@@ -387,6 +387,12 @@
           "simplified": "Forenklet",
           "traditional": "Traditionel"
         }
+      },
+      "clipboardNotice": {
+        "title": "Besked om udklipsholder",
+        "description": "Hvor længe beskeden er synlig, når en transskription kopieres til udklipsholderen i stedet for at blive indsat (f.eks. uden tilgængelighed). I sekunder, decimaler tilladt; 0 slår den fra.",
+        "unit": "s",
+        "invalid": "Angiv et antal sekunder fra 0 til {{max}}."
       }
     },
     "postProcessing": {
@@ -702,7 +708,8 @@
   "overlay": {
     "transcribing": "Transskriberer...",
     "processing": "Behandler...",
-    "loadingModel": "Indlæser model..."
+    "loadingModel": "Indlæser model...",
+    "clipboard": "I udklipsholderen – {{keys}} for at indsætte"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} blokerer muligvis 1 genvej",

@@ -357,6 +357,12 @@
           "simplified": "مبسطة",
           "traditional": "تقليدية"
         }
+      },
+      "clipboardNotice": {
+        "title": "تنبيه الحافظة",
+        "description": "مدة ظهور التنبيه عند نسخ النص المفرَّغ إلى الحافظة بدلاً من لصقه (مثلاً بدون إمكانية الوصول). بالثواني، مع السماح بالكسور؛ 0 يوقفه.",
+        "unit": "ث",
+        "invalid": "أدخل عدد ثوانٍ من 0 إلى {{max}}."
       }
     },
     "postProcessing": {
@@ -699,7 +705,8 @@
   "overlay": {
     "transcribing": "جاري التفريغ...",
     "processing": "جاري المعالجة...",
-    "loadingModel": "جارٍ تحميل النموذج..."
+    "loadingModel": "جارٍ تحميل النموذج...",
+    "clipboard": "في الحافظة – {{keys}} للصق"
   },
   "whatsNew": {
     "title": "الجديد في Handy v{{version}}"

@@ -387,6 +387,12 @@
           "simplified": "簡体字",
           "traditional": "繁体字"
         }
+      },
+      "clipboardNotice": {
+        "title": "クリップボード通知",
+        "description": "文字起こしが貼り付けではなくクリップボードにコピーされたとき（アクセシビリティがない場合など）に通知を表示する時間。秒単位で小数も可。0 でオフ。",
+        "unit": "秒",
+        "invalid": "0〜{{max}} 秒の数値を入力してください。"
       }
     },
     "postProcessing": {
@@ -699,7 +705,8 @@
   "overlay": {
     "transcribing": "文字起こし中…",
     "processing": "処理中…",
-    "loadingModel": "モデルを読み込み中…"
+    "loadingModel": "モデルを読み込み中…",
+    "clipboard": "クリップボードにコピーしました – {{keys}} で貼り付け"
   },
   "whatsNew": {
     "title": "Handy v{{version}} の新機能"

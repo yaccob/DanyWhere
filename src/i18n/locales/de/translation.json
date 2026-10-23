@@ -387,6 +387,12 @@
           "simplified": "Vereinfacht",
           "traditional": "Traditionell"
         }
+      },
+      "clipboardNotice": {
+        "title": "Hinweis zur Zwischenablage",
+        "description": "Wie lange der Hinweis sichtbar bleibt, wenn eine Transkription in die Zwischenablage gelegt statt eingefügt wird (z. B. ohne Bedienungshilfen). In Sekunden, Nachkommastellen erlaubt; 0 schaltet ihn aus.",
+        "unit": "s",
+        "invalid": "Gib eine Sekundenzahl von 0 bis {{max}} ein."
       }
     },
     "postProcessing": {
@@ -699,7 +705,8 @@
   "overlay": {
     "transcribing": "Transkribiere...",
     "processing": "Verarbeite...",
-    "loadingModel": "Modell wird geladen..."
+    "loadingModel": "Modell wird geladen...",
+    "clipboard": "In der Zwischenablage – {{keys}} zum Einfügen"
   },
   "whatsNew": {
     "title": "Neu in Handy v{{version}}"

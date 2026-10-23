@@ -387,6 +387,12 @@
           "simplified": "Sederhana",
           "traditional": "Tradisional"
         }
+      },
+      "clipboardNotice": {
+        "title": "Pemberitahuan papan klip",
+        "description": "Berapa lama pemberitahuan terlihat saat transkripsi disalin ke papan klip alih-alih ditempel (misalnya tanpa Aksesibilitas). Dalam detik, desimal diperbolehkan; 0 mematikannya.",
+        "unit": "dtk",
+        "invalid": "Masukkan jumlah detik dari 0 sampai {{max}}."
       }
     },
     "postProcessing": {
@@ -702,7 +708,8 @@
   "overlay": {
     "transcribing": "Mentranskripsikan...",
     "processing": "Memproses...",
-    "loadingModel": "Memuat model..."
+    "loadingModel": "Memuat model...",
+    "clipboard": "Di papan klip – {{keys}} untuk menempel"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} mungkin memblokir 1 pintasan",

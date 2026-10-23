@@ -387,6 +387,12 @@
           "simplified": "מפושט",
           "traditional": "מסורתי"
         }
+      },
+      "clipboardNotice": {
+        "title": "הודעת לוח",
+        "description": "כמה זמן ההודעה מוצגת כשתמלול מועתק ללוח במקום להיות מודבק (למשל ללא נגישות). בשניות, מותרים שברים; 0 מכבה אותה.",
+        "unit": "ש׳",
+        "invalid": "הזן מספר שניות בין 0 ל-{{max}}."
       }
     },
     "postProcessing": {
@@ -699,7 +705,8 @@
   "overlay": {
     "transcribing": "מתמלל...",
     "processing": "מעבד...",
-    "loadingModel": "טוען מודל..."
+    "loadingModel": "טוען מודל...",
+    "clipboard": "בלוח – {{keys}} להדבקה"
   },
   "whatsNew": {
     "title": "חדש ב-Handy v{{version}}"

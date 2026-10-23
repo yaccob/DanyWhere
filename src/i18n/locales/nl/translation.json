@@ -387,6 +387,12 @@
           "simplified": "Vereenvoudigd",
           "traditional": "Traditioneel"
         }
+      },
+      "clipboardNotice": {
+        "title": "Melding klembord",
+        "description": "Hoe lang de melding zichtbaar blijft wanneer een transcriptie naar het klembord wordt gekopieerd in plaats van geplakt (bijv. zonder Toegankelijkheid). In seconden, decimalen toegestaan; 0 zet hem uit.",
+        "unit": "s",
+        "invalid": "Voer een aantal seconden in van 0 tot {{max}}."
       }
     },
     "postProcessing": {
@@ -702,7 +708,8 @@
   "overlay": {
     "transcribing": "Transcriberen...",
     "processing": "Verwerken...",
-    "loadingModel": "Model laden..."
+    "loadingModel": "Model laden...",
+    "clipboard": "Op het klembord – {{keys}} om te plakken"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} blokkeert mogelijk 1 sneltoets",

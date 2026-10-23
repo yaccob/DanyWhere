@@ -387,6 +387,12 @@
           "simplified": "Förenklad",
           "traditional": "Traditionell"
         }
+      },
+      "clipboardNotice": {
+        "title": "Meddelande om urklipp",
+        "description": "Hur länge meddelandet syns när en transkription kopieras till urklipp i stället för att klistras in (t.ex. utan hjälpmedel). I sekunder, decimaler tillåtna; 0 stänger av det.",
+        "unit": "s",
+        "invalid": "Ange ett antal sekunder från 0 till {{max}}."
       }
     },
     "postProcessing": {
@@ -699,7 +705,8 @@
   "overlay": {
     "transcribing": "Transkriberar...",
     "processing": "Bearbetar...",
-    "loadingModel": "Laddar modell..."
+    "loadingModel": "Laddar modell...",
+    "clipboard": "I urklipp – {{keys}} för att klistra in"
   },
   "whatsNew": {
     "title": "Nytt i Handy v{{version}}"

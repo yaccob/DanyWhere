@@ -387,6 +387,12 @@
           "simplified": "Uproszczone",
           "traditional": "Tradycyjne"
         }
+      },
+      "clipboardNotice": {
+        "title": "Powiadomienie o schowku",
+        "description": "Jak długo widoczne jest powiadomienie, gdy transkrypcja trafia do schowka zamiast zostać wklejona (np. bez dostępności). W sekundach, ułamki dozwolone; 0 je wyłącza.",
+        "unit": "s",
+        "invalid": "Wpisz liczbę sekund od 0 do {{max}}."
       }
     },
     "postProcessing": {
@@ -699,7 +705,8 @@
   "overlay": {
     "transcribing": "Transkrypcja...",
     "processing": "Przetwarzanie...",
-    "loadingModel": "Wczytywanie modelu..."
+    "loadingModel": "Wczytywanie modelu...",
+    "clipboard": "W schowku – {{keys}}, aby wkleić"
   },
   "whatsNew": {
     "title": "Nowości w Handy v{{version}}"

@@ -387,6 +387,12 @@
           "simplified": "Simplified",
           "traditional": "Traditional"
         }
+      },
+      "clipboardNotice": {
+        "title": "Clipboard Notice",
+        "description": "How long the notice stays visible when a transcript is put on the clipboard instead of being pasted (e.g. without Accessibility). In seconds, decimals allowed; 0 turns it off.",
+        "unit": "s",
+        "invalid": "Enter a number of seconds from 0 to {{max}}."
       }
     },
     "postProcessing": {
@@ -702,7 +708,8 @@
   "overlay": {
     "transcribing": "Transcribing...",
     "processing": "Processing...",
-    "loadingModel": "Loading model..."
+    "loadingModel": "Loading model...",
+    "clipboard": "On the clipboard – {{keys}} to paste"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} may be blocking 1 shortcut",

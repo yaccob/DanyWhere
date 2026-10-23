@@ -51,12 +51,16 @@ const OVERLAY_HEIGHT: f64 = 50.0;
 
 // Actual is 394x118, just a little extra
 const OVERLAY_STREAM_WIDTH: f64 = 400.0;
+/// Wide enough for the "on the clipboard" notice text.
+const OVERLAY_NOTICE_WIDTH: f64 = 340.0;
 const OVERLAY_STREAM_HEIGHT: f64 = 120.0;
 
 /// Overlay window size (logical) for a given UI state.
 fn overlay_dimensions(state: &str) -> (f64, f64) {
     if state == "streaming" {
         (OVERLAY_STREAM_WIDTH, OVERLAY_STREAM_HEIGHT)
+    } else if state == "clipboard" {
+        (OVERLAY_NOTICE_WIDTH, OVERLAY_HEIGHT)
     } else {
         (OVERLAY_WIDTH, OVERLAY_HEIGHT)
     }
@@ -684,6 +688,24 @@ fn update_overlay_position_on_main(app_handle: &AppHandle) {
 /// press the coordinator remembered while the pipeline was busy and started
 /// the instant it drained, well inside the 300 ms hide delay.
 static OVERLAY_SHOW_GENERATION: AtomicU64 = AtomicU64::new(0);
+
+/// Shows the "on the clipboard" notice for `duration`, then hides the overlay
+/// unless something else (e.g. a new recording) has shown it in the meantime.
+/// Unlike the recording states it ignores the overlay style: the notice tells
+/// the user where the text went, which matters even with the overlay off.
+pub fn show_clipboard_notice(app_handle: &AppHandle, duration: std::time::Duration) {
+    let before = OVERLAY_SHOW_GENERATION.load(Ordering::SeqCst);
+    let handle = app_handle.clone();
+    let _ = app_handle.run_on_main_thread(move || show_overlay_state_on_main(&handle, "clipboard"));
+    let handle = app_handle.clone();
+    std::thread::spawn(move || {
+        std::thread::sleep(duration);
+        // Our own show bumped the generation by exactly one.
+        if OVERLAY_SHOW_GENERATION.load(Ordering::SeqCst) == before + 1 {
+            hide_recording_overlay(&handle);
+        }
+    });
+}
 
 /// Hides the recording overlay window with fade-out animation
 pub fn hide_recording_overlay(app_handle: &AppHandle) {

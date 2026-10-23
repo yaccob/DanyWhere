@@ -387,6 +387,12 @@
           "simplified": "Simplificat",
           "traditional": "Tradicional"
         }
+      },
+      "clipboardNotice": {
+        "title": "Avís del porta-retalls",
+        "description": "Quant de temps es mostra l'avís quan una transcripció es copia al porta-retalls en lloc d'enganxar-se (p. ex. sense accessibilitat). En segons, amb decimals; 0 el desactiva.",
+        "unit": "s",
+        "invalid": "Introdueix un nombre de segons de 0 a {{max}}."
       }
     },
     "postProcessing": {
@@ -702,7 +708,8 @@
   "overlay": {
     "transcribing": "S'està transcrivint...",
     "processing": "S'està processant...",
-    "loadingModel": "S'està carregant el model..."
+    "loadingModel": "S'està carregant el model...",
+    "clipboard": "Al porta-retalls – {{keys}} per enganxar"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} pot estar blocant 1 drecera",

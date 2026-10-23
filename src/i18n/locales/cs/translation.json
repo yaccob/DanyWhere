@@ -387,6 +387,12 @@
           "simplified": "Zjednodušené",
           "traditional": "Tradiční"
         }
+      },
+      "clipboardNotice": {
+        "title": "Upozornění na schránku",
+        "description": "Jak dlouho zůstane upozornění viditelné, když se přepis místo vložení zkopíruje do schránky (např. bez usnadnění). V sekundách, desetinná čísla povolena; 0 ho vypne.",
+        "unit": "s",
+        "invalid": "Zadejte počet sekund od 0 do {{max}}."
       }
     },
     "postProcessing": {
@@ -699,7 +705,8 @@
   "overlay": {
     "transcribing": "Přepisuji...",
     "processing": "Zpracovávám...",
-    "loadingModel": "Načítání modelu..."
+    "loadingModel": "Načítání modelu...",
+    "clipboard": "Ve schránce – {{keys}} pro vložení"
   },
   "whatsNew": {
     "title": "Novinky v Handy v{{version}}"

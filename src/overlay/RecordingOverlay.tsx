@@ -13,7 +13,12 @@ import i18n, { syncLanguageFromSettings } from "@/i18n";
 import type { ModelStateEvent } from "@/lib/types/events";
 import { getLanguageDirection } from "@/lib/utils/rtl";
 
-type OverlayState = "recording" | "streaming" | "transcribing" | "processing";
+type OverlayState =
+  | "recording"
+  | "streaming"
+  | "transcribing"
+  | "processing"
+  | "clipboard";
 
 // Number of reactive bars in the waveform (the simple, smoothed style shared by
 // every overlay form). Mic levels arrive as 16 FFT buckets; we take the first N.
@@ -340,6 +345,31 @@ const RecordingOverlay: React.FC = () => {
                 true,
               )
             : listeningRow(open, true)}
+        </div>
+      </div>
+    );
+  }
+
+  // ---- Clipboard notice: the text was put on the clipboard instead of pasted.
+  if (state === "clipboard") {
+    const pasteKeys = navigator.platform.toLowerCase().includes("mac")
+      ? "⌘V"
+      : "Ctrl+V";
+    return (
+      <div
+        dir={direction}
+        className={`ov-stage ${position} ov-fade ${isVisible ? "show" : ""}`}
+      >
+        <div className="scard compact">
+          <div className="sbase">
+            <div className="sbase-l">
+              <span className="sdot ready" />
+            </div>
+            <span className="swork-label">
+              {t("overlay.clipboard", { keys: pasteKeys })}
+            </span>
+            <div className="sbase-r" />
+          </div>
         </div>
       </div>
     );

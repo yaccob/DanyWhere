@@ -387,6 +387,12 @@
           "simplified": "Simplificado",
           "traditional": "Tradicional"
         }
+      },
+      "clipboardNotice": {
+        "title": "Aviso da área de transferência",
+        "description": "Por quanto tempo o aviso fica visível quando uma transcrição é copiada para a área de transferência em vez de colada (por ex. sem Acessibilidade). Em segundos, decimais permitidos; 0 desativa.",
+        "unit": "s",
+        "invalid": "Digite um número de segundos de 0 a {{max}}."
       }
     },
     "postProcessing": {
@@ -699,7 +705,8 @@
   "overlay": {
     "transcribing": "Transcrevendo...",
     "processing": "Processando...",
-    "loadingModel": "Carregando modelo..."
+    "loadingModel": "Carregando modelo...",
+    "clipboard": "Na área de transferência – {{keys}} para colar"
   },
   "whatsNew": {
     "title": "Novidades no Handy v{{version}}"

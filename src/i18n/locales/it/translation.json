@@ -387,6 +387,12 @@
           "simplified": "Semplificato",
           "traditional": "Tradizionale"
         }
+      },
+      "clipboardNotice": {
+        "title": "Avviso appunti",
+        "description": "Per quanto tempo resta visibile l'avviso quando una trascrizione viene copiata negli appunti invece di essere incollata (ad es. senza Accessibilità). In secondi, decimali ammessi; 0 lo disattiva.",
+        "unit": "s",
+        "invalid": "Inserisci un numero di secondi da 0 a {{max}}."
       }
     },
     "postProcessing": {
@@ -699,7 +705,8 @@
   "overlay": {
     "transcribing": "Trascrizione...",
     "processing": "Elaborazione...",
-    "loadingModel": "Caricamento del modello..."
+    "loadingModel": "Caricamento del modello...",
+    "clipboard": "Negli appunti – {{keys}} per incollare"
   },
   "whatsNew": {
     "title": "Novità in Handy v{{version}}"

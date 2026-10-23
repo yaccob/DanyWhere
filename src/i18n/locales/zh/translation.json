@@ -387,6 +387,12 @@
           "simplified": "简体",
           "traditional": "繁体"
         }
+      },
+      "clipboardNotice": {
+        "title": "剪贴板提示",
+        "description": "当转录被复制到剪贴板而不是直接粘贴时（例如没有辅助功能权限），提示显示的时长。以秒为单位，可用小数；0 表示关闭。",
+        "unit": "秒",
+        "invalid": "请输入 0 到 {{max}} 之间的秒数。"
       }
     },
     "postProcessing": {
@@ -699,7 +705,8 @@
   "overlay": {
     "transcribing": "正在转录...",
     "processing": "处理中...",
-    "loadingModel": "正在加载模型..."
+    "loadingModel": "正在加载模型...",
+    "clipboard": "已在剪贴板 – 按 {{keys}} 粘贴"
   },
   "whatsNew": {
     "title": "Handy v{{version}} 新功能"

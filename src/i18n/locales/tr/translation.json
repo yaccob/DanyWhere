@@ -387,6 +387,12 @@
           "simplified": "Basitleştirilmiş",
           "traditional": "Geleneksel"
         }
+      },
+      "clipboardNotice": {
+        "title": "Pano bildirimi",
+        "description": "Transkript yapıştırılmak yerine panoya kopyalandığında (ör. Erişilebilirlik olmadan) bildirimin ne kadar görüneceği. Saniye cinsinden, ondalık kullanılabilir; 0 kapatır.",
+        "unit": "sn",
+        "invalid": "0 ile {{max}} arasında saniye girin."
       }
     },
     "postProcessing": {
@@ -699,7 +705,8 @@
   "overlay": {
     "transcribing": "Transkribe ediliyor...",
     "processing": "İşleniyor...",
-    "loadingModel": "Model yükleniyor..."
+    "loadingModel": "Model yükleniyor...",
+    "clipboard": "Panoda – yapıştırmak için {{keys}}"
   },
   "whatsNew": {
     "title": "Handy v{{version}} yenilikleri"

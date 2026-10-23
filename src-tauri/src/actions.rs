@@ -776,7 +776,9 @@ impl ShortcutAction for TranscribeAction {
                                         // A new session may have started while
                                         // this paste ran; the UI is now its.
                                         if RECORDING_SESSION.load(Ordering::SeqCst) == session {
-                                            utils::hide_recording_overlay(&ah_clone);
+                                            crate::delivery::finish_overlay_after_dictation(
+                                                &ah_clone,
+                                            );
                                             set_tray_state(&ah_clone, TrayIconState::Idle);
                                         }
                                     })

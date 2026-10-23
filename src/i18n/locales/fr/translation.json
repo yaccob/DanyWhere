@@ -387,6 +387,12 @@
           "simplified": "Simplifié",
           "traditional": "Traditionnel"
         }
+      },
+      "clipboardNotice": {
+        "title": "Avis du presse-papiers",
+        "description": "Durée d'affichage de l'avis lorsqu'une transcription est copiée dans le presse-papiers au lieu d'être collée (par ex. sans l'accessibilité). En secondes, décimales autorisées ; 0 le désactive.",
+        "unit": "s",
+        "invalid": "Saisissez un nombre de secondes entre 0 et {{max}}."
       }
     },
     "postProcessing": {
@@ -699,7 +705,8 @@
   "overlay": {
     "transcribing": "Transcription...",
     "processing": "Traitement...",
-    "loadingModel": "Chargement du modèle..."
+    "loadingModel": "Chargement du modèle...",
+    "clipboard": "Dans le presse-papiers – {{keys}} pour coller"
   },
   "whatsNew": {
     "title": "Nouveautés de Handy v{{version}}"

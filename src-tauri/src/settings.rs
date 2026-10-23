@@ -495,6 +495,10 @@ pub struct AppSettings {
     pub show_tray_icon: bool,
     #[serde(default = "default_paste_delay_ms")]
     pub paste_delay_ms: u64,
+    /// How long the "on the clipboard" notice stays visible, in milliseconds;
+    /// 0 switches it off. Independent of the recording overlay style.
+    #[serde(default = "default_clipboard_notice_ms")]
+    pub clipboard_notice_ms: u64,
     #[serde(default = "default_paste_delay_after_ms")]
     pub paste_delay_after_ms: u64,
     /// Debug-gated ("beta") receipt-sequenced paste: restore the clipboard only
@@ -636,6 +640,10 @@ fn default_word_correction_threshold() -> f64 {
 
 fn default_paste_delay_ms() -> u64 {
     60
+}
+
+fn default_clipboard_notice_ms() -> u64 {
+    2500
 }
 
 fn default_paste_delay_after_ms() -> u64 {
@@ -1030,6 +1038,7 @@ pub fn get_default_settings() -> AppSettings {
         keyboard_implementation: KeyboardImplementation::default(),
         show_tray_icon: default_show_tray_icon(),
         paste_delay_ms: default_paste_delay_ms(),
+        clipboard_notice_ms: default_clipboard_notice_ms(),
         paste_delay_after_ms: default_paste_delay_after_ms(),
         reliable_paste: false,
         typing_tool: default_typing_tool(),
@@ -1483,6 +1492,7 @@ mod tests {
 
         assert_eq!(settings.selected_model, "whisper-large-v3-turbo");
         assert!(!settings.accessibility_skipped);
+        assert_eq!(settings.clipboard_notice_ms, 2500);
         assert_eq!(settings.bindings["transcribe"].current_binding, "f13");
         assert_eq!(settings.log_level, LogLevel::Debug);
         assert_eq!(settings.sound_theme, SoundTheme::Pop);
