@@ -76,7 +76,11 @@
       },
       "accessibility": {
         "title": "Accesso all'Accessibilità",
-        "description": "Necessario per digitare il testo trascritto nelle tue applicazioni."
+        "description": "Necessario per digitare il testo trascritto nelle tue applicazioni.",
+        "skip": "Continua senza Accessibilità",
+        "skipHint": "Se la tua organizzazione blocca questo permesso: il testo trascritto viene copiato negli appunti perché tu lo incolli, e le scorciatoie non possono usare il tasto fn.",
+        "skipped": "Saltato — il testo viene copiato negli appunti",
+        "shortcutsReset": "Alcune scorciatoie richiedono l'Accessibilità e sono state ripristinate ai valori predefiniti."
       },
       "grant": "Concedi Permesso",
       "granted": "Concesso",

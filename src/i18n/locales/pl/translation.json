@@ -76,7 +76,11 @@
       },
       "accessibility": {
         "title": "Dostęp do dostępności",
-        "description": "Wymagany do wpisywania transkrybowanego tekstu w Twoich aplikacjach."
+        "description": "Wymagany do wpisywania transkrybowanego tekstu w Twoich aplikacjach.",
+        "skip": "Kontynuuj bez dostępności",
+        "skipHint": "Jeśli Twoja organizacja blokuje to uprawnienie: transkrybowany tekst jest kopiowany do schowka, abyś wkleił go samodzielnie, a skróty nie mogą używać klawisza fn.",
+        "skipped": "Pominięto — tekst jest kopiowany do schowka",
+        "shortcutsReset": "Niektóre skróty wymagają dostępności i zostały przywrócone do wartości domyślnych."
       },
       "grant": "Przyznaj uprawnienie",
       "granted": "Przyznano",

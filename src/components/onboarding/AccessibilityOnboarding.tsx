@@ -12,6 +12,10 @@ import { commands } from "@/bindings";
 import { useSettingsStore } from "@/stores/settingsStore";
 import HandyTextLogo from "../icons/HandyTextLogo";
 import { Keyboard, Mic, Check, Loader2 } from "lucide-react";
+import {
+  permissionsSatisfied,
+  type PermissionPlatform,
+} from "./permissionGate";
 
 interface AccessibilityOnboardingProps {
   onComplete: () => void;
@@ -19,7 +23,6 @@ interface AccessibilityOnboardingProps {
 }
 
 type PermissionStatus = "checking" | "needed" | "waiting" | "granted";
-type PermissionPlatform = "macos" | "windows" | "other";
 
 interface PermissionsState {
   accessibility: PermissionStatus;
@@ -43,6 +46,9 @@ const AccessibilityOnboarding: React.FC<AccessibilityOnboardingProps> = ({
     accessibility: "checking",
     microphone: "checking",
   });
+  const [accessibilitySkipped, setAccessibilitySkipped] = useState(false);
+  // Read by the polling callback, which outlives a single render.
+  const accessibilitySkippedRef = useRef(false);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const errorCountRef = useRef<number>(0);
@@ -53,12 +59,16 @@ const AccessibilityOnboarding: React.FC<AccessibilityOnboardingProps> = ({
   const showMicrophonePermission = isMacOS || isWindows;
   const showAccessibilityPermission = isMacOS;
 
-  const allGranted = isMacOS
-    ? permissions.accessibility === "granted" &&
-      permissions.microphone === "granted"
-    : isWindows
-      ? permissions.microphone === "granted"
-      : true;
+  const allGranted =
+    permissionPlatform !== null &&
+    permissionsSatisfied(
+      permissionPlatform,
+      {
+        accessibility: permissions.accessibility === "granted",
+        microphone: permissions.microphone === "granted",
+      },
+      accessibilitySkipped,
+    );
 
   const completeOnboarding = useCallback(async () => {
     await Promise.all([refreshAudioDevices(), refreshOutputDevices()]);
@@ -107,10 +117,17 @@ const AccessibilityOnboarding: React.FC<AccessibilityOnboardingProps> = ({
     const checkInitial = async () => {
       if (nextPlatform === "macos") {
         try {
-          const [accessibilityGranted, microphoneGranted] = await Promise.all([
-            checkAccessibilityPermission(),
-            checkMicrophonePermission(),
-          ]);
+          const [accessibilityGranted, microphoneGranted, settingsResult] =
+            await Promise.all([
+              checkAccessibilityPermission(),
+              checkMicrophonePermission(),
+              commands.getAppSettings(),
+            ]);
+          const skipped =
+            settingsResult.status === "ok" &&
+            settingsResult.data.accessibility_skipped === true;
+          accessibilitySkippedRef.current = skipped;
+          setAccessibilitySkipped(skipped);
 
           // If accessibility is granted, initialize Enigo and shortcuts
           if (accessibilityGranted) {
@@ -131,7 +148,7 @@ const AccessibilityOnboarding: React.FC<AccessibilityOnboardingProps> = ({
 
           setPermissions(newState);
 
-          if (accessibilityGranted && microphoneGranted) {
+          if ((accessibilityGranted || skipped) && microphoneGranted) {
             await completeOnboarding();
           }
         } catch (error) {
@@ -220,8 +237,11 @@ const AccessibilityOnboarding: React.FC<AccessibilityOnboardingProps> = ({
           return newState;
         });
 
-        // If both granted, stop polling, refresh audio devices, and proceed
-        if (accessibilityGranted && microphoneGranted) {
+        // Once satisfied, stop polling, refresh audio devices, and proceed
+        if (
+          (accessibilityGranted || accessibilitySkippedRef.current) &&
+          microphoneGranted
+        ) {
           if (pollingRef.current) {
             clearInterval(pollingRef.current);
             pollingRef.current = null;
@@ -268,6 +288,31 @@ const AccessibilityOnboarding: React.FC<AccessibilityOnboardingProps> = ({
       startPolling();
     } catch (error) {
       console.error("Failed to request accessibility permission:", error);
+      toast.error(t("onboarding.permissions.errors.requestFailed"));
+    }
+  };
+
+  const handleSkipAccessibility = async () => {
+    if (preview) return;
+
+    try {
+      const resetBindings = await commands.skipAccessibilityPermission();
+      accessibilitySkippedRef.current = true;
+      setAccessibilitySkipped(true);
+      if (resetBindings.length > 0) {
+        toast.info(t("onboarding.permissions.accessibility.shortcutsReset"));
+      }
+      // Shortcuts now use the Tauri backend, which needs no permission.
+      await commands.initializeShortcuts();
+      if (permissions.microphone === "granted") {
+        if (pollingRef.current) {
+          clearInterval(pollingRef.current);
+          pollingRef.current = null;
+        }
+        await completeOnboarding();
+      }
+    } catch (error) {
+      console.error("Failed to continue without accessibility:", error);
       toast.error(t("onboarding.permissions.errors.requestFailed"));
     }
   };
@@ -395,18 +440,36 @@ const AccessibilityOnboarding: React.FC<AccessibilityOnboardingProps> = ({
                     <Check className="w-4 h-4" />
                     {t("onboarding.permissions.granted")}
                   </div>
-                ) : permissions.accessibility === "waiting" ? (
-                  <div className="flex items-center gap-2 text-text/50 text-sm">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    {t("onboarding.permissions.waiting")}
+                ) : accessibilitySkipped ? (
+                  <div className="flex items-center gap-2 text-text/60 text-sm">
+                    <Check className="w-4 h-4" />
+                    {t("onboarding.permissions.accessibility.skipped")}
                   </div>
                 ) : (
-                  <button
-                    onClick={handleGrantAccessibility}
-                    className="px-4 py-2 rounded-lg bg-logo-primary hover:bg-logo-primary/90 text-white text-sm font-medium transition-colors"
-                  >
-                    {t("onboarding.permissions.grant")}
-                  </button>
+                  <div className="flex flex-col items-start gap-2">
+                    {permissions.accessibility === "waiting" ? (
+                      <div className="flex items-center gap-2 text-text/50 text-sm">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        {t("onboarding.permissions.waiting")}
+                      </div>
+                    ) : (
+                      <button
+                        onClick={handleGrantAccessibility}
+                        className="px-4 py-2 rounded-lg bg-logo-primary hover:bg-logo-primary/90 text-white text-sm font-medium transition-colors"
+                      >
+                        {t("onboarding.permissions.grant")}
+                      </button>
+                    )}
+                    <button
+                      onClick={handleSkipAccessibility}
+                      className="text-sm text-text/70 underline hover:text-text transition-colors"
+                    >
+                      {t("onboarding.permissions.accessibility.skip")}
+                    </button>
+                    <p className="text-xs text-text/50">
+                      {t("onboarding.permissions.accessibility.skipHint")}
+                    </p>
+                  </div>
                 )}
               </div>
             </div>

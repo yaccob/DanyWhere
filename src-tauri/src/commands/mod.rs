@@ -148,6 +148,11 @@ pub fn initialize_enigo(app: AppHandle) -> Result<(), String> {
         return Ok(());
     }
 
+    if !crate::input::enigo_wanted(&crate::settings::get_settings(&app)) {
+        log::debug!("Running without Accessibility; not initializing Enigo");
+        return Ok(());
+    }
+
     // Try to initialize
     match EnigoState::new() {
         Ok(enigo_state) => {
@@ -167,6 +172,24 @@ pub fn initialize_enigo(app: AppHandle) -> Result<(), String> {
             Err(format!("Failed to initialize input system: {}", e))
         }
     }
+}
+
+/// Switch to the mode that works without the macOS Accessibility permission
+/// and persist it. Call before `initialize_shortcuts`, which then registers the
+/// shortcuts with the Tauri backend.
+///
+/// Returns the IDs of bindings that were reset to their defaults.
+#[specta::specta]
+#[tauri::command]
+pub fn skip_accessibility_permission(app: AppHandle) -> Vec<String> {
+    let mut settings = crate::settings::get_settings(&app);
+    let reset_bindings = crate::shortcut::apply_no_accessibility_mode(&mut settings);
+    crate::settings::write_settings(&app, settings);
+    log::info!(
+        "Continuing without Accessibility permission; reset bindings: {:?}",
+        reset_bindings
+    );
+    reset_bindings
 }
 
 /// Marker state to track if shortcuts have been initialized.

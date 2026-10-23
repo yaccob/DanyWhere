@@ -76,7 +76,11 @@
       },
       "accessibility": {
         "title": "Tilgængelighedsadgang",
-        "description": "Påkrævet for at skrive den transskriberede tekst ind i dine programmer."
+        "description": "Påkrævet for at skrive den transskriberede tekst ind i dine programmer.",
+        "skip": "Fortsæt uden tilgængelighed",
+        "skipHint": "Hvis din organisation blokerer denne tilladelse: transskriberet tekst kopieres til udklipsholderen, så du selv kan indsætte den, og genveje kan ikke bruge fn-tasten.",
+        "skipped": "Sprunget over — tekst kopieres til udklipsholderen",
+        "shortcutsReset": "Nogle genveje kræver tilgængelighed og er nulstillet til standard."
       },
       "grant": "Giv tilladelse",
       "granted": "Givet",

@@ -76,7 +76,11 @@
       },
       "accessibility": {
         "title": "Accés a l'accessibilitat",
-        "description": "Necessari per escriure el text transcrit a les aplicacions."
+        "description": "Necessari per escriure el text transcrit a les aplicacions.",
+        "skip": "Continua sense accessibilitat",
+        "skipHint": "Si la teva organització bloqueja aquest permís: el text transcrit es copia al porta-retalls perquè l'enganxis tu mateix, i les dreceres no poden fer servir la tecla fn.",
+        "skipped": "Omès — el text es copia al porta-retalls",
+        "shortcutsReset": "Algunes dreceres necessiten accessibilitat i s'han restablert als valors per defecte."
       },
       "grant": "Concediu el permís",
       "granted": "Concedit",

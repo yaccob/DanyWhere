@@ -76,7 +76,11 @@
       },
       "accessibility": {
         "title": "Erişilebilirlik Erişimi",
-        "description": "Transkribe edilen metni uygulamalarınıza yazabilmek için gereklidir."
+        "description": "Transkribe edilen metni uygulamalarınıza yazabilmek için gereklidir.",
+        "skip": "Erişilebilirlik olmadan devam et",
+        "skipHint": "Kuruluşunuz bu izni engelliyorsa: yazıya dökülen metin, kendiniz yapıştırmanız için panoya kopyalanır ve kısayollar fn tuşunu kullanamaz.",
+        "skipped": "Atlandı — metin panoya kopyalanır",
+        "shortcutsReset": "Bazı kısayollar Erişilebilirlik gerektirdiği için varsayılanlara sıfırlandı."
       },
       "grant": "İzin Ver",
       "granted": "Verildi",

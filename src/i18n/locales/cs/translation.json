@@ -76,7 +76,11 @@
       },
       "accessibility": {
         "title": "Přístup k usnadnění",
-        "description": "Potřebný pro psaní přepsaného textu do vašich aplikací."
+        "description": "Potřebný pro psaní přepsaného textu do vašich aplikací.",
+        "skip": "Pokračovat bez usnadnění",
+        "skipHint": "Pokud vaše organizace toto oprávnění blokuje: přepsaný text se zkopíruje do schránky, abyste ho vložili sami, a klávesové zkratky nemohou používat klávesu fn.",
+        "skipped": "Přeskočeno — text se kopíruje do schránky",
+        "shortcutsReset": "Některé zkratky vyžadují usnadnění a byly obnoveny na výchozí hodnoty."
       },
       "grant": "Udělit oprávnění",
       "granted": "Uděleno",

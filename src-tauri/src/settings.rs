@@ -417,6 +417,12 @@ pub struct AppSettings {
     pub selected_model: String,
     #[serde(default)]
     pub onboarding_completed: bool,
+    /// The user chose to run without the macOS Accessibility permission
+    /// (e.g. it is blocked by device management). Startup then no longer
+    /// sends them back to the permission screen. See
+    /// `shortcut::apply_no_accessibility_mode`.
+    #[serde(default)]
+    pub accessibility_skipped: bool,
     #[serde(default = "default_always_on_microphone")]
     pub always_on_microphone: bool,
     #[serde(default)]
@@ -973,6 +979,7 @@ pub fn get_default_settings() -> AppSettings {
         whats_new_last_seen_version: default_whats_new_last_seen_version(),
         selected_model: "".to_string(),
         onboarding_completed: false,
+        accessibility_skipped: false,
         always_on_microphone: false,
         selected_microphone: None,
         selected_channel: None,
@@ -1460,6 +1467,7 @@ mod tests {
             .expect("a stored v0.9.0 settings object must keep parsing strictly");
 
         assert_eq!(settings.selected_model, "whisper-large-v3-turbo");
+        assert!(!settings.accessibility_skipped);
         assert_eq!(settings.bindings["transcribe"].current_binding, "f13");
         assert_eq!(settings.log_level, LogLevel::Debug);
         assert_eq!(settings.sound_theme, SoundTheme::Pop);

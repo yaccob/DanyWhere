@@ -76,7 +76,11 @@
       },
       "accessibility": {
         "title": "Hjälpmedelsåtkomst",
-        "description": "Krävs för att skriva transkriberad text i dina program."
+        "description": "Krävs för att skriva transkriberad text i dina program.",
+        "skip": "Fortsätt utan hjälpmedel",
+        "skipHint": "Om din organisation blockerar den här behörigheten: transkriberad text kopieras till urklipp så att du kan klistra in den själv, och kortkommandon kan inte använda fn-tangenten.",
+        "skipped": "Hoppades över — texten kopieras till urklipp",
+        "shortcutsReset": "Vissa kortkommandon kräver hjälpmedel och har återställts till standard."
       },
       "grant": "Bevilja behörighet",
       "granted": "Beviljad",

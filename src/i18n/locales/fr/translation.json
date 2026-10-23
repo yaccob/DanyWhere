@@ -76,7 +76,11 @@
       },
       "accessibility": {
         "title": "Accès à l'accessibilité",
-        "description": "Nécessaire pour taper le texte transcrit dans vos applications."
+        "description": "Nécessaire pour taper le texte transcrit dans vos applications.",
+        "skip": "Continuer sans l'accessibilité",
+        "skipHint": "Si votre organisation bloque cette autorisation : le texte transcrit est copié dans le presse-papiers pour que vous le colliez vous-même, et les raccourcis ne peuvent pas utiliser la touche fn.",
+        "skipped": "Ignoré — le texte est copié dans le presse-papiers",
+        "shortcutsReset": "Certains raccourcis nécessitent l'accessibilité et ont été réinitialisés à leurs valeurs par défaut."
       },
       "grant": "Accorder l'autorisation",
       "granted": "Accordé",

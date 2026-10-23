@@ -76,7 +76,11 @@
       },
       "accessibility": {
         "title": "Accessibility Access",
-        "description": "Required to type transcribed text into your applications."
+        "description": "Required to type transcribed text into your applications.",
+        "skip": "Continue without Accessibility",
+        "skipHint": "If your organization blocks this permission: transcribed text is copied to the clipboard for you to paste, and shortcuts can't use the fn key.",
+        "skipped": "Skipped — text is copied to the clipboard",
+        "shortcutsReset": "Some shortcuts need Accessibility and were reset to their defaults."
       },
       "grant": "Grant Permission",
       "granted": "Granted",
