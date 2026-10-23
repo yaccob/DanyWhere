@@ -34,9 +34,14 @@ Planned work on DanyWhere, roughly in priority order within each section. Items 
 
 Whisper sometimes appends text that was never said when the recording ends in silence (observed: "Vielen Dank." after a synthetic 60 s German recording). Known Whisper behaviour on trailing silence. To check: whether trimming trailing silence with the VAD before decoding (or dropping a final chunk without speech) avoids it.
 
-### Continue without the Accessibility permission
+### Running without the Accessibility permission
 
-Done in DanyWhere's base: onboarding offers "Continue without Accessibility" for managed Macs (shortcuts via the Tauri backend, transcript left on the clipboard). **Upstream candidate** (needs a Handy Discussion first because of the feature freeze).
+Available: onboarding offers "Continue without Accessibility" for managed Macs (shortcuts via the Tauri backend, transcript left on the clipboard, input simulation not set up). A DanyWhere feature for now; it may be offered to Handy later.
+
+Next steps:
+
+- **Switch automatically.** Today the user chooses the mode once in onboarding and it stays, even if the permission is granted later. Instead: without the permission, use the clipboard mode with a short notice; once the permission is granted, return to the full mode on its own.
+- **Test both states through one permission check.** Route every Accessibility check (backend and frontend) through a single function that tests can replace, and cover the whole flow — onboarding, startup, shortcut backend, input simulation, paste vs. clipboard — once with "granted" and once with "not granted". Component tests for the onboarding need a React test setup, which the project does not have yet. A real run without the permission stays necessary when code around permissions, pasting or shortcuts changes, because the operating system and third-party libraries can behave in ways a mock does not show.
 
 ## Branding
 
