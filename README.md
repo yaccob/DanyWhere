@@ -1,3 +1,20 @@
+# DanyWhere
+
+**Dictate anywhere.** DanyWhere is a personal distribution of [Handy](https://github.com/cjpais/Handy), the free, open-source, offline speech-to-text app by CJ Pais and contributors.
+
+The hard problems — local speech recognition, voice activity detection, global shortcuts and pasting into any app on three platforms — are solved in Handy. DanyWhere admires that work and builds on it with a few additions its author needs in daily use, for example running on managed Macs where the Accessibility permission is blocked. Anything here that is useful to Handy is happily offered upstream.
+
+- **Not affiliated with or endorsed by Handy or CJ Pais.** The Handy name, logo and icon belong to the Handy project; DanyWhere uses its own branding.
+- **Report DanyWhere problems in this repository**, not in Handy's issue tracker.
+- **Support the original:** if you find this useful, consider supporting Handy via [handy.computer](https://handy.computer).
+- What is planned: [ROADMAP.md](ROADMAP.md).
+
+> Status: early, private builds; no public releases yet.
+
+---
+
+_The rest of this file is Handy's upstream README. It describes the shared foundation and largely applies to DanyWhere as well; where it says "Handy", read "DanyWhere" for the app, and use this repository's issue tracker for DanyWhere-specific problems._
+
 # Handy
 
 [![Discord](https://img.shields.io/badge/Discord-%235865F2.svg?style=for-the-badge&logo=discord&logoColor=white)](https://discord.com/invite/WVBeWsNXK4)

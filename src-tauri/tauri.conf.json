@@ -70,7 +70,6 @@
       }
     },
     "windows": {
-      "signCommand": "trusted-signing-cli -e https://eus.codesigning.azure.net/ -a CJ-Signing -c cjpais-dev -d Handy %1",
       "nsis": {
         "template": "nsis/installer.nsi",
         "installerIcon": "icons/icon.ico"
@@ -81,7 +80,7 @@
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEMwREUyOEQyOEYwQUVDRjQKUldUMDdBcVAwaWpld0pyUTJuRmlIdldzaGw4QlRLdVVpTXE5TUVCaEx1dkt1aXV0VWxrN0tDeXYK",
       "endpoints": [
-        "https://github.com/yaccob/Handy/releases/latest/download/latest.json"
+        "https://github.com/yaccob/DanyWhere/releases/latest/download/latest.json"
       ]
     }
   }
