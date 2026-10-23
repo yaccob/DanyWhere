@@ -1,0 +1,43 @@
+/* DanyWhere wordmark colours.
+ *
+ * Kept out of theme.css so merges from upstream Handy never touch them. Same
+ * mechanism as theme.css: light by default, the OS dark mode via the media
+ * query, and the explicit `data-theme` override on top.
+ *
+ * "any" carries a vertical gradient that continues the icon tile's gradient;
+ * "Where" has the same petrol hue in both themes with chroma and lightness
+ * tuned per theme (OKLCH), so it looks equally blue on light and dark.
+ */
+:root {
+  --light-color-wordmark-any-top: #3c9caa;
+  --light-color-wordmark-any-bottom: #225f73;
+  --light-color-wordmark-where: #0e6c7b;
+
+  --dark-color-wordmark-any-top: #5bb3c0;
+  --dark-color-wordmark-any-bottom: #3c9caa;
+  --dark-color-wordmark-where: #bee2ea;
+
+  --color-wordmark-any-top: var(--light-color-wordmark-any-top);
+  --color-wordmark-any-bottom: var(--light-color-wordmark-any-bottom);
+  --color-wordmark-where: var(--light-color-wordmark-where);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-wordmark-any-top: var(--dark-color-wordmark-any-top);
+    --color-wordmark-any-bottom: var(--dark-color-wordmark-any-bottom);
+    --color-wordmark-where: var(--dark-color-wordmark-where);
+  }
+}
+
+:root[data-theme="light"] {
+  --color-wordmark-any-top: var(--light-color-wordmark-any-top);
+  --color-wordmark-any-bottom: var(--light-color-wordmark-any-bottom);
+  --color-wordmark-where: var(--light-color-wordmark-where);
+}
+
+:root[data-theme="dark"] {
+  --color-wordmark-any-top: var(--dark-color-wordmark-any-top);
+  --color-wordmark-any-bottom: var(--dark-color-wordmark-any-bottom);
+  --color-wordmark-where: var(--dark-color-wordmark-where);
+}
