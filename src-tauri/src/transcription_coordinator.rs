@@ -162,8 +162,13 @@ enum Effect {
         hotkey_string: String,
     },
     Stop {
+        /// The binding whose recording is stopped.
         binding_id: String,
         hotkey_string: String,
+        /// The binding whose action finishes the recording — usually
+        /// `binding_id`, but the post-process binding when it stopped a
+        /// recording started with the plain one.
+        action_id: String,
     },
 }
 
@@ -365,6 +370,21 @@ impl CoordinatorState {
                     // recording), so a repeated press means nothing.
                     debug!("Ignoring press for '{}': key is held", input.binding_id);
                 }
+                Stage::Recording(id)
+                    if id == "transcribe"
+                        && input.binding_id == "transcribe_with_post_process"
+                        && self.is_locked() =>
+                {
+                    // Post-processing only runs after recording, so the shortcut
+                    // that stops a locked plain recording can still opt into it.
+                    // The recording stays owned by the binding that started it.
+                    let id = id.clone();
+                    return Some(self.begin_processing_with(
+                        id,
+                        input.hotkey_string,
+                        input.binding_id,
+                    ));
+                }
                 _ => debug!(
                     "Ignoring press for '{}': another binding is recording",
                     input.binding_id
@@ -516,11 +536,22 @@ impl CoordinatorState {
     }
 
     fn begin_processing(&mut self, binding_id: String, hotkey_string: String) -> Effect {
+        let action_id = binding_id.clone();
+        self.begin_processing_with(binding_id, hotkey_string, action_id)
+    }
+
+    fn begin_processing_with(
+        &mut self,
+        binding_id: String,
+        hotkey_string: String,
+        action_id: String,
+    ) -> Effect {
         self.stage = Stage::Processing;
         self.hold = None;
         Effect::Stop {
             binding_id,
             hotkey_string,
+            action_id,
         }
     }
 }
@@ -680,7 +711,8 @@ fn run_effect(app: &AppHandle, state: &mut CoordinatorState, effect: Effect) {
         Effect::Stop {
             binding_id,
             hotkey_string,
-        } => stop(app, &binding_id, &hotkey_string),
+            action_id,
+        } => stop(app, &binding_id, &hotkey_string, &action_id),
     }
 }
 
@@ -701,9 +733,12 @@ fn start(app: &AppHandle, binding_id: &str, hotkey_string: &str) -> bool {
     recording
 }
 
-fn stop(app: &AppHandle, binding_id: &str, hotkey_string: &str) {
-    let Some(action) = ACTION_MAP.get(binding_id) else {
-        warn!("No action in ACTION_MAP for '{binding_id}'");
+/// Execute a stop effect. The action of `action_id` finishes the recording
+/// owned by `binding_id` (the audio manager only stops the binding that
+/// started it).
+fn stop(app: &AppHandle, binding_id: &str, hotkey_string: &str, action_id: &str) {
+    let Some(action) = ACTION_MAP.get(action_id) else {
+        warn!("No action in ACTION_MAP for '{action_id}'");
         return;
     };
     action.stop(app, binding_id, hotkey_string);
@@ -1153,6 +1188,161 @@ mod tests {
             Some(Effect::Start { binding_id, .. }) => assert_eq!(binding_id, BINDING),
             other => panic!("expected Start for '{BINDING}', got {other:?}"),
         }
+    }
+
+    // ---------------------------------------------------------------------
+    // Deciding on post-processing when stopping: a locked recording started
+    // with the plain binding can be stopped with the post-process binding,
+    // which then finishes it. Everything else stays as it was.
+    // ---------------------------------------------------------------------
+
+    fn input_for(binding_id: &str, mode: ShortcutActivation, is_pressed: bool) -> InputEvent {
+        InputEvent {
+            binding_id: binding_id.to_string(),
+            hotkey_string: binding_id.to_string(),
+            is_pressed,
+            mode,
+            hold_threshold: Duration::from_millis(300),
+            external: false,
+        }
+    }
+
+    fn assert_stop(effect: Option<Effect>, expected_binding: &str, expected_action: &str) {
+        match effect {
+            Some(Effect::Stop {
+                binding_id,
+                action_id,
+                ..
+            }) => {
+                assert_eq!(
+                    binding_id, expected_binding,
+                    "stop must target the recording binding"
+                );
+                assert_eq!(
+                    action_id, expected_action,
+                    "wrong action finishes the recording"
+                );
+            }
+            other => panic!("expected Stop, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn toggle_recording_stopped_with_post_process_binding_is_post_processed() {
+        let mode = ShortcutActivation::Toggle;
+        let mut state = CoordinatorState::new();
+        let t0 = Instant::now();
+
+        assert!(matches!(
+            state.on_input(input_for(BINDING, mode, true), t0),
+            Some(Effect::Start { .. })
+        ));
+        assert_stop(
+            state.on_input(
+                input_for(OTHER_BINDING, mode, true),
+                t0 + Duration::from_millis(1000),
+            ),
+            BINDING,
+            OTHER_BINDING,
+        );
+        assert_eq!(state.stage, Stage::Processing);
+    }
+
+    #[test]
+    fn tapped_hold_or_toggle_recording_stopped_with_post_process_binding_is_post_processed() {
+        let mode = ShortcutActivation::HoldOrToggle;
+        let mut state = CoordinatorState::new();
+        let t0 = Instant::now();
+        let at = |ms| t0 + Duration::from_millis(ms);
+
+        assert!(matches!(
+            state.on_input(input_for(BINDING, mode, true), t0),
+            Some(Effect::Start { .. })
+        ));
+        assert!(state
+            .on_input(input_for(BINDING, mode, false), at(100))
+            .is_none());
+        assert!(
+            state.on_grace_expired().is_none(),
+            "a tap locks the recording on"
+        );
+
+        assert_stop(
+            state.on_input(input_for(OTHER_BINDING, mode, true), at(1000)),
+            BINDING,
+            OTHER_BINDING,
+        );
+        assert_eq!(state.stage, Stage::Processing);
+    }
+
+    #[test]
+    fn toggle_recording_stopped_with_its_own_binding_keeps_its_action() {
+        let mode = ShortcutActivation::Toggle;
+        let mut state = CoordinatorState::new();
+        let t0 = Instant::now();
+
+        state.on_input(input_for(BINDING, mode, true), t0);
+        assert_stop(
+            state.on_input(
+                input_for(BINDING, mode, true),
+                t0 + Duration::from_millis(1000),
+            ),
+            BINDING,
+            BINDING,
+        );
+    }
+
+    /// Unchanged: a recording started with post-processing cannot be stopped
+    /// with the plain binding, so post-processing chosen up front is never lost.
+    #[test]
+    fn plain_binding_still_ignored_while_post_process_recording_runs() {
+        let mode = ShortcutActivation::Toggle;
+        let mut state = CoordinatorState::new();
+        let t0 = Instant::now();
+
+        state.on_input(input_for(OTHER_BINDING, mode, true), t0);
+        assert!(state
+            .on_input(
+                input_for(BINDING, mode, true),
+                t0 + Duration::from_millis(1000)
+            )
+            .is_none());
+        assert_eq!(state.stage, Stage::Recording(OTHER_BINDING.to_string()));
+    }
+
+    /// Unchanged: while the key is held, the release ends the recording, so a
+    /// press of the post-process binding is still ignored.
+    #[test]
+    fn post_process_binding_still_ignored_while_key_is_held() {
+        let mode = ShortcutActivation::HoldOrToggle;
+        let mut state = CoordinatorState::new();
+        let t0 = Instant::now();
+
+        state.on_input(input_for(BINDING, mode, true), t0);
+        assert!(state
+            .on_input(
+                input_for(OTHER_BINDING, mode, true),
+                t0 + Duration::from_millis(500)
+            )
+            .is_none());
+        assert_eq!(state.stage, Stage::Recording(BINDING.to_string()));
+    }
+
+    /// Unchanged: push-to-talk recordings are never locked.
+    #[test]
+    fn post_process_binding_still_ignored_in_push_to_talk() {
+        let mode = ShortcutActivation::PushToTalk;
+        let mut state = CoordinatorState::new();
+        let t0 = Instant::now();
+
+        state.on_input(input_for(BINDING, mode, true), t0);
+        assert!(state
+            .on_input(
+                input_for(OTHER_BINDING, mode, true),
+                t0 + Duration::from_millis(500)
+            )
+            .is_none());
+        assert_eq!(state.stage, Stage::Recording(BINDING.to_string()));
     }
 
     /// External triggers fire on every edge by design (e.g. SIGUSR2 sent on
