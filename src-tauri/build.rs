@@ -328,6 +328,7 @@ fn generate_tray_translations() {
         out.push_str(&format!("    m.insert(\"{lang}\", TrayStrings {{\n"));
         for (rust_field, json_key) in &fields {
             let val = tray.get(json_key).and_then(|v| v.as_str()).unwrap_or("");
+            let val = &rebrand_product_name(val);
             out.push_str(&format!(
                 "        {rust_field}: \"{}\".to_string(),\n",
                 escape_string(val)
@@ -345,6 +346,30 @@ fn generate_tray_translations() {
         translations.len(),
         fields.len()
     );
+}
+
+/// DanyWhere branding: replaces the product name "Handy" (whole word, or the
+/// genitive "Handys") with "DanyWhere" in the tray strings taken from the
+/// upstream locale files. Same rule as `src/i18n/branding.ts` for the
+/// frontend; identifiers such as "HandyKeys" or "HANDY_..." are left alone.
+fn rebrand_product_name(text: &str) -> String {
+    const NAME: &str = "Handy";
+    let is_word = |c: Option<char>| c.is_some_and(|c| c.is_ascii_alphanumeric() || c == '_');
+    let mut out = String::with_capacity(text.len());
+    let mut copied = 0;
+    for (start, _) in text.match_indices(NAME) {
+        let end = start + NAME.len();
+        let rest = &text[end..];
+        let before = text[..start].chars().next_back();
+        let after = rest.strip_prefix('s').unwrap_or(rest).chars().next();
+        if !is_word(before) && !is_word(after) {
+            out.push_str(&text[copied..start]);
+            out.push_str("DanyWhere");
+            copied = end;
+        }
+    }
+    out.push_str(&text[copied..]);
+    out
 }
 
 fn camel_to_snake(s: &str) -> String {
