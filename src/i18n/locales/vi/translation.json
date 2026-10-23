@@ -175,6 +175,10 @@
           "transcribe_with_post_process": {
             "name": "Phím tắt xử lý sau",
             "description": "Tùy chọn: Phím tắt chuyên dụng luôn áp dụng xử lý sau bằng AI cho bản chuyển đổi của bạn."
+          },
+          "paste_last_transcript": {
+            "name": "Dán bản chép gần nhất",
+            "description": "Dán lại bản chép gần nhất, ví dụ khi nó không đến nơi vì không có ô văn bản nào được chọn. Khi không có Trợ năng, bản chép được sao chép vào bảng nhớ tạm."
           }
         },
         "errors": {

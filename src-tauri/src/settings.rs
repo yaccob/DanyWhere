@@ -953,6 +953,21 @@ pub fn get_default_settings() -> AppSettings {
             current_binding: default_post_process_shortcut.to_string(),
         },
     );
+    #[cfg(target_os = "macos")]
+    let default_paste_last_shortcut = "option+shift+v";
+    #[cfg(not(target_os = "macos"))]
+    let default_paste_last_shortcut = "alt+shift+v";
+
+    bindings.insert(
+        "paste_last_transcript".to_string(),
+        ShortcutBinding {
+            id: "paste_last_transcript".to_string(),
+            name: "Paste Last Transcript".to_string(),
+            description: "Pastes the most recent transcript again.".to_string(),
+            default_binding: default_paste_last_shortcut.to_string(),
+            current_binding: default_paste_last_shortcut.to_string(),
+        },
+    );
     bindings.insert(
         "cancel".to_string(),
         ShortcutBinding {

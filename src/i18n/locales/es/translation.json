@@ -175,6 +175,10 @@
           "transcribe_with_post_process": {
             "name": "Tecla de post procesamiento",
             "description": "Opcional: Una tecla de acceso rápido dedicada que siempre aplica post procesamiento con IA a tu transcripción."
+          },
+          "paste_last_transcript": {
+            "name": "Pegar la última transcripción",
+            "description": "Vuelve a pegar la última transcripción, por ejemplo si no llegó porque ningún campo de texto tenía el foco. Sin accesibilidad se copia al portapapeles."
           }
         },
         "errors": {

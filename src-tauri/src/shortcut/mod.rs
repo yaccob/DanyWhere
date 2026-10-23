@@ -1544,6 +1544,19 @@ mod tests {
         }
     }
 
+    #[test]
+    fn has_a_default_shortcut_to_paste_the_last_transcript() {
+        let settings = crate::settings::get_default_settings();
+        let binding = settings
+            .bindings
+            .get("paste_last_transcript")
+            .expect("default binding 'paste_last_transcript'");
+        // Must work with both backends, incl. the one used without Accessibility.
+        let raw = &binding.current_binding;
+        assert_eq!(super::tauri_impl::validate_shortcut(raw), Ok(()));
+        assert!(super::handy_keys::validate_shortcut(raw).is_ok());
+    }
+
     mod no_accessibility_mode {
         use super::super::apply_no_accessibility_mode;
         use crate::settings::{

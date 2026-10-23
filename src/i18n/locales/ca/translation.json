@@ -148,6 +148,10 @@
           "transcribe_with_post_process": {
             "name": "Drecera de postprocessament",
             "description": "Opcional: una drecera específica que sempre aplica postprocessament amb IA a la transcripció."
+          },
+          "paste_last_transcript": {
+            "name": "Enganxa l'última transcripció",
+            "description": "Torna a enganxar l'última transcripció, per exemple si no ha arribat perquè cap camp de text tenia el focus. Sense accessibilitat es copia al porta-retalls."
           }
         },
         "errors": {

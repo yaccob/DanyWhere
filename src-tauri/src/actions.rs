@@ -848,6 +848,20 @@ impl ShortcutAction for CancelAction {
     }
 }
 
+// Paste Last Transcript Action
+struct PasteLastTranscriptAction;
+
+impl ShortcutAction for PasteLastTranscriptAction {
+    fn start(&self, _app: &AppHandle, _binding_id: &str, _shortcut_str: &str) {
+        // Delivered on release: while the shortcut's modifiers are still held,
+        // a simulated Cmd+V would arrive as e.g. Option+Shift+Cmd+V.
+    }
+
+    fn stop(&self, app: &AppHandle, _binding_id: &str, _shortcut_str: &str) {
+        crate::delivery::deliver_last_transcript(app);
+    }
+}
+
 // Test Action
 struct TestAction;
 
@@ -889,6 +903,10 @@ pub static ACTION_MAP: Lazy<HashMap<String, Arc<dyn ShortcutAction>>> = Lazy::ne
         Arc::new(CancelAction) as Arc<dyn ShortcutAction>,
     );
     map.insert(
+        "paste_last_transcript".to_string(),
+        Arc::new(PasteLastTranscriptAction) as Arc<dyn ShortcutAction>,
+    );
+    map.insert(
         "test".to_string(),
         Arc::new(TestAction) as Arc<dyn ShortcutAction>,
     );
@@ -907,6 +925,16 @@ mod tests {
     use std::sync::Arc;
     use std::thread;
     use std::time::Duration;
+
+    #[test]
+    fn every_default_shortcut_has_an_action() {
+        for id in crate::settings::get_default_settings().bindings.keys() {
+            assert!(
+                super::ACTION_MAP.contains_key(id),
+                "no action for default shortcut '{id}'"
+            );
+        }
+    }
 
     #[test]
     fn blank_transcription_is_detected() {

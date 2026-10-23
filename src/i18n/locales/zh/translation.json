@@ -175,6 +175,10 @@
           "transcribe_with_post_process": {
             "name": "后处理快捷键",
             "description": "可选：一个专用快捷键，始终对您的转录应用 AI 后处理。"
+          },
+          "paste_last_transcript": {
+            "name": "粘贴最近的转录",
+            "description": "再次粘贴最近的转录，例如因没有文本框获得焦点而未送达时。没有辅助功能权限时，改为复制到剪贴板。"
           }
         },
         "errors": {

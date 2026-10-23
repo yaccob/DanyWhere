@@ -148,6 +148,10 @@
           "transcribe_with_post_process": {
             "name": "Snabbkommando för efterbearbetning",
             "description": "Valfritt: En dedikerad snabbknapp som alltid tillämpar AI-efterbearbetning på din transkription."
+          },
+          "paste_last_transcript": {
+            "name": "Klistra in senaste transkriptionen",
+            "description": "Klistrar in den senaste transkriptionen igen, t.ex. om den inte kom fram eftersom inget textfält hade fokus. Utan hjälpmedel kopieras den till urklipp i stället."
           }
         },
         "errors": {

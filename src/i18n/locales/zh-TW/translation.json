@@ -148,6 +148,10 @@
           "transcribe_with_post_process": {
             "name": "後處理快捷鍵",
             "description": "可選：專用快捷鍵，使用時一律對轉錄結果套用 AI 後處理"
+          },
+          "paste_last_transcript": {
+            "name": "貼上最近的轉錄",
+            "description": "再次貼上最近的轉錄，例如因沒有文字欄位取得焦點而未送達時。沒有輔助使用權限時，改為複製到剪貼簿。"
           }
         },
         "errors": {
