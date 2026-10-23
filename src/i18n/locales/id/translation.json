@@ -76,7 +76,11 @@
       },
       "accessibility": {
         "title": "Izin Aksesibilitas",
-        "description": "Diperlukan untuk mengetik teks hasil transkripsi ke aplikasi Anda."
+        "description": "Diperlukan untuk mengetik teks hasil transkripsi ke aplikasi Anda.",
+        "skip": "Lanjutkan tanpa Aksesibilitas",
+        "skipHint": "Jika organisasi Anda memblokir izin ini: teks transkripsi disalin ke papan klip agar Anda tempel sendiri, dan pintasan tidak dapat menggunakan tombol fn.",
+        "skipped": "Dilewati — teks disalin ke papan klip",
+        "shortcutsReset": "Beberapa pintasan memerlukan Aksesibilitas dan telah diatur ulang ke default."
       },
       "grant": "Berikan Izin",
       "granted": "Diizinkan",

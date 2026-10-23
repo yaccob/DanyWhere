@@ -457,6 +457,36 @@ fn parse_keyboard_implementation(s: &str) -> KeyboardImplementation {
     }
 }
 
+/// Configure `settings` to work without the macOS Accessibility permission.
+///
+/// Without it, handy-keys' event tap receives no key events and simulated
+/// paste is blocked. The Tauri backend registers hotkeys through Carbon,
+/// which needs no permission, and the transcript is left on the clipboard
+/// for the user to paste. Shortcuts the Tauri backend can't register (e.g.
+/// `fn`) are reset to their defaults.
+///
+/// Returns the IDs of bindings that were reset to their defaults.
+pub fn apply_no_accessibility_mode(settings: &mut settings::AppSettings) -> Vec<String> {
+    settings.accessibility_skipped = true;
+    settings.paste_method = PasteMethod::None;
+    settings.clipboard_handling = ClipboardHandling::CopyToClipboard;
+    settings.keyboard_implementation = KeyboardImplementation::Tauri;
+
+    let defaults = settings::get_default_settings().bindings;
+    let mut reset = Vec::new();
+    for (id, binding) in settings.bindings.iter_mut() {
+        let Some(default) = defaults.get(id) else {
+            continue;
+        };
+        if tauri_impl::validate_shortcut(&binding.current_binding).is_err() {
+            binding.current_binding = default.current_binding.clone();
+            reset.push(id.clone());
+        }
+    }
+    reset.sort();
+    reset
+}
+
 /// Unregister all shortcuts for the current implementation
 fn unregister_all_shortcuts(app: &AppHandle, implementation: KeyboardImplementation) {
     let bindings = settings::get_bindings(app);
@@ -1511,6 +1541,84 @@ mod tests {
         ] {
             assert!(key.parse::<Shortcut>().is_ok(), "Tauri rejected {key}");
             assert!(key.parse::<Hotkey>().is_ok(), "HandyKeys rejected {key}");
+        }
+    }
+
+    mod no_accessibility_mode {
+        use super::super::apply_no_accessibility_mode;
+        use crate::settings::{
+            get_default_settings, AppSettings, ClipboardHandling, KeyboardImplementation,
+            PasteMethod,
+        };
+
+        /// A user coming from the default macOS setup: handy-keys backend,
+        /// simulated paste, and a shortcut only handy-keys can register.
+        fn handy_keys_user() -> AppSettings {
+            let mut settings = get_default_settings();
+            settings.keyboard_implementation = KeyboardImplementation::HandyKeys;
+            settings.paste_method = PasteMethod::CtrlV;
+            settings.clipboard_handling = ClipboardHandling::DontModify;
+            settings
+                .bindings
+                .get_mut("transcribe")
+                .unwrap()
+                .current_binding = "fn+space".into();
+            settings
+        }
+
+        #[test]
+        fn marks_accessibility_as_skipped() {
+            let mut settings = handy_keys_user();
+            apply_no_accessibility_mode(&mut settings);
+            assert!(settings.accessibility_skipped);
+        }
+
+        #[test]
+        fn delivers_text_via_clipboard_instead_of_simulated_paste() {
+            let mut settings = handy_keys_user();
+            apply_no_accessibility_mode(&mut settings);
+            assert_eq!(settings.paste_method, PasteMethod::None);
+            assert_eq!(
+                settings.clipboard_handling,
+                ClipboardHandling::CopyToClipboard
+            );
+        }
+
+        #[test]
+        fn switches_to_the_shortcut_backend_that_needs_no_event_tap() {
+            let mut settings = handy_keys_user();
+            apply_no_accessibility_mode(&mut settings);
+            assert_eq!(
+                settings.keyboard_implementation,
+                KeyboardImplementation::Tauri
+            );
+        }
+
+        #[test]
+        fn resets_bindings_the_tauri_backend_cannot_register() {
+            let mut settings = handy_keys_user();
+            let reset = apply_no_accessibility_mode(&mut settings);
+            let default = get_default_settings().bindings["transcribe"]
+                .current_binding
+                .clone();
+            assert_eq!(settings.bindings["transcribe"].current_binding, default);
+            assert_eq!(reset, vec!["transcribe".to_string()]);
+        }
+
+        #[test]
+        fn keeps_bindings_the_tauri_backend_can_register() {
+            let mut settings = handy_keys_user();
+            settings
+                .bindings
+                .get_mut("transcribe")
+                .unwrap()
+                .current_binding = "ctrl+shift+d".into();
+            let reset = apply_no_accessibility_mode(&mut settings);
+            assert_eq!(
+                settings.bindings["transcribe"].current_binding,
+                "ctrl+shift+d"
+            );
+            assert!(reset.is_empty());
         }
     }
 }

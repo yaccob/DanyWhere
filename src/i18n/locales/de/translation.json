@@ -76,7 +76,11 @@
       },
       "accessibility": {
         "title": "Bedienungshilfen-Zugriff",
-        "description": "Erforderlich, um transkribierten Text in deine Anwendungen einzugeben."
+        "description": "Erforderlich, um transkribierten Text in deine Anwendungen einzugeben.",
+        "skip": "Ohne Bedienungshilfen fortfahren",
+        "skipHint": "Falls deine Organisation diese Berechtigung sperrt: Der transkribierte Text wird in die Zwischenablage kopiert, damit du ihn selbst einfügst, und Tastenkürzel können die fn-Taste nicht verwenden.",
+        "skipped": "Übersprungen – Text wird in die Zwischenablage kopiert",
+        "shortcutsReset": "Einige Tastenkürzel benötigen Bedienungshilfen und wurden auf die Standardwerte zurückgesetzt."
       },
       "grant": "Berechtigung erteilen",
       "granted": "Erteilt",

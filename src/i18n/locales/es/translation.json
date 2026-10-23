@@ -76,7 +76,11 @@
       },
       "accessibility": {
         "title": "Acceso de accesibilidad",
-        "description": "Necesario para escribir el texto transcrito en tus aplicaciones."
+        "description": "Necesario para escribir el texto transcrito en tus aplicaciones.",
+        "skip": "Continuar sin accesibilidad",
+        "skipHint": "Si tu organización bloquea este permiso: el texto transcrito se copia al portapapeles para que lo pegues tú, y los atajos no pueden usar la tecla fn.",
+        "skipped": "Omitido — el texto se copia al portapapeles",
+        "shortcutsReset": "Algunos atajos necesitan accesibilidad y se restablecieron a sus valores predeterminados."
       },
       "grant": "Conceder permiso",
       "granted": "Concedido",

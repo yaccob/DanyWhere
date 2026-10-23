@@ -648,6 +648,16 @@ async initializeShortcuts() : Promise<Result<null, string>> {
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * Switch to the mode that works without the macOS Accessibility permission
+ * and persist it. Call before `initialize_shortcuts`, which then registers the
+ * shortcuts with the Tauri backend.
+ * 
+ * Returns the IDs of bindings that were reset to their defaults.
+ */
+async skipAccessibilityPermission() : Promise<string[]> {
+    return await TAURI_INVOKE("skip_accessibility_permission");
+},
 async getAvailableModels() : Promise<Result<ModelInfo[], string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_available_models") };
@@ -1004,7 +1014,14 @@ hold_threshold_ms?: number; audio_feedback?: boolean; audio_feedback_volume?: nu
  * upgrading from before this key existed are blanked by the migration so they
  * see the current release's notes — see `apply_settings_migrations`.
  */
-whats_new_last_seen_version?: string; selected_model?: string; onboarding_completed?: boolean; always_on_microphone?: boolean; selected_microphone?: string | null; 
+whats_new_last_seen_version?: string; selected_model?: string; onboarding_completed?: boolean; 
+/**
+ * The user chose to run without the macOS Accessibility permission
+ * (e.g. it is blocked by device management). Startup then no longer
+ * sends them back to the permission screen. See
+ * `shortcut::apply_no_accessibility_mode`.
+ */
+accessibility_skipped?: boolean; always_on_microphone?: boolean; selected_microphone?: string | null; 
 /**
  * Which input channel to use on the selected microphone device.
  * None means "average all channels" (original behavior).

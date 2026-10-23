@@ -76,7 +76,11 @@
       },
       "accessibility": {
         "title": "Acesso à Acessibilidade",
-        "description": "Necessário para digitar o texto transcrito em seus aplicativos."
+        "description": "Necessário para digitar o texto transcrito em seus aplicativos.",
+        "skip": "Continuar sem Acessibilidade",
+        "skipHint": "Se a sua organização bloqueia esta permissão: o texto transcrito é copiado para a área de transferência para que você o cole, e os atalhos não podem usar a tecla fn.",
+        "skipped": "Ignorado — o texto é copiado para a área de transferência",
+        "shortcutsReset": "Alguns atalhos precisam de Acessibilidade e foram redefinidos para o padrão."
       },
       "grant": "Conceder Permissão",
       "granted": "Concedido",

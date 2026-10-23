@@ -151,6 +151,13 @@ mod macos {
 /// Enigo is wrapped in a Mutex since it requires mutable access.
 pub struct EnigoState(pub Mutex<Enigo>);
 
+/// Whether input simulation should be set up at all. Not when the user chose
+/// to run without Accessibility: creating Enigo would make macOS prompt for
+/// that permission again on every launch.
+pub fn enigo_wanted(settings: &crate::settings::AppSettings) -> bool {
+    !settings.accessibility_skipped
+}
+
 impl EnigoState {
     pub fn new() -> Result<Self, String> {
         let enigo = Enigo::new(&Settings::default())
@@ -272,4 +279,25 @@ pub fn paste_text_direct(enigo: &mut Enigo, text: &str) -> Result<(), String> {
         .map_err(|e| format!("Failed to send text directly: {}", e))?;
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::enigo_wanted;
+    use crate::settings::get_default_settings;
+    use crate::shortcut::apply_no_accessibility_mode;
+
+    #[test]
+    fn enigo_is_set_up_by_default() {
+        assert!(enigo_wanted(&get_default_settings()));
+    }
+
+    #[test]
+    fn enigo_is_not_set_up_without_accessibility() {
+        // Setting it up would make macOS prompt for the permission the user
+        // chose to go without, on every launch.
+        let mut settings = get_default_settings();
+        apply_no_accessibility_mode(&mut settings);
+        assert!(!enigo_wanted(&settings));
+    }
 }

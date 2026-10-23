@@ -32,6 +32,7 @@ import { WhatsNewGate } from "./components/whats-new";
 import { useSettings } from "./hooks/useSettings";
 import { useSettingsStore } from "./stores/settingsStore";
 import { commands } from "@/bindings";
+import { permissionsSatisfied } from "@/components/onboarding/permissionGate";
 import { deleteRetiredModel } from "@/components/onboarding/retiredModels";
 import { getLanguageDirection, initializeRTL } from "@/lib/utils/rtl";
 
@@ -254,6 +255,9 @@ function App() {
       const hasCompletedOnboarding =
         settingsResult.status === "ok" &&
         settingsResult.data.onboarding_completed === true;
+      const accessibilitySkipped =
+        settingsResult.status === "ok" &&
+        settingsResult.data.accessibility_skipped === true;
       const currentPlatform = platform();
 
       if (hasCompletedOnboarding) {
@@ -270,7 +274,12 @@ function App() {
               checkAccessibilityPermission(),
               checkMicrophonePermission(),
             ]);
-            if (!hasAccessibility || !hasMicrophone) {
+            const satisfied = permissionsSatisfied(
+              "macos",
+              { accessibility: hasAccessibility, microphone: hasMicrophone },
+              accessibilitySkipped,
+            );
+            if (!satisfied) {
               await revealMainWindowForPermissions();
               setOnboardingStep("accessibility");
               return;

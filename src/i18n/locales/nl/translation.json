@@ -76,7 +76,11 @@
       },
       "accessibility": {
         "title": "Toegankelijkheid",
-        "description": "Vereist om getranscribeerde tekst in je applicaties te kunnen typen."
+        "description": "Vereist om getranscribeerde tekst in je applicaties te kunnen typen.",
+        "skip": "Doorgaan zonder Toegankelijkheid",
+        "skipHint": "Als je organisatie deze toestemming blokkeert: getranscribeerde tekst wordt naar het klembord gekopieerd zodat je hem zelf plakt, en sneltoetsen kunnen de fn-toets niet gebruiken.",
+        "skipped": "Overgeslagen — tekst wordt naar het klembord gekopieerd",
+        "shortcutsReset": "Sommige sneltoetsen hebben Toegankelijkheid nodig en zijn teruggezet naar de standaardwaarden."
       },
       "grant": "Machtiging verlenen",
       "granted": "Verleend",
