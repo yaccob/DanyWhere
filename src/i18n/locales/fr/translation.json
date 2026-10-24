@@ -178,7 +178,7 @@
           },
           "paste_last_transcript": {
             "name": "Coller la dernière transcription",
-            "description": "Colle à nouveau la dernière transcription, par exemple si elle n'est pas arrivée parce qu'aucun champ de texte n'avait le focus. Sans l'accessibilité, elle est copiée dans le presse-papiers."
+            "description": "Colle la dernière transcription à l'emplacement actuel du curseur, par exemple si elle n'est pas arrivée parce qu'aucun champ de texte n'avait le focus. Sans l'accessibilité, elle est copiée dans le presse-papiers."
           }
         },
         "errors": {

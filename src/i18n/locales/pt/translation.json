@@ -151,7 +151,7 @@
           },
           "paste_last_transcript": {
             "name": "Colar a última transcrição",
-            "description": "Cola novamente a última transcrição, por exemplo se não chegou porque nenhum campo de texto estava em foco. Sem Acessibilidade, ela é copiada para a área de transferência."
+            "description": "Cola a última transcrição onde o cursor está agora, por exemplo se não chegou porque nenhum campo de texto estava em foco. Sem Acessibilidade, ela é copiada para a área de transferência."
           }
         },
         "errors": {

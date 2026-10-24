@@ -151,7 +151,7 @@
           },
           "paste_last_transcript": {
             "name": "Tempel transkripsi terakhir",
-            "description": "Menempelkan transkripsi terakhir lagi, misalnya jika tidak sampai karena tidak ada kolom teks yang fokus. Tanpa Aksesibilitas, transkripsi disalin ke papan klip."
+            "description": "Menempelkan transkripsi terakhir di posisi kursor saat ini, misalnya jika tidak sampai karena tidak ada kolom teks yang fokus. Tanpa Aksesibilitas, transkripsi disalin ke papan klip."
           }
         },
         "errors": {

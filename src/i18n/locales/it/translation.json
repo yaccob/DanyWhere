@@ -178,7 +178,7 @@
           },
           "paste_last_transcript": {
             "name": "Incolla l'ultima trascrizione",
-            "description": "Incolla di nuovo l'ultima trascrizione, ad esempio se non è arrivata perché nessun campo di testo aveva il focus. Senza Accessibilità viene copiata negli appunti."
+            "description": "Incolla l'ultima trascrizione dove si trova ora il cursore, ad esempio se non è arrivata perché nessun campo di testo aveva il focus. Senza Accessibilità viene copiata negli appunti."
           }
         },
         "errors": {

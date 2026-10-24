@@ -151,7 +151,7 @@
           },
           "paste_last_transcript": {
             "name": "Laatste transcriptie plakken",
-            "description": "Plakt de laatste transcriptie opnieuw, bijvoorbeeld als die niet aankwam omdat geen tekstveld focus had. Zonder Toegankelijkheid wordt die naar het klembord gekopieerd."
+            "description": "Plakt de laatste transcriptie waar de cursor nu staat, bijvoorbeeld als die niet aankwam omdat geen tekstveld focus had. Zonder Toegankelijkheid wordt die naar het klembord gekopieerd."
           }
         },
         "errors": {

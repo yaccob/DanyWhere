@@ -151,7 +151,7 @@
           },
           "paste_last_transcript": {
             "name": "Paste Last Transcript",
-            "description": "Pastes the most recent transcript again, e.g. when it did not arrive because no text field had focus. Without Accessibility it is put on the clipboard instead."
+            "description": "Pastes the most recent transcript where the cursor is now, e.g. when it did not arrive because no text field had focus. Without Accessibility it is put on the clipboard instead."
           }
         },
         "errors": {

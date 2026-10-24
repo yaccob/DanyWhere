@@ -151,7 +151,7 @@
           },
           "paste_last_transcript": {
             "name": "Indsæt seneste transskription",
-            "description": "Indsætter den seneste transskription igen, f.eks. hvis den ikke kom frem, fordi intet tekstfelt havde fokus. Uden tilgængelighed kopieres den i stedet til udklipsholderen."
+            "description": "Indsætter den seneste transskription, der hvor markøren står nu, f.eks. hvis den ikke kom frem, fordi intet tekstfelt havde fokus. Uden tilgængelighed kopieres den i stedet til udklipsholderen."
           }
         },
         "errors": {

@@ -178,7 +178,7 @@
           },
           "paste_last_transcript": {
             "name": "Vložit poslední přepis",
-            "description": "Znovu vloží poslední přepis, např. když nedorazil, protože žádné textové pole nemělo fokus. Bez usnadnění se místo toho zkopíruje do schránky."
+            "description": "Vloží poslední přepis tam, kde je právě kurzor, např. když nedorazil, protože žádné textové pole nemělo fokus. Bez usnadnění se místo toho zkopíruje do schránky."
           }
         },
         "errors": {

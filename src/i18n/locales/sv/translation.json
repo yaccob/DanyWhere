@@ -151,7 +151,7 @@
           },
           "paste_last_transcript": {
             "name": "Klistra in senaste transkriptionen",
-            "description": "Klistrar in den senaste transkriptionen igen, t.ex. om den inte kom fram eftersom inget textfält hade fokus. Utan hjälpmedel kopieras den till urklipp i stället."
+            "description": "Klistrar in den senaste transkriptionen där markören står nu, t.ex. om den inte kom fram eftersom inget textfält hade fokus. Utan hjälpmedel kopieras den till urklipp i stället."
           }
         },
         "errors": {

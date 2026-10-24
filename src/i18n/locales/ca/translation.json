@@ -151,7 +151,7 @@
           },
           "paste_last_transcript": {
             "name": "Enganxa l'última transcripció",
-            "description": "Torna a enganxar l'última transcripció, per exemple si no ha arribat perquè cap camp de text tenia el focus. Sense accessibilitat es copia al porta-retalls."
+            "description": "Enganxa l'última transcripció on hi ha el cursor ara, per exemple si no ha arribat perquè cap camp de text tenia el focus. Sense accessibilitat es copia al porta-retalls."
           }
         },
         "errors": {

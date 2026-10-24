@@ -178,7 +178,7 @@
           },
           "paste_last_transcript": {
             "name": "Letzte Transkription einfügen",
-            "description": "Fügt die letzte Transkription erneut ein, z. B. wenn sie nicht angekommen ist, weil kein Textfeld den Fokus hatte. Ohne Bedienungshilfen wird sie stattdessen in die Zwischenablage gelegt."
+            "description": "Fügt die letzte Transkription dort ein, wo der Cursor gerade steht, z. B. wenn sie nicht angekommen ist, weil kein Textfeld den Fokus hatte. Ohne Bedienungshilfen wird sie stattdessen in die Zwischenablage gelegt."
           }
         },
         "errors": {

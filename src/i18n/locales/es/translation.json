@@ -178,7 +178,7 @@
           },
           "paste_last_transcript": {
             "name": "Pegar la última transcripción",
-            "description": "Vuelve a pegar la última transcripción, por ejemplo si no llegó porque ningún campo de texto tenía el foco. Sin accesibilidad se copia al portapapeles."
+            "description": "Pega la última transcripción donde está ahora el cursor, por ejemplo si no llegó porque ningún campo de texto tenía el foco. Sin accesibilidad se copia al portapapeles."
           }
         },
         "errors": {

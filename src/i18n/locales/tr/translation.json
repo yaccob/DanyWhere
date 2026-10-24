@@ -178,7 +178,7 @@
           },
           "paste_last_transcript": {
             "name": "Son transkripti yapıştır",
-            "description": "Son transkripti yeniden yapıştırır; örneğin hiçbir metin alanı odakta olmadığı için ulaşmadıysa. Erişilebilirlik olmadan panoya kopyalanır."
+            "description": "Son transkripti imlecin şu anda bulunduğu yere yapıştırır; örneğin hiçbir metin alanı odakta olmadığı için ulaşmadıysa. Erişilebilirlik olmadan panoya kopyalanır."
           }
         },
         "errors": {

@@ -178,7 +178,7 @@
           },
           "paste_last_transcript": {
             "name": "Wklej ostatnią transkrypcję",
-            "description": "Ponownie wkleja ostatnią transkrypcję, np. gdy nie dotarła, bo żadne pole tekstowe nie miało fokusu. Bez dostępności jest kopiowana do schowka."
+            "description": "Wkleja ostatnią transkrypcję tam, gdzie jest teraz kursor, np. gdy nie dotarła, bo żadne pole tekstowe nie miało fokusu. Bez dostępności jest kopiowana do schowka."
           }
         },
         "errors": {
