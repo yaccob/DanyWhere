@@ -6,15 +6,11 @@ Planned work on DanyWhere, roughly in priority order within each section. Items 
 
 ### Keep the transcript when there is nowhere to paste it
 
-**Problem:** when the focus is not on something that accepts text (the desktop, a non-editable window), recording and transcription work, but the text ends up nowhere.
+**Problem:** when the focus is not on something that accepts text (the desktop, a non-editable window), recording and transcription work, but the text ends up nowhere. Inherited from Handy: the paste is sent without checking for an editable target, and the clipboard is restored afterwards.
 
-**Cause (inherited from Handy):** pasting saves the clipboard, writes the transcript, sends the paste shortcut without checking for an editable target, then restores the old clipboard (`paste_via_clipboard` in `src-tauri/src/clipboard.rs`). With no target, the paste goes nowhere and the restore also removes the transcript from the clipboard. It is only recoverable through the history or the tray item "Copy last transcription".
+**Done:** the "Paste Last Transcript" shortcut (Option+Shift+V on macOS) puts the most recent transcript where the cursor is now; without Accessibility it goes to the clipboard, and a notice tells the user where the text is (duration configurable under Advanced, 0 = off).
 
-**Goal:** if the transcript could not be pasted, leave it on the clipboard and, once transcription (and post-processing, if used) has finished, show a notification: the text is on the clipboard because it could not be pasted — no editable field had focus.
-
-**Approach:** Handy's experimental receipt-based paste (`reliable_paste`, `src-tauri/src/paste_tx/macos.rs`) puts a promise on the pasteboard and gets a callback when an app actually reads it; it already detects "no read within timeout". That signal is a more reliable trigger than guessing whether the focused element is editable. Clipboard managers that read the pasteboard eagerly need checking (Handy already marks the transcript as concealed for them).
-
-**Upstream candidate.**
+**Possible later addition:** detect automatically that a paste went nowhere and leave the text on the clipboard with the same notice. Handy's experimental receipt-based paste (`reliable_paste`, `src-tauri/src/paste_tx/macos.rs`) gets a callback when an app actually reads the pasteboard and already detects "no read within timeout". Clipboard managers that read eagerly need checking. **Upstream candidate.**
 
 ### Space between consecutive dictations
 
