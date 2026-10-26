@@ -30,6 +30,24 @@ Planned work on DanyWhere, roughly in priority order within each section. Items 
 
 Whisper sometimes appends text that was never said when the recording ends in silence (observed: "Vielen Dank." after a synthetic 60 s German recording). Known Whisper behaviour on trailing silence. To check: whether trimming trailing silence with the VAD before decoding (or dropping a final chunk without speech) avoids it.
 
+### Translation to English
+
+**Problem:** Whisper large-v3-turbo, DanyWhere's default model, cannot translate (it was fine-tuned on transcription data only). The legacy `ggml-large-v3-turbo.bin` still reports translation support, so "Translate to English" is offered, the log says "(translated)", and the text stays in the spoken language (reproduced 2026-10-24). DanyWhere lets the catalog's capabilities win (the GGUF Turbo is marked `translate: false`), so the option no longer appears for Turbo (verified 2026-10-26).
+
+**Options:** translate with Whisper medium or small (trained for translation; both in DanyWhere's selection), or with LLM post-processing (a "translate to English" prompt; usually better quality, needs a provider). Report the legacy-Turbo capability to Handy as a follow-up to [#1746](https://github.com/cjpais/Handy/issues/1746). **Upstream candidate** (the report).
+
+### History: keep more, store less
+
+**Problem:** inherited from Handy, the history keeps a fixed number of entries (default 5, `history_limit`) together with their recordings. Recordings are uncompressed WAV (16 kHz mono 16-bit, about 1.9 MB per minute), which is why the limit is small; the transcripts themselves take almost no space.
+
+**Idea:**
+
+- Limit recordings by **disk space** instead of a count: a maximum size (with a sensible minimum, and "unlimited" as an option); when it is exceeded, the oldest unsaved recordings are deleted first.
+- Keep **transcripts** independently of their recordings (much longer, or unlimited), so the text history is not lost when audio is pruned.
+- Store recordings **compressed**: Opus at about 24–32 kbit/s is roughly 8–10 times smaller and still fine for re-transcribing speech; FLAC is lossless but only about 2 times smaller. The 16 kHz rate is what the models use, so recording at a higher rate would not improve transcription.
+
+**Upstream candidate.**
+
 ### Running without the Accessibility permission
 
 Available: onboarding offers "Continue without Accessibility" for managed Macs (shortcuts via the Tauri backend, transcript left on the clipboard, input simulation not set up). A DanyWhere feature for now; it may be offered to Handy later.

@@ -29,28 +29,8 @@ use crate::managers::model_capabilities::{CapabilityProbe, Compatibility};
 /// breaking change; additive fields are ignored.
 const SCHEMA: u32 = 2;
 
-/// Base URLs tried in order when the Hugging Face download fails. The full
-/// file URL is `{mirror}/{repo_id}/{revision}/{filename}` — the same three
-/// values that form the HF resolve URL, so a mirror is a plain static host.
-/// `scripts/mirror_models.py` populates it from this catalog.
-const MIRRORS: &[&str] = &["https://blob.handy.computer"];
-
-/// Handy's list order and onboarding set, keyed by catalog id. Kept from the
-/// previous generator until onboarding moves to the package's recommendations.
-/// `(id, rank, recommended)`: rank is the editorial sort position (lower =
-/// higher); recommended is the small badged onboarding subset.
-const HANDY_RANKING: &[(&str, u32, bool)] = &[
-    ("parakeet-unified-en-0.6b", 1, true),
-    ("nemotron-3.5-asr-streaming-0.6b", 2, true),
-    ("canary-180m-flash", 3, true),
-    ("cohere-transcribe-03-2026", 4, true),
-    ("whisper-medium", 5, true),
-    ("Voxtral-Mini-4B-Realtime-2602", 6, false),
-    ("parakeet-tdt-0.6b-v3", 7, false),
-    ("parakeet-tdt-0.6b-v2", 8, false),
-    ("Qwen3-ASR-0.6B", 9, false),
-    ("Fun-ASR-MLT-Nano-2512", 10, false),
-];
+// DanyWhere: which models are offered, their order and their mirror live in
+// `crate::model_selection` (Handy's MIRRORS and HANDY_RANKING are not used).
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -146,6 +126,7 @@ impl CatalogModel {
             && self
                 .default_file()
                 .is_some_and(|file| !file.filename.contains('/'))
+            && crate::model_selection::is_offered(&self.id)
     }
 
     /// Files ordered largest first, so the list reads F32 → Q4 like the HF repo.
@@ -270,7 +251,7 @@ impl From<&CatalogModel> for ModelDescriptor {
         let default_filename = default_quant_file(&files, Some(&m.quant))
             .map(|f| f.filename.clone())
             .unwrap_or_default();
-        let ranking = HANDY_RANKING.iter().find(|(id, _, _)| *id == m.id);
+        let ranking = crate::model_selection::rank(&m.id);
         let results = ROOT.results.get(&m.id);
 
         ModelDescriptor {
@@ -302,8 +283,8 @@ impl From<&CatalogModel> for ModelDescriptor {
             // ModelInfo / the UI bars use 0.0–1.0.
             speed_score: speed_score(results) / 100.0,
             accuracy_score: accuracy_score(m, results) / 100.0,
-            recommended_rank: ranking.map(|(_, rank, _)| *rank),
-            recommended: ranking.is_some_and(|(_, _, recommended)| *recommended),
+            recommended_rank: ranking.map(|(rank, _)| rank),
+            recommended: ranking.is_some_and(|(_, recommended)| recommended),
         }
     }
 }
@@ -362,20 +343,33 @@ pub fn mirror_fallbacks(model_id: &str) -> Vec<MirrorFile> {
     else {
         return Vec::new();
     };
-    MIRRORS
-        .iter()
-        .map(|base| MirrorFile {
-            url: format!(
-                "{}/{}/{}/{}",
-                base.trim_end_matches('/'),
-                m.repository,
-                m.revision,
-                file.filename
-            ),
-            sha256: file.sha256.clone(),
-            size_bytes: file.size,
+    vec![MirrorFile {
+        url: crate::model_selection::mirror_url(&m.id, &m.revision, &file.filename),
+        sha256: file.sha256.clone(),
+        size_bytes: file.size,
+    }]
+}
+
+/// Capabilities the catalog states for a model variant (the catalog id equals
+/// the variant the engine reports). Covers every catalogued model, offered or
+/// not, so files from older releases (e.g. the legacy Whisper `.bin`s) are
+/// described correctly too.
+pub fn known_capabilities(variant: &str) -> Option<KnownCapabilities> {
+    transcription_models()
+        .find(|m| m.id == variant)
+        .map(|m| KnownCapabilities {
+            streaming: m.capabilities.streaming,
+            translate: m.capabilities.translate,
+            language_detection: m.capabilities.language_detection,
         })
-        .collect()
+}
+
+/// The catalog's view of what a model can do.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct KnownCapabilities {
+    pub streaming: bool,
+    pub translate: bool,
+    pub language_detection: bool,
 }
 
 /// The catalog descriptor + specific `files[]` entry owning `filename`,
@@ -451,9 +445,10 @@ mod tests {
     }
 
     #[test]
-    fn all_flat_asr_models_are_offered_at_the_package_default() {
+    fn selected_models_are_offered_at_the_package_default() {
         for m in transcription_models()
             .filter(|m| m.default_file().is_some_and(|f| !f.filename.contains('/')))
+            .filter(|m| crate::model_selection::is_offered(&m.id))
         {
             let id = format!("{}/{}", m.repository, m.default_file().unwrap().filename);
             let desc = CATALOG
@@ -481,17 +476,14 @@ mod tests {
     }
 
     #[test]
-    fn handy_ranking_names_offered_models() {
-        for (id, _, _) in HANDY_RANKING {
+    fn selection_names_offered_models() {
+        for o in crate::model_selection::offered() {
+            let id = &o.id;
             let model = transcription_models()
                 .find(|m| m.id == *id)
-                .unwrap_or_else(|| panic!("ranked model {id} is not in the catalog"));
-            assert!(model.is_offered(), "ranked model {id} is not offered");
+                .unwrap_or_else(|| panic!("selected model {id} is not in the catalog"));
+            assert!(model.is_offered(), "selected model {id} is not offered");
         }
-        assert_eq!(
-            CATALOG.iter().filter(|d| d.recommended).count(),
-            HANDY_RANKING.iter().filter(|(_, _, r)| *r).count()
-        );
     }
 
     #[test]
@@ -507,6 +499,74 @@ mod tests {
                 assert!(m.url.starts_with("https://"), "{}: bad url {}", d.id, m.url);
             }
         }
+    }
+
+    fn catalog_id_of(descriptor: &ModelDescriptor) -> &'static str {
+        transcription_models()
+            .find(|m| descriptor.id.starts_with(&format!("{}/", m.repository)))
+            .map(|m| m.id.as_str())
+            .unwrap_or_else(|| panic!("{} has no catalog entry", descriptor.id))
+    }
+
+    #[test]
+    fn offers_exactly_the_danywhere_selection() {
+        let offered: BTreeSet<&str> = CATALOG.iter().map(catalog_id_of).collect();
+        let selection: BTreeSet<&str> = crate::model_selection::offered()
+            .iter()
+            .map(|o| o.id.as_str())
+            .collect();
+        assert_eq!(offered, selection);
+    }
+
+    #[test]
+    fn the_default_model_comes_first_and_is_recommended() {
+        let first = CATALOG
+            .iter()
+            .min_by_key(|d| d.recommended_rank.unwrap_or(u32::MAX))
+            .expect("catalog offers models");
+        assert_eq!(catalog_id_of(first), "whisper-large-v3-turbo");
+        assert!(first.recommended);
+        let recommended: Vec<&str> = crate::model_selection::offered()
+            .iter()
+            .filter(|o| o.recommended)
+            .map(|o| o.id.as_str())
+            .collect();
+        for d in CATALOG.iter() {
+            assert_eq!(
+                d.recommended,
+                recommended.contains(&catalog_id_of(d)),
+                "{}",
+                d.id
+            );
+        }
+    }
+
+    #[test]
+    fn files_come_only_from_the_danywhere_mirror() {
+        for d in CATALOG.iter() {
+            let mirrors = mirror_fallbacks(&d.id);
+            assert_eq!(mirrors.len(), 1, "{}: expected exactly one mirror", d.id);
+            let url = &mirrors[0].url;
+            let filename = d.id.rsplit('/').next().unwrap();
+            assert!(
+                url.starts_with(crate::model_selection::mirror_releases()),
+                "{url}"
+            );
+            assert!(url.ends_with(&format!("/{filename}")), "{url}");
+            assert!(!url.contains("handy.computer"), "{url}");
+        }
+    }
+
+    #[test]
+    fn catalog_capabilities_are_known_by_variant() {
+        // Whisper large-v3-turbo cannot translate; the engine reports that it
+        // can for the legacy .bin, so the catalog's answer has to win.
+        let turbo = known_capabilities("whisper-large-v3-turbo").expect("turbo is catalogued");
+        assert!(!turbo.translate);
+        assert!(turbo.language_detection);
+        let medium = known_capabilities("whisper-medium").expect("medium is catalogued");
+        assert!(medium.translate);
+        assert!(known_capabilities("not-a-model").is_none());
     }
 
     #[test]

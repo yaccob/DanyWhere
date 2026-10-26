@@ -1724,6 +1724,34 @@ impl ModelManager {
             disarmed: false,
         };
 
+        // DanyWhere: its own mirror comes first — it also works on networks
+        // that block Hugging Face — and Hugging Face is the fallback.
+        let mirrors = crate::catalog::mirror_fallbacks(&model_id);
+        for mirror in &mirrors {
+            info!("Downloading {} from mirror {}", model_id, mirror.url);
+            match self
+                .download_from_mirror(&model_id, &filename, mirror, cancel_token.clone())
+                .await
+            {
+                Ok(true) => {
+                    cleanup.disarmed = true;
+                    self.update_download_status()?;
+                    self.cancel_flags.lock().unwrap().remove(&model_id);
+                    let _ = self.app_handle.emit("model-download-complete", &model_id);
+                    info!("Model {} downloaded from mirror", model_id);
+                    return Ok(());
+                }
+                Ok(false) => {
+                    info!("Mirror download cancelled for: {}", model_id);
+                    return Ok(());
+                }
+                Err(e) => warn!(
+                    "Mirror download failed for {} from {}: {:?}; trying Hugging Face",
+                    model_id, mirror.url, e
+                ),
+            }
+        }
+
         info!(
             "Downloading HF model {} from {}@{} ({})",
             model_id, repo_id, revision, filename
@@ -1893,44 +1921,13 @@ impl ModelManager {
                 "HF download failed for {} after {} attempt(s): {:?}",
                 model_id, attempt, hf_error
             );
-            let mirrors = crate::catalog::mirror_fallbacks(&model_id);
-            if mirrors.is_empty() {
-                return Err(anyhow::anyhow!(
-                    "Hugging Face download failed after {} attempt(s): {}",
-                    attempt,
-                    hf_error
-                ));
-            }
-            let mut completed = false;
-            for mirror in &mirrors {
-                info!("Falling back to mirror for {}: {}", model_id, mirror.url);
-                match self
-                    .download_from_mirror(&model_id, &filename, mirror, cancel_token.clone())
-                    .await
-                {
-                    Ok(true) => {
-                        completed = true;
-                        break;
-                    }
-                    Ok(false) => {
-                        info!("Mirror download cancelled for: {}", model_id);
-                        return Ok(());
-                    }
-                    Err(e) => {
-                        warn!(
-                            "Mirror download failed for {} from {}: {:?}",
-                            model_id, mirror.url, e
-                        );
-                    }
-                }
-            }
-            if !completed {
-                return Err(anyhow::anyhow!(
-                    "Download failed from Hugging Face ({}) and {} mirror(s)",
-                    hf_error,
-                    mirrors.len()
-                ));
-            }
+            // The mirror was already tried first (see above).
+            return Err(anyhow::anyhow!(
+                "Download failed from {} mirror(s) and from Hugging Face after {} attempt(s): {}",
+                mirrors.len(),
+                attempt,
+                hf_error
+            ));
         }
 
         cleanup.disarmed = true;
@@ -2434,9 +2431,20 @@ mod tests {
     #[test]
     fn test_every_retired_model_has_a_downloadable_replacement() {
         // A missing replacement would silently hide a row in the migration UI.
+        // DanyWhere offers a smaller selection and keeps its data in its own
+        // directory, where Handy's ONNX models never were; only retired models
+        // whose replacement it offers need a migration row.
         let mut registry = HashMap::new();
         ModelManager::seed_catalog_models(&mut registry);
-        for retired in RETIRED_ONNX_MODELS {
+        let offered_repo = |repo: &str| {
+            crate::catalog::CATALOG.iter().any(|d| {
+                matches!(&d.source, ModelSource::HuggingFace { repo_id, .. } if repo_id == repo)
+            })
+        };
+        for retired in RETIRED_ONNX_MODELS
+            .iter()
+            .filter(|r| offered_repo(r.replacement_repo))
+        {
             let replacement = registry
                 .values()
                 .find(|info| {
@@ -2484,7 +2492,7 @@ mod tests {
 
     #[test]
     fn test_old_q5_is_discovered_and_survives_deleting_all_q8_copies() {
-        let desc = catalog_model("handy-computer/whisper-large-v3-gguf/");
+        let desc = catalog_model("handy-computer/whisper-large-v3-turbo-gguf/");
         let (repo, revision) = hf_source(desc);
         let q5 = desc.files.iter().find(|f| f.quant == "Q5_K_M").unwrap();
         let q8 = desc.default_file().unwrap();
@@ -2940,17 +2948,19 @@ mod tests {
         // HF repo ids are case-insensitive, so another tool can cache a catalog
         // repo under other casing. On a case-sensitive filesystem only that
         // casing finds the file again, so it must not take the catalog's.
-        let filename = "SenseVoiceSmall-Q8_0.gguf";
-        let folder_repo = "handy-computer/sensevoicesmall-gguf";
+        // (DanyWhere offers no catalog repo with capitals, so the cache folder
+        // carries them instead; the property under test is the same.)
+        let filename = "whisper-large-v3-turbo-Q8_0.gguf";
+        let folder_repo = "handy-computer/Whisper-Large-V3-Turbo-gguf";
         assert!(crate::catalog::file_in_catalog(
             filename,
-            Some("handy-computer/SenseVoiceSmall-gguf")
+            Some("handy-computer/whisper-large-v3-turbo-gguf")
         )
         .is_some());
 
         let cache = TempDir::new().unwrap();
         let path = add_cached_model(cache.path(), folder_repo, "main", filename);
-        write_synthetic_gguf(&path, "sensevoice", &["en", "zh"]);
+        write_synthetic_gguf(&path, "whisper", &["en", "de"]);
 
         let mut models = HashMap::new();
         ModelManager::discover_hf_cache_models_in(cache.path(), &mut models);

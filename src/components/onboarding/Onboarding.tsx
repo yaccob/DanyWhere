@@ -5,6 +5,7 @@ import { ChevronDown, ChevronLeft } from "lucide-react";
 import type { ModelInfo } from "@/bindings";
 import type { ModelCardStatus } from "./ModelCard";
 import ModelCard, { isLegacySource } from "./ModelCard";
+import { modelToFollow } from "./autoDownload";
 import HandyTextLogo from "../icons/HandyTextLogo";
 import { Button } from "../ui/Button";
 import { useModelStore } from "../../stores/modelStore";
@@ -14,12 +15,15 @@ interface OnboardingProps {
   // Shown when the picker was opened from another step (the model update).
   onBack?: () => void;
   preview?: boolean;
+  // DanyWhere: a download started before this step, to take over.
+  followModelId?: string | null;
 }
 
 const Onboarding: React.FC<OnboardingProps> = ({
   onModelSelected,
   onBack,
   preview = false,
+  followModelId,
 }) => {
   const { t } = useTranslation();
   const {
@@ -125,6 +129,28 @@ const Onboarding: React.FC<OnboardingProps> = ({
       setSelectedModelId(null);
     }
   };
+
+  // DanyWhere: take over the download the permission step started (once).
+  const followed = useRef(false);
+  useEffect(() => {
+    if (preview || followed.current || selectedModelId) return;
+    const id = modelToFollow(
+      followModelId ?? null,
+      models,
+      downloadingModels,
+      verifyingModels,
+    );
+    if (!id) return;
+    followed.current = true;
+    setSelectedModelId(id);
+  }, [
+    followModelId,
+    models,
+    downloadingModels,
+    verifyingModels,
+    preview,
+    selectedModelId,
+  ]);
 
   const handleCancelDownload = async (modelId: string) => {
     if (preview) return;

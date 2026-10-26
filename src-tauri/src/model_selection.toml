@@ -1,0 +1,38 @@
+# DanyWhere's model offer, compiled into the app (see model_selection.rs).
+#
+# catalog/catalog.json stays a verbatim copy of Handy's model package; this
+# file only picks from it. Ids are catalog ids. Capabilities (translation,
+# streaming, language detection) come from the catalog, not from here.
+
+# GitHub releases of the mirror repository. A model file lives at
+# {mirror}/{id}-{first 12 characters of the catalog revision}/{filename}.
+# Files are tried there first, then on Hugging Face.
+mirror = "https://github.com/yaccob/DanyWhere-models/releases/download"
+
+# Offered models, best first. Onboarding features the recommended ones and
+# downloads the first one by itself on a fresh install. Chosen for dictation
+# on a laptop: fast enough on Apple silicon, at most about 0.9 GB each.
+
+[[offered]]
+id = "whisper-large-v3-turbo"
+recommended = true # multilingual default; cannot translate
+
+[[offered]]
+id = "parakeet-tdt-0.6b-v3"
+recommended = true # very fast, 25 European languages
+
+[[offered]]
+id = "whisper-medium"
+recommended = false # can translate to English
+
+[[offered]]
+id = "whisper-small"
+recommended = false # lighter Whisper, can translate to English
+
+[[offered]]
+id = "parakeet-unified-en-0.6b"
+recommended = false # English only
+
+[[offered]]
+id = "canary-180m-flash"
+recommended = false # small, en/de/es/fr

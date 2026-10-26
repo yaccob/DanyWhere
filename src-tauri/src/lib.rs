@@ -16,6 +16,7 @@ mod input;
 mod llm_client;
 mod managers;
 mod memory;
+mod model_selection;
 mod overlay;
 mod paste_tx;
 pub mod portable;

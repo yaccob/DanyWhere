@@ -34,6 +34,7 @@ import { useSettingsStore } from "./stores/settingsStore";
 import { commands } from "@/bindings";
 import { permissionsSatisfied } from "@/components/onboarding/permissionGate";
 import { deleteRetiredModel } from "@/components/onboarding/retiredModels";
+import { useAutoDownload } from "@/components/onboarding/useAutoDownload";
 import { getLanguageDirection, initializeRTL } from "@/lib/utils/rtl";
 
 type OnboardingStep = "accessibility" | "migration" | "model" | "done";
@@ -78,6 +79,10 @@ function App() {
     (state) => state.refreshOutputDevices,
   );
   const hasCompletedPostOnboardingInit = useRef(false);
+  // DanyWhere: a fresh install downloads its model while permissions are granted.
+  const autoDownloadModelId = useAutoDownload(
+    onboardingStep === "accessibility" && !isReturningUser,
+  );
   const settingsScrollRef = useRef<HTMLDivElement>(null);
   const isShowingOnboarding =
     onboardingPreview !== null ||
@@ -409,6 +414,7 @@ function App() {
     content = (
       <Onboarding
         onModelSelected={handleModelSelected}
+        followModelId={autoDownloadModelId}
         onBack={
           migrationModelId ? () => setOnboardingStep("migration") : undefined
         }

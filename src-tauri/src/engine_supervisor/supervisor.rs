@@ -1218,7 +1218,12 @@ impl Worker {
             device: spec.device.clone(),
         };
         match self.call(&request, None, LOAD_TIMEOUT)? {
-            Response::Loaded(info) => {
+            Response::Loaded(mut info) => {
+                // DanyWhere: the catalog knows better than the engine's guess.
+                crate::model_selection::reconcile_capabilities(
+                    &info.variant,
+                    &mut info.capabilities,
+                );
                 self.info = Some(info.clone());
                 Ok(info)
             }
