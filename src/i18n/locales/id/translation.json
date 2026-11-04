@@ -627,9 +627,14 @@
         "description": "Lihat kode sumber dan berkontribusi",
         "button": "Lihat di GitHub"
       },
+      "basedOn": {
+        "title": "Berbasis Handy",
+        "description": "DanyWhere dibangun di atas Handy karya CJ Pais dan para kontributor",
+        "button": "Kunjungi Handy"
+      },
       "supportDevelopment": {
         "title": "Dukung Pengembangan",
-        "description": "Bantu kami terus mengembangkan Handy",
+        "description": "Donasi diberikan kepada Handy, proyek sumber terbuka yang menjadi dasar DanyWhere",
         "button": "Donasi"
       },
       "acknowledgments": {

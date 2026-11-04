@@ -623,9 +623,14 @@
         "description": "Zobrazit zdrojový kód a přispět",
         "button": "Zobrazit na GitHubu"
       },
+      "basedOn": {
+        "title": "Založeno na Handy",
+        "description": "DanyWhere vychází z aplikace Handy, kterou vytvořil CJ Pais a další přispěvatelé",
+        "button": "Navštívit Handy"
+      },
       "supportDevelopment": {
         "title": "Podpořte vývoj",
-        "description": "Pomozte nám pokračovat ve vývoji Handy",
+        "description": "Dary jdou projektu Handy, open-source projektu, na kterém je DanyWhere postaven",
         "button": "Přispět"
       },
       "acknowledgments": {

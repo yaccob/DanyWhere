@@ -623,9 +623,14 @@
         "description": "Просмотреть исходный код и внести свой вклад",
         "button": "Посмотреть на GitHub"
       },
+      "basedOn": {
+        "title": "Основано на Handy",
+        "description": "DanyWhere основан на Handy от CJ Pais и участников проекта",
+        "button": "Перейти к Handy"
+      },
       "supportDevelopment": {
         "title": "Поддержка развития",
-        "description": "Помогите нам продолжать развитие Handy",
+        "description": "Пожертвования идут в Handy — проект с открытым исходным кодом, на котором основан DanyWhere",
         "button": "Поддержать"
       },
       "acknowledgments": {

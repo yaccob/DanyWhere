@@ -623,9 +623,14 @@
         "description": "Xem mã nguồn và đóng góp",
         "button": "Xem trên GitHub"
       },
+      "basedOn": {
+        "title": "Dựa trên Handy",
+        "description": "DanyWhere được xây dựng dựa trên Handy của CJ Pais và các cộng tác viên",
+        "button": "Truy cập Handy"
+      },
       "supportDevelopment": {
         "title": "Hỗ trợ phát triển",
-        "description": "Giúp chúng tôi tiếp tục xây dựng Handy",
+        "description": "Khoản quyên góp được chuyển đến Handy, dự án mã nguồn mở mà DanyWhere dựa trên",
         "button": "Quyên góp"
       },
       "acknowledgments": {

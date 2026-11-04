@@ -627,9 +627,14 @@
         "description": "View source code and contribute",
         "button": "View on GitHub"
       },
+      "basedOn": {
+        "title": "Based on Handy",
+        "description": "DanyWhere is built on Handy by CJ Pais and contributors",
+        "button": "Visit Handy"
+      },
       "supportDevelopment": {
         "title": "Support Development",
-        "description": "Help us continue building Handy",
+        "description": "Donations go to Handy, the open-source project DanyWhere is built on",
         "button": "Donate"
       },
       "acknowledgments": {

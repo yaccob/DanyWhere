@@ -6,6 +6,11 @@ Add user-facing release notes as Markdown files named by app version:
 src/content/release-notes/0.8.4.md
 ```
 
+**DanyWhere:** name DanyWhere's notes `danywhere-<version>.md` (e.g.
+`danywhere-0.2.0.md`). Only those are shown; the plain `<version>.md` files are
+Handy's notes, kept as upstream ships them (see
+`src/components/whats-new/releaseNoteFiles.ts`).
+
 The update modal shows the highest bundled release note newer than the
 persisted `whats_new_last_seen_version` and not newer than the running app
 version.

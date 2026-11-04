@@ -623,9 +623,14 @@
         "description": "Quellcode ansehen und beitragen",
         "button": "Auf GitHub ansehen"
       },
+      "basedOn": {
+        "title": "Basiert auf Handy",
+        "description": "DanyWhere baut auf Handy von CJ Pais und Mitwirkenden auf",
+        "button": "Handy besuchen"
+      },
       "supportDevelopment": {
         "title": "Entwicklung unterstützen",
-        "description": "Hilf uns, Handy weiterzuentwickeln",
+        "description": "Spenden gehen an Handy, das Open-Source-Projekt, auf dem DanyWhere aufbaut",
         "button": "Spenden"
       },
       "acknowledgments": {

@@ -627,9 +627,14 @@
         "description": "Consulta el codi font i col·laboreu-hi",
         "button": "Mostra al GitHub"
       },
+      "basedOn": {
+        "title": "Basat en Handy",
+        "description": "DanyWhere es basa en Handy, de CJ Pais i col·laboradors",
+        "button": "Visita Handy"
+      },
       "supportDevelopment": {
         "title": "Dona suport al desenvolupament",
-        "description": "Ajudeu-nos a continuar desenvolupant el Handy",
+        "description": "Les donacions van a Handy, el projecte de codi obert en què es basa DanyWhere",
         "button": "Feu una donació"
       },
       "acknowledgments": {

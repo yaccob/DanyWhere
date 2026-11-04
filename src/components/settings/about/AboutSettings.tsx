@@ -10,6 +10,7 @@ import { AppLanguageSelector } from "../AppLanguageSelector";
 import { ShowWhatsNewOnUpdate } from "../ShowWhatsNewOnUpdate";
 import { ThemeSelector } from "../ThemeSelector";
 import { LogDirectory } from "../debug";
+import { SOURCE_CODE_URL, UPSTREAM_URL } from "../../../lib/constants/branding";
 
 export const AboutSettings: React.FC = () => {
   const { t } = useTranslation();
@@ -71,9 +72,23 @@ export const AboutSettings: React.FC = () => {
           <Button
             variant="secondary"
             size="md"
-            onClick={() => openUrl("https://github.com/cjpais/Handy")}
+            onClick={() => openUrl(SOURCE_CODE_URL)}
           >
             {t("settings.about.sourceCode.button")}
+          </Button>
+        </SettingContainer>
+
+        <SettingContainer
+          title={t("settings.about.basedOn.title")}
+          description={t("settings.about.basedOn.description")}
+          grouped={true}
+        >
+          <Button
+            variant="secondary"
+            size="md"
+            onClick={() => openUrl(UPSTREAM_URL)}
+          >
+            {t("settings.about.basedOn.button")}
           </Button>
         </SettingContainer>
 

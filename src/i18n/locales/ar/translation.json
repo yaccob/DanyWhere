@@ -593,9 +593,14 @@
         "description": "عرض كود المصدر والمساهمة",
         "button": "عرض على GitHub"
       },
+      "basedOn": {
+        "title": "مبني على Handy",
+        "description": "DanyWhere مبني على Handy من تطوير CJ Pais والمساهمين",
+        "button": "زيارة Handy"
+      },
       "supportDevelopment": {
         "title": "دعم التطوير",
-        "description": "ساعدنا في مواصلة بناء Handy",
+        "description": "تذهب التبرعات إلى Handy، المشروع مفتوح المصدر الذي بُني عليه DanyWhere",
         "button": "تبرع"
       },
       "acknowledgments": {

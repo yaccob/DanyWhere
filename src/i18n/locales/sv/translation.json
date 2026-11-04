@@ -623,9 +623,14 @@
         "description": "Visa källkod och bidra",
         "button": "Visa på GitHub"
       },
+      "basedOn": {
+        "title": "Baserad på Handy",
+        "description": "DanyWhere bygger på Handy av CJ Pais och bidragsgivare",
+        "button": "Besök Handy"
+      },
       "supportDevelopment": {
         "title": "Stöd utvecklingen",
-        "description": "Hjälp oss att fortsätta bygga Handy",
+        "description": "Donationer går till Handy, projektet med öppen källkod som DanyWhere bygger på",
         "button": "Donera"
       },
       "acknowledgments": {

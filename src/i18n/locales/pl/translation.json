@@ -623,9 +623,14 @@
         "description": "Zobacz kod źródłowy i współtwórz",
         "button": "Zobacz na GitHub"
       },
+      "basedOn": {
+        "title": "Oparte na Handy",
+        "description": "DanyWhere opiera się na Handy, którego autorem jest CJ Pais wraz ze współtwórcami",
+        "button": "Odwiedź Handy"
+      },
       "supportDevelopment": {
         "title": "Wspieraj rozwój",
-        "description": "Pomóż nam dalej rozwijać Handy",
+        "description": "Darowizny trafiają do Handy – projektu open source, na którym opiera się DanyWhere",
         "button": "Wesprzyj"
       },
       "acknowledgments": {

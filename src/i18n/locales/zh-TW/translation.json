@@ -623,9 +623,14 @@
         "description": "檢視原始碼並參與貢獻",
         "button": "在 GitHub 上檢視"
       },
+      "basedOn": {
+        "title": "基於 Handy",
+        "description": "DanyWhere 基於 CJ Pais 及貢獻者開發的 Handy",
+        "button": "前往 Handy"
+      },
       "supportDevelopment": {
         "title": "支持開發",
-        "description": "幫助我們繼續開發 Handy",
+        "description": "捐款將用於支持 Handy，也就是 DanyWhere 所基於的開源專案",
         "button": "捐贈"
       },
       "acknowledgments": {

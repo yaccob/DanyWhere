@@ -81,6 +81,31 @@ for (const lang of readdirSync(localesDir)) {
       `${lang}: exception ${key} no longer names ${UPSTREAM_NAME}: ${value}`,
     );
   }
+
+  // The About page tells the two projects apart: donations go to Handy, not
+  // to DanyWhere ("help us" would suggest otherwise), and a row credits Handy
+  // as the base with a link.
+  const namesBoth = (key: string) => {
+    const value = branded.get(key);
+    assert.ok(
+      typeof value === "string" &&
+        value.includes(BRAND_NAME) &&
+        value.includes(UPSTREAM_NAME),
+      `${lang}: ${key} must name both ${BRAND_NAME} and ${UPSTREAM_NAME}: ${value}`,
+    );
+  };
+  namesBoth("settings.about.supportDevelopment.description");
+  namesBoth("settings.about.basedOn.description");
+  for (const key of [
+    "settings.about.basedOn.title",
+    "settings.about.basedOn.button",
+  ]) {
+    const value = branded.get(key);
+    assert.ok(
+      typeof value === "string" && value.includes(UPSTREAM_NAME),
+      `${lang}: ${key} must name ${UPSTREAM_NAME}: ${value}`,
+    );
+  }
 }
 
 console.log("branding: all checks passed");

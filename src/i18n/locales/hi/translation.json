@@ -627,9 +627,14 @@
         "description": "सोर्स कोड देखें और योगदान दें",
         "button": "GitHub पर देखें"
       },
+      "basedOn": {
+        "title": "Handy पर आधारित",
+        "description": "DanyWhere, CJ Pais और योगदानकर्ताओं के Handy पर आधारित है",
+        "button": "Handy देखें"
+      },
       "supportDevelopment": {
         "title": "डेवलपमेंट में सहयोग करें",
-        "description": "Handy को आगे बढ़ाने में हमारी मदद करें",
+        "description": "दान Handy को जाता है, वह ओपन-सोर्स प्रोजेक्ट जिस पर DanyWhere आधारित है",
         "button": "दान करें"
       },
       "acknowledgments": {

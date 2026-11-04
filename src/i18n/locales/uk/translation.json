@@ -623,9 +623,14 @@
         "description": "Переглянути вихідний код та зробити внесок",
         "button": "Переглянути на GitHub"
       },
+      "basedOn": {
+        "title": "Базується на Handy",
+        "description": "DanyWhere базується на Handy від CJ Pais та учасників проєкту",
+        "button": "Перейти до Handy"
+      },
       "supportDevelopment": {
         "title": "Підтримати розробку",
-        "description": "Допоможіть нам продовжувати розвивати Handy",
+        "description": "Пожертви йдуть на Handy — проєкт із відкритим кодом, на якому базується DanyWhere",
         "button": "Підтримати"
       },
       "acknowledgments": {

@@ -623,9 +623,14 @@
         "description": "ソースコードを見て貢献する",
         "button": "GitHub で見る"
       },
+      "basedOn": {
+        "title": "Handy をベースにしています",
+        "description": "DanyWhere は CJ Pais と貢献者による Handy をベースにしています",
+        "button": "Handy を見る"
+      },
       "supportDevelopment": {
         "title": "開発を支援",
-        "description": "Handy の開発を支援してください",
+        "description": "寄付は DanyWhere の基盤であるオープンソースプロジェクト Handy に届きます",
         "button": "寄付する"
       },
       "acknowledgments": {

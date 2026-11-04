@@ -623,9 +623,14 @@
         "description": "Kaynak kodunu görüntüle ve katkıda bulun",
         "button": "GitHub'da Görüntüle"
       },
+      "basedOn": {
+        "title": "Handy tabanlı",
+        "description": "DanyWhere, CJ Pais ve katkıda bulunanların geliştirdiği Handy üzerine kuruludur",
+        "button": "Handy'yi ziyaret et"
+      },
       "supportDevelopment": {
         "title": "Geliştirmeyi Destekle",
-        "description": "Handy'yi geliştirmeye devam etmemize yardımcı olun",
+        "description": "Bağışlar, DanyWhere'in üzerine kurulduğu açık kaynaklı proje Handy'ye gider",
         "button": "Bağış Yap"
       },
       "acknowledgments": {

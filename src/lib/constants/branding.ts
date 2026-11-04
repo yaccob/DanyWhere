@@ -6,3 +6,9 @@ export const BRAND_NAME = "DanyWhere";
 // Name of the upstream project, kept where text refers to the original
 // project rather than to the running app (donations, credits).
 export const UPSTREAM_NAME = "Handy";
+
+// The About page's "Source Code" button.
+export const SOURCE_CODE_URL = "https://github.com/yaccob/DanyWhere";
+
+// The upstream project, linked where DanyWhere credits it.
+export const UPSTREAM_URL = "https://github.com/cjpais/Handy";

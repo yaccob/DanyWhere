@@ -1,3 +1,5 @@
+import { versionFromReleaseNotePath } from "./releaseNoteFiles";
+
 export interface ReleaseNote {
   version: string;
   markdown: string;
@@ -33,10 +35,8 @@ const parseVersion = (version: string): [number, number, number] | null => {
 };
 
 for (const [path, markdown] of Object.entries(releaseNoteModules)) {
-  const match = path.match(/release-notes\/([^/]+)\.md$/);
-  if (!match) continue;
-
-  const version = match[1];
+  const version = versionFromReleaseNotePath(path);
+  if (!version) continue;
 
   if (!parseVersion(version)) continue;
 

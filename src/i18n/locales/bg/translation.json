@@ -623,9 +623,14 @@
         "description": "Преглед на изходния код и принос",
         "button": "Вижте в GitHub"
       },
+      "basedOn": {
+        "title": "Базирано на Handy",
+        "description": "DanyWhere е изграден върху Handy от CJ Pais и сътрудници",
+        "button": "Към Handy"
+      },
       "supportDevelopment": {
         "title": "Подкрепете разработката",
-        "description": "Помогнете ни да продължим да развиваме Handy",
+        "description": "Даренията отиват за Handy – проекта с отворен код, на който е изграден DanyWhere",
         "button": "Дарение"
       },
       "acknowledgments": {
