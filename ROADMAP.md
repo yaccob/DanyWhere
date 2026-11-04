@@ -59,7 +59,6 @@ Next steps:
 
 ## Branding
 
-- Own tray icons for the recording and transcribing states (currently Handy's ear and brain).
 - About page: "DanyWhere is based on Handy" with a link.
 
 ## Distribution

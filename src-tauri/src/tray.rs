@@ -742,3 +742,58 @@ mod tests {
         assert_ne!(inputs(false), inputs(true));
     }
 }
+
+/// DanyWhere: the tray must not show Handy's artwork. Handy's name, logo and
+/// icons are not covered by its open-source license.
+#[cfg(test)]
+mod artwork_tests {
+    use super::{get_icon_path, AppTheme, TrayIconState};
+    use sha2::{Digest, Sha256};
+    use std::path::Path;
+
+    /// SHA-256 of Handy's tray PNGs (cjpais/Handy, src-tauri/resources/*.png,
+    /// as of 2026-11-04).
+    const HANDY_TRAY_ARTWORK: &[&str] = &[
+        "e160aca4bde798d741a304e325bb9cb50a6ad1a56dde4fc18c6482a4afbce4b8", // handy.png
+        "44cc11e4ab3550ad05022f1b96efe1b6a0b3da6f708daaa6778e0c2e1ad86895", // handy_warning.png
+        "aa723ebda2520622911abb0468754e264ab64ee4b967c8413e68fd165d9b64dd", // recording.png
+        "29822fa1a77e79af9a01790e2baf317a8e47c6be581bec6067bbbd62d7ff3976", // transcribing.png
+        "b554fd1013bd2f8312eab255c47278ed76ce2808aabecbd8648f961d45afbe9d", // tray_idle.png
+        "c0e672564f498316ad5b7a9f78bd703aec8722eca25f3e2fe19d23beaf114cd6", // tray_idle_dark.png
+        "4fad013a4a2ce5e7a88d8df2271c221c6524b5e2cb316b7b3d4abc4efa7ce687", // tray_idle_warning.png
+        "8030ee0dea7666a2fd32a7045a7dee3e062a3d2b39438898d8fe1e8777806ea4", // tray_idle_warning_dark.png
+        "51596aa529120696e46309f9b135ac4f199158849810373e9c88f85daf59e395", // tray_recording.png
+        "ce2cb47c930b73d59a0d30f26aa1c6d369a106f64a4afe5571d60a29ae63ec56", // tray_recording_dark.png
+        "7b03376131c570d2a67eeac29410c983c6b5483ec188f8d520ff09d28202d0e9", // tray_transcribing.png
+        "af81a67d3df7226b48247271fd309394e46a5fcf17aaa6d2d9da11b917d8bf64", // tray_transcribing_dark.png
+    ];
+
+    #[test]
+    fn tray_shows_none_of_handys_artwork() {
+        let manifest_dir = Path::new(env!("CARGO_MANIFEST_DIR"));
+        let mut still_handys = Vec::new();
+        for theme in [AppTheme::Dark, AppTheme::Light, AppTheme::Colored] {
+            for state in [
+                TrayIconState::Idle,
+                TrayIconState::Recording,
+                TrayIconState::Transcribing,
+            ] {
+                for warning in [false, true] {
+                    let path = get_icon_path(theme.clone(), state, warning);
+                    let bytes = std::fs::read(manifest_dir.join(path))
+                        .unwrap_or_else(|e| panic!("{path}: {e}"));
+                    let hash = format!("{:x}", Sha256::digest(&bytes));
+                    if HANDY_TRAY_ARTWORK.contains(&hash.as_str()) {
+                        still_handys.push(path);
+                    }
+                }
+            }
+        }
+        still_handys.sort();
+        still_handys.dedup();
+        assert!(
+            still_handys.is_empty(),
+            "tray icons still show Handy's artwork: {still_handys:?}"
+        );
+    }
+}
