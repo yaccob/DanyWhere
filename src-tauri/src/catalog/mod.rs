@@ -17,7 +17,7 @@
 //! `GgufHeaderProber` is the same shape with `None` where a header omits a key,
 //! which is why the two are interchangeable (the catalog is a baked probe).
 
-use std::collections::{BTreeSet, HashMap};
+use std::collections::{BTreeSet, HashMap, HashSet};
 
 use once_cell::sync::Lazy;
 use serde::Deserialize;
@@ -40,6 +40,10 @@ struct CatalogRoot {
     #[cfg_attr(not(test), allow(dead_code))]
     transcribe_cpp: String,
     models: Vec<CatalogModel>,
+    /// Catalog id of the spoken-language detector for transcription models
+    /// without their own language detection.
+    #[serde(default)]
+    language_detector: Option<String>,
     /// Benchmark results keyed by catalog id.
     #[serde(default)]
     results: HashMap<String, ModelResults>,
@@ -180,19 +184,8 @@ fn accuracy_score(model: &CatalogModel, results: Option<&ModelResults>) -> f32 {
 
 /// The package's language identity (its `languageIdentity`): base code, with
 /// the aliases its benchmark keys use.
-fn language_identity(language: &str) -> String {
-    let base = language
-        .split(['-', '_'])
-        .next()
-        .unwrap_or(language)
-        .to_ascii_lowercase();
-    match base.as_str() {
-        "tl" => "fil".to_string(),
-        "no" => "nb".to_string(),
-        "iw" => "he".to_string(),
-        "jw" => "jv".to_string(),
-        _ => base,
-    }
+pub(crate) fn language_identity(language: &str) -> String {
+    crate::managers::model::canonical_language_code(&language.to_ascii_lowercase()).to_string()
 }
 
 // ───────────────────────── descriptions ─────────────────────────
@@ -308,12 +301,58 @@ fn transcription_models() -> impl Iterator<Item = &'static CatalogModel> {
     ROOT.models.iter().filter(|m| m.role == "asr")
 }
 
+/// Every language a transcription model in the catalog hears, as identities:
+/// the languages the frontend's picker offers (its `LANGUAGES`).
+static LANGUAGES: Lazy<HashSet<String>> = Lazy::new(|| {
+    transcription_models()
+        .flat_map(|m| m.languages.iter().map(|l| language_identity(l)))
+        .collect()
+});
+
+/// Whether the picker offers this language identity.
+pub fn offers_language(identity: &str) -> bool {
+    LANGUAGES.contains(identity)
+}
+
 /// Every transcription model Handy can download, normalised into descriptors.
 pub static CATALOG: Lazy<Vec<ModelDescriptor>> = Lazy::new(|| {
     transcription_models()
         .filter(|m| m.is_offered())
         .map(ModelDescriptor::from)
         .collect()
+});
+
+/// The spoken-language detector the catalog names (`languageDetector`): the
+/// file Handy fetches, at the package's default quant, and the labels it can
+/// tell apart.
+pub struct LanguageDetectorFile {
+    /// Catalog id (DanyWhere's mirror names its releases after it).
+    pub id: String,
+    pub repo_id: String,
+    pub revision: String,
+    pub filename: String,
+    pub size_bytes: u64,
+    sha256: String,
+    /// The detector's own codes (`iw`, `jw`, `tl`, `no` included).
+    pub labels: Vec<String>,
+}
+
+pub static LANGUAGE_DETECTOR: Lazy<Option<LanguageDetectorFile>> = Lazy::new(|| {
+    let id = ROOT.language_detector.as_deref()?;
+    let model = ROOT
+        .models
+        .iter()
+        .find(|m| m.id == id && m.role == "langid")?;
+    let file = model.default_file()?;
+    Some(LanguageDetectorFile {
+        id: model.id.clone(),
+        repo_id: model.repository.clone(),
+        revision: model.revision.clone(),
+        filename: file.filename.clone(),
+        size_bytes: file.size,
+        sha256: file.sha256.clone(),
+        labels: model.languages.clone(),
+    })
 });
 
 /// A mirror copy of a catalog model's file, with the expected content hash for
@@ -348,6 +387,18 @@ pub fn mirror_fallbacks(model_id: &str) -> Vec<MirrorFile> {
         sha256: file.sha256.clone(),
         size_bytes: file.size,
     }]
+}
+
+/// Mirror copy of the language detector's file, from DanyWhere's mirror like
+/// the offered models (Hugging Face remains the fallback).
+pub fn language_detector_mirrors() -> Vec<MirrorFile> {
+    LANGUAGE_DETECTOR.as_ref().map_or_else(Vec::new, |d| {
+        vec![MirrorFile {
+            url: crate::model_selection::mirror_url(&d.id, &d.revision, &d.filename),
+            sha256: d.sha256.clone(),
+            size_bytes: d.size_bytes,
+        }]
+    })
 }
 
 /// Capabilities the catalog states for a model variant (the catalog id equals
@@ -428,6 +479,16 @@ mod tests {
         let before = ids.len();
         ids.dedup();
         assert_eq!(before, ids.len(), "catalog descriptor ids must be unique");
+    }
+
+    #[test]
+    fn names_a_language_detector() {
+        let detector = LANGUAGE_DETECTOR
+            .as_ref()
+            .expect("catalog names a language detector");
+        assert!(detector.filename.ends_with(".gguf"));
+        assert!(detector.labels.iter().any(|l| l == "en"));
+        assert!(detector.labels.iter().any(|l| l == "iw"));
     }
 
     #[test]
