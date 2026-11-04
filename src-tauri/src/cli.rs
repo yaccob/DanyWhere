@@ -2,7 +2,7 @@ use clap::Parser;
 use std::path::PathBuf;
 
 #[derive(Parser, Debug, Clone, Default)]
-#[command(name = "handy", about = "DanyWhere - Speech to Text")]
+#[command(name = "danywhere", about = "DanyWhere - Speech to Text")]
 pub struct CliArgs {
     /// Start with the main window hidden
     #[arg(long)]
@@ -61,4 +61,33 @@ pub struct CliArgs {
     /// Emit --transcribe-file results as JSON.
     #[arg(long)]
     pub json: bool,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use clap::CommandFactory;
+
+    /// The executable name the bundles ship: `mainBinaryName` from
+    /// tauri.conf.json, or the crate's binary name when it is not set.
+    fn shipped_binary_name() -> String {
+        let conf: serde_json::Value = serde_json::from_str(include_str!("../tauri.conf.json"))
+            .expect("tauri.conf.json is valid JSON");
+        conf.get("mainBinaryName")
+            .and_then(|name| name.as_str())
+            .unwrap_or(env!("CARGO_PKG_NAME"))
+            .to_string()
+    }
+
+    #[test]
+    fn shipped_binary_has_danywheres_own_name() {
+        // Named after the crate, DanyWhere's process is "handy": Activity
+        // Monitor, pkill and UI scripting can't tell it apart from Handy.
+        assert_eq!(shipped_binary_name(), "danywhere");
+    }
+
+    #[test]
+    fn cli_names_the_shipped_binary() {
+        assert_eq!(CliArgs::command().get_name(), shipped_binary_name());
+    }
 }
