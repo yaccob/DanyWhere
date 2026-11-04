@@ -1,6 +1,6 @@
 ---
 name: Bug Report
-about: Create a report to help us improve Handy
+about: Report a problem with DanyWhere
 title: "[BUG] "
 labels: ["bug"]
 assignees: ""
@@ -8,30 +8,34 @@ assignees: ""
 
 ## Before You Submit
 
-**Please search [existing issues](https://github.com/cjpais/Handy/issues) to avoid duplicates.** Your bug may already be reported! Right now it's just me maintaining this project so many issues can be overwhelming! Help me out by checking first.
+Please search the [existing issues](https://github.com/yaccob/DanyWhere/issues), including closed ones. If the problem also occurs in [Handy](https://github.com/cjpais/Handy), please report it there instead.
 
 ## Bug Description
 
-A clear and concise description of what the bug is.
+What happened, and what did you expect to happen? Steps to reproduce help a lot.
 
 ## System Information
 
-**App Version:**
+**DanyWhere Version:**
 
-<!-- You can find this in the app settings or about section -->
+<!-- Settings → About -->
 
-**Operating System:**
+**macOS Version and Mac Model:**
 
-<!-- e.g., macOS 14.1, Windows 11, Ubuntu 22.04 -->
+<!-- e.g., macOS 15.6 on a MacBook Pro with M4 -->
 
-**CPU:**
+**Accessibility Permission:**
 
-<!-- e.g., Apple M2, Intel i7-12700K, AMD Ryzen 7 5800X -->
+<!-- Granted, or "Continue without Accessibility" -->
 
-**GPU:**
+**Model:**
 
-<!-- e.g., Apple M2 GPU, NVIDIA RTX 4080, AMD RX 6800 XT, Intel UHD Graphics -->
+<!-- e.g., Whisper large-v3-turbo -->
+
+**Does it also happen in Handy?**
+
+<!-- Yes / No / Not tried -->
 
 ## Logs
 
-<!-- Please attach relevant logs to help us diagnose the issue. You can find the log directory by going to Settings > About in the app. -->
+<!-- Attach the relevant part of the log. Settings → About shows the log directory. Remove private dictated text first. -->

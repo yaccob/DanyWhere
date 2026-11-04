@@ -59,13 +59,13 @@ Next steps:
 
 ## Branding
 
-- A real DanyWhere wordmark to replace the placeholder text.
 - Own tray icons for the recording and transcribing states (currently Handy's ear and brain).
 - About page: "DanyWhere is based on Handy" with a link.
 
 ## Distribution
 
-- Release workflow: build, sign the updater artifacts, publish `latest.json` in this repository's releases (the updater already points here).
+Done: macOS releases for Apple silicon, signed with a Developer ID and notarized, with signed updater artifacts and `latest.json` in this repository's releases.
+
 - Trademark search for the name before going public.
-- Apple Developer ID signing and notarization, so others can install without Gatekeeper warnings.
-- Windows signing with an own certificate (Handy's signing setup was removed).
+- Make the repository and the first release public (the updater only finds published releases of a public repository).
+- Windows and Linux builds; Windows signing with an own certificate (Handy's signing setup was removed).

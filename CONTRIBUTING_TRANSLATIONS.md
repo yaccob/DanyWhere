@@ -1,5 +1,7 @@
 # Contributing Translations to Handy
 
+> **DanyWhere note:** this is Handy's translation guide, kept unchanged. Strings that DanyWhere shares with Handy are translated in [Handy](https://github.com/cjpais/Handy) and follow this guide there; corrections to DanyWhere's own strings are welcome in this repository (see [CONTRIBUTING.md](CONTRIBUTING.md)).
+
 Thank you for helping translate Handy! This guide explains how to add or improve translations.
 
 ## Quick Start
