@@ -26,6 +26,14 @@ Planned work on DanyWhere, roughly in priority order within each section. Items 
 
 **Proposal:** option 2 where available, option 3 as fallback (e.g. in "continue without Accessibility" mode); never add a space before text that starts with punctuation, and respect languages without word spacing (reuse `is_unspaced` from the chunk joiner). **Upstream candidate.**
 
+**Deferred:** not before the first public release; the preferred behaviour is still open.
+
+### Named word lists
+
+**Problem:** there is one list of custom words for everything. Whisper models get the list as a short context ("Glossary: …") of at most 223 tokens (roughly 70–100 German words); what does not fit is dropped from the end. Parakeet and Canary have no such input; for them DanyWhere replaces similar-sounding words after transcription, and only for entries without umlauts or ß. One long list mixing topics therefore biases recognition less precisely than a short list for the topic at hand.
+
+**Idea:** several named word lists (e.g. "Work", "Programming", "Private"), one of them active, managed in the settings the same way as the post-processing prompts, so the method is familiar. In addition a shortcut to switch quickly between them. Open: one shortcut that steps through the lists (showing the active list's name) or one shortcut per list; whether a list may be tied to a post-processing prompt.
+
 ### Phantom phrases at the end of a recording
 
 Whisper sometimes appends text that was never said when the recording ends in silence (observed: "Vielen Dank." after a synthetic 60 s German recording). Known Whisper behaviour on trailing silence. To check: whether trimming trailing silence with the VAD before decoding (or dropping a final chunk without speech) avoids it.
@@ -40,11 +48,12 @@ Whisper sometimes appends text that was never said when the recording ends in si
 
 **Problem:** inherited from Handy, the history keeps a fixed number of entries (default 5, `history_limit`) together with their recordings. Recordings are uncompressed WAV (16 kHz mono 16-bit, about 1.9 MB per minute), which is why the limit is small; the transcripts themselves take almost no space.
 
-**Idea:**
+**Done:**
 
-- Limit recordings by **disk space** instead of a count: a maximum size (with a sensible minimum, and "unlimited" as an option); when it is exceeded, the oldest unsaved recordings are deleted first.
-- Keep **transcripts** independently of their recordings (much longer, or unlimited), so the text history is not lost when audio is pruned.
-- Store recordings **compressed**: Opus at about 24–32 kbit/s is roughly 8–10 times smaller and still fine for re-transcribing speech; FLAC is lossless but only about 2 times smaller. The 16 kHz rate is what the models use, so recording at a higher rate would not improve transcription.
+- Recordings are stored as **Ogg Opus** at 24 kbit/s, about 12 times smaller than WAV (9 MB per hour of dictation); in a test with real dictations, re-transcribing them gave the same text as the WAV originals. Existing WAV recordings are converted once at startup.
+- A **storage limit** (100 MB, 500 MB by default, 1 GB, 5 GB or unlimited) replaces the count and age options; over it, the oldest recordings are deleted. Saved entries and transcribed files count but are never deleted automatically, and the newest recording is always kept.
+- **Transcripts stay** when their recording is deleted; the entry says the recording was removed.
+- The history player and "Re-transcribe" decode recordings in the backend, so playback does not depend on the webview's codecs.
 
 **Upstream candidate.**
 
