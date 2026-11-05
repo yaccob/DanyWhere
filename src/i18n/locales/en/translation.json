@@ -10,7 +10,9 @@
     "secureInputWarning": "⚠ Shortcuts blocked by Secure Input",
     "language": "Language",
     "autoLanguage": "Auto",
-    "otherLanguages": "Other Languages"
+    "otherLanguages": "Other Languages",
+    "wordList": "Word List",
+    "onlyGlobalWordList": "Global Word List Only"
   },
   "sidebar": {
     "general": "General",
@@ -356,6 +358,10 @@
           "paste_last_transcript": {
             "name": "Paste Last Transcript",
             "description": "Pastes the most recent transcript where the cursor is now, e.g. when it did not arrive because no text field had focus. Without Accessibility it is put on the clipboard instead."
+          },
+          "cycle_word_list": {
+            "name": "Switch Word List",
+            "description": "Switches on the next additional word list; after the last one, only the global word list applies."
           }
         },
         "errors": {
@@ -597,6 +603,21 @@
         "add": "Add",
         "remove": "Remove {{word}}",
         "duplicate": "\"{{word}}\" already exists"
+      },
+      "wordLists": {
+        "globalTitle": "Global Word List",
+        "activeTitle": "Active Word List",
+        "activeDescription": "Its words go to the model before those of the global word list, which always applies. Switch it with the shortcut or from the tray menu.",
+        "onlyGlobal": "None (global word list only)",
+        "title": "Additional Word Lists",
+        "description": "Named lists to switch on in addition to the global word list, e.g. one per topic. One at a time.",
+        "selectList": "Select a list",
+        "createNew": "New List",
+        "namePlaceholder": "List name, e.g. Work",
+        "create": "Create List",
+        "rename": "Rename",
+        "delete": "Delete List",
+        "empty": "No additional lists yet"
       },
       "voiceActivityDetection": {
         "title": "Voice Activity Detection",
@@ -1004,7 +1025,9 @@
     "transcribing": "Transcribing...",
     "processing": "Processing...",
     "loadingModel": "Loading model...",
-    "clipboard": "On the clipboard – {{keys}} to paste"
+    "clipboard": "On the clipboard – {{keys}} to paste",
+    "wordList": "Word list: {{name}}",
+    "wordListGlobalOnly": "Global word list only"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} may be blocking 1 shortcut",

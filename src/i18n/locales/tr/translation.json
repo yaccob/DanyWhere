@@ -10,7 +10,9 @@
     "secureInputWarning": "⚠ Kısayollar Secure Input tarafından engelleniyor",
     "language": "Dil",
     "autoLanguage": "Otomatik",
-    "otherLanguages": "Diğer Diller"
+    "otherLanguages": "Diğer Diller",
+    "wordList": "Kelime Listesi",
+    "onlyGlobalWordList": "Yalnızca Genel Kelime Listesi"
   },
   "sidebar": {
     "general": "Genel",
@@ -356,6 +358,10 @@
           "paste_last_transcript": {
             "name": "Son transkripti yapıştır",
             "description": "Son transkripti imlecin şu anda bulunduğu yere yapıştırır; örneğin hiçbir metin alanı odakta olmadığı için ulaşmadıysa. Erişilebilirlik olmadan panoya kopyalanır."
+          },
+          "cycle_word_list": {
+            "name": "Kelime Listesini Değiştir",
+            "description": "Sonraki ek kelime listesini açar; sonuncusundan sonra yalnızca genel liste geçerli olur."
           }
         },
         "errors": {
@@ -597,6 +603,21 @@
         "add": "Ekle",
         "remove": "{{word}} Kaldır",
         "duplicate": "\"{{word}}\" zaten mevcut"
+      },
+      "wordLists": {
+        "globalTitle": "Genel Kelime Listesi",
+        "activeTitle": "Etkin Kelime Listesi",
+        "activeDescription": "Kelimeleri, her zaman geçerli olan genel listedeki kelimelerden önce modele verilir. Kısayolla veya tepsi menüsünden değiştirin.",
+        "onlyGlobal": "Hiçbiri (yalnızca genel kelime listesi)",
+        "title": "Ek Kelime Listeleri",
+        "description": "Genel kelime listesine ek olarak açabileceğiniz adlandırılmış listeler, örneğin her konu için bir tane. Aynı anda yalnızca bir tane.",
+        "selectList": "Bir liste seçin",
+        "createNew": "Yeni Liste",
+        "namePlaceholder": "Liste adı, örn. İş",
+        "create": "Liste Oluştur",
+        "rename": "Yeniden Adlandır",
+        "delete": "Listeyi Sil",
+        "empty": "Henüz ek liste yok"
       },
       "voiceActivityDetection": {
         "title": "Ses Etkinliği Algılama",
@@ -1004,7 +1025,9 @@
     "transcribing": "Transkribe ediliyor...",
     "processing": "İşleniyor...",
     "loadingModel": "Model yükleniyor...",
-    "clipboard": "Panoda – yapıştırmak için {{keys}}"
+    "clipboard": "Panoda – yapıştırmak için {{keys}}",
+    "wordList": "Kelime listesi: {{name}}",
+    "wordListGlobalOnly": "Yalnızca genel kelime listesi"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} 1 kısayolu engelliyor olabilir",

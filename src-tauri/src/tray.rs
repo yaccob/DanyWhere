@@ -72,6 +72,18 @@ struct MenuInputs {
     update_checks_enabled: bool,
     /// The language submenu, when the selected model has languages to pick.
     language: Option<LanguageMenu>,
+    /// The word list submenu, when there are additional lists to switch on.
+    word_lists: Option<WordListMenu>,
+}
+
+/// What the word list submenu shows: "only the global list" plus each
+/// additional list, the active one checked.
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct WordListMenu {
+    /// The checked list's id; `None`: only the global list.
+    active: Option<String>,
+    /// `(id, name)` of the additional lists, in their settings order.
+    lists: Vec<(String, String)>,
 }
 
 /// What the language submenu shows: `(code, name)` entries, with codes as
@@ -381,6 +393,12 @@ fn compute_desired(app: &AppHandle, icon_state: TrayIconState) -> TrayDesired {
             })
     };
 
+    // Like the language submenu, only in the idle menu.
+    let word_lists = if icon_state.is_busy() {
+        None
+    } else {
+        word_list_menu(&settings)
+    };
     TrayDesired {
         icon_path: get_icon_path(theme, icon_state, badge),
         menu: MenuInputs {
@@ -394,6 +412,7 @@ fn compute_desired(app: &AppHandle, icon_state: TrayIconState) -> TrayDesired {
             locale: settings.app_language,
             update_checks_enabled: settings.update_checks_enabled,
             language,
+            word_lists,
         },
     }
 }
@@ -462,6 +481,65 @@ fn language_menu(
         main: main.iter().map(named).collect(),
         others,
     })
+}
+
+/// The word list submenu for `settings`; `None` while there are no
+/// additional lists to switch on.
+fn word_list_menu(settings: &settings::AppSettings) -> Option<WordListMenu> {
+    if settings.word_lists.is_empty() {
+        return None;
+    }
+    Some(WordListMenu {
+        active: crate::word_lists::active_list(settings).map(|list| list.id.clone()),
+        lists: settings
+            .word_lists
+            .iter()
+            .map(|list| (list.id.clone(), list.name.clone()))
+            .collect(),
+    })
+}
+
+/// Menu item ids of the word list submenu: `word_list_select:` alone means
+/// only the global list.
+pub const WORD_LIST_SELECT_PREFIX: &str = "word_list_select:";
+
+fn word_list_submenu(
+    app: &AppHandle,
+    strings: &crate::tray_i18n::TrayStrings,
+    menu: &WordListMenu,
+) -> tauri::Result<Submenu<tauri::Wry>> {
+    let active_label = menu
+        .active
+        .as_ref()
+        .and_then(|id| menu.lists.iter().find(|(list_id, _)| list_id == id))
+        .map(|(_, name)| name.clone())
+        .unwrap_or_else(|| strings.only_global_word_list.clone());
+    let submenu = Submenu::with_id(
+        app,
+        "word_list_submenu",
+        format!("{} ({})", strings.word_list, active_label),
+        true,
+    )?;
+    submenu.append(&CheckMenuItem::with_id(
+        app,
+        WORD_LIST_SELECT_PREFIX,
+        &strings.only_global_word_list,
+        true,
+        menu.active.is_none(),
+        None::<&str>,
+    )?)?;
+    submenu.append(&PredefinedMenuItem::separator(app)?)?;
+    for (id, name) in &menu.lists {
+        submenu.append(&CheckMenuItem::with_id(
+            app,
+            format!("{WORD_LIST_SELECT_PREFIX}{id}"),
+            name,
+            true,
+            menu.active.as_deref() == Some(id.as_str()),
+            None::<&str>,
+        )?)?;
+    }
+    Ok(submenu)
 }
 
 fn language_submenu(
@@ -752,8 +830,14 @@ fn build_menu(app: &AppHandle, inputs: &MenuInputs) -> tauri::Result<(Menu<tauri
             ],
         )?;
         // Right below the model submenu: version, separator, copy, separator, model.
+        let mut position = 5;
         if let Some(language) = &inputs.language {
-            menu.insert(&language_submenu(app, &strings, language)?, 5)?;
+            menu.insert(&language_submenu(app, &strings, language)?, position)?;
+            position += 1;
+        }
+        // Below the model and language: the words the model is given.
+        if let Some(word_lists) = &inputs.word_lists {
+            menu.insert(&word_list_submenu(app, &strings, word_lists)?, position)?;
         }
         menu
     };
@@ -863,8 +947,8 @@ pub fn copy_last_transcript(app: &AppHandle) {
 #[cfg(test)]
 mod tests {
     use super::{
-        get_icon_path, language_menu, last_transcript_text, load_tray_icon, AppTheme, MenuInputs,
-        TrayDesired, TrayIconState,
+        get_icon_path, language_menu, last_transcript_text, load_tray_icon, word_list_menu,
+        AppTheme, MenuInputs, TrayDesired, TrayIconState, WordListMenu,
     };
     use crate::managers::history::HistoryEntry;
     use crate::managers::model::{ModelInfo, ModelSource};
@@ -990,7 +1074,57 @@ mod tests {
             locale: "en".to_string(),
             update_checks_enabled: true,
             language: None,
+            word_lists: None,
         }
+    }
+
+    fn with_word_lists(active: Option<&str>) -> AppSettings {
+        let mut settings = get_default_settings();
+        settings.word_lists = ["work", "code"]
+            .iter()
+            .map(|id| crate::word_lists::WordList {
+                id: id.to_string(),
+                name: id.to_uppercase(),
+                words: vec![],
+            })
+            .collect();
+        settings.active_word_list_id = active.map(str::to_string);
+        settings
+    }
+
+    #[test]
+    fn word_list_menu_hidden_without_additional_lists() {
+        assert_eq!(word_list_menu(&get_default_settings()), None);
+    }
+
+    #[test]
+    fn word_list_menu_lists_them_in_order_with_the_active_one() {
+        let lists = vec![
+            ("work".to_string(), "WORK".to_string()),
+            ("code".to_string(), "CODE".to_string()),
+        ];
+        assert_eq!(
+            word_list_menu(&with_word_lists(Some("code"))),
+            Some(WordListMenu {
+                active: Some("code".to_string()),
+                lists: lists.clone(),
+            })
+        );
+        assert_eq!(
+            word_list_menu(&with_word_lists(None)),
+            Some(WordListMenu {
+                active: None,
+                lists: lists.clone(),
+            })
+        );
+        // A list that no longer exists isn't shown as active.
+        assert_eq!(
+            word_list_menu(&with_word_lists(Some("gone"))),
+            Some(WordListMenu {
+                active: None,
+                lists,
+            })
+        );
     }
 
     #[test]

@@ -10,7 +10,9 @@
     "secureInputWarning": "⚠ Scorciatoie bloccate da Secure Input",
     "language": "Lingua",
     "autoLanguage": "Automatico",
-    "otherLanguages": "Altre lingue"
+    "otherLanguages": "Altre lingue",
+    "wordList": "Elenco di parole",
+    "onlyGlobalWordList": "Solo l'elenco di parole globale"
   },
   "sidebar": {
     "general": "Generale",
@@ -356,6 +358,10 @@
           "paste_last_transcript": {
             "name": "Incolla l'ultima trascrizione",
             "description": "Incolla l'ultima trascrizione dove si trova ora il cursore, ad esempio se non è arrivata perché nessun campo di testo aveva il focus. Senza Accessibilità viene copiata negli appunti."
+          },
+          "cycle_word_list": {
+            "name": "Cambia elenco di parole",
+            "description": "Attiva l'elenco di parole aggiuntivo successivo; dopo l'ultimo vale solo l'elenco globale."
           }
         },
         "errors": {
@@ -597,6 +603,21 @@
         "add": "Aggiungi",
         "remove": "Rimuovi {{word}}",
         "duplicate": "\"{{word}}\" esiste già"
+      },
+      "wordLists": {
+        "globalTitle": "Elenco di parole globale",
+        "activeTitle": "Elenco di parole attivo",
+        "activeDescription": "Le sue parole arrivano al modello prima di quelle dell'elenco globale, che vale sempre. Cambialo con la scorciatoia o dal menu della barra.",
+        "onlyGlobal": "Nessuno (solo l'elenco di parole globale)",
+        "title": "Elenchi di parole aggiuntivi",
+        "description": "Elenchi con nome da attivare in aggiunta all'elenco di parole globale, ad esempio uno per argomento. Uno alla volta.",
+        "selectList": "Seleziona un elenco",
+        "createNew": "Nuovo elenco",
+        "namePlaceholder": "Nome dell'elenco, ad es. Lavoro",
+        "create": "Crea elenco",
+        "rename": "Rinomina",
+        "delete": "Elimina elenco",
+        "empty": "Ancora nessun elenco aggiuntivo"
       },
       "voiceActivityDetection": {
         "title": "Rilevamento dell'attività vocale",
@@ -1004,7 +1025,9 @@
     "transcribing": "Trascrizione...",
     "processing": "Elaborazione...",
     "loadingModel": "Caricamento del modello...",
-    "clipboard": "Negli appunti – {{keys}} per incollare"
+    "clipboard": "Negli appunti – {{keys}} per incollare",
+    "wordList": "Elenco di parole: {{name}}",
+    "wordListGlobalOnly": "Solo l'elenco di parole globale"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} potrebbe bloccare 1 scorciatoia",

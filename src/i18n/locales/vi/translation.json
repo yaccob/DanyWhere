@@ -10,7 +10,9 @@
     "secureInputWarning": "⚠ Phím tắt bị Secure Input chặn",
     "language": "Ngôn ngữ",
     "autoLanguage": "Tự động",
-    "otherLanguages": "Ngôn ngữ khác"
+    "otherLanguages": "Ngôn ngữ khác",
+    "wordList": "Danh sách từ",
+    "onlyGlobalWordList": "Chỉ danh sách từ chung"
   },
   "sidebar": {
     "general": "Chung",
@@ -356,6 +358,10 @@
           "paste_last_transcript": {
             "name": "Dán bản chép gần nhất",
             "description": "Dán bản chép gần nhất vào vị trí con trỏ hiện tại, ví dụ khi nó không đến nơi vì không có ô văn bản nào được chọn. Khi không có Trợ năng, bản chép được sao chép vào bảng nhớ tạm."
+          },
+          "cycle_word_list": {
+            "name": "Đổi danh sách từ",
+            "description": "Bật danh sách từ bổ sung tiếp theo; sau danh sách cuối cùng, chỉ danh sách chung được áp dụng."
           }
         },
         "errors": {
@@ -597,6 +603,21 @@
         "add": "Thêm",
         "remove": "Xóa {{word}}",
         "duplicate": "\"{{word}}\" đã tồn tại"
+      },
+      "wordLists": {
+        "globalTitle": "Danh sách từ chung",
+        "activeTitle": "Danh sách từ đang dùng",
+        "activeDescription": "Các từ trong danh sách được đưa cho mô hình trước các từ của danh sách chung, vốn luôn được áp dụng. Đổi bằng phím tắt hoặc từ menu khay.",
+        "onlyGlobal": "Không có (chỉ danh sách từ chung)",
+        "title": "Danh sách từ bổ sung",
+        "description": "Các danh sách có tên mà bạn có thể bật thêm ngoài danh sách từ chung, ví dụ mỗi chủ đề một danh sách. Mỗi lần chỉ một.",
+        "selectList": "Chọn danh sách",
+        "createNew": "Danh sách mới",
+        "namePlaceholder": "Tên danh sách, ví dụ Công việc",
+        "create": "Tạo danh sách",
+        "rename": "Đổi tên",
+        "delete": "Xóa danh sách",
+        "empty": "Chưa có danh sách bổ sung nào"
       },
       "voiceActivityDetection": {
         "title": "Phát hiện hoạt động giọng nói",
@@ -1004,7 +1025,9 @@
     "transcribing": "Đang chuyển đổi...",
     "processing": "Đang xử lý...",
     "loadingModel": "Đang tải mô hình...",
-    "clipboard": "Trong bảng nhớ tạm – {{keys}} để dán"
+    "clipboard": "Trong bảng nhớ tạm – {{keys}} để dán",
+    "wordList": "Danh sách từ: {{name}}",
+    "wordListGlobalOnly": "Chỉ danh sách từ chung"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} có thể đang chặn 1 phím tắt",

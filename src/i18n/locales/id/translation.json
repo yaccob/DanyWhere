@@ -10,7 +10,9 @@
     "secureInputWarning": "⚠ Pintasan diblokir oleh Secure Input",
     "language": "Bahasa",
     "autoLanguage": "Otomatis",
-    "otherLanguages": "Bahasa Lain"
+    "otherLanguages": "Bahasa Lain",
+    "wordList": "Daftar Kata",
+    "onlyGlobalWordList": "Hanya Daftar Kata Global"
   },
   "sidebar": {
     "general": "Umum",
@@ -356,6 +358,10 @@
           "paste_last_transcript": {
             "name": "Tempel transkripsi terakhir",
             "description": "Menempelkan transkripsi terakhir di posisi kursor saat ini, misalnya jika tidak sampai karena tidak ada kolom teks yang fokus. Tanpa Aksesibilitas, transkripsi disalin ke papan klip."
+          },
+          "cycle_word_list": {
+            "name": "Ganti Daftar Kata",
+            "description": "Mengaktifkan daftar kata tambahan berikutnya; setelah yang terakhir, hanya daftar global yang berlaku."
           }
         },
         "errors": {
@@ -597,6 +603,21 @@
         "add": "Tambah",
         "remove": "Hapus {{word}}",
         "duplicate": "\"{{word}}\" sudah ada"
+      },
+      "wordLists": {
+        "globalTitle": "Daftar Kata Global",
+        "activeTitle": "Daftar Kata Aktif",
+        "activeDescription": "Kata-katanya diberikan ke model sebelum kata dari daftar global, yang selalu berlaku. Ganti dengan pintasan atau dari menu baki.",
+        "onlyGlobal": "Tidak ada (hanya daftar kata global)",
+        "title": "Daftar Kata Tambahan",
+        "description": "Daftar bernama yang bisa Anda aktifkan selain daftar kata global, misalnya satu per topik. Hanya satu sekaligus.",
+        "selectList": "Pilih daftar",
+        "createNew": "Daftar Baru",
+        "namePlaceholder": "Nama daftar, misalnya Kerja",
+        "create": "Buat Daftar",
+        "rename": "Ganti Nama",
+        "delete": "Hapus Daftar",
+        "empty": "Belum ada daftar tambahan"
       },
       "voiceActivityDetection": {
         "title": "Deteksi Aktivitas Suara",
@@ -1004,7 +1025,9 @@
     "transcribing": "Mentranskripsikan...",
     "processing": "Memproses...",
     "loadingModel": "Memuat model...",
-    "clipboard": "Di papan klip – {{keys}} untuk menempel"
+    "clipboard": "Di papan klip – {{keys}} untuk menempel",
+    "wordList": "Daftar kata: {{name}}",
+    "wordListGlobalOnly": "Hanya daftar kata global"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} mungkin memblokir 1 pintasan",

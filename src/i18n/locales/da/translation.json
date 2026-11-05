@@ -10,7 +10,9 @@
     "secureInputWarning": "⚠ Genveje blokeret af Secure Input",
     "language": "Sprog",
     "autoLanguage": "Automatisk",
-    "otherLanguages": "Andre sprog"
+    "otherLanguages": "Andre sprog",
+    "wordList": "Ordliste",
+    "onlyGlobalWordList": "Kun den globale ordliste"
   },
   "sidebar": {
     "general": "Generelt",
@@ -356,6 +358,10 @@
           "paste_last_transcript": {
             "name": "Indsæt seneste transskription",
             "description": "Indsætter den seneste transskription, der hvor markøren står nu, f.eks. hvis den ikke kom frem, fordi intet tekstfelt havde fokus. Uden tilgængelighed kopieres den i stedet til udklipsholderen."
+          },
+          "cycle_word_list": {
+            "name": "Skift ordliste",
+            "description": "Slår den næste ekstra ordliste til; efter den sidste gælder kun den globale ordliste."
           }
         },
         "errors": {
@@ -597,6 +603,21 @@
         "add": "Tilføj",
         "remove": "Fjern {{word}}",
         "duplicate": "\"{{word}}\" findes allerede"
+      },
+      "wordLists": {
+        "globalTitle": "Global ordliste",
+        "activeTitle": "Aktiv ordliste",
+        "activeDescription": "Dens ord gives til modellen før ordene i den globale ordliste, som altid gælder. Skift den med genvejen eller fra menuen i menulinjen.",
+        "onlyGlobal": "Ingen (kun den globale ordliste)",
+        "title": "Ekstra ordlister",
+        "description": "Navngivne lister, du kan slå til ud over den globale ordliste, f.eks. én pr. emne. Kun én ad gangen.",
+        "selectList": "Vælg en liste",
+        "createNew": "Ny liste",
+        "namePlaceholder": "Listens navn, f.eks. Arbejde",
+        "create": "Opret liste",
+        "rename": "Omdøb",
+        "delete": "Slet liste",
+        "empty": "Ingen ekstra lister endnu"
       },
       "voiceActivityDetection": {
         "title": "Stemmeaktivitetsdetektion",
@@ -1004,7 +1025,9 @@
     "transcribing": "Transskriberer...",
     "processing": "Behandler...",
     "loadingModel": "Indlæser model...",
-    "clipboard": "I udklipsholderen – {{keys}} for at indsætte"
+    "clipboard": "I udklipsholderen – {{keys}} for at indsætte",
+    "wordList": "Ordliste: {{name}}",
+    "wordListGlobalOnly": "Kun den globale ordliste"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} blokerer muligvis 1 genvej",

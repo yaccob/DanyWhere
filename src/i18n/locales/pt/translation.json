@@ -10,7 +10,9 @@
     "secureInputWarning": "⚠ Atalhos bloqueados pelo Secure Input",
     "language": "Idioma",
     "autoLanguage": "Automático",
-    "otherLanguages": "Outros idiomas"
+    "otherLanguages": "Outros idiomas",
+    "wordList": "Lista de Palavras",
+    "onlyGlobalWordList": "Só a Lista de Palavras Global"
   },
   "sidebar": {
     "general": "Geral",
@@ -356,6 +358,10 @@
           "paste_last_transcript": {
             "name": "Colar a última transcrição",
             "description": "Cola a última transcrição onde o cursor está agora, por exemplo se não chegou porque nenhum campo de texto estava em foco. Sem Acessibilidade, ela é copiada para a área de transferência."
+          },
+          "cycle_word_list": {
+            "name": "Trocar Lista de Palavras",
+            "description": "Ativa a próxima lista de palavras adicional; depois da última, vale só a lista global."
           }
         },
         "errors": {
@@ -597,6 +603,21 @@
         "add": "Adicionar",
         "remove": "Remover {{word}}",
         "duplicate": "\"{{word}}\" já existe"
+      },
+      "wordLists": {
+        "globalTitle": "Lista de Palavras Global",
+        "activeTitle": "Lista de Palavras Ativa",
+        "activeDescription": "As palavras dela chegam ao modelo antes das da lista global, que sempre vale. Troque-a com o atalho ou pelo menu da bandeja.",
+        "onlyGlobal": "Nenhuma (só a lista de palavras global)",
+        "title": "Listas de Palavras Adicionais",
+        "description": "Listas com nome para ativar além da lista de palavras global, por exemplo uma por assunto. Só uma por vez.",
+        "selectList": "Selecione uma lista",
+        "createNew": "Nova Lista",
+        "namePlaceholder": "Nome da lista, por ex. Trabalho",
+        "create": "Criar Lista",
+        "rename": "Renomear",
+        "delete": "Excluir Lista",
+        "empty": "Ainda não há listas adicionais"
       },
       "voiceActivityDetection": {
         "title": "Detecção de atividade de voz",
@@ -1004,7 +1025,9 @@
     "transcribing": "Transcrevendo...",
     "processing": "Processando...",
     "loadingModel": "Carregando modelo...",
-    "clipboard": "Na área de transferência – {{keys}} para colar"
+    "clipboard": "Na área de transferência – {{keys}} para colar",
+    "wordList": "Lista de palavras: {{name}}",
+    "wordListGlobalOnly": "Só a lista de palavras global"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} pode estar bloqueando 1 atalho",

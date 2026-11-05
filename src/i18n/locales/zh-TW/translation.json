@@ -10,7 +10,9 @@
     "secureInputWarning": "⚠ 快捷鍵被 Secure Input 阻擋",
     "language": "語言",
     "autoLanguage": "自動",
-    "otherLanguages": "其他語言"
+    "otherLanguages": "其他語言",
+    "wordList": "詞彙清單",
+    "onlyGlobalWordList": "僅全域詞彙清單"
   },
   "sidebar": {
     "general": "一般",
@@ -356,6 +358,10 @@
           "paste_last_transcript": {
             "name": "貼上最近的轉錄",
             "description": "將最近的轉錄貼到目前游標位置，例如因沒有文字欄位取得焦點而未送達時。沒有輔助使用權限時，改為複製到剪貼簿。"
+          },
+          "cycle_word_list": {
+            "name": "切換詞彙清單",
+            "description": "啟用下一個附加詞彙清單；最後一個之後只使用全域詞彙清單。"
           }
         },
         "errors": {
@@ -597,6 +603,21 @@
         "add": "新增",
         "remove": "刪除 {{word}}",
         "duplicate": "「{{word}}」已存在"
+      },
+      "wordLists": {
+        "globalTitle": "全域詞彙清單",
+        "activeTitle": "目前的詞彙清單",
+        "activeDescription": "其中的詞彙會先於一律生效的全域詞彙清單提供給模型。可用快捷鍵或系統匣選單切換。",
+        "onlyGlobal": "無（僅全域詞彙清單）",
+        "title": "附加詞彙清單",
+        "description": "可在全域詞彙清單之外額外啟用的具名清單，例如每個主題一個。一次只能啟用一個。",
+        "selectList": "選擇清單",
+        "createNew": "新增清單",
+        "namePlaceholder": "清單名稱，例如 工作",
+        "create": "建立清單",
+        "rename": "重新命名",
+        "delete": "刪除清單",
+        "empty": "還沒有附加清單"
       },
       "voiceActivityDetection": {
         "title": "語音活動偵測",
@@ -1004,7 +1025,9 @@
     "transcribing": "正在轉錄...",
     "processing": "處理中...",
     "loadingModel": "正在載入模型...",
-    "clipboard": "已在剪貼簿 – 按 {{keys}} 貼上"
+    "clipboard": "已在剪貼簿 – 按 {{keys}} 貼上",
+    "wordList": "詞彙清單：{{name}}",
+    "wordListGlobalOnly": "僅全域詞彙清單"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} 可能正在阻擋 1 個快捷鍵",

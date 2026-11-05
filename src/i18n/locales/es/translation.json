@@ -10,7 +10,9 @@
     "secureInputWarning": "⚠ Atajos bloqueados por Secure Input",
     "language": "Idioma",
     "autoLanguage": "Automático",
-    "otherLanguages": "Otros idiomas"
+    "otherLanguages": "Otros idiomas",
+    "wordList": "Lista de palabras",
+    "onlyGlobalWordList": "Solo la lista de palabras global"
   },
   "sidebar": {
     "general": "General",
@@ -356,6 +358,10 @@
           "paste_last_transcript": {
             "name": "Pegar la última transcripción",
             "description": "Pega la última transcripción donde está ahora el cursor, por ejemplo si no llegó porque ningún campo de texto tenía el foco. Sin accesibilidad se copia al portapapeles."
+          },
+          "cycle_word_list": {
+            "name": "Cambiar lista de palabras",
+            "description": "Activa la siguiente lista de palabras adicional; después de la última, solo se aplica la lista global."
           }
         },
         "errors": {
@@ -597,6 +603,21 @@
         "add": "Agregar",
         "remove": "Eliminar {{word}}",
         "duplicate": "\"{{word}}\" ya existe"
+      },
+      "wordLists": {
+        "globalTitle": "Lista de palabras global",
+        "activeTitle": "Lista de palabras activa",
+        "activeDescription": "Sus palabras llegan al modelo antes que las de la lista global, que siempre se aplica. Cámbiala con el atajo o desde el menú de la bandeja.",
+        "onlyGlobal": "Ninguna (solo la lista de palabras global)",
+        "title": "Listas de palabras adicionales",
+        "description": "Listas con nombre que puedes activar además de la lista de palabras global, p. ej. una por tema. Solo una a la vez.",
+        "selectList": "Selecciona una lista",
+        "createNew": "Nueva lista",
+        "namePlaceholder": "Nombre de la lista, p. ej. Trabajo",
+        "create": "Crear lista",
+        "rename": "Renombrar",
+        "delete": "Eliminar lista",
+        "empty": "Aún no hay listas adicionales"
       },
       "voiceActivityDetection": {
         "title": "Detección de actividad de voz",
@@ -1004,7 +1025,9 @@
     "transcribing": "Transcribiendo...",
     "processing": "Procesando...",
     "loadingModel": "Cargando modelo...",
-    "clipboard": "En el portapapeles – {{keys}} para pegar"
+    "clipboard": "En el portapapeles – {{keys}} para pegar",
+    "wordList": "Lista de palabras: {{name}}",
+    "wordListGlobalOnly": "Solo la lista de palabras global"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} puede estar bloqueando 1 atajo",

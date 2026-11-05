@@ -10,7 +10,9 @@
     "secureInputWarning": "⚠ 快捷键被 Secure Input 阻止",
     "language": "语言",
     "autoLanguage": "自动",
-    "otherLanguages": "其他语言"
+    "otherLanguages": "其他语言",
+    "wordList": "词汇列表",
+    "onlyGlobalWordList": "仅全局词汇列表"
   },
   "sidebar": {
     "general": "通用",
@@ -356,6 +358,10 @@
           "paste_last_transcript": {
             "name": "粘贴最近的转录",
             "description": "将最近的转录粘贴到当前光标位置，例如因没有文本框获得焦点而未送达时。没有辅助功能权限时，改为复制到剪贴板。"
+          },
+          "cycle_word_list": {
+            "name": "切换词汇列表",
+            "description": "启用下一个附加词汇列表；最后一个之后只使用全局词汇列表。"
           }
         },
         "errors": {
@@ -597,6 +603,21 @@
         "add": "添加",
         "remove": "删除 {{word}}",
         "duplicate": "\"{{word}}\" 已存在"
+      },
+      "wordLists": {
+        "globalTitle": "全局词汇列表",
+        "activeTitle": "当前词汇列表",
+        "activeDescription": "其中的词汇会先于始终生效的全局词汇列表提供给模型。可用快捷键或托盘菜单切换。",
+        "onlyGlobal": "无（仅全局词汇列表）",
+        "title": "附加词汇列表",
+        "description": "可在全局词汇列表之外额外启用的命名列表，例如每个主题一个。一次只能启用一个。",
+        "selectList": "选择列表",
+        "createNew": "新建列表",
+        "namePlaceholder": "列表名称，例如 工作",
+        "create": "创建列表",
+        "rename": "重命名",
+        "delete": "删除列表",
+        "empty": "还没有附加列表"
       },
       "voiceActivityDetection": {
         "title": "语音活动检测",
@@ -1004,7 +1025,9 @@
     "transcribing": "正在转录...",
     "processing": "处理中...",
     "loadingModel": "正在加载模型...",
-    "clipboard": "已在剪贴板 – 按 {{keys}} 粘贴"
+    "clipboard": "已在剪贴板 – 按 {{keys}} 粘贴",
+    "wordList": "词汇列表：{{name}}",
+    "wordListGlobalOnly": "仅全局词汇列表"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} 可能正在阻止 1 个快捷键",

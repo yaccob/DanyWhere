@@ -515,8 +515,15 @@ pub struct AppSettings {
     pub debug_mode: bool,
     #[serde(default = "default_log_level")]
     pub log_level: LogLevel,
+    /// The global word list: always given to the model (see `word_lists`).
     #[serde(default)]
     pub custom_words: Vec<String>,
+    /// Named lists that can be switched on in addition to the global one.
+    #[serde(default)]
+    pub word_lists: Vec<crate::word_lists::WordList>,
+    /// The additional list in use; `None`: only the global list.
+    #[serde(default)]
+    pub active_word_list_id: Option<String>,
     #[serde(default)]
     pub model_unload_timeout: ModelUnloadTimeout,
     #[serde(default = "default_word_correction_threshold")]
@@ -1067,6 +1074,24 @@ pub fn get_default_settings() -> AppSettings {
             current_binding: default_paste_last_shortcut.to_string(),
         },
     );
+    // DanyWhere: steps through the additional word lists. L for "list";
+    // Option/Alt+Shift like the paste-last shortcut. Not W: on German Mac
+    // keyboards Option+Shift+W types the opening quote „.
+    #[cfg(target_os = "macos")]
+    let default_cycle_word_list_shortcut = "option+shift+l";
+    #[cfg(not(target_os = "macos"))]
+    let default_cycle_word_list_shortcut = "alt+shift+l";
+
+    bindings.insert(
+        "cycle_word_list".to_string(),
+        ShortcutBinding {
+            id: "cycle_word_list".to_string(),
+            name: "Switch Word List".to_string(),
+            description: "Switches on the next additional word list.".to_string(),
+            default_binding: default_cycle_word_list_shortcut.to_string(),
+            current_binding: default_cycle_word_list_shortcut.to_string(),
+        },
+    );
     bindings.insert(
         "cancel".to_string(),
         ShortcutBinding {
@@ -1106,6 +1131,8 @@ pub fn get_default_settings() -> AppSettings {
         debug_mode: false,
         log_level: default_log_level(),
         custom_words: Vec::new(),
+        word_lists: Vec::new(),
+        active_word_list_id: None,
         model_unload_timeout: ModelUnloadTimeout::default(),
         word_correction_threshold: default_word_correction_threshold(),
         history_limit: default_history_limit(),
@@ -1897,6 +1924,35 @@ mod tests {
         let mut settings: AppSettings = serde_json::from_value(raw.clone()).unwrap();
         apply_settings_migrations(&mut settings, &raw);
         settings
+    }
+
+    #[test]
+    fn fresh_installs_have_only_the_global_word_list() {
+        let defaults = get_default_settings();
+        assert!(defaults.word_lists.is_empty());
+        assert_eq!(defaults.active_word_list_id, None);
+    }
+
+    #[test]
+    fn an_older_store_keeps_its_words_as_the_global_list() {
+        let settings = backfilled(serde_json::json!({
+            "custom_words": ["Sayuri", "DanyWhere"]
+        }));
+        assert_eq!(settings.custom_words, vec!["Sayuri", "DanyWhere"]);
+        assert!(settings.word_lists.is_empty());
+        assert_eq!(settings.active_word_list_id, None);
+    }
+
+    #[test]
+    fn word_lists_round_trip_through_the_store() {
+        let settings = backfilled(serde_json::json!({
+            "custom_words": ["Sayuri"],
+            "word_lists": [{ "id": "w1", "name": "Work", "words": ["Jira"] }],
+            "active_word_list_id": "w1"
+        }));
+        assert_eq!(settings.word_lists.len(), 1);
+        assert_eq!(settings.word_lists[0].name, "Work");
+        assert_eq!(settings.active_word_list_id.as_deref(), Some("w1"));
     }
 
     #[test]

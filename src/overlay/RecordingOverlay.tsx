@@ -23,7 +23,8 @@ type OverlayState =
   | "processing"
   | "notice"
   | "live_notice"
-  | "clipboard";
+  | "clipboard"
+  | "word_list";
 
 const isNoticeState = (state: OverlayState) =>
   state === "notice" || state === "live_notice";
@@ -81,6 +82,9 @@ const RecordingOverlay: React.FC = () => {
   // while overflowing, so the resting first line stays crisp flush under the pill.
   const [overflowing, setOverflowing] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
+  // The additional word list the switch shortcut just turned on; null: only
+  // the global list.
+  const [wordListName, setWordListName] = useState<string | null>(null);
   const [noticeWidth, setNoticeWidth] = useState<number>();
   const noticeProbeRef = useRef<HTMLSpanElement>(null);
   const fadeTimerRef = useRef<ReturnType<typeof setTimeout>>();
@@ -99,6 +103,11 @@ const RecordingOverlay: React.FC = () => {
         clearTimeout(fadeTimerRef.current);
         setNotice(event.payload);
       });
+
+      const unlistenWordList = await listen<{ name: string | null }>(
+        "overlay-word-list",
+        (event) => setWordListName(event.payload.name),
+      );
 
       const unlistenShow = await listen("show-overlay", async (event) => {
         const overlayState = event.payload as OverlayState;
@@ -206,6 +215,7 @@ const RecordingOverlay: React.FC = () => {
 
       return () => {
         unlistenNotice();
+        unlistenWordList();
         unlistenShow();
         unlistenHide();
         unlistenReady();
@@ -447,6 +457,30 @@ const RecordingOverlay: React.FC = () => {
             </div>
             <span className="swork-label">
               {t("overlay.clipboard", { keys: pasteKeys })}
+            </span>
+            <div className="sbase-r" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ---- Word list notice: the switch shortcut turned another list on.
+  if (state === "word_list") {
+    return (
+      <div
+        dir={direction}
+        className={`ov-stage ${position} ov-fade ${isVisible ? "show" : ""}`}
+      >
+        <div className="scard compact">
+          <div className="sbase">
+            <div className="sbase-l">
+              <span className="sdot ready" />
+            </div>
+            <span className="swork-label">
+              {wordListName
+                ? t("overlay.wordList", { name: wordListName })
+                : t("overlay.wordListGlobalOnly")}
             </span>
             <div className="sbase-r" />
           </div>

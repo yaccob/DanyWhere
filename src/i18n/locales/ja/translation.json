@@ -10,7 +10,9 @@
     "secureInputWarning": "⚠ Secure Input でショートカットがブロック中",
     "language": "言語",
     "autoLanguage": "自動",
-    "otherLanguages": "その他の言語"
+    "otherLanguages": "その他の言語",
+    "wordList": "単語リスト",
+    "onlyGlobalWordList": "グローバル単語リストのみ"
   },
   "sidebar": {
     "general": "一般",
@@ -356,6 +358,10 @@
           "paste_last_transcript": {
             "name": "最後の文字起こしを貼り付け",
             "description": "最後の文字起こしを現在のカーソル位置に貼り付けます。テキストフィールドにフォーカスがなく届かなかった場合などに使います。アクセシビリティがない場合はクリップボードにコピーされます。"
+          },
+          "cycle_word_list": {
+            "name": "単語リストを切り替え",
+            "description": "次の追加単語リストをオンにします。最後のリストの次はグローバル単語リストのみになります。"
           }
         },
         "errors": {
@@ -597,6 +603,21 @@
         "add": "追加",
         "remove": "{{word}}を削除",
         "duplicate": "「{{word}}」は既に存在します"
+      },
+      "wordLists": {
+        "globalTitle": "グローバル単語リスト",
+        "activeTitle": "有効な単語リスト",
+        "activeDescription": "このリストの単語は、常に適用されるグローバル単語リストの単語より先にモデルへ渡されます。ショートカットまたはトレイメニューから切り替えます。",
+        "onlyGlobal": "なし(グローバル単語リストのみ)",
+        "title": "追加の単語リスト",
+        "description": "グローバル単語リストに加えてオンにできる名前付きリストです(例: トピックごとに1つ)。一度に1つだけです。",
+        "selectList": "リストを選択",
+        "createNew": "新しいリスト",
+        "namePlaceholder": "リスト名(例: 仕事)",
+        "create": "リストを作成",
+        "rename": "名前を変更",
+        "delete": "リストを削除",
+        "empty": "追加のリストはまだありません"
       },
       "voiceActivityDetection": {
         "title": "音声区間検出 (VAD)",
@@ -1004,7 +1025,9 @@
     "transcribing": "文字起こし中…",
     "processing": "処理中…",
     "loadingModel": "モデルを読み込み中…",
-    "clipboard": "クリップボードにコピーしました – {{keys}} で貼り付け"
+    "clipboard": "クリップボードにコピーしました – {{keys}} で貼り付け",
+    "wordList": "単語リスト: {{name}}",
+    "wordListGlobalOnly": "グローバル単語リストのみ"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} が1個のショートカットをブロックしている可能性があります",

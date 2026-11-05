@@ -10,7 +10,9 @@
     "secureInputWarning": "⚠ Raccourcis bloqués par Secure Input",
     "language": "Langue",
     "autoLanguage": "Automatique",
-    "otherLanguages": "Autres langues"
+    "otherLanguages": "Autres langues",
+    "wordList": "Liste de mots",
+    "onlyGlobalWordList": "Liste de mots globale uniquement"
   },
   "sidebar": {
     "general": "Général",
@@ -356,6 +358,10 @@
           "paste_last_transcript": {
             "name": "Coller la dernière transcription",
             "description": "Colle la dernière transcription à l'emplacement actuel du curseur, par exemple si elle n'est pas arrivée parce qu'aucun champ de texte n'avait le focus. Sans l'accessibilité, elle est copiée dans le presse-papiers."
+          },
+          "cycle_word_list": {
+            "name": "Changer de liste de mots",
+            "description": "Active la liste de mots supplémentaire suivante ; après la dernière, seule la liste globale s'applique."
           }
         },
         "errors": {
@@ -597,6 +603,21 @@
         "add": "Ajouter",
         "remove": "Supprimer {{word}}",
         "duplicate": "\"{{word}}\" existe déjà"
+      },
+      "wordLists": {
+        "globalTitle": "Liste de mots globale",
+        "activeTitle": "Liste de mots active",
+        "activeDescription": "Ses mots sont transmis au modèle avant ceux de la liste globale, qui s'applique toujours. Changez-la avec le raccourci ou depuis le menu de la barre.",
+        "onlyGlobal": "Aucune (liste de mots globale uniquement)",
+        "title": "Listes de mots supplémentaires",
+        "description": "Listes nommées à activer en plus de la liste de mots globale, par exemple une par sujet. Une seule à la fois.",
+        "selectList": "Choisir une liste",
+        "createNew": "Nouvelle liste",
+        "namePlaceholder": "Nom de la liste, par ex. Travail",
+        "create": "Créer la liste",
+        "rename": "Renommer",
+        "delete": "Supprimer la liste",
+        "empty": "Aucune liste supplémentaire pour l'instant"
       },
       "voiceActivityDetection": {
         "title": "Détection d'activité vocale (VAD)",
@@ -1004,7 +1025,9 @@
     "transcribing": "Transcription...",
     "processing": "Traitement...",
     "loadingModel": "Chargement du modèle...",
-    "clipboard": "Dans le presse-papiers – {{keys}} pour coller"
+    "clipboard": "Dans le presse-papiers – {{keys}} pour coller",
+    "wordList": "Liste de mots : {{name}}",
+    "wordListGlobalOnly": "Liste de mots globale uniquement"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} bloque peut-être 1 raccourci",

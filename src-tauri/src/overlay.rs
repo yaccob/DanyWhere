@@ -81,7 +81,7 @@ fn notice_state(session_is_live: bool) -> &'static str {
 fn overlay_dimensions(state: &str) -> (f64, f64) {
     if is_live_state(state) {
         (OVERLAY_STREAM_WIDTH, OVERLAY_STREAM_HEIGHT)
-    } else if state == "clipboard" {
+    } else if state == "clipboard" || state == "word_list" {
         (OVERLAY_NOTICE_WIDTH, OVERLAY_HEIGHT)
     } else {
         (OVERLAY_WIDTH, OVERLAY_HEIGHT)
@@ -759,9 +759,30 @@ static OVERLAY_SHOW_GENERATION: AtomicU64 = AtomicU64::new(0);
 /// Unlike the recording states it ignores the overlay style: the notice tells
 /// the user where the text went, which matters even with the overlay off.
 pub fn show_clipboard_notice(app_handle: &AppHandle, duration: std::time::Duration) {
+    show_timed_state(app_handle, "clipboard", duration);
+}
+
+/// Shows which additional word list is now in use (`None`: only the global
+/// list) for `duration`, like the clipboard notice. The caller skips it while
+/// a recording or transcription owns the overlay.
+pub fn show_word_list_notice(
+    app_handle: &AppHandle,
+    name: Option<String>,
+    duration: std::time::Duration,
+) {
+    // Sent before the state, so the overlay has the name when it renders.
+    if let Some(overlay_window) = app_handle.get_webview_window("recording_overlay") {
+        let _ = overlay_window.emit("overlay-word-list", serde_json::json!({ "name": name }));
+    }
+    show_timed_state(app_handle, "word_list", duration);
+}
+
+/// Shows `state` for `duration`, then hides the overlay unless something else
+/// has shown it in the meantime.
+fn show_timed_state(app_handle: &AppHandle, state: &'static str, duration: std::time::Duration) {
     let before = OVERLAY_SHOW_GENERATION.load(Ordering::SeqCst);
     let handle = app_handle.clone();
-    let _ = app_handle.run_on_main_thread(move || show_overlay_state_on_main(&handle, "clipboard"));
+    let _ = app_handle.run_on_main_thread(move || show_overlay_state_on_main(&handle, state));
     let handle = app_handle.clone();
     std::thread::spawn(move || {
         std::thread::sleep(duration);

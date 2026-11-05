@@ -34,6 +34,7 @@ mod tray;
 mod tray_i18n;
 mod utils;
 pub mod webkit_renderer;
+mod word_lists;
 
 pub use cli::CliArgs;
 #[cfg(debug_assertions)]
@@ -371,6 +372,16 @@ fn initialize_core_logic(app_handle: &AppHandle) {
                     return;
                 }
                 log::info!("Language switched to {} via tray.", language);
+                tray::rebuild_tray_menu(app);
+            }
+            id if id.starts_with(tray::WORD_LIST_SELECT_PREFIX) => {
+                let list_id = id
+                    .strip_prefix(tray::WORD_LIST_SELECT_PREFIX)
+                    .filter(|list_id| !list_id.is_empty());
+                if let Err(e) = word_lists::select_from_tray(app, list_id) {
+                    log::error!("Failed to switch word list via tray: {}", e);
+                }
+                // Re-picking the checked item unchecks it natively; rebuild.
                 tray::rebuild_tray_menu(app);
             }
             _ => {}
@@ -739,6 +750,11 @@ pub fn run(cli_args: CliArgs) {
             shortcut::delete_post_process_prompt,
             shortcut::set_post_process_selected_prompt,
             shortcut::update_custom_words,
+            word_lists::add_word_list,
+            word_lists::rename_word_list,
+            word_lists::set_word_list_words,
+            word_lists::delete_word_list,
+            word_lists::set_active_word_list,
             shortcut::suspend_all_bindings,
             shortcut::resume_all_bindings,
             shortcut::change_mute_while_recording_setting,

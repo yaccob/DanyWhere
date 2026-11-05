@@ -10,7 +10,9 @@
     "secureInputWarning": "⚠ Sneltoetsen geblokkeerd door Secure Input",
     "language": "Taal",
     "autoLanguage": "Automatisch",
-    "otherLanguages": "Andere talen"
+    "otherLanguages": "Andere talen",
+    "wordList": "Woordenlijst",
+    "onlyGlobalWordList": "Alleen algemene woordenlijst"
   },
   "sidebar": {
     "general": "Algemeen",
@@ -356,6 +358,10 @@
           "paste_last_transcript": {
             "name": "Laatste transcriptie plakken",
             "description": "Plakt de laatste transcriptie waar de cursor nu staat, bijvoorbeeld als die niet aankwam omdat geen tekstveld focus had. Zonder Toegankelijkheid wordt die naar het klembord gekopieerd."
+          },
+          "cycle_word_list": {
+            "name": "Woordenlijst wisselen",
+            "description": "Zet de volgende extra woordenlijst aan; na de laatste geldt alleen de algemene woordenlijst."
           }
         },
         "errors": {
@@ -597,6 +603,21 @@
         "add": "Toevoegen",
         "remove": "{{word}} verwijderen",
         "duplicate": "\"{{word}}\" bestaat al"
+      },
+      "wordLists": {
+        "globalTitle": "Algemene woordenlijst",
+        "activeTitle": "Actieve woordenlijst",
+        "activeDescription": "De woorden ervan gaan naar het model vóór die van de algemene woordenlijst, die altijd geldt. Wissel met de sneltoets of via het menu in de menubalk.",
+        "onlyGlobal": "Geen (alleen algemene woordenlijst)",
+        "title": "Extra woordenlijsten",
+        "description": "Lijsten met een naam die je naast de algemene woordenlijst kunt aanzetten, bijv. één per onderwerp. Steeds maar één.",
+        "selectList": "Kies een lijst",
+        "createNew": "Nieuwe lijst",
+        "namePlaceholder": "Naam van de lijst, bijv. Werk",
+        "create": "Lijst maken",
+        "rename": "Hernoemen",
+        "delete": "Lijst verwijderen",
+        "empty": "Nog geen extra lijsten"
       },
       "voiceActivityDetection": {
         "title": "Spraakactiviteitsdetectie (VAD)",
@@ -1004,7 +1025,9 @@
     "transcribing": "Transcriberen...",
     "processing": "Verwerken...",
     "loadingModel": "Model laden...",
-    "clipboard": "Op het klembord – {{keys}} om te plakken"
+    "clipboard": "Op het klembord – {{keys}} om te plakken",
+    "wordList": "Woordenlijst: {{name}}",
+    "wordListGlobalOnly": "Alleen algemene woordenlijst"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} blokkeert mogelijk 1 sneltoets",

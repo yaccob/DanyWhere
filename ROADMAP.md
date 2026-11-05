@@ -32,7 +32,7 @@ Planned work on DanyWhere, roughly in priority order within each section. Items 
 
 **Problem:** there is one list of custom words for everything. Whisper models get the list as a short context ("Glossary: …") of at most 223 tokens (roughly 70–100 German words); what does not fit is dropped from the end. Parakeet and Canary have no such input; for them DanyWhere replaces similar-sounding words after transcription, and only for entries without umlauts or ß. One long list mixing topics therefore biases recognition less precisely than a short list for the topic at hand.
 
-**Idea:** several named word lists (e.g. "Work", "Programming", "Private"), one of them active, managed in the settings the same way as the post-processing prompts, so the method is familiar. In addition a shortcut to switch quickly between them. Open: one shortcut that steps through the lists (showing the active list's name) or one shortcut per list; whether a list may be tied to a post-processing prompt.
+**Done:** the custom words are now the **Global Word List**, which always applies. Named additional lists (e.g. "Work", "Programming") are managed in the Advanced settings the same way as the post-processing prompts; one of them or none is switched on in addition. The model gets the additional list's words first, then the global ones. The shortcut ⌥⇧L steps through the lists (only global → first list → … → only global) and shows the result briefly in the overlay; the tray menu shows the active list and switches it.
 
 ### Phantom phrases at the end of a recording
 

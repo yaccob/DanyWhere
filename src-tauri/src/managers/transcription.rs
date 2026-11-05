@@ -1355,7 +1355,7 @@ fn run_setup(info: &LoadedInfo, settings: &AppSettings, language: LanguageDecisi
         task: run_plan.task,
         language: run_plan.language,
         target_language: run_plan.target_language,
-        vocabulary: vocabulary_for_model(info.supports_vocabulary, &settings.custom_words),
+        vocabulary: vocabulary_for_model(info.supports_vocabulary, settings),
         ..Default::default()
     };
 
@@ -1588,12 +1588,13 @@ fn with_model_detected_language(
     }
 }
 
-/// Custom words for transcribe-cpp's `vocabulary` slot, in priority order.
-/// Empty for models without Feature::Vocabulary, which would warn on every run
-/// and rely on fuzzy correction instead.
-fn vocabulary_for_model(supports_vocabulary: bool, custom_words: &[String]) -> Vec<String> {
+/// Custom words for transcribe-cpp's `vocabulary` slot, in priority order:
+/// the active additional word list, then the global one. Empty for models
+/// without Feature::Vocabulary, which would warn on every run and rely on
+/// fuzzy correction instead.
+fn vocabulary_for_model(supports_vocabulary: bool, settings: &AppSettings) -> Vec<String> {
     if supports_vocabulary {
-        custom_words.to_vec()
+        crate::word_lists::merged_vocabulary(settings)
     } else {
         Vec::new()
     }
@@ -1678,12 +1679,10 @@ fn post_process_transcription_text(
             _ => raw,
         };
 
-        let corrected = if !settings.custom_words.is_empty() && !custom_words_already_prompted {
-            apply_custom_words(
-                &raw,
-                &settings.custom_words,
-                settings.word_correction_threshold,
-            )
+        // The same words, in the same order, as models with vocabulary get.
+        let words = crate::word_lists::merged_vocabulary(settings);
+        let corrected = if !words.is_empty() && !custom_words_already_prompted {
+            apply_custom_words(&raw, &words, settings.word_correction_threshold)
         } else {
             raw
         };
@@ -2382,6 +2381,56 @@ mod tests {
             &supported,
         );
         assert_eq!(corrected, "i use Handy every day");
+    }
+
+    fn with_work_list(global: &[&str], work: &[&str], active: bool) -> AppSettings {
+        AppSettings {
+            selected_language: "en".to_string(),
+            custom_words: global.iter().map(|w| w.to_string()).collect(),
+            word_lists: vec![crate::word_lists::WordList {
+                id: "work".to_string(),
+                name: "Work".to_string(),
+                words: work.iter().map(|w| w.to_string()).collect(),
+            }],
+            active_word_list_id: active.then(|| "work".to_string()),
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn the_model_gets_the_active_word_list_before_the_global_one() {
+        let settings = with_work_list(&["Sayuri", "Jira"], &["Jira", "Confluence"], true);
+        assert_eq!(
+            vocabulary_for_model(true, &settings),
+            vec!["Jira", "Confluence", "Sayuri"]
+        );
+        let inactive = with_work_list(&["Sayuri"], &["Jira"], false);
+        assert_eq!(vocabulary_for_model(true, &inactive), vec!["Sayuri"]);
+        assert!(vocabulary_for_model(false, &settings).is_empty());
+    }
+
+    #[test]
+    fn fuzzy_correction_uses_the_active_word_list_too() {
+        let evidence = OutputLanguageEvidence::UserSelected("en".to_string());
+        let supported = languages(&["en"]);
+        let correct = |settings: &AppSettings| {
+            post_process_transcription_text(
+                "we pay with chargebee".to_string(),
+                settings,
+                false,
+                &evidence,
+                &supported,
+            )
+        };
+        assert_eq!(
+            correct(&with_work_list(&[], &["ChargeBee"], true)),
+            "we pay with ChargeBee"
+        );
+        assert_eq!(
+            correct(&with_work_list(&[], &["ChargeBee"], false)),
+            "we pay with chargebee",
+            "a list that isn't switched on doesn't apply"
+        );
     }
 }
 

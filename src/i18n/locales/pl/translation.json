@@ -10,7 +10,9 @@
     "secureInputWarning": "⚠ Skróty zablokowane przez Secure Input",
     "language": "Język",
     "autoLanguage": "Automatycznie",
-    "otherLanguages": "Inne języki"
+    "otherLanguages": "Inne języki",
+    "wordList": "Lista słów",
+    "onlyGlobalWordList": "Tylko globalna lista słów"
   },
   "sidebar": {
     "general": "Ogólne",
@@ -356,6 +358,10 @@
           "paste_last_transcript": {
             "name": "Wklej ostatnią transkrypcję",
             "description": "Wkleja ostatnią transkrypcję tam, gdzie jest teraz kursor, np. gdy nie dotarła, bo żadne pole tekstowe nie miało fokusu. Bez dostępności jest kopiowana do schowka."
+          },
+          "cycle_word_list": {
+            "name": "Przełącz listę słów",
+            "description": "Włącza następną dodatkową listę słów; po ostatniej obowiązuje tylko lista globalna."
           }
         },
         "errors": {
@@ -597,6 +603,21 @@
         "add": "Dodaj",
         "remove": "Usuń {{word}}",
         "duplicate": "\"{{word}}\" już istnieje"
+      },
+      "wordLists": {
+        "globalTitle": "Globalna lista słów",
+        "activeTitle": "Aktywna lista słów",
+        "activeDescription": "Jej słowa trafiają do modelu przed słowami z listy globalnej, która obowiązuje zawsze. Przełączaj ją skrótem lub z menu w zasobniku.",
+        "onlyGlobal": "Brak (tylko globalna lista słów)",
+        "title": "Dodatkowe listy słów",
+        "description": "Nazwane listy, które możesz włączyć oprócz globalnej listy słów, np. jedną na temat. Tylko jedna naraz.",
+        "selectList": "Wybierz listę",
+        "createNew": "Nowa lista",
+        "namePlaceholder": "Nazwa listy, np. Praca",
+        "create": "Utwórz listę",
+        "rename": "Zmień nazwę",
+        "delete": "Usuń listę",
+        "empty": "Brak dodatkowych list"
       },
       "voiceActivityDetection": {
         "title": "Wykrywanie aktywności głosowej",
@@ -1004,7 +1025,9 @@
     "transcribing": "Transkrypcja...",
     "processing": "Przetwarzanie...",
     "loadingModel": "Wczytywanie modelu...",
-    "clipboard": "W schowku – {{keys}}, aby wkleić"
+    "clipboard": "W schowku – {{keys}}, aby wkleić",
+    "wordList": "Lista słów: {{name}}",
+    "wordListGlobalOnly": "Tylko globalna lista słów"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} może blokować 1 skrót",

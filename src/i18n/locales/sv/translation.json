@@ -10,7 +10,9 @@
     "secureInputWarning": "⚠ Kortkommandon blockeras av Secure Input",
     "language": "Språk",
     "autoLanguage": "Automatiskt",
-    "otherLanguages": "Andra språk"
+    "otherLanguages": "Andra språk",
+    "wordList": "Ordlista",
+    "onlyGlobalWordList": "Endast global ordlista"
   },
   "sidebar": {
     "general": "Allmänt",
@@ -356,6 +358,10 @@
           "paste_last_transcript": {
             "name": "Klistra in senaste transkriptionen",
             "description": "Klistrar in den senaste transkriptionen där markören står nu, t.ex. om den inte kom fram eftersom inget textfält hade fokus. Utan hjälpmedel kopieras den till urklipp i stället."
+          },
+          "cycle_word_list": {
+            "name": "Byt ordlista",
+            "description": "Slår på nästa extra ordlista; efter den sista gäller bara den globala ordlistan."
           }
         },
         "errors": {
@@ -597,6 +603,21 @@
         "add": "Lägg till",
         "remove": "Ta bort {{word}}",
         "duplicate": "\"{{word}}\" finns redan"
+      },
+      "wordLists": {
+        "globalTitle": "Global ordlista",
+        "activeTitle": "Aktiv ordlista",
+        "activeDescription": "Dess ord ges till modellen före orden i den globala ordlistan, som alltid gäller. Byt den med kortkommandot eller från menyn i menyraden.",
+        "onlyGlobal": "Ingen (endast global ordlista)",
+        "title": "Extra ordlistor",
+        "description": "Namngivna listor som du kan slå på utöver den globala ordlistan, t.ex. en per ämne. En i taget.",
+        "selectList": "Välj en lista",
+        "createNew": "Ny lista",
+        "namePlaceholder": "Listans namn, t.ex. Arbete",
+        "create": "Skapa lista",
+        "rename": "Byt namn",
+        "delete": "Ta bort lista",
+        "empty": "Inga extra listor än"
       },
       "voiceActivityDetection": {
         "title": "Röstaktivitetsdetektering",
@@ -1004,7 +1025,9 @@
     "transcribing": "Transkriberar...",
     "processing": "Bearbetar...",
     "loadingModel": "Laddar modell...",
-    "clipboard": "I urklipp – {{keys}} för att klistra in"
+    "clipboard": "I urklipp – {{keys}} för att klistra in",
+    "wordList": "Ordlista: {{name}}",
+    "wordListGlobalOnly": "Endast global ordlista"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} kanske blockerar 1 kortkommando",

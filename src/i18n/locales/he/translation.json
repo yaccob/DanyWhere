@@ -10,7 +10,9 @@
     "secureInputWarning": "⚠ קיצורי המקשים חסומים על ידי Secure Input",
     "language": "שפה",
     "autoLanguage": "אוטומטי",
-    "otherLanguages": "שפות אחרות"
+    "otherLanguages": "שפות אחרות",
+    "wordList": "רשימת מילים",
+    "onlyGlobalWordList": "רשימת המילים הכללית בלבד"
   },
   "sidebar": {
     "general": "כללי",
@@ -356,6 +358,10 @@
           "paste_last_transcript": {
             "name": "הדבק את התמלול האחרון",
             "description": "מדביק את התמלול האחרון במקום שבו נמצא הסמן כעת, למשל אם הוא לא הגיע כי אף שדה טקסט לא היה בפוקוס. ללא נגישות הוא מועתק ללוח במקום זאת."
+          },
+          "cycle_word_list": {
+            "name": "החלפת רשימת מילים",
+            "description": "מפעיל את רשימת המילים הנוספת הבאה; אחרי האחרונה חלה רק הרשימה הכללית."
           }
         },
         "errors": {
@@ -597,6 +603,21 @@
         "add": "הוסף",
         "remove": "הסר את {{word}}",
         "duplicate": "\"{{word}}\" כבר קיימת"
+      },
+      "wordLists": {
+        "globalTitle": "רשימת מילים כללית",
+        "activeTitle": "רשימת מילים פעילה",
+        "activeDescription": "המילים שלה מגיעות למודל לפני המילים של הרשימה הכללית, שחלה תמיד. החלף אותה בקיצור המקשים או מתפריט המגש.",
+        "onlyGlobal": "ללא (רשימת המילים הכללית בלבד)",
+        "title": "רשימות מילים נוספות",
+        "description": "רשימות עם שם שאפשר להפעיל בנוסף לרשימת המילים הכללית, למשל אחת לכל נושא. רק אחת בכל פעם.",
+        "selectList": "בחר רשימה",
+        "createNew": "רשימה חדשה",
+        "namePlaceholder": "שם הרשימה, למשל עבודה",
+        "create": "צור רשימה",
+        "rename": "שנה שם",
+        "delete": "מחק רשימה",
+        "empty": "אין עדיין רשימות נוספות"
       },
       "voiceActivityDetection": {
         "title": "זיהוי פעילות קולית",
@@ -1004,7 +1025,9 @@
     "transcribing": "מתמלל...",
     "processing": "מעבד...",
     "loadingModel": "טוען מודל...",
-    "clipboard": "בלוח – {{keys}} להדבקה"
+    "clipboard": "בלוח – {{keys}} להדבקה",
+    "wordList": "רשימת מילים: {{name}}",
+    "wordListGlobalOnly": "רשימת המילים הכללית בלבד"
   },
   "secureInput": {
     "blockedWithCulprit_one": "ייתכן ש-{{name}} חוסם קיצור דרך אחד",

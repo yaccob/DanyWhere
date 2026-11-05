@@ -10,7 +10,9 @@
     "secureInputWarning": "⚠ Tastenkürzel durch Secure Input blockiert",
     "language": "Sprache",
     "autoLanguage": "Automatisch",
-    "otherLanguages": "Weitere Sprachen"
+    "otherLanguages": "Weitere Sprachen",
+    "wordList": "Wortliste",
+    "onlyGlobalWordList": "Nur globale Wortliste"
   },
   "sidebar": {
     "general": "Allgemein",
@@ -356,6 +358,10 @@
           "paste_last_transcript": {
             "name": "Letzte Transkription einfügen",
             "description": "Fügt die letzte Transkription dort ein, wo der Cursor gerade steht, z. B. wenn sie nicht angekommen ist, weil kein Textfeld den Fokus hatte. Ohne Bedienungshilfen wird sie stattdessen in die Zwischenablage gelegt."
+          },
+          "cycle_word_list": {
+            "name": "Wortliste wechseln",
+            "description": "Schaltet die nächste zusätzliche Wortliste ein; nach der letzten gilt nur noch die globale Wortliste."
           }
         },
         "errors": {
@@ -597,6 +603,21 @@
         "add": "Hinzufügen",
         "remove": "{{word}} entfernen",
         "duplicate": "\"{{word}}\" existiert bereits"
+      },
+      "wordLists": {
+        "globalTitle": "Globale Wortliste",
+        "activeTitle": "Aktive Wortliste",
+        "activeDescription": "Ihre Wörter bekommt das Modell vor denen der globalen Wortliste, die immer gilt. Umschalten mit dem Tastenkürzel oder im Tray-Menü.",
+        "onlyGlobal": "Keine (nur globale Wortliste)",
+        "title": "Zusätzliche Wortlisten",
+        "description": "Benannte Listen, die du zusätzlich zur globalen Wortliste einschalten kannst, z. B. eine pro Thema. Immer nur eine.",
+        "selectList": "Liste auswählen",
+        "createNew": "Neue Liste",
+        "namePlaceholder": "Name der Liste, z. B. Arbeit",
+        "create": "Liste anlegen",
+        "rename": "Umbenennen",
+        "delete": "Liste löschen",
+        "empty": "Noch keine zusätzlichen Listen"
       },
       "voiceActivityDetection": {
         "title": "Sprachaktivitätserkennung (VAD)",
@@ -1004,7 +1025,9 @@
     "transcribing": "Transkribiere...",
     "processing": "Verarbeite...",
     "loadingModel": "Modell wird geladen...",
-    "clipboard": "In der Zwischenablage – {{keys}} zum Einfügen"
+    "clipboard": "In der Zwischenablage – {{keys}} zum Einfügen",
+    "wordList": "Wortliste: {{name}}",
+    "wordListGlobalOnly": "Nur globale Wortliste"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} blockiert möglicherweise 1 Tastenkürzel",

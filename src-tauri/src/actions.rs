@@ -1039,6 +1039,19 @@ impl ShortcutAction for PasteLastTranscriptAction {
     }
 }
 
+// Switch Word List Action (DanyWhere)
+struct CycleWordListAction;
+
+impl ShortcutAction for CycleWordListAction {
+    fn start(&self, _app: &AppHandle, _binding_id: &str, _shortcut_str: &str) {
+        // Switched on release, so a held key or key repeat switches once.
+    }
+
+    fn stop(&self, app: &AppHandle, _binding_id: &str, _shortcut_str: &str) {
+        crate::word_lists::switch_to_next(app);
+    }
+}
+
 // Test Action
 struct TestAction;
 
@@ -1082,6 +1095,10 @@ pub static ACTION_MAP: Lazy<HashMap<String, Arc<dyn ShortcutAction>>> = Lazy::ne
     map.insert(
         "paste_last_transcript".to_string(),
         Arc::new(PasteLastTranscriptAction) as Arc<dyn ShortcutAction>,
+    );
+    map.insert(
+        "cycle_word_list".to_string(),
+        Arc::new(CycleWordListAction) as Arc<dyn ShortcutAction>,
     );
     map.insert(
         "test".to_string(),

@@ -1614,6 +1614,39 @@ mod tests {
         assert!(super::handy_keys::validate_shortcut(raw).is_ok());
     }
 
+    /// Older stores get it too: `get_settings` fills in every default binding
+    /// a store doesn't have yet.
+    #[test]
+    fn has_a_default_shortcut_to_switch_word_lists() {
+        let settings = crate::settings::get_default_settings();
+        let binding = settings
+            .bindings
+            .get("cycle_word_list")
+            .expect("default binding 'cycle_word_list'");
+        // Must work with both backends, incl. the one used without Accessibility.
+        let raw = &binding.current_binding;
+        assert_eq!(super::tauri_impl::validate_shortcut(raw), Ok(()));
+        assert!(super::handy_keys::validate_shortcut(raw).is_ok());
+        assert!(
+            crate::actions::ACTION_MAP.contains_key("cycle_word_list"),
+            "the shortcut has an action"
+        );
+    }
+
+    #[test]
+    fn no_two_default_shortcuts_are_the_same() {
+        let settings = crate::settings::get_default_settings();
+        let mut seen = std::collections::HashMap::new();
+        for binding in settings.bindings.values() {
+            if let Some(other) = seen.insert(binding.default_binding.clone(), binding.id.clone()) {
+                panic!(
+                    "'{}' and '{}' share the default {}",
+                    other, binding.id, binding.default_binding
+                );
+            }
+        }
+    }
+
     mod no_accessibility_mode {
         use super::super::apply_no_accessibility_mode;
         use crate::settings::{

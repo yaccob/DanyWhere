@@ -10,7 +10,9 @@
     "secureInputWarning": "⚠ Zkratky blokuje Secure Input",
     "language": "Jazyk",
     "autoLanguage": "Automaticky",
-    "otherLanguages": "Další jazyky"
+    "otherLanguages": "Další jazyky",
+    "wordList": "Seznam slov",
+    "onlyGlobalWordList": "Jen globální seznam slov"
   },
   "sidebar": {
     "general": "Obecné",
@@ -356,6 +358,10 @@
           "paste_last_transcript": {
             "name": "Vložit poslední přepis",
             "description": "Vloží poslední přepis tam, kde je právě kurzor, např. když nedorazil, protože žádné textové pole nemělo fokus. Bez usnadnění se místo toho zkopíruje do schránky."
+          },
+          "cycle_word_list": {
+            "name": "Přepnout seznam slov",
+            "description": "Zapne další doplňkový seznam slov; po posledním platí jen globální seznam."
           }
         },
         "errors": {
@@ -597,6 +603,21 @@
         "add": "Přidat",
         "remove": "Odebrat {{word}}",
         "duplicate": "\"{{word}}\" již existuje"
+      },
+      "wordLists": {
+        "globalTitle": "Globální seznam slov",
+        "activeTitle": "Aktivní seznam slov",
+        "activeDescription": "Jeho slova dostane model před slovy z globálního seznamu, který platí vždy. Přepnete ho klávesovou zkratkou nebo z nabídky v liště.",
+        "onlyGlobal": "Žádný (jen globální seznam slov)",
+        "title": "Doplňkové seznamy slov",
+        "description": "Pojmenované seznamy, které můžete zapnout navíc ke globálnímu seznamu slov, např. jeden pro každé téma. Vždy jen jeden.",
+        "selectList": "Vyberte seznam",
+        "createNew": "Nový seznam",
+        "namePlaceholder": "Název seznamu, např. Práce",
+        "create": "Vytvořit seznam",
+        "rename": "Přejmenovat",
+        "delete": "Smazat seznam",
+        "empty": "Zatím žádné doplňkové seznamy"
       },
       "voiceActivityDetection": {
         "title": "Detekce hlasové aktivity",
@@ -1004,7 +1025,9 @@
     "transcribing": "Přepisuji...",
     "processing": "Zpracovávám...",
     "loadingModel": "Načítání modelu...",
-    "clipboard": "Ve schránce – {{keys}} pro vložení"
+    "clipboard": "Ve schránce – {{keys}} pro vložení",
+    "wordList": "Seznam slov: {{name}}",
+    "wordListGlobalOnly": "Jen globální seznam slov"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} může blokovat 1 zkratku",

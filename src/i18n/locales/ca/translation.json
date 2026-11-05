@@ -10,7 +10,9 @@
     "secureInputWarning": "⚠ Dreceres blocades per l'entrada segura",
     "language": "Llengua",
     "autoLanguage": "Automàtica",
-    "otherLanguages": "Altres llengües"
+    "otherLanguages": "Altres llengües",
+    "wordList": "Llista de paraules",
+    "onlyGlobalWordList": "Només la llista de paraules global"
   },
   "sidebar": {
     "general": "General",
@@ -356,6 +358,10 @@
           "paste_last_transcript": {
             "name": "Enganxa l'última transcripció",
             "description": "Enganxa l'última transcripció on hi ha el cursor ara, per exemple si no ha arribat perquè cap camp de text tenia el focus. Sense accessibilitat es copia al porta-retalls."
+          },
+          "cycle_word_list": {
+            "name": "Canvia la llista de paraules",
+            "description": "Activa la següent llista de paraules addicional; després de l'última, només s'aplica la llista global."
           }
         },
         "errors": {
@@ -597,6 +603,21 @@
         "add": "Afegiu",
         "remove": "Suprimiu {{word}}",
         "duplicate": "«{{word}}» ja existeix"
+      },
+      "wordLists": {
+        "globalTitle": "Llista de paraules global",
+        "activeTitle": "Llista de paraules activa",
+        "activeDescription": "Les seves paraules arriben al model abans que les de la llista global, que sempre s'aplica. Canvieu-la amb la drecera o des del menú de la safata.",
+        "onlyGlobal": "Cap (només la llista de paraules global)",
+        "title": "Llistes de paraules addicionals",
+        "description": "Llistes amb nom que podeu activar a més de la llista de paraules global, p. ex. una per tema. Només una alhora.",
+        "selectList": "Seleccioneu una llista",
+        "createNew": "Llista nova",
+        "namePlaceholder": "Nom de la llista, p. ex. Feina",
+        "create": "Crea la llista",
+        "rename": "Canvia el nom",
+        "delete": "Elimina la llista",
+        "empty": "Encara no hi ha llistes addicionals"
       },
       "voiceActivityDetection": {
         "title": "Detecció d'activitat de veu",
@@ -1004,7 +1025,9 @@
     "transcribing": "S'està transcrivint...",
     "processing": "S'està processant...",
     "loadingModel": "S'està carregant el model...",
-    "clipboard": "Al porta-retalls – {{keys}} per enganxar"
+    "clipboard": "Al porta-retalls – {{keys}} per enganxar",
+    "wordList": "Llista de paraules: {{name}}",
+    "wordListGlobalOnly": "Només la llista de paraules global"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} pot estar blocant 1 drecera",
