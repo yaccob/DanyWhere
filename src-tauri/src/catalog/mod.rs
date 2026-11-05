@@ -580,12 +580,51 @@ mod tests {
     }
 
     #[test]
+    fn offers_the_selection_decided_on_2026_11_05() {
+        // Variant B of qa/2026-11-04_2337_model-offer-and-auto-download.md in
+        // the DanyWhere sidecar: Parakeet Ultra replaces Parakeet TDT 0.6B v3,
+        // Canary 1B v2 replaces Whisper medium.
+        let order: Vec<&str> = crate::model_selection::offered()
+            .iter()
+            .map(|o| o.id.as_str())
+            .collect();
+        assert_eq!(
+            order,
+            [
+                "parakeet-ultra",
+                "whisper-large-v3-turbo",
+                "canary-1b-v2",
+                "parakeet-unified-en-0.6b",
+                "whisper-small",
+                "canary-180m-flash",
+            ]
+        );
+    }
+
+    #[test]
+    fn every_offered_file_fits_a_github_release() {
+        // The mirror is GitHub releases, which take files below 2 GiB.
+        const GITHUB_RELEASE_FILE_LIMIT: u64 = 2 * 1024 * 1024 * 1024;
+        for m in transcription_models().filter(|m| m.is_offered()) {
+            let file = m
+                .default_file()
+                .expect("offered models have a default file");
+            assert!(
+                file.size < GITHUB_RELEASE_FILE_LIMIT,
+                "{} ({} bytes) does not fit a GitHub release",
+                m.id,
+                file.size
+            );
+        }
+    }
+
+    #[test]
     fn the_default_model_comes_first_and_is_recommended() {
         let first = CATALOG
             .iter()
             .min_by_key(|d| d.recommended_rank.unwrap_or(u32::MAX))
             .expect("catalog offers models");
-        assert_eq!(catalog_id_of(first), "whisper-large-v3-turbo");
+        assert_eq!(catalog_id_of(first), "parakeet-ultra");
         assert!(first.recommended);
         let recommended: Vec<&str> = crate::model_selection::offered()
             .iter()

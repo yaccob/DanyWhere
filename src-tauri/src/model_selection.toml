@@ -9,30 +9,32 @@
 # Files are tried there first, then on Hugging Face.
 mirror = "https://github.com/yaccob/DanyWhere-models/releases/download"
 
-# Offered models, best first. Onboarding features the recommended ones and
-# downloads the first one by itself on a fresh install. Chosen for dictation
-# on a laptop: fast enough on Apple silicon, at most about 0.9 GB each.
+# Offered models, best first. Chosen for dictation on a laptop: fast enough on
+# a normal MacBook, a small selection rather than the whole catalog, and every
+# file on the mirror, so each below GitHub's 2 GiB per release file.
+# Onboarding recommends a model per spoken language with the catalog's own
+# logic, limited to this offer; "recommended" marks the general favourites.
+
+[[offered]]
+id = "parakeet-ultra"
+recommended = true # fast, 25 European languages; Handy's pick for German + English
 
 [[offered]]
 id = "whisper-large-v3-turbo"
-recommended = true # multilingual default; cannot translate
+recommended = true # 100 languages; cannot translate
 
 [[offered]]
-id = "parakeet-tdt-0.6b-v3"
-recommended = true # very fast, 25 European languages
-
-[[offered]]
-id = "whisper-medium"
-recommended = false # can translate to English
-
-[[offered]]
-id = "whisper-small"
-recommended = false # lighter Whisper, can translate to English
+id = "canary-1b-v2"
+recommended = false # translates to English, 25 European languages
 
 [[offered]]
 id = "parakeet-unified-en-0.6b"
-recommended = false # English only
+recommended = false # English only, live preview
+
+[[offered]]
+id = "whisper-small"
+recommended = false # lighter Whisper, translates to English from 99 languages
 
 [[offered]]
 id = "canary-180m-flash"
-recommended = false # small, en/de/es/fr
+recommended = false # tiny, en/de/es/fr

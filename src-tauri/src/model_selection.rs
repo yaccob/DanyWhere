@@ -24,7 +24,7 @@ struct Selection {
 #[derive(Deserialize)]
 pub struct Offered {
     pub id: String,
-    /// Featured in onboarding; the first one is downloaded by itself.
+    /// A general favourite (the onboarding's pick depends on the languages).
     pub recommended: bool,
 }
 

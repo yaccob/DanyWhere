@@ -22,6 +22,7 @@ import { useOnboardingModels } from "./useOnboardingModels";
 import { useModelStore } from "@/stores/modelStore";
 import { moveScreens } from "./screenTransitions";
 import { downloadPick } from "./downloadPick";
+import { autoDownloadPick } from "./autoDownload";
 import "./screenTransitions.css";
 
 interface OnboardingFlowProps {
@@ -192,6 +193,17 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
           progress={progress}
           onContinue={() => {
             saveLanguages();
+            // DanyWhere: the recommended model loads while permissions are granted.
+            const auto = preview
+              ? null
+              : autoDownloadPick({
+                  picks: models.picks,
+                  states: models.offered.map(
+                    (m) => models.downloadState(m).state,
+                  ),
+                  chosen: useOnboardingStore.getState().downloadId,
+                });
+            if (auto) startModel(auto);
             onward();
           }}
         />
