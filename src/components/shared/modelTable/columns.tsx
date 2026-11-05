@@ -7,20 +7,20 @@ import { SpeedBars, speedLevel } from "@/components/shared/SpeedBars";
 import { languageName } from "@/lib/constants/languages";
 import { formatModelSize } from "@/lib/utils/format";
 import type { Grading } from "@/lib/models/grading";
+import { Gauge, Globe, HardDrive, type LucideIcon } from "lucide-react";
+import { gradeMode, headCells, isDense, type HeadColumn } from "./headLabels";
 
-/**
- * One grade column per language up to 3, dense chips for 4–5, and past 5 a
- * single overall grade: at the Models page's ~540px a sixth column crowds out the name.
- */
-const MAX_COLUMNS = 5;
-const MAX_ROOMY = 3;
+export { gradeMode, isDense };
 
-export const gradeMode = (langs: string[]) =>
-  langs.length > MAX_COLUMNS ? "overall" : "each";
-export const isDense = (langs: string[]) =>
-  langs.length > MAX_ROOMY && langs.length <= MAX_COLUMNS;
+/** Heads shown as icons: their words don't fit the columns in many locales. */
+const HEAD_ICONS: Partial<Record<HeadColumn, LucideIcon>> = {
+  all: Globe,
+  speed: Gauge,
+  size: HardDrive,
+};
 
-/** The grade, speed and size columns: the same grid in heads and rows. */
+/** The grade, speed and size columns: the same grid in heads and rows (the
+ * widths are COLUMN_PX in headLabels.ts). */
 export const columnsClass = (langs: string[]) =>
   gradeMode(langs) === "overall"
     ? "grid-cols-[44px_40px_52px] gap-x-[6px]"
@@ -53,23 +53,24 @@ export const Codes: React.FC<{ langs: string[]; vt?: VtName }> = ({
       style={columnsStyle(langs)}
       className={`grid items-center justify-items-center ${columnsClass(langs)}`}
     >
-      {gradeMode(langs) === "each" ? (
-        langs.map((l) => (
-          <span
-            key={l}
-            title={languageName(l, i18n.language)}
-            className={CODE_CLASS}
-          >
-            {l}
-          </span>
-        ))
-      ) : (
-        <span className={CODE_CLASS} title={t("modelTable.accuracy")}>
-          {t("modelTable.allLanguages")}
-        </span>
+      {headCells(langs, t, (l) => languageName(l, i18n.language)).map(
+        (cell) => {
+          const Icon = cell.text === null ? HEAD_ICONS[cell.column] : null;
+          // The app's tooltip, not `title`: the webview shows no native
+          // tooltips. It also opens on a click.
+          return (
+            <Tooltip key={cell.key} text={cell.label} showOnPress>
+              <span aria-label={cell.label} className={CODE_CLASS}>
+                {Icon ? (
+                  <Icon aria-hidden="true" className="h-[13px] w-[13px]" />
+                ) : (
+                  cell.text
+                )}
+              </span>
+            </Tooltip>
+          );
+        },
       )}
-      <span className={CODE_CLASS}>{t("modelTable.speed")}</span>
-      <span className={CODE_CLASS}>{t("modelTable.size")}</span>
     </span>
   );
 };
