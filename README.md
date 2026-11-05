@@ -29,6 +29,9 @@ You need a Mac with Apple silicon (M1 or later).
 
 1. Download `DanyWhere_<version>_aarch64.dmg` from this repository's [releases](https://github.com/yaccob/DanyWhere/releases). It is signed with an Apple Developer ID and notarized by Apple.
 2. Open the DMG and drag DanyWhere into Applications.
+
+   Or install it with [Homebrew](https://brew.sh) instead of steps 1 and 2: `brew install --cask yaccob/tap/danywhere`
+
 3. Start DanyWhere and follow the setup: allow microphone access, then grant Accessibility, or choose "Continue without Accessibility" if your organization blocks it.
 4. Press Option+Space and speak. Hold the shortcut to record and release it to stop, or tap it to start and tap again to stop. Once post-processing is set up in the settings, Option+Shift+Space does the same and post-processes the transcript.
 
