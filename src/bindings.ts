@@ -1044,6 +1044,41 @@ async updateRecordingRetentionPeriod(period: string) : Promise<Result<null, stri
 }
 },
 /**
+ * A WAV of the recording for the history player: Opus recordings are
+ * decoded into a short-lived copy, because the webview of older macOS
+ * versions can't play Ogg Opus.
+ */
+async getRecordingPlaybackPath(fileName: string) : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_recording_playback_path", { fileName }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * What History's recordings take, for the storage setting.
+ */
+async getRecordingStorageUsage() : Promise<Result<RecordingStorageUsage, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_recording_storage_usage") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Set how much space recordings may take, and apply it right away.
+ */
+async updateRecordingStorageLimit(limit: RecordingStorageLimit) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("update_recording_storage_limit", { limit }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
  * Checks if the Mac is a laptop by detecting battery presence
  * 
  * This uses pmset to check for battery information.
@@ -1154,7 +1189,11 @@ selected_channel?: number | null; clamshell_microphone?: string | null; selected
  * Every language the person dictates in (codes, e.g. ["en", "zh"]),
  * picked during onboarding. Empty until then.
  */
-spoken_languages?: string[]; overlay_position?: OverlayPosition; debug_mode?: boolean; log_level?: LogLevel; custom_words?: string[]; model_unload_timeout?: ModelUnloadTimeout; word_correction_threshold?: number; history_limit?: number; recording_retention_period?: RecordingRetentionPeriod; paste_method?: PasteMethod; clipboard_handling?: ClipboardHandling; auto_submit?: boolean; auto_submit_key?: AutoSubmitKey; post_process_enabled?: boolean; post_process_provider_id?: string; post_process_providers?: PostProcessProvider[]; post_process_api_keys?: SecretMap; post_process_models?: Partial<{ [key in string]: string }>; post_process_prompts?: LLMPrompt[]; post_process_selected_prompt_id?: string | null; mute_while_recording?: boolean; append_trailing_space?: boolean; app_language?: string; theme?: Theme; experimental_enabled?: boolean; lazy_stream_close?: boolean; 
+spoken_languages?: string[]; overlay_position?: OverlayPosition; debug_mode?: boolean; log_level?: LogLevel; custom_words?: string[]; model_unload_timeout?: ModelUnloadTimeout; word_correction_threshold?: number; history_limit?: number; recording_retention_period?: RecordingRetentionPeriod; 
+/**
+ * Migrated from `recording_retention_period` in `apply_settings_migrations`.
+ */
+recording_storage_limit?: RecordingStorageLimit; paste_method?: PasteMethod; clipboard_handling?: ClipboardHandling; auto_submit?: boolean; auto_submit_key?: AutoSubmitKey; post_process_enabled?: boolean; post_process_provider_id?: string; post_process_providers?: PostProcessProvider[]; post_process_api_keys?: SecretMap; post_process_models?: Partial<{ [key in string]: string }>; post_process_prompts?: LLMPrompt[]; post_process_selected_prompt_id?: string | null; mute_while_recording?: boolean; append_trailing_space?: boolean; app_language?: string; theme?: Theme; experimental_enabled?: boolean; lazy_stream_close?: boolean; 
 /**
  * Experimental, macOS only: move a Bluetooth headset (AirPods) to this
  * Mac while recording, so its microphone does not return silence while
@@ -1254,7 +1293,12 @@ language: string | null;
 /**
  * How that language was chosen; `None` before it was recorded.
  */
-language_source: LanguageSource | null }
+language_source: LanguageSource | null; 
+/**
+ * The storage limit deleted the recording; the transcript stays, but
+ * there is nothing to play or transcribe again.
+ */
+recording_removed: boolean }
 export type HistoryUpdatePayload = { action: "added"; entry: HistoryEntry } | { action: "updated"; entry: HistoryEntry } | { action: "deleted"; id: number } | { action: "toggled"; id: number }
 /**
  * Result of changing keyboard implementation
@@ -1443,6 +1487,30 @@ export type RecordingPhase =
 "cancelled"
 export type RecordingRetentionPeriod = "never" | "preserve_limit" | "days_3" | "weeks_2" | "months_3"
 export type RecordingStateEvent = { phase: RecordingPhase }
+/**
+ * How much space History's recordings may take. Over it, the oldest
+ * recordings that are not starred are deleted; their transcripts stay.
+ * Replaces [`RecordingRetentionPeriod`] and `history_limit`, which are kept
+ * only so older stores still parse and migrate.
+ * 
+ * The names are spelled out because serde's and specta's `snake_case`
+ * disagree on digits (`mb100` vs `mb_100`), and the frontend sends what
+ * specta generates.
+ */
+export type RecordingStorageLimit = "mb_100" | "mb_500" | "gb_1" | "gb_5" | "unlimited"
+/**
+ * What History's recordings take, for the storage setting.
+ */
+export type RecordingStorageUsage = { 
+/**
+ * All recordings.
+ */
+total_bytes: number; 
+/**
+ * Starred entries and transcribed files, which are never deleted
+ * automatically.
+ */
+protected_bytes: number }
 /**
  * A retired ONNX model found on disk.
  */

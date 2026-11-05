@@ -8,8 +8,10 @@ pub mod utils;
 pub mod vad;
 
 pub use audio::{
-    decode_audio_file, list_output_devices, read_wav_samples, save_wav_file, verify_wav_file,
-    CaptureSink, CaptureVad, VadPolicy,
+    decode_audio_file, list_output_devices, read_opus_samples, read_recording_samples,
+    read_wav_samples, recording_file_name, save_opus_file, save_recording, save_wav_file,
+    verify_recording, verify_wav_file, write_playback_wav, CaptureSink, CaptureVad, VadPolicy,
+    RECORDING_EXTENSION,
 };
 pub use lang_id::detect_output_language;
 pub use text::{

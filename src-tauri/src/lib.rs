@@ -224,6 +224,17 @@ fn initialize_core_logic(app_handle: &AppHandle) {
     app_handle.manage(tray::TrayState::new());
     app_handle.manage(TranscriptionJobManager::new(app_handle));
 
+    // Recordings from before Opus are converted once, in the background, and
+    // the storage limit is applied to what they take afterwards.
+    {
+        let history_manager = history_manager.clone();
+        std::thread::spawn(move || {
+            if let Err(e) = history_manager.convert_wav_recordings() {
+                log::warn!("Converting WAV recordings failed: {}", e);
+            }
+        });
+    }
+
     // Note: Shortcuts are NOT initialized here.
     // The frontend is responsible for calling the `initialize_shortcuts` command
     // after permissions are confirmed (on macOS) or after onboarding completes.
@@ -815,6 +826,9 @@ pub fn run(cli_args: CliArgs) {
             commands::history::transcribe_file,
             commands::history::update_history_limit,
             commands::history::update_recording_retention_period,
+            commands::history::get_recording_playback_path,
+            commands::history::get_recording_storage_usage,
+            commands::history::update_recording_storage_limit,
             helpers::clamshell::is_laptop,
             notices::get_active_notices,
             notices::dismiss_notice,

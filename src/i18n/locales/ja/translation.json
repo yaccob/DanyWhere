@@ -716,6 +716,7 @@
       "delete": "エントリーを削除",
       "deleteError": "エントリーの削除に失敗しました。もう一度お試しください。",
       "retranscribe": "再文字起こし",
+      "recordingRemoved": "保存容量の上限を超えないよう録音を削除しました",
       "cancelTranscription": "文字起こしをキャンセル",
       "transcribing": "文字起こし中…",
       "transcriptionFailed": "文字起こしに失敗しました。リトライアイコンを使用して再文字起こしできます。",
@@ -809,6 +810,13 @@
         "weeks2": "2週間後",
         "months3": "3ヶ月後",
         "placeholder": "保持期間を選択…"
+      },
+      "recordingStorage": {
+        "title": "録音の保存容量",
+        "description": "すべての録音の合計がこの容量を超えると、古いものから削除されます。文字起こしは履歴に残ります。保存したエントリと文字起こししたファイルは自動では削除されません。",
+        "unlimited": "無制限",
+        "usage": "録音の使用量: {{size}}",
+        "protectedOverLimit": "保存したエントリと文字起こししたファイルだけで {{size}} を使用しており、この上限を超えています。その他の録音は、最新のものだけが残ります。"
       },
       "alwaysOnMicrophone": {
         "label": "マイク常時オン",

@@ -5,7 +5,6 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { convertFileSrc } from "@tauri-apps/api/core";
 import { readFile } from "@tauri-apps/plugin-fs";
 import {
   Check,
@@ -26,7 +25,6 @@ import {
   type HistoryEntry,
   type HistoryUpdatePayload,
 } from "@/bindings";
-import { useOsType } from "@/hooks/useOsType";
 import {
   useTranscriptionJobsStore,
   type ActiveJobStatus,
@@ -126,7 +124,6 @@ const HeaderButton: React.FC<HeaderButtonProps> = ({
 
 export const HistorySettings: React.FC = () => {
   const { t } = useTranslation();
-  const osType = useOsType();
   const jobs = useTranscriptionJobsStore((state) => state.jobs);
   const reads = useFileReadsStore((state) => state.reads);
   const [entries, setEntries] = useState<HistoryEntry[]>([]);
@@ -247,26 +244,22 @@ export const HistorySettings: React.FC = () => {
     }
   };
 
-  const getAudioUrl = useCallback(
-    async (fileName: string) => {
-      try {
-        const result = await commands.getAudioFilePath(fileName);
-        if (result.status === "ok") {
-          if (osType === "linux") {
-            const fileData = await readFile(result.data);
-            const blob = new Blob([fileData], { type: "audio/wav" });
-            return URL.createObjectURL(blob);
-          }
-          return convertFileSrc(result.data, "asset");
-        }
-        return null;
-      } catch (error) {
-        console.error("Failed to get audio file path:", error);
-        return null;
+  // Recordings are Opus, which older webviews can't play: the backend hands
+  // over a WAV (decoded if need be), played from memory on every OS.
+  const getAudioUrl = useCallback(async (fileName: string) => {
+    try {
+      const result = await commands.getRecordingPlaybackPath(fileName);
+      if (result.status === "ok") {
+        const fileData = await readFile(result.data);
+        const blob = new Blob([fileData], { type: "audio/wav" });
+        return URL.createObjectURL(blob);
       }
-    },
-    [osType],
-  );
+      return null;
+    } catch (error) {
+      console.error("Failed to load the recording:", error);
+      return null;
+    }
+  }, []);
 
   const deleteAudioEntry = async (id: number) => {
     // Optimistically remove
@@ -518,12 +511,14 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
               <X width={16} height={16} />
             </IconButton>
           ) : (
-            <IconButton
-              onClick={() => retryTranscription(entry.id)}
-              title={t("settings.history.retranscribe")}
-            >
-              <RotateCcw width={16} height={16} />
-            </IconButton>
+            !entry.recording_removed && (
+              <IconButton
+                onClick={() => retryTranscription(entry.id)}
+                title={t("settings.history.retranscribe")}
+              >
+                <RotateCcw width={16} height={16} />
+              </IconButton>
+            )
           )}
           <IconButton
             onClick={handleDeleteEntry}
@@ -580,7 +575,13 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
         )}
       </div>
 
-      <AudioPlayer onLoadRequest={handleLoadAudio} className="w-full" />
+      {entry.recording_removed ? (
+        <p className="text-xs text-ink-3">
+          {t("settings.history.recordingRemoved")}
+        </p>
+      ) : (
+        <AudioPlayer onLoadRequest={handleLoadAudio} className="w-full" />
+      )}
     </div>
   );
 };

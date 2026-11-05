@@ -1,7 +1,8 @@
 use crate::managers::{
-    history::{HistoryEntry, HistoryManager, PaginatedHistory},
+    history::{HistoryEntry, HistoryManager, PaginatedHistory, RecordingStorageUsage},
     transcription_jobs::TranscriptionJobManager,
 };
+use crate::settings::RecordingStorageLimit;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tauri::{AppHandle, State};
@@ -44,6 +45,52 @@ pub async fn get_audio_file_path(
     path.to_str()
         .ok_or_else(|| "Invalid file path".to_string())
         .map(|s| s.to_string())
+}
+
+/// A WAV of the recording for the history player: Opus recordings are
+/// decoded into a short-lived copy, because the webview of older macOS
+/// versions can't play Ogg Opus.
+#[tauri::command]
+#[specta::specta]
+pub async fn get_recording_playback_path(
+    history_manager: State<'_, Arc<HistoryManager>>,
+    file_name: String,
+) -> Result<String, String> {
+    let history_manager = Arc::clone(&history_manager);
+    let path =
+        tauri::async_runtime::spawn_blocking(move || history_manager.playback_wav_path(&file_name))
+            .await
+            .map_err(|e| e.to_string())?
+            .map_err(|e| e.to_string())?;
+    path.to_str()
+        .ok_or_else(|| "Invalid file path".to_string())
+        .map(|s| s.to_string())
+}
+
+/// What History's recordings take, for the storage setting.
+#[tauri::command]
+#[specta::specta]
+pub async fn get_recording_storage_usage(
+    history_manager: State<'_, Arc<HistoryManager>>,
+) -> Result<RecordingStorageUsage, String> {
+    history_manager.storage_usage().map_err(|e| e.to_string())
+}
+
+/// Set how much space recordings may take, and apply it right away.
+#[tauri::command]
+#[specta::specta]
+pub async fn update_recording_storage_limit(
+    app: AppHandle,
+    history_manager: State<'_, Arc<HistoryManager>>,
+    limit: RecordingStorageLimit,
+) -> Result<(), String> {
+    let mut settings = crate::settings::get_settings(&app);
+    settings.recording_storage_limit = limit;
+    crate::settings::write_settings(&app, settings);
+
+    history_manager
+        .cleanup_old_entries()
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]

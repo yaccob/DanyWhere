@@ -716,6 +716,7 @@
       "delete": "Item verwijderen",
       "deleteError": "Item verwijderen mislukt. Probeer het opnieuw.",
       "retranscribe": "Opnieuw transcriberen",
+      "recordingRemoved": "Opname verwijderd om binnen de opslaglimiet te blijven",
       "cancelTranscription": "Transcriptie annuleren",
       "transcribing": "Transcriberen...",
       "transcriptionFailed": "Transcriptie mislukt. Je kunt het opnieuw proberen via het herlaad-pictogram.",
@@ -809,6 +810,13 @@
         "weeks2": "Na 2 weken",
         "months3": "Na 3 maanden",
         "placeholder": "Selecteer bewaarperiode..."
+      },
+      "recordingStorage": {
+        "title": "Opslag voor opnames",
+        "description": "Nemen alle opnames samen meer ruimte in dan dit, dan worden de oudste verwijderd. Hun transcripties blijven in de geschiedenis. Opgeslagen items en getranscribeerde bestanden worden nooit automatisch verwijderd.",
+        "unlimited": "Onbeperkt",
+        "usage": "Opnames nemen {{size}} in beslag",
+        "protectedOverLimit": "Opgeslagen items en getranscribeerde bestanden nemen alleen al {{size}} in, meer dan deze limiet. Van de overige opnames blijft alleen de nieuwste bewaard."
       },
       "alwaysOnMicrophone": {
         "label": "Microfoon altijd aan",

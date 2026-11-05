@@ -30,6 +30,7 @@ export { ModelUnloadTimeoutSetting } from "./ModelUnloadTimeout";
 export { StartHidden } from "./StartHidden";
 export { HistoryLimit } from "./HistoryLimit";
 export { RecordingRetentionPeriodSelector } from "./RecordingRetentionPeriod";
+export { RecordingStorageLimitSetting } from "./RecordingStorageLimit";
 export { AutostartToggle } from "./AutostartToggle";
 export { UpdateChecksToggle } from "./UpdateChecksToggle";
 export { ShowWhatsNewOnUpdate } from "./ShowWhatsNewOnUpdate";

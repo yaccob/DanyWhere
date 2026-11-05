@@ -17,7 +17,7 @@ use tauri::{AppHandle, Manager};
 use tauri_specta::Event;
 
 use crate::actions::process_transcription_output;
-use crate::audio_toolkit::{decode_audio_file, read_wav_samples, save_wav_file};
+use crate::audio_toolkit::{decode_audio_file, recording_file_name, save_recording};
 use crate::managers::history::{HistoryEntry, HistoryManager};
 use crate::managers::transcription::{
     panic_payload_message, ChunkControl, Transcription, TranscriptionManager,
@@ -132,11 +132,14 @@ impl TranscriptionJobManager {
         }
 
         let hm = self.app.state::<Arc<HistoryManager>>();
-        let file_name = format!("handy-file-{}.wav", chrono::Utc::now().timestamp_millis());
+        let file_name = recording_file_name(&format!(
+            "handy-file-{}",
+            chrono::Utc::now().timestamp_millis()
+        ));
         let recording = hm.get_audio_file_path(&file_name);
         // Written aside and renamed, so a crash never leaves a partial one.
-        let partial = recording.with_extension("wav.partial");
-        if let Err(e) = save_wav_file(&partial, &samples)
+        let partial = recording.with_file_name(format!("{file_name}.partial"));
+        if let Err(e) = save_recording(&partial, &samples)
             .and_then(|()| std::fs::rename(&partial, &recording).map_err(Into::into))
         {
             remove_recording(&partial);
@@ -303,7 +306,7 @@ impl TranscriptionJobManager {
         let tm = Arc::clone(&self.app.state::<Arc<TranscriptionManager>>());
         let entry = tauri::async_runtime::block_on(hm.get_entry_by_id(entry_id))?
             .ok_or_else(|| anyhow!("History entry {} not found", entry_id))?;
-        let samples = read_wav_samples(hm.get_audio_file_path(&entry.file_name))
+        let samples = HistoryManager::recording_samples_in(&entry, hm.recordings_dir())
             .map_err(|e| anyhow!("Failed to load audio: {}", e))?;
         if samples.is_empty() {
             return Err(anyhow!("Recording has no audio samples"));

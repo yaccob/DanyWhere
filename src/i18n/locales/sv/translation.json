@@ -716,6 +716,7 @@
       "delete": "Ta bort post",
       "deleteError": "Misslyckades med att ta bort post. Försök igen.",
       "retranscribe": "Transkribera igen",
+      "recordingRemoved": "Inspelningen raderades för att hålla lagringsgränsen",
       "cancelTranscription": "Avbryt transkribering",
       "transcribing": "Transkriberar...",
       "transcriptionFailed": "Transkribering misslyckades. Du kan transkribera igen med hjälp av ikonen för nytt försök.",
@@ -809,6 +810,13 @@
         "weeks2": "Efter 2 veckor",
         "months3": "Efter 3 månader",
         "placeholder": "Välj lagringsperiod..."
+      },
+      "recordingStorage": {
+        "title": "Lagringsutrymme för inspelningar",
+        "description": "När alla inspelningar tillsammans tar mer plats än så raderas de äldsta. Deras transkriptioner finns kvar i historiken. Sparade poster och transkriberade filer raderas aldrig automatiskt.",
+        "unlimited": "Obegränsat",
+        "usage": "Inspelningar tar {{size}}",
+        "protectedOverLimit": "Sparade poster och transkriberade filer tar ensamma {{size}}, mer än denna gräns. Av de övriga inspelningarna behålls bara den senaste."
       },
       "alwaysOnMicrophone": {
         "label": "Alltid påslagen mikrofon",

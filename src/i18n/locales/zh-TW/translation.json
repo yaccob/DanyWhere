@@ -716,6 +716,7 @@
       "delete": "刪除條目",
       "deleteError": "刪除條目失敗，請重試",
       "retranscribe": "重新轉錄",
+      "recordingRemoved": "為維持在儲存上限內，已刪除錄音",
       "cancelTranscription": "取消轉錄",
       "transcribing": "轉錄中...",
       "transcriptionFailed": "轉錄失敗。您可以使用重試圖示重新轉錄。",
@@ -809,6 +810,13 @@
         "weeks2": "2 週後",
         "months3": "3 個月後",
         "placeholder": "選擇保留期限..."
+      },
+      "recordingStorage": {
+        "title": "錄音儲存空間",
+        "description": "當所有錄音合計超過此容量時，會刪除最舊的錄音。其轉錄會保留在歷史紀錄中。已儲存的項目和已轉錄的檔案永遠不會被自動刪除。",
+        "unlimited": "不限",
+        "usage": "錄音佔用 {{size}}",
+        "protectedOverLimit": "僅已儲存的項目和已轉錄的檔案就佔用了 {{size}}，超過此上限。其他錄音只保留最新的一個。"
       },
       "alwaysOnMicrophone": {
         "label": "麥克風常開",

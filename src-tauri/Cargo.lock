@@ -2484,7 +2484,9 @@ dependencies = [
  "objc2-app-kit",
  "objc2-foundation",
  "objc2-service-management",
+ "ogg",
  "once_cell",
+ "opusic-c",
  "rdev",
  "regex",
  "reqwest 0.12.28",
@@ -4144,6 +4146,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "ogg"
+version = "0.9.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fdab8dcd8d4052eaacaf8fb07a3ccd9a6e26efadb42878a413c68fc4af1dee2b"
+dependencies = [
+ "byteorder",
+]
+
+[[package]]
 name = "once_cell"
 version = "1.21.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4222,6 +4233,24 @@ name = "option-ext"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "04744f49eae99ab78e0d5c0b603ab218f515ea8cfe5a456d7629ad883a3b6e7d"
+
+[[package]]
+name = "opusic-c"
+version = "1.6.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "89f8e9c909466f15e60277212cc4fec082c68a5e1c9f6e373eee716fec2fed47"
+dependencies = [
+ "opusic-sys",
+]
+
+[[package]]
+name = "opusic-sys"
+version = "0.7.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "986d749e9dc12035f11bf3ecc83a2a696ff7534d4143be9469a4a0faa25b9fd1"
+dependencies = [
+ "cmake",
+]
 
 [[package]]
 name = "ordered-stream"

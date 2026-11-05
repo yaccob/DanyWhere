@@ -716,6 +716,7 @@
       "delete": "Slet post",
       "deleteError": "Kunne ikke slette posten. Prøv igen.",
       "retranscribe": "Transskribér igen",
+      "recordingRemoved": "Optagelse slettet for at holde lagergrænsen",
       "cancelTranscription": "Annuller transskription",
       "transcribing": "Transskriberer...",
       "transcriptionFailed": "Transskription mislykkedes. Du kan transskribere igen ved hjælp af genforsøgsikonet.",
@@ -809,6 +810,13 @@
         "weeks2": "Efter 2 uger",
         "months3": "Efter 3 måneder",
         "placeholder": "Vælg opbevaringsperiode..."
+      },
+      "recordingStorage": {
+        "title": "Lagerplads til optagelser",
+        "description": "Når alle optagelser tilsammen fylder mere end dette, slettes de ældste. Deres transskriptioner bliver i historikken. Gemte poster og transskriberede filer slettes aldrig automatisk.",
+        "unlimited": "Ubegrænset",
+        "usage": "Optagelser fylder {{size}}",
+        "protectedOverLimit": "Gemte poster og transskriberede filer fylder alene {{size}}, mere end denne grænse. Af de øvrige optagelser beholdes kun den nyeste."
       },
       "alwaysOnMicrophone": {
         "label": "Altid aktiv mikrofon",

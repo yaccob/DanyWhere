@@ -716,6 +716,7 @@
       "delete": "Eintrag löschen",
       "deleteError": "Eintrag konnte nicht gelöscht werden. Bitte versuche es erneut.",
       "retranscribe": "Erneut transkribieren",
+      "recordingRemoved": "Aufnahme gelöscht, um im Speicherlimit zu bleiben",
       "cancelTranscription": "Transkription abbrechen",
       "transcribing": "Transkribiere...",
       "transcriptionFailed": "Transkription fehlgeschlagen. Du kannst über das Wiederholen-Symbol erneut transkribieren.",
@@ -809,6 +810,13 @@
         "weeks2": "Nach 2 Wochen",
         "months3": "Nach 3 Monaten",
         "placeholder": "Aufbewahrungszeitraum auswählen..."
+      },
+      "recordingStorage": {
+        "title": "Speicherplatz für Aufnahmen",
+        "description": "Brauchen alle Aufnahmen zusammen mehr Platz, werden die ältesten gelöscht. Ihre Transkripte bleiben im Verlauf. Gespeicherte Einträge und transkribierte Dateien werden nie automatisch gelöscht.",
+        "unlimited": "Unbegrenzt",
+        "usage": "Aufnahmen belegen {{size}}",
+        "protectedOverLimit": "Gespeicherte Einträge und transkribierte Dateien allein belegen {{size}}, mehr als dieses Limit. Von den übrigen Aufnahmen bleibt nur die neueste erhalten."
       },
       "alwaysOnMicrophone": {
         "label": "Mikrofon immer aktiv",

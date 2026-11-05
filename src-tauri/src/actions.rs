@@ -729,14 +729,22 @@ impl ShortcutAction for TranscribeAction {
                     set_tray_state(&ah, TrayIconState::Idle);
                     emit_transcription_complete(&ah, empty_outcome(input_silent), 0, stop_time);
                 } else {
-                    // Save WAV concurrently with transcription
+                    // Save the recording (Opus) and check it by decoding it,
+                    // concurrently with transcription
                     let sample_count = samples.len();
-                    let file_name = format!("handy-{}.wav", chrono::Utc::now().timestamp());
+                    let file_name = crate::audio_toolkit::recording_file_name(&format!(
+                        "handy-{}",
+                        chrono::Utc::now().timestamp()
+                    ));
                     let wav_path = hm.recordings_dir().join(&file_name);
-                    let wav_path_for_verify = wav_path.clone();
                     let samples_for_wav = samples.clone();
                     let wav_handle = tauri::async_runtime::spawn_blocking(move || {
-                        crate::audio_toolkit::save_wav_file(&wav_path, &samples_for_wav)
+                        crate::audio_toolkit::save_recording(&wav_path, &samples_for_wav)
+                            .map_err(|e| (false, e))
+                            .and_then(|()| {
+                                crate::audio_toolkit::verify_recording(&wav_path, sample_count)
+                                    .map_err(|e| (true, e))
+                            })
                     });
 
                     // Transcribe concurrently with WAV save: the live decode's
@@ -746,26 +754,19 @@ impl ShortcutAction for TranscribeAction {
                     let transcription_time = Instant::now();
                     let transcription_result = tm.transcribe_recording(samples);
 
-                    // Await WAV save and verify
+                    // Await the saved and verified recording
                     let wav_saved = match wav_handle.await {
-                        Ok(Ok(())) => {
-                            match crate::audio_toolkit::verify_wav_file(
-                                &wav_path_for_verify,
-                                sample_count,
-                            ) {
-                                Ok(()) => true,
-                                Err(e) => {
-                                    error!("WAV verification failed: {}", e);
-                                    false
-                                }
-                            }
+                        Ok(Ok(())) => true,
+                        Ok(Err((true, e))) => {
+                            error!("Recording verification failed: {}", e);
+                            false
                         }
-                        Ok(Err(e)) => {
-                            error!("Failed to save WAV file: {}", e);
+                        Ok(Err((false, e))) => {
+                            error!("Failed to save recording: {}", e);
                             false
                         }
                         Err(e) => {
-                            error!("WAV save task panicked: {}", e);
+                            error!("Recording save task panicked: {}", e);
                             false
                         }
                     };

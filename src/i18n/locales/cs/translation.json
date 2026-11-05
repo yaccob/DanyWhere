@@ -716,6 +716,7 @@
       "delete": "Smazat záznam",
       "deleteError": "Nepodařilo se smazat záznam. Zkuste to prosím znovu.",
       "retranscribe": "Přepsat znovu",
+      "recordingRemoved": "Nahrávka smazána kvůli limitu místa",
       "cancelTranscription": "Zrušit přepis",
       "transcribing": "Přepisuji...",
       "transcriptionFailed": "Přepis selhal. Můžete zkusit přepis znovu pomocí ikony opakování.",
@@ -809,6 +810,13 @@
         "weeks2": "Po 2 týdnech",
         "months3": "Po 3 měsících",
         "placeholder": "Vyberte dobu uchování..."
+      },
+      "recordingStorage": {
+        "title": "Místo pro nahrávky",
+        "description": "Když všechny nahrávky dohromady zaberou víc místa, nejstarší se smažou. Jejich přepisy zůstanou v historii. Uložené záznamy a přepsané soubory se nikdy nemažou automaticky.",
+        "unlimited": "Neomezeně",
+        "usage": "Nahrávky zabírají {{size}}",
+        "protectedOverLimit": "Samotné uložené záznamy a přepsané soubory zabírají {{size}}, víc než tento limit. Z ostatních nahrávek zůstane jen ta nejnovější."
       },
       "alwaysOnMicrophone": {
         "label": "Vždy zapnutý mikrofon",

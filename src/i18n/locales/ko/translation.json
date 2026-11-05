@@ -716,6 +716,7 @@
       "delete": "항목 삭제",
       "deleteError": "항목 삭제에 실패했습니다. 다시 시도해주세요.",
       "retranscribe": "다시 전사",
+      "recordingRemoved": "저장 공간 한도를 지키기 위해 녹음을 삭제했습니다",
       "cancelTranscription": "전사 취소",
       "transcribing": "전사 중...",
       "transcriptionFailed": "전사에 실패했습니다. 재시도 아이콘을 사용하여 다시 전사할 수 있습니다.",
@@ -809,6 +810,13 @@
         "weeks2": "2주 후",
         "months3": "3개월 후",
         "placeholder": "보관 기간 선택..."
+      },
+      "recordingStorage": {
+        "title": "녹음 저장 공간",
+        "description": "모든 녹음의 합계가 이 용량을 넘으면 가장 오래된 녹음부터 삭제됩니다. 변환된 텍스트는 히스토리에 남습니다. 저장한 항목과 변환한 파일은 자동으로 삭제되지 않습니다.",
+        "unlimited": "무제한",
+        "usage": "녹음 사용량: {{size}}",
+        "protectedOverLimit": "저장한 항목과 변환한 파일만으로 {{size}}를 사용해 이 한도를 넘었습니다. 나머지 녹음은 가장 최근 것만 유지됩니다."
       },
       "alwaysOnMicrophone": {
         "label": "항상 켜진 마이크",

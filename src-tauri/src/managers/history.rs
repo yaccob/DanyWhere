@@ -6,7 +6,7 @@ use rusqlite_migration::{MigrationDefinitionError, Migrations, M};
 use serde::{Deserialize, Serialize};
 use specta::Type;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tauri::AppHandle;
 use tauri_specta::Event;
 
@@ -37,12 +37,19 @@ static MIGRATIONS: &[M] = &[
 
 /// Nullable columns added outside [`MIGRATIONS`]; see
 /// [`HistoryManager::apply_migrations`].
-const ADDED_COLUMNS: &[&str] = &["source_name", "language", "language_source"];
+/// `recording_removed` holds when the storage limit deleted the entry's
+/// recording (Unix seconds); the transcript stays.
+const ADDED_COLUMNS: &[&str] = &[
+    "source_name",
+    "language",
+    "language_source",
+    "recording_removed",
+];
 
 /// Every column a [`HistoryEntry`] is read from.
 const ENTRY_COLUMNS: &str = "id, file_name, timestamp, saved, title, transcription_text, \
     post_processed_text, post_process_prompt, post_process_requested, source_name, language, \
-    language_source";
+    language_source, recording_removed";
 
 #[derive(Clone, Debug, Serialize, Deserialize, Type)]
 pub struct PaginatedHistory {
@@ -81,11 +88,85 @@ pub struct HistoryEntry {
     pub language: Option<String>,
     /// How that language was chosen; `None` before it was recorded.
     pub language_source: Option<LanguageSource>,
+    /// The storage limit deleted the recording; the transcript stays, but
+    /// there is nothing to play or transcribe again.
+    pub recording_removed: bool,
+}
+
+/// One recording as the storage limit sees it.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct StoredRecording {
+    pub id: i64,
+    pub bytes: u64,
+    /// Starred entries are never deleted automatically.
+    pub saved: bool,
+    /// Transcribed files are never deleted automatically.
+    pub is_file: bool,
+    pub timestamp: i64,
+}
+
+/// What History's recordings take, for the storage setting.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, Type)]
+pub struct RecordingStorageUsage {
+    /// All recordings.
+    pub total_bytes: u64,
+    /// Starred entries and transcribed files, which are never deleted
+    /// automatically.
+    pub protected_bytes: u64,
+}
+
+/// The recordings to delete so the rest fit in `limit` bytes (`None`:
+/// unlimited): the oldest first, never a starred entry or a transcribed
+/// file. These still count, so when they alone exceed the limit every
+/// other recording goes, except the newest: what was just dictated can
+/// always be played and transcribed again, even if that goes over the
+/// limit by one recording.
+pub fn recordings_to_remove(recordings: &[StoredRecording], limit: Option<u64>) -> Vec<i64> {
+    let Some(limit) = limit else {
+        return Vec::new();
+    };
+    let mut total: u64 = recordings.iter().map(|r| r.bytes).sum();
+    if total <= limit {
+        return Vec::new();
+    }
+
+    let mut removable: Vec<&StoredRecording> = recordings
+        .iter()
+        .filter(|r| !r.saved && !r.is_file)
+        .collect();
+    removable.sort_by_key(|r| (r.timestamp, r.id));
+    // The newest recording is never removed.
+    removable.pop();
+
+    let mut remove = Vec::new();
+    for recording in removable {
+        if total <= limit {
+            break;
+        }
+        total = total.saturating_sub(recording.bytes);
+        remove.push(recording.id);
+    }
+    remove
+}
+
+/// How much the recordings take, and how much of it is never deleted.
+pub fn storage_usage(recordings: &[StoredRecording]) -> RecordingStorageUsage {
+    recordings
+        .iter()
+        .fold(RecordingStorageUsage::default(), |mut usage, r| {
+            usage.total_bytes += r.bytes;
+            if r.saved || r.is_file {
+                usage.protected_bytes += r.bytes;
+            }
+            usage
+        })
 }
 
 pub struct HistoryManager {
     app_handle: AppHandle,
     recordings_dir: PathBuf,
+    /// Decoded WAV copies of Opus recordings for the player.
+    playback_dir: PathBuf,
     db_path: PathBuf,
 }
 
@@ -102,6 +183,7 @@ impl HistoryManager {
         // Create recordings directory in app data dir
         let app_data_dir = crate::portable::app_data_dir(app_handle)?;
         let recordings_dir = app_data_dir.join("recordings");
+        let playback_dir = app_data_dir.join("recording-playback");
         let db_path = app_data_dir.join("history.db");
 
         // Ensure recordings directory exists
@@ -113,6 +195,7 @@ impl HistoryManager {
         let manager = Self {
             app_handle: app_handle.clone(),
             recordings_dir,
+            playback_dir,
             db_path,
         };
 
@@ -272,6 +355,7 @@ impl HistoryManager {
                 .get::<_, Option<String>>("language_source")?
                 .as_deref()
                 .and_then(LanguageSource::parse),
+            recording_removed: row.get::<_, Option<String>>("recording_removed")?.is_some(),
         })
     }
 
@@ -280,7 +364,7 @@ impl HistoryManager {
     }
 
     /// Save a new history entry to the database.
-    /// The WAV file should already have been written to the recordings directory.
+    /// The recording should already have been written to the recordings directory.
     pub fn save_entry(
         &self,
         file_name: String,
@@ -304,6 +388,7 @@ impl HistoryManager {
             source_name: None,
             language,
             language_source,
+            recording_removed: false,
         })?;
 
         self.cleanup_old_entries()?;
@@ -312,10 +397,10 @@ impl HistoryManager {
     }
 
     /// Save the entry for a file whose audio is already at `file_name`.
-    /// Retention never removes it (only deleting it does); never
+    /// The storage limit never removes it (only deleting it does); never
     /// post-processed.
     pub fn save_file_entry(&self, file_name: String, source_name: String) -> Result<HistoryEntry> {
-        self.insert_entry(HistoryEntry {
+        let entry = self.insert_entry(HistoryEntry {
             id: 0,
             file_name,
             timestamp: Utc::now().timestamp(),
@@ -328,7 +413,16 @@ impl HistoryManager {
             source_name: Some(source_name),
             language: None,
             language_source: None,
-        })
+            recording_removed: false,
+        })?;
+
+        // The file counts toward the storage limit, so older dictations may
+        // have to make room; the file itself is never removed.
+        if let Err(e) = self.cleanup_old_entries() {
+            warn!("Failed to apply the storage limit: {}", e);
+        }
+
+        Ok(entry)
     }
 
     /// Insert `entry`, filling in its id and title, and announce it.
@@ -432,126 +526,80 @@ impl HistoryManager {
         Ok(entry)
     }
 
+    /// Keep the recordings within the storage limit: the oldest that are
+    /// neither starred nor transcribed files go first. Their entries and
+    /// transcripts stay; the entries say the recording was removed.
     pub fn cleanup_old_entries(&self) -> Result<()> {
-        let retention_period = crate::settings::get_recording_retention_period(&self.app_handle);
-
-        match retention_period {
-            crate::settings::RecordingRetentionPeriod::Never => {
-                // Don't delete anything
-                Ok(())
-            }
-            crate::settings::RecordingRetentionPeriod::PreserveLimit => {
-                // Use the old count-based logic with history_limit
-                let limit = crate::settings::get_history_limit(&self.app_handle);
-                self.cleanup_by_count(limit)
-            }
-            _ => {
-                // Use time-based logic
-                self.cleanup_by_time(retention_period)
-            }
+        let limit = crate::settings::get_recording_storage_limit(&self.app_handle).bytes();
+        let conn = self.get_connection()?;
+        let recordings = Self::stored_recordings_with_conn(&conn, &self.recordings_dir)?;
+        let remove = recordings_to_remove(&recordings, limit);
+        if remove.is_empty() {
+            return Ok(());
         }
+
+        Self::remove_recordings_with_conn(
+            &conn,
+            &self.recordings_dir,
+            &remove,
+            Utc::now().timestamp(),
+        )?;
+        info!(
+            "Removed {} recording(s) to stay within the storage limit",
+            remove.len()
+        );
+        for id in remove {
+            self.emit_updated(&conn, id);
+        }
+        Ok(())
     }
 
-    fn delete_entries_and_files(&self, entries: &[(i64, String)]) -> Result<usize> {
-        if entries.is_empty() {
-            return Ok(0);
-        }
-
+    /// What the recordings take now.
+    pub fn storage_usage(&self) -> Result<RecordingStorageUsage> {
         let conn = self.get_connection()?;
-        let mut deleted_count = 0;
+        Ok(storage_usage(&Self::stored_recordings_with_conn(
+            &conn,
+            &self.recordings_dir,
+        )?))
+    }
 
-        for (id, file_name) in entries {
-            // Delete database entry
-            conn.execute(
-                "DELETE FROM transcription_history WHERE id = ?1",
-                params![id],
-            )?;
+    /// Convert the WAV recordings from before Opus, then apply the storage
+    /// limit to what they take now. Runs once per start, in the background.
+    pub fn convert_wav_recordings(&self) -> Result<()> {
+        let conn = self.get_connection()?;
+        let converted = Self::convert_wav_recordings_with_conn(&conn, &self.recordings_dir)?;
+        if !converted.is_empty() {
+            info!("Converted {} WAV recording(s) to Opus", converted.len());
+        }
+        for id in converted {
+            self.emit_updated(&conn, id);
+        }
+        self.cleanup_old_entries()
+    }
 
-            // Delete WAV file
-            let file_path = self.recordings_dir.join(file_name);
-            if file_path.exists() {
-                if let Err(e) = fs::remove_file(&file_path) {
-                    error!("Failed to delete WAV file {}: {}", file_name, e);
-                } else {
-                    debug!("Deleted old WAV file: {}", file_name);
-                    deleted_count += 1;
+    /// A WAV of the recording `file_name` for the history player.
+    pub fn playback_wav_path(&self, file_name: &str) -> Result<PathBuf> {
+        crate::audio_toolkit::write_playback_wav(
+            &self.get_audio_file_path(file_name),
+            &self.playback_dir,
+        )
+    }
+
+    /// Tell the frontend that entry `id` changed.
+    fn emit_updated(&self, conn: &Connection, id: i64) {
+        let entry = conn.query_row(
+            &format!("SELECT {ENTRY_COLUMNS} FROM transcription_history WHERE id = ?1"),
+            params![id],
+            Self::map_history_entry,
+        );
+        match entry {
+            Ok(entry) => {
+                if let Err(e) = (HistoryUpdatePayload::Updated { entry }).emit(&self.app_handle) {
+                    error!("Failed to emit history-updated event: {}", e);
                 }
             }
+            Err(e) => warn!("Failed to read history entry {} after a change: {}", id, e),
         }
-
-        Ok(deleted_count)
-    }
-
-    fn cleanup_by_count(&self, limit: usize) -> Result<()> {
-        let conn = self.get_connection()?;
-
-        // Unsaved dictations, newest first. Transcribed files are only ever
-        // deleted explicitly, and don't count toward the limit.
-        let mut stmt = conn.prepare(
-            "SELECT id, file_name FROM transcription_history WHERE saved = 0 AND source_name IS NULL ORDER BY timestamp DESC"
-        )?;
-
-        let rows = stmt.query_map([], |row| {
-            Ok((row.get::<_, i64>("id")?, row.get::<_, String>("file_name")?))
-        })?;
-
-        let mut entries: Vec<(i64, String)> = Vec::new();
-        for row in rows {
-            entries.push(row?);
-        }
-
-        if entries.len() > limit {
-            let entries_to_delete = &entries[limit..];
-            let deleted_count = self.delete_entries_and_files(entries_to_delete)?;
-
-            if deleted_count > 0 {
-                debug!("Cleaned up {} old history entries by count", deleted_count);
-            }
-        }
-
-        Ok(())
-    }
-
-    fn cleanup_by_time(
-        &self,
-        retention_period: crate::settings::RecordingRetentionPeriod,
-    ) -> Result<()> {
-        let conn = self.get_connection()?;
-
-        // Calculate cutoff timestamp (current time minus retention period)
-        let now = Utc::now().timestamp();
-        let cutoff_timestamp = match retention_period {
-            crate::settings::RecordingRetentionPeriod::Days3 => now - (3 * 24 * 60 * 60), // 3 days in seconds
-            crate::settings::RecordingRetentionPeriod::Weeks2 => now - (2 * 7 * 24 * 60 * 60), // 2 weeks in seconds
-            crate::settings::RecordingRetentionPeriod::Months3 => now - (3 * 30 * 24 * 60 * 60), // 3 months in seconds (approximate)
-            _ => unreachable!("Should not reach here"),
-        };
-
-        // Unsaved dictations older than the cutoff; transcribed files are only
-        // ever deleted explicitly.
-        let mut stmt = conn.prepare(
-            "SELECT id, file_name FROM transcription_history WHERE saved = 0 AND source_name IS NULL AND timestamp < ?1",
-        )?;
-
-        let rows = stmt.query_map(params![cutoff_timestamp], |row| {
-            Ok((row.get::<_, i64>("id")?, row.get::<_, String>("file_name")?))
-        })?;
-
-        let mut entries_to_delete: Vec<(i64, String)> = Vec::new();
-        for row in rows {
-            entries_to_delete.push(row?);
-        }
-
-        let deleted_count = self.delete_entries_and_files(&entries_to_delete)?;
-
-        if deleted_count > 0 {
-            debug!(
-                "Cleaned up {} old history entries based on retention period",
-                deleted_count
-            );
-        }
-
-        Ok(())
     }
 
     pub async fn get_history_entries(
@@ -719,6 +767,176 @@ impl HistoryManager {
         Ok(())
     }
 
+    /// Every entry whose recording is still there, with its size. A missing
+    /// file counts as nothing.
+    fn stored_recordings_with_conn(
+        conn: &Connection,
+        recordings_dir: &Path,
+    ) -> Result<Vec<StoredRecording>> {
+        let mut stmt = conn.prepare(
+            "SELECT id, file_name, saved, source_name, timestamp
+             FROM transcription_history
+             WHERE recording_removed IS NULL",
+        )?;
+        let rows = stmt
+            .query_map([], |row| {
+                Ok((
+                    row.get::<_, i64>("id")?,
+                    row.get::<_, String>("file_name")?,
+                    row.get::<_, bool>("saved")?,
+                    row.get::<_, Option<String>>("source_name")?,
+                    row.get::<_, i64>("timestamp")?,
+                ))
+            })?
+            .collect::<std::result::Result<Vec<_>, _>>()?;
+
+        Ok(rows
+            .into_iter()
+            .filter_map(|(id, file_name, saved, source_name, timestamp)| {
+                let metadata = fs::metadata(recordings_dir.join(&file_name)).ok()?;
+                metadata.is_file().then(|| StoredRecording {
+                    id,
+                    bytes: metadata.len(),
+                    saved,
+                    is_file: source_name.is_some(),
+                    timestamp,
+                })
+            })
+            .collect())
+    }
+
+    /// Delete the recordings of `ids` and mark them removed at `now`; the
+    /// entries and their transcripts stay. A recording that can't be deleted
+    /// stays marked as present.
+    fn remove_recordings_with_conn(
+        conn: &Connection,
+        recordings_dir: &Path,
+        ids: &[i64],
+        now: i64,
+    ) -> Result<()> {
+        for id in ids {
+            let file_name: Option<String> = conn
+                .query_row(
+                    "SELECT file_name FROM transcription_history WHERE id = ?1",
+                    params![id],
+                    |row| row.get(0),
+                )
+                .optional()?;
+            let Some(file_name) = file_name else {
+                continue;
+            };
+            let path = recordings_dir.join(&file_name);
+            if path.exists() {
+                if let Err(e) = fs::remove_file(&path) {
+                    error!("Failed to delete recording {}: {}", file_name, e);
+                    continue;
+                }
+            }
+            conn.execute(
+                "UPDATE transcription_history SET recording_removed = ?1 WHERE id = ?2",
+                params![now.to_string(), id],
+            )?;
+            debug!("Removed recording {} of entry {}", file_name, id);
+        }
+        Ok(())
+    }
+
+    /// Convert every WAV recording to Opus: written aside, checked by
+    /// decoding, renamed, the entry pointed at it, and only then the WAV
+    /// deleted. A recording that fails stays a WAV. Returns the converted
+    /// entries.
+    fn convert_wav_recordings_with_conn(
+        conn: &Connection,
+        recordings_dir: &Path,
+    ) -> Result<Vec<i64>> {
+        let mut stmt = conn.prepare(
+            "SELECT id, file_name FROM transcription_history WHERE recording_removed IS NULL",
+        )?;
+        let wavs = stmt
+            .query_map([], |row| {
+                Ok((row.get::<_, i64>("id")?, row.get::<_, String>("file_name")?))
+            })?
+            .collect::<std::result::Result<Vec<_>, _>>()?
+            .into_iter()
+            .filter(|(_, file_name)| {
+                Path::new(file_name)
+                    .extension()
+                    .and_then(|e| e.to_str())
+                    .is_some_and(|e| e.eq_ignore_ascii_case("wav"))
+                    && recordings_dir.join(file_name).is_file()
+            });
+
+        let mut converted = Vec::new();
+        for (id, file_name) in wavs {
+            match Self::convert_wav_recording(conn, recordings_dir, id, &file_name) {
+                Ok(true) => converted.push(id),
+                Ok(false) => {}
+                Err(e) => warn!("Kept {} as WAV: {}", file_name, e),
+            }
+        }
+        Ok(converted)
+    }
+
+    /// Convert one WAV recording; `false` when its entry went away meanwhile.
+    fn convert_wav_recording(
+        conn: &Connection,
+        recordings_dir: &Path,
+        id: i64,
+        file_name: &str,
+    ) -> Result<bool> {
+        let wav = recordings_dir.join(file_name);
+        let stem = Path::new(file_name)
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .ok_or_else(|| anyhow!("no file name"))?;
+        let opus_name = crate::audio_toolkit::recording_file_name(stem);
+        let opus = recordings_dir.join(&opus_name);
+        if opus.exists() {
+            return Err(anyhow!("{} already exists", opus_name));
+        }
+
+        let samples = crate::audio_toolkit::read_wav_samples(&wav)?;
+        let partial = recordings_dir.join(format!("{opus_name}.partial"));
+        let written = crate::audio_toolkit::save_recording(&partial, &samples).and_then(|()| {
+            let decoded = crate::audio_toolkit::read_opus_samples(&partial)?.len();
+            if decoded != samples.len() {
+                return Err(anyhow!(
+                    "decoded {} samples instead of {}",
+                    decoded,
+                    samples.len()
+                ));
+            }
+            Ok(fs::rename(&partial, &opus)?)
+        });
+        if let Err(e) = written {
+            let _ = fs::remove_file(&partial);
+            return Err(e);
+        }
+
+        let updated = conn.execute(
+            "UPDATE transcription_history SET file_name = ?1 WHERE id = ?2 AND file_name = ?3",
+            params![opus_name, id, file_name],
+        )?;
+        if updated == 0 {
+            let _ = fs::remove_file(&opus);
+            return Ok(false);
+        }
+        if let Err(e) = fs::remove_file(&wav) {
+            warn!("Converted {} but couldn't delete the WAV: {}", file_name, e);
+        }
+        Ok(true)
+    }
+
+    /// The samples of `entry`'s recording, in either format.
+    pub fn recording_samples_in(entry: &HistoryEntry, recordings_dir: &Path) -> Result<Vec<f32>> {
+        if entry.recording_removed {
+            return Err(anyhow!(
+                "The recording was removed to stay within the storage limit"
+            ));
+        }
+        crate::audio_toolkit::read_recording_samples(recordings_dir.join(&entry.file_name))
+    }
+
     fn format_timestamp_title(&self, timestamp: i64) -> String {
         if let Some(utc_datetime) = DateTime::from_timestamp(timestamp, 0) {
             // Convert UTC to local timezone
@@ -750,7 +968,8 @@ mod tests {
                 post_process_requested BOOLEAN NOT NULL DEFAULT 0,
                 source_name TEXT,
                 language TEXT,
-                language_source TEXT
+                language_source TEXT,
+                recording_removed TEXT
             );",
         )
         .expect("create transcription_history table");
@@ -894,5 +1113,322 @@ mod tests {
             .expect("completed entry exists");
 
         assert_eq!(entry.transcription_text, "dictated");
+    }
+
+    // ---- Storage limit -------------------------------------------------
+
+    fn rec(id: i64, bytes: u64, timestamp: i64) -> StoredRecording {
+        StoredRecording {
+            id,
+            bytes,
+            saved: false,
+            is_file: false,
+            timestamp,
+        }
+    }
+
+    #[test]
+    fn unlimited_storage_removes_nothing() {
+        let recordings = [rec(1, 900, 1), rec(2, 900, 2)];
+        assert!(recordings_to_remove(&recordings, None).is_empty());
+    }
+
+    #[test]
+    fn recordings_within_the_limit_stay() {
+        let recordings = [rec(1, 100, 1), rec(2, 150, 2)];
+        assert!(recordings_to_remove(&recordings, Some(250)).is_empty());
+        assert!(recordings_to_remove(&recordings, Some(1_000)).is_empty());
+    }
+
+    #[test]
+    fn the_oldest_recordings_go_first_until_the_rest_fits() {
+        let recordings = [
+            rec(1, 100, 10),
+            rec(2, 100, 30),
+            rec(3, 100, 20),
+            rec(4, 100, 40),
+        ];
+        assert_eq!(recordings_to_remove(&recordings, Some(250)), vec![1, 3]);
+        assert_eq!(recordings_to_remove(&recordings, Some(300)), vec![1]);
+    }
+
+    #[test]
+    fn recordings_of_the_same_time_go_in_the_order_they_were_made() {
+        let recordings = [rec(7, 100, 5), rec(3, 100, 5), rec(9, 100, 6)];
+        assert_eq!(recordings_to_remove(&recordings, Some(150)), vec![3, 7]);
+    }
+
+    #[test]
+    fn starred_recordings_are_never_removed_but_count() {
+        let starred = StoredRecording {
+            saved: true,
+            ..rec(1, 300, 1)
+        };
+        let recordings = [starred, rec(2, 100, 2), rec(3, 100, 3)];
+        assert_eq!(recordings_to_remove(&recordings, Some(450)), vec![2]);
+    }
+
+    #[test]
+    fn transcribed_files_are_never_removed_but_count() {
+        let file = StoredRecording {
+            is_file: true,
+            ..rec(1, 300, 1)
+        };
+        let recordings = [file, rec(2, 100, 2), rec(3, 100, 3)];
+        assert_eq!(recordings_to_remove(&recordings, Some(450)), vec![2]);
+    }
+
+    #[test]
+    fn when_protected_recordings_alone_exceed_the_limit_only_the_newest_stays() {
+        let starred = StoredRecording {
+            saved: true,
+            ..rec(1, 600, 1)
+        };
+        let file = StoredRecording {
+            is_file: true,
+            ..rec(2, 100, 2)
+        };
+        let recordings = [rec(4, 50, 4), starred, file, rec(3, 50, 3), rec(5, 50, 5)];
+        assert_eq!(recordings_to_remove(&recordings, Some(500)), vec![3, 4]);
+    }
+
+    #[test]
+    fn the_newest_recording_stays_even_when_it_alone_exceeds_the_limit() {
+        let recordings = [rec(1, 100, 1), rec(2, 900, 2)];
+        assert_eq!(recordings_to_remove(&recordings, Some(500)), vec![1]);
+        assert!(recordings_to_remove(&[rec(3, 900, 3)], Some(500)).is_empty());
+    }
+
+    #[test]
+    fn the_newest_recording_stays_when_a_newer_one_is_starred() {
+        let starred = StoredRecording {
+            saved: true,
+            ..rec(3, 600, 3)
+        };
+        let recordings = [rec(1, 50, 1), rec(2, 50, 2), starred];
+        assert_eq!(recordings_to_remove(&recordings, Some(500)), vec![1]);
+    }
+
+    #[test]
+    fn usage_counts_all_recordings_and_the_protected_ones() {
+        let starred = StoredRecording {
+            saved: true,
+            ..rec(1, 300, 1)
+        };
+        let file = StoredRecording {
+            is_file: true,
+            ..rec(2, 200, 2)
+        };
+        let usage = storage_usage(&[starred, file, rec(3, 50, 3)]);
+        assert_eq!(
+            usage,
+            RecordingStorageUsage {
+                total_bytes: 550,
+                protected_bytes: 500,
+            }
+        );
+        assert_eq!(storage_usage(&[]), RecordingStorageUsage::default());
+    }
+
+    // ---- Recordings on disk ----------------------------------------------
+
+    /// Insert an entry whose recording is `file_name`; returns its id.
+    fn insert_recording(
+        conn: &Connection,
+        timestamp: i64,
+        file_name: &str,
+        saved: bool,
+        source_name: Option<&str>,
+    ) -> i64 {
+        conn.execute(
+            "INSERT INTO transcription_history (file_name, timestamp, saved, title, transcription_text, source_name)
+             VALUES (?1, ?2, ?3, 'title', ?4, ?5)",
+            params![file_name, timestamp, saved, format!("text {timestamp}"), source_name],
+        )
+        .expect("insert recording entry");
+        conn.last_insert_rowid()
+    }
+
+    fn entry_by_id(conn: &Connection, id: i64) -> Option<HistoryEntry> {
+        conn.query_row(
+            &format!("SELECT {ENTRY_COLUMNS} FROM transcription_history WHERE id = ?1"),
+            params![id],
+            HistoryManager::map_history_entry,
+        )
+        .optional()
+        .expect("read entry")
+    }
+
+    fn tone(n: usize) -> Vec<f32> {
+        (0..n).map(|i| 0.4 * (i as f32 * 0.05).sin()).collect()
+    }
+
+    #[test]
+    fn finds_the_recordings_that_are_still_there() {
+        let conn = setup_conn();
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(dir.path().join("a.opus"), vec![0u8; 1_000]).unwrap();
+        std::fs::write(dir.path().join("b.opus"), vec![0u8; 2_000]).unwrap();
+        std::fs::write(dir.path().join("f.opus"), vec![0u8; 3_000]).unwrap();
+        let a = insert_recording(&conn, 1, "a.opus", false, None);
+        let b = insert_recording(&conn, 2, "b.opus", true, None);
+        let f = insert_recording(&conn, 3, "f.opus", false, Some("talk.mp3"));
+        let removed = insert_recording(&conn, 4, "gone.opus", false, None);
+        conn.execute(
+            "UPDATE transcription_history SET recording_removed = '5' WHERE id = ?1",
+            params![removed],
+        )
+        .unwrap();
+        insert_recording(&conn, 5, "missing.opus", false, None);
+
+        let mut found = HistoryManager::stored_recordings_with_conn(&conn, dir.path())
+            .expect("list recordings");
+        found.sort_by_key(|r| r.id);
+        assert_eq!(
+            found,
+            vec![
+                StoredRecording {
+                    id: a,
+                    bytes: 1_000,
+                    saved: false,
+                    is_file: false,
+                    timestamp: 1
+                },
+                StoredRecording {
+                    id: b,
+                    bytes: 2_000,
+                    saved: true,
+                    is_file: false,
+                    timestamp: 2
+                },
+                StoredRecording {
+                    id: f,
+                    bytes: 3_000,
+                    saved: false,
+                    is_file: true,
+                    timestamp: 3
+                },
+            ]
+        );
+    }
+
+    #[test]
+    fn removing_a_recording_keeps_the_entry_and_its_text() {
+        let conn = setup_conn();
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(dir.path().join("a.opus"), b"audio").unwrap();
+        std::fs::write(dir.path().join("b.opus"), b"audio").unwrap();
+        let a = insert_recording(&conn, 1, "a.opus", false, None);
+        let b = insert_recording(&conn, 2, "b.opus", false, None);
+
+        HistoryManager::remove_recordings_with_conn(&conn, dir.path(), &[a], 99)
+            .expect("remove recording");
+
+        assert!(!dir.path().join("a.opus").exists(), "file deleted");
+        let entry = entry_by_id(&conn, a).expect("entry kept");
+        assert_eq!(entry.transcription_text, "text 1");
+        assert!(entry.recording_removed);
+        let other = entry_by_id(&conn, b).expect("other entry kept");
+        assert!(!other.recording_removed);
+        assert!(dir.path().join("b.opus").exists());
+    }
+
+    #[test]
+    fn converts_wav_recordings_to_opus() {
+        let conn = setup_conn();
+        let dir = tempfile::tempdir().unwrap();
+        crate::audio_toolkit::save_wav_file(dir.path().join("handy-1.wav"), &tone(16_000)).unwrap();
+        let id = insert_recording(&conn, 1, "handy-1.wav", false, None);
+
+        let converted = HistoryManager::convert_wav_recordings_with_conn(&conn, dir.path())
+            .expect("convert recordings");
+
+        assert_eq!(converted, vec![id]);
+        let entry = entry_by_id(&conn, id).unwrap();
+        assert_eq!(entry.file_name, "handy-1.opus");
+        assert!(!dir.path().join("handy-1.wav").exists(), "WAV deleted");
+        let samples = crate::audio_toolkit::read_opus_samples(dir.path().join("handy-1.opus"))
+            .expect("read converted recording");
+        assert_eq!(samples.len(), 16_000);
+        let leftovers: Vec<_> = std::fs::read_dir(dir.path())
+            .unwrap()
+            .map(|e| e.unwrap().file_name().to_string_lossy().into_owned())
+            .collect();
+        assert_eq!(leftovers, vec!["handy-1.opus".to_string()]);
+    }
+
+    #[test]
+    fn a_wav_that_cannot_be_read_stays_as_it_is() {
+        let conn = setup_conn();
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(dir.path().join("broken.wav"), b"not a wav at all").unwrap();
+        let id = insert_recording(&conn, 1, "broken.wav", false, None);
+
+        let converted = HistoryManager::convert_wav_recordings_with_conn(&conn, dir.path())
+            .expect("conversion runs");
+
+        assert!(converted.is_empty());
+        assert_eq!(entry_by_id(&conn, id).unwrap().file_name, "broken.wav");
+        let files: Vec<_> = std::fs::read_dir(dir.path())
+            .unwrap()
+            .map(|e| e.unwrap().file_name().to_string_lossy().into_owned())
+            .collect();
+        assert_eq!(files, vec!["broken.wav".to_string()]);
+    }
+
+    #[test]
+    fn conversion_leaves_opus_missing_and_removed_recordings_alone() {
+        let conn = setup_conn();
+        let dir = tempfile::tempdir().unwrap();
+        crate::audio_toolkit::save_opus_file(dir.path().join("new.opus"), &tone(800)).unwrap();
+        crate::audio_toolkit::save_wav_file(dir.path().join("old.wav"), &tone(800)).unwrap();
+        insert_recording(&conn, 1, "new.opus", false, None);
+        insert_recording(&conn, 2, "missing.wav", false, None);
+        let removed = insert_recording(&conn, 3, "old.wav", false, None);
+        conn.execute(
+            "UPDATE transcription_history SET recording_removed = '5' WHERE id = ?1",
+            params![removed],
+        )
+        .unwrap();
+
+        let converted = HistoryManager::convert_wav_recordings_with_conn(&conn, dir.path())
+            .expect("conversion runs");
+
+        assert!(converted.is_empty());
+        assert_eq!(entry_by_id(&conn, removed).unwrap().file_name, "old.wav");
+    }
+
+    #[test]
+    fn reads_the_samples_of_opus_and_wav_recordings() {
+        let conn = setup_conn();
+        let dir = tempfile::tempdir().unwrap();
+        crate::audio_toolkit::save_opus_file(dir.path().join("a.opus"), &tone(5_000)).unwrap();
+        crate::audio_toolkit::save_wav_file(dir.path().join("b.wav"), &tone(3_000)).unwrap();
+        let a = insert_recording(&conn, 1, "a.opus", false, None);
+        let b = insert_recording(&conn, 2, "b.wav", false, None);
+
+        let samples = |id| {
+            HistoryManager::recording_samples_in(&entry_by_id(&conn, id).unwrap(), dir.path())
+                .expect("read samples")
+                .len()
+        };
+        assert_eq!(samples(a), 5_000);
+        assert_eq!(samples(b), 3_000);
+    }
+
+    #[test]
+    fn a_removed_recording_has_no_samples() {
+        let conn = setup_conn();
+        let dir = tempfile::tempdir().unwrap();
+        crate::audio_toolkit::save_wav_file(dir.path().join("a.wav"), &tone(3_000)).unwrap();
+        let id = insert_recording(&conn, 1, "a.wav", false, None);
+        conn.execute(
+            "UPDATE transcription_history SET recording_removed = '5' WHERE id = ?1",
+            params![id],
+        )
+        .unwrap();
+
+        let entry = entry_by_id(&conn, id).unwrap();
+        assert!(HistoryManager::recording_samples_in(&entry, dir.path()).is_err());
     }
 }

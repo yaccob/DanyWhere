@@ -716,6 +716,7 @@
       "delete": "Delete entry",
       "deleteError": "Failed to delete entry. Please try again.",
       "retranscribe": "Re-transcribe",
+      "recordingRemoved": "Recording deleted to stay within the storage limit",
       "cancelTranscription": "Cancel transcription",
       "transcribing": "Transcribing...",
       "transcriptionFailed": "Transcription failed. You can re-transcribe using the retry icon.",
@@ -809,6 +810,13 @@
         "weeks2": "After 2 weeks",
         "months3": "After 3 months",
         "placeholder": "Select retention period..."
+      },
+      "recordingStorage": {
+        "title": "Storage for Recordings",
+        "description": "When all recordings together take more space than this, the oldest are deleted. Their transcripts stay in History. Saved entries and transcribed files are never deleted automatically.",
+        "unlimited": "Unlimited",
+        "usage": "Recordings take {{size}}",
+        "protectedOverLimit": "Saved entries and transcribed files alone take {{size}}, more than this limit. Of the other recordings, only the newest is kept."
       },
       "alwaysOnMicrophone": {
         "label": "Always-On Microphone",

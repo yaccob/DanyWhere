@@ -10,6 +10,7 @@ import type {
   ShortcutActivation,
   VadBackend,
   LanguageDetectionMode,
+  RecordingStorageLimit,
 } from "@/bindings";
 import { commands } from "@/bindings";
 import { notify } from "@/stores/noticeStore";
@@ -136,6 +137,8 @@ const settingUpdaters: {
     ),
   recording_retention_period: (value) =>
     commands.updateRecordingRetentionPeriod(value as string),
+  recording_storage_limit: (value) =>
+    commands.updateRecordingStorageLimit(value as RecordingStorageLimit),
   translate_to_english: (value) =>
     commands.changeTranslateToEnglishSetting(value as boolean),
   selected_language: (value) =>

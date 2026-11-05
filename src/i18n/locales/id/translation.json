@@ -716,6 +716,7 @@
       "delete": "Hapus entri",
       "deleteError": "Gagal menghapus entri. Silakan coba lagi.",
       "retranscribe": "Transkripsikan ulang",
+      "recordingRemoved": "Rekaman dihapus agar tetap dalam batas penyimpanan",
       "cancelTranscription": "Batalkan transkripsi",
       "transcribing": "Mentranskripsikan...",
       "transcriptionFailed": "Transkripsi gagal. Anda dapat mentranskripsikan ulang menggunakan ikon coba lagi.",
@@ -809,6 +810,13 @@
         "weeks2": "Setelah 2 minggu",
         "months3": "Setelah 3 bulan",
         "placeholder": "Pilih masa penyimpanan..."
+      },
+      "recordingStorage": {
+        "title": "Penyimpanan untuk Rekaman",
+        "description": "Jika semua rekaman bersama-sama memakai lebih banyak ruang dari ini, rekaman tertua dihapus. Transkripsinya tetap ada di riwayat. Entri yang disimpan dan file yang ditranskripsi tidak pernah dihapus otomatis.",
+        "unlimited": "Tanpa Batas",
+        "usage": "Rekaman memakai {{size}}",
+        "protectedOverLimit": "Entri yang disimpan dan file yang ditranskripsi saja sudah memakai {{size}}, lebih dari batas ini. Dari rekaman lainnya, hanya yang terbaru yang disimpan."
       },
       "alwaysOnMicrophone": {
         "label": "Mikrofon Selalu Aktif",

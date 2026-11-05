@@ -716,6 +716,7 @@
       "delete": "Suprimeix l'entrada",
       "deleteError": "No s'ha pogut suprimir l'entrada. Torneu-ho a provar.",
       "retranscribe": "Torneu a transcriure",
+      "recordingRemoved": "Enregistrament eliminat per no superar el límit d'espai",
       "cancelTranscription": "Cancel·la la transcripció",
       "transcribing": "S'està transcrivint...",
       "transcriptionFailed": "La transcripció ha fallat. Podeu tornar a transcriure amb la icona de reintent.",
@@ -809,6 +810,13 @@
         "weeks2": "Al cap de 2 setmanes",
         "months3": "Al cap de 3 mesos",
         "placeholder": "Selecciona el període de conservació..."
+      },
+      "recordingStorage": {
+        "title": "Espai per als enregistraments",
+        "description": "Quan tots els enregistraments junts ocupen més espai que aquest, s'eliminen els més antics. Les transcripcions es queden a l'historial. Les entrades desades i els fitxers transcrits no s'eliminen mai automàticament.",
+        "unlimited": "Il·limitat",
+        "usage": "Els enregistraments ocupen {{size}}",
+        "protectedOverLimit": "Les entrades desades i els fitxers transcrits ja ocupen {{size}}, més que aquest límit. Dels altres enregistraments només es conserva el més recent."
       },
       "alwaysOnMicrophone": {
         "label": "Micròfon sempre actiu",

@@ -716,6 +716,7 @@
       "delete": "Kaydı sil",
       "deleteError": "Kayıt silinemedi. Lütfen tekrar deneyin.",
       "retranscribe": "Yeniden transkribe et",
+      "recordingRemoved": "Depolama sınırında kalmak için kayıt silindi",
       "cancelTranscription": "Transkripsiyonu iptal et",
       "transcribing": "Transkribe ediliyor...",
       "transcriptionFailed": "Transkripsiyon başarısız oldu. Yeniden deneme simgesini kullanarak tekrar transkribe edebilirsiniz.",
@@ -809,6 +810,13 @@
         "weeks2": "2 hafta sonra",
         "months3": "3 ay sonra",
         "placeholder": "Saklama süresi seçin..."
+      },
+      "recordingStorage": {
+        "title": "Kayıtlar İçin Depolama",
+        "description": "Tüm kayıtlar birlikte bundan fazla yer kaplarsa en eskileri silinir. Transkripsiyonları geçmişte kalır. Kaydedilen girişler ve transkribe edilen dosyalar hiçbir zaman otomatik olarak silinmez.",
+        "unlimited": "Sınırsız",
+        "usage": "Kayıtlar {{size}} yer kaplıyor",
+        "protectedOverLimit": "Yalnızca kaydedilen girişler ve transkribe edilen dosyalar {{size}} yer kaplıyor, bu sınırdan fazla. Diğer kayıtlardan yalnızca en yenisi saklanır."
       },
       "alwaysOnMicrophone": {
         "label": "Mikrofon Her Zaman Açık",

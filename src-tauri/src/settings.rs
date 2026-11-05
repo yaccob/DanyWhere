@@ -228,6 +228,53 @@ pub enum RecordingRetentionPeriod {
     Months3,
 }
 
+/// How much space History's recordings may take. Over it, the oldest
+/// recordings that are not starred are deleted; their transcripts stay.
+/// Replaces [`RecordingRetentionPeriod`] and `history_limit`, which are kept
+/// only so older stores still parse and migrate.
+///
+/// The names are spelled out because serde's and specta's `snake_case`
+/// disagree on digits (`mb100` vs `mb_100`), and the frontend sends what
+/// specta generates.
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Type, Default)]
+pub enum RecordingStorageLimit {
+    #[serde(rename = "mb_100")]
+    Mb100,
+    #[default]
+    #[serde(rename = "mb_500")]
+    Mb500,
+    #[serde(rename = "gb_1")]
+    Gb1,
+    #[serde(rename = "gb_5")]
+    Gb5,
+    #[serde(rename = "unlimited")]
+    Unlimited,
+}
+
+impl RecordingStorageLimit {
+    /// The limit in bytes (decimal units, as Finder and Explorer count them);
+    /// `None` when unlimited.
+    pub fn bytes(self) -> Option<u64> {
+        const MB: u64 = 1_000_000;
+        match self {
+            Self::Mb100 => Some(100 * MB),
+            Self::Mb500 => Some(500 * MB),
+            Self::Gb1 => Some(1_000 * MB),
+            Self::Gb5 => Some(5_000 * MB),
+            Self::Unlimited => None,
+        }
+    }
+
+    /// The limit an upgrading user gets for the retention they had chosen:
+    /// "never delete" stays unlimited, every other choice gets the default.
+    pub fn for_retention(period: RecordingRetentionPeriod) -> Self {
+        match period {
+            RecordingRetentionPeriod::Never => Self::Unlimited,
+            _ => Self::default(),
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Type)]
 #[serde(rename_all = "snake_case")]
 pub enum KeyboardImplementation {
@@ -478,6 +525,9 @@ pub struct AppSettings {
     pub history_limit: usize,
     #[serde(default = "default_recording_retention_period")]
     pub recording_retention_period: RecordingRetentionPeriod,
+    /// Migrated from `recording_retention_period` in `apply_settings_migrations`.
+    #[serde(default)]
+    pub recording_storage_limit: RecordingStorageLimit,
     #[serde(default)]
     pub paste_method: PasteMethod,
     #[serde(default)]
@@ -1060,6 +1110,7 @@ pub fn get_default_settings() -> AppSettings {
         word_correction_threshold: default_word_correction_threshold(),
         history_limit: default_history_limit(),
         recording_retention_period: default_recording_retention_period(),
+        recording_storage_limit: RecordingStorageLimit::default(),
         paste_method: PasteMethod::default(),
         clipboard_handling: ClipboardHandling::default(),
         auto_submit: default_auto_submit(),
@@ -1274,6 +1325,14 @@ fn apply_settings_migrations(
         }
     }
 
+    // One-time storage limit migration (only while the new key is absent):
+    // the count and age options gave way to a size limit for recordings.
+    if settings_value.get("recording_storage_limit").is_none() {
+        settings.recording_storage_limit =
+            RecordingStorageLimit::for_retention(settings.recording_retention_period);
+        updated = true;
+    }
+
     // One-time spoken languages backfill for users onboarded before it was asked.
     // The guess always includes English, so it never decides a transcription
     // (`effective_language` only uses a lone language). Must run before the
@@ -1451,14 +1510,8 @@ pub fn get_stored_binding(settings: &AppSettings, id: &str) -> Result<ShortcutBi
         .ok_or_else(|| format!("Binding with id '{}' not found", id))
 }
 
-pub fn get_history_limit(app: &AppHandle) -> usize {
-    let settings = get_settings(app);
-    settings.history_limit
-}
-
-pub fn get_recording_retention_period(app: &AppHandle) -> RecordingRetentionPeriod {
-    let settings = get_settings(app);
-    settings.recording_retention_period
+pub fn get_recording_storage_limit(app: &AppHandle) -> RecordingStorageLimit {
+    get_settings(app).recording_storage_limit
 }
 
 #[cfg(test)]
@@ -1847,6 +1900,73 @@ mod tests {
     }
 
     #[test]
+    fn recording_storage_limits_in_bytes() {
+        assert_eq!(RecordingStorageLimit::Mb100.bytes(), Some(100_000_000));
+        assert_eq!(RecordingStorageLimit::Mb500.bytes(), Some(500_000_000));
+        assert_eq!(RecordingStorageLimit::Gb1.bytes(), Some(1_000_000_000));
+        assert_eq!(RecordingStorageLimit::Gb5.bytes(), Some(5_000_000_000));
+        assert_eq!(RecordingStorageLimit::Unlimited.bytes(), None);
+    }
+
+    #[test]
+    fn fresh_installs_keep_500_mb_of_recordings() {
+        assert_eq!(
+            get_default_settings().recording_storage_limit,
+            RecordingStorageLimit::Mb500
+        );
+        let parsed: AppSettings = serde_json::from_value(serde_json::json!({})).unwrap();
+        assert_eq!(parsed.recording_storage_limit, RecordingStorageLimit::Mb500);
+    }
+
+    #[test]
+    fn retention_migrates_to_a_storage_limit() {
+        for (period, limit) in [
+            ("never", RecordingStorageLimit::Unlimited),
+            ("preserve_limit", RecordingStorageLimit::Mb500),
+            ("days3", RecordingStorageLimit::Mb500),
+            ("weeks2", RecordingStorageLimit::Mb500),
+            ("months3", RecordingStorageLimit::Mb500),
+        ] {
+            let settings = backfilled(serde_json::json!({
+                "recording_retention_period": period
+            }));
+            assert_eq!(settings.recording_storage_limit, limit, "{period}");
+        }
+        // A store from before either key existed had the count limit.
+        assert_eq!(
+            backfilled(serde_json::json!({})).recording_storage_limit,
+            RecordingStorageLimit::Mb500
+        );
+    }
+
+    #[test]
+    fn a_chosen_storage_limit_is_kept() {
+        let settings = backfilled(serde_json::json!({
+            "recording_retention_period": "never",
+            "recording_storage_limit": "gb_1"
+        }));
+        assert_eq!(settings.recording_storage_limit, RecordingStorageLimit::Gb1);
+    }
+
+    /// The frontend sends the names specta generates in bindings.ts.
+    #[test]
+    fn storage_limits_use_the_names_the_frontend_sends() {
+        for (limit, name) in [
+            (RecordingStorageLimit::Mb100, "mb_100"),
+            (RecordingStorageLimit::Mb500, "mb_500"),
+            (RecordingStorageLimit::Gb1, "gb_1"),
+            (RecordingStorageLimit::Gb5, "gb_5"),
+            (RecordingStorageLimit::Unlimited, "unlimited"),
+        ] {
+            assert_eq!(serde_json::to_value(limit).unwrap(), name);
+            assert_eq!(
+                serde_json::from_value::<RecordingStorageLimit>(name.into()).unwrap(),
+                limit
+            );
+        }
+    }
+
+    #[test]
     fn spoken_languages_backfill_guesses_with_english_included() {
         for (stored, spoken) in [
             (
@@ -2030,6 +2150,7 @@ mod tests {
             "whats_new_last_seen_version": default_whats_new_last_seen_version(),
             "overlay_style": "live",
             "chinese_script": "as_transcribed",
+            "recording_storage_limit": "mb_500",
             "transcribe_accelerator": "gpu",
             "transcribe_gpu_device": settings.transcribe_gpu_device
         });

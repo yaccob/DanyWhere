@@ -716,6 +716,7 @@
       "delete": "Excluir entrada",
       "deleteError": "Falha ao excluir entrada. Por favor, tente novamente.",
       "retranscribe": "Re-transcrever",
+      "recordingRemoved": "Gravação excluída para ficar dentro do limite de espaço",
       "cancelTranscription": "Cancelar transcrição",
       "transcribing": "Transcrevendo...",
       "transcriptionFailed": "A transcrição falhou. Você pode re-transcrever usando o ícone de tentar novamente.",
@@ -809,6 +810,13 @@
         "weeks2": "Após 2 semanas",
         "months3": "Após 3 meses",
         "placeholder": "Selecionar período de retenção..."
+      },
+      "recordingStorage": {
+        "title": "Espaço para Gravações",
+        "description": "Quando todas as gravações juntas ocupam mais espaço do que isto, as mais antigas são excluídas. As transcrições permanecem no histórico. Entradas salvas e arquivos transcritos nunca são excluídos automaticamente.",
+        "unlimited": "Ilimitado",
+        "usage": "As gravações ocupam {{size}}",
+        "protectedOverLimit": "Entradas salvas e arquivos transcritos ocupam sozinhos {{size}}, mais do que este limite. Das demais gravações, só a mais recente é mantida."
       },
       "alwaysOnMicrophone": {
         "label": "Microfone Sempre Ativo",

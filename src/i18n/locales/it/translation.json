@@ -716,6 +716,7 @@
       "delete": "Elimina elemento",
       "deleteError": "Errore nell'eliminazione dell'elemento. Riprova.",
       "retranscribe": "Ri-trascrivere",
+      "recordingRemoved": "Registrazione eliminata per restare entro il limite di spazio",
       "cancelTranscription": "Annulla trascrizione",
       "transcribing": "Trascrizione in corso...",
       "transcriptionFailed": "Trascrizione fallita. Puoi ri-trascrivere usando l'icona di ripetizione.",
@@ -809,6 +810,13 @@
         "weeks2": "Dopo 2 settimane",
         "months3": "Dopo 3 mesi",
         "placeholder": "Seleziona periodo di conservazione..."
+      },
+      "recordingStorage": {
+        "title": "Spazio per le Registrazioni",
+        "description": "Quando tutte le registrazioni insieme occupano più spazio di così, le più vecchie vengono eliminate. Le loro trascrizioni restano nella cronologia. Le voci salvate e i file trascritti non vengono mai eliminati automaticamente.",
+        "unlimited": "Illimitato",
+        "usage": "Le registrazioni occupano {{size}}",
+        "protectedOverLimit": "Le voci salvate e i file trascritti occupano da soli {{size}}, più di questo limite. Delle altre registrazioni viene conservata solo la più recente."
       },
       "alwaysOnMicrophone": {
         "label": "Microfono Sempre Attivo",

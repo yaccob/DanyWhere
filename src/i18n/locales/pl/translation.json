@@ -716,6 +716,7 @@
       "delete": "Usuń wpis",
       "deleteError": "Nie udało się usunąć wpisu. Spróbuj ponownie.",
       "retranscribe": "Transkrybuj ponownie",
+      "recordingRemoved": "Nagranie usunięte, aby zmieścić się w limicie miejsca",
       "cancelTranscription": "Anuluj transkrypcję",
       "transcribing": "Transkrybuję...",
       "transcriptionFailed": "Transkrypcja nie powiodła się. Możesz transkrybować ponownie za pomocą ikony ponowienia.",
@@ -809,6 +810,13 @@
         "weeks2": "Po 2 tygodniach",
         "months3": "Po 3 miesiącach",
         "placeholder": "Wybierz okres retencji..."
+      },
+      "recordingStorage": {
+        "title": "Miejsce na nagrania",
+        "description": "Gdy wszystkie nagrania razem zajmują więcej miejsca, najstarsze są usuwane. Ich transkrypcje zostają w historii. Zapisane wpisy i transkrybowane pliki nigdy nie są usuwane automatycznie.",
+        "unlimited": "Bez limitu",
+        "usage": "Nagrania zajmują {{size}}",
+        "protectedOverLimit": "Same zapisane wpisy i transkrybowane pliki zajmują {{size}}, więcej niż ten limit. Z pozostałych nagrań zachowywane jest tylko najnowsze."
       },
       "alwaysOnMicrophone": {
         "label": "Mikrofon zawsze aktywny",
