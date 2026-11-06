@@ -78,10 +78,13 @@ jobs:
                 return
               }
               if (existing.target_commitish !== context.sha) {
+                // tag_name must be sent along: without it, GitHub turns the
+                // draft into an "untagged-…" one.
                 await github.rest.repos.updateRelease({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   release_id: existing.id,
+                  tag_name: tag,
                   target_commitish: context.sha,
                 })
                 core.info(`Moved draft ${tag} from ${existing.target_commitish} to ${context.sha}`)
