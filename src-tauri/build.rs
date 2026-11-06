@@ -15,8 +15,10 @@ fn main() {
     // init_backends_default() then loads the ggml modules co-located there.
     // (Windows resolves DLLs from the exe directory, so it needs no rpath;
     // macOS links transcribe-cpp statically via the `metal` feature.)
+    // DanyWhere: its deb/rpm use `/usr/lib/DanyWhere` (its product name), so
+    // the package never shares files with an installed Handy.
     if std::env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("linux") {
-        println!("cargo:rustc-link-arg=-Wl,-rpath,$ORIGIN/../lib/Handy:$ORIGIN/../lib");
+        println!("cargo:rustc-link-arg=-Wl,-rpath,$ORIGIN/../lib/DanyWhere:$ORIGIN/../lib");
     }
 
     // CPAL (handy-recorder's and rodio's) links two CoreAudio functions that

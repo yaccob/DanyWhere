@@ -1,12 +1,17 @@
-name: "Release (DanyWhere, macOS)"
+name: "Release (DanyWhere, Windows and Linux)"
 
-# DanyWhere releases: signed with Developer ID and notarized, Apple silicon
-# only. Handy's release.yml (all platforms) stays untouched so upstream merges
-# don't conflict; it is disabled in the repository settings.
+# DanyWhere releases for Windows and Linux. macOS builds are made locally
+# (signed with Developer ID and notarized) and uploaded into the same draft
+# release; both add their platforms to the draft's latest.json. Handy's
+# release.yml (all platforms) stays untouched so upstream merges don't
+# conflict; it is disabled in the repository settings.
 #
 # Tags are `danywhere-v<version>`: the clone also holds Handy's `v*` tags
 # (fetched from upstream), and DanyWhere's own version numbers would collide
 # with them.
+#
+# Windows builds are not Authenticode-signed (DanyWhere has no Windows signing
+# identity); the updater artifacts are signed with DanyWhere's updater key.
 on: workflow_dispatch
 
 jobs:
@@ -29,32 +34,91 @@ jobs:
           echo "Application version from tauri.conf.json: $VERSION"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
-      - name: Create Draft Release
+      # The README names this release's files and links to them, so it is
+      # tagged with the release; one left at another version would send
+      # people to the wrong downloads.
+      - name: Check that the README links to this version
+        shell: bash
+        env:
+          VERSION: ${{ steps.get-version.outputs.version }}
+        run: |
+          set -euo pipefail
+          links=$(grep -oE 'releases/download/danywhere-v[^/]+/' README.md | sort -u || true)
+          if [ "$links" != "releases/download/danywhere-v${VERSION}/" ]; then
+            echo "README.md must link to danywhere-v${VERSION} only; it links to: ${links:-nothing}" >&2
+            exit 1
+          fi
+          others=$(grep -oE 'DanyWhere[_-][0-9]+\.[0-9]+\.[0-9]+' README.md | sort -u \
+            | grep -v -x -F -e "DanyWhere_${VERSION}" -e "DanyWhere-${VERSION}" || true)
+          if [ -n "$others" ] || grep -q '<version>' README.md; then
+            echo "README.md names other versions or <version>: ${others}" >&2
+            exit 1
+          fi
+          echo "README.md links to danywhere-v${VERSION}"
+
+      # The draft may already exist: the local macOS release script creates it
+      # when it runs first, and a re-run of this workflow reuses it.
+      - name: Find or create the draft release
         id: create-release
         uses: actions/github-script@v9
         with:
           script: |
+            const tag = `danywhere-v${{ steps.get-version.outputs.version }}`
+            const releases = await github.paginate(github.rest.repos.listReleases, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100,
+            })
+            const existing = releases.find((r) => r.tag_name === tag)
+            if (existing) {
+              if (!existing.draft) {
+                core.setFailed(`${tag} is already published; bump the version first`)
+                return
+              }
+              core.info(`Reusing draft release ${tag} (id ${existing.id})`)
+              return existing.id
+            }
             const { data } = await github.rest.repos.createRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              tag_name: `danywhere-v${{ steps.get-version.outputs.version }}`,
+              tag_name: tag,
               target_commitish: context.sha,
               name: `DanyWhere ${{ steps.get-version.outputs.version }}`,
               draft: true,
               prerelease: false,
-              generate_release_notes: true
+              generate_release_notes: true,
             })
+            core.info(`Created draft release ${tag} (id ${data.id})`)
             return data.id
 
   publish-tauri:
     permissions:
       contents: write
     needs: create-release
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: "windows-latest"
+            args: ""
+            target: "x86_64-pc-windows-msvc"
+          - platform: "windows-11-arm"
+            args: "--target aarch64-pc-windows-msvc"
+            target: "aarch64-pc-windows-msvc"
+          - platform: "ubuntu-22.04" # .deb on 22.04, so it runs on older distributions
+            args: "--bundles deb"
+            target: "x86_64-unknown-linux-gnu"
+          - platform: "ubuntu-24.04"
+            args: "--bundles appimage,rpm"
+            target: "x86_64-unknown-linux-gnu"
+          - platform: "ubuntu-24.04-arm"
+            args: "--bundles appimage,deb,rpm"
+            target: "aarch64-unknown-linux-gnu"
     uses: ./.github/workflows/build.yml
     with:
-      platform: "macos-26" # Apple silicon; macOS 26 for the Apple Intelligence SDK
-      target: "aarch64-apple-darwin"
-      build-args: "--target aarch64-apple-darwin"
+      platform: ${{ matrix.platform }}
+      target: ${{ matrix.target }}
+      build-args: ${{ matrix.args }}
       sign-binaries: true
       asset-prefix: "danywhere"
       upload-artifacts: false

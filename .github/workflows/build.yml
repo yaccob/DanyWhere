@@ -47,6 +47,20 @@ on:
         required: false
         type: boolean
         default: false
+      # DanyWhere's executable, Linux library directory and release tag prefix
+      # (Handy's are "handy", "Handy" and "v").
+      binary-name:
+        required: false
+        type: string
+        default: "danywhere"
+      linux-lib-dir:
+        required: false
+        type: string
+        default: "DanyWhere"
+      release-tag-prefix:
+        required: false
+        type: string
+        default: "danywhere-v"
 
 env:
   TSC_VERSION: "0.9.0"
@@ -473,8 +487,8 @@ jobs:
           # X-AppImage-Version for desktop integration tools such as Gear Lever.
           LINUXDEPLOY_OUTPUT_VERSION: ${{ contains(inputs.platform, 'ubuntu') && steps.get-version.outputs.version || '' }}
         with:
-          tagName: ${{ inputs.release-id && format('v{0}', steps.get-version.outputs.version) || '' }}
-          releaseName: ${{ inputs.release-id && format('v{0}', steps.get-version.outputs.version) || '' }}
+          tagName: ${{ inputs.release-id && format('{0}{1}', inputs.release-tag-prefix, steps.get-version.outputs.version) || '' }}
+          releaseName: ${{ inputs.release-id && format('{0}{1}', inputs.release-tag-prefix, steps.get-version.outputs.version) || '' }}
           releaseId: ${{ inputs.release-id }}
           assetNamePattern: ${{ steps.patch-release-name.outputs.platform }}
           args: ${{ inputs.build-args }}
@@ -526,6 +540,9 @@ jobs:
       - name: Audit Linux package runtime contents
         if: contains(inputs.platform, 'ubuntu')
         shell: bash
+        env:
+          BIN: ${{ inputs.binary-name }}
+          LIBDIR: ${{ inputs.linux-lib-dir }}
         run: |
           set -euo pipefail
 
@@ -574,8 +591,8 @@ jobs:
               export VK_ICD_FILENAMES="$vulkan_icd"
             fi
             HANDY_NO_GTK_LAYER_SHELL=1 \
-            LD_LIBRARY_PATH="${root}/usr/lib/Handy:${root}/usr/lib${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}" \
-              xvfb-run -a "${root}/usr/bin/handy" --list-devices \
+            LD_LIBRARY_PATH="${root}/usr/lib/${LIBDIR}:${root}/usr/lib${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}" \
+              xvfb-run -a "${root}/usr/bin/${BIN}" --list-devices \
                 >/tmp/handy-package-smoke.log 2>&1
             echo "${label} --list-devices smoke passed"
           }
@@ -590,9 +607,9 @@ jobs:
               fi
               listing="$(mktemp)"
               dpkg-deb -c "$deb" > "$listing"
-              require_pattern "$listing" 'usr/bin/handy$' "handy binary"
-              require_pattern "$listing" 'usr/lib/Handy/libtranscribe\.so(\.[0-9]+)+$' "transcribe runtime library (SONAME)"
-              require_pattern "$listing" 'usr/lib/Handy/libggml-cpu.*\.so' "ggml CPU backend module"
+              require_pattern "$listing" "usr/bin/${BIN}\$" "${BIN} binary"
+              require_pattern "$listing" "usr/lib/${LIBDIR}/libtranscribe\\.so(\\.[0-9]+)+\$" "transcribe runtime library (SONAME)"
+              require_pattern "$listing" "usr/lib/${LIBDIR}/libggml-cpu.*\\.so" "ggml CPU backend module"
               # Handy's libs must stay out of the ldconfig-scanned /usr/lib
               # (issue #1639): app-private libs belong in /usr/lib/Handy only.
               # `[^/]+` excludes the Handy/ subdir, so only direct hits match.
@@ -617,9 +634,9 @@ jobs:
               echo "Auditing rpm package: ${rpm_pkg}"
               listing="$(mktemp)"
               rpm -qpl "$rpm_pkg" > "$listing"
-              require_pattern "$listing" '/usr/bin/handy$' "handy binary"
-              require_pattern "$listing" '/usr/lib/Handy/libtranscribe\.so(\.[0-9]+)+$' "transcribe runtime library (SONAME)"
-              require_pattern "$listing" '/usr/lib/Handy/libggml-cpu.*\.so' "ggml CPU backend module"
+              require_pattern "$listing" "/usr/bin/${BIN}\$" "${BIN} binary"
+              require_pattern "$listing" "/usr/lib/${LIBDIR}/libtranscribe\\.so(\\.[0-9]+)+\$" "transcribe runtime library (SONAME)"
+              require_pattern "$listing" "/usr/lib/${LIBDIR}/libggml-cpu.*\\.so" "ggml CPU backend module"
               # Same /usr/lib pollution guard as the deb audit (issue #1639).
               if grep -Eq 'usr/lib/[^/]+\.so' "$listing"; then
                 echo "ERROR: libraries installed directly into /usr/lib (issue #1639):" >&2
@@ -639,7 +656,7 @@ jobs:
               (
                 cd "$workdir"
                 ./Handy.AppImage --appimage-extract >/dev/null
-                require_path "squashfs-root/usr/bin/handy" "AppImage handy binary"
+                require_path "squashfs-root/usr/bin/${BIN}" "AppImage ${BIN} binary"
                 # Gear Lever and other integration tools consume the root entry;
                 # appimagetool does not update the copy under usr/share/applications.
                 desktop_file="$(find squashfs-root -maxdepth 1 -type f -name '*.desktop' -print -quit)"
@@ -710,6 +727,8 @@ jobs:
       - name: Audit Windows package runtime contents
         if: contains(inputs.platform, 'windows')
         shell: pwsh
+        env:
+          BIN: ${{ inputs.binary-name }}
         run: |
           $profile = "${{ steps.build-profile.outputs.profile }}"
           $target = "${{ inputs.target }}"
@@ -747,9 +766,10 @@ jobs:
           function Assert-PackageContents {
             param([string]$Root, [string]$Label)
 
-            $handy = Get-ChildItem $Root -Filter "handy.exe" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+            $exe = "$($env:BIN).exe"
+            $handy = Get-ChildItem $Root -Filter $exe -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
             if (-not $handy) {
-              throw "$Label package is missing handy.exe"
+              throw "$Label package is missing $exe"
             }
             foreach ($dll in $stagedDlls) {
               if (-not (Get-ChildItem $Root -Filter $dll.Name -Recurse -ErrorAction SilentlyContinue)) {
@@ -760,7 +780,7 @@ jobs:
             $deviceOutput = (& $handy.FullName --list-devices | Out-String)
             $deviceOutput | Write-Host
             if ($LASTEXITCODE -ne 0) {
-              throw "$Label handy.exe --list-devices failed"
+              throw "$Label $exe --list-devices failed"
             }
             if ("${{ inputs.target }}" -like "aarch64*" -and $deviceOutput -match "kind=(vulkan|cuda|metal|gpu)") {
               throw "$Label Windows ARM64 package unexpectedly exposed a GPU compute device"
