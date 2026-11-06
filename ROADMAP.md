@@ -74,4 +74,5 @@ Next steps:
 
 Done: macOS releases for Apple silicon, signed with a Developer ID and notarized, with signed updater artifacts and `latest.json` in this repository's releases. The repository and DanyWhere 0.1.0 are public (2026-11-05), after a trademark pre-check of the name; Homebrew installs it from the tap `yaccob/tap`.
 
+- **macOS on Intel:** releases for `x86_64-apple-darwin` next to Apple silicon (DMG, updater bundle, `darwin-x86_64` in `latest.json`, the Homebrew cask per architecture). First target: a 2 GHz dual-core Intel Core i5 on macOS 12.7.6. The binary already allows macOS 11; to check on the device: which models are fast enough for dictation there, and whether the system WebKit (Safari 16.4 or newer) renders the interface.
 - Windows and Linux builds; Windows signing with an own certificate (Handy's signing setup was removed).
