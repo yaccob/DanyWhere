@@ -9,7 +9,7 @@ The hard problems — local speech recognition, voice activity detection, global
 - **Support the original:** if you find this useful, consider supporting Handy via [handy.computer](https://handy.computer).
 - What is planned: [ROADMAP.md](ROADMAP.md).
 
-> Status: early. Releases are for Macs with Apple silicon only; on Windows and Linux, use [Handy](https://github.com/cjpais/Handy).
+> Status: early. Releases are for Macs, with Apple silicon or an Intel processor; on Windows and Linux, use [Handy](https://github.com/cjpais/Handy).
 
 ## What DanyWhere adds to Handy
 
@@ -25,15 +25,15 @@ Everything else works as in Handy.
 
 ## Install
 
-You need a Mac with Apple silicon (M1 or later).
+You need a Mac with macOS 11 (Big Sur) or later, with Apple silicon or an Intel processor. On Intel Macs, transcription runs on the processor, so older or dual-core Macs work best with the smaller models.
 
-1. Download `DanyWhere_<version>_aarch64.dmg` from this repository's [releases](https://github.com/yaccob/DanyWhere/releases). It is signed with an Apple Developer ID and notarized by Apple.
+1. Download `DanyWhere_<version>_aarch64.dmg` (Apple silicon) or `DanyWhere_<version>_x64.dmg` (Intel) from this repository's [releases](https://github.com/yaccob/DanyWhere/releases). Both are signed with an Apple Developer ID and notarized by Apple.
 2. Open the DMG and drag DanyWhere into Applications.
 
    Or install it with [Homebrew](https://brew.sh) instead of steps 1 and 2: `brew install --cask yaccob/tap/danywhere`
 
 3. Start DanyWhere and follow the setup: allow microphone access, then grant Accessibility, or choose "Continue without Accessibility" if your organization blocks it.
-4. Press Option+Space and speak. Hold the shortcut to record and release it to stop, or tap it to start and tap again to stop. Once post-processing is set up in the settings, Option+Shift+Space does the same and post-processes the transcript.
+4. Press Option+Space and speak. Hold the shortcut to record and release it to stop, or tap it to start and tap again to stop. Once post-processing is switched on (Settings → Advanced → Transcription) and set up, Option+Shift+Space does the same and post-processes the transcript.
 
 DanyWhere checks this repository's releases for updates; updates are signed with DanyWhere's own key.
 
