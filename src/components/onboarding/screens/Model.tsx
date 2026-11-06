@@ -40,6 +40,7 @@ import type { CatalogModel, ModelRow, PickRole } from "@/lib/models/catalog";
 import type { useOnboardingModels } from "../useOnboardingModels";
 import { moveModels } from "./modelTransitions";
 import "./modelTransitions.css";
+import { CARD_LINES_COLUMNS } from "./modelCardGrid";
 
 type Models = ReturnType<typeof useOnboardingModels>;
 
@@ -306,7 +307,9 @@ export const Model: React.FC<ModelProps> = ({
                 : t(`onboarding.model.lines.${ROLE_KEYS[role]}`)}
             </span>
           )}
-          <span className="mt-[10px] grid grid-cols-[84px_1fr] items-center gap-x-[12px] gap-y-[8px] self-stretch">
+          <span
+            className={`mt-[10px] grid ${CARD_LINES_COLUMNS} items-center gap-x-[12px] gap-y-[8px] self-stretch`}
+          >
             <span className="text-ink-2">{t("modelTable.accuracy")}</span>
             <span
               className={`grid gap-x-[18px] gap-y-[5px] ${dense ? "grid-cols-[repeat(4,max-content)]" : "grid-cols-[repeat(3,max-content)]"}`}
