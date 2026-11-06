@@ -2487,6 +2487,7 @@ dependencies = [
  "ogg",
  "once_cell",
  "opusic-c",
+ "opusic-sys",
  "rdev",
  "regex",
  "reqwest 0.12.28",

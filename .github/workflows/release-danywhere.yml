@@ -57,7 +57,9 @@ jobs:
           echo "README.md links to danywhere-v${VERSION}"
 
       # The draft may already exist: the local macOS release script creates it
-      # when it runs first, and a re-run of this workflow reuses it.
+      # when it runs first, and a re-run of this workflow reuses it. A reused
+      # draft moves to the commit built here, so the tag lands on the commit
+      # the files come from.
       - name: Find or create the draft release
         id: create-release
         uses: actions/github-script@v9
@@ -74,6 +76,15 @@ jobs:
               if (!existing.draft) {
                 core.setFailed(`${tag} is already published; bump the version first`)
                 return
+              }
+              if (existing.target_commitish !== context.sha) {
+                await github.rest.repos.updateRelease({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  release_id: existing.id,
+                  target_commitish: context.sha,
+                })
+                core.info(`Moved draft ${tag} from ${existing.target_commitish} to ${context.sha}`)
               }
               core.info(`Reusing draft release ${tag} (id ${existing.id})`)
               return existing.id

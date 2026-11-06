@@ -149,6 +149,12 @@ transcribe-cpp = { version = "0.4.0", default-features = false, features = [
 
 [target.'cfg(all(windows, target_arch = "aarch64"))'.dependencies]
 transcribe-cpp = { version = "0.4.0", default-features = false }
+# DanyWhere: libopus (history recordings) without SIMD. Its ARM runtime CPU
+# detection calls MSVC's __emit intrinsic, which clang-cl (needed here, see
+# build.yml) lacks, and its CMake cannot presume NEON without that detection
+# (the NEON functions are then undeclared). Plain C is fast enough for 16 kHz
+# mono speech.
+opusic-sys = { version = "0.7.7", features = ["no-simd"] }
 
 # Whisper backend per macOS arch. Apple Silicon links the static Metal build.
 # Intel Macs are CPU-only: ggml-metal compiles its embedded shader library at
