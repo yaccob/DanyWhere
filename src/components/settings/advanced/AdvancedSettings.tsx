@@ -59,6 +59,9 @@ export const AdvancedSettings: React.FC = () => {
         <CustomWords descriptionMode="tooltip" grouped />
         <ActiveWordList descriptionMode="tooltip" grouped />
         <WordLists descriptionMode="tooltip" grouped />
+        {/* DanyWhere: post-processing is used daily, so its switch is not
+            hidden behind the experimental features. */}
+        <PostProcessingToggle descriptionMode="tooltip" grouped={true} />
         <AppendTrailingSpace descriptionMode="tooltip" grouped={true} />
       </SettingsGroup>
 
@@ -71,7 +74,6 @@ export const AdvancedSettings: React.FC = () => {
 
       {experimentalEnabled && (
         <SettingsGroup title={t("settings.advanced.groups.experimental")}>
-          <PostProcessingToggle descriptionMode="tooltip" grouped={true} />
           <KeyboardImplementationSelector
             descriptionMode="tooltip"
             grouped={true}

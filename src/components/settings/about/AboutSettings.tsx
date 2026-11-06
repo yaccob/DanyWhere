@@ -78,6 +78,12 @@ export const AboutSettings: React.FC = () => {
           </Button>
         </SettingContainer>
 
+        <AppDataDirectory descriptionMode="tooltip" grouped={true} />
+        <LogDirectory grouped={true} />
+      </SettingsGroup>
+
+      <SettingsGroup title={t("settings.about.acknowledgments.title")}>
+        {/* DanyWhere: Handy comes first among the acknowledgments. */}
         <SettingContainer
           title={t("settings.about.basedOn.title")}
           description={t("settings.about.basedOn.description")}
@@ -91,12 +97,6 @@ export const AboutSettings: React.FC = () => {
             {t("settings.about.basedOn.button")}
           </Button>
         </SettingContainer>
-
-        <AppDataDirectory descriptionMode="tooltip" grouped={true} />
-        <LogDirectory grouped={true} />
-      </SettingsGroup>
-
-      <SettingsGroup title={t("settings.about.acknowledgments.title")}>
         <SettingContainer
           title={t("settings.about.acknowledgments.ggml.title")}
           description={t("settings.about.acknowledgments.ggml.description")}
