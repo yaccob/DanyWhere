@@ -3,11 +3,12 @@ import { events, type TranscriptionJobStatus } from "@/bindings";
 
 export type ActiveJobStatus = Extract<
   TranscriptionJobStatus,
-  { state: "queued" } | { state: "running" }
+  { state: "queued" } | { state: "running" } | { state: "post_processing" }
 >;
 
-// Background transcriptions (files, and History entries transcribed again),
-// keyed by History entry id. Only unfinished jobs are kept.
+// Background transcriptions (files, and History entries transcribed or
+// post-processed again), keyed by History entry id. Only unfinished jobs are
+// kept.
 interface TranscriptionJobsStore {
   jobs: Record<number, ActiveJobStatus>;
   initialized: boolean;
@@ -27,7 +28,11 @@ export const useTranscriptionJobsStore = create<TranscriptionJobsStore>()(
         const { entry_id: entryId, status } = payload;
         set((state) => {
           const jobs = { ...state.jobs };
-          if (status.state === "queued" || status.state === "running") {
+          if (
+            status.state === "queued" ||
+            status.state === "running" ||
+            status.state === "post_processing"
+          ) {
             jobs[entryId] = status;
           } else {
             delete jobs[entryId];

@@ -57,6 +57,19 @@ Whisper sometimes appends text that was never said when the recording ends in si
 
 **Upstream candidate.**
 
+### History: post-process an entry on demand
+
+**Idea (user, 2026-11-07):** post-process a history entry at the press of a button, or re-transcribe it and post-process the result.
+
+**Found:** "Re-transcribe" already post-processed, but only entries dictated with post-processing (`post_process_requested`). The history showed and copied only the raw transcript: the post-processed text was stored (`post_processed_text`) but never displayed, so its result was invisible. Handy's history does the same.
+
+**Done:**
+
+- An entry with a post-processed text shows it, and "Show original" switches to the raw transcript; the copy button copies what is shown.
+- A **Post-process** button (wand) post-processes the existing transcript with the prompt selected now. It needs no recording, so it also works once the storage limit has deleted it. While post-processing is off or not set up, it is greyed out and its tooltip says why.
+- **Shift+click on Re-transcribe** transcribes again and post-processes the result (Shift, as in the dictation shortcuts). A plain click works as before.
+- An entry post-processed this way counts as post-processed from then on, so a later "Re-transcribe" post-processes it too. While it runs, the entry and the footer say "Post-processing..."; when it fails, the entry stays as it was and a notice says so.
+
 ### Running without the Accessibility permission
 
 Available: onboarding offers "Continue without Accessibility" for managed Macs (shortcuts via the Tauri backend, transcript left on the clipboard, input simulation not set up). A DanyWhere feature for now; it may be offered to Handy later.

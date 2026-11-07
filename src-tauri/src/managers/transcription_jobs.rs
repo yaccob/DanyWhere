@@ -1,5 +1,6 @@
-//! Background transcriptions (a file, or an entry transcribed again), one at
-//! a time in chunks that yield to dictation. Progress is kept in memory.
+//! Background transcriptions (a file, or an entry transcribed or
+//! post-processed again), one at a time in chunks that yield to dictation.
+//! Progress is kept in memory.
 
 use anyhow::{anyhow, Result};
 use log::{error, info, warn};
@@ -36,6 +37,8 @@ pub enum TranscriptionJobStatus {
     Running {
         percent: u8,
     },
+    /// The transcript is being post-processed.
+    PostProcessing,
     /// The entry has its new text, or the job was cancelled.
     Finished,
     Failed {
@@ -50,6 +53,46 @@ pub struct TranscriptionJob {
     pub status: TranscriptionJobStatus,
 }
 
+/// What a History entry's job does again.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, Type)]
+#[serde(rename_all = "snake_case")]
+pub enum ReprocessMode {
+    /// Transcribe the recording again, and post-process the result if the
+    /// entry was post-processed before.
+    Transcribe,
+    /// Transcribe the recording again and post-process the result.
+    TranscribeAndPostProcess,
+    /// Keep the transcript and post-process it again; needs no recording.
+    PostProcess,
+}
+
+impl ReprocessMode {
+    /// Whether the job transcribes the recording.
+    fn transcribes(self) -> bool {
+        !matches!(self, Self::PostProcess)
+    }
+
+    /// Whether the job post-processes, given whether the entry was
+    /// post-processed before. An entry a job post-processed stays marked
+    /// that way, so transcribing it again later post-processes too.
+    fn post_processes(self, requested: bool) -> bool {
+        match self {
+            Self::Transcribe => requested,
+            Self::TranscribeAndPostProcess | Self::PostProcess => true,
+        }
+    }
+}
+
+/// The notice for a post-processing that failed: after a transcription the
+/// new transcript is kept as it is, without one the entry is unchanged.
+fn post_process_failure_notice(transcribed: bool) -> NoticeCode {
+    if transcribed {
+        NoticeCode::FilePostProcessFailed
+    } else {
+        NoticeCode::HistoryPostProcessFailed
+    }
+}
+
 struct Running {
     entry_id: i64,
     cancelled: Arc<AtomicBool>,
@@ -57,9 +100,9 @@ struct Running {
 
 #[derive(Default)]
 struct Jobs {
-    /// Entry ids waiting to be transcribed again. They go before files:
-    /// someone is waiting on them.
-    retries: VecDeque<i64>,
+    /// Entry ids waiting to be transcribed or post-processed again, with
+    /// what to do. They go before files: someone is waiting on them.
+    retries: VecDeque<(i64, ReprocessMode)>,
     /// Entry ids of files waiting to be transcribed.
     files: VecDeque<i64>,
     running: Option<Running>,
@@ -70,7 +113,7 @@ impl Jobs {
         self.running
             .as_ref()
             .is_some_and(|r| r.entry_id == entry_id)
-            || self.retries.contains(&entry_id)
+            || self.retries.iter().any(|&(id, _)| id == entry_id)
             || self.files.contains(&entry_id)
     }
 
@@ -78,10 +121,33 @@ impl Jobs {
         self.running.is_none() && self.retries.is_empty() && self.files.is_empty()
     }
 
+    /// Queues the entry unless it already has a job; whether it was queued.
+    /// `None` is a file, transcribed for the first time.
+    fn push(&mut self, entry_id: i64, mode: Option<ReprocessMode>) -> bool {
+        if self.has(entry_id) {
+            return false;
+        }
+        match mode {
+            Some(mode) => self.retries.push_back((entry_id, mode)),
+            None => self.files.push_back(entry_id),
+        }
+        true
+    }
+
+    /// The next job to run: entries someone waits on, then files. A file
+    /// is transcribed like an entry transcribed again.
+    fn next(&mut self) -> Option<(i64, ReprocessMode)> {
+        self.retries.pop_front().or_else(|| {
+            self.files
+                .pop_front()
+                .map(|id| (id, ReprocessMode::Transcribe))
+        })
+    }
+
     /// Drops the entry from the queues; whether it was in one.
     fn unqueue(&mut self, entry_id: i64) -> bool {
         let before = self.retries.len() + self.files.len();
-        self.retries.retain(|&id| id != entry_id);
+        self.retries.retain(|&(id, _)| id != entry_id);
         self.files.retain(|&id| id != entry_id);
         self.retries.len() + self.files.len() != before
     }
@@ -159,28 +225,29 @@ impl TranscriptionJobManager {
             }
         };
         info!("Queued file transcription for history entry {}", entry.id);
-        self.queue(entry.id, false);
+        self.queue(entry.id, None);
         Ok(entry)
     }
 
     /// Queues the entry to be transcribed again from its recording, ahead
     /// of any file.
     pub fn retry(&self, entry_id: i64) {
-        self.queue(entry_id, true);
+        self.reprocess(entry_id, ReprocessMode::Transcribe);
     }
 
-    /// Queues the entry to be transcribed from its recording, unless it
-    /// already is.
-    fn queue(&self, entry_id: i64, retry: bool) {
+    /// Queues the entry to be transcribed or post-processed again, ahead of
+    /// any file.
+    pub fn reprocess(&self, entry_id: i64, mode: ReprocessMode) {
+        self.queue(entry_id, Some(mode));
+    }
+
+    /// Queues the entry's job, unless it already has one. `None` is a file,
+    /// transcribed for the first time.
+    fn queue(&self, entry_id: i64, mode: Option<ReprocessMode>) {
         {
             let mut jobs = self.lock();
-            if jobs.has(entry_id) {
+            if !jobs.push(entry_id, mode) {
                 return;
-            }
-            if retry {
-                jobs.retries.push_back(entry_id);
-            } else {
-                jobs.files.push_back(entry_id);
             }
             self.sync_job_active(&jobs);
         }
@@ -229,13 +296,11 @@ impl TranscriptionJobManager {
 
     fn run_jobs(&self) {
         loop {
-            let (entry_id, cancelled) = {
+            let (entry_id, mode, cancelled) = {
                 let mut jobs = self.lock();
-                let entry_id = loop {
-                    if let Some(entry_id) =
-                        jobs.retries.pop_front().or_else(|| jobs.files.pop_front())
-                    {
-                        break entry_id;
+                let (entry_id, mode) = loop {
+                    if let Some(job) = jobs.next() {
+                        break job;
                     }
                     jobs = self
                         .wake
@@ -247,14 +312,23 @@ impl TranscriptionJobManager {
                     entry_id,
                     cancelled: Arc::clone(&cancelled),
                 });
-                (entry_id, cancelled)
+                (entry_id, mode, cancelled)
             };
-            self.emit(entry_id, TranscriptionJobStatus::Running { percent: 0 });
+            self.emit(
+                entry_id,
+                if mode.transcribes() {
+                    TranscriptionJobStatus::Running { percent: 0 }
+                } else {
+                    TranscriptionJobStatus::PostProcessing
+                },
+            );
 
             // A panic fails only this job; the rest of the loop still has to
             // run, or the model would stay held and the queue stuck.
-            let result = catch_unwind(AssertUnwindSafe(|| self.run_job(entry_id, &cancelled)))
-                .unwrap_or_else(|payload| Err(crashed(payload.as_ref())));
+            let result = catch_unwind(AssertUnwindSafe(|| {
+                self.run_job(entry_id, mode, &cancelled)
+            }))
+            .unwrap_or_else(|payload| Err(crashed(payload.as_ref())));
 
             let idle = {
                 let mut jobs = self.lock();
@@ -272,11 +346,15 @@ impl TranscriptionJobManager {
             }
             let status = match result {
                 Err(e) if !cancelled.load(Ordering::Acquire) => {
-                    warn!("Transcription of history entry {} failed: {}", entry_id, e);
+                    let (what, code) = if mode.transcribes() {
+                        ("Transcription", NoticeCode::FileTranscriptionFailed)
+                    } else {
+                        ("Post-processing", NoticeCode::HistoryPostProcessFailed)
+                    };
+                    warn!("{} of history entry {} failed: {}", what, entry_id, e);
                     notices::raise(
                         &self.app,
-                        Notice::new(NoticeCode::FileTranscriptionFailed, NoticeSource::File)
-                            .with_detail(e.to_string()),
+                        Notice::new(code, NoticeSource::File).with_detail(e.to_string()),
                     );
                     TranscriptionJobStatus::Failed {
                         error: e.to_string(),
@@ -284,13 +362,17 @@ impl TranscriptionJobManager {
                 }
                 Ok(JobEnd::Finished {
                     post_process_failed,
+                    transcribed,
                 }) => {
                     // Clear first, so the warning about this job survives it.
                     notices::clear(&self.app, NoticeSource::File);
                     if post_process_failed {
                         notices::raise(
                             &self.app,
-                            Notice::new(NoticeCode::FilePostProcessFailed, NoticeSource::File),
+                            Notice::new(
+                                post_process_failure_notice(transcribed),
+                                NoticeSource::File,
+                            ),
                         );
                     }
                     TranscriptionJobStatus::Finished
@@ -301,11 +383,21 @@ impl TranscriptionJobManager {
         }
     }
 
-    fn run_job(&self, entry_id: i64, cancelled: &AtomicBool) -> Result<JobEnd> {
+    fn run_job(
+        &self,
+        entry_id: i64,
+        mode: ReprocessMode,
+        cancelled: &AtomicBool,
+    ) -> Result<JobEnd> {
         let hm = Arc::clone(&self.app.state::<Arc<HistoryManager>>());
-        let tm = Arc::clone(&self.app.state::<Arc<TranscriptionManager>>());
         let entry = tauri::async_runtime::block_on(hm.get_entry_by_id(entry_id))?
             .ok_or_else(|| anyhow!("History entry {} not found", entry_id))?;
+        if !mode.transcribes() {
+            return self.post_process_again(&hm, &entry, cancelled);
+        }
+        let post_process = mode.post_processes(entry.post_process_requested);
+
+        let tm = Arc::clone(&self.app.state::<Arc<TranscriptionManager>>());
         let samples = HistoryManager::recording_samples_in(&entry, hm.recordings_dir())
             .map_err(|e| anyhow!("Failed to load audio: {}", e))?;
         if samples.is_empty() {
@@ -329,10 +421,13 @@ impl TranscriptionJobManager {
             return Ok(JobEnd::Cancelled);
         }
 
+        if post_process {
+            self.emit(entry.id, TranscriptionJobStatus::PostProcessing);
+        }
         let processed = tauri::async_runtime::block_on(process_transcription_output(
             &self.app,
             &text,
-            entry.post_process_requested,
+            post_process,
         ));
         // Post-processing can take a while; a cancel during it still wins.
         if cancelled.load(Ordering::Acquire) {
@@ -345,16 +440,55 @@ impl TranscriptionJobManager {
             processed.post_processed_text,
             processed.post_process_prompt,
             language,
+            post_process,
         )?;
         Ok(JobEnd::Finished {
             post_process_failed,
+            transcribed: true,
+        })
+    }
+
+    /// Post-processes the entry's transcript again; the transcript stays.
+    /// Needs no recording and no model. When nothing new comes out, the
+    /// entry keeps what it had.
+    fn post_process_again(
+        &self,
+        hm: &HistoryManager,
+        entry: &HistoryEntry,
+        cancelled: &AtomicBool,
+    ) -> Result<JobEnd> {
+        if entry.transcription_text.trim().is_empty() {
+            return Err(anyhow!("The entry has no transcript to post-process"));
+        }
+        let processed = tauri::async_runtime::block_on(process_transcription_output(
+            &self.app,
+            &entry.transcription_text,
+            true,
+        ));
+        if cancelled.load(Ordering::Acquire) {
+            return Ok(JobEnd::Cancelled);
+        }
+        let post_process_failed = match processed.post_processed_text {
+            Some(text) => {
+                hm.update_post_processing(entry.id, text, processed.post_process_prompt)?;
+                false
+            }
+            None => true,
+        };
+        Ok(JobEnd::Finished {
+            post_process_failed,
+            transcribed: false,
         })
     }
 }
 
 /// A cancelled job changes no notices.
 enum JobEnd {
-    Finished { post_process_failed: bool },
+    /// `transcribed` is false when the job only post-processed.
+    Finished {
+        post_process_failed: bool,
+        transcribed: bool,
+    },
     Cancelled,
 }
 
@@ -405,5 +539,100 @@ impl ChunkControl for Control<'_> {
         }
         self.manager
             .emit(self.entry_id, TranscriptionJobStatus::Running { percent });
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use ReprocessMode::{PostProcess, Transcribe, TranscribeAndPostProcess};
+
+    #[test]
+    fn a_post_process_job_keeps_its_mode() {
+        let mut jobs = Jobs::default();
+        assert!(jobs.push(1, Some(PostProcess)));
+        assert_eq!(jobs.next(), Some((1, PostProcess)));
+    }
+
+    #[test]
+    fn a_job_that_transcribes_and_post_processes_keeps_its_mode() {
+        let mut jobs = Jobs::default();
+        assert!(jobs.push(1, Some(TranscribeAndPostProcess)));
+        assert_eq!(jobs.next(), Some((1, TranscribeAndPostProcess)));
+    }
+
+    #[test]
+    fn entries_go_before_files() {
+        let mut jobs = Jobs::default();
+        jobs.push(1, None);
+        jobs.push(2, Some(Transcribe));
+        jobs.push(3, Some(PostProcess));
+        assert_eq!(jobs.next(), Some((2, Transcribe)));
+        assert_eq!(jobs.next(), Some((3, PostProcess)));
+        assert_eq!(jobs.next(), Some((1, Transcribe)));
+        assert_eq!(jobs.next(), None);
+    }
+
+    #[test]
+    fn an_entry_has_one_job_at_a_time() {
+        let mut jobs = Jobs::default();
+        assert!(jobs.push(1, Some(PostProcess)));
+        assert!(!jobs.push(1, Some(Transcribe)));
+        assert_eq!(jobs.next(), Some((1, PostProcess)));
+        assert_eq!(jobs.next(), None);
+    }
+
+    #[test]
+    fn unqueue_drops_a_post_process_job() {
+        let mut jobs = Jobs::default();
+        jobs.push(1, Some(PostProcess));
+        assert!(jobs.unqueue(1));
+        assert!(jobs.is_idle());
+        assert_eq!(jobs.next(), None);
+    }
+
+    #[test]
+    fn only_post_processing_skips_the_transcription() {
+        assert!(Transcribe.transcribes());
+        assert!(TranscribeAndPostProcess.transcribes());
+        assert!(!PostProcess.transcribes());
+    }
+
+    #[test]
+    fn transcribing_again_post_processes_as_dictated() {
+        assert!(!Transcribe.post_processes(false));
+        assert!(Transcribe.post_processes(true));
+    }
+
+    #[test]
+    fn the_post_processing_modes_always_post_process() {
+        for requested in [false, true] {
+            assert!(TranscribeAndPostProcess.post_processes(requested));
+            assert!(PostProcess.post_processes(requested));
+        }
+    }
+
+    #[test]
+    fn a_failed_post_processing_without_transcription_has_its_own_notice() {
+        assert_eq!(
+            post_process_failure_notice(true),
+            NoticeCode::FilePostProcessFailed
+        );
+        assert_eq!(
+            post_process_failure_notice(false),
+            NoticeCode::HistoryPostProcessFailed
+        );
+    }
+
+    #[test]
+    fn reprocess_modes_reach_the_frontend_in_snake_case() {
+        assert_eq!(
+            serde_json::to_string(&TranscribeAndPostProcess).unwrap(),
+            "\"transcribe_and_post_process\""
+        );
+        assert_eq!(
+            serde_json::to_string(&PostProcess).unwrap(),
+            "\"post_process\""
+        );
     }
 }

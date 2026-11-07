@@ -16,12 +16,16 @@ const TranscriptionStatus: React.FC<TranscriptionStatusProps> = ({
   if (jobs.length === 0) return null;
 
   // Jobs run one at a time; the rest wait behind it.
-  const running = jobs.find((j) => j.state === "running");
+  const running = jobs.find((j) => j.state !== "queued");
   const text = !running
     ? t("settings.history.waiting")
-    : running.percent > 0
-      ? t("settings.history.transcribingPercent", { percent: running.percent })
-      : t("settings.history.transcribing");
+    : running.state === "post_processing"
+      ? t("settings.history.postProcessing")
+      : running.percent > 0
+        ? t("settings.history.transcribingPercent", {
+            percent: running.percent,
+          })
+        : t("settings.history.transcribing");
 
   return (
     <button

@@ -1048,6 +1048,13 @@ async retryHistoryEntryTranscription(id: number) : Promise<void> {
     await TAURI_INVOKE("retry_history_entry_transcription", { id });
 },
 /**
+ * Queues the entry to be transcribed or post-processed again, as `mode`
+ * says. Its progress and outcome arrive as `TranscriptionJob` events.
+ */
+async reprocessHistoryEntry(id: number, mode: ReprocessMode) : Promise<void> {
+    await TAURI_INVOKE("reprocess_history_entry", { id, mode });
+},
+/**
  * Stops the entry's background transcription: a queued one is dropped, a
  * running one stops after the chunk it is on. The entry keeps the text it
  * had before.
@@ -1466,7 +1473,12 @@ detail: string | null }
 /**
  * The frontend maps each code to its text in `src/lib/notices.ts`.
  */
-export type NoticeCode = "TranscriptionFailed" | "PasteFailed" | "NoMicrophone" | "MicPermissionDenied" | "RecordingFailed" | "ModelLoadFailed" | "PostProcessFailed" | "FileTranscriptionFailed" | "FilePostProcessFailed"
+export type NoticeCode = "TranscriptionFailed" | "PasteFailed" | "NoMicrophone" | "MicPermissionDenied" | "RecordingFailed" | "ModelLoadFailed" | "PostProcessFailed" | "FileTranscriptionFailed" | "FilePostProcessFailed" | 
+/**
+ * Post-processing a History entry's transcript again failed; the entry
+ * is unchanged.
+ */
+"HistoryPostProcessFailed"
 export type NoticeLevel = 
 /**
  * Nothing came out, or Handy can't do its job.
@@ -1563,6 +1575,23 @@ total_bytes: number;
  * automatically.
  */
 protected_bytes: number }
+/**
+ * What a History entry's job does again.
+ */
+export type ReprocessMode = 
+/**
+ * Transcribe the recording again, and post-process the result if the
+ * entry was post-processed before.
+ */
+"transcribe" | 
+/**
+ * Transcribe the recording again and post-process the result.
+ */
+"transcribe_and_post_process" | 
+/**
+ * Keep the transcript and post-process it again; needs no recording.
+ */
+"post_process"
 /**
  * A retired ONNX model found on disk.
  */
@@ -1675,6 +1704,10 @@ export type TranscriptionJobStatus =
  * `percent` of the audio is transcribed.
  */
 { state: "running"; percent: number } | 
+/**
+ * The transcript is being post-processed.
+ */
+{ state: "post_processing" } | 
 /**
  * The entry has its new text, or the job was cancelled.
  */
