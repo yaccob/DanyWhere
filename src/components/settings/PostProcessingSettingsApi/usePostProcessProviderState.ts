@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSettings } from "../../../hooks/useSettings";
 import {
   commands,
@@ -7,6 +7,11 @@ import {
 } from "@/bindings";
 import type { ModelOption } from "./types";
 import type { DropdownOption } from "../../ui/Dropdown";
+import { modelFetchAttemptKey, shouldAutoFetchModels } from "./modelAutoFetch";
+
+// Providers (with their key and base URL) whose model list this app session
+// already asked for, so a failing request is not repeated on every render.
+const triedModelFetches = new Set<string>();
 
 type PostProcessProviderState = {
   providerOptions: DropdownOption[];
@@ -100,29 +105,10 @@ export const usePostProcessProviderState = (): PostProcessProviderState => {
 
       await setPostProcessProvider(providerId);
 
-      // Auto-fetch available models for the new provider so the model dropdown
-      // reflects what's actually valid. Without this, a stale model value from
-      // a previous provider/base_url can persist and silently 404 at runtime.
-      // Skip when the provider isn't configured yet (no API key / empty base URL)
-      // to avoid unnecessary backend errors.
-      if (providerId !== APPLE_PROVIDER_ID) {
-        const provider = providers.find((p) => p.id === providerId);
-        const apiKey = settings?.post_process_api_keys?.[providerId] ?? "";
-        const hasBaseUrl = (provider?.base_url ?? "").trim() !== "";
-        const hasApiKey = apiKey.trim() !== "";
-
-        if (provider?.id === "custom" ? hasBaseUrl : hasApiKey) {
-          void fetchPostProcessModels(providerId);
-        }
-      }
+      // DanyWhere: the effect below loads the new provider's models, as it
+      // does whenever the page shows a provider whose list isn't loaded yet.
     },
-    [
-      selectedProviderId,
-      setPostProcessProvider,
-      fetchPostProcessModels,
-      providers,
-      settings,
-    ],
+    [selectedProviderId, setPostProcessProvider],
   );
 
   const handleBaseUrlChange = useCallback(
@@ -228,7 +214,37 @@ export const usePostProcessProviderState = (): PostProcessProviderState => {
 
   const isCustomProvider = selectedProvider?.id === "custom";
 
-  // No automatic fetching - user must click refresh button
+  // DanyWhere: load the model list when the page shows a provider that is set
+  // up and whose list this app session hasn't loaded or tried yet, e.g. right
+  // after the app starts, after switching providers, or once a key is entered.
+  // Handy only loaded it on a provider switch or the refresh button, so after
+  // every restart the dropdown held just the selected model.
+  const modelsLoaded =
+    postProcessModelOptions[selectedProviderId] !== undefined;
+  useEffect(() => {
+    const attempt = modelFetchAttemptKey(selectedProviderId, baseUrl, apiKey);
+    if (
+      !shouldAutoFetchModels({
+        providerId: selectedProviderId,
+        baseUrl,
+        apiKey,
+        modelsLoaded,
+        isFetching: isFetchingModels,
+        alreadyTried: triedModelFetches.has(attempt),
+      })
+    ) {
+      return;
+    }
+    triedModelFetches.add(attempt);
+    void fetchPostProcessModels(selectedProviderId);
+  }, [
+    selectedProviderId,
+    baseUrl,
+    apiKey,
+    modelsLoaded,
+    isFetchingModels,
+    fetchPostProcessModels,
+  ]);
 
   return {
     providerOptions,

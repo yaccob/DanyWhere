@@ -7,3 +7,7 @@ The History now shows what post-processing made of your dictations, and you can 
 - **Re-transcribe and post-process in one go.** Shift+click on **Re-transcribe** transcribes the recording again and post-processes the result.
 
 Post-processing is switched on under **Advanced → Transcription → Post Processing**; provider, model and prompt are chosen on the **Post Process** page.
+
+## All models to choose from
+
+The **Post Process** page now loads the provider's models by itself, so every model your API key can use is offered right away, not only the one selected. Before, the list had to be loaded with **Refresh models** after every start. That button still reloads it.

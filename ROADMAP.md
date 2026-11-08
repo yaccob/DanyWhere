@@ -70,6 +70,12 @@ Whisper sometimes appends text that was never said when the recording ends in si
 - **Shift+click on Re-transcribe** transcribes again and post-processes the result (Shift, as in the dictation shortcuts). A plain click works as before.
 - An entry post-processed this way counts as post-processed from then on, so a later "Re-transcribe" post-processes it too. While it runs, the entry and the footer say "Post-processing..."; when it fails, the entry stays as it was and a notice says so.
 
+### Post-processing: the model list loads by itself
+
+**Found (user, 2026-11-08):** the model dropdown offered only the selected model (`claude-sonnet-5`), although the API key can use 14 Anthropic models. Handy keeps the fetched list in memory only and fetches it only on a provider switch or with the refresh button, so after every start the dropdown held just the selected model.
+
+**Done** (ships with 0.1.4): the Post Process page loads the list by itself when it shows a provider that is set up (a key, or a base URL for the custom provider) and whose list this app session has not loaded or tried yet: after the start, after a provider switch, once a key is entered. A failed attempt is repeated only after the key or base URL changes, or with the refresh button.
+
 ### Running without the Accessibility permission
 
 Available: onboarding offers "Continue without Accessibility" for managed Macs (shortcuts via the Tauri backend, transcript left on the clipboard, input simulation not set up). A DanyWhere feature for now; it may be offered to Handy later.
