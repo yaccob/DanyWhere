@@ -1,6 +1,6 @@
 use crate::managers::{
     history::{HistoryEntry, HistoryManager, PaginatedHistory, RecordingStorageUsage},
-    transcription_jobs::TranscriptionJobManager,
+    transcription_jobs::{ReprocessMode, TranscriptionJobManager},
 };
 use crate::settings::RecordingStorageLimit;
 use std::path::PathBuf;
@@ -114,6 +114,18 @@ pub async fn delete_history_entry(
 #[specta::specta]
 pub fn retry_history_entry_transcription(jobs: State<'_, Arc<TranscriptionJobManager>>, id: i64) {
     jobs.retry(id);
+}
+
+/// Queues the entry to be transcribed or post-processed again, as `mode`
+/// says. Its progress and outcome arrive as `TranscriptionJob` events.
+#[tauri::command]
+#[specta::specta]
+pub fn reprocess_history_entry(
+    jobs: State<'_, Arc<TranscriptionJobManager>>,
+    id: i64,
+    mode: ReprocessMode,
+) {
+    jobs.reprocess(id, mode);
 }
 
 /// Stops the entry's background transcription: a queued one is dropped, a

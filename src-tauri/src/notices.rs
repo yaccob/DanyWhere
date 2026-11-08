@@ -48,6 +48,9 @@ pub enum NoticeCode {
     PostProcessFailed,
     FileTranscriptionFailed,
     FilePostProcessFailed,
+    /// Post-processing a History entry's transcript again failed; the entry
+    /// is unchanged.
+    HistoryPostProcessFailed,
 }
 
 impl NoticeCode {
@@ -59,7 +62,8 @@ impl NoticeCode {
             | Self::MicPermissionDenied
             | Self::RecordingFailed
             | Self::ModelLoadFailed
-            | Self::FileTranscriptionFailed => NoticeLevel::Error,
+            | Self::FileTranscriptionFailed
+            | Self::HistoryPostProcessFailed => NoticeLevel::Error,
             Self::PostProcessFailed | Self::FilePostProcessFailed => NoticeLevel::Warning,
         }
     }
@@ -76,6 +80,7 @@ impl NoticeCode {
             Self::PostProcessFailed => &strings.post_process_failed_title,
             Self::FileTranscriptionFailed => &strings.file_transcription_failed_title,
             Self::FilePostProcessFailed => &strings.file_post_process_failed_title,
+            Self::HistoryPostProcessFailed => &strings.history_post_process_failed_title,
         }
     }
 }

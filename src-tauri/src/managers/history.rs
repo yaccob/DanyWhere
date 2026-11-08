@@ -474,7 +474,9 @@ impl HistoryManager {
         Ok(entry)
     }
 
-    /// Update an existing history entry with new transcription results (used by retry).
+    /// Update an existing history entry with new transcription results (used
+    /// by retry). `post_process_requested` is whether the entry counts as
+    /// post-processed from now on, so the next retry post-processes too.
     pub fn update_transcription(
         &self,
         id: i64,
@@ -482,23 +484,49 @@ impl HistoryManager {
         post_processed_text: Option<String>,
         post_process_prompt: Option<String>,
         language: Option<LanguageDecision>,
+        post_process_requested: bool,
+    ) -> Result<HistoryEntry> {
+        let conn = self.get_connection()?;
+        let entry = Self::update_transcription_with_conn(
+            &conn,
+            id,
+            transcription_text,
+            post_processed_text,
+            post_process_prompt,
+            language,
+            post_process_requested,
+        )?;
+        debug!("Updated transcription for history entry {}", id);
+        self.emit_entry(&entry);
+        Ok(entry)
+    }
+
+    fn update_transcription_with_conn(
+        conn: &Connection,
+        id: i64,
+        transcription_text: String,
+        post_processed_text: Option<String>,
+        post_process_prompt: Option<String>,
+        language: Option<LanguageDecision>,
+        post_process_requested: bool,
     ) -> Result<HistoryEntry> {
         let (language, language_source) = split_language(language);
-        let conn = self.get_connection()?;
         let updated = conn.execute(
             "UPDATE transcription_history
              SET transcription_text = ?1,
                  post_processed_text = ?2,
                  post_process_prompt = ?3,
                  language = ?4,
-                 language_source = ?5
-             WHERE id = ?6",
+                 language_source = ?5,
+                 post_process_requested = ?6
+             WHERE id = ?7",
             params![
                 transcription_text,
                 post_processed_text,
                 post_process_prompt,
                 language,
                 language_source.map(LanguageSource::as_str),
+                post_process_requested,
                 id
             ],
         )?;
@@ -506,15 +534,59 @@ impl HistoryManager {
         if updated == 0 {
             return Err(anyhow!("History entry {} not found", id));
         }
+        Self::entry_with_conn(conn, id)
+    }
 
-        let entry = conn.query_row(
+    /// Store a new post-processing of the entry's transcript, which stays as
+    /// it is. The entry counts as post-processed from now on.
+    pub fn update_post_processing(
+        &self,
+        id: i64,
+        post_processed_text: String,
+        post_process_prompt: Option<String>,
+    ) -> Result<HistoryEntry> {
+        let conn = self.get_connection()?;
+        let entry = Self::update_post_processing_with_conn(
+            &conn,
+            id,
+            post_processed_text,
+            post_process_prompt,
+        )?;
+        debug!("Updated post-processing for history entry {}", id);
+        self.emit_entry(&entry);
+        Ok(entry)
+    }
+
+    fn update_post_processing_with_conn(
+        conn: &Connection,
+        id: i64,
+        post_processed_text: String,
+        post_process_prompt: Option<String>,
+    ) -> Result<HistoryEntry> {
+        let updated = conn.execute(
+            "UPDATE transcription_history
+             SET post_processed_text = ?1,
+                 post_process_prompt = ?2,
+                 post_process_requested = 1
+             WHERE id = ?3",
+            params![post_processed_text, post_process_prompt, id],
+        )?;
+        if updated == 0 {
+            return Err(anyhow!("History entry {} not found", id));
+        }
+        Self::entry_with_conn(conn, id)
+    }
+
+    fn entry_with_conn(conn: &Connection, id: i64) -> Result<HistoryEntry> {
+        Ok(conn.query_row(
             &format!("SELECT {ENTRY_COLUMNS} FROM transcription_history WHERE id = ?1"),
             params![id],
             Self::map_history_entry,
-        )?;
+        )?)
+    }
 
-        debug!("Updated transcription for history entry {}", id);
-
+    /// Tell the frontend that `entry` changed.
+    fn emit_entry(&self, entry: &HistoryEntry) {
         if let Err(e) = (HistoryUpdatePayload::Updated {
             entry: entry.clone(),
         })
@@ -522,8 +594,6 @@ impl HistoryManager {
         {
             error!("Failed to emit history-updated event: {}", e);
         }
-
-        Ok(entry)
     }
 
     /// Keep the recordings within the storage limit: the oldest that are
@@ -1430,5 +1500,130 @@ mod tests {
 
         let entry = entry_by_id(&conn, id).unwrap();
         assert!(HistoryManager::recording_samples_in(&entry, dir.path()).is_err());
+    }
+
+    // Post-processing an entry again from History.
+
+    fn post_process_requested(conn: &Connection, id: i64) -> bool {
+        entry_by_id(conn, id)
+            .expect("entry exists")
+            .post_process_requested
+    }
+
+    #[test]
+    fn post_processing_an_entry_keeps_its_transcript() {
+        let conn = setup_conn();
+        insert_entry(&conn, 100, "raw words", None);
+
+        let entry = HistoryManager::update_post_processing_with_conn(
+            &conn,
+            1,
+            "Clean words.".into(),
+            Some("Fix the grammar".into()),
+        )
+        .expect("update post-processing");
+
+        assert_eq!(entry.transcription_text, "raw words");
+        assert_eq!(entry.post_processed_text.as_deref(), Some("Clean words."));
+        assert_eq!(
+            entry.post_process_prompt.as_deref(),
+            Some("Fix the grammar")
+        );
+        assert_eq!(
+            entry_by_id(&conn, 1).unwrap().post_processed_text,
+            entry.post_processed_text
+        );
+    }
+
+    #[test]
+    fn post_processing_replaces_an_earlier_result() {
+        let conn = setup_conn();
+        insert_entry(&conn, 100, "raw words", Some("Old result."));
+
+        HistoryManager::update_post_processing_with_conn(&conn, 1, "New result.".into(), None)
+            .expect("update post-processing");
+
+        let entry = entry_by_id(&conn, 1).unwrap();
+        assert_eq!(entry.post_processed_text.as_deref(), Some("New result."));
+        assert_eq!(entry.post_process_prompt, None);
+    }
+
+    #[test]
+    fn post_processing_an_entry_marks_it_post_processed() {
+        let conn = setup_conn();
+        insert_entry(&conn, 100, "raw words", None);
+        assert!(!post_process_requested(&conn, 1));
+
+        HistoryManager::update_post_processing_with_conn(&conn, 1, "Clean.".into(), None)
+            .expect("update post-processing");
+
+        assert!(post_process_requested(&conn, 1));
+    }
+
+    #[test]
+    fn post_processing_a_missing_entry_fails() {
+        let conn = setup_conn();
+        assert!(
+            HistoryManager::update_post_processing_with_conn(&conn, 42, "Clean.".into(), None)
+                .is_err()
+        );
+    }
+
+    #[test]
+    fn transcribing_again_with_post_processing_marks_the_entry() {
+        let conn = setup_conn();
+        insert_entry(&conn, 100, "raw words", None);
+
+        HistoryManager::update_transcription_with_conn(
+            &conn,
+            1,
+            "new words".into(),
+            Some("New words.".into()),
+            None,
+            None,
+            true,
+        )
+        .expect("update transcription");
+
+        let entry = entry_by_id(&conn, 1).unwrap();
+        assert_eq!(entry.transcription_text, "new words");
+        assert_eq!(entry.post_processed_text.as_deref(), Some("New words."));
+        assert!(entry.post_process_requested);
+    }
+
+    #[test]
+    fn transcribing_again_as_dictated_keeps_how_it_was_dictated() {
+        let conn = setup_conn();
+        insert_entry(&conn, 100, "plain", None);
+        insert_entry(&conn, 200, "with post-processing", Some("Processed."));
+        conn.execute(
+            "UPDATE transcription_history SET post_process_requested = 1 WHERE id = 2",
+            [],
+        )
+        .unwrap();
+
+        HistoryManager::update_transcription_with_conn(
+            &conn,
+            1,
+            "a".into(),
+            None,
+            None,
+            None,
+            false,
+        )
+        .expect("update plain entry");
+        HistoryManager::update_transcription_with_conn(
+            &conn,
+            2,
+            "b".into(),
+            Some("B.".into()),
+            None,
+            None,
+            true,
+        )
+        .expect("update post-processed entry");
+
+        assert!(!post_process_requested(&conn, 1));
+        assert!(post_process_requested(&conn, 2));
     }
 }
