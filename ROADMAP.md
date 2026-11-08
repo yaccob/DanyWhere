@@ -70,6 +70,23 @@ Whisper sometimes appends text that was never said when the recording ends in si
 - **Shift+click on Re-transcribe** transcribes again and post-processes the result (Shift, as in the dictation shortcuts). A plain click works as before.
 - An entry post-processed this way counts as post-processed from then on, so a later "Re-transcribe" post-processes it too. While it runs, the entry and the footer say "Post-processing..."; when it fails, the entry stays as it was and a notice says so.
 
+### History: where a dictation was made, and earlier dictations as context
+
+**Idea (user, 2026-11-08, undecided):** store with each History entry the caption of the window or application the recording was started in, the word lists and the post-processing in effect, and show them in the History. On that basis, post-processing could optionally get the last N dictations from the same window as context.
+
+**Found:** the History stores the text of the prompt that ran, but not its name, and does not show it; the word lists in effect are not recorded; nothing determines the active window yet. Post-processing sees only the current transcript.
+
+**The problem behind it (user, 2026-11-08):** with "Build" in the word list, a dictated "Bild" comes out as "Build". For models without vocabulary input, such as Parakeet, the speech model hears "Bild" correctly and the fuzzy word replacement then changes every occurrence, whatever the sentence means. The similarity threshold cannot separate the two.
+
+**Tested (2026-11-08, invented dictations, one model):** labelled context repairs this only if the prompt explicitly allows correcting sound-alike words over its rule to change nothing, and works best when told which word the list replaced. Context does nothing for dictations that are not post-processed, so the replacement itself needs a fix too.
+
+**To settle first:**
+
+- Whether the changes context makes to real dictations are improvements.
+- Privacy: dictations made without post-processing have never left the computer, and window titles can be sensitive.
+- Matching: an exact title is unreliable, because titles change with state or are too general.
+- Availability: a window title needs Accessibility on macOS and has no general API on Wayland; the application name is easier.
+
 ### Post-processing: the model list loads by itself
 
 **Found (user, 2026-11-08):** the model dropdown offered only the selected model (`claude-sonnet-5`), although the API key can use 14 Anthropic models. Handy keeps the fetched list in memory only and fetches it only on a provider switch or with the refresh button, so after every start the dropdown held just the selected model.
