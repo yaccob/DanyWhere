@@ -11,6 +11,15 @@ src/content/release-notes/0.8.4.md
 Handy's notes, kept as upstream ships them (see
 `src/components/whats-new/releaseNoteFiles.ts`).
 
+`danywhere-<version>.md` is written in English and shown for every language
+without a translation. A translation sits next to it as
+`danywhere-<version>.<language>.md`, named by the app's language code from
+`src/i18n/languages.ts` (e.g. `danywhere-0.2.0.de.md`, `danywhere-0.2.0.zh-TW.md`).
+The dialog picks the translation for the app's language, then for its base
+language (`zh-TW` falls back to `zh`), then the English file.
+`releaseNoteFiles.test.ts` checks that every translation has its English file
+and names a language the app offers.
+
 The update modal shows the highest bundled release note newer than the
 persisted `whats_new_last_seen_version` and not newer than the running app
 version.

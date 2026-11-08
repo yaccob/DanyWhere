@@ -79,6 +79,17 @@ Next steps:
 - **Switch automatically.** Today the user chooses the mode once in onboarding and it stays, even if the permission is granted later. Instead: without the permission, use the clipboard mode with a short notice; once the permission is granted, return to the full mode on its own.
 - **Test both states through one permission check.** Route every Accessibility check (backend and frontend) through a single function that tests can replace, and cover the whole flow — onboarding, startup, shortcut backend, input simulation, paste vs. clipboard — once with "granted" and once with "not granted". Component tests for the onboarding need a React test setup, which the project does not have yet. A real run without the permission stays necessary when code around permissions, pasting or shortcuts changes, because the operating system and third-party libraries can behave in ways a mock does not show.
 
+### "What's new" after an update
+
+**Found (2026-11-08):** DanyWhere has Handy's "What's new" dialog, shown once after an update, but shipped no notes for it, so users learnt about new features only from the release page. Handy's notes are English only.
+
+**Done** (the first note ships with 0.1.4):
+
+- Notes in the app's language: `src/content/release-notes/danywhere-<version>.md` in English, the fallback for every language, plus translations `danywhere-<version>.<language>.md`. The dialog takes the translation for the app's language, then for its base language, then the English file.
+- The first note, in English and German, explains the History's post-processing from 0.1.3, which no dialog announced.
+
+**With each release:** write the version's note and its German translation. The dialog shows only the newest note, so it covers what is new since the last one.
+
 ## Branding
 
 - About page: "DanyWhere is based on Handy" with a link.

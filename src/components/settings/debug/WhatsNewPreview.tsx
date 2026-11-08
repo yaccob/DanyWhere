@@ -15,7 +15,7 @@ export const WhatsNewPreview: React.FC<WhatsNewPreviewProps> = ({
   descriptionMode = "tooltip",
   grouped = false,
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [note, setNote] = useState<ReleaseNote | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -23,7 +23,7 @@ export const WhatsNewPreview: React.FC<WhatsNewPreviewProps> = ({
     setIsLoading(true);
 
     try {
-      const releaseNote = findLatestReleaseNote();
+      const releaseNote = findLatestReleaseNote(i18n.language);
 
       if (!releaseNote) {
         console.info("What's New preview: no bundled release notes");

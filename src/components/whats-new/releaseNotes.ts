@@ -1,11 +1,9 @@
-import { versionFromReleaseNotePath } from "./releaseNoteFiles";
+import {
+  parseReleaseNotePath,
+  pickReleaseNoteMarkdown,
+} from "./releaseNoteFiles";
 
 export interface ReleaseNote {
-  version: string;
-  markdown: string;
-}
-
-interface ReleaseNoteRecord {
   version: string;
   markdown: string;
 }
@@ -13,6 +11,8 @@ interface ReleaseNoteRecord {
 interface FindReleaseNoteOptions {
   currentVersion: string;
   lastSeenVersion: string;
+  /** The app's interface language; picks the note's translation. */
+  language: string;
 }
 
 const releaseNoteModules = import.meta.glob<string>(
@@ -24,7 +24,8 @@ const releaseNoteModules = import.meta.glob<string>(
   },
 );
 
-const releaseNotesByVersion = new Map<string, ReleaseNoteRecord>();
+/** Each version's notes by language ("" is the English file). */
+const releaseNotesByVersion = new Map<string, Record<string, string>>();
 
 const parseVersion = (version: string): [number, number, number] | null => {
   const normalized = version.trim().replace(/^v/i, "");
@@ -35,15 +36,14 @@ const parseVersion = (version: string): [number, number, number] | null => {
 };
 
 for (const [path, markdown] of Object.entries(releaseNoteModules)) {
-  const version = versionFromReleaseNotePath(path);
-  if (!version) continue;
+  const file = parseReleaseNotePath(path);
+  if (!file) continue;
 
-  if (!parseVersion(version)) continue;
+  if (!parseVersion(file.version)) continue;
 
-  releaseNotesByVersion.set(version, {
-    version,
-    markdown,
-  });
+  const byLanguage = releaseNotesByVersion.get(file.version) ?? {};
+  byLanguage[file.language ?? ""] = markdown;
+  releaseNotesByVersion.set(file.version, byLanguage);
 }
 
 const compareVersions = (a: string, b: string) => {
@@ -61,33 +61,42 @@ const compareVersions = (a: string, b: string) => {
   return 0;
 };
 
+const noteFor = (version: string, language: string): ReleaseNote | null => {
+  const byLanguage = releaseNotesByVersion.get(version);
+  const markdown = byLanguage
+    ? pickReleaseNoteMarkdown(byLanguage, language)
+    : null;
+  return markdown === null ? null : { version, markdown };
+};
+
 export const findReleaseNoteToShow = ({
   currentVersion,
   lastSeenVersion,
+  language,
 }: FindReleaseNoteOptions): ReleaseNote | null => {
   if (!parseVersion(currentVersion)) return null;
 
   const hasValidLastSeenVersion = parseVersion(lastSeenVersion) !== null;
-  const candidate = Array.from(releaseNotesByVersion.values())
-    .filter((note) => compareVersions(note.version, currentVersion) <= 0)
+  const candidate = Array.from(releaseNotesByVersion.keys())
+    .filter((version) => compareVersions(version, currentVersion) <= 0)
     .filter(
-      (note) =>
+      (version) =>
         !hasValidLastSeenVersion ||
-        compareVersions(note.version, lastSeenVersion) > 0,
+        compareVersions(version, lastSeenVersion) > 0,
     )
-    .sort((a, b) => compareVersions(b.version, a.version))[0];
+    .sort((a, b) => compareVersions(b, a))[0];
 
   if (!candidate) return null;
 
-  return candidate;
+  return noteFor(candidate, language);
 };
 
-export const findLatestReleaseNote = (): ReleaseNote | null => {
-  const candidate = Array.from(releaseNotesByVersion.values()).sort((a, b) =>
-    compareVersions(b.version, a.version),
+export const findLatestReleaseNote = (language: string): ReleaseNote | null => {
+  const candidate = Array.from(releaseNotesByVersion.keys()).sort((a, b) =>
+    compareVersions(b, a),
   )[0];
 
   if (!candidate) return null;
 
-  return candidate;
+  return noteFor(candidate, language);
 };
