@@ -63,7 +63,7 @@ Whisper sometimes appends text that was never said when the recording ends in si
 
 **Found:** "Re-transcribe" already post-processed, but only entries dictated with post-processing (`post_process_requested`). The history showed and copied only the raw transcript: the post-processed text was stored (`post_processed_text`) but never displayed, so its result was invisible. Handy's history does the same.
 
-**Done:**
+**Done** (released in 0.1.3):
 
 - An entry with a post-processed text shows it, and "Show original" switches to the raw transcript; the copy button copies what is shown.
 - A **Post-process** button (wand) post-processes the existing transcript with the prompt selected now. It needs no recording, so it also works once the storage limit has deleted it. While post-processing is off or not set up, it is greyed out and its tooltip says why.
@@ -88,4 +88,4 @@ Next steps:
 Done: macOS releases for Apple silicon, signed with a Developer ID and notarized, with signed updater artifacts and `latest.json` in this repository's releases. The repository and DanyWhere 0.1.0 are public (2026-11-05), after a trademark pre-check of the name; Homebrew installs it from the tap `yaccob/tap`.
 
 - **macOS on Intel:** releases for `x86_64-apple-darwin` next to Apple silicon (DMG, updater bundle, `darwin-x86_64` in `latest.json`, the Homebrew cask per architecture). First target: a 2 GHz dual-core Intel Core i5 on macOS 12.7.6. The binary already allows macOS 11; to check on the device: which models are fast enough for dictation there, and whether the system WebKit (Safari 16.4 or newer) renders the interface.
-- **Windows and Linux:** releases since 0.1.2, built by GitHub Actions (`.github/workflows/release-danywhere.yml`) for Windows x64 and ARM64 (NSIS installer and MSI) and Linux x64 and ARM64 (deb, rpm, AppImage), in the same release and `latest.json` as the macOS builds. Open: a first test on a real Windows PC; Windows code signing, without which SmartScreen warns and Smart App Control blocks the installer (options: SignPath Foundation, free for open source; a certificate of one's own; the Microsoft Store).
+- **Windows and Linux:** releases since 0.1.2, built by GitHub Actions (`.github/workflows/release-danywhere.yml`) for Windows x64 and ARM64 (NSIS installer and MSI) and Linux x64 and ARM64 (deb, rpm, AppImage), in the same release and `latest.json` as the macOS builds. A first test of 0.1.2 on a real Windows PC went well (2026-11-08). Open: Windows code signing, without which SmartScreen warns and Smart App Control blocks the installer (options: SignPath Foundation, free for open source; a certificate of one's own; the Microsoft Store).
