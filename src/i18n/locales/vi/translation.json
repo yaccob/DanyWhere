@@ -68,8 +68,8 @@
       },
       "accessibility": {
         "skip": "Tiếp tục mà không có Trợ năng",
-        "skipHint": "Nếu tổ chức của bạn chặn quyền này: văn bản đã chép được sao chép vào bảng nhớ tạm để bạn tự dán, và phím tắt không thể dùng phím fn.",
-        "skipped": "Đã bỏ qua — văn bản được sao chép vào bảng nhớ tạm",
+        "skipHint": "Nếu tổ chức của bạn chặn quyền này: bản đọc chính tả sẽ chờ cho đến khi bạn chèn bằng ⌃⌥⌘V, và phím tắt không thể dùng phím fn.",
+        "skipped": "Đã bỏ qua — chèn bản đọc chính tả bằng ⌃⌥⌘V",
         "shortcutsReset": "Một số phím tắt cần Trợ năng và đã được đặt lại về mặc định.",
         "name": "Trợ năng",
         "why": "Để phím tắt của bạn hoạt động trong mọi ứng dụng, và Handy có thể gõ văn bản vào nơi con trỏ của bạn đang đứng."
@@ -357,7 +357,7 @@
           },
           "paste_last_transcript": {
             "name": "Dán bản chép gần nhất",
-            "description": "Dán bản chép gần nhất vào vị trí con trỏ hiện tại, ví dụ khi nó không đến nơi vì không có ô văn bản nào được chọn. Khi không có Trợ năng, bản chép được sao chép vào bảng nhớ tạm."
+            "description": "Dán bản chép gần nhất vào vị trí con trỏ hiện tại, ví dụ khi nó không đến nơi vì không có ô văn bản nào được chọn. Khi không có Trợ năng, bản chép được sao chép vào bảng nhớ tạm, dành cho các ứng dụng mà Chèn bản đọc chính tả gần nhất không hoạt động, như Terminal."
           },
           "cycle_word_list": {
             "name": "Đổi danh sách từ",
@@ -403,6 +403,14 @@
           "push_to_talk": "Ghi âm trong lúc bạn giữ phím tắt",
           "toggle": "Nhấn phím tắt để bắt đầu ghi âm, nhấn lại để dừng"
         }
+      },
+      "insertService": {
+        "title": "Chèn bản đọc chính tả gần nhất",
+        "description": "Khi không có Trợ năng, bản đọc chính tả sẽ chờ cho đến khi bạn chèn bằng phím tắt này, trong mọi ứng dụng hỗ trợ dịch vụ macOS. Các ứng dụng đang mở khi bạn thay đổi chỉ dùng phím tắt mới sau khi khởi động lại.",
+        "none": "Không có phím tắt",
+        "invalid": "Dùng ⌘ hoặc ⌃ với một chữ cái, chữ số hoặc dấu câu",
+        "conflict": "{{name}} đã dùng phím tắt này",
+        "failed": "Không thể đặt phím tắt: {{error}}"
       }
     },
     "models": {
@@ -466,7 +474,7 @@
       },
       "audioFeedback": {
         "label": "Phản hồi âm thanh",
-        "description": "Phát âm thanh khi bắt đầu và kết thúc ghi âm"
+        "description": "Phát âm thanh khi bắt đầu và kết thúc ghi âm, và khi một bản chép đang chờ bạn dán hoặc chèn"
       },
       "outputDevice": {
         "title": "Thiết bị đầu ra",
@@ -656,8 +664,8 @@
         }
       },
       "clipboardNotice": {
-        "title": "Thông báo bảng nhớ tạm",
-        "description": "Thời gian hiển thị thông báo khi bản chép được sao chép vào bảng nhớ tạm thay vì được dán (ví dụ khi không có Trợ năng). Tính bằng giây, cho phép số thập phân; 0 để tắt.",
+        "title": "Thông báo dán",
+        "description": "Thời gian thông báo hiển thị khi một bản chép đang chờ bạn dán hoặc chèn (ví dụ khi không có Trợ năng). Tính bằng giây, cho phép số thập phân; 0 để tắt.",
         "unit": "giây",
         "invalid": "Nhập số giây từ 0 đến {{max}}."
       }
@@ -1035,6 +1043,9 @@
     "processing": "Đang xử lý...",
     "loadingModel": "Đang tải mô hình...",
     "clipboard": "Trong bảng nhớ tạm – {{keys}} để dán",
+    "ready": "Sẵn sàng – {{keys}} để chèn",
+    "readyNoShortcut": "Sẵn sàng – chèn từ menu Dịch vụ",
+    "notReady": "Chưa sẵn sàng",
     "wordList": "Danh sách từ: {{name}}",
     "wordListGlobalOnly": "Chỉ danh sách từ chung"
   },

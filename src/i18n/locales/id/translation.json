@@ -68,8 +68,8 @@
       },
       "accessibility": {
         "skip": "Lanjutkan tanpa Aksesibilitas",
-        "skipHint": "Jika organisasi Anda memblokir izin ini: teks transkripsi disalin ke papan klip agar Anda tempel sendiri, dan pintasan tidak dapat menggunakan tombol fn.",
-        "skipped": "Dilewati — teks disalin ke papan klip",
+        "skipHint": "Jika organisasi Anda memblokir izin ini: dikte menunggu hingga Anda menyisipkannya dengan ⌃⌥⌘V, dan pintasan tidak dapat menggunakan tombol fn.",
+        "skipped": "Dilewati — sisipkan dikte dengan ⌃⌥⌘V",
         "shortcutsReset": "Beberapa pintasan memerlukan Aksesibilitas dan telah diatur ulang ke default.",
         "name": "Aksesibilitas",
         "why": "Agar pintasan Anda berfungsi di semua aplikasi, dan Handy dapat mengetik teks di tempat kursor Anda berada."
@@ -357,7 +357,7 @@
           },
           "paste_last_transcript": {
             "name": "Tempel transkripsi terakhir",
-            "description": "Menempelkan transkripsi terakhir di posisi kursor saat ini, misalnya jika tidak sampai karena tidak ada kolom teks yang fokus. Tanpa Aksesibilitas, transkripsi disalin ke papan klip."
+            "description": "Menempelkan transkripsi terakhir di posisi kursor saat ini, misalnya jika tidak sampai karena tidak ada kolom teks yang fokus. Tanpa Aksesibilitas, transkripsi disalin ke papan klip, untuk aplikasi tempat Sisipkan dikte terakhir tidak berfungsi, seperti Terminal."
           },
           "cycle_word_list": {
             "name": "Ganti Daftar Kata",
@@ -403,6 +403,14 @@
           "push_to_talk": "Merekam selama Anda menahan pintasan",
           "toggle": "Ketuk pintasan untuk mulai merekam, lalu ketuk lagi untuk berhenti"
         }
+      },
+      "insertService": {
+        "title": "Sisipkan dikte terakhir",
+        "description": "Tanpa Aksesibilitas, dikte menunggu hingga Anda menyisipkannya dengan pintasan ini, di aplikasi apa pun yang mendukung layanan macOS. Aplikasi yang sudah terbuka saat Anda mengubahnya baru memakainya setelah dimulai ulang.",
+        "none": "Tidak ada pintasan",
+        "invalid": "Gunakan ⌘ atau ⌃ dengan huruf, angka, atau tanda baca",
+        "conflict": "{{name}} sudah memakai pintasan ini",
+        "failed": "Pintasan tidak dapat diatur: {{error}}"
       }
     },
     "models": {
@@ -466,7 +474,7 @@
       },
       "audioFeedback": {
         "label": "Umpan Balik Audio",
-        "description": "Putar suara saat perekaman dimulai dan dihentikan"
+        "description": "Putar suara saat perekaman dimulai dan dihentikan, dan saat transkripsi menunggu untuk Anda tempel atau sisipkan"
       },
       "outputDevice": {
         "title": "Perangkat Keluaran",
@@ -656,8 +664,8 @@
         }
       },
       "clipboardNotice": {
-        "title": "Pemberitahuan papan klip",
-        "description": "Berapa lama pemberitahuan terlihat saat transkripsi disalin ke papan klip alih-alih ditempel (misalnya tanpa Aksesibilitas). Dalam detik, desimal diperbolehkan; 0 mematikannya.",
+        "title": "Pemberitahuan tempel",
+        "description": "Berapa lama pemberitahuan terlihat saat transkripsi menunggu untuk Anda tempel atau sisipkan (mis. tanpa Aksesibilitas). Dalam detik, desimal diperbolehkan; 0 mematikannya.",
         "unit": "dtk",
         "invalid": "Masukkan jumlah detik dari 0 sampai {{max}}."
       }
@@ -1035,6 +1043,9 @@
     "processing": "Memproses...",
     "loadingModel": "Memuat model...",
     "clipboard": "Di papan klip – {{keys}} untuk menempel",
+    "ready": "Siap – {{keys}} untuk menyisipkan",
+    "readyNoShortcut": "Siap – sisipkan dari menu Layanan",
+    "notReady": "Belum siap",
     "wordList": "Daftar kata: {{name}}",
     "wordListGlobalOnly": "Hanya daftar kata global"
   },

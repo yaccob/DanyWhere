@@ -494,6 +494,11 @@ pub struct AppSettings {
     /// `shortcut::apply_no_accessibility_mode`.
     #[serde(default)]
     pub accessibility_skipped: bool,
+    /// DanyWhere gave the "Insert Last Dictation" service its default
+    /// shortcut once (or found one set); it never sets it again, so a change
+    /// in System Settings stays. See `insert_service`.
+    #[serde(default)]
+    pub insert_service_shortcut_set: bool,
     #[serde(default = "default_always_on_microphone")]
     pub always_on_microphone: bool,
     #[serde(default)]
@@ -1124,6 +1129,7 @@ pub fn get_default_settings() -> AppSettings {
         selected_model: "".to_string(),
         onboarding_completed: false,
         accessibility_skipped: false,
+        insert_service_shortcut_set: false,
         always_on_microphone: false,
         spoken_languages: Vec::new(),
         selected_microphone: None,

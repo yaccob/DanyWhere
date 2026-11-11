@@ -68,8 +68,8 @@
       },
       "accessibility": {
         "skip": "Pokračovat bez usnadnění",
-        "skipHint": "Pokud vaše organizace toto oprávnění blokuje: přepsaný text se zkopíruje do schránky, abyste ho vložili sami, a klávesové zkratky nemohou používat klávesu fn.",
-        "skipped": "Přeskočeno — text se kopíruje do schránky",
+        "skipHint": "Pokud vaše organizace toto oprávnění blokuje: diktát počká, dokud ho nevložíte pomocí ⌃⌥⌘V, a zkratky nemohou používat klávesu fn.",
+        "skipped": "Přeskočeno — diktáty vkládejte pomocí ⌃⌥⌘V",
         "shortcutsReset": "Některé zkratky vyžadují usnadnění a byly obnoveny na výchozí hodnoty.",
         "name": "Zpřístupnění",
         "why": "Aby vaše zkratka fungovala v každé aplikaci a Handy mohl psát text tam, kde máte kurzor."
@@ -357,7 +357,7 @@
           },
           "paste_last_transcript": {
             "name": "Vložit poslední přepis",
-            "description": "Vloží poslední přepis tam, kde je právě kurzor, např. když nedorazil, protože žádné textové pole nemělo fokus. Bez usnadnění se místo toho zkopíruje do schránky."
+            "description": "Vloží poslední přepis tam, kde je právě kurzor, např. když nedorazil, protože žádné textové pole nemělo fokus. Bez usnadnění se místo toho zkopíruje do schránky, pro aplikace, ve kterých „Vložit poslední diktát“ nefunguje, například Terminál."
           },
           "cycle_word_list": {
             "name": "Přepnout seznam slov",
@@ -403,6 +403,14 @@
           "push_to_talk": "Nahrává, dokud držíte zkratku",
           "toggle": "Klepněte na zkratku pro zahájení nahrávání, klepněte znovu pro zastavení"
         }
+      },
+      "insertService": {
+        "title": "Vložit poslední diktát",
+        "description": "Bez usnadnění diktát počká, dokud ho nevložíte touto zkratkou, v každé aplikaci, která podporuje služby macOS. Aplikace, které jsou při změně otevřené, ji převezmou až po restartu.",
+        "none": "Žádná zkratka",
+        "invalid": "Použijte ⌘ nebo ⌃ s písmenem, číslicí nebo interpunkčním znakem",
+        "conflict": "„{{name}}“ už tuto zkratku používá",
+        "failed": "Zkratku se nepodařilo nastavit: {{error}}"
       }
     },
     "models": {
@@ -466,7 +474,7 @@
       },
       "audioFeedback": {
         "label": "Zvuková odezva",
-        "description": "Přehrát zvuk při zahájení a ukončení nahrávání"
+        "description": "Přehrát zvuk při zahájení a ukončení nahrávání a když přepis čeká, až ho vložíte"
       },
       "outputDevice": {
         "title": "Výstupní zařízení",
@@ -656,8 +664,8 @@
         }
       },
       "clipboardNotice": {
-        "title": "Upozornění na schránku",
-        "description": "Jak dlouho zůstane upozornění viditelné, když se přepis místo vložení zkopíruje do schránky (např. bez usnadnění). V sekundách, desetinná čísla povolena; 0 ho vypne.",
+        "title": "Upozornění na vložení",
+        "description": "Jak dlouho zůstane upozornění viditelné, když přepis čeká, až ho vložíte (např. bez usnadnění). V sekundách, desetinná místa povolena; 0 ho vypne.",
         "unit": "s",
         "invalid": "Zadejte počet sekund od 0 do {{max}}."
       }
@@ -1035,6 +1043,9 @@
     "processing": "Zpracovávám...",
     "loadingModel": "Načítání modelu...",
     "clipboard": "Ve schránce – {{keys}} pro vložení",
+    "ready": "Připraveno – {{keys}} pro vložení",
+    "readyNoShortcut": "Připraveno – vložte z nabídky Služby",
+    "notReady": "Ještě není hotovo",
     "wordList": "Seznam slov: {{name}}",
     "wordListGlobalOnly": "Jen globální seznam slov"
   },

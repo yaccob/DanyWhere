@@ -24,6 +24,8 @@ type OverlayState =
   | "notice"
   | "live_notice"
   | "clipboard"
+  | "ready"
+  | "not_ready"
   | "word_list";
 
 const isNoticeState = (state: OverlayState) =>
@@ -85,6 +87,8 @@ const RecordingOverlay: React.FC = () => {
   // The additional word list the switch shortcut just turned on; null: only
   // the global list.
   const [wordListName, setWordListName] = useState<string | null>(null);
+  // The "Insert Last Dictation" service's shortcut, e.g. ⌃⌥⌘V; null: none.
+  const [insertKeys, setInsertKeys] = useState<string | null>(null);
   const [noticeWidth, setNoticeWidth] = useState<number>();
   const noticeProbeRef = useRef<HTMLSpanElement>(null);
   const fadeTimerRef = useRef<ReturnType<typeof setTimeout>>();
@@ -107,6 +111,11 @@ const RecordingOverlay: React.FC = () => {
       const unlistenWordList = await listen<{ name: string | null }>(
         "overlay-word-list",
         (event) => setWordListName(event.payload.name),
+      );
+
+      const unlistenInsertKeys = await listen<{ keys: string | null }>(
+        "overlay-ready",
+        (event) => setInsertKeys(event.payload.keys),
       );
 
       const unlistenShow = await listen("show-overlay", async (event) => {
@@ -216,6 +225,7 @@ const RecordingOverlay: React.FC = () => {
       return () => {
         unlistenNotice();
         unlistenWordList();
+        unlistenInsertKeys();
         unlistenShow();
         unlistenHide();
         unlistenReady();
@@ -441,10 +451,20 @@ const RecordingOverlay: React.FC = () => {
   }
 
   // ---- Clipboard notice: the text was put on the clipboard instead of pasted.
-  if (state === "clipboard") {
+  // Ready notice: the text waits for the "Insert Last Dictation" service.
+  // Not ready: that service was called while a dictation was still running.
+  if (state === "clipboard" || state === "ready" || state === "not_ready") {
     const pasteKeys = navigator.platform.toLowerCase().includes("mac")
       ? "⌘V"
       : "Ctrl+V";
+    const label =
+      state === "clipboard"
+        ? t("overlay.clipboard", { keys: pasteKeys })
+        : state === "not_ready"
+          ? t("overlay.notReady")
+          : insertKeys
+            ? t("overlay.ready", { keys: insertKeys })
+            : t("overlay.readyNoShortcut");
     return (
       <div
         dir={direction}

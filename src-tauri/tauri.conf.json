@@ -38,7 +38,9 @@
       "icons/icon.ico"
     ],
     "macOS": {
-      "files": {},
+      "files": {
+        "Resources/de.lproj/ServicesMenu.strings": "macos/de.lproj/ServicesMenu.strings"
+      },
       "hardenedRuntime": true,
       "minimumSystemVersion": "10.15",
       "signingIdentity": "-",

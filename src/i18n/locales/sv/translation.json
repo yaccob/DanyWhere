@@ -68,8 +68,8 @@
       },
       "accessibility": {
         "skip": "Fortsätt utan hjälpmedel",
-        "skipHint": "Om din organisation blockerar den här behörigheten: transkriberad text kopieras till urklipp så att du kan klistra in den själv, och kortkommandon kan inte använda fn-tangenten.",
-        "skipped": "Hoppades över — texten kopieras till urklipp",
+        "skipHint": "Om din organisation blockerar den här behörigheten: en diktering väntar tills du infogar den med ⌃⌥⌘V, och kortkommandon kan inte använda fn-tangenten.",
+        "skipped": "Hoppades över — infoga dikteringar med ⌃⌥⌘V",
         "shortcutsReset": "Vissa kortkommandon kräver hjälpmedel och har återställts till standard.",
         "name": "Hjälpmedel",
         "why": "Så att din genväg fungerar i alla appar och Handy kan skriva texten där markören står."
@@ -357,7 +357,7 @@
           },
           "paste_last_transcript": {
             "name": "Klistra in senaste transkriptionen",
-            "description": "Klistrar in den senaste transkriptionen där markören står nu, t.ex. om den inte kom fram eftersom inget textfält hade fokus. Utan hjälpmedel kopieras den till urklipp i stället."
+            "description": "Klistrar in den senaste transkriptionen där markören står nu, t.ex. om den inte kom fram eftersom inget textfält hade fokus. Utan hjälpmedel kopieras den till urklipp i stället, för appar där ”Infoga senaste diktering” inte fungerar, t.ex. Terminal."
           },
           "cycle_word_list": {
             "name": "Byt ordlista",
@@ -403,6 +403,14 @@
           "push_to_talk": "Spelar in så länge du håller genvägen nedtryckt",
           "toggle": "Tryck på genvägen för att starta inspelningen, tryck igen för att stoppa"
         }
+      },
+      "insertService": {
+        "title": "Infoga senaste diktering",
+        "description": "Utan hjälpmedel väntar en diktering tills du infogar den med det här kortkommandot, i alla appar som stöder macOS-tjänster. Appar som redan är öppna när du ändrar det börjar använda det först efter en omstart.",
+        "none": "Inget kortkommando",
+        "invalid": "Använd ⌘ eller ⌃ med en bokstav, siffra eller ett skiljetecken",
+        "conflict": "”{{name}}” använder redan det här kortkommandot",
+        "failed": "Kortkommandot kunde inte ställas in: {{error}}"
       }
     },
     "models": {
@@ -466,7 +474,7 @@
       },
       "audioFeedback": {
         "label": "Ljudåterkoppling",
-        "description": "Spela upp ljud när inspelningen startar och stoppar"
+        "description": "Spela upp ljud när inspelningen startar och stoppar, och när en transkription väntar på att du klistrar in eller infogar den"
       },
       "outputDevice": {
         "title": "Utmatningsenhet",
@@ -656,8 +664,8 @@
         }
       },
       "clipboardNotice": {
-        "title": "Meddelande om urklipp",
-        "description": "Hur länge meddelandet syns när en transkription kopieras till urklipp i stället för att klistras in (t.ex. utan hjälpmedel). I sekunder, decimaler tillåtna; 0 stänger av det.",
+        "title": "Meddelande om inklistring",
+        "description": "Hur länge meddelandet visas när en transkription väntar på att du klistrar in eller infogar den (t.ex. utan hjälpmedel). I sekunder, decimaler tillåtna; 0 stänger av det.",
         "unit": "s",
         "invalid": "Ange ett antal sekunder från 0 till {{max}}."
       }
@@ -1035,6 +1043,9 @@
     "processing": "Bearbetar...",
     "loadingModel": "Laddar modell...",
     "clipboard": "I urklipp – {{keys}} för att klistra in",
+    "ready": "Klar – {{keys}} för att infoga",
+    "readyNoShortcut": "Klar – infoga från menyn Tjänster",
+    "notReady": "Inte klar än",
     "wordList": "Ordlista: {{name}}",
     "wordListGlobalOnly": "Endast global ordlista"
   },

@@ -68,8 +68,8 @@
       },
       "accessibility": {
         "skip": "Doorgaan zonder Toegankelijkheid",
-        "skipHint": "Als je organisatie deze toestemming blokkeert: getranscribeerde tekst wordt naar het klembord gekopieerd zodat je hem zelf plakt, en sneltoetsen kunnen de fn-toets niet gebruiken.",
-        "skipped": "Overgeslagen — tekst wordt naar het klembord gekopieerd",
+        "skipHint": "Als je organisatie deze toestemming blokkeert: een dictaat wacht tot je het invoegt met ⌃⌥⌘V, en sneltoetsen kunnen de fn-toets niet gebruiken.",
+        "skipped": "Overgeslagen — voeg dictaten in met ⌃⌥⌘V",
         "shortcutsReset": "Sommige sneltoetsen hebben Toegankelijkheid nodig en zijn teruggezet naar de standaardwaarden.",
         "name": "Toegankelijkheid",
         "why": "Zodat je sneltoets in elke app werkt en Handy de tekst kan typen waar je cursor staat."
@@ -357,7 +357,7 @@
           },
           "paste_last_transcript": {
             "name": "Laatste transcriptie plakken",
-            "description": "Plakt de laatste transcriptie waar de cursor nu staat, bijvoorbeeld als die niet aankwam omdat geen tekstveld focus had. Zonder Toegankelijkheid wordt die naar het klembord gekopieerd."
+            "description": "Plakt de laatste transcriptie waar de cursor nu staat, bijvoorbeeld als die niet aankwam omdat geen tekstveld focus had. Zonder Toegankelijkheid wordt die naar het klembord gekopieerd, voor apps waarin 'Laatste dictaat invoegen' niet werkt, zoals Terminal."
           },
           "cycle_word_list": {
             "name": "Woordenlijst wisselen",
@@ -403,6 +403,14 @@
           "push_to_talk": "Neemt op zolang je de sneltoets ingedrukt houdt",
           "toggle": "Tik op de sneltoets om de opname te starten, tik opnieuw om te stoppen"
         }
+      },
+      "insertService": {
+        "title": "Laatste dictaat invoegen",
+        "description": "Zonder Toegankelijkheid wacht een dictaat tot je het invoegt met deze sneltoets, in elke app die macOS-voorzieningen ondersteunt. Apps die al open zijn als je hem wijzigt, nemen hem pas over na een herstart.",
+        "none": "Geen sneltoets",
+        "invalid": "Gebruik ⌘ of ⌃ met een letter, cijfer of leesteken",
+        "conflict": "'{{name}}' gebruikt deze sneltoets al",
+        "failed": "Sneltoets kon niet worden ingesteld: {{error}}"
       }
     },
     "models": {
@@ -466,7 +474,7 @@
       },
       "audioFeedback": {
         "label": "Geluidsfeedback",
-        "description": "Geluid afspelen wanneer de opname start en stopt"
+        "description": "Geluid afspelen wanneer de opname start en stopt, en wanneer een transcriptie wacht tot je hem plakt of invoegt"
       },
       "outputDevice": {
         "title": "Afspeelapparaat",
@@ -656,8 +664,8 @@
         }
       },
       "clipboardNotice": {
-        "title": "Melding klembord",
-        "description": "Hoe lang de melding zichtbaar blijft wanneer een transcriptie naar het klembord wordt gekopieerd in plaats van geplakt (bijv. zonder Toegankelijkheid). In seconden, decimalen toegestaan; 0 zet hem uit.",
+        "title": "Melding plakken",
+        "description": "Hoe lang de melding zichtbaar blijft wanneer een transcriptie wacht tot je hem plakt of invoegt (bijv. zonder Toegankelijkheid). In seconden, decimalen toegestaan; 0 schakelt hem uit.",
         "unit": "s",
         "invalid": "Voer een aantal seconden in van 0 tot {{max}}."
       }
@@ -1035,6 +1043,9 @@
     "processing": "Verwerken...",
     "loadingModel": "Model laden...",
     "clipboard": "Op het klembord – {{keys}} om te plakken",
+    "ready": "Klaar – {{keys}} om in te voegen",
+    "readyNoShortcut": "Klaar – voeg in via het menu Voorzieningen",
+    "notReady": "Nog niet klaar",
     "wordList": "Woordenlijst: {{name}}",
     "wordListGlobalOnly": "Alleen algemene woordenlijst"
   },

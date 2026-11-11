@@ -81,7 +81,7 @@ fn notice_state(session_is_live: bool) -> &'static str {
 fn overlay_dimensions(state: &str) -> (f64, f64) {
     if is_live_state(state) {
         (OVERLAY_STREAM_WIDTH, OVERLAY_STREAM_HEIGHT)
-    } else if state == "clipboard" || state == "word_list" {
+    } else if matches!(state, "clipboard" | "ready" | "not_ready" | "word_list") {
         (OVERLAY_NOTICE_WIDTH, OVERLAY_HEIGHT)
     } else {
         (OVERLAY_WIDTH, OVERLAY_HEIGHT)
@@ -760,6 +760,51 @@ static OVERLAY_SHOW_GENERATION: AtomicU64 = AtomicU64::new(0);
 /// the user where the text went, which matters even with the overlay off.
 pub fn show_clipboard_notice(app_handle: &AppHandle, duration: std::time::Duration) {
     show_timed_state(app_handle, "clipboard", duration);
+}
+
+/// The show generation of the latest "ready to insert" notice; it's on screen
+/// while this matches `OVERLAY_SHOW_GENERATION`.
+static READY_NOTICE_GENERATION: AtomicU64 = AtomicU64::new(u64::MAX);
+
+/// Shows "Ready – <keys> to insert" for `duration` after a dictation that
+/// waits for the "Insert Last Dictation" service; `keys` is its shortcut, if
+/// it has one. Like the clipboard notice it ignores the overlay style.
+pub fn show_ready_notice(
+    app_handle: &AppHandle,
+    keys: Option<String>,
+    duration: std::time::Duration,
+) {
+    // Sent before the state, so the overlay has the keys when it renders.
+    if let Some(overlay_window) = app_handle.get_webview_window("recording_overlay") {
+        let _ = overlay_window.emit("overlay-ready", serde_json::json!({ "keys": keys }));
+    }
+    // The show below bumps the generation by one.
+    READY_NOTICE_GENERATION.store(
+        OVERLAY_SHOW_GENERATION.load(Ordering::SeqCst) + 1,
+        Ordering::SeqCst,
+    );
+    show_timed_state(app_handle, "ready", duration);
+}
+
+/// Hides the "ready to insert" notice once the dictation was inserted, unless
+/// something else has taken the overlay since.
+pub fn hide_ready_notice(app_handle: &AppHandle) {
+    if READY_NOTICE_GENERATION.load(Ordering::SeqCst)
+        == OVERLAY_SHOW_GENERATION.load(Ordering::SeqCst)
+    {
+        hide_recording_overlay(app_handle);
+    }
+}
+
+/// Shows "Not ready yet" for `duration`, when the service is called while a
+/// dictation is still in progress and the overlay doesn't show it.
+pub fn show_not_ready_notice(app_handle: &AppHandle, duration: std::time::Duration) {
+    show_timed_state(app_handle, "not_ready", duration);
+}
+
+/// Whether the overlay shows a recording or transcribing session right now.
+pub fn session_showing() -> bool {
+    OVERLAY_SESSION_SHOWING.load(Ordering::SeqCst)
 }
 
 /// Shows which additional word list is now in use (`None`: only the global

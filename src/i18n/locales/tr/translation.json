@@ -68,8 +68,8 @@
       },
       "accessibility": {
         "skip": "Erişilebilirlik olmadan devam et",
-        "skipHint": "Kuruluşunuz bu izni engelliyorsa: yazıya dökülen metin, kendiniz yapıştırmanız için panoya kopyalanır ve kısayollar fn tuşunu kullanamaz.",
-        "skipped": "Atlandı — metin panoya kopyalanır",
+        "skipHint": "Kuruluşunuz bu izni engelliyorsa: dikte, ⌃⌥⌘V ile ekleyene kadar bekler ve kısayollar fn tuşunu kullanamaz.",
+        "skipped": "Atlandı — dikteleri ⌃⌥⌘V ile ekleyin",
         "shortcutsReset": "Bazı kısayollar Erişilebilirlik gerektirdiği için varsayılanlara sıfırlandı.",
         "name": "Erişilebilirlik",
         "why": "Kısayolunuz her uygulamada çalışsın ve Handy metni imlecinizin bulunduğu yere yazabilsin diye."
@@ -357,7 +357,7 @@
           },
           "paste_last_transcript": {
             "name": "Son transkripti yapıştır",
-            "description": "Son transkripti imlecin şu anda bulunduğu yere yapıştırır; örneğin hiçbir metin alanı odakta olmadığı için ulaşmadıysa. Erişilebilirlik olmadan panoya kopyalanır."
+            "description": "Son transkripti imlecin şu anda bulunduğu yere yapıştırır; örneğin hiçbir metin alanı odakta olmadığı için ulaşmadıysa. Erişilebilirlik olmadan panoya kopyalanır; Son dikteyi ekle'nin çalışmadığı uygulamalar için, örneğin Terminal."
           },
           "cycle_word_list": {
             "name": "Kelime Listesini Değiştir",
@@ -403,6 +403,14 @@
           "push_to_talk": "Kısayolu basılı tuttuğunuz sürece kaydeder",
           "toggle": "Kaydı başlatmak için kısayola dokunun, durdurmak için tekrar dokunun"
         }
+      },
+      "insertService": {
+        "title": "Son dikteyi ekle",
+        "description": "Erişilebilirlik olmadan dikte, bu kısayolla ekleyene kadar bekler; macOS servislerini destekleyen her uygulamada çalışır. Değiştirdiğinizde zaten açık olan uygulamalar kısayolu ancak yeniden başlatıldıktan sonra benimser.",
+        "none": "Kısayol yok",
+        "invalid": "Bir harf, rakam veya noktalama işaretiyle ⌘ ya da ⌃ kullanın",
+        "conflict": "{{name}} bu kısayolu zaten kullanıyor",
+        "failed": "Kısayol ayarlanamadı: {{error}}"
       }
     },
     "models": {
@@ -466,7 +474,7 @@
       },
       "audioFeedback": {
         "label": "Sesli Geri Bildirim",
-        "description": "Kayıt başladığında ve bittiğinde ses çalar"
+        "description": "Kayıt başladığında ve bittiğinde ve bir transkript yapıştırılmayı veya eklenmeyi beklediğinde ses çalar"
       },
       "outputDevice": {
         "title": "Çıkış Cihazı",
@@ -656,8 +664,8 @@
         }
       },
       "clipboardNotice": {
-        "title": "Pano bildirimi",
-        "description": "Transkript yapıştırılmak yerine panoya kopyalandığında (ör. Erişilebilirlik olmadan) bildirimin ne kadar görüneceği. Saniye cinsinden, ondalık kullanılabilir; 0 kapatır.",
+        "title": "Yapıştırma bildirimi",
+        "description": "Bir transkript yapıştırılmayı veya eklenmeyi beklediğinde (ör. Erişilebilirlik olmadan) bildirimin ne kadar süre görüneceği. Saniye cinsinden, ondalık kullanılabilir; 0 kapatır.",
         "unit": "sn",
         "invalid": "0 ile {{max}} arasında saniye girin."
       }
@@ -1035,6 +1043,9 @@
     "processing": "İşleniyor...",
     "loadingModel": "Model yükleniyor...",
     "clipboard": "Panoda – yapıştırmak için {{keys}}",
+    "ready": "Hazır – eklemek için {{keys}}",
+    "readyNoShortcut": "Hazır – Servisler menüsünden ekleyin",
+    "notReady": "Henüz hazır değil",
     "wordList": "Kelime listesi: {{name}}",
     "wordListGlobalOnly": "Yalnızca genel kelime listesi"
   },

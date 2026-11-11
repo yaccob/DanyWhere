@@ -68,8 +68,8 @@
       },
       "accessibility": {
         "skip": "Continua senza Accessibilità",
-        "skipHint": "Se la tua organizzazione blocca questo permesso: il testo trascritto viene copiato negli appunti perché tu lo incolli, e le scorciatoie non possono usare il tasto fn.",
-        "skipped": "Saltato — il testo viene copiato negli appunti",
+        "skipHint": "Se la tua organizzazione blocca questo permesso: una dettatura attende finché non la inserisci con ⌃⌥⌘V, e le scorciatoie non possono usare il tasto fn.",
+        "skipped": "Saltato — inserisci le dettature con ⌃⌥⌘V",
         "shortcutsReset": "Alcune scorciatoie richiedono l'Accessibilità e sono state ripristinate ai valori predefiniti.",
         "name": "Accessibilità",
         "why": "Così la tua scorciatoia funziona in ogni app e Handy può scrivere il testo dove si trova il cursore."
@@ -357,7 +357,7 @@
           },
           "paste_last_transcript": {
             "name": "Incolla l'ultima trascrizione",
-            "description": "Incolla l'ultima trascrizione dove si trova ora il cursore, ad esempio se non è arrivata perché nessun campo di testo aveva il focus. Senza Accessibilità viene copiata negli appunti."
+            "description": "Incolla l'ultima trascrizione dove si trova ora il cursore, ad esempio se non è arrivata perché nessun campo di testo aveva il focus. Senza Accessibilità viene copiata negli appunti, per le app in cui «Inserisci l'ultima dettatura» non funziona, come Terminale."
           },
           "cycle_word_list": {
             "name": "Cambia elenco di parole",
@@ -403,6 +403,14 @@
           "push_to_talk": "Registra finché tieni premuta la scorciatoia",
           "toggle": "Tocca la scorciatoia per avviare la registrazione, tocca di nuovo per fermarla"
         }
+      },
+      "insertService": {
+        "title": "Inserisci l'ultima dettatura",
+        "description": "Senza Accessibilità una dettatura attende finché non la inserisci con questa scorciatoia, in qualsiasi app che supporta i servizi di macOS. Le app già aperte quando la cambi la adottano solo dopo un riavvio.",
+        "none": "Nessuna scorciatoia",
+        "invalid": "Usa ⌘ o ⌃ con una lettera, una cifra o un segno di punteggiatura",
+        "conflict": "«{{name}}» usa già questa scorciatoia",
+        "failed": "Impossibile impostare la scorciatoia: {{error}}"
       }
     },
     "models": {
@@ -466,7 +474,7 @@
       },
       "audioFeedback": {
         "label": "Feedback Audio",
-        "description": "Riproduci un suono quando la registrazione inizia e finisce"
+        "description": "Riproduci un suono quando la registrazione inizia e finisce, e quando una trascrizione attende di essere incollata o inserita"
       },
       "outputDevice": {
         "title": "Dispositivo di Output",
@@ -656,8 +664,8 @@
         }
       },
       "clipboardNotice": {
-        "title": "Avviso appunti",
-        "description": "Per quanto tempo resta visibile l'avviso quando una trascrizione viene copiata negli appunti invece di essere incollata (ad es. senza Accessibilità). In secondi, decimali ammessi; 0 lo disattiva.",
+        "title": "Avviso per incollare",
+        "description": "Per quanto tempo l'avviso resta visibile quando una trascrizione attende di essere incollata o inserita (ad es. senza Accessibilità). In secondi, decimali ammessi; 0 lo disattiva.",
         "unit": "s",
         "invalid": "Inserisci un numero di secondi da 0 a {{max}}."
       }
@@ -1035,6 +1043,9 @@
     "processing": "Elaborazione...",
     "loadingModel": "Caricamento del modello...",
     "clipboard": "Negli appunti – {{keys}} per incollare",
+    "ready": "Pronto – {{keys}} per inserire",
+    "readyNoShortcut": "Pronto – inseriscilo dal menu Servizi",
+    "notReady": "Non ancora pronto",
     "wordList": "Elenco di parole: {{name}}",
     "wordListGlobalOnly": "Solo l'elenco di parole globale"
   },

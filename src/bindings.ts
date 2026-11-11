@@ -184,6 +184,27 @@ async changeClipboardNoticeMsSetting(ms: number) : Promise<Result<null, string>>
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * The "Insert Last Dictation" service's current shortcut for the settings,
+ * as a recorded combination (e.g. `ctrl+option+command+v`), or `None`.
+ */
+async getInsertServiceShortcut() : Promise<string | null> {
+    return await TAURI_INVOKE("get_insert_service_shortcut");
+},
+/**
+ * Gives the service the recorded combination `binding` as its shortcut and
+ * returns it as stored. Errors are codes the settings translate: `invalid`,
+ * `conflict:<binding id>`, `unsupported` (no services on this platform) or
+ * `failed:<reason>`.
+ */
+async setInsertServiceShortcut(binding: string) : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("set_insert_service_shortcut", { binding }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async changePasteDelayAfterMsSetting(ms: number) : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("change_paste_delay_after_ms_setting", { ms }) };
@@ -1226,7 +1247,13 @@ whats_new_last_seen_version?: string; selected_model?: string; onboarding_comple
  * sends them back to the permission screen. See
  * `shortcut::apply_no_accessibility_mode`.
  */
-accessibility_skipped?: boolean; always_on_microphone?: boolean; selected_microphone?: string | null; 
+accessibility_skipped?: boolean; 
+/**
+ * DanyWhere gave the "Insert Last Dictation" service its default
+ * shortcut once (or found one set); it never sets it again, so a change
+ * in System Settings stays. See `insert_service`.
+ */
+insert_service_shortcut_set?: boolean; always_on_microphone?: boolean; selected_microphone?: string | null; 
 /**
  * Which input channel to use on the selected microphone device.
  * None means "average all channels" (original behavior).

@@ -12,6 +12,10 @@ Die Nachbearbeitung schaltest du unter **Erweitert → Transkription → Nachbea
 
 Die Seite **Nachbearbeitung** lädt die Modelle des Anbieters jetzt selbst. Zur Auswahl stehen damit gleich alle Modelle, die dein API-Schlüssel nutzen kann, nicht nur das eingestellte. Bisher musstest du die Liste nach jedem Start mit **Modelle aktualisieren** laden; der Knopf lädt sie weiterhin neu.
 
-## Ein Ton, wenn der Text in der Zwischenablage liegt
+## Diktate ohne Bedienungshilfen einfügen, die Zwischenablage bleibt unberührt
 
-Kann DanyWhere ein Diktat nicht selbst einfügen, zum Beispiel nach **Ohne Bedienungshilfen fortfahren**, legt es den Text in die Zwischenablage, damit du ihn selbst einfügst. Ein dritter Ton, höher als der Startton, sagt dir jetzt, wann er dort liegt. Er kommt in diesem Fall auch nach **Letzte Transkription einfügen**. Der Schalter **Audio-Feedback** schaltet ihn zusammen mit Start- und Endton ab.
+Auf einem Mac ohne die Berechtigung Bedienungshilfen (**Ohne Bedienungshilfen fortfahren**) legt DanyWhere ein Diktat nicht mehr in die Zwischenablage; was du kopiert hast, bleibt dort. Das Diktat wartet, bis du es in der App, in der du schreibst, mit **⌃⌥⌘V** einfügst. Das geht über einen macOS-Dienst, „Letztes Diktat einfügen“, und braucht keine Berechtigung.
+
+- Die kleine Anzeige am Bildschirmrand sagt **Bereit – ⌃⌥⌘V zum Einfügen**, und ein dritter Ton, höher als der Startton, kommt, sobald das Diktat bereitliegt. Der Schalter **Audio-Feedback** schaltet ihn zusammen mit Start- und Endton ab.
+- Das Kürzel änderst du unter **Allgemein → Letztes Diktat einfügen**. Apps, die schon geöffnet sind, übernehmen ein neues Kürzel nach einem Neustart; das gilt auch für ⌃⌥⌘V direkt nach dem Fortfahren ohne Bedienungshilfen.
+- Der Dienst funktioniert in Apps, die macOS-Dienste unterstützen, etwa iTerm2, VS Code, Safari und Chrome. Apples Terminal gibt den Text nicht weiter: Dort legt **Letzte Transkription einfügen** das Diktat in die Zwischenablage, damit du es mit ⌘V einfügst, und auch dann kommt der Ton.

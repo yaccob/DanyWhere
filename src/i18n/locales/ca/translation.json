@@ -68,8 +68,8 @@
       },
       "accessibility": {
         "skip": "Continua sense accessibilitat",
-        "skipHint": "Si la teva organització bloqueja aquest permís: el text transcrit es copia al porta-retalls perquè l'enganxis tu mateix, i les dreceres no poden fer servir la tecla fn.",
-        "skipped": "Omès — el text es copia al porta-retalls",
+        "skipHint": "Si la vostra organització bloqueja aquest permís: un dictat espera fins que l'inseriu amb ⌃⌥⌘V, i les dreceres no poden fer servir la tecla fn.",
+        "skipped": "Omès — inseriu els dictats amb ⌃⌥⌘V",
         "shortcutsReset": "Algunes dreceres necessiten accessibilitat i s'han restablert als valors per defecte.",
         "name": "Accessibilitat",
         "why": "Perquè la drecera funcioni a totes les aplicacions i el Handy pugui escriure el text on tingueu el cursor."
@@ -357,7 +357,7 @@
           },
           "paste_last_transcript": {
             "name": "Enganxa l'última transcripció",
-            "description": "Enganxa l'última transcripció on hi ha el cursor ara, per exemple si no ha arribat perquè cap camp de text tenia el focus. Sense accessibilitat es copia al porta-retalls."
+            "description": "Enganxa l'última transcripció on hi ha el cursor ara, per exemple si no ha arribat perquè cap camp de text tenia el focus. Sense accessibilitat es copia al porta-retalls, per a les apps on «Insereix l'últim dictat» no funciona, com ara el Terminal."
           },
           "cycle_word_list": {
             "name": "Canvia la llista de paraules",
@@ -403,6 +403,14 @@
           "push_to_talk": "Enregistreu mentre manteniu premuda la drecera",
           "toggle": "Premeu la drecera per iniciar l'enregistrament i torneu-la a prémer per aturar-lo"
         }
+      },
+      "insertService": {
+        "title": "Insereix l'últim dictat",
+        "description": "Sense accessibilitat, un dictat espera fins que l'inseriu amb aquesta drecera, en qualsevol app que admeti els serveis de macOS. Les apps que ja són obertes quan la canvieu no l'adopten fins que les reinicieu.",
+        "none": "Cap drecera",
+        "invalid": "Feu servir ⌘ o ⌃ amb una lletra, un dígit o un signe de puntuació",
+        "conflict": "«{{name}}» ja fa servir aquesta drecera",
+        "failed": "No s'ha pogut definir la drecera: {{error}}"
       }
     },
     "models": {
@@ -466,7 +474,7 @@
       },
       "audioFeedback": {
         "label": "Avisos sonors",
-        "description": "Reprodueix un so quan s'inicia i s'atura l'enregistrament"
+        "description": "Reprodueix un so quan s'inicia i s'atura l'enregistrament i quan una transcripció espera que l'enganxeu o l'inseriu"
       },
       "outputDevice": {
         "title": "Dispositiu de sortida",
@@ -656,8 +664,8 @@
         }
       },
       "clipboardNotice": {
-        "title": "Avís del porta-retalls",
-        "description": "Quant de temps es mostra l'avís quan una transcripció es copia al porta-retalls en lloc d'enganxar-se (p. ex. sense accessibilitat). En segons, amb decimals; 0 el desactiva.",
+        "title": "Avís per enganxar",
+        "description": "Quant de temps es mostra l'avís quan una transcripció espera que l'enganxeu o l'inseriu (p. ex. sense accessibilitat). En segons, s'admeten decimals; 0 el desactiva.",
         "unit": "s",
         "invalid": "Introdueix un nombre de segons de 0 a {{max}}."
       }
@@ -1035,6 +1043,9 @@
     "processing": "S'està processant...",
     "loadingModel": "S'està carregant el model...",
     "clipboard": "Al porta-retalls – {{keys}} per enganxar",
+    "ready": "A punt – {{keys}} per inserir",
+    "readyNoShortcut": "A punt – inseriu-lo des del menú Serveis",
+    "notReady": "Encara no està a punt",
     "wordList": "Llista de paraules: {{name}}",
     "wordListGlobalOnly": "Només la llista de paraules global"
   },

@@ -185,6 +185,8 @@ pub fn skip_accessibility_permission(app: AppHandle) -> Vec<String> {
     let mut settings = crate::settings::get_settings(&app);
     let reset_bindings = crate::shortcut::apply_no_accessibility_mode(&mut settings);
     crate::settings::write_settings(&app, settings);
+    // DanyWhere: the dictation now waits for "Insert Last Dictation".
+    crate::insert_service::ensure_default_shortcut(&app);
     log::info!(
         "Continuing without Accessibility permission; reset bindings: {:?}",
         reset_bindings

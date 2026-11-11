@@ -4,5 +4,32 @@
 <dict>
   <key>NSMicrophoneUsageDescription</key>
   <string>Request microphone access to transcribe audio locally</string>
+  <!-- DanyWhere: "Insert Last Dictation" (src/insert_service.rs). It takes
+       nothing and returns text, which the calling app inserts itself. The
+       test builds' build script renames the menu item and port per variant. -->
+  <key>NSServices</key>
+  <array>
+    <dict>
+      <key>NSMenuItem</key>
+      <dict>
+        <key>default</key>
+        <string>DanyWhere: Insert Last Dictation</string>
+      </dict>
+      <key>NSMessage</key>
+      <string>insertLastDictation</string>
+      <key>NSPortName</key>
+      <string>DanyWhere</string>
+      <key>NSReturnTypes</key>
+      <array>
+        <string>NSStringPboardType</string>
+        <string>public.utf8-plain-text</string>
+      </array>
+      <!-- Present (even empty) so macOS enables the service by default. -->
+      <key>NSRequiredContext</key>
+      <dict/>
+      <key>NSTimeout</key>
+      <string>5000</string>
+    </dict>
+  </array>
 </dict>
 </plist>

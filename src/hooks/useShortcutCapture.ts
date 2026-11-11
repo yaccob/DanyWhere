@@ -23,7 +23,10 @@ interface HandyKeysEvent {
 /**
  * Records a new binding via handy-keys events, or this window's key events
  * with all bindings suspended. `inert` records without saving;
- * `escapeCancels` makes Escape exit instead of recording.
+ * `escapeCancels` makes Escape exit instead of recording. `save` hands the
+ * recorded combination to the caller instead of storing it as `bindingId`
+ * (DanyWhere: the "Insert Last Dictation" service's shortcut, which macOS
+ * keeps); it is recorded from this window's key events.
  */
 export const useShortcutCapture = (
   bindingId: string,
@@ -32,12 +35,18 @@ export const useShortcutCapture = (
     onDone,
     inert = false,
     escapeCancels = false,
-  }: { onDone?: () => void; inert?: boolean; escapeCancels?: boolean } = {},
+    save,
+  }: {
+    onDone?: () => void;
+    inert?: boolean;
+    escapeCancels?: boolean;
+    save?: (binding: string) => Promise<void>;
+  } = {},
 ) => {
   const { t } = useTranslation();
   const { getSetting, updateBinding } = useSettings();
   const handyKeys =
-    !inert && getSetting("keyboard_implementation") === "handy_keys";
+    !inert && !save && getSetting("keyboard_implementation") === "handy_keys";
   const [capturing, setCapturing] = useState(false);
   const [partial, setPartial] = useState("");
   const onDoneRef = useRef(onDone);
@@ -70,7 +79,8 @@ export const useShortcutCapture = (
   const commit = useCallback(
     async (binding: string) => {
       try {
-        if (!inert) await updateBinding(bindingId, binding);
+        if (save) await save(binding);
+        else if (!inert) await updateBinding(bindingId, binding);
       } catch (error) {
         console.error("Failed to change binding:", error);
         notify({
@@ -81,7 +91,7 @@ export const useShortcutCapture = (
       }
       await finish();
     },
-    [bindingId, finish, inert, t, updateBinding],
+    [bindingId, finish, inert, save, t, updateBinding],
   );
 
   /** Resolves to whether capture began. */

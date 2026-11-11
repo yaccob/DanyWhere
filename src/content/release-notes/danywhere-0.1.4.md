@@ -12,6 +12,10 @@ Post-processing is switched on under **Advanced → Transcription → Post Proce
 
 The **Post Process** page now loads the provider's models by itself, so every model your API key can use is offered right away, not only the one selected. Before, the list had to be loaded with **Refresh models** after every start. That button still reloads it.
 
-## A sound when the text waits on the clipboard
+## Insert dictations without Accessibility, and keep your clipboard
 
-When DanyWhere cannot paste a dictation itself, for example after **Continue without Accessibility**, it puts the text on the clipboard for you to paste. A third sound, higher than the start sound, now tells you when the text is there. It plays after **Paste Last Transcript** in that case too. The **Audio Feedback** switch turns it off together with the start and stop sounds.
+On a Mac without the Accessibility permission (**Continue without Accessibility**), DanyWhere no longer puts a dictation on the clipboard, so what you copied stays there. The dictation waits until you insert it with **⌃⌥⌘V** in the app you're typing in. This works through a macOS service, "Insert Last Dictation", and needs no permission.
+
+- The small indicator at the edge of the screen says **Ready – ⌃⌥⌘V to insert**, and a third sound, higher than the start sound, plays once the dictation is ready. The **Audio Feedback** switch turns it off together with the start and stop sounds.
+- Change the shortcut under **General → Insert Last Dictation**. Apps that are already open pick up a new shortcut after a restart; the same goes for ⌃⌥⌘V right after you continue without Accessibility.
+- The service works in apps that support macOS services, such as iTerm2, VS Code, Safari and Chrome. Apple's Terminal doesn't pass the text on: there, **Paste Last Transcript** puts the dictation on the clipboard for you to paste with ⌘V, and the sound plays then too.

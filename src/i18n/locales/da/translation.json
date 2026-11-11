@@ -68,8 +68,8 @@
       },
       "accessibility": {
         "skip": "Fortsæt uden tilgængelighed",
-        "skipHint": "Hvis din organisation blokerer denne tilladelse: transskriberet tekst kopieres til udklipsholderen, så du selv kan indsætte den, og genveje kan ikke bruge fn-tasten.",
-        "skipped": "Sprunget over — tekst kopieres til udklipsholderen",
+        "skipHint": "Hvis din organisation blokerer denne tilladelse: en diktering venter, til du indsætter den med ⌃⌥⌘V, og genveje kan ikke bruge fn-tasten.",
+        "skipped": "Sprunget over — indsæt dikteringer med ⌃⌥⌘V",
         "shortcutsReset": "Nogle genveje kræver tilgængelighed og er nulstillet til standard.",
         "name": "Hjælpemidler",
         "why": "Så din genvej virker i alle apps, og Handy kan skrive teksten dér, hvor din markør er."
@@ -357,7 +357,7 @@
           },
           "paste_last_transcript": {
             "name": "Indsæt seneste transskription",
-            "description": "Indsætter den seneste transskription, der hvor markøren står nu, f.eks. hvis den ikke kom frem, fordi intet tekstfelt havde fokus. Uden tilgængelighed kopieres den i stedet til udklipsholderen."
+            "description": "Indsætter den seneste transskription, der hvor markøren står nu, f.eks. hvis den ikke kom frem, fordi intet tekstfelt havde fokus. Uden tilgængelighed kopieres den i stedet til udklipsholderen, til apps hvor »Indsæt seneste diktering« ikke virker, f.eks. Terminal."
           },
           "cycle_word_list": {
             "name": "Skift ordliste",
@@ -403,6 +403,14 @@
           "push_to_talk": "Optager, mens du holder genvejen nede",
           "toggle": "Tryk på genvejen for at starte optagelsen, tryk igen for at stoppe"
         }
+      },
+      "insertService": {
+        "title": "Indsæt seneste diktering",
+        "description": "Uden tilgængelighed venter en diktering, til du indsætter den med denne genvej, i alle apps, der understøtter macOS-tjenester. Apps, der allerede er åbne, når du ændrer den, tager den først i brug efter en genstart.",
+        "none": "Ingen genvej",
+        "invalid": "Brug ⌘ eller ⌃ med et bogstav, et tal eller et tegn",
+        "conflict": "»{{name}}« bruger allerede denne genvej",
+        "failed": "Genvejen kunne ikke indstilles: {{error}}"
       }
     },
     "models": {
@@ -466,7 +474,7 @@
       },
       "audioFeedback": {
         "label": "Lydfeedback",
-        "description": "Afspil lyd, når optagelse starter og stopper"
+        "description": "Afspil lyd, når optagelse starter og stopper, og når en transskription venter på, at du indsætter den"
       },
       "outputDevice": {
         "title": "Outputenhed",
@@ -656,8 +664,8 @@
         }
       },
       "clipboardNotice": {
-        "title": "Besked om udklipsholder",
-        "description": "Hvor længe beskeden er synlig, når en transskription kopieres til udklipsholderen i stedet for at blive indsat (f.eks. uden tilgængelighed). I sekunder, decimaler tilladt; 0 slår den fra.",
+        "title": "Besked om indsættelse",
+        "description": "Hvor længe beskeden vises, når en transskription venter på, at du indsætter den (f.eks. uden tilgængelighed). I sekunder, decimaler tilladt; 0 slår den fra.",
         "unit": "s",
         "invalid": "Angiv et antal sekunder fra 0 til {{max}}."
       }
@@ -1035,6 +1043,9 @@
     "processing": "Behandler...",
     "loadingModel": "Indlæser model...",
     "clipboard": "I udklipsholderen – {{keys}} for at indsætte",
+    "ready": "Klar – {{keys}} for at indsætte",
+    "readyNoShortcut": "Klar – indsæt fra menuen Tjenester",
+    "notReady": "Ikke klar endnu",
     "wordList": "Ordliste: {{name}}",
     "wordListGlobalOnly": "Kun den globale ordliste"
   },

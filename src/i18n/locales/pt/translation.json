@@ -68,8 +68,8 @@
       },
       "accessibility": {
         "skip": "Continuar sem Acessibilidade",
-        "skipHint": "Se a sua organização bloqueia esta permissão: o texto transcrito é copiado para a área de transferência para que você o cole, e os atalhos não podem usar a tecla fn.",
-        "skipped": "Ignorado — o texto é copiado para a área de transferência",
+        "skipHint": "Se a sua organização bloqueia esta permissão: um ditado espera até que você o insira com ⌃⌥⌘V, e os atalhos não podem usar a tecla fn.",
+        "skipped": "Ignorado — insira ditados com ⌃⌥⌘V",
         "shortcutsReset": "Alguns atalhos precisam de Acessibilidade e foram redefinidos para o padrão.",
         "name": "Acessibilidade",
         "why": "Para o seu atalho funcionar em todos os apps e o Handy digitar o texto onde está o cursor."
@@ -357,7 +357,7 @@
           },
           "paste_last_transcript": {
             "name": "Colar a última transcrição",
-            "description": "Cola a última transcrição onde o cursor está agora, por exemplo se não chegou porque nenhum campo de texto estava em foco. Sem Acessibilidade, ela é copiada para a área de transferência."
+            "description": "Cola a última transcrição onde o cursor está agora, por exemplo se não chegou porque nenhum campo de texto estava em foco. Sem Acessibilidade, ela é copiada para a área de transferência, para apps em que “Inserir o último ditado” não funciona, como o Terminal."
           },
           "cycle_word_list": {
             "name": "Trocar Lista de Palavras",
@@ -403,6 +403,14 @@
           "push_to_talk": "Grava enquanto você mantém o atalho pressionado",
           "toggle": "Toque no atalho para começar a gravar, toque novamente para parar"
         }
+      },
+      "insertService": {
+        "title": "Inserir o último ditado",
+        "description": "Sem Acessibilidade, um ditado espera até que você o insira com este atalho, em qualquer app compatível com os serviços do macOS. Apps que já estão abertos quando você o altera só passam a usá-lo depois de reiniciados.",
+        "none": "Nenhum atalho",
+        "invalid": "Use ⌘ ou ⌃ com uma letra, um número ou um sinal de pontuação",
+        "conflict": "“{{name}}” já usa este atalho",
+        "failed": "Não foi possível definir o atalho: {{error}}"
       }
     },
     "models": {
@@ -466,7 +474,7 @@
       },
       "audioFeedback": {
         "label": "Feedback de Áudio",
-        "description": "Reproduzir som quando a gravação iniciar e parar"
+        "description": "Reproduzir som quando a gravação iniciar e parar, e quando uma transcrição estiver esperando para você colar ou inserir"
       },
       "outputDevice": {
         "title": "Dispositivo de Saída",
@@ -656,8 +664,8 @@
         }
       },
       "clipboardNotice": {
-        "title": "Aviso da área de transferência",
-        "description": "Por quanto tempo o aviso fica visível quando uma transcrição é copiada para a área de transferência em vez de colada (por ex. sem Acessibilidade). Em segundos, decimais permitidos; 0 desativa.",
+        "title": "Aviso para colar",
+        "description": "Por quanto tempo o aviso fica visível quando uma transcrição espera para você colar ou inserir (por ex. sem Acessibilidade). Em segundos, decimais permitidos; 0 o desativa.",
         "unit": "s",
         "invalid": "Digite um número de segundos de 0 a {{max}}."
       }
@@ -1035,6 +1043,9 @@
     "processing": "Processando...",
     "loadingModel": "Carregando modelo...",
     "clipboard": "Na área de transferência – {{keys}} para colar",
+    "ready": "Pronto – {{keys}} para inserir",
+    "readyNoShortcut": "Pronto – insira pelo menu Serviços",
+    "notReady": "Ainda não está pronto",
     "wordList": "Lista de palavras: {{name}}",
     "wordListGlobalOnly": "Só a lista de palavras global"
   },

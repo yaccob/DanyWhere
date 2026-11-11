@@ -68,8 +68,8 @@
       },
       "accessibility": {
         "skip": "Continuer sans l'accessibilité",
-        "skipHint": "Si votre organisation bloque cette autorisation : le texte transcrit est copié dans le presse-papiers pour que vous le colliez vous-même, et les raccourcis ne peuvent pas utiliser la touche fn.",
-        "skipped": "Ignoré — le texte est copié dans le presse-papiers",
+        "skipHint": "Si votre organisation bloque cette autorisation : une dictée attend que vous l'insériez avec ⌃⌥⌘V, et les raccourcis ne peuvent pas utiliser la touche fn.",
+        "skipped": "Ignoré — insérez les dictées avec ⌃⌥⌘V",
         "shortcutsReset": "Certains raccourcis nécessitent l'accessibilité et ont été réinitialisés à leurs valeurs par défaut.",
         "name": "Accessibilité",
         "why": "Pour que votre raccourci fonctionne dans toutes les apps et que Handy puisse saisir le texte là où se trouve votre curseur."
@@ -357,7 +357,7 @@
           },
           "paste_last_transcript": {
             "name": "Coller la dernière transcription",
-            "description": "Colle la dernière transcription à l'emplacement actuel du curseur, par exemple si elle n'est pas arrivée parce qu'aucun champ de texte n'avait le focus. Sans l'accessibilité, elle est copiée dans le presse-papiers."
+            "description": "Colle la dernière transcription à l'emplacement actuel du curseur, par exemple si elle n'est pas arrivée parce qu'aucun champ de texte n'avait le focus. Sans l'accessibilité, elle est copiée dans le presse-papiers, pour les apps où « Insérer la dernière dictée » ne fonctionne pas, comme Terminal."
           },
           "cycle_word_list": {
             "name": "Changer de liste de mots",
@@ -403,6 +403,14 @@
           "push_to_talk": "Enregistre tant que le raccourci est maintenu",
           "toggle": "Appuyez sur le raccourci pour démarrer l'enregistrement, appuyez à nouveau pour arrêter"
         }
+      },
+      "insertService": {
+        "title": "Insérer la dernière dictée",
+        "description": "Sans l'accessibilité, une dictée attend que vous l'insériez avec ce raccourci, dans toute app compatible avec les services macOS. Les apps déjà ouvertes lors du changement ne l'adoptent qu'après avoir été relancées.",
+        "none": "Aucun raccourci",
+        "invalid": "Utilisez ⌘ ou ⌃ avec une lettre, un chiffre ou un signe de ponctuation",
+        "conflict": "« {{name}} » utilise déjà ce raccourci",
+        "failed": "Impossible de définir le raccourci : {{error}}"
       }
     },
     "models": {
@@ -466,7 +474,7 @@
       },
       "audioFeedback": {
         "label": "Signal sonore",
-        "description": "Jouer un son au début et à la fin de l'enregistrement"
+        "description": "Jouer un son au début et à la fin de l'enregistrement, et lorsqu'une transcription attend que vous la colliez ou l'insériez"
       },
       "outputDevice": {
         "title": "Périphérique de sortie",
@@ -656,8 +664,8 @@
         }
       },
       "clipboardNotice": {
-        "title": "Avis du presse-papiers",
-        "description": "Durée d'affichage de l'avis lorsqu'une transcription est copiée dans le presse-papiers au lieu d'être collée (par ex. sans l'accessibilité). En secondes, décimales autorisées ; 0 le désactive.",
+        "title": "Avis pour coller",
+        "description": "Durée d'affichage de l'avis lorsqu'une transcription attend que vous la colliez ou l'insériez (par ex. sans l'accessibilité). En secondes, décimales autorisées ; 0 le désactive.",
         "unit": "s",
         "invalid": "Saisissez un nombre de secondes entre 0 et {{max}}."
       }
@@ -1035,6 +1043,9 @@
     "processing": "Traitement...",
     "loadingModel": "Chargement du modèle...",
     "clipboard": "Dans le presse-papiers – {{keys}} pour coller",
+    "ready": "Prêt – {{keys}} pour insérer",
+    "readyNoShortcut": "Prêt – insérez-le depuis le menu Services",
+    "notReady": "Pas encore prêt",
     "wordList": "Liste de mots : {{name}}",
     "wordListGlobalOnly": "Liste de mots globale uniquement"
   },

@@ -68,8 +68,8 @@
       },
       "accessibility": {
         "skip": "Continuar sin accesibilidad",
-        "skipHint": "Si tu organización bloquea este permiso: el texto transcrito se copia al portapapeles para que lo pegues tú, y los atajos no pueden usar la tecla fn.",
-        "skipped": "Omitido — el texto se copia al portapapeles",
+        "skipHint": "Si tu organización bloquea este permiso: un dictado espera hasta que lo insertes con ⌃⌥⌘V, y los atajos no pueden usar la tecla fn.",
+        "skipped": "Omitido — inserta los dictados con ⌃⌥⌘V",
         "shortcutsReset": "Algunos atajos necesitan accesibilidad y se restablecieron a sus valores predeterminados.",
         "name": "Accesibilidad",
         "why": "Para que tu atajo funcione en cualquier app y Handy pueda escribir el texto donde está tu cursor."
@@ -357,7 +357,7 @@
           },
           "paste_last_transcript": {
             "name": "Pegar la última transcripción",
-            "description": "Pega la última transcripción donde está ahora el cursor, por ejemplo si no llegó porque ningún campo de texto tenía el foco. Sin accesibilidad se copia al portapapeles."
+            "description": "Pega la última transcripción donde está ahora el cursor, por ejemplo si no llegó porque ningún campo de texto tenía el foco. Sin accesibilidad se copia al portapapeles, para las apps en las que «Insertar el último dictado» no funciona, como Terminal."
           },
           "cycle_word_list": {
             "name": "Cambiar lista de palabras",
@@ -403,6 +403,14 @@
           "push_to_talk": "Graba mientras mantienes pulsado el atajo",
           "toggle": "Toca el atajo para empezar a grabar, tócalo de nuevo para detener"
         }
+      },
+      "insertService": {
+        "title": "Insertar el último dictado",
+        "description": "Sin accesibilidad, un dictado espera hasta que lo insertes con este atajo, en cualquier app compatible con los servicios de macOS. Las apps que ya están abiertas al cambiarlo no lo adoptan hasta que las reinicias.",
+        "none": "Sin atajo",
+        "invalid": "Usa ⌘ o ⌃ con una letra, un número o un signo de puntuación",
+        "conflict": "«{{name}}» ya usa este atajo",
+        "failed": "No se pudo establecer el atajo: {{error}}"
       }
     },
     "models": {
@@ -466,7 +474,7 @@
       },
       "audioFeedback": {
         "label": "Retroalimentación de audio",
-        "description": "Reproducir sonido cuando la grabación inicia y se detiene"
+        "description": "Reproducir sonido cuando la grabación inicia y se detiene, y cuando una transcripción espera a que la pegues o insertes"
       },
       "outputDevice": {
         "title": "Dispositivo de salida",
@@ -656,8 +664,8 @@
         }
       },
       "clipboardNotice": {
-        "title": "Aviso del portapapeles",
-        "description": "Cuánto tiempo se muestra el aviso cuando una transcripción se copia al portapapeles en lugar de pegarse (p. ej. sin accesibilidad). En segundos, con decimales; 0 lo desactiva.",
+        "title": "Aviso para pegar",
+        "description": "Cuánto tiempo se muestra el aviso cuando una transcripción espera a que la pegues o insertes (p. ej. sin accesibilidad). En segundos, se permiten decimales; 0 lo desactiva.",
         "unit": "s",
         "invalid": "Introduce un número de segundos de 0 a {{max}}."
       }
@@ -1035,6 +1043,9 @@
     "processing": "Procesando...",
     "loadingModel": "Cargando modelo...",
     "clipboard": "En el portapapeles – {{keys}} para pegar",
+    "ready": "Listo – {{keys}} para insertar",
+    "readyNoShortcut": "Listo – insértalo desde el menú Servicios",
+    "notReady": "Aún no está listo",
     "wordList": "Lista de palabras: {{name}}",
     "wordListGlobalOnly": "Solo la lista de palabras global"
   },

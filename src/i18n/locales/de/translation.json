@@ -68,8 +68,8 @@
       },
       "accessibility": {
         "skip": "Ohne Bedienungshilfen fortfahren",
-        "skipHint": "Falls deine Organisation diese Berechtigung sperrt: Der transkribierte Text wird in die Zwischenablage kopiert, damit du ihn selbst einfügst, und Tastenkürzel können die fn-Taste nicht verwenden.",
-        "skipped": "Übersprungen – Text wird in die Zwischenablage kopiert",
+        "skipHint": "Falls deine Organisation diese Berechtigung sperrt: Ein Diktat wartet, bis du es mit ⌃⌥⌘V einfügst, und Tastenkürzel können die fn-Taste nicht verwenden.",
+        "skipped": "Übersprungen – Diktate mit ⌃⌥⌘V einfügen",
         "shortcutsReset": "Einige Tastenkürzel benötigen Bedienungshilfen und wurden auf die Standardwerte zurückgesetzt.",
         "name": "Bedienungshilfen",
         "why": "Damit dein Tastenkürzel in jeder App funktioniert und Handy den Text dort eintippen kann, wo dein Cursor steht."
@@ -357,7 +357,7 @@
           },
           "paste_last_transcript": {
             "name": "Letzte Transkription einfügen",
-            "description": "Fügt die letzte Transkription dort ein, wo der Cursor gerade steht, z. B. wenn sie nicht angekommen ist, weil kein Textfeld den Fokus hatte. Ohne Bedienungshilfen wird sie stattdessen in die Zwischenablage gelegt."
+            "description": "Fügt die letzte Transkription dort ein, wo der Cursor gerade steht, z. B. wenn sie nicht angekommen ist, weil kein Textfeld den Fokus hatte. Ohne Bedienungshilfen wird sie stattdessen in die Zwischenablage gelegt, für Apps, in denen „Letztes Diktat einfügen“ nicht funktioniert, etwa das Terminal."
           },
           "cycle_word_list": {
             "name": "Wortliste wechseln",
@@ -403,6 +403,14 @@
           "push_to_talk": "Nimmt auf, solange die Tastenkombination gedrückt bleibt",
           "toggle": "Tastenkombination antippen, um die Aufnahme zu starten, erneut antippen zum Stoppen"
         }
+      },
+      "insertService": {
+        "title": "Letztes Diktat einfügen",
+        "description": "Ohne Bedienungshilfen wartet ein Diktat, bis du es mit diesem Kürzel einfügst, in jeder App, die macOS-Dienste unterstützt. Apps, die beim Ändern schon geöffnet sind, übernehmen das neue Kürzel erst nach einem Neustart.",
+        "none": "Kein Kürzel",
+        "invalid": "Nimm ⌘ oder ⌃ mit einem Buchstaben, einer Ziffer oder einem Satzzeichen",
+        "conflict": "„{{name}}“ verwendet dieses Kürzel schon",
+        "failed": "Kürzel konnte nicht gesetzt werden: {{error}}"
       }
     },
     "models": {
@@ -466,7 +474,7 @@
       },
       "audioFeedback": {
         "label": "Audio-Feedback",
-        "description": "Töne bei Start und Ende der Aufnahme abspielen und wenn ein Transkript zum Einfügen in der Zwischenablage liegt"
+        "description": "Töne bei Start und Ende der Aufnahme abspielen und wenn ein Transkript darauf wartet, dass du es einfügst"
       },
       "outputDevice": {
         "title": "Ausgabegerät",
@@ -656,8 +664,8 @@
         }
       },
       "clipboardNotice": {
-        "title": "Hinweis zur Zwischenablage",
-        "description": "Wie lange der Hinweis sichtbar bleibt, wenn eine Transkription in die Zwischenablage gelegt statt eingefügt wird (z. B. ohne Bedienungshilfen). In Sekunden, Nachkommastellen erlaubt; 0 schaltet ihn aus.",
+        "title": "Hinweis zum Einfügen",
+        "description": "Wie lange der Hinweis sichtbar bleibt, wenn eine Transkription darauf wartet, dass du sie einfügst (z. B. ohne Bedienungshilfen). In Sekunden, Nachkommastellen erlaubt; 0 schaltet ihn aus.",
         "unit": "s",
         "invalid": "Gib eine Sekundenzahl von 0 bis {{max}} ein."
       }
@@ -1035,6 +1043,9 @@
     "processing": "Verarbeite...",
     "loadingModel": "Modell wird geladen...",
     "clipboard": "In der Zwischenablage – {{keys}} zum Einfügen",
+    "ready": "Bereit – {{keys}} zum Einfügen",
+    "readyNoShortcut": "Bereit – über das Dienste-Menü einfügen",
+    "notReady": "Noch nicht fertig",
     "wordList": "Wortliste: {{name}}",
     "wordListGlobalOnly": "Nur globale Wortliste"
   },

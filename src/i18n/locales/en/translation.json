@@ -68,8 +68,8 @@
       },
       "accessibility": {
         "skip": "Continue without Accessibility",
-        "skipHint": "If your organization blocks this permission: transcribed text is copied to the clipboard for you to paste, and shortcuts can't use the fn key.",
-        "skipped": "Skipped — text is copied to the clipboard",
+        "skipHint": "If your organization blocks this permission: a dictation waits until you insert it with ⌃⌥⌘V, and shortcuts can't use the fn key.",
+        "skipped": "Skipped — insert dictations with ⌃⌥⌘V",
         "shortcutsReset": "Some shortcuts need Accessibility and were reset to their defaults.",
         "name": "Accessibility",
         "why": "So your shortcut works in every app, and Handy can type the text where your cursor is."
@@ -357,7 +357,7 @@
           },
           "paste_last_transcript": {
             "name": "Paste Last Transcript",
-            "description": "Pastes the most recent transcript where the cursor is now, e.g. when it did not arrive because no text field had focus. Without Accessibility it is put on the clipboard instead."
+            "description": "Pastes the most recent transcript where the cursor is now, e.g. when it did not arrive because no text field had focus. Without Accessibility it is put on the clipboard instead, for apps where Insert Last Dictation doesn't work, such as Terminal."
           },
           "cycle_word_list": {
             "name": "Switch Word List",
@@ -403,6 +403,14 @@
           "push_to_talk": "Records while you hold the shortcut",
           "toggle": "Tap the shortcut to start recording, tap again to stop"
         }
+      },
+      "insertService": {
+        "title": "Insert Last Dictation",
+        "description": "Without Accessibility a dictation waits until you insert it with this shortcut, in any app that supports macOS services. Apps that are already open when you change it only pick it up after a restart.",
+        "none": "No shortcut",
+        "invalid": "Use ⌘ or ⌃ with a letter, digit or punctuation key",
+        "conflict": "{{name}} already uses this shortcut",
+        "failed": "Couldn't set the shortcut: {{error}}"
       }
     },
     "models": {
@@ -466,7 +474,7 @@
       },
       "audioFeedback": {
         "label": "Audio Feedback",
-        "description": "Play sounds when recording starts and stops, and when a transcript is left on the clipboard for you to paste"
+        "description": "Play sounds when recording starts and stops, and when a transcript waits for you to paste or insert it"
       },
       "outputDevice": {
         "title": "Output Device",
@@ -656,8 +664,8 @@
         }
       },
       "clipboardNotice": {
-        "title": "Clipboard Notice",
-        "description": "How long the notice stays visible when a transcript is put on the clipboard instead of being pasted (e.g. without Accessibility). In seconds, decimals allowed; 0 turns it off.",
+        "title": "Paste Notice",
+        "description": "How long the notice stays visible when a transcript waits for you to paste or insert it (e.g. without Accessibility). In seconds, decimals allowed; 0 turns it off.",
         "unit": "s",
         "invalid": "Enter a number of seconds from 0 to {{max}}."
       }
@@ -1035,6 +1043,9 @@
     "processing": "Processing...",
     "loadingModel": "Loading model...",
     "clipboard": "On the clipboard – {{keys}} to paste",
+    "ready": "Ready – {{keys}} to insert",
+    "readyNoShortcut": "Ready – insert it from the Services menu",
+    "notReady": "Not ready yet",
     "wordList": "Word list: {{name}}",
     "wordListGlobalOnly": "Global word list only"
   },

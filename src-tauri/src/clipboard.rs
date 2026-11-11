@@ -1,7 +1,7 @@
 use crate::input::{self, EnigoState};
 #[cfg(target_os = "linux")]
 use crate::settings::TypingTool;
-use crate::settings::{get_settings, AutoSubmitKey, ClipboardHandling, PasteMethod};
+use crate::settings::{get_settings, AutoSubmitKey, PasteMethod};
 use enigo::{Direction, Enigo, Key, Keyboard};
 use log::info;
 use std::process::Command;
@@ -912,8 +912,12 @@ pub fn paste(text: String, app_handle: AppHandle) -> Result<(), String> {
         }
     }
 
-    // After pasting, optionally copy to clipboard based on settings
-    if settings.clipboard_handling == ClipboardHandling::CopyToClipboard {
+    // After pasting, optionally copy to clipboard based on settings. DanyWhere:
+    // not while the dictation waits for the "Insert Last Dictation" service.
+    if crate::delivery::copies_dictation_to_clipboard(
+        &settings,
+        crate::delivery::INSERT_SERVICE_AVAILABLE,
+    ) {
         write_text_to_clipboard(&app_handle, &text)?;
     }
 

@@ -68,8 +68,8 @@
       },
       "accessibility": {
         "skip": "Kontynuuj bez dostępności",
-        "skipHint": "Jeśli Twoja organizacja blokuje to uprawnienie: transkrybowany tekst jest kopiowany do schowka, abyś wkleił go samodzielnie, a skróty nie mogą używać klawisza fn.",
-        "skipped": "Pominięto — tekst jest kopiowany do schowka",
+        "skipHint": "Jeśli Twoja organizacja blokuje to uprawnienie: dyktowanie czeka, aż wstawisz je skrótem ⌃⌥⌘V, a skróty nie mogą używać klawisza fn.",
+        "skipped": "Pominięto — wstawiaj dyktowanie skrótem ⌃⌥⌘V",
         "shortcutsReset": "Niektóre skróty wymagają dostępności i zostały przywrócone do wartości domyślnych.",
         "name": "Dostępność",
         "why": "Żeby Twój skrót działał w każdej aplikacji, a Handy mogło wpisywać tekst tam, gdzie jest kursor."
@@ -357,7 +357,7 @@
           },
           "paste_last_transcript": {
             "name": "Wklej ostatnią transkrypcję",
-            "description": "Wkleja ostatnią transkrypcję tam, gdzie jest teraz kursor, np. gdy nie dotarła, bo żadne pole tekstowe nie miało fokusu. Bez dostępności jest kopiowana do schowka."
+            "description": "Wkleja ostatnią transkrypcję tam, gdzie jest teraz kursor, np. gdy nie dotarła, bo żadne pole tekstowe nie miało fokusu. Bez dostępności jest kopiowana do schowka, dla aplikacji, w których „Wstaw ostatnie dyktowanie” nie działa, np. Terminal."
           },
           "cycle_word_list": {
             "name": "Przełącz listę słów",
@@ -403,6 +403,14 @@
           "push_to_talk": "Nagrywa, dopóki trzymasz skrót",
           "toggle": "Dotknij skrótu, aby rozpocząć nagrywanie, dotknij ponownie, aby zatrzymać"
         }
+      },
+      "insertService": {
+        "title": "Wstaw ostatnie dyktowanie",
+        "description": "Bez dostępności dyktowanie czeka, aż wstawisz je tym skrótem, w każdej aplikacji obsługującej usługi macOS. Aplikacje otwarte w chwili zmiany przejmą go dopiero po ponownym uruchomieniu.",
+        "none": "Brak skrótu",
+        "invalid": "Użyj ⌘ lub ⌃ z literą, cyfrą lub znakiem interpunkcyjnym",
+        "conflict": "„{{name}}” już używa tego skrótu",
+        "failed": "Nie udało się ustawić skrótu: {{error}}"
       }
     },
     "models": {
@@ -466,7 +474,7 @@
       },
       "audioFeedback": {
         "label": "Informacja dźwiękowa",
-        "description": "Odtwarzaj dźwięk przy rozpoczęciu i zakończeniu nagrywania"
+        "description": "Odtwarzaj dźwięk przy rozpoczęciu i zakończeniu nagrywania oraz gdy transkrypcja czeka na wklejenie lub wstawienie"
       },
       "outputDevice": {
         "title": "Urządzenie wyjściowe",
@@ -656,8 +664,8 @@
         }
       },
       "clipboardNotice": {
-        "title": "Powiadomienie o schowku",
-        "description": "Jak długo widoczne jest powiadomienie, gdy transkrypcja trafia do schowka zamiast zostać wklejona (np. bez dostępności). W sekundach, ułamki dozwolone; 0 je wyłącza.",
+        "title": "Powiadomienie o wklejaniu",
+        "description": "Jak długo powiadomienie jest widoczne, gdy transkrypcja czeka na wklejenie lub wstawienie (np. bez dostępności). W sekundach, dozwolone ułamki; 0 je wyłącza.",
         "unit": "s",
         "invalid": "Wpisz liczbę sekund od 0 do {{max}}."
       }
@@ -1035,6 +1043,9 @@
     "processing": "Przetwarzanie...",
     "loadingModel": "Wczytywanie modelu...",
     "clipboard": "W schowku – {{keys}}, aby wkleić",
+    "ready": "Gotowe – {{keys}}, aby wstawić",
+    "readyNoShortcut": "Gotowe – wstaw z menu Usługi",
+    "notReady": "Jeszcze niegotowe",
     "wordList": "Lista słów: {{name}}",
     "wordListGlobalOnly": "Tylko globalna lista słów"
   },
