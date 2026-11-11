@@ -11,3 +11,7 @@ Post-processing is switched on under **Advanced → Transcription → Post Proce
 ## All models to choose from
 
 The **Post Process** page now loads the provider's models by itself, so every model your API key can use is offered right away, not only the one selected. Before, the list had to be loaded with **Refresh models** after every start. That button still reloads it.
+
+## A sound when the text waits on the clipboard
+
+When DanyWhere cannot paste a dictation itself, for example after **Continue without Accessibility**, it puts the text on the clipboard for you to paste. A third sound, higher than the start sound, now tells you when the text is there. It plays after **Paste Last Transcript** in that case too. The **Audio Feedback** switch turns it off together with the start and stop sounds.

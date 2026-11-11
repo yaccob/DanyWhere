@@ -352,6 +352,11 @@ impl SoundTheme {
     pub fn to_stop_path(self) -> String {
         format!("resources/{}_stop.wav", self.as_str())
     }
+
+    /// DanyWhere: the sound for a transcript left on the clipboard.
+    pub fn to_clipboard_path(self) -> String {
+        format!("resources/{}_clipboard.wav", self.as_str())
+    }
 }
 
 /// UI appearance mode. `System` follows the OS `prefers-color-scheme`; `Light`

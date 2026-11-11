@@ -11,3 +11,7 @@ Die Nachbearbeitung schaltest du unter **Erweitert → Transkription → Nachbea
 ## Alle Modelle zur Auswahl
 
 Die Seite **Nachbearbeitung** lädt die Modelle des Anbieters jetzt selbst. Zur Auswahl stehen damit gleich alle Modelle, die dein API-Schlüssel nutzen kann, nicht nur das eingestellte. Bisher musstest du die Liste nach jedem Start mit **Modelle aktualisieren** laden; der Knopf lädt sie weiterhin neu.
+
+## Ein Ton, wenn der Text in der Zwischenablage liegt
+
+Kann DanyWhere ein Diktat nicht selbst einfügen, zum Beispiel nach **Ohne Bedienungshilfen fortfahren**, legt es den Text in die Zwischenablage, damit du ihn selbst einfügst. Ein dritter Ton, höher als der Startton, sagt dir jetzt, wann er dort liegt. Er kommt in diesem Fall auch nach **Letzte Transkription einfügen**. Der Schalter **Audio-Feedback** schaltet ihn zusammen mit Start- und Endton ab.

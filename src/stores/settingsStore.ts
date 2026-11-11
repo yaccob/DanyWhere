@@ -43,7 +43,7 @@ interface SettingsStore {
   resetBinding: (id: string) => Promise<void>;
   getSetting: <K extends keyof Settings>(key: K) => Settings[K] | undefined;
   isUpdatingKey: (key: string) => boolean;
-  playTestSound: (soundType: "start" | "stop") => Promise<void>;
+  playTestSound: (soundType: "start" | "stop" | "clipboard") => Promise<void>;
   checkCustomSounds: () => Promise<void>;
   setPostProcessProvider: (providerId: string) => Promise<void>;
   updatePostProcessSetting: (
@@ -322,7 +322,7 @@ export const useSettingsStore = create<SettingsStore>()(
     },
 
     // Play a test sound
-    playTestSound: async (soundType: "start" | "stop") => {
+    playTestSound: async (soundType: "start" | "stop" | "clipboard") => {
       try {
         await commands.playTestSound(soundType);
       } catch (error) {

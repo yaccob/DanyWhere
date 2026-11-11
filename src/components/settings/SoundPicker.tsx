@@ -38,9 +38,11 @@ export const SoundPicker: React.FC<SoundPickerProps> = ({
     options.push({ value: "custom", label: "Custom" });
   }
 
-  const handlePlayBothSounds = async () => {
+  const handlePlayAllSounds = async () => {
     await playTestSound("start");
     await playTestSound("stop");
+    // DanyWhere: the sound for a transcript left on the clipboard.
+    await playTestSound("clipboard");
   };
 
   return (
@@ -62,8 +64,8 @@ export const SoundPicker: React.FC<SoundPickerProps> = ({
         <Button
           variant="ghost"
           size="sm"
-          onClick={handlePlayBothSounds}
-          title="Preview sound theme (plays start then stop)"
+          onClick={handlePlayAllSounds}
+          title="Preview sound theme (plays start, stop, then clipboard)"
         >
           <PlayIcon className="h-4 w-4" />
         </Button>

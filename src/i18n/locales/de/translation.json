@@ -466,7 +466,7 @@
       },
       "audioFeedback": {
         "label": "Audio-Feedback",
-        "description": "Ton bei Start und Ende der Aufnahme abspielen"
+        "description": "Töne bei Start und Ende der Aufnahme abspielen und wenn ein Transkript zum Einfügen in der Zwischenablage liegt"
       },
       "outputDevice": {
         "title": "Ausgabegerät",

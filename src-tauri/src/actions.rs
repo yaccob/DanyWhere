@@ -911,6 +911,15 @@ impl ShortcutAction for TranscribeAction {
                                                     )
                                                 }
                                             };
+                                        // DanyWhere: a sound says the text waits
+                                        // on the clipboard, also when post-
+                                        // processing failed; not while a newer
+                                        // session records.
+                                        if outcome == TranscriptionOutcome::Typed && owns_ui() {
+                                            crate::delivery::play_sound_if_left_on_clipboard(
+                                                &ah_clone,
+                                            );
+                                        }
                                         match (owns_ui(), notice) {
                                             (true, Some(notice)) => {
                                                 notices::raise(&ah_clone, notice)

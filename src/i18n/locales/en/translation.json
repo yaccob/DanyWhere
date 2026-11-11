@@ -466,7 +466,7 @@
       },
       "audioFeedback": {
         "label": "Audio Feedback",
-        "description": "Play sound when recording starts and stops"
+        "description": "Play sounds when recording starts and stops, and when a transcript is left on the clipboard for you to paste"
       },
       "outputDevice": {
         "title": "Output Device",

@@ -13,6 +13,7 @@ use log::{error, info, warn};
 use tauri::{AppHandle, Manager};
 use tauri_plugin_clipboard_manager::ClipboardExt;
 
+use crate::audio_feedback::{play_feedback_sound, SoundType};
 use crate::managers::history::HistoryManager;
 use crate::settings::{get_settings, AppSettings, ClipboardHandling, PasteMethod};
 
@@ -43,8 +44,9 @@ pub fn clipboard_notice_duration(settings: &AppSettings) -> Option<std::time::Du
 }
 
 /// Whether a finished dictation ends up on the clipboard instead of being
-/// pasted, so the user should be told where it is.
-pub fn notice_after_dictation(settings: &AppSettings) -> bool {
+/// pasted, so the user has to paste it: the overlay says where the text is,
+/// and the clipboard sound plays.
+pub fn dictation_left_on_clipboard(settings: &AppSettings) -> bool {
     delivery_for(settings) == Delivery::Clipboard
         && settings.clipboard_handling == ClipboardHandling::CopyToClipboard
 }
@@ -74,6 +76,7 @@ pub fn deliver_last_transcript(app: &AppHandle) {
         Delivery::Clipboard => match app.clipboard().write_text(text) {
             Ok(()) => {
                 info!("Put the last transcript on the clipboard.");
+                play_feedback_sound(app, SoundType::Clipboard);
                 if let Some(duration) = clipboard_notice_duration(&get_settings(app)) {
                     crate::overlay::show_clipboard_notice(app, duration);
                 }
@@ -100,12 +103,21 @@ pub fn deliver_last_transcript(app: &AppHandle) {
     }
 }
 
+/// Plays the clipboard sound after a dictation whose text was left on the
+/// clipboard for the user to paste. Call only once the text is there.
+pub fn play_sound_if_left_on_clipboard(app: &AppHandle) {
+    if dictation_left_on_clipboard(&get_settings(app)) {
+        info!("Dictation left on the clipboard; playing the clipboard sound.");
+        play_feedback_sound(app, SoundType::Clipboard);
+    }
+}
+
 /// Ends the overlay after a finished dictation: tells the user the text is on
 /// the clipboard when it was not pasted, otherwise just hides the overlay.
 pub fn finish_overlay_after_dictation(app: &AppHandle) {
     let settings = get_settings(app);
     match clipboard_notice_duration(&settings) {
-        Some(duration) if notice_after_dictation(&settings) => {
+        Some(duration) if dictation_left_on_clipboard(&settings) => {
             crate::overlay::show_clipboard_notice(app, duration)
         }
         _ => crate::overlay::hide_recording_overlay(app),
@@ -124,7 +136,7 @@ pub fn change_clipboard_notice_ms_setting(app: AppHandle, ms: u64) -> Result<(),
 
 #[cfg(test)]
 mod tests {
-    use super::{clipboard_notice_duration, delivery_for, notice_after_dictation, Delivery};
+    use super::{clipboard_notice_duration, delivery_for, dictation_left_on_clipboard, Delivery};
     use crate::settings::{get_default_settings, ClipboardHandling, PasteMethod};
     use crate::shortcut::apply_no_accessibility_mode;
     use std::time::Duration;
@@ -152,14 +164,14 @@ mod tests {
 
     #[test]
     fn no_notice_after_a_pasted_dictation() {
-        assert!(!notice_after_dictation(&get_default_settings()));
+        assert!(!dictation_left_on_clipboard(&get_default_settings()));
     }
 
     #[test]
     fn notice_after_a_dictation_without_accessibility() {
         let mut settings = get_default_settings();
         apply_no_accessibility_mode(&mut settings);
-        assert!(notice_after_dictation(&settings));
+        assert!(dictation_left_on_clipboard(&settings));
     }
 
     #[test]
@@ -167,9 +179,9 @@ mod tests {
         let mut settings = get_default_settings();
         settings.paste_method = PasteMethod::None;
         settings.clipboard_handling = ClipboardHandling::DontModify;
-        assert!(!notice_after_dictation(&settings));
+        assert!(!dictation_left_on_clipboard(&settings));
         settings.clipboard_handling = ClipboardHandling::CopyToClipboard;
-        assert!(notice_after_dictation(&settings));
+        assert!(dictation_left_on_clipboard(&settings));
     }
 
     #[test]

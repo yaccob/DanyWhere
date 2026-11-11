@@ -97,9 +97,10 @@ Whisper sometimes appends text that was never said when the recording ends in si
 
 Available: onboarding offers "Continue without Accessibility" for managed Macs (shortcuts via the Tauri backend, transcript left on the clipboard, input simulation not set up). A DanyWhere feature for now; it may be offered to Handy later.
 
+**A sound when the dictation is on the clipboard** (user, 2026-11-11; ships with 0.1.4): whenever the user has to paste the text themselves, after a dictation or after "Paste Last Transcript", a third sound plays once the text is on the clipboard: a single marimba stroke on E5, a fourth above the start sound (the Pop theme plays two pops; a custom theme may add `custom_clipboard.wav` and otherwise borrows the marimba sound). The existing Audio Feedback switch turns it on and off. All feedback sounds now play one after another, so it never overlaps the stop sound.
+
 Next steps:
 
-- **A sound when the dictation is on the clipboard (user, 2026-11-11).** Without Accessibility the transcript is only put on the clipboard, and nothing audible says when it is there. A third sound, different from the start and stop sounds, should play as soon as it is, so the user knows ⌘V will now paste it. To settle: whether "Paste Last Transcript" plays it too, how it is switched off, and what it sounds like in each sound theme.
 - **Insert without Accessibility and without the general clipboard (user, 2026-11-11).** On a Mac where Accessibility cannot be granted, bring the result into the active window with a shortcut of its own instead of ⌘V, without using the general clipboard. Today every dictation replaces what the user had copied. Approaches to check, none tested yet:
   - A **macOS service** with its own keyboard shortcut: the app the user types in asks DanyWhere for the text and inserts it itself, over a pasteboard used only for this exchange, so no Accessibility is needed. It works only in apps that support services; to check: Terminal and iTerm2, browsers, Electron apps, and whether managed Macs allow services.
   - An **input method** of DanyWhere's own, the intended way to write text into any text field. More work, and it has to be enabled as an input source.
