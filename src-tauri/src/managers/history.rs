@@ -39,17 +39,23 @@ static MIGRATIONS: &[M] = &[
 /// [`HistoryManager::apply_migrations`].
 /// `recording_removed` holds when the storage limit deleted the entry's
 /// recording (Unix seconds); the transcript stays.
+/// DanyWhere: the last three hold the user's corrections, see
+/// `history_corrections`.
 const ADDED_COLUMNS: &[&str] = &[
     "source_name",
     "language",
     "language_source",
     "recording_removed",
+    "transcription_correction",
+    "post_processed_correction",
+    "post_processed_from_correction",
 ];
 
 /// Every column a [`HistoryEntry`] is read from.
 const ENTRY_COLUMNS: &str = "id, file_name, timestamp, saved, title, transcription_text, \
     post_processed_text, post_process_prompt, post_process_requested, source_name, language, \
-    language_source, recording_removed";
+    language_source, recording_removed, transcription_correction, post_processed_correction, \
+    post_processed_from_correction";
 
 #[derive(Clone, Debug, Serialize, Deserialize, Type)]
 pub struct PaginatedHistory {
@@ -91,6 +97,14 @@ pub struct HistoryEntry {
     /// The storage limit deleted the recording; the transcript stays, but
     /// there is nothing to play or transcribe again.
     pub recording_removed: bool,
+    /// DanyWhere: the user's correction of `transcription_text`, which stays
+    /// as the model wrote it (see `history_corrections`).
+    pub transcription_correction: Option<String>,
+    /// DanyWhere: the user's correction of `post_processed_text`.
+    pub post_processed_correction: Option<String>,
+    /// DanyWhere: the post-processed text was made from another version of
+    /// the transcription than the one the entry has now.
+    pub post_processing_outdated: bool,
 }
 
 /// One recording as the storage limit sees it.
@@ -244,7 +258,8 @@ impl HistoryManager {
 
     /// Bring the schema up to date. A newer Handy's database opens as is:
     /// migrations only add columns, and every query names its columns.
-    fn apply_migrations(conn: &mut Connection) -> Result<()> {
+    // DanyWhere: pub(crate) so `history_corrections` can test on a real schema.
+    pub(crate) fn apply_migrations(conn: &mut Connection) -> Result<()> {
         match Migrations::new(MIGRATIONS.to_vec()).to_latest(conn) {
             Err(rusqlite_migration::Error::MigrationDefinition(
                 MigrationDefinitionError::DatabaseTooFarAhead,
@@ -334,7 +349,8 @@ impl HistoryManager {
         Ok(())
     }
 
-    fn get_connection(&self) -> Result<Connection> {
+    // DanyWhere: pub(crate) for `history_corrections`.
+    pub(crate) fn get_connection(&self) -> Result<Connection> {
         Ok(Connection::open(&self.db_path)?)
     }
 
@@ -356,6 +372,16 @@ impl HistoryManager {
                 .as_deref()
                 .and_then(LanguageSource::parse),
             recording_removed: row.get::<_, Option<String>>("recording_removed")?.is_some(),
+            transcription_correction: row.get("transcription_correction")?,
+            post_processed_correction: row.get("post_processed_correction")?,
+            post_processing_outdated: crate::history_corrections::post_processing_outdated(
+                row.get::<_, Option<String>>("post_processed_text")?
+                    .as_deref(),
+                row.get::<_, Option<String>>("transcription_correction")?
+                    .as_deref(),
+                row.get::<_, Option<String>>("post_processed_from_correction")?
+                    .as_deref(),
+            ),
         })
     }
 
@@ -389,6 +415,9 @@ impl HistoryManager {
             language,
             language_source,
             recording_removed: false,
+            transcription_correction: None,
+            post_processed_correction: None,
+            post_processing_outdated: false,
         })?;
 
         self.cleanup_old_entries()?;
@@ -414,6 +443,9 @@ impl HistoryManager {
             language: None,
             language_source: None,
             recording_removed: false,
+            transcription_correction: None,
+            post_processed_correction: None,
+            post_processing_outdated: false,
         })?;
 
         // The file counts toward the storage limit, so older dictations may
@@ -501,7 +533,7 @@ impl HistoryManager {
         Ok(entry)
     }
 
-    fn update_transcription_with_conn(
+    pub(crate) fn update_transcription_with_conn(
         conn: &Connection,
         id: i64,
         transcription_text: String,
@@ -511,6 +543,8 @@ impl HistoryManager {
         post_process_requested: bool,
     ) -> Result<HistoryEntry> {
         let (language, language_source) = split_language(language);
+        // DanyWhere: a new transcription replaces the user's corrections of the
+        // old one and of its post-processing (`history_corrections`).
         let updated = conn.execute(
             "UPDATE transcription_history
              SET transcription_text = ?1,
@@ -518,7 +552,10 @@ impl HistoryManager {
                  post_process_prompt = ?3,
                  language = ?4,
                  language_source = ?5,
-                 post_process_requested = ?6
+                 post_process_requested = ?6,
+                 transcription_correction = NULL,
+                 post_processed_correction = NULL,
+                 post_processed_from_correction = NULL
              WHERE id = ?7",
             params![
                 transcription_text,
@@ -539,11 +576,14 @@ impl HistoryManager {
 
     /// Store a new post-processing of the entry's transcript, which stays as
     /// it is. The entry counts as post-processed from now on.
+    /// DanyWhere: `from_correction` is the transcription's correction it was
+    /// made from (`None`: from the transcription as the model wrote it).
     pub fn update_post_processing(
         &self,
         id: i64,
         post_processed_text: String,
         post_process_prompt: Option<String>,
+        from_correction: Option<String>,
     ) -> Result<HistoryEntry> {
         let conn = self.get_connection()?;
         let entry = Self::update_post_processing_with_conn(
@@ -551,25 +591,37 @@ impl HistoryManager {
             id,
             post_processed_text,
             post_process_prompt,
+            from_correction,
         )?;
         debug!("Updated post-processing for history entry {}", id);
         self.emit_entry(&entry);
         Ok(entry)
     }
 
-    fn update_post_processing_with_conn(
+    pub(crate) fn update_post_processing_with_conn(
         conn: &Connection,
         id: i64,
         post_processed_text: String,
         post_process_prompt: Option<String>,
+        from_correction: Option<String>,
     ) -> Result<HistoryEntry> {
+        // DanyWhere: a new post-processing replaces the correction of the old
+        // one and records which correction of the transcription it was made
+        // from (`history_corrections`).
         let updated = conn.execute(
             "UPDATE transcription_history
              SET post_processed_text = ?1,
                  post_process_prompt = ?2,
-                 post_process_requested = 1
-             WHERE id = ?3",
-            params![post_processed_text, post_process_prompt, id],
+                 post_process_requested = 1,
+                 post_processed_correction = NULL,
+                 post_processed_from_correction = ?3
+             WHERE id = ?4",
+            params![
+                post_processed_text,
+                post_process_prompt,
+                from_correction,
+                id
+            ],
         )?;
         if updated == 0 {
             return Err(anyhow!("History entry {} not found", id));
@@ -577,7 +629,8 @@ impl HistoryManager {
         Self::entry_with_conn(conn, id)
     }
 
-    fn entry_with_conn(conn: &Connection, id: i64) -> Result<HistoryEntry> {
+    // DanyWhere: pub(crate) for `history_corrections`.
+    pub(crate) fn entry_with_conn(conn: &Connection, id: i64) -> Result<HistoryEntry> {
         Ok(conn.query_row(
             &format!("SELECT {ENTRY_COLUMNS} FROM transcription_history WHERE id = ?1"),
             params![id],
@@ -586,7 +639,8 @@ impl HistoryManager {
     }
 
     /// Tell the frontend that `entry` changed.
-    fn emit_entry(&self, entry: &HistoryEntry) {
+    // DanyWhere: pub(crate) for `history_corrections`.
+    pub(crate) fn emit_entry(&self, entry: &HistoryEntry) {
         if let Err(e) = (HistoryUpdatePayload::Updated {
             entry: entry.clone(),
         })
@@ -1039,7 +1093,10 @@ mod tests {
                 source_name TEXT,
                 language TEXT,
                 language_source TEXT,
-                recording_removed TEXT
+                recording_removed TEXT,
+                transcription_correction TEXT,
+                post_processed_correction TEXT,
+                post_processed_from_correction TEXT
             );",
         )
         .expect("create transcription_history table");
@@ -1520,6 +1577,7 @@ mod tests {
             1,
             "Clean words.".into(),
             Some("Fix the grammar".into()),
+            None,
         )
         .expect("update post-processing");
 
@@ -1540,8 +1598,14 @@ mod tests {
         let conn = setup_conn();
         insert_entry(&conn, 100, "raw words", Some("Old result."));
 
-        HistoryManager::update_post_processing_with_conn(&conn, 1, "New result.".into(), None)
-            .expect("update post-processing");
+        HistoryManager::update_post_processing_with_conn(
+            &conn,
+            1,
+            "New result.".into(),
+            None,
+            None,
+        )
+        .expect("update post-processing");
 
         let entry = entry_by_id(&conn, 1).unwrap();
         assert_eq!(entry.post_processed_text.as_deref(), Some("New result."));
@@ -1554,7 +1618,7 @@ mod tests {
         insert_entry(&conn, 100, "raw words", None);
         assert!(!post_process_requested(&conn, 1));
 
-        HistoryManager::update_post_processing_with_conn(&conn, 1, "Clean.".into(), None)
+        HistoryManager::update_post_processing_with_conn(&conn, 1, "Clean.".into(), None, None)
             .expect("update post-processing");
 
         assert!(post_process_requested(&conn, 1));
@@ -1563,10 +1627,14 @@ mod tests {
     #[test]
     fn post_processing_a_missing_entry_fails() {
         let conn = setup_conn();
-        assert!(
-            HistoryManager::update_post_processing_with_conn(&conn, 42, "Clean.".into(), None)
-                .is_err()
-        );
+        assert!(HistoryManager::update_post_processing_with_conn(
+            &conn,
+            42,
+            "Clean.".into(),
+            None,
+            None
+        )
+        .is_err());
     }
 
     #[test]

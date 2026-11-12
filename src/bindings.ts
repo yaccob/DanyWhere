@@ -1076,6 +1076,30 @@ async reprocessHistoryEntry(id: number, mode: ReprocessMode) : Promise<void> {
     await TAURI_INVOKE("reprocess_history_entry", { id, mode });
 },
 /**
+ * Corrects the entry's `part` to `text`, or removes its correction when
+ * `text` is `None`. Errors: `blank`, or the database's message.
+ */
+async correctHistoryEntry(id: number, part: CorrectionPart, text: string | null) : Promise<Result<HistoryEntry, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("correct_history_entry", { id, part, text }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Deletes the entry's post-processing, so its (corrected) transcription is
+ * its result again.
+ */
+async deleteHistoryEntryPostProcessing(id: number) : Promise<Result<HistoryEntry, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("delete_history_entry_post_processing", { id }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
  * Stops the entry's background transcription: a queued one is dropped, a
  * running one stops after the chunk it is on. The entry keeps the text it
  * had before.
@@ -1364,6 +1388,18 @@ export type ChineseScript =
  */
 "traditional_hk"
 export type ClipboardHandling = "dont_modify" | "copy_to_clipboard"
+/**
+ * Which of an entry's two texts a correction belongs to.
+ */
+export type CorrectionPart = 
+/**
+ * The transcription as the speech model wrote it.
+ */
+"transcription" | 
+/**
+ * The text post-processing made of it.
+ */
+"post_processing"
 export type CustomSounds = { start: boolean; stop: boolean }
 export type GpuDeviceOption = { id: string; name: string; total_vram_mb: number }
 export type HistoryEntry = { id: number; file_name: string; timestamp: number; saved: boolean; title: string; transcription_text: string; post_processed_text: string | null; post_process_prompt: string | null; post_process_requested: boolean; 
@@ -1384,7 +1420,21 @@ language_source: LanguageSource | null;
  * The storage limit deleted the recording; the transcript stays, but
  * there is nothing to play or transcribe again.
  */
-recording_removed: boolean }
+recording_removed: boolean; 
+/**
+ * DanyWhere: the user's correction of `transcription_text`, which stays
+ * as the model wrote it (see `history_corrections`).
+ */
+transcription_correction: string | null; 
+/**
+ * DanyWhere: the user's correction of `post_processed_text`.
+ */
+post_processed_correction: string | null; 
+/**
+ * DanyWhere: the post-processed text was made from another version of
+ * the transcription than the one the entry has now.
+ */
+post_processing_outdated: boolean }
 export type HistoryUpdatePayload = { action: "added"; entry: HistoryEntry } | { action: "updated"; entry: HistoryEntry } | { action: "deleted"; id: number } | { action: "toggled"; id: number }
 /**
  * Result of changing keyboard implementation
