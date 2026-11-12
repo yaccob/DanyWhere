@@ -355,6 +355,10 @@
             "name": "Snabbkommando för efterbearbetning",
             "description": "Valfritt: En dedikerad snabbknapp som alltid tillämpar AI-efterbearbetning på din transkription."
           },
+          "transcribe_with_context": {
+            "name": "Snabbkommando med kontext",
+            "description": "Valfritt: diktera och efterbearbeta sedan med den valda prompten och dina tidigare dikteringar från samma fönster som kontext. Så länge det här snabbkommandot är inställt minns varje diktering sitt fönster."
+          },
           "paste_last_transcript": {
             "name": "Klistra in senaste transkriptionen",
             "description": "Klistrar in den senaste transkriptionen där markören står nu, t.ex. om den inte kom fram eftersom inget textfält hade fokus. Utan hjälpmedel kopieras den till urklipp i stället, för appar där ”Infoga senaste diktering” inte fungerar, t.ex. Terminal."
@@ -743,6 +747,31 @@
         "cancel": "Avbryt",
         "selectToEdit": "Välj en prompt ovan för att visa och redigera dess detaljer.",
         "createFirst": "Klicka på 'Skapa ny prompt' ovan för att skapa din första prompt för efterbearbetning."
+      },
+      "context": {
+        "title": "Kontext från tidigare dikteringar",
+        "privacy": "Tidigare dikteringar från samma fönster skickas till leverantören av efterbearbetningen tillsammans med den aktuella, även sådana som aldrig efterbearbetats. Historiken markerar varje post som skickats på det sättet.",
+        "ageLimit": "Åldersgräns",
+        "ageLimitDescription": "Bara dikteringar som är högst så många minuter äldre än den aktuella ({{min}}–{{max}}).",
+        "minutes": "min",
+        "maxEntries": "Tidigare dikteringar",
+        "maxEntriesDescription": "Högst så många tidigare dikteringar ({{min}}–{{max}}).",
+        "charBudget": "Tecken",
+        "charBudgetDescription": "Högst så många tecken från tidigare dikteringar; de äldsta faller bort först ({{min}}–{{max}}).",
+        "invalid": "Ange ett heltal från {{min}} till {{max}}.",
+        "excludedApps": "Undantagna appar",
+        "excludedAppsDescription": "Fönster från de här apparna registreras aldrig, så deras dikteringar används aldrig som kontext. En app per rad: dess namn eller bundle-ID (Windows: programmets namn).",
+        "windowTitles": "Fönstertitlar",
+        "windowTitlesAvailable": "Handy läser titeln på fönstret du dikterar i.",
+        "windowTitlesUnsupported": "Handy känner ännu inte till fönstertitlar på det här systemet, så här finns ingen kontext.",
+        "windowTitlesAutomation": "Utan Hjälpmedel kan Handy fråga de här apparna om deras fönstertitel. macOS frågar dig en gång per app; Handy läser bara titeln.",
+        "windowTitlesOtherApps": "Andra appar ger ingen titel utan Hjälpmedel; dikteringar där har ingen kontext.",
+        "allow": "Tillåt…",
+        "statusAllowed": "Tillåten",
+        "statusNotAsked": "Inte frågad än",
+        "statusDenied": "Inte tillåten – ändra i Systeminställningar › Integritet och säkerhet › Automatisering",
+        "statusNotRunning": "Körs inte – starta den för att tillåta",
+        "statusUnknown": "Okänd"
       }
     },
     "history": {
@@ -787,6 +816,13 @@
       "revertCorrection": "Ångra rättelse",
       "correctError": "Misslyckades med att spara rättelsen. Försök igen.",
       "postProcessingOutdated": "Efterbearbetad från en tidigare version av transkriptionen. Trollstaven efterbearbetar den igen.",
+      "contextSent": "Skickad som kontext",
+      "contextSentTooltip": "Skickades {{date}} till leverantören av efterbearbetningen som kontext till en senare diktering.",
+      "contextUsed": "Tidigare dikteringar som kontext: {{count}}",
+      "windowFilter": "Fönster: {{window}} ({{count}})",
+      "showAll": "Visa alla",
+      "showWindowEntries": "Visa bara dikteringar från det här fönstret",
+      "contextEntryJump": "Visa i historiken för att rätta",
       "confirmReplaceTitle": "Ersätta din rättelse?",
       "confirmPostProcessReplacesCorrection": "En ny efterbearbetning ersätter din rättelse av den efterbearbetade texten.",
       "confirmRetranscribeReplacesCorrection": "Att transkribera igen ersätter dina rättelser av den här posten.",

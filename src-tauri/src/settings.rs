@@ -557,6 +557,10 @@ pub struct AppSettings {
     /// The additional list in use; `None`: only the global list.
     #[serde(default)]
     pub active_word_list_id: Option<String>,
+    /// DanyWhere: earlier dictations from the same window as context for
+    /// post-processing (`dictation_context`).
+    #[serde(default)]
+    pub dictation_context: crate::dictation_context::DictationContextSettings,
     #[serde(default)]
     pub model_unload_timeout: ModelUnloadTimeout,
     #[serde(default = "default_word_correction_threshold")]
@@ -1096,6 +1100,31 @@ pub fn get_default_settings() -> AppSettings {
             current_binding: default_post_process_shortcut.to_string(),
         },
     );
+    // DanyWhere: dictate, then post-process with context from earlier
+    // dictations in the same window (`dictation_context`). Provisional
+    // defaults (2026-11-13), chosen to clash with nothing known: not ⌘⌥Space
+    // (Finder search), ⌃⌥Space (next input source) or ⌃Space; on Windows not
+    // Win+Ctrl+Space (input language); the user decides the real one later.
+    #[cfg(target_os = "windows")]
+    let default_context_shortcut = "ctrl+alt+shift+space";
+    #[cfg(target_os = "macos")]
+    let default_context_shortcut = "option+shift+command+space";
+    #[cfg(target_os = "linux")]
+    let default_context_shortcut = "ctrl+alt+shift+c";
+    #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
+    let default_context_shortcut = "alt+shift+c";
+
+    bindings.insert(
+        crate::dictation_context::CONTEXT_BINDING.to_string(),
+        ShortcutBinding {
+            id: crate::dictation_context::CONTEXT_BINDING.to_string(),
+            name: "Transcribe with Context".to_string(),
+            description: "Converts your speech into text and post-processes it with earlier dictations from the same window as context."
+                .to_string(),
+            default_binding: default_context_shortcut.to_string(),
+            current_binding: default_context_shortcut.to_string(),
+        },
+    );
     #[cfg(target_os = "macos")]
     let default_paste_last_shortcut = "option+shift+v";
     #[cfg(not(target_os = "macos"))]
@@ -1173,6 +1202,7 @@ pub fn get_default_settings() -> AppSettings {
         custom_words: Vec::new(),
         word_lists: Vec::new(),
         active_word_list_id: None,
+        dictation_context: Default::default(),
         model_unload_timeout: ModelUnloadTimeout::default(),
         word_correction_threshold: default_word_correction_threshold(),
         history_limit: default_history_limit(),
@@ -1265,6 +1295,12 @@ pub fn load_or_create_app_settings(app: &AppHandle) -> AppSettings {
     let settings = get_settings(app);
     debug!("Loaded settings: {:?}", settings);
     settings
+}
+
+/// DanyWhere: the shortcuts that post-process, which are registered only
+/// while post-processing is switched on.
+pub fn binding_needs_post_processing(id: &str) -> bool {
+    id == "transcribe_with_post_process" || id == crate::dictation_context::CONTEXT_BINDING
 }
 
 pub fn get_settings(app: &AppHandle) -> AppSettings {
@@ -1584,6 +1620,31 @@ pub fn get_recording_storage_limit(app: &AppHandle) -> RecordingStorageLimit {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn both_post_processing_shortcuts_need_post_processing() {
+        assert!(binding_needs_post_processing(
+            "transcribe_with_post_process"
+        ));
+        assert!(binding_needs_post_processing("transcribe_with_context"));
+        assert!(!binding_needs_post_processing("transcribe"));
+        assert!(!binding_needs_post_processing("paste_last_transcript"));
+    }
+
+    #[test]
+    fn the_context_shortcut_has_a_default_on_every_platform() {
+        let defaults = get_default_settings();
+        let binding = &defaults.bindings["transcribe_with_context"];
+        assert!(!binding.default_binding.is_empty());
+        assert_eq!(binding.current_binding, binding.default_binding);
+        let others: Vec<&str> = defaults
+            .bindings
+            .values()
+            .filter(|b| b.id != "transcribe_with_context")
+            .map(|b| b.default_binding.as_str())
+            .collect();
+        assert!(!others.contains(&binding.default_binding.as_str()));
+    }
 
     #[test]
     fn stored_binding_returns_the_requested_binding() {

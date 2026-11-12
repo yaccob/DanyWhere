@@ -355,6 +355,10 @@
             "name": "Klávesa pro následné zpracování",
             "description": "Volitelné: Vyhrazená klávesová zkratka, která vždy použije AI následné zpracování na váš přepis."
           },
+          "transcribe_with_context": {
+            "name": "Klávesa s kontextem",
+            "description": "Volitelné: diktuj a pak následně zpracuj se zvoleným promptem a svými dřívějšími diktáty ze stejného okna jako kontextem. Dokud je tato klávesa nastavena, každý diktát si pamatuje své okno."
+          },
           "paste_last_transcript": {
             "name": "Vložit poslední přepis",
             "description": "Vloží poslední přepis tam, kde je právě kurzor, např. když nedorazil, protože žádné textové pole nemělo fokus. Bez usnadnění se místo toho zkopíruje do schránky, pro aplikace, ve kterých „Vložit poslední diktát“ nefunguje, například Terminál."
@@ -743,6 +747,31 @@
         "cancel": "Zrušit",
         "selectToEdit": "Vyberte výše prompt, abyste zobrazili a upravili jeho podrobnosti.",
         "createFirst": "Klikněte nahoře na 'Vytvořit nový prompt' a vytvořte svůj první prompt pro následné zpracování."
+      },
+      "context": {
+        "title": "Kontext z dřívějších diktátů",
+        "privacy": "Dřívější diktáty ze stejného okna jdou poskytovateli následného zpracování spolu s aktuálním, i ty, které nikdy nebyly následně zpracovány. Historie označí každý záznam, který takto odešel.",
+        "ageLimit": "Věková hranice",
+        "ageLimitDescription": "Jen diktáty nejvýše o tolik minut starší než aktuální ({{min}}–{{max}}).",
+        "minutes": "min",
+        "maxEntries": "Dřívější diktáty",
+        "maxEntriesDescription": "Nejvýše tolik dřívějších diktátů ({{min}}–{{max}}).",
+        "charBudget": "Znaky",
+        "charBudgetDescription": "Nejvýše tolik znaků z dřívějších diktátů; nejstarší odpadají první ({{min}}–{{max}}).",
+        "invalid": "Zadej celé číslo od {{min}} do {{max}}.",
+        "excludedApps": "Vyloučené aplikace",
+        "excludedAppsDescription": "Okna těchto aplikací se nikdy nezaznamenávají, takže jejich diktáty nikdy neslouží jako kontext. Jedna aplikace na řádek: její název nebo ID balíčku (Windows: název programu).",
+        "windowTitles": "Názvy oken",
+        "windowTitlesAvailable": "Handy čte název okna, do kterého diktuješ.",
+        "windowTitlesUnsupported": "Handy na tomto systému zatím nezná názvy oken, takže zde žádný kontext není.",
+        "windowTitlesAutomation": "Bez Zpřístupnění se Handy může těchto aplikací zeptat na název okna. macOS se tě zeptá jednou pro každou aplikaci; Handy čte jen název.",
+        "windowTitlesOtherApps": "Jiné aplikace bez Zpřístupnění název nesdělí; diktáty v nich nemají kontext.",
+        "allow": "Povolit…",
+        "statusAllowed": "Povoleno",
+        "statusNotAsked": "Zatím nedotázáno",
+        "statusDenied": "Nepovoleno – změň v Nastavení systému › Soukromí a zabezpečení › Automatizace",
+        "statusNotRunning": "Neběží – spusť ji pro povolení",
+        "statusUnknown": "Neznámé"
       }
     },
     "history": {
@@ -787,6 +816,13 @@
       "revertCorrection": "Vrátit opravu",
       "correctError": "Nepodařilo se uložit opravu. Zkuste to prosím znovu.",
       "postProcessingOutdated": "Zpracováno ze starší verze přepisu. Kouzelná hůlka ho zpracuje znovu.",
+      "contextSent": "Odesláno jako kontext",
+      "contextSentTooltip": "Odešlo {{date}} poskytovateli následného zpracování jako kontext pozdějšího diktátu.",
+      "contextUsed": "Dřívější diktáty jako kontext: {{count}}",
+      "windowFilter": "Okno: {{window}} ({{count}})",
+      "showAll": "Zobrazit vše",
+      "showWindowEntries": "Zobrazit jen diktáty z tohoto okna",
+      "contextEntryJump": "Zobrazit v historii a opravit",
       "confirmReplaceTitle": "Nahradit vaši opravu?",
       "confirmPostProcessReplacesCorrection": "Nové následné zpracování nahradí vaši opravu zpracovaného textu.",
       "confirmRetranscribeReplacesCorrection": "Nový přepis nahradí vaše opravy tohoto záznamu.",

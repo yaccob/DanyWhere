@@ -355,6 +355,10 @@
             "name": "後処理のショートカット",
             "description": "文字起こしに常に AI 後処理を適用するキーボードショートカット。 (任意)"
           },
+          "transcribe_with_context": {
+            "name": "コンテキスト付きのショートカット",
+            "description": "任意：音声入力したあと、選択したプロンプトと同じウインドウでの以前の音声入力をコンテキストにして後処理します。このショートカットが設定されている間、音声入力ごとにウインドウが記録されます。"
+          },
           "paste_last_transcript": {
             "name": "最後の文字起こしを貼り付け",
             "description": "最後の文字起こしを現在のカーソル位置に貼り付けます。テキストフィールドにフォーカスがなく届かなかった場合などに使います。アクセシビリティがない場合はクリップボードにコピーされます。「最後の音声入力を挿入」が使えないアプリ（ターミナルなど）向けです。"
@@ -743,6 +747,31 @@
         "cancel": "キャンセル",
         "selectToEdit": "上からプロンプトを選択して、詳細を表示・編集します。",
         "createFirst": "上の「新しいプロンプトを作成」をクリックして、最初の後処理プロンプトを作成してください。"
+      },
+      "context": {
+        "title": "以前の音声入力からのコンテキスト",
+        "privacy": "同じウインドウの以前の音声入力は、現在のものと一緒に後処理のプロバイダーに送られます。後処理されたことのないものも含みます。こうして送られた項目は履歴に印が付きます。",
+        "ageLimit": "経過時間の上限",
+        "ageLimitDescription": "現在のものより最大でこの分数だけ古い音声入力のみ（{{min}}〜{{max}}）。",
+        "minutes": "分",
+        "maxEntries": "以前の音声入力",
+        "maxEntriesDescription": "以前の音声入力は最大でこの件数まで（{{min}}〜{{max}}）。",
+        "charBudget": "文字数",
+        "charBudgetDescription": "以前の音声入力から最大でこの文字数まで。古いものから外れます（{{min}}〜{{max}}）。",
+        "invalid": "{{min}}から{{max}}までの整数を入力してください。",
+        "excludedApps": "除外するアプリ",
+        "excludedAppsDescription": "これらのアプリのウインドウは記録されないため、その音声入力がコンテキストになることはありません。1行に1つのアプリ：名前またはバンドルID（Windows：プログラム名）。",
+        "windowTitles": "ウインドウのタイトル",
+        "windowTitlesAvailable": "Handyは音声入力先のウインドウのタイトルを読み取ります。",
+        "windowTitlesUnsupported": "このシステムではHandyはまだウインドウのタイトルを取得できないため、ここではコンテキストはありません。",
+        "windowTitlesAutomation": "アクセシビリティなしでも、Handyはこれらのアプリにウインドウのタイトルを問い合わせられます。macOSがアプリごとに一度確認します。Handyが読み取るのはタイトルだけです。",
+        "windowTitlesOtherApps": "その他のアプリはアクセシビリティなしではタイトルを返さないため、そこでの音声入力にはコンテキストがありません。",
+        "allow": "許可…",
+        "statusAllowed": "許可済み",
+        "statusNotAsked": "まだ確認していません",
+        "statusDenied": "許可されていません – システム設定 › プライバシーとセキュリティ › オートメーションで変更してください",
+        "statusNotRunning": "起動していません – 許可するには起動してください",
+        "statusUnknown": "不明"
       }
     },
     "history": {
@@ -787,6 +816,13 @@
       "revertCorrection": "修正を取り消す",
       "correctError": "修正の保存に失敗しました。もう一度お試しください。",
       "postProcessingOutdated": "以前の文字起こしから後処理されています。魔法の杖ボタンで後処理し直せます。",
+      "contextSent": "コンテキストとして送信済み",
+      "contextSentTooltip": "{{date}}に、後の音声入力のコンテキストとして後処理のプロバイダーに送られました。",
+      "contextUsed": "コンテキストにした以前の音声入力：{{count}}",
+      "windowFilter": "ウインドウ：{{window}}（{{count}}）",
+      "showAll": "すべて表示",
+      "showWindowEntries": "このウインドウの音声入力だけを表示",
+      "contextEntryJump": "修正するために履歴で表示",
       "confirmReplaceTitle": "修正を置き換えますか？",
       "confirmPostProcessReplacesCorrection": "後処理し直すと、後処理後のテキストへの修正が置き換えられます。",
       "confirmRetranscribeReplacesCorrection": "再文字起こしすると、このエントリーへの修正が置き換えられます。",

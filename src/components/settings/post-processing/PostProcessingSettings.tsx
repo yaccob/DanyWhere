@@ -21,6 +21,8 @@ import { ModelSelect } from "../PostProcessingSettingsApi/ModelSelect";
 import { usePostProcessProviderState } from "../PostProcessingSettingsApi/usePostProcessProviderState";
 import { ShortcutInput } from "../ShortcutInput";
 import { useSettings } from "../../../hooks/useSettings";
+// DanyWhere: context from earlier dictations in the same window.
+import { DictationContextSettings } from "../dictation-context/DictationContextSettings";
 
 const PostProcessingSettingsApiComponent: React.FC = () => {
   const { t } = useTranslation();
@@ -481,6 +483,11 @@ export const PostProcessingSettings: React.FC = () => {
 
       <SettingsGroup title={t("settings.postProcessing.prompts.title")}>
         <PostProcessingSettingsPrompts />
+      </SettingsGroup>
+
+      {/* DanyWhere */}
+      <SettingsGroup title={t("settings.postProcessing.context.title")}>
+        <DictationContextSettings />
       </SettingsGroup>
     </div>
   );

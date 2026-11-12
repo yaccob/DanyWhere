@@ -355,6 +355,10 @@
             "name": "Phím tắt xử lý sau",
             "description": "Tùy chọn: Phím tắt chuyên dụng luôn áp dụng xử lý sau bằng AI cho bản chuyển đổi của bạn."
           },
+          "transcribe_with_context": {
+            "name": "Phím tắt có ngữ cảnh",
+            "description": "Tùy chọn: đọc chính tả, rồi hậu xử lý bằng prompt đã chọn cùng các lần đọc chính tả trước trong cùng cửa sổ làm ngữ cảnh. Khi phím tắt này được đặt, mỗi lần đọc chính tả sẽ ghi nhớ cửa sổ của nó."
+          },
           "paste_last_transcript": {
             "name": "Dán bản chép gần nhất",
             "description": "Dán bản chép gần nhất vào vị trí con trỏ hiện tại, ví dụ khi nó không đến nơi vì không có ô văn bản nào được chọn. Khi không có Trợ năng, bản chép được sao chép vào bảng nhớ tạm, dành cho các ứng dụng mà Chèn bản đọc chính tả gần nhất không hoạt động, như Terminal."
@@ -743,6 +747,31 @@
         "cancel": "Hủy",
         "selectToEdit": "Chọn một prompt ở trên để xem và chỉnh sửa chi tiết.",
         "createFirst": "Nhấn 'Tạo Prompt mới' ở trên để tạo prompt xử lý sau đầu tiên của bạn."
+      },
+      "context": {
+        "title": "Ngữ cảnh từ các lần đọc chính tả trước",
+        "privacy": "Các lần đọc chính tả trước trong cùng cửa sổ được gửi đến nhà cung cấp hậu xử lý cùng với lần hiện tại, kể cả những lần chưa từng được hậu xử lý. Lịch sử đánh dấu mọi mục đã được gửi đi như vậy.",
+        "ageLimit": "Giới hạn thời gian",
+        "ageLimitDescription": "Chỉ các lần đọc chính tả cũ hơn lần hiện tại tối đa bấy nhiêu phút ({{min}}–{{max}}).",
+        "minutes": "phút",
+        "maxEntries": "Các lần đọc chính tả trước",
+        "maxEntriesDescription": "Tối đa bấy nhiêu lần đọc chính tả trước ({{min}}–{{max}}).",
+        "charBudget": "Ký tự",
+        "charBudgetDescription": "Tối đa bấy nhiêu ký tự từ các lần đọc chính tả trước; các lần cũ nhất bị bỏ trước ({{min}}–{{max}}).",
+        "invalid": "Nhập một số nguyên từ {{min}} đến {{max}}.",
+        "excludedApps": "Ứng dụng bị loại trừ",
+        "excludedAppsDescription": "Cửa sổ của các ứng dụng này không bao giờ được ghi nhận, nên các lần đọc chính tả trong đó không bao giờ làm ngữ cảnh. Mỗi dòng một ứng dụng: tên hoặc bundle ID (Windows: tên chương trình).",
+        "windowTitles": "Tiêu đề cửa sổ",
+        "windowTitlesAvailable": "Handy đọc tiêu đề của cửa sổ bạn đang đọc chính tả vào.",
+        "windowTitlesUnsupported": "Handy chưa biết tiêu đề cửa sổ trên hệ thống này, nên ở đây không có ngữ cảnh.",
+        "windowTitlesAutomation": "Không có Trợ năng, Handy có thể hỏi các ứng dụng này tiêu đề cửa sổ. macOS hỏi bạn một lần cho mỗi ứng dụng; Handy chỉ đọc tiêu đề.",
+        "windowTitlesOtherApps": "Các ứng dụng khác không cho biết tiêu đề khi không có Trợ năng; các lần đọc chính tả ở đó không có ngữ cảnh.",
+        "allow": "Cho phép…",
+        "statusAllowed": "Đã cho phép",
+        "statusNotAsked": "Chưa hỏi",
+        "statusDenied": "Không được phép – thay đổi trong Cài đặt hệ thống › Quyền riêng tư & Bảo mật › Tự động hóa",
+        "statusNotRunning": "Không chạy – hãy mở để cho phép",
+        "statusUnknown": "Không rõ"
       }
     },
     "history": {
@@ -787,6 +816,13 @@
       "revertCorrection": "Hoàn tác chỉnh sửa",
       "correctError": "Không lưu được chỉnh sửa. Vui lòng thử lại.",
       "postProcessingOutdated": "Được xử lý sau từ phiên bản cũ hơn của bản phiên âm. Cây đũa phép sẽ xử lý sau lại.",
+      "contextSent": "Đã gửi làm ngữ cảnh",
+      "contextSentTooltip": "Đã được gửi vào {{date}} đến nhà cung cấp hậu xử lý làm ngữ cảnh cho một lần đọc chính tả sau.",
+      "contextUsed": "Các lần đọc chính tả trước làm ngữ cảnh: {{count}}",
+      "windowFilter": "Cửa sổ: {{window}} ({{count}})",
+      "showAll": "Hiện tất cả",
+      "showWindowEntries": "Chỉ hiện các lần đọc chính tả từ cửa sổ này",
+      "contextEntryJump": "Hiện trong lịch sử để sửa",
       "confirmReplaceTitle": "Thay thế chỉnh sửa của bạn?",
       "confirmPostProcessReplacesCorrection": "Xử lý sau lại sẽ thay thế chỉnh sửa của bạn đối với văn bản đã xử lý.",
       "confirmRetranscribeReplacesCorrection": "Phiên âm lại sẽ thay thế các chỉnh sửa của bạn cho mục này.",

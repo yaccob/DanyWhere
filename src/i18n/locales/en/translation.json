@@ -355,6 +355,10 @@
             "name": "Post-Processing Hotkey",
             "description": "Optional: A dedicated hotkey that always applies AI post-processing to your transcription."
           },
+          "transcribe_with_context": {
+            "name": "Context Hotkey",
+            "description": "Optional: dictate, then post-process with the selected prompt and your earlier dictations from the same window as context. While this hotkey is set, every dictation remembers its window."
+          },
           "paste_last_transcript": {
             "name": "Paste Last Transcript",
             "description": "Pastes the most recent transcript where the cursor is now, e.g. when it did not arrive because no text field had focus. Without Accessibility it is put on the clipboard instead, for apps where Insert Last Dictation doesn't work, such as Terminal."
@@ -743,6 +747,31 @@
         "cancel": "Cancel",
         "selectToEdit": "Select a prompt above to view and edit its details.",
         "createFirst": "Click 'Create New Prompt' above to create your first post-processing prompt."
+      },
+      "context": {
+        "title": "Context from Earlier Dictations",
+        "privacy": "Earlier dictations from the same window go to the post-processing provider along with the current one, including dictations that were never post-processed. The History marks every entry that went out this way.",
+        "ageLimit": "Age Limit",
+        "ageLimitDescription": "Only dictations at most this many minutes older than the current one ({{min}}–{{max}}).",
+        "minutes": "min",
+        "maxEntries": "Earlier Dictations",
+        "maxEntriesDescription": "At most this many earlier dictations ({{min}}–{{max}}).",
+        "charBudget": "Characters",
+        "charBudgetDescription": "At most this many characters of earlier dictations; the oldest drop out first ({{min}}–{{max}}).",
+        "invalid": "Enter a whole number from {{min}} to {{max}}.",
+        "excludedApps": "Excluded Apps",
+        "excludedAppsDescription": "Windows of these apps are never captured, so their dictations never serve as context. One app per line: its name or bundle ID (Windows: the program's name).",
+        "windowTitles": "Window Titles",
+        "windowTitlesAvailable": "Handy reads the title of the window you dictate into.",
+        "windowTitlesUnsupported": "Handy can't tell window titles on this system yet, so there is no context here.",
+        "windowTitlesAutomation": "Without Accessibility, Handy can ask these apps for their window title. macOS asks you once per app; Handy reads only the title.",
+        "windowTitlesOtherApps": "Other apps give no title without Accessibility; dictations there have no context.",
+        "allow": "Allow…",
+        "statusAllowed": "Allowed",
+        "statusNotAsked": "Not asked yet",
+        "statusDenied": "Not allowed – change it in System Settings › Privacy & Security › Automation",
+        "statusNotRunning": "Not running – start it to allow",
+        "statusUnknown": "Unknown"
       }
     },
     "history": {
@@ -787,6 +816,13 @@
       "revertCorrection": "Undo correction",
       "correctError": "Failed to save the correction. Please try again.",
       "postProcessingOutdated": "Post-processed from an earlier version of the transcription. The wand post-processes it again.",
+      "contextSent": "Sent as context",
+      "contextSentTooltip": "Went to the post-processing provider as context of a later dictation on {{date}}.",
+      "contextUsed": "Earlier dictations as context: {{count}}",
+      "windowFilter": "Window: {{window}} ({{count}})",
+      "showAll": "Show all",
+      "showWindowEntries": "Show only dictations from this window",
+      "contextEntryJump": "Show it in the History to correct it",
       "confirmReplaceTitle": "Replace your correction?",
       "confirmPostProcessReplacesCorrection": "Post-processing again replaces your correction of the post-processed text.",
       "confirmRetranscribeReplacesCorrection": "Re-transcribing replaces your corrections of this entry.",

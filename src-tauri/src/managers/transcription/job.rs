@@ -7,8 +7,8 @@ use std::time::Instant;
 use transcribe_cpp::Transcript;
 
 use super::{
-    agreed_language, engine_error, post_process_transcription_text, real_time_factor, BatchContext,
-    Transcription, TranscriptionManager,
+    agreed_language, engine_error, post_process_transcription_text_reporting, real_time_factor,
+    BatchContext, Transcription, TranscriptionManager,
 };
 use crate::audio_toolkit::chunking::Chunker;
 use crate::engine_supervisor::EngineError;
@@ -46,6 +46,7 @@ impl TranscriptionManager {
             return Ok(Some(Transcription {
                 text: String::new(),
                 language: None,
+                word_replacements: Vec::new(),
             }));
         }
 
@@ -106,17 +107,25 @@ impl TranscriptionManager {
 
         debug!("Transcribed {} chunks in the background", transcripts.len());
         let language = setup.spoken_language(agreed_language(&transcripts).as_deref());
+        // DanyWhere: also collect what the word list replaced in each chunk.
+        let mut word_replacements: Vec<crate::dictation_context::WordReplacement> = Vec::new();
         let paragraphs: Vec<String> = transcripts
             .into_iter()
             .map(|t| {
                 let output_language = setup.output_language(&settings, t.language);
-                post_process_transcription_text(
+                let (text, replaced) = post_process_transcription_text_reporting(
                     t.text,
                     &settings,
                     setup.custom_words_prompted(),
                     &output_language,
                     &setup.languages,
-                )
+                );
+                for replacement in replaced {
+                    if !word_replacements.contains(&replacement) {
+                        word_replacements.push(replacement);
+                    }
+                }
+                text
             })
             .filter(|p| !p.trim().is_empty())
             .collect();
@@ -133,6 +142,7 @@ impl TranscriptionManager {
         Ok(Some(Transcription {
             text: paragraphs.join("\n\n"),
             language: Some(language),
+            word_replacements,
         }))
     }
 }

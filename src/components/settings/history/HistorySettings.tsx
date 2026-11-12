@@ -58,6 +58,17 @@ import {
   useFileReadsStore,
   type FileRead,
 } from "./transcribeFiles";
+// DanyWhere: the window a dictation was made in, and its context.
+import {
+  inWindow,
+  type WindowFilter,
+} from "../dictation-context/dictationContext";
+import {
+  EntryContextInfo,
+  EntryWindowLine,
+  WindowFilterChip,
+  type ShowWindow,
+} from "../dictation-context/EntryContext";
 
 const IconButton: React.FC<{
   onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
@@ -160,6 +171,45 @@ export const HistorySettings: React.FC = () => {
   const sentinelRef = useRef<HTMLDivElement>(null);
   const entriesRef = useRef<HistoryEntry[]>([]);
   const loadingRef = useRef(false);
+  // DanyWhere: the History of one window (the criterion context is chosen
+  // by), and an entry to scroll to once it shows.
+  const [windowFilter, setWindowFilter] = useState<WindowFilter | null>(null);
+  const [windowEntries, setWindowEntries] = useState<HistoryEntry[]>([]);
+  const [scrollToId, setScrollToId] = useState<number | null>(null);
+  const windowFilterRef = useRef<WindowFilter | null>(null);
+  useEffect(() => {
+    windowFilterRef.current = windowFilter;
+  }, [windowFilter]);
+
+  const showWindow: ShowWindow = useCallback(async (filter, focusId) => {
+    try {
+      const result = await commands.getHistoryEntriesInWindow(
+        filter.app_id,
+        filter.title,
+      );
+      setWindowEntries(result.status === "ok" ? result.data : []);
+    } catch (error) {
+      console.error("Failed to load the window's entries:", error);
+      setWindowEntries([]);
+    }
+    setWindowFilter(filter);
+    setScrollToId(focusId ?? null);
+  }, []);
+
+  useEffect(() => {
+    if (scrollToId === null) return;
+    const element = document.getElementById(`history-entry-${scrollToId}`);
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth", block: "center" });
+      setScrollToId(null);
+    }
+  }, [scrollToId, windowEntries, entries]);
+
+  // DanyWhere: a change to an entry reaches both lists.
+  const updateEntries = (change: (list: HistoryEntry[]) => HistoryEntry[]) => {
+    setEntries(change);
+    setWindowEntries(change);
+  };
 
   // Keep ref in sync for use in IntersectionObserver callback
   useEffect(() => {
@@ -236,10 +286,34 @@ export const HistorySettings: React.FC = () => {
           payload.entry,
           ...prev.filter((entry) => entry.id !== payload.entry.id),
         ]);
+        // DanyWhere: a new dictation in the shown window shows there too.
+        const filter = windowFilterRef.current;
+        if (filter && inWindow(payload.entry.window_context, filter)) {
+          setWindowEntries((prev) => [
+            payload.entry,
+            ...prev.filter((entry) => entry.id !== payload.entry.id),
+          ]);
+        }
       } else if (payload.action === "updated") {
         setEntries((prev) =>
           prev.map((e) => (e.id === payload.entry.id ? payload.entry : e)),
         );
+        // DanyWhere: the window's list too; a dictation whose window was
+        // stored only now joins it.
+        const filter = windowFilterRef.current;
+        setWindowEntries((prev) => {
+          if (prev.some((e) => e.id === payload.entry.id)) {
+            return prev.map((e) =>
+              e.id === payload.entry.id ? payload.entry : e,
+            );
+          }
+          if (filter && inWindow(payload.entry.window_context, filter)) {
+            return [payload.entry, ...prev].sort(
+              (a, b) => b.timestamp - a.timestamp || b.id - a.id,
+            );
+          }
+          return prev;
+        });
       }
       // "deleted" and "toggled" are handled by optimistic updates only,
       // so we intentionally ignore them here to avoid double-mutation.
@@ -252,21 +326,21 @@ export const HistorySettings: React.FC = () => {
 
   const toggleSaved = async (id: number) => {
     // Optimistic update
-    setEntries((prev) =>
+    updateEntries((prev) =>
       prev.map((e) => (e.id === id ? { ...e, saved: !e.saved } : e)),
     );
     try {
       const result = await commands.toggleHistoryEntrySaved(id);
       if (result.status !== "ok") {
         // Revert on failure
-        setEntries((prev) =>
+        updateEntries((prev) =>
           prev.map((e) => (e.id === id ? { ...e, saved: !e.saved } : e)),
         );
       }
     } catch (error) {
       console.error("Failed to toggle saved status:", error);
       // Revert on failure
-      setEntries((prev) =>
+      updateEntries((prev) =>
         prev.map((e) => (e.id === id ? { ...e, saved: !e.saved } : e)),
       );
     }
@@ -291,7 +365,7 @@ export const HistorySettings: React.FC = () => {
 
   const deleteAudioEntry = async (id: number) => {
     // Optimistically remove
-    setEntries((prev) => prev.filter((e) => e.id !== id));
+    updateEntries((prev) => prev.filter((e) => e.id !== id));
     try {
       const result = await commands.deleteHistoryEntry(id);
       if (result.status !== "ok") {
@@ -325,6 +399,8 @@ export const HistorySettings: React.FC = () => {
   };
 
   let content: React.ReactNode;
+  // DanyWhere: one window's entries while filtered.
+  const shownEntries = windowFilter ? windowEntries : entries;
 
   if (loading) {
     content = (
@@ -332,7 +408,7 @@ export const HistorySettings: React.FC = () => {
         {t("settings.history.loading")}
       </div>
     );
-  } else if (entries.length === 0 && reads.length === 0) {
+  } else if (shownEntries.length === 0 && reads.length === 0) {
     content = (
       <div className="px-4 py-3 text-center text-ink-2">
         {t("settings.history.empty")}
@@ -346,10 +422,11 @@ export const HistorySettings: React.FC = () => {
             {reads.map((read) => (
               <FileReadRow key={`read-${read.id}`} read={read} />
             ))}
-            {entries.map((entry) => (
+            {shownEntries.map((entry) => (
               <HistoryEntryComponent
                 key={entry.id}
                 entry={entry}
+                onShowWindow={showWindow}
                 job={jobs[entry.id]}
                 onToggleSaved={() => toggleSaved(entry.id)}
                 onCopyText={(text) => copyToClipboard(text)}
@@ -364,8 +441,9 @@ export const HistorySettings: React.FC = () => {
             ))}
           </div>
         </AudioPlayerGroup>
-        {/* Sentinel for infinite scroll */}
-        <div ref={sentinelRef} className="h-1" />
+        {/* Sentinel for infinite scroll (DanyWhere: not while one window
+            shows, which is loaded whole) */}
+        {!windowFilter && <div ref={sentinelRef} className="h-1" />}
       </>
     );
   }
@@ -392,6 +470,16 @@ export const HistorySettings: React.FC = () => {
             />
           </div>
         </div>
+        {windowFilter && (
+          <WindowFilterChip
+            filter={windowFilter}
+            count={windowEntries.length}
+            onClear={() => {
+              setWindowFilter(null);
+              setWindowEntries([]);
+            }}
+          />
+        )}
         <div className="bg-background border border-line rounded-lg overflow-visible">
           {content}
         </div>
@@ -402,6 +490,8 @@ export const HistorySettings: React.FC = () => {
 
 interface HistoryEntryProps {
   entry: HistoryEntry;
+  // DanyWhere: shows the History of one window.
+  onShowWindow: ShowWindow;
   job?: ActiveJobStatus;
   onToggleSaved: () => void;
   onCopyText: (text: string) => Promise<boolean>;
@@ -421,6 +511,7 @@ interface HistoryEntryProps {
 
 const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
   entry,
+  onShowWindow,
   job,
   onToggleSaved,
   onCopyText,
@@ -574,7 +665,10 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
   }
 
   return (
-    <div className="px-4 py-2 pb-5 flex flex-col gap-3">
+    <div
+      id={`history-entry-${entry.id}`}
+      className="px-4 py-2 pb-5 flex flex-col gap-3"
+    >
       <div className="flex justify-between items-center gap-3">
         <div className="flex items-center gap-2 min-w-0">
           <p className="text-sm font-medium shrink-0">{formattedDate}</p>
@@ -686,6 +780,9 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
           </IconButton>
         </div>
       </div>
+
+      {/* DanyWhere: the window it was dictated in; shows that window. */}
+      <EntryWindowLine entry={entry} onShowWindow={onShowWindow} />
 
       <div className="flex flex-col items-start gap-1 pb-2">
         {editing !== null && (
@@ -821,6 +918,10 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
               )}
             </div>
           )}
+        {/* DanyWhere: its context, and whether it went out as context. */}
+        {!retrying && editing === null && (
+          <EntryContextInfo entry={entry} onShowWindow={onShowWindow} />
+        )}
       </div>
 
       {entry.recording_removed ? (

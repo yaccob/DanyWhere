@@ -355,6 +355,10 @@
             "name": "後處理快捷鍵",
             "description": "可選：專用快捷鍵，使用時一律對轉錄結果套用 AI 後處理"
           },
+          "transcribe_with_context": {
+            "name": "上下文快捷鍵",
+            "description": "選用：聽寫後，使用所選提示詞並以同一視窗中的先前聽寫作為上下文進行後處理。設定此快捷鍵期間，每次聽寫都會記住其視窗。"
+          },
           "paste_last_transcript": {
             "name": "貼上最近的轉錄",
             "description": "將最近的轉錄貼到目前游標位置，例如因沒有文字欄位取得焦點而未送達時。沒有輔助使用權限時，改為複製到剪貼簿，適用於「插入最近的聽寫」無法使用的 App，例如終端機。"
@@ -743,6 +747,31 @@
         "cancel": "取消",
         "selectToEdit": "選擇上方的提示詞以檢視和編輯其詳細資訊",
         "createFirst": "點選上方的「建立新提示詞」來建立您的第一個後處理提示詞"
+      },
+      "context": {
+        "title": "來自先前聽寫的上下文",
+        "privacy": "同一視窗中的先前聽寫會與目前的聽寫一起傳送給後處理服務商，包括從未經過後處理的聽寫。以這種方式送出的每個項目都會在記錄中標示。",
+        "ageLimit": "時間上限",
+        "ageLimitDescription": "僅限比目前聽寫最多早這麼多分鐘的聽寫（{{min}}–{{max}}）。",
+        "minutes": "分鐘",
+        "maxEntries": "先前聽寫",
+        "maxEntriesDescription": "最多這麼多筆先前聽寫（{{min}}–{{max}}）。",
+        "charBudget": "字元數",
+        "charBudgetDescription": "先前聽寫最多這麼多字元；最早的先被捨去（{{min}}–{{max}}）。",
+        "invalid": "請輸入 {{min}} 到 {{max}} 之間的整數。",
+        "excludedApps": "排除的 App",
+        "excludedAppsDescription": "這些 App 的視窗永遠不會被記錄，因此它們的聽寫永遠不會作為上下文。每行一個 App：名稱或 Bundle ID（Windows：程式名稱）。",
+        "windowTitles": "視窗標題",
+        "windowTitlesAvailable": "Handy 會讀取你聽寫所在視窗的標題。",
+        "windowTitlesUnsupported": "Handy 尚無法取得此系統上的視窗標題，因此這裡沒有上下文。",
+        "windowTitlesAutomation": "沒有輔助使用權限時，Handy 可以向這些 App 詢問視窗標題。macOS 會針對每個 App 詢問你一次；Handy 只讀取標題。",
+        "windowTitlesOtherApps": "其他 App 在沒有輔助使用權限時不提供標題；在其中的聽寫沒有上下文。",
+        "allow": "允許…",
+        "statusAllowed": "已允許",
+        "statusNotAsked": "尚未詢問",
+        "statusDenied": "未允許 – 請在 系統設定 › 隱私權與安全性 › 自動化 中變更",
+        "statusNotRunning": "未執行 – 請啟動它以允許",
+        "statusUnknown": "未知"
       }
     },
     "history": {
@@ -787,6 +816,13 @@
       "revertCorrection": "復原更正",
       "correctError": "儲存更正失敗。請重試。",
       "postProcessingOutdated": "此後處理是根據轉錄的較早版本。點選魔杖可重新後處理。",
+      "contextSent": "已作為上下文傳送",
+      "contextSentTooltip": "已於 {{date}} 作為之後某次聽寫的上下文傳送給後處理服務商。",
+      "contextUsed": "作為上下文的先前聽寫：{{count}}",
+      "windowFilter": "視窗：{{window}}（{{count}}）",
+      "showAll": "全部顯示",
+      "showWindowEntries": "僅顯示此視窗的聽寫",
+      "contextEntryJump": "在記錄中顯示以便更正",
       "confirmReplaceTitle": "要取代你的更正嗎？",
       "confirmPostProcessReplacesCorrection": "重新後處理會取代你對後處理文字的更正。",
       "confirmRetranscribeReplacesCorrection": "重新轉錄會取代你對此項目的更正。",

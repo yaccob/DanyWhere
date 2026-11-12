@@ -355,6 +355,10 @@
             "name": "Raccourci de post-traitement",
             "description": "Facultatif : Un raccourci dédié qui applique toujours le post-traitement IA à votre transcription."
           },
+          "transcribe_with_context": {
+            "name": "Raccourci avec contexte",
+            "description": "Facultatif : dictez, puis post-traitez avec le prompt choisi et vos dictées précédentes de la même fenêtre comme contexte. Tant que ce raccourci est défini, chaque dictée retient sa fenêtre."
+          },
           "paste_last_transcript": {
             "name": "Coller la dernière transcription",
             "description": "Colle la dernière transcription à l'emplacement actuel du curseur, par exemple si elle n'est pas arrivée parce qu'aucun champ de texte n'avait le focus. Sans l'accessibilité, elle est copiée dans le presse-papiers, pour les apps où « Insérer la dernière dictée » ne fonctionne pas, comme Terminal."
@@ -743,6 +747,31 @@
         "cancel": "Annuler",
         "selectToEdit": "Sélectionnez un prompt ci-dessus pour voir et modifier ses détails.",
         "createFirst": "Cliquez sur 'Créer un nouveau prompt' ci-dessus pour créer votre premier prompt de post-traitement."
+      },
+      "context": {
+        "title": "Contexte des dictées précédentes",
+        "privacy": "Les dictées précédentes de la même fenêtre sont envoyées au fournisseur du post-traitement avec la dictée actuelle, y compris celles qui n'ont jamais été post-traitées. L'historique marque chaque entrée envoyée ainsi.",
+        "ageLimit": "Âge maximal",
+        "ageLimitDescription": "Uniquement les dictées d'au plus ce nombre de minutes plus anciennes que la dictée actuelle ({{min}}–{{max}}).",
+        "minutes": "min",
+        "maxEntries": "Dictées précédentes",
+        "maxEntriesDescription": "Au plus ce nombre de dictées précédentes ({{min}}–{{max}}).",
+        "charBudget": "Caractères",
+        "charBudgetDescription": "Au plus ce nombre de caractères des dictées précédentes ; les plus anciennes sont retirées en premier ({{min}}–{{max}}).",
+        "invalid": "Saisissez un nombre entier de {{min}} à {{max}}.",
+        "excludedApps": "Apps exclues",
+        "excludedAppsDescription": "Les fenêtres de ces apps ne sont jamais relevées, leurs dictées ne servent donc jamais de contexte. Une app par ligne : son nom ou son identifiant de bundle (Windows : le nom du programme).",
+        "windowTitles": "Titres de fenêtre",
+        "windowTitlesAvailable": "Handy lit le titre de la fenêtre dans laquelle vous dictez.",
+        "windowTitlesUnsupported": "Handy ne connaît pas encore les titres de fenêtre sur ce système, il n'y a donc pas de contexte ici.",
+        "windowTitlesAutomation": "Sans Accessibilité, Handy peut demander leur titre de fenêtre à ces apps. macOS vous le demande une fois par app ; Handy ne lit que le titre.",
+        "windowTitlesOtherApps": "Les autres apps ne donnent pas de titre sans Accessibilité ; les dictées qui y sont faites n'ont pas de contexte.",
+        "allow": "Autoriser…",
+        "statusAllowed": "Autorisé",
+        "statusNotAsked": "Pas encore demandé",
+        "statusDenied": "Non autorisé – à modifier dans Réglages Système › Confidentialité et sécurité › Automatisation",
+        "statusNotRunning": "Non lancée – lancez-la pour autoriser",
+        "statusUnknown": "Inconnu"
       }
     },
     "history": {
@@ -787,6 +816,13 @@
       "revertCorrection": "Annuler la correction",
       "correctError": "Échec de l'enregistrement de la correction. Veuillez réessayer.",
       "postProcessingOutdated": "Post-traité à partir d'une version antérieure de la transcription. La baguette le post-traite à nouveau.",
+      "contextSent": "Envoyée comme contexte",
+      "contextSentTooltip": "Envoyée le {{date}} au fournisseur du post-traitement comme contexte d'une dictée ultérieure.",
+      "contextUsed": "Dictées précédentes comme contexte : {{count}}",
+      "windowFilter": "Fenêtre : {{window}} ({{count}})",
+      "showAll": "Tout afficher",
+      "showWindowEntries": "N'afficher que les dictées de cette fenêtre",
+      "contextEntryJump": "L'afficher dans l'historique pour la corriger",
       "confirmReplaceTitle": "Remplacer votre correction ?",
       "confirmPostProcessReplacesCorrection": "Un nouveau post-traitement remplace votre correction du texte post-traité.",
       "confirmRetranscribeReplacesCorrection": "Re-transcrire remplace vos corrections de cette entrée.",

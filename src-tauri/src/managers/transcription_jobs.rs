@@ -410,7 +410,11 @@ impl TranscriptionJobManager {
             cancelled,
             percent: Cell::new(0),
         };
-        let Some(Transcription { text, language }) = tm.transcribe_in_chunks(samples, &control)?
+        let Some(Transcription {
+            text,
+            language,
+            word_replacements,
+        }) = tm.transcribe_in_chunks(samples, &control)?
         else {
             return Ok(JobEnd::Cancelled);
         };
@@ -424,16 +428,27 @@ impl TranscriptionJobManager {
         if post_process {
             self.emit(entry.id, TranscriptionJobStatus::PostProcessing);
         }
+        // DanyWhere: the entries made before it in the same window go along
+        // as context when it was dictated with the context shortcut
+        // (`dictation_context`).
+        let with_context = post_process && entry.window_context.context_requested;
+        let mut context_query =
+            crate::dictation_context::ContextQuery::for_entry(&entry, word_replacements.clone());
+        if !with_context {
+            context_query.window = None;
+        }
         let processed = tauri::async_runtime::block_on(process_transcription_output(
             &self.app,
             &text,
             post_process,
+            &context_query,
         ));
         // Post-processing can take a while; a cancel during it still wins.
         if cancelled.load(Ordering::Acquire) {
             return Ok(JobEnd::Cancelled);
         }
         let post_process_failed = processed.post_process_failed;
+        let context_entry_ids = processed.context_entry_ids.clone();
         hm.update_transcription(
             entry.id,
             text,
@@ -442,6 +457,14 @@ impl TranscriptionJobManager {
             language,
             post_process,
         )?;
+        if let Err(e) = hm.record_entry_context(
+            entry.id,
+            None,
+            &word_replacements,
+            with_context.then_some(context_entry_ids.as_slice()),
+        ) {
+            warn!("Failed to store the entry's context: {}", e);
+        }
         Ok(JobEnd::Finished {
             post_process_failed,
             transcribed: true,
@@ -462,11 +485,39 @@ impl TranscriptionJobManager {
         if transcript.trim().is_empty() {
             return Err(anyhow!("The entry has no transcript to post-process"));
         }
+        // DanyWhere: the entries made before it in the same window go along
+        // as context when it was dictated with the context shortcut; the
+        // word-list hint only fits the transcription as the model wrote it,
+        // not the user's correction.
+        let with_context = entry.window_context.context_requested;
+        let replacements = if entry.transcription_correction.is_some() {
+            Vec::new()
+        } else {
+            entry.window_context.word_replacements.clone()
+        };
+        let mut context_query =
+            crate::dictation_context::ContextQuery::for_entry(entry, replacements);
+        if !with_context {
+            context_query.window = None;
+        }
         let processed = tauri::async_runtime::block_on(process_transcription_output(
-            &self.app, transcript, true,
+            &self.app,
+            transcript,
+            true,
+            &context_query,
         ));
         if cancelled.load(Ordering::Acquire) {
             return Ok(JobEnd::Cancelled);
+        }
+        if with_context {
+            if let Err(e) = hm.record_entry_context(
+                entry.id,
+                None,
+                &entry.window_context.word_replacements,
+                Some(&processed.context_entry_ids),
+            ) {
+                warn!("Failed to store the entry's context: {}", e);
+            }
         }
         let post_process_failed = match processed.post_processed_text {
             Some(text) => {

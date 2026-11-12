@@ -6,5 +6,10 @@
     <true/>
     <key>com.apple.security.device.audio-input</key>
     <true/>
+    <!-- DanyWhere: lets macOS ask the user whether DanyWhere may read a
+         window title from apps like iTerm2 or Safari by Apple event, for
+         context from earlier dictations (src/window_capture.rs). -->
+    <key>com.apple.security.automation.apple-events</key>
+    <true/>
   </dict>
 </plist>

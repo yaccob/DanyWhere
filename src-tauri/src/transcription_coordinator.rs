@@ -416,9 +416,13 @@ impl CoordinatorState {
                     // recording), so a repeated press means nothing.
                     debug!("Ignoring press for '{}': key is held", input.binding_id);
                 }
+                // DanyWhere: generalized from Handy's "post-process shortcut
+                // stops a plain recording" to every binding that does more,
+                // so the context shortcut finishes a plain or post-processed
+                // recording too.
                 Stage::Recording(id)
-                    if id == "transcribe"
-                        && input.binding_id == "transcribe_with_post_process"
+                    if is_transcribe_binding(&input.binding_id)
+                        && finish_rank(&input.binding_id) > finish_rank(id)
                         && self.is_locked() =>
                 {
                     // Post-processing only runs after recording, so the shortcut
@@ -651,7 +655,22 @@ pub struct TranscriptionCoordinator {
 }
 
 pub fn is_transcribe_binding(id: &str) -> bool {
-    id == "transcribe" || id == "transcribe_with_post_process"
+    // DanyWhere: also the shortcut that post-processes with context.
+    id == "transcribe"
+        || id == "transcribe_with_post_process"
+        || id == crate::dictation_context::CONTEXT_BINDING
+}
+
+/// DanyWhere: how much a transcribe binding does after recording: plain,
+/// post-processing, post-processing with context. A locked recording can be
+/// finished by a binding that does more, never by one that does less.
+fn finish_rank(binding_id: &str) -> u8 {
+    match binding_id {
+        "transcribe" => 0,
+        "transcribe_with_post_process" => 1,
+        id if id == crate::dictation_context::CONTEXT_BINDING => 2,
+        _ => 0,
+    }
 }
 
 impl TranscriptionCoordinator {
@@ -1605,6 +1624,72 @@ mod tests {
             BINDING,
             BINDING,
         );
+    }
+
+    // DanyWhere: the context shortcut finishes a locked recording started with
+    // the plain or the post-process shortcut with context, as the post-process
+    // shortcut does for a plain one; context chosen up front is never lost.
+    const CONTEXT: &str = "transcribe_with_context";
+
+    #[test]
+    fn a_plain_recording_stopped_with_the_context_shortcut_gets_context() {
+        let mode = ShortcutActivation::Toggle;
+        let mut state = CoordinatorState::new();
+        let t0 = Instant::now();
+        state.on_input(input_for(BINDING, mode, true), t0);
+        assert_stop(
+            state.on_input(
+                input_for(CONTEXT, mode, true),
+                t0 + Duration::from_millis(1000),
+            ),
+            BINDING,
+            CONTEXT,
+        );
+    }
+
+    #[test]
+    fn a_post_processed_recording_stopped_with_the_context_shortcut_gets_context() {
+        let mode = ShortcutActivation::Toggle;
+        let mut state = CoordinatorState::new();
+        let t0 = Instant::now();
+        state.on_input(input_for(OTHER_BINDING, mode, true), t0);
+        assert_stop(
+            state.on_input(
+                input_for(CONTEXT, mode, true),
+                t0 + Duration::from_millis(1000),
+            ),
+            OTHER_BINDING,
+            CONTEXT,
+        );
+    }
+
+    #[test]
+    fn a_context_recording_keeps_its_context() {
+        let mode = ShortcutActivation::Toggle;
+        let mut state = CoordinatorState::new();
+        let t0 = Instant::now();
+        state.on_input(input_for(CONTEXT, mode, true), t0);
+        for other in [BINDING, OTHER_BINDING] {
+            assert!(state
+                .on_input(
+                    input_for(other, mode, true),
+                    t0 + Duration::from_millis(1000)
+                )
+                .is_none());
+        }
+        assert_stop(
+            state.on_input(
+                input_for(CONTEXT, mode, true),
+                t0 + Duration::from_millis(2000),
+            ),
+            CONTEXT,
+            CONTEXT,
+        );
+    }
+
+    #[test]
+    fn the_context_shortcut_is_a_transcribe_binding() {
+        assert!(is_transcribe_binding(CONTEXT));
     }
 
     /// Unchanged: a recording started with post-processing cannot be stopped

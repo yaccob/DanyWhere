@@ -149,8 +149,22 @@ fn find_best_match<'a>(
 /// # Returns
 /// The corrected text with custom words applied
 pub fn apply_custom_words(text: &str, custom_words: &[String], threshold: f64) -> String {
+    apply_custom_words_with_replacements(text, custom_words, threshold).0
+}
+
+/// DanyWhere: [`apply_custom_words`], also reporting what it replaced as
+/// `(original, replacement)` without punctuation, each once and only when
+/// more than the case changed. Post-processing tells the LLM about them
+/// (`dictation_context`), since the list can turn a right word into a wrong
+/// one ("Bild" into "Build").
+pub fn apply_custom_words_with_replacements(
+    text: &str,
+    custom_words: &[String],
+    threshold: f64,
+) -> (String, Vec<(String, String)>) {
+    let mut replacements: Vec<(String, String)> = Vec::new();
     if custom_words.is_empty() {
-        return text.to_string();
+        return (text.to_string(), replacements);
     }
 
     // Pre-compute normalized comparison keys to avoid repeated allocations.
@@ -208,6 +222,21 @@ pub fn apply_custom_words(text: &str, custom_words: &[String], threshold: f64) -
             // Preserve case from first word.
             let corrected = preserve_case_pattern(ngram_words[0], replacement);
 
+            // DanyWhere: report what was replaced, without its punctuation.
+            let spoken = ngram_words.join(" ");
+            let original = if prefix.len() + suffix.len() <= spoken.len() {
+                spoken[prefix.len()..spoken.len() - suffix.len()].to_string()
+            } else {
+                spoken.clone()
+            };
+            if original.to_lowercase() != corrected.to_lowercase()
+                && !replacements
+                    .iter()
+                    .any(|(o, r)| o == &original && r == &corrected)
+            {
+                replacements.push((original, corrected.clone()));
+            }
+
             result.push(format!("{}{}{}", prefix, corrected, suffix));
             i += n;
         } else {
@@ -216,7 +245,7 @@ pub fn apply_custom_words(text: &str, custom_words: &[String], threshold: f64) -
         }
     }
 
-    result.join(" ")
+    (result.join(" "), replacements)
 }
 
 /// Preserves the case pattern of the original word when applying a replacement
@@ -494,6 +523,31 @@ mod tests {
         let language = OutputLanguageEvidence::UserSelected(language.to_string());
         let filtered = remove_filler_words(text, &language, custom_filler_words, true);
         normalize_transcription_output(&filtered)
+    }
+
+    #[test]
+    fn replacements_are_reported_without_punctuation() {
+        let words = vec!["Build".to_string()];
+        let (text, replaced) =
+            apply_custom_words_with_replacements("Schau dir das Bild an.", &words, 0.18);
+        assert_eq!(text, "Schau dir das Build an.");
+        assert_eq!(replaced, vec![("Bild".to_string(), "Build".to_string())]);
+    }
+
+    #[test]
+    fn a_change_of_case_is_no_replacement() {
+        let words = vec!["GitHub".to_string()];
+        let (text, replaced) = apply_custom_words_with_replacements("auf github", &words, 0.18);
+        assert_eq!(text, "auf GitHub");
+        assert!(replaced.is_empty());
+    }
+
+    #[test]
+    fn each_replacement_is_reported_once() {
+        let words = vec!["Build".to_string()];
+        let (_, replaced) =
+            apply_custom_words_with_replacements("Bild und Bild, Bild.", &words, 0.18);
+        assert_eq!(replaced, vec![("Bild".to_string(), "Build".to_string())]);
     }
 
     #[test]
