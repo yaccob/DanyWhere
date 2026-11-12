@@ -8,6 +8,10 @@
 //! in `Info.plist` (`NSServices`); its shortcut lives in the system's services
 //! settings (domain `pbs`, key `NSServicesStatus`), where System Settings →
 //! Keyboard → Keyboard Shortcuts → Services writes it too.
+//!
+//! Called during a dictation, the service ends the recording and answers
+//! once the text is ready, so one shortcut both ends and inserts a
+//! dictation (user, 2026-11-12). The calling app waits meanwhile.
 
 /// The Objective-C message named by `NSMessage` in `Info.plist`; the
 /// provider's method is `insertLastDictation:userData:error:`.
@@ -46,6 +50,156 @@ pub fn service_reply(
         }),
         _ => ServiceReply::Nothing,
     }
+}
+
+/// How a call of the service is answered, by the dictation's phase.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CallPlan {
+    /// Answer right away with the last dictation (or nothing).
+    AnswerNow,
+    /// End the recording, then answer once its text is ready.
+    StopAndWait,
+    /// The dictation is being transcribed: answer once its text is ready.
+    Wait,
+}
+
+/// Decides how to answer a call. `waits_for_service` is whether finished
+/// dictations wait for this service (no Accessibility); otherwise a call
+/// during a dictation keeps inserting nothing, as before.
+pub fn plan_call(waits_for_service: bool, phase: crate::tray::TrayIconState) -> CallPlan {
+    use crate::tray::TrayIconState;
+    match (waits_for_service, phase) {
+        (true, TrayIconState::Recording) => CallPlan::StopAndWait,
+        (true, TrayIconState::Transcribing) => CallPlan::Wait,
+        _ => CallPlan::AnswerNow,
+    }
+}
+
+/// How long a call waits for the dictation it ended. The calling app waits
+/// as long as `NSTimeout` in `Info.plist`, which must be longer.
+pub const WAIT_FOR_DICTATION: std::time::Duration = std::time::Duration::from_secs(20);
+
+#[derive(Debug)]
+enum WaitState {
+    Idle,
+    Waiting,
+    Delivered(String),
+}
+
+/// Hands a finished dictation's text to the service call waiting for it.
+/// The dictation's pipeline delivers; the call takes the text or gives up.
+#[derive(Debug)]
+pub struct WaitSlot {
+    state: std::sync::Mutex<WaitState>,
+}
+
+impl WaitSlot {
+    pub const fn new() -> Self {
+        Self {
+            state: std::sync::Mutex::new(WaitState::Idle),
+        }
+    }
+
+    fn lock(&self) -> std::sync::MutexGuard<'_, WaitState> {
+        self.state
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+    }
+
+    /// A call starts waiting. `false` when another call already waits.
+    pub fn begin(&self) -> bool {
+        let mut state = self.lock();
+        match *state {
+            WaitState::Idle => {
+                *state = WaitState::Waiting;
+                true
+            }
+            WaitState::Waiting | WaitState::Delivered(_) => false,
+        }
+    }
+
+    /// The pipeline hands over a dictation's text. `true` when a call waits
+    /// for it and will insert it, `false` when no call waits.
+    pub fn deliver(&self, text: &str) -> bool {
+        let mut state = self.lock();
+        match *state {
+            WaitState::Waiting => {
+                *state = WaitState::Delivered(text.to_string());
+                true
+            }
+            WaitState::Idle | WaitState::Delivered(_) => false,
+        }
+    }
+
+    /// The delivered text, if it has arrived; the call keeps waiting if not.
+    pub fn take(&self) -> Option<String> {
+        let mut state = self.lock();
+        match std::mem::replace(&mut *state, WaitState::Idle) {
+            WaitState::Delivered(text) => Some(text),
+            other => {
+                *state = other;
+                None
+            }
+        }
+    }
+
+    /// The call stops waiting. Returns a text delivered at the last moment,
+    /// so it is inserted rather than lost.
+    pub fn give_up(&self) -> Option<String> {
+        match std::mem::replace(&mut *self.lock(), WaitState::Idle) {
+            WaitState::Delivered(text) => Some(text),
+            WaitState::Idle | WaitState::Waiting => None,
+        }
+    }
+}
+
+impl Default for WaitSlot {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// What a waiting call does next.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum WaitStep {
+    KeepWaiting,
+    /// The dictation's text arrived: insert it.
+    Insert(String),
+    /// The dictation ended without text (empty, cancelled or failed).
+    EndedWithoutText,
+    /// Waited too long: insert nothing; the dictation's text waits as usual.
+    GaveUp,
+}
+
+/// One round of a waiting call: `dictation_in_progress` is whether the
+/// dictation still records or transcribes, `deadline_passed` whether
+/// [`WAIT_FOR_DICTATION`] is over.
+pub fn next_wait_step(
+    slot: &WaitSlot,
+    dictation_in_progress: bool,
+    deadline_passed: bool,
+) -> WaitStep {
+    if let Some(text) = slot.take() {
+        return WaitStep::Insert(text);
+    }
+    if dictation_in_progress && !deadline_passed {
+        return WaitStep::KeepWaiting;
+    }
+    match slot.give_up() {
+        Some(text) => WaitStep::Insert(text),
+        None if !dictation_in_progress => WaitStep::EndedWithoutText,
+        None => WaitStep::GaveUp,
+    }
+}
+
+/// The one call that may wait for a dictation at a time.
+static WAITING_CALL: WaitSlot = WaitSlot::new();
+
+/// Hands a finished dictation's text to a service call waiting for it.
+/// `true` when the call takes it: the dictation is then inserted, and the
+/// waiting sound and the "Ready" notice are not needed.
+pub fn deliver_to_waiting_call(text: &str) -> bool {
+    WAITING_CALL.deliver(text)
 }
 
 /// The key under which `NSServicesStatus` keeps a service's settings.
@@ -234,6 +388,66 @@ fn answer_call(app: &tauri::AppHandle) -> Option<String> {
     }
 }
 
+/// Answers a call made during a dictation, as `plan` says: ends the
+/// recording if needed, then waits for its text and returns it. `pump` lets
+/// the main thread's other work run for a moment between two checks; the
+/// service is answered on the main thread, which the dictation may need.
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+fn answer_waiting_call(
+    app: &tauri::AppHandle,
+    plan: CallPlan,
+    mut pump: impl FnMut(),
+) -> Option<String> {
+    use tauri::Manager;
+
+    if !WAITING_CALL.begin() {
+        log::info!("Insert Last Dictation: another call already waits for this dictation.");
+        return None;
+    }
+    if plan == CallPlan::StopAndWait {
+        if let Some(coordinator) = app.try_state::<crate::TranscriptionCoordinator>() {
+            coordinator.finish_recording();
+        }
+        log::info!("Insert Last Dictation: ending the recording and waiting for its text.");
+    } else {
+        log::info!("Insert Last Dictation: waiting for the dictation's text.");
+    }
+    let started = std::time::Instant::now();
+    loop {
+        let step = next_wait_step(
+            &WAITING_CALL,
+            crate::tray::dictation_in_progress(app),
+            started.elapsed() >= WAIT_FOR_DICTATION,
+        );
+        match step {
+            WaitStep::KeepWaiting => pump(),
+            WaitStep::Insert(text) => {
+                log::info!(
+                    "Insert Last Dictation: handing over the dictation after {:?}.",
+                    started.elapsed()
+                );
+                crate::overlay::hide_ready_notice(app);
+                let settings = crate::settings::get_settings(app);
+                return match service_reply(false, Some(&text), settings.append_trailing_space) {
+                    ServiceReply::Insert(text) => Some(text),
+                    ServiceReply::NotReady | ServiceReply::Nothing => None,
+                };
+            }
+            WaitStep::EndedWithoutText => {
+                log::info!("Insert Last Dictation: the dictation ended without text.");
+                return None;
+            }
+            WaitStep::GaveUp => {
+                log::info!(
+                    "Insert Last Dictation: gave up after {:?}; the dictation waits as usual.",
+                    started.elapsed()
+                );
+                return None;
+            }
+        }
+    }
+}
+
 /// Offers the service to other apps. Call once on the main thread at startup.
 pub fn register(app: &tauri::AppHandle) {
     #[cfg(target_os = "macos")]
@@ -321,12 +535,15 @@ mod macos {
     use objc2_app_kit::{
         NSApplication, NSPasteboard, NSPasteboardTypeString, NSUpdateDynamicServices,
     };
-    use objc2_foundation::{NSBundle, NSDictionary, NSObject, NSString, NSUserDefaults};
+    use objc2_foundation::{
+        NSBundle, NSDate, NSDefaultRunLoopMode, NSDictionary, NSObject, NSRunLoop, NSString,
+        NSUserDefaults,
+    };
     use tauri::AppHandle;
 
     use super::{
-        answer_call, should_set_default_shortcut, status_entry_value, status_key,
-        DEFAULT_KEY_EQUIVALENT, SERVICE_MESSAGE,
+        answer_call, answer_waiting_call, plan_call, should_set_default_shortcut,
+        status_entry_value, status_key, CallPlan, DEFAULT_KEY_EQUIVALENT, SERVICE_MESSAGE,
     };
 
     pub struct ProviderIvars {
@@ -351,7 +568,17 @@ mod macos {
                 _user_data: Option<&NSString>,
                 _error: *mut *mut NSString,
             ) {
-                let Some(text) = answer_call(&self.ivars().app) else {
+                let app = &self.ivars().app;
+                let settings = crate::settings::get_settings(app);
+                let waits_for_service = crate::delivery::dictation_target(
+                    &settings,
+                    crate::delivery::INSERT_SERVICE_AVAILABLE,
+                ) == crate::delivery::DictationTarget::InsertService;
+                let reply = match plan_call(waits_for_service, crate::tray::dictation_phase(app)) {
+                    CallPlan::AnswerNow => answer_call(app),
+                    plan => answer_waiting_call(app, plan, pump_main_run_loop),
+                };
+                let Some(text) = reply else {
                     return;
                 };
                 pasteboard.clearContents();
@@ -364,6 +591,18 @@ mod macos {
             }
         }
     );
+
+    /// Runs the main thread's run loop for a moment, so that work the
+    /// dictation queues there keeps going while the service call waits.
+    fn pump_main_run_loop() {
+        // SAFETY: NSDefaultRunLoopMode is a read-only framework static.
+        let mode = unsafe { NSDefaultRunLoopMode };
+        let until = NSDate::dateWithTimeIntervalSinceNow(PUMP_INTERVAL_SECONDS);
+        NSRunLoop::currentRunLoop().runMode_beforeDate(mode, &until);
+    }
+
+    /// How long one round of [`pump_main_run_loop`] runs at most.
+    const PUMP_INTERVAL_SECONDS: f64 = 0.02;
 
     impl InsertServiceProvider {
         fn new(app: AppHandle) -> Retained<Self> {
@@ -530,6 +769,173 @@ mod tests {
         let start = rest.find("<string>")? + "<string>".len();
         let end = start + rest[start..].find("</string>")?;
         Some(&rest[start..end])
+    }
+
+    // -----------------------------------------------------------------
+    // The shortcut also ends a dictation (user, 2026-11-12): a call during
+    // a dictation stops the recording and inserts the text once it's ready.
+    // -----------------------------------------------------------------
+
+    use crate::tray::TrayIconState;
+
+    #[test]
+    fn a_call_while_recording_ends_the_recording_and_waits() {
+        assert_eq!(
+            plan_call(true, TrayIconState::Recording),
+            CallPlan::StopAndWait
+        );
+    }
+
+    #[test]
+    fn a_call_while_transcribing_waits_for_the_text() {
+        assert_eq!(plan_call(true, TrayIconState::Transcribing), CallPlan::Wait);
+    }
+
+    #[test]
+    fn a_call_without_a_dictation_answers_right_away() {
+        assert_eq!(plan_call(true, TrayIconState::Idle), CallPlan::AnswerNow);
+    }
+
+    #[test]
+    fn with_accessibility_a_call_never_ends_or_waits_for_a_dictation() {
+        for phase in [
+            TrayIconState::Idle,
+            TrayIconState::Recording,
+            TrayIconState::Transcribing,
+        ] {
+            assert_eq!(plan_call(false, phase), CallPlan::AnswerNow, "{phase:?}");
+        }
+    }
+
+    #[test]
+    fn a_waiting_call_gets_the_delivered_text() {
+        let slot = WaitSlot::new();
+        assert!(slot.begin());
+        assert_eq!(slot.take(), None, "nothing delivered yet");
+        assert!(slot.deliver("Hallo Welt"));
+        assert_eq!(slot.take(), Some("Hallo Welt".to_string()));
+    }
+
+    #[test]
+    fn without_a_waiting_call_nothing_is_delivered() {
+        let slot = WaitSlot::new();
+        assert!(!slot.deliver("Hallo Welt"));
+        assert_eq!(slot.take(), None);
+    }
+
+    #[test]
+    fn only_one_call_waits_at_a_time() {
+        let slot = WaitSlot::new();
+        assert!(slot.begin());
+        assert!(
+            !slot.begin(),
+            "a second call must not wait for the same text"
+        );
+    }
+
+    #[test]
+    fn a_call_that_gave_up_frees_the_slot_and_refuses_later_text() {
+        let slot = WaitSlot::new();
+        assert!(slot.begin());
+        assert_eq!(slot.give_up(), None);
+        assert!(
+            !slot.deliver("zu spät"),
+            "nobody waits any more: the text must take the normal path"
+        );
+        assert!(slot.begin(), "the next call may wait again");
+    }
+
+    #[test]
+    fn a_text_delivered_at_the_last_moment_is_not_lost() {
+        let slot = WaitSlot::new();
+        assert!(slot.begin());
+        assert!(slot.deliver("gerade noch"));
+        assert_eq!(slot.give_up(), Some("gerade noch".to_string()));
+    }
+
+    #[test]
+    fn after_the_text_was_taken_the_slot_is_free() {
+        let slot = WaitSlot::new();
+        assert!(slot.begin());
+        assert!(slot.deliver("eins"));
+        assert_eq!(slot.take(), Some("eins".to_string()));
+        assert!(!slot.deliver("zwei"));
+        assert!(slot.begin());
+    }
+
+    #[test]
+    fn a_waiting_call_keeps_waiting_while_the_dictation_runs() {
+        let slot = WaitSlot::new();
+        assert!(slot.begin());
+        assert_eq!(next_wait_step(&slot, true, false), WaitStep::KeepWaiting);
+    }
+
+    #[test]
+    fn a_waiting_call_inserts_the_text_once_it_arrives() {
+        let slot = WaitSlot::new();
+        assert!(slot.begin());
+        assert!(slot.deliver("fertig"));
+        assert_eq!(
+            next_wait_step(&slot, true, false),
+            WaitStep::Insert("fertig".into())
+        );
+    }
+
+    #[test]
+    fn a_text_that_arrives_as_the_dictation_ends_is_inserted() {
+        let slot = WaitSlot::new();
+        assert!(slot.begin());
+        assert!(slot.deliver("fertig"));
+        assert_eq!(
+            next_wait_step(&slot, false, false),
+            WaitStep::Insert("fertig".into())
+        );
+    }
+
+    #[test]
+    fn a_dictation_that_ends_without_text_ends_the_wait() {
+        let slot = WaitSlot::new();
+        assert!(slot.begin());
+        assert_eq!(
+            next_wait_step(&slot, false, false),
+            WaitStep::EndedWithoutText
+        );
+        assert!(!slot.deliver("später"), "the slot must be free again");
+    }
+
+    #[test]
+    fn a_waiting_call_gives_up_at_the_deadline() {
+        let slot = WaitSlot::new();
+        assert!(slot.begin());
+        assert_eq!(next_wait_step(&slot, true, true), WaitStep::GaveUp);
+        assert!(
+            !slot.deliver("zu spät"),
+            "the text must take the normal path"
+        );
+    }
+
+    #[test]
+    fn a_text_delivered_at_the_deadline_is_still_inserted() {
+        let slot = WaitSlot::new();
+        assert!(slot.begin());
+        assert!(slot.deliver("knapp"));
+        assert_eq!(
+            next_wait_step(&slot, true, true),
+            WaitStep::Insert("knapp".into())
+        );
+    }
+
+    #[test]
+    fn the_calling_app_waits_longer_than_danywhere() {
+        let plist = read_manifest_file("Info.plist");
+        let timeout_ms: u128 = string_after_key(&plist, "NSTimeout")
+            .and_then(|value| value.parse().ok())
+            .expect("Info.plist sets NSTimeout in milliseconds");
+        assert!(
+            timeout_ms >= WAIT_FOR_DICTATION.as_millis() + 5_000,
+            "NSTimeout {timeout_ms} ms must leave DanyWhere's {} ms wait room to answer",
+            WAIT_FOR_DICTATION.as_millis()
+        );
     }
 
     #[test]

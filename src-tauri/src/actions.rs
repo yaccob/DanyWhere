@@ -878,6 +878,9 @@ impl ShortcutAction for TranscribeAction {
                                         // UI while this paste ran.
                                         let owns_ui =
                                             || RECORDING_SESSION.load(Ordering::SeqCst) == session;
+                                        // DanyWhere: the "Insert Last Dictation"
+                                        // service may be waiting for this text.
+                                        let text_for_service = final_text.clone();
                                         let (outcome, notice) =
                                             match utils::paste(final_text, ah_clone.clone()) {
                                                 Ok(()) => {
@@ -911,11 +914,22 @@ impl ShortcutAction for TranscribeAction {
                                                     )
                                                 }
                                             };
+                                        // DanyWhere: a service call that ended
+                                        // this dictation inserts it now, so it
+                                        // doesn't wait for the user.
+                                        let inserted_by_service = outcome
+                                            == TranscriptionOutcome::Typed
+                                            && crate::insert_service::deliver_to_waiting_call(
+                                                &text_for_service,
+                                            );
                                         // DanyWhere: a sound says the text waits
                                         // to be pasted or inserted, also when post-
                                         // processing failed; not while a newer
                                         // session records.
-                                        if outcome == TranscriptionOutcome::Typed && owns_ui() {
+                                        if outcome == TranscriptionOutcome::Typed
+                                            && owns_ui()
+                                            && !inserted_by_service
+                                        {
                                             crate::delivery::play_sound_if_waiting_for_user(
                                                 &ah_clone,
                                             );
@@ -923,6 +937,9 @@ impl ShortcutAction for TranscribeAction {
                                         match (owns_ui(), notice) {
                                             (true, Some(notice)) => {
                                                 notices::raise(&ah_clone, notice)
+                                            }
+                                            (true, None) if inserted_by_service => {
+                                                utils::hide_recording_overlay(&ah_clone)
                                             }
                                             // DanyWhere: says where the text waits
                                             // when it was not pasted.

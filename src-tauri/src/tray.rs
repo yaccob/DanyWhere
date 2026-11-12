@@ -261,6 +261,14 @@ pub fn dictation_in_progress(app: &AppHandle) -> bool {
         .is_some_and(|state| state.lock().icon_state.is_busy())
 }
 
+/// DanyWhere: whether a dictation is recording, transcribing or done, as the
+/// tray shows it (the "Insert Last Dictation" service ends a recording).
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+pub fn dictation_phase(app: &AppHandle) -> TrayIconState {
+    app.try_state::<TrayState>()
+        .map_or(TrayIconState::Idle, |state| state.lock().icon_state)
+}
+
 /// Re-syncs the tray after something other than the recording state changed
 /// (theme, Secure Input warning, notices). The recording state itself is
 /// preserved.

@@ -27,8 +27,11 @@
       <!-- Present (even empty) so macOS enables the service by default. -->
       <key>NSRequiredContext</key>
       <dict/>
+      <!-- Milliseconds the calling app waits. A call during a dictation ends
+           the recording and answers once the text is ready; DanyWhere gives
+           up after 20 s (WAIT_FOR_DICTATION), well within this. -->
       <key>NSTimeout</key>
-      <string>5000</string>
+      <string>30000</string>
     </dict>
   </array>
 </dict>

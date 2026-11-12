@@ -204,8 +204,13 @@ enum Effect {
 /// Commands processed sequentially by the coordinator thread.
 enum Command {
     Input(InputEvent),
-    Cancel { recording_was_active: bool },
+    Cancel {
+        recording_was_active: bool,
+    },
     ProcessingFinished,
+    /// DanyWhere: end the running recording, if any (the "Insert Last
+    /// Dictation" service, which then inserts its text).
+    Finish,
 }
 
 /// Decide whether a key-up should be deferred (so auto-repeat can cancel it)
@@ -526,6 +531,20 @@ impl CoordinatorState {
         }
     }
 
+    /// DanyWhere: the "Insert Last Dictation" service ends the recording, so
+    /// that it can insert the text once it's ready. Stops a running recording
+    /// however it was started; never starts one and leaves a press remembered
+    /// during processing alone.
+    fn on_finish(&mut self) -> Option<Effect> {
+        let Stage::Recording(binding_id) = &self.stage else {
+            return None;
+        };
+        let binding_id = binding_id.clone();
+        // A key-up still in its grace window belongs to this recording.
+        self.pending_release = None;
+        Some(self.begin_processing(binding_id, "insert-service".to_string()))
+    }
+
     fn on_processing_finished(&mut self) -> Option<Effect> {
         self.stage = Stage::Idle;
         self.hold = None;
@@ -657,6 +676,11 @@ impl TranscriptionCoordinator {
                                 run_effect(&app, &mut state, effect);
                             }
                         }
+                        Command::Finish => {
+                            if let Some(effect) = state.on_finish() {
+                                run_effect(&app, &mut state, effect);
+                            }
+                        }
                     }
                     if !was_locked && state.is_recording_locked() {
                         emit_recording_phase(&app, RecordingPhase::Locked);
@@ -744,6 +768,14 @@ impl TranscriptionCoordinator {
 
     pub fn notify_processing_finished(&self) {
         if self.tx.send(Command::ProcessingFinished).is_err() {
+            warn!("Transcription coordinator channel closed");
+        }
+    }
+
+    /// DanyWhere: ends the running recording, however it was started, as the
+    /// next press of its shortcut would. Does nothing without a recording.
+    pub fn finish_recording(&self) {
+        if self.tx.send(Command::Finish).is_err() {
             warn!("Transcription coordinator channel closed");
         }
     }
@@ -1244,6 +1276,82 @@ mod tests {
             Some(Effect::Start { binding_id, .. }) => assert_eq!(binding_id, BINDING),
             other => panic!("expected Start for '{BINDING}', got {other:?}"),
         }
+    }
+
+    // ---------------------------------------------------------------------
+    // DanyWhere: the "Insert Last Dictation" service ends a recording, so it
+    // can insert the text as soon as it's ready (user, 2026-11-12).
+    // ---------------------------------------------------------------------
+
+    #[test]
+    fn finish_stops_a_toggle_recording() {
+        let mut state = CoordinatorState::new();
+        let now = Instant::now();
+        assert!(matches!(
+            state.on_input(toggle_input(false), now),
+            Some(Effect::Start { .. })
+        ));
+        assert_stop(state.on_finish(), BINDING, BINDING);
+        assert_eq!(state.stage, Stage::Processing);
+    }
+
+    #[test]
+    fn finish_keeps_the_post_process_action_of_the_recording() {
+        let mut state = CoordinatorState::new();
+        let now = Instant::now();
+        assert!(matches!(
+            state.on_input(toggle_input_for(OTHER_BINDING, false), now),
+            Some(Effect::Start { .. })
+        ));
+        assert_stop(state.on_finish(), OTHER_BINDING, OTHER_BINDING);
+    }
+
+    #[test]
+    fn finish_stops_a_held_push_to_talk_recording_and_drops_its_release() {
+        let mut state = CoordinatorState::new();
+        let now = Instant::now();
+        assert!(matches!(
+            state.on_input(ptt_input(true), now),
+            Some(Effect::Start { .. })
+        ));
+        // The key comes up; its release waits out the grace window.
+        assert!(state
+            .on_input(ptt_input(false), now + Duration::from_millis(500))
+            .is_none());
+        assert!(state.grace_deadline().is_some());
+
+        assert_stop(state.on_finish(), BINDING, BINDING);
+        assert!(
+            state.grace_deadline().is_none(),
+            "the stopped recording's release must not be resolved again"
+        );
+        assert!(state.on_grace_expired().is_none());
+        assert_eq!(state.stage, Stage::Processing);
+    }
+
+    #[test]
+    fn finish_while_idle_does_nothing() {
+        let mut state = CoordinatorState::new();
+        assert!(state.on_finish().is_none());
+        assert_eq!(state.stage, Stage::Idle);
+    }
+
+    #[test]
+    fn finish_while_processing_keeps_a_remembered_press() {
+        let mut state = CoordinatorState::new();
+        let now = Instant::now();
+        drive_into_processing(&mut state, now);
+        // The user starts the next dictation while this one is transcribing.
+        assert!(state
+            .on_input(toggle_input(true), now + Duration::from_millis(200))
+            .is_none());
+
+        assert!(state.on_finish().is_none());
+        assert_eq!(state.stage, Stage::Processing);
+        assert!(
+            matches!(state.on_processing_finished(), Some(Effect::Start { .. })),
+            "the remembered press must still start the next recording"
+        );
     }
 
     // ---------------------------------------------------------------------
