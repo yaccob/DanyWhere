@@ -13,6 +13,8 @@ mod delivery;
 mod dictation_key_inserts;
 pub mod engine_supervisor;
 mod helpers;
+// DanyWhere: corrections in History.
+mod history_corrections;
 mod input;
 mod insert_service;
 mod language_detection;
@@ -846,6 +848,9 @@ pub fn run(cli_args: CliArgs) {
             commands::history::delete_history_entry,
             commands::history::retry_history_entry_transcription,
             commands::history::reprocess_history_entry,
+            // DanyWhere: corrections in History.
+            history_corrections::correct_history_entry,
+            history_corrections::delete_history_entry_post_processing,
             commands::history::cancel_history_entry_transcription,
             commands::history::transcribe_file,
             commands::history::update_history_limit,

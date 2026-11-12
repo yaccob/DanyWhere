@@ -457,20 +457,25 @@ impl TranscriptionJobManager {
         entry: &HistoryEntry,
         cancelled: &AtomicBool,
     ) -> Result<JobEnd> {
-        if entry.transcription_text.trim().is_empty() {
+        // DanyWhere: from the user's correction of the transcription, if any.
+        let transcript = crate::history_corrections::transcript_for_post_processing(entry);
+        if transcript.trim().is_empty() {
             return Err(anyhow!("The entry has no transcript to post-process"));
         }
         let processed = tauri::async_runtime::block_on(process_transcription_output(
-            &self.app,
-            &entry.transcription_text,
-            true,
+            &self.app, transcript, true,
         ));
         if cancelled.load(Ordering::Acquire) {
             return Ok(JobEnd::Cancelled);
         }
         let post_process_failed = match processed.post_processed_text {
             Some(text) => {
-                hm.update_post_processing(entry.id, text, processed.post_process_prompt)?;
+                hm.update_post_processing(
+                    entry.id,
+                    text,
+                    processed.post_process_prompt,
+                    entry.transcription_correction.clone(),
+                )?;
                 false
             }
             None => true,

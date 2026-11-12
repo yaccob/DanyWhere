@@ -6,12 +6,14 @@ import React, {
   useState,
 } from "react";
 import { readFile } from "@tauri-apps/plugin-fs";
+import { ask } from "@tauri-apps/plugin-dialog";
 import {
   Check,
   Copy,
   FileAudio,
   FilePlus,
   FolderOpen,
+  Pencil,
   RotateCcw,
   Star,
   Trash2,
@@ -24,8 +26,10 @@ import { notify } from "@/stores/noticeStore";
 import {
   commands,
   events,
+  type CorrectionPart,
   type HistoryEntry,
   type HistoryUpdatePayload,
+  type Result,
 } from "@/bindings";
 import {
   useTranscriptionJobsStore,
@@ -35,6 +39,12 @@ import { formatDateTime } from "@/utils/dateFormat";
 import { AudioPlayer, AudioPlayerGroup } from "../../ui/AudioPlayer";
 import { Button } from "../../ui/Button";
 import { copyToClipboard } from "./clipboard";
+import {
+  correctionsLostBy,
+  isCorrected,
+  isSaveShortcut,
+  shownPart,
+} from "./corrections";
 import {
   postProcessAvailability,
   postProcessedText,
@@ -348,6 +358,8 @@ export const HistorySettings: React.FC = () => {
                 postProcess={postProcess}
                 reprocess={commands.reprocessHistoryEntry}
                 cancelTranscription={commands.cancelHistoryEntryTranscription}
+                correct={commands.correctHistoryEntry}
+                deletePostProcessing={commands.deleteHistoryEntryPostProcessing}
               />
             ))}
           </div>
@@ -398,6 +410,13 @@ interface HistoryEntryProps {
   postProcess: PostProcessAvailability;
   reprocess: (id: number, mode: ReprocessMode) => Promise<void>;
   cancelTranscription: (id: number) => Promise<void>;
+  // DanyWhere: corrections in History.
+  correct: (
+    id: number,
+    part: CorrectionPart,
+    text: string | null,
+  ) => Promise<Result<HistoryEntry, string>>;
+  deletePostProcessing: (id: number) => Promise<Result<HistoryEntry, string>>;
 }
 
 const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
@@ -410,6 +429,8 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
   postProcess,
   reprocess,
   cancelTranscription,
+  correct,
+  deletePostProcessing,
 }) => {
   const { t, i18n } = useTranslation();
   const [showCopied, setShowCopied] = useState(false);
@@ -421,6 +442,10 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
   // original is asked for.
   const [showOriginal, setShowOriginal] = useState(false);
   const textRef = useRef<HTMLParagraphElement>(null);
+  // DanyWhere: the part being corrected, and the text typed so far.
+  const [editing, setEditing] = useState<CorrectionPart | null>(null);
+  const [draft, setDraft] = useState("");
+  const [saving, setSaving] = useState(false);
 
   // Queued, or being transcribed or post-processed in the background.
   const retrying = job !== undefined;
@@ -430,6 +455,8 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
   const hasTranscription = entry.transcription_text.trim().length > 0;
   const hasPostProcessed = postProcessedText(entry) !== null;
   const text = shownText(entry, showOriginal);
+  const part = shownPart(entry, showOriginal);
+  const corrected = isCorrected(entry, part);
   const folded = hasTranscription && !retrying && !expanded;
 
   // Offer "Show more" only when the folded text is actually cut off.
@@ -441,7 +468,8 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
     const observer = new ResizeObserver(measure);
     observer.observe(el);
     return () => observer.disconnect();
-  }, [folded, text]);
+    // DanyWhere: `editing` remounts the paragraph after a correction.
+  }, [folded, text, editing]);
 
   const handleLoadAudio = useCallback(
     () => getAudioUrl(entry.file_name),
@@ -461,6 +489,66 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
 
     setShowCopied(true);
     setTimeout(() => setShowCopied(false), 2000);
+  };
+
+  const startEditing = () => {
+    setDraft(text);
+    setEditing(part);
+  };
+
+  const saveCorrection = async () => {
+    if (editing === null || draft.trim().length === 0) return;
+    setSaving(true);
+    try {
+      const result = await correct(entry.id, editing, draft);
+      if (result.status !== "ok") throw new Error(String(result.error));
+      setEditing(null);
+    } catch (error) {
+      console.error("Failed to save the correction:", error);
+      notify({ title: t("settings.history.correctError") });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const revertCorrection = async () => {
+    try {
+      const result = await correct(entry.id, part, null);
+      if (result.status !== "ok") throw new Error(String(result.error));
+    } catch (error) {
+      console.error("Failed to undo the correction:", error);
+      notify({ title: t("settings.history.correctError") });
+    }
+  };
+
+  const handleDeletePostProcessing = async () => {
+    try {
+      const result = await deletePostProcessing(entry.id);
+      if (result.status !== "ok") throw new Error(String(result.error));
+      setShowOriginal(false);
+    } catch (error) {
+      console.error("Failed to delete the post-processing:", error);
+      notify({ title: t("settings.history.deletePostProcessingError") });
+    }
+  };
+
+  // Post-processing or transcribing again replaces corrections: ask first.
+  const runReprocess = async (mode: ReprocessMode, message: string) => {
+    if (correctionsLostBy(entry, mode)) {
+      let replace = false;
+      try {
+        replace = await ask(message, {
+          title: t("settings.history.confirmReplaceTitle"),
+          kind: "warning",
+          okLabel: t("settings.history.confirmReplace"),
+          cancelLabel: t("settings.history.cancelCorrection"),
+        });
+      } catch (error) {
+        console.error("Failed to ask before replacing a correction:", error);
+      }
+      if (!replace) return;
+    }
+    void reprocess(entry.id, mode);
   };
 
   const handleDeleteEntry = async () => {
@@ -513,6 +601,13 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
             )}
           </IconButton>
           <IconButton
+            onClick={startEditing}
+            disabled={!hasTranscription || retrying || editing !== null}
+            title={t("settings.history.edit")}
+          >
+            <Pencil width={16} height={16} />
+          </IconButton>
+          <IconButton
             onClick={onToggleSaved}
             active={entry.saved}
             title={
@@ -542,7 +637,14 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
             <>
               {hasTranscription && (
                 <IconButton
-                  onClick={() => void reprocess(entry.id, "post_process")}
+                  onClick={() =>
+                    void runReprocess(
+                      "post_process",
+                      t(
+                        "settings.history.confirmPostProcessReplacesCorrection",
+                      ),
+                    )
+                  }
                   unavailable={postProcess !== "ready"}
                   title={
                     postProcess === "ready"
@@ -558,9 +660,11 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
               {!entry.recording_removed && (
                 <IconButton
                   onClick={(event) =>
-                    void reprocess(
-                      entry.id,
+                    void runReprocess(
                       retranscribeMode(event.shiftKey, postProcess),
+                      t(
+                        "settings.history.confirmRetranscribeReplacesCorrection",
+                      ),
                     )
                   }
                   title={
@@ -584,42 +688,91 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
       </div>
 
       <div className="flex flex-col items-start gap-1 pb-2">
-        <p
-          ref={textRef}
-          className={`italic text-sm w-full ${
-            retrying
-              ? ""
+        {editing !== null && (
+          <div className="w-full flex flex-col gap-2">
+            <textarea
+              value={draft}
+              onChange={(event) => setDraft(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Escape") {
+                  event.preventDefault();
+                  setEditing(null);
+                } else if (isSaveShortcut(event)) {
+                  event.preventDefault();
+                  void saveCorrection();
+                }
+              }}
+              autoFocus
+              rows={Math.min(12, Math.max(3, draft.split("\n").length + 1))}
+              aria-label={t("settings.history.edit")}
+              className="w-full italic text-sm text-text bg-background border border-line rounded-md p-2 resize-y focus:outline-none focus:border-logo-primary"
+            />
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                onClick={() => void saveCorrection()}
+                disabled={saving || draft.trim().length === 0}
+              >
+                {t("settings.history.saveCorrection")}
+              </Button>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => setEditing(null)}
+              >
+                {t("settings.history.cancelCorrection")}
+              </Button>
+            </div>
+          </div>
+        )}
+        {editing === null && (
+          <p
+            ref={textRef}
+            className={`italic text-sm w-full ${
+              retrying
+                ? ""
+                : hasTranscription
+                  ? "text-text select-text cursor-text whitespace-pre-wrap break-words"
+                  : "text-ink-3"
+            }`}
+            style={
+              retrying
+                ? TRANSCRIBE_PULSE
+                : folded
+                  ? {
+                      display: "-webkit-box",
+                      WebkitLineClamp: FOLDED_LINES,
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
+                    }
+                  : undefined
+            }
+          >
+            {retrying && <TranscribePulseKeyframes />}
+            {retrying
+              ? progressText
               : hasTranscription
-                ? "text-text select-text cursor-text whitespace-pre-wrap break-words"
-                : "text-ink-3"
-          }`}
-          style={
-            retrying
-              ? TRANSCRIBE_PULSE
-              : folded
-                ? {
-                    display: "-webkit-box",
-                    WebkitLineClamp: FOLDED_LINES,
-                    WebkitBoxOrient: "vertical",
-                    overflow: "hidden",
-                  }
-                : undefined
-          }
-        >
-          {retrying && <TranscribePulseKeyframes />}
-          {retrying
-            ? progressText
-            : hasTranscription
-              ? text
-              : entry.source_name
-                ? // Cancelled, interrupted by a quit, or failed.
-                  t("settings.history.notTranscribed")
-                : t("settings.history.transcriptionFailed")}
-        </p>
+                ? text
+                : entry.source_name
+                  ? // Cancelled, interrupted by a quit, or failed.
+                    t("settings.history.notTranscribed")
+                  : t("settings.history.transcriptionFailed")}
+          </p>
+        )}
+        {hasPostProcessed &&
+          entry.post_processing_outdated &&
+          part === "post_processing" &&
+          !retrying &&
+          editing === null && (
+            <p className="text-xs text-ink-3">
+              {t("settings.history.postProcessingOutdated")}
+            </p>
+          )}
         {hasTranscription &&
           !retrying &&
-          (expanded || overflows || hasPostProcessed) && (
-            <div className="flex items-center gap-4">
+          editing === null &&
+          (expanded || overflows || hasPostProcessed || corrected) && (
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
               {(expanded || overflows) && (
                 <button
                   type="button"
@@ -641,6 +794,30 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
                     ? t("settings.history.showPostProcessed")
                     : t("settings.history.showOriginal")}
                 </button>
+              )}
+              {hasPostProcessed && (
+                <button
+                  type="button"
+                  onClick={() => void handleDeletePostProcessing()}
+                  className="text-xs font-medium text-ink-3 hover:text-logo-primary cursor-pointer"
+                >
+                  {t("settings.history.deletePostProcessing")}
+                </button>
+              )}
+              {corrected && (
+                <span className="flex items-center gap-2">
+                  <span className="flex items-center gap-1 text-xs text-ink-3">
+                    <Pencil width={12} height={12} />
+                    {t("settings.history.corrected")}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => void revertCorrection()}
+                    className="text-xs font-medium text-ink-3 hover:text-logo-primary cursor-pointer"
+                  >
+                    {t("settings.history.revertCorrection")}
+                  </button>
+                </span>
               )}
             </div>
           )}

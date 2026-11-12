@@ -886,10 +886,9 @@ fn build_menu(app: &AppHandle, inputs: &MenuInputs) -> tauri::Result<(Menu<tauri
 }
 
 pub(crate) fn last_transcript_text(entry: &HistoryEntry) -> &str {
-    entry
-        .post_processed_text
-        .as_deref()
-        .unwrap_or(&entry.transcription_text)
+    // DanyWhere: the user's corrections from History count, in the same order
+    // History shows them.
+    crate::history_corrections::entry_text(entry)
 }
 
 pub fn set_tray_visibility(app: &AppHandle, visible: bool) {
@@ -1072,6 +1071,9 @@ mod tests {
             language: None,
             language_source: None,
             recording_removed: false,
+            transcription_correction: None,
+            post_processed_correction: None,
+            post_processing_outdated: false,
         }
     }
 
@@ -1150,6 +1152,22 @@ mod tests {
     fn falls_back_to_raw_transcription() {
         let entry = build_entry("raw", None);
         assert_eq!(last_transcript_text(&entry), "raw");
+    }
+
+    // DanyWhere: a correction made in History is what gets pasted again.
+    #[test]
+    fn uses_the_corrected_post_processed_text() {
+        let mut entry = build_entry("raw", Some("processed"));
+        entry.transcription_correction = Some("raw, corrected".to_string());
+        entry.post_processed_correction = Some("processed, corrected".to_string());
+        assert_eq!(last_transcript_text(&entry), "processed, corrected");
+    }
+
+    #[test]
+    fn uses_the_corrected_transcription_without_post_processing() {
+        let mut entry = build_entry("raw", None);
+        entry.transcription_correction = Some("raw, corrected".to_string());
+        assert_eq!(last_transcript_text(&entry), "raw, corrected");
     }
 
     #[test]
