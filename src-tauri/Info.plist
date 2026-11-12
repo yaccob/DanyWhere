@@ -4,6 +4,10 @@
 <dict>
   <key>NSMicrophoneUsageDescription</key>
   <string>Request microphone access to transcribe audio locally</string>
+  <!-- DanyWhere: shown when the user allows reading window titles without
+       Accessibility (src/window_capture.rs). -->
+  <key>NSAppleEventsUsageDescription</key>
+  <string>DanyWhere reads the title of the window you dictate into, so that post-processing can use your earlier dictations from the same window. It reads nothing else.</string>
   <!-- DanyWhere: "Insert Last Dictation" (src/insert_service.rs). It takes
        nothing and returns text, which the calling app inserts itself. The
        test builds' build script renames the menu item and port per variant. -->

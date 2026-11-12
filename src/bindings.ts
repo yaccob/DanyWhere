@@ -1100,6 +1100,53 @@ async deleteHistoryEntryPostProcessing(id: number) : Promise<Result<HistoryEntry
 }
 },
 /**
+ * Saves the settings for context from earlier dictations. Errors: `invalid`
+ * when a number is out of range.
+ */
+async setDictationContextSettings(value: DictationContextSettings) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("set_dictation_context_settings", { value }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * The History filtered to one window (the criterion context is chosen by).
+ */
+async getHistoryEntriesInWindow(appId: string, title: string) : Promise<Result<HistoryEntry[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_history_entries_in_window", { appId, title }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * The entries that went along as context, for the History to show them.
+ */
+async getHistoryEntriesByIds(ids: number[]) : Promise<Result<HistoryEntry[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_history_entries_by_ids", { ids }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * How DanyWhere learns window titles here, for the settings.
+ */
+async getWindowTitleAccess() : Promise<WindowTitleAccess> {
+    return await TAURI_INVOKE("get_window_title_access");
+},
+/**
+ * Shows macOS's dialog asking whether DanyWhere may control the app
+ * `bundle_id` (only reads its window title). The app has to be running.
+ */
+async requestWindowTitleAccess(bundleId: string) : Promise<AutomationStatus> {
+    return await TAURI_INVOKE("request_window_title_access", { bundleId });
+},
+/**
  * Stops the entry's background transcription: a queued one is dropped, a
  * running one stops after the chunk it is on. The entry keeps the text it
  * had before.
@@ -1299,7 +1346,12 @@ word_lists?: WordList[];
 /**
  * The additional list in use; `None`: only the global list.
  */
-active_word_list_id?: string | null; model_unload_timeout?: ModelUnloadTimeout; word_correction_threshold?: number; history_limit?: number; recording_retention_period?: RecordingRetentionPeriod; 
+active_word_list_id?: string | null; 
+/**
+ * DanyWhere: earlier dictations from the same window as context for
+ * post-processing (`dictation_context`).
+ */
+dictation_context?: DictationContextSettings; model_unload_timeout?: ModelUnloadTimeout; word_correction_threshold?: number; history_limit?: number; recording_retention_period?: RecordingRetentionPeriod; 
 /**
  * Migrated from `recording_retention_period` in `apply_settings_migrations`.
  */
@@ -1368,6 +1420,23 @@ export type AutoUnavailableReason =
  * None of their languages fit the model.
  */
 { kind: "no_match" }
+export type AutomationApp = { bundle_id: string; name: string; status: AutomationStatus }
+/**
+ * Whether DanyWhere may ask an app for its window title by Apple event.
+ */
+export type AutomationStatus = "allowed" | 
+/**
+ * The user was never asked.
+ */
+"not_asked" | 
+/**
+ * The user (or the Mac's management) said no.
+ */
+"denied" | 
+/**
+ * The app isn't running, so macOS can't tell.
+ */
+"not_running" | "unknown"
 export type AvailableAccelerators = { transcribe: string[]; gpu_devices: GpuDeviceOption[] }
 export type BindingResponse = { success: boolean; binding: ShortcutBinding | null; error: string | null }
 /**
@@ -1401,6 +1470,51 @@ export type CorrectionPart =
  */
 "post_processing"
 export type CustomSounds = { start: boolean; stop: boolean }
+/**
+ * The user's settings for context from earlier dictations.
+ */
+export type DictationContextSettings = { 
+/**
+ * Only dictations at most this many minutes older than the current one.
+ */
+age_limit_minutes?: number; 
+/**
+ * At most this many earlier dictations.
+ */
+max_entries?: number; 
+/**
+ * At most this many characters of earlier dictations; the oldest go
+ * first.
+ */
+char_budget?: number; 
+/**
+ * Apps whose windows are never captured, so their dictations never serve
+ * as context; matched against the app's id (bundle id, exe name) or name,
+ * ignoring case.
+ */
+excluded_apps?: string[] }
+/**
+ * What a History entry knows about its window and its context.
+ */
+export type EntryWindowContext = { window_app_id: string | null; window_app_name: string | null; window_title: string | null; 
+/**
+ * It was dictated (or post-processed again) with the context shortcut,
+ * so re-processing it from the History uses context again.
+ */
+context_requested: boolean; 
+/**
+ * The earlier entries its post-processing got as context.
+ */
+context_entry_ids: number[]; 
+/**
+ * When it last went to the provider as context of another entry (Unix
+ * seconds); `None`: never.
+ */
+sent_as_context_at: number | null; 
+/**
+ * What the word list replaced in its transcription.
+ */
+word_replacements: WordReplacement[] }
 export type GpuDeviceOption = { id: string; name: string; total_vram_mb: number }
 export type HistoryEntry = { id: number; file_name: string; timestamp: number; saved: boolean; title: string; transcription_text: string; post_processed_text: string | null; post_process_prompt: string | null; post_process_requested: boolean; 
 /**
@@ -1434,7 +1548,12 @@ post_processed_correction: string | null;
  * DanyWhere: the post-processed text was made from another version of
  * the transcription than the one the entry has now.
  */
-post_processing_outdated: boolean }
+post_processing_outdated: boolean; 
+/**
+ * DanyWhere: the window it was dictated in and its context for
+ * post-processing (`dictation_context`).
+ */
+window_context: EntryWindowContext }
 export type HistoryUpdatePayload = { action: "added"; entry: HistoryEntry } | { action: "updated"; entry: HistoryEntry } | { action: "deleted"; id: number } | { action: "toggled"; id: number }
 /**
  * Result of changing keyboard implementation
@@ -1811,12 +1930,34 @@ export type TranscriptionOutcome =
 "failed"
 export type TypingTool = "auto" | "wtype" | "kwtype" | "dotool" | "ydotool" | "xdotool"
 export type VadBackend = "silero" | "earshot"
+/**
+ * What the settings show about window titles on this computer.
+ */
+export type WindowTitleAccess = { 
+/**
+ * This platform can tell window titles at all (not Linux yet).
+ */
+supported: boolean; 
+/**
+ * macOS: DanyWhere has Accessibility, so it reads every window's title.
+ */
+accessibility: boolean; 
+/**
+ * macOS without Accessibility: the scriptable apps and whether DanyWhere
+ * may ask them.
+ */
+apps: AutomationApp[] }
 export type WindowsMicrophonePermissionStatus = { supported: boolean; overall_access: PermissionAccess; device_access: PermissionAccess; app_access: PermissionAccess; desktop_app_access: PermissionAccess }
 /**
  * A named list of words that can be switched on in addition to the global
  * list.
  */
 export type WordList = { id: string; name: string; words?: string[] }
+/**
+ * A word the word list replaced in a transcription (see
+ * `apply_custom_words_with_replacements`).
+ */
+export type WordReplacement = { original: string; replacement: string }
 
 /** tauri-specta globals **/
 

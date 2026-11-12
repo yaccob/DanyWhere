@@ -107,6 +107,9 @@ pub trait ShortcutAction: Send + Sync {
 // Transcribe Action
 struct TranscribeAction {
     post_process: bool,
+    /// DanyWhere: post-process with context from earlier dictations in the
+    /// same window (`dictation_context`); only with `post_process`.
+    with_context: bool,
 }
 
 /// Field name for structured output JSON schema
@@ -191,9 +194,12 @@ enum PostProcessOutcome {
     Failed,
 }
 
+/// DanyWhere: `context` (earlier dictations from the same window, see
+/// `dictation_context`) goes after the selected prompt, in every path.
 async fn post_process_transcription(
     settings: &AppSettings,
     transcription: &str,
+    context: Option<&crate::dictation_context::ContextBlock>,
 ) -> PostProcessOutcome {
     if is_blank_transcription(transcription) {
         debug!("Post-processing skipped because the transcription is empty");
@@ -269,7 +275,11 @@ async fn post_process_transcription(
     if provider.supports_structured_output {
         debug!("Using structured outputs for provider '{}'", provider.id);
 
-        let system_prompt = build_system_prompt(&prompt);
+        // DanyWhere: the context block after the prompt (`dictation_context`).
+        let system_prompt = build_system_prompt(&crate::dictation_context::prompt_with_context(
+            &prompt,
+            context.map(|c| c.system.as_str()),
+        ));
         let user_content = transcription.to_string();
 
         // Handle Apple Intelligence separately since it uses native Swift APIs
@@ -384,7 +394,12 @@ async fn post_process_transcription(
     }
 
     // Legacy mode: Replace ${output} variable in the prompt with the actual text
-    let processed_prompt = prompt.replace("${output}", transcription);
+    // DanyWhere: the context block after the filled-in prompt, so a context
+    // text can never be taken for the placeholder.
+    let processed_prompt = crate::dictation_context::prompt_with_context(
+        &prompt.replace("${output}", transcription),
+        context.map(|c| c.legacy.as_str()),
+    );
     debug!("Processed prompt length: {} chars", processed_prompt.len());
 
     match crate::llm_client::send_chat_completion(
@@ -426,26 +441,59 @@ pub(crate) struct ProcessedTranscription {
     pub post_process_prompt: Option<String>,
     /// `final_text` is the bare transcript because post-processing failed.
     pub post_process_failed: bool,
+    /// DanyWhere: the earlier entries sent along as context
+    /// (`dictation_context`).
+    pub context_entry_ids: Vec<i64>,
 }
 
+/// DanyWhere: `context` says which earlier dictations may go along as
+/// context for post-processing (`dictation_context`).
 pub(crate) async fn process_transcription_output(
     app: &AppHandle,
     transcription: &str,
     post_process: bool,
+    context: &crate::dictation_context::ContextQuery,
 ) -> ProcessedTranscription {
     let settings = get_settings(app);
     let mut final_text = transcription.to_string();
     let mut post_processed_text: Option<String> = None;
     let mut post_process_prompt: Option<String> = None;
     let mut post_process_failed = false;
+    let mut context_entry_ids: Vec<i64> = Vec::new();
 
     if post_process {
+        // DanyWhere: earlier dictations from the same window, if the context
+        // shortcut asked for them (the query then has a window).
+        let selected_prompt_id = settings.post_process_selected_prompt_id.as_deref();
+        let selected_prompt = settings
+            .post_process_prompts
+            .iter()
+            .find(|prompt| Some(prompt.id.as_str()) == selected_prompt_id)
+            .map(|prompt| prompt.prompt.clone())
+            .unwrap_or_default();
+        let context_block = if is_blank_transcription(&final_text) {
+            None
+        } else {
+            crate::dictation_context::context_for(app, &settings, &selected_prompt, context)
+        };
         // A reply that's blank once cleaned is no better than none.
-        let outcome = match post_process_transcription(&settings, &final_text).await {
+        let outcome = match post_process_transcription(
+            &settings,
+            &final_text,
+            context_block.as_ref(),
+        )
+        .await
+        {
             PostProcessOutcome::Done(text) => non_blank_post_processed_text(text)
                 .map_or(PostProcessOutcome::Failed, PostProcessOutcome::Done),
             outcome => outcome,
         };
+        // The request was made, so the context left the computer.
+        if outcome != PostProcessOutcome::Skipped {
+            if let Some(block) = &context_block {
+                context_entry_ids = block.entry_ids.clone();
+            }
+        }
         match outcome {
             PostProcessOutcome::Skipped => {}
             PostProcessOutcome::Failed => post_process_failed = true,
@@ -471,6 +519,7 @@ pub(crate) async fn process_transcription_output(
         post_processed_text,
         post_process_prompt,
         post_process_failed,
+        context_entry_ids,
     }
 }
 
@@ -511,7 +560,10 @@ impl ShortcutAction for TranscribeAction {
         }
 
         let binding_id = binding_id.to_string();
-        RECORDING_SESSION.fetch_add(1, Ordering::SeqCst);
+        let session = RECORDING_SESSION.fetch_add(1, Ordering::SeqCst) + 1;
+        // DanyWhere: which window this dictation starts in, for context from
+        // earlier dictations there (`dictation_context`). In the background.
+        crate::window_capture::begin_capture(app, session);
         let tray_started = Instant::now();
         set_tray_state(app, TrayIconState::Recording);
         let tray_elapsed = tray_started.elapsed();
@@ -692,6 +744,9 @@ impl ShortcutAction for TranscribeAction {
 
         let binding_id = binding_id.to_string(); // Clone binding_id for the async task
         let post_process = self.post_process;
+        let with_context = self.post_process && self.with_context;
+        // DanyWhere: the recording whose window was captured at its start.
+        let context_session = RECORDING_SESSION.load(Ordering::SeqCst);
         let cancel_generation = rm.cancel_generation();
 
         tauri::async_runtime::spawn(async move {
@@ -782,6 +837,7 @@ impl ShortcutAction for TranscribeAction {
                         Ok(Transcription {
                             text: transcription,
                             language,
+                            word_replacements,
                         }) => {
                             debug!(
                                 "Transcription completed in {:?}: '{}'",
@@ -796,8 +852,23 @@ impl ShortcutAction for TranscribeAction {
                                     show_processing_overlay(&ah);
                                 }
                             }
+                            // DanyWhere: the window this dictation started
+                            // in, and what the word list replaced in it.
+                            let window = crate::window_capture::take_capture(context_session);
+                            let context_query =
+                                crate::dictation_context::ContextQuery::for_new_dictation(
+                                    // Only the context shortcut sends context;
+                                    // every dictation keeps its window.
+                                    if with_context { window.clone() } else { None },
+                                    word_replacements.clone(),
+                                );
                             let Some(processed) = complete_unless_cancelled(
-                                process_transcription_output(&ah, &transcription, post_process),
+                                process_transcription_output(
+                                    &ah,
+                                    &transcription,
+                                    post_process,
+                                    &context_query,
+                                ),
                                 || rm.was_cancelled_since(cancel_generation),
                             )
                             .await
@@ -817,7 +888,7 @@ impl ShortcutAction for TranscribeAction {
 
                             // Save to history if WAV was saved
                             if wav_saved {
-                                if let Err(err) = hm.save_entry(
+                                match hm.save_entry(
                                     file_name,
                                     transcription,
                                     post_process,
@@ -825,7 +896,22 @@ impl ShortcutAction for TranscribeAction {
                                     processed.post_process_prompt.clone(),
                                     language,
                                 ) {
-                                    error!("Failed to save history entry: {}", err);
+                                    // DanyWhere: its window and context.
+                                    Ok(entry) => {
+                                        if let Err(err) = hm.record_entry_context(
+                                            entry.id,
+                                            window.as_ref(),
+                                            &word_replacements,
+                                            with_context
+                                                .then_some(processed.context_entry_ids.as_slice()),
+                                        ) {
+                                            warn!(
+                                                "Failed to store the dictation's window: {}",
+                                                err
+                                            );
+                                        }
+                                    }
+                                    Err(err) => error!("Failed to save history entry: {}", err),
                                 }
                             }
 
@@ -1091,11 +1177,24 @@ pub static ACTION_MAP: Lazy<HashMap<String, Arc<dyn ShortcutAction>>> = Lazy::ne
         "transcribe".to_string(),
         Arc::new(TranscribeAction {
             post_process: false,
+            with_context: false,
         }) as Arc<dyn ShortcutAction>,
     );
     map.insert(
         "transcribe_with_post_process".to_string(),
-        Arc::new(TranscribeAction { post_process: true }) as Arc<dyn ShortcutAction>,
+        Arc::new(TranscribeAction {
+            post_process: true,
+            with_context: false,
+        }) as Arc<dyn ShortcutAction>,
+    );
+    // DanyWhere: dictate, then post-process with context from earlier
+    // dictations in the same window (`dictation_context`).
+    map.insert(
+        crate::dictation_context::CONTEXT_BINDING.to_string(),
+        Arc::new(TranscribeAction {
+            post_process: true,
+            with_context: true,
+        }) as Arc<dyn ShortcutAction>,
     );
     map.insert(
         "cancel".to_string(),
@@ -1170,7 +1269,115 @@ mod tests {
     }
 
     fn run_post_process(settings: &AppSettings, transcription: &str) -> PostProcessOutcome {
-        tauri::async_runtime::block_on(post_process_transcription(settings, transcription))
+        tauri::async_runtime::block_on(post_process_transcription(settings, transcription, None))
+    }
+
+    fn marker_block() -> crate::dictation_context::ContextBlock {
+        crate::dictation_context::ContextBlock {
+            system: "SYSTEM-MARKER".to_string(),
+            legacy: "LEGACY-MARKER".to_string(),
+            entry_ids: vec![1],
+        }
+    }
+
+    /// Like [`serve_once`], and hands over the request it got.
+    fn serve_once_capturing(body: &'static str) -> (String, std::sync::mpsc::Receiver<String>) {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let address = listener.local_addr().unwrap();
+        let (tx, rx) = std::sync::mpsc::channel();
+        thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            let mut request = Vec::new();
+            let mut buffer = [0; 8192];
+            // Read until the body announced by content-length is complete.
+            loop {
+                let n = stream.read(&mut buffer).unwrap_or(0);
+                if n == 0 {
+                    break;
+                }
+                request.extend_from_slice(&buffer[..n]);
+                let text = String::from_utf8_lossy(&request);
+                if let Some(header_end) = text.find("\r\n\r\n") {
+                    let length = text[..header_end]
+                        .lines()
+                        .find_map(|line| {
+                            let lower = line.to_ascii_lowercase();
+                            lower
+                                .strip_prefix("content-length:")
+                                .map(|v| v.trim().parse::<usize>().unwrap_or(0))
+                        })
+                        .unwrap_or(0);
+                    if request.len() >= header_end + 4 + length {
+                        break;
+                    }
+                }
+            }
+            let _ = tx.send(String::from_utf8_lossy(&request).to_string());
+            let response = format!(
+                "HTTP/1.1 200 OK\r\ncontent-type: application/json\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{}",
+                body.len(),
+                body
+            );
+            stream.write_all(response.as_bytes()).unwrap();
+        });
+        (format!("http://{address}"), rx)
+    }
+
+    #[test]
+    fn the_context_block_follows_the_prompt_in_the_legacy_request() {
+        let (url, request) =
+            serve_once_capturing(r#"{"choices":[{"message":{"content":"polished"}}]}"#);
+        let settings = post_process_settings(&url);
+        let outcome = tauri::async_runtime::block_on(post_process_transcription(
+            &settings,
+            "hello",
+            Some(&marker_block()),
+        ));
+        assert_eq!(outcome, PostProcessOutcome::Done("polished".to_string()));
+        let request = request.recv_timeout(Duration::from_secs(5)).unwrap();
+        assert!(request.contains("LEGACY-MARKER"), "{request}");
+        assert!(!request.contains("SYSTEM-MARKER"), "{request}");
+    }
+
+    #[test]
+    fn the_context_block_goes_into_the_system_prompt() {
+        let (url, request) = serve_once_capturing(
+            r#"{"choices":[{"message":{"content":"{\"transcription\":\"polished\"}"}}]}"#,
+        );
+        let mut settings = post_process_settings(&url);
+        for provider in settings.post_process_providers.iter_mut() {
+            provider.supports_structured_output = true;
+        }
+        let outcome = tauri::async_runtime::block_on(post_process_transcription(
+            &settings,
+            "hello",
+            Some(&marker_block()),
+        ));
+        assert_eq!(outcome, PostProcessOutcome::Done("polished".to_string()));
+        let request = request.recv_timeout(Duration::from_secs(5)).unwrap();
+        assert!(!request.contains("LEGACY-MARKER"), "{request}");
+        let body = &request[request.find("\r\n\r\n").unwrap() + 4..];
+        let json: serde_json::Value = serde_json::from_str(body).unwrap();
+        let system = json["messages"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|m| m["role"] == "system")
+            .expect("a system message");
+        assert!(
+            system["content"]
+                .as_str()
+                .unwrap()
+                .contains("SYSTEM-MARKER"),
+            "{system}"
+        );
+        let user = json["messages"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|m| m["role"] == "user")
+            .expect("a user message");
+        assert_eq!(user["content"], "hello");
     }
 
     #[test]

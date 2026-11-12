@@ -1,7 +1,7 @@
 use crate::audio_toolkit::chunking;
 use crate::audio_toolkit::{
-    apply_custom_words, detect_output_language, normalize_transcription_output,
-    remove_filler_words, OutputLanguageEvidence,
+    detect_output_language, normalize_transcription_output, remove_filler_words,
+    OutputLanguageEvidence,
 };
 use crate::chinese_script::{convert_chinese_script, ChineseVariety};
 use crate::engine_supervisor::{
@@ -997,6 +997,7 @@ impl TranscriptionManager {
             return Ok(Transcription {
                 text: String::new(),
                 language: None,
+                word_replacements: Vec::new(),
             });
         }
 
@@ -1008,7 +1009,7 @@ impl TranscriptionManager {
         let language = outcome
             .setup
             .spoken_language(outcome.model_detected_language.as_deref());
-        let final_result = finish_text(outcome, &settings);
+        let (final_result, word_replacements) = finish_text(outcome, &settings);
 
         let translation_note = if settings.translate_to_english {
             " (translated)"
@@ -1040,6 +1041,7 @@ impl TranscriptionManager {
         Ok(Transcription {
             text: final_result,
             language: Some(language),
+            word_replacements,
         })
     }
 
@@ -1224,6 +1226,9 @@ pub struct Transcription {
     /// The language it ran in and how that was chosen; `None` when there was
     /// no audio to run.
     pub language: Option<LanguageDecision>,
+    /// DanyWhere: what the word list replaced in `text`
+    /// (`dictation_context`).
+    pub word_replacements: Vec<crate::dictation_context::WordReplacement>,
 }
 
 /// What one transcription decoded (live or in batch), with how its runs were
@@ -1236,8 +1241,11 @@ struct RunOutcome {
 }
 
 /// One transcription's final text: its output language resolved, then
-/// post-processed.
-fn finish_text(outcome: RunOutcome, settings: &AppSettings) -> String {
+/// post-processed. DanyWhere: with what the word list replaced in it.
+fn finish_text(
+    outcome: RunOutcome,
+    settings: &AppSettings,
+) -> (String, Vec<crate::dictation_context::WordReplacement>) {
     let RunOutcome {
         setup,
         text,
@@ -1246,7 +1254,7 @@ fn finish_text(outcome: RunOutcome, settings: &AppSettings) -> String {
     let output_language = setup.output_language(settings, model_detected_language);
     debug!("Output language evidence: {:?}", output_language);
     // Skip fuzzy correction if the model already got the custom words.
-    post_process_transcription_text(
+    post_process_transcription_text_reporting(
         text,
         settings,
         setup.custom_words_prompted(),
@@ -1636,12 +1644,54 @@ fn transcribe_cpp_run_plan(
     }
 }
 
+// DanyWhere: the app uses `post_process_transcription_text_reporting`; the
+// tests keep this shorter form.
+#[cfg(test)]
 fn post_process_transcription_text(
     raw: String,
     settings: &AppSettings,
     custom_words_already_prompted: bool,
     output_language: &OutputLanguageEvidence,
     supported_languages: &[String],
+) -> String {
+    post_process_transcription_text_reporting(
+        raw,
+        settings,
+        custom_words_already_prompted,
+        output_language,
+        supported_languages,
+    )
+    .0
+}
+
+/// DanyWhere: [`post_process_transcription_text`], also reporting what the
+/// word list replaced (`dictation_context` tells the LLM).
+pub(crate) fn post_process_transcription_text_reporting(
+    raw: String,
+    settings: &AppSettings,
+    custom_words_already_prompted: bool,
+    output_language: &OutputLanguageEvidence,
+    supported_languages: &[String],
+) -> (String, Vec<crate::dictation_context::WordReplacement>) {
+    let mut replacements = Vec::new();
+    let text = post_process_transcription_text_inner(
+        raw,
+        settings,
+        custom_words_already_prompted,
+        output_language,
+        supported_languages,
+        &mut replacements,
+    );
+    (text, replacements)
+}
+
+fn post_process_transcription_text_inner(
+    raw: String,
+    settings: &AppSettings,
+    custom_words_already_prompted: bool,
+    output_language: &OutputLanguageEvidence,
+    supported_languages: &[String],
+    replacements: &mut Vec<crate::dictation_context::WordReplacement>,
 ) -> String {
     let converts_script = settings.chinese_script != ChineseScript::AsTranscribed;
     fail_open_text_transform(raw, |raw| {
@@ -1681,10 +1731,15 @@ fn post_process_transcription_text(
 
         // The same words, in the same order, as models with vocabulary get.
         let words = crate::word_lists::merged_vocabulary(settings);
-        let corrected = if !words.is_empty() && !custom_words_already_prompted {
-            apply_custom_words(&raw, &words, settings.word_correction_threshold)
+        // DanyWhere: also note what the list replaced (`dictation_context`).
+        let (corrected, replaced) = if !words.is_empty() && !custom_words_already_prompted {
+            crate::audio_toolkit::apply_custom_words_with_replacements(
+                &raw,
+                &words,
+                settings.word_correction_threshold,
+            )
         } else {
-            raw
+            (raw, Vec::new())
         };
 
         let without_fillers = remove_filler_words(
@@ -1694,7 +1749,19 @@ fn post_process_transcription_text(
             settings.filler_word_removal_enabled,
         );
 
-        normalize_transcription_output(&without_fillers)
+        let normalized = normalize_transcription_output(&without_fillers);
+        // Set last, so a panic above leaves no replacements of a text that
+        // is then not used.
+        *replacements = replaced
+            .into_iter()
+            .map(
+                |(original, replacement)| crate::dictation_context::WordReplacement {
+                    original,
+                    replacement,
+                },
+            )
+            .collect();
+        normalized
     })
 }
 
@@ -2041,6 +2108,40 @@ mod tests {
         });
 
         assert_eq!(result, raw);
+    }
+
+    #[test]
+    fn the_word_lists_replacements_are_reported() {
+        let settings = AppSettings {
+            custom_words: vec!["Build".to_string()],
+            filler_word_removal_enabled: false,
+            ..Default::default()
+        };
+        let (text, replaced) = post_process_transcription_text_reporting(
+            "Schau dir das Bild an.".to_string(),
+            &settings,
+            false,
+            &OutputLanguageEvidence::UserSelected("de".to_string()),
+            &languages(&["de"]),
+        );
+        assert_eq!(text, "Schau dir das Build an.");
+        assert_eq!(
+            replaced,
+            vec![crate::dictation_context::WordReplacement {
+                original: "Bild".to_string(),
+                replacement: "Build".to_string(),
+            }]
+        );
+
+        // A model that got the words as vocabulary replaces nothing afterwards.
+        let (_, replaced) = post_process_transcription_text_reporting(
+            "Schau dir das Bild an.".to_string(),
+            &settings,
+            true,
+            &OutputLanguageEvidence::UserSelected("de".to_string()),
+            &languages(&["de"]),
+        );
+        assert!(replaced.is_empty());
     }
 
     #[test]

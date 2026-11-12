@@ -355,6 +355,10 @@
             "name": "Pintasan Pascaproses",
             "description": "Opsional: pintasan khusus yang selalu menerapkan pascaproses AI pada transkripsi Anda."
           },
+          "transcribe_with_context": {
+            "name": "Pintasan dengan Konteks",
+            "description": "Opsional: dikte, lalu pascaproses dengan prompt yang dipilih dan dikte Anda sebelumnya dari jendela yang sama sebagai konteks. Selama pintasan ini diatur, setiap dikte mengingat jendelanya."
+          },
           "paste_last_transcript": {
             "name": "Tempel transkripsi terakhir",
             "description": "Menempelkan transkripsi terakhir di posisi kursor saat ini, misalnya jika tidak sampai karena tidak ada kolom teks yang fokus. Tanpa Aksesibilitas, transkripsi disalin ke papan klip, untuk aplikasi tempat Sisipkan dikte terakhir tidak berfungsi, seperti Terminal."
@@ -731,6 +735,31 @@
         "cancel": "Batal",
         "selectToEdit": "Pilih prompt di atas untuk melihat dan mengedit detailnya.",
         "createFirst": "Klik 'Buat Prompt Baru' di atas untuk membuat prompt pascaproses pertama Anda."
+      },
+      "context": {
+        "title": "Konteks dari dikte sebelumnya",
+        "privacy": "Dikte sebelumnya dari jendela yang sama dikirim ke penyedia pascaproses bersama dikte saat ini, termasuk yang belum pernah dipascaproses. Riwayat menandai setiap entri yang terkirim dengan cara ini.",
+        "ageLimit": "Batas usia",
+        "ageLimitDescription": "Hanya dikte yang paling lama sekian menit lebih tua dari dikte saat ini ({{min}}–{{max}}).",
+        "minutes": "mnt",
+        "maxEntries": "Dikte sebelumnya",
+        "maxEntriesDescription": "Paling banyak sekian dikte sebelumnya ({{min}}–{{max}}).",
+        "charBudget": "Karakter",
+        "charBudgetDescription": "Paling banyak sekian karakter dari dikte sebelumnya; yang tertua keluar lebih dulu ({{min}}–{{max}}).",
+        "invalid": "Masukkan bilangan bulat dari {{min}} sampai {{max}}.",
+        "excludedApps": "Aplikasi yang dikecualikan",
+        "excludedAppsDescription": "Jendela aplikasi ini tidak pernah dicatat, jadi diktenya tidak pernah menjadi konteks. Satu aplikasi per baris: namanya atau ID bundle (Windows: nama program).",
+        "windowTitles": "Judul jendela",
+        "windowTitlesAvailable": "Handy membaca judul jendela tempat Anda mendikte.",
+        "windowTitlesUnsupported": "Handy belum mengetahui judul jendela di sistem ini, jadi di sini tidak ada konteks.",
+        "windowTitlesAutomation": "Tanpa Aksesibilitas, Handy dapat menanyakan judul jendela kepada aplikasi ini. macOS menanyakannya kepada Anda sekali per aplikasi; Handy hanya membaca judulnya.",
+        "windowTitlesOtherApps": "Aplikasi lain tidak memberi judul tanpa Aksesibilitas; dikte di sana tidak punya konteks.",
+        "allow": "Izinkan…",
+        "statusAllowed": "Diizinkan",
+        "statusNotAsked": "Belum ditanyakan",
+        "statusDenied": "Tidak diizinkan – ubah di Pengaturan Sistem › Privasi & Keamanan › Otomatisasi",
+        "statusNotRunning": "Tidak berjalan – jalankan untuk mengizinkan",
+        "statusUnknown": "Tidak diketahui"
       }
     },
     "history": {
@@ -775,6 +804,13 @@
       "revertCorrection": "Urungkan koreksi",
       "correctError": "Gagal menyimpan koreksi. Silakan coba lagi.",
       "postProcessingOutdated": "Dipascaproses dari versi transkripsi yang lebih lama. Tongkat ajaib akan memascaprosesnya lagi.",
+      "contextSent": "Terkirim sebagai konteks",
+      "contextSentTooltip": "Terkirim pada {{date}} ke penyedia pascaproses sebagai konteks dikte berikutnya.",
+      "contextUsed": "Dikte sebelumnya sebagai konteks: {{count}}",
+      "windowFilter": "Jendela: {{window}} ({{count}})",
+      "showAll": "Tampilkan semua",
+      "showWindowEntries": "Tampilkan hanya dikte dari jendela ini",
+      "contextEntryJump": "Tampilkan di riwayat untuk mengoreksinya",
       "confirmReplaceTitle": "Ganti koreksi Anda?",
       "confirmPostProcessReplacesCorrection": "Pascaproses ulang mengganti koreksi Anda pada teks hasil pascaproses.",
       "confirmRetranscribeReplacesCorrection": "Transkripsi ulang mengganti koreksi Anda pada entri ini.",

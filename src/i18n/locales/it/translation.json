@@ -355,6 +355,10 @@
             "name": "Tasto di post-elaborazione",
             "description": "Facoltativo: Un tasto di scelta rapida dedicato che applica sempre la post-elaborazione IA alla trascrizione."
           },
+          "transcribe_with_context": {
+            "name": "Tasto con contesto",
+            "description": "Facoltativo: detta, poi post-elabora con il prompt scelto e le tue dettature precedenti della stessa finestra come contesto. Finché questo tasto è impostato, ogni dettatura ricorda la sua finestra."
+          },
           "paste_last_transcript": {
             "name": "Incolla l'ultima trascrizione",
             "description": "Incolla l'ultima trascrizione dove si trova ora il cursore, ad esempio se non è arrivata perché nessun campo di testo aveva il focus. Senza Accessibilità viene copiata negli appunti, per le app in cui «Inserisci l'ultima dettatura» non funziona, come Terminale."
@@ -731,6 +735,31 @@
         "cancel": "Annulla",
         "selectToEdit": "Scegli un prompt qui sopra per visualizzare o modificare i dettagli.",
         "createFirst": "Clicca 'Crea un nuovo prompt' qui sopra per creare il tuo primo prompt di post-elaborazione."
+      },
+      "context": {
+        "title": "Contesto dalle dettature precedenti",
+        "privacy": "Le dettature precedenti della stessa finestra vanno al fornitore della post-elaborazione insieme a quella attuale, anche quelle mai post-elaborate. La cronologia segna ogni voce uscita in questo modo.",
+        "ageLimit": "Età massima",
+        "ageLimitDescription": "Solo dettature al massimo di questi minuti più vecchie di quella attuale ({{min}}–{{max}}).",
+        "minutes": "min",
+        "maxEntries": "Dettature precedenti",
+        "maxEntriesDescription": "Al massimo questo numero di dettature precedenti ({{min}}–{{max}}).",
+        "charBudget": "Caratteri",
+        "charBudgetDescription": "Al massimo questo numero di caratteri delle dettature precedenti; le più vecchie escono per prime ({{min}}–{{max}}).",
+        "invalid": "Inserisci un numero intero da {{min}} a {{max}}.",
+        "excludedApps": "App escluse",
+        "excludedAppsDescription": "Le finestre di queste app non vengono mai rilevate, quindi le loro dettature non servono mai da contesto. Un'app per riga: il suo nome o l'ID del bundle (Windows: il nome del programma).",
+        "windowTitles": "Titoli delle finestre",
+        "windowTitlesAvailable": "Handy legge il titolo della finestra in cui detti.",
+        "windowTitlesUnsupported": "Handy non conosce ancora i titoli delle finestre su questo sistema, quindi qui non c'è contesto.",
+        "windowTitlesAutomation": "Senza Accessibilità, Handy può chiedere a queste app il titolo della finestra. macOS te lo chiede una volta per app; Handy legge solo il titolo.",
+        "windowTitlesOtherApps": "Le altre app non danno un titolo senza Accessibilità; le dettature lì non hanno contesto.",
+        "allow": "Consenti…",
+        "statusAllowed": "Consentito",
+        "statusNotAsked": "Non ancora chiesto",
+        "statusDenied": "Non consentito – modificalo in Impostazioni di Sistema › Privacy e sicurezza › Automazione",
+        "statusNotRunning": "Non in esecuzione – aprila per consentire",
+        "statusUnknown": "Sconosciuto"
       }
     },
     "history": {
@@ -775,6 +804,13 @@
       "revertCorrection": "Annulla correzione",
       "correctError": "Errore nel salvataggio della correzione. Riprova.",
       "postProcessingOutdated": "Post-elaborato da una versione precedente della trascrizione. La bacchetta lo post-elabora di nuovo.",
+      "contextSent": "Inviata come contesto",
+      "contextSentTooltip": "Inviata il {{date}} al fornitore della post-elaborazione come contesto di una dettatura successiva.",
+      "contextUsed": "Dettature precedenti come contesto: {{count}}",
+      "windowFilter": "Finestra: {{window}} ({{count}})",
+      "showAll": "Mostra tutto",
+      "showWindowEntries": "Mostra solo le dettature di questa finestra",
+      "contextEntryJump": "Mostrala nella cronologia per correggerla",
       "confirmReplaceTitle": "Sostituire la tua correzione?",
       "confirmPostProcessReplacesCorrection": "Una nuova post-elaborazione sostituisce la tua correzione del testo post-elaborato.",
       "confirmRetranscribeReplacesCorrection": "Ri-trascrivere sostituisce le tue correzioni di questo elemento.",

@@ -39,8 +39,10 @@ static MIGRATIONS: &[M] = &[
 /// [`HistoryManager::apply_migrations`].
 /// `recording_removed` holds when the storage limit deleted the entry's
 /// recording (Unix seconds); the transcript stays.
-/// DanyWhere: the last three hold the user's corrections, see
-/// `history_corrections`.
+/// DanyWhere: `transcription_correction` to `post_processed_from_correction`
+/// hold the user's corrections, see `history_corrections`; the `window_*` to
+/// `word_replacements` columns the window a dictation was made in and its
+/// context, see `dictation_context`.
 const ADDED_COLUMNS: &[&str] = &[
     "source_name",
     "language",
@@ -49,13 +51,20 @@ const ADDED_COLUMNS: &[&str] = &[
     "transcription_correction",
     "post_processed_correction",
     "post_processed_from_correction",
+    "window_app_id",
+    "window_app_name",
+    "window_title",
+    "context_entry_ids",
+    "sent_as_context",
+    "word_replacements",
 ];
 
 /// Every column a [`HistoryEntry`] is read from.
 const ENTRY_COLUMNS: &str = "id, file_name, timestamp, saved, title, transcription_text, \
     post_processed_text, post_process_prompt, post_process_requested, source_name, language, \
     language_source, recording_removed, transcription_correction, post_processed_correction, \
-    post_processed_from_correction";
+    post_processed_from_correction, window_app_id, window_app_name, window_title, \
+    context_entry_ids, sent_as_context, word_replacements";
 
 #[derive(Clone, Debug, Serialize, Deserialize, Type)]
 pub struct PaginatedHistory {
@@ -105,6 +114,9 @@ pub struct HistoryEntry {
     /// DanyWhere: the post-processed text was made from another version of
     /// the transcription than the one the entry has now.
     pub post_processing_outdated: bool,
+    /// DanyWhere: the window it was dictated in and its context for
+    /// post-processing (`dictation_context`).
+    pub window_context: crate::dictation_context::EntryWindowContext,
 }
 
 /// One recording as the storage limit sees it.
@@ -354,6 +366,16 @@ impl HistoryManager {
         Ok(Connection::open(&self.db_path)?)
     }
 
+    /// DanyWhere: the columns an entry is read from, and reading one, for
+    /// `dictation_context`'s own queries.
+    pub(crate) fn entry_columns() -> &'static str {
+        ENTRY_COLUMNS
+    }
+
+    pub(crate) fn map_entry_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<HistoryEntry> {
+        Self::map_history_entry(row)
+    }
+
     fn map_history_entry(row: &rusqlite::Row<'_>) -> rusqlite::Result<HistoryEntry> {
         Ok(HistoryEntry {
             id: row.get("id")?,
@@ -382,6 +404,7 @@ impl HistoryManager {
                 row.get::<_, Option<String>>("post_processed_from_correction")?
                     .as_deref(),
             ),
+            window_context: crate::dictation_context::window_context_from_row(row)?,
         })
     }
 
@@ -418,6 +441,7 @@ impl HistoryManager {
             transcription_correction: None,
             post_processed_correction: None,
             post_processing_outdated: false,
+            window_context: Default::default(),
         })?;
 
         self.cleanup_old_entries()?;
@@ -446,6 +470,7 @@ impl HistoryManager {
             transcription_correction: None,
             post_processed_correction: None,
             post_processing_outdated: false,
+            window_context: Default::default(),
         })?;
 
         // The file counts toward the storage limit, so older dictations may
@@ -1096,7 +1121,13 @@ mod tests {
                 recording_removed TEXT,
                 transcription_correction TEXT,
                 post_processed_correction TEXT,
-                post_processed_from_correction TEXT
+                post_processed_from_correction TEXT,
+                window_app_id TEXT,
+                window_app_name TEXT,
+                window_title TEXT,
+                context_entry_ids TEXT,
+                sent_as_context TEXT,
+                word_replacements TEXT
             );",
         )
         .expect("create transcription_history table");

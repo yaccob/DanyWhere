@@ -355,6 +355,10 @@
             "name": "Nachbearbeitungs-Tastenkürzel",
             "description": "Optional: Ein dediziertes Tastenkürzel, das immer die KI-Nachbearbeitung auf deine Transkription anwendet."
           },
+          "transcribe_with_context": {
+            "name": "Kontext-Tastenkürzel",
+            "description": "Optional: Diktieren und danach mit dem gewählten Prompt und deinen früheren Diktaten aus demselben Fenster als Kontext nachbearbeiten. Solange dieses Tastenkürzel gesetzt ist, merkt sich jedes Diktat sein Fenster."
+          },
           "paste_last_transcript": {
             "name": "Letzte Transkription einfügen",
             "description": "Fügt die letzte Transkription dort ein, wo der Cursor gerade steht, z. B. wenn sie nicht angekommen ist, weil kein Textfeld den Fokus hatte. Ohne Bedienungshilfen wird sie stattdessen in die Zwischenablage gelegt, für Apps, in denen „Letztes Diktat einfügen“ nicht funktioniert, etwa das Terminal."
@@ -731,6 +735,31 @@
         "cancel": "Abbrechen",
         "selectToEdit": "Wähle oben einen Prompt aus, um dessen Details anzuzeigen und zu bearbeiten.",
         "createFirst": "Klicke oben auf 'Neuen Prompt erstellen', um deinen ersten Nachbearbeitungs-Prompt zu erstellen."
+      },
+      "context": {
+        "title": "Kontext aus früheren Diktaten",
+        "privacy": "Frühere Diktate aus demselben Fenster gehen zusammen mit dem aktuellen an den Anbieter der Nachbearbeitung, auch solche, die nie nachbearbeitet wurden. Der Verlauf markiert jeden Eintrag, der so hinausging.",
+        "ageLimit": "Altersgrenze",
+        "ageLimitDescription": "Nur Diktate, die höchstens so viele Minuten älter sind als das aktuelle ({{min}}–{{max}}).",
+        "minutes": "Min.",
+        "maxEntries": "Frühere Diktate",
+        "maxEntriesDescription": "Höchstens so viele frühere Diktate ({{min}}–{{max}}).",
+        "charBudget": "Zeichen",
+        "charBudgetDescription": "Höchstens so viele Zeichen aus früheren Diktaten; die ältesten fallen zuerst weg ({{min}}–{{max}}).",
+        "invalid": "Gib eine ganze Zahl von {{min}} bis {{max}} ein.",
+        "excludedApps": "Ausgenommene Apps",
+        "excludedAppsDescription": "Die Fenster dieser Apps werden nie erfasst, ihre Diktate dienen also nie als Kontext. Eine App pro Zeile: ihr Name oder ihre Bundle-ID (Windows: der Programmname).",
+        "windowTitles": "Fenstertitel",
+        "windowTitlesAvailable": "Handy liest den Titel des Fensters, in das du diktierst.",
+        "windowTitlesUnsupported": "Auf diesem System kennt Handy noch keine Fenstertitel, daher gibt es hier keinen Kontext.",
+        "windowTitlesAutomation": "Ohne Bedienungshilfen kann Handy diese Apps nach ihrem Fenstertitel fragen. macOS fragt dich dafür einmal pro App; Handy liest nur den Titel.",
+        "windowTitlesOtherApps": "Andere Apps nennen ohne Bedienungshilfen keinen Titel; Diktate dort haben keinen Kontext.",
+        "allow": "Erlauben …",
+        "statusAllowed": "Erlaubt",
+        "statusNotAsked": "Noch nicht gefragt",
+        "statusDenied": "Nicht erlaubt – ändern unter Systemeinstellungen › Datenschutz & Sicherheit › Automation",
+        "statusNotRunning": "Läuft nicht – zum Erlauben starten",
+        "statusUnknown": "Unbekannt"
       }
     },
     "history": {
@@ -775,6 +804,13 @@
       "revertCorrection": "Korrektur zurücknehmen",
       "correctError": "Die Korrektur konnte nicht gespeichert werden. Bitte versuche es erneut.",
       "postProcessingOutdated": "Diese Nachbearbeitung stammt aus einer früheren Fassung der Transkription. Mit dem Zauberstab wird sie neu erstellt.",
+      "contextSent": "Als Kontext gesendet",
+      "contextSentTooltip": "Ging am {{date}} als Kontext eines späteren Diktats an den Anbieter der Nachbearbeitung.",
+      "contextUsed": "Frühere Diktate als Kontext: {{count}}",
+      "windowFilter": "Fenster: {{window}} ({{count}})",
+      "showAll": "Alle anzeigen",
+      "showWindowEntries": "Nur Diktate aus diesem Fenster zeigen",
+      "contextEntryJump": "Im Verlauf zeigen, um es zu korrigieren",
       "confirmReplaceTitle": "Korrektur ersetzen?",
       "confirmPostProcessReplacesCorrection": "Eine neue Nachbearbeitung ersetzt deine Korrektur des nachbearbeiteten Texts.",
       "confirmRetranscribeReplacesCorrection": "Erneutes Transkribieren ersetzt deine Korrekturen an diesem Eintrag.",

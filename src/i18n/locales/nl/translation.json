@@ -355,6 +355,10 @@
             "name": "Sneltoets voor naverwerking",
             "description": "Optioneel: Een specifieke sneltoets die altijd AI-naverwerking toepast op je transcriptie."
           },
+          "transcribe_with_context": {
+            "name": "Sneltoets met context",
+            "description": "Optioneel: dicteren en daarna naverwerken met de gekozen prompt en je eerdere dicteringen uit hetzelfde venster als context. Zolang deze sneltoets is ingesteld, onthoudt elke dictering haar venster."
+          },
           "paste_last_transcript": {
             "name": "Laatste transcriptie plakken",
             "description": "Plakt de laatste transcriptie waar de cursor nu staat, bijvoorbeeld als die niet aankwam omdat geen tekstveld focus had. Zonder Toegankelijkheid wordt die naar het klembord gekopieerd, voor apps waarin 'Laatste dictaat invoegen' niet werkt, zoals Terminal."
@@ -731,6 +735,31 @@
         "cancel": "Annuleren",
         "selectToEdit": "Selecteer hierboven een prompt om de details te bekijken en te bewerken.",
         "createFirst": "Klik hierboven op 'Nieuwe prompt maken' om je eerste naverwerkingsprompt aan te maken."
+      },
+      "context": {
+        "title": "Context uit eerdere dicteringen",
+        "privacy": "Eerdere dicteringen uit hetzelfde venster gaan samen met de huidige naar de aanbieder van de naverwerking, ook dicteringen die nooit zijn naverwerkt. De geschiedenis markeert elk item dat zo is verstuurd.",
+        "ageLimit": "Maximale leeftijd",
+        "ageLimitDescription": "Alleen dicteringen die hoogstens zoveel minuten ouder zijn dan de huidige ({{min}}–{{max}}).",
+        "minutes": "min",
+        "maxEntries": "Eerdere dicteringen",
+        "maxEntriesDescription": "Hoogstens zoveel eerdere dicteringen ({{min}}–{{max}}).",
+        "charBudget": "Tekens",
+        "charBudgetDescription": "Hoogstens zoveel tekens uit eerdere dicteringen; de oudste vallen eerst weg ({{min}}–{{max}}).",
+        "invalid": "Voer een geheel getal van {{min}} tot {{max}} in.",
+        "excludedApps": "Uitgesloten apps",
+        "excludedAppsDescription": "Vensters van deze apps worden nooit vastgelegd, dus hun dicteringen dienen nooit als context. Eén app per regel: de naam of de bundel-ID (Windows: de programmanaam).",
+        "windowTitles": "Venstertitels",
+        "windowTitlesAvailable": "Handy leest de titel van het venster waarin je dicteert.",
+        "windowTitlesUnsupported": "Handy kent op dit systeem nog geen venstertitels, dus hier is geen context.",
+        "windowTitlesAutomation": "Zonder Toegankelijkheid kan Handy deze apps om hun venstertitel vragen. macOS vraagt je dat één keer per app; Handy leest alleen de titel.",
+        "windowTitlesOtherApps": "Andere apps geven zonder Toegankelijkheid geen titel; dicteringen daar hebben geen context.",
+        "allow": "Toestaan…",
+        "statusAllowed": "Toegestaan",
+        "statusNotAsked": "Nog niet gevraagd",
+        "statusDenied": "Niet toegestaan – wijzig dit in Systeeminstellingen › Privacy en beveiliging › Automatisering",
+        "statusNotRunning": "Niet actief – start de app om toe te staan",
+        "statusUnknown": "Onbekend"
       }
     },
     "history": {
@@ -775,6 +804,13 @@
       "revertCorrection": "Correctie ongedaan maken",
       "correctError": "Correctie opslaan mislukt. Probeer het opnieuw.",
       "postProcessingOutdated": "Naverwerkt vanuit een eerdere versie van de transcriptie. De toverstaf verwerkt hem opnieuw na.",
+      "contextSent": "Als context verstuurd",
+      "contextSentTooltip": "Ging op {{date}} als context van een latere dictering naar de aanbieder van de naverwerking.",
+      "contextUsed": "Eerdere dicteringen als context: {{count}}",
+      "windowFilter": "Venster: {{window}} ({{count}})",
+      "showAll": "Alles tonen",
+      "showWindowEntries": "Alleen dicteringen uit dit venster tonen",
+      "contextEntryJump": "In de geschiedenis tonen om te corrigeren",
       "confirmReplaceTitle": "Je correctie vervangen?",
       "confirmPostProcessReplacesCorrection": "Opnieuw naverwerken vervangt je correctie van de naverwerkte tekst.",
       "confirmRetranscribeReplacesCorrection": "Opnieuw transcriberen vervangt je correcties van dit item.",

@@ -355,6 +355,10 @@
             "name": "Tecla de Pós-Processamento",
             "description": "Opcional: Uma tecla de atalho dedicada que sempre aplica pós-processamento com IA à sua transcrição."
           },
+          "transcribe_with_context": {
+            "name": "Tecla com Contexto",
+            "description": "Opcional: dite e depois pós-processe com o prompt escolhido e os seus ditados anteriores da mesma janela como contexto. Enquanto esta tecla estiver definida, cada ditado lembra a sua janela."
+          },
           "paste_last_transcript": {
             "name": "Colar a última transcrição",
             "description": "Cola a última transcrição onde o cursor está agora, por exemplo se não chegou porque nenhum campo de texto estava em foco. Sem Acessibilidade, ela é copiada para a área de transferência, para apps em que “Inserir o último ditado” não funciona, como o Terminal."
@@ -731,6 +735,31 @@
         "cancel": "Cancelar",
         "selectToEdit": "Selecione um prompt acima para visualizar e editar seus detalhes.",
         "createFirst": "Clique em 'Criar Novo Prompt' acima para criar seu primeiro prompt de pós-processamento."
+      },
+      "context": {
+        "title": "Contexto de ditados anteriores",
+        "privacy": "Os ditados anteriores da mesma janela vão para o fornecedor do pós-processamento junto com o atual, incluindo os que nunca foram pós-processados. O histórico marca cada entrada que saiu assim.",
+        "ageLimit": "Idade máxima",
+        "ageLimitDescription": "Apenas ditados no máximo esta quantidade de minutos mais antigos que o atual ({{min}}–{{max}}).",
+        "minutes": "min",
+        "maxEntries": "Ditados anteriores",
+        "maxEntriesDescription": "No máximo esta quantidade de ditados anteriores ({{min}}–{{max}}).",
+        "charBudget": "Caracteres",
+        "charBudgetDescription": "No máximo esta quantidade de caracteres de ditados anteriores; os mais antigos saem primeiro ({{min}}–{{max}}).",
+        "invalid": "Digite um número inteiro de {{min}} a {{max}}.",
+        "excludedApps": "Apps excluídos",
+        "excludedAppsDescription": "As janelas destes apps nunca são registradas, então os seus ditados nunca servem de contexto. Um app por linha: o nome ou o ID do bundle (Windows: o nome do programa).",
+        "windowTitles": "Títulos de janela",
+        "windowTitlesAvailable": "O Handy lê o título da janela em que você dita.",
+        "windowTitlesUnsupported": "O Handy ainda não conhece títulos de janela neste sistema, então aqui não há contexto.",
+        "windowTitlesAutomation": "Sem Acessibilidade, o Handy pode pedir a estes apps o título da janela. O macOS pergunta uma vez por app; o Handy lê apenas o título.",
+        "windowTitlesOtherApps": "Os outros apps não dão título sem Acessibilidade; os ditados neles não têm contexto.",
+        "allow": "Permitir…",
+        "statusAllowed": "Permitido",
+        "statusNotAsked": "Ainda não perguntado",
+        "statusDenied": "Não permitido – altere em Ajustes do Sistema › Privacidade e Segurança › Automação",
+        "statusNotRunning": "Não está em execução – abra-o para permitir",
+        "statusUnknown": "Desconhecido"
       }
     },
     "history": {
@@ -775,6 +804,13 @@
       "revertCorrection": "Desfazer correção",
       "correctError": "Falha ao salvar a correção. Por favor, tente novamente.",
       "postProcessingOutdated": "Pós-processado a partir de uma versão anterior da transcrição. A varinha o pós-processa novamente.",
+      "contextSent": "Enviado como contexto",
+      "contextSentTooltip": "Foi em {{date}} para o fornecedor do pós-processamento como contexto de um ditado posterior.",
+      "contextUsed": "Ditados anteriores como contexto: {{count}}",
+      "windowFilter": "Janela: {{window}} ({{count}})",
+      "showAll": "Mostrar tudo",
+      "showWindowEntries": "Mostrar só os ditados desta janela",
+      "contextEntryJump": "Mostrar no histórico para corrigir",
       "confirmReplaceTitle": "Substituir sua correção?",
       "confirmPostProcessReplacesCorrection": "Pós-processar novamente substitui sua correção do texto pós-processado.",
       "confirmRetranscribeReplacesCorrection": "Re-transcrever substitui suas correções desta entrada.",

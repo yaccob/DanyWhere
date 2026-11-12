@@ -355,6 +355,10 @@
             "name": "Son İşlem Kısayolu",
             "description": "İsteğe bağlı: Transkripsiyonunuza her zaman yapay zekâ ile son işlem uygulayan özel bir kısayol tuşu."
           },
+          "transcribe_with_context": {
+            "name": "Bağlam Kısayolu",
+            "description": "İsteğe bağlı: dikte edin, ardından seçili prompt ve aynı penceredeki önceki diktelerinizle bağlam olarak son işlemi uygulayın. Bu kısayol ayarlı olduğu sürece her dikte kendi penceresini hatırlar."
+          },
           "paste_last_transcript": {
             "name": "Son transkripti yapıştır",
             "description": "Son transkripti imlecin şu anda bulunduğu yere yapıştırır; örneğin hiçbir metin alanı odakta olmadığı için ulaşmadıysa. Erişilebilirlik olmadan panoya kopyalanır; Son dikteyi ekle'nin çalışmadığı uygulamalar için, örneğin Terminal."
@@ -731,6 +735,31 @@
         "cancel": "İptal",
         "selectToEdit": "Ayrıntılarını görüntülemek ve düzenlemek için yukarıdan bir prompt seçin.",
         "createFirst": "İlk son işlem promptunuzu oluşturmak için yukarıdaki “Yeni Prompt Oluştur” seçeneğine tıklayın."
+      },
+      "context": {
+        "title": "Önceki dikteler bağlam olarak",
+        "privacy": "Aynı penceredeki önceki dikteler, şimdiki dikteyle birlikte son işlem sağlayıcısına gider; hiç son işlemden geçmemiş olanlar da dahil. Geçmiş, bu şekilde giden her kaydı işaretler.",
+        "ageLimit": "Yaş sınırı",
+        "ageLimitDescription": "Yalnızca şimdikinden en fazla bu kadar dakika eski dikteler ({{min}}–{{max}}).",
+        "minutes": "dk",
+        "maxEntries": "Önceki dikteler",
+        "maxEntriesDescription": "En fazla bu kadar önceki dikte ({{min}}–{{max}}).",
+        "charBudget": "Karakter",
+        "charBudgetDescription": "Önceki diktelerden en fazla bu kadar karakter; en eskiler önce çıkar ({{min}}–{{max}}).",
+        "invalid": "{{min}} ile {{max}} arasında bir tam sayı girin.",
+        "excludedApps": "Hariç tutulan uygulamalar",
+        "excludedAppsDescription": "Bu uygulamaların pencereleri hiçbir zaman kaydedilmez, bu yüzden dikteleri asla bağlam olmaz. Her satıra bir uygulama: adı veya paket kimliği (Windows: programın adı).",
+        "windowTitles": "Pencere başlıkları",
+        "windowTitlesAvailable": "Handy, dikte ettiğiniz pencerenin başlığını okur.",
+        "windowTitlesUnsupported": "Handy bu sistemde henüz pencere başlıklarını bilmiyor, bu yüzden burada bağlam yok.",
+        "windowTitlesAutomation": "Erişilebilirlik olmadan Handy bu uygulamalardan pencere başlığını isteyebilir. macOS bunu size her uygulama için bir kez sorar; Handy yalnızca başlığı okur.",
+        "windowTitlesOtherApps": "Diğer uygulamalar Erişilebilirlik olmadan başlık vermez; oradaki diktelerin bağlamı olmaz.",
+        "allow": "İzin ver…",
+        "statusAllowed": "İzin verildi",
+        "statusNotAsked": "Henüz sorulmadı",
+        "statusDenied": "İzin verilmedi – Sistem Ayarları › Gizlilik ve Güvenlik › Otomasyon'dan değiştirin",
+        "statusNotRunning": "Çalışmıyor – izin vermek için başlatın",
+        "statusUnknown": "Bilinmiyor"
       }
     },
     "history": {
@@ -775,6 +804,13 @@
       "revertCorrection": "Düzeltmeyi geri al",
       "correctError": "Düzeltme kaydedilemedi. Lütfen tekrar deneyin.",
       "postProcessingOutdated": "Transkripsiyonun önceki bir sürümünden son işlem uygulandı. Sihirli değnek son işlemi yeniden uygular.",
+      "contextSent": "Bağlam olarak gönderildi",
+      "contextSentTooltip": "{{date}} tarihinde daha sonraki bir diktenin bağlamı olarak son işlem sağlayıcısına gitti.",
+      "contextUsed": "Bağlam olarak önceki dikteler: {{count}}",
+      "windowFilter": "Pencere: {{window}} ({{count}})",
+      "showAll": "Tümünü göster",
+      "showWindowEntries": "Yalnızca bu pencerenin diktelerini göster",
+      "contextEntryJump": "Düzeltmek için geçmişte göster",
       "confirmReplaceTitle": "Düzeltmeniz değiştirilsin mi?",
       "confirmPostProcessReplacesCorrection": "Son işlemi yeniden uygulamak, son işlem sonucundaki düzeltmenizin yerini alır.",
       "confirmRetranscribeReplacesCorrection": "Yeniden transkribe etmek, bu kayıttaki düzeltmelerinizin yerini alır.",

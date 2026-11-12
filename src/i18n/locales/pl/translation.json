@@ -355,6 +355,10 @@
             "name": "Skrót postprocessingu",
             "description": "Opcjonalnie: Dedykowany skrót klawiszowy, który zawsze stosuje postprocessing AI do transkrypcji."
           },
+          "transcribe_with_context": {
+            "name": "Skrót z kontekstem",
+            "description": "Opcjonalnie: dyktuj, a potem przeprowadź postproces z wybranym promptem i twoimi wcześniejszymi dyktowaniami z tego samego okna jako kontekstem. Dopóki ten skrót jest ustawiony, każde dyktowanie zapamiętuje swoje okno."
+          },
           "paste_last_transcript": {
             "name": "Wklej ostatnią transkrypcję",
             "description": "Wkleja ostatnią transkrypcję tam, gdzie jest teraz kursor, np. gdy nie dotarła, bo żadne pole tekstowe nie miało fokusu. Bez dostępności jest kopiowana do schowka, dla aplikacji, w których „Wstaw ostatnie dyktowanie” nie działa, np. Terminal."
@@ -731,6 +735,31 @@
         "cancel": "Anuluj",
         "selectToEdit": "Wybierz prompt powyżej, aby zobaczyć i edytować jego szczegóły.",
         "createFirst": "Kliknij 'Utwórz nowy prompt' powyżej, aby utworzyć pierwszy prompt postprocessingu."
+      },
+      "context": {
+        "title": "Kontekst z wcześniejszych dyktowań",
+        "privacy": "Wcześniejsze dyktowania z tego samego okna trafiają do dostawcy postprocesu razem z bieżącym, także te, które nigdy nie przeszły postprocesu. Historia oznacza każdy wpis wysłany w ten sposób.",
+        "ageLimit": "Limit wieku",
+        "ageLimitDescription": "Tylko dyktowania najwyżej o tyle minut starsze od bieżącego ({{min}}–{{max}}).",
+        "minutes": "min",
+        "maxEntries": "Wcześniejsze dyktowania",
+        "maxEntriesDescription": "Najwyżej tyle wcześniejszych dyktowań ({{min}}–{{max}}).",
+        "charBudget": "Znaki",
+        "charBudgetDescription": "Najwyżej tyle znaków z wcześniejszych dyktowań; najstarsze odpadają najpierw ({{min}}–{{max}}).",
+        "invalid": "Wpisz liczbę całkowitą od {{min}} do {{max}}.",
+        "excludedApps": "Wykluczone aplikacje",
+        "excludedAppsDescription": "Okna tych aplikacji nigdy nie są rejestrowane, więc ich dyktowania nigdy nie służą jako kontekst. Jedna aplikacja w wierszu: jej nazwa lub identyfikator pakietu (Windows: nazwa programu).",
+        "windowTitles": "Tytuły okien",
+        "windowTitlesAvailable": "Handy odczytuje tytuł okna, w którym dyktujesz.",
+        "windowTitlesUnsupported": "Handy nie zna jeszcze tytułów okien w tym systemie, więc nie ma tu kontekstu.",
+        "windowTitlesAutomation": "Bez Dostępności Handy może zapytać te aplikacje o tytuł okna. macOS pyta cię o to raz dla każdej aplikacji; Handy odczytuje tylko tytuł.",
+        "windowTitlesOtherApps": "Inne aplikacje bez Dostępności nie podają tytułu; dyktowania w nich nie mają kontekstu.",
+        "allow": "Zezwól…",
+        "statusAllowed": "Dozwolone",
+        "statusNotAsked": "Jeszcze nie zapytano",
+        "statusDenied": "Niedozwolone – zmień w Ustawieniach systemowych › Prywatność i ochrona › Automatyzacja",
+        "statusNotRunning": "Nie działa – uruchom ją, aby zezwolić",
+        "statusUnknown": "Nieznane"
       }
     },
     "history": {
@@ -775,6 +804,13 @@
       "revertCorrection": "Cofnij poprawkę",
       "correctError": "Nie udało się zapisać poprawki. Spróbuj ponownie.",
       "postProcessingOutdated": "Wynik postprocesu powstał z wcześniejszej wersji transkrypcji. Różdżka uruchomi postproces ponownie.",
+      "contextSent": "Wysłane jako kontekst",
+      "contextSentTooltip": "Trafiło {{date}} do dostawcy postprocesu jako kontekst późniejszego dyktowania.",
+      "contextUsed": "Wcześniejsze dyktowania jako kontekst: {{count}}",
+      "windowFilter": "Okno: {{window}} ({{count}})",
+      "showAll": "Pokaż wszystko",
+      "showWindowEntries": "Pokaż tylko dyktowania z tego okna",
+      "contextEntryJump": "Pokaż w historii, aby poprawić",
       "confirmReplaceTitle": "Zastąpić twoją poprawkę?",
       "confirmPostProcessReplacesCorrection": "Ponowny postproces zastępuje twoją poprawkę wyniku postprocesu.",
       "confirmRetranscribeReplacesCorrection": "Ponowna transkrypcja zastępuje twoje poprawki tego wpisu.",

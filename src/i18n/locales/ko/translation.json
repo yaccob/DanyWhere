@@ -355,6 +355,10 @@
             "name": "후처리 단축키",
             "description": "선택 사항: 항상 AI 후처리를 적용하는 전용 단축키입니다."
           },
+          "transcribe_with_context": {
+            "name": "컨텍스트 단축키",
+            "description": "선택 사항: 받아쓰기한 뒤 선택한 프롬프트와 같은 창의 이전 받아쓰기를 컨텍스트로 삼아 후처리합니다. 이 단축키가 설정되어 있는 동안 받아쓰기마다 창이 기록됩니다."
+          },
           "paste_last_transcript": {
             "name": "마지막 받아쓰기 붙여넣기",
             "description": "마지막 받아쓰기를 현재 커서 위치에 붙여넣습니다. 텍스트 필드에 포커스가 없어 전달되지 않았을 때 등에 사용합니다. 접근성 권한이 없으면 대신 클립보드에 복사됩니다. ‘마지막 받아쓰기 삽입’이 작동하지 않는 앱(예: 터미널)용입니다."
@@ -731,6 +735,31 @@
         "cancel": "취소",
         "selectToEdit": "세부 정보를 보고 편집하려면 위에서 프롬프트를 선택하세요.",
         "createFirst": "첫 번째 후처리 프롬프트를 만들려면 위의 '새 프롬프트 만들기'를 클릭하세요."
+      },
+      "context": {
+        "title": "이전 받아쓰기의 컨텍스트",
+        "privacy": "같은 창의 이전 받아쓰기는 현재 받아쓰기와 함께 후처리 제공업체로 전송되며, 후처리된 적 없는 것도 포함됩니다. 이렇게 전송된 항목은 히스토리에 표시됩니다.",
+        "ageLimit": "경과 시간 제한",
+        "ageLimitDescription": "현재 받아쓰기보다 최대 이만큼의 분만큼 오래된 받아쓰기만 ({{min}}–{{max}}).",
+        "minutes": "분",
+        "maxEntries": "이전 받아쓰기",
+        "maxEntriesDescription": "이전 받아쓰기는 최대 이만큼 ({{min}}–{{max}}).",
+        "charBudget": "문자 수",
+        "charBudgetDescription": "이전 받아쓰기에서 최대 이만큼의 문자. 가장 오래된 것부터 빠집니다 ({{min}}–{{max}}).",
+        "invalid": "{{min}}에서 {{max}} 사이의 정수를 입력하세요.",
+        "excludedApps": "제외된 앱",
+        "excludedAppsDescription": "이 앱들의 창은 기록되지 않으므로 그 받아쓰기는 컨텍스트로 쓰이지 않습니다. 한 줄에 앱 하나: 이름 또는 번들 ID (Windows: 프로그램 이름).",
+        "windowTitles": "창 제목",
+        "windowTitlesAvailable": "Handy는 받아쓰기하는 창의 제목을 읽습니다.",
+        "windowTitlesUnsupported": "이 시스템에서는 Handy가 아직 창 제목을 알 수 없으므로 여기서는 컨텍스트가 없습니다.",
+        "windowTitlesAutomation": "손쉬운 사용 없이도 Handy는 이 앱들에 창 제목을 물어볼 수 있습니다. macOS가 앱마다 한 번 묻습니다. Handy는 제목만 읽습니다.",
+        "windowTitlesOtherApps": "다른 앱은 손쉬운 사용 없이는 제목을 알려 주지 않으므로 그곳의 받아쓰기에는 컨텍스트가 없습니다.",
+        "allow": "허용…",
+        "statusAllowed": "허용됨",
+        "statusNotAsked": "아직 묻지 않음",
+        "statusDenied": "허용되지 않음 – 시스템 설정 › 개인정보 보호 및 보안 › 자동화에서 변경하세요",
+        "statusNotRunning": "실행 중 아님 – 허용하려면 실행하세요",
+        "statusUnknown": "알 수 없음"
       }
     },
     "history": {
@@ -775,6 +804,13 @@
       "revertCorrection": "수정 취소",
       "correctError": "수정 사항 저장에 실패했습니다. 다시 시도해주세요.",
       "postProcessingOutdated": "이전 버전의 전사 내용으로 후처리되었습니다. 마술봉 버튼으로 다시 후처리할 수 있습니다.",
+      "contextSent": "컨텍스트로 전송됨",
+      "contextSentTooltip": "{{date}}에 이후 받아쓰기의 컨텍스트로 후처리 제공업체에 전송되었습니다.",
+      "contextUsed": "컨텍스트로 사용한 이전 받아쓰기: {{count}}",
+      "windowFilter": "창: {{window}} ({{count}})",
+      "showAll": "모두 보기",
+      "showWindowEntries": "이 창의 받아쓰기만 보기",
+      "contextEntryJump": "수정하려면 히스토리에서 보기",
       "confirmReplaceTitle": "수정 내용을 바꿀까요?",
       "confirmPostProcessReplacesCorrection": "다시 후처리하면 후처리 결과에 대한 수정 내용이 바뀝니다.",
       "confirmRetranscribeReplacesCorrection": "다시 전사하면 이 항목에 대한 수정 내용이 바뀝니다.",

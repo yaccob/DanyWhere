@@ -355,6 +355,10 @@
             "name": "Genvej til efterbehandling",
             "description": "Valgfrit: En dedikeret genvej, der altid anvender AI-efterbehandling på din transskription."
           },
+          "transcribe_with_context": {
+            "name": "Genvej med kontekst",
+            "description": "Valgfrit: diktér, og efterbehandl derefter med den valgte prompt og dine tidligere dikteringer fra samme vindue som kontekst. Så længe denne genvej er sat, husker hver diktering sit vindue."
+          },
           "paste_last_transcript": {
             "name": "Indsæt seneste transskription",
             "description": "Indsætter den seneste transskription, der hvor markøren står nu, f.eks. hvis den ikke kom frem, fordi intet tekstfelt havde fokus. Uden tilgængelighed kopieres den i stedet til udklipsholderen, til apps hvor »Indsæt seneste diktering« ikke virker, f.eks. Terminal."
@@ -731,6 +735,31 @@
         "cancel": "Annuller",
         "selectToEdit": "Vælg en prompt ovenfor for at se og redigere dens detaljer.",
         "createFirst": "Klik på 'Opret ny prompt' ovenfor for at oprette din første efterbehandlingsprompt."
+      },
+      "context": {
+        "title": "Kontekst fra tidligere dikteringer",
+        "privacy": "Tidligere dikteringer fra samme vindue sendes til udbyderen af efterbehandlingen sammen med den aktuelle, også dem, der aldrig er blevet efterbehandlet. Historikken markerer hver post, der er sendt på den måde.",
+        "ageLimit": "Aldersgrænse",
+        "ageLimitDescription": "Kun dikteringer, der højst er så mange minutter ældre end den aktuelle ({{min}}–{{max}}).",
+        "minutes": "min",
+        "maxEntries": "Tidligere dikteringer",
+        "maxEntriesDescription": "Højst så mange tidligere dikteringer ({{min}}–{{max}}).",
+        "charBudget": "Tegn",
+        "charBudgetDescription": "Højst så mange tegn fra tidligere dikteringer; de ældste falder fra først ({{min}}–{{max}}).",
+        "invalid": "Indtast et helt tal fra {{min}} til {{max}}.",
+        "excludedApps": "Undtagne apps",
+        "excludedAppsDescription": "Vinduer fra disse apps registreres aldrig, så deres dikteringer bruges aldrig som kontekst. Én app pr. linje: dens navn eller bundle-ID (Windows: programmets navn).",
+        "windowTitles": "Vinduestitler",
+        "windowTitlesAvailable": "Handy læser titlen på det vindue, du dikterer i.",
+        "windowTitlesUnsupported": "Handy kender endnu ikke vinduestitler på dette system, så her er der ingen kontekst.",
+        "windowTitlesAutomation": "Uden Hjælpemidler kan Handy spørge disse apps om deres vinduestitel. macOS spørger dig én gang pr. app; Handy læser kun titlen.",
+        "windowTitlesOtherApps": "Andre apps giver ingen titel uden Hjælpemidler; dikteringer der har ingen kontekst.",
+        "allow": "Tillad…",
+        "statusAllowed": "Tilladt",
+        "statusNotAsked": "Ikke spurgt endnu",
+        "statusDenied": "Ikke tilladt – ændr det i Systemindstillinger › Anonymitet og sikkerhed › Automatisering",
+        "statusNotRunning": "Kører ikke – start den for at tillade",
+        "statusUnknown": "Ukendt"
       }
     },
     "history": {
@@ -775,6 +804,13 @@
       "revertCorrection": "Fortryd rettelse",
       "correctError": "Kunne ikke gemme rettelsen. Prøv igen.",
       "postProcessingOutdated": "Efterbehandlet fra en tidligere version af transskriptionen. Tryllestaven efterbehandler den igen.",
+      "contextSent": "Sendt som kontekst",
+      "contextSentTooltip": "Blev sendt {{date}} til udbyderen af efterbehandlingen som kontekst til en senere diktering.",
+      "contextUsed": "Tidligere dikteringer som kontekst: {{count}}",
+      "windowFilter": "Vindue: {{window}} ({{count}})",
+      "showAll": "Vis alle",
+      "showWindowEntries": "Vis kun dikteringer fra dette vindue",
+      "contextEntryJump": "Vis i historikken for at rette",
       "confirmReplaceTitle": "Erstat din rettelse?",
       "confirmPostProcessReplacesCorrection": "En ny efterbehandling erstatter din rettelse af den efterbehandlede tekst.",
       "confirmRetranscribeReplacesCorrection": "At transskribere igen erstatter dine rettelser af denne post.",

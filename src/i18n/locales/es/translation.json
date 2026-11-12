@@ -355,6 +355,10 @@
             "name": "Tecla de post procesamiento",
             "description": "Opcional: Una tecla de acceso rápido dedicada que siempre aplica post procesamiento con IA a tu transcripción."
           },
+          "transcribe_with_context": {
+            "name": "Tecla con contexto",
+            "description": "Opcional: dicta y luego post procesa con el prompt elegido y tus dictados anteriores de la misma ventana como contexto. Mientras esta tecla esté definida, cada dictado recuerda su ventana."
+          },
           "paste_last_transcript": {
             "name": "Pegar la última transcripción",
             "description": "Pega la última transcripción donde está ahora el cursor, por ejemplo si no llegó porque ningún campo de texto tenía el foco. Sin accesibilidad se copia al portapapeles, para las apps en las que «Insertar el último dictado» no funciona, como Terminal."
@@ -731,6 +735,31 @@
         "cancel": "Cancelar",
         "selectToEdit": "Selecciona un prompt arriba para ver y editar sus detalles.",
         "createFirst": "Haz clic en 'Crear nuevo prompt' arriba para crear tu primer prompt de post procesamiento."
+      },
+      "context": {
+        "title": "Contexto de dictados anteriores",
+        "privacy": "Los dictados anteriores de la misma ventana se envían al proveedor del post procesamiento junto con el actual, incluidos los que nunca se post procesaron. El historial marca cada entrada que salió así.",
+        "ageLimit": "Antigüedad máxima",
+        "ageLimitDescription": "Solo dictados como máximo esta cantidad de minutos más antiguos que el actual ({{min}}–{{max}}).",
+        "minutes": "min",
+        "maxEntries": "Dictados anteriores",
+        "maxEntriesDescription": "Como máximo esta cantidad de dictados anteriores ({{min}}–{{max}}).",
+        "charBudget": "Caracteres",
+        "charBudgetDescription": "Como máximo esta cantidad de caracteres de dictados anteriores; los más antiguos salen primero ({{min}}–{{max}}).",
+        "invalid": "Introduce un número entero de {{min}} a {{max}}.",
+        "excludedApps": "Apps excluidas",
+        "excludedAppsDescription": "Las ventanas de estas apps nunca se registran, así que sus dictados nunca sirven de contexto. Una app por línea: su nombre o su ID de bundle (Windows: el nombre del programa).",
+        "windowTitles": "Títulos de ventana",
+        "windowTitlesAvailable": "Handy lee el título de la ventana en la que dictas.",
+        "windowTitlesUnsupported": "Handy aún no conoce los títulos de ventana en este sistema, así que aquí no hay contexto.",
+        "windowTitlesAutomation": "Sin Accesibilidad, Handy puede pedir a estas apps el título de su ventana. macOS te lo pregunta una vez por app; Handy solo lee el título.",
+        "windowTitlesOtherApps": "Las demás apps no dan título sin Accesibilidad; los dictados en ellas no tienen contexto.",
+        "allow": "Permitir…",
+        "statusAllowed": "Permitido",
+        "statusNotAsked": "Aún sin preguntar",
+        "statusDenied": "No permitido – cámbialo en Ajustes del Sistema › Privacidad y seguridad › Automatización",
+        "statusNotRunning": "No se está ejecutando – ábrela para permitir",
+        "statusUnknown": "Desconocido"
       }
     },
     "history": {
@@ -775,6 +804,13 @@
       "revertCorrection": "Deshacer corrección",
       "correctError": "Error al guardar la corrección. Por favor, intenta de nuevo.",
       "postProcessingOutdated": "Post procesado a partir de una versión anterior de la transcripción. La varita lo vuelve a post procesar.",
+      "contextSent": "Enviado como contexto",
+      "contextSentTooltip": "Se envió el {{date}} al proveedor del post procesamiento como contexto de un dictado posterior.",
+      "contextUsed": "Dictados anteriores como contexto: {{count}}",
+      "windowFilter": "Ventana: {{window}} ({{count}})",
+      "showAll": "Mostrar todo",
+      "showWindowEntries": "Mostrar solo los dictados de esta ventana",
+      "contextEntryJump": "Mostrarlo en el historial para corregirlo",
       "confirmReplaceTitle": "¿Reemplazar tu corrección?",
       "confirmPostProcessReplacesCorrection": "Post procesar de nuevo reemplaza tu corrección del texto post procesado.",
       "confirmRetranscribeReplacesCorrection": "Re-transcribir reemplaza tus correcciones de esta entrada.",

@@ -20,6 +20,11 @@ pub struct CliArgs {
     #[arg(long)]
     pub toggle_post_process: bool,
 
+    /// Toggle transcription with post-processing and context from earlier
+    /// dictations in the same window (sent to running instance)
+    #[arg(long)]
+    pub toggle_post_process_with_context: bool,
+
     /// Cancel the current operation (sent to running instance)
     #[arg(long)]
     pub cancel: bool,

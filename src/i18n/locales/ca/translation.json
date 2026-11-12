@@ -355,6 +355,10 @@
             "name": "Drecera de postprocessament",
             "description": "Opcional: una drecera específica que sempre aplica postprocessament amb IA a la transcripció."
           },
+          "transcribe_with_context": {
+            "name": "Drecera amb context",
+            "description": "Opcional: dicta i després postprocessa amb la indicació escollida i els teus dictats anteriors de la mateixa finestra com a context. Mentre aquesta drecera estigui definida, cada dictat recorda la seva finestra."
+          },
           "paste_last_transcript": {
             "name": "Enganxa l'última transcripció",
             "description": "Enganxa l'última transcripció on hi ha el cursor ara, per exemple si no ha arribat perquè cap camp de text tenia el focus. Sense accessibilitat es copia al porta-retalls, per a les apps on «Insereix l'últim dictat» no funciona, com ara el Terminal."
@@ -731,6 +735,31 @@
         "cancel": "Cancel·leu",
         "selectToEdit": "Seleccioneu una indicació more amunt per veure'n i editar-ne els detalls.",
         "createFirst": "Feu clic a «Creeu una indicació nova» més amunt per crear la primera indicació de postprocessament."
+      },
+      "context": {
+        "title": "Context de dictats anteriors",
+        "privacy": "Els dictats anteriors de la mateixa finestra van al proveïdor del postprocessament juntament amb l'actual, també els que mai no s'han postprocessat. L'historial marca cada entrada que ha sortit així.",
+        "ageLimit": "Antiguitat màxima",
+        "ageLimitDescription": "Només dictats com a màxim aquests minuts més antics que l'actual ({{min}}–{{max}}).",
+        "minutes": "min",
+        "maxEntries": "Dictats anteriors",
+        "maxEntriesDescription": "Com a màxim aquests dictats anteriors ({{min}}–{{max}}).",
+        "charBudget": "Caràcters",
+        "charBudgetDescription": "Com a màxim aquests caràcters de dictats anteriors; els més antics surten primer ({{min}}–{{max}}).",
+        "invalid": "Introdueix un nombre enter de {{min}} a {{max}}.",
+        "excludedApps": "Apps excloses",
+        "excludedAppsDescription": "Les finestres d'aquestes apps no es registren mai, de manera que els seus dictats mai no serveixen de context. Una app per línia: el nom o l'identificador del paquet (Windows: el nom del programa).",
+        "windowTitles": "Títols de finestra",
+        "windowTitlesAvailable": "Handy llegeix el títol de la finestra on dictes.",
+        "windowTitlesUnsupported": "Handy encara no coneix els títols de finestra en aquest sistema, així que aquí no hi ha context.",
+        "windowTitlesAutomation": "Sense Accessibilitat, Handy pot demanar a aquestes apps el títol de la finestra. El macOS t'ho pregunta un cop per app; Handy només llegeix el títol.",
+        "windowTitlesOtherApps": "Les altres apps no donen títol sense Accessibilitat; els dictats que s'hi fan no tenen context.",
+        "allow": "Permet…",
+        "statusAllowed": "Permès",
+        "statusNotAsked": "Encara no s'ha preguntat",
+        "statusDenied": "No permès – canvia-ho a Configuració del Sistema › Privacitat i seguretat › Automatització",
+        "statusNotRunning": "No s'està executant – obre-la per permetre-ho",
+        "statusUnknown": "Desconegut"
       }
     },
     "history": {
@@ -775,6 +804,13 @@
       "revertCorrection": "Desfés la correcció",
       "correctError": "No s'ha pogut desar la correcció. Torneu-ho a provar.",
       "postProcessingOutdated": "Postprocessat a partir d'una versió anterior de la transcripció. La vareta el torna a postprocessar.",
+      "contextSent": "Enviat com a context",
+      "contextSentTooltip": "Es va enviar el {{date}} al proveïdor del postprocessament com a context d'un dictat posterior.",
+      "contextUsed": "Dictats anteriors com a context: {{count}}",
+      "windowFilter": "Finestra: {{window}} ({{count}})",
+      "showAll": "Mostra-ho tot",
+      "showWindowEntries": "Mostra només els dictats d'aquesta finestra",
+      "contextEntryJump": "Mostra-ho a l'historial per corregir-ho",
       "confirmReplaceTitle": "Voleu substituir la correcció?",
       "confirmPostProcessReplacesCorrection": "Postprocessar de nou substitueix la vostra correcció del text postprocessat.",
       "confirmRetranscribeReplacesCorrection": "Tornar a transcriure substitueix les vostres correccions d'aquesta entrada.",

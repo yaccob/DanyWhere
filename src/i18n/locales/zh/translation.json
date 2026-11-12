@@ -355,6 +355,10 @@
             "name": "后处理快捷键",
             "description": "可选：一个专用快捷键，始终对您的转录应用 AI 后处理。"
           },
+          "transcribe_with_context": {
+            "name": "上下文快捷键",
+            "description": "可选：听写后，使用所选提示词并以同一窗口中的早前听写作为上下文进行后处理。设置此快捷键期间，每次听写都会记住其窗口。"
+          },
           "paste_last_transcript": {
             "name": "粘贴最近的转录",
             "description": "将最近的转录粘贴到当前光标位置，例如因没有文本框获得焦点而未送达时。没有辅助功能权限时，改为复制到剪贴板，适用于“插入最近的听写”无法使用的应用，例如终端。"
@@ -731,6 +735,31 @@
         "cancel": "取消",
         "selectToEdit": "选择上方的提示词以查看和编辑其详细信息。",
         "createFirst": "点击上方的「创建新提示词」来创建您的第一个后处理提示词。"
+      },
+      "context": {
+        "title": "来自早前听写的上下文",
+        "privacy": "同一窗口中的早前听写会与当前听写一起发送给后处理服务商，包括从未经过后处理的听写。以这种方式发出的每个条目都会在历史记录中标出。",
+        "ageLimit": "时间上限",
+        "ageLimitDescription": "仅限比当前听写最多早这么多分钟的听写（{{min}}–{{max}}）。",
+        "minutes": "分钟",
+        "maxEntries": "早前听写",
+        "maxEntriesDescription": "最多这么多条早前听写（{{min}}–{{max}}）。",
+        "charBudget": "字符数",
+        "charBudgetDescription": "早前听写最多这么多字符；最早的先被舍去（{{min}}–{{max}}）。",
+        "invalid": "请输入 {{min}} 到 {{max}} 之间的整数。",
+        "excludedApps": "排除的应用",
+        "excludedAppsDescription": "这些应用的窗口永远不会被记录，因此它们的听写永远不会作为上下文。每行一个应用：名称或 Bundle ID（Windows：程序名称）。",
+        "windowTitles": "窗口标题",
+        "windowTitlesAvailable": "Handy 会读取你听写所在窗口的标题。",
+        "windowTitlesUnsupported": "Handy 尚不能获取此系统上的窗口标题，因此这里没有上下文。",
+        "windowTitlesAutomation": "没有辅助功能权限时，Handy 可以向这些应用询问窗口标题。macOS 会针对每个应用询问你一次；Handy 只读取标题。",
+        "windowTitlesOtherApps": "其他应用在没有辅助功能权限时不提供标题；在其中的听写没有上下文。",
+        "allow": "允许…",
+        "statusAllowed": "已允许",
+        "statusNotAsked": "尚未询问",
+        "statusDenied": "未允许 – 请在 系统设置 › 隐私与安全性 › 自动化 中更改",
+        "statusNotRunning": "未运行 – 请启动它以允许",
+        "statusUnknown": "未知"
       }
     },
     "history": {
@@ -775,6 +804,13 @@
       "revertCorrection": "撤销更正",
       "correctError": "保存更正失败。请重试。",
       "postProcessingOutdated": "此后处理基于转录的早期版本。点击魔杖可重新后处理。",
+      "contextSent": "已作为上下文发送",
+      "contextSentTooltip": "已于 {{date}} 作为之后某次听写的上下文发送给后处理服务商。",
+      "contextUsed": "作为上下文的早前听写：{{count}}",
+      "windowFilter": "窗口：{{window}}（{{count}}）",
+      "showAll": "显示全部",
+      "showWindowEntries": "仅显示此窗口的听写",
+      "contextEntryJump": "在历史记录中显示以便更正",
       "confirmReplaceTitle": "替换你的更正？",
       "confirmPostProcessReplacesCorrection": "重新后处理会替换你对后处理文本的更正。",
       "confirmRetranscribeReplacesCorrection": "重新转录会替换你对此条目的更正。",

@@ -1061,6 +1061,7 @@ mod tests {
             transcription_correction: None,
             post_processed_correction: None,
             post_processing_outdated: false,
+            window_context: Default::default(),
         }
     }
 

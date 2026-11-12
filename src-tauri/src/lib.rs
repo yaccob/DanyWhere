@@ -13,6 +13,7 @@ mod delivery;
 pub mod engine_supervisor;
 mod helpers;
 // DanyWhere: corrections in History.
+mod dictation_context;
 mod history_corrections;
 mod input;
 mod insert_service;
@@ -38,6 +39,7 @@ mod tray;
 mod tray_i18n;
 mod utils;
 pub mod webkit_renderer;
+mod window_capture;
 mod word_lists;
 
 pub use cli::CliArgs;
@@ -848,6 +850,11 @@ pub fn run(cli_args: CliArgs) {
             // DanyWhere: corrections in History.
             history_corrections::correct_history_entry,
             history_corrections::delete_history_entry_post_processing,
+            dictation_context::set_dictation_context_settings,
+            dictation_context::get_history_entries_in_window,
+            dictation_context::get_history_entries_by_ids,
+            window_capture::get_window_title_access,
+            window_capture::request_window_title_access,
             commands::history::cancel_history_entry_transcription,
             commands::history::transcribe_file,
             commands::history::update_history_limit,
@@ -953,6 +960,16 @@ pub fn run(cli_args: CliArgs) {
                 signal_handle::send_transcription_input(app, "transcribe", "CLI");
             } else if args.iter().any(|a| a == "--toggle-post-process") {
                 signal_handle::send_transcription_input(app, "transcribe_with_post_process", "CLI");
+            } else if args
+                .iter()
+                .any(|a| a == "--toggle-post-process-with-context")
+            {
+                // DanyWhere: post-processing with context.
+                signal_handle::send_transcription_input(
+                    app,
+                    crate::dictation_context::CONTEXT_BINDING,
+                    "CLI",
+                );
             } else if args.iter().any(|a| a == "--cancel") {
                 crate::utils::cancel_current_operation(app);
             } else {

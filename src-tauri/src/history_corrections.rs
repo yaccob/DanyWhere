@@ -224,6 +224,7 @@ mod tests {
             transcription_correction: transcription_correction.map(str::to_string),
             post_processed_correction: post_processed_correction.map(str::to_string),
             post_processing_outdated: false,
+            window_context: Default::default(),
         }
     }
 

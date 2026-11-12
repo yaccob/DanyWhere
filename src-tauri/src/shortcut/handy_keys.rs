@@ -430,7 +430,10 @@ pub fn init_shortcuts(app: &AppHandle) -> Result<(), String> {
             continue;
         }
         // Skip post-processing shortcut when the feature is disabled
-        if id == "transcribe_with_post_process" && !user_settings.post_process_enabled {
+        // DanyWhere: also the context shortcut.
+        if crate::settings::binding_needs_post_processing(&id)
+            && !user_settings.post_process_enabled
+        {
             continue;
         }
 

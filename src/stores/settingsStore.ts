@@ -11,6 +11,7 @@ import type {
   VadBackend,
   LanguageDetectionMode,
   RecordingStorageLimit,
+  DictationContextSettings,
 } from "@/bindings";
 import { commands } from "@/bindings";
 import { notify } from "@/stores/noticeStore";
@@ -149,6 +150,13 @@ const settingUpdaters: {
   custom_words: (value) => commands.updateCustomWords(value as string[]),
   active_word_list_id: (value) =>
     commands.setActiveWordList((value as string | null | undefined) ?? null),
+  // DanyWhere: context from earlier dictations in the same window.
+  dictation_context: async (value) => {
+    const result = await commands.setDictationContextSettings(
+      value as DictationContextSettings,
+    );
+    if (result.status === "error") throw new Error(result.error);
+  },
   word_correction_threshold: (value) =>
     commands.changeWordCorrectionThresholdSetting(value as number),
   paste_delay_ms: (value) =>
