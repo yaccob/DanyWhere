@@ -33,6 +33,51 @@
       <key>NSTimeout</key>
       <string>30000</string>
     </dict>
+    <!-- The dictation shortcut's own service: DanyWhere gives it the dictation
+         shortcut and releases that shortcut during a recording, so its second
+         press ends the dictation and inserts it (src/dictation_key_inserts.rs). -->
+    <dict>
+      <key>NSMenuItem</key>
+      <dict>
+        <key>default</key>
+        <string>DanyWhere: End Dictation and Insert</string>
+      </dict>
+      <key>NSMessage</key>
+      <string>endDictationAndInsert</string>
+      <key>NSPortName</key>
+      <string>DanyWhere</string>
+      <key>NSReturnTypes</key>
+      <array>
+        <string>NSStringPboardType</string>
+        <string>public.utf8-plain-text</string>
+      </array>
+      <key>NSRequiredContext</key>
+      <dict/>
+      <key>NSTimeout</key>
+      <string>30000</string>
+    </dict>
+    <!-- The same for the post-process shortcut: ends the dictation with
+         post-processing. -->
+    <dict>
+      <key>NSMenuItem</key>
+      <dict>
+        <key>default</key>
+        <string>DanyWhere: End Dictation with Post-processing and Insert</string>
+      </dict>
+      <key>NSMessage</key>
+      <string>endDictationWithPostProcessAndInsert</string>
+      <key>NSPortName</key>
+      <string>DanyWhere</string>
+      <key>NSReturnTypes</key>
+      <array>
+        <string>NSStringPboardType</string>
+        <string>public.utf8-plain-text</string>
+      </array>
+      <key>NSRequiredContext</key>
+      <dict/>
+      <key>NSTimeout</key>
+      <string>30000</string>
+    </dict>
   </array>
 </dict>
 </plist>

@@ -411,6 +411,18 @@
         "invalid": "Nimm ⌘ oder ⌃ mit einem Buchstaben, einer Ziffer oder einem Satzzeichen",
         "conflict": "„{{name}}“ verwendet dieses Kürzel schon",
         "failed": "Kürzel konnte nicht gesetzt werden: {{error}}"
+      },
+      "dictationKeyInserts": {
+        "label": "Tastenkombination fügt beim zweiten Druck ein",
+        "description": "Drück die Tastenkombination fürs Diktieren ein zweites Mal, um das Diktat zu beenden und einzufügen, sobald es fertig ist, in Apps, die macOS-Dienste unterstützen. Apps, die schon geöffnet sind, übernehmen das erst nach einem Neustart. Wo sich nichts einfügen lässt, nimm „Letzte Transkription einfügen“."
+      },
+      "dictationServiceWhenIdle": {
+        "title": "Wenn gerade nichts aufgenommen wird",
+        "description": "Wenn die Tastenkombination in einer App ankommt, während DanyWhere nicht aufnimmt, etwa weil DanyWhere noch nicht lief: eine Aufnahme starten oder nichts tun. Ein früheres Diktat wird nie eingefügt.",
+        "options": {
+          "startRecording": "Aufnahme starten",
+          "doNothing": "Nichts tun"
+        }
       }
     },
     "models": {

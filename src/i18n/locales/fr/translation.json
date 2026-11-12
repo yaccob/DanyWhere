@@ -411,6 +411,18 @@
         "invalid": "Utilisez ⌘ ou ⌃ avec une lettre, un chiffre ou un signe de ponctuation",
         "conflict": "« {{name}} » utilise déjà ce raccourci",
         "failed": "Impossible de définir le raccourci : {{error}}"
+      },
+      "dictationKeyInserts": {
+        "label": "Le raccourci de dictée insère aussi",
+        "description": "Appuyez à nouveau sur le raccourci de dictée pour terminer la dictée et l'insérer dès qu'elle est prête, dans les apps qui prennent en charge les services de macOS. Les apps déjà ouvertes en tiennent compte après un redémarrage. Là où rien ne peut être inséré, utilisez « Coller la dernière transcription »."
+      },
+      "dictationServiceWhenIdle": {
+        "title": "Quand rien n'est enregistré",
+        "description": "Si le raccourci arrive dans une app alors que DanyWhere n'enregistre pas, par exemple parce que DanyWhere n'était pas encore lancé : démarrer un enregistrement ou ne rien faire. Une dictée antérieure n'est jamais insérée.",
+        "options": {
+          "startRecording": "Démarrer un enregistrement",
+          "doNothing": "Ne rien faire"
+        }
       }
     },
     "models": {

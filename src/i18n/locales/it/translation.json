@@ -411,6 +411,18 @@
         "invalid": "Usa ⌘ o ⌃ con una lettera, una cifra o un segno di punteggiatura",
         "conflict": "«{{name}}» usa già questa scorciatoia",
         "failed": "Impossibile impostare la scorciatoia: {{error}}"
+      },
+      "dictationKeyInserts": {
+        "label": "La scorciatoia di dettatura inserisce anche",
+        "description": "Premi di nuovo la scorciatoia di dettatura per terminare la dettatura e inserirla non appena è pronta, nelle app che supportano i servizi di macOS. Le app già aperte lo applicano dopo un riavvio. Dove non si può inserire nulla, usa «Incolla l'ultima trascrizione»."
+      },
+      "dictationServiceWhenIdle": {
+        "title": "Quando non si sta registrando",
+        "description": "Se la scorciatoia arriva a un'app mentre DanyWhere non registra, per esempio perché DanyWhere non era ancora in esecuzione: avvia una registrazione o non fare nulla. Una dettatura precedente non viene mai inserita.",
+        "options": {
+          "startRecording": "Avvia una registrazione",
+          "doNothing": "Non fare nulla"
+        }
       }
     },
     "models": {

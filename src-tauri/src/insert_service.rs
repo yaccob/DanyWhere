@@ -20,6 +20,64 @@ pub const SERVICE_MESSAGE: &str = "insertLastDictation";
 /// ⌃⌥⌘V, in the notation of `NSServicesStatus` (`@` ⌘, `~` ⌥, `^` ⌃, `$` ⇧).
 pub const DEFAULT_KEY_EQUIVALENT: &str = "@~^v";
 
+/// The services DanyWhere declares in `Info.plist`, all answered the same
+/// way: during a dictation they end it and insert its text once it's ready,
+/// otherwise they insert the last dictation.
+///
+/// The two "end dictation" services carry the dictation shortcuts as their
+/// own (user, 2026-11-12): while a recording runs without Accessibility,
+/// DanyWhere releases those shortcuts, so their second press reaches the app
+/// being typed in and calls the service there (see `dictation_key_inserts`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ServiceKind {
+    /// "Insert Last Dictation", with a shortcut of its own (⌃⌥⌘V).
+    InsertLastDictation,
+    /// The dictation shortcut's service.
+    EndDictation,
+    /// The post-process shortcut's service: ends a recording with
+    /// post-processing.
+    EndDictationWithPostProcess,
+}
+
+impl ServiceKind {
+    #[cfg(test)]
+    pub const ALL: [ServiceKind; 3] = [
+        ServiceKind::InsertLastDictation,
+        ServiceKind::EndDictation,
+        ServiceKind::EndDictationWithPostProcess,
+    ];
+
+    /// The Objective-C message `NSMessage` names in `Info.plist`.
+    pub fn message(self) -> &'static str {
+        match self {
+            ServiceKind::InsertLastDictation => SERVICE_MESSAGE,
+            ServiceKind::EndDictation => "endDictationAndInsert",
+            ServiceKind::EndDictationWithPostProcess => "endDictationWithPostProcessAndInsert",
+        }
+    }
+
+    #[cfg(test)]
+    pub fn from_message(message: &str) -> Option<ServiceKind> {
+        ServiceKind::ALL
+            .into_iter()
+            .find(|kind| kind.message() == message)
+    }
+
+    /// Whether ending a recording through this service post-processes it.
+    pub fn post_processes(self) -> bool {
+        self == ServiceKind::EndDictationWithPostProcess
+    }
+
+    /// The dictation shortcut whose service this is, if any.
+    pub fn binding_id(self) -> Option<&'static str> {
+        match self {
+            ServiceKind::InsertLastDictation => None,
+            ServiceKind::EndDictation => Some("transcribe"),
+            ServiceKind::EndDictationWithPostProcess => Some("transcribe_with_post_process"),
+        }
+    }
+}
+
 /// What the service hands back to the app that called it.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ServiceReply {
@@ -72,6 +130,41 @@ pub fn plan_call(waits_for_service: bool, phase: crate::tray::TrayIconState) -> 
         (true, TrayIconState::Recording) => CallPlan::StopAndWait,
         (true, TrayIconState::Transcribing) => CallPlan::Wait,
         _ => CallPlan::AnswerNow,
+    }
+}
+
+/// How an "end dictation" service answers. Unlike "Insert Last Dictation" it
+/// never inserts an earlier dictation (user, 2026-11-12).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EndCallPlan {
+    /// End the recording, then answer once its text is ready.
+    StopAndWait,
+    /// The dictation is being transcribed: answer once its text is ready.
+    Wait,
+    /// Nothing records: answer with nothing at once, then start a locked
+    /// recording for the service's shortcut.
+    StartRecording,
+    /// Answer with nothing.
+    Nothing,
+}
+
+/// Decides how an "end dictation" service answers a call.
+pub fn plan_end_call(
+    waits_for_service: bool,
+    phase: crate::tray::TrayIconState,
+    when_idle: crate::settings::DictationServiceWhenIdle,
+) -> EndCallPlan {
+    use crate::settings::DictationServiceWhenIdle;
+    use crate::tray::TrayIconState;
+    match (waits_for_service, phase, when_idle) {
+        (true, TrayIconState::Recording, _) => EndCallPlan::StopAndWait,
+        (true, TrayIconState::Transcribing, _) => EndCallPlan::Wait,
+        (true, TrayIconState::Idle, DictationServiceWhenIdle::StartRecording) => {
+            EndCallPlan::StartRecording
+        }
+        (true, TrayIconState::Idle, DictationServiceWhenIdle::DoNothing) | (false, _, _) => {
+            EndCallPlan::Nothing
+        }
     }
 }
 
@@ -244,6 +337,9 @@ pub enum ShortcutProblem {
     UnsupportedKey(String),
     /// Without ⌘ or ⌃ the combination would type a character instead.
     NeedsCommandOrControl,
+    /// A character key with at most ⇧ would type the character in the app
+    /// instead of reaching the service.
+    TypesCharacter,
 }
 
 /// Turns a recorded combination such as `ctrl+option+command+v` into the
@@ -268,6 +364,73 @@ pub fn key_equivalent_from_binding(binding: &str) -> Result<String, ShortcutProb
 
 /// The modifier codes in the order macOS writes them (`@~^v` for ⌃⌥⌘V).
 const KEY_EQUIVALENT_ORDER: [char; 4] = ['@', '~', '^', '$'];
+
+/// Turns a dictation shortcut (e.g. `option+space`) into the key equivalent
+/// of its "end dictation" service. Unlike [`key_equivalent_from_binding`],
+/// which guards the shortcut the user picks for "Insert Last Dictation", it
+/// takes what a dictation shortcut can be: Space, ⌥ or ⇧ without ⌘ or ⌃, and
+/// function keys (written as AppKit's function-key characters, F1 =
+/// U+F704). Only a character key with at most ⇧ is refused: it would type.
+pub fn dictation_key_equivalent(binding: &str) -> Result<String, ShortcutProblem> {
+    let (modifiers, keys) = split_binding(binding);
+    let key = match keys.as_slice() {
+        [] => return Err(ShortcutProblem::NoKey),
+        [key] => key.clone(),
+        _ => return Err(ShortcutProblem::UnsupportedKey(keys.join("+"))),
+    };
+    let (character, types) = if key == "space" {
+        (" ".to_string(), true)
+    } else if key.chars().count() == 1 {
+        (key.clone(), true)
+    } else if let Some(function_key) = function_key_character(&key) {
+        (function_key.to_string(), false)
+    } else {
+        return Err(ShortcutProblem::UnsupportedKey(key));
+    };
+    if types && modifiers.iter().all(|code| *code == '$') {
+        return Err(ShortcutProblem::TypesCharacter);
+    }
+    let mut key_equivalent: String = KEY_EQUIVALENT_ORDER
+        .iter()
+        .filter(|code| modifiers.contains(code))
+        .collect();
+    key_equivalent.push_str(&character);
+    Ok(key_equivalent)
+}
+
+/// AppKit's character for a function key (`NSF1FunctionKey` = U+F704 …
+/// `NSF35FunctionKey`), e.g. `f5` → U+F708.
+fn function_key_character(key: &str) -> Option<char> {
+    let number: u32 = key.strip_prefix('f')?.parse().ok()?;
+    if !(1..=35).contains(&number) {
+        return None;
+    }
+    char::from_u32(0xF704 + number - 1)
+}
+
+/// The key equivalents the two "end dictation" services should have: the
+/// dictation shortcuts' own when `enabled` (the setting "Dictation shortcut
+/// also inserts"), else none. A shortcut that can't be a key equivalent
+/// leaves its service without one.
+pub fn dictation_service_shortcuts(
+    bindings: &std::collections::HashMap<String, crate::settings::ShortcutBinding>,
+    enabled: bool,
+) -> Vec<(ServiceKind, Option<String>)> {
+    [
+        ServiceKind::EndDictation,
+        ServiceKind::EndDictationWithPostProcess,
+    ]
+    .into_iter()
+    .map(|kind| {
+        let key_equivalent = kind
+            .binding_id()
+            .filter(|_| enabled)
+            .and_then(|id| bindings.get(id))
+            .and_then(|binding| dictation_key_equivalent(&binding.current_binding).ok());
+        (kind, key_equivalent)
+    })
+    .collect()
+}
 
 /// A recorded combination's modifiers as `NSServicesStatus` codes, and its
 /// other keys, lowercased.
@@ -340,9 +503,20 @@ pub fn conflicting_binding(
 }
 
 /// The `NSServicesStatus` entry for a shortcut, as System Settings stores it
-/// for an enabled service.
+/// for an enabled service. Characters outside printable ASCII, such as
+/// AppKit's function-key characters, are written as `\UXXXX` escapes, the
+/// way the old-style plist syntax `defaults` reads takes them; an empty key
+/// equivalent means no shortcut.
 pub fn status_entry_value(key_equivalent: &str) -> String {
-    format!("{{ \"key_equivalent\" = \"{key_equivalent}\"; }}")
+    let escaped: String = key_equivalent
+        .chars()
+        .map(|c| match c {
+            '"' | '\\' => format!("\\{c}"),
+            ' '..='~' => c.to_string(),
+            _ => format!("\\U{:04X}", c as u32),
+        })
+        .collect();
+    format!("{{ \"key_equivalent\" = \"{escaped}\"; }}")
 }
 
 /// Whether to flash "Not ready yet" when the service is called during a
@@ -396,6 +570,7 @@ fn answer_call(app: &tauri::AppHandle) -> Option<String> {
 fn answer_waiting_call(
     app: &tauri::AppHandle,
     plan: CallPlan,
+    post_process: bool,
     mut pump: impl FnMut(),
 ) -> Option<String> {
     use tauri::Manager;
@@ -406,9 +581,16 @@ fn answer_waiting_call(
     }
     if plan == CallPlan::StopAndWait {
         if let Some(coordinator) = app.try_state::<crate::TranscriptionCoordinator>() {
-            coordinator.finish_recording();
+            coordinator.finish_recording_with(post_process);
         }
-        log::info!("Insert Last Dictation: ending the recording and waiting for its text.");
+        log::info!(
+            "Insert Last Dictation: ending the recording{} and waiting for its text.",
+            if post_process {
+                " with post-processing"
+            } else {
+                ""
+            }
+        );
     } else {
         log::info!("Insert Last Dictation: waiting for the dictation's text.");
     }
@@ -446,6 +628,99 @@ fn answer_waiting_call(
             }
         }
     }
+}
+
+/// Answers a call of one of DanyWhere's services. During a dictation without
+/// Accessibility it ends the recording (with post-processing for the
+/// post-process shortcut's service) and answers once the text is ready.
+/// Otherwise "Insert Last Dictation" answers with the last dictation, while
+/// the two "end dictation" services never insert an earlier dictation: they
+/// answer with nothing and, as the user chose, start a recording or do
+/// nothing (user, 2026-11-12).
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+fn answer_service(app: &tauri::AppHandle, kind: ServiceKind, pump: impl FnMut()) -> Option<String> {
+    let settings = crate::settings::get_settings(app);
+    let waits_for_service =
+        crate::delivery::dictation_target(&settings, crate::delivery::INSERT_SERVICE_AVAILABLE)
+            == crate::delivery::DictationTarget::InsertService;
+    let phase = crate::tray::dictation_phase(app);
+    let Some(binding_id) = kind.binding_id() else {
+        return match plan_call(waits_for_service, phase) {
+            CallPlan::AnswerNow => answer_call(app),
+            plan => answer_waiting_call(app, plan, false, pump),
+        };
+    };
+    match plan_end_call(
+        waits_for_service,
+        phase,
+        settings.dictation_service_when_idle,
+    ) {
+        EndCallPlan::StopAndWait => {
+            answer_waiting_call(app, CallPlan::StopAndWait, kind.post_processes(), pump)
+        }
+        EndCallPlan::Wait => answer_waiting_call(app, CallPlan::Wait, kind.post_processes(), pump),
+        EndCallPlan::StartRecording => {
+            log::info!("{kind:?}: called while nothing records; starting a recording.");
+            start_recording_when_ready(app, binding_id);
+            None
+        }
+        EndCallPlan::Nothing => {
+            log::info!("{kind:?}: called while nothing records; doing nothing.");
+            None
+        }
+    }
+}
+
+/// How long a service-started recording waits for DanyWhere to finish
+/// starting (macOS may have launched DanyWhere just to answer the service).
+const START_WHEN_READY: std::time::Duration = std::time::Duration::from_secs(15);
+
+/// Starts a locked recording for `binding_id` off the main thread, so the
+/// calling app gets its (empty) answer at once. Waits for the transcription
+/// coordinator if DanyWhere is still starting, and gives up with a log line
+/// after [`START_WHEN_READY`].
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+fn start_recording_when_ready(app: &tauri::AppHandle, binding_id: &'static str) {
+    use tauri::Manager;
+
+    let app = app.clone();
+    let spawned = std::thread::Builder::new()
+        .name("service-start".into())
+        .spawn(move || {
+            let started = std::time::Instant::now();
+            loop {
+                if let Some(coordinator) = app.try_state::<crate::TranscriptionCoordinator>() {
+                    coordinator.start_locked_recording(binding_id);
+                    log::info!(
+                        "Started a recording for '{binding_id}' through its service after {:?}.",
+                        started.elapsed()
+                    );
+                    return;
+                }
+                if started.elapsed() >= START_WHEN_READY {
+                    log::warn!(
+                        "Not starting a recording for '{binding_id}': DanyWhere wasn't ready after {START_WHEN_READY:?}."
+                    );
+                    return;
+                }
+                std::thread::sleep(std::time::Duration::from_millis(100));
+            }
+        });
+    if let Err(err) = spawned {
+        log::error!("Couldn't start the thread for a service-started recording: {err}");
+    }
+}
+
+/// Gives the two "end dictation" services the dictation shortcuts as their
+/// own while DanyWhere runs without Accessibility and "Dictation shortcut
+/// also inserts" is on, and takes them away otherwise. Call at startup and
+/// whenever a dictation shortcut, the setting or the mode changes. Apps that
+/// are already open learn a changed shortcut only after a restart.
+pub fn sync_dictation_service_shortcuts(app: &tauri::AppHandle) {
+    #[cfg(target_os = "macos")]
+    macos::sync_dictation_service_shortcuts(app);
+    #[cfg(not(target_os = "macos"))]
+    let _ = app;
 }
 
 /// Offers the service to other apps. Call once on the main thread at startup.
@@ -542,8 +817,8 @@ mod macos {
     use tauri::AppHandle;
 
     use super::{
-        answer_call, answer_waiting_call, plan_call, should_set_default_shortcut,
-        status_entry_value, status_key, CallPlan, DEFAULT_KEY_EQUIVALENT, SERVICE_MESSAGE,
+        answer_service, dictation_service_shortcuts, should_set_default_shortcut,
+        status_entry_value, status_key, ServiceKind, DEFAULT_KEY_EQUIVALENT,
     };
 
     pub struct ProviderIvars {
@@ -559,7 +834,7 @@ mod macos {
         pub struct InsertServiceProvider;
 
         impl InsertServiceProvider {
-            // Named by NSMessage in Info.plist. AppKit calls it on the main
+            // Named by NSMessage in Info.plist. AppKit calls them on the main
             // thread with a pasteboard made for this one request.
             #[unsafe(method(insertLastDictation:userData:error:))]
             fn insert_last_dictation(
@@ -568,29 +843,47 @@ mod macos {
                 _user_data: Option<&NSString>,
                 _error: *mut *mut NSString,
             ) {
-                let app = &self.ivars().app;
-                let settings = crate::settings::get_settings(app);
-                let waits_for_service = crate::delivery::dictation_target(
-                    &settings,
-                    crate::delivery::INSERT_SERVICE_AVAILABLE,
-                ) == crate::delivery::DictationTarget::InsertService;
-                let reply = match plan_call(waits_for_service, crate::tray::dictation_phase(app)) {
-                    CallPlan::AnswerNow => answer_call(app),
-                    plan => answer_waiting_call(app, plan, pump_main_run_loop),
-                };
-                let Some(text) = reply else {
-                    return;
-                };
-                pasteboard.clearContents();
-                // SAFETY: NSPasteboardTypeString is a read-only framework static.
-                let written = pasteboard
-                    .setString_forType(&NSString::from_str(&text), unsafe { NSPasteboardTypeString });
-                if !written {
-                    error!("Insert Last Dictation: could not write to the service pasteboard.");
-                }
+                self.reply(pasteboard, ServiceKind::InsertLastDictation);
+            }
+
+            #[unsafe(method(endDictationAndInsert:userData:error:))]
+            fn end_dictation_and_insert(
+                &self,
+                pasteboard: &NSPasteboard,
+                _user_data: Option<&NSString>,
+                _error: *mut *mut NSString,
+            ) {
+                self.reply(pasteboard, ServiceKind::EndDictation);
+            }
+
+            #[unsafe(method(endDictationWithPostProcessAndInsert:userData:error:))]
+            fn end_dictation_with_post_process_and_insert(
+                &self,
+                pasteboard: &NSPasteboard,
+                _user_data: Option<&NSString>,
+                _error: *mut *mut NSString,
+            ) {
+                self.reply(pasteboard, ServiceKind::EndDictationWithPostProcess);
             }
         }
     );
+
+    impl InsertServiceProvider {
+        /// Answers a call of `kind` on the service's own pasteboard.
+        fn reply(&self, pasteboard: &NSPasteboard, kind: ServiceKind) {
+            let Some(text) = answer_service(&self.ivars().app, kind, pump_main_run_loop) else {
+                return;
+            };
+            pasteboard.clearContents();
+            // SAFETY: NSPasteboardTypeString is a read-only framework static.
+            let written = pasteboard.setString_forType(&NSString::from_str(&text), unsafe {
+                NSPasteboardTypeString
+            });
+            if !written {
+                error!("{kind:?}: could not write to the service pasteboard.");
+            }
+        }
+    }
 
     /// Runs the main thread's run loop for a moment, so that work the
     /// dictation queues there keeps going while the service call waits.
@@ -611,35 +904,46 @@ mod macos {
         }
     }
 
-    /// `(menu title, message)` of the service this bundle declares, or `None`
+    /// `(menu title, message)` of each service this bundle declares; empty
     /// when it declares none (e.g. a binary run outside its app bundle).
-    fn declared_service() -> Option<(String, String)> {
-        let services = NSBundle::mainBundle()
-            .objectForInfoDictionaryKey(&NSString::from_str("NSServices"))?
-            .downcast::<objc2_foundation::NSArray>()
-            .ok()?;
-        let service = services.firstObject()?.downcast::<NSDictionary>().ok()?;
+    fn declared_services() -> Vec<(String, String)> {
+        let Some(services) = NSBundle::mainBundle()
+            .objectForInfoDictionaryKey(&NSString::from_str("NSServices"))
+            .and_then(|services| services.downcast::<objc2_foundation::NSArray>().ok())
+        else {
+            return Vec::new();
+        };
         let string_for = |dict: &NSDictionary, key: &str| -> Option<String> {
             let key = NSString::from_str(key);
             let value = dict.objectForKey(&key)?.downcast::<NSString>().ok()?;
             Some(value.to_string())
         };
-        let message = string_for(&service, "NSMessage")?;
-        let menu_item = service
-            .objectForKey(&NSString::from_str("NSMenuItem"))?
-            .downcast::<NSDictionary>()
-            .ok()?;
-        let title = string_for(&menu_item, "default")?;
-        Some((title, message))
+        services
+            .iter()
+            .filter_map(|service| {
+                let service = service.downcast::<NSDictionary>().ok()?;
+                let message = string_for(&service, "NSMessage")?;
+                let menu_item = service
+                    .objectForKey(&NSString::from_str("NSMenuItem"))?
+                    .downcast::<NSDictionary>()
+                    .ok()?;
+                let title = string_for(&menu_item, "default")?;
+                Some((title, message))
+            })
+            .collect()
     }
 
-    /// The `NSServicesStatus` key of this app's service.
-    fn this_status_key(app: &AppHandle) -> Option<String> {
-        let (title, message) = declared_service()?;
-        if message != SERVICE_MESSAGE {
-            warn!("Info.plist names the service message {message}, expected {SERVICE_MESSAGE}.");
-        }
+    /// The `NSServicesStatus` key of one of this app's services.
+    fn status_key_for(app: &AppHandle, kind: ServiceKind) -> Option<String> {
+        let (title, message) = declared_services()
+            .into_iter()
+            .find(|(_, message)| message == kind.message())?;
         Some(status_key(&app.config().identifier, &title, &message))
+    }
+
+    /// The `NSServicesStatus` key of "Insert Last Dictation".
+    fn this_status_key(app: &AppHandle) -> Option<String> {
+        status_key_for(app, ServiceKind::InsertLastDictation)
     }
 
     /// The services settings of the current user (`defaults read pbs`).
@@ -658,10 +962,38 @@ mod macos {
     }
 
     pub fn current_key_equivalent(app: &AppHandle) -> Option<String> {
-        let entry = status_entry(&this_status_key(app)?)?;
+        key_equivalent_of(&this_status_key(app)?)
+    }
+
+    /// The key equivalent stored for a service, if any.
+    fn key_equivalent_of(status_key: &str) -> Option<String> {
+        let entry = status_entry(status_key)?;
         let key = NSString::from_str("key_equivalent");
         let value = entry.objectForKey(&key)?.downcast::<NSString>().ok()?;
         Some(value.to_string())
+    }
+
+    pub fn sync_dictation_service_shortcuts(app: &AppHandle) {
+        let settings = crate::settings::get_settings(app);
+        let enabled = settings.accessibility_skipped && settings.dictation_key_inserts;
+        for (kind, wanted) in dictation_service_shortcuts(&settings.bindings, enabled) {
+            let Some(key) = status_key_for(app, kind) else {
+                continue;
+            };
+            let current = key_equivalent_of(&key).filter(|k| !k.is_empty());
+            if current == wanted {
+                continue;
+            }
+            // No entry and none wanted: nothing to take away.
+            if wanted.is_none() && status_entry(&key).is_none() {
+                continue;
+            }
+            let key_equivalent = wanted.clone().unwrap_or_default();
+            match write_key_equivalent(&key, &key_equivalent) {
+                Ok(()) => info!("{kind:?}: shortcut set to {wanted:?}."),
+                Err(err) => error!("{kind:?}: could not set the shortcut: {err}"),
+            }
+        }
     }
 
     pub fn register(app: &AppHandle) {
@@ -669,10 +1001,12 @@ mod macos {
             warn!("Insert Last Dictation: not on the main thread; service not offered.");
             return;
         };
-        let Some((title, _)) = declared_service() else {
+        let services = declared_services();
+        if services.is_empty() {
             info!("Insert Last Dictation: no service in Info.plist (unbundled run).");
             return;
-        };
+        }
+        let titles: Vec<&str> = services.iter().map(|(title, _)| title.as_str()).collect();
         let provider = InsertServiceProvider::new(app.clone());
         let provider_object: &AnyObject = &provider;
         // SAFETY: the provider implements the method Info.plist names, and it
@@ -681,7 +1015,7 @@ mod macos {
         NSUpdateDynamicServices();
         // AppKit doesn't keep the provider; DanyWhere needs it until it quits.
         std::mem::forget(provider);
-        info!("Insert Last Dictation: offering the service \"{title}\".");
+        info!("Offering the services {titles:?}.");
     }
 
     pub fn ensure_default_shortcut(app: &AppHandle) {
@@ -1139,6 +1473,272 @@ mod tests {
             status_entry_value("@~^v"),
             "{ \"key_equivalent\" = \"@~^v\"; }"
         );
+    }
+
+    // -----------------------------------------------------------------
+    // The dictation shortcut also inserts (user, 2026-11-12): two more
+    // services carry the dictation shortcuts as their key equivalents.
+    // -----------------------------------------------------------------
+
+    fn binding(id: &str, keys: &str) -> (String, crate::settings::ShortcutBinding) {
+        (
+            id.to_string(),
+            crate::settings::ShortcutBinding {
+                id: id.to_string(),
+                name: id.to_string(),
+                description: String::new(),
+                default_binding: keys.to_string(),
+                current_binding: keys.to_string(),
+            },
+        )
+    }
+
+    use crate::settings::DictationServiceWhenIdle;
+
+    #[test]
+    fn an_end_service_ends_a_recording_or_waits_for_its_text() {
+        for when_idle in [
+            DictationServiceWhenIdle::StartRecording,
+            DictationServiceWhenIdle::DoNothing,
+        ] {
+            assert_eq!(
+                plan_end_call(true, TrayIconState::Recording, when_idle),
+                EndCallPlan::StopAndWait
+            );
+            assert_eq!(
+                plan_end_call(true, TrayIconState::Transcribing, when_idle),
+                EndCallPlan::Wait
+            );
+        }
+    }
+
+    #[test]
+    fn an_end_service_called_while_idle_starts_a_recording_by_default() {
+        assert_eq!(
+            plan_end_call(
+                true,
+                TrayIconState::Idle,
+                DictationServiceWhenIdle::default()
+            ),
+            EndCallPlan::StartRecording
+        );
+    }
+
+    #[test]
+    fn an_end_service_called_while_idle_can_do_nothing() {
+        assert_eq!(
+            plan_end_call(
+                true,
+                TrayIconState::Idle,
+                DictationServiceWhenIdle::DoNothing
+            ),
+            EndCallPlan::Nothing
+        );
+    }
+
+    #[test]
+    fn with_accessibility_an_end_service_does_nothing() {
+        for phase in [
+            TrayIconState::Idle,
+            TrayIconState::Recording,
+            TrayIconState::Transcribing,
+        ] {
+            assert_eq!(
+                plan_end_call(false, phase, DictationServiceWhenIdle::StartRecording),
+                EndCallPlan::Nothing
+            );
+        }
+    }
+
+    #[test]
+    fn settings_from_before_the_choice_start_a_recording() {
+        let mut value = serde_json::to_value(crate::settings::get_default_settings()).unwrap();
+        value
+            .as_object_mut()
+            .unwrap()
+            .remove("dictation_service_when_idle");
+        let settings: crate::settings::AppSettings = serde_json::from_value(value).unwrap();
+        assert_eq!(
+            settings.dictation_service_when_idle,
+            DictationServiceWhenIdle::StartRecording
+        );
+        assert_eq!(
+            serde_json::to_value(DictationServiceWhenIdle::DoNothing).unwrap(),
+            "do_nothing"
+        );
+    }
+
+    #[test]
+    fn each_service_has_its_own_message() {
+        assert_eq!(ServiceKind::InsertLastDictation.message(), SERVICE_MESSAGE);
+        assert_eq!(ServiceKind::EndDictation.message(), "endDictationAndInsert");
+        assert_eq!(
+            ServiceKind::EndDictationWithPostProcess.message(),
+            "endDictationWithPostProcessAndInsert"
+        );
+        for kind in ServiceKind::ALL {
+            assert_eq!(ServiceKind::from_message(kind.message()), Some(kind));
+        }
+        assert_eq!(ServiceKind::from_message("somethingElse"), None);
+    }
+
+    #[test]
+    fn only_the_post_process_service_post_processes() {
+        assert!(!ServiceKind::InsertLastDictation.post_processes());
+        assert!(!ServiceKind::EndDictation.post_processes());
+        assert!(ServiceKind::EndDictationWithPostProcess.post_processes());
+        assert_eq!(ServiceKind::EndDictation.binding_id(), Some("transcribe"));
+        assert_eq!(
+            ServiceKind::EndDictationWithPostProcess.binding_id(),
+            Some("transcribe_with_post_process")
+        );
+        assert_eq!(ServiceKind::InsertLastDictation.binding_id(), None);
+    }
+
+    #[test]
+    fn a_dictation_shortcut_with_space_becomes_a_key_equivalent() {
+        assert_eq!(
+            dictation_key_equivalent("option+space"),
+            Ok("~ ".to_string())
+        );
+        assert_eq!(
+            dictation_key_equivalent("ctrl+shift+space"),
+            Ok("^$ ".to_string())
+        );
+        assert_eq!(
+            dictation_key_equivalent("ctrl+option+shift+space"),
+            Ok("~^$ ".to_string())
+        );
+    }
+
+    #[test]
+    fn a_dictation_shortcut_needs_neither_command_nor_control() {
+        assert_eq!(dictation_key_equivalent("option+d"), Ok("~d".to_string()));
+        assert_eq!(
+            dictation_key_equivalent("command+shift+d"),
+            Ok("@$d".to_string())
+        );
+    }
+
+    #[test]
+    fn function_keys_become_appkits_function_key_characters() {
+        assert_eq!(dictation_key_equivalent("f5"), Ok("\u{F708}".to_string()));
+        assert_eq!(
+            dictation_key_equivalent("shift+f13"),
+            Ok("$\u{F710}".to_string())
+        );
+    }
+
+    #[test]
+    fn a_dictation_shortcut_that_would_type_is_refused() {
+        for binding in ["space", "shift+a", "a", "shift+space"] {
+            assert_eq!(
+                dictation_key_equivalent(binding),
+                Err(ShortcutProblem::TypesCharacter),
+                "{binding}"
+            );
+        }
+    }
+
+    #[test]
+    fn a_dictation_shortcut_needs_a_key_and_a_supported_one() {
+        assert_eq!(
+            dictation_key_equivalent("ctrl+option"),
+            Err(ShortcutProblem::NoKey)
+        );
+        assert_eq!(
+            dictation_key_equivalent("ctrl+backspace"),
+            Err(ShortcutProblem::UnsupportedKey("backspace".to_string()))
+        );
+    }
+
+    #[test]
+    fn the_dictation_services_take_the_dictation_shortcuts() {
+        let bindings = std::collections::HashMap::from([
+            binding("transcribe", "option+space"),
+            binding("transcribe_with_post_process", "option+shift+space"),
+            binding("paste_last_transcript", "option+shift+v"),
+        ]);
+        assert_eq!(
+            dictation_service_shortcuts(&bindings, true),
+            vec![
+                (ServiceKind::EndDictation, Some("~ ".to_string())),
+                (
+                    ServiceKind::EndDictationWithPostProcess,
+                    Some("~$ ".to_string())
+                ),
+            ]
+        );
+    }
+
+    #[test]
+    fn the_dictation_services_have_no_shortcut_when_the_option_is_off() {
+        let bindings = std::collections::HashMap::from([
+            binding("transcribe", "option+space"),
+            binding("transcribe_with_post_process", "option+shift+space"),
+        ]);
+        assert_eq!(
+            dictation_service_shortcuts(&bindings, false),
+            vec![
+                (ServiceKind::EndDictation, None),
+                (ServiceKind::EndDictationWithPostProcess, None),
+            ]
+        );
+    }
+
+    #[test]
+    fn a_shortcut_that_cant_be_a_key_equivalent_leaves_its_service_without_one() {
+        let bindings = std::collections::HashMap::from([
+            binding("transcribe", "ctrl+backspace"),
+            binding("transcribe_with_post_process", "ctrl+shift+space"),
+        ]);
+        assert_eq!(
+            dictation_service_shortcuts(&bindings, true),
+            vec![
+                (ServiceKind::EndDictation, None),
+                (
+                    ServiceKind::EndDictationWithPostProcess,
+                    Some("^$ ".to_string())
+                ),
+            ]
+        );
+    }
+
+    #[test]
+    fn function_key_characters_are_written_as_plist_escapes() {
+        assert_eq!(
+            status_entry_value("$\u{F710}"),
+            "{ \"key_equivalent\" = \"$\\UF710\"; }"
+        );
+        assert_eq!(status_entry_value("~ "), "{ \"key_equivalent\" = \"~ \"; }");
+    }
+
+    #[test]
+    fn info_plist_declares_the_dictation_services() {
+        let plist = read_manifest_file("Info.plist");
+        for kind in ServiceKind::ALL {
+            assert!(
+                plist.contains(&format!("<string>{}</string>", kind.message())),
+                "{kind:?}"
+            );
+        }
+        assert!(plist.contains("<string>DanyWhere: End Dictation and Insert</string>"));
+        assert!(plist
+            .contains("<string>DanyWhere: End Dictation with Post-processing and Insert</string>"));
+        // Every service waits as long as the first one.
+        assert_eq!(plist.matches("<key>NSTimeout</key>").count(), 3);
+        assert_eq!(plist.matches("<key>NSPortName</key>").count(), 3);
+    }
+
+    #[test]
+    fn the_german_services_menu_translates_the_dictation_services() {
+        let strings = read_manifest_file("macos/de.lproj/ServicesMenu.strings");
+        assert!(strings.contains(
+            "\"DanyWhere: End Dictation and Insert\" = \"DanyWhere: Diktat beenden und einfügen\";"
+        ));
+        assert!(strings.contains(
+            "\"DanyWhere: End Dictation with Post-processing and Insert\" = \"DanyWhere: Diktat mit Nachbearbeitung beenden und einfügen\";"
+        ));
     }
 
     #[test]

@@ -252,6 +252,11 @@ pub fn get_icon_path(theme: AppTheme, state: TrayIconState, badge: bool) -> &'st
 /// Sets the recording state shown by the tray (icon + Cancel/model menu).
 pub fn set_tray_state(app: &AppHandle, state: TrayIconState) {
     sync_tray_with(app, |inner| inner.icon_state = state);
+    // DanyWhere: a finished dictation gives the dictation shortcuts back,
+    // should a path have ended it without the coordinator noticing.
+    if state == TrayIconState::Idle {
+        crate::dictation_key_inserts::dictation_went_idle(app);
+    }
 }
 
 /// Whether a dictation is recording, transcribing or delivering. Every start,

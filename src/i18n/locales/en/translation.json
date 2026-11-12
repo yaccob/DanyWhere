@@ -411,6 +411,18 @@
         "invalid": "Use ⌘ or ⌃ with a letter, digit or punctuation key",
         "conflict": "{{name}} already uses this shortcut",
         "failed": "Couldn't set the shortcut: {{error}}"
+      },
+      "dictationKeyInserts": {
+        "label": "Dictation Shortcut Also Inserts",
+        "description": "Press the dictation shortcut again to end the dictation and insert it as soon as it's ready, in apps that support macOS services. Apps that are already open pick this up after a restart. Where nothing can be inserted, use Paste Last Transcript."
+      },
+      "dictationServiceWhenIdle": {
+        "title": "When Nothing Is Being Recorded",
+        "description": "If the shortcut reaches an app while DanyWhere isn't recording, for example because DanyWhere wasn't running yet: start a recording, or do nothing. An earlier dictation is never inserted.",
+        "options": {
+          "startRecording": "Start a recording",
+          "doNothing": "Do nothing"
+        }
       }
     },
     "models": {

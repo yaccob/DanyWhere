@@ -411,6 +411,18 @@
         "invalid": "請使用 ⌘ 或 ⌃ 加一個字母、數字或標點",
         "conflict": "「{{name}}」已在使用此快速鍵",
         "failed": "無法設定快速鍵：{{error}}"
+      },
+      "dictationKeyInserts": {
+        "label": "聽寫快捷鍵也會插入",
+        "description": "再按一次聽寫快捷鍵即可結束聽寫，並在準備好後立即插入（適用於支援 macOS 服務的 App）。已經開啟的 App 需要重新啟動後才會生效。無法插入內容的地方，請使用「貼上最近的轉錄」。"
+      },
+      "dictationServiceWhenIdle": {
+        "title": "未在錄音時",
+        "description": "如果 DanyWhere 未在錄音時快捷鍵送達某個 App（例如 DanyWhere 尚未執行）：開始錄音，或不執行任何動作。絕不會插入先前的聽寫。",
+        "options": {
+          "startRecording": "開始錄音",
+          "doNothing": "不執行任何動作"
+        }
       }
     },
     "models": {

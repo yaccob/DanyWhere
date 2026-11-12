@@ -411,6 +411,18 @@
         "invalid": "Použijte ⌘ nebo ⌃ s písmenem, číslicí nebo interpunkčním znakem",
         "conflict": "„{{name}}“ už tuto zkratku používá",
         "failed": "Zkratku se nepodařilo nastavit: {{error}}"
+      },
+      "dictationKeyInserts": {
+        "label": "Zkratka diktování také vkládá",
+        "description": "Stiskněte zkratku diktování znovu, aby se diktování ukončilo a vložilo, jakmile bude hotové, v aplikacích, které podporují služby macOS. Již otevřené aplikace to převezmou až po restartu. Kde nelze nic vložit, použijte „Vložit poslední přepis“."
+      },
+      "dictationServiceWhenIdle": {
+        "title": "Když se nic nenahrává",
+        "description": "Pokud zkratka dorazí do aplikace, když DanyWhere nenahrává, například protože DanyWhere ještě neběžel: spustit nahrávání, nebo nedělat nic. Dřívější diktát se nikdy nevloží.",
+        "options": {
+          "startRecording": "Spustit nahrávání",
+          "doNothing": "Nedělat nic"
+        }
       }
     },
     "models": {

@@ -10,6 +10,7 @@ pub mod cli;
 mod clipboard;
 mod commands;
 mod delivery;
+mod dictation_key_inserts;
 pub mod engine_supervisor;
 mod helpers;
 mod input;
@@ -732,6 +733,8 @@ pub fn run(cli_args: CliArgs) {
             delivery::change_clipboard_notice_ms_setting,
             insert_service::get_insert_service_shortcut,
             insert_service::set_insert_service_shortcut,
+            dictation_key_inserts::change_dictation_key_inserts_setting,
+            dictation_key_inserts::change_dictation_service_when_idle_setting,
             shortcut::change_paste_delay_after_ms_setting,
             shortcut::change_reliable_paste_setting,
             shortcut::change_paste_method_setting,
@@ -1130,6 +1133,7 @@ pub fn run(cli_args: CliArgs) {
             // the last dictation without Accessibility (insert_service.rs).
             insert_service::register(&app_handle);
             insert_service::ensure_default_shortcut(&app_handle);
+            insert_service::sync_dictation_service_shortcuts(&app_handle);
 
             // Populate the overlay-enabled cache from initial settings so the
             // audio path (overlay::emit_levels, called ~24 Hz during recording)

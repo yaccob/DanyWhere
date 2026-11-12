@@ -411,6 +411,18 @@
         "invalid": "Usa ⌘ o ⌃ con una letra, un número o un signo de puntuación",
         "conflict": "«{{name}}» ya usa este atajo",
         "failed": "No se pudo establecer el atajo: {{error}}"
+      },
+      "dictationKeyInserts": {
+        "label": "El atajo de dictado también inserta",
+        "description": "Vuelve a pulsar el atajo de dictado para terminar el dictado e insertarlo en cuanto esté listo, en las apps que admiten los servicios de macOS. Las apps que ya están abiertas lo aplican después de reiniciarlas. Donde no se pueda insertar nada, usa «Pegar la última transcripción»."
+      },
+      "dictationServiceWhenIdle": {
+        "title": "Cuando no se está grabando nada",
+        "description": "Si el atajo llega a una app mientras DanyWhere no está grabando, por ejemplo porque DanyWhere aún no se estaba ejecutando: empezar una grabación o no hacer nada. Nunca se inserta un dictado anterior.",
+        "options": {
+          "startRecording": "Empezar una grabación",
+          "doNothing": "No hacer nada"
+        }
       }
     },
     "models": {

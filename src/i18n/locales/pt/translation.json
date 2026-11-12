@@ -411,6 +411,18 @@
         "invalid": "Use ⌘ ou ⌃ com uma letra, um número ou um sinal de pontuação",
         "conflict": "“{{name}}” já usa este atalho",
         "failed": "Não foi possível definir o atalho: {{error}}"
+      },
+      "dictationKeyInserts": {
+        "label": "O atalho de ditado também insere",
+        "description": "Prima novamente o atalho de ditado para terminar o ditado e inseri-lo assim que estiver pronto, nas apps que suportam os serviços do macOS. As apps que já estão abertas só aplicam isto depois de reiniciadas. Onde não for possível inserir nada, use «Colar a última transcrição»."
+      },
+      "dictationServiceWhenIdle": {
+        "title": "Quando nada está a ser gravado",
+        "description": "Se o atalho chegar a uma app enquanto o DanyWhere não está a gravar, por exemplo porque o DanyWhere ainda não estava em execução: iniciar uma gravação ou não fazer nada. Um ditado anterior nunca é inserido.",
+        "options": {
+          "startRecording": "Iniciar uma gravação",
+          "doNothing": "Não fazer nada"
+        }
       }
     },
     "models": {

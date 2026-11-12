@@ -187,6 +187,8 @@ pub fn skip_accessibility_permission(app: AppHandle) -> Vec<String> {
     crate::settings::write_settings(&app, settings);
     // DanyWhere: the dictation now waits for "Insert Last Dictation".
     crate::insert_service::ensure_default_shortcut(&app);
+    // DanyWhere: and the dictation shortcut's second press inserts it.
+    crate::insert_service::sync_dictation_service_shortcuts(&app);
     log::info!(
         "Continuing without Accessibility permission; reset bindings: {:?}",
         reset_bindings

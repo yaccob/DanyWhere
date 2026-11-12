@@ -205,6 +205,30 @@ async setInsertServiceShortcut(binding: string) : Promise<Result<string, string>
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * Switches "Dictation shortcut also inserts" on or off and gives the "end
+ * dictation" services their shortcuts, or takes them away.
+ */
+async changeDictationKeyInsertsSetting(enabled: boolean) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_dictation_key_inserts_setting", { enabled }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * What the dictation shortcuts' services do when nothing records: start a
+ * recording or nothing.
+ */
+async changeDictationServiceWhenIdleSetting(choice: DictationServiceWhenIdle) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_dictation_service_when_idle_setting", { choice }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async changePasteDelayAfterMsSetting(ms: number) : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("change_paste_delay_after_ms_setting", { ms }) };
@@ -1253,7 +1277,18 @@ accessibility_skipped?: boolean;
  * shortcut once (or found one set); it never sets it again, so a change
  * in System Settings stays. See `insert_service`.
  */
-insert_service_shortcut_set?: boolean; always_on_microphone?: boolean; selected_microphone?: string | null; 
+insert_service_shortcut_set?: boolean; 
+/**
+ * DanyWhere: without Accessibility, the dictation shortcut's second press
+ * ends the dictation and inserts it once it's ready, through the "end
+ * dictation" services (user, 2026-11-12). See `dictation_key_inserts`.
+ */
+dictation_key_inserts?: boolean; 
+/**
+ * DanyWhere: what the dictation shortcuts' services do when no dictation
+ * is recording. See `DictationServiceWhenIdle`.
+ */
+dictation_service_when_idle?: DictationServiceWhenIdle; always_on_microphone?: boolean; selected_microphone?: string | null; 
 /**
  * Which input channel to use on the selected microphone device.
  * None means "average all channels" (original behavior).
@@ -1365,6 +1400,18 @@ export type ChineseScript =
 "traditional_hk"
 export type ClipboardHandling = "dont_modify" | "copy_to_clipboard"
 export type CustomSounds = { start: boolean; stop: boolean }
+/**
+ * DanyWhere: what an "end dictation" service does when it is called while
+ * no dictation is recording (e.g. DanyWhere wasn't running and macOS
+ * started it to answer the service). It never inserts an earlier dictation
+ * (user, 2026-11-12).
+ */
+export type DictationServiceWhenIdle = 
+/**
+ * Start a recording for the shortcut, so its next press ends and
+ * inserts it ("noch besser", the user's choice as the default).
+ */
+"start_recording" | "do_nothing"
 export type GpuDeviceOption = { id: string; name: string; total_vram_mb: number }
 export type HistoryEntry = { id: number; file_name: string; timestamp: number; saved: boolean; title: string; transcription_text: string; post_processed_text: string | null; post_process_prompt: string | null; post_process_requested: boolean; 
 /**

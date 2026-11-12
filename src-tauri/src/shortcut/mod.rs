@@ -255,8 +255,14 @@ pub fn change_binding(
     settings.bindings.insert(id, updated_binding.clone());
 
     // Save the settings and synchronize any active Secure Input shadows.
+    let changed_dictation_shortcut =
+        crate::transcription_coordinator::is_transcribe_binding(&updated_binding.id);
     settings::write_settings(&app, settings);
     crate::secure_input::reconcile_fallback(&app);
+    // DanyWhere: the dictation shortcuts' services carry them as theirs.
+    if changed_dictation_shortcut {
+        crate::insert_service::sync_dictation_service_shortcuts(&app);
+    }
 
     // Return the updated binding
     Ok(BindingResponse {

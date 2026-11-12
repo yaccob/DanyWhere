@@ -411,6 +411,18 @@
         "invalid": "Dùng ⌘ hoặc ⌃ với một chữ cái, chữ số hoặc dấu câu",
         "conflict": "{{name}} đã dùng phím tắt này",
         "failed": "Không thể đặt phím tắt: {{error}}"
+      },
+      "dictationKeyInserts": {
+        "label": "Phím tắt đọc chính tả cũng chèn văn bản",
+        "description": "Nhấn phím tắt đọc chính tả lần nữa để kết thúc và chèn bản đọc ngay khi sẵn sàng, trong các ứng dụng hỗ trợ dịch vụ của macOS. Các ứng dụng đang mở chỉ áp dụng sau khi khởi động lại. Ở nơi không thể chèn gì, hãy dùng Dán bản chép gần nhất."
+      },
+      "dictationServiceWhenIdle": {
+        "title": "Khi không có gì đang được ghi",
+        "description": "Nếu phím tắt đến một ứng dụng khi DanyWhere không ghi âm, chẳng hạn vì DanyWhere chưa chạy: bắt đầu ghi âm hoặc không làm gì. Bản đọc chính tả trước đó không bao giờ được chèn.",
+        "options": {
+          "startRecording": "Bắt đầu ghi âm",
+          "doNothing": "Không làm gì"
+        }
       }
     },
     "models": {

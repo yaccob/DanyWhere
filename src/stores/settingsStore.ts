@@ -11,6 +11,7 @@ import type {
   VadBackend,
   LanguageDetectionMode,
   RecordingStorageLimit,
+  DictationServiceWhenIdle,
 } from "@/bindings";
 import { commands } from "@/bindings";
 import { notify } from "@/stores/noticeStore";
@@ -177,6 +178,12 @@ const settingUpdaters: {
     commands.changeMuteWhileRecordingSetting(value as boolean),
   append_trailing_space: (value) =>
     commands.changeAppendTrailingSpaceSetting(value as boolean),
+  dictation_key_inserts: (value) =>
+    commands.changeDictationKeyInsertsSetting(value as boolean),
+  dictation_service_when_idle: (value) =>
+    commands.changeDictationServiceWhenIdleSetting(
+      value as DictationServiceWhenIdle,
+    ),
   log_level: (value) => commands.setLogLevel(value as any),
   app_language: (value) => commands.changeAppLanguageSetting(value as string),
   theme: (value) => commands.changeThemeSetting(value as string),

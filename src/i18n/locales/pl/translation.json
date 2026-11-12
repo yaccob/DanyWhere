@@ -411,6 +411,18 @@
         "invalid": "Użyj ⌘ lub ⌃ z literą, cyfrą lub znakiem interpunkcyjnym",
         "conflict": "„{{name}}” już używa tego skrótu",
         "failed": "Nie udało się ustawić skrótu: {{error}}"
+      },
+      "dictationKeyInserts": {
+        "label": "Skrót dyktowania również wstawia",
+        "description": "Naciśnij ponownie skrót dyktowania, aby zakończyć dyktowanie i wstawić je, gdy tylko będzie gotowe, w aplikacjach obsługujących usługi macOS. Aplikacje, które są już otwarte, uwzględnią to dopiero po ponownym uruchomieniu. Tam, gdzie nie da się nic wstawić, użyj „Wklej ostatnią transkrypcję”."
+      },
+      "dictationServiceWhenIdle": {
+        "title": "Gdy nic nie jest nagrywane",
+        "description": "Jeśli skrót trafi do aplikacji, gdy DanyWhere nie nagrywa, na przykład dlatego, że DanyWhere jeszcze nie działał: rozpocznij nagrywanie albo nic nie rób. Wcześniejsze dyktowanie nigdy nie jest wstawiane.",
+        "options": {
+          "startRecording": "Rozpocznij nagrywanie",
+          "doNothing": "Nic nie rób"
+        }
       }
     },
     "models": {

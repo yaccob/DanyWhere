@@ -411,6 +411,18 @@
         "invalid": "Brug ⌘ eller ⌃ med et bogstav, et tal eller et tegn",
         "conflict": "»{{name}}« bruger allerede denne genvej",
         "failed": "Genvejen kunne ikke indstilles: {{error}}"
+      },
+      "dictationKeyInserts": {
+        "label": "Dikteringsgenvejen indsætter også",
+        "description": "Tryk på dikteringsgenvejen igen for at afslutte dikteringen og indsætte den, så snart den er klar, i apps, der understøtter macOS-tjenester. Apps, der allerede er åbne, bruger det først efter en genstart. Hvor intet kan indsættes, så brug Indsæt seneste transskription."
+      },
+      "dictationServiceWhenIdle": {
+        "title": "Når der ikke optages",
+        "description": "Hvis genvejen når en app, mens DanyWhere ikke optager, fx fordi DanyWhere ikke kørte endnu: start en optagelse, eller gør ingenting. En tidligere diktering indsættes aldrig.",
+        "options": {
+          "startRecording": "Start en optagelse",
+          "doNothing": "Gør ingenting"
+        }
       }
     },
     "models": {

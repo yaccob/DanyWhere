@@ -411,6 +411,18 @@
         "invalid": "Feu servir ⌘ o ⌃ amb una lletra, un dígit o un signe de puntuació",
         "conflict": "«{{name}}» ja fa servir aquesta drecera",
         "failed": "No s'ha pogut definir la drecera: {{error}}"
+      },
+      "dictationKeyInserts": {
+        "label": "La drecera de dictat també insereix",
+        "description": "Torna a prémer la drecera de dictat per acabar el dictat i inserir-lo tan aviat com estigui llest, a les aplicacions que admeten els serveis de macOS. Les aplicacions que ja estan obertes ho apliquen després de reiniciar-les. On no es pot inserir res, fes servir «Enganxa l'última transcripció»."
+      },
+      "dictationServiceWhenIdle": {
+        "title": "Quan no s'enregistra res",
+        "description": "Si la drecera arriba a una aplicació mentre DanyWhere no enregistra, per exemple perquè DanyWhere encara no s'executava: comença un enregistrament o no facis res. Mai s'insereix un dictat anterior.",
+        "options": {
+          "startRecording": "Comença un enregistrament",
+          "doNothing": "No facis res"
+        }
       }
     },
     "models": {

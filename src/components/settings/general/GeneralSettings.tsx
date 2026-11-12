@@ -5,6 +5,8 @@ import { MicrophoneSelector } from "../MicrophoneSelector";
 import { ChannelSelector } from "../ChannelSelector";
 import { ShortcutInput } from "../ShortcutInput";
 import { InsertServiceShortcut } from "../InsertServiceShortcut";
+import { DictationKeyInserts } from "../DictationKeyInserts";
+import { DictationServiceWhenIdleSetting } from "../DictationServiceWhenIdle";
 import { SettingsGroup } from "../../ui/SettingsGroup";
 import { OutputDeviceSelector } from "../OutputDeviceSelector";
 import { ShortcutActivationSetting } from "../ShortcutActivation";
@@ -23,6 +25,7 @@ export const GeneralSettings: React.FC = () => {
   const isLinux = type() === "linux";
   const isMacOS = type() === "macos";
   const accessibilitySkipped = getSetting("accessibility_skipped") === true;
+  const dictationKeyInserts = getSetting("dictation_key_inserts") ?? true;
   // Only for Chinese speakers, or anyone who already picked a script.
   const speaksChinese =
     (getSetting("spoken_languages") ?? []).some(isChinese) ||
@@ -36,6 +39,16 @@ export const GeneralSettings: React.FC = () => {
             macOS service, whose shortcut macOS keeps. */}
         {isMacOS && accessibilitySkipped && (
           <InsertServiceShortcut descriptionMode="tooltip" grouped={true} />
+        )}
+        {/* DanyWhere: the dictation shortcut's second press inserts too. */}
+        {isMacOS && accessibilitySkipped && (
+          <DictationKeyInserts descriptionMode="tooltip" grouped={true} />
+        )}
+        {isMacOS && accessibilitySkipped && dictationKeyInserts && (
+          <DictationServiceWhenIdleSetting
+            descriptionMode="tooltip"
+            grouped={true}
+          />
         )}
         <ShortcutInput shortcutId="paste_last_transcript" grouped={true} />
         <ShortcutInput shortcutId="cycle_word_list" grouped={true} />

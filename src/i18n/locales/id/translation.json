@@ -411,6 +411,18 @@
         "invalid": "Gunakan ⌘ atau ⌃ dengan huruf, angka, atau tanda baca",
         "conflict": "{{name}} sudah memakai pintasan ini",
         "failed": "Pintasan tidak dapat diatur: {{error}}"
+      },
+      "dictationKeyInserts": {
+        "label": "Pintasan dikte juga menyisipkan",
+        "description": "Tekan pintasan dikte sekali lagi untuk mengakhiri dikte dan menyisipkannya segera setelah siap, di aplikasi yang mendukung layanan macOS. Aplikasi yang sudah terbuka baru menerapkannya setelah dimulai ulang. Jika tidak ada yang bisa disisipkan, gunakan Tempel transkripsi terakhir."
+      },
+      "dictationServiceWhenIdle": {
+        "title": "Saat tidak ada yang direkam",
+        "description": "Jika pintasan sampai ke aplikasi saat DanyWhere tidak merekam, misalnya karena DanyWhere belum berjalan: mulai merekam, atau tidak melakukan apa pun. Dikte sebelumnya tidak pernah disisipkan.",
+        "options": {
+          "startRecording": "Mulai merekam",
+          "doNothing": "Tidak melakukan apa pun"
+        }
       }
     },
     "models": {

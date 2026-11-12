@@ -411,6 +411,18 @@
         "invalid": "Bir harf, rakam veya noktalama işaretiyle ⌘ ya da ⌃ kullanın",
         "conflict": "{{name}} bu kısayolu zaten kullanıyor",
         "failed": "Kısayol ayarlanamadı: {{error}}"
+      },
+      "dictationKeyInserts": {
+        "label": "Dikte kısayolu ekleme de yapar",
+        "description": "Dikteyi bitirmek ve hazır olur olmaz eklemek için dikte kısayoluna tekrar basın; macOS hizmetlerini destekleyen uygulamalarda çalışır. Zaten açık olan uygulamalar bunu ancak yeniden başlatıldıktan sonra uygular. Hiçbir şeyin eklenemediği yerlerde Son transkripti yapıştır'ı kullanın."
+      },
+      "dictationServiceWhenIdle": {
+        "title": "Kayıt yapılmıyorken",
+        "description": "Kısayol, DanyWhere kayıt yapmıyorken bir uygulamaya ulaşırsa (örneğin DanyWhere henüz çalışmıyorsa): kaydı başlat veya hiçbir şey yapma. Önceki bir dikte asla eklenmez.",
+        "options": {
+          "startRecording": "Kaydı başlat",
+          "doNothing": "Hiçbir şey yapma"
+        }
       }
     },
     "models": {

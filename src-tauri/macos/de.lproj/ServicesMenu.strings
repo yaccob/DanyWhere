@@ -1,2 +1,6 @@
 /* Services menu title of "Insert Last Dictation" (Info.plist, NSServices). */
 "DanyWhere: Insert Last Dictation" = "DanyWhere: Letztes Diktat einfügen";
+
+/* Services menu titles of the dictation shortcuts' own services. */
+"DanyWhere: End Dictation and Insert" = "DanyWhere: Diktat beenden und einfügen";
+"DanyWhere: End Dictation with Post-processing and Insert" = "DanyWhere: Diktat mit Nachbearbeitung beenden und einfügen";

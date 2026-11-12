@@ -411,6 +411,18 @@
         "invalid": "⌘ 또는 ⌃와 문자, 숫자 또는 문장 부호를 함께 사용하세요",
         "conflict": "‘{{name}}’에서 이미 이 단축키를 사용합니다",
         "failed": "단축키를 설정할 수 없습니다: {{error}}"
+      },
+      "dictationKeyInserts": {
+        "label": "받아쓰기 단축키로 삽입도 하기",
+        "description": "받아쓰기 단축키를 한 번 더 누르면 받아쓰기를 끝내고 준비되는 대로 삽입합니다(macOS 서비스를 지원하는 앱에서). 이미 열려 있는 앱은 다시 시작한 뒤에 적용됩니다. 아무것도 삽입할 수 없는 곳에서는 '마지막 받아쓰기 붙여넣기'를 사용하세요."
+      },
+      "dictationServiceWhenIdle": {
+        "title": "녹음 중이 아닐 때",
+        "description": "DanyWhere가 녹음 중이 아닐 때 단축키가 앱에 전달되면(예: DanyWhere가 아직 실행 중이 아니었을 때): 녹음을 시작하거나 아무것도 하지 않습니다. 이전 받아쓰기는 절대 삽입되지 않습니다.",
+        "options": {
+          "startRecording": "녹음 시작",
+          "doNothing": "아무것도 하지 않음"
+        }
       }
     },
     "models": {

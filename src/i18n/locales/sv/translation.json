@@ -411,6 +411,18 @@
         "invalid": "Använd ⌘ eller ⌃ med en bokstav, siffra eller ett skiljetecken",
         "conflict": "”{{name}}” använder redan det här kortkommandot",
         "failed": "Kortkommandot kunde inte ställas in: {{error}}"
+      },
+      "dictationKeyInserts": {
+        "label": "Kortkommandot för diktering infogar också",
+        "description": "Tryck på kortkommandot för diktering en gång till för att avsluta dikteringen och infoga den så snart den är klar, i appar som stöder macOS-tjänster. Appar som redan är öppna tar till sig detta först efter en omstart. Där inget kan infogas använder du Klistra in senaste transkriptionen."
+      },
+      "dictationServiceWhenIdle": {
+        "title": "När inget spelas in",
+        "description": "Om kortkommandot når en app medan DanyWhere inte spelar in, till exempel för att DanyWhere inte var igång än: starta en inspelning eller gör ingenting. En tidigare diktering infogas aldrig.",
+        "options": {
+          "startRecording": "Starta en inspelning",
+          "doNothing": "Gör ingenting"
+        }
       }
     },
     "models": {

@@ -411,6 +411,18 @@
         "invalid": "Gebruik ⌘ of ⌃ met een letter, cijfer of leesteken",
         "conflict": "'{{name}}' gebruikt deze sneltoets al",
         "failed": "Sneltoets kon niet worden ingesteld: {{error}}"
+      },
+      "dictationKeyInserts": {
+        "label": "Dicteersneltoets voegt ook in",
+        "description": "Druk nog een keer op de dicteersneltoets om het dictaat te beëindigen en in te voegen zodra het klaar is, in apps die macOS-diensten ondersteunen. Apps die al open zijn, nemen dit pas na een herstart over. Waar niets kan worden ingevoegd, gebruik je Laatste transcriptie plakken."
+      },
+      "dictationServiceWhenIdle": {
+        "title": "Als er niets wordt opgenomen",
+        "description": "Als de sneltoets in een app aankomt terwijl DanyWhere niet opneemt, bijvoorbeeld omdat DanyWhere nog niet draaide: een opname starten of niets doen. Een eerder dictaat wordt nooit ingevoegd.",
+        "options": {
+          "startRecording": "Opname starten",
+          "doNothing": "Niets doen"
+        }
       }
     },
     "models": {

@@ -922,6 +922,17 @@ impl ShortcutAction for TranscribeAction {
                                             && crate::insert_service::deliver_to_waiting_call(
                                                 &text_for_service,
                                             );
+                                        // DanyWhere: "Paste Last Transcript"
+                                        // during this dictation asked for its
+                                        // text on the clipboard.
+                                        let put_on_clipboard = outcome
+                                            == TranscriptionOutcome::Typed
+                                            && !inserted_by_service
+                                            && crate::dictation_key_inserts::put_on_clipboard_if_requested(
+                                                &ah_clone,
+                                                session,
+                                                &text_for_service,
+                                            );
                                         // DanyWhere: a sound says the text waits
                                         // to be pasted or inserted, also when post-
                                         // processing failed; not while a newer
@@ -940,6 +951,11 @@ impl ShortcutAction for TranscribeAction {
                                             }
                                             (true, None) if inserted_by_service => {
                                                 utils::hide_recording_overlay(&ah_clone)
+                                            }
+                                            (true, None) if put_on_clipboard => {
+                                                crate::dictation_key_inserts::show_on_clipboard_notice(
+                                                    &ah_clone,
+                                                )
                                             }
                                             // DanyWhere: says where the text waits
                                             // when it was not pasted.
@@ -1061,7 +1077,12 @@ impl ShortcutAction for PasteLastTranscriptAction {
     }
 
     fn stop(&self, app: &AppHandle, _binding_id: &str, _shortcut_str: &str) {
-        crate::delivery::deliver_last_transcript(app);
+        // DanyWhere: during a dictation without Accessibility it ends the
+        // dictation and puts its text on the clipboard once it's ready.
+        crate::dictation_key_inserts::paste_last_transcript(
+            app,
+            RECORDING_SESSION.load(Ordering::SeqCst),
+        );
     }
 }
 

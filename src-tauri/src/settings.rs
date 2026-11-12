@@ -193,6 +193,20 @@ pub enum ClipboardHandling {
     CopyToClipboard,
 }
 
+/// DanyWhere: what an "end dictation" service does when it is called while
+/// no dictation is recording (e.g. DanyWhere wasn't running and macOS
+/// started it to answer the service). It never inserts an earlier dictation
+/// (user, 2026-11-12).
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Type, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum DictationServiceWhenIdle {
+    /// Start a recording for the shortcut, so its next press ends and
+    /// inserts it ("noch besser", the user's choice as the default).
+    #[default]
+    StartRecording,
+    DoNothing,
+}
+
 /// Script applied to Mandarin and Cantonese output. Traditional carries its region
 /// (Taiwan vs Hong Kong forms, e.g. 裡/裏) rather than guessing it.
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Type, Default)]
@@ -499,6 +513,15 @@ pub struct AppSettings {
     /// in System Settings stays. See `insert_service`.
     #[serde(default)]
     pub insert_service_shortcut_set: bool,
+    /// DanyWhere: without Accessibility, the dictation shortcut's second press
+    /// ends the dictation and inserts it once it's ready, through the "end
+    /// dictation" services (user, 2026-11-12). See `dictation_key_inserts`.
+    #[serde(default = "default_dictation_key_inserts")]
+    pub dictation_key_inserts: bool,
+    /// DanyWhere: what the dictation shortcuts' services do when no dictation
+    /// is recording. See `DictationServiceWhenIdle`.
+    #[serde(default)]
+    pub dictation_service_when_idle: DictationServiceWhenIdle,
     #[serde(default = "default_always_on_microphone")]
     pub always_on_microphone: bool,
     #[serde(default)]
@@ -664,6 +687,10 @@ fn default_hold_threshold_ms() -> u64 {
 
 fn default_always_on_microphone() -> bool {
     false
+}
+
+fn default_dictation_key_inserts() -> bool {
+    true
 }
 
 fn default_translate_to_english() -> bool {
@@ -1130,6 +1157,8 @@ pub fn get_default_settings() -> AppSettings {
         onboarding_completed: false,
         accessibility_skipped: false,
         insert_service_shortcut_set: false,
+        dictation_key_inserts: default_dictation_key_inserts(),
+        dictation_service_when_idle: DictationServiceWhenIdle::default(),
         always_on_microphone: false,
         spoken_languages: Vec::new(),
         selected_microphone: None,

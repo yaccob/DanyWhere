@@ -210,7 +210,14 @@ enum Command {
     ProcessingFinished,
     /// DanyWhere: end the running recording, if any (the "Insert Last
     /// Dictation" service, which then inserts its text).
-    Finish,
+    Finish {
+        post_process: bool,
+    },
+    /// DanyWhere: start a locked recording if nothing records (an "end
+    /// dictation" service called while idle).
+    StartLocked {
+        binding_id: String,
+    },
 }
 
 /// Decide whether a key-up should be deferred (so auto-repeat can cancel it)
@@ -535,14 +542,39 @@ impl CoordinatorState {
     /// that it can insert the text once it's ready. Stops a running recording
     /// however it was started; never starts one and leaves a press remembered
     /// during processing alone.
+    #[cfg(test)]
     fn on_finish(&mut self) -> Option<Effect> {
+        self.on_finish_with(false)
+    }
+
+    /// [`CoordinatorState::on_finish`], with post-processing when
+    /// `post_process` is set: the service of the post-process shortcut ends a
+    /// recording as that shortcut's press would. A recording started with the
+    /// post-process shortcut keeps post-processing either way.
+    fn on_finish_with(&mut self, post_process: bool) -> Option<Effect> {
         let Stage::Recording(binding_id) = &self.stage else {
             return None;
         };
         let binding_id = binding_id.clone();
         // A key-up still in its grace window belongs to this recording.
         self.pending_release = None;
-        Some(self.begin_processing(binding_id, "insert-service".to_string()))
+        let action_id = if post_process {
+            "transcribe_with_post_process".to_string()
+        } else {
+            binding_id.clone()
+        };
+        Some(self.begin_processing_with(binding_id, "insert-service".to_string(), action_id))
+    }
+
+    /// DanyWhere: an "end dictation" service was called while nothing was
+    /// recording (e.g. macOS started DanyWhere to answer it): start a locked
+    /// recording for `binding_id`, so the shortcut's next press ends it. Only
+    /// from idle; never stops or replaces anything.
+    fn on_start_locked(&mut self, binding_id: String, now: Instant) -> Option<Effect> {
+        if self.stage != Stage::Idle {
+            return None;
+        }
+        Some(self.begin_recording(binding_id, "insert-service".to_string(), now, true))
     }
 
     fn on_processing_finished(&mut self) -> Option<Effect> {
@@ -629,6 +661,10 @@ impl TranscriptionCoordinator {
         thread::spawn(move || {
             let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                 let mut state = CoordinatorState::new();
+                // DanyWhere: whether a locked recording runs, as last reported
+                // to `dictation_key_inserts`, which releases the dictation
+                // shortcuts meanwhile.
+                let mut reported_locked = false;
 
                 loop {
                     let cmd = if let Some(deadline) = state.grace_deadline() {
@@ -642,6 +678,7 @@ impl TranscriptionCoordinator {
                                 if !was_locked && state.is_recording_locked() {
                                     emit_recording_phase(&app, RecordingPhase::Locked);
                                 }
+                                report_recording_locked(&app, &state, &mut reported_locked);
                                 continue;
                             }
                             Err(mpsc::RecvTimeoutError::Disconnected) => break,
@@ -676,15 +713,22 @@ impl TranscriptionCoordinator {
                                 run_effect(&app, &mut state, effect);
                             }
                         }
-                        Command::Finish => {
-                            if let Some(effect) = state.on_finish() {
+                        Command::Finish { post_process } => {
+                            if let Some(effect) = state.on_finish_with(post_process) {
                                 run_effect(&app, &mut state, effect);
+                            }
+                        }
+                        Command::StartLocked { binding_id } => {
+                            match state.on_start_locked(binding_id, Instant::now()) {
+                                Some(effect) => run_effect(&app, &mut state, effect),
+                                None => debug!("Not starting a recording: one runs already"),
                             }
                         }
                     }
                     if !was_locked && state.is_recording_locked() {
                         emit_recording_phase(&app, RecordingPhase::Locked);
                     }
+                    report_recording_locked(&app, &state, &mut reported_locked);
                 }
                 debug!("Transcription coordinator exited");
             }));
@@ -775,9 +819,41 @@ impl TranscriptionCoordinator {
     /// DanyWhere: ends the running recording, however it was started, as the
     /// next press of its shortcut would. Does nothing without a recording.
     pub fn finish_recording(&self) {
-        if self.tx.send(Command::Finish).is_err() {
+        self.finish_recording_with(false);
+    }
+
+    /// DanyWhere: starts a locked recording for `binding_id` if nothing is
+    /// recording or being transcribed (see `CoordinatorState::on_start_locked`).
+    pub fn start_locked_recording(&self, binding_id: &str) {
+        if self
+            .tx
+            .send(Command::StartLocked {
+                binding_id: binding_id.to_string(),
+            })
+            .is_err()
+        {
             warn!("Transcription coordinator channel closed");
         }
+    }
+
+    /// DanyWhere: [`TranscriptionCoordinator::finish_recording`], with
+    /// post-processing when `post_process` is set (the service of the
+    /// post-process shortcut).
+    pub fn finish_recording_with(&self, post_process: bool) {
+        if self.tx.send(Command::Finish { post_process }).is_err() {
+            warn!("Transcription coordinator channel closed");
+        }
+    }
+}
+
+/// DanyWhere: tells `dictation_key_inserts` when a locked recording begins
+/// or ends (stopped, cancelled, failed to start), so it releases the
+/// dictation shortcuts only meanwhile.
+fn report_recording_locked(app: &AppHandle, state: &CoordinatorState, reported: &mut bool) {
+    let locked = state.is_recording_locked();
+    if locked != *reported {
+        *reported = locked;
+        crate::dictation_key_inserts::recording_locked_changed(app, locked);
     }
 }
 
@@ -1327,6 +1403,81 @@ mod tests {
         );
         assert!(state.on_grace_expired().is_none());
         assert_eq!(state.stage, Stage::Processing);
+    }
+
+    #[test]
+    fn finish_with_post_processing_stops_a_plain_recording_with_post_processing() {
+        let mut state = CoordinatorState::new();
+        let now = Instant::now();
+        assert!(matches!(
+            state.on_input(toggle_input(false), now),
+            Some(Effect::Start { .. })
+        ));
+        assert_stop(state.on_finish_with(true), BINDING, OTHER_BINDING);
+        assert_eq!(state.stage, Stage::Processing);
+    }
+
+    #[test]
+    fn finish_with_post_processing_keeps_a_post_process_recording() {
+        let mut state = CoordinatorState::new();
+        let now = Instant::now();
+        assert!(matches!(
+            state.on_input(toggle_input_for(OTHER_BINDING, false), now),
+            Some(Effect::Start { .. })
+        ));
+        assert_stop(state.on_finish_with(true), OTHER_BINDING, OTHER_BINDING);
+    }
+
+    #[test]
+    fn finish_with_post_processing_while_idle_does_nothing() {
+        let mut state = CoordinatorState::new();
+        assert!(state.on_finish_with(true).is_none());
+        assert_eq!(state.stage, Stage::Idle);
+    }
+
+    #[test]
+    fn a_service_call_while_idle_starts_a_locked_recording() {
+        let mut state = CoordinatorState::new();
+        let now = Instant::now();
+        assert!(matches!(
+            state.on_start_locked(OTHER_BINDING.to_string(), now),
+            Some(Effect::Start { binding_id, .. }) if binding_id == OTHER_BINDING
+        ));
+        assert!(
+            state.is_recording_locked(),
+            "the next press of the shortcut must end it"
+        );
+        // That next press ends it, with the binding that started it.
+        assert_stop(state.on_finish(), OTHER_BINDING, OTHER_BINDING);
+    }
+
+    #[test]
+    fn a_service_start_never_touches_a_running_recording() {
+        let mut state = CoordinatorState::new();
+        let now = Instant::now();
+        assert!(matches!(
+            state.on_input(toggle_input(false), now),
+            Some(Effect::Start { .. })
+        ));
+        assert!(state
+            .on_start_locked(OTHER_BINDING.to_string(), now + Duration::from_millis(200))
+            .is_none());
+        assert_eq!(state.stage, Stage::Recording(BINDING.to_string()));
+    }
+
+    #[test]
+    fn a_service_start_waits_for_nothing_while_processing() {
+        let mut state = CoordinatorState::new();
+        let now = Instant::now();
+        drive_into_processing(&mut state, now);
+        assert!(state
+            .on_start_locked(BINDING.to_string(), now + Duration::from_millis(200))
+            .is_none());
+        assert_eq!(state.stage, Stage::Processing);
+        assert!(
+            state.on_processing_finished().is_none(),
+            "nothing was remembered to start later"
+        );
     }
 
     #[test]
