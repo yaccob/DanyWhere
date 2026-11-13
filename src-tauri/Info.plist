@@ -82,6 +82,29 @@
       <key>NSTimeout</key>
       <string>30000</string>
     </dict>
+    <!-- The same for the context shortcut: ends the dictation with
+         post-processing and context from earlier dictations in the same
+         window. -->
+    <dict>
+      <key>NSMenuItem</key>
+      <dict>
+        <key>default</key>
+        <string>DanyWhere: End Dictation with Context and Insert</string>
+      </dict>
+      <key>NSMessage</key>
+      <string>endDictationWithContextAndInsert</string>
+      <key>NSPortName</key>
+      <string>DanyWhere</string>
+      <key>NSReturnTypes</key>
+      <array>
+        <string>NSStringPboardType</string>
+        <string>public.utf8-plain-text</string>
+      </array>
+      <key>NSRequiredContext</key>
+      <dict/>
+      <key>NSTimeout</key>
+      <string>30000</string>
+    </dict>
   </array>
 </dict>
 </plist>

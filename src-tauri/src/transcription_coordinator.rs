@@ -208,10 +208,10 @@ enum Command {
         recording_was_active: bool,
     },
     ProcessingFinished,
-    /// DanyWhere: end the running recording, if any (the "Insert Last
-    /// Dictation" service, which then inserts its text).
+    /// DanyWhere: end the running recording, if any (DanyWhere's services,
+    /// which then insert its text), as a press of `finish_as` would.
     Finish {
-        post_process: bool,
+        finish_as: Option<String>,
     },
     /// DanyWhere: start a locked recording if nothing records (an "end
     /// dictation" service called while idle).
@@ -548,24 +548,28 @@ impl CoordinatorState {
     /// during processing alone.
     #[cfg(test)]
     fn on_finish(&mut self) -> Option<Effect> {
-        self.on_finish_with(false)
+        self.on_finish_as(None)
     }
 
-    /// [`CoordinatorState::on_finish`], with post-processing when
-    /// `post_process` is set: the service of the post-process shortcut ends a
-    /// recording as that shortcut's press would. A recording started with the
-    /// post-process shortcut keeps post-processing either way.
-    fn on_finish_with(&mut self, post_process: bool) -> Option<Effect> {
+    /// [`CoordinatorState::on_finish`] for a dictation shortcut's "end
+    /// dictation" service: `finish_as` is that shortcut's binding. Like a
+    /// press of that shortcut during a locked recording, the recording ends
+    /// with whichever of its own binding and `finish_as` does more
+    /// ([`finish_rank`]): the post-process and context services add
+    /// post-processing or context, and post-processing or context chosen up
+    /// front is never lost (2026-11-13).
+    fn on_finish_as(&mut self, finish_as: Option<&str>) -> Option<Effect> {
         let Stage::Recording(binding_id) = &self.stage else {
             return None;
         };
         let binding_id = binding_id.clone();
         // A key-up still in its grace window belongs to this recording.
         self.pending_release = None;
-        let action_id = if post_process {
-            "transcribe_with_post_process".to_string()
-        } else {
-            binding_id.clone()
+        let action_id = match finish_as {
+            Some(id) if is_transcribe_binding(id) && finish_rank(id) > finish_rank(&binding_id) => {
+                id.to_string()
+            }
+            _ => binding_id.clone(),
         };
         Some(self.begin_processing_with(binding_id, "insert-service".to_string(), action_id))
     }
@@ -732,8 +736,8 @@ impl TranscriptionCoordinator {
                                 run_effect(&app, &mut state, effect);
                             }
                         }
-                        Command::Finish { post_process } => {
-                            if let Some(effect) = state.on_finish_with(post_process) {
+                        Command::Finish { finish_as } => {
+                            if let Some(effect) = state.on_finish_as(finish_as.as_deref()) {
                                 run_effect(&app, &mut state, effect);
                             }
                         }
@@ -838,7 +842,7 @@ impl TranscriptionCoordinator {
     /// DanyWhere: ends the running recording, however it was started, as the
     /// next press of its shortcut would. Does nothing without a recording.
     pub fn finish_recording(&self) {
-        self.finish_recording_with(false);
+        self.finish_recording_as(None);
     }
 
     /// DanyWhere: starts a locked recording for `binding_id` if nothing is
@@ -855,11 +859,18 @@ impl TranscriptionCoordinator {
         }
     }
 
-    /// DanyWhere: [`TranscriptionCoordinator::finish_recording`], with
-    /// post-processing when `post_process` is set (the service of the
-    /// post-process shortcut).
-    pub fn finish_recording_with(&self, post_process: bool) {
-        if self.tx.send(Command::Finish { post_process }).is_err() {
+    /// DanyWhere: [`TranscriptionCoordinator::finish_recording`] for the
+    /// "end dictation" service of the shortcut `finish_as`: adds that
+    /// shortcut's post-processing or context, never takes the recording's own
+    /// away (see `CoordinatorState::on_finish_as`).
+    pub fn finish_recording_as(&self, finish_as: Option<&str>) {
+        if self
+            .tx
+            .send(Command::Finish {
+                finish_as: finish_as.map(str::to_string),
+            })
+            .is_err()
+        {
             warn!("Transcription coordinator channel closed");
         }
     }
@@ -1432,7 +1443,11 @@ mod tests {
             state.on_input(toggle_input(false), now),
             Some(Effect::Start { .. })
         ));
-        assert_stop(state.on_finish_with(true), BINDING, OTHER_BINDING);
+        assert_stop(
+            state.on_finish_as(Some(OTHER_BINDING)),
+            BINDING,
+            OTHER_BINDING,
+        );
         assert_eq!(state.stage, Stage::Processing);
     }
 
@@ -1444,14 +1459,67 @@ mod tests {
             state.on_input(toggle_input_for(OTHER_BINDING, false), now),
             Some(Effect::Start { .. })
         ));
-        assert_stop(state.on_finish_with(true), OTHER_BINDING, OTHER_BINDING);
+        assert_stop(
+            state.on_finish_as(Some(OTHER_BINDING)),
+            OTHER_BINDING,
+            OTHER_BINDING,
+        );
     }
 
     #[test]
     fn finish_with_post_processing_while_idle_does_nothing() {
         let mut state = CoordinatorState::new();
-        assert!(state.on_finish_with(true).is_none());
+        assert!(state.on_finish_as(Some(OTHER_BINDING)).is_none());
         assert_eq!(state.stage, Stage::Idle);
+    }
+
+    // DanyWhere: the context shortcut's service (2026-11-13). A service ends
+    // a recording as its shortcut's press would: with the action that does
+    // more, so it can add context but never take it away.
+
+    #[test]
+    fn the_context_service_ends_a_plain_recording_with_context() {
+        let mut state = CoordinatorState::new();
+        let now = Instant::now();
+        state.on_input(toggle_input(false), now);
+        assert_stop(state.on_finish_as(Some(CONTEXT)), BINDING, CONTEXT);
+    }
+
+    #[test]
+    fn the_context_service_ends_a_post_process_recording_with_context() {
+        let mut state = CoordinatorState::new();
+        let now = Instant::now();
+        state.on_input(toggle_input_for(OTHER_BINDING, false), now);
+        assert_stop(state.on_finish_as(Some(CONTEXT)), OTHER_BINDING, CONTEXT);
+    }
+
+    #[test]
+    fn the_post_process_service_keeps_a_context_recording_s_context() {
+        let mut state = CoordinatorState::new();
+        let now = Instant::now();
+        state.on_input(toggle_input_for(CONTEXT, false), now);
+        assert_stop(state.on_finish_as(Some(OTHER_BINDING)), CONTEXT, CONTEXT);
+    }
+
+    #[test]
+    fn the_plain_service_and_insert_last_dictation_keep_a_context_recording_s_context() {
+        for finish_as in [Some(BINDING), None] {
+            let mut state = CoordinatorState::new();
+            let now = Instant::now();
+            state.on_input(toggle_input_for(CONTEXT, false), now);
+            assert_stop(state.on_finish_as(finish_as), CONTEXT, CONTEXT);
+        }
+    }
+
+    #[test]
+    fn the_context_service_while_idle_starts_a_context_recording() {
+        let mut state = CoordinatorState::new();
+        let now = Instant::now();
+        assert!(matches!(
+            state.on_start_locked(CONTEXT.to_string(), now),
+            Some(Effect::Start { binding_id, .. }) if binding_id == CONTEXT
+        ));
+        assert_stop(state.on_finish_as(Some(CONTEXT)), CONTEXT, CONTEXT);
     }
 
     #[test]

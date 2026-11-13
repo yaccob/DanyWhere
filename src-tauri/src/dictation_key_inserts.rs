@@ -5,10 +5,11 @@
 //! macOS lets an app ask DanyWhere for text only when a key press reaches
 //! that app and calls a service there (`insert_service`). So while a locked
 //! recording runs (toggle, or hold-or-toggle after a tap), DanyWhere releases
-//! its two dictation shortcuts: their next press reaches the app being typed
-//! in, where it is the key equivalent of an "end dictation" service, which
-//! ends the recording and answers with the text. As soon as the recording
-//! ends, for whatever reason, DanyWhere takes the shortcuts back.
+//! its dictation shortcuts (plain, with post-processing, with context): their
+//! next press reaches the app being typed in, where it is the key equivalent
+//! of that shortcut's "end dictation" service, which ends the recording and
+//! answers with the text. As soon as the recording ends, for whatever reason,
+//! DanyWhere takes the shortcuts back.
 //!
 //! Push-to-talk can't work this way: a key release calls no service.
 //!
@@ -23,8 +24,22 @@ use tauri::{AppHandle, Manager};
 
 use crate::tray::TrayIconState;
 
-/// The two dictation shortcuts, each with an "end dictation" service.
-const DICTATION_BINDINGS: [&str; 2] = ["transcribe", "transcribe_with_post_process"];
+/// The dictation shortcuts, each with an "end dictation" service.
+const DICTATION_BINDINGS: [&str; 3] = [
+    "transcribe",
+    "transcribe_with_post_process",
+    crate::dictation_context::CONTEXT_BINDING,
+];
+
+/// The dictation shortcuts to release and take back. Those that need
+/// post-processing are registered only while it is on (`shortcut`), so
+/// otherwise they are left alone: taking them back would register them.
+pub fn bindings_to_release(post_process_enabled: bool) -> Vec<&'static str> {
+    DICTATION_BINDINGS
+        .into_iter()
+        .filter(|id| post_process_enabled || !crate::settings::binding_needs_post_processing(id))
+        .collect()
+}
 
 /// Whether DanyWhere releases its dictation shortcuts now. `waits_for_service`
 /// is whether finished dictations wait for the "Insert Last Dictation"
@@ -163,7 +178,7 @@ fn reconcile_release(app: &AppHandle) {
         return;
     }
     let settings = crate::settings::get_settings(app);
-    for id in DICTATION_BINDINGS {
+    for id in bindings_to_release(settings.post_process_enabled) {
         let Some(binding) = settings.bindings.get(id).cloned() else {
             continue;
         };
@@ -343,6 +358,22 @@ mod tests {
         // A request whose dictation ended without text is not used by the next.
         request.request(6);
         assert!(!request.take(7));
+    }
+
+    #[test]
+    fn the_context_shortcut_is_released_too() {
+        // Its second press must reach the app as well, where its own service
+        // ends the dictation with context (2026-11-13).
+        assert!(DICTATION_BINDINGS.contains(&crate::dictation_context::CONTEXT_BINDING));
+        assert!(DICTATION_BINDINGS.contains(&"transcribe"));
+        assert!(DICTATION_BINDINGS.contains(&"transcribe_with_post_process"));
+    }
+
+    #[test]
+    fn the_post_processing_shortcuts_are_left_alone_while_post_processing_is_off() {
+        // They aren't registered then; taking them back would register them.
+        assert_eq!(bindings_to_release(false), vec!["transcribe"]);
+        assert_eq!(bindings_to_release(true).len(), DICTATION_BINDINGS.len());
     }
 
     #[test]
