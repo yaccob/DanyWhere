@@ -1076,6 +1076,8 @@
     "filePostProcessFailed": "لم تكتمل المعالجة اللاحقة، لذا حُفظ النص المنسوخ كما هو.",
     "historyPostProcessFailedTitle": "فشلت المعالجة اللاحقة",
     "historyPostProcessFailed": "لم تكتمل المعالجة اللاحقة، لذا بقي الإدخال كما هو.",
+    "appMissedShortcutTitle": "نُسخ – أعد تشغيل التطبيق",
+    "appMissedShortcut": "كان {{app}} مفتوحًا بالفعل عندما أعدّ DanyWhere اختصار الإملاء، لذا لن يعرفه إلا بعد إعادة تشغيله. النص في الحافظة.",
     "fileTranscriptionFailedTitle": "فشل التفريغ النصي للملف",
     "transcriptionFailedTitle": "فشل التفريغ النصي"
   },

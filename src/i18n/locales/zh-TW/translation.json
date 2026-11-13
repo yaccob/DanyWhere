@@ -1076,6 +1076,8 @@
     "filePostProcessFailed": "後處理未完成，因此按原樣儲存轉錄內容。",
     "historyPostProcessFailedTitle": "後處理失敗",
     "historyPostProcessFailed": "後處理未完成，因此該項目保持不變。",
+    "appMissedShortcutTitle": "已複製 – 請重新啟動該 App",
+    "appMissedShortcut": "DanyWhere 設定聽寫快捷鍵時 {{app}} 已經開著，因此要重新啟動後才能辨識該快捷鍵。文字已在剪貼簿中。",
     "fileTranscriptionFailedTitle": "檔案轉錄失敗",
     "transcriptionFailedTitle": "轉錄失敗"
   },

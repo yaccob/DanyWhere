@@ -1076,6 +1076,8 @@
     "filePostProcessFailed": "Efterbehandlingen blev ikke færdig, så transskriptionen blev gemt, som den er.",
     "historyPostProcessFailedTitle": "Efterbehandling mislykkedes",
     "historyPostProcessFailed": "Efterbehandlingen blev ikke færdig, så posten er uændret.",
+    "appMissedShortcutTitle": "Kopieret – genstart appen",
+    "appMissedShortcut": "{{app}} var allerede åben, da DanyWhere satte dikteringsgenvejen op, så den kender den først efter en genstart. Teksten er i udklipsholderen.",
     "fileTranscriptionFailedTitle": "Transskription af fil mislykkedes",
     "transcriptionFailedTitle": "Transskription mislykkedes"
   },

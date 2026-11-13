@@ -1076,6 +1076,8 @@
     "filePostProcessFailed": "O pós-processamento não terminou, então a transcrição foi salva como está.",
     "historyPostProcessFailedTitle": "Falha no pós-processamento",
     "historyPostProcessFailed": "O pós-processamento não terminou, então a entrada ficou como estava.",
+    "appMissedShortcutTitle": "Copiado – reinicie a app",
+    "appMissedShortcut": "{{app}} já estava aberto quando o DanyWhere configurou o atalho de ditado, por isso só o reconhece depois de reiniciado. O texto está na área de transferência.",
     "fileTranscriptionFailedTitle": "Falha na transcrição do arquivo",
     "transcriptionFailedTitle": "Falha na transcrição"
   },

@@ -1076,6 +1076,8 @@
     "filePostProcessFailed": "De naverwerking is niet voltooid, dus de transcriptie is ongewijzigd opgeslagen.",
     "historyPostProcessFailedTitle": "Naverwerking mislukt",
     "historyPostProcessFailed": "De naverwerking is niet voltooid, dus het item blijft ongewijzigd.",
+    "appMissedShortcutTitle": "Gekopieerd – herstart de app",
+    "appMissedShortcut": "{{app}} was al open toen DanyWhere de dicteersneltoets instelde, dus kent die pas na een herstart. De tekst staat op het klembord.",
     "fileTranscriptionFailedTitle": "Transcriptie van bestand mislukt",
     "transcriptionFailedTitle": "Transcriptie mislukt"
   },

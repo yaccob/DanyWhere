@@ -82,6 +82,11 @@ const CANCELLATION_POLL_INTERVAL: Duration = Duration::from_millis(25);
 /// doesn't reset the tray or hide the overlay of a newer one.
 static RECORDING_SESSION: AtomicU64 = AtomicU64::new(0);
 
+/// DanyWhere: the current recording session, for `dictation_key_inserts`.
+pub fn current_recording_session() -> u64 {
+    RECORDING_SESSION.load(Ordering::SeqCst)
+}
+
 /// Drop guard that finishes the transcription pipeline, including immediate
 /// model unloading on early exits.
 struct FinishGuard(AppHandle, Arc<TranscriptionManager>);
@@ -1009,16 +1014,21 @@ impl ShortcutAction for TranscribeAction {
                                                 &text_for_service,
                                             );
                                         // DanyWhere: "Paste Last Transcript"
-                                        // during this dictation asked for its
-                                        // text on the clipboard.
-                                        let put_on_clipboard = outcome
+                                        // during this dictation, or an app that
+                                        // didn't know the dictation shortcut,
+                                        // asked for its text on the clipboard.
+                                        let put_on_clipboard = if outcome
                                             == TranscriptionOutcome::Typed
                                             && !inserted_by_service
-                                            && crate::dictation_key_inserts::put_on_clipboard_if_requested(
+                                        {
+                                            crate::dictation_key_inserts::put_on_clipboard_if_requested(
                                                 &ah_clone,
                                                 session,
                                                 &text_for_service,
-                                            );
+                                            )
+                                        } else {
+                                            None
+                                        };
                                         // DanyWhere: a sound says the text waits
                                         // to be pasted or inserted, also when post-
                                         // processing failed; not while a newer
@@ -1031,29 +1041,30 @@ impl ShortcutAction for TranscribeAction {
                                                 &ah_clone,
                                             );
                                         }
-                                        match (owns_ui(), notice) {
-                                            (true, Some(notice)) => {
+                                        match (owns_ui(), notice, &put_on_clipboard) {
+                                            (true, Some(notice), _) => {
                                                 notices::raise(&ah_clone, notice)
                                             }
-                                            (true, None) if inserted_by_service => {
+                                            (true, None, _) if inserted_by_service => {
                                                 utils::hide_recording_overlay(&ah_clone)
                                             }
-                                            (true, None) if put_on_clipboard => {
+                                            (true, None, Some(reason)) => {
                                                 crate::dictation_key_inserts::show_on_clipboard_notice(
                                                     &ah_clone,
+                                                    reason,
                                                 )
                                             }
                                             // DanyWhere: says where the text waits
                                             // when it was not pasted.
-                                            (true, None) => {
+                                            (true, None, None) => {
                                                 crate::delivery::finish_overlay_after_dictation(
                                                     &ah_clone,
                                                 )
                                             }
-                                            (false, Some(notice)) => {
+                                            (false, Some(notice), _) => {
                                                 notices::raise_without_overlay(&ah_clone, notice)
                                             }
-                                            (false, None) => {}
+                                            (false, None, _) => {}
                                         }
                                         if owns_ui() {
                                             set_tray_state(&ah_clone, TrayIconState::Idle);

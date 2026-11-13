@@ -190,6 +190,10 @@ mod tests {
             "ctrl+alt+shift+space",
             "alt+space",
             "escape",
+            // DanyWhere's macOS defaults since 2026-11-13.
+            "ctrl+shift+command+space",
+            "ctrl+shift+v",
+            "ctrl+shift+l",
         ] {
             assert_eq!(validate_shortcut(raw), Ok(()), "{raw} should be accepted");
         }

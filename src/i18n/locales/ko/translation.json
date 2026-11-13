@@ -1076,6 +1076,8 @@
     "filePostProcessFailed": "후처리가 완료되지 않아 받아쓰기 결과를 그대로 저장했습니다.",
     "historyPostProcessFailedTitle": "후처리 실패",
     "historyPostProcessFailed": "후처리가 완료되지 않아 항목이 그대로 유지됩니다.",
+    "appMissedShortcutTitle": "복사됨 – 앱을 다시 시작하세요",
+    "appMissedShortcut": "DanyWhere가 받아쓰기 단축키를 설정할 때 {{app}}이(가) 이미 열려 있어서, 다시 시작한 후에야 단축키를 인식합니다. 텍스트는 클립보드에 있습니다.",
     "fileTranscriptionFailedTitle": "파일 음성 인식 실패",
     "transcriptionFailedTitle": "음성 인식 실패"
   },

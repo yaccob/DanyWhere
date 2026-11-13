@@ -1076,6 +1076,8 @@
     "filePostProcessFailed": "Následné zpracování se nedokončilo, takže byl přepis uložen beze změn.",
     "historyPostProcessFailedTitle": "Následné zpracování selhalo",
     "historyPostProcessFailed": "Následné zpracování se nedokončilo, takže záznam zůstává beze změn.",
+    "appMissedShortcutTitle": "Zkopírováno – nutný restart",
+    "appMissedShortcut": "{{app}} už byla otevřená, když DanyWhere nastavil zkratku diktování, takže ji rozpozná až po restartu. Text je ve schránce.",
     "fileTranscriptionFailedTitle": "Přepis souboru selhal",
     "transcriptionFailedTitle": "Přepis selhal"
   },

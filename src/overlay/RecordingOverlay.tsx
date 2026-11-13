@@ -383,7 +383,8 @@ const RecordingOverlay: React.FC = () => {
     // A notice keeps the transcript; with none, the panel explains the notice.
     const noticeText =
       liveNotice && !hasText
-        ? (noticeDisplay(liveNotice.code).explanation?.(t) ?? liveNotice.detail)
+        ? (noticeDisplay(liveNotice.code).explanation?.(t, liveNotice.detail) ??
+          liveNotice.detail)
         : null;
     // While listening, a slow model load opens the panel with a notice where the
     // text would be, so speech that isn't transcribing yet doesn't look ignored.

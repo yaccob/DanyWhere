@@ -135,13 +135,15 @@ export const NoticePanel: React.FC = () => {
     ...notices
       .filter((notice) => isShown(notice.source))
       .map((notice) => {
-        const { title, explanation } = noticeDisplay(notice.code);
+        const { title, explanation, detailInExplanation } = noticeDisplay(
+          notice.code,
+        );
         return {
           id: notice.source,
           level: notice.level,
           title: t(title),
-          explanation: explanation?.(t),
-          detail: notice.detail,
+          explanation: explanation?.(t, notice.detail),
+          detail: detailInExplanation ? null : notice.detail,
           onDismiss: () => dismiss(notice),
         };
       }),

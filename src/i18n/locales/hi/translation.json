@@ -1076,6 +1076,8 @@
     "filePostProcessFailed": "पोस्ट प्रोसेस पूरा नहीं हुआ, इसलिए ट्रांसक्रिप्ट जैसा था वैसा ही सहेजा गया।",
     "historyPostProcessFailedTitle": "पोस्ट प्रोसेस विफल रहा",
     "historyPostProcessFailed": "पोस्ट प्रोसेस पूरा नहीं हुआ, इसलिए एंट्री जैसी थी वैसी ही है।",
+    "appMissedShortcutTitle": "कॉपी हुआ – ऐप रीस्टार्ट करें",
+    "appMissedShortcut": "जब DanyWhere ने डिक्टेशन शॉर्टकट सेट किया, तब {{app}} पहले से खुला था, इसलिए वह इसे रीस्टार्ट के बाद ही पहचानेगा। टेक्स्ट क्लिपबोर्ड पर है।",
     "fileTranscriptionFailedTitle": "फ़ाइल का ट्रांसक्रिप्शन नहीं हो सका",
     "transcriptionFailedTitle": "ट्रांसक्रिप्शन नहीं हो सका"
   },

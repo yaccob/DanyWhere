@@ -1076,6 +1076,8 @@
     "filePostProcessFailed": "後処理が完了しなかったため、文字起こしをそのまま保存しました。",
     "historyPostProcessFailedTitle": "後処理に失敗しました",
     "historyPostProcessFailed": "後処理が完了しなかったため、エントリーはそのままです。",
+    "appMissedShortcutTitle": "コピー済み – アプリを再起動",
+    "appMissedShortcut": "DanyWhere が音声入力のショートカットを設定したとき {{app}} はすでに開いていたため、再起動するまでショートカットを認識しません。テキストはクリップボードにあります。",
     "fileTranscriptionFailedTitle": "ファイルの文字起こしに失敗しました",
     "transcriptionFailedTitle": "文字起こしに失敗しました"
   },

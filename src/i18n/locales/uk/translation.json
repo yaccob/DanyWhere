@@ -1076,6 +1076,8 @@
     "filePostProcessFailed": "Постобробка не завершилася, тому розшифровку збережено як є.",
     "historyPostProcessFailedTitle": "Помилка постобробки",
     "historyPostProcessFailed": "Постобробка не завершилася, тому запис залишився без змін.",
+    "appMissedShortcutTitle": "Скопійовано – потрібен перезапуск",
+    "appMissedShortcut": "{{app}} уже був відкритий, коли DanyWhere налаштував комбінацію клавіш для диктування, тому розпізнає її лише після перезапуску. Текст у буфері обміну.",
     "fileTranscriptionFailedTitle": "Помилка транскрипції файлу",
     "transcriptionFailedTitle": "Помилка транскрипції"
   },

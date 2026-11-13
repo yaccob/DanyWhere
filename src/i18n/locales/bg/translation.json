@@ -1076,6 +1076,8 @@
     "filePostProcessFailed": "Постобработката не завърши, затова транскрипцията беше запазена без промени.",
     "historyPostProcessFailedTitle": "Постобработката не успя",
     "historyPostProcessFailed": "Постобработката не завърши, затова записът остава без промени.",
+    "appMissedShortcutTitle": "Копирано – нужен е рестарт",
+    "appMissedShortcut": "{{app}} беше вече отворено, когато DanyWhere настрои бързия клавиш за диктовка, затова ще го разпознае едва след рестартиране. Текстът е в клипборда.",
     "fileTranscriptionFailedTitle": "Неуспешна транскрипция на файла",
     "transcriptionFailedTitle": "Неуспешна транскрипция"
   },

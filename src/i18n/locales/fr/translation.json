@@ -1076,6 +1076,8 @@
     "filePostProcessFailed": "Le post-traitement n'a pas abouti, la transcription a donc été enregistrée telle quelle.",
     "historyPostProcessFailedTitle": "Échec du post-traitement",
     "historyPostProcessFailed": "Le post-traitement n'a pas abouti, l'entrée reste donc inchangée.",
+    "appMissedShortcutTitle": "Copié – redémarrez l'app",
+    "appMissedShortcut": "{{app}} était déjà ouverte quand DanyWhere a configuré le raccourci de dictée ; elle ne le reconnaîtra qu'après un redémarrage. Le texte est dans le presse-papiers.",
     "fileTranscriptionFailedTitle": "Échec de la transcription du fichier",
     "transcriptionFailedTitle": "Échec de la transcription"
   },
