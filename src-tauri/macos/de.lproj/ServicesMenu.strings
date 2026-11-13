@@ -4,3 +4,4 @@
 /* Services menu titles of the dictation shortcuts' own services. */
 "DanyWhere: End Dictation and Insert" = "DanyWhere: Diktat beenden und einfügen";
 "DanyWhere: End Dictation with Post-processing and Insert" = "DanyWhere: Diktat mit Nachbearbeitung beenden und einfügen";
+"DanyWhere: End Dictation with Context and Insert" = "DanyWhere: Diktat mit Kontext beenden und einfügen";

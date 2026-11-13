@@ -1101,10 +1101,12 @@ pub fn get_default_settings() -> AppSettings {
         },
     );
     // DanyWhere: dictate, then post-process with context from earlier
-    // dictations in the same window (`dictation_context`). Provisional
-    // defaults (2026-11-13), chosen to clash with nothing known: not ⌘⌥Space
-    // (Finder search), ⌃⌥Space (next input source) or ⌃Space; on Windows not
-    // Win+Ctrl+Space (input language); the user decides the real one later.
+    // dictations in the same window (`dictation_context`). One modifier more
+    // than the post-process shortcut where that is free, chosen to clash with
+    // nothing known: not ⌘⌥Space (Finder search), ⌃⌥Space (next input
+    // source, on by default) or ⌃Space; on Windows not Win+Ctrl+Space (input
+    // language); on Linux Ctrl+Alt+Shift+Space is the post-process shortcut
+    // already, so C for context (settled with the user, 2026-11-13).
     #[cfg(target_os = "windows")]
     let default_context_shortcut = "ctrl+alt+shift+space";
     #[cfg(target_os = "macos")]

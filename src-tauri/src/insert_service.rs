@@ -24,10 +24,12 @@ pub const DEFAULT_KEY_EQUIVALENT: &str = "@~^v";
 /// way: during a dictation they end it and insert its text once it's ready,
 /// otherwise they insert the last dictation.
 ///
-/// The two "end dictation" services carry the dictation shortcuts as their
-/// own (user, 2026-11-12): while a recording runs without Accessibility,
-/// DanyWhere releases those shortcuts, so their second press reaches the app
-/// being typed in and calls the service there (see `dictation_key_inserts`).
+/// The three "end dictation" services carry the dictation shortcuts (plain,
+/// with post-processing, with context) as their own (user, 2026-11-12; the
+/// context one since 2026-11-13): while a recording runs without
+/// Accessibility, DanyWhere releases those shortcuts, so their second press
+/// reaches the app being typed in and calls the service there (see
+/// `dictation_key_inserts`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ServiceKind {
     /// "Insert Last Dictation", with a shortcut of its own (⌃⌥⌘V).
@@ -37,14 +39,18 @@ pub enum ServiceKind {
     /// The post-process shortcut's service: ends a recording with
     /// post-processing.
     EndDictationWithPostProcess,
+    /// The context shortcut's service: ends a recording with post-processing
+    /// and context from earlier dictations in the same window.
+    EndDictationWithContext,
 }
 
 impl ServiceKind {
     #[cfg(test)]
-    pub const ALL: [ServiceKind; 3] = [
+    pub const ALL: [ServiceKind; 4] = [
         ServiceKind::InsertLastDictation,
         ServiceKind::EndDictation,
         ServiceKind::EndDictationWithPostProcess,
+        ServiceKind::EndDictationWithContext,
     ];
 
     /// The Objective-C message `NSMessage` names in `Info.plist`.
@@ -53,6 +59,7 @@ impl ServiceKind {
             ServiceKind::InsertLastDictation => SERVICE_MESSAGE,
             ServiceKind::EndDictation => "endDictationAndInsert",
             ServiceKind::EndDictationWithPostProcess => "endDictationWithPostProcessAndInsert",
+            ServiceKind::EndDictationWithContext => "endDictationWithContextAndInsert",
         }
     }
 
@@ -63,17 +70,16 @@ impl ServiceKind {
             .find(|kind| kind.message() == message)
     }
 
-    /// Whether ending a recording through this service post-processes it.
-    pub fn post_processes(self) -> bool {
-        self == ServiceKind::EndDictationWithPostProcess
-    }
-
-    /// The dictation shortcut whose service this is, if any.
+    /// The dictation shortcut whose service this is, if any. Ending a
+    /// recording through the service does what a press of that shortcut
+    /// would: the post-process and context services add post-processing or
+    /// context.
     pub fn binding_id(self) -> Option<&'static str> {
         match self {
             ServiceKind::InsertLastDictation => None,
             ServiceKind::EndDictation => Some("transcribe"),
             ServiceKind::EndDictationWithPostProcess => Some("transcribe_with_post_process"),
+            ServiceKind::EndDictationWithContext => Some(crate::dictation_context::CONTEXT_BINDING),
         }
     }
 }
@@ -408,10 +414,10 @@ fn function_key_character(key: &str) -> Option<char> {
     char::from_u32(0xF704 + number - 1)
 }
 
-/// The key equivalents the two "end dictation" services should have: the
+/// The key equivalents the three "end dictation" services should have: the
 /// dictation shortcuts' own when `enabled` (the setting "Dictation shortcut
-/// also inserts"), else none. A shortcut that can't be a key equivalent
-/// leaves its service without one.
+/// also inserts"), else none. A shortcut that can't be a key equivalent, or
+/// isn't set, leaves its service without one.
 pub fn dictation_service_shortcuts(
     bindings: &std::collections::HashMap<String, crate::settings::ShortcutBinding>,
     enabled: bool,
@@ -419,6 +425,7 @@ pub fn dictation_service_shortcuts(
     [
         ServiceKind::EndDictation,
         ServiceKind::EndDictationWithPostProcess,
+        ServiceKind::EndDictationWithContext,
     ]
     .into_iter()
     .map(|kind| {
@@ -563,14 +570,15 @@ fn answer_call(app: &tauri::AppHandle) -> Option<String> {
 }
 
 /// Answers a call made during a dictation, as `plan` says: ends the
-/// recording if needed, then waits for its text and returns it. `pump` lets
+/// recording if needed (as a press of the shortcut `finish_as` would, see
+/// `ServiceKind::binding_id`), then waits for its text and returns it. `pump` lets
 /// the main thread's other work run for a moment between two checks; the
 /// service is answered on the main thread, which the dictation may need.
 #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 fn answer_waiting_call(
     app: &tauri::AppHandle,
     plan: CallPlan,
-    post_process: bool,
+    finish_as: Option<&'static str>,
     mut pump: impl FnMut(),
 ) -> Option<String> {
     use tauri::Manager;
@@ -581,15 +589,11 @@ fn answer_waiting_call(
     }
     if plan == CallPlan::StopAndWait {
         if let Some(coordinator) = app.try_state::<crate::TranscriptionCoordinator>() {
-            coordinator.finish_recording_with(post_process);
+            coordinator.finish_recording_as(finish_as);
         }
         log::info!(
-            "Insert Last Dictation: ending the recording{} and waiting for its text.",
-            if post_process {
-                " with post-processing"
-            } else {
-                ""
-            }
+            "Insert Last Dictation: ending the recording (service of {}) and waiting for its text.",
+            finish_as.unwrap_or("no shortcut")
         );
     } else {
         log::info!("Insert Last Dictation: waiting for the dictation's text.");
@@ -631,10 +635,10 @@ fn answer_waiting_call(
 }
 
 /// Answers a call of one of DanyWhere's services. During a dictation without
-/// Accessibility it ends the recording (with post-processing for the
-/// post-process shortcut's service) and answers once the text is ready.
+/// Accessibility it ends the recording (with post-processing or context for
+/// those shortcuts' services) and answers once the text is ready.
 /// Otherwise "Insert Last Dictation" answers with the last dictation, while
-/// the two "end dictation" services never insert an earlier dictation: they
+/// the three "end dictation" services never insert an earlier dictation: they
 /// answer with nothing and, as the user chose, start a recording or do
 /// nothing (user, 2026-11-12).
 #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
@@ -647,7 +651,7 @@ fn answer_service(app: &tauri::AppHandle, kind: ServiceKind, pump: impl FnMut())
     let Some(binding_id) = kind.binding_id() else {
         return match plan_call(waits_for_service, phase) {
             CallPlan::AnswerNow => answer_call(app),
-            plan => answer_waiting_call(app, plan, false, pump),
+            plan => answer_waiting_call(app, plan, None, pump),
         };
     };
     match plan_end_call(
@@ -656,9 +660,9 @@ fn answer_service(app: &tauri::AppHandle, kind: ServiceKind, pump: impl FnMut())
         settings.dictation_service_when_idle,
     ) {
         EndCallPlan::StopAndWait => {
-            answer_waiting_call(app, CallPlan::StopAndWait, kind.post_processes(), pump)
+            answer_waiting_call(app, CallPlan::StopAndWait, Some(binding_id), pump)
         }
-        EndCallPlan::Wait => answer_waiting_call(app, CallPlan::Wait, kind.post_processes(), pump),
+        EndCallPlan::Wait => answer_waiting_call(app, CallPlan::Wait, Some(binding_id), pump),
         EndCallPlan::StartRecording => {
             log::info!("{kind:?}: called while nothing records; starting a recording.");
             start_recording_when_ready(app, binding_id);
@@ -711,7 +715,7 @@ fn start_recording_when_ready(app: &tauri::AppHandle, binding_id: &'static str) 
     }
 }
 
-/// Gives the two "end dictation" services the dictation shortcuts as their
+/// Gives the three "end dictation" services the dictation shortcuts as their
 /// own while DanyWhere runs without Accessibility and "Dictation shortcut
 /// also inserts" is on, and takes them away otherwise. Call at startup and
 /// whenever a dictation shortcut, the setting or the mode changes. Apps that
@@ -864,6 +868,16 @@ mod macos {
                 _error: *mut *mut NSString,
             ) {
                 self.reply(pasteboard, ServiceKind::EndDictationWithPostProcess);
+            }
+
+            #[unsafe(method(endDictationWithContextAndInsert:userData:error:))]
+            fn end_dictation_with_context_and_insert(
+                &self,
+                pasteboard: &NSPasteboard,
+                _user_data: Option<&NSString>,
+                _error: *mut *mut NSString,
+            ) {
+                self.reply(pasteboard, ServiceKind::EndDictationWithContext);
             }
         }
     );
@@ -1576,6 +1590,10 @@ mod tests {
             ServiceKind::EndDictationWithPostProcess.message(),
             "endDictationWithPostProcessAndInsert"
         );
+        assert_eq!(
+            ServiceKind::EndDictationWithContext.message(),
+            "endDictationWithContextAndInsert"
+        );
         for kind in ServiceKind::ALL {
             assert_eq!(ServiceKind::from_message(kind.message()), Some(kind));
         }
@@ -1583,11 +1601,12 @@ mod tests {
     }
 
     #[test]
-    fn only_the_post_process_service_post_processes() {
-        assert!(!ServiceKind::InsertLastDictation.post_processes());
-        assert!(!ServiceKind::EndDictation.post_processes());
-        assert!(ServiceKind::EndDictationWithPostProcess.post_processes());
+    fn each_end_service_belongs_to_its_dictation_shortcut() {
         assert_eq!(ServiceKind::EndDictation.binding_id(), Some("transcribe"));
+        assert_eq!(
+            ServiceKind::EndDictationWithContext.binding_id(),
+            Some(crate::dictation_context::CONTEXT_BINDING)
+        );
         assert_eq!(
             ServiceKind::EndDictationWithPostProcess.binding_id(),
             Some("transcribe_with_post_process")
@@ -1657,6 +1676,7 @@ mod tests {
         let bindings = std::collections::HashMap::from([
             binding("transcribe", "option+space"),
             binding("transcribe_with_post_process", "option+shift+space"),
+            binding("transcribe_with_context", "option+shift+command+space"),
             binding("paste_last_transcript", "option+shift+v"),
         ]);
         assert_eq!(
@@ -1667,6 +1687,10 @@ mod tests {
                     ServiceKind::EndDictationWithPostProcess,
                     Some("~$ ".to_string())
                 ),
+                (
+                    ServiceKind::EndDictationWithContext,
+                    Some("@~$ ".to_string())
+                ),
             ]
         );
     }
@@ -1676,12 +1700,14 @@ mod tests {
         let bindings = std::collections::HashMap::from([
             binding("transcribe", "option+space"),
             binding("transcribe_with_post_process", "option+shift+space"),
+            binding("transcribe_with_context", "option+shift+command+space"),
         ]);
         assert_eq!(
             dictation_service_shortcuts(&bindings, false),
             vec![
                 (ServiceKind::EndDictation, None),
                 (ServiceKind::EndDictationWithPostProcess, None),
+                (ServiceKind::EndDictationWithContext, None),
             ]
         );
     }
@@ -1700,6 +1726,8 @@ mod tests {
                     ServiceKind::EndDictationWithPostProcess,
                     Some("^$ ".to_string())
                 ),
+                // No context shortcut set: no shortcut for its service.
+                (ServiceKind::EndDictationWithContext, None),
             ]
         );
     }
@@ -1725,9 +1753,10 @@ mod tests {
         assert!(plist.contains("<string>DanyWhere: End Dictation and Insert</string>"));
         assert!(plist
             .contains("<string>DanyWhere: End Dictation with Post-processing and Insert</string>"));
+        assert!(plist.contains("<string>DanyWhere: End Dictation with Context and Insert</string>"));
         // Every service waits as long as the first one.
-        assert_eq!(plist.matches("<key>NSTimeout</key>").count(), 3);
-        assert_eq!(plist.matches("<key>NSPortName</key>").count(), 3);
+        assert_eq!(plist.matches("<key>NSTimeout</key>").count(), 4);
+        assert_eq!(plist.matches("<key>NSPortName</key>").count(), 4);
     }
 
     #[test]
@@ -1738,6 +1767,9 @@ mod tests {
         ));
         assert!(strings.contains(
             "\"DanyWhere: End Dictation with Post-processing and Insert\" = \"DanyWhere: Diktat mit Nachbearbeitung beenden und einfügen\";"
+        ));
+        assert!(strings.contains(
+            "\"DanyWhere: End Dictation with Context and Insert\" = \"DanyWhere: Diktat mit Kontext beenden und einfügen\";"
         ));
     }
 
