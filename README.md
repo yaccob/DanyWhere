@@ -14,10 +14,10 @@ The hard problems — local speech recognition, voice activity detection, global
 ## What DanyWhere adds to Handy
 
 - **Works without the Accessibility permission (macOS).** On managed Macs where this permission is blocked, choose "Continue without Accessibility" during setup: each transcript is put on the clipboard for you to paste with ⌘V, and a short notice says so. Shortcuts with the fn key are not available in this mode.
-- **Paste the last transcript again.** Option+Shift+V (Alt+Shift+V on Windows and Linux) puts the most recent transcript where the cursor is now, for example after a dictation went nowhere because no text field had focus.
+- **Paste the last transcript again.** Control+Shift+V (Alt+Shift+V on Windows and Linux) puts the most recent transcript where the cursor is now, for example after a dictation went nowhere because no text field had focus.
 - **A small model selection for laptops.** Six models that are fast enough for dictation on a MacBook: Parakeet Ultra (25 European languages), Whisper large-v3-turbo (100 languages), Canary 1B v2 (translates to English), Parakeet unified EN 0.6B (English with live preview), Whisper small and Canary 180M flash. Setup recommends one for the languages you speak and starts downloading it while you grant permissions. Models and the language detector some of them use download from DanyWhere's own mirror, [yaccob/DanyWhere-models](https://github.com/yaccob/DanyWhere-models), with Hugging Face as a fallback, and every file is checked against its SHA-256 hash.
 - **A long history that stays small.** Recordings are stored as Opus, about 12 times smaller than WAV, and a storage limit (500 MB by default, about 54 hours of dictation, or unlimited) replaces the count of five recent entries. When old recordings are removed, their transcripts stay in the history.
-- **Word lists per topic.** The custom words are a global word list that always applies. Named additional lists, for example one per project, can be switched on one at a time in the settings, from the tray menu or with Option+Shift+L (Alt+Shift+L on Windows and Linux); their words go to the model first.
+- **Word lists per topic.** The custom words are a global word list that always applies. Named additional lists, for example one per project, can be switched on one at a time in the settings, from the tray menu or with Control+Shift+L (Alt+Shift+L on Windows and Linux); their words go to the model first.
 - **Decide on post-processing at the end.** In toggle mode, the post-processing shortcut also stops a recording that was started with the plain shortcut, and the transcript is post-processed.
 - **Installs next to Handy.** DanyWhere has its own app name, settings, process name (`danywhere`) and update channel, so both apps can be installed at the same time. Give them different shortcuts.
 
@@ -37,7 +37,7 @@ You need a Mac with macOS 11 (Big Sur) or later, with Apple silicon or an Intel 
    Or install it with [Homebrew](https://brew.sh) instead of steps 1 and 2: `brew install --cask yaccob/tap/danywhere`
 
 3. Start DanyWhere and follow the setup: allow microphone access, then grant Accessibility, or choose "Continue without Accessibility" if your organization blocks it.
-4. Press Option+Space and speak. Hold the shortcut to record and release it to stop, or tap it to start and tap again to stop. Once post-processing is switched on (Settings → Advanced → Transcription) and set up, Option+Shift+Space does the same and post-processes the transcript.
+4. Press Control+Space and speak. Hold the shortcut to record and release it to stop, or tap it to start and tap again to stop. Once post-processing is switched on (Settings → Advanced → Transcription) and set up, Control+Shift+Space does the same and post-processes the transcript.
 
 ### Windows
 

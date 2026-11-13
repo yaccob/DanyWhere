@@ -1076,6 +1076,8 @@
     "filePostProcessFailed": "Efterbearbetningen slutfördes inte, så transkriptionen sparades som den är.",
     "historyPostProcessFailedTitle": "Efterbearbetningen misslyckades",
     "historyPostProcessFailed": "Efterbearbetningen slutfördes inte, så posten är oförändrad.",
+    "appMissedShortcutTitle": "Kopierat – starta om appen",
+    "appMissedShortcut": "{{app}} var redan öppen när DanyWhere ställde in kortkommandot för diktering, så den känner till det först efter en omstart. Texten finns i urklipp.",
     "fileTranscriptionFailedTitle": "Transkriptionen av filen misslyckades",
     "transcriptionFailedTitle": "Transkriptionen misslyckades"
   },

@@ -51,6 +51,10 @@ pub enum NoticeCode {
     /// Post-processing a History entry's transcript again failed; the entry
     /// is unchanged.
     HistoryPostProcessFailed,
+    /// DanyWhere: the app in front was open before DanyWhere gave its
+    /// services the dictation shortcuts, so the second press couldn't insert;
+    /// the text went on the clipboard. Detail: the app's name.
+    AppMissedShortcut,
 }
 
 impl NoticeCode {
@@ -64,7 +68,9 @@ impl NoticeCode {
             | Self::ModelLoadFailed
             | Self::FileTranscriptionFailed
             | Self::HistoryPostProcessFailed => NoticeLevel::Error,
-            Self::PostProcessFailed | Self::FilePostProcessFailed => NoticeLevel::Warning,
+            Self::PostProcessFailed | Self::FilePostProcessFailed | Self::AppMissedShortcut => {
+                NoticeLevel::Warning
+            }
         }
     }
 
@@ -81,6 +87,7 @@ impl NoticeCode {
             Self::FileTranscriptionFailed => &strings.file_transcription_failed_title,
             Self::FilePostProcessFailed => &strings.file_post_process_failed_title,
             Self::HistoryPostProcessFailed => &strings.history_post_process_failed_title,
+            Self::AppMissedShortcut => &strings.app_missed_shortcut_title,
         }
     }
 }
@@ -235,6 +242,15 @@ mod tests {
 
     fn dictation(code: NoticeCode) -> Notice {
         Notice::new(code, NoticeSource::Dictation)
+    }
+
+    #[test]
+    fn a_missed_shortcut_is_a_warning() {
+        // The user got the text, on the clipboard instead of inserted.
+        assert_eq!(
+            dictation(NoticeCode::AppMissedShortcut).level,
+            NoticeLevel::Warning
+        );
     }
 
     fn file(code: NoticeCode) -> Notice {

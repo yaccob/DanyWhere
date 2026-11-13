@@ -1076,6 +1076,8 @@
     "filePostProcessFailed": "La post-elaborazione non è terminata, quindi la trascrizione è stata salvata così com'è.",
     "historyPostProcessFailedTitle": "Post-elaborazione non riuscita",
     "historyPostProcessFailed": "La post-elaborazione non è terminata, quindi la voce resta com'era.",
+    "appMissedShortcutTitle": "Copiato – riavvia l'app",
+    "appMissedShortcut": "{{app}} era già aperta quando DanyWhere ha impostato la scorciatoia di dettatura, quindi la riconoscerà solo dopo un riavvio. Il testo è negli appunti.",
     "fileTranscriptionFailedTitle": "Trascrizione del file non riuscita",
     "transcriptionFailedTitle": "Trascrizione non riuscita"
   },

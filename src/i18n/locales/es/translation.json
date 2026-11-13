@@ -1076,6 +1076,8 @@
     "filePostProcessFailed": "El post proceso no terminó, así que la transcripción se guardó tal cual.",
     "historyPostProcessFailedTitle": "Falló el post proceso",
     "historyPostProcessFailed": "El post proceso no terminó, así que la entrada queda como estaba.",
+    "appMissedShortcutTitle": "Copiado – reinicia la app",
+    "appMissedShortcut": "{{app}} ya estaba abierta cuando DanyWhere configuró el atajo de dictado, así que solo lo reconocerá tras reiniciarla. El texto está en el portapapeles.",
     "fileTranscriptionFailedTitle": "Error al transcribir el archivo",
     "transcriptionFailedTitle": "Error de transcripción"
   },

@@ -5,7 +5,9 @@ import type { NoticeCode } from "@/bindings";
 interface NoticeDisplay {
   title: string;
   // Without one, the Live overlay shows the notice's detail instead.
-  explanation?: (t: TFunction) => string;
+  explanation?: (t: TFunction, detail?: string | null) => string;
+  // The explanation already names the detail, so it isn't shown again.
+  detailInExplanation?: boolean;
 }
 
 // See "Error notices" in AGENTS.md for how to add a code.
@@ -49,6 +51,13 @@ const NOTICE_DISPLAY: Record<NoticeCode, NoticeDisplay> = {
   HistoryPostProcessFailed: {
     title: "errors.historyPostProcessFailedTitle",
     explanation: (t) => t("errors.historyPostProcessFailed"),
+  },
+  // DanyWhere: the detail is the app that missed the dictation shortcut.
+  AppMissedShortcut: {
+    title: "errors.appMissedShortcutTitle",
+    explanation: (t, detail) =>
+      t("errors.appMissedShortcut", { app: detail ?? "" }),
+    detailInExplanation: true,
   },
 };
 

@@ -1359,7 +1359,13 @@ dictation_key_inserts?: boolean;
  * DanyWhere: what the dictation shortcuts' services do when no dictation
  * is recording. See `DictationServiceWhenIdle`.
  */
-dictation_service_when_idle?: DictationServiceWhenIdle; always_on_microphone?: boolean; selected_microphone?: string | null; 
+dictation_service_when_idle?: DictationServiceWhenIdle; 
+/**
+ * DanyWhere: when DanyWhere last gave the "end dictation" services a
+ * shortcut, in seconds since the Unix epoch. Apps launched before it
+ * don't know the shortcut until they restart. See `dictation_key_inserts`.
+ */
+dictation_service_shortcuts_written_at?: number | null; always_on_microphone?: boolean; selected_microphone?: string | null; 
 /**
  * Which input channel to use on the selected microphone device.
  * None means "average all channels" (original behavior).
@@ -1721,7 +1727,13 @@ export type NoticeCode = "TranscriptionFailed" | "PasteFailed" | "NoMicrophone" 
  * Post-processing a History entry's transcript again failed; the entry
  * is unchanged.
  */
-"HistoryPostProcessFailed"
+"HistoryPostProcessFailed" | 
+/**
+ * DanyWhere: the app in front was open before DanyWhere gave its
+ * services the dictation shortcuts, so the second press couldn't insert;
+ * the text went on the clipboard. Detail: the app's name.
+ */
+"AppMissedShortcut"
 export type NoticeLevel = 
 /**
  * Nothing came out, or Handy can't do its job.

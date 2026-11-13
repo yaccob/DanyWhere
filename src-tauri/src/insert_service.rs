@@ -301,6 +301,28 @@ pub fn deliver_to_waiting_call(text: &str) -> bool {
     WAITING_CALL.deliver(text)
 }
 
+/// When the "end dictation" services last got a shortcut, as DanyWhere keeps
+/// it (`dictation_service_shortcuts_written_at`) after syncing them:
+/// `wrote_shortcut` is whether this sync wrote one, `has_shortcuts` whether
+/// any of them has one now. Settings from before this was kept get, once,
+/// the time the services settings last changed (`services_file_modified`,
+/// at most later than the real write, which errs on the safe side), or `now`.
+pub fn shortcuts_written_at(
+    stored: Option<u64>,
+    wrote_shortcut: bool,
+    has_shortcuts: bool,
+    now: u64,
+    services_file_modified: Option<u64>,
+) -> Option<u64> {
+    if wrote_shortcut {
+        Some(now)
+    } else if stored.is_some() || !has_shortcuts {
+        stored
+    } else {
+        Some(services_file_modified.unwrap_or(now))
+    }
+}
+
 /// The key under which `NSServicesStatus` keeps a service's settings.
 pub fn status_key(bundle_id: &str, menu_title: &str, message: &str) -> String {
     format!("{bundle_id} - {menu_title} - {message}")
@@ -371,12 +393,14 @@ pub fn key_equivalent_from_binding(binding: &str) -> Result<String, ShortcutProb
 /// The modifier codes in the order macOS writes them (`@~^v` for ⌃⌥⌘V).
 const KEY_EQUIVALENT_ORDER: [char; 4] = ['@', '~', '^', '$'];
 
-/// Turns a dictation shortcut (e.g. `option+space`) into the key equivalent
+/// Turns a dictation shortcut (e.g. `ctrl+space`) into the key equivalent
 /// of its "end dictation" service. Unlike [`key_equivalent_from_binding`],
 /// which guards the shortcut the user picks for "Insert Last Dictation", it
-/// takes what a dictation shortcut can be: Space, ⌥ or ⇧ without ⌘ or ⌃, and
-/// function keys (written as AppKit's function-key characters, F1 =
-/// U+F704). Only a character key with at most ⇧ is refused: it would type.
+/// takes what a dictation shortcut can be: Space, and function keys (written
+/// as AppKit's function-key characters, F1 = U+F704) with any modifiers. A
+/// character key needs ⌘ or ⌃: with at most ⇧ it types the character, and
+/// with ⌥ it types one too (⌥Space a no-break space), so the press never
+/// reaches the service (⌥Space and ⌥⇧Space on the company Mac, 2026-11-13).
 pub fn dictation_key_equivalent(binding: &str) -> Result<String, ShortcutProblem> {
     let (modifiers, keys) = split_binding(binding);
     let key = match keys.as_slice() {
@@ -395,6 +419,9 @@ pub fn dictation_key_equivalent(binding: &str) -> Result<String, ShortcutProblem
     };
     if types && modifiers.iter().all(|code| *code == '$') {
         return Err(ShortcutProblem::TypesCharacter);
+    }
+    if types && modifiers.iter().all(|code| *code == '$' || *code == '~') {
+        return Err(ShortcutProblem::NeedsCommandOrControl);
     }
     let mut key_equivalent: String = KEY_EQUIVALENT_ORDER
         .iter()
@@ -821,8 +848,9 @@ mod macos {
     use tauri::AppHandle;
 
     use super::{
-        answer_service, dictation_service_shortcuts, should_set_default_shortcut,
-        status_entry_value, status_key, ServiceKind, DEFAULT_KEY_EQUIVALENT,
+        answer_service, dictation_service_shortcuts, shortcuts_written_at,
+        should_set_default_shortcut, status_entry_value, status_key, ServiceKind,
+        DEFAULT_KEY_EQUIVALENT,
     };
 
     pub struct ProviderIvars {
@@ -988,12 +1016,15 @@ mod macos {
     }
 
     pub fn sync_dictation_service_shortcuts(app: &AppHandle) {
-        let settings = crate::settings::get_settings(app);
+        let mut settings = crate::settings::get_settings(app);
         let enabled = settings.accessibility_skipped && settings.dictation_key_inserts;
+        let mut wrote_shortcut = false;
+        let mut has_shortcuts = false;
         for (kind, wanted) in dictation_service_shortcuts(&settings.bindings, enabled) {
             let Some(key) = status_key_for(app, kind) else {
                 continue;
             };
+            has_shortcuts |= wanted.is_some();
             let current = key_equivalent_of(&key).filter(|k| !k.is_empty());
             if current == wanted {
                 continue;
@@ -1004,10 +1035,41 @@ mod macos {
             }
             let key_equivalent = wanted.clone().unwrap_or_default();
             match write_key_equivalent(&key, &key_equivalent) {
-                Ok(()) => info!("{kind:?}: shortcut set to {wanted:?}."),
+                Ok(()) => {
+                    info!("{kind:?}: shortcut set to {wanted:?}.");
+                    wrote_shortcut |= wanted.is_some();
+                }
                 Err(err) => error!("{kind:?}: could not set the shortcut: {err}"),
             }
         }
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|elapsed| elapsed.as_secs())
+            .unwrap_or_default();
+        let written_at = shortcuts_written_at(
+            settings.dictation_service_shortcuts_written_at,
+            wrote_shortcut,
+            has_shortcuts,
+            now,
+            services_file_modified(),
+        );
+        if written_at != settings.dictation_service_shortcuts_written_at {
+            info!("The services got their shortcuts at {written_at:?} (Unix time); apps launched before know them after a restart.");
+            settings.dictation_service_shortcuts_written_at = written_at;
+            crate::settings::write_settings(app, settings);
+        }
+    }
+
+    /// When the services settings (`~/Library/Preferences/pbs.plist`) last
+    /// changed, in seconds since the Unix epoch.
+    fn services_file_modified() -> Option<u64> {
+        let home = std::env::var_os("HOME")?;
+        let path = std::path::Path::new(&home).join("Library/Preferences/pbs.plist");
+        let modified = std::fs::metadata(path).ok()?.modified().ok()?;
+        modified
+            .duration_since(std::time::UNIX_EPOCH)
+            .ok()
+            .map(|elapsed| elapsed.as_secs())
     }
 
     pub fn register(app: &AppHandle) {
@@ -1616,10 +1678,7 @@ mod tests {
 
     #[test]
     fn a_dictation_shortcut_with_space_becomes_a_key_equivalent() {
-        assert_eq!(
-            dictation_key_equivalent("option+space"),
-            Ok("~ ".to_string())
-        );
+        assert_eq!(dictation_key_equivalent("ctrl+space"), Ok("^ ".to_string()));
         assert_eq!(
             dictation_key_equivalent("ctrl+shift+space"),
             Ok("^$ ".to_string())
@@ -1628,14 +1687,83 @@ mod tests {
             dictation_key_equivalent("ctrl+option+shift+space"),
             Ok("~^$ ".to_string())
         );
+        assert_eq!(
+            dictation_key_equivalent("ctrl+shift+command+space"),
+            Ok("@^$ ".to_string())
+        );
     }
 
     #[test]
-    fn a_dictation_shortcut_needs_neither_command_nor_control() {
-        assert_eq!(dictation_key_equivalent("option+d"), Ok("~d".to_string()));
+    fn a_dictation_shortcut_with_command_or_control_becomes_a_key_equivalent() {
         assert_eq!(
             dictation_key_equivalent("command+shift+d"),
             Ok("@$d".to_string())
+        );
+        assert_eq!(
+            dictation_key_equivalent("option+shift+command+space"),
+            Ok("@~$ ".to_string())
+        );
+    }
+
+    #[test]
+    fn a_dictation_shortcut_with_only_option_is_refused() {
+        // ⌥ with a character key types a character (⌥Space a no-break
+        // space), so the press never reaches the service: ⌥Space and ⌥⇧Space
+        // did nothing on the company Mac, ⌃ worked (user, 2026-11-13).
+        for binding in ["option+space", "option+shift+space", "option+d"] {
+            assert_eq!(
+                dictation_key_equivalent(binding),
+                Err(ShortcutProblem::NeedsCommandOrControl),
+                "{binding}"
+            );
+        }
+        // A function key types nothing, with ⌥ or without.
+        assert_eq!(
+            dictation_key_equivalent("option+f5"),
+            Ok("~\u{F708}".to_string())
+        );
+    }
+
+    #[test]
+    fn writing_a_shortcut_records_the_time() {
+        assert_eq!(
+            shortcuts_written_at(Some(100), true, true, 500, Some(450)),
+            Some(500)
+        );
+        assert_eq!(shortcuts_written_at(None, true, true, 500, None), Some(500));
+    }
+
+    #[test]
+    fn the_recorded_time_stays_until_the_next_write() {
+        assert_eq!(
+            shortcuts_written_at(Some(100), false, true, 500, Some(450)),
+            Some(100)
+        );
+        // Taking the shortcuts away (e.g. Accessibility granted) leaves it.
+        assert_eq!(
+            shortcuts_written_at(Some(100), false, false, 500, Some(450)),
+            Some(100)
+        );
+    }
+
+    #[test]
+    fn shortcuts_from_before_the_time_was_kept_get_the_services_files_time() {
+        // DanyWhere 0.1.5 wrote them without keeping the time.
+        assert_eq!(
+            shortcuts_written_at(None, false, true, 500, Some(450)),
+            Some(450)
+        );
+        assert_eq!(
+            shortcuts_written_at(None, false, true, 500, None),
+            Some(500)
+        );
+    }
+
+    #[test]
+    fn no_shortcuts_no_time() {
+        assert_eq!(
+            shortcuts_written_at(None, false, false, 500, Some(450)),
+            None
         );
     }
 
@@ -1674,19 +1802,40 @@ mod tests {
     #[test]
     fn the_dictation_services_take_the_dictation_shortcuts() {
         let bindings = std::collections::HashMap::from([
-            binding("transcribe", "option+space"),
-            binding("transcribe_with_post_process", "option+shift+space"),
-            binding("transcribe_with_context", "option+shift+command+space"),
-            binding("paste_last_transcript", "option+shift+v"),
+            binding("transcribe", "ctrl+space"),
+            binding("transcribe_with_post_process", "ctrl+shift+space"),
+            binding("transcribe_with_context", "ctrl+shift+command+space"),
+            binding("paste_last_transcript", "ctrl+shift+v"),
         ]);
         assert_eq!(
             dictation_service_shortcuts(&bindings, true),
             vec![
-                (ServiceKind::EndDictation, Some("~ ".to_string())),
+                (ServiceKind::EndDictation, Some("^ ".to_string())),
                 (
                     ServiceKind::EndDictationWithPostProcess,
-                    Some("~$ ".to_string())
+                    Some("^$ ".to_string())
                 ),
+                (
+                    ServiceKind::EndDictationWithContext,
+                    Some("@^$ ".to_string())
+                ),
+            ]
+        );
+    }
+
+    #[test]
+    fn option_only_dictation_shortcuts_give_their_services_none() {
+        // The defaults up to 0.1.5: the press never reached the service.
+        let bindings = std::collections::HashMap::from([
+            binding("transcribe", "option+space"),
+            binding("transcribe_with_post_process", "option+shift+space"),
+            binding("transcribe_with_context", "option+shift+command+space"),
+        ]);
+        assert_eq!(
+            dictation_service_shortcuts(&bindings, true),
+            vec![
+                (ServiceKind::EndDictation, None),
+                (ServiceKind::EndDictationWithPostProcess, None),
                 (
                     ServiceKind::EndDictationWithContext,
                     Some("@~$ ".to_string())

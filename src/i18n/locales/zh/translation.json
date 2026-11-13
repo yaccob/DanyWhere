@@ -1076,6 +1076,8 @@
     "filePostProcessFailed": "后处理未完成，因此按原样保存转录内容。",
     "historyPostProcessFailedTitle": "后处理失败",
     "historyPostProcessFailed": "后处理未完成，因此该条目保持不变。",
+    "appMissedShortcutTitle": "已复制 – 请重启该应用",
+    "appMissedShortcut": "DanyWhere 设置听写快捷键时 {{app}} 已经打开，因此要重启后才能识别该快捷键。文本已在剪贴板中。",
     "fileTranscriptionFailedTitle": "文件转录失败",
     "transcriptionFailedTitle": "转录失败"
   },

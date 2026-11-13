@@ -1076,6 +1076,8 @@
     "filePostProcessFailed": "העיבוד המשלים לא הסתיים, ולכן התמלול נשמר כפי שהוא.",
     "historyPostProcessFailedTitle": "העיבוד המשלים נכשל",
     "historyPostProcessFailed": "העיבוד המשלים לא הסתיים, ולכן הרשומה נשארה ללא שינוי.",
+    "appMissedShortcutTitle": "הועתק – נדרשת הפעלה מחדש",
+    "appMissedShortcut": "{{app}} כבר היה פתוח כש־DanyWhere הגדיר את קיצור ההכתבה, ולכן יכיר אותו רק אחרי הפעלה מחדש. הטקסט נמצא בלוח.",
     "fileTranscriptionFailedTitle": "תמלול הקובץ נכשל",
     "transcriptionFailedTitle": "התמלול נכשל"
   },

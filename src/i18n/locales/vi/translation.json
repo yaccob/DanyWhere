@@ -1076,6 +1076,8 @@
     "filePostProcessFailed": "Xử lý sau chưa hoàn tất nên bản chép lời được lưu nguyên trạng.",
     "historyPostProcessFailedTitle": "Xử lý sau thất bại",
     "historyPostProcessFailed": "Xử lý sau chưa hoàn tất nên mục này vẫn giữ nguyên.",
+    "appMissedShortcutTitle": "Đã sao chép – cần khởi động lại",
+    "appMissedShortcut": "{{app}} đã mở sẵn khi DanyWhere thiết lập phím tắt đọc chính tả, nên chỉ nhận ra phím tắt sau khi khởi động lại. Văn bản đang ở trong bảng nhớ tạm.",
     "fileTranscriptionFailedTitle": "Phiên âm tệp thất bại",
     "transcriptionFailedTitle": "Phiên âm thất bại"
   },

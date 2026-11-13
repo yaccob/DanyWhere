@@ -1076,6 +1076,8 @@
     "filePostProcessFailed": "Pascaproses tidak selesai, jadi transkrip disimpan apa adanya.",
     "historyPostProcessFailedTitle": "Pascaproses Gagal",
     "historyPostProcessFailed": "Pascaproses tidak selesai, jadi entri tetap seperti semula.",
+    "appMissedShortcutTitle": "Disalin – Mulai Ulang Aplikasi",
+    "appMissedShortcut": "{{app}} sudah terbuka saat DanyWhere menyiapkan pintasan dikte, jadi aplikasi itu baru mengenalinya setelah dimulai ulang. Teksnya ada di papan klip.",
     "fileTranscriptionFailedTitle": "Transkripsi File Gagal",
     "transcriptionFailedTitle": "Transkripsi Gagal"
   },

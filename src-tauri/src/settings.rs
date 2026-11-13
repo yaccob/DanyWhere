@@ -522,6 +522,11 @@ pub struct AppSettings {
     /// is recording. See `DictationServiceWhenIdle`.
     #[serde(default)]
     pub dictation_service_when_idle: DictationServiceWhenIdle,
+    /// DanyWhere: when DanyWhere last gave the "end dictation" services a
+    /// shortcut, in seconds since the Unix epoch. Apps launched before it
+    /// don't know the shortcut until they restart. See `dictation_key_inserts`.
+    #[serde(default)]
+    pub dictation_service_shortcuts_written_at: Option<u64>,
     #[serde(default = "default_always_on_microphone")]
     pub always_on_microphone: bool,
     #[serde(default)]
@@ -1060,10 +1065,15 @@ fn ensure_post_process_defaults(settings: &mut AppSettings) -> bool {
 pub const SETTINGS_STORE_PATH: &str = "settings_store.json";
 
 pub fn get_default_settings() -> AppSettings {
+    // DanyWhere: ⌃ instead of ⌥ on macOS (user, 2026-11-13). Without
+    // Accessibility a dictation shortcut's second press inserts through a
+    // service, and a service shortcut with ⌥ but no ⌃ or ⌘ never fires (⌥
+    // types a character); the others follow so all shortcuts stay alike.
+    // ⌃Space is also macOS's "select the previous input source", see ROADMAP.
     #[cfg(target_os = "windows")]
     let default_shortcut = "ctrl+space";
     #[cfg(target_os = "macos")]
-    let default_shortcut = "option+space";
+    let default_shortcut = "ctrl+space";
     #[cfg(target_os = "linux")]
     let default_shortcut = "ctrl+alt+space";
     #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
@@ -1083,7 +1093,7 @@ pub fn get_default_settings() -> AppSettings {
     #[cfg(target_os = "windows")]
     let default_post_process_shortcut = "ctrl+shift+space";
     #[cfg(target_os = "macos")]
-    let default_post_process_shortcut = "option+shift+space";
+    let default_post_process_shortcut = "ctrl+shift+space";
     #[cfg(target_os = "linux")]
     let default_post_process_shortcut = "ctrl+alt+shift+space";
     #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
@@ -1104,13 +1114,14 @@ pub fn get_default_settings() -> AppSettings {
     // dictations in the same window (`dictation_context`). One modifier more
     // than the post-process shortcut where that is free, chosen to clash with
     // nothing known: not ⌘⌥Space (Finder search), ⌃⌥Space (next input
-    // source, on by default) or ⌃Space; on Windows not Win+Ctrl+Space (input
-    // language); on Linux Ctrl+Alt+Shift+Space is the post-process shortcut
-    // already, so C for context (settled with the user, 2026-11-13).
+    // source, on by default) or ⌃⌘Space (Character Viewer); on Windows not
+    // Win+Ctrl+Space (input language); on Linux Ctrl+Alt+Shift+Space is the
+    // post-process shortcut already, so C for context (settled with the
+    // user, 2026-11-13; ⌃ instead of ⌥ on macOS the same day, see above).
     #[cfg(target_os = "windows")]
     let default_context_shortcut = "ctrl+alt+shift+space";
     #[cfg(target_os = "macos")]
-    let default_context_shortcut = "option+shift+command+space";
+    let default_context_shortcut = "ctrl+shift+command+space";
     #[cfg(target_os = "linux")]
     let default_context_shortcut = "ctrl+alt+shift+c";
     #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
@@ -1128,7 +1139,7 @@ pub fn get_default_settings() -> AppSettings {
         },
     );
     #[cfg(target_os = "macos")]
-    let default_paste_last_shortcut = "option+shift+v";
+    let default_paste_last_shortcut = "ctrl+shift+v";
     #[cfg(not(target_os = "macos"))]
     let default_paste_last_shortcut = "alt+shift+v";
 
@@ -1143,10 +1154,10 @@ pub fn get_default_settings() -> AppSettings {
         },
     );
     // DanyWhere: steps through the additional word lists. L for "list";
-    // Option/Alt+Shift like the paste-last shortcut. Not W: on German Mac
-    // keyboards Option+Shift+W types the opening quote „.
+    // Control/Alt+Shift like the paste-last shortcut. Not W: on German Mac
+    // keyboards Option+Shift+W types the opening quote „ (when it was ⌥).
     #[cfg(target_os = "macos")]
-    let default_cycle_word_list_shortcut = "option+shift+l";
+    let default_cycle_word_list_shortcut = "ctrl+shift+l";
     #[cfg(not(target_os = "macos"))]
     let default_cycle_word_list_shortcut = "alt+shift+l";
 
@@ -1190,6 +1201,7 @@ pub fn get_default_settings() -> AppSettings {
         insert_service_shortcut_set: false,
         dictation_key_inserts: default_dictation_key_inserts(),
         dictation_service_when_idle: DictationServiceWhenIdle::default(),
+        dictation_service_shortcuts_written_at: None,
         always_on_microphone: false,
         spoken_languages: Vec::new(),
         selected_microphone: None,

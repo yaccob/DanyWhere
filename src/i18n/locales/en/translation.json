@@ -1076,6 +1076,8 @@
     "filePostProcessFailed": "Post Process didn't finish, so the transcript was saved as is.",
     "historyPostProcessFailedTitle": "Post-Processing Failed",
     "historyPostProcessFailed": "Post Process didn't finish, so the entry stays as it was.",
+    "appMissedShortcutTitle": "Copied – Restart the App",
+    "appMissedShortcut": "{{app}} was already open when DanyWhere set up the dictation shortcut, so it only knows it after a restart. Your text is on the clipboard.",
     "fileTranscriptionFailedTitle": "File Transcription Failed",
     "transcriptionFailedTitle": "Transcription Failed"
   },

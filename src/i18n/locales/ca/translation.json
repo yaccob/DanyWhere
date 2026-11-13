@@ -1076,6 +1076,8 @@
     "filePostProcessFailed": "El postprocessament no ha acabat, així que la transcripció s'ha desat tal qual.",
     "historyPostProcessFailedTitle": "El postprocessament ha fallat",
     "historyPostProcessFailed": "El postprocessament no ha acabat, així que l'entrada es queda com estava.",
+    "appMissedShortcutTitle": "Copiat – reinicia l'app",
+    "appMissedShortcut": "{{app}} ja estava obert quan DanyWhere va configurar la drecera de dictat, així que només la reconeixerà després de reiniciar-lo. El text és al porta-retalls.",
     "fileTranscriptionFailedTitle": "La transcripció del fitxer ha fallat",
     "transcriptionFailedTitle": "La transcripció ha fallat"
   },
