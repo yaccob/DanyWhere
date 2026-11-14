@@ -22,10 +22,13 @@ pub fn init_shortcuts(app: &AppHandle) {
             continue; // Skip cancel shortcut, it will be registered dynamically
         }
         // Skip post-processing shortcut when the feature is disabled
-        // DanyWhere: also the context shortcut.
-        if crate::settings::binding_needs_post_processing(&id)
-            && !user_settings.post_process_enabled
-        {
+        // DanyWhere: also the context shortcut, and "Paste Last Transcript"
+        // while it is the insert service's shortcut.
+        if !crate::settings::registers_binding(
+            &id,
+            &user_settings,
+            crate::delivery::INSERT_SERVICE_AVAILABLE,
+        ) {
             continue;
         }
         let binding = user_settings

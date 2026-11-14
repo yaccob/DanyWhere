@@ -68,8 +68,8 @@
       },
       "accessibility": {
         "skip": "Pokračovat bez usnadnění",
-        "skipHint": "Pokud vaše organizace toto oprávnění blokuje: diktát počká, dokud ho nevložíte pomocí ⌃⌥⌘V, a zkratky nemohou používat klávesu fn.",
-        "skipped": "Přeskočeno — diktáty vkládejte pomocí ⌃⌥⌘V",
+        "skipHint": "Pokud vaše organizace toto oprávnění blokuje: diktát počká, dokud ho nevložíte pomocí ⌃⇧V, a zkratky nemohou používat klávesu fn.",
+        "skipped": "Přeskočeno — diktáty vkládejte pomocí ⌃⇧V",
         "shortcutsReset": "Některé zkratky vyžadují usnadnění a byly obnoveny na výchozí hodnoty.",
         "name": "Zpřístupnění",
         "why": "Aby vaše zkratka fungovala v každé aplikaci a Handy mohl psát text tam, kde máte kurzor."
@@ -361,7 +361,11 @@
           },
           "paste_last_transcript": {
             "name": "Vložit poslední přepis",
-            "description": "Vloží poslední přepis tam, kde je právě kurzor, např. když nedorazil, protože žádné textové pole nemělo fokus. Bez usnadnění se místo toho zkopíruje do schránky, pro aplikace, ve kterých „Vložit poslední diktát“ nefunguje, například Terminál."
+            "description": "Vloží poslední přepis tam, kde je právě kurzor, např. když nedorazil, protože žádné textové pole nemělo fokus. Bez usnadnění ho vloží služba macOS, která nejprve ukončí probíhající diktování; již otevřené aplikace převezmou změněnou zkratku až po restartu."
+          },
+          "copy_last_transcript": {
+            "name": "Zkopírovat poslední přepis",
+            "description": "Zkopíruje poslední přepis do schránky, např. pro aplikace, do kterých ho nelze vložit. Během diktování diktování ukončí a zkopíruje text do schránky, jakmile bude hotový."
           },
           "cycle_word_list": {
             "name": "Přepnout seznam slov",
@@ -409,16 +413,12 @@
         }
       },
       "insertService": {
-        "title": "Vložit poslední diktát",
-        "description": "Bez usnadnění diktát počká, dokud ho nevložíte touto zkratkou, v každé aplikaci, která podporuje služby macOS. Aplikace, které jsou při změně otevřené, ji převezmou až po restartu.",
-        "none": "Žádná zkratka",
         "invalid": "Použijte ⌘ nebo ⌃ s písmenem, číslicí nebo interpunkčním znakem",
-        "conflict": "„{{name}}“ už tuto zkratku používá",
-        "failed": "Zkratku se nepodařilo nastavit: {{error}}"
+        "conflict": "„{{name}}“ už tuto zkratku používá"
       },
       "dictationKeyInserts": {
         "label": "Zkratka diktování také vkládá",
-        "description": "Stiskněte zkratku diktování znovu, aby se diktování ukončilo a vložilo, jakmile bude hotové, v aplikacích, které podporují služby macOS. Již otevřené aplikace to převezmou až po restartu. Kde nelze nic vložit, použijte „Vložit poslední přepis“."
+        "description": "Stiskněte zkratku diktování znovu, aby se diktování ukončilo a vložilo, jakmile bude hotové, v aplikacích, které podporují služby macOS. Již otevřené aplikace to převezmou až po restartu. Kde nelze nic vložit, použijte „Zkopírovat poslední přepis“."
       },
       "dictationServiceWhenIdle": {
         "title": "Když se nic nenahrává",

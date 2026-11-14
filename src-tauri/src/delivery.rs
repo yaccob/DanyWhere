@@ -8,9 +8,11 @@
 //! A dictation can also end up nowhere, e.g. when no text field had focus.
 //! Instead of dictating again, the user presses the "paste last transcript"
 //! shortcut with the cursor where the text belongs: with Accessibility it is
-//! pasted like a fresh transcript; without it (or with pasting switched off)
-//! it is put on the clipboard for the user to paste, which is also the way to
-//! get it into apps where the service doesn't work, such as Apple's Terminal.
+//! pasted like a fresh transcript (with pasting switched off it is put on the
+//! clipboard); without it, on macOS, the shortcut is the "Insert Last
+//! Dictation" service's (`insert_service`). "Copy last transcript" puts it
+//! on the clipboard for the user to paste, which is also the way to get it
+//! into apps where the service doesn't work, such as the Finder.
 
 use std::sync::Arc;
 
@@ -141,6 +143,32 @@ pub fn latest_transcript_text(app: &AppHandle) -> Option<String> {
     Some(text)
 }
 
+/// Puts `text` on the clipboard with the clipboard sound and the "on the
+/// clipboard" notice.
+fn put_on_clipboard_with_notice(app: &AppHandle, text: String) {
+    match app.clipboard().write_text(text) {
+        Ok(()) => {
+            info!("Put the last transcript on the clipboard.");
+            play_feedback_sound(app, SoundType::Clipboard);
+            if let Some(duration) = clipboard_notice_duration(&get_settings(app)) {
+                crate::overlay::show_clipboard_notice(app, duration);
+            }
+        }
+        Err(err) => error!(
+            "Failed to put the last transcript on the clipboard: {}",
+            err
+        ),
+    }
+}
+
+/// DanyWhere: puts the most recent completed transcript on the clipboard,
+/// for "Copy Last Transcript".
+pub fn copy_last_transcript_now(app: &AppHandle) {
+    if let Some(text) = latest_transcript_text(app) {
+        put_on_clipboard_with_notice(app, text);
+    }
+}
+
 /// Delivers the most recent completed transcript (the post-processed text if
 /// there is one), pasting it or leaving it on the clipboard per `delivery_for`.
 pub fn deliver_last_transcript(app: &AppHandle) {
@@ -149,19 +177,7 @@ pub fn deliver_last_transcript(app: &AppHandle) {
     };
 
     match delivery_for(&get_settings(app)) {
-        Delivery::Clipboard => match app.clipboard().write_text(text) {
-            Ok(()) => {
-                info!("Put the last transcript on the clipboard.");
-                play_feedback_sound(app, SoundType::Clipboard);
-                if let Some(duration) = clipboard_notice_duration(&get_settings(app)) {
-                    crate::overlay::show_clipboard_notice(app, duration);
-                }
-            }
-            Err(err) => error!(
-                "Failed to put the last transcript on the clipboard: {}",
-                err
-            ),
-        },
+        Delivery::Clipboard => put_on_clipboard_with_notice(app, text),
         Delivery::Paste => {
             // Paste sleeps between steps and must not run on the main thread
             // (see `clipboard::paste`).
@@ -182,10 +198,25 @@ pub fn deliver_last_transcript(app: &AppHandle) {
     }
 }
 
+/// Whether the waiting sound plays after a finished dictation: when the user
+/// still has to paste or insert it, which includes a dictation that "Copy
+/// Last Transcript" put on the clipboard (`put_on_clipboard`).
+pub fn plays_waiting_sound(
+    settings: &AppSettings,
+    service_available: bool,
+    put_on_clipboard: bool,
+) -> bool {
+    put_on_clipboard || dictation_waits_for_user(settings, service_available)
+}
+
 /// Plays the waiting sound after a dictation the user still has to paste or
 /// insert. Call only once the text is ready for that.
-pub fn play_sound_if_waiting_for_user(app: &AppHandle) {
-    if dictation_waits_for_user(&get_settings(app), INSERT_SERVICE_AVAILABLE) {
+pub fn play_sound_if_waiting_for_user(app: &AppHandle, put_on_clipboard: bool) {
+    if plays_waiting_sound(
+        &get_settings(app),
+        INSERT_SERVICE_AVAILABLE,
+        put_on_clipboard,
+    ) {
         info!("Dictation waits for the user; playing the waiting sound.");
         play_feedback_sound(app, SoundType::Clipboard);
     }
@@ -222,7 +253,8 @@ pub fn change_clipboard_notice_ms_setting(app: AppHandle, ms: u64) -> Result<(),
 mod tests {
     use super::{
         clipboard_notice_duration, copies_dictation_to_clipboard, delivery_for, dictation_notice,
-        dictation_target, dictation_waits_for_user, Delivery, DictationNotice, DictationTarget,
+        dictation_target, dictation_waits_for_user, plays_waiting_sound, Delivery, DictationNotice,
+        DictationTarget,
     };
     use crate::settings::{get_default_settings, AppSettings, ClipboardHandling, PasteMethod};
     use crate::shortcut::apply_no_accessibility_mode;
@@ -232,6 +264,23 @@ mod tests {
         let mut settings = get_default_settings();
         apply_no_accessibility_mode(&mut settings);
         settings
+    }
+
+    #[test]
+    fn a_dictation_copied_with_accessibility_plays_the_waiting_sound() {
+        // "Copy Last Transcript" ended it: it waits on the clipboard.
+        assert!(plays_waiting_sound(&get_default_settings(), true, true));
+    }
+
+    #[test]
+    fn a_pasted_dictation_plays_no_waiting_sound() {
+        assert!(!plays_waiting_sound(&get_default_settings(), true, false));
+    }
+
+    #[test]
+    fn a_dictation_without_accessibility_plays_the_waiting_sound_once_in_any_case() {
+        assert!(plays_waiting_sound(&without_accessibility(), true, false));
+        assert!(plays_waiting_sound(&without_accessibility(), true, true));
     }
 
     #[test]

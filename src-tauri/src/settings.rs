@@ -1170,6 +1170,25 @@ pub fn get_default_settings() -> AppSettings {
             current_binding: default_paste_last_shortcut.to_string(),
         },
     );
+    // DanyWhere: puts the last transcript on the clipboard; during a
+    // dictation it ends it onto the clipboard (user, 2026-11-14: "⌃⇧V
+    // fügt ein, ⌃⇧C kopiert", with Accessibility and without). C next to V,
+    // with the same modifiers as paste last.
+    #[cfg(target_os = "macos")]
+    let default_copy_last_shortcut = "ctrl+shift+c";
+    #[cfg(not(target_os = "macos"))]
+    let default_copy_last_shortcut = "alt+shift+c";
+
+    bindings.insert(
+        "copy_last_transcript".to_string(),
+        ShortcutBinding {
+            id: "copy_last_transcript".to_string(),
+            name: "Copy Last Transcript".to_string(),
+            description: "Puts the most recent transcript on the clipboard.".to_string(),
+            default_binding: default_copy_last_shortcut.to_string(),
+            current_binding: default_copy_last_shortcut.to_string(),
+        },
+    );
     // DanyWhere: steps through the additional word lists. L for "list";
     // Control/Alt+Shift like the paste-last shortcut. Not W: on German Mac
     // keyboards Option+Shift+W types the opening quote „ (when it was ⌥).
@@ -1334,6 +1353,38 @@ pub fn load_or_create_app_settings(app: &AppHandle) -> AppSettings {
 /// while post-processing is switched on.
 pub fn binding_needs_post_processing(id: &str) -> bool {
     id == "transcribe_with_post_process" || id == crate::dictation_context::CONTEXT_BINDING
+}
+
+/// DanyWhere: whether DanyWhere registers the shortcut `id` as its own.
+/// Not the post-processing ones while post-processing is off, and not
+/// "Paste Last Transcript" while it is the shortcut of the "Insert Last
+/// Dictation" service (`insert_service::paste_last_is_service_shortcut`).
+/// `service_available` is `delivery::INSERT_SERVICE_AVAILABLE`, passed in
+/// so tests cover every platform. The cancel shortcut is registered only
+/// while recording, by its callers' own rule.
+pub fn registers_binding(id: &str, settings: &AppSettings, service_available: bool) -> bool {
+    if binding_needs_post_processing(id) && !settings.post_process_enabled {
+        return false;
+    }
+    if id == crate::insert_service::PASTE_LAST_BINDING {
+        let binding = settings
+            .bindings
+            .get(id)
+            .map(|b| b.current_binding.clone())
+            .or_else(|| {
+                get_default_settings()
+                    .bindings
+                    .get(id)
+                    .map(|b| b.current_binding.clone())
+            })
+            .unwrap_or_default();
+        return !crate::insert_service::paste_last_is_service_shortcut(
+            settings.accessibility_skipped,
+            &binding,
+            service_available,
+        );
+    }
+    true
 }
 
 pub fn get_settings(app: &AppHandle) -> AppSettings {
@@ -1739,6 +1790,90 @@ mod tests {
         assert!(binding_needs_post_processing("transcribe_with_context"));
         assert!(!binding_needs_post_processing("transcribe"));
         assert!(!binding_needs_post_processing("paste_last_transcript"));
+    }
+
+    fn without_accessibility() -> AppSettings {
+        let mut settings = get_default_settings();
+        crate::shortcut::apply_no_accessibility_mode(&mut settings);
+        settings
+    }
+
+    fn with_paste_last(mut settings: AppSettings, keys: &str) -> AppSettings {
+        settings
+            .bindings
+            .get_mut("paste_last_transcript")
+            .unwrap()
+            .current_binding = keys.to_string();
+        settings
+    }
+
+    #[test]
+    fn without_accessibility_danywhere_leaves_paste_last_to_the_service() {
+        let settings = with_paste_last(without_accessibility(), "ctrl+shift+v");
+        assert!(!registers_binding("paste_last_transcript", &settings, true));
+        // The others stay DanyWhere's, the copy shortcut included.
+        assert!(registers_binding("copy_last_transcript", &settings, true));
+        assert!(registers_binding("transcribe", &settings, true));
+        assert!(registers_binding("cycle_word_list", &settings, true));
+    }
+
+    #[test]
+    fn paste_last_stays_registered_where_the_service_cant_take_it() {
+        let settings = with_paste_last(get_default_settings(), "ctrl+shift+v");
+        assert!(registers_binding("paste_last_transcript", &settings, true));
+        let settings = with_paste_last(without_accessibility(), "ctrl+shift+v");
+        assert!(registers_binding("paste_last_transcript", &settings, false));
+        let settings = with_paste_last(without_accessibility(), "option+shift+v");
+        assert!(registers_binding("paste_last_transcript", &settings, true));
+    }
+
+    #[test]
+    fn the_post_processing_shortcuts_are_registered_only_while_it_is_on() {
+        let mut settings = get_default_settings();
+        settings.post_process_enabled = false;
+        assert!(!registers_binding(
+            "transcribe_with_post_process",
+            &settings,
+            true
+        ));
+        assert!(!registers_binding(
+            "transcribe_with_context",
+            &settings,
+            true
+        ));
+        settings.post_process_enabled = true;
+        assert!(registers_binding(
+            "transcribe_with_post_process",
+            &settings,
+            true
+        ));
+        assert!(registers_binding(
+            "transcribe_with_context",
+            &settings,
+            true
+        ));
+    }
+
+    #[test]
+    fn copy_last_transcript_has_a_shortcut_next_to_paste_last() {
+        // User, 2026-11-14: ⌃⇧V pastes and ⌃⇧C copies, with Accessibility
+        // or without; Alt+Shift elsewhere, like paste last.
+        let defaults = get_default_settings();
+        let copy = defaults.bindings.get("copy_last_transcript");
+        let expected = if cfg!(target_os = "macos") {
+            "ctrl+shift+c"
+        } else {
+            "alt+shift+c"
+        };
+        assert_eq!(copy.map(|b| b.default_binding.as_str()), Some(expected));
+        assert_eq!(copy.map(|b| b.current_binding.as_str()), Some(expected));
+        assert_eq!(copy.map(|b| b.name.as_str()), Some("Copy Last Transcript"));
+        let others = defaults
+            .bindings
+            .values()
+            .filter(|b| b.id != "copy_last_transcript" && b.default_binding == expected)
+            .count();
+        assert_eq!(others, 0, "{expected} is taken");
     }
 
     #[test]

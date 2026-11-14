@@ -68,8 +68,8 @@
       },
       "accessibility": {
         "skip": "Continuar sem Acessibilidade",
-        "skipHint": "Se a sua organização bloqueia esta permissão: um ditado espera até que você o insira com ⌃⌥⌘V, e os atalhos não podem usar a tecla fn.",
-        "skipped": "Ignorado — insira ditados com ⌃⌥⌘V",
+        "skipHint": "Se a sua organização bloqueia esta permissão: um ditado espera até que você o insira com ⌃⇧V, e os atalhos não podem usar a tecla fn.",
+        "skipped": "Ignorado — insira ditados com ⌃⇧V",
         "shortcutsReset": "Alguns atalhos precisam de Acessibilidade e foram redefinidos para o padrão.",
         "name": "Acessibilidade",
         "why": "Para o seu atalho funcionar em todos os apps e o Handy digitar o texto onde está o cursor."
@@ -361,7 +361,11 @@
           },
           "paste_last_transcript": {
             "name": "Colar a última transcrição",
-            "description": "Cola a última transcrição onde o cursor está agora, por exemplo se não chegou porque nenhum campo de texto estava em foco. Sem Acessibilidade, ela é copiada para a área de transferência, para apps em que “Inserir o último ditado” não funciona, como o Terminal."
+            "description": "Cola a última transcrição onde o cursor está agora, por exemplo se não chegou porque nenhum campo de texto estava em foco. Sem Acessibilidade, um serviço do macOS insere-a e termina primeiro o ditado em curso; as apps que já estão abertas só aplicam um atalho alterado depois de reiniciadas."
+          },
+          "copy_last_transcript": {
+            "name": "Copiar a última transcrição",
+            "description": "Copia a última transcrição para a área de transferência, por exemplo para apps em que não pode ser inserida. Durante um ditado, termina-o e coloca o texto na área de transferência assim que estiver pronto."
           },
           "cycle_word_list": {
             "name": "Trocar Lista de Palavras",
@@ -409,16 +413,12 @@
         }
       },
       "insertService": {
-        "title": "Inserir o último ditado",
-        "description": "Sem Acessibilidade, um ditado espera até que você o insira com este atalho, em qualquer app compatível com os serviços do macOS. Apps que já estão abertos quando você o altera só passam a usá-lo depois de reiniciados.",
-        "none": "Nenhum atalho",
         "invalid": "Use ⌘ ou ⌃ com uma letra, um número ou um sinal de pontuação",
-        "conflict": "“{{name}}” já usa este atalho",
-        "failed": "Não foi possível definir o atalho: {{error}}"
+        "conflict": "“{{name}}” já usa este atalho"
       },
       "dictationKeyInserts": {
         "label": "O atalho de ditado também insere",
-        "description": "Prima novamente o atalho de ditado para terminar o ditado e inseri-lo assim que estiver pronto, nas apps que suportam os serviços do macOS. As apps que já estão abertas só aplicam isto depois de reiniciadas. Onde não for possível inserir nada, use «Colar a última transcrição»."
+        "description": "Prima novamente o atalho de ditado para terminar o ditado e inseri-lo assim que estiver pronto, nas apps que suportam os serviços do macOS. As apps que já estão abertas só aplicam isto depois de reiniciadas. Onde não for possível inserir nada, use «Copiar a última transcrição»."
       },
       "dictationServiceWhenIdle": {
         "title": "Quando nada está a ser gravado",

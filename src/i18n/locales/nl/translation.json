@@ -68,8 +68,8 @@
       },
       "accessibility": {
         "skip": "Doorgaan zonder Toegankelijkheid",
-        "skipHint": "Als je organisatie deze toestemming blokkeert: een dictaat wacht tot je het invoegt met ⌃⌥⌘V, en sneltoetsen kunnen de fn-toets niet gebruiken.",
-        "skipped": "Overgeslagen — voeg dictaten in met ⌃⌥⌘V",
+        "skipHint": "Als je organisatie deze toestemming blokkeert: een dictaat wacht tot je het invoegt met ⌃⇧V, en sneltoetsen kunnen de fn-toets niet gebruiken.",
+        "skipped": "Overgeslagen — voeg dictaten in met ⌃⇧V",
         "shortcutsReset": "Sommige sneltoetsen hebben Toegankelijkheid nodig en zijn teruggezet naar de standaardwaarden.",
         "name": "Toegankelijkheid",
         "why": "Zodat je sneltoets in elke app werkt en Handy de tekst kan typen waar je cursor staat."
@@ -361,7 +361,11 @@
           },
           "paste_last_transcript": {
             "name": "Laatste transcriptie plakken",
-            "description": "Plakt de laatste transcriptie waar de cursor nu staat, bijvoorbeeld als die niet aankwam omdat geen tekstveld focus had. Zonder Toegankelijkheid wordt die naar het klembord gekopieerd, voor apps waarin 'Laatste dictaat invoegen' niet werkt, zoals Terminal."
+            "description": "Plakt de laatste transcriptie waar de cursor nu staat, bijvoorbeeld als die niet aankwam omdat geen tekstveld focus had. Zonder Toegankelijkheid voegt een macOS-dienst die in en beëindigt eerst een lopend dictaat; apps die al open zijn, nemen een gewijzigde sneltoets pas na een herstart over."
+          },
+          "copy_last_transcript": {
+            "name": "Laatste transcriptie kopiëren",
+            "description": "Kopieert de laatste transcriptie naar het klembord, bijvoorbeeld voor apps waarin die niet kan worden ingevoegd. Tijdens een dictaat beëindigt de sneltoets het dictaat en zet de tekst op het klembord zodra die klaar is."
           },
           "cycle_word_list": {
             "name": "Woordenlijst wisselen",
@@ -409,16 +413,12 @@
         }
       },
       "insertService": {
-        "title": "Laatste dictaat invoegen",
-        "description": "Zonder Toegankelijkheid wacht een dictaat tot je het invoegt met deze sneltoets, in elke app die macOS-voorzieningen ondersteunt. Apps die al open zijn als je hem wijzigt, nemen hem pas over na een herstart.",
-        "none": "Geen sneltoets",
         "invalid": "Gebruik ⌘ of ⌃ met een letter, cijfer of leesteken",
-        "conflict": "'{{name}}' gebruikt deze sneltoets al",
-        "failed": "Sneltoets kon niet worden ingesteld: {{error}}"
+        "conflict": "'{{name}}' gebruikt deze sneltoets al"
       },
       "dictationKeyInserts": {
         "label": "Dicteersneltoets voegt ook in",
-        "description": "Druk nog een keer op de dicteersneltoets om het dictaat te beëindigen en in te voegen zodra het klaar is, in apps die macOS-diensten ondersteunen. Apps die al open zijn, nemen dit pas na een herstart over. Waar niets kan worden ingevoegd, gebruik je Laatste transcriptie plakken."
+        "description": "Druk nog een keer op de dicteersneltoets om het dictaat te beëindigen en in te voegen zodra het klaar is, in apps die macOS-diensten ondersteunen. Apps die al open zijn, nemen dit pas na een herstart over. Waar niets kan worden ingevoegd, gebruik je Laatste transcriptie kopiëren."
       },
       "dictationServiceWhenIdle": {
         "title": "Als er niets wordt opgenomen",

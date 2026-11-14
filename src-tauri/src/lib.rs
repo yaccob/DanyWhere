@@ -744,8 +744,6 @@ pub fn run(cli_args: CliArgs) {
             delivery::change_clipboard_notice_ms_setting,
             llm_timeouts::change_post_process_timeout_setting,
             llm_timeouts::change_model_list_timeout_setting,
-            insert_service::get_insert_service_shortcut,
-            insert_service::set_insert_service_shortcut,
             dictation_key_inserts::change_dictation_key_inserts_setting,
             dictation_key_inserts::change_dictation_service_when_idle_setting,
             shortcut::change_paste_delay_after_ms_setting,
@@ -1179,7 +1177,6 @@ pub fn run(cli_args: CliArgs) {
             // DanyWhere: "Insert Last Dictation", a macOS service that inserts
             // the last dictation without Accessibility (insert_service.rs).
             insert_service::register(&app_handle);
-            insert_service::ensure_default_shortcut(&app_handle);
             insert_service::sync_dictation_service_shortcuts(&app_handle);
 
             // Populate the overlay-enabled cache from initial settings so the

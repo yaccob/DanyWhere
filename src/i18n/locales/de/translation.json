@@ -68,8 +68,8 @@
       },
       "accessibility": {
         "skip": "Ohne Bedienungshilfen fortfahren",
-        "skipHint": "Falls deine Organisation diese Berechtigung sperrt: Ein Diktat wartet, bis du es mit ⌃⌥⌘V einfügst, und Tastenkürzel können die fn-Taste nicht verwenden.",
-        "skipped": "Übersprungen – Diktate mit ⌃⌥⌘V einfügen",
+        "skipHint": "Falls deine Organisation diese Berechtigung sperrt: Ein Diktat wartet, bis du es mit ⌃⇧V einfügst, und Tastenkürzel können die fn-Taste nicht verwenden.",
+        "skipped": "Übersprungen – Diktate mit ⌃⇧V einfügen",
         "shortcutsReset": "Einige Tastenkürzel benötigen Bedienungshilfen und wurden auf die Standardwerte zurückgesetzt.",
         "name": "Bedienungshilfen",
         "why": "Damit dein Tastenkürzel in jeder App funktioniert und Handy den Text dort eintippen kann, wo dein Cursor steht."
@@ -361,7 +361,11 @@
           },
           "paste_last_transcript": {
             "name": "Letzte Transkription einfügen",
-            "description": "Fügt die letzte Transkription dort ein, wo der Cursor gerade steht, z. B. wenn sie nicht angekommen ist, weil kein Textfeld den Fokus hatte. Ohne Bedienungshilfen wird sie stattdessen in die Zwischenablage gelegt, für Apps, in denen „Letztes Diktat einfügen“ nicht funktioniert, etwa das Terminal."
+            "description": "Fügt die letzte Transkription dort ein, wo der Cursor gerade steht, z. B. wenn sie nicht angekommen ist, weil kein Textfeld den Fokus hatte. Ohne Bedienungshilfen fügt ein macOS-Dienst sie ein und beendet vorher ein laufendes Diktat; Apps, die schon geöffnet sind, übernehmen eine geänderte Tastenkombination erst nach einem Neustart."
+          },
+          "copy_last_transcript": {
+            "name": "Letzte Transkription kopieren",
+            "description": "Legt die letzte Transkription in die Zwischenablage, z. B. für Apps, in denen sie sich nicht einfügen lässt. Während eines Diktats wird es beendet und sein Text in die Zwischenablage gelegt, sobald er fertig ist."
           },
           "cycle_word_list": {
             "name": "Wortliste wechseln",
@@ -409,16 +413,12 @@
         }
       },
       "insertService": {
-        "title": "Letztes Diktat einfügen",
-        "description": "Ohne Bedienungshilfen wartet ein Diktat, bis du es mit diesem Kürzel einfügst, in jeder App, die macOS-Dienste unterstützt. Apps, die beim Ändern schon geöffnet sind, übernehmen das neue Kürzel erst nach einem Neustart.",
-        "none": "Kein Kürzel",
         "invalid": "Nimm ⌘ oder ⌃ mit einem Buchstaben, einer Ziffer oder einem Satzzeichen",
-        "conflict": "„{{name}}“ verwendet dieses Kürzel schon",
-        "failed": "Kürzel konnte nicht gesetzt werden: {{error}}"
+        "conflict": "„{{name}}“ verwendet dieses Kürzel schon"
       },
       "dictationKeyInserts": {
         "label": "Tastenkombination fügt beim zweiten Druck ein",
-        "description": "Drück die Tastenkombination fürs Diktieren ein zweites Mal, um das Diktat zu beenden und einzufügen, sobald es fertig ist, in Apps, die macOS-Dienste unterstützen. Apps, die schon geöffnet sind, übernehmen das erst nach einem Neustart. Wo sich nichts einfügen lässt, nimm „Letzte Transkription einfügen“."
+        "description": "Drück die Tastenkombination fürs Diktieren ein zweites Mal, um das Diktat zu beenden und einzufügen, sobald es fertig ist, in Apps, die macOS-Dienste unterstützen. Apps, die schon geöffnet sind, übernehmen das erst nach einem Neustart. Wo sich nichts einfügen lässt, nimm „Letzte Transkription kopieren“."
       },
       "dictationServiceWhenIdle": {
         "title": "Wenn gerade nichts aufgenommen wird",

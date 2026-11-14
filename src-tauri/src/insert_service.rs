@@ -12,12 +12,18 @@
 //! Called during a dictation, the service ends the recording and answers
 //! once the text is ready, so one shortcut both ends and inserts a
 //! dictation (user, 2026-11-12). The calling app waits meanwhile.
+//!
+//! Its shortcut is the one of "Paste Last Transcript" (user, 2026-11-14):
+//! without Accessibility DanyWhere leaves that combination to the app in
+//! front, so ⌃⇧V inserts with Accessibility and without.
 
 /// The Objective-C message named by `NSMessage` in `Info.plist`; the
 /// provider's method is `insertLastDictation:userData:error:`.
 pub const SERVICE_MESSAGE: &str = "insertLastDictation";
 
-/// ⌃⌥⌘V, in the notation of `NSServicesStatus` (`@` ⌘, `~` ⌥, `^` ⌃, `$` ⇧).
+/// ⌃⌥⌘V, in the notation of `NSServicesStatus` (`@` ⌘, `~` ⌥, `^` ⌃, `$` ⇧):
+/// the service's shortcut up to 0.1.6, still given once where "Paste Last
+/// Transcript" can't be the service's shortcut ([`insert_service_shortcut_plan`]).
 pub const DEFAULT_KEY_EQUIVALENT: &str = "@~^v";
 
 /// The services DanyWhere declares in `Info.plist`, all answered the same
@@ -32,7 +38,8 @@ pub const DEFAULT_KEY_EQUIVALENT: &str = "@~^v";
 /// `dictation_key_inserts`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ServiceKind {
-    /// "Insert Last Dictation", with a shortcut of its own (⌃⌥⌘V).
+    /// "Insert Last Dictation", with the shortcut of "Paste Last Transcript"
+    /// (⌃⇧V) since 2026-11-14, ⌃⌥⌘V before.
     InsertLastDictation,
     /// The dictation shortcut's service.
     EndDictation,
@@ -466,6 +473,85 @@ pub fn dictation_service_shortcuts(
     .collect()
 }
 
+/// The id of "Paste Last Transcript".
+pub const PASTE_LAST_BINDING: &str = "paste_last_transcript";
+
+/// The error `change_binding` returns for a "Paste Last Transcript"
+/// combination that can't be the service's shortcut; the settings translate
+/// it.
+pub const SERVICE_SHORTCUT_INVALID: &str = "service-shortcut-invalid";
+
+/// Whether "Paste Last Transcript" is the shortcut of "Insert Last
+/// Dictation" instead of DanyWhere's own (user, 2026-11-14). Without
+/// Accessibility DanyWhere can't paste, so the press goes to the app in
+/// front, where the service inserts the last dictation, or, during a
+/// dictation, ends it and inserts it once it's ready: what the shortcut does
+/// with Accessibility. A combination that can't be a service's shortcut
+/// (e.g. ⌥⇧V, the macOS default up to 0.1.5) stays DanyWhere's and copies,
+/// as before.
+pub fn paste_last_is_service_shortcut(
+    accessibility_skipped: bool,
+    binding: &str,
+    service_available: bool,
+) -> bool {
+    service_available && accessibility_skipped && key_equivalent_from_binding(binding).is_ok()
+}
+
+/// What DanyWhere does with the shortcut of "Insert Last Dictation".
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum InsertServiceShortcutPlan {
+    /// Give it this key equivalent, the one of "Paste Last Transcript".
+    Follow(String),
+    /// "Paste Last Transcript" can't be a service's shortcut: give the
+    /// service ⌃⌥⌘V once, as up to 0.1.6, and never touch it again.
+    DefaultOnce,
+    /// Leave it as it is: with Accessibility nothing uses it.
+    Leave,
+}
+
+/// Decides [`InsertServiceShortcutPlan`] from the mode and the combination
+/// of "Paste Last Transcript", if there is one.
+pub fn insert_service_shortcut_plan(
+    accessibility_skipped: bool,
+    paste_last_binding: Option<&str>,
+) -> InsertServiceShortcutPlan {
+    if !accessibility_skipped {
+        return InsertServiceShortcutPlan::Leave;
+    }
+    match paste_last_binding.map(key_equivalent_from_binding) {
+        Some(Ok(key_equivalent)) => InsertServiceShortcutPlan::Follow(key_equivalent),
+        _ => InsertServiceShortcutPlan::DefaultOnce,
+    }
+}
+
+/// Checks a new combination for "Paste Last Transcript". While it is the
+/// service's shortcut (without Accessibility) it must be one a service can
+/// have, and no other DanyWhere shortcut may use it: DanyWhere would take
+/// the press before the app could see it. Errors are
+/// [`SERVICE_SHORTCUT_INVALID`] or `conflict:<binding id>`.
+pub fn check_paste_last_binding(
+    accessibility_skipped: bool,
+    binding: &str,
+    bindings: &std::collections::HashMap<String, crate::settings::ShortcutBinding>,
+    service_available: bool,
+) -> Result<(), String> {
+    if !(service_available && accessibility_skipped) {
+        return Ok(());
+    }
+    if key_equivalent_from_binding(binding).is_err() {
+        return Err(SERVICE_SHORTCUT_INVALID.to_string());
+    }
+    let others: std::collections::HashMap<String, crate::settings::ShortcutBinding> = bindings
+        .iter()
+        .filter(|(id, _)| id.as_str() != PASTE_LAST_BINDING)
+        .map(|(id, b)| (id.clone(), b.clone()))
+        .collect();
+    match conflicting_binding(binding, &others) {
+        Some(id) => Err(format!("conflict:{id}")),
+        None => Ok(()),
+    }
+}
+
 /// A recorded combination's modifiers as `NSServicesStatus` codes, and its
 /// other keys, lowercased.
 fn split_binding(binding: &str) -> (Vec<char>, Vec<String>) {
@@ -487,31 +573,6 @@ fn split_binding(binding: &str) -> (Vec<char>, Vec<String>) {
         }
     }
     (modifiers, keys)
-}
-
-/// The recorded-combination form of a key equivalent, e.g. `@~^v` →
-/// `ctrl+option+command+v`, so the settings show it like other shortcuts.
-pub fn binding_from_key_equivalent(key_equivalent: &str) -> Option<String> {
-    const NAMES: [(char, &str); 4] = [
-        ('^', "ctrl"),
-        ('~', "option"),
-        ('$', "shift"),
-        ('@', "command"),
-    ];
-    let key: String = key_equivalent
-        .chars()
-        .filter(|c| !NAMES.iter().any(|(code, _)| code == c))
-        .collect();
-    if key.is_empty() {
-        return None;
-    }
-    let mut parts: Vec<String> = NAMES
-        .iter()
-        .filter(|(code, _)| key_equivalent.contains(*code))
-        .map(|(_, name)| name.to_string())
-        .collect();
-    parts.push(key.to_lowercase());
-    Some(parts.join("+"))
 }
 
 /// The id of a DanyWhere shortcut that already uses `binding`: its global
@@ -744,9 +805,12 @@ fn start_recording_when_ready(app: &tauri::AppHandle, binding_id: &'static str) 
 
 /// Gives the three "end dictation" services the dictation shortcuts as their
 /// own while DanyWhere runs without Accessibility and "Dictation shortcut
-/// also inserts" is on, and takes them away otherwise. Call at startup and
-/// whenever a dictation shortcut, the setting or the mode changes. Apps that
-/// are already open learn a changed shortcut only after a restart.
+/// also inserts" is on, and takes them away otherwise; and gives "Insert
+/// Last Dictation" the shortcut of "Paste Last Transcript"
+/// ([`insert_service_shortcut_plan`]). Call at startup and whenever a
+/// dictation shortcut, "Paste Last Transcript", the setting or the mode
+/// changes. Apps that are already open learn a changed shortcut only after a
+/// restart.
 pub fn sync_dictation_service_shortcuts(app: &tauri::AppHandle) {
     #[cfg(target_os = "macos")]
     macos::sync_dictation_service_shortcuts(app);
@@ -762,15 +826,6 @@ pub fn register(app: &tauri::AppHandle) {
     let _ = app;
 }
 
-/// Gives the service its default shortcut ⌃⌥⌘V, once, when DanyWhere runs
-/// without Accessibility. Never touches a shortcut the user set or removed.
-pub fn ensure_default_shortcut(app: &tauri::AppHandle) {
-    #[cfg(target_os = "macos")]
-    macos::ensure_default_shortcut(app);
-    #[cfg(not(target_os = "macos"))]
-    let _ = app;
-}
-
 /// The service's current shortcut as macOS shows it (e.g. `⌃⌥⌘V`), or
 /// `None` when it has none or the platform has no services.
 pub fn current_shortcut(app: &tauri::AppHandle) -> Option<String> {
@@ -782,54 +837,6 @@ pub fn current_shortcut(app: &tauri::AppHandle) -> Option<String> {
         None
     };
     key_equivalent.as_deref().and_then(display_key_equivalent)
-}
-
-/// The "Insert Last Dictation" service's current shortcut for the settings,
-/// as a recorded combination (e.g. `ctrl+option+command+v`), or `None`.
-#[tauri::command]
-#[specta::specta]
-pub fn get_insert_service_shortcut(app: tauri::AppHandle) -> Option<String> {
-    #[cfg(target_os = "macos")]
-    let key_equivalent = macos::current_key_equivalent(&app);
-    #[cfg(not(target_os = "macos"))]
-    let key_equivalent: Option<String> = {
-        let _ = app;
-        None
-    };
-    key_equivalent
-        .as_deref()
-        .and_then(binding_from_key_equivalent)
-}
-
-/// Gives the service the recorded combination `binding` as its shortcut and
-/// returns it as stored. Errors are codes the settings translate: `invalid`,
-/// `conflict:<binding id>`, `unsupported` (no services on this platform) or
-/// `failed:<reason>`.
-#[tauri::command]
-#[specta::specta]
-pub fn set_insert_service_shortcut(
-    app: tauri::AppHandle,
-    binding: String,
-) -> Result<String, String> {
-    let key_equivalent = key_equivalent_from_binding(&binding).map_err(|problem| {
-        log::info!("Insert Last Dictation: refused shortcut {binding}: {problem:?}");
-        "invalid".to_string()
-    })?;
-    let settings = crate::settings::get_settings(&app);
-    if let Some(id) = conflicting_binding(&binding, &settings.bindings) {
-        return Err(format!("conflict:{id}"));
-    }
-    let stored = binding_from_key_equivalent(&key_equivalent).unwrap_or_default();
-    #[cfg(target_os = "macos")]
-    let result = macos::set_key_equivalent(&app, &key_equivalent)
-        .map(|()| stored)
-        .map_err(|err| format!("failed:{err}"));
-    #[cfg(not(target_os = "macos"))]
-    let result: Result<String, String> = {
-        let _ = (app, stored);
-        Err("unsupported".to_string())
-    };
-    result
 }
 
 #[cfg(target_os = "macos")]
@@ -848,9 +855,9 @@ mod macos {
     use tauri::AppHandle;
 
     use super::{
-        answer_service, dictation_service_shortcuts, shortcuts_written_at,
-        should_set_default_shortcut, status_entry_value, status_key, ServiceKind,
-        DEFAULT_KEY_EQUIVALENT,
+        answer_service, dictation_service_shortcuts, insert_service_shortcut_plan,
+        shortcuts_written_at, should_set_default_shortcut, status_entry_value, status_key,
+        InsertServiceShortcutPlan, ServiceKind, DEFAULT_KEY_EQUIVALENT, PASTE_LAST_BINDING,
     };
 
     pub struct ProviderIvars {
@@ -1016,6 +1023,7 @@ mod macos {
     }
 
     pub fn sync_dictation_service_shortcuts(app: &AppHandle) {
+        sync_insert_service_shortcut(app);
         let mut settings = crate::settings::get_settings(app);
         let enabled = settings.accessibility_skipped && settings.dictation_key_inserts;
         let mut wrote_shortcut = false;
@@ -1094,7 +1102,36 @@ mod macos {
         info!("Offering the services {titles:?}.");
     }
 
-    pub fn ensure_default_shortcut(app: &AppHandle) {
+    /// Gives "Insert Last Dictation" the shortcut of "Paste Last
+    /// Transcript" without Accessibility (user, 2026-11-14), or ⌃⌥⌘V once
+    /// where that one can't be a service's. Not counted as a write of the
+    /// "end dictation" services' shortcuts: apps that know those keep
+    /// inserting with the second press.
+    fn sync_insert_service_shortcut(app: &AppHandle) {
+        let settings = crate::settings::get_settings(app);
+        let paste_last = settings
+            .bindings
+            .get(PASTE_LAST_BINDING)
+            .map(|binding| binding.current_binding.as_str());
+        match insert_service_shortcut_plan(settings.accessibility_skipped, paste_last) {
+            InsertServiceShortcutPlan::Follow(wanted) => {
+                let Some(key) = this_status_key(app) else {
+                    return;
+                };
+                if key_equivalent_of(&key).as_deref() == Some(wanted.as_str()) {
+                    return;
+                }
+                match write_key_equivalent(&key, &wanted) {
+                    Ok(()) => info!("Insert Last Dictation: shortcut set to {wanted}, the one of Paste Last Transcript."),
+                    Err(err) => error!("Insert Last Dictation: could not set the shortcut: {err}"),
+                }
+            }
+            InsertServiceShortcutPlan::DefaultOnce => ensure_default_shortcut(app),
+            InsertServiceShortcutPlan::Leave => {}
+        }
+    }
+
+    fn ensure_default_shortcut(app: &AppHandle) {
         let mut settings = crate::settings::get_settings(app);
         if !settings.accessibility_skipped || settings.insert_service_shortcut_set {
             return;
@@ -1114,18 +1151,6 @@ mod macos {
         }
         settings.insert_service_shortcut_set = true;
         crate::settings::write_settings(app, settings);
-    }
-
-    /// Gives this app's service `key_equivalent` as its shortcut, on the
-    /// user's request in the settings.
-    pub fn set_key_equivalent(app: &AppHandle, key_equivalent: &str) -> Result<(), String> {
-        let key = this_status_key(app).ok_or("this build declares no service")?;
-        write_key_equivalent(&key, key_equivalent)?;
-        info!("Insert Last Dictation: shortcut changed to {key_equivalent}.");
-        let mut settings = crate::settings::get_settings(app);
-        settings.insert_service_shortcut_set = true;
-        crate::settings::write_settings(app, settings);
-        Ok(())
     }
 
     /// Writes the entry the way System Settings → Keyboard → Keyboard
@@ -1495,31 +1520,6 @@ mod tests {
             key_equivalent_from_binding("command+a+b"),
             Err(ShortcutProblem::UnsupportedKey("a+b".into()))
         );
-    }
-
-    #[test]
-    fn turns_the_services_notation_back_into_a_combination() {
-        assert_eq!(
-            binding_from_key_equivalent("@~^v").as_deref(),
-            Some("ctrl+option+command+v")
-        );
-        assert_eq!(
-            binding_from_key_equivalent("@$k").as_deref(),
-            Some("shift+command+k")
-        );
-        assert_eq!(binding_from_key_equivalent(""), None);
-        assert_eq!(binding_from_key_equivalent("@~"), None);
-    }
-
-    #[test]
-    fn a_combination_survives_the_round_trip() {
-        for binding in ["ctrl+option+command+v", "shift+command+k", "ctrl+command+1"] {
-            let key_equivalent = key_equivalent_from_binding(binding).unwrap();
-            assert_eq!(
-                binding_from_key_equivalent(&key_equivalent).as_deref(),
-                Some(binding)
-            );
-        }
     }
 
     #[test]
@@ -1947,6 +1947,98 @@ mod tests {
         assert!(strings.contains(&format!(
             "\"{SERVICE_MENU_TITLE}\" = \"DanyWhere: Letztes Diktat einfügen\";"
         )));
+    }
+
+    #[test]
+    fn without_accessibility_paste_last_is_the_services_shortcut() {
+        assert!(paste_last_is_service_shortcut(true, "ctrl+shift+v", true));
+        assert!(paste_last_is_service_shortcut(
+            true,
+            "ctrl+option+command+v",
+            true
+        ));
+    }
+
+    #[test]
+    fn paste_last_stays_danywheres_own_otherwise() {
+        // With Accessibility DanyWhere pastes itself.
+        assert!(!paste_last_is_service_shortcut(false, "ctrl+shift+v", true));
+        // No services (Windows, Linux).
+        assert!(!paste_last_is_service_shortcut(true, "ctrl+shift+v", false));
+        // ⌥⇧V, the macOS default up to 0.1.5, types a character instead.
+        assert!(!paste_last_is_service_shortcut(
+            true,
+            "option+shift+v",
+            true
+        ));
+        assert!(!paste_last_is_service_shortcut(true, "f5", true));
+    }
+
+    #[test]
+    fn the_service_takes_paste_lasts_shortcut_without_accessibility() {
+        assert_eq!(
+            insert_service_shortcut_plan(true, Some("ctrl+shift+v")),
+            InsertServiceShortcutPlan::Follow("^$v".to_string())
+        );
+    }
+
+    #[test]
+    fn the_service_keeps_its_old_default_when_paste_last_cant_be_its_shortcut() {
+        assert_eq!(
+            insert_service_shortcut_plan(true, Some("option+shift+v")),
+            InsertServiceShortcutPlan::DefaultOnce
+        );
+        assert_eq!(
+            insert_service_shortcut_plan(true, None),
+            InsertServiceShortcutPlan::DefaultOnce
+        );
+    }
+
+    #[test]
+    fn with_accessibility_the_services_shortcut_is_left_alone() {
+        assert_eq!(
+            insert_service_shortcut_plan(false, Some("ctrl+shift+v")),
+            InsertServiceShortcutPlan::Leave
+        );
+    }
+
+    #[test]
+    fn without_accessibility_paste_last_refuses_what_a_service_cant_take() {
+        let bindings = std::collections::HashMap::from([
+            binding("paste_last_transcript", "ctrl+shift+v"),
+            binding("cycle_word_list", "ctrl+shift+l"),
+        ]);
+        assert_eq!(
+            check_paste_last_binding(true, "option+shift+v", &bindings, true),
+            Err(SERVICE_SHORTCUT_INVALID.to_string())
+        );
+        assert_eq!(
+            check_paste_last_binding(true, "ctrl+shift+l", &bindings, true),
+            Err("conflict:cycle_word_list".to_string())
+        );
+        // Its own combination is no conflict.
+        assert_eq!(
+            check_paste_last_binding(true, "ctrl+shift+v", &bindings, true),
+            Ok(())
+        );
+        assert_eq!(
+            check_paste_last_binding(true, "ctrl+option+v", &bindings, true),
+            Ok(())
+        );
+    }
+
+    #[test]
+    fn with_accessibility_paste_last_takes_any_combination() {
+        let bindings =
+            std::collections::HashMap::from([binding("paste_last_transcript", "ctrl+shift+v")]);
+        assert_eq!(
+            check_paste_last_binding(false, "option+shift+v", &bindings, true),
+            Ok(())
+        );
+        assert_eq!(
+            check_paste_last_binding(true, "option+shift+v", &bindings, false),
+            Ok(())
+        );
     }
 
     #[test]

@@ -68,8 +68,8 @@
       },
       "accessibility": {
         "skip": "Fortsätt utan hjälpmedel",
-        "skipHint": "Om din organisation blockerar den här behörigheten: en diktering väntar tills du infogar den med ⌃⌥⌘V, och kortkommandon kan inte använda fn-tangenten.",
-        "skipped": "Hoppades över — infoga dikteringar med ⌃⌥⌘V",
+        "skipHint": "Om din organisation blockerar den här behörigheten: en diktering väntar tills du infogar den med ⌃⇧V, och kortkommandon kan inte använda fn-tangenten.",
+        "skipped": "Hoppades över — infoga dikteringar med ⌃⇧V",
         "shortcutsReset": "Vissa kortkommandon kräver hjälpmedel och har återställts till standard.",
         "name": "Hjälpmedel",
         "why": "Så att din genväg fungerar i alla appar och Handy kan skriva texten där markören står."
@@ -361,7 +361,11 @@
           },
           "paste_last_transcript": {
             "name": "Klistra in senaste transkriptionen",
-            "description": "Klistrar in den senaste transkriptionen där markören står nu, t.ex. om den inte kom fram eftersom inget textfält hade fokus. Utan hjälpmedel kopieras den till urklipp i stället, för appar där ”Infoga senaste diktering” inte fungerar, t.ex. Terminal."
+            "description": "Klistrar in den senaste transkriptionen där markören står nu, t.ex. om den inte kom fram eftersom inget textfält hade fokus. Utan hjälpmedel infogar en macOS-tjänst den och avslutar först en pågående diktering; appar som redan är öppna tar till sig ett ändrat kortkommando först efter en omstart."
+          },
+          "copy_last_transcript": {
+            "name": "Kopiera senaste transkriptionen",
+            "description": "Kopierar den senaste transkriptionen till urklipp, t.ex. för appar där den inte kan infogas. Under en diktering avslutar den dikteringen och lägger texten i urklipp så snart den är klar."
           },
           "cycle_word_list": {
             "name": "Byt ordlista",
@@ -409,16 +413,12 @@
         }
       },
       "insertService": {
-        "title": "Infoga senaste diktering",
-        "description": "Utan hjälpmedel väntar en diktering tills du infogar den med det här kortkommandot, i alla appar som stöder macOS-tjänster. Appar som redan är öppna när du ändrar det börjar använda det först efter en omstart.",
-        "none": "Inget kortkommando",
         "invalid": "Använd ⌘ eller ⌃ med en bokstav, siffra eller ett skiljetecken",
-        "conflict": "”{{name}}” använder redan det här kortkommandot",
-        "failed": "Kortkommandot kunde inte ställas in: {{error}}"
+        "conflict": "”{{name}}” använder redan det här kortkommandot"
       },
       "dictationKeyInserts": {
         "label": "Kortkommandot för diktering infogar också",
-        "description": "Tryck på kortkommandot för diktering en gång till för att avsluta dikteringen och infoga den så snart den är klar, i appar som stöder macOS-tjänster. Appar som redan är öppna tar till sig detta först efter en omstart. Där inget kan infogas använder du Klistra in senaste transkriptionen."
+        "description": "Tryck på kortkommandot för diktering en gång till för att avsluta dikteringen och infoga den så snart den är klar, i appar som stöder macOS-tjänster. Appar som redan är öppna tar till sig detta först efter en omstart. Där inget kan infogas använder du Kopiera senaste transkriptionen."
       },
       "dictationServiceWhenIdle": {
         "title": "När inget spelas in",

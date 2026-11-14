@@ -4,7 +4,6 @@ import { type } from "@tauri-apps/plugin-os";
 import { MicrophoneSelector } from "../MicrophoneSelector";
 import { ChannelSelector } from "../ChannelSelector";
 import { ShortcutInput } from "../ShortcutInput";
-import { InsertServiceShortcut } from "../InsertServiceShortcut";
 import { DictationKeyInserts } from "../DictationKeyInserts";
 import { DictationServiceWhenIdleSetting } from "../DictationServiceWhenIdle";
 import { SettingsGroup } from "../../ui/SettingsGroup";
@@ -35,11 +34,6 @@ export const GeneralSettings: React.FC = () => {
       <SettingsGroup title={t("settings.general.title")}>
         <ShortcutInput shortcutId="transcribe" grouped={true} />
         <ShortcutActivationSetting descriptionMode="tooltip" grouped={true} />
-        {/* DanyWhere: without Accessibility the dictation waits for this
-            macOS service, whose shortcut macOS keeps. */}
-        {isMacOS && accessibilitySkipped && (
-          <InsertServiceShortcut descriptionMode="tooltip" grouped={true} />
-        )}
         {/* DanyWhere: the dictation shortcut's second press inserts too. */}
         {isMacOS && accessibilitySkipped && (
           <DictationKeyInserts descriptionMode="tooltip" grouped={true} />
@@ -50,7 +44,10 @@ export const GeneralSettings: React.FC = () => {
             grouped={true}
           />
         )}
+        {/* DanyWhere: without Accessibility, on macOS, the paste shortcut is
+            the "Insert Last Dictation" service's (insert_service.rs). */}
         <ShortcutInput shortcutId="paste_last_transcript" grouped={true} />
+        <ShortcutInput shortcutId="copy_last_transcript" grouped={true} />
         <ShortcutInput shortcutId="cycle_word_list" grouped={true} />
         {/* Cancel shortcut remains hidden on Linux because of dynamic shortcut instability. */}
         {!isLinux && <ShortcutInput shortcutId="cancel" grouped={true} />}

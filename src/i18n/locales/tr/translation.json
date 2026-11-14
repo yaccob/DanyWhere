@@ -68,8 +68,8 @@
       },
       "accessibility": {
         "skip": "Erişilebilirlik olmadan devam et",
-        "skipHint": "Kuruluşunuz bu izni engelliyorsa: dikte, ⌃⌥⌘V ile ekleyene kadar bekler ve kısayollar fn tuşunu kullanamaz.",
-        "skipped": "Atlandı — dikteleri ⌃⌥⌘V ile ekleyin",
+        "skipHint": "Kuruluşunuz bu izni engelliyorsa: dikte, ⌃⇧V ile ekleyene kadar bekler ve kısayollar fn tuşunu kullanamaz.",
+        "skipped": "Atlandı — dikteleri ⌃⇧V ile ekleyin",
         "shortcutsReset": "Bazı kısayollar Erişilebilirlik gerektirdiği için varsayılanlara sıfırlandı.",
         "name": "Erişilebilirlik",
         "why": "Kısayolunuz her uygulamada çalışsın ve Handy metni imlecinizin bulunduğu yere yazabilsin diye."
@@ -361,7 +361,11 @@
           },
           "paste_last_transcript": {
             "name": "Son transkripti yapıştır",
-            "description": "Son transkripti imlecin şu anda bulunduğu yere yapıştırır; örneğin hiçbir metin alanı odakta olmadığı için ulaşmadıysa. Erişilebilirlik olmadan panoya kopyalanır; Son dikteyi ekle'nin çalışmadığı uygulamalar için, örneğin Terminal."
+            "description": "Son transkripti imlecin şu anda bulunduğu yere yapıştırır; örneğin hiçbir metin alanı odakta olmadığı için ulaşmadıysa. Erişilebilirlik olmadan bir macOS hizmeti ekler ve önce süren dikteyi bitirir; zaten açık olan uygulamalar değiştirilen kısayolu ancak yeniden başlatıldıktan sonra uygular."
+          },
+          "copy_last_transcript": {
+            "name": "Son transkripti kopyala",
+            "description": "Son transkripti panoya kopyalar; örneğin eklenemediği uygulamalar için. Dikte sırasında dikteyi bitirir ve metin hazır olur olmaz panoya koyar."
           },
           "cycle_word_list": {
             "name": "Kelime Listesini Değiştir",
@@ -409,16 +413,12 @@
         }
       },
       "insertService": {
-        "title": "Son dikteyi ekle",
-        "description": "Erişilebilirlik olmadan dikte, bu kısayolla ekleyene kadar bekler; macOS servislerini destekleyen her uygulamada çalışır. Değiştirdiğinizde zaten açık olan uygulamalar kısayolu ancak yeniden başlatıldıktan sonra benimser.",
-        "none": "Kısayol yok",
         "invalid": "Bir harf, rakam veya noktalama işaretiyle ⌘ ya da ⌃ kullanın",
-        "conflict": "{{name}} bu kısayolu zaten kullanıyor",
-        "failed": "Kısayol ayarlanamadı: {{error}}"
+        "conflict": "{{name}} bu kısayolu zaten kullanıyor"
       },
       "dictationKeyInserts": {
         "label": "Dikte kısayolu ekleme de yapar",
-        "description": "Dikteyi bitirmek ve hazır olur olmaz eklemek için dikte kısayoluna tekrar basın; macOS hizmetlerini destekleyen uygulamalarda çalışır. Zaten açık olan uygulamalar bunu ancak yeniden başlatıldıktan sonra uygular. Hiçbir şeyin eklenemediği yerlerde Son transkripti yapıştır'ı kullanın."
+        "description": "Dikteyi bitirmek ve hazır olur olmaz eklemek için dikte kısayoluna tekrar basın; macOS hizmetlerini destekleyen uygulamalarda çalışır. Zaten açık olan uygulamalar bunu ancak yeniden başlatıldıktan sonra uygular. Hiçbir şeyin eklenemediği yerlerde Son transkripti kopyala'yı kullanın."
       },
       "dictationServiceWhenIdle": {
         "title": "Kayıt yapılmıyorken",

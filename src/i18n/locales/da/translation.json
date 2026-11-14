@@ -68,8 +68,8 @@
       },
       "accessibility": {
         "skip": "Fortsæt uden tilgængelighed",
-        "skipHint": "Hvis din organisation blokerer denne tilladelse: en diktering venter, til du indsætter den med ⌃⌥⌘V, og genveje kan ikke bruge fn-tasten.",
-        "skipped": "Sprunget over — indsæt dikteringer med ⌃⌥⌘V",
+        "skipHint": "Hvis din organisation blokerer denne tilladelse: en diktering venter, til du indsætter den med ⌃⇧V, og genveje kan ikke bruge fn-tasten.",
+        "skipped": "Sprunget over — indsæt dikteringer med ⌃⇧V",
         "shortcutsReset": "Nogle genveje kræver tilgængelighed og er nulstillet til standard.",
         "name": "Hjælpemidler",
         "why": "Så din genvej virker i alle apps, og Handy kan skrive teksten dér, hvor din markør er."
@@ -361,7 +361,11 @@
           },
           "paste_last_transcript": {
             "name": "Indsæt seneste transskription",
-            "description": "Indsætter den seneste transskription, der hvor markøren står nu, f.eks. hvis den ikke kom frem, fordi intet tekstfelt havde fokus. Uden tilgængelighed kopieres den i stedet til udklipsholderen, til apps hvor »Indsæt seneste diktering« ikke virker, f.eks. Terminal."
+            "description": "Indsætter den seneste transskription, der hvor markøren står nu, f.eks. hvis den ikke kom frem, fordi intet tekstfelt havde fokus. Uden tilgængelighed indsætter en macOS-tjeneste den og afslutter først en igangværende diktering; apps, der allerede er åbne, bruger en ændret genvej først efter en genstart."
+          },
+          "copy_last_transcript": {
+            "name": "Kopiér seneste transskription",
+            "description": "Kopierer den seneste transskription til udklipsholderen, f.eks. til apps hvor den ikke kan indsættes. Under en diktering afslutter den dikteringen og lægger teksten i udklipsholderen, så snart den er klar."
           },
           "cycle_word_list": {
             "name": "Skift ordliste",
@@ -409,16 +413,12 @@
         }
       },
       "insertService": {
-        "title": "Indsæt seneste diktering",
-        "description": "Uden tilgængelighed venter en diktering, til du indsætter den med denne genvej, i alle apps, der understøtter macOS-tjenester. Apps, der allerede er åbne, når du ændrer den, tager den først i brug efter en genstart.",
-        "none": "Ingen genvej",
         "invalid": "Brug ⌘ eller ⌃ med et bogstav, et tal eller et tegn",
-        "conflict": "»{{name}}« bruger allerede denne genvej",
-        "failed": "Genvejen kunne ikke indstilles: {{error}}"
+        "conflict": "»{{name}}« bruger allerede denne genvej"
       },
       "dictationKeyInserts": {
         "label": "Dikteringsgenvejen indsætter også",
-        "description": "Tryk på dikteringsgenvejen igen for at afslutte dikteringen og indsætte den, så snart den er klar, i apps, der understøtter macOS-tjenester. Apps, der allerede er åbne, bruger det først efter en genstart. Hvor intet kan indsættes, så brug Indsæt seneste transskription."
+        "description": "Tryk på dikteringsgenvejen igen for at afslutte dikteringen og indsætte den, så snart den er klar, i apps, der understøtter macOS-tjenester. Apps, der allerede er åbne, bruger det først efter en genstart. Hvor intet kan indsættes, så brug Kopiér seneste transskription."
       },
       "dictationServiceWhenIdle": {
         "title": "Når der ikke optages",

@@ -87,7 +87,7 @@ const RecordingOverlay: React.FC = () => {
   // The additional word list the switch shortcut just turned on; null: only
   // the global list.
   const [wordListName, setWordListName] = useState<string | null>(null);
-  // The "Insert Last Dictation" service's shortcut, e.g. ⌃⌥⌘V; null: none.
+  // The "Insert Last Dictation" service's shortcut, e.g. ⌃⇧V; null: none.
   const [insertKeys, setInsertKeys] = useState<string | null>(null);
   const [noticeWidth, setNoticeWidth] = useState<number>();
   const noticeProbeRef = useRef<HTMLSpanElement>(null);

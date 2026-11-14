@@ -68,8 +68,8 @@
       },
       "accessibility": {
         "skip": "Continuar sin accesibilidad",
-        "skipHint": "Si tu organización bloquea este permiso: un dictado espera hasta que lo insertes con ⌃⌥⌘V, y los atajos no pueden usar la tecla fn.",
-        "skipped": "Omitido — inserta los dictados con ⌃⌥⌘V",
+        "skipHint": "Si tu organización bloquea este permiso: un dictado espera hasta que lo insertes con ⌃⇧V, y los atajos no pueden usar la tecla fn.",
+        "skipped": "Omitido — inserta los dictados con ⌃⇧V",
         "shortcutsReset": "Algunos atajos necesitan accesibilidad y se restablecieron a sus valores predeterminados.",
         "name": "Accesibilidad",
         "why": "Para que tu atajo funcione en cualquier app y Handy pueda escribir el texto donde está tu cursor."
@@ -361,7 +361,11 @@
           },
           "paste_last_transcript": {
             "name": "Pegar la última transcripción",
-            "description": "Pega la última transcripción donde está ahora el cursor, por ejemplo si no llegó porque ningún campo de texto tenía el foco. Sin accesibilidad se copia al portapapeles, para las apps en las que «Insertar el último dictado» no funciona, como Terminal."
+            "description": "Pega la última transcripción donde está ahora el cursor, por ejemplo si no llegó porque ningún campo de texto tenía el foco. Sin accesibilidad la inserta un servicio de macOS, que antes termina el dictado en curso; las apps que ya están abiertas aplican un atajo cambiado después de reiniciarlas."
+          },
+          "copy_last_transcript": {
+            "name": "Copiar la última transcripción",
+            "description": "Copia la última transcripción al portapapeles, por ejemplo para las apps en las que no se puede insertar. Durante un dictado, lo termina y pone el texto en el portapapeles en cuanto esté listo."
           },
           "cycle_word_list": {
             "name": "Cambiar lista de palabras",
@@ -409,16 +413,12 @@
         }
       },
       "insertService": {
-        "title": "Insertar el último dictado",
-        "description": "Sin accesibilidad, un dictado espera hasta que lo insertes con este atajo, en cualquier app compatible con los servicios de macOS. Las apps que ya están abiertas al cambiarlo no lo adoptan hasta que las reinicias.",
-        "none": "Sin atajo",
         "invalid": "Usa ⌘ o ⌃ con una letra, un número o un signo de puntuación",
-        "conflict": "«{{name}}» ya usa este atajo",
-        "failed": "No se pudo establecer el atajo: {{error}}"
+        "conflict": "«{{name}}» ya usa este atajo"
       },
       "dictationKeyInserts": {
         "label": "El atajo de dictado también inserta",
-        "description": "Vuelve a pulsar el atajo de dictado para terminar el dictado e insertarlo en cuanto esté listo, en las apps que admiten los servicios de macOS. Las apps que ya están abiertas lo aplican después de reiniciarlas. Donde no se pueda insertar nada, usa «Pegar la última transcripción»."
+        "description": "Vuelve a pulsar el atajo de dictado para terminar el dictado e insertarlo en cuanto esté listo, en las apps que admiten los servicios de macOS. Las apps que ya están abiertas lo aplican después de reiniciarlas. Donde no se pueda insertar nada, usa «Copiar la última transcripción»."
       },
       "dictationServiceWhenIdle": {
         "title": "Cuando no se está grabando nada",

@@ -68,8 +68,8 @@
       },
       "accessibility": {
         "skip": "Continue without Accessibility",
-        "skipHint": "If your organization blocks this permission: a dictation waits until you insert it with ⌃⌥⌘V, and shortcuts can't use the fn key.",
-        "skipped": "Skipped — insert dictations with ⌃⌥⌘V",
+        "skipHint": "If your organization blocks this permission: a dictation waits until you insert it with ⌃⇧V, and shortcuts can't use the fn key.",
+        "skipped": "Skipped — insert dictations with ⌃⇧V",
         "shortcutsReset": "Some shortcuts need Accessibility and were reset to their defaults.",
         "name": "Accessibility",
         "why": "So your shortcut works in every app, and Handy can type the text where your cursor is."
@@ -361,7 +361,11 @@
           },
           "paste_last_transcript": {
             "name": "Paste Last Transcript",
-            "description": "Pastes the most recent transcript where the cursor is now, e.g. when it did not arrive because no text field had focus. Without Accessibility it is put on the clipboard instead, for apps where Insert Last Dictation doesn't work, such as Terminal."
+            "description": "Pastes the most recent transcript where the cursor is now, e.g. when it did not arrive because no text field had focus. Without Accessibility a macOS service inserts it and ends a running dictation first; apps that are already open pick up a changed shortcut after a restart."
+          },
+          "copy_last_transcript": {
+            "name": "Copy Last Transcript",
+            "description": "Puts the most recent transcript on the clipboard, e.g. for apps where it can't be inserted. During a dictation it ends the dictation and puts the text on the clipboard once it's ready."
           },
           "cycle_word_list": {
             "name": "Switch Word List",
@@ -409,16 +413,12 @@
         }
       },
       "insertService": {
-        "title": "Insert Last Dictation",
-        "description": "Without Accessibility a dictation waits until you insert it with this shortcut, in any app that supports macOS services. Apps that are already open when you change it only pick it up after a restart.",
-        "none": "No shortcut",
         "invalid": "Use ⌘ or ⌃ with a letter, digit or punctuation key",
-        "conflict": "{{name}} already uses this shortcut",
-        "failed": "Couldn't set the shortcut: {{error}}"
+        "conflict": "{{name}} already uses this shortcut"
       },
       "dictationKeyInserts": {
         "label": "Dictation Shortcut Also Inserts",
-        "description": "Press the dictation shortcut again to end the dictation and insert it as soon as it's ready, in apps that support macOS services. Apps that are already open pick this up after a restart. Where nothing can be inserted, use Paste Last Transcript."
+        "description": "Press the dictation shortcut again to end the dictation and insert it as soon as it's ready, in apps that support macOS services. Apps that are already open pick this up after a restart. Where nothing can be inserted, use Copy Last Transcript."
       },
       "dictationServiceWhenIdle": {
         "title": "When Nothing Is Being Recorded",

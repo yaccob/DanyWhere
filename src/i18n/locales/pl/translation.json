@@ -68,8 +68,8 @@
       },
       "accessibility": {
         "skip": "Kontynuuj bez dostępności",
-        "skipHint": "Jeśli Twoja organizacja blokuje to uprawnienie: dyktowanie czeka, aż wstawisz je skrótem ⌃⌥⌘V, a skróty nie mogą używać klawisza fn.",
-        "skipped": "Pominięto — wstawiaj dyktowanie skrótem ⌃⌥⌘V",
+        "skipHint": "Jeśli Twoja organizacja blokuje to uprawnienie: dyktowanie czeka, aż wstawisz je skrótem ⌃⇧V, a skróty nie mogą używać klawisza fn.",
+        "skipped": "Pominięto — wstawiaj dyktowanie skrótem ⌃⇧V",
         "shortcutsReset": "Niektóre skróty wymagają dostępności i zostały przywrócone do wartości domyślnych.",
         "name": "Dostępność",
         "why": "Żeby Twój skrót działał w każdej aplikacji, a Handy mogło wpisywać tekst tam, gdzie jest kursor."
@@ -361,7 +361,11 @@
           },
           "paste_last_transcript": {
             "name": "Wklej ostatnią transkrypcję",
-            "description": "Wkleja ostatnią transkrypcję tam, gdzie jest teraz kursor, np. gdy nie dotarła, bo żadne pole tekstowe nie miało fokusu. Bez dostępności jest kopiowana do schowka, dla aplikacji, w których „Wstaw ostatnie dyktowanie” nie działa, np. Terminal."
+            "description": "Wkleja ostatnią transkrypcję tam, gdzie jest teraz kursor, np. gdy nie dotarła, bo żadne pole tekstowe nie miało fokusu. Bez dostępności wstawia ją usługa macOS, która najpierw kończy trwające dyktowanie; aplikacje, które są już otwarte, uwzględnią zmieniony skrót dopiero po ponownym uruchomieniu."
+          },
+          "copy_last_transcript": {
+            "name": "Kopiuj ostatnią transkrypcję",
+            "description": "Kopiuje ostatnią transkrypcję do schowka, np. dla aplikacji, w których nie da się jej wstawić. Podczas dyktowania kończy je i umieszcza tekst w schowku, gdy tylko będzie gotowy."
           },
           "cycle_word_list": {
             "name": "Przełącz listę słów",
@@ -409,16 +413,12 @@
         }
       },
       "insertService": {
-        "title": "Wstaw ostatnie dyktowanie",
-        "description": "Bez dostępności dyktowanie czeka, aż wstawisz je tym skrótem, w każdej aplikacji obsługującej usługi macOS. Aplikacje otwarte w chwili zmiany przejmą go dopiero po ponownym uruchomieniu.",
-        "none": "Brak skrótu",
         "invalid": "Użyj ⌘ lub ⌃ z literą, cyfrą lub znakiem interpunkcyjnym",
-        "conflict": "„{{name}}” już używa tego skrótu",
-        "failed": "Nie udało się ustawić skrótu: {{error}}"
+        "conflict": "„{{name}}” już używa tego skrótu"
       },
       "dictationKeyInserts": {
         "label": "Skrót dyktowania również wstawia",
-        "description": "Naciśnij ponownie skrót dyktowania, aby zakończyć dyktowanie i wstawić je, gdy tylko będzie gotowe, w aplikacjach obsługujących usługi macOS. Aplikacje, które są już otwarte, uwzględnią to dopiero po ponownym uruchomieniu. Tam, gdzie nie da się nic wstawić, użyj „Wklej ostatnią transkrypcję”."
+        "description": "Naciśnij ponownie skrót dyktowania, aby zakończyć dyktowanie i wstawić je, gdy tylko będzie gotowe, w aplikacjach obsługujących usługi macOS. Aplikacje, które są już otwarte, uwzględnią to dopiero po ponownym uruchomieniu. Tam, gdzie nie da się nic wstawić, użyj „Kopiuj ostatnią transkrypcję”."
       },
       "dictationServiceWhenIdle": {
         "title": "Gdy nic nie jest nagrywane",

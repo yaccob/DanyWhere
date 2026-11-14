@@ -68,8 +68,8 @@
       },
       "accessibility": {
         "skip": "Continuer sans l'accessibilité",
-        "skipHint": "Si votre organisation bloque cette autorisation : une dictée attend que vous l'insériez avec ⌃⌥⌘V, et les raccourcis ne peuvent pas utiliser la touche fn.",
-        "skipped": "Ignoré — insérez les dictées avec ⌃⌥⌘V",
+        "skipHint": "Si votre organisation bloque cette autorisation : une dictée attend que vous l'insériez avec ⌃⇧V, et les raccourcis ne peuvent pas utiliser la touche fn.",
+        "skipped": "Ignoré — insérez les dictées avec ⌃⇧V",
         "shortcutsReset": "Certains raccourcis nécessitent l'accessibilité et ont été réinitialisés à leurs valeurs par défaut.",
         "name": "Accessibilité",
         "why": "Pour que votre raccourci fonctionne dans toutes les apps et que Handy puisse saisir le texte là où se trouve votre curseur."
@@ -361,7 +361,11 @@
           },
           "paste_last_transcript": {
             "name": "Coller la dernière transcription",
-            "description": "Colle la dernière transcription à l'emplacement actuel du curseur, par exemple si elle n'est pas arrivée parce qu'aucun champ de texte n'avait le focus. Sans l'accessibilité, elle est copiée dans le presse-papiers, pour les apps où « Insérer la dernière dictée » ne fonctionne pas, comme Terminal."
+            "description": "Colle la dernière transcription à l'emplacement actuel du curseur, par exemple si elle n'est pas arrivée parce qu'aucun champ de texte n'avait le focus. Sans l'accessibilité, un service de macOS l'insère et termine d'abord la dictée en cours ; les apps déjà ouvertes tiennent compte d'un raccourci modifié après un redémarrage."
+          },
+          "copy_last_transcript": {
+            "name": "Copier la dernière transcription",
+            "description": "Copie la dernière transcription dans le presse-papiers, par exemple pour les apps où elle ne peut pas être insérée. Pendant une dictée, celle-ci est terminée et son texte est placé dans le presse-papiers dès qu'il est prêt."
           },
           "cycle_word_list": {
             "name": "Changer de liste de mots",
@@ -409,16 +413,12 @@
         }
       },
       "insertService": {
-        "title": "Insérer la dernière dictée",
-        "description": "Sans l'accessibilité, une dictée attend que vous l'insériez avec ce raccourci, dans toute app compatible avec les services macOS. Les apps déjà ouvertes lors du changement ne l'adoptent qu'après avoir été relancées.",
-        "none": "Aucun raccourci",
         "invalid": "Utilisez ⌘ ou ⌃ avec une lettre, un chiffre ou un signe de ponctuation",
-        "conflict": "« {{name}} » utilise déjà ce raccourci",
-        "failed": "Impossible de définir le raccourci : {{error}}"
+        "conflict": "« {{name}} » utilise déjà ce raccourci"
       },
       "dictationKeyInserts": {
         "label": "Le raccourci de dictée insère aussi",
-        "description": "Appuyez à nouveau sur le raccourci de dictée pour terminer la dictée et l'insérer dès qu'elle est prête, dans les apps qui prennent en charge les services de macOS. Les apps déjà ouvertes en tiennent compte après un redémarrage. Là où rien ne peut être inséré, utilisez « Coller la dernière transcription »."
+        "description": "Appuyez à nouveau sur le raccourci de dictée pour terminer la dictée et l'insérer dès qu'elle est prête, dans les apps qui prennent en charge les services de macOS. Les apps déjà ouvertes en tiennent compte après un redémarrage. Là où rien ne peut être inséré, utilisez « Copier la dernière transcription »."
       },
       "dictationServiceWhenIdle": {
         "title": "Quand rien n'est enregistré",

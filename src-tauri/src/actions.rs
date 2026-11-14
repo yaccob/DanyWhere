@@ -1014,8 +1014,17 @@ impl ShortcutAction for TranscribeAction {
                                         // DanyWhere: the "Insert Last Dictation"
                                         // service may be waiting for this text.
                                         let text_for_service = final_text.clone();
+                                        // DanyWhere: "Copy Last Transcript"
+                                        // during this dictation puts it on the
+                                        // clipboard instead (below).
+                                        let pasted = if crate::dictation_key_inserts::copies_instead_of_pasting(session) {
+                                            log::info!("Copy Last Transcript asked for this dictation; not pasting it.");
+                                            Ok(utils::PasteOutcome::Pasted)
+                                        } else {
+                                            utils::paste(final_text, ah_clone.clone())
+                                        };
                                         let (outcome, notice) =
-                                            match utils::paste(final_text, ah_clone.clone()) {
+                                            match pasted {
                                                 Ok(utils::PasteOutcome::Pasted) => {
                                                     debug!(
                                                         "Text pasted successfully in {:?}",
@@ -1062,7 +1071,7 @@ impl ShortcutAction for TranscribeAction {
                                             && crate::insert_service::deliver_to_waiting_call(
                                                 &text_for_service,
                                             );
-                                        // DanyWhere: "Paste Last Transcript"
+                                        // DanyWhere: "Copy Last Transcript"
                                         // during this dictation, or an app that
                                         // didn't know the dictation shortcut,
                                         // asked for its text on the clipboard.
@@ -1088,6 +1097,7 @@ impl ShortcutAction for TranscribeAction {
                                         {
                                             crate::delivery::play_sound_if_waiting_for_user(
                                                 &ah_clone,
+                                                put_on_clipboard.is_some(),
                                             );
                                         }
                                         match (owns_ui(), notice, &put_on_clipboard) {
@@ -1223,9 +1233,28 @@ impl ShortcutAction for PasteLastTranscriptAction {
     }
 
     fn stop(&self, app: &AppHandle, _binding_id: &str, _shortcut_str: &str) {
-        // DanyWhere: during a dictation without Accessibility it ends the
-        // dictation and puts its text on the clipboard once it's ready.
+        // DanyWhere: without Accessibility it reaches DanyWhere only where it
+        // can't be the "Insert Last Dictation" service's shortcut; it copies
+        // then.
         crate::dictation_key_inserts::paste_last_transcript(
+            app,
+            RECORDING_SESSION.load(Ordering::SeqCst),
+        );
+    }
+}
+
+// Copy Last Transcript Action (DanyWhere)
+struct CopyLastTranscriptAction;
+
+impl ShortcutAction for CopyLastTranscriptAction {
+    fn start(&self, _app: &AppHandle, _binding_id: &str, _shortcut_str: &str) {
+        // Copied on release, like Paste Last Transcript.
+    }
+
+    fn stop(&self, app: &AppHandle, _binding_id: &str, _shortcut_str: &str) {
+        // During a dictation it ends the dictation and puts its text on the
+        // clipboard once it's ready.
+        crate::dictation_key_inserts::copy_last_transcript(
             app,
             RECORDING_SESSION.load(Ordering::SeqCst),
         );
@@ -1301,6 +1330,10 @@ pub static ACTION_MAP: Lazy<HashMap<String, Arc<dyn ShortcutAction>>> = Lazy::ne
     map.insert(
         "paste_last_transcript".to_string(),
         Arc::new(PasteLastTranscriptAction) as Arc<dyn ShortcutAction>,
+    );
+    map.insert(
+        "copy_last_transcript".to_string(),
+        Arc::new(CopyLastTranscriptAction) as Arc<dyn ShortcutAction>,
     );
     map.insert(
         "cycle_word_list".to_string(),

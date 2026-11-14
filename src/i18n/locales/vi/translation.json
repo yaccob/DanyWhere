@@ -68,8 +68,8 @@
       },
       "accessibility": {
         "skip": "Tiếp tục mà không có Trợ năng",
-        "skipHint": "Nếu tổ chức của bạn chặn quyền này: bản đọc chính tả sẽ chờ cho đến khi bạn chèn bằng ⌃⌥⌘V, và phím tắt không thể dùng phím fn.",
-        "skipped": "Đã bỏ qua — chèn bản đọc chính tả bằng ⌃⌥⌘V",
+        "skipHint": "Nếu tổ chức của bạn chặn quyền này: bản đọc chính tả sẽ chờ cho đến khi bạn chèn bằng ⌃⇧V, và phím tắt không thể dùng phím fn.",
+        "skipped": "Đã bỏ qua — chèn bản đọc chính tả bằng ⌃⇧V",
         "shortcutsReset": "Một số phím tắt cần Trợ năng và đã được đặt lại về mặc định.",
         "name": "Trợ năng",
         "why": "Để phím tắt của bạn hoạt động trong mọi ứng dụng, và Handy có thể gõ văn bản vào nơi con trỏ của bạn đang đứng."
@@ -361,7 +361,11 @@
           },
           "paste_last_transcript": {
             "name": "Dán bản chép gần nhất",
-            "description": "Dán bản chép gần nhất vào vị trí con trỏ hiện tại, ví dụ khi nó không đến nơi vì không có ô văn bản nào được chọn. Khi không có Trợ năng, bản chép được sao chép vào bảng nhớ tạm, dành cho các ứng dụng mà Chèn bản đọc chính tả gần nhất không hoạt động, như Terminal."
+            "description": "Dán bản chép gần nhất vào vị trí con trỏ hiện tại, ví dụ khi nó không đến nơi vì không có ô văn bản nào được chọn. Khi không có Trợ năng, một dịch vụ của macOS sẽ chèn nó và kết thúc trước bản đọc chính tả đang chạy; các ứng dụng đang mở chỉ áp dụng phím tắt đã đổi sau khi khởi động lại."
+          },
+          "copy_last_transcript": {
+            "name": "Sao chép bản chép gần nhất",
+            "description": "Sao chép bản chép gần nhất vào bảng nhớ tạm, ví dụ cho các ứng dụng không thể chèn vào. Trong khi đọc chính tả, phím tắt này kết thúc bản đọc và đưa văn bản vào bảng nhớ tạm ngay khi sẵn sàng."
           },
           "cycle_word_list": {
             "name": "Đổi danh sách từ",
@@ -409,16 +413,12 @@
         }
       },
       "insertService": {
-        "title": "Chèn bản đọc chính tả gần nhất",
-        "description": "Khi không có Trợ năng, bản đọc chính tả sẽ chờ cho đến khi bạn chèn bằng phím tắt này, trong mọi ứng dụng hỗ trợ dịch vụ macOS. Các ứng dụng đang mở khi bạn thay đổi chỉ dùng phím tắt mới sau khi khởi động lại.",
-        "none": "Không có phím tắt",
         "invalid": "Dùng ⌘ hoặc ⌃ với một chữ cái, chữ số hoặc dấu câu",
-        "conflict": "{{name}} đã dùng phím tắt này",
-        "failed": "Không thể đặt phím tắt: {{error}}"
+        "conflict": "{{name}} đã dùng phím tắt này"
       },
       "dictationKeyInserts": {
         "label": "Phím tắt đọc chính tả cũng chèn văn bản",
-        "description": "Nhấn phím tắt đọc chính tả lần nữa để kết thúc và chèn bản đọc ngay khi sẵn sàng, trong các ứng dụng hỗ trợ dịch vụ của macOS. Các ứng dụng đang mở chỉ áp dụng sau khi khởi động lại. Ở nơi không thể chèn gì, hãy dùng Dán bản chép gần nhất."
+        "description": "Nhấn phím tắt đọc chính tả lần nữa để kết thúc và chèn bản đọc ngay khi sẵn sàng, trong các ứng dụng hỗ trợ dịch vụ của macOS. Các ứng dụng đang mở chỉ áp dụng sau khi khởi động lại. Ở nơi không thể chèn gì, hãy dùng Sao chép bản chép gần nhất."
       },
       "dictationServiceWhenIdle": {
         "title": "Khi không có gì đang được ghi",

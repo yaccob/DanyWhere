@@ -21,12 +21,31 @@ interface HandyKeysEvent {
 }
 
 /**
+ * DanyWhere: the toast for a refused binding. Without Accessibility "Paste
+ * Last Transcript" is the "Insert Last Dictation" service's shortcut, and
+ * the backend refuses what a service can't take with a code of its own.
+ */
+const bindingErrorTitle = (
+  error: string,
+  t: ReturnType<typeof useTranslation>["t"],
+): string => {
+  if (error.includes("service-shortcut-invalid"))
+    return t("settings.general.insertService.invalid");
+  const conflict = /conflict:([a-z_]+)/.exec(error);
+  if (conflict)
+    return t("settings.general.insertService.conflict", {
+      name: t(
+        `settings.general.shortcut.bindings.${conflict[1]}.name`,
+        conflict[1],
+      ),
+    });
+  return t("settings.general.shortcut.errors.set", { error });
+};
+
+/**
  * Records a new binding via handy-keys events, or this window's key events
  * with all bindings suspended. `inert` records without saving;
- * `escapeCancels` makes Escape exit instead of recording. `save` hands the
- * recorded combination to the caller instead of storing it as `bindingId`
- * (DanyWhere: the "Insert Last Dictation" service's shortcut, which macOS
- * keeps); it is recorded from this window's key events.
+ * `escapeCancels` makes Escape exit instead of recording.
  */
 export const useShortcutCapture = (
   bindingId: string,
@@ -35,18 +54,12 @@ export const useShortcutCapture = (
     onDone,
     inert = false,
     escapeCancels = false,
-    save,
-  }: {
-    onDone?: () => void;
-    inert?: boolean;
-    escapeCancels?: boolean;
-    save?: (binding: string) => Promise<void>;
-  } = {},
+  }: { onDone?: () => void; inert?: boolean; escapeCancels?: boolean } = {},
 ) => {
   const { t } = useTranslation();
   const { getSetting, updateBinding } = useSettings();
   const handyKeys =
-    !inert && !save && getSetting("keyboard_implementation") === "handy_keys";
+    !inert && getSetting("keyboard_implementation") === "handy_keys";
   const [capturing, setCapturing] = useState(false);
   const [partial, setPartial] = useState("");
   const onDoneRef = useRef(onDone);
@@ -79,19 +92,14 @@ export const useShortcutCapture = (
   const commit = useCallback(
     async (binding: string) => {
       try {
-        if (save) await save(binding);
-        else if (!inert) await updateBinding(bindingId, binding);
+        if (!inert) await updateBinding(bindingId, binding);
       } catch (error) {
         console.error("Failed to change binding:", error);
-        notify({
-          title: t("settings.general.shortcut.errors.set", {
-            error: String(error),
-          }),
-        });
+        notify({ title: bindingErrorTitle(String(error), t) });
       }
       await finish();
     },
-    [bindingId, finish, inert, save, t, updateBinding],
+    [bindingId, finish, inert, t, updateBinding],
   );
 
   /** Resolves to whether capture began. */

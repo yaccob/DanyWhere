@@ -221,6 +221,21 @@ pub fn change_binding(
         }
     }
 
+    // DanyWhere: without Accessibility "Paste Last Transcript" is the "Insert
+    // Last Dictation" service's shortcut, so it must be one a service can
+    // have.
+    if id == crate::insert_service::PASTE_LAST_BINDING {
+        if let Err(e) = crate::insert_service::check_paste_last_binding(
+            settings.accessibility_skipped,
+            &binding,
+            &settings.bindings,
+            crate::delivery::INSERT_SERVICE_AVAILABLE,
+        ) {
+            warn!("change_binding: refused {binding} for {id}: {e}");
+            return Err(e);
+        }
+    }
+
     // Unregister the existing binding
     if let Err(e) = unregister_shortcut(&app, binding_to_modify.clone()) {
         let error_msg = format!("Failed to unregister shortcut: {}", e);
@@ -239,8 +254,24 @@ pub fn change_binding(
     let mut updated_binding = binding_to_modify.clone();
     updated_binding.current_binding = binding;
 
+    // DanyWhere: not while it is the insert service's shortcut.
+    let mut updated_settings = settings.clone();
+    updated_settings
+        .bindings
+        .insert(id.clone(), updated_binding.clone());
+    let registers = settings::registers_binding(
+        &id,
+        &updated_settings,
+        crate::delivery::INSERT_SERVICE_AVAILABLE,
+    );
+
     // Register the new binding
-    if let Err(e) = register_shortcut(&app, updated_binding.clone()) {
+    if !registers {
+        info!(
+            "{id}: {} goes to the app in front, not to DanyWhere.",
+            updated_binding.current_binding
+        );
+    } else if let Err(e) = register_shortcut(&app, updated_binding.clone()) {
         let error_msg = format!("Failed to register shortcut: {}", e);
         error!("change_binding error: {}", error_msg);
         restore_registration(&app, &binding_to_modify);
@@ -252,15 +283,18 @@ pub fn change_binding(
     }
 
     // Update the binding in the settings
-    settings.bindings.insert(id, updated_binding.clone());
+    settings
+        .bindings
+        .insert(id.clone(), updated_binding.clone());
 
     // Save the settings and synchronize any active Secure Input shadows.
     let changed_dictation_shortcut =
         crate::transcription_coordinator::is_transcribe_binding(&updated_binding.id);
     settings::write_settings(&app, settings);
     crate::secure_input::reconcile_fallback(&app);
-    // DanyWhere: the dictation shortcuts' services carry them as theirs.
-    if changed_dictation_shortcut {
+    // DanyWhere: the dictation shortcuts' services carry them as theirs, and
+    // "Insert Last Dictation" carries "Paste Last Transcript".
+    if changed_dictation_shortcut || id == crate::insert_service::PASTE_LAST_BINDING {
         crate::insert_service::sync_dictation_service_shortcuts(&app);
     }
 
@@ -275,6 +309,14 @@ pub fn change_binding(
 /// Best-effort re-register of the previous binding after a failed change,
 /// so a failure leaves the user's shortcut working exactly as before.
 fn restore_registration(app: &AppHandle, binding: &ShortcutBinding) {
+    // DanyWhere: a shortcut DanyWhere leaves to the app stays unregistered.
+    if !settings::registers_binding(
+        &binding.id,
+        &settings::get_settings(app),
+        crate::delivery::INSERT_SERVICE_AVAILABLE,
+    ) {
+        return;
+    }
     if let Err(e) = register_shortcut(app, binding.clone()) {
         error!(
             "Failed to restore previous binding '{}' ({}): {}",
@@ -317,8 +359,9 @@ pub fn resume_all_shortcuts(app: &AppHandle) {
         if id == "cancel" {
             continue;
         }
-        // DanyWhere: also the context shortcut.
-        if settings::binding_needs_post_processing(id) && !settings.post_process_enabled {
+        // DanyWhere: also the context shortcut, and not "Paste Last
+        // Transcript" while it is the insert service's shortcut.
+        if !settings::registers_binding(id, &settings, crate::delivery::INSERT_SERVICE_AVAILABLE) {
             continue;
         }
         if let Err(e) = register_shortcut(app, binding.clone()) {
@@ -544,8 +587,13 @@ fn register_all_shortcuts_for_implementation(
         }
 
         // Skip post-processing shortcut when the feature is disabled
-        // DanyWhere: also the context shortcut.
-        if settings::binding_needs_post_processing(id) && !current_settings.post_process_enabled {
+        // DanyWhere: also the context shortcut, and "Paste Last Transcript"
+        // while it is the insert service's shortcut.
+        if !settings::registers_binding(
+            id,
+            &current_settings,
+            crate::delivery::INSERT_SERVICE_AVAILABLE,
+        ) {
             continue;
         }
 

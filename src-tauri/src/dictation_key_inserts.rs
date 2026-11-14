@@ -13,9 +13,11 @@
 //!
 //! Push-to-talk can't work this way: a key release calls no service.
 //!
-//! Where no service can take the press (Apple's Terminal, the Finder, no
-//! text field), "Paste Last Transcript" ends the recording and puts the text
-//! on the clipboard once it's ready.
+//! Where no service can take the press (the Finder, no text field), "Copy
+//! Last Transcript" ends the recording and puts the text on the clipboard
+//! once it's ready. "Paste Last Transcript" is the "Insert Last Dictation"
+//! service's own shortcut then (`insert_service`), so during a recording
+//! it ends and inserts like the second press.
 //!
 //! An app that was already open when DanyWhere gave the services their
 //! shortcuts learns them only after a restart (2026-11-11/12; the user's
@@ -141,33 +143,57 @@ pub fn releases_dictation_keys(
     waits_for_service && enabled && recording_locked
 }
 
-/// What "Paste Last Transcript" does.
+/// What "Copy Last Transcript" does (user, 2026-11-14: the same with
+/// Accessibility and without).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum PasteLastPlan {
-    /// Deliver the last dictation now, as always.
-    AsToday,
-    /// End the running recording; its text goes on the clipboard once ready.
+pub enum CopyLastPlan {
+    /// Put the last dictation on the clipboard now.
+    CopyNow,
+    /// End the running recording; its text goes on the clipboard once
+    /// ready, instead of being pasted or waiting for a service.
     EndAndPutOnClipboard,
     /// The dictation is being transcribed: its text goes on the clipboard
     /// once ready.
     PutOnClipboardWhenReady,
 }
 
-/// Decides what "Paste Last Transcript" does in this phase of a dictation.
-pub fn paste_last_plan(waits_for_service: bool, phase: TrayIconState) -> PasteLastPlan {
-    match (waits_for_service, phase) {
-        (true, TrayIconState::Recording) => PasteLastPlan::EndAndPutOnClipboard,
-        (true, TrayIconState::Transcribing) => PasteLastPlan::PutOnClipboardWhenReady,
-        _ => PasteLastPlan::AsToday,
+/// Decides what "Copy Last Transcript" does in this phase of a dictation.
+pub fn copy_last_plan(phase: TrayIconState) -> CopyLastPlan {
+    match phase {
+        TrayIconState::Recording => CopyLastPlan::EndAndPutOnClipboard,
+        TrayIconState::Transcribing => CopyLastPlan::PutOnClipboardWhenReady,
+        TrayIconState::Idle => CopyLastPlan::CopyNow,
     }
 }
 
-/// Why a dictation's text goes on the clipboard instead of waiting for a
-/// service.
+/// What "Paste Last Transcript" does when DanyWhere receives it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PasteLastPlan {
+    /// Paste the last dictation (or leave it on the clipboard where pasting
+    /// is off), as always.
+    Deliver,
+    /// Without Accessibility, where its combination can't be the service's
+    /// shortcut (`insert_service::paste_last_is_service_shortcut`): as
+    /// before, it does what "Copy Last Transcript" does.
+    Copy,
+}
+
+/// Decides what "Paste Last Transcript" does; `waits_for_service` is whether
+/// dictations wait for the "Insert Last Dictation" service.
+pub fn paste_last_plan(waits_for_service: bool) -> PasteLastPlan {
+    if waits_for_service {
+        PasteLastPlan::Copy
+    } else {
+        PasteLastPlan::Deliver
+    }
+}
+
+/// Why a dictation's text goes on the clipboard instead of being pasted or
+/// waiting for a service.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ClipboardReason {
-    /// "Paste Last Transcript" asked for it during the dictation.
-    PasteLast,
+    /// "Copy Last Transcript" asked for it during the dictation.
+    CopyLast,
     /// The app in front didn't know the dictation shortcut
     /// ([`SecondPress::KeepAndCopy`]).
     AppMissedShortcut { app: String },
@@ -195,24 +221,24 @@ impl ClipboardRequest {
             .unwrap_or_else(std::sync::PoisonError::into_inner)
     }
 
-    /// "Paste Last Transcript" asks for the dictation of `session`.
+    /// "Copy Last Transcript" asks for the dictation of `session`.
     pub fn request(&self, session: u64) {
-        *self.lock() = Some((session, ClipboardReason::PasteLast));
+        *self.lock() = Some((session, ClipboardReason::CopyLast));
     }
 
     /// The app in front of the dictation of `session` doesn't know the
-    /// shortcut. Leaves a "Paste Last Transcript" request of the same
+    /// shortcut. Leaves a "Copy Last Transcript" request of the same
     /// dictation as it is.
     pub fn request_for_missed_shortcut(&self, session: u64, app: String) {
         let mut requested = self.lock();
-        if *requested != Some((session, ClipboardReason::PasteLast)) {
+        if *requested != Some((session, ClipboardReason::CopyLast)) {
             *requested = Some((session, ClipboardReason::AppMissedShortcut { app }));
         }
     }
 
     /// An app that knows the shortcut came to the front: its service will
     /// insert the text, so a request made for an earlier app is withdrawn.
-    /// A "Paste Last Transcript" request stays.
+    /// A "Copy Last Transcript" request stays.
     pub fn withdraw_missed_shortcut(&self, session: u64) {
         let mut requested = self.lock();
         if matches!(
@@ -222,6 +248,15 @@ impl ClipboardRequest {
         ) {
             *requested = None;
         }
+    }
+
+    /// Whether "Copy Last Transcript" asked for the dictation of `session`,
+    /// which then is not pasted; the request stays for [`Self::take`].
+    pub fn copy_requested(&self, session: u64) -> bool {
+        matches!(
+            &*self.lock(),
+            Some((requested_session, ClipboardReason::CopyLast)) if *requested_session == session
+        )
     }
 
     /// Why the dictation of `session` goes on the clipboard, if it does; the
@@ -416,39 +451,53 @@ fn reconcile_release(app: &AppHandle) {
 }
 
 // ---------------------------------------------------------------------------
-// "Paste Last Transcript" during a dictation
+// "Copy Last Transcript", and "Paste Last Transcript" where DanyWhere gets it
 // ---------------------------------------------------------------------------
 
-/// The dictation whose text "Paste Last Transcript" put on the clipboard.
+/// The dictation whose text "Copy Last Transcript" put on the clipboard.
 static CLIPBOARD_REQUEST: ClipboardRequest = ClipboardRequest::new();
 
-/// "Paste Last Transcript" was pressed; `session` is the current recording
-/// session. During a dictation without Accessibility it ends the recording
-/// and has the text put on the clipboard once it's ready; otherwise it
-/// delivers the last dictation as always.
-pub fn paste_last_transcript(app: &AppHandle, session: u64) {
-    let settings = crate::settings::get_settings(app);
-    match paste_last_plan(
-        waits_for_service(&settings),
-        crate::tray::dictation_phase(app),
-    ) {
-        PasteLastPlan::AsToday => crate::delivery::deliver_last_transcript(app),
-        PasteLastPlan::EndAndPutOnClipboard => {
-            info!("Paste Last Transcript: ending the recording; its text goes on the clipboard.");
+/// "Copy Last Transcript" was pressed; `session` is the current recording
+/// session. During a dictation it ends the recording and has the text put
+/// on the clipboard once it's ready, instead of pasted or kept for a
+/// service; otherwise it puts the last dictation on the clipboard.
+pub fn copy_last_transcript(app: &AppHandle, session: u64) {
+    match copy_last_plan(crate::tray::dictation_phase(app)) {
+        CopyLastPlan::CopyNow => crate::delivery::copy_last_transcript_now(app),
+        CopyLastPlan::EndAndPutOnClipboard => {
+            info!("Copy Last Transcript: ending the recording; its text goes on the clipboard.");
             CLIPBOARD_REQUEST.request(session);
             if let Some(coordinator) = app.try_state::<crate::TranscriptionCoordinator>() {
                 coordinator.finish_recording();
             }
         }
-        PasteLastPlan::PutOnClipboardWhenReady => {
-            info!("Paste Last Transcript: the dictation's text goes on the clipboard once ready.");
+        CopyLastPlan::PutOnClipboardWhenReady => {
+            info!("Copy Last Transcript: the dictation's text goes on the clipboard once ready.");
             CLIPBOARD_REQUEST.request(session);
         }
     }
 }
 
+/// "Paste Last Transcript" reached DanyWhere; `session` as above. Without
+/// Accessibility that happens only where its combination can't be the
+/// service's shortcut, and it copies as before; otherwise it delivers the
+/// last dictation as always.
+pub fn paste_last_transcript(app: &AppHandle, session: u64) {
+    let settings = crate::settings::get_settings(app);
+    match paste_last_plan(waits_for_service(&settings)) {
+        PasteLastPlan::Deliver => crate::delivery::deliver_last_transcript(app),
+        PasteLastPlan::Copy => copy_last_transcript(app, session),
+    }
+}
+
+/// Whether "Copy Last Transcript" asked for the text of the dictation of
+/// `session`, which then goes on the clipboard instead of being pasted.
+pub fn copies_instead_of_pasting(session: u64) -> bool {
+    CLIPBOARD_REQUEST.copy_requested(session)
+}
+
 /// Called with a finished dictation's text: puts it on the clipboard if
-/// "Paste Last Transcript" asked for it during this `session`, or the app in
+/// "Copy Last Transcript" asked for it during this `session`, or the app in
 /// front didn't know the shortcut; returns why when it did.
 pub fn put_on_clipboard_if_requested(
     app: &AppHandle,
@@ -470,13 +519,13 @@ pub fn put_on_clipboard_if_requested(
     }
 }
 
-/// The overlay after a dictation put on the clipboard. For "Paste Last
+/// The overlay after a dictation put on the clipboard. For "Copy Last
 /// Transcript" the "on the clipboard" notice, or nothing when the user
 /// switched notices off; for an app that didn't know the shortcut a notice
 /// that names it, since restarting it is what helps.
 pub fn show_on_clipboard_notice(app: &AppHandle, reason: &ClipboardReason) {
     match reason {
-        ClipboardReason::PasteLast => {
+        ClipboardReason::CopyLast => {
             let settings = crate::settings::get_settings(app);
             match crate::delivery::clipboard_notice_duration(&settings) {
                 Some(duration) => crate::overlay::show_clipboard_notice(app, duration),
@@ -663,12 +712,12 @@ mod tests {
     }
 
     #[test]
-    fn a_paste_last_request_outlives_app_switches() {
+    fn a_copy_last_request_outlives_app_switches() {
         let request = ClipboardRequest::new();
         request.request(5);
         request.withdraw_missed_shortcut(5);
         request.request_for_missed_shortcut(5, "iTerm2".to_string());
-        assert_eq!(request.take(5), Some(ClipboardReason::PasteLast));
+        assert_eq!(request.take(5), Some(ClipboardReason::CopyLast));
     }
 
     #[test]
@@ -719,37 +768,58 @@ mod tests {
     }
 
     #[test]
-    fn paste_last_during_a_recording_ends_it_onto_the_clipboard() {
+    fn copy_last_during_a_recording_ends_it_onto_the_clipboard() {
         assert_eq!(
-            paste_last_plan(true, TrayIconState::Recording),
-            PasteLastPlan::EndAndPutOnClipboard
+            copy_last_plan(TrayIconState::Recording),
+            CopyLastPlan::EndAndPutOnClipboard
         );
         assert_eq!(
-            paste_last_plan(true, TrayIconState::Transcribing),
-            PasteLastPlan::PutOnClipboardWhenReady
+            copy_last_plan(TrayIconState::Transcribing),
+            CopyLastPlan::PutOnClipboardWhenReady
         );
     }
 
     #[test]
-    fn paste_last_otherwise_works_as_before() {
-        assert_eq!(
-            paste_last_plan(true, TrayIconState::Idle),
-            PasteLastPlan::AsToday
-        );
-        for phase in [
-            TrayIconState::Idle,
-            TrayIconState::Recording,
-            TrayIconState::Transcribing,
-        ] {
-            assert_eq!(paste_last_plan(false, phase), PasteLastPlan::AsToday);
-        }
+    fn copy_last_otherwise_copies_the_last_dictation() {
+        assert_eq!(copy_last_plan(TrayIconState::Idle), CopyLastPlan::CopyNow);
+    }
+
+    #[test]
+    fn paste_last_that_reaches_danywhere_without_accessibility_copies() {
+        // Only where its combination can't be the service's shortcut.
+        assert_eq!(paste_last_plan(true), PasteLastPlan::Copy);
+    }
+
+    #[test]
+    fn paste_last_otherwise_delivers_as_before() {
+        assert_eq!(paste_last_plan(false), PasteLastPlan::Deliver);
+    }
+
+    #[test]
+    fn a_copy_request_keeps_its_dictation_from_being_pasted() {
+        let request = ClipboardRequest::new();
+        assert!(!request.copy_requested(5), "nothing requested");
+        request.request(5);
+        assert!(request.copy_requested(5));
+        assert!(!request.copy_requested(6), "another dictation");
+        // Asking doesn't use the request up.
+        assert_eq!(request.take(5), Some(ClipboardReason::CopyLast));
+        assert!(!request.copy_requested(5), "used up");
+    }
+
+    #[test]
+    fn a_missed_shortcut_never_keeps_a_dictation_from_being_pasted() {
+        // That happens only without Accessibility, where nothing is pasted.
+        let request = ClipboardRequest::new();
+        request.request_for_missed_shortcut(5, "iTerm2".to_string());
+        assert!(!request.copy_requested(5));
     }
 
     #[test]
     fn a_clipboard_request_is_taken_once_by_its_dictation() {
         let request = ClipboardRequest::new();
         request.request(5);
-        assert_eq!(request.take(5), Some(ClipboardReason::PasteLast));
+        assert_eq!(request.take(5), Some(ClipboardReason::CopyLast));
         assert_eq!(request.take(5), None, "used up");
     }
 
@@ -760,7 +830,7 @@ mod tests {
         request.request(5);
         // An earlier dictation finishing late leaves the request alone.
         assert_eq!(request.take(4), None);
-        assert_eq!(request.take(5), Some(ClipboardReason::PasteLast));
+        assert_eq!(request.take(5), Some(ClipboardReason::CopyLast));
         // A request whose dictation ended without text is not used by the next.
         request.request(6);
         assert_eq!(request.take(7), None);

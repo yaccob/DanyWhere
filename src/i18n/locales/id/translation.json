@@ -68,8 +68,8 @@
       },
       "accessibility": {
         "skip": "Lanjutkan tanpa Aksesibilitas",
-        "skipHint": "Jika organisasi Anda memblokir izin ini: dikte menunggu hingga Anda menyisipkannya dengan ⌃⌥⌘V, dan pintasan tidak dapat menggunakan tombol fn.",
-        "skipped": "Dilewati — sisipkan dikte dengan ⌃⌥⌘V",
+        "skipHint": "Jika organisasi Anda memblokir izin ini: dikte menunggu hingga Anda menyisipkannya dengan ⌃⇧V, dan pintasan tidak dapat menggunakan tombol fn.",
+        "skipped": "Dilewati — sisipkan dikte dengan ⌃⇧V",
         "shortcutsReset": "Beberapa pintasan memerlukan Aksesibilitas dan telah diatur ulang ke default.",
         "name": "Aksesibilitas",
         "why": "Agar pintasan Anda berfungsi di semua aplikasi, dan Handy dapat mengetik teks di tempat kursor Anda berada."
@@ -361,7 +361,11 @@
           },
           "paste_last_transcript": {
             "name": "Tempel transkripsi terakhir",
-            "description": "Menempelkan transkripsi terakhir di posisi kursor saat ini, misalnya jika tidak sampai karena tidak ada kolom teks yang fokus. Tanpa Aksesibilitas, transkripsi disalin ke papan klip, untuk aplikasi tempat Sisipkan dikte terakhir tidak berfungsi, seperti Terminal."
+            "description": "Menempelkan transkripsi terakhir di posisi kursor saat ini, misalnya jika tidak sampai karena tidak ada kolom teks yang fokus. Tanpa Aksesibilitas, layanan macOS menyisipkannya dan lebih dulu mengakhiri dikte yang sedang berjalan; aplikasi yang sudah terbuka baru menerapkan pintasan yang diubah setelah dimulai ulang."
+          },
+          "copy_last_transcript": {
+            "name": "Salin transkripsi terakhir",
+            "description": "Menyalin transkripsi terakhir ke papan klip, misalnya untuk aplikasi yang tidak bisa disisipi. Selama dikte, pintasan ini mengakhiri dikte dan menaruh teksnya di papan klip segera setelah siap."
           },
           "cycle_word_list": {
             "name": "Ganti Daftar Kata",
@@ -409,16 +413,12 @@
         }
       },
       "insertService": {
-        "title": "Sisipkan dikte terakhir",
-        "description": "Tanpa Aksesibilitas, dikte menunggu hingga Anda menyisipkannya dengan pintasan ini, di aplikasi apa pun yang mendukung layanan macOS. Aplikasi yang sudah terbuka saat Anda mengubahnya baru memakainya setelah dimulai ulang.",
-        "none": "Tidak ada pintasan",
         "invalid": "Gunakan ⌘ atau ⌃ dengan huruf, angka, atau tanda baca",
-        "conflict": "{{name}} sudah memakai pintasan ini",
-        "failed": "Pintasan tidak dapat diatur: {{error}}"
+        "conflict": "{{name}} sudah memakai pintasan ini"
       },
       "dictationKeyInserts": {
         "label": "Pintasan dikte juga menyisipkan",
-        "description": "Tekan pintasan dikte sekali lagi untuk mengakhiri dikte dan menyisipkannya segera setelah siap, di aplikasi yang mendukung layanan macOS. Aplikasi yang sudah terbuka baru menerapkannya setelah dimulai ulang. Jika tidak ada yang bisa disisipkan, gunakan Tempel transkripsi terakhir."
+        "description": "Tekan pintasan dikte sekali lagi untuk mengakhiri dikte dan menyisipkannya segera setelah siap, di aplikasi yang mendukung layanan macOS. Aplikasi yang sudah terbuka baru menerapkannya setelah dimulai ulang. Jika tidak ada yang bisa disisipkan, gunakan Salin transkripsi terakhir."
       },
       "dictationServiceWhenIdle": {
         "title": "Saat tidak ada yang direkam",

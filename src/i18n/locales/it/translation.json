@@ -68,8 +68,8 @@
       },
       "accessibility": {
         "skip": "Continua senza Accessibilità",
-        "skipHint": "Se la tua organizzazione blocca questo permesso: una dettatura attende finché non la inserisci con ⌃⌥⌘V, e le scorciatoie non possono usare il tasto fn.",
-        "skipped": "Saltato — inserisci le dettature con ⌃⌥⌘V",
+        "skipHint": "Se la tua organizzazione blocca questo permesso: una dettatura attende finché non la inserisci con ⌃⇧V, e le scorciatoie non possono usare il tasto fn.",
+        "skipped": "Saltato — inserisci le dettature con ⌃⇧V",
         "shortcutsReset": "Alcune scorciatoie richiedono l'Accessibilità e sono state ripristinate ai valori predefiniti.",
         "name": "Accessibilità",
         "why": "Così la tua scorciatoia funziona in ogni app e Handy può scrivere il testo dove si trova il cursore."
@@ -361,7 +361,11 @@
           },
           "paste_last_transcript": {
             "name": "Incolla l'ultima trascrizione",
-            "description": "Incolla l'ultima trascrizione dove si trova ora il cursore, ad esempio se non è arrivata perché nessun campo di testo aveva il focus. Senza Accessibilità viene copiata negli appunti, per le app in cui «Inserisci l'ultima dettatura» non funziona, come Terminale."
+            "description": "Incolla l'ultima trascrizione dove si trova ora il cursore, ad esempio se non è arrivata perché nessun campo di testo aveva il focus. Senza Accessibilità la inserisce un servizio di macOS, che prima termina la dettatura in corso; le app già aperte applicano una scorciatoia modificata dopo un riavvio."
+          },
+          "copy_last_transcript": {
+            "name": "Copia l'ultima trascrizione",
+            "description": "Copia l'ultima trascrizione negli appunti, ad esempio per le app in cui non si può inserire. Durante una dettatura la termina e mette il testo negli appunti non appena è pronto."
           },
           "cycle_word_list": {
             "name": "Cambia elenco di parole",
@@ -409,16 +413,12 @@
         }
       },
       "insertService": {
-        "title": "Inserisci l'ultima dettatura",
-        "description": "Senza Accessibilità una dettatura attende finché non la inserisci con questa scorciatoia, in qualsiasi app che supporta i servizi di macOS. Le app già aperte quando la cambi la adottano solo dopo un riavvio.",
-        "none": "Nessuna scorciatoia",
         "invalid": "Usa ⌘ o ⌃ con una lettera, una cifra o un segno di punteggiatura",
-        "conflict": "«{{name}}» usa già questa scorciatoia",
-        "failed": "Impossibile impostare la scorciatoia: {{error}}"
+        "conflict": "«{{name}}» usa già questa scorciatoia"
       },
       "dictationKeyInserts": {
         "label": "La scorciatoia di dettatura inserisce anche",
-        "description": "Premi di nuovo la scorciatoia di dettatura per terminare la dettatura e inserirla non appena è pronta, nelle app che supportano i servizi di macOS. Le app già aperte lo applicano dopo un riavvio. Dove non si può inserire nulla, usa «Incolla l'ultima trascrizione»."
+        "description": "Premi di nuovo la scorciatoia di dettatura per terminare la dettatura e inserirla non appena è pronta, nelle app che supportano i servizi di macOS. Le app già aperte lo applicano dopo un riavvio. Dove non si può inserire nulla, usa «Copia l'ultima trascrizione»."
       },
       "dictationServiceWhenIdle": {
         "title": "Quando non si sta registrando",
