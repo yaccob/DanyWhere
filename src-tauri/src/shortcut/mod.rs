@@ -1352,6 +1352,8 @@ pub fn add_post_process_prompt(
 
     settings.post_process_prompts.push(new_prompt.clone());
     settings::write_settings(&app, settings);
+    // DanyWhere: the warning about prompts with old parts.
+    crate::prompt_frame::prompts_changed(&app);
 
     Ok(new_prompt)
 }
@@ -1374,6 +1376,8 @@ pub fn update_post_process_prompt(
         existing_prompt.name = name;
         existing_prompt.prompt = prompt;
         settings::write_settings(&app, settings);
+        // DanyWhere: the warning about prompts with old parts.
+        crate::prompt_frame::prompts_changed(&app);
         Ok(())
     } else {
         Err(format!("Prompt with id '{}' not found", id))
@@ -1405,6 +1409,8 @@ pub fn delete_post_process_prompt(app: AppHandle, id: String) -> Result<(), Stri
     }
 
     settings::write_settings(&app, settings);
+    // DanyWhere: the warning about prompts with old parts.
+    crate::prompt_frame::prompts_changed(&app);
     Ok(())
 }
 

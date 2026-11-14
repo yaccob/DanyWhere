@@ -34,6 +34,8 @@ pub enum NoticeSource {
     Dictation,
     File,
     Model,
+    /// DanyWhere: the post-processing prompts (`prompt_frame`).
+    Prompts,
 }
 
 /// The frontend maps each code to its text in `src/lib/notices.ts`.
@@ -58,6 +60,10 @@ pub enum NoticeCode {
     /// services the dictation shortcuts, so the second press couldn't insert;
     /// the text went on the clipboard. Detail: the app's name.
     AppMissedShortcut,
+    /// DanyWhere: prompts still have `${output}` or `<transcript>` tags,
+    /// which the fixed frame makes unnecessary (`prompt_frame`). Detail:
+    /// their names.
+    OutdatedPrompts,
 }
 
 impl NoticeCode {
@@ -74,9 +80,10 @@ impl NoticeCode {
             | Self::NoModelSelected
             | Self::FileTranscriptionFailed
             | Self::HistoryPostProcessFailed => NoticeLevel::Error,
-            Self::PostProcessFailed | Self::FilePostProcessFailed | Self::AppMissedShortcut => {
-                NoticeLevel::Warning
-            }
+            Self::PostProcessFailed
+            | Self::FilePostProcessFailed
+            | Self::AppMissedShortcut
+            | Self::OutdatedPrompts => NoticeLevel::Warning,
         }
     }
 
@@ -97,6 +104,7 @@ impl NoticeCode {
             Self::FilePostProcessFailed => &strings.file_post_process_failed_title,
             Self::HistoryPostProcessFailed => &strings.history_post_process_failed_title,
             Self::AppMissedShortcut => &strings.app_missed_shortcut_title,
+            Self::OutdatedPrompts => &strings.outdated_prompts_title,
         }
     }
 }
@@ -130,7 +138,7 @@ impl Notice {
 pub struct NoticesChanged {
     /// Every active notice, newest first.
     pub notices: Vec<Notice>,
-    /// `None` when a notice was cleared.
+    /// `None` when a notice was cleared (DanyWhere: or updated in place).
     pub raised: Option<Notice>,
 }
 
@@ -155,6 +163,21 @@ fn remove(active: &mut Vec<Notice>, source: NoticeSource, code: Option<NoticeCod
     let before = active.len();
     active.retain(|notice| notice.source != source || code.is_some_and(|code| notice.code != code));
     active.len() != before
+}
+
+/// DanyWhere: replaces the active notice that has the same source and code,
+/// in its place. Returns whether there was one.
+fn replace_active(active: &mut [Notice], notice: Notice) -> bool {
+    match active
+        .iter_mut()
+        .find(|old| old.source == notice.source && old.code == notice.code)
+    {
+        Some(old) => {
+            *old = notice;
+            true
+        }
+        None => false,
+    }
 }
 
 /// The notice the tray shows: the newest at the highest level.
@@ -195,6 +218,24 @@ pub fn raise_without_overlay(app: &AppHandle, notice: Notice) {
         publish(app, &active, Some(notice));
     }
     tray::refresh_tray_icon(app);
+}
+
+/// DanyWhere: updates the active notice with the same source and code in
+/// place, without popping it up again. Nothing happens without one, e.g.
+/// after the user dismissed it.
+pub fn update_if_active(app: &AppHandle, notice: Notice) {
+    let updated = {
+        let store = app.state::<NoticeStore>();
+        let mut active = store.lock();
+        let updated = replace_active(&mut active, notice);
+        if updated {
+            publish(app, &active, None);
+        }
+        updated
+    };
+    if updated {
+        tray::refresh_tray_icon(app);
+    }
 }
 
 /// Call when `source` next succeeds, before raising anything about that run.
@@ -307,6 +348,26 @@ mod tests {
         let shown = Some(NoticeCode::PasteFailed);
         assert!(remove(&mut active, NoticeSource::Dictation, shown));
         assert!(active.is_empty());
+    }
+
+    #[test]
+    fn an_update_replaces_only_an_active_notice_with_that_code_in_its_place() {
+        let mut active = vec![
+            dictation(NoticeCode::PasteFailed),
+            file(NoticeCode::FileTranscriptionFailed),
+        ];
+        assert!(!replace_active(
+            &mut active,
+            file(NoticeCode::FilePostProcessFailed)
+        ));
+        assert_eq!(active[1], file(NoticeCode::FileTranscriptionFailed));
+
+        let updated =
+            file(NoticeCode::FileTranscriptionFailed).with_detail("new detail".to_string());
+        assert!(replace_active(&mut active, updated.clone()));
+        assert_eq!(active, vec![dictation(NoticeCode::PasteFailed), updated]);
+
+        assert!(!replace_active(&mut [], dictation(NoticeCode::PasteFailed)));
     }
 
     #[test]

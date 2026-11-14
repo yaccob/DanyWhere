@@ -31,6 +31,7 @@ mod paste_tx;
 pub mod portable;
 #[cfg(target_os = "linux")]
 mod primary_selection;
+mod prompt_frame;
 mod secure_input;
 mod settings;
 mod shortcut;
@@ -877,6 +878,7 @@ pub fn run(cli_args: CliArgs) {
             notices::get_active_notices,
             notices::dismiss_notice,
             notices::dismiss_overlay_notice,
+            prompt_frame::check_prompts_for_old_parts,
         ])
         .events(collect_events![
             managers::history::HistoryUpdatePayload,

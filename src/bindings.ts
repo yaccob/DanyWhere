@@ -1286,6 +1286,15 @@ async dismissNotice(source: NoticeSource, code: NoticeCode) : Promise<void> {
  */
 async dismissOverlayNotice() : Promise<void> {
     await TAURI_INVOKE("dismiss_overlay_notice");
+},
+/**
+ * At startup: raises the warning, or clears it. The frontend calls this
+ * once its notices listen, so the warning also pops up in the window; after
+ * a dismissal it comes back at the next start while a prompt still has old
+ * parts.
+ */
+async checkPromptsForOldParts() : Promise<void> {
+    await TAURI_INVOKE("check_prompts_for_old_parts");
 }
 }
 
@@ -1763,7 +1772,13 @@ export type NoticeCode = "TranscriptionFailed" | "PasteFailed" | "PasteBlockedEl
  * services the dictation shortcuts, so the second press couldn't insert;
  * the text went on the clipboard. Detail: the app's name.
  */
-"AppMissedShortcut"
+"AppMissedShortcut" | 
+/**
+ * DanyWhere: prompts still have `${output}` or `<transcript>` tags,
+ * which the fixed frame makes unnecessary (`prompt_frame`). Detail:
+ * their names.
+ */
+"OutdatedPrompts"
 export type NoticeLevel = 
 /**
  * Nothing came out, or Handy can't do its job.
@@ -1778,14 +1793,18 @@ export type NoticeLevel =
  * overlay: a file job finishes while the user is doing something else, and
  * `Model` is a switch the user made in Settings or the tray.
  */
-export type NoticeSource = "dictation" | "file" | "model"
+export type NoticeSource = "dictation" | "file" | "model" | 
+/**
+ * DanyWhere: the post-processing prompts (`prompt_frame`).
+ */
+"prompts"
 export type NoticesChanged = { 
 /**
  * Every active notice, newest first.
  */
 notices: Notice[]; 
 /**
- * `None` when a notice was cleared.
+ * `None` when a notice was cleared (DanyWhere: or updated in place).
  */
 raised: Notice | null }
 export type OverlayPosition = "top" | "bottom"

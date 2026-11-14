@@ -71,6 +71,13 @@ const NOTICE_DISPLAY: Record<NoticeCode, NoticeDisplay> = {
       t("errors.appMissedShortcut", { app: detail ?? "" }),
     detailInExplanation: true,
   },
+  // DanyWhere: the detail names the prompts (src-tauri/src/prompt_frame.rs).
+  OutdatedPrompts: {
+    title: "errors.outdatedPromptsTitle",
+    explanation: (t, detail) =>
+      t("errors.outdatedPrompts", { prompts: detail ?? "" }),
+    detailInExplanation: true,
+  },
 };
 
 export const noticeDisplay = (code: NoticeCode) => NOTICE_DISPLAY[code];

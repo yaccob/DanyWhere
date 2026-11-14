@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import { RefreshCcw } from "lucide-react";
 import { commands, type PostProcessApiFormat } from "@/bindings";
 
@@ -23,6 +23,8 @@ import { ShortcutInput } from "../ShortcutInput";
 import { useSettings } from "../../../hooks/useSettings";
 // DanyWhere: context from earlier dictations in the same window.
 import { DictationContextSettings } from "../dictation-context/DictationContextSettings";
+// DanyWhere: the fixed frame around every prompt.
+import { PromptFrameText, PromptFrameTip } from "./PromptFrame";
 
 const PostProcessingSettingsApiComponent: React.FC = () => {
   const { t } = useTranslation();
@@ -290,9 +292,8 @@ const PostProcessingSettingsPromptsComponent: React.FC = () => {
   return (
     <SettingContainer
       title={t("settings.postProcessing.prompts.selectedPrompt.title")}
-      description={t(
-        "settings.postProcessing.prompts.selectedPrompt.description",
-      )}
+      // DanyWhere: a prompt no longer needs ${output}.
+      description={t("settings.postProcessing.prompts.frame.description")}
       descriptionMode="tooltip"
       layout="stacked"
       grouped={true}
@@ -348,19 +349,17 @@ const PostProcessingSettingsPromptsComponent: React.FC = () => {
               <label className="text-sm font-semibold">
                 {t("settings.postProcessing.prompts.promptInstructions")}
               </label>
+              {/* DanyWhere: the fixed frame before the instructions */}
+              <PromptFrameText />
               <Textarea
                 value={draftText}
                 onChange={(e) => setDraftText(e.target.value)}
                 placeholder={t(
-                  "settings.postProcessing.prompts.promptInstructionsPlaceholder",
+                  "settings.postProcessing.prompts.frame.placeholder",
                 )}
               />
-              <p className="text-xs text-ink-3">
-                <Trans
-                  i18nKey="settings.postProcessing.prompts.promptTip"
-                  components={{ code: <code /> }}
-                />
-              </p>
+              {/* DanyWhere */}
+              <PromptFrameTip prompt={draftText} />
             </div>
 
             <div className="flex gap-2 pt-2">
@@ -415,19 +414,17 @@ const PostProcessingSettingsPromptsComponent: React.FC = () => {
               <label className="text-sm font-semibold">
                 {t("settings.postProcessing.prompts.promptInstructions")}
               </label>
+              {/* DanyWhere: the fixed frame before the instructions */}
+              <PromptFrameText />
               <Textarea
                 value={draftText}
                 onChange={(e) => setDraftText(e.target.value)}
                 placeholder={t(
-                  "settings.postProcessing.prompts.promptInstructionsPlaceholder",
+                  "settings.postProcessing.prompts.frame.placeholder",
                 )}
               />
-              <p className="text-xs text-ink-3">
-                <Trans
-                  i18nKey="settings.postProcessing.prompts.promptTip"
-                  components={{ code: <code /> }}
-                />
-              </p>
+              {/* DanyWhere */}
+              <PromptFrameTip prompt={draftText} />
             </div>
 
             <div className="flex gap-2 pt-2">

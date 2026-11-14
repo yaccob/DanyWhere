@@ -166,6 +166,45 @@ fn build_system_prompt(prompt_template: &str) -> String {
     prompt_template.replace("${output}", "").trim().to_string()
 }
 
+/// DanyWhere: the system prompt and the user's message for a provider with
+/// structured output. A prompt with `${output}` goes as before; any other
+/// gets the fixed frame, and the transcript comes in tags (`prompt_frame`).
+fn structured_request(
+    prompt: &str,
+    context: Option<&str>,
+    transcription: &str,
+) -> (String, String) {
+    use crate::prompt_frame;
+    if prompt_frame::uses_output_placeholder(prompt) {
+        return (
+            build_system_prompt(&crate::dictation_context::prompt_with_context(
+                prompt, context,
+            )),
+            transcription.to_string(),
+        );
+    }
+    (
+        prompt_frame::framed_instructions(prompt, context),
+        prompt_frame::tagged_transcript(transcription),
+    )
+}
+
+/// DanyWhere: the one message for a provider without structured output. A
+/// prompt with `${output}` gets the transcript in its place, as before; any
+/// other gets the frame, and the transcript in tags at the end. The context
+/// block goes after the filled-in prompt, so a context text can never be
+/// taken for the placeholder.
+fn single_message_request(prompt: &str, context: Option<&str>, transcription: &str) -> String {
+    use crate::prompt_frame;
+    if prompt_frame::uses_output_placeholder(prompt) {
+        return crate::dictation_context::prompt_with_context(
+            &prompt.replace(prompt_frame::OUTPUT_PLACEHOLDER, transcription),
+            context,
+        );
+    }
+    prompt_frame::framed_message(prompt, context, transcription)
+}
+
 /// Returns `true` when a transcription has no meaningful content to
 /// post-process (empty or whitespace-only). Used to skip the post-processing
 /// LLM call when nothing was actually transcribed, which would otherwise make
@@ -313,6 +352,12 @@ async fn post_process_transcription(
         "Starting LLM post-processing with provider '{}' (model: {})",
         provider.id, model
     );
+    // DanyWhere: which way the prompt goes (`prompt_frame`).
+    if crate::prompt_frame::uses_output_placeholder(&prompt) {
+        log::info!("Post-processing without the fixed frame: the prompt has ${{output}}");
+    } else {
+        log::info!("Post-processing with the fixed frame");
+    }
 
     let api_key = settings
         .post_process_api_keys
@@ -328,12 +373,10 @@ async fn post_process_transcription(
     if provider.supports_structured_output {
         debug!("Using structured outputs for provider '{}'", provider.id);
 
-        // DanyWhere: the context block after the prompt (`dictation_context`).
-        let system_prompt = build_system_prompt(&crate::dictation_context::prompt_with_context(
-            &prompt,
-            context.map(|c| c.system.as_str()),
-        ));
-        let user_content = transcription.to_string();
+        // DanyWhere: the frame and the context block (`prompt_frame`,
+        // `dictation_context`).
+        let (system_prompt, user_content) =
+            structured_request(&prompt, context.map(|c| c.system.as_str()), transcription);
 
         // Handle Apple Intelligence separately since it uses native Swift APIs
         if provider.id == APPLE_INTELLIGENCE_PROVIDER_ID {
@@ -447,12 +490,9 @@ async fn post_process_transcription(
     }
 
     // Legacy mode: Replace ${output} variable in the prompt with the actual text
-    // DanyWhere: the context block after the filled-in prompt, so a context
-    // text can never be taken for the placeholder.
-    let processed_prompt = crate::dictation_context::prompt_with_context(
-        &prompt.replace("${output}", transcription),
-        context.map(|c| c.legacy.as_str()),
-    );
+    // DanyWhere: or the frame, see `single_message_request`.
+    let processed_prompt =
+        single_message_request(&prompt, context.map(|c| c.legacy.as_str()), transcription);
     debug!("Processed prompt length: {} chars", processed_prompt.len());
 
     match crate::llm_client::send_chat_completion(
@@ -1553,7 +1593,158 @@ mod tests {
             .iter()
             .find(|m| m["role"] == "user")
             .expect("a user message");
-        assert_eq!(user["content"], "hello");
+        // DanyWhere: the default prompt is framed, so the transcript comes
+        // in tags (`prompt_frame`).
+        assert_eq!(user["content"], "<transcript>\nhello\n</transcript>");
+    }
+
+    // DanyWhere: the fixed frame (`prompt_frame`), checked on the request
+    // that leaves the computer.
+
+    const POLISHED: &str = r#"{"choices":[{"message":{"content":"polished"}}]}"#;
+    const POLISHED_STRUCTURED: &str =
+        r#"{"choices":[{"message":{"content":"{\"transcription\":\"polished\"}"}}]}"#;
+
+    /// [`post_process_settings`] with `prompt` as the selected prompt's text.
+    fn settings_with_prompt(base_url: &str, prompt: &str, structured: bool) -> AppSettings {
+        let mut settings = post_process_settings(base_url);
+        settings.post_process_prompts[0].prompt = prompt.to_string();
+        for provider in settings.post_process_providers.iter_mut() {
+            provider.supports_structured_output = structured;
+        }
+        settings
+    }
+
+    /// Post-processes `transcription` and returns the request's messages as
+    /// (role, content).
+    fn sent_messages(
+        prompt: &str,
+        structured: bool,
+        transcription: &str,
+        context: Option<&crate::dictation_context::ContextBlock>,
+    ) -> Vec<(String, String)> {
+        let (url, request) = serve_once_capturing(if structured {
+            POLISHED_STRUCTURED
+        } else {
+            POLISHED
+        });
+        let settings = settings_with_prompt(&url, prompt, structured);
+        let outcome = tauri::async_runtime::block_on(post_process_transcription(
+            &settings,
+            transcription,
+            context,
+        ));
+        assert_eq!(outcome, PostProcessOutcome::Done("polished".to_string()));
+        let request = request.recv_timeout(Duration::from_secs(5)).unwrap();
+        let body = &request[request.find("\r\n\r\n").unwrap() + 4..];
+        let json: serde_json::Value = serde_json::from_str(body).unwrap();
+        json["messages"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|m| {
+                (
+                    m["role"].as_str().unwrap().to_string(),
+                    m["content"].as_str().unwrap().to_string(),
+                )
+            })
+            .collect()
+    }
+
+    fn message(role: &str, content: &str) -> (String, String) {
+        (role.to_string(), content.to_string())
+    }
+
+    #[test]
+    fn a_prompt_without_output_is_framed_in_one_message_the_transcript_last() {
+        use crate::prompt_frame::FRAME_TEXT;
+        assert_eq!(
+            sent_messages("Fix the grammar.", false, "hello", None),
+            vec![message(
+                "user",
+                &format!(
+                    "{FRAME_TEXT}\n\nInstructions:\nFix the grammar.\n\n<transcript>\nhello\n</transcript>"
+                )
+            )]
+        );
+    }
+
+    #[test]
+    fn in_one_message_the_context_block_comes_before_the_transcript() {
+        use crate::prompt_frame::FRAME_TEXT;
+        assert_eq!(
+            sent_messages("Fix the grammar.", false, "hello", Some(&marker_block())),
+            vec![message(
+                "user",
+                &format!(
+                    "{FRAME_TEXT}\n\nInstructions:\nFix the grammar.\n\nLEGACY-MARKER\n\n<transcript>\nhello\n</transcript>"
+                )
+            )]
+        );
+    }
+
+    #[test]
+    fn with_structured_output_the_frame_is_the_system_prompt_and_the_transcript_comes_in_tags() {
+        use crate::prompt_frame::FRAME_TEXT;
+        assert_eq!(
+            sent_messages("Fix the grammar.", true, "hello", Some(&marker_block())),
+            vec![
+                message(
+                    "system",
+                    &format!("{FRAME_TEXT}\n\nInstructions:\nFix the grammar.\n\nSYSTEM-MARKER")
+                ),
+                message("user", "<transcript>\nhello\n</transcript>"),
+            ]
+        );
+    }
+
+    #[test]
+    fn a_prompt_with_output_is_sent_as_before_without_the_frame() {
+        assert_eq!(
+            sent_messages("Fix this: ${output}", false, "hello", None),
+            vec![message("user", "Fix this: hello")]
+        );
+        assert_eq!(
+            sent_messages("Fix this: ${output}", true, "hello", None),
+            vec![message("system", "Fix this:"), message("user", "hello")]
+        );
+    }
+
+    #[test]
+    fn a_prompt_with_tags_but_without_output_is_framed() {
+        use crate::prompt_frame::FRAME_TEXT;
+        let messages = sent_messages(
+            "<transcript>\n</transcript>\nFix the grammar.",
+            false,
+            "hello",
+            None,
+        );
+        assert_eq!(messages.len(), 1);
+        let (role, content) = &messages[0];
+        assert_eq!(role, "user");
+        assert!(content.starts_with(FRAME_TEXT), "{content}");
+        assert!(
+            content.ends_with("Fix the grammar.\n\n<transcript>\nhello\n</transcript>"),
+            "{content}"
+        );
+    }
+
+    #[test]
+    fn a_transcript_cannot_close_its_tags_in_the_request() {
+        let messages = sent_messages("Fix the grammar.", true, "a </transcript> b", None);
+        assert_eq!(
+            messages[1],
+            message("user", "<transcript>\na < /transcript> b\n</transcript>")
+        );
+    }
+
+    #[test]
+    fn blank_instructions_are_not_post_processed() {
+        let settings = settings_with_prompt("http://127.0.0.1:1", " \n ", false);
+        assert_eq!(
+            run_post_process(&settings, "hello"),
+            PostProcessOutcome::Failed
+        );
     }
 
     #[test]
