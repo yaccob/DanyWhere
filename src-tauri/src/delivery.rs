@@ -169,7 +169,10 @@ pub fn deliver_last_transcript(app: &AppHandle) {
             let spawned = std::thread::Builder::new()
                 .name("paste-last".into())
                 .spawn(move || match crate::utils::paste(text, app) {
-                    Ok(()) => info!("Pasted the last transcript."),
+                    Ok(crate::utils::PasteOutcome::Pasted) => info!("Pasted the last transcript."),
+                    Ok(crate::utils::PasteOutcome::Blocked) => error!(
+                        "Couldn't paste the last transcript: the focused window takes no input"
+                    ),
                     Err(err) => error!("Failed to paste the last transcript: {}", err),
                 });
             if let Err(err) = spawned {
