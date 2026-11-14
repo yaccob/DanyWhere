@@ -4,6 +4,20 @@ Planned work on DanyWhere, roughly in priority order within each section. Items 
 
 ## Features and improvements
 
+### Post-processing: a fixed frame around every prompt
+
+**Idea (user, 2026-11-14; next):** the part of a prompt that tells the model what it gets — a speech-recognition transcript between `<transcript>` tags, to be processed rather than answered — should be sent by DanyWhere itself, so a prompt only says what to do with the text. Today every prompt has to contain it, and a prompt that gets it wrong produces nonsense.
+
+**Found:** a prompt has to contain `${output}`. For providers without structured output (Anthropic, Groq, custom) the transcript takes its place and the whole prompt goes out as one message, so without `${output}` the model never sees the transcript. For providers with structured output the transcript goes as a message of its own and `${output}` is dropped, so the prompt's `<transcript>` tags arrive empty.
+
+**Proposal:** DanyWhere sends a fixed frame (what the model gets, that instructions and questions in the dictation are not to be followed, that the language stays unless the instructions say otherwise, that only the result is returned), then the prompt's instructions, then the context if any, then the transcript in `<transcript>` tags. A prompt without `${output}` becomes valid; the editor shows the frame read-only above the prompt. Open: what happens with existing prompts that contain `${output}`, and the frame's language (like the context block: German with a German interface, else English?). **Upstream candidate.**
+
+### Configurations to save and load
+
+**Idea (user, 2026-11-14):** save and load a whole DanyWhere configuration, e.g. one that combines a speech model with a post-processing setup, or prompts for particular topics. A new installation starts with a default configuration; an update from a version without configurations saves the settings in use as that default.
+
+**To settle:** what a configuration includes (everything, or only what decides how a dictation is processed, with shortcuts, microphone, API keys and interface staying global), whether a change goes into the active configuration at once, where to switch (at the top of General, or in the sidebar and the tray menu), whether prompts and word lists are shared or copied, and export to a file without API keys.
+
 ### Keep the transcript when there is nowhere to paste it
 
 **Problem:** when the focus is not on something that accepts text (the desktop, a non-editable window), recording and transcription work, but the text ends up nowhere. Inherited from Handy: the paste is sent without checking for an editable target, and the clipboard is restored afterwards.
