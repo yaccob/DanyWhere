@@ -684,6 +684,14 @@
         "description": "Quant de temps es mostra l'avís quan una transcripció espera que l'enganxeu o l'inseriu (p. ex. sense accessibilitat). En segons, s'admeten decimals; 0 el desactiva.",
         "unit": "s",
         "invalid": "Introdueix un nombre de segons de 0 a {{max}}."
+      },
+      "llmTimeouts": {
+        "postProcessTitle": "Límit de temps del postprocessament",
+        "postProcessDescription": "Quant pot durar el postprocessament, inclòs un segon intent. Després es fa servir la transcripció sense postprocessament. En segons sencers, de {{min}} a {{max}}.",
+        "modelListTitle": "Límit de temps de la llista de models",
+        "modelListDescription": "Quant s'espera la llista de models d'un proveïdor a Postprocessament. En segons sencers, de {{min}} a {{max}}.",
+        "unit": "s",
+        "invalid": "Introdueix un nombre sencer de segons de {{min}} a {{max}}."
       }
     },
     "postProcessing": {

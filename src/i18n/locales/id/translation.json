@@ -684,6 +684,14 @@
         "description": "Berapa lama pemberitahuan terlihat saat transkripsi menunggu untuk Anda tempel atau sisipkan (mis. tanpa Aksesibilitas). Dalam detik, desimal diperbolehkan; 0 mematikannya.",
         "unit": "dtk",
         "invalid": "Masukkan jumlah detik dari 0 sampai {{max}}."
+      },
+      "llmTimeouts": {
+        "postProcessTitle": "Batas Waktu Pascaproses",
+        "postProcessDescription": "Berapa lama pascaproses boleh berlangsung, termasuk percobaan kedua. Setelah itu transkrip digunakan tanpa pascaproses. Detik bulat dari {{min}} sampai {{max}}.",
+        "modelListTitle": "Batas Waktu Daftar Model",
+        "modelListDescription": "Berapa lama menunggu daftar model dari penyedia di Pascaproses. Detik bulat dari {{min}} sampai {{max}}.",
+        "unit": "dtk",
+        "invalid": "Masukkan detik bulat dari {{min}} sampai {{max}}."
       }
     },
     "postProcessing": {

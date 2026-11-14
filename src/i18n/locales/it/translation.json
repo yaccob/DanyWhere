@@ -684,6 +684,14 @@
         "description": "Per quanto tempo l'avviso resta visibile quando una trascrizione attende di essere incollata o inserita (ad es. senza Accessibilità). In secondi, decimali ammessi; 0 lo disattiva.",
         "unit": "s",
         "invalid": "Inserisci un numero di secondi da 0 a {{max}}."
+      },
+      "llmTimeouts": {
+        "postProcessTitle": "Limite di tempo della post-elaborazione",
+        "postProcessDescription": "Quanto può durare la post-elaborazione, compreso un secondo tentativo. Dopo, la trascrizione viene usata senza post-elaborazione. In secondi interi, da {{min}} a {{max}}.",
+        "modelListTitle": "Limite di tempo dell'elenco dei modelli",
+        "modelListDescription": "Quanto attendere l'elenco dei modelli di un provider in Post-Elaborazione. In secondi interi, da {{min}} a {{max}}.",
+        "unit": "s",
+        "invalid": "Inserisci un numero intero di secondi da {{min}} a {{max}}."
       }
     },
     "postProcessing": {

@@ -100,11 +100,6 @@ fn finish_without_text(
 
 const CANCELLATION_POLL_INTERVAL: Duration = Duration::from_millis(25);
 
-/// Deadline for the whole post-processing step, retries included. The HTTP
-/// client only bounds connecting, so an endpoint that accepts the request and
-/// never answers would otherwise hold the dictation until a proxy gives up.
-const POST_PROCESS_TIMEOUT: Duration = Duration::from_secs(60);
-
 /// Bumped per recording session, so a late paste from an earlier session
 /// doesn't reset the tray or hide the overlay of a newer one.
 static RECORDING_SESSION: AtomicU64 = AtomicU64::new(0);
@@ -224,6 +219,32 @@ enum PostProcessOutcome {
     /// The user asked for it, but it couldn't run or produced nothing, so the
     /// transcript goes out as it is.
     Failed,
+}
+
+/// DanyWhere: [`post_process_transcription`] under the time limit from the
+/// settings (Handy: a fixed 60 s). On timeout it falls back like any other
+/// failure, so the original transcription goes out.
+async fn post_process_within_time_limit(
+    settings: &AppSettings,
+    transcription: &str,
+    context: Option<&crate::dictation_context::ContextBlock>,
+) -> PostProcessOutcome {
+    let limit = crate::llm_timeouts::post_process_timeout(settings);
+    match tokio::time::timeout(
+        limit,
+        post_process_transcription(settings, transcription, context),
+    )
+    .await
+    {
+        Ok(outcome) => outcome,
+        Err(_) => {
+            warn!(
+                "Post-processing timed out after {:?}; pasting the original transcription",
+                limit
+            );
+            PostProcessOutcome::Failed
+        }
+    }
 }
 
 /// DanyWhere: `context` (earlier dictations from the same window, see
@@ -509,23 +530,14 @@ pub(crate) async fn process_transcription_output(
             crate::dictation_context::context_for(app, &settings, &selected_prompt, context)
         };
         // A reply that's blank once cleaned is no better than none.
-        let outcome = match tokio::time::timeout(
-            POST_PROCESS_TIMEOUT,
-            post_process_transcription(&settings, &final_text, context_block.as_ref()),
-        )
-        .await
-        {
-            Ok(PostProcessOutcome::Done(text)) => non_blank_post_processed_text(text)
-                .map_or(PostProcessOutcome::Failed, PostProcessOutcome::Done),
-            Ok(outcome) => outcome,
-            Err(_) => {
-                warn!(
-                    "Post-processing timed out after {:?}; pasting the original transcription",
-                    POST_PROCESS_TIMEOUT
-                );
-                PostProcessOutcome::Failed
-            }
-        };
+        let outcome =
+            match post_process_within_time_limit(&settings, &final_text, context_block.as_ref())
+                .await
+            {
+                PostProcessOutcome::Done(text) => non_blank_post_processed_text(text)
+                    .map_or(PostProcessOutcome::Failed, PostProcessOutcome::Done),
+                outcome => outcome,
+            };
         // The request was made, so the context left the computer.
         if outcome != PostProcessOutcome::Skipped {
             if let Some(block) = &context_block {
@@ -1305,8 +1317,8 @@ pub static ACTION_MAP: Lazy<HashMap<String, Arc<dyn ShortcutAction>>> = Lazy::ne
 mod tests {
     use super::{
         complete_unless_cancelled, is_blank_transcription, non_blank_post_processed_text,
-        post_process_transcription, should_use_streaming_overlay, strip_invisible_chars,
-        strip_think_block, PostProcessOutcome,
+        post_process_transcription, post_process_within_time_limit, should_use_streaming_overlay,
+        strip_invisible_chars, strip_think_block, PostProcessOutcome,
     };
     use crate::settings::{get_default_settings, AppSettings, OverlayStyle};
     use std::future;
@@ -1352,6 +1364,51 @@ mod tests {
             stream.write_all(response.as_bytes()).unwrap();
         });
         format!("http://{address}")
+    }
+
+    /// Accepts one request and never answers it, until the returned sender
+    /// is dropped. Returns the URL and that sender.
+    fn serve_never() -> (String, std::sync::mpsc::Sender<()>) {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let address = listener.local_addr().unwrap();
+        let (hold, release) = std::sync::mpsc::channel::<()>();
+        thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            let mut request = [0; 8192];
+            let _ = stream.read(&mut request);
+            // Keep the connection open without a reply.
+            let _ = release.recv();
+            drop(stream);
+        });
+        (format!("http://{address}"), hold)
+    }
+
+    #[test]
+    fn post_processing_gives_up_at_the_time_limit_from_the_settings() {
+        let (url, _hold) = serve_never();
+        let mut settings = post_process_settings(&url);
+        settings.post_process_timeout_secs = 5;
+
+        let started = std::time::Instant::now();
+        let outcome = tauri::async_runtime::block_on(async {
+            // Handy's fixed 60 s would run far past this.
+            tokio::time::timeout(
+                Duration::from_secs(15),
+                post_process_within_time_limit(&settings, "hello", None),
+            )
+            .await
+        });
+        let elapsed = started.elapsed();
+
+        assert_eq!(
+            outcome,
+            Ok(PostProcessOutcome::Failed),
+            "post-processing must give up after the 5 s from the settings"
+        );
+        assert!(
+            elapsed >= Duration::from_millis(4900) && elapsed < Duration::from_secs(10),
+            "gave up after {elapsed:?}"
+        );
     }
 
     fn run_post_process(settings: &AppSettings, transcription: &str) -> PostProcessOutcome {

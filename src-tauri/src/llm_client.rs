@@ -621,9 +621,11 @@ async fn send_anthropic_message(
 
 /// Fetch available models from an OpenAI-compatible API
 /// Returns a list of model IDs
+/// DanyWhere: `time_limit` comes from the settings (Handy: a fixed 15 s).
 pub async fn fetch_models(
     provider: &PostProcessProvider,
     api_key: String,
+    time_limit: Duration,
 ) -> Result<Vec<String>, String> {
     let base_url = provider.base_url.trim_end_matches('/');
     let url = format!("{}/models", base_url);
@@ -634,7 +636,7 @@ pub async fn fetch_models(
 
     let response = client
         .get(&url)
-        .timeout(Duration::from_secs(15))
+        .timeout(time_limit)
         .send()
         .await
         .map_err(|e| report_reqwest_error("Failed to fetch models", &e))?;
@@ -761,6 +763,39 @@ mod tests {
         });
 
         format!("http://{address}")
+    }
+
+    #[tokio::test]
+    async fn the_model_list_request_gives_up_at_the_given_time_limit() {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let (_hold, release) = tokio::sync::oneshot::channel::<()>();
+        tokio::spawn(async move {
+            let (mut stream, _) = listener.accept().await.unwrap();
+            let mut request = [0_u8; 2048];
+            let _ = stream.read(&mut request).await;
+            // Keep the connection open without a reply.
+            let _ = release.await;
+        });
+        let provider = provider("custom", &format!("http://{address}"));
+
+        let started = std::time::Instant::now();
+        let result = tokio::time::timeout(
+            // Handy's fixed 15 s would run past this.
+            Duration::from_secs(8),
+            fetch_models(&provider, String::new(), Duration::from_secs(1)),
+        )
+        .await;
+        let elapsed = started.elapsed();
+
+        assert!(
+            matches!(result, Ok(Err(_))),
+            "the request must fail after the 1 s it was given"
+        );
+        assert!(
+            elapsed < Duration::from_secs(4),
+            "gave up after {elapsed:?}"
+        );
     }
 
     #[test]

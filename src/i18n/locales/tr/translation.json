@@ -684,6 +684,14 @@
         "description": "Bir transkript yapıştırılmayı veya eklenmeyi beklediğinde (ör. Erişilebilirlik olmadan) bildirimin ne kadar süre görüneceği. Saniye cinsinden, ondalık kullanılabilir; 0 kapatır.",
         "unit": "sn",
         "invalid": "0 ile {{max}} arasında saniye girin."
+      },
+      "llmTimeouts": {
+        "postProcessTitle": "Son İşlem Zaman Sınırı",
+        "postProcessDescription": "Son işlemin, ikinci bir deneme dahil, en fazla ne kadar sürebileceği. Sonrasında transkript son işlem olmadan kullanılır. {{min}} ile {{max}} arasında tam saniye.",
+        "modelListTitle": "Model Listesi Zaman Sınırı",
+        "modelListDescription": "Son İşlem altında bir sağlayıcının model listesi için ne kadar bekleneceği. {{min}} ile {{max}} arasında tam saniye.",
+        "unit": "sn",
+        "invalid": "{{min}} ile {{max}} arasında tam saniye girin."
       }
     },
     "postProcessing": {

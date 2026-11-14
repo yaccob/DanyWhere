@@ -684,6 +684,14 @@
         "description": "Cuánto tiempo se muestra el aviso cuando una transcripción espera a que la pegues o insertes (p. ej. sin accesibilidad). En segundos, se permiten decimales; 0 lo desactiva.",
         "unit": "s",
         "invalid": "Introduce un número de segundos de 0 a {{max}}."
+      },
+      "llmTimeouts": {
+        "postProcessTitle": "Límite de tiempo del post procesamiento",
+        "postProcessDescription": "Cuánto puede tardar el post procesamiento, incluido un segundo intento. Después se usa la transcripción sin post procesamiento. En segundos enteros, de {{min}} a {{max}}.",
+        "modelListTitle": "Límite de tiempo de la lista de modelos",
+        "modelListDescription": "Cuánto se espera la lista de modelos de un proveedor en Post procesamiento. En segundos enteros, de {{min}} a {{max}}.",
+        "unit": "s",
+        "invalid": "Introduce un número entero de segundos de {{min}} a {{max}}."
       }
     },
     "postProcessing": {

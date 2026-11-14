@@ -684,6 +684,14 @@
         "description": "Durée d'affichage de l'avis lorsqu'une transcription attend que vous la colliez ou l'insériez (par ex. sans l'accessibilité). En secondes, décimales autorisées ; 0 le désactive.",
         "unit": "s",
         "invalid": "Saisissez un nombre de secondes entre 0 et {{max}}."
+      },
+      "llmTimeouts": {
+        "postProcessTitle": "Délai du post-traitement",
+        "postProcessDescription": "Durée maximale du post-traitement, nouvelle tentative comprise. Au-delà, la transcription est utilisée sans post-traitement. En secondes entières, de {{min}} à {{max}}.",
+        "modelListTitle": "Délai de la liste des modèles",
+        "modelListDescription": "Durée d'attente de la liste des modèles d'un fournisseur, sous Post-traitement. En secondes entières, de {{min}} à {{max}}.",
+        "unit": "s",
+        "invalid": "Saisissez un nombre entier de secondes entre {{min}} et {{max}}."
       }
     },
     "postProcessing": {

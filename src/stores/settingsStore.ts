@@ -164,6 +164,19 @@ const settingUpdaters: {
     commands.changePasteDelayMsSetting(value as number),
   clipboard_notice_ms: (value) =>
     commands.changeClipboardNoticeMsSetting(value as number),
+  // DanyWhere: Handy's fixed post-processing time limits as settings.
+  post_process_timeout_secs: async (value) => {
+    const result = await commands.changePostProcessTimeoutSetting(
+      value as number,
+    );
+    if (result.status === "error") throw new Error(result.error);
+  },
+  model_list_timeout_secs: async (value) => {
+    const result = await commands.changeModelListTimeoutSetting(
+      value as number,
+    );
+    if (result.status === "error") throw new Error(result.error);
+  },
   paste_delay_after_ms: (value) =>
     commands.changePasteDelayAfterMsSetting(value as number),
   reliable_paste: (value) =>

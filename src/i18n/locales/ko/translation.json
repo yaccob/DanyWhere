@@ -684,6 +684,14 @@
         "description": "받아쓰기가 붙여넣기나 삽입을 기다릴 때(예: 접근성 권한이 없을 때) 알림이 표시되는 시간입니다. 초 단위, 소수 허용, 0이면 끔.",
         "unit": "초",
         "invalid": "0에서 {{max}} 사이의 초를 입력하세요."
+      },
+      "llmTimeouts": {
+        "postProcessTitle": "후처리 제한 시간",
+        "postProcessDescription": "재시도를 포함해 후처리에 걸릴 수 있는 최대 시간입니다. 이후에는 후처리 없이 전사 텍스트가 사용됩니다. {{min}}~{{max}}초의 정수.",
+        "modelListTitle": "모델 목록 제한 시간",
+        "modelListDescription": "후처리에서 제공자의 모델 목록을 기다리는 최대 시간입니다. {{min}}~{{max}}초의 정수.",
+        "unit": "초",
+        "invalid": "{{min}}에서 {{max}} 사이의 정수 초를 입력하세요."
       }
     },
     "postProcessing": {

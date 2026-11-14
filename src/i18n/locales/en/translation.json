@@ -684,6 +684,14 @@
         "description": "How long the notice stays visible when a transcript waits for you to paste or insert it (e.g. without Accessibility). In seconds, decimals allowed; 0 turns it off.",
         "unit": "s",
         "invalid": "Enter a number of seconds from 0 to {{max}}."
+      },
+      "llmTimeouts": {
+        "postProcessTitle": "Post-Processing Time Limit",
+        "postProcessDescription": "How long post-processing may take, a second attempt included. After that the transcript is used without post-processing. Whole seconds from {{min}} to {{max}}.",
+        "modelListTitle": "Model List Time Limit",
+        "modelListDescription": "How long to wait for a provider's list of models under Post Process. Whole seconds from {{min}} to {{max}}.",
+        "unit": "s",
+        "invalid": "Enter whole seconds from {{min}} to {{max}}."
       }
     },
     "postProcessing": {

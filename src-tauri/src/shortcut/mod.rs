@@ -1402,7 +1402,12 @@ pub async fn fetch_post_process_models(
         ));
     }
 
-    crate::llm_client::fetch_models(provider, api_key).await
+    crate::llm_client::fetch_models(
+        provider,
+        api_key,
+        crate::llm_timeouts::model_list_timeout(&settings),
+    )
+    .await
 }
 
 #[tauri::command]

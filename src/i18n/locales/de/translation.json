@@ -684,6 +684,14 @@
         "description": "Wie lange der Hinweis sichtbar bleibt, wenn eine Transkription darauf wartet, dass du sie einfügst (z. B. ohne Bedienungshilfen). In Sekunden, Nachkommastellen erlaubt; 0 schaltet ihn aus.",
         "unit": "s",
         "invalid": "Gib eine Sekundenzahl von 0 bis {{max}} ein."
+      },
+      "llmTimeouts": {
+        "postProcessTitle": "Zeitgrenze der Nachbearbeitung",
+        "postProcessDescription": "Wie lange die Nachbearbeitung dauern darf, einschließlich eines zweiten Versuchs. Danach wird die Transkription ohne Nachbearbeitung verwendet. Ganze Sekunden von {{min}} bis {{max}}.",
+        "modelListTitle": "Zeitgrenze der Modellliste",
+        "modelListDescription": "Wie lange auf die Liste der Modelle eines Anbieters unter Nachbearbeitung gewartet wird. Ganze Sekunden von {{min}} bis {{max}}.",
+        "unit": "s",
+        "invalid": "Gib ganze Sekunden von {{min}} bis {{max}} ein."
       }
     },
     "postProcessing": {

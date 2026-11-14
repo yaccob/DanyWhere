@@ -684,6 +684,14 @@
         "description": "Hoe lang de melding zichtbaar blijft wanneer een transcriptie wacht tot je hem plakt of invoegt (bijv. zonder Toegankelijkheid). In seconden, decimalen toegestaan; 0 schakelt hem uit.",
         "unit": "s",
         "invalid": "Voer een aantal seconden in van 0 tot {{max}}."
+      },
+      "llmTimeouts": {
+        "postProcessTitle": "Tijdslimiet voor naverwerking",
+        "postProcessDescription": "Hoe lang de naverwerking mag duren, een tweede poging inbegrepen. Daarna wordt de transcriptie zonder naverwerking gebruikt. Hele seconden van {{min}} tot {{max}}.",
+        "modelListTitle": "Tijdslimiet voor de modellenlijst",
+        "modelListDescription": "Hoe lang er wordt gewacht op de lijst met modellen van een provider onder Naverwerking. Hele seconden van {{min}} tot {{max}}.",
+        "unit": "s",
+        "invalid": "Voer hele seconden in van {{min}} tot {{max}}."
       }
     },
     "postProcessing": {

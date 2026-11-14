@@ -602,6 +602,14 @@ pub struct AppSettings {
     pub post_process_prompts: Vec<LLMPrompt>,
     #[serde(default)]
     pub post_process_selected_prompt_id: Option<String>,
+    /// DanyWhere: time limit for the whole post-processing step, retries
+    /// included, in seconds (Handy: a fixed 60 s; see `llm_timeouts`).
+    #[serde(default = "crate::llm_timeouts::default_post_process_timeout_secs")]
+    pub post_process_timeout_secs: u64,
+    /// DanyWhere: time limit for a provider's model list, in seconds (Handy:
+    /// a fixed 15 s).
+    #[serde(default = "crate::llm_timeouts::default_model_list_timeout_secs")]
+    pub model_list_timeout_secs: u64,
     #[serde(default)]
     pub mute_while_recording: bool,
     #[serde(default)]
@@ -1242,6 +1250,8 @@ pub fn get_default_settings() -> AppSettings {
         post_process_models: default_post_process_models(),
         post_process_prompts: default_post_process_prompts(),
         post_process_selected_prompt_id: None,
+        post_process_timeout_secs: crate::llm_timeouts::default_post_process_timeout_secs(),
+        model_list_timeout_secs: crate::llm_timeouts::default_model_list_timeout_secs(),
         mute_while_recording: false,
         append_trailing_space: false,
         app_language: default_app_language(),

@@ -684,6 +684,14 @@
         "description": "Hur länge meddelandet visas när en transkription väntar på att du klistrar in eller infogar den (t.ex. utan hjälpmedel). I sekunder, decimaler tillåtna; 0 stänger av det.",
         "unit": "s",
         "invalid": "Ange ett antal sekunder från 0 till {{max}}."
+      },
+      "llmTimeouts": {
+        "postProcessTitle": "Tidsgräns för efterbearbetning",
+        "postProcessDescription": "Hur länge efterbearbetningen får ta, ett andra försök inräknat. Därefter används transkriptionen utan efterbearbetning. Hela sekunder från {{min}} till {{max}}.",
+        "modelListTitle": "Tidsgräns för modellistan",
+        "modelListDescription": "Hur länge det väntas på en leverantörs lista över modeller under Efterbearbetning. Hela sekunder från {{min}} till {{max}}.",
+        "unit": "s",
+        "invalid": "Ange hela sekunder från {{min}} till {{max}}."
       }
     },
     "postProcessing": {

@@ -684,6 +684,14 @@
         "description": "Por quanto tempo o aviso fica visível quando uma transcrição espera para você colar ou inserir (por ex. sem Acessibilidade). Em segundos, decimais permitidos; 0 o desativa.",
         "unit": "s",
         "invalid": "Digite um número de segundos de 0 a {{max}}."
+      },
+      "llmTimeouts": {
+        "postProcessTitle": "Limite de tempo do pós-processamento",
+        "postProcessDescription": "Quanto tempo o pós-processamento pode levar, incluindo uma segunda tentativa. Depois disso, a transcrição é usada sem pós-processamento. Em segundos inteiros, de {{min}} a {{max}}.",
+        "modelListTitle": "Limite de tempo da lista de modelos",
+        "modelListDescription": "Quanto tempo esperar pela lista de modelos de um provedor em Pós-Processamento. Em segundos inteiros, de {{min}} a {{max}}.",
+        "unit": "s",
+        "invalid": "Digite um número inteiro de segundos de {{min}} a {{max}}."
       }
     },
     "postProcessing": {

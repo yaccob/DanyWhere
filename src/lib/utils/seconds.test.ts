@@ -1,5 +1,9 @@
 import assert from "node:assert/strict";
-import { formatMsAsSeconds, parseSecondsToMs } from "./seconds";
+import {
+  formatMsAsSeconds,
+  parseSecondsToMs,
+  parseWholeSeconds,
+} from "./seconds";
 
 // Both decimal separators are accepted.
 assert.equal(parseSecondsToMs("2,5", 0, 30), 2500);
@@ -19,5 +23,18 @@ assert.equal(parseSecondsToMs("2,5,1", 0, 30), null);
 assert.equal(formatMsAsSeconds(2500, "de"), "2,5");
 assert.equal(formatMsAsSeconds(2500, "en"), "2.5");
 assert.equal(formatMsAsSeconds(3000, "de"), "3");
+
+// Whole seconds within the limits, e.g. for the post-processing time limits.
+assert.equal(parseWholeSeconds("60", 5, 600), 60);
+assert.equal(parseWholeSeconds(" 5 ", 5, 600), 5);
+assert.equal(parseWholeSeconds("600", 5, 600), 600);
+assert.equal(parseWholeSeconds("4", 5, 600), null);
+assert.equal(parseWholeSeconds("601", 5, 600), null);
+assert.equal(parseWholeSeconds("0", 5, 600), null);
+assert.equal(parseWholeSeconds("2,5", 5, 600), null);
+assert.equal(parseWholeSeconds("7.5", 5, 600), null);
+assert.equal(parseWholeSeconds("-10", 5, 600), null);
+assert.equal(parseWholeSeconds("", 5, 600), null);
+assert.equal(parseWholeSeconds("abc", 5, 600), null);
 
 console.log("seconds: all assertions passed");

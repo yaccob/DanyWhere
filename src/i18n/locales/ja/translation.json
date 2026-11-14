@@ -684,6 +684,14 @@
         "description": "文字起こしが貼り付けや挿入を待っているとき（アクセシビリティがない場合など）に通知を表示する時間。秒単位で小数も可。0 でオフ。",
         "unit": "秒",
         "invalid": "0〜{{max}} 秒の数値を入力してください。"
+      },
+      "llmTimeouts": {
+        "postProcessTitle": "後処理の制限時間",
+        "postProcessDescription": "後処理にかけられる最大時間です（再試行を含む）。これを過ぎると、後処理なしの文字起こしが使われます。{{min}}〜{{max}} 秒の整数。",
+        "modelListTitle": "モデル一覧の制限時間",
+        "modelListDescription": "後処理でプロバイダーのモデル一覧を待つ最大時間です。{{min}}〜{{max}} 秒の整数。",
+        "unit": "秒",
+        "invalid": "{{min}}〜{{max}} 秒の整数を入力してください。"
       }
     },
     "postProcessing": {

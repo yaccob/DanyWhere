@@ -21,6 +21,7 @@ mod insert_service;
 mod language_detection;
 mod languages;
 mod llm_client;
+mod llm_timeouts;
 mod managers;
 mod memory;
 mod model_selection;
@@ -741,6 +742,8 @@ pub fn run(cli_args: CliArgs) {
             shortcut::change_language_detection_window_setting,
             shortcut::change_paste_delay_ms_setting,
             delivery::change_clipboard_notice_ms_setting,
+            llm_timeouts::change_post_process_timeout_setting,
+            llm_timeouts::change_model_list_timeout_setting,
             insert_service::get_insert_service_shortcut,
             insert_service::set_insert_service_shortcut,
             dictation_key_inserts::change_dictation_key_inserts_setting,

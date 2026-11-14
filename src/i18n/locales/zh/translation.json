@@ -684,6 +684,14 @@
         "description": "当转录等待你粘贴或插入时（例如没有辅助功能权限时），提示显示的时长。以秒为单位，允许小数；0 表示关闭。",
         "unit": "秒",
         "invalid": "请输入 0 到 {{max}} 之间的秒数。"
+      },
+      "llmTimeouts": {
+        "postProcessTitle": "后处理时间限制",
+        "postProcessDescription": "后处理（含重试）最多可用的时间。超时后将使用未经后处理的转录文本。{{min}} 到 {{max}} 之间的整数秒。",
+        "modelListTitle": "模型列表时间限制",
+        "modelListDescription": "在后处理中等待提供商模型列表的最长时间。{{min}} 到 {{max}} 之间的整数秒。",
+        "unit": "秒",
+        "invalid": "请输入 {{min}} 到 {{max}} 之间的整数秒。"
       }
     },
     "postProcessing": {

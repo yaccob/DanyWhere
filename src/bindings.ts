@@ -185,6 +185,28 @@ async changeClipboardNoticeMsSetting(ms: number) : Promise<Result<null, string>>
 }
 },
 /**
+ * Sets the time limit for post-processing, in whole seconds.
+ */
+async changePostProcessTimeoutSetting(secs: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_post_process_timeout_setting", { secs }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Sets the time limit for the model list request, in whole seconds.
+ */
+async changeModelListTimeoutSetting(secs: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_model_list_timeout_setting", { secs }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
  * The "Insert Last Dictation" service's current shortcut for the settings,
  * as a recorded combination (e.g. `ctrl+option+command+v`), or `None`.
  */
@@ -1411,7 +1433,17 @@ dictation_context?: DictationContextSettings; model_unload_timeout?: ModelUnload
 /**
  * Migrated from `recording_retention_period` in `apply_settings_migrations`.
  */
-recording_storage_limit?: RecordingStorageLimit; paste_method?: PasteMethod; clipboard_handling?: ClipboardHandling; auto_submit?: boolean; auto_submit_key?: AutoSubmitKey; post_process_enabled?: boolean; post_process_provider_id?: string; post_process_providers?: PostProcessProvider[]; post_process_api_keys?: SecretMap; post_process_models?: Partial<{ [key in string]: string }>; post_process_prompts?: LLMPrompt[]; post_process_selected_prompt_id?: string | null; mute_while_recording?: boolean; append_trailing_space?: boolean; app_language?: string; theme?: Theme; experimental_enabled?: boolean; lazy_stream_close?: boolean; 
+recording_storage_limit?: RecordingStorageLimit; paste_method?: PasteMethod; clipboard_handling?: ClipboardHandling; auto_submit?: boolean; auto_submit_key?: AutoSubmitKey; post_process_enabled?: boolean; post_process_provider_id?: string; post_process_providers?: PostProcessProvider[]; post_process_api_keys?: SecretMap; post_process_models?: Partial<{ [key in string]: string }>; post_process_prompts?: LLMPrompt[]; post_process_selected_prompt_id?: string | null; 
+/**
+ * DanyWhere: time limit for the whole post-processing step, retries
+ * included, in seconds (Handy: a fixed 60 s; see `llm_timeouts`).
+ */
+post_process_timeout_secs?: number; 
+/**
+ * DanyWhere: time limit for a provider's model list, in seconds (Handy:
+ * a fixed 15 s).
+ */
+model_list_timeout_secs?: number; mute_while_recording?: boolean; append_trailing_space?: boolean; app_language?: string; theme?: Theme; experimental_enabled?: boolean; lazy_stream_close?: boolean; 
 /**
  * Experimental, macOS only: move a Bluetooth headset (AirPods) to this
  * Mac while recording, so its microphone does not return silence while

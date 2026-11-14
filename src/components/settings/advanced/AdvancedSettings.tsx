@@ -14,6 +14,7 @@ import { ClipboardHandlingSetting } from "../ClipboardHandling";
 import { ClipboardNoticeSetting } from "../ClipboardNotice";
 import { AutoSubmit } from "../AutoSubmit";
 import { PostProcessingToggle } from "../PostProcessingToggle";
+import { PostProcessTimeouts } from "../PostProcessTimeouts";
 import { AppendTrailingSpace } from "../AppendTrailingSpace";
 import { RecordingStorageLimitSetting } from "../RecordingStorageLimit";
 import { ExperimentalToggle } from "../ExperimentalToggle";
@@ -62,6 +63,7 @@ export const AdvancedSettings: React.FC = () => {
         {/* DanyWhere: post-processing is used daily, so its switch is not
             hidden behind the experimental features. */}
         <PostProcessingToggle descriptionMode="tooltip" grouped={true} />
+        <PostProcessTimeouts descriptionMode="tooltip" grouped={true} />
         <AppendTrailingSpace descriptionMode="tooltip" grouped={true} />
       </SettingsGroup>
 

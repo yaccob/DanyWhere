@@ -684,6 +684,14 @@
         "description": "Hvor længe beskeden vises, når en transskription venter på, at du indsætter den (f.eks. uden tilgængelighed). I sekunder, decimaler tilladt; 0 slår den fra.",
         "unit": "s",
         "invalid": "Angiv et antal sekunder fra 0 til {{max}}."
+      },
+      "llmTimeouts": {
+        "postProcessTitle": "Tidsgrænse for efterbehandling",
+        "postProcessDescription": "Hvor længe efterbehandlingen må tage, et ekstra forsøg medregnet. Derefter bruges transskriptionen uden efterbehandling. Hele sekunder fra {{min}} til {{max}}.",
+        "modelListTitle": "Tidsgrænse for modellisten",
+        "modelListDescription": "Hvor længe der ventes på en udbyders liste over modeller under Efterbehandling. Hele sekunder fra {{min}} til {{max}}.",
+        "unit": "s",
+        "invalid": "Angiv hele sekunder fra {{min}} til {{max}}."
       }
     },
     "postProcessing": {

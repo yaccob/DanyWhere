@@ -684,6 +684,14 @@
         "description": "Jak dlouho zůstane upozornění viditelné, když přepis čeká, až ho vložíte (např. bez usnadnění). V sekundách, desetinná místa povolena; 0 ho vypne.",
         "unit": "s",
         "invalid": "Zadejte počet sekund od 0 do {{max}}."
+      },
+      "llmTimeouts": {
+        "postProcessTitle": "Časový limit následného zpracování",
+        "postProcessDescription": "Jak dlouho smí následné zpracování trvat, včetně druhého pokusu. Poté se použije přepis bez následného zpracování. Celé sekundy od {{min}} do {{max}}.",
+        "modelListTitle": "Časový limit seznamu modelů",
+        "modelListDescription": "Jak dlouho čekat na seznam modelů poskytovatele v části Následné zpracování. Celé sekundy od {{min}} do {{max}}.",
+        "unit": "s",
+        "invalid": "Zadejte celé sekundy od {{min}} do {{max}}."
       }
     },
     "postProcessing": {

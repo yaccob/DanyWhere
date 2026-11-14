@@ -684,6 +684,14 @@
         "description": "Thời gian thông báo hiển thị khi một bản chép đang chờ bạn dán hoặc chèn (ví dụ khi không có Trợ năng). Tính bằng giây, cho phép số thập phân; 0 để tắt.",
         "unit": "giây",
         "invalid": "Nhập số giây từ 0 đến {{max}}."
+      },
+      "llmTimeouts": {
+        "postProcessTitle": "Giới hạn thời gian xử lý sau",
+        "postProcessDescription": "Thời gian tối đa cho bước xử lý sau, kể cả lần thử thứ hai. Sau đó bản chép lời được dùng mà không qua xử lý sau. Số giây nguyên từ {{min}} đến {{max}}.",
+        "modelListTitle": "Giới hạn thời gian danh sách mô hình",
+        "modelListDescription": "Thời gian chờ danh sách mô hình của nhà cung cấp trong mục Xử lý sau. Số giây nguyên từ {{min}} đến {{max}}.",
+        "unit": "giây",
+        "invalid": "Nhập số giây nguyên từ {{min}} đến {{max}}."
       }
     },
     "postProcessing": {

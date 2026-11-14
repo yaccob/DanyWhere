@@ -684,6 +684,14 @@
         "description": "Jak długo powiadomienie jest widoczne, gdy transkrypcja czeka na wklejenie lub wstawienie (np. bez dostępności). W sekundach, dozwolone ułamki; 0 je wyłącza.",
         "unit": "s",
         "invalid": "Wpisz liczbę sekund od 0 do {{max}}."
+      },
+      "llmTimeouts": {
+        "postProcessTitle": "Limit czasu postprocessu",
+        "postProcessDescription": "Jak długo może trwać postprocess, łącznie z drugą próbą. Potem używana jest transkrypcja bez postprocessu. Pełne sekundy od {{min}} do {{max}}.",
+        "modelListTitle": "Limit czasu listy modeli",
+        "modelListDescription": "Jak długo czekać na listę modeli dostawcy w sekcji Postprocess. Pełne sekundy od {{min}} do {{max}}.",
+        "unit": "s",
+        "invalid": "Wpisz pełne sekundy od {{min}} do {{max}}."
       }
     },
     "postProcessing": {

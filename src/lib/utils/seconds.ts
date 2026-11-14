@@ -18,3 +18,18 @@ export const parseSecondsToMs = (
 /** Formats milliseconds as seconds with at most one decimal, per locale. */
 export const formatMsAsSeconds = (ms: number, locale: string): string =>
   new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(ms / 1000);
+
+/**
+ * Parses whole seconds as typed by the user (" 60 "). Returns null for input
+ * that is not a whole number or lies outside [min, max].
+ */
+export const parseWholeSeconds = (
+  input: string,
+  min: number,
+  max: number,
+): number | null => {
+  const normalized = input.trim();
+  if (!/^\d+$/.test(normalized)) return null;
+  const seconds = Number(normalized);
+  return seconds < min || seconds > max ? null : seconds;
+};
