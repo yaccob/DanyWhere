@@ -285,8 +285,10 @@ const DemoLaptop: React.FC<{
             <svg width="14" height="20" viewBox="0 0 11 16" aria-hidden="true">
               <path
                 d="M1 1v12.2l3-2.9 1.9 4.5 2-.9-1.9-4.4h4.1z"
-                fill="#111"
-                stroke="#fff"
+                style={{
+                  fill: "var(--color-demo-pointer)",
+                  stroke: "var(--color-demo-pointer-edge)",
+                }}
                 strokeWidth="1.1"
                 strokeLinejoin="round"
               />

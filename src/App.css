@@ -27,6 +27,10 @@
   --color-line-strong: var(--color-line-strong);
   --color-search-match: var(--color-search-match);
   --color-search-match-text: var(--color-search-match-text);
+  --color-on-accent: var(--color-on-accent);
+  --color-switch-thumb: var(--color-switch-thumb);
+  --color-backdrop: var(--color-backdrop);
+  --color-invalid: var(--color-invalid);
 }
 
 /* Noto Sans CJK subset (see src/lib/utils/cjkFont.ts): Windows' CJK fonts

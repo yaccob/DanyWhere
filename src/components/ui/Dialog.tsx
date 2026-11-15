@@ -158,7 +158,7 @@ export const Dialog: React.FC<DialogProps> = ({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 sm:p-6"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-backdrop p-4 sm:p-6"
       onMouseDown={handleBackdropMouseDown}
     >
       <div

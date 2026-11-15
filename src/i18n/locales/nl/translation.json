@@ -1102,6 +1102,11 @@
         "description": "Open de nieuwste meegeleverde release-notes zonder deze als gelezen te markeren",
         "button": "Voorbeeld"
       },
+      "themeFile": {
+        "title": "Themabestand",
+        "description": "Opent theme.css, waarmee je de kleuren en andere stijlen van de app wijzigt. Opgeslagen wijzigingen zijn binnen enkele seconden zichtbaar, zonder herstart. Is het bestand verwijderd, dan wordt het opnieuw aangemaakt.",
+        "button": "Themabestand openen"
+      },
       "onboardingPreview": {
         "title": "Voorbeeld van onboarding",
         "description": "Bekijk de onboardingschermen zonder machtigingen, modellen of de voltooiingsstatus te wijzigen",

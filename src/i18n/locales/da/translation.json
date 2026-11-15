@@ -1102,6 +1102,11 @@
         "description": "Åbn de seneste medfølgende udgivelsesnoter uden at markere dem som set",
         "button": "Forhåndsvisning"
       },
+      "themeFile": {
+        "title": "Temafil",
+        "description": "Åbn theme.css, som ændrer appens farver og andre typografier. Gemte ændringer vises inden for få sekunder uden genstart. Hvis filen er slettet, oprettes den igen.",
+        "button": "Åbn temafil"
+      },
       "onboardingPreview": {
         "title": "Forhåndsvis introduktion",
         "description": "Forhåndsvis introduktionsskærmene uden at ændre tilladelser, modeller eller fuldførelsesstatus",

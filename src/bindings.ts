@@ -1517,6 +1517,25 @@ async dismissOverlayNotice() : Promise<void> {
  */
 async checkPromptsForOldParts() : Promise<void> {
     await TAURI_INVOKE("check_prompts_for_old_parts");
+},
+/**
+ * The theme file's CSS, or `null` while it is missing or unreadable (the
+ * built-in styles alone). Never an error: a bad file must not break the UI.
+ */
+async getUserTheme() : Promise<string | null> {
+    return await TAURI_INVOKE("get_user_theme");
+},
+/**
+ * Opens the theme file in the system's default app for CSS files, writing
+ * it first if it is missing (Debug page).
+ */
+async openThemeFile() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("open_theme_file") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 

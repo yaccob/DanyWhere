@@ -1102,6 +1102,11 @@
         "description": "Buka catatan rilis terbaru yang disertakan tanpa menandainya sebagai telah dilihat",
         "button": "Pratinjau"
       },
+      "themeFile": {
+        "title": "Berkas Tema",
+        "description": "Buka theme.css, yang mengubah warna dan gaya lain aplikasi. Perubahan yang disimpan tampil dalam beberapa detik, tanpa memulai ulang. Jika berkas telah dihapus, berkas dibuat lagi.",
+        "button": "Buka Berkas Tema"
+      },
       "onboardingPreview": {
         "title": "Pratinjau Penyiapan Awal",
         "description": "Pratinjau layar penyiapan awal tanpa mengubah izin, model, atau status penyelesaian",

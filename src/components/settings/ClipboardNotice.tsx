@@ -52,7 +52,7 @@ export const ClipboardNoticeSetting: React.FC<ClipboardNoticeProps> =
         <div className="flex items-center gap-2">
           <Input
             variant="compact"
-            className={`w-20 text-end ${invalid ? "border-red-500" : ""}`}
+            className={`w-20 text-end ${invalid ? "border-invalid" : ""}`}
             inputMode="decimal"
             value={draft}
             aria-invalid={invalid}

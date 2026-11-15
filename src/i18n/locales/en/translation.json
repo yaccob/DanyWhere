@@ -1102,6 +1102,11 @@
         "description": "Open the latest bundled release note without marking it as seen",
         "button": "Preview"
       },
+      "themeFile": {
+        "title": "Theme File",
+        "description": "Open theme.css, which changes the app's colors and other styles. Saved changes show within seconds, without a restart. If the file was deleted, it is created again.",
+        "button": "Open Theme File"
+      },
       "onboardingPreview": {
         "title": "Preview Onboarding",
         "description": "Preview onboarding screens without changing permissions, models, or completion state",

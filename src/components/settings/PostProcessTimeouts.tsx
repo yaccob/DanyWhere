@@ -61,7 +61,7 @@ const TimeoutSetting: React.FC<TimeoutSettingProps> = ({
       <div className="flex items-center gap-2">
         <Input
           variant="compact"
-          className={`w-20 text-end ${invalid ? "border-red-500" : ""}`}
+          className={`w-20 text-end ${invalid ? "border-invalid" : ""}`}
           inputMode="numeric"
           value={draft}
           aria-invalid={invalid}

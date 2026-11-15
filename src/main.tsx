@@ -8,6 +8,7 @@ import {
   getStoredTheme,
   syncThemeFromSettings,
 } from "./lib/utils/theme";
+import { loadUserTheme } from "./lib/loadUserTheme";
 
 installCompatShims();
 
@@ -18,6 +19,8 @@ document.documentElement.dataset.platform = platform();
 // the wrong palette, then reconcile with the persisted setting once it loads.
 applyTheme(getStoredTheme());
 syncThemeFromSettings();
+// DanyWhere: the user's theme file, after the built-in styles.
+loadUserTheme();
 
 // Initialize i18n
 import "./i18n";

@@ -2,8 +2,15 @@
  * greys (ink-2, ink-3, line-strong, line, wash) for text, edges and fills;
  * logo-primary / background-ui for brand and primary actions; plum for keys
  * and picks (onboarding); moss / warning / error (+ -wash) for status;
- * search-match (+ -text) for what a search found.
+ * search-match (+ -text) for what a search found; on-accent, switch-thumb,
+ * backdrop, invalid and shadow-* for the rest of the controls.
  * demo-*, wordmark and mascot are illustration, not UI.
+ *
+ * DanyWhere: the user's theme file (theme.css next to the settings,
+ * src-tauri/src/theme_file.rs) lists the variables of the first :root block
+ * below, all but the lines that pick the active theme, and can override
+ * them; so a colour belongs here, not in a component
+ * (src/styles/hardcodedColours.test.ts).
  */
 
 :root {
@@ -138,6 +145,33 @@
   /* Tokens that do not change between light and dark */
   --color-background-ui: #2f7d8e;
   --color-mid-gray: #808080;
+  /* Text and marks on the accent fill: a primary button, a picked radio. */
+  --color-on-accent: #fff;
+  /* A switch's knob. */
+  --color-switch-thumb: #fff;
+  /* The dimmed window behind a dialog. */
+  --color-backdrop: rgb(0 0 0 / 0.5);
+  /* The edge of a field whose value can't be used. */
+  --color-invalid: oklch(63.7% 0.237 25.331);
+
+  /* Shadows of what floats over the page. */
+  --shadow-tooltip: 0 8px 24px -10px rgba(0, 0, 0, 0.45);
+  --shadow-select-menu: 0 10px 30px rgba(15, 15, 15, 0.2);
+  --shadow-popover: 0 12px 32px -12px rgba(0, 0, 0, 0.35);
+  --shadow-language-menu:
+    0 14px 36px -10px rgb(0 0 0 / 0.35), 0 2px 6px rgb(0 0 0 / 0.08);
+
+  /* Demo's shading: drop shadows, the laptop's highlights, the pointer. */
+  --color-demo-shadow: rgb(40 20 50 / 0.16);
+  --color-demo-bubble-shadow: rgb(0 0 0 / 0.22);
+  --color-demo-panel-shadow: rgb(0 0 0 / 0.3);
+  --color-demo-pointer-shadow: rgb(0 0 0 / 0.25);
+  --color-demo-lid-edge: rgb(255 255 255 / 0.08);
+  --color-demo-cam: rgb(255 255 255 / 0.25);
+  --color-demo-base-shine: rgb(255 255 255 / 0.35);
+  --color-demo-notch: #000;
+  --color-demo-pointer: #111;
+  --color-demo-pointer-edge: #fff;
 
   /* Active palette — defaults to light, follows the OS via the media query
      below, or is forced by `data-theme` (see the overrides below). */

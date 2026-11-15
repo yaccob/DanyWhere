@@ -1102,6 +1102,11 @@
         "description": "Otevřít nejnovější přibalené poznámky k vydání bez označení jako zobrazené",
         "button": "Náhled"
       },
+      "themeFile": {
+        "title": "Soubor motivu",
+        "description": "Otevře theme.css, kterým lze měnit barvy a další styly aplikace. Uložené změny se projeví během několika sekund bez restartu. Pokud byl soubor smazán, vytvoří se znovu.",
+        "button": "Otevřít soubor motivu"
+      },
       "onboardingPreview": {
         "title": "Náhled úvodního nastavení",
         "description": "Prohlédněte si obrazovky úvodního nastavení beze změny oprávnění, modelů nebo stavu dokončení",

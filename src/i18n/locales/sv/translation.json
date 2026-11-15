@@ -1102,6 +1102,11 @@
         "description": "Öppna den senaste medföljande versionsinformationen utan att markera den som visad",
         "button": "Förhandsvisa"
       },
+      "themeFile": {
+        "title": "Temafil",
+        "description": "Öppnar theme.css, som ändrar appens färger och andra stilar. Sparade ändringar syns inom några sekunder, utan omstart. Om filen har tagits bort skapas den igen.",
+        "button": "Öppna temafil"
+      },
       "onboardingPreview": {
         "title": "Förhandsvisa introduktionen",
         "description": "Förhandsvisa introduktionsskärmarna utan att ändra behörigheter, modeller eller slutförandestatus",

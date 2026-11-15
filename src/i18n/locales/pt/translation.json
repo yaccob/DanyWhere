@@ -1102,6 +1102,11 @@
         "description": "Abrir a nota de versão incorporada mais recente sem marcá-la como vista",
         "button": "Pré-visualizar"
       },
+      "themeFile": {
+        "title": "Arquivo de tema",
+        "description": "Abre theme.css, que muda as cores e outros estilos do aplicativo. As alterações salvas aparecem em poucos segundos, sem reiniciar. Se o arquivo foi excluído, ele é criado de novo.",
+        "button": "Abrir arquivo de tema"
+      },
       "onboardingPreview": {
         "title": "Pré-visualizar configuração inicial",
         "description": "Pré-visualize os ecrãs de configuração sem alterar permissões, modelos ou o estado de conclusão",

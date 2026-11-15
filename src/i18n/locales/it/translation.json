@@ -1102,6 +1102,11 @@
         "description": "Apri le note di rilascio incluse più recenti senza segnarle come viste",
         "button": "Anteprima"
       },
+      "themeFile": {
+        "title": "File del tema",
+        "description": "Apre theme.css, che cambia i colori e gli altri stili dell'app. Le modifiche salvate compaiono in pochi secondi, senza riavvio. Se il file è stato eliminato, viene ricreato.",
+        "button": "Apri file del tema"
+      },
       "onboardingPreview": {
         "title": "Anteprima della configurazione iniziale",
         "description": "Visualizza le schermate di configurazione senza modificare autorizzazioni, modelli o stato di completamento",

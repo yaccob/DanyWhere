@@ -1102,6 +1102,11 @@
         "description": "Obre les últimes notes de la versió incloses sense marcar-les com a llegides",
         "button": "Previsualitzeu"
       },
+      "themeFile": {
+        "title": "Fitxer de tema",
+        "description": "Obre theme.css, que canvia els colors i altres estils de l'aplicació. Els canvis desats es veuen en pocs segons, sense reiniciar. Si s'ha suprimit el fitxer, es torna a crear.",
+        "button": "Obre el fitxer de tema"
+      },
       "onboardingPreview": {
         "title": "Previsualització de la configuració inicial",
         "description": "Previsualitza les pantalles de configuració inicial sense canviar els permisos, os models ni l'estat de compleció",

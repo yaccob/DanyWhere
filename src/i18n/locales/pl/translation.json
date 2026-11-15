@@ -1102,6 +1102,11 @@
         "description": "Otwórz najnowsze dołączone informacje o wydaniu bez oznaczania ich jako wyświetlone",
         "button": "Podgląd"
       },
+      "themeFile": {
+        "title": "Plik motywu",
+        "description": "Otwiera theme.css, który zmienia kolory i inne style aplikacji. Zapisane zmiany widać po kilku sekundach, bez ponownego uruchamiania. Jeśli plik został usunięty, zostanie utworzony ponownie.",
+        "button": "Otwórz plik motywu"
+      },
       "onboardingPreview": {
         "title": "Podgląd konfiguracji początkowej",
         "description": "Wyświetl ekrany konfiguracji początkowej bez zmiany uprawnień, modeli ani stanu ukończenia",

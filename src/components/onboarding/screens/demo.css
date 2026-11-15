@@ -139,7 +139,7 @@
   padding: 11px 11px 14px;
   border-radius: 20px 20px 7.5px 7.5px;
   background: var(--color-demo-lid);
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08);
+  box-shadow: inset 0 0 0 1px var(--color-demo-lid-edge);
 }
 .demo-cam {
   position: absolute;
@@ -149,7 +149,7 @@
   height: 4px;
   margin-left: -2px;
   border-radius: 50%;
-  background: rgb(255 255 255 / 0.25);
+  background: var(--color-demo-cam);
 }
 .demo-screen {
   position: relative;
@@ -186,7 +186,7 @@
   background: var(--color-demo-window);
   box-shadow:
     0 0 0 0.5px var(--color-line),
-    0 10px 30px rgb(40 20 50 / 0.16);
+    0 10px 30px var(--color-demo-shadow);
 }
 .demo-screen:has(.is-task) .demo-app {
   top: 20px;
@@ -248,7 +248,7 @@
   height: 20px;
   margin: -1px 0 0 -1px; /* the arrow's tip sits on the point */
   pointer-events: none;
-  filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / 0.25));
+  filter: drop-shadow(0 1px 1.5px var(--color-demo-pointer-shadow));
 }
 .demo-pointer svg {
   display: block;
@@ -323,7 +323,7 @@
     var(--color-demo-alu-hi),
     var(--color-demo-alu-lo)
   );
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.35);
+  box-shadow: inset 0 1px 0 var(--color-demo-base-shine);
 }
 .demo-notch {
   position: absolute;
@@ -333,7 +333,7 @@
   height: 5px;
   margin-left: -35px;
   border-radius: 0 0 6px 6px;
-  background: #000;
+  background: var(--color-demo-notch);
   opacity: 0.12;
 }
 .demo-floor {
