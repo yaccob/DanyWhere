@@ -711,6 +711,29 @@
           "ctrlEnter": "Ctrl+Enter"
         }
       },
+      "appendText": {
+        "title": "Tambahkan di akhir",
+        "description": "Ditambahkan setelah setiap dikte di profil ini. Teks seperti ditulis; \\s spasi, \\n baris baru, \\t tab, \\\\ garis miring terbalik, \\{ dan \\} kurung kurawal. Di akhir, penekanan tombol: {Enter}, {Tab}, {Shift+Enter}, {Cmd+Enter} (Super+Enter di Windows dan Linux), {Ctrl+Enter}. Tombol hanya dikirim saat teks ditempel.",
+        "noAccessibility": "Tanpa Aksesibilitas, tombol tidak dikirim; teks tetap ditambahkan.",
+        "notSaved": "Tidak disimpan; nilai valid terakhir tetap berlaku.",
+        "preview": {
+          "nothing": "Tidak ada yang ditambahkan",
+          "space": "spasi",
+          "newLine": "baris baru",
+          "tab": "karakter tab",
+          "text": "“{{text}}”",
+          "key": "tombol {{key}}",
+          "then": "{{first}}, lalu {{next}}"
+        },
+        "errors": {
+          "unknownEscape": "Escape tidak dikenal {{escape}}: gunakan \\s, \\n, \\t, \\\\, \\{ atau \\}",
+          "trailingBackslash": "Garis miring terbalik harus diikuti huruf: \\s, \\n, \\t, \\\\, \\{ atau \\}",
+          "unknownKey": "Tombol tidak dikenal {{key}}",
+          "unclosedKey": "{ belum ditutup dengan }; \\{ menulis kurung",
+          "unmatchedBrace": "} tidak punya {; \\} menulis kurung",
+          "textAfterKey": "Setelah penekanan tombol hanya boleh ada penekanan tombol"
+        }
+      },
       "translateToEnglish": {
         "label": "Terjemahkan ke Bahasa Inggris",
         "description": "Terjemahkan ucapan dari bahasa lain ke bahasa Inggris secara otomatis selama transkripsi."

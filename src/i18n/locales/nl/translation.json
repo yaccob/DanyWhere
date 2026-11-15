@@ -711,6 +711,29 @@
           "ctrlEnter": "Ctrl+Enter"
         }
       },
+      "appendText": {
+        "title": "Toevoegen",
+        "description": "Wordt na elk dictaat van dit profiel toegevoegd. Tekst zoals geschreven; \\s spatie, \\n nieuwe regel, \\t tab, \\\\ backslash, \\{ en \\} accolades. Aan het eind toetsaanslagen: {Enter}, {Tab}, {Shift+Enter}, {Cmd+Enter} (Super+Enter op Windows en Linux), {Ctrl+Enter}. Toetsaanslagen worden alleen verstuurd als de tekst wordt geplakt.",
+        "noAccessibility": "Zonder Toegankelijkheid worden geen toetsaanslagen verstuurd; de tekst wordt wel toegevoegd.",
+        "notSaved": "Niet opgeslagen; de laatste geldige waarde blijft van kracht.",
+        "preview": {
+          "nothing": "Er wordt niets toegevoegd",
+          "space": "spatie",
+          "newLine": "nieuwe regel",
+          "tab": "tabteken",
+          "text": "“{{text}}”",
+          "key": "de toets {{key}}",
+          "then": "{{first}}, dan {{next}}"
+        },
+        "errors": {
+          "unknownEscape": "Onbekende escape {{escape}}: gebruik \\s, \\n, \\t, \\\\, \\{ of \\}",
+          "trailingBackslash": "Na een backslash hoort een letter: \\s, \\n, \\t, \\\\, \\{ of \\}",
+          "unknownKey": "Onbekende toetsaanslag {{key}}",
+          "unclosedKey": "Een { heeft een } nodig; schrijf \\{ voor een accolade",
+          "unmatchedBrace": "Een } heeft een { nodig; schrijf \\} voor een accolade",
+          "textAfterKey": "Na een toetsaanslag mogen alleen toetsaanslagen volgen"
+        }
+      },
       "translateToEnglish": {
         "label": "Vertalen naar het Engels",
         "description": "Vertaal spraak uit andere talen tijdens het transcriberen automatisch naar het Engels."

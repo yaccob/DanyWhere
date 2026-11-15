@@ -623,6 +623,11 @@ pub struct AppSettings {
     pub mute_while_recording: bool,
     #[serde(default)]
     pub append_trailing_space: bool,
+    /// DanyWhere: what every dictation gets appended, text and key presses at
+    /// the end (`append_text`). Replaces `append_trailing_space` and
+    /// `auto_submit`, which stay only for Handy merges and the migration.
+    #[serde(default)]
+    pub append_text: String,
     #[serde(default = "default_app_language")]
     pub app_language: String,
     #[serde(default = "default_theme")]
@@ -1332,6 +1337,7 @@ pub fn get_default_settings() -> AppSettings {
         model_list_timeout_secs: crate::llm_timeouts::default_model_list_timeout_secs(),
         mute_while_recording: false,
         append_trailing_space: false,
+        append_text: String::new(),
         app_language: default_app_language(),
         theme: default_theme(),
         experimental_enabled: false,
@@ -1695,6 +1701,12 @@ fn apply_settings_migrations(
         && settings.transcribe_gpu_device.is_none()
     {
         settings.transcribe_accelerator = TranscribeAcceleratorSetting::Auto;
+        updated = true;
+    }
+
+    // DanyWhere: one-time "Append" migration from the trailing space and
+    // auto submit, for the settings and every stored profile.
+    if crate::append_text::migrate(settings, settings_value) {
         updated = true;
     }
 
@@ -2341,6 +2353,23 @@ mod tests {
 
         assert!(apply_settings_migrations(&mut settings, &raw));
         assert_eq!(settings.overlay_style, OverlayStyle::None);
+    }
+
+    /// DanyWhere: the trailing space and auto submit become the "Append"
+    /// field when the store is read (`append_text::migrate`).
+    #[test]
+    fn append_migration_runs_when_the_store_is_read() {
+        let raw = serde_json::json!({
+            "append_trailing_space": true,
+            "auto_submit": true,
+            "auto_submit_key": "ctrl_enter"
+        });
+        let mut settings: AppSettings = serde_json::from_value(raw.clone()).expect("parses");
+        assert!(apply_settings_migrations(&mut settings, &raw));
+        assert_eq!(settings.append_text, r"\s{Ctrl+Enter}");
+        // The default profile is made from the migrated flat values.
+        crate::profiles::ensure_profiles(&mut settings);
+        assert_eq!(settings.profiles[0].values.append_text, r"\s{Ctrl+Enter}");
     }
 
     #[test]

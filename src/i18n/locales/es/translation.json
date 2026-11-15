@@ -711,6 +711,29 @@
           "ctrlEnter": "Ctrl+Intro"
         }
       },
+      "appendText": {
+        "title": "Añadir al final",
+        "description": "Se añade tras cada dictado de este perfil. Texto tal cual; \\s espacio, \\n salto de línea, \\t tabulación, \\\\ barra invertida, \\{ y \\} llaves. Al final, pulsaciones de teclas: {Enter}, {Tab}, {Shift+Enter}, {Cmd+Enter} (Super+Enter en Windows y Linux), {Ctrl+Enter}. Las teclas solo se envían cuando el texto se pega.",
+        "noAccessibility": "Sin accesibilidad no se envían teclas; el texto se añade igualmente.",
+        "notSaved": "No guardado; sigue vigente el último valor válido.",
+        "preview": {
+          "nothing": "No se añade nada",
+          "space": "espacio",
+          "newLine": "salto de línea",
+          "tab": "carácter de tabulación",
+          "text": "«{{text}}»",
+          "key": "la tecla {{key}}",
+          "then": "{{first}}, luego {{next}}"
+        },
+        "errors": {
+          "unknownEscape": "Secuencia de escape desconocida {{escape}}: usa \\s, \\n, \\t, \\\\, \\{ o \\}",
+          "trailingBackslash": "Una barra invertida necesita una letra detrás: \\s, \\n, \\t, \\\\, \\{ o \\}",
+          "unknownKey": "Tecla desconocida {{key}}",
+          "unclosedKey": "Una { necesita su }; escribe \\{ para una llave",
+          "unmatchedBrace": "Una } necesita su {; escribe \\} para una llave",
+          "textAfterKey": "Tras una tecla solo pueden seguir otras teclas"
+        }
+      },
       "translateToEnglish": {
         "label": "Traducir al inglés",
         "description": "Traducir automáticamente el habla de otros idiomas al inglés durante la transcripción."

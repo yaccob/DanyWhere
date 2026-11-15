@@ -711,6 +711,29 @@
           "ctrlEnter": "Ctrl+Enter"
         }
       },
+      "appendText": {
+        "title": "הוספה בסוף",
+        "description": "נוסף אחרי כל הכתבה בפרופיל הזה. טקסט כפי שנכתב; \\s רווח, \\n שורה חדשה, \\t טאב, \\\\ לוכסן הפוך, \\{ ו-\\} סוגריים מסולסלים. בסוף, הקשות מקשים: {Enter}, {Tab}, {Shift+Enter}, {Cmd+Enter} (Super+Enter ב-Windows וב-Linux), {Ctrl+Enter}. מקשים נשלחים רק כשהטקסט מודבק.",
+        "noAccessibility": "ללא נגישות לא נשלחים מקשים; הטקסט עדיין נוסף.",
+        "notSaved": "לא נשמר; הערך התקין האחרון נשאר בתוקף.",
+        "preview": {
+          "nothing": "לא נוסף דבר",
+          "space": "רווח",
+          "newLine": "שורה חדשה",
+          "tab": "תו טאב",
+          "text": "“{{text}}”",
+          "key": "המקש {{key}}",
+          "then": "{{first}}, ואז {{next}}"
+        },
+        "errors": {
+          "unknownEscape": "רצף בריחה לא מוכר {{escape}}: השתמשו ב-\\s, \\n, \\t, \\\\, \\{ או \\}",
+          "trailingBackslash": "אחרי לוכסן הפוך צריכה לבוא אות: \\s, \\n, \\t, \\\\, \\{ או \\}",
+          "unknownKey": "הקשת מקש לא מוכרת {{key}}",
+          "unclosedKey": "ל-{ חסר }; \\{ כותב סוגר",
+          "unmatchedBrace": "ל-} חסר {; \\} כותב סוגר",
+          "textAfterKey": "אחרי הקשת מקש יכולות לבוא רק הקשות מקשים"
+        }
+      },
       "translateToEnglish": {
         "label": "תרגם לאנגלית",
         "description": "תרגם אוטומטית דיבור משפות אחרות לאנגלית בזמן התמלול."

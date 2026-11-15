@@ -624,6 +624,29 @@ async changeAppendTrailingSpaceSetting(enabled: boolean) : Promise<Result<null, 
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * The field's parts for the preview, or why the value is invalid.
+ */
+async parseAppendText(value: string) : Promise<Result<AppendPart[], AppendTextError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("parse_append_text", { value }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Stores the field in the active profile; an invalid value is refused and
+ * the stored one stays.
+ */
+async changeAppendTextSetting(value: string) : Promise<Result<null, AppendTextError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_append_text_setting", { value }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async changeLazyStreamCloseSetting(enabled: boolean) : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("change_lazy_stream_close_setting", { enabled }) };
@@ -1613,7 +1636,13 @@ post_process_timeout_secs?: number;
  * DanyWhere: time limit for a provider's model list, in seconds (Handy:
  * a fixed 15 s).
  */
-model_list_timeout_secs?: number; mute_while_recording?: boolean; append_trailing_space?: boolean; app_language?: string; theme?: Theme; experimental_enabled?: boolean; lazy_stream_close?: boolean; 
+model_list_timeout_secs?: number; mute_while_recording?: boolean; append_trailing_space?: boolean; 
+/**
+ * DanyWhere: what every dictation gets appended, text and key presses at
+ * the end (`append_text`). Replaces `append_trailing_space` and
+ * `auto_submit`, which stay only for Handy merges and the migration.
+ */
+append_text?: string; app_language?: string; theme?: Theme; experimental_enabled?: boolean; lazy_stream_close?: boolean; 
 /**
  * Experimental, macOS only: move a Bluetooth headset (AirPods) to this
  * Mac while recording, so its microphone does not return silence while
@@ -1678,6 +1707,56 @@ profile_words?: string[];
  * into it. Not used yet.
  */
 profile_auto_by_app?: boolean }
+/**
+ * A key press the field can end with.
+ */
+export type AppendKey = "enter" | "tab" | "shift_enter" | 
+/**
+ * Cmd+Enter on macOS, Super (Windows key)+Enter elsewhere, as Handy's
+ * `AutoSubmitKey::CmdEnter`.
+ */
+"cmd_enter" | "ctrl_enter"
+/**
+ * One part of the field, in order; what the preview names.
+ */
+export type AppendPart = 
+/**
+ * Text as written. Spaces at its ends are parts of their own.
+ */
+{ kind: "text"; text: string } | { kind: "space" } | { kind: "new_line" } | { kind: "tab" } | { kind: "key"; key: AppendKey }
+/**
+ * An invalid value: the code and what it is about, the escape (`\x`) for
+ * `UnknownEscape`, the name between the braces for `UnknownKey`, else empty.
+ */
+export type AppendTextError = { code: AppendTextErrorCode; detail: string }
+/**
+ * Why a value is invalid, as a code the frontend translates.
+ */
+export type AppendTextErrorCode = 
+/**
+ * A backslash before a character that has no meaning after one.
+ */
+"unknown_escape" | 
+/**
+ * A backslash at the very end.
+ */
+"trailing_backslash" | 
+/**
+ * Braces around something that is no known key press.
+ */
+"unknown_key" | 
+/**
+ * A `{` without its `}`.
+ */
+"unclosed_key" | 
+/**
+ * A `}` without its `{`.
+ */
+"unmatched_brace" | 
+/**
+ * Text after a key press.
+ */
+"text_after_key"
 /**
  * An application that can be assigned to a profile.
  */
@@ -2207,7 +2286,12 @@ context_max_entries: number;
 /**
  * `dictation_context.char_budget`
  */
-context_char_budget: number; filler_word_removal_enabled: boolean; custom_filler_words: string[] | null; append_trailing_space: boolean }
+context_char_budget: number; filler_word_removal_enabled: boolean; custom_filler_words: string[] | null; 
+/**
+ * The "Append" field (`append_text`), which replaced the trailing space;
+ * stored profiles got it from theirs (`append_text::migrate`).
+ */
+append_text: string }
 /**
  * Recording phase events for windows that follow along (onboarding's Try it).
  */

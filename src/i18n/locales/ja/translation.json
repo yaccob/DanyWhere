@@ -711,6 +711,29 @@
           "ctrlEnter": "Ctrl+Enter"
         }
       },
+      "appendText": {
+        "title": "末尾に追加",
+        "description": "このプロファイルの音声入力のたびに末尾に追加されます。テキストはそのまま。\\s スペース、\\n 改行、\\t タブ、\\\\ バックスラッシュ、\\{ と \\} 波かっこ。末尾にはキー操作：{Enter}、{Tab}、{Shift+Enter}、{Cmd+Enter}（Windows と Linux では Super+Enter）、{Ctrl+Enter}。キーはテキストを貼り付けるときだけ送信されます。",
+        "noAccessibility": "アクセシビリティがないとキーは送信されません。テキストは追加されます。",
+        "notSaved": "保存されていません。最後の有効な値が引き続き使われます。",
+        "preview": {
+          "nothing": "何も追加しません",
+          "space": "スペース",
+          "newLine": "改行",
+          "tab": "タブ文字",
+          "text": "「{{text}}」",
+          "key": "{{key}} キー",
+          "then": "{{first}}、次に {{next}}"
+        },
+        "errors": {
+          "unknownEscape": "不明なエスケープ {{escape}}：\\s、\\n、\\t、\\\\、\\{、\\} が使えます",
+          "trailingBackslash": "バックスラッシュの後には文字が必要です：\\s、\\n、\\t、\\\\、\\{、\\}",
+          "unknownKey": "不明なキー操作 {{key}}",
+          "unclosedKey": "{ に対応する } がありません。\\{ でかっこを入力できます",
+          "unmatchedBrace": "} に対応する { がありません。\\} でかっこを入力できます",
+          "textAfterKey": "キー操作の後にはキー操作しか続けられません"
+        }
+      },
       "translateToEnglish": {
         "label": "英語に翻訳",
         "description": "文字起こし中に他の言語から英語に自動的に翻訳。"

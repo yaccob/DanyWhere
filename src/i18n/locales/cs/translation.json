@@ -711,6 +711,29 @@
           "ctrlEnter": "Ctrl+Enter"
         }
       },
+      "appendText": {
+        "title": "Připojit",
+        "description": "Připojí se za každý diktát tohoto profilu. Text tak, jak je napsán; \\s mezera, \\n nový řádek, \\t tabulátor, \\\\ zpětné lomítko, \\{ a \\} složené závorky. Na konci stisky kláves: {Enter}, {Tab}, {Shift+Enter}, {Cmd+Enter} (Super+Enter ve Windows a Linuxu), {Ctrl+Enter}. Klávesy se odešlou jen tehdy, když se text vkládá.",
+        "noAccessibility": "Bez usnadnění se žádné klávesy neodešlou; text se přesto připojí.",
+        "notSaved": "Neuloženo; dál platí poslední platná hodnota.",
+        "preview": {
+          "nothing": "Nic se nepřipojí",
+          "space": "mezera",
+          "newLine": "nový řádek",
+          "tab": "znak tabulátoru",
+          "text": "„{{text}}“",
+          "key": "klávesa {{key}}",
+          "then": "{{first}}, potom {{next}}"
+        },
+        "errors": {
+          "unknownEscape": "Neznámá escape sekvence {{escape}}: použijte \\s, \\n, \\t, \\\\, \\{ nebo \\}",
+          "trailingBackslash": "Za zpětným lomítkem musí následovat písmeno: \\s, \\n, \\t, \\\\, \\{ nebo \\}",
+          "unknownKey": "Neznámý stisk klávesy {{key}}",
+          "unclosedKey": "Ke { chybí }; \\{ zapíše závorku",
+          "unmatchedBrace": "K } chybí {; \\} zapíše závorku",
+          "textAfterKey": "Po stisku klávesy mohou následovat jen další stisky kláves"
+        }
+      },
       "translateToEnglish": {
         "label": "Překládat do angličtiny",
         "description": "Během přepisu automaticky překládat řeč z jiných jazyků do angličtiny."

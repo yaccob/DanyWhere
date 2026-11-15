@@ -711,6 +711,29 @@
           "ctrlEnter": "Ctrl+Enter"
         }
       },
+      "appendText": {
+        "title": "結尾附加",
+        "description": "在此設定檔的每次聽寫後附加。文字照原樣；\\s 空格，\\n 換行，\\t 定位字元，\\\\ 反斜線，\\{ 和 \\} 大括號。結尾可加按鍵：{Enter}、{Tab}、{Shift+Enter}、{Cmd+Enter}（Windows 和 Linux 上為 Super+Enter）、{Ctrl+Enter}。僅在貼上文字時傳送按鍵。",
+        "noAccessibility": "沒有輔助使用權限時不傳送按鍵；文字仍會附加。",
+        "notSaved": "未儲存；最後一個有效值繼續生效。",
+        "preview": {
+          "nothing": "不附加任何內容",
+          "space": "空格",
+          "newLine": "換行",
+          "tab": "定位字元",
+          "text": "「{{text}}」",
+          "key": "{{key}} 鍵",
+          "then": "{{first}}，然後 {{next}}"
+        },
+        "errors": {
+          "unknownEscape": "未知的跳脫序列 {{escape}}：可用 \\s、\\n、\\t、\\\\、\\{ 或 \\}",
+          "trailingBackslash": "反斜線後需要一個字母：\\s、\\n、\\t、\\\\、\\{ 或 \\}",
+          "unknownKey": "未知的按鍵 {{key}}",
+          "unclosedKey": "{ 缺少對應的 }；\\{ 表示大括號本身",
+          "unmatchedBrace": "} 缺少對應的 {；\\} 表示大括號本身",
+          "textAfterKey": "按鍵之後只能接按鍵"
+        }
+      },
       "translateToEnglish": {
         "label": "翻譯為英語",
         "description": "在轉錄過程中自動將其他語言的語音翻譯為英語"

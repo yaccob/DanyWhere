@@ -66,7 +66,9 @@ pub struct ProfileValues {
     pub context_char_budget: u32,
     pub filler_word_removal_enabled: bool,
     pub custom_filler_words: Option<Vec<String>>,
-    pub append_trailing_space: bool,
+    /// The "Append" field (`append_text`), which replaced the trailing space;
+    /// stored profiles got it from theirs (`append_text::migrate`).
+    pub append_text: String,
 }
 
 impl Default for ProfileValues {
@@ -101,7 +103,7 @@ impl ProfileValues {
             context_char_budget: settings.dictation_context.char_budget,
             filler_word_removal_enabled: settings.filler_word_removal_enabled,
             custom_filler_words: settings.custom_filler_words.clone(),
-            append_trailing_space: settings.append_trailing_space,
+            append_text: settings.append_text.clone(),
         }
     }
 
@@ -129,7 +131,7 @@ impl ProfileValues {
         settings.dictation_context.char_budget = self.context_char_budget;
         settings.filler_word_removal_enabled = self.filler_word_removal_enabled;
         settings.custom_filler_words = self.custom_filler_words.clone();
-        settings.append_trailing_space = self.append_trailing_space;
+        settings.append_text = self.append_text.clone();
     }
 }
 
@@ -513,7 +515,7 @@ mod tests {
             context_char_budget: 999,
             filler_word_removal_enabled: false,
             custom_filler_words: Some(strings(&["äh"])),
-            append_trailing_space: true,
+            append_text: r"\s{Enter}".to_string(),
         }
     }
 

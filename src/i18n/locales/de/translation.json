@@ -711,6 +711,29 @@
           "ctrlEnter": "Ctrl+Enter"
         }
       },
+      "appendText": {
+        "title": "Anhängen",
+        "description": "Wird nach jedem Diktat dieses Profils angehängt. Text wie geschrieben; \\s Leerzeichen, \\n Zeilenumbruch, \\t Tabulator, \\\\ Backslash, \\{ und \\} geschweifte Klammern. Am Ende Tastendrücke: {Enter}, {Tab}, {Shift+Enter}, {Cmd+Enter} (Super+Enter unter Windows und Linux), {Ctrl+Enter}. Tastendrücke werden nur gesendet, wenn der Text eingefügt wird.",
+        "noAccessibility": "Ohne Bedienungshilfen werden keine Tastendrücke gesendet; der Text wird trotzdem angehängt.",
+        "notSaved": "Nicht gespeichert; es gilt weiter der letzte gültige Wert.",
+        "preview": {
+          "nothing": "Es wird nichts angehängt",
+          "space": "Leerzeichen",
+          "newLine": "Zeilenumbruch",
+          "tab": "Tabulatorzeichen",
+          "text": "„{{text}}“",
+          "key": "Taste {{key}}",
+          "then": "{{first}}, dann {{next}}"
+        },
+        "errors": {
+          "unknownEscape": "Unbekannte Escape-Sequenz {{escape}}: möglich sind \\s, \\n, \\t, \\\\, \\{ und \\}",
+          "trailingBackslash": "Nach einem Backslash muss ein Buchstabe folgen: \\s, \\n, \\t, \\\\, \\{ oder \\}",
+          "unknownKey": "Unbekannter Tastendruck {{key}}",
+          "unclosedKey": "Zu einer { fehlt die }; \\{ schreibt eine Klammer",
+          "unmatchedBrace": "Zu einer } fehlt die {; \\} schreibt eine Klammer",
+          "textAfterKey": "Nach einem Tastendruck dürfen nur noch Tastendrücke folgen"
+        }
+      },
       "translateToEnglish": {
         "label": "Ins Englische übersetzen",
         "description": "Sprache aus anderen Sprachen automatisch während der Transkription ins Englische übersetzen."

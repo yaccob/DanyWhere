@@ -900,9 +900,24 @@ fn sends_keys(paste_method: PasteMethod) -> bool {
 /// Pastes `text` into the focused app. Call from a worker thread, never the main
 /// thread: it sleeps between steps (input injection hops via `with_enigo`).
 pub fn paste(text: String, app_handle: AppHandle) -> Result<PasteOutcome, String> {
+    // DanyWhere: the values of the dictation in progress, if any.
+    paste_with_values(text, app_handle, crate::app_profiles::dictation_values())
+}
+
+/// DanyWhere: [`paste`] with the profile values of the dictation whose text
+/// it is (the "Append" field is the profile's), taken while it ran: its
+/// profile ends when the transcription task returns, which can be before
+/// this paste reads the settings.
+pub fn paste_with_values(
+    text: String,
+    app_handle: AppHandle,
+    values: Option<crate::profiles::ProfileValues>,
+) -> Result<PasteOutcome, String> {
     let _paste = PASTE_LOCK.lock().unwrap_or_else(PoisonError::into_inner);
-    // DanyWhere: the trailing space is the dictation profile's.
-    let settings = crate::app_profiles::dictation_settings(&app_handle);
+    let settings = crate::app_profiles::with_values(
+        &crate::settings::get_settings(&app_handle),
+        values.as_ref(),
+    );
 
     // Windows drops the keystrokes Handy sends to an elevated window and may
     // not say so, so ask before pasting instead of trusting the result. The
@@ -928,12 +943,12 @@ fn paste_as_configured(
     let paste_delay_ms = settings.paste_delay_ms;
     let paste_delay_after_ms = settings.paste_delay_after_ms;
 
-    // Append trailing space if setting is enabled
-    let text = if settings.append_trailing_space {
-        format!("{} ", text)
-    } else {
-        text
-    };
+    // DanyWhere: the "Append" field instead of the trailing space; its key
+    // presses replace auto submit (below).
+    let append = crate::append_text::for_settings(&settings);
+    let append_keys =
+        crate::append_text::keys_after_paste(&append, paste_method, settings.accessibility_skipped);
+    let text = text + &append.text;
 
     info!(
         "Using paste method: {:?}, delay before: {}ms, delay after: {}ms",
@@ -963,19 +978,15 @@ fn paste_as_configured(
             if settings.reliable_paste {
                 // Runs entirely on the main thread, as it requires.
                 let (text, app) = (text.clone(), app_handle.clone());
-                let (auto_submit, auto_submit_key, clipboard_handling) = (
-                    settings.auto_submit,
-                    settings.auto_submit_key,
-                    settings.clipboard_handling,
-                );
+                let (append_keys, clipboard_handling) =
+                    (append_keys.clone(), settings.clipboard_handling);
                 let reliable_result = with_enigo(&app_handle, move |enigo| {
                     crate::paste_tx::try_reliable_paste(
                         &text,
                         &app,
                         &paste_method,
                         enigo,
-                        auto_submit,
-                        auto_submit_key,
+                        append_keys,
                         clipboard_handling,
                     )
                 });
@@ -1004,13 +1015,13 @@ fn paste_as_configured(
         }
     }
 
-    if should_send_auto_submit(settings.auto_submit, paste_method) {
+    // DanyWhere: the "Append" field's key presses, in their order.
+    if should_send_auto_submit(!append_keys.is_empty(), paste_method) {
         std::thread::sleep(Duration::from_millis(50));
-        let auto_submit_key = settings.auto_submit_key;
         if let Err(error) = with_enigo(&app_handle, move |enigo| {
-            send_return_key(enigo, auto_submit_key)
+            crate::append_text::send_keys(enigo, &append_keys)
         }) {
-            log::warn!("Paste succeeded, but auto-submit failed: {error}");
+            log::warn!("Paste succeeded, but the appended key presses failed: {error}");
         }
     }
 

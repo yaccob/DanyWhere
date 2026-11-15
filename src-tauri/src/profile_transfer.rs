@@ -259,7 +259,10 @@ pub fn read_import(
         }),
         _ => None,
     };
-    Ok((file.profile, key))
+    let mut profile = file.profile;
+    // DanyWhere: a file from before the "Append" field.
+    crate::append_text::fill_from_older_export(text, &mut profile.values);
+    Ok((profile, key))
 }
 
 /// `wanted`, or `wanted (2)`, `wanted (3)`, … whichever is not in `taken`.
@@ -685,6 +688,36 @@ mod tests {
         let (profile, _) = read_import(&older, None).expect("import");
         assert!(profile.values.post_process_efforts.is_empty());
         assert_eq!(profile.name, "Work");
+    }
+
+    #[test]
+    fn the_append_field_travels_with_the_exported_profile() {
+        let mut s = settings();
+        s.append_text = r"\s{Enter}".to_string();
+        let yaml = export(&s, "default", Some("geheim")).expect("export");
+        let (profile, _) = read_import(&yaml, None).expect("import");
+        assert_eq!(profile.values.append_text, r"\s{Enter}");
+    }
+
+    #[test]
+    fn a_file_from_before_the_append_field_gets_it_from_its_trailing_space() {
+        let s = settings();
+        let yaml = export(&s, "work", None).expect("export");
+        let line = yaml
+            .lines()
+            .find(|line| line.trim_start().starts_with("append_text:"))
+            .expect("the export names the field")
+            .to_string();
+        let indent = &line[..line.len() - line.trim_start().len()];
+        for (trailing_space, expected) in [(true, r"\s"), (false, "")] {
+            let older = yaml.replace(
+                &line,
+                &format!("{indent}append_trailing_space: {trailing_space}"),
+            );
+            assert!(!older.contains("append_text"), "{older}");
+            let (profile, _) = read_import(&older, None).expect("import");
+            assert_eq!(profile.values.append_text, expected, "{older}");
+        }
     }
 
     #[test]

@@ -1140,6 +1140,10 @@ impl ShortcutAction for TranscribeAction {
                                 // Taken before the paste thread exists, and so
                                 // before the next session can start.
                                 let session = RECORDING_SESSION.load(Ordering::SeqCst);
+                                // DanyWhere: the dictation profile's values for the
+                                // paste and its "Append" field, taken now: the
+                                // profile ends when this task returns.
+                                let dictation_values = crate::app_profiles::dictation_values();
                                 // Off the main thread: paste sleeps between steps, and a
                                 // paste into Handy's own windows needs the main thread free.
                                 std::thread::Builder::new()
@@ -1161,6 +1165,12 @@ impl ShortcutAction for TranscribeAction {
                                         // DanyWhere: the "Insert Last Dictation"
                                         // service may be waiting for this text.
                                         let text_for_service = final_text.clone();
+                                        // DanyWhere: with the profile's "Append" text.
+                                        let service_text = crate::append_text::with_dictation_text(
+                                            &ah_clone,
+                                            &text_for_service,
+                                            dictation_values.as_ref(),
+                                        );
                                         // DanyWhere: "Copy Last Transcript"
                                         // during this dictation puts it on the
                                         // clipboard instead (below).
@@ -1168,7 +1178,7 @@ impl ShortcutAction for TranscribeAction {
                                             log::info!("Copy Last Transcript asked for this dictation; not pasting it.");
                                             Ok(utils::PasteOutcome::Pasted)
                                         } else {
-                                            utils::paste(final_text, ah_clone.clone())
+                                            utils::paste_with_values(final_text, ah_clone.clone(), dictation_values)
                                         };
                                         let (outcome, notice) =
                                             match pasted {
@@ -1214,7 +1224,7 @@ impl ShortcutAction for TranscribeAction {
                                         let inserted_by_service = outcome
                                             == TranscriptionOutcome::Typed
                                             && crate::insert_service::deliver_to_waiting_call(
-                                                &text_for_service,
+                                                &service_text,
                                             );
                                         // DanyWhere: "Copy Last Transcript"
                                         // during this dictation, or an app that

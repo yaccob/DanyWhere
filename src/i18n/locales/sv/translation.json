@@ -711,6 +711,29 @@
           "ctrlEnter": "Ctrl+Enter"
         }
       },
+      "appendText": {
+        "title": "Lägg till",
+        "description": "Läggs till efter varje diktering i den här profilen. Text som den skrivs; \\s mellanslag, \\n ny rad, \\t tabb, \\\\ omvänt snedstreck, \\{ och \\} klammerparenteser. I slutet tangenttryck: {Enter}, {Tab}, {Shift+Enter}, {Cmd+Enter} (Super+Enter på Windows och Linux), {Ctrl+Enter}. Tangenttryck skickas bara när texten klistras in.",
+        "noAccessibility": "Utan hjälpmedel skickas inga tangenttryck; texten läggs ändå till.",
+        "notSaved": "Inte sparat; det senaste giltiga värdet gäller fortfarande.",
+        "preview": {
+          "nothing": "Inget läggs till",
+          "space": "mellanslag",
+          "newLine": "ny rad",
+          "tab": "tabbtecken",
+          "text": "”{{text}}”",
+          "key": "tangenten {{key}}",
+          "then": "{{first}}, sedan {{next}}"
+        },
+        "errors": {
+          "unknownEscape": "Okänd escape-sekvens {{escape}}: använd \\s, \\n, \\t, \\\\, \\{ eller \\}",
+          "trailingBackslash": "Ett omvänt snedstreck måste följas av en bokstav: \\s, \\n, \\t, \\\\, \\{ eller \\}",
+          "unknownKey": "Okänt tangenttryck {{key}}",
+          "unclosedKey": "En { saknar sin }; skriv \\{ för en klammer",
+          "unmatchedBrace": "En } saknar sin {; skriv \\} för en klammer",
+          "textAfterKey": "Efter ett tangenttryck får bara tangenttryck följa"
+        }
+      },
       "translateToEnglish": {
         "label": "Översätt till engelska",
         "description": "Översätt automatiskt tal från andra språk till engelska under transkription."

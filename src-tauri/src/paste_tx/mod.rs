@@ -196,8 +196,8 @@ pub(crate) fn try_reliable_paste(
     app_handle: &tauri::AppHandle,
     paste_method: &crate::settings::PasteMethod,
     enigo: &mut enigo::Enigo,
-    auto_submit: bool,
-    auto_submit_key: crate::settings::AutoSubmitKey,
+    // DanyWhere: the "Append" field's key presses instead of auto submit.
+    append_keys: Vec<crate::append_text::AppendKey>,
     clipboard_handling: crate::settings::ClipboardHandling,
 ) -> Result<(), String> {
     platform::run(
@@ -205,8 +205,7 @@ pub(crate) fn try_reliable_paste(
         app_handle,
         paste_method,
         enigo,
-        auto_submit,
-        auto_submit_key,
+        append_keys,
         clipboard_handling,
     )
 }

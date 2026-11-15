@@ -104,21 +104,18 @@ pub enum ServiceReply {
 }
 
 /// Decides the service's reply. `latest` is the most recent dictation's text
-/// (as "Paste Last Transcript" would deliver it).
+/// (as "Paste Last Transcript" would deliver it), `appended` the text of the
+/// "Append" field (`append_text`), whose key presses the service can't send.
 pub fn service_reply(
     dictation_in_progress: bool,
     latest: Option<&str>,
-    append_trailing_space: bool,
+    appended: &str,
 ) -> ServiceReply {
     if dictation_in_progress {
         return ServiceReply::NotReady;
     }
     match latest {
-        Some(text) if !text.trim().is_empty() => ServiceReply::Insert(if append_trailing_space {
-            format!("{text} ")
-        } else {
-            text.to_string()
-        }),
+        Some(text) if !text.trim().is_empty() => ServiceReply::Insert(format!("{text}{appended}")),
         _ => ServiceReply::Nothing,
     }
 }
@@ -637,7 +634,7 @@ fn answer_call(app: &tauri::AppHandle) -> Option<String> {
     match service_reply(
         in_progress,
         latest.as_deref(),
-        settings.append_trailing_space,
+        &crate::append_text::for_settings(&settings).text,
     ) {
         ServiceReply::Insert(text) => {
             log::info!("Insert Last Dictation: handing over the last dictation.");
@@ -702,8 +699,9 @@ fn answer_waiting_call(
                     started.elapsed()
                 );
                 crate::overlay::hide_ready_notice(app);
-                let settings = crate::settings::get_settings(app);
-                return match service_reply(false, Some(&text), settings.append_trailing_space) {
+                // DanyWhere: the dictation's text arrives with its profile's
+                // "Append" text (`append_text::with_dictation_text`).
+                return match service_reply(false, Some(&text), "") {
                     ServiceReply::Insert(text) => Some(text),
                     ServiceReply::NotReady | ServiceReply::Nothing => None,
                 };
@@ -1377,7 +1375,7 @@ mod tests {
     #[test]
     fn inserts_nothing_while_a_dictation_is_in_progress() {
         assert_eq!(
-            service_reply(true, Some("the previous dictation"), false),
+            service_reply(true, Some("the previous dictation"), ""),
             ServiceReply::NotReady
         );
     }
@@ -1385,24 +1383,28 @@ mod tests {
     #[test]
     fn inserts_the_last_dictation() {
         assert_eq!(
-            service_reply(false, Some("Hallo Welt"), false),
+            service_reply(false, Some("Hallo Welt"), ""),
             ServiceReply::Insert("Hallo Welt".into())
         );
     }
 
     #[test]
-    fn adds_the_trailing_space_when_set() {
+    fn adds_the_text_of_the_append_field() {
         assert_eq!(
-            service_reply(false, Some("Hallo"), true),
+            service_reply(false, Some("Hallo"), " "),
             ServiceReply::Insert("Hallo ".into())
+        );
+        assert_eq!(
+            service_reply(false, Some("Hallo"), "\nMfG"),
+            ServiceReply::Insert("Hallo\nMfG".into())
         );
     }
 
     #[test]
     fn inserts_nothing_without_a_dictation() {
-        assert_eq!(service_reply(false, None, false), ServiceReply::Nothing);
+        assert_eq!(service_reply(false, None, ""), ServiceReply::Nothing);
         assert_eq!(
-            service_reply(false, Some("  \n"), true),
+            service_reply(false, Some("  \n"), " "),
             ServiceReply::Nothing
         );
     }
