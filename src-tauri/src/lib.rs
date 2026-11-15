@@ -31,6 +31,8 @@ mod paste_tx;
 pub mod portable;
 #[cfg(target_os = "linux")]
 mod primary_selection;
+mod profile_export;
+mod profile_transfer;
 mod profiles;
 mod prompt_frame;
 mod secure_input;
@@ -790,6 +792,10 @@ pub fn run(cli_args: CliArgs) {
             profiles::duplicate_profile,
             profiles::rename_profile,
             profiles::delete_profile,
+            profile_transfer::profile_export_needs_password,
+            profile_transfer::export_profile,
+            profile_transfer::inspect_profile_import,
+            profile_transfer::import_profile,
             shortcut::suspend_all_bindings,
             shortcut::resume_all_bindings,
             shortcut::change_mute_while_recording_setting,

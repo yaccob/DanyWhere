@@ -10,6 +10,11 @@ default-run = "handy"
 [profile.dev]
 incremental = true # Compile your binary in smaller steps.
 
+# DanyWhere: unoptimized Argon2 needs about 9 s per profile export password
+# instead of under a second, in debug builds and tests.
+[profile.dev.package.argon2]
+opt-level = 3
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [lib]
@@ -84,6 +89,14 @@ isolang = "2"
 chrono = "0.4"
 rusqlite = { version = "0.37", features = ["bundled"] }
 sha2 = "0.10"
+# DanyWhere: profile export (profile_export.rs). The API key in the file is
+# encrypted with a password (Argon2id, XChaCha20-Poly1305); the file is YAML.
+argon2 = { version = "0.6", default-features = false, features = ["alloc", "zeroize"] }
+base64 = "0.22"
+chacha20poly1305 = { version = "0.11", default-features = false, features = ["alloc", "zeroize"] }
+getrandom = "0.3"
+serde-saphyr = { version = "2.1", default-features = false, features = ["serialize", "deserialize"] }
+zeroize = "1.8"
 libc = "0.2"
 # Every model runs through transcribe-cpp (GGUF/ggml, native backends).
 # Per-platform backend features are added in the target tables (Cargo unifies
