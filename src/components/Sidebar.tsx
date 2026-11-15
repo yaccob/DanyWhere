@@ -14,6 +14,8 @@ import {
 } from "./settings";
 // DanyWhere: the profile in use, on every page.
 import { ProfileSelector } from "./settings/profiles/ProfileSelector";
+// DanyWhere: names a test build (Dev, NoAX) under the wordmark.
+import VariantBadge from "./VariantBadge";
 
 export type SidebarSection = keyof typeof SECTIONS_CONFIG;
 
@@ -105,6 +107,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <div className="flex flex-col w-40 h-full border-e border-line items-center px-2">
       <HandyTextLogo width={120} className="m-4" />
+      <VariantBadge className="-mt-2 mb-3 text-xs" />
       <ProfileSelector />
       <div className="flex flex-col w-full items-center gap-1 pt-2 border-t border-line">
         {availableSections.map((section) => {

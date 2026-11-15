@@ -5,6 +5,8 @@ import ModelSelector from "../model-selector";
 import UpdateChecker from "../update-checker";
 import NoticeChip from "./NoticeChip";
 import TranscriptionStatus from "./TranscriptionStatus";
+// DanyWhere: names a test build (Dev, NoAX) next to the version.
+import VariantBadge from "../VariantBadge";
 
 interface FooterProps {
   onShowHistory: () => void;
@@ -42,6 +44,7 @@ const Footer: React.FC<FooterProps> = ({ onShowHistory }) => {
             <span>•</span>
             {/* eslint-disable-next-line i18next/no-literal-string */}
             <span>v{version}</span>
+            <VariantBadge className="ms-1 text-[10px]" />
           </div>
           <NoticeChip />
         </div>
