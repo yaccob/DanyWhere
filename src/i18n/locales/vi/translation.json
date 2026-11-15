@@ -714,9 +714,10 @@
       },
       "appendText": {
         "title": "Thêm vào cuối",
-        "description": "Được thêm sau mỗi lần đọc chính tả của hồ sơ này. Văn bản như đã viết; \\s dấu cách, \\n xuống dòng, \\t tab, \\\\ dấu gạch chéo ngược, \\{ và \\} dấu ngoặc nhọn. Ở cuối là các lần nhấn phím: {Enter}, {Tab}, {Shift+Enter}, {{cmdEnter}}, {Ctrl+Enter}. Phím chỉ được gửi khi văn bản được dán.",
+        "description": "Được thêm sau mỗi lần đọc chính tả của hồ sơ này: văn bản, rồi đến phím bạn chọn. Trong văn bản, \\s là dấu cách, \\n là xuống dòng, \\t là tab và \\\\ là dấu gạch chéo ngược; mọi thứ khác được thêm đúng như đã viết. Phím chỉ được gửi khi văn bản được dán.",
         "noAccessibility": "Không có Trợ năng thì không gửi phím; văn bản vẫn được thêm.",
-        "notSaved": "Chưa lưu; giá trị hợp lệ cuối cùng vẫn có hiệu lực.",
+        "keyNone": "Không có phím",
+        "keyKept": "Giữ lại từ trước; không có trên hệ thống này",
         "preview": {
           "nothing": "Không thêm gì",
           "space": "dấu cách",
@@ -725,19 +726,6 @@
           "text": "“{{text}}”",
           "key": "phím {{key}}",
           "then": "{{first}}, rồi {{next}}"
-        },
-        "errors": {
-          "unknownEscape": "Chuỗi thoát không xác định {{escape}}: dùng \\s, \\n, \\t, \\\\, \\{ hoặc \\}",
-          "trailingBackslash": "Sau dấu gạch chéo ngược phải có một chữ cái: \\s, \\n, \\t, \\\\, \\{ hoặc \\}",
-          "unknownKey": "Phím không xác định {{key}}",
-          "unclosedKey": "{ thiếu }; \\{ viết dấu ngoặc",
-          "unmatchedBrace": "} thiếu {; \\} viết dấu ngoặc",
-          "textAfterKey": "Sau một lần nhấn phím chỉ được có các lần nhấn phím",
-          "foreignKeyName": {
-            "macos": "Trên Mac, phím này tên là {{name}}: {{key}}",
-            "windows": "Trên Windows, phím này tên là {{name}}: {{key}}",
-            "linux": "Trên Linux, phím này tên là {{name}}: {{key}}"
-          }
         }
       },
       "translateToEnglish": {

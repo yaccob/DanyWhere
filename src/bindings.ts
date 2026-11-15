@@ -632,28 +632,29 @@ async changeAppendTrailingSpaceSetting(enabled: boolean) : Promise<Result<null, 
 }
 },
 /**
- * The field's parts for the preview, or why the value is invalid.
+ * The key presses the selection offers on this system, in its order.
  */
-async parseAppendText(value: string) : Promise<Result<AppendPart[], AppendTextError>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("parse_append_text", { value }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
+async appendKeyOptions() : Promise<AppendKey[]> {
+    return await TAURI_INVOKE("append_key_options");
 },
 /**
- * This system and its name of the ⌘ / Windows / Super key press, for the
- * field's description and the wording of its errors.
+ * The stored value as the text field and the selection show it.
  */
-async appendKeyNames() : Promise<AppendKeyNames> {
-    return await TAURI_INVOKE("append_key_names");
+async splitAppendText(value: string) : Promise<AppendChoice> {
+    return await TAURI_INVOKE("split_append_text", { value });
 },
 /**
- * Stores the field in the active profile; an invalid value is refused and
- * the stored one stays.
+ * The value to store for the text field's `text` and the selection's
+ * `keys`, and its parts for the preview.
  */
-async changeAppendTextSetting(value: string) : Promise<Result<null, AppendTextError>> {
+async composeAppendText(text: string, keys: AppendKey[]) : Promise<AppendComposed> {
+    return await TAURI_INVOKE("compose_append_text", { text, keys });
+},
+/**
+ * Stores the field (a value from `compose_append_text`) in the active
+ * profile.
+ */
+async changeAppendTextSetting(value: string) : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("change_append_text_setting", { value }) };
 } catch (e) {
@@ -1728,27 +1729,47 @@ profile_auto_by_app?: boolean;
  */
 send_context?: boolean }
 /**
+ * The stored value as the field's two controls show it.
+ */
+export type AppendChoice = { 
+/**
+ * The text as the text field shows it: `\s`, `\n`, `\t` and `\\` as
+ * written, braces and every other character as they are.
+ */
+text: string; 
+/**
+ * The key presses after the text, in their order; none is empty.
+ */
+keys: AppendKey[]; 
+/**
+ * Whether the selection has no entry for `keys`: several key presses,
+ * or one this system doesn't offer, as an older version or a hand-edited
+ * settings file may have stored. The selection then shows them as an
+ * extra entry, and they stay, and are sent, until another is chosen.
+ */
+kept: boolean }
+/**
+ * A value to store, made from the field's two controls.
+ */
+export type AppendComposed = { 
+/**
+ * The stored string.
+ */
+value: string; 
+/**
+ * Its parts, for the preview in words under the field.
+ */
+parts: AppendPart[] }
+/**
  * A key press the field can end with.
  */
 export type AppendKey = "enter" | "tab" | "shift_enter" | 
 /**
  * Cmd+Enter on macOS, Win+Enter on Windows, Super+Enter on Linux, as
- * Handy's `AutoSubmitKey::CmdEnter`.
+ * Handy's `AutoSubmitKey::CmdEnter`. Offered only on the Mac; elsewhere
+ * only a stored value can hold it.
  */
 "cmd_enter" | "ctrl_enter"
-/**
- * What the frontend needs to name the field's keys on this system.
- */
-export type AppendKeyNames = { 
-/**
- * The system; picks the wording of `ForeignKeyName`.
- */
-platform: KeyPlatform; 
-/**
- * `AppendKey::CmdEnter` as this system writes it, for the field's
- * description: `Cmd+Enter`, `Win+Enter` or `Super+Enter`.
- */
-cmd_enter: string }
 /**
  * One part of the field, in order; what the preview names.
  */
@@ -1756,53 +1777,7 @@ export type AppendPart =
 /**
  * Text as written. Spaces at its ends are parts of their own.
  */
-{ kind: "text"; text: string } | { kind: "space" } | { kind: "new_line" } | { kind: "tab" } | 
-/**
- * A key press, with its `name` as this system writes it (`Win+Enter`),
- * whichever of its names was typed.
- */
-{ kind: "key"; key: AppendKey; name: string }
-/**
- * An invalid value: the code and what it is about, the escape (`\x`) for
- * `UnknownEscape`, the name between the braces for `UnknownKey`, this
- * system's name of the key for `ForeignKeyName` (`Cmd`), else empty.
- * `suggestion` is, for `ForeignKeyName` only, the key press as this system
- * writes it, without the braces (`Cmd+Enter`).
- */
-export type AppendTextError = { code: AppendTextErrorCode; detail: string; suggestion: string }
-/**
- * Why a value is invalid, as a code the frontend translates.
- */
-export type AppendTextErrorCode = 
-/**
- * A backslash before a character that has no meaning after one.
- */
-"unknown_escape" | 
-/**
- * A backslash at the very end.
- */
-"trailing_backslash" | 
-/**
- * Braces around something that is no known key press.
- */
-"unknown_key" | 
-/**
- * A `{` without its `}`.
- */
-"unclosed_key" | 
-/**
- * A `}` without its `{`.
- */
-"unmatched_brace" | 
-/**
- * Text after a key press.
- */
-"text_after_key" | 
-/**
- * A known key press written with another system's name of a key, such
- * as `{Win+Enter}` on the Mac or `{Return}` on Windows.
- */
-"foreign_key_name"
+{ kind: "text"; text: string } | { kind: "space" } | { kind: "new_line" } | { kind: "tab" } | { kind: "key"; key: AppendKey }
 /**
  * An application that can be assigned to a profile.
  */
@@ -2115,10 +2090,6 @@ export type KeyConflictChoice =
  * Keep the stored key and import the profile.
  */
 "keep"
-/**
- * The system whose key names the field uses.
- */
-export type KeyPlatform = "macos" | "windows" | "linux"
 export type KeyboardDiagnosticReport = { secure_input_enabled: boolean; culprit_pid: number | null; culprit_name: string | null; 
 /**
  * Counts only — key identity is deliberately never captured.

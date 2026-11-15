@@ -2371,7 +2371,7 @@ mod tests {
     /// in every profile, so none of them turns invalid by moving.
     #[test]
     fn reading_the_store_gives_append_the_systems_key_names() {
-        use crate::append_text::{parse, Append, AppendKey, KeyPlatform};
+        use crate::append_text::{localize, parse, Append, AppendKey, KeyPlatform};
         // Every system's name of the key, so at least two are foreign here.
         let written = "{Cmd+Enter}{Win+Enter}{Super+Enter}{Return}";
         let mut settings = get_default_settings();
@@ -2384,10 +2384,10 @@ mod tests {
             &settings.append_text,
             &settings.profiles[0].values.append_text,
         ] {
-            let parts = parse(value, KeyPlatform::current())
-                .unwrap_or_else(|e| panic!("{value} is invalid here: {e}"));
+            // Only this system's names are left.
+            assert_eq!(&localize(value, KeyPlatform::current()), value);
             assert_eq!(
-                Append::from_parts(&parts).keys,
+                Append::from_parts(&parse(value)).keys,
                 vec![
                     AppendKey::CmdEnter,
                     AppendKey::CmdEnter,

@@ -714,9 +714,10 @@
       },
       "appendText": {
         "title": "Afegeix al final",
-        "description": "S'afegeix després de cada dictat d'aquest perfil. Text tal com s'escriu; \\s espai, \\n salt de línia, \\t tabulació, \\\\ barra inversa, \\{ i \\} claus. Al final, pulsacions de tecles: {Enter}, {Tab}, {Shift+Enter}, {{cmdEnter}}, {Ctrl+Enter}. Les tecles només s'envien quan s'enganxa el text.",
+        "description": "S'afegeix després de cada dictat d'aquest perfil: el text i després la pulsació de tecla que triïs. Al text, \\s és un espai, \\n un salt de línia, \\t una tabulació i \\\\ una barra inversa; la resta s'afegeix tal com està escrit. La pulsació de tecla només s'envia quan s'enganxa el text.",
         "noAccessibility": "Sense accessibilitat no s'envien tecles; el text s'afegeix igualment.",
-        "notSaved": "No desat; continua vigent l'últim valor vàlid.",
+        "keyNone": "Cap tecla",
+        "keyKept": "Conservat d'abans; no s'ofereix en aquest sistema",
         "preview": {
           "nothing": "No s'afegeix res",
           "space": "espai",
@@ -725,19 +726,6 @@
           "text": "«{{text}}»",
           "key": "la tecla {{key}}",
           "then": "{{first}}, després {{next}}"
-        },
-        "errors": {
-          "unknownEscape": "Seqüència d'escapament desconeguda {{escape}}: fes servir \\s, \\n, \\t, \\\\, \\{ o \\}",
-          "trailingBackslash": "Una barra inversa necessita una lletra al darrere: \\s, \\n, \\t, \\\\, \\{ o \\}",
-          "unknownKey": "Tecla desconeguda {{key}}",
-          "unclosedKey": "Una { necessita la seva }; escriu \\{ per a una clau",
-          "unmatchedBrace": "Una } necessita la seva {; escriu \\} per a una clau",
-          "textAfterKey": "Després d'una tecla només poden venir altres tecles",
-          "foreignKeyName": {
-            "macos": "Al Mac aquesta tecla es diu {{name}}: {{key}}",
-            "windows": "A Windows aquesta tecla es diu {{name}}: {{key}}",
-            "linux": "A Linux aquesta tecla es diu {{name}}: {{key}}"
-          }
         }
       },
       "translateToEnglish": {

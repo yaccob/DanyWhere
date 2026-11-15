@@ -714,9 +714,10 @@
       },
       "appendText": {
         "title": "Připojit",
-        "description": "Připojí se za každý diktát tohoto profilu. Text tak, jak je napsán; \\s mezera, \\n nový řádek, \\t tabulátor, \\\\ zpětné lomítko, \\{ a \\} složené závorky. Na konci stisky kláves: {Enter}, {Tab}, {Shift+Enter}, {{cmdEnter}}, {Ctrl+Enter}. Klávesy se odešlou jen tehdy, když se text vkládá.",
+        "description": "Připojí se za každý diktát tohoto profilu: text a potom zvolený stisk klávesy. V textu je \\s mezera, \\n nový řádek, \\t tabulátor a \\\\ zpětné lomítko; vše ostatní se připojí tak, jak je napsáno. Stisk klávesy se odešle, jen když se text vkládá.",
         "noAccessibility": "Bez usnadnění se žádné klávesy neodešlou; text se přesto připojí.",
-        "notSaved": "Neuloženo; dál platí poslední platná hodnota.",
+        "keyNone": "Žádná klávesa",
+        "keyKept": "Zachováno z dřívějška; v tomto systému se nenabízí",
         "preview": {
           "nothing": "Nic se nepřipojí",
           "space": "mezera",
@@ -725,19 +726,6 @@
           "text": "„{{text}}“",
           "key": "klávesa {{key}}",
           "then": "{{first}}, potom {{next}}"
-        },
-        "errors": {
-          "unknownEscape": "Neznámá escape sekvence {{escape}}: použijte \\s, \\n, \\t, \\\\, \\{ nebo \\}",
-          "trailingBackslash": "Za zpětným lomítkem musí následovat písmeno: \\s, \\n, \\t, \\\\, \\{ nebo \\}",
-          "unknownKey": "Neznámý stisk klávesy {{key}}",
-          "unclosedKey": "Ke { chybí }; \\{ zapíše závorku",
-          "unmatchedBrace": "K } chybí {; \\} zapíše závorku",
-          "textAfterKey": "Po stisku klávesy mohou následovat jen další stisky kláves",
-          "foreignKeyName": {
-            "macos": "Na Macu se tato klávesa jmenuje {{name}}: {{key}}",
-            "windows": "Ve Windows se tato klávesa jmenuje {{name}}: {{key}}",
-            "linux": "V Linuxu se tato klávesa jmenuje {{name}}: {{key}}"
-          }
         }
       },
       "translateToEnglish": {

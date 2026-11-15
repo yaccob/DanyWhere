@@ -714,9 +714,10 @@
       },
       "appendText": {
         "title": "結尾附加",
-        "description": "在此設定檔的每次聽寫後附加。文字照原樣；\\s 空格，\\n 換行，\\t 定位字元，\\\\ 反斜線，\\{ 和 \\} 大括號。結尾可加按鍵：{Enter}、{Tab}、{Shift+Enter}、{{cmdEnter}}、{Ctrl+Enter}。僅在貼上文字時傳送按鍵。",
+        "description": "在此設定檔的每次聽寫後附加：先是文字，然後是你選擇的按鍵。文字中 \\s 代表空格，\\n 代表換行，\\t 代表定位字元，\\\\ 代表反斜線；其他內容依原樣附加。只有在貼上文字時才會送出按鍵。",
         "noAccessibility": "沒有輔助使用權限時不傳送按鍵；文字仍會附加。",
-        "notSaved": "未儲存；最後一個有效值繼續生效。",
+        "keyNone": "無按鍵",
+        "keyKept": "沿用先前的設定；此系統不提供",
         "preview": {
           "nothing": "不附加任何內容",
           "space": "空格",
@@ -725,19 +726,6 @@
           "text": "「{{text}}」",
           "key": "{{key}} 鍵",
           "then": "{{first}}，然後 {{next}}"
-        },
-        "errors": {
-          "unknownEscape": "未知的跳脫序列 {{escape}}：可用 \\s、\\n、\\t、\\\\、\\{ 或 \\}",
-          "trailingBackslash": "反斜線後需要一個字母：\\s、\\n、\\t、\\\\、\\{ 或 \\}",
-          "unknownKey": "未知的按鍵 {{key}}",
-          "unclosedKey": "{ 缺少對應的 }；\\{ 表示大括號本身",
-          "unmatchedBrace": "} 缺少對應的 {；\\} 表示大括號本身",
-          "textAfterKey": "按鍵之後只能接按鍵",
-          "foreignKeyName": {
-            "macos": "在 Mac 上，此鍵名為 {{name}}：{{key}}",
-            "windows": "在 Windows 上，此鍵名為 {{name}}：{{key}}",
-            "linux": "在 Linux 上，此鍵名為 {{name}}：{{key}}"
-          }
         }
       },
       "translateToEnglish": {

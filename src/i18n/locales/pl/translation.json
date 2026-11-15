@@ -714,9 +714,10 @@
       },
       "appendText": {
         "title": "Dołącz",
-        "description": "Dołączane po każdym dyktowaniu w tym profilu. Tekst tak, jak został wpisany; \\s spacja, \\n nowy wiersz, \\t tabulator, \\\\ ukośnik wsteczny, \\{ i \\} nawiasy klamrowe. Na końcu naciśnięcia klawiszy: {Enter}, {Tab}, {Shift+Enter}, {{cmdEnter}}, {Ctrl+Enter}. Klawisze są wysyłane tylko wtedy, gdy tekst jest wklejany.",
+        "description": "Dołączane po każdym dyktowaniu w tym profilu: tekst, a potem wybrane naciśnięcie klawisza. W tekście \\s to spacja, \\n nowy wiersz, \\t tabulator, a \\\\ ukośnik wsteczny; wszystko inne jest dołączane tak, jak zostało wpisane. Naciśnięcie klawisza jest wysyłane tylko wtedy, gdy tekst jest wklejany.",
         "noAccessibility": "Bez dostępności klawisze nie są wysyłane; tekst i tak zostanie dołączony.",
-        "notSaved": "Nie zapisano; nadal obowiązuje ostatnia poprawna wartość.",
+        "keyNone": "Bez klawisza",
+        "keyKept": "Zachowane z wcześniej; niedostępne w tym systemie",
         "preview": {
           "nothing": "Nic nie jest dołączane",
           "space": "spacja",
@@ -725,19 +726,6 @@
           "text": "„{{text}}”",
           "key": "klawisz {{key}}",
           "then": "{{first}}, potem {{next}}"
-        },
-        "errors": {
-          "unknownEscape": "Nieznana sekwencja {{escape}}: użyj \\s, \\n, \\t, \\\\, \\{ lub \\}",
-          "trailingBackslash": "Po ukośniku wstecznym musi być litera: \\s, \\n, \\t, \\\\, \\{ lub \\}",
-          "unknownKey": "Nieznany klawisz {{key}}",
-          "unclosedKey": "Do { brakuje }; \\{ wpisuje nawias",
-          "unmatchedBrace": "Do } brakuje {; \\} wpisuje nawias",
-          "textAfterKey": "Po klawiszu mogą następować tylko kolejne klawisze",
-          "foreignKeyName": {
-            "macos": "Na Macu ten klawisz nazywa się {{name}}: {{key}}",
-            "windows": "W Windows ten klawisz nazywa się {{name}}: {{key}}",
-            "linux": "W Linuksie ten klawisz nazywa się {{name}}: {{key}}"
-          }
         }
       },
       "translateToEnglish": {

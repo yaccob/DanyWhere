@@ -714,9 +714,10 @@
       },
       "appendText": {
         "title": "Toevoegen",
-        "description": "Wordt na elk dictaat van dit profiel toegevoegd. Tekst zoals geschreven; \\s spatie, \\n nieuwe regel, \\t tab, \\\\ backslash, \\{ en \\} accolades. Aan het eind toetsaanslagen: {Enter}, {Tab}, {Shift+Enter}, {{cmdEnter}}, {Ctrl+Enter}. Toetsaanslagen worden alleen verstuurd als de tekst wordt geplakt.",
+        "description": "Wordt na elk dictaat van dit profiel toegevoegd: de tekst en daarna de toetsaanslag die je kiest. In de tekst is \\s een spatie, \\n een nieuwe regel, \\t een tab en \\\\ een backslash; al het andere wordt toegevoegd zoals het er staat. De toetsaanslag wordt alleen verstuurd als de tekst wordt geplakt.",
         "noAccessibility": "Zonder Toegankelijkheid worden geen toetsaanslagen verstuurd; de tekst wordt wel toegevoegd.",
-        "notSaved": "Niet opgeslagen; de laatste geldige waarde blijft van kracht.",
+        "keyNone": "Geen toets",
+        "keyKept": "Overgenomen van eerder; niet aangeboden op dit systeem",
         "preview": {
           "nothing": "Er wordt niets toegevoegd",
           "space": "spatie",
@@ -725,19 +726,6 @@
           "text": "“{{text}}”",
           "key": "de toets {{key}}",
           "then": "{{first}}, dan {{next}}"
-        },
-        "errors": {
-          "unknownEscape": "Onbekende escape {{escape}}: gebruik \\s, \\n, \\t, \\\\, \\{ of \\}",
-          "trailingBackslash": "Na een backslash hoort een letter: \\s, \\n, \\t, \\\\, \\{ of \\}",
-          "unknownKey": "Onbekende toetsaanslag {{key}}",
-          "unclosedKey": "Een { heeft een } nodig; schrijf \\{ voor een accolade",
-          "unmatchedBrace": "Een } heeft een { nodig; schrijf \\} voor een accolade",
-          "textAfterKey": "Na een toetsaanslag mogen alleen toetsaanslagen volgen",
-          "foreignKeyName": {
-            "macos": "Op de Mac heet deze toets {{name}}: {{key}}",
-            "windows": "Op Windows heet deze toets {{name}}: {{key}}",
-            "linux": "Op Linux heet deze toets {{name}}: {{key}}"
-          }
         }
       },
       "translateToEnglish": {

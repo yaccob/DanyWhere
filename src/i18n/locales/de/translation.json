@@ -714,9 +714,10 @@
       },
       "appendText": {
         "title": "Anhängen",
-        "description": "Wird nach jedem Diktat dieses Profils angehängt. Text wie geschrieben; \\s Leerzeichen, \\n Zeilenumbruch, \\t Tabulator, \\\\ Backslash, \\{ und \\} geschweifte Klammern. Am Ende Tastendrücke: {Enter}, {Tab}, {Shift+Enter}, {{cmdEnter}}, {Ctrl+Enter}. Tastendrücke werden nur gesendet, wenn der Text eingefügt wird.",
+        "description": "Wird nach jedem Diktat dieses Profils angehängt: der Text, dann der gewählte Tastendruck. Im Text ist \\s ein Leerzeichen, \\n ein Zeilenumbruch, \\t ein Tabulator und \\\\ ein Backslash; alles andere wird angehängt, wie es dasteht. Der Tastendruck wird nur gesendet, wenn der Text eingefügt wird.",
         "noAccessibility": "Ohne Bedienungshilfen werden keine Tastendrücke gesendet; der Text wird trotzdem angehängt.",
-        "notSaved": "Nicht gespeichert; es gilt weiter der letzte gültige Wert.",
+        "keyNone": "Keine Taste",
+        "keyKept": "Von früher übernommen; auf diesem System nicht angeboten",
         "preview": {
           "nothing": "Es wird nichts angehängt",
           "space": "Leerzeichen",
@@ -725,19 +726,6 @@
           "text": "„{{text}}“",
           "key": "Taste {{key}}",
           "then": "{{first}}, dann {{next}}"
-        },
-        "errors": {
-          "unknownEscape": "Unbekannte Escape-Sequenz {{escape}}: möglich sind \\s, \\n, \\t, \\\\, \\{ und \\}",
-          "trailingBackslash": "Nach einem Backslash muss ein Buchstabe folgen: \\s, \\n, \\t, \\\\, \\{ oder \\}",
-          "unknownKey": "Unbekannter Tastendruck {{key}}",
-          "unclosedKey": "Zu einer { fehlt die }; \\{ schreibt eine Klammer",
-          "unmatchedBrace": "Zu einer } fehlt die {; \\} schreibt eine Klammer",
-          "textAfterKey": "Nach einem Tastendruck dürfen nur noch Tastendrücke folgen",
-          "foreignKeyName": {
-            "macos": "Auf dem Mac heißt diese Taste {{name}}: {{key}}",
-            "windows": "Unter Windows heißt diese Taste {{name}}: {{key}}",
-            "linux": "Unter Linux heißt diese Taste {{name}}: {{key}}"
-          }
         }
       },
       "translateToEnglish": {

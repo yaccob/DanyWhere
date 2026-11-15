@@ -714,9 +714,10 @@
       },
       "appendText": {
         "title": "Acrescentar",
-        "description": "Acrescentado após cada ditado deste perfil. Texto como escrito; \\s espaço, \\n nova linha, \\t tabulação, \\\\ barra invertida, \\{ e \\} chaves. No final, teclas: {Enter}, {Tab}, {Shift+Enter}, {{cmdEnter}}, {Ctrl+Enter}. As teclas só são enviadas quando o texto é colado.",
+        "description": "Acrescentado após cada ditado deste perfil: o texto e depois a tecla que escolher. No texto, \\s é um espaço, \\n uma nova linha, \\t uma tabulação e \\\\ uma barra invertida; todo o resto é acrescentado como está escrito. A tecla só é enviada quando o texto é colado.",
         "noAccessibility": "Sem Acessibilidade, as teclas não são enviadas; o texto continua sendo acrescentado.",
-        "notSaved": "Não salvo; continua valendo o último valor válido.",
+        "keyNone": "Nenhuma tecla",
+        "keyKept": "Mantido de antes; não disponível neste sistema",
         "preview": {
           "nothing": "Nada é acrescentado",
           "space": "espaço",
@@ -725,19 +726,6 @@
           "text": "“{{text}}”",
           "key": "a tecla {{key}}",
           "then": "{{first}}, depois {{next}}"
-        },
-        "errors": {
-          "unknownEscape": "Sequência de escape desconhecida {{escape}}: use \\s, \\n, \\t, \\\\, \\{ ou \\}",
-          "trailingBackslash": "Uma barra invertida precisa de uma letra depois: \\s, \\n, \\t, \\\\, \\{ ou \\}",
-          "unknownKey": "Tecla desconhecida {{key}}",
-          "unclosedKey": "Uma { precisa da sua }; escreva \\{ para uma chave",
-          "unmatchedBrace": "Uma } precisa da sua {; escreva \\} para uma chave",
-          "textAfterKey": "Depois de uma tecla só podem vir outras teclas",
-          "foreignKeyName": {
-            "macos": "No Mac, esta tecla se chama {{name}}: {{key}}",
-            "windows": "No Windows, esta tecla se chama {{name}}: {{key}}",
-            "linux": "No Linux, esta tecla se chama {{name}}: {{key}}"
-          }
         }
       },
       "translateToEnglish": {
