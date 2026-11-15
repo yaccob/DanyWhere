@@ -975,6 +975,10 @@
       "readingFile": "Dosya okunuyor...",
       "showMore": "Daha fazla göster",
       "showLess": "Daha az göster",
+      "box": {
+        "resizeNewest": "En yeni kaydın yüksekliğini değiştirmek için sürükleyin. Çift tıklama: varsayılan yükseklik",
+        "resizeOther": "Tüm eski kayıtların yüksekliğini değiştirmek için sürükleyin. Çift tıklama: varsayılan yükseklik"
+      },
       "showOriginal": "Orijinali göster",
       "showPostProcessed": "Son işlem sonucunu göster",
       "edit": "Metni düzelt",

@@ -975,6 +975,10 @@
       "readingFile": "S'està llegint el fitxer...",
       "showMore": "Mostra'n més",
       "showLess": "Mostra'n menys",
+      "box": {
+        "resizeNewest": "Arrossegueu per canviar l'alçada de l'entrada més recent. Doble clic: alçada predeterminada",
+        "resizeOther": "Arrossegueu per canviar l'alçada de totes les entrades més antigues. Doble clic: alçada predeterminada"
+      },
       "showOriginal": "Mostra l'original",
       "showPostProcessed": "Mostra el text postprocessat",
       "edit": "Corregeix el text",

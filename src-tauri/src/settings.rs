@@ -722,6 +722,13 @@ pub struct AppSettings {
     /// context (`send_context`).
     #[serde(default)]
     pub send_context: bool,
+    /// DanyWhere: the height in pixels a History text box may grow to before
+    /// it scrolls, as dragged at its grip, for the newest entry and for the
+    /// others; `None` = the default lines (`history_box`).
+    #[serde(default)]
+    pub history_box_height_newest: Option<u32>,
+    #[serde(default)]
+    pub history_box_height_other: Option<u32>,
 }
 
 fn default_profile_auto_by_app() -> bool {
@@ -1366,6 +1373,8 @@ pub fn get_default_settings() -> AppSettings {
         profile_words: Vec::new(),
         profile_auto_by_app: default_profile_auto_by_app(),
         send_context: false,
+        history_box_height_newest: None,
+        history_box_height_other: None,
     }
 }
 

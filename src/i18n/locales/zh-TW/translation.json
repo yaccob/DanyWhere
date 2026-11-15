@@ -975,6 +975,10 @@
       "readingFile": "正在讀取檔案...",
       "showMore": "顯示更多",
       "showLess": "收合",
+      "box": {
+        "resizeNewest": "拖曳可變更最新項目的高度。按兩下：恢復預設高度",
+        "resizeOther": "拖曳可變更所有較早項目的高度。按兩下：恢復預設高度"
+      },
       "showOriginal": "顯示原文",
       "showPostProcessed": "顯示後處理結果",
       "edit": "更正文字",
