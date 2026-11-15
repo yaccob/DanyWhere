@@ -1251,9 +1251,9 @@ pub fn get_default_settings() -> AppSettings {
     // (C is Copy Last Transcript); Control/Alt+Shift like the profile
     // toggle. Registered only while some dictation can post-process.
     #[cfg(target_os = "macos")]
-    let default_toggle_send_context_shortcut = "ctrl+shift+k";
+    let default_toggle_send_context_shortcut = "ctrl+shift+x";
     #[cfg(not(target_os = "macos"))]
-    let default_toggle_send_context_shortcut = "alt+shift+k";
+    let default_toggle_send_context_shortcut = "alt+shift+x";
 
     bindings.insert(
         crate::send_context::TOGGLE_BINDING.to_string(),

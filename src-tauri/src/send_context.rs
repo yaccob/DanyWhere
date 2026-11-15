@@ -382,9 +382,9 @@ mod tests {
         let defaults = get_default_settings();
         let binding = defaults.bindings.get(TOGGLE_BINDING).expect("a default");
         let expected = if cfg!(target_os = "macos") {
-            "ctrl+shift+k"
+            "ctrl+shift+x"
         } else {
-            "alt+shift+k"
+            "alt+shift+x"
         };
         assert_eq!(binding.default_binding, expected);
         assert_eq!(binding.current_binding, expected);
