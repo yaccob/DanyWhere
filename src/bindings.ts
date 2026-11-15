@@ -586,7 +586,8 @@ async listApplications() : Promise<ApplicationInfo[]> {
     return await TAURI_INVOKE("list_applications");
 },
 /**
- * The switch in the sidebar and on the Context settings.
+ * The switch in the sidebar and on the Context settings: the active
+ * profile's.
  */
 async setSendContext(enabled: boolean) : Promise<void> {
     await TAURI_INVOKE("set_send_context", { enabled });
