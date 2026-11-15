@@ -6,7 +6,12 @@
 // it). A match has to be seen at a glance in either theme, so per theme:
 // - the fill against the surface the History text sits on reaches 3:1
 //   (WCAG 1.4.11, non-text contrast);
-// - the text on the fill reaches 4.5:1 (WCAG 1.4.3).
+// - the text on the fill reaches 4.5:1 (WCAG 1.4.3) in light, 3:1 in dark
+//   (see MIN_TEXT).
+// The fills are petrol, as the user picked them, so the version track marks
+// its shown chip with a ring of --color-shown-version outside the chip, with
+// a gap: a petrol edge on the petrol fill would hardly show. The ring reaches
+// 3:1 against the surface it is drawn on.
 // Colors are read from theme.css and alpha-composited the way the browser
 // draws them, so a tint like "25 % petrol" is measured as it looks.
 import assert from "node:assert/strict";
@@ -185,12 +190,35 @@ const THEMES = {
   light: base,
   dark: new Map([...base, ...osDark]),
 };
-const TOKENS = ["--color-search-match", "--color-search-match-text"];
+const TOKENS = [
+  "--color-search-match",
+  "--color-search-match-text",
+  "--color-shown-version",
+];
+
+// The user's choice on 2026-11-15 from the sheet
+// qa/out/2026-11-15_2250_fundstellen-petrol/abbildungen/varianten.svg in the
+// sidecar ("D1 und L2"):
+// - dark, D1: the selected sidebar item's petrol (logo-primary at 80 % over
+//   the background) with white text;
+// - light, L2: logo-primary, only as much darker as 3:1 needs, with dark text.
+const CHOSEN = {
+  light: { fill: "#3999a7", text: "#0f0f0f" },
+  dark: { fill: "#5298a2", text: "#fbfbfb" },
+};
 
 const MIN_FILL = 3;
-const MIN_TEXT = 4.5;
+const MIN_RING = 3;
+// D1's white text reads at 3.19:1 on its fill, under WCAG's 4.5:1. The user
+// saw that failure on the sheet and chose D1 anyway on 2026-11-15, to match
+// the selected sidebar item; dark mode therefore only guards 3:1.
+const MIN_TEXT = { light: 4.5, dark: 3 };
 
-for (const [name, vars] of Object.entries(THEMES)) {
+for (const [name, vars] of Object.entries(THEMES) as [
+  keyof typeof THEMES,
+  Map<string, string>,
+][]) {
+  const minText = MIN_TEXT[name];
   // The History list is a `bg-background` card.
   const surface = resolve("var(--color-background)", vars);
   let fill: Rgba | null = null;
@@ -202,7 +230,7 @@ for (const [name, vars] of Object.entries(THEMES)) {
       `${name}: fill ${toHex(fill)} on ${toHex(surface)} ` +
         `${contrast(fill, surface).toFixed(2)}:1 (needs ${MIN_FILL}), ` +
         `text ${toHex(text)} on the fill ` +
-        `${contrast(text, fill).toFixed(2)}:1 (needs ${MIN_TEXT})`,
+        `${contrast(text, fill).toFixed(2)}:1 (needs ${minText})`,
     );
   } catch (error) {
     console.error(`${name}: ${(error as Error).message}`);
@@ -222,9 +250,29 @@ for (const [name, vars] of Object.entries(THEMES)) {
     assert.ok(fill && text, "no match colors");
     const ratio = contrast(text, fill);
     assert.ok(
-      ratio >= MIN_TEXT,
+      ratio >= minText,
       `text ${toHex(text)} on ${toHex(fill)}: ${ratio.toFixed(2)}:1, ` +
-        `needs ${MIN_TEXT}:1`,
+        `needs ${minText}:1`,
+    );
+  });
+
+  check(`${name}: the match colors are the ones the user chose`, () => {
+    assert.ok(fill && text, "no match colors");
+    assert.equal(toHex(fill), CHOSEN[name].fill, "fill");
+    assert.equal(toHex(text), CHOSEN[name].text, "text");
+  });
+
+  check(`${name}: the shown version's ring stands out from the surface`, () => {
+    const ring = over(resolve("var(--color-shown-version)", vars), surface);
+    const ratio = contrast(ring, surface);
+    console.log(
+      `${name}: ring ${toHex(ring)} on ${toHex(surface)} ` +
+        `${ratio.toFixed(2)}:1 (needs ${MIN_RING})`,
+    );
+    assert.ok(
+      ratio >= MIN_RING,
+      `ring ${toHex(ring)} on ${toHex(surface)}: ${ratio.toFixed(2)}:1, ` +
+        `needs ${MIN_RING}:1`,
     );
   });
 }
@@ -276,6 +324,20 @@ check("the History search draws every match with the match colors", () => {
       !source.includes("bg-logo-primary/25"),
       `${file}: still the petrol tint`,
     );
+  }
+});
+
+// The ring sits outside the chip with a gap of the surface's color, so it
+// never touches the match fill.
+check("the version track rings the shown chip", () => {
+  const source = read("../components/settings/history/VersionTrack.tsx");
+  for (const name of [
+    "ring-1",
+    "ring-shown-version",
+    "ring-offset-1",
+    "ring-offset-background",
+  ]) {
+    assert.ok(source.includes(name), `VersionTrack.tsx: no ${name}`);
   }
 });
 
