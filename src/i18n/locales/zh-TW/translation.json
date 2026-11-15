@@ -595,6 +595,10 @@
         "label": "聲音回饋",
         "description": "錄製開始和停止時，以及轉錄等待你貼上或插入時播放聲音"
       },
+      "doneSound": {
+        "label": "完成提示音",
+        "description": "聽寫全部完成（包括後處理）時播放聲音，無論已貼上、留在剪貼簿還是等待插入"
+      },
       "outputDevice": {
         "title": "輸出裝置",
         "description": "選擇用於聲音回饋的音訊輸出裝置",

@@ -595,6 +595,10 @@
         "label": "Geluidsfeedback",
         "description": "Geluid afspelen wanneer de opname start en stopt, en wanneer een transcriptie wacht tot je hem plakt of invoegt"
       },
+      "doneSound": {
+        "label": "Geluid als alles klaar is",
+        "description": "Een geluid afspelen zodra een dictaat helemaal klaar is, naverwerking inbegrepen, of het nu geplakt is, op het klembord staat of klaarstaat om in te voegen"
+      },
       "outputDevice": {
         "title": "Afspeelapparaat",
         "description": "Selecteer het gewenste audioapparaat voor feedbackgeluiden",

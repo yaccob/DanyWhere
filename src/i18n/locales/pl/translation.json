@@ -595,6 +595,10 @@
         "label": "Informacja dźwiękowa",
         "description": "Odtwarzaj dźwięk przy rozpoczęciu i zakończeniu nagrywania oraz gdy transkrypcja czeka na wklejenie lub wstawienie"
       },
+      "doneSound": {
+        "label": "Dźwięk po zakończeniu",
+        "description": "Odtwarzaj dźwięk, gdy dyktowanie jest całkowicie gotowe, łącznie z postprocesem, niezależnie od tego, czy zostało wklejone, pozostawione w schowku, czy czeka na wstawienie"
+      },
       "outputDevice": {
         "title": "Urządzenie wyjściowe",
         "description": "Wybierz preferowane urządzenie audio do odtwarzania dźwięków",

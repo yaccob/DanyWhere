@@ -38,11 +38,14 @@ export const SoundPicker: React.FC<SoundPickerProps> = ({
     options.push({ value: "custom", label: "Custom" });
   }
 
+  // DanyWhere: the sound that ends a dictation, the done sound unless it is
+  // switched off, else the one for a transcript left on the clipboard.
+  const doneSound = getSetting("done_sound") ?? true;
+
   const handlePlayAllSounds = async () => {
     await playTestSound("start");
     await playTestSound("stop");
-    // DanyWhere: the sound for a transcript left on the clipboard.
-    await playTestSound("clipboard");
+    await playTestSound(doneSound ? "done" : "clipboard");
   };
 
   return (
@@ -65,7 +68,7 @@ export const SoundPicker: React.FC<SoundPickerProps> = ({
           variant="ghost"
           size="sm"
           onClick={handlePlayAllSounds}
-          title="Preview sound theme (plays start, stop, then clipboard)"
+          title="Preview sound theme (plays start, stop, then the sound that ends a dictation)"
         >
           <PlayIcon className="h-4 w-4" />
         </Button>

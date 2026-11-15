@@ -109,7 +109,7 @@ pub fn dictation_notice(
 }
 
 /// Whether the user has to act to get a finished dictation into place, which
-/// is when the waiting sound plays.
+/// is when the waiting sound plays while the done sound is off.
 pub fn dictation_waits_for_user(settings: &AppSettings, service_available: bool) -> bool {
     dictation_notice(settings, service_available).is_some()
 }
@@ -198,9 +198,10 @@ pub fn deliver_last_transcript(app: &AppHandle) {
     }
 }
 
-/// Whether the waiting sound plays after a finished dictation: when the user
-/// still has to paste or insert it, which includes a dictation that "Copy
-/// Last Transcript" put on the clipboard (`put_on_clipboard`).
+/// Whether the waiting sound plays after a finished dictation while the done
+/// sound is off: when the user still has to paste or insert it, which
+/// includes a dictation that "Copy Last Transcript" put on the clipboard
+/// (`put_on_clipboard`).
 pub fn plays_waiting_sound(
     settings: &AppSettings,
     service_available: bool,
@@ -209,16 +210,73 @@ pub fn plays_waiting_sound(
     put_on_clipboard || dictation_waits_for_user(settings, service_available)
 }
 
-/// Plays the waiting sound after a dictation the user still has to paste or
-/// insert. Call only once the text is ready for that.
-pub fn play_sound_if_waiting_for_user(app: &AppHandle, put_on_clipboard: bool) {
-    if plays_waiting_sound(
-        &get_settings(app),
-        INSERT_SERVICE_AVAILABLE,
-        put_on_clipboard,
-    ) {
-        info!("Dictation waits for the user; playing the waiting sound.");
-        play_feedback_sound(app, SoundType::Clipboard);
+/// How a dictation ended, as far as the sound after it is concerned.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct DictationEnd {
+    /// Whether its text was delivered (`Typed`), or why not.
+    pub outcome: crate::actions::TranscriptionOutcome,
+    /// Escape was pressed for this dictation.
+    pub cancelled: bool,
+    /// The service call that ended the dictation inserted it right away.
+    pub inserted_by_service: bool,
+    /// "Copy Last Transcript", or an app that missed the dictation shortcut,
+    /// put its text on the clipboard.
+    pub put_on_clipboard: bool,
+    /// No newer dictation has started since (it would hear the sound).
+    pub owns_ui: bool,
+}
+
+/// The one sound that ends a dictation, if any.
+///
+/// With the done sound on (the default) every dictation whose text was
+/// delivered ends with it, however it was delivered: pasted, inserted by the
+/// service, left on the clipboard, waiting for the service, or only kept in
+/// the History. The user's wish (2026-11-15): it says that everything is
+/// done, post-processing included, and makes no difference between pasted
+/// and on the clipboard. It replaces the waiting sound for dictations, so a
+/// dictation the user still has to paste never plays two sounds; the overlay
+/// still says where the text waits. With the done sound off only a
+/// dictation the user still has to paste or insert plays the waiting sound,
+/// as before.
+///
+/// Nothing plays when no text came out or pasting failed (a notice says so),
+/// after Escape, once a newer dictation has started (it would record the
+/// sound), or while the feedback sounds are off.
+pub fn sound_after_dictation(
+    settings: &AppSettings,
+    service_available: bool,
+    end: DictationEnd,
+) -> Option<SoundType> {
+    if !settings.audio_feedback
+        || end.outcome != crate::actions::TranscriptionOutcome::Typed
+        || end.cancelled
+        || !end.owns_ui
+    {
+        None
+    } else if settings.done_sound {
+        Some(SoundType::Done)
+    } else if !end.inserted_by_service
+        && plays_waiting_sound(settings, service_available, end.put_on_clipboard)
+    {
+        Some(SoundType::Clipboard)
+    } else {
+        None
+    }
+}
+
+/// Plays the sound that ends a dictation (`sound_after_dictation`). Call once
+/// the dictation's text is where it goes, after post-processing.
+pub fn play_sound_after_dictation(app: &AppHandle, end: DictationEnd) {
+    match sound_after_dictation(&get_settings(app), INSERT_SERVICE_AVAILABLE, end) {
+        Some(SoundType::Done) => {
+            info!("Dictation done; playing the done sound.");
+            play_feedback_sound(app, SoundType::Done);
+        }
+        Some(sound) => {
+            info!("Dictation waits for the user; playing the waiting sound.");
+            play_feedback_sound(app, sound);
+        }
+        None => {}
     }
 }
 
@@ -239,6 +297,16 @@ pub fn finish_overlay_after_dictation(app: &AppHandle) {
     }
 }
 
+/// Switches the sound that says a dictation is done on or off.
+#[tauri::command]
+#[specta::specta]
+pub fn change_done_sound_setting(app: AppHandle, enabled: bool) -> Result<(), String> {
+    let mut settings = get_settings(&app);
+    settings.done_sound = enabled;
+    crate::settings::write_settings(&app, settings);
+    Ok(())
+}
+
 /// How long the "on the clipboard" notice stays visible; 0 switches it off.
 #[tauri::command]
 #[specta::specta]
@@ -253,9 +321,11 @@ pub fn change_clipboard_notice_ms_setting(app: AppHandle, ms: u64) -> Result<(),
 mod tests {
     use super::{
         clipboard_notice_duration, copies_dictation_to_clipboard, delivery_for, dictation_notice,
-        dictation_target, dictation_waits_for_user, plays_waiting_sound, Delivery, DictationNotice,
-        DictationTarget,
+        dictation_target, dictation_waits_for_user, plays_waiting_sound, sound_after_dictation,
+        Delivery, DictationEnd, DictationNotice, DictationTarget,
     };
+    use crate::actions::TranscriptionOutcome;
+    use crate::audio_feedback::SoundType;
     use crate::settings::{get_default_settings, AppSettings, ClipboardHandling, PasteMethod};
     use crate::shortcut::apply_no_accessibility_mode;
     use std::time::Duration;
@@ -264,6 +334,206 @@ mod tests {
         let mut settings = get_default_settings();
         apply_no_accessibility_mode(&mut settings);
         settings
+    }
+
+    /// `settings` with the feedback sounds switched on (they're off by
+    /// default) and the done sound as given.
+    fn with_sounds(mut settings: AppSettings, done_sound: bool) -> AppSettings {
+        settings.audio_feedback = true;
+        settings.done_sound = done_sound;
+        settings
+    }
+
+    /// A dictation whose text was delivered, with nothing else going on.
+    fn delivered() -> DictationEnd {
+        DictationEnd {
+            outcome: TranscriptionOutcome::Typed,
+            cancelled: false,
+            inserted_by_service: false,
+            put_on_clipboard: false,
+            owns_ui: true,
+        }
+    }
+
+    #[test]
+    fn the_done_sound_is_on_by_default() {
+        assert!(get_default_settings().done_sound);
+    }
+
+    #[test]
+    fn a_pasted_dictation_ends_with_the_done_sound() {
+        // Post-processed or not: this is decided once the text is pasted,
+        // after post-processing; a failed post-processing pastes the raw
+        // transcript and ends the same way.
+        let settings = with_sounds(get_default_settings(), true);
+        assert_eq!(
+            sound_after_dictation(&settings, true, delivered()),
+            Some(SoundType::Done)
+        );
+    }
+
+    #[test]
+    fn a_dictation_left_on_the_clipboard_ends_with_the_done_sound_only() {
+        // Without the service a dictation without Accessibility waits on the
+        // clipboard; the done sound replaces the waiting sound.
+        let settings = with_sounds(without_accessibility(), true);
+        assert_eq!(
+            sound_after_dictation(&settings, false, delivered()),
+            Some(SoundType::Done)
+        );
+    }
+
+    #[test]
+    fn a_dictation_waiting_for_the_service_ends_with_the_done_sound_only() {
+        let settings = with_sounds(without_accessibility(), true);
+        assert_eq!(
+            sound_after_dictation(&settings, true, delivered()),
+            Some(SoundType::Done)
+        );
+    }
+
+    #[test]
+    fn a_dictation_the_service_inserted_ends_with_the_done_sound() {
+        let settings = with_sounds(without_accessibility(), true);
+        let end = DictationEnd {
+            inserted_by_service: true,
+            ..delivered()
+        };
+        assert_eq!(
+            sound_after_dictation(&settings, true, end),
+            Some(SoundType::Done)
+        );
+    }
+
+    #[test]
+    fn a_dictation_copy_last_put_on_the_clipboard_ends_with_the_done_sound_only() {
+        let end = DictationEnd {
+            put_on_clipboard: true,
+            ..delivered()
+        };
+        for settings in [get_default_settings(), without_accessibility()] {
+            assert_eq!(
+                sound_after_dictation(&with_sounds(settings, true), true, end),
+                Some(SoundType::Done)
+            );
+        }
+    }
+
+    #[test]
+    fn a_dictation_kept_only_in_the_history_ends_with_the_done_sound() {
+        let mut settings = with_sounds(get_default_settings(), true);
+        settings.paste_method = PasteMethod::None;
+        settings.clipboard_handling = ClipboardHandling::DontModify;
+        assert_eq!(
+            sound_after_dictation(&settings, true, delivered()),
+            Some(SoundType::Done)
+        );
+    }
+
+    #[test]
+    fn no_sound_when_the_text_could_not_be_pasted() {
+        let end = DictationEnd {
+            outcome: TranscriptionOutcome::Failed,
+            ..delivered()
+        };
+        for done_sound in [true, false] {
+            for settings in [get_default_settings(), without_accessibility()] {
+                assert_eq!(
+                    sound_after_dictation(&with_sounds(settings, done_sound), true, end),
+                    None
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn no_sound_when_nothing_came_out() {
+        for outcome in [TranscriptionOutcome::Empty, TranscriptionOutcome::Silent] {
+            let end = DictationEnd {
+                outcome,
+                ..delivered()
+            };
+            for settings in [get_default_settings(), without_accessibility()] {
+                assert_eq!(
+                    sound_after_dictation(&with_sounds(settings, true), true, end),
+                    None
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn no_sound_after_escape() {
+        let end = DictationEnd {
+            cancelled: true,
+            ..delivered()
+        };
+        for done_sound in [true, false] {
+            for settings in [get_default_settings(), without_accessibility()] {
+                assert_eq!(
+                    sound_after_dictation(&with_sounds(settings, done_sound), true, end),
+                    None
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn no_sound_once_a_newer_dictation_has_started() {
+        let end = DictationEnd {
+            owns_ui: false,
+            ..delivered()
+        };
+        for done_sound in [true, false] {
+            assert_eq!(
+                sound_after_dictation(&with_sounds(without_accessibility(), done_sound), true, end),
+                None
+            );
+        }
+    }
+
+    #[test]
+    fn with_the_done_sound_off_only_a_waiting_dictation_plays_the_waiting_sound() {
+        let pasted = with_sounds(get_default_settings(), false);
+        assert_eq!(sound_after_dictation(&pasted, true, delivered()), None);
+        let copied = DictationEnd {
+            put_on_clipboard: true,
+            ..delivered()
+        };
+        assert_eq!(
+            sound_after_dictation(&pasted, true, copied),
+            Some(SoundType::Clipboard)
+        );
+        let waiting = with_sounds(without_accessibility(), false);
+        assert_eq!(
+            sound_after_dictation(&waiting, true, delivered()),
+            Some(SoundType::Clipboard)
+        );
+        assert_eq!(
+            sound_after_dictation(&waiting, false, delivered()),
+            Some(SoundType::Clipboard)
+        );
+        let inserted = DictationEnd {
+            inserted_by_service: true,
+            ..delivered()
+        };
+        assert_eq!(sound_after_dictation(&waiting, true, inserted), None);
+    }
+
+    #[test]
+    fn no_sound_at_all_while_audio_feedback_is_off() {
+        for done_sound in [true, false] {
+            for settings in [get_default_settings(), without_accessibility()] {
+                let mut settings = with_sounds(settings, done_sound);
+                settings.audio_feedback = false;
+                assert_eq!(sound_after_dictation(&settings, true, delivered()), None);
+                let copied = DictationEnd {
+                    put_on_clipboard: true,
+                    ..delivered()
+                };
+                assert_eq!(sound_after_dictation(&settings, true, copied), None);
+            }
+        }
     }
 
     #[test]

@@ -595,6 +595,10 @@
         "label": "Zvuková odezva",
         "description": "Přehrát zvuk při zahájení a ukončení nahrávání a když přepis čeká, až ho vložíte"
       },
+      "doneSound": {
+        "label": "Zvuk po dokončení",
+        "description": "Přehrát zvuk, jakmile je diktát zcela hotový včetně následného zpracování, ať už byl vložen, ponechán ve schránce, nebo je připraven k vložení"
+      },
       "outputDevice": {
         "title": "Výstupní zařízení",
         "description": "Vyberte preferované výstupní zařízení pro zvuky odezvy",

@@ -595,6 +595,10 @@
         "label": "音频反馈",
         "description": "录制开始和停止时，以及转录等待你粘贴或插入时播放声音"
       },
+      "doneSound": {
+        "label": "完成提示音",
+        "description": "听写全部完成（包括后处理）时播放声音，无论已粘贴、留在剪贴板还是等待插入"
+      },
       "outputDevice": {
         "title": "输出设备",
         "description": "选择用于反馈声音的音频输出设备",

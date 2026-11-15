@@ -303,7 +303,8 @@ static WAITING_CALL: WaitSlot = WaitSlot::new();
 
 /// Hands a finished dictation's text to a service call waiting for it.
 /// `true` when the call takes it: the dictation is then inserted, and the
-/// waiting sound and the "Ready" notice are not needed.
+/// waiting sound and the "Ready" notice are not needed (the done sound still
+/// plays, see `delivery::sound_after_dictation`).
 pub fn deliver_to_waiting_call(text: &str) -> bool {
     WAITING_CALL.deliver(text)
 }

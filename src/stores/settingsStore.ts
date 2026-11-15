@@ -46,7 +46,9 @@ interface SettingsStore {
   resetBinding: (id: string) => Promise<void>;
   getSetting: <K extends keyof Settings>(key: K) => Settings[K] | undefined;
   isUpdatingKey: (key: string) => boolean;
-  playTestSound: (soundType: "start" | "stop" | "clipboard") => Promise<void>;
+  playTestSound: (
+    soundType: "start" | "stop" | "clipboard" | "done",
+  ) => Promise<void>;
   checkCustomSounds: () => Promise<void>;
   setPostProcessProvider: (providerId: string) => Promise<void>;
   updatePostProcessSetting: (
@@ -167,6 +169,8 @@ const settingUpdaters: {
     commands.changePasteDelayMsSetting(value as number),
   clipboard_notice_ms: (value) =>
     commands.changeClipboardNoticeMsSetting(value as number),
+  // DanyWhere: the sound once a dictation is completely done.
+  done_sound: (value) => commands.changeDoneSoundSetting(value as boolean),
   // DanyWhere: Handy's fixed post-processing time limits as settings.
   post_process_timeout_secs: async (value) => {
     const result = await commands.changePostProcessTimeoutSetting(
@@ -353,7 +357,9 @@ export const useSettingsStore = create<SettingsStore>()(
     },
 
     // Play a test sound
-    playTestSound: async (soundType: "start" | "stop" | "clipboard") => {
+    playTestSound: async (
+      soundType: "start" | "stop" | "clipboard" | "done",
+    ) => {
       try {
         await commands.playTestSound(soundType);
       } catch (error) {

@@ -185,6 +185,17 @@ async changeClipboardNoticeMsSetting(ms: number) : Promise<Result<null, string>>
 }
 },
 /**
+ * Switches the sound that says a dictation is done on or off.
+ */
+async changeDoneSoundSetting(enabled: boolean) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_done_sound_setting", { enabled }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
  * Sets the time limit for post-processing, in whole seconds.
  */
 async changePostProcessTimeoutSetting(secs: number) : Promise<Result<null, string>> {
@@ -1486,7 +1497,13 @@ shortcut_activation?: ShortcutActivation;
  * Hold-or-toggle only: a press held at least this long is push-to-talk,
  * anything shorter is a tap that locks recording on.
  */
-hold_threshold_ms?: number; audio_feedback?: boolean; audio_feedback_volume?: number; sound_theme?: SoundTheme; start_hidden?: boolean; autostart_enabled?: boolean; update_checks_enabled?: boolean; show_whats_new_on_update?: boolean; 
+hold_threshold_ms?: number; audio_feedback?: boolean; audio_feedback_volume?: number; sound_theme?: SoundTheme; 
+/**
+ * DanyWhere: a sound once a dictation is completely done, post-processing
+ * included, however it was delivered (user, 2026-11-15). Plays only
+ * while `audio_feedback` is on. See `delivery::sound_after_dictation`.
+ */
+done_sound?: boolean; start_hidden?: boolean; autostart_enabled?: boolean; update_checks_enabled?: boolean; show_whats_new_on_update?: boolean; 
 /**
  * The app version whose What's New the user has already seen. Fresh installs
  * default to the current version (nothing is "new" to them). Existing users

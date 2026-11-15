@@ -595,6 +595,10 @@
         "label": "Lydfeedback",
         "description": "Afspil lyd, når optagelse starter og stopper, og når en transskription venter på, at du indsætter den"
       },
+      "doneSound": {
+        "label": "Lyd, når alt er færdigt",
+        "description": "Afspil en lyd, når en diktering er helt færdig, inklusive efterbehandling, uanset om den blev indsat, lagt på udklipsholderen eller er klar til at blive indsat"
+      },
       "outputDevice": {
         "title": "Outputenhed",
         "description": "Vælg din foretrukne lydoutputenhed til feedbacklyde",

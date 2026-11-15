@@ -763,6 +763,7 @@ pub fn run(cli_args: CliArgs) {
             shortcut::change_language_detection_window_setting,
             shortcut::change_paste_delay_ms_setting,
             delivery::change_clipboard_notice_ms_setting,
+            delivery::change_done_sound_setting,
             llm_timeouts::change_post_process_timeout_setting,
             llm_timeouts::change_model_list_timeout_setting,
             dictation_key_inserts::change_dictation_key_inserts_setting,

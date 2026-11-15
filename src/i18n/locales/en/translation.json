@@ -595,6 +595,10 @@
         "label": "Audio Feedback",
         "description": "Play sounds when recording starts and stops, and when a transcript waits for you to paste or insert it"
       },
+      "doneSound": {
+        "label": "Sound When Done",
+        "description": "Play a sound once a dictation is completely done, post-processing included, whether it was pasted, left on the clipboard or is ready to insert"
+      },
       "outputDevice": {
         "title": "Output Device",
         "description": "Select your preferred audio output device for feedback sounds",

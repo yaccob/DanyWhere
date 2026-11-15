@@ -595,6 +595,10 @@
         "label": "Avisos sonors",
         "description": "Reprodueix un so quan s'inicia i s'atura l'enregistrament i quan una transcripció espera que l'enganxeu o l'inseriu"
       },
+      "doneSound": {
+        "label": "So en acabar",
+        "description": "Reprodueix un so quan un dictat ha acabat del tot, postprocessament inclòs, tant si s'ha enganxat com si s'ha deixat al porta-retalls o està a punt per inserir-lo"
+      },
       "outputDevice": {
         "title": "Dispositiu de sortida",
         "description": "Selecciona el dispositiu de sortida d'àudio preferit per als avisos sonors",

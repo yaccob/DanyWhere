@@ -595,6 +595,10 @@
         "label": "Phản hồi âm thanh",
         "description": "Phát âm thanh khi bắt đầu và kết thúc ghi âm, và khi một bản chép đang chờ bạn dán hoặc chèn"
       },
+      "doneSound": {
+        "label": "Âm thanh khi hoàn tất",
+        "description": "Phát âm thanh khi một lần đọc chính tả đã xong hoàn toàn, kể cả xử lý sau, dù đã được dán, để trong bộ nhớ tạm hay đang chờ chèn"
+      },
       "outputDevice": {
         "title": "Thiết bị đầu ra",
         "description": "Chọn thiết bị đầu ra âm thanh ưa thích của bạn cho âm thanh phản hồi",
