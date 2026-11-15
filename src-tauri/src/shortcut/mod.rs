@@ -1480,7 +1480,7 @@ pub async fn fetch_post_process_models(
         .unwrap_or_default();
 
     // Skip fetching if no API key for providers that typically need one
-    if api_key.trim().is_empty() && provider.id != "custom" {
+    if api_key.trim().is_empty() && model_list_needs_api_key(&provider.id) {
         return Err(format!(
             "API key is required for {}. Please add an API key to list available models.",
             provider.label
@@ -1493,6 +1493,13 @@ pub async fn fetch_post_process_models(
         crate::llm_timeouts::model_list_timeout(&settings),
     )
     .await
+}
+
+/// DanyWhere: whether listing a provider's models needs its API key. A local
+/// server (custom) may need none, and OpenRouter's list is public, so it can
+/// show before a key is entered.
+fn model_list_needs_api_key(provider_id: &str) -> bool {
+    !matches!(provider_id, "custom" | "openrouter")
 }
 
 #[tauri::command]
@@ -1685,6 +1692,24 @@ pub async fn get_available_accelerators(
 mod tests {
     use handy_keys::Hotkey;
     use tauri_plugin_global_shortcut::Shortcut;
+
+    // DanyWhere: OpenRouter's model list is public, so the list can load
+    // before a key is entered; every other provider answers 401 without one.
+    #[test]
+    fn openrouter_lists_its_models_without_a_key_the_others_need_one() {
+        assert!(!super::model_list_needs_api_key("custom"));
+        assert!(!super::model_list_needs_api_key("openrouter"));
+        for id in [
+            "openai",
+            "anthropic",
+            "groq",
+            "cerebras",
+            "zai",
+            "bedrock_mantle",
+        ] {
+            assert!(super::model_list_needs_api_key(id), "{id}");
+        }
+    }
 
     /// A shortcut action runs on the handy-keys manager thread, which also
     /// serves registrations. Work that registers a shortcut and waits for the

@@ -2,9 +2,12 @@
 //   bun src/components/settings/PostProcessingSettingsApi/modelAutoFetch.test.ts
 import assert from "node:assert";
 import {
+  forgetLoadedAttempt,
   isProviderReadyForModelList,
   modelFetchAttemptKey,
+  modelsLoadedFor,
   shouldAutoFetchModels,
+  withoutModelOptions,
 } from "./modelAutoFetch";
 
 let failures = 0;
@@ -122,6 +125,56 @@ check(
     modelFetchAttemptKey("anthropic", "https://x/v1", "k"),
   false,
 );
+
+// OpenRouter answers GET /models without a key (checked 2026-11-15; OpenAI
+// and Groq answer 401), so its list loads as soon as it is chosen.
+check(
+  "OpenRouter without a key",
+  isProviderReadyForModelList("openrouter", "https://openrouter.ai/api/v1", ""),
+  true,
+);
+
+// After a new key or a provider switch the list counts as not loaded, so the
+// page loads it by itself (user, 2026-11-15: entering the key needed a click
+// on refresh). Other providers' lists stay.
+const loaded = { anthropic: ["claude-a"], openai: ["gpt-a"] };
+const cleared = withoutModelOptions(loaded, "anthropic");
+check("cleared list not loaded", modelsLoadedFor(cleared, "anthropic"), false);
+check("other lists kept", cleared.openai, ["gpt-a"]);
+check("nothing shown from before", cleared.anthropic ?? [], []);
+check(
+  "a new key loads the list again",
+  shouldAutoFetchModels({
+    ...anthropic,
+    apiKey: "sk-new",
+    modelsLoaded: modelsLoadedFor(cleared, "anthropic"),
+  }),
+  true,
+);
+check("a loaded list counts", modelsLoadedFor(loaded, "openai"), true);
+check("a list never loaded", modelsLoadedFor(loaded, "groq"), false);
+
+// Switching to another provider and back: the list loaded before was cleared
+// by the switch and loads again; a failed attempt is still not repeated.
+const attempt = modelFetchAttemptKey("anthropic", anthropic.baseUrl, "sk-test");
+const succeeded = new Set([attempt]);
+forgetLoadedAttempt(succeeded, attempt, true);
+check("a loaded attempt is forgotten", succeeded.has(attempt), false);
+check(
+  "back to a provider whose list was loaded",
+  shouldAutoFetchModels({
+    ...anthropic,
+    modelsLoaded: modelsLoadedFor(
+      withoutModelOptions(loaded, "anthropic"),
+      "anthropic",
+    ),
+    alreadyTried: succeeded.has(attempt),
+  }),
+  true,
+);
+const failed = new Set([attempt]);
+forgetLoadedAttempt(failed, attempt, false);
+check("a failed attempt stays tried", failed.has(attempt), true);
 
 if (failures > 0) {
   console.error(`model auto-fetch: ${failures} of ${checks} checks failed`);

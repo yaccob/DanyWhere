@@ -16,6 +16,7 @@ import type {
 } from "@/bindings";
 import { commands } from "@/bindings";
 import { notify } from "@/stores/noticeStore";
+import { withoutModelOptions } from "@/components/settings/PostProcessingSettingsApi/modelAutoFetch";
 
 interface SettingsStore {
   settings: Settings | null;
@@ -494,12 +495,7 @@ export const useSettingsStore = create<SettingsStore>()(
     },
 
     setPostProcessProvider: async (providerId) => {
-      const {
-        settings,
-        setUpdating,
-        refreshSettings,
-        setPostProcessModelOptions,
-      } = get();
+      const { settings, setUpdating, refreshSettings } = get();
       const updateKey = "post_process_provider_id";
       const previousId = settings?.post_process_provider_id ?? null;
 
@@ -515,7 +511,13 @@ export const useSettingsStore = create<SettingsStore>()(
 
       // Clear cached model options for the new provider so the dropdown
       // doesn't show stale models from a previous fetch or base_url.
-      setPostProcessModelOptions(providerId, []);
+      // DanyWhere: as "not loaded", so the page loads the list by itself.
+      set((state) => ({
+        postProcessModelOptions: withoutModelOptions(
+          state.postProcessModelOptions,
+          providerId,
+        ),
+      }));
 
       try {
         await commands.setPostProcessProvider(providerId);
@@ -642,12 +644,13 @@ export const useSettingsStore = create<SettingsStore>()(
     },
 
     updatePostProcessApiKey: async (providerId, apiKey) => {
-      // Clear cached models when API key changes - user should click refresh after
+      // Clear cached models when the API key changes. DanyWhere: as "not
+      // loaded", so the page loads the list with the new key by itself.
       set((state) => ({
-        postProcessModelOptions: {
-          ...state.postProcessModelOptions,
-          [providerId]: [],
-        },
+        postProcessModelOptions: withoutModelOptions(
+          state.postProcessModelOptions,
+          providerId,
+        ),
       }));
       return get().updatePostProcessSetting("api_key", providerId, apiKey);
     },

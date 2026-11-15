@@ -7,10 +7,16 @@ import {
 } from "@/bindings";
 import type { ModelOption } from "./types";
 import type { DropdownOption } from "../../ui/Dropdown";
-import { modelFetchAttemptKey, shouldAutoFetchModels } from "./modelAutoFetch";
+import {
+  forgetLoadedAttempt,
+  modelFetchAttemptKey,
+  modelsLoadedFor,
+  shouldAutoFetchModels,
+} from "./modelAutoFetch";
 
 // Providers (with their key and base URL) whose model list this app session
-// already asked for, so a failing request is not repeated on every render.
+// asked for without getting it yet, so a failing request is not repeated on
+// every render (a loaded one is forgotten, see forgetLoadedAttempt).
 const triedModelFetches = new Set<string>();
 
 type PostProcessProviderState = {
@@ -219,8 +225,17 @@ export const usePostProcessProviderState = (): PostProcessProviderState => {
   // after the app starts, after switching providers, or once a key is entered.
   // Handy only loaded it on a provider switch or the refresh button, so after
   // every restart the dropdown held just the selected model.
-  const modelsLoaded =
-    postProcessModelOptions[selectedProviderId] !== undefined;
+  const modelsLoaded = modelsLoadedFor(
+    postProcessModelOptions,
+    selectedProviderId,
+  );
+  useEffect(() => {
+    forgetLoadedAttempt(
+      triedModelFetches,
+      modelFetchAttemptKey(selectedProviderId, baseUrl, apiKey),
+      modelsLoaded,
+    );
+  }, [selectedProviderId, baseUrl, apiKey, modelsLoaded]);
   useEffect(() => {
     const attempt = modelFetchAttemptKey(selectedProviderId, baseUrl, apiKey);
     if (

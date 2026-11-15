@@ -143,6 +143,8 @@ Whisper sometimes appends text that was never said when the recording ends in si
 
 **Done** (ships with 0.1.4): the Post Process page loads the list by itself when it shows a provider that is set up (a key, or a base URL for the custom provider) and whose list this app session has not loaded or tried yet: after the start, after a provider switch, once a key is entered. A failed attempt is repeated only after the key or base URL changes, or with the refresh button.
 
+**Fixed (user, 2026-11-15; not released yet):** entering a key or switching the provider still needed the refresh button: both cleared the list to an empty one, which counted as loaded. Now they clear it as not loaded, a list that arrived no longer counts as tried, so coming back to a provider loads it again, and OpenRouter's list, which needs no key, loads as soon as it is chosen. The other providers answer 401 without a key, so a key is still needed there.
+
 ### Running without the Accessibility permission
 
 Available: onboarding offers "Continue without Accessibility" for managed Macs (shortcuts via the Tauri backend, input simulation not set up). A DanyWhere feature for now; it may be offered to Handy later.
