@@ -978,7 +978,8 @@
         "wholeWord": "Chỉ toàn bộ từ",
         "invalidPattern": "Không phải biểu thức chính quy hợp lệ",
         "noMatches": "Không có mục nào khớp với tìm kiếm.",
-        "clear": "Xóa"
+        "clear": "Xóa",
+        "matchBeforeCorrection": "Khớp trong phiên bản trước khi bạn chỉnh sửa"
       },
       "contextEntryJump": "Hiện trong lịch sử để sửa",
       "confirmReplaceTitle": "Thay thế chỉnh sửa của bạn?",

@@ -978,7 +978,8 @@
         "wholeWord": "Yalnızca tam sözcükler",
         "invalidPattern": "Geçerli bir düzenli ifade değil",
         "noMatches": "Aramayla eşleşen kayıt yok.",
-        "clear": "Temizle"
+        "clear": "Temizle",
+        "matchBeforeCorrection": "Düzeltmenizden önceki sürümde eşleşme"
       },
       "contextEntryJump": "Düzeltmek için geçmişte göster",
       "confirmReplaceTitle": "Düzeltmeniz değiştirilsin mi?",

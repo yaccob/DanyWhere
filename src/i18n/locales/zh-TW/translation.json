@@ -978,7 +978,8 @@
         "wholeWord": "僅全字相符",
         "invalidPattern": "不是有效的規則運算式",
         "noMatches": "沒有符合搜尋的項目。",
-        "clear": "清除"
+        "clear": "清除",
+        "matchBeforeCorrection": "符合的內容在你更正之前的版本中"
       },
       "contextEntryJump": "在記錄中顯示以便更正",
       "confirmReplaceTitle": "要取代你的更正嗎？",

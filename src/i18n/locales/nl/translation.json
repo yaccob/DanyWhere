@@ -978,7 +978,8 @@
         "wholeWord": "Alleen hele woorden",
         "invalidPattern": "Geen geldige reguliere expressie",
         "noMatches": "Geen items komen overeen met de zoekopdracht.",
-        "clear": "Wissen"
+        "clear": "Wissen",
+        "matchBeforeCorrection": "Overeenkomst in de versie van vóór je correctie"
       },
       "contextEntryJump": "In de geschiedenis tonen om te corrigeren",
       "confirmReplaceTitle": "Je correctie vervangen?",

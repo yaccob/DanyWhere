@@ -978,7 +978,8 @@
         "wholeWord": "Tylko całe słowa",
         "invalidPattern": "Nieprawidłowe wyrażenie regularne",
         "noMatches": "Żaden wpis nie pasuje do wyszukiwania.",
-        "clear": "Wyczyść"
+        "clear": "Wyczyść",
+        "matchBeforeCorrection": "Dopasowanie w wersji sprzed twojej poprawki"
       },
       "contextEntryJump": "Pokaż w historii, aby poprawić",
       "confirmReplaceTitle": "Zastąpić twoją poprawkę?",

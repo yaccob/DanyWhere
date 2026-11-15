@@ -4,6 +4,7 @@ import {
   EMPTY_SEARCH,
   invalidField,
   isSearchActive,
+  matchesOnlyBeforeCorrection,
   matchRanges,
   mergeSearchUpdate,
   searchQuery,
@@ -281,6 +282,79 @@ check("the whole word rule decides which text matches", () => {
 check("an entry without post-processing has nothing to switch to", () => {
   const plain = processed({ post_processed_text: null });
   assert.equal(shows(plain, { text: "raw" }), false);
+});
+
+// ---- A match only in a text a correction replaced -----------------------
+
+const beforeCorrection = (shown: HistoryEntry, search: Partial<SearchFields>) =>
+  matchesOnlyBeforeCorrection(shown, textMatcher(fields(search)));
+
+check("a match only in the post-processing a correction replaced", () => {
+  const entry = processed({ post_processed_correction: "Corrected." });
+  assert.equal(beforeCorrection(entry, { text: "polished" }), true);
+});
+
+check("a match only in the transcription a correction replaced", () => {
+  const entry = processed({ transcription_correction: "fixed words" });
+  assert.equal(beforeCorrection(entry, { text: "raw" }), true);
+  // Without post-processing too: its one view shows the correction.
+  const plain = processed({
+    post_processed_text: null,
+    transcription_correction: "fixed words",
+  });
+  assert.equal(beforeCorrection(plain, { text: "raw" }), true);
+});
+
+check("no hint when a view shows the match", () => {
+  // The original view still has it.
+  const inOriginal = processed({
+    post_processed_text: "The raw text.",
+    post_processed_correction: "Corrected.",
+  });
+  assert.equal(beforeCorrection(inOriginal, { text: "raw" }), false);
+  // The correction itself has it.
+  const inCorrection = processed({ post_processed_correction: "Polished!" });
+  assert.equal(beforeCorrection(inCorrection, { text: "polished" }), false);
+  // Without a correction every text is in a view.
+  assert.equal(beforeCorrection(processed(), { text: "raw" }), false);
+  assert.equal(beforeCorrection(processed(), { text: "polished" }), false);
+});
+
+check("no hint when nothing matches", () => {
+  const entry = processed({ post_processed_correction: "Corrected." });
+  assert.equal(beforeCorrection(entry, { text: "elsewhere" }), false);
+});
+
+check("no hint without a text to search", () => {
+  const entry = processed({ post_processed_correction: "Corrected." });
+  assert.equal(matchesOnlyBeforeCorrection(entry, null), false);
+  assert.equal(beforeCorrection(entry, { window: "polished" }), false);
+  assert.equal(beforeCorrection(entry, { text: "(", regex: true }), false);
+});
+
+check("the hint follows case and whole words as the search does", () => {
+  const entry = processed({
+    post_processed_text: "Start polished.",
+    post_processed_correction: "Corrected.",
+  });
+  assert.equal(
+    beforeCorrection(entry, { text: "art", whole_word: true }),
+    false,
+  );
+  assert.equal(beforeCorrection(entry, { text: "art" }), true);
+  assert.equal(
+    beforeCorrection(entry, { text: "start", case_sensitive: true }),
+    false,
+  );
+  assert.equal(
+    beforeCorrection(entry, { text: "Start", case_sensitive: true }),
+    true,
+  );
+});
+
+check("a blank correction replaces nothing", () => {
+  const entry = processed({ post_processed_correction: "  " });
+  assert.equal(beforeCorrection(entry, { text: "polished" }), false);
 });
 
 // ---- Highlighting the window line and the file name ---------------------

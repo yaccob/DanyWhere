@@ -978,7 +978,8 @@
         "wholeWord": "Mots entiers uniquement",
         "invalidPattern": "Expression régulière non valide",
         "noMatches": "Aucune entrée ne correspond à la recherche.",
-        "clear": "Effacer"
+        "clear": "Effacer",
+        "matchBeforeCorrection": "Correspondance dans la version antérieure à votre correction"
       },
       "contextEntryJump": "L'afficher dans l'historique pour la corriger",
       "confirmReplaceTitle": "Remplacer votre correction ?",

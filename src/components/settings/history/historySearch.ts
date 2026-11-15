@@ -11,6 +11,7 @@ import {
   windowLabel,
   type WindowFilter,
 } from "../dictation-context/dictationContext";
+import { isCorrected, type CorrectionPart } from "./corrections";
 import { postProcessedText, shownText } from "./postProcessEntry";
 
 /** What the search fields and their toggles hold. */
@@ -255,6 +256,31 @@ export const showsOriginal = (
     matchRanges(shownText(entry, original), matcher).length > 0;
   if (matches(showOriginal) || !matches(!showOriginal)) return showOriginal;
   return !showOriginal;
+};
+
+/** Whether the search matches the entry only in a text the user's
+ * correction replaced (the backend searches those too), so neither view
+ * shows the match and the entry says why it was found instead. `false`
+ * without a text to search or with a pattern JavaScript can't read. */
+export const matchesOnlyBeforeCorrection = (
+  entry: ShownTextFields,
+  matcher: TextMatcher | null,
+): boolean => {
+  if (!matcher) return false;
+  const matches = (text: string | null) =>
+    text !== null && matchRanges(text, matcher).length > 0;
+  if (matches(shownText(entry, false)) || matches(shownText(entry, true))) {
+    return false;
+  }
+  const replaced = (part: CorrectionPart) =>
+    isCorrected(entry, part)
+      ? part === "transcription"
+        ? entry.transcription_text
+        : postProcessedText(entry)
+      : null;
+  return (
+    matches(replaced("transcription")) || matches(replaced("post_processing"))
+  );
 };
 
 /** `text` cut into the parts to show plain and highlighted. */
