@@ -975,6 +975,10 @@
       "readingFile": "Bestand lezen...",
       "showMore": "Meer tonen",
       "showLess": "Minder tonen",
+      "box": {
+        "resizeNewest": "Sleep om de hoogte van het nieuwste item te wijzigen. Dubbelklik: standaardhoogte",
+        "resizeOther": "Sleep om de hoogte van alle oudere items te wijzigen. Dubbelklik: standaardhoogte"
+      },
       "showOriginal": "Origineel tonen",
       "showPostProcessed": "Naverwerkte tekst tonen",
       "edit": "Tekst corrigeren",

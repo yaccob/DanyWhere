@@ -975,6 +975,10 @@
       "readingFile": "Odczytuję plik...",
       "showMore": "Pokaż więcej",
       "showLess": "Pokaż mniej",
+      "box": {
+        "resizeNewest": "Przeciągnij, aby zmienić wysokość najnowszego wpisu. Dwukrotne kliknięcie: domyślna wysokość",
+        "resizeOther": "Przeciągnij, aby zmienić wysokość wszystkich starszych wpisów. Dwukrotne kliknięcie: domyślna wysokość"
+      },
       "showOriginal": "Pokaż oryginał",
       "showPostProcessed": "Pokaż wynik postprocesu",
       "edit": "Popraw tekst",

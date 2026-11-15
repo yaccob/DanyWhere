@@ -20,6 +20,8 @@ mod dictation_context;
 mod history_corrections;
 // DanyWhere: searching History.
 mod history_search;
+// DanyWhere: the height of History's text boxes.
+mod history_box;
 mod input;
 mod insert_service;
 mod language_detection;
@@ -773,6 +775,8 @@ pub fn run(cli_args: CliArgs) {
             delivery::change_done_sound_setting,
             llm_timeouts::change_post_process_timeout_setting,
             llm_timeouts::change_model_list_timeout_setting,
+            // DanyWhere: the height of History's text boxes.
+            history_box::change_history_box_height_setting,
             dictation_key_inserts::change_dictation_key_inserts_setting,
             dictation_key_inserts::change_dictation_service_when_idle_setting,
             shortcut::change_paste_delay_after_ms_setting,

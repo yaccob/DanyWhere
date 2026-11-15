@@ -975,6 +975,10 @@
       "readingFile": "Läser fil...",
       "showMore": "Visa mer",
       "showLess": "Visa mindre",
+      "box": {
+        "resizeNewest": "Dra för att ändra höjden på den senaste posten. Dubbelklicka: standardhöjd",
+        "resizeOther": "Dra för att ändra höjden på alla äldre poster. Dubbelklicka: standardhöjd"
+      },
       "showOriginal": "Visa original",
       "showPostProcessed": "Visa efterbearbetad",
       "edit": "Rätta texten",

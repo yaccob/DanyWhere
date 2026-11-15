@@ -198,6 +198,11 @@ const settingUpdaters: {
   auto_submit_key: (value) =>
     commands.changeAutoSubmitKeySetting(value as string),
   history_limit: (value) => commands.updateHistoryLimit(value as number),
+  // DanyWhere: how tall History's text boxes grow, per kind of entry.
+  history_box_height_newest: (value) =>
+    commands.changeHistoryBoxHeightSetting("newest", value ?? null),
+  history_box_height_other: (value) =>
+    commands.changeHistoryBoxHeightSetting("other", value ?? null),
   post_process_enabled: (value) =>
     commands.changePostProcessEnabledSetting(value as boolean),
   post_process_selected_prompt_id: (value) =>

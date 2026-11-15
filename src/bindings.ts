@@ -218,6 +218,18 @@ async changeModelListTimeoutSetting(secs: number) : Promise<Result<null, string>
 }
 },
 /**
+ * Sets the height a History text box of `kind` may grow to, in pixels;
+ * `None` puts the kind back to its default.
+ */
+async changeHistoryBoxHeightSetting(kind: HistoryBoxKind, height: number | null) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_history_box_height_setting", { kind, height }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
  * Switches "Dictation shortcut also inserts" on or off and gives the "end
  * dictation" services their shortcuts, or takes them away.
  */
@@ -1727,7 +1739,13 @@ profile_auto_by_app?: boolean;
  * with post-processing sends earlier dictations of the same window as
  * context (`send_context`).
  */
-send_context?: boolean }
+send_context?: boolean; 
+/**
+ * DanyWhere: the height in pixels a History text box may grow to before
+ * it scrolls, as dragged at its grip, for the newest entry and for the
+ * others; `None` = the default lines (`history_box`).
+ */
+history_box_height_newest?: number | null; history_box_height_other?: number | null }
 /**
  * The stored value as the field's two controls show it.
  */
@@ -1937,6 +1955,18 @@ sent_as_context_at: number | null;
  */
 word_replacements: WordReplacement[] }
 export type GpuDeviceOption = { id: string; name: string; total_vram_mb: number }
+/**
+ * The two kinds of entry that have a height of their own.
+ */
+export type HistoryBoxKind = 
+/**
+ * The first entry of the list shown.
+ */
+"newest" | 
+/**
+ * Every other entry.
+ */
+"other"
 export type HistoryEntry = { id: number; file_name: string; timestamp: number; saved: boolean; title: string; transcription_text: string; post_processed_text: string | null; post_process_prompt: string | null; post_process_requested: boolean; 
 /**
  * The name of the file this entry was transcribed from; `None` for a

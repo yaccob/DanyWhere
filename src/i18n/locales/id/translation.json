@@ -975,6 +975,10 @@
       "readingFile": "Membaca file...",
       "showMore": "Tampilkan lebih banyak",
       "showLess": "Tampilkan lebih sedikit",
+      "box": {
+        "resizeNewest": "Seret untuk mengubah tinggi entri terbaru. Klik dua kali: tinggi bawaan",
+        "resizeOther": "Seret untuk mengubah tinggi semua entri yang lebih lama. Klik dua kali: tinggi bawaan"
+      },
       "showOriginal": "Tampilkan asli",
       "showPostProcessed": "Tampilkan hasil pascaproses",
       "edit": "Koreksi teks",

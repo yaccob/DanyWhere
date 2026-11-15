@@ -975,6 +975,10 @@
       "readingFile": "Reading file...",
       "showMore": "Show more",
       "showLess": "Show less",
+      "box": {
+        "resizeNewest": "Drag to change the height of the newest entry. Double-click: default height",
+        "resizeOther": "Drag to change the height of all older entries. Double-click: default height"
+      },
       "showOriginal": "Show original",
       "showPostProcessed": "Show post-processed",
       "edit": "Correct the text",
