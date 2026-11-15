@@ -5,10 +5,13 @@ import { readFileSync } from "node:fs";
 import {
   OVERLAY_WINDOW,
   PILL,
+  contextGlyph,
   profileGlyph,
   profileNoticeLayout,
   recordingLayout,
+  recordingPill,
   workingLayout,
+  workingPill,
 } from "./overlayProfile";
 
 // A card's content box is its window's width less its 1px border on each side.
@@ -137,6 +140,85 @@ const cases: Array<[string, () => void]> = [
           assert.ok(
             fits(recordingLayout(name, glyph, true).width, OVERLAY_WINDOW.live),
           );
+        }
+      }
+    },
+  ],
+  // DanyWhere: "Send Context" (2026-11-15).
+  [
+    "the notice after turning Send Context over shows the bubble, crossed out while off",
+    () => {
+      assert.strictEqual(contextGlyph(true, "notice"), "context");
+      assert.strictEqual(contextGlyph(false, "notice"), "context-off");
+    },
+  ],
+  [
+    "a dictation's pill shows the bubble only while it sends context",
+    () => {
+      assert.strictEqual(contextGlyph(true, "dictation"), "context");
+      assert.strictEqual(contextGlyph(false, "dictation"), null);
+    },
+  ],
+  [
+    "the bubble widens a pill with a profile by its own 20px",
+    () => {
+      const named = { named: true, glyph: true, context: true };
+      assert.strictEqual(
+        recordingPill(60, named).width - recordingLayout(60, true).width,
+        20,
+      );
+      assert.strictEqual(
+        workingPill(LABEL, 60, named).width -
+          workingLayout(LABEL, 60, true).width,
+        20,
+      );
+      assert.strictEqual(
+        recordingPill(60, named, true).width -
+          recordingLayout(60, true, true).width,
+        20,
+      );
+    },
+  ],
+  [
+    "with a single profile the bubble alone follows the separator",
+    () => {
+      const alone = { named: false, glyph: false, context: true };
+      // 20px row padding, 44px side columns, 16px label padding, the
+      // label, 8px separator, 20px bubble.
+      assert.strictEqual(workingPill(150, 0, alone).width, 258);
+      assert.strictEqual(
+        recordingPill(500, alone).width,
+        recordingPill(0, alone).width,
+      );
+      assert.strictEqual(recordingPill(0, alone).width, PILL.rest);
+      // The Live pill: its own width, 8px separator, 20px bubble.
+      assert.strictEqual(recordingPill(0, alone, true).width, PILL.live + 28);
+    },
+  ],
+  [
+    "the recording pill still cuts a name at 90px when the bubble follows it",
+    () => {
+      const named = { named: true, glyph: true, context: true };
+      assert.strictEqual(recordingPill(200, named).nameMax, 90);
+      assert.ok(fits(recordingPill(200, named).width, OVERLAY_WINDOW.session));
+    },
+  ],
+  [
+    "no pill with the bubble gets wider than its window",
+    () => {
+      for (let name = 0; name <= 600; name += 25) {
+        for (const glyph of [true, false]) {
+          const named = { named: true, glyph, context: true };
+          assert.ok(
+            fits(recordingPill(name, named).width, OVERLAY_WINDOW.session),
+          );
+          assert.ok(
+            fits(workingPill(LABEL, name, named).width, OVERLAY_WINDOW.session),
+          );
+          assert.ok(
+            fits(recordingPill(name, named, true).width, OVERLAY_WINDOW.live),
+          );
+          assert.ok(fits(workingPill(LABEL, name, named, true).width, 394));
         }
       }
     },

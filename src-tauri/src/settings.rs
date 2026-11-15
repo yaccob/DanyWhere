@@ -717,6 +717,11 @@ pub struct AppSettings {
     /// into it. Not used yet.
     #[serde(default = "default_profile_auto_by_app")]
     pub profile_auto_by_app: bool,
+    /// DanyWhere: the active profile's switch "Send Context": a dictation
+    /// with post-processing sends earlier dictations of the same window as
+    /// context (`send_context`).
+    #[serde(default)]
+    pub send_context: bool,
 }
 
 fn default_profile_auto_by_app() -> bool {
@@ -1171,34 +1176,6 @@ pub fn get_default_settings() -> AppSettings {
             current_binding: default_post_process_shortcut.to_string(),
         },
     );
-    // DanyWhere: dictate, then post-process with context from earlier
-    // dictations in the same window (`dictation_context`). One modifier more
-    // than the post-process shortcut where that is free, chosen to clash with
-    // nothing known: not ⌘⌥Space (Finder search), ⌃⌥Space (next input
-    // source, on by default) or ⌃⌘Space (Character Viewer); on Windows not
-    // Win+Ctrl+Space (input language); on Linux Ctrl+Alt+Shift+Space is the
-    // post-process shortcut already, so C for context (settled with the
-    // user, 2026-11-13; ⌃ instead of ⌥ on macOS the same day, see above).
-    #[cfg(target_os = "windows")]
-    let default_context_shortcut = "ctrl+alt+shift+space";
-    #[cfg(target_os = "macos")]
-    let default_context_shortcut = "ctrl+shift+command+space";
-    #[cfg(target_os = "linux")]
-    let default_context_shortcut = "ctrl+alt+shift+c";
-    #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
-    let default_context_shortcut = "alt+shift+c";
-
-    bindings.insert(
-        crate::dictation_context::CONTEXT_BINDING.to_string(),
-        ShortcutBinding {
-            id: crate::dictation_context::CONTEXT_BINDING.to_string(),
-            name: "Transcribe with Context".to_string(),
-            description: "Converts your speech into text and post-processes it with earlier dictations from the same window as context."
-                .to_string(),
-            default_binding: default_context_shortcut.to_string(),
-            current_binding: default_context_shortcut.to_string(),
-        },
-    );
     #[cfg(target_os = "macos")]
     let default_paste_last_shortcut = "ctrl+shift+v";
     #[cfg(not(target_os = "macos"))]
@@ -1267,6 +1244,27 @@ pub fn get_default_settings() -> AppSettings {
             description: "Turns choosing the profile by application on or off.".to_string(),
             default_binding: default_toggle_profile_auto_shortcut.to_string(),
             current_binding: default_toggle_profile_auto_shortcut.to_string(),
+        },
+    );
+    // DanyWhere: turns the active profile's "Send Context" on and off
+    // (`send_context`). K for "Kontext"/context (C is Copy Last
+    // Transcript); Control/Alt+Shift like the profile toggle. Registered only
+    // while some dictation can post-process.
+    #[cfg(target_os = "macos")]
+    let default_toggle_send_context_shortcut = "ctrl+shift+k";
+    #[cfg(not(target_os = "macos"))]
+    let default_toggle_send_context_shortcut = "alt+shift+k";
+
+    bindings.insert(
+        crate::send_context::TOGGLE_BINDING.to_string(),
+        ShortcutBinding {
+            id: crate::send_context::TOGGLE_BINDING.to_string(),
+            name: "Send Context".to_string(),
+            description:
+                "Turns sending context with post-processing on or off for the active profile."
+                    .to_string(),
+            default_binding: default_toggle_send_context_shortcut.to_string(),
+            current_binding: default_toggle_send_context_shortcut.to_string(),
         },
     );
     bindings.insert(
@@ -1367,6 +1365,7 @@ pub fn get_default_settings() -> AppSettings {
         active_profile_id: String::new(),
         profile_words: Vec::new(),
         profile_auto_by_app: default_profile_auto_by_app(),
+        send_context: false,
     }
 }
 
@@ -1419,9 +1418,10 @@ pub fn load_or_create_app_settings(app: &AppHandle) -> AppSettings {
 }
 
 /// DanyWhere: the shortcuts that post-process, which are registered only
-/// while post-processing is switched on.
+/// while post-processing is switched on, and the switch "Send Context",
+/// which does nothing without it.
 pub fn binding_needs_post_processing(id: &str) -> bool {
-    id == "transcribe_with_post_process" || id == crate::dictation_context::CONTEXT_BINDING
+    id == "transcribe_with_post_process" || id == crate::send_context::TOGGLE_BINDING
 }
 
 /// DanyWhere: whether DanyWhere registers the shortcut `id` as its own.
@@ -1728,6 +1728,11 @@ fn apply_settings_migrations(
         updated = true;
     }
 
+    // DanyWhere: the context shortcut gave way to "Send Context".
+    if crate::send_context::drop_retired_binding(settings) {
+        updated = true;
+    }
+
     updated
 }
 
@@ -1880,7 +1885,11 @@ mod tests {
         assert!(binding_needs_post_processing(
             "transcribe_with_post_process"
         ));
-        assert!(binding_needs_post_processing("transcribe_with_context"));
+        // DanyWhere: the switch "Send Context" does nothing without it.
+        assert!(binding_needs_post_processing(
+            crate::send_context::TOGGLE_BINDING
+        ));
+        assert!(!binding_needs_post_processing("transcribe_with_context"));
         assert!(!binding_needs_post_processing("transcribe"));
         assert!(!binding_needs_post_processing("paste_last_transcript"));
     }
@@ -1969,7 +1978,7 @@ mod tests {
             true
         ));
         assert!(!registers_binding(
-            "transcribe_with_context",
+            crate::send_context::TOGGLE_BINDING,
             &settings,
             true
         ));
@@ -1980,7 +1989,7 @@ mod tests {
             true
         ));
         assert!(registers_binding(
-            "transcribe_with_context",
+            crate::send_context::TOGGLE_BINDING,
             &settings,
             true
         ));
@@ -2006,21 +2015,6 @@ mod tests {
             .filter(|b| b.id != "copy_last_transcript" && b.default_binding == expected)
             .count();
         assert_eq!(others, 0, "{expected} is taken");
-    }
-
-    #[test]
-    fn the_context_shortcut_has_a_default_on_every_platform() {
-        let defaults = get_default_settings();
-        let binding = &defaults.bindings["transcribe_with_context"];
-        assert!(!binding.default_binding.is_empty());
-        assert_eq!(binding.current_binding, binding.default_binding);
-        let others: Vec<&str> = defaults
-            .bindings
-            .values()
-            .filter(|b| b.id != "transcribe_with_context")
-            .map(|b| b.default_binding.as_str())
-            .collect();
-        assert!(!others.contains(&binding.default_binding.as_str()));
     }
 
     #[test]

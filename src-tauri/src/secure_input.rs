@@ -480,7 +480,7 @@ mod imp {
                 if id == "cancel" && !state.cancel_requested.load(Ordering::SeqCst) {
                     continue;
                 }
-                // DanyWhere: also the context shortcut.
+                // DanyWhere: also the toggle of "Send Context".
                 if crate::settings::binding_needs_post_processing(id)
                     && !settings.post_process_enabled
                 {

@@ -490,6 +490,24 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* DanyWhere: the speech bubble of "Send Context" (send_context.rs) after the
+   profile's name in a dictation's pill, or alone after the separator with a
+   single profile: 14px and 6px after it (CONTEXT in overlayProfile.ts). In
+   the notice after turning the switch over it is the .sglyph. */
+.sctx {
+  display: block;
+  width: 14px;
+  height: 14px;
+  margin-right: 6px;
+  flex: none;
+  color: var(--color-moss);
+}
+.sglyph.context {
+  color: var(--color-moss);
+}
+.sglyph.context-off {
+  color: var(--color-text);
+}
 /* Measures a full name or label, since the visible one can be cut off. */
 .sprobe {
   position: absolute;

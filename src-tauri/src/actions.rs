@@ -137,9 +137,6 @@ pub trait ShortcutAction: Send + Sync {
 // Transcribe Action
 struct TranscribeAction {
     post_process: bool,
-    /// DanyWhere: post-process with context from earlier dictations in the
-    /// same window (`dictation_context`); only with `post_process`.
-    with_context: bool,
 }
 
 /// Field name for structured output JSON schema
@@ -618,8 +615,8 @@ pub(crate) async fn process_transcription_output(
     let mut context_entry_ids: Vec<i64> = Vec::new();
 
     if post_process {
-        // DanyWhere: earlier dictations from the same window, if the context
-        // shortcut asked for them (the query then has a window).
+        // DanyWhere: earlier dictations from the same window, if "Send
+        // Context" asked for them (the query then has a window).
         let selected_prompt_id = settings.post_process_selected_prompt_id.as_deref();
         let selected_prompt = settings
             .post_process_prompts
@@ -802,6 +799,8 @@ impl ShortcutAction for TranscribeAction {
         // DanyWhere: from two profiles on, the overlay names the dictation's
         // profile with the glyph of choosing it by application.
         crate::overlay::set_dictation_profile(app, dictation_profile);
+        // DanyWhere: and a speech bubble while it would send context.
+        crate::send_context::begin_dictation(app, self.post_process);
         match settings.overlay_style {
             OverlayStyle::Live if model_supports_streaming => utils::show_streaming_overlay(app),
             OverlayStyle::Live | OverlayStyle::Minimal => show_recording_overlay(app),
@@ -945,7 +944,9 @@ impl ShortcutAction for TranscribeAction {
             self.post_process,
             crate::app_profiles::dictation_values().as_ref(),
         );
-        let with_context = post_process && self.with_context;
+        // DanyWhere: and with the profile's "Send Context" whether earlier
+        // dictations go along (`send_context`).
+        let with_context = crate::send_context::decide_at_stop(app, post_process);
         // DanyWhere: the recording whose window was captured at its start.
         let context_session = RECORDING_SESSION.load(Ordering::SeqCst);
         let cancel_generation = rm.cancel_generation();
@@ -1056,8 +1057,8 @@ impl ShortcutAction for TranscribeAction {
                             let window = crate::window_capture::take_capture(context_session);
                             let context_query =
                                 crate::dictation_context::ContextQuery::for_new_dictation(
-                                    // Only the context shortcut sends context;
-                                    // every dictation keeps its window.
+                                    // Only "Send Context" sends context; every
+                                    // dictation keeps its window.
                                     if with_context { window.clone() } else { None },
                                     word_replacements.clone(),
                                 );
@@ -1451,6 +1452,24 @@ impl ShortcutAction for ToggleProfileAutoAction {
     }
 }
 
+// Send Context on/off (DanyWhere, `send_context`)
+struct ToggleSendContextAction;
+
+impl ShortcutAction for ToggleSendContextAction {
+    fn start(&self, _app: &AppHandle, _binding_id: &str, _shortcut_str: &str) {
+        // Switched on release, so a held key or key repeat switches once.
+    }
+
+    fn stop(&self, app: &AppHandle, _binding_id: &str, _shortcut_str: &str) {
+        // Like the profile toggle: off the handler thread, which the overlay
+        // and the tray must not wait for.
+        let app = app.clone();
+        crate::shortcut::off_handler_thread(move || {
+            crate::send_context::toggle_from_shortcut(&app);
+        });
+    }
+}
+
 // Test Action
 struct TestAction;
 
@@ -1481,24 +1500,11 @@ pub static ACTION_MAP: Lazy<HashMap<String, Arc<dyn ShortcutAction>>> = Lazy::ne
         "transcribe".to_string(),
         Arc::new(TranscribeAction {
             post_process: false,
-            with_context: false,
         }) as Arc<dyn ShortcutAction>,
     );
     map.insert(
         "transcribe_with_post_process".to_string(),
-        Arc::new(TranscribeAction {
-            post_process: true,
-            with_context: false,
-        }) as Arc<dyn ShortcutAction>,
-    );
-    // DanyWhere: dictate, then post-process with context from earlier
-    // dictations in the same window (`dictation_context`).
-    map.insert(
-        crate::dictation_context::CONTEXT_BINDING.to_string(),
-        Arc::new(TranscribeAction {
-            post_process: true,
-            with_context: true,
-        }) as Arc<dyn ShortcutAction>,
+        Arc::new(TranscribeAction { post_process: true }) as Arc<dyn ShortcutAction>,
     );
     map.insert(
         "cancel".to_string(),
@@ -1519,6 +1525,10 @@ pub static ACTION_MAP: Lazy<HashMap<String, Arc<dyn ShortcutAction>>> = Lazy::ne
     map.insert(
         crate::app_profiles::TOGGLE_BINDING.to_string(),
         Arc::new(ToggleProfileAutoAction) as Arc<dyn ShortcutAction>,
+    );
+    map.insert(
+        crate::send_context::TOGGLE_BINDING.to_string(),
+        Arc::new(ToggleSendContextAction) as Arc<dyn ShortcutAction>,
     );
     map.insert(
         "test".to_string(),

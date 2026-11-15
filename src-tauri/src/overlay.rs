@@ -87,7 +87,7 @@ fn overlay_dimensions(state: &str) -> (f64, f64) {
         (OVERLAY_STREAM_WIDTH, OVERLAY_STREAM_HEIGHT)
     } else if matches!(
         state,
-        "clipboard" | "ready" | "not_ready" | "word_list" | "profile"
+        "clipboard" | "ready" | "not_ready" | "word_list" | "profile" | "context"
     ) {
         (OVERLAY_NOTICE_WIDTH, OVERLAY_HEIGHT)
     } else {
@@ -875,6 +875,35 @@ pub fn set_dictation_profile(app_handle: &AppHandle, profile: Option<OverlayProf
     }
 }
 
+/// DanyWhere: shows the new state of "Send Context" for `duration`, as the
+/// speech bubble (crossed out while off) and the profile's name, like the
+/// profile notice (`send_context`). The caller skips it while a recording or
+/// transcription owns the overlay.
+pub fn show_context_notice(
+    app_handle: &AppHandle,
+    notice: crate::send_context::ContextNotice,
+    duration: std::time::Duration,
+) {
+    // Sent before the state, so the overlay has the notice when it renders.
+    if let Some(overlay_window) = app_handle.get_webview_window("recording_overlay") {
+        let _ = overlay_window.emit("overlay-context", notice);
+    }
+    show_timed_state(app_handle, "context", duration);
+}
+
+/// DanyWhere: whether the dictation in progress sends context, shown as a
+/// speech bubble next to its profile (`send_context`). Sent at the start of
+/// every dictation, when "Send Context" is turned over while it records, and
+/// once more when it stops, with the decision.
+pub fn set_dictation_context(app_handle: &AppHandle, sends: bool) {
+    if !OVERLAY_ENABLED.load(Ordering::Relaxed) {
+        return;
+    }
+    if let Some(overlay_window) = app_handle.get_webview_window("recording_overlay") {
+        let _ = overlay_window.emit("overlay-dictation-context", sends);
+    }
+}
+
 /// Shows `state` for `duration`, then hides the overlay unless something else
 /// has shown it in the meantime.
 fn show_timed_state(app_handle: &AppHandle, state: &'static str, duration: std::time::Duration) {
@@ -998,6 +1027,17 @@ mod tests {
             );
             assert_eq!(is_live_state(session), live);
         }
+    }
+
+    /// DanyWhere: the notice after turning "Send Context" over is as wide
+    /// as the profile notice it looks like.
+    #[test]
+    fn the_context_notice_gets_the_notice_window() {
+        assert_eq!(
+            overlay_dimensions("context"),
+            (OVERLAY_NOTICE_WIDTH, OVERLAY_HEIGHT)
+        );
+        assert_eq!(overlay_dimensions("context"), overlay_dimensions("profile"));
     }
 
     #[test]

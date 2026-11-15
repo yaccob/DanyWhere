@@ -20,11 +20,6 @@ pub struct CliArgs {
     #[arg(long)]
     pub toggle_post_process: bool,
 
-    /// Toggle transcription with post-processing and context from earlier
-    /// dictations in the same window (sent to running instance)
-    #[arg(long)]
-    pub toggle_post_process_with_context: bool,
-
     /// Cancel the current operation (sent to running instance)
     #[arg(long)]
     pub cancel: bool,
@@ -94,5 +89,15 @@ mod tests {
     #[test]
     fn cli_names_the_shipped_binary() {
         assert_eq!(CliArgs::command().get_name(), shipped_binary_name());
+    }
+
+    /// DanyWhere: context follows the profile's switch "Send Context" since
+    /// 2026-11-15, so the flag of the context shortcut is gone.
+    #[test]
+    fn the_context_flag_is_gone() {
+        assert!(
+            CliArgs::try_parse_from(["danywhere", "--toggle-post-process-with-context"]).is_err()
+        );
+        assert!(CliArgs::try_parse_from(["danywhere", "--toggle-post-process"]).is_ok());
     }
 }

@@ -41,6 +41,7 @@ mod profile_transfer;
 mod profiles;
 mod prompt_frame;
 mod secure_input;
+mod send_context;
 mod settings;
 mod shortcut;
 mod signal_handle;
@@ -411,6 +412,9 @@ fn initialize_core_logic(app_handle: &AppHandle) {
             }
             tray::PROFILE_AUTO_ID => {
                 app_profiles::toggle_from_tray(app);
+            }
+            tray::SEND_CONTEXT_ID => {
+                send_context::toggle_from_tray(app);
             }
             id if id.starts_with(tray::PROFILE_SELECT_PREFIX) => {
                 let profile_id = id
@@ -812,6 +816,7 @@ pub fn run(cli_args: CliArgs) {
             app_profiles::set_profile_apps,
             app_profiles::set_profile_auto_by_app,
             app_profiles::list_applications,
+            send_context::set_send_context,
             shortcut::suspend_all_bindings,
             shortcut::resume_all_bindings,
             shortcut::change_mute_while_recording_setting,
@@ -1015,16 +1020,6 @@ pub fn run(cli_args: CliArgs) {
                 signal_handle::send_transcription_input(app, "transcribe", "CLI");
             } else if args.iter().any(|a| a == "--toggle-post-process") {
                 signal_handle::send_transcription_input(app, "transcribe_with_post_process", "CLI");
-            } else if args
-                .iter()
-                .any(|a| a == "--toggle-post-process-with-context")
-            {
-                // DanyWhere: post-processing with context.
-                signal_handle::send_transcription_input(
-                    app,
-                    crate::dictation_context::CONTEXT_BINDING,
-                    "CLI",
-                );
             } else if args.iter().any(|a| a == "--cancel") {
                 crate::utils::cancel_current_operation(app);
             } else {

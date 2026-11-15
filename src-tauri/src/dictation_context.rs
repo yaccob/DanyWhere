@@ -1,12 +1,13 @@
 //! DanyWhere: earlier dictations from the same window as context for
 //! post-processing.
 //!
-//! A dictation made with its own shortcut (`transcribe_with_context`) is
-//! post-processed with the selected prompt plus the user's earlier
-//! dictations made in the same window (same app, same window title) within an
-//! age limit, oldest first, and the instruction to make one consistent whole
-//! of them and the current dictation. The plain post-processing shortcut
-//! never sends context (decided with the user on 2026-11-13). Without a window title there is no context at all: the user
+//! A dictation with post-processing whose profile has "Send Context" on
+//! (`send_context`; until 2026-11-15 its own shortcut,
+//! `transcribe_with_context`) is post-processed with the selected prompt plus
+//! the user's earlier dictations made in the same window (same app, same
+//! window title) within an age limit, oldest first, and the instruction to
+//! make one consistent whole of them and the current dictation. A dictation
+//! without post-processing never sends context. Without a window title there is no context at all: the user
 //! often works on several things at once, and a wrong context is worse than
 //! none (decided with the user on 2026-11-12).
 //!
@@ -29,9 +30,6 @@ use tauri::{AppHandle, Manager};
 
 use crate::managers::history::{HistoryEntry, HistoryManager};
 use crate::settings::{self, AppSettings};
-
-/// The shortcut that dictates and post-processes with context.
-pub const CONTEXT_BINDING: &str = "transcribe_with_context";
 
 /// The user's settings for context from earlier dictations.
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Type)]
@@ -131,8 +129,8 @@ pub struct EntryWindowContext {
     pub window_app_id: Option<String>,
     pub window_app_name: Option<String>,
     pub window_title: Option<String>,
-    /// It was dictated (or post-processed again) with the context shortcut,
-    /// so re-processing it from the History uses context again.
+    /// It was dictated (or post-processed again) with context, so
+    /// re-processing it from the History uses context again.
     pub context_requested: bool,
     /// The earlier entries its post-processing got as context.
     pub context_entry_ids: Vec<i64>,
@@ -268,15 +266,12 @@ pub fn is_excluded_app(app_id: &str, app_name: &str, excluded: &[String]) -> boo
     })
 }
 
-/// Whether recordings capture their window: while post-processing is on and
-/// the context shortcut has a key, every recording does, so plain dictations
+/// Whether recordings capture their window: while some dictation can
+/// post-process (`app_profiles::post_processing_reachable`), every recording
+/// does, so plain dictations, and those made before "Send Context" went on,
 /// can serve as context later.
 pub fn capture_wanted(settings: &AppSettings) -> bool {
-    settings.post_process_enabled
-        && settings
-            .bindings
-            .get(CONTEXT_BINDING)
-            .is_some_and(|binding| !binding.current_binding.trim().is_empty())
+    crate::app_profiles::post_processing_reachable(settings)
 }
 
 /// The earliest time an entry may have to serve as context.
@@ -792,28 +787,24 @@ mod tests {
         ));
     }
 
-    fn settings_with(context_shortcut: &str, post_process_enabled: bool) -> AppSettings {
-        let mut settings = settings::get_default_settings();
-        settings.post_process_enabled = post_process_enabled;
-        settings
-            .bindings
-            .get_mut(CONTEXT_BINDING)
-            .expect("the context shortcut is a default binding")
-            .current_binding = context_shortcut.to_string();
-        settings
-    }
-
     #[test]
-    fn windows_are_captured_while_the_context_shortcut_has_a_key() {
-        assert!(capture_wanted(&settings_with(
-            "option+shift+command+space",
-            true
-        )));
-        assert!(!capture_wanted(&settings_with("", true)));
-        assert!(!capture_wanted(&settings_with(
-            "option+shift+command+space",
-            false
-        )));
+    fn windows_are_captured_while_some_dictation_can_post_process() {
+        // So dictations made before "Send Context" goes on serve as context
+        // too; no shortcut decides it any more (2026-11-15).
+        let mut settings = settings::get_default_settings();
+        settings.bindings.remove("transcribe_with_context");
+        settings.post_process_enabled = true;
+        assert!(capture_wanted(&settings));
+        settings.post_process_enabled = false;
+        assert!(!capture_wanted(&settings));
+        // A profile with applications that post-processes.
+        crate::profiles::ensure_profiles(&mut settings);
+        let mut mail = settings.profiles[0].clone();
+        mail.id = "mail".to_string();
+        mail.values.post_process_enabled = true;
+        mail.apps = vec!["com.apple.mail".to_string()];
+        settings.profiles.push(mail);
+        assert!(capture_wanted(&settings));
     }
 
     #[test]

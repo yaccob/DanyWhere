@@ -1210,13 +1210,14 @@ pub fn change_post_process_enabled_setting(app: AppHandle, enabled: bool) -> Res
     Ok(())
 }
 
-/// Registers the post-processing shortcuts (DanyWhere: the context shortcut
-/// too) while post-processing is on in `settings`, and unregisters them while
-/// it's off. DanyWhere: also after a profile switch turned it on or off.
+/// Registers the post-processing shortcuts (DanyWhere: the toggle of "Send
+/// Context" too) while post-processing is on in `settings`, and unregisters
+/// them while it's off. DanyWhere: also after a profile switch turned it on
+/// or off.
 pub fn sync_post_process_shortcuts(app: &AppHandle, settings: &settings::AppSettings) {
     for id in [
         "transcribe_with_post_process",
-        crate::dictation_context::CONTEXT_BINDING,
+        crate::send_context::TOGGLE_BINDING,
     ] {
         if let Some(binding) = settings.bindings.get(id).cloned() {
             // DanyWhere: also while a profile with applications
@@ -1813,6 +1814,20 @@ mod tests {
             crate::actions::ACTION_MAP.contains_key(crate::app_profiles::TOGGLE_BINDING),
             "the shortcut has an action"
         );
+    }
+
+    /// DanyWhere: turns the active profile's "Send Context" over.
+    #[test]
+    fn has_a_default_shortcut_to_toggle_sending_context() {
+        let settings = crate::settings::get_default_settings();
+        let binding = settings
+            .bindings
+            .get(crate::send_context::TOGGLE_BINDING)
+            .expect("default binding 'toggle_send_context'");
+        // Must work with both backends, incl. the one used without Accessibility.
+        let raw = &binding.current_binding;
+        assert_eq!(super::tauri_impl::validate_shortcut(raw), Ok(()));
+        assert!(super::handy_keys::validate_shortcut(raw).is_ok());
     }
 
     #[test]

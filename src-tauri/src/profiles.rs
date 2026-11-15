@@ -1,7 +1,7 @@
 //! DanyWhere: profiles. A profile holds everything that decides how a
 //! dictation is processed: speech model, languages, word lists, post-processing
-//! and its prompts, context limits, filler words. Shortcuts, microphone, API
-//! keys and the interface stay global.
+//! and its prompts, context limits and "Send Context", filler words.
+//! Shortcuts, microphone, API keys and the interface stay global.
 //!
 //! The flat fields of [`AppSettings`] always hold the active profile's values,
 //! so the code that reads settings stays as it is. [`sync_active_profile`]
@@ -64,6 +64,8 @@ pub struct ProfileValues {
     pub context_max_entries: u32,
     /// `dictation_context.char_budget`
     pub context_char_budget: u32,
+    /// The switch "Send Context" (`send_context`).
+    pub send_context: bool,
     pub filler_word_removal_enabled: bool,
     pub custom_filler_words: Option<Vec<String>>,
     /// The "Append" field (`append_text`), which replaced the trailing space;
@@ -101,6 +103,7 @@ impl ProfileValues {
             context_age_limit_minutes: settings.dictation_context.age_limit_minutes,
             context_max_entries: settings.dictation_context.max_entries,
             context_char_budget: settings.dictation_context.char_budget,
+            send_context: settings.send_context,
             filler_word_removal_enabled: settings.filler_word_removal_enabled,
             custom_filler_words: settings.custom_filler_words.clone(),
             append_text: settings.append_text.clone(),
@@ -129,6 +132,7 @@ impl ProfileValues {
         settings.dictation_context.age_limit_minutes = self.context_age_limit_minutes;
         settings.dictation_context.max_entries = self.context_max_entries;
         settings.dictation_context.char_budget = self.context_char_budget;
+        settings.send_context = self.send_context;
         settings.filler_word_removal_enabled = self.filler_word_removal_enabled;
         settings.custom_filler_words = self.custom_filler_words.clone();
         settings.append_text = self.append_text.clone();
@@ -513,6 +517,7 @@ mod tests {
             context_age_limit_minutes: 11,
             context_max_entries: 2,
             context_char_budget: 999,
+            send_context: true,
             filler_word_removal_enabled: false,
             custom_filler_words: Some(strings(&["äh"])),
             append_text: r"\s{Enter}".to_string(),
