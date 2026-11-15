@@ -2,6 +2,7 @@
 //   bun src/lib/variant.test.ts
 import assert from "node:assert";
 import { buildVariant, RELEASE_PRODUCT_NAME } from "./variant";
+import tauriConfig from "../../src-tauri/tauri.conf.json";
 
 const cases: Array<[string, () => void]> = [
   [
@@ -11,6 +12,12 @@ const cases: Array<[string, () => void]> = [
   [
     "the release's product name is DanyWhere",
     () => assert.strictEqual(RELEASE_PRODUCT_NAME, "DanyWhere"),
+  ],
+  [
+    // The release is built with tauri.conf.json's productName; were it to
+    // differ, the release would carry a test build's mark.
+    "the release build's product name is the unmarked one",
+    () => assert.strictEqual(tauriConfig.productName, RELEASE_PRODUCT_NAME),
   ],
   [
     "Dev is marked violet",
