@@ -1298,24 +1298,25 @@ async reprocessHistoryEntry(id: number, mode: ReprocessMode) : Promise<void> {
     await TAURI_INVOKE("reprocess_history_entry", { id, mode });
 },
 /**
- * Corrects the entry's `part` to `text`, or removes its correction when
- * `text` is `None`. Errors: `blank`, or the database's message.
+ * Saves the user's `text` for the entry's version `base`: the versions above
+ * it go, then `Replace` changes `base` and `New` adds a version above it.
+ * Errors: `blank`, `no_such_version`, `transcription_is_fixed`, or the
+ * database's message.
  */
-async correctHistoryEntry(id: number, part: CorrectionPart, text: string | null) : Promise<Result<HistoryEntry, string>> {
+async saveHistoryVersion(id: number, base: number, text: string, mode: SaveVersionMode) : Promise<Result<HistoryEntry, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("correct_history_entry", { id, part, text }) };
+    return { status: "ok", data: await TAURI_INVOKE("save_history_version", { id, base, text, mode }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
 },
 /**
- * Deletes the entry's post-processing, so its (corrected) transcription is
- * its result again.
+ * Keeps the entry's versions `0..=keep` and deletes the ones above them.
  */
-async deleteHistoryEntryPostProcessing(id: number) : Promise<Result<HistoryEntry, string>> {
+async revertHistoryEntryToVersion(id: number, keep: number) : Promise<Result<HistoryEntry, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("delete_history_entry_post_processing", { id }) };
+    return { status: "ok", data: await TAURI_INVOKE("revert_history_entry_to_version", { id, keep }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -1838,18 +1839,6 @@ export type ChineseScript =
  */
 "traditional_hk"
 export type ClipboardHandling = "dont_modify" | "copy_to_clipboard"
-/**
- * Which of an entry's two texts a correction belongs to.
- */
-export type CorrectionPart = 
-/**
- * The transcription as the speech model wrote it.
- */
-"transcription" | 
-/**
- * The text post-processing made of it.
- */
-"post_processing"
 export type CustomSounds = { start: boolean; stop: boolean }
 /**
  * The user's settings for context from earlier dictations.
@@ -1955,21 +1944,12 @@ language_source: LanguageSource | null;
  * The storage limit deleted the recording; the transcript stays, but
  * there is nothing to play or transcribe again.
  */
-recording_removed: boolean; 
+recording_removed: boolean;
 /**
- * DanyWhere: the user's correction of `transcription_text`, which stays
- * as the model wrote it (see `history_corrections`).
+ * DanyWhere: the entry's versions, oldest first: `versions[0]` is the
+ * transcription, the last one the entry's result (see `history_versions`).
  */
-transcription_correction: string | null; 
-/**
- * DanyWhere: the user's correction of `post_processed_text`.
- */
-post_processed_correction: string | null; 
-/**
- * DanyWhere: the post-processed text was made from another version of
- * the transcription than the one the entry has now.
- */
-post_processing_outdated: boolean; 
+versions: HistoryVersion[];
 /**
  * DanyWhere: the window it was dictated in and its context for
  * post-processing (`dictation_context`).
@@ -2006,6 +1986,10 @@ whole_word: boolean;
  */
 same_window: SameWindow | null }
 export type HistoryUpdatePayload = { action: "added"; entry: HistoryEntry } | { action: "updated"; entry: HistoryEntry } | { action: "deleted"; id: number } | { action: "toggled"; id: number }
+/**
+ * One version of a History entry: its text and the steps that made it.
+ */
+export type HistoryVersion = { text: string; steps: VersionStep[] }
 /**
  * Result of changing keyboard implementation
  */
@@ -2378,9 +2362,20 @@ export type ReprocessMode =
  */
 "transcribe_and_post_process" | 
 /**
- * Keep the transcript and post-process it again; needs no recording.
+ * Post-process the top version further; the result is a new version.
+ * Needs no recording.
  */
-"post_process"
+"post_process" |
+/**
+ * Post-process the top version; the result replaces it (not on the
+ * transcription).
+ */
+"post_process_replace" |
+/**
+ * Post-process the version below the top again; the result replaces the
+ * top (only when the top was made by post-processing).
+ */
+"post_process_redo"
 /**
  * A retired ONNX model found on disk.
  */
@@ -2389,6 +2384,10 @@ export type RetiredModel = { id: string; name: string; size_mb: number; replacem
  * One window, as History's "same window" filter names it.
  */
 export type SameWindow = { app_id: string; title: string }
+/**
+ * Whether saving changes the version or adds a new one above it.
+ */
+export type SaveVersionMode = "replace" | "new"
 export type SecretMap = Partial<{ [key in string]: string }>
 export type SecureInputStatus = { 
 /**
@@ -2556,6 +2555,22 @@ export type TransferErrorCode = "profile_not_found" |
 "io" | "internal"
 export type TypingTool = "auto" | "wtype" | "kwtype" | "dotool" | "ydotool" | "xdotool"
 export type VadBackend = "silero" | "earshot"
+/**
+ * Who made a step of a version.
+ */
+export type VersionAuthor = "transcription" | "ai" | "user"
+/**
+ * One step that made a version.
+ */
+export type VersionStep = { by: VersionAuthor;
+/**
+ * Unix milliseconds; None for steps migrated from before versions existed.
+ */
+at: number | null;
+/**
+ * For an AI step: the prompt's name, when known.
+ */
+prompt_name: string | null }
 /**
  * What the settings show about window titles on this computer.
  */
