@@ -1088,6 +1088,11 @@
         "description": "Mở ghi chú phát hành mới nhất được đóng gói mà không đánh dấu là đã xem",
         "button": "Xem trước"
       },
+      "themeFile": {
+        "title": "Tệp giao diện",
+        "description": "Mở theme.css, tệp thay đổi màu sắc và các kiểu khác của ứng dụng. Thay đổi đã lưu hiển thị trong vài giây mà không cần khởi động lại. Nếu tệp đã bị xóa, tệp sẽ được tạo lại.",
+        "button": "Mở tệp giao diện"
+      },
       "onboardingPreview": {
         "title": "Xem trước thiết lập ban đầu",
         "description": "Xem trước các màn hình thiết lập mà không thay đổi quyền, mô hình hoặc trạng thái hoàn tất",

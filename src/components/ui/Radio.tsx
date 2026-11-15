@@ -9,7 +9,7 @@ interface RadioProps {
 export const Radio: React.FC<RadioProps> = ({ checked, className = "" }) => (
   <span
     aria-hidden="true"
-    className={`grid place-items-center shrink-0 size-[18px] rounded-full border-[1.5px] text-white ${
+    className={`grid place-items-center shrink-0 size-[18px] rounded-full border-[1.5px] text-on-accent ${
       checked ? "border-background-ui bg-background-ui" : "border-line-strong"
     } ${className}`}
   >

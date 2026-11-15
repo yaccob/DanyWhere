@@ -1088,6 +1088,11 @@
         "description": "En son paketlenmiş sürüm notunu görüldü olarak işaretlemeden aç",
         "button": "Önizle"
       },
+      "themeFile": {
+        "title": "Tema Dosyası",
+        "description": "Uygulamanın renklerini ve diğer stillerini değiştiren theme.css dosyasını açar. Kaydedilen değişiklikler yeniden başlatmadan birkaç saniye içinde görünür. Dosya silinmişse yeniden oluşturulur.",
+        "button": "Tema Dosyasını Aç"
+      },
       "onboardingPreview": {
         "title": "İlk kurulum önizlemesi",
         "description": "İzinleri, modelleri veya tamamlanma durumunu değiştirmeden ilk kurulum ekranlarını önizleyin",

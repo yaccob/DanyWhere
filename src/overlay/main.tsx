@@ -7,6 +7,7 @@ import {
   getStoredTheme,
   syncThemeFromSettings,
 } from "@/lib/utils/theme";
+import { loadUserTheme } from "@/lib/loadUserTheme";
 import type { Theme } from "@/bindings";
 import "@/i18n";
 
@@ -17,6 +18,8 @@ import "@/i18n";
 applyTheme(getStoredTheme());
 syncThemeFromSettings();
 listen<Theme>("theme-changed", (event) => applyTheme(event.payload));
+// DanyWhere: the user's theme file, after the built-in styles.
+loadUserTheme();
 
 // The overlay floats over other apps, so a stray right-click must not open the
 // webview's default menu (Reload, Save as, Print, ...). Kept in dev for Inspect.

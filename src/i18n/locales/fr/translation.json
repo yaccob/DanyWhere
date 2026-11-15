@@ -1088,6 +1088,11 @@
         "description": "Ouvrir la dernière note de version intégrée sans la marquer comme vue",
         "button": "Aperçu"
       },
+      "themeFile": {
+        "title": "Fichier de thème",
+        "description": "Ouvre theme.css, qui modifie les couleurs et les autres styles de l'application. Les modifications enregistrées s'affichent en quelques secondes, sans redémarrage. Si le fichier a été supprimé, il est recréé.",
+        "button": "Ouvrir le fichier de thème"
+      },
       "onboardingPreview": {
         "title": "Aperçu de la configuration initiale",
         "description": "Prévisualisez les écrans de configuration sans modifier les autorisations, les modèles ou l’état d’achèvement",

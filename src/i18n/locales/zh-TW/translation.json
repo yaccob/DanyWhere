@@ -1088,6 +1088,11 @@
         "description": "開啟最新內建版本資訊，且不標記為已看過",
         "button": "預覽"
       },
+      "themeFile": {
+        "title": "主題檔案",
+        "description": "開啟 theme.css，用它可以變更應用程式的顏色和其他樣式。儲存的變更幾秒內即會生效，無需重新啟動。如果檔案已被刪除，會重新建立。",
+        "button": "開啟主題檔案"
+      },
       "onboardingPreview": {
         "title": "預覽新手引導",
         "description": "預覽新手引導畫面，而不變更權限、模型或完成狀態",

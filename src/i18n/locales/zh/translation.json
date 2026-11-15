@@ -1088,6 +1088,11 @@
         "description": "打开最新内置发行说明，且不标记为已查看",
         "button": "预览"
       },
+      "themeFile": {
+        "title": "主题文件",
+        "description": "打开 theme.css，用它可以更改应用的颜色和其他样式。保存的更改几秒内即可生效，无需重启。如果文件已被删除，会重新创建。",
+        "button": "打开主题文件"
+      },
       "onboardingPreview": {
         "title": "预览新手引导",
         "description": "预览新手引导界面，而不更改权限、模型或完成状态",

@@ -58,7 +58,7 @@
   background: var(--color-demo-window);
   box-shadow:
     0 0 0 0.5px var(--color-line),
-    0 14px 40px rgb(40 20 50 / 0.16);
+    0 14px 40px var(--color-demo-shadow);
   cursor: text;
 }
 .try-screen[data-os="win"] .try-notes {
@@ -191,7 +191,7 @@
 .try-bubble {
   --try-bubble-edge: color-mix(in srgb, var(--color-text) 15%, transparent);
   --try-bubble-fill: var(--color-demo-window);
-  --try-bubble-shadow: 0 6px 18px -8px rgb(0 0 0 / 0.22);
+  --try-bubble-shadow: 0 6px 18px -8px var(--color-demo-bubble-shadow);
   position: relative;
   margin-bottom: 16px;
   border: 1px solid var(--try-bubble-edge);
@@ -485,7 +485,7 @@
   border: 1px solid var(--try-panel-edge);
   border-radius: 16px;
   background: var(--try-panel-fill);
-  box-shadow: 0 14px 34px -12px rgb(0 0 0 / 0.3);
+  box-shadow: 0 14px 34px -12px var(--color-demo-panel-shadow);
   font-size: var(--text-small);
   line-height: 1.35;
   text-align: start;

@@ -1088,6 +1088,11 @@
         "description": "Die neuesten gebündelten Versionshinweise öffnen, ohne sie als gesehen zu markieren",
         "button": "Vorschau"
       },
+      "themeFile": {
+        "title": "Design-Datei",
+        "description": "theme.css öffnen, mit der sich Farben und andere Stile der App ändern lassen. Gespeicherte Änderungen erscheinen nach wenigen Sekunden, ohne Neustart. Wurde die Datei gelöscht, wird sie neu angelegt.",
+        "button": "Design-Datei öffnen"
+      },
       "onboardingPreview": {
         "title": "Ersteinrichtung ansehen",
         "description": "Vorschau der Einrichtungsbildschirme, ohne Berechtigungen, Modelle oder den Abschlussstatus zu ändern",

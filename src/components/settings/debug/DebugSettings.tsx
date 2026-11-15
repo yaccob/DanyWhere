@@ -14,6 +14,7 @@ import { SoundPicker } from "../SoundPicker";
 import { ClamshellMicrophoneSelector } from "../ClamshellMicrophoneSelector";
 import { UpdateChecksToggle } from "../UpdateChecksToggle";
 import { WhatsNewPreview } from "./WhatsNewPreview";
+import { ThemeFile } from "./ThemeFile";
 import { KeyboardDiagnostic } from "./KeyboardDiagnostic";
 import { DebugRun, OnboardingPreview } from "./OnboardingPreview";
 import type { OnboardingStep } from "../../onboarding/onboardingStore";
@@ -43,6 +44,7 @@ export const DebugSettings: React.FC<DebugSettingsProps> = ({
       <SettingsGroup title={t("settings.debug.title")}>
         <LogLevelSelector grouped={true} />
         <WhatsNewPreview descriptionMode="tooltip" grouped={true} />
+        <ThemeFile descriptionMode="tooltip" grouped={true} />
         <OnboardingPreview
           onPreview={onPreviewOnboarding}
           descriptionMode="tooltip"
