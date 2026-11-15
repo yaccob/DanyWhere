@@ -21,7 +21,8 @@
     "postProcessing": "Post-Elaborazione",
     "history": "Cronologia",
     "debug": "Debug",
-    "about": "Informazioni"
+    "about": "Informazioni",
+    "profile": "Profilo"
   },
   "onboarding": {
     "customModelDescription": "Non ufficialmente supportato",
@@ -369,7 +370,7 @@
           },
           "cycle_word_list": {
             "name": "Cambia elenco di parole",
-            "description": "Attiva l'elenco di parole aggiuntivo successivo; dopo l'ultimo vale solo l'elenco globale."
+            "description": "Attiva l'elenco di parole aggiuntivo successivo del profilo attivo; dopo l'ultimo non ne resta attivo nessuno."
           }
         },
         "errors": {
@@ -427,6 +428,46 @@
           "startRecording": "Avvia una registrazione",
           "doNothing": "Non fare nulla"
         }
+      }
+    },
+    "profiles": {
+      "title": "Profili",
+      "description": "Un profilo comprende il modello, le lingue, gli elenchi di parole e la post-elaborazione. Le modifiche vanno sempre nel profilo attivo.",
+      "active": "Attivo",
+      "use": "Usa",
+      "duplicate": "Duplica",
+      "rename": "Rinomina",
+      "delete": "Elimina",
+      "lastProfile": "L'ultimo profilo non può essere eliminato",
+      "cancel": "Annulla",
+      "nameLabel": "Nome",
+      "namePlaceholder": "ad es. Lavoro",
+      "nameTaken": "Esiste già un profilo con questo nome",
+      "duplicateDialog": {
+        "title": "Duplica «{{name}}»",
+        "description": "Il nuovo profilo parte come copia di questo. Non diventa attivo; passaci con «Usa» o dalla barra laterale.",
+        "confirm": "Duplica"
+      },
+      "renameDialog": {
+        "title": "Rinomina «{{name}}»",
+        "defaultHint": "Lascialo vuoto per mostrare «{{defaultName}}» nella lingua dell'app.",
+        "confirm": "Rinomina"
+      },
+      "deleteDialog": {
+        "title": "Eliminare «{{name}}»?",
+        "description": "Con lui vengono eliminati la scelta del modello, le lingue, gli elenchi di parole e i prompt. L'operazione non si può annullare.",
+        "switchesTo": "È il profilo attivo, quindi prima diventa attivo «{{name}}».",
+        "confirm": "Elimina profilo"
+      },
+      "scope": {
+        "models": "Il modello scelto qui appartiene al profilo «{{name}}».",
+        "postProcessing": "Provider, modello, prompt e limiti del contesto appartengono al profilo «{{name}}»; le chiavi API valgono per tutti i profili."
+      },
+      "errors": {
+        "switch": "Impossibile cambiare profilo",
+        "duplicate": "Impossibile duplicare il profilo",
+        "rename": "Impossibile rinominare il profilo",
+        "delete": "Impossibile eliminare il profilo"
       }
     },
     "models": {
@@ -629,12 +670,16 @@
         "duplicate": "\"{{word}}\" esiste già"
       },
       "wordLists": {
-        "globalTitle": "Elenco di parole globale",
-        "activeTitle": "Elenco di parole attivo",
-        "activeDescription": "Le sue parole arrivano al modello prima di quelle dell'elenco globale, che vale sempre. Cambialo con la scorciatoia o dal menu della barra.",
-        "onlyGlobal": "Nessuno (solo l'elenco di parole globale)",
-        "title": "Elenchi di parole aggiuntivi",
-        "description": "Elenchi con nome da attivare in aggiunta all'elenco di parole globale, ad esempio uno per argomento. Uno alla volta.",
+        "groupTitle": "Elenchi di parole",
+        "groupDescription": "Il modello riceve prima le parole dell'elenco aggiuntivo attivo, poi quelle dell'elenco del profilo e infine quelle dell'elenco di parole globale.",
+        "globalTitle": "Elenco di parole globale (tutti i profili)",
+        "profileTitle": "Elenco di parole del profilo «{{name}}»",
+        "profileDescription": "Vale sempre in questo profilo, insieme all'elenco di parole globale. Qui vanno le parole di un contesto; quelle che ti servono ovunque, nell'elenco globale.",
+        "activeTitle": "Elenco aggiuntivo attivo",
+        "activeDescription": "Le sue parole arrivano per prime al modello, prima di quelle dell'elenco del profilo e dell'elenco globale, che valgono sempre. Cambialo con la scorciatoia o dal menu della barra.",
+        "onlyGlobal": "Nessuno",
+        "title": "Elenchi aggiuntivi del profilo «{{name}}»",
+        "description": "Elenchi con nome di questo profilo da attivare in aggiunta, ad esempio uno per argomento. Uno alla volta.",
         "selectList": "Seleziona un elenco",
         "createNew": "Nuovo elenco",
         "namePlaceholder": "Nome dell'elenco, ad es. Lavoro",

@@ -21,7 +21,8 @@
     "postProcessing": "Post proceso",
     "history": "Historial",
     "debug": "Depuración",
-    "about": "Acerca de"
+    "about": "Acerca de",
+    "profile": "Perfil"
   },
   "onboarding": {
     "customModelDescription": "Sin soporte oficial",
@@ -369,7 +370,7 @@
           },
           "cycle_word_list": {
             "name": "Cambiar lista de palabras",
-            "description": "Activa la siguiente lista de palabras adicional; después de la última, solo se aplica la lista global."
+            "description": "Activa la siguiente lista de palabras adicional del perfil activo; después de la última, no queda ninguna activa."
           }
         },
         "errors": {
@@ -427,6 +428,46 @@
           "startRecording": "Empezar una grabación",
           "doNothing": "No hacer nada"
         }
+      }
+    },
+    "profiles": {
+      "title": "Perfiles",
+      "description": "Un perfil incluye el modelo, los idiomas, las listas de palabras y el post proceso. Los cambios siempre van al perfil activo.",
+      "active": "Activo",
+      "use": "Usar",
+      "duplicate": "Duplicar",
+      "rename": "Renombrar",
+      "delete": "Eliminar",
+      "lastProfile": "El último perfil no se puede eliminar",
+      "cancel": "Cancelar",
+      "nameLabel": "Nombre",
+      "namePlaceholder": "p. ej. Trabajo",
+      "nameTaken": "Ya existe un perfil con este nombre",
+      "duplicateDialog": {
+        "title": "Duplicar «{{name}}»",
+        "description": "El perfil nuevo empieza como copia de este. No se activa; cámbiate a él con «Usar» o desde la barra lateral.",
+        "confirm": "Duplicar"
+      },
+      "renameDialog": {
+        "title": "Renombrar «{{name}}»",
+        "defaultHint": "Déjalo vacío para que se muestre «{{defaultName}}» en el idioma de la aplicación.",
+        "confirm": "Renombrar"
+      },
+      "deleteDialog": {
+        "title": "¿Eliminar «{{name}}»?",
+        "description": "Con él se eliminan la elección de modelo, los idiomas, las listas de palabras y los prompts. No se puede deshacer.",
+        "switchesTo": "Es el perfil activo, así que antes se activa «{{name}}».",
+        "confirm": "Eliminar perfil"
+      },
+      "scope": {
+        "models": "El modelo elegido aquí pertenece al perfil «{{name}}».",
+        "postProcessing": "El proveedor, el modelo, los prompts y los límites del contexto pertenecen al perfil «{{name}}»; las claves API valen para todos los perfiles."
+      },
+      "errors": {
+        "switch": "No se pudo cambiar de perfil",
+        "duplicate": "No se pudo duplicar el perfil",
+        "rename": "No se pudo renombrar el perfil",
+        "delete": "No se pudo eliminar el perfil"
       }
     },
     "models": {
@@ -629,12 +670,16 @@
         "duplicate": "\"{{word}}\" ya existe"
       },
       "wordLists": {
-        "globalTitle": "Lista de palabras global",
-        "activeTitle": "Lista de palabras activa",
-        "activeDescription": "Sus palabras llegan al modelo antes que las de la lista global, que siempre se aplica. Cámbiala con el atajo o desde el menú de la bandeja.",
-        "onlyGlobal": "Ninguna (solo la lista de palabras global)",
-        "title": "Listas de palabras adicionales",
-        "description": "Listas con nombre que puedes activar además de la lista de palabras global, p. ej. una por tema. Solo una a la vez.",
+        "groupTitle": "Listas de palabras",
+        "groupDescription": "El modelo recibe primero las palabras de la lista adicional activa, luego las de la lista del perfil y por último las de la lista de palabras global.",
+        "globalTitle": "Lista de palabras global (todos los perfiles)",
+        "profileTitle": "Lista de palabras del perfil «{{name}}»",
+        "profileDescription": "Siempre se aplica en este perfil, junto con la lista de palabras global. Aquí van las palabras de un contexto; las que necesitas en todas partes, en la lista global.",
+        "activeTitle": "Lista adicional activa",
+        "activeDescription": "Sus palabras llegan primero al modelo, antes que las de la lista del perfil y de la lista global, que siempre se aplican. Cámbiala con el atajo o desde el menú de la bandeja.",
+        "onlyGlobal": "Ninguna",
+        "title": "Listas adicionales del perfil «{{name}}»",
+        "description": "Listas con nombre de este perfil que puedes activar además, p. ej. una por tema. Solo una a la vez.",
         "selectList": "Selecciona una lista",
         "createNew": "Nueva lista",
         "namePlaceholder": "Nombre de la lista, p. ej. Trabajo",

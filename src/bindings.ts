@@ -442,6 +442,50 @@ async setActiveWordList(id: string | null) : Promise<Result<null, string>> {
 }
 },
 /**
+ * DanyWhere: replaces the active profile's own word list, which always
+ * applies in that profile (`custom_words` applies in every profile).
+ */
+async updateProfileWords(words: string[]) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("update_profile_words", { words }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async switchProfile(id: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("switch_profile", { id }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async duplicateProfile(sourceId: string, name: string) : Promise<Result<Profile, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("duplicate_profile", { sourceId, name }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async renameProfile(id: string, name: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("rename_profile", { id, name }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async deleteProfile(id: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("delete_profile", { id }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
  * Temporarily unregister all bindings while the user is recording a
  * shortcut in the UI. This avoids firing actions while keys are recorded.
  */
@@ -1480,7 +1524,22 @@ language_detection_window_secs?: number;
  * not gated on this — that follows model capability. Migrated from the old
  * `overlay_position` (position `none` → style `None`).
  */
-overlay_style?: OverlayStyle }
+overlay_style?: OverlayStyle; 
+/**
+ * DanyWhere: the profiles (`profiles`). The flat fields above hold the
+ * active profile's values.
+ */
+profiles?: Profile[]; active_profile_id?: string; 
+/**
+ * DanyWhere: the active profile's own word list, which always applies
+ * in it; `custom_words` applies in every profile.
+ */
+profile_words?: string[]; 
+/**
+ * DanyWhere: whether an application's profile is used for dictations
+ * into it. Not used yet.
+ */
+profile_auto_by_app?: boolean }
 export type AudioDevice = { index: string; name: string; is_default: boolean }
 export type AutoSubmitKey = "enter" | "ctrl_enter" | "cmd_enter"
 export type AutoUnavailableReason = 
@@ -1832,6 +1891,33 @@ export type PostProcessApiFormat =
  */
 "anthropic"
 export type PostProcessProvider = { id: string; label: string; base_url: string; allow_base_url_edit?: boolean; models_endpoint?: string | null; supports_structured_output?: boolean; api_format?: PostProcessApiFormat }
+export type Profile = { id: string; 
+/**
+ * Empty = the default profile's name, shown translated ("Standard").
+ */
+name: string; values: ProfileValues; 
+/**
+ * Applications this profile is used for automatically: bundle ids on
+ * macOS, executable names on Windows. Not used yet.
+ */
+apps?: string[] }
+/**
+ * Everything that is per profile. Mirrors fields of [`AppSettings`] with the
+ * same names and types; the context limits mirror `dictation_context`.
+ */
+export type ProfileValues = { selected_model: string; selected_language: string; spoken_languages: string[]; language_detection: LanguageDetectionMode; language_detection_window_secs: number; translate_to_english: boolean; chinese_script: ChineseScript; profile_words: string[]; word_lists: WordList[]; active_word_list_id: string | null; post_process_enabled: boolean; post_process_provider_id: string; post_process_models: Partial<{ [key in string]: string }>; post_process_prompts: LLMPrompt[]; post_process_selected_prompt_id: string | null; 
+/**
+ * `dictation_context.age_limit_minutes`
+ */
+context_age_limit_minutes: number; 
+/**
+ * `dictation_context.max_entries`
+ */
+context_max_entries: number; 
+/**
+ * `dictation_context.char_budget`
+ */
+context_char_budget: number; filler_word_removal_enabled: boolean; custom_filler_words: string[] | null; append_trailing_space: boolean }
 /**
  * Recording phase events for windows that follow along (onboarding's Try it).
  */

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { commands } from "@/bindings";
 import { useSettings } from "../../hooks/useSettings";
+import { useProfiles } from "../../hooks/useProfiles";
 import { NO_WORD_LIST, activeListOption } from "../../lib/utils/wordLists";
 import { Button } from "../ui/Button";
 import { Dropdown } from "../ui/Dropdown";
@@ -61,6 +62,9 @@ export const WordLists: React.FC<WordListsProps> = React.memo(
   ({ descriptionMode = "tooltip", grouped = false }) => {
     const { t } = useTranslation();
     const { getSetting, refreshSettings } = useSettings();
+    // DanyWhere: the additional lists belong to the active profile.
+    const { active, defaultName, displayName } = useProfiles();
+    const profileName = active ? displayName(active) : defaultName;
     const lists = getSetting("word_lists") || [];
     const activeId = getSetting("active_word_list_id") ?? null;
 
@@ -129,7 +133,7 @@ export const WordLists: React.FC<WordListsProps> = React.memo(
 
     return (
       <SettingContainer
-        title={t("settings.advanced.wordLists.title")}
+        title={t("settings.advanced.wordLists.title", { name: profileName })}
         description={t("settings.advanced.wordLists.description")}
         descriptionMode={descriptionMode}
         layout="stacked"

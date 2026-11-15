@@ -21,7 +21,8 @@
     "postProcessing": "Efterbehandling",
     "history": "Historik",
     "debug": "Fejlfinding",
-    "about": "Om"
+    "about": "Om",
+    "profile": "Profil"
   },
   "onboarding": {
     "customModelDescription": "Ikke officielt understøttet",
@@ -369,7 +370,7 @@
           },
           "cycle_word_list": {
             "name": "Skift ordliste",
-            "description": "Slår den næste ekstra ordliste til; efter den sidste gælder kun den globale ordliste."
+            "description": "Slår den næste ekstra ordliste i den aktive profil til; efter den sidste er ingen slået til."
           }
         },
         "errors": {
@@ -427,6 +428,46 @@
           "startRecording": "Start en optagelse",
           "doNothing": "Gør ingenting"
         }
+      }
+    },
+    "profiles": {
+      "title": "Profiler",
+      "description": "En profil omfatter modellen, sprogene, ordlisterne og efterbehandlingen. Ændringer gemmes altid i den aktive profil.",
+      "active": "Aktiv",
+      "use": "Brug",
+      "duplicate": "Dupliker",
+      "rename": "Omdøb",
+      "delete": "Slet",
+      "lastProfile": "Den sidste profil kan ikke slettes",
+      "cancel": "Annuller",
+      "nameLabel": "Navn",
+      "namePlaceholder": "f.eks. Arbejde",
+      "nameTaken": "Der findes allerede en profil med dette navn",
+      "duplicateDialog": {
+        "title": "Dupliker »{{name}}«",
+        "description": "Den nye profil starter som en kopi af denne. Den bliver ikke aktiv; skift til den med »Brug« eller i sidepanelet.",
+        "confirm": "Dupliker"
+      },
+      "renameDialog": {
+        "title": "Omdøb »{{name}}«",
+        "defaultHint": "Lad feltet være tomt for at vise »{{defaultName}}« på appens sprog.",
+        "confirm": "Omdøb"
+      },
+      "deleteDialog": {
+        "title": "Slet »{{name}}«?",
+        "description": "Dens valg af model, sprog, ordlister og prompts slettes sammen med den. Det kan ikke fortrydes.",
+        "switchesTo": "Det er den aktive profil, så »{{name}}« bliver aktiv først.",
+        "confirm": "Slet profil"
+      },
+      "scope": {
+        "models": "Den model, du vælger her, hører til profilen »{{name}}«.",
+        "postProcessing": "Udbyder, model, prompts og grænserne for kontekst hører til profilen »{{name}}«; API-nøgler gælder for alle profiler."
+      },
+      "errors": {
+        "switch": "Kunne ikke skifte profil",
+        "duplicate": "Kunne ikke duplikere profilen",
+        "rename": "Kunne ikke omdøbe profilen",
+        "delete": "Kunne ikke slette profilen"
       }
     },
     "models": {
@@ -629,12 +670,16 @@
         "duplicate": "\"{{word}}\" findes allerede"
       },
       "wordLists": {
-        "globalTitle": "Global ordliste",
-        "activeTitle": "Aktiv ordliste",
-        "activeDescription": "Dens ord gives til modellen før ordene i den globale ordliste, som altid gælder. Skift den med genvejen eller fra menuen i menulinjen.",
-        "onlyGlobal": "Ingen (kun den globale ordliste)",
-        "title": "Ekstra ordlister",
-        "description": "Navngivne lister, du kan slå til ud over den globale ordliste, f.eks. én pr. emne. Kun én ad gangen.",
+        "groupTitle": "Ordlister",
+        "groupDescription": "Modellen får først ordene fra den aktive ekstra liste, derefter ordene fra profilens ordliste og til sidst ordene fra den globale ordliste.",
+        "globalTitle": "Global ordliste (alle profiler)",
+        "profileTitle": "Ordliste for profilen »{{name}}«",
+        "profileDescription": "Gælder altid i denne profil, sammen med den globale ordliste. Ord til én sammenhæng hører til her, ord du har brug for overalt, i den globale liste.",
+        "activeTitle": "Aktiv ekstra liste",
+        "activeDescription": "Dens ord gives først til modellen, før ordene i profilens ordliste og den globale ordliste, som altid gælder. Skift den med genvejen eller fra menuen i menulinjen.",
+        "onlyGlobal": "Ingen",
+        "title": "Ekstra lister for profilen »{{name}}«",
+        "description": "Navngivne lister i denne profil, som du kan slå til derudover, f.eks. én pr. emne. Kun én ad gangen.",
         "selectList": "Vælg en liste",
         "createNew": "Ny liste",
         "namePlaceholder": "Listens navn, f.eks. Arbejde",

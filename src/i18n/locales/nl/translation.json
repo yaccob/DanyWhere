@@ -21,7 +21,8 @@
     "postProcessing": "Naverwerking",
     "history": "Geschiedenis",
     "debug": "Probleemoplossing",
-    "about": "Over Handy"
+    "about": "Over Handy",
+    "profile": "Profiel"
   },
   "onboarding": {
     "customModelDescription": "Niet officieel ondersteund",
@@ -369,7 +370,7 @@
           },
           "cycle_word_list": {
             "name": "Woordenlijst wisselen",
-            "description": "Zet de volgende extra woordenlijst aan; na de laatste geldt alleen de algemene woordenlijst."
+            "description": "Zet de volgende extra woordenlijst van het actieve profiel aan; na de laatste staat er geen meer aan."
           }
         },
         "errors": {
@@ -427,6 +428,46 @@
           "startRecording": "Opname starten",
           "doNothing": "Niets doen"
         }
+      }
+    },
+    "profiles": {
+      "title": "Profielen",
+      "description": "Een profiel omvat het model, de talen, de woordenlijsten en de naverwerking. Wijzigingen gaan altijd naar het actieve profiel.",
+      "active": "Actief",
+      "use": "Gebruiken",
+      "duplicate": "Dupliceren",
+      "rename": "Hernoemen",
+      "delete": "Verwijderen",
+      "lastProfile": "Het laatste profiel kan niet worden verwijderd",
+      "cancel": "Annuleren",
+      "nameLabel": "Naam",
+      "namePlaceholder": "bijv. Werk",
+      "nameTaken": "Er bestaat al een profiel met deze naam",
+      "duplicateDialog": {
+        "title": "„{{name}}” dupliceren",
+        "description": "Het nieuwe profiel begint als kopie van dit profiel. Het wordt niet actief; schakel ernaar over met „Gebruiken” of in de zijbalk.",
+        "confirm": "Dupliceren"
+      },
+      "renameDialog": {
+        "title": "„{{name}}” hernoemen",
+        "defaultHint": "Laat het leeg om „{{defaultName}}” in de taal van de app te tonen.",
+        "confirm": "Hernoemen"
+      },
+      "deleteDialog": {
+        "title": "„{{name}}” verwijderen?",
+        "description": "De modelkeuze, talen, woordenlijsten en prompts worden mee verwijderd. Dit kan niet ongedaan worden gemaakt.",
+        "switchesTo": "Dit is het actieve profiel, dus eerst wordt „{{name}}” actief.",
+        "confirm": "Profiel verwijderen"
+      },
+      "scope": {
+        "models": "Het model dat je hier kiest, hoort bij het profiel „{{name}}”.",
+        "postProcessing": "Provider, model, prompts en de grenzen voor context horen bij het profiel „{{name}}”; API-sleutels gelden voor alle profielen."
+      },
+      "errors": {
+        "switch": "Kan niet van profiel wisselen",
+        "duplicate": "Kan het profiel niet dupliceren",
+        "rename": "Kan het profiel niet hernoemen",
+        "delete": "Kan het profiel niet verwijderen"
       }
     },
     "models": {
@@ -629,12 +670,16 @@
         "duplicate": "\"{{word}}\" bestaat al"
       },
       "wordLists": {
-        "globalTitle": "Algemene woordenlijst",
-        "activeTitle": "Actieve woordenlijst",
-        "activeDescription": "De woorden ervan gaan naar het model vóór die van de algemene woordenlijst, die altijd geldt. Wissel met de sneltoets of via het menu in de menubalk.",
-        "onlyGlobal": "Geen (alleen algemene woordenlijst)",
-        "title": "Extra woordenlijsten",
-        "description": "Lijsten met een naam die je naast de algemene woordenlijst kunt aanzetten, bijv. één per onderwerp. Steeds maar één.",
+        "groupTitle": "Woordenlijsten",
+        "groupDescription": "Het model krijgt eerst de woorden van de actieve extra lijst, dan die van de woordenlijst van het profiel en ten slotte die van de algemene woordenlijst.",
+        "globalTitle": "Algemene woordenlijst (alle profielen)",
+        "profileTitle": "Woordenlijst van profiel „{{name}}”",
+        "profileDescription": "Geldt in dit profiel altijd, samen met de algemene woordenlijst. Woorden voor één context horen hier, woorden die je overal nodig hebt in de algemene lijst.",
+        "activeTitle": "Actieve extra lijst",
+        "activeDescription": "De woorden ervan gaan als eerste naar het model, vóór die van de woordenlijst van het profiel en de algemene woordenlijst, die altijd gelden. Wissel met de sneltoets of via het menu in de menubalk.",
+        "onlyGlobal": "Geen",
+        "title": "Extra lijsten van profiel „{{name}}”",
+        "description": "Lijsten met een naam in dit profiel die je er extra bij kunt aanzetten, bijv. één per onderwerp. Steeds maar één.",
         "selectList": "Kies een lijst",
         "createNew": "Nieuwe lijst",
         "namePlaceholder": "Naam van de lijst, bijv. Werk",

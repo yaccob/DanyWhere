@@ -21,7 +21,8 @@
     "postProcessing": "Postproces",
     "history": "Historia",
     "debug": "Debugowanie",
-    "about": "O programie"
+    "about": "O programie",
+    "profile": "Profil"
   },
   "onboarding": {
     "customModelDescription": "Nieoficjalnie wspierane",
@@ -369,7 +370,7 @@
           },
           "cycle_word_list": {
             "name": "Przełącz listę słów",
-            "description": "Włącza następną dodatkową listę słów; po ostatniej obowiązuje tylko lista globalna."
+            "description": "Włącza następną dodatkową listę słów aktywnego profilu; po ostatniej żadna nie jest włączona."
           }
         },
         "errors": {
@@ -427,6 +428,46 @@
           "startRecording": "Rozpocznij nagrywanie",
           "doNothing": "Nic nie rób"
         }
+      }
+    },
+    "profiles": {
+      "title": "Profile",
+      "description": "Profil obejmuje model, języki, listy słów i postproces. Zmiany zawsze trafiają do aktywnego profilu.",
+      "active": "Aktywny",
+      "use": "Użyj",
+      "duplicate": "Duplikuj",
+      "rename": "Zmień nazwę",
+      "delete": "Usuń",
+      "lastProfile": "Ostatniego profilu nie można usunąć",
+      "cancel": "Anuluj",
+      "nameLabel": "Nazwa",
+      "namePlaceholder": "np. Praca",
+      "nameTaken": "Profil o tej nazwie już istnieje",
+      "duplicateDialog": {
+        "title": "Duplikuj „{{name}}”",
+        "description": "Nowy profil zaczyna jako kopia tego profilu. Nie staje się aktywny; przełącz się na niego przyciskiem „Użyj” lub na pasku bocznym.",
+        "confirm": "Duplikuj"
+      },
+      "renameDialog": {
+        "title": "Zmień nazwę „{{name}}”",
+        "defaultHint": "Zostaw puste, aby wyświetlać „{{defaultName}}” w języku aplikacji.",
+        "confirm": "Zmień nazwę"
+      },
+      "deleteDialog": {
+        "title": "Usunąć „{{name}}”?",
+        "description": "Razem z nim zostaną usunięte wybór modelu, języki, listy słów i prompty. Tego nie można cofnąć.",
+        "switchesTo": "To aktywny profil, więc najpierw aktywny stanie się „{{name}}”.",
+        "confirm": "Usuń profil"
+      },
+      "scope": {
+        "models": "Wybrany tutaj model należy do profilu „{{name}}”.",
+        "postProcessing": "Dostawca, model, prompty i limity kontekstu należą do profilu „{{name}}”; klucze API obowiązują we wszystkich profilach."
+      },
+      "errors": {
+        "switch": "Nie udało się przełączyć profilu",
+        "duplicate": "Nie udało się zduplikować profilu",
+        "rename": "Nie udało się zmienić nazwy profilu",
+        "delete": "Nie udało się usunąć profilu"
       }
     },
     "models": {
@@ -629,12 +670,16 @@
         "duplicate": "\"{{word}}\" już istnieje"
       },
       "wordLists": {
-        "globalTitle": "Globalna lista słów",
-        "activeTitle": "Aktywna lista słów",
-        "activeDescription": "Jej słowa trafiają do modelu przed słowami z listy globalnej, która obowiązuje zawsze. Przełączaj ją skrótem lub z menu w zasobniku.",
-        "onlyGlobal": "Brak (tylko globalna lista słów)",
-        "title": "Dodatkowe listy słów",
-        "description": "Nazwane listy, które możesz włączyć oprócz globalnej listy słów, np. jedną na temat. Tylko jedna naraz.",
+        "groupTitle": "Listy słów",
+        "groupDescription": "Model dostaje najpierw słowa z aktywnej listy dodatkowej, potem z listy słów profilu, a na końcu z globalnej listy słów.",
+        "globalTitle": "Globalna lista słów (wszystkie profile)",
+        "profileTitle": "Lista słów profilu „{{name}}”",
+        "profileDescription": "Obowiązuje zawsze w tym profilu, razem z globalną listą słów. Tu wpisuj słowa do jednego kontekstu, a słowa potrzebne wszędzie na listę globalną.",
+        "activeTitle": "Aktywna lista dodatkowa",
+        "activeDescription": "Jej słowa trafiają do modelu jako pierwsze, przed słowami z listy profilu i z listy globalnej, które obowiązują zawsze. Przełączaj ją skrótem lub z menu w zasobniku.",
+        "onlyGlobal": "Brak",
+        "title": "Dodatkowe listy profilu „{{name}}”",
+        "description": "Nazwane listy tego profilu, które możesz dodatkowo włączyć, np. jedną na temat. Tylko jedna naraz.",
         "selectList": "Wybierz listę",
         "createNew": "Nowa lista",
         "namePlaceholder": "Nazwa listy, np. Praca",

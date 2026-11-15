@@ -21,7 +21,8 @@
     "postProcessing": "Postprocessament",
     "history": "Historial",
     "debug": "Depuració",
-    "about": "Quant a"
+    "about": "Quant a",
+    "profile": "Perfil"
   },
   "onboarding": {
     "customModelDescription": "Sense suport oficial",
@@ -369,7 +370,7 @@
           },
           "cycle_word_list": {
             "name": "Canvia la llista de paraules",
-            "description": "Activa la següent llista de paraules addicional; després de l'última, només s'aplica la llista global."
+            "description": "Activa la següent llista de paraules addicional del perfil actiu; després de l'última, no n'hi ha cap d'activa."
           }
         },
         "errors": {
@@ -427,6 +428,46 @@
           "startRecording": "Comença un enregistrament",
           "doNothing": "No facis res"
         }
+      }
+    },
+    "profiles": {
+      "title": "Perfils",
+      "description": "Un perfil inclou el model, els idiomes, les llistes de paraules i el postprocessament. Els canvis sempre van al perfil actiu.",
+      "active": "Actiu",
+      "use": "Utilitza",
+      "duplicate": "Duplica",
+      "rename": "Canvia el nom",
+      "delete": "Suprimeix",
+      "lastProfile": "No es pot suprimir l'últim perfil",
+      "cancel": "Cancel·la",
+      "nameLabel": "Nom",
+      "namePlaceholder": "p. ex. Feina",
+      "nameTaken": "Ja hi ha un perfil amb aquest nom",
+      "duplicateDialog": {
+        "title": "Duplica «{{name}}»",
+        "description": "El perfil nou comença com a còpia d'aquest. No s'activa; canvieu-hi amb «Utilitza» o des de la barra lateral.",
+        "confirm": "Duplica"
+      },
+      "renameDialog": {
+        "title": "Canvia el nom de «{{name}}»",
+        "defaultHint": "Deixeu-lo buit perquè es mostri «{{defaultName}}» en l'idioma de l'aplicació.",
+        "confirm": "Canvia el nom"
+      },
+      "deleteDialog": {
+        "title": "Voleu suprimir «{{name}}»?",
+        "description": "També se'n suprimeixen l'elecció de model, els idiomes, les llistes de paraules i les indicacions. No es pot desfer.",
+        "switchesTo": "És el perfil actiu, així que primer s'activa «{{name}}».",
+        "confirm": "Suprimeix el perfil"
+      },
+      "scope": {
+        "models": "El model triat aquí pertany al perfil «{{name}}».",
+        "postProcessing": "El proveïdor, el model, les indicacions i els límits del context pertanyen al perfil «{{name}}»; les claus de l'API valen per a tots els perfils."
+      },
+      "errors": {
+        "switch": "No s'ha pogut canviar de perfil",
+        "duplicate": "No s'ha pogut duplicar el perfil",
+        "rename": "No s'ha pogut canviar el nom del perfil",
+        "delete": "No s'ha pogut suprimir el perfil"
       }
     },
     "models": {
@@ -629,12 +670,16 @@
         "duplicate": "«{{word}}» ja existeix"
       },
       "wordLists": {
-        "globalTitle": "Llista de paraules global",
-        "activeTitle": "Llista de paraules activa",
-        "activeDescription": "Les seves paraules arriben al model abans que les de la llista global, que sempre s'aplica. Canvieu-la amb la drecera o des del menú de la safata.",
-        "onlyGlobal": "Cap (només la llista de paraules global)",
-        "title": "Llistes de paraules addicionals",
-        "description": "Llistes amb nom que podeu activar a més de la llista de paraules global, p. ex. una per tema. Només una alhora.",
+        "groupTitle": "Llistes de paraules",
+        "groupDescription": "El model rep primer les paraules de la llista addicional activa, després les de la llista del perfil i finalment les de la llista de paraules global.",
+        "globalTitle": "Llista de paraules global (tots els perfils)",
+        "profileTitle": "Llista de paraules del perfil «{{name}}»",
+        "profileDescription": "S'aplica sempre en aquest perfil, juntament amb la llista de paraules global. Poseu-hi les paraules d'un context, i a la llista global les que necessiteu arreu.",
+        "activeTitle": "Llista addicional activa",
+        "activeDescription": "Les seves paraules arriben primer al model, abans que les de la llista del perfil i de la llista global, que sempre s'apliquen. Canvieu-la amb la drecera o des del menú de la safata.",
+        "onlyGlobal": "Cap",
+        "title": "Llistes addicionals del perfil «{{name}}»",
+        "description": "Llistes amb nom d'aquest perfil que podeu activar a més, p. ex. una per tema. Només una alhora.",
         "selectList": "Seleccioneu una llista",
         "createNew": "Llista nova",
         "namePlaceholder": "Nom de la llista, p. ex. Feina",

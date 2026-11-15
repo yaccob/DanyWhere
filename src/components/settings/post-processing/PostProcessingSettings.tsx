@@ -25,6 +25,8 @@ import { useSettings } from "../../../hooks/useSettings";
 import { DictationContextSettings } from "../dictation-context/DictationContextSettings";
 // DanyWhere: the fixed frame around every prompt.
 import { PromptFrameText, PromptFrameTip } from "./PromptFrame";
+// DanyWhere: most of this page belongs to the active profile.
+import { ProfileScopeHint } from "../profiles/ProfileScopeHint";
 
 const PostProcessingSettingsApiComponent: React.FC = () => {
   const { t } = useTranslation();
@@ -466,6 +468,8 @@ export const PostProcessingSettings: React.FC = () => {
 
   return (
     <div className="max-w-3xl w-full mx-auto space-y-6">
+      {/* DanyWhere */}
+      <ProfileScopeHint page="postProcessing" className="px-4" />
       <SettingsGroup title={t("settings.postProcessing.hotkey.title")}>
         <ShortcutInput
           shortcutId="transcribe_with_post_process"
