@@ -2,6 +2,7 @@ import React, {
   useCallback,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -28,6 +29,7 @@ import {
   events,
   type CorrectionPart,
   type HistoryEntry,
+  type HistorySearchQuery,
   type HistoryUpdatePayload,
   type Result,
 } from "@/bindings";
@@ -69,6 +71,20 @@ import {
   WindowFilterChip,
   type ShowWindow,
 } from "../dictation-context/EntryContext";
+// DanyWhere: searching History.
+import {
+  EMPTY_SEARCH,
+  SEARCH_DELAY_MS,
+  invalidField,
+  isSearchActive,
+  matchRanges,
+  mergeSearchUpdate,
+  searchQuery,
+  textMatcher,
+  type SearchFields,
+  type TextMatcher,
+} from "./historySearch";
+import { Highlighted, HistorySearchBar } from "./HistorySearchBar";
 
 const IconButton: React.FC<{
   onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
@@ -194,6 +210,11 @@ export const HistorySettings: React.FC = () => {
     }
     setWindowFilter(filter);
     setScrollToId(focusId ?? null);
+    // DanyWhere: a jump to one entry ends the search, which might hide it.
+    if (focusId !== undefined) {
+      setSearchFields(EMPTY_SEARCH);
+      setSearch(EMPTY_SEARCH);
+    }
   }, []);
 
   useEffect(() => {
@@ -205,10 +226,141 @@ export const HistorySettings: React.FC = () => {
     }
   }, [scrollToId, windowEntries, entries]);
 
-  // DanyWhere: a change to an entry reaches both lists.
+  // DanyWhere: the search: what's typed, what it settled on after a pause,
+  // and the pages of entries that match it in the whole history (within the
+  // window filter, if one is set).
+  const [searchFields, setSearchFields] = useState<SearchFields>(EMPTY_SEARCH);
+  const [search, setSearch] = useState<SearchFields>(EMPTY_SEARCH);
+  const [searchEntries, setSearchEntries] = useState<HistoryEntry[]>([]);
+  const [searchHasMore, setSearchHasMore] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchInvalid, setSearchInvalid] = useState<"text" | "window" | null>(
+    null,
+  );
+  const searchActive = isSearchActive(search);
+  const query = useMemo(
+    () => (searchActive ? searchQuery(search, windowFilter) : null),
+    [searchActive, search, windowFilter],
+  );
+  const matcher = useMemo(
+    () => (searchActive ? textMatcher(search) : null),
+    [searchActive, search],
+  );
+  const queryRef = useRef<HistorySearchQuery | null>(null);
+  const searchEntriesRef = useRef<HistoryEntry[]>([]);
+  const searchHasMoreRef = useRef(false);
+  const searchLoadingRef = useRef(false);
+  // Counts the queries, so a late answer to an earlier one is dropped.
+  const searchGeneration = useRef(0);
+  // Live updates are checked one after another, in the order they came.
+  const searchUpdates = useRef<Promise<void>>(Promise.resolve());
+  useEffect(() => {
+    searchEntriesRef.current = searchEntries;
+  }, [searchEntries]);
+  useEffect(() => {
+    searchHasMoreRef.current = searchHasMore;
+  }, [searchHasMore]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setSearch(searchFields), SEARCH_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [searchFields]);
+
+  const loadSearchPage = useCallback(
+    async (pageQuery: HistorySearchQuery, cursor?: number) => {
+      const isFirstPage = cursor === undefined;
+      if (!isFirstPage && searchLoadingRef.current) return;
+      const generation = searchGeneration.current;
+      searchLoadingRef.current = true;
+      if (isFirstPage) setSearchLoading(true);
+      try {
+        const result = await commands.searchHistoryEntries(
+          pageQuery,
+          cursor ?? null,
+          PAGE_SIZE,
+        );
+        if (generation !== searchGeneration.current) return;
+        if (result.status === "ok") {
+          const { entries: found, has_more } = result.data;
+          setSearchInvalid(null);
+          setSearchEntries((prev) => {
+            if (isFirstPage) return found;
+            const shown = new Set(prev.map((entry) => entry.id));
+            return [...prev, ...found.filter((entry) => !shown.has(entry.id))];
+          });
+          setSearchHasMore(has_more);
+        } else {
+          // An invalid pattern searches nothing; the last results stay.
+          const field = invalidField(result.error);
+          setSearchInvalid(field);
+          if (field === null) {
+            console.error("Failed to search the history:", result.error);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to search the history:", error);
+      } finally {
+        if (generation === searchGeneration.current) {
+          setSearchLoading(false);
+          searchLoadingRef.current = false;
+        }
+      }
+    },
+    [],
+  );
+
+  useEffect(() => {
+    searchGeneration.current += 1;
+    queryRef.current = query;
+    searchLoadingRef.current = false;
+    if (!query) {
+      setSearchEntries([]);
+      setSearchHasMore(false);
+      setSearchInvalid(null);
+      setSearchLoading(false);
+      return;
+    }
+    void loadSearchPage(query);
+  }, [query, loadSearchPage]);
+
+  // A new or changed entry joins the results only if it matches.
+  const updateSearch = useCallback((entry: HistoryEntry) => {
+    const updateQuery = queryRef.current;
+    if (!updateQuery) return;
+    const generation = searchGeneration.current;
+    searchUpdates.current = searchUpdates.current.then(async () => {
+      const shown = searchEntriesRef.current.some((e) => e.id === entry.id);
+      let matches = shown;
+      if (!shown) {
+        try {
+          const result = await commands.historyEntryMatchesSearch(
+            entry.id,
+            updateQuery,
+          );
+          matches = result.status === "ok" && result.data;
+        } catch (error) {
+          console.error("Failed to check an entry against the search:", error);
+        }
+      }
+      if (generation !== searchGeneration.current) return;
+      setSearchEntries((prev) => {
+        const next = mergeSearchUpdate(
+          prev,
+          entry,
+          matches,
+          searchHasMoreRef.current,
+        );
+        searchEntriesRef.current = next;
+        return next;
+      });
+    });
+  }, []);
+
+  // DanyWhere: a change to an entry reaches every list.
   const updateEntries = (change: (list: HistoryEntry[]) => HistoryEntry[]) => {
     setEntries(change);
     setWindowEntries(change);
+    setSearchEntries(change);
   };
 
   // Keep ref in sync for use in IntersectionObserver callback
@@ -254,18 +406,29 @@ export const HistorySettings: React.FC = () => {
   }, [loadPage]);
 
   // Infinite scroll via IntersectionObserver
+  // DanyWhere: a search pages through its own results; the observer starts
+  // again after each page, so a short page that leaves the end in view
+  // loads the next.
+  const searchCount = searchEntries.length;
   useEffect(() => {
     if (loading) return;
 
     const sentinel = sentinelRef.current;
-    if (!sentinel || !hasMore) return;
+    const more = query ? searchHasMore && !searchLoading : hasMore;
+    if (!sentinel || !more) return;
 
     const observer = new IntersectionObserver(
       (observerEntries) => {
         const first = observerEntries[0];
         if (first.isIntersecting) {
-          const lastEntry = entriesRef.current[entriesRef.current.length - 1];
-          if (lastEntry) {
+          const pageQuery = queryRef.current;
+          const list = pageQuery
+            ? searchEntriesRef.current
+            : entriesRef.current;
+          const lastEntry = list[list.length - 1];
+          if (lastEntry && pageQuery) {
+            void loadSearchPage(pageQuery, lastEntry.id);
+          } else if (lastEntry) {
             loadPage(lastEntry.id);
           }
         }
@@ -275,7 +438,16 @@ export const HistorySettings: React.FC = () => {
 
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [loading, hasMore, loadPage]);
+  }, [
+    loading,
+    hasMore,
+    loadPage,
+    query,
+    searchHasMore,
+    searchLoading,
+    searchCount,
+    loadSearchPage,
+  ]);
 
   // Listen for new entries added from the transcription pipeline
   useEffect(() => {
@@ -315,6 +487,10 @@ export const HistorySettings: React.FC = () => {
           return prev;
         });
       }
+      // DanyWhere: and the search's results, if it matches.
+      if (payload.action === "added" || payload.action === "updated") {
+        updateSearch(payload.entry);
+      }
       // "deleted" and "toggled" are handled by optimistic updates only,
       // so we intentionally ignore them here to avoid double-mutation.
     });
@@ -322,7 +498,7 @@ export const HistorySettings: React.FC = () => {
     return () => {
       unlisten.then((fn) => fn());
     };
-  }, []);
+  }, [updateSearch]);
 
   const toggleSaved = async (id: number) => {
     // Optimistic update
@@ -374,6 +550,8 @@ export const HistorySettings: React.FC = () => {
     } catch (error) {
       console.error("Failed to delete entry:", error);
       loadPage();
+      // DanyWhere: the search's results too.
+      if (queryRef.current) void loadSearchPage(queryRef.current);
       throw error;
     }
   };
@@ -399,10 +577,15 @@ export const HistorySettings: React.FC = () => {
   };
 
   let content: React.ReactNode;
-  // DanyWhere: one window's entries while filtered.
-  const shownEntries = windowFilter ? windowEntries : entries;
+  // DanyWhere: what the search found, else one window's entries while
+  // filtered.
+  const shownEntries = query
+    ? searchEntries
+    : windowFilter
+      ? windowEntries
+      : entries;
 
-  if (loading) {
+  if (loading || (query && searchLoading && searchEntries.length === 0)) {
     content = (
       <div className="px-4 py-3 text-center text-ink-2">
         {t("settings.history.loading")}
@@ -411,7 +594,11 @@ export const HistorySettings: React.FC = () => {
   } else if (shownEntries.length === 0 && reads.length === 0) {
     content = (
       <div className="px-4 py-3 text-center text-ink-2">
-        {t("settings.history.empty")}
+        {query
+          ? searchInvalid
+            ? t("settings.history.search.invalidPattern")
+            : t("settings.history.search.noMatches")
+          : t("settings.history.empty")}
       </div>
     );
   } else {
@@ -427,6 +614,7 @@ export const HistorySettings: React.FC = () => {
                 key={entry.id}
                 entry={entry}
                 onShowWindow={showWindow}
+                highlight={matcher}
                 job={jobs[entry.id]}
                 onToggleSaved={() => toggleSaved(entry.id)}
                 onCopyText={(text) => copyToClipboard(text)}
@@ -442,8 +630,8 @@ export const HistorySettings: React.FC = () => {
           </div>
         </AudioPlayerGroup>
         {/* Sentinel for infinite scroll (DanyWhere: not while one window
-            shows, which is loaded whole) */}
-        {!windowFilter && <div ref={sentinelRef} className="h-1" />}
+            shows, which is loaded whole, unless a search pages it) */}
+        {(query || !windowFilter) && <div ref={sentinelRef} className="h-1" />}
       </>
     );
   }
@@ -470,6 +658,12 @@ export const HistorySettings: React.FC = () => {
             />
           </div>
         </div>
+        {/* DanyWhere: searching History. */}
+        <HistorySearchBar
+          fields={searchFields}
+          onChange={setSearchFields}
+          invalid={searchInvalid}
+        />
         {windowFilter && (
           <WindowFilterChip
             filter={windowFilter}
@@ -492,6 +686,8 @@ interface HistoryEntryProps {
   entry: HistoryEntry;
   // DanyWhere: shows the History of one window.
   onShowWindow: ShowWindow;
+  // DanyWhere: what the search highlights in the text.
+  highlight: TextMatcher | null;
   job?: ActiveJobStatus;
   onToggleSaved: () => void;
   onCopyText: (text: string) => Promise<boolean>;
@@ -512,6 +708,7 @@ interface HistoryEntryProps {
 const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
   entry,
   onShowWindow,
+  highlight,
   job,
   onToggleSaved,
   onCopyText,
@@ -549,6 +746,11 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
   const part = shownPart(entry, showOriginal);
   const corrected = isCorrected(entry, part);
   const folded = hasTranscription && !retrying && !expanded;
+  // DanyWhere: where the search matches the shown text.
+  const highlights = useMemo(
+    () => matchRanges(text, highlight),
+    [text, highlight],
+  );
 
   // Offer "Show more" only when the folded text is actually cut off.
   useLayoutEffect(() => {
@@ -846,14 +1048,16 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
             }
           >
             {retrying && <TranscribePulseKeyframes />}
-            {retrying
-              ? progressText
-              : hasTranscription
-                ? text
-                : entry.source_name
-                  ? // Cancelled, interrupted by a quit, or failed.
-                    t("settings.history.notTranscribed")
-                  : t("settings.history.transcriptionFailed")}
+            {retrying ? (
+              progressText
+            ) : hasTranscription ? (
+              <Highlighted text={text} ranges={highlights} />
+            ) : entry.source_name ? (
+              // Cancelled, interrupted by a quit, or failed.
+              t("settings.history.notTranscribed")
+            ) : (
+              t("settings.history.transcriptionFailed")
+            )}
           </p>
         )}
         {hasPostProcessed &&

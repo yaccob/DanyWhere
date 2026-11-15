@@ -966,6 +966,18 @@
       "windowFilter": "Fenêtre : {{window}} ({{count}})",
       "showAll": "Tout afficher",
       "showWindowEntries": "N'afficher que les dictées de cette fenêtre",
+      "search": {
+        "text": "Rechercher dans l'historique",
+        "textTooltip": "Recherche dans les transcriptions, les textes post-traités et vos corrections",
+        "window": "Application ou titre de fenêtre",
+        "windowTooltip": "Correspond à l'application, au titre de la fenêtre ou à la ligne affichée sous une entrée",
+        "regex": "Expressions régulières (les deux champs)",
+        "caseSensitive": "Respecter la casse",
+        "wholeWord": "Mots entiers uniquement",
+        "invalidPattern": "Expression régulière non valide",
+        "noMatches": "Aucune entrée ne correspond à la recherche.",
+        "clear": "Effacer"
+      },
       "contextEntryJump": "L'afficher dans l'historique pour la corriger",
       "confirmReplaceTitle": "Remplacer votre correction ?",
       "confirmPostProcessReplacesCorrection": "Un nouveau post-traitement remplace votre correction du texte post-traité.",

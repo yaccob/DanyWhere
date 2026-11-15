@@ -966,6 +966,18 @@
       "windowFilter": "Okno: {{window}} ({{count}})",
       "showAll": "Pokaż wszystko",
       "showWindowEntries": "Pokaż tylko dyktowania z tego okna",
+      "search": {
+        "text": "Szukaj w historii",
+        "textTooltip": "Szuka w transkrypcjach, tekstach po postprocesie i twoich poprawkach",
+        "window": "Aplikacja lub tytuł okna",
+        "windowTooltip": "Pasuje do aplikacji, tytułu okna lub wiersza pod wpisem",
+        "regex": "Wyrażenia regularne (oba pola)",
+        "caseSensitive": "Uwzględniaj wielkość liter",
+        "wholeWord": "Tylko całe słowa",
+        "invalidPattern": "Nieprawidłowe wyrażenie regularne",
+        "noMatches": "Żaden wpis nie pasuje do wyszukiwania.",
+        "clear": "Wyczyść"
+      },
       "contextEntryJump": "Pokaż w historii, aby poprawić",
       "confirmReplaceTitle": "Zastąpić twoją poprawkę?",
       "confirmPostProcessReplacesCorrection": "Ponowny postproces zastępuje twoją poprawkę wyniku postprocesu.",

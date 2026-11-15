@@ -966,6 +966,18 @@
       "windowFilter": "Cửa sổ: {{window}} ({{count}})",
       "showAll": "Hiện tất cả",
       "showWindowEntries": "Chỉ hiện các lần đọc chính tả từ cửa sổ này",
+      "search": {
+        "text": "Tìm trong lịch sử",
+        "textTooltip": "Tìm trong các bản phiên âm, văn bản đã xử lý và các chỉnh sửa của bạn",
+        "window": "Ứng dụng hoặc tiêu đề cửa sổ",
+        "windowTooltip": "Khớp với ứng dụng, tiêu đề cửa sổ hoặc dòng hiển thị dưới một mục",
+        "regex": "Biểu thức chính quy (cả hai ô)",
+        "caseSensitive": "Phân biệt hoa thường",
+        "wholeWord": "Chỉ toàn bộ từ",
+        "invalidPattern": "Không phải biểu thức chính quy hợp lệ",
+        "noMatches": "Không có mục nào khớp với tìm kiếm.",
+        "clear": "Xóa"
+      },
       "contextEntryJump": "Hiện trong lịch sử để sửa",
       "confirmReplaceTitle": "Thay thế chỉnh sửa của bạn?",
       "confirmPostProcessReplacesCorrection": "Xử lý sau lại sẽ thay thế chỉnh sửa của bạn đối với văn bản đã xử lý.",

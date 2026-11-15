@@ -966,6 +966,18 @@
       "windowFilter": "Fenster: {{window}} ({{count}})",
       "showAll": "Alle anzeigen",
       "showWindowEntries": "Nur Diktate aus diesem Fenster zeigen",
+      "search": {
+        "text": "Verlauf durchsuchen",
+        "textTooltip": "Sucht in den Transkriptionen, den nachbearbeiteten Texten und deinen Korrekturen",
+        "window": "App oder Fenstertitel",
+        "windowTooltip": "Passt auf die App, den Fenstertitel oder die Zeile unter einem Eintrag",
+        "regex": "Reguläre Ausdrücke (beide Felder)",
+        "caseSensitive": "Groß-/Kleinschreibung beachten",
+        "wholeWord": "Nur ganze Wörter",
+        "invalidPattern": "Kein gültiger regulärer Ausdruck",
+        "noMatches": "Keine Einträge passen zur Suche.",
+        "clear": "Leeren"
+      },
       "contextEntryJump": "Im Verlauf zeigen, um es zu korrigieren",
       "confirmReplaceTitle": "Korrektur ersetzen?",
       "confirmPostProcessReplacesCorrection": "Eine neue Nachbearbeitung ersetzt deine Korrektur des nachbearbeiteten Texts.",

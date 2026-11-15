@@ -966,6 +966,18 @@
       "windowFilter": "Vindue: {{window}} ({{count}})",
       "showAll": "Vis alle",
       "showWindowEntries": "Vis kun dikteringer fra dette vindue",
+      "search": {
+        "text": "Søg i historikken",
+        "textTooltip": "Søger i transskriptionerne, de efterbehandlede tekster og dine rettelser",
+        "window": "App eller vinduestitel",
+        "windowTooltip": "Matcher appen, vinduestitlen eller linjen under en post",
+        "regex": "Regulære udtryk (begge felter)",
+        "caseSensitive": "Forskel på store og små bogstaver",
+        "wholeWord": "Kun hele ord",
+        "invalidPattern": "Ikke et gyldigt regulært udtryk",
+        "noMatches": "Ingen poster matcher søgningen.",
+        "clear": "Ryd"
+      },
       "contextEntryJump": "Vis i historikken for at rette",
       "confirmReplaceTitle": "Erstat din rettelse?",
       "confirmPostProcessReplacesCorrection": "En ny efterbehandling erstatter din rettelse af den efterbehandlede tekst.",

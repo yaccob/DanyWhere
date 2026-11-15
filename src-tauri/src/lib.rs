@@ -17,6 +17,8 @@ mod helpers;
 // DanyWhere: corrections in History.
 mod dictation_context;
 mod history_corrections;
+// DanyWhere: searching History.
+mod history_search;
 mod input;
 mod insert_service;
 mod language_detection;
@@ -900,6 +902,8 @@ pub fn run(cli_args: CliArgs) {
             dictation_context::set_dictation_context_settings,
             dictation_context::get_history_entries_in_window,
             dictation_context::get_history_entries_by_ids,
+            history_search::search_history_entries,
+            history_search::history_entry_matches_search,
             window_capture::get_window_title_access,
             window_capture::request_window_title_access,
             commands::history::cancel_history_entry_transcription,

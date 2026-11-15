@@ -966,6 +966,18 @@
       "windowFilter": "Jendela: {{window}} ({{count}})",
       "showAll": "Tampilkan semua",
       "showWindowEntries": "Tampilkan hanya dikte dari jendela ini",
+      "search": {
+        "text": "Cari di Riwayat",
+        "textTooltip": "Mencari di transkripsi, teks hasil pascaproses, dan koreksi Anda",
+        "window": "Aplikasi atau judul jendela",
+        "windowTooltip": "Cocok dengan aplikasi, judul jendela, atau baris yang ditampilkan di bawah entri",
+        "regex": "Ekspresi reguler (kedua kolom)",
+        "caseSensitive": "Cocokkan huruf besar/kecil",
+        "wholeWord": "Hanya kata utuh",
+        "invalidPattern": "Bukan ekspresi reguler yang valid",
+        "noMatches": "Tidak ada entri yang cocok dengan pencarian.",
+        "clear": "Hapus"
+      },
       "contextEntryJump": "Tampilkan di riwayat untuk mengoreksinya",
       "confirmReplaceTitle": "Ganti koreksi Anda?",
       "confirmPostProcessReplacesCorrection": "Pascaproses ulang mengganti koreksi Anda pada teks hasil pascaproses.",

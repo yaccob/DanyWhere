@@ -966,6 +966,18 @@
       "windowFilter": "Finestra: {{window}} ({{count}})",
       "showAll": "Mostra-ho tot",
       "showWindowEntries": "Mostra només els dictats d'aquesta finestra",
+      "search": {
+        "text": "Cerca a l'historial",
+        "textTooltip": "Cerca a les transcripcions, als textos postprocessats i a les vostres correccions",
+        "window": "Aplicació o títol de finestra",
+        "windowTooltip": "Coincideix amb l'aplicació, el títol de la finestra o la línia que es mostra sota una entrada",
+        "regex": "Expressions regulars (tots dos camps)",
+        "caseSensitive": "Distingeix majúscules i minúscules",
+        "wholeWord": "Només paraules senceres",
+        "invalidPattern": "No és una expressió regular vàlida",
+        "noMatches": "Cap entrada coincideix amb la cerca.",
+        "clear": "Esborra"
+      },
       "contextEntryJump": "Mostra-ho a l'historial per corregir-ho",
       "confirmReplaceTitle": "Voleu substituir la correcció?",
       "confirmPostProcessReplacesCorrection": "Postprocessar de nou substitueix la vostra correcció del text postprocessat.",

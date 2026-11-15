@@ -966,6 +966,18 @@
       "windowFilter": "Ventana: {{window}} ({{count}})",
       "showAll": "Mostrar todo",
       "showWindowEntries": "Mostrar solo los dictados de esta ventana",
+      "search": {
+        "text": "Buscar en el historial",
+        "textTooltip": "Busca en las transcripciones, los textos post procesados y tus correcciones",
+        "window": "Aplicación o título de ventana",
+        "windowTooltip": "Coincide con la aplicación, el título de la ventana o la línea que se muestra bajo una entrada",
+        "regex": "Expresiones regulares (ambos campos)",
+        "caseSensitive": "Distinguir mayúsculas y minúsculas",
+        "wholeWord": "Solo palabras completas",
+        "invalidPattern": "No es una expresión regular válida",
+        "noMatches": "Ninguna entrada coincide con la búsqueda.",
+        "clear": "Borrar"
+      },
       "contextEntryJump": "Mostrarlo en el historial para corregirlo",
       "confirmReplaceTitle": "¿Reemplazar tu corrección?",
       "confirmPostProcessReplacesCorrection": "Post procesar de nuevo reemplaza tu corrección del texto post procesado.",
