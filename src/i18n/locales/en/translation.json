@@ -971,8 +971,8 @@
       "search": {
         "text": "Search History",
         "textTooltip": "Searches the transcriptions, the post-processed texts and your corrections",
-        "window": "App or window title",
-        "windowTooltip": "Matches the app, the window title or the line shown under an entry",
+        "window": "App, window title or file",
+        "windowTooltip": "Matches the app, the window title, the line shown under an entry or the name of a transcribed file",
         "regex": "Regular expressions (both fields)",
         "caseSensitive": "Match case",
         "wholeWord": "Match whole words only",

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import type { HistoryEntry } from "@/bindings";
+import type { EntryWindowContext, HistoryEntry } from "@/bindings";
 import {
   EMPTY_SEARCH,
   invalidField,
@@ -7,8 +7,11 @@ import {
   matchRanges,
   mergeSearchUpdate,
   searchQuery,
+  showsOriginal,
   splitHighlights,
   textMatcher,
+  windowLineRanges,
+  windowMatcher,
   type SearchFields,
 } from "./historySearch";
 
@@ -195,6 +198,189 @@ check("the text is cut into plain and highlighted parts", () => {
   assert.deepEqual(splitHighlights("plain", []), [
     { text: "plain", mark: false },
   ]);
+});
+
+// ---- Which text an entry shows during a search --------------------------
+
+const processed = (changes: Partial<HistoryEntry> = {}): HistoryEntry =>
+  ({
+    id: 1,
+    transcription_text: "the raw words",
+    post_processed_text: "The polished text.",
+    transcription_correction: null,
+    post_processed_correction: null,
+    ...changes,
+  }) as HistoryEntry;
+
+const shows = (
+  shown: HistoryEntry,
+  search: Partial<SearchFields>,
+  chosenOriginal = false,
+  pinned = false,
+) => showsOriginal(shown, textMatcher(fields(search)), chosenOriginal, pinned);
+
+check("a match only in the original shows the original", () => {
+  assert.equal(shows(processed(), { text: "raw" }), true);
+});
+
+check("a match in the post-processed text keeps it shown", () => {
+  assert.equal(shows(processed(), { text: "polished" }), false);
+});
+
+check("a match in both texts keeps the normal display", () => {
+  const both = processed({
+    transcription_text: "the words",
+    post_processed_text: "The words.",
+  });
+  assert.equal(shows(both, { text: "words" }), false);
+});
+
+check("without a search the entry shows what the user chose", () => {
+  assert.equal(showsOriginal(processed(), null, false), false);
+  assert.equal(showsOriginal(processed(), null, true), true);
+  // A search of the window alone has no text to match.
+  assert.equal(shows(processed(), { window: "safari" }), false);
+});
+
+check("a match only in the other text shows it, whichever was chosen", () => {
+  assert.equal(shows(processed(), { text: "polished" }, true), false);
+  assert.equal(shows(processed(), { text: "raw" }, true), true);
+});
+
+check(
+  "a match only in the transcription's correction shows the original",
+  () => {
+    const corrected = processed({
+      transcription_correction: "the fixed words",
+    });
+    assert.equal(shows(corrected, { text: "fixed" }), true);
+  },
+);
+
+check("a match only in a text a correction replaced changes nothing", () => {
+  const ppCorrected = processed({ post_processed_correction: "Corrected." });
+  assert.equal(shows(ppCorrected, { text: "polished" }), false);
+  const corrected = processed({ transcription_correction: "fixed words" });
+  assert.equal(shows(corrected, { text: "raw" }), false);
+});
+
+check("switching by hand during the search keeps the user's choice", () => {
+  assert.equal(shows(processed(), { text: "raw" }, false, true), false);
+  assert.equal(shows(processed(), { text: "polished" }, true, true), true);
+});
+
+check("the whole word rule decides which text matches", () => {
+  const entry = processed({
+    transcription_text: "start art",
+    post_processed_text: "Start.",
+  });
+  assert.equal(shows(entry, { text: "art", whole_word: true }), true);
+  assert.equal(shows(entry, { text: "art" }), false);
+});
+
+check("an entry without post-processing has nothing to switch to", () => {
+  const plain = processed({ post_processed_text: null });
+  assert.equal(shows(plain, { text: "raw" }), false);
+});
+
+// ---- Highlighting the window line and the file name ---------------------
+
+const win = (
+  app_name: string | null,
+  title: string | null,
+  app_id: string | null = "com.example.app",
+): EntryWindowContext => ({
+  window_app_id: app_id,
+  window_app_name: app_name,
+  window_title: title,
+  context_requested: false,
+  context_entry_ids: [],
+  sent_as_context_at: null,
+  word_replacements: [],
+});
+
+const lineRanges = (
+  context: EntryWindowContext,
+  search: Partial<SearchFields>,
+) => windowLineRanges(context, windowMatcher(fields(search)));
+
+// "Safari – GitHub – DanyWhere": the title starts at 9.
+const safari = win("Safari", "GitHub – DanyWhere");
+
+check("the window line highlights the app and the title", () => {
+  assert.deepEqual(lineRanges(safari, { window: "saf" }), [[0, 3]]);
+  assert.deepEqual(lineRanges(safari, { window: "github" }), [[9, 15]]);
+  assert.deepEqual(lineRanges(safari, { window: "fari – Git" }), [[2, 12]]);
+});
+
+check("the window line ignores case and whole words", () => {
+  assert.deepEqual(
+    lineRanges(safari, {
+      window: "SAF",
+      case_sensitive: true,
+      whole_word: true,
+    }),
+    [[0, 3]],
+  );
+});
+
+check("a window regex is anchored at the app, the title or the line", () => {
+  assert.deepEqual(lineRanges(safari, { window: "^safari$", regex: true }), [
+    [0, 6],
+  ]);
+  assert.deepEqual(lineRanges(safari, { window: "^github", regex: true }), [
+    [9, 15],
+  ]);
+  assert.deepEqual(
+    lineRanges(safari, { window: "^Safari – Git", regex: true }),
+    [[0, 12]],
+  );
+});
+
+check("the window line's matches are joined without repeats", () => {
+  // "Safari – Mail": in the app, the title and the line alike.
+  assert.deepEqual(lineRanges(win("Safari", "Mail"), { window: "i" }), [
+    [5, 6],
+    [11, 12],
+  ]);
+  // "Mail – Inbox": the title's "^Inbox" and the line's "l – In" overlap.
+  assert.deepEqual(
+    lineRanges(win("Mail", "Inbox"), { window: "^Inbox|l – In", regex: true }),
+    [[3, 12]],
+  );
+});
+
+check("the window line falls back to the app id as History does", () => {
+  assert.deepEqual(
+    lineRanges(win("", "Inbox", "com.apple.mail"), { window: "apple" }),
+    [[4, 9]],
+  );
+});
+
+check("no window line or no window field highlights nothing", () => {
+  assert.deepEqual(lineRanges(win("Mail", null), { window: "mail" }), []);
+  assert.deepEqual(lineRanges(safari, { text: "safari" }), []);
+  assert.deepEqual(
+    windowLineRanges(null, windowMatcher(fields({ window: "a" }))),
+    [],
+  );
+});
+
+check("a window pattern JavaScript can't read highlights nothing", () => {
+  assert.equal(windowMatcher(fields({ window: "(?i)abc", regex: true })), null);
+  assert.equal(windowMatcher(fields({ window: "[a-", regex: true })), null);
+  assert.equal(windowMatcher(EMPTY_SEARCH), null);
+});
+
+check("a transcribed file's name is highlighted like the window", () => {
+  const name = "Interview Müller.m4a";
+  const fileRanges = (search: Partial<SearchFields>) =>
+    matchRanges(name, windowMatcher(fields(search)));
+  assert.deepEqual(fileRanges({ window: "MÜLLER" }), [[10, 16]]);
+  assert.deepEqual(fileRanges({ window: "\\.m4a$", regex: true }), [[16, 20]]);
+  // Literal without the regex toggle.
+  assert.deepEqual(fileRanges({ window: "w.m" }), []);
+  assert.deepEqual(fileRanges({ window: "w.m", regex: true }), [[8, 11]]);
 });
 
 if (failures > 0) {

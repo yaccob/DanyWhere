@@ -971,8 +971,8 @@
       "search": {
         "text": "Geschiedenis doorzoeken",
         "textTooltip": "Zoekt in de transcripties, de naverwerkte teksten en je correcties",
-        "window": "App of venstertitel",
-        "windowTooltip": "Komt overeen met de app, de venstertitel of de regel onder een item",
+        "window": "App, venstertitel of bestand",
+        "windowTooltip": "Komt overeen met de app, de venstertitel, de regel onder een item of de naam van een getranscribeerd bestand",
         "regex": "Reguliere expressies (beide velden)",
         "caseSensitive": "Hoofdlettergevoelig",
         "wholeWord": "Alleen hele woorden",

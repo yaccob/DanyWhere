@@ -971,8 +971,8 @@
       "search": {
         "text": "Szukaj w historii",
         "textTooltip": "Szuka w transkrypcjach, tekstach po postprocesie i twoich poprawkach",
-        "window": "Aplikacja lub tytuł okna",
-        "windowTooltip": "Pasuje do aplikacji, tytułu okna lub wiersza pod wpisem",
+        "window": "Aplikacja, tytuł okna lub plik",
+        "windowTooltip": "Pasuje do aplikacji, tytułu okna, wiersza pod wpisem lub nazwy przetranskrybowanego pliku",
         "regex": "Wyrażenia regularne (oba pola)",
         "caseSensitive": "Uwzględniaj wielkość liter",
         "wholeWord": "Tylko całe słowa",

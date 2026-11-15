@@ -971,8 +971,8 @@
       "search": {
         "text": "Cerca a l'historial",
         "textTooltip": "Cerca a les transcripcions, als textos postprocessats i a les vostres correccions",
-        "window": "Aplicació o títol de finestra",
-        "windowTooltip": "Coincideix amb l'aplicació, el títol de la finestra o la línia que es mostra sota una entrada",
+        "window": "Aplicació, títol de finestra o fitxer",
+        "windowTooltip": "Coincideix amb l'aplicació, el títol de la finestra, la línia que es mostra sota una entrada o el nom d'un fitxer transcrit",
         "regex": "Expressions regulars (tots dos camps)",
         "caseSensitive": "Distingeix majúscules i minúscules",
         "wholeWord": "Només paraules senceres",

@@ -80,7 +80,9 @@ import {
   matchRanges,
   mergeSearchUpdate,
   searchQuery,
+  showsOriginal,
   textMatcher,
+  windowMatcher,
   type SearchFields,
   type TextMatcher,
 } from "./historySearch";
@@ -244,6 +246,10 @@ export const HistorySettings: React.FC = () => {
   );
   const matcher = useMemo(
     () => (searchActive ? textMatcher(search) : null),
+    [searchActive, search],
+  );
+  const windowHighlight = useMemo(
+    () => (searchActive ? windowMatcher(search) : null),
     [searchActive, search],
   );
   const queryRef = useRef<HistorySearchQuery | null>(null);
@@ -615,6 +621,7 @@ export const HistorySettings: React.FC = () => {
                 entry={entry}
                 onShowWindow={showWindow}
                 highlight={matcher}
+                windowHighlight={windowHighlight}
                 job={jobs[entry.id]}
                 onToggleSaved={() => toggleSaved(entry.id)}
                 onCopyText={(text) => copyToClipboard(text)}
@@ -686,8 +693,10 @@ interface HistoryEntryProps {
   entry: HistoryEntry;
   // DanyWhere: shows the History of one window.
   onShowWindow: ShowWindow;
-  // DanyWhere: what the search highlights in the text.
+  // DanyWhere: what the search highlights in the text, and in the window
+  // line and the file name.
   highlight: TextMatcher | null;
+  windowHighlight: TextMatcher | null;
   job?: ActiveJobStatus;
   onToggleSaved: () => void;
   onCopyText: (text: string) => Promise<boolean>;
@@ -709,6 +718,7 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
   entry,
   onShowWindow,
   highlight,
+  windowHighlight,
   job,
   onToggleSaved,
   onCopyText,
@@ -729,6 +739,10 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
   // A post-processed entry shows the post-processed text unless the
   // original is asked for.
   const [showOriginal, setShowOriginal] = useState(false);
+  // DanyWhere: the search during which the user switched the text by hand;
+  // during it the entry keeps their choice instead of showing the text
+  // that matches.
+  const [switchedIn, setSwitchedIn] = useState<TextMatcher | null>(null);
   const textRef = useRef<HTMLParagraphElement>(null);
   // DanyWhere: the part being corrected, and the text typed so far.
   const [editing, setEditing] = useState<CorrectionPart | null>(null);
@@ -742,14 +756,26 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
   }, [retrying]);
   const hasTranscription = entry.transcription_text.trim().length > 0;
   const hasPostProcessed = postProcessedText(entry) !== null;
-  const text = shownText(entry, showOriginal);
-  const part = shownPart(entry, showOriginal);
+  // DanyWhere: during a search, the text that matches when only one does.
+  const original = showsOriginal(
+    entry,
+    highlight,
+    showOriginal,
+    highlight !== null && switchedIn === highlight,
+  );
+  const text = shownText(entry, original);
+  const part = shownPart(entry, original);
   const corrected = isCorrected(entry, part);
   const folded = hasTranscription && !retrying && !expanded;
-  // DanyWhere: where the search matches the shown text.
+  // DanyWhere: where the search matches the shown text and the file name.
   const highlights = useMemo(
     () => matchRanges(text, highlight),
     [text, highlight],
+  );
+  const fileHighlights = useMemo(
+    () =>
+      entry.source_name ? matchRanges(entry.source_name, windowHighlight) : [],
+    [entry.source_name, windowHighlight],
   );
 
   // Offer "Show more" only when the folded text is actually cut off.
@@ -880,7 +906,9 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
               title={entry.source_name}
             >
               <FileAudio width={14} height={14} className="shrink-0" />
-              <span className="truncate">{entry.source_name}</span>
+              <span className="truncate">
+                <Highlighted text={entry.source_name} ranges={fileHighlights} />
+              </span>
             </span>
           )}
         </div>
@@ -984,7 +1012,11 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
       </div>
 
       {/* DanyWhere: the window it was dictated in; shows that window. */}
-      <EntryWindowLine entry={entry} onShowWindow={onShowWindow} />
+      <EntryWindowLine
+        entry={entry}
+        onShowWindow={onShowWindow}
+        highlight={windowHighlight}
+      />
 
       <div className="flex flex-col items-start gap-1 pb-2">
         {editing !== null && (
@@ -1088,10 +1120,15 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
               {hasPostProcessed && (
                 <button
                   type="button"
-                  onClick={() => setShowOriginal(!showOriginal)}
+                  onClick={() => {
+                    // DanyWhere: switches from what is shown, which a
+                    // search may have chosen, and keeps it for that search.
+                    setShowOriginal(!original);
+                    setSwitchedIn(highlight);
+                  }}
                   className="text-xs font-medium text-ink-3 hover:text-logo-primary cursor-pointer"
                 >
-                  {showOriginal
+                  {original
                     ? t("settings.history.showPostProcessed")
                     : t("settings.history.showOriginal")}
                 </button>

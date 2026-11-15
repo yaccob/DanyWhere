@@ -971,8 +971,8 @@
       "search": {
         "text": "搜尋歷史紀錄",
         "textTooltip": "在轉錄、後處理後的文字和你的更正中搜尋",
-        "window": "應用程式或視窗標題",
-        "windowTooltip": "符合應用程式、視窗標題或項目下方顯示的那一行",
+        "window": "應用程式、視窗標題或檔案",
+        "windowTooltip": "符合應用程式、視窗標題、項目下方顯示的那一行或已轉錄檔案的名稱",
         "regex": "規則運算式（兩個欄位）",
         "caseSensitive": "區分大小寫",
         "wholeWord": "僅全字相符",

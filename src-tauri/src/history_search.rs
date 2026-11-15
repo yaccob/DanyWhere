@@ -4,7 +4,8 @@
 //!
 //! The text is searched in the transcription, the post-processed text and
 //! the user's corrections of both; the window in the app's name, the
-//! window's title and the line History shows for them ("App – Title"). Both
+//! window's title and the line History shows for them ("App – Title"), and
+//! in the name of the file a transcribed file's entry shows instead. Both
 //! are substrings by default, ignoring case. The text can also match case
 //! and whole words only, and both can be regular expressions (the `regex`
 //! crate's syntax, which runs in linear time whatever is typed). The two
@@ -26,8 +27,8 @@ use crate::managers::history::{HistoryEntry, HistoryManager, PaginatedHistory};
 pub struct HistorySearchQuery {
     /// Searched in the entry's texts.
     pub text: String,
-    /// Searched in the window it was dictated in; an entry without one
-    /// never matches it.
+    /// Searched in the window it was dictated in, or in the name of the
+    /// file it was transcribed from; an entry with neither never matches it.
     pub window: String,
     /// Both fields are regular expressions.
     pub regex: bool,
@@ -72,6 +73,9 @@ pub struct Searched<'a> {
     pub app_id: Option<&'a str>,
     pub app_name: Option<&'a str>,
     pub title: Option<&'a str>,
+    /// The name of the file a transcribed file's entry was made from (its
+    /// `source_name`, which History shows in place of a window).
+    pub file: Option<&'a str>,
 }
 
 impl<'a> Searched<'a> {
@@ -87,6 +91,7 @@ impl<'a> Searched<'a> {
             app_id: window.window_app_id.as_deref(),
             app_name: window.window_app_name.as_deref(),
             title: window.window_title.as_deref(),
+            file: entry.source_name.as_deref(),
         }
     }
 }
@@ -236,11 +241,13 @@ impl Search {
         }
     }
 
-    /// The app, the title, or the line History shows for both.
+    /// The app, the title, the line History shows for both, or the name of
+    /// the file a transcribed file's entry shows instead.
     fn window_matches(regex: &Regex, entry: &Searched<'_>) -> bool {
         let (app, title) = window_parts(entry);
         if app.is_some_and(|app| regex.is_match(app))
             || title.is_some_and(|title| regex.is_match(title))
+            || entry.file.is_some_and(|file| regex.is_match(file))
         {
             return true;
         }
@@ -272,6 +279,7 @@ fn searched_row<'a>(row: &'a Row<'_>) -> rusqlite::Result<Searched<'a>> {
         app_id: text_ref(row, "window_app_id")?,
         app_name: text_ref(row, "window_app_name")?,
         title: text_ref(row, "window_title")?,
+        file: text_ref(row, "source_name")?,
     })
 }
 
@@ -403,6 +411,15 @@ mod tests {
             app_id: Some(app_id),
             app_name: Some(app_name),
             title: Some(title),
+            file: None,
+        }
+    }
+
+    fn from_file(name: &str) -> Searched<'_> {
+        Searched {
+            texts: [Some("words"), None, None, None],
+            file: Some(name),
+            ..Default::default()
         }
     }
 
@@ -587,12 +604,62 @@ mod tests {
     }
 
     #[test]
+    fn the_window_matches_a_transcribed_files_name_ignoring_case() {
+        let file = from_file("Interview Müller 2026-11-15.m4a");
+        assert!(matches(&window_query("interview"), &file));
+        assert!(matches(&window_query("MÜLLER"), &file));
+        assert!(matches(&window_query(".m4a"), &file));
+        assert!(!matches(&window_query("zoom"), &file));
+        // Literal without the regex toggle.
+        assert!(!matches(&window_query("2026.11"), &file));
+        // A dictation has no file name to match.
+        assert!(!matches(
+            &window_query("m4a"),
+            &in_window("m", "Mail", "Inbox")
+        ));
+    }
+
+    #[test]
+    fn a_window_regex_matches_a_transcribed_files_name() {
+        let regex = |pattern: &str| HistorySearchQuery {
+            regex: true,
+            ..window_query(pattern)
+        };
+        let file = from_file("Interview Müller 2026-11-15.m4a");
+        assert!(matches(&regex(r"\.m4a$"), &file));
+        assert!(matches(&regex(r"^interview\s"), &file));
+        assert!(matches(&regex(r"\d{4}-\d{2}"), &file));
+        assert!(!matches(&regex(r"^Müller"), &file));
+        assert!(!matches(&regex(r"\.wav$"), &file));
+    }
+
+    #[test]
+    fn a_files_name_combines_with_the_text() {
+        let file = Searched {
+            texts: [Some("the budget for next year"), None, None, None],
+            file: Some("Meeting.m4a"),
+            ..Default::default()
+        };
+        let both = HistorySearchQuery {
+            window: "meeting".to_string(),
+            ..query("budget")
+        };
+        assert!(matches(&both, &file));
+        let wrong_text = HistorySearchQuery {
+            window: "meeting".to_string(),
+            ..query("holiday")
+        };
+        assert!(!matches(&wrong_text, &file));
+    }
+
+    #[test]
     fn text_window_and_same_window_combine() {
         let entry = Searched {
             texts: [Some("the build hangs"), None, None, None],
             app_id: Some("com.apple.Safari"),
             app_name: Some("Safari"),
             title: Some("CI"),
+            file: None,
         };
         let both = HistorySearchQuery {
             window: "safari".to_string(),
@@ -642,6 +709,45 @@ mod tests {
 
     fn compiled(query: &HistorySearchQuery) -> Search {
         Search::new(query).expect("query compiles")
+    }
+
+    /// A transcribed file's entry, as `save_file_entry` makes it: no window,
+    /// the file's name in `source_name`.
+    fn insert_file(conn: &Connection, text: &str, source_name: &str) -> i64 {
+        conn.execute(
+            "INSERT INTO transcription_history (
+                file_name, timestamp, saved, title, transcription_text, source_name
+            ) VALUES ('handy-file-1.opus', 1, 0, 't', ?1, ?2)",
+            params![text, source_name],
+        )
+        .expect("insert file entry");
+        conn.last_insert_rowid()
+    }
+
+    #[test]
+    fn a_search_finds_transcribed_files_by_their_name() {
+        let conn = database();
+        let interview = insert_file(&conn, "questions and answers", "Interview.m4a");
+        insert_file(&conn, "a lecture", "Lecture.mp3");
+        let dictation = insert(
+            &conn,
+            "dictated about the interview",
+            Some(("com.apple.Notes", "Notes", "Interview prep")),
+        );
+        let by_name = compiled(&window_query("interview"));
+        let page = search_entries(&conn, &by_name, None, 30).expect("search");
+        let ids: Vec<i64> = page.entries.iter().map(|e| e.id).collect();
+        assert_eq!(ids, vec![dictation, interview]);
+
+        let by_regex = compiled(&HistorySearchQuery {
+            regex: true,
+            ..window_query(r"\.m4a$")
+        });
+        let page = search_entries(&conn, &by_regex, None, 30).expect("search");
+        let ids: Vec<i64> = page.entries.iter().map(|e| e.id).collect();
+        assert_eq!(ids, vec![interview]);
+        assert!(entry_matches(&conn, interview, &by_regex).expect("check"));
+        assert!(!entry_matches(&conn, dictation, &by_regex).expect("check"));
     }
 
     #[test]

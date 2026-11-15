@@ -971,8 +971,8 @@
       "search": {
         "text": "Hledat v historii",
         "textTooltip": "Hledá v přepisech, zpracovaných textech a vašich opravách",
-        "window": "Aplikace nebo název okna",
-        "windowTooltip": "Odpovídá aplikaci, názvu okna nebo řádku pod záznamem",
+        "window": "Aplikace, název okna nebo soubor",
+        "windowTooltip": "Odpovídá aplikaci, názvu okna, řádku pod záznamem nebo názvu přepsaného souboru",
         "regex": "Regulární výrazy (obě pole)",
         "caseSensitive": "Rozlišovat velká a malá písmena",
         "wholeWord": "Jen celá slova",
