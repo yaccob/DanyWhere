@@ -19,6 +19,7 @@
   },
   "sidebar": {
     "general": "一般",
+    "profiles": "プロファイル",
     "models": "モデル",
     "advanced": "詳細設定",
     "postProcessing": "後処理",

@@ -19,6 +19,7 @@
   },
   "sidebar": {
     "general": "सामान्य",
+    "profiles": "प्रोफाइलहरू",
     "models": "मोडेलहरू",
     "advanced": "उन्नत",
     "postProcessing": "पोस्ट प्रोसेस",

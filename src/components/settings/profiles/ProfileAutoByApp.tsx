@@ -3,8 +3,8 @@ import { useTranslation } from "react-i18next";
 import { useProfiles } from "@/hooks/useProfiles";
 import { ToggleSwitch } from "../../ui/ToggleSwitch";
 
-/** DanyWhere: "Choose Profile by Application" in the profile list and
- * under General (`app_profiles.rs`); the tray and its shortcut switch the
+/** DanyWhere: "Choose Profile by Application" under the profile list on the
+ * page "Profiles" (`app_profiles.rs`); the tray and its shortcut switch the
  * same setting. Shown from two profiles on. */
 export const ProfileAutoByApp: React.FC<{ grouped?: boolean }> = ({
   grouped = true,

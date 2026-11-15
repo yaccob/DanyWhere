@@ -19,6 +19,7 @@
   },
   "sidebar": {
     "general": "Umum",
+    "profiles": "Profil",
     "models": "Model",
     "advanced": "Lanjutan",
     "postProcessing": "Pascaproses",

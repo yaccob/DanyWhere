@@ -19,6 +19,7 @@
   },
   "sidebar": {
     "general": "Allmänt",
+    "profiles": "Profiler",
     "models": "Modeller",
     "advanced": "Avancerat",
     "postProcessing": "Efterbearbetning",

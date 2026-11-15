@@ -19,6 +19,7 @@
   },
   "sidebar": {
     "general": "Genel",
+    "profiles": "Profiller",
     "models": "Modeller",
     "advanced": "Gelişmiş",
     "postProcessing": "Son İşlem",

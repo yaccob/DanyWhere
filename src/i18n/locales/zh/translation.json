@@ -19,6 +19,7 @@
   },
   "sidebar": {
     "general": "通用",
+    "profiles": "配置文件",
     "models": "模型",
     "advanced": "高级",
     "postProcessing": "后处理",

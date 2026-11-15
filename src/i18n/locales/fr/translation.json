@@ -19,6 +19,7 @@
   },
   "sidebar": {
     "general": "Général",
+    "profiles": "Profils",
     "models": "Modèles",
     "advanced": "Avancé",
     "postProcessing": "Post-traitement",
