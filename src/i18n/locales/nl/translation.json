@@ -968,6 +968,18 @@
       "windowFilter": "Venster: {{window}} ({{count}})",
       "showAll": "Alles tonen",
       "showWindowEntries": "Alleen dicteringen uit dit venster tonen",
+      "search": {
+        "text": "Geschiedenis doorzoeken",
+        "textTooltip": "Zoekt in de transcripties, de naverwerkte teksten en je correcties",
+        "window": "App of venstertitel",
+        "windowTooltip": "Komt overeen met de app, de venstertitel of de regel onder een item",
+        "regex": "Reguliere expressies (beide velden)",
+        "caseSensitive": "Hoofdlettergevoelig",
+        "wholeWord": "Alleen hele woorden",
+        "invalidPattern": "Geen geldige reguliere expressie",
+        "noMatches": "Geen items komen overeen met de zoekopdracht.",
+        "clear": "Wissen"
+      },
       "contextEntryJump": "In de geschiedenis tonen om te corrigeren",
       "confirmReplaceTitle": "Je correctie vervangen?",
       "confirmPostProcessReplacesCorrection": "Opnieuw naverwerken vervangt je correctie van de naverwerkte tekst.",

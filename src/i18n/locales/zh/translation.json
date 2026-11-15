@@ -968,6 +968,18 @@
       "windowFilter": "窗口：{{window}}（{{count}}）",
       "showAll": "显示全部",
       "showWindowEntries": "仅显示此窗口的听写",
+      "search": {
+        "text": "搜索历史记录",
+        "textTooltip": "在转录、后处理后的文本和你的更正中搜索",
+        "window": "应用或窗口标题",
+        "windowTooltip": "匹配应用、窗口标题或条目下方显示的那一行",
+        "regex": "正则表达式（两个字段）",
+        "caseSensitive": "区分大小写",
+        "wholeWord": "仅全字匹配",
+        "invalidPattern": "不是有效的正则表达式",
+        "noMatches": "没有与搜索匹配的条目。",
+        "clear": "清除"
+      },
       "contextEntryJump": "在历史记录中显示以便更正",
       "confirmReplaceTitle": "替换你的更正？",
       "confirmPostProcessReplacesCorrection": "重新后处理会替换你对后处理文本的更正。",

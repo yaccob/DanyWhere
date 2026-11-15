@@ -968,6 +968,18 @@
       "windowFilter": "Fönster: {{window}} ({{count}})",
       "showAll": "Visa alla",
       "showWindowEntries": "Visa bara dikteringar från det här fönstret",
+      "search": {
+        "text": "Sök i historiken",
+        "textTooltip": "Söker i transkriptionerna, de efterbearbetade texterna och dina rättelser",
+        "window": "App eller fönstertitel",
+        "windowTooltip": "Matchar appen, fönstertiteln eller raden under en post",
+        "regex": "Reguljära uttryck (båda fälten)",
+        "caseSensitive": "Matcha versaler/gemener",
+        "wholeWord": "Endast hela ord",
+        "invalidPattern": "Inte ett giltigt reguljärt uttryck",
+        "noMatches": "Inga poster matchar sökningen.",
+        "clear": "Rensa"
+      },
       "contextEntryJump": "Visa i historiken för att rätta",
       "confirmReplaceTitle": "Ersätta din rättelse?",
       "confirmPostProcessReplacesCorrection": "En ny efterbearbetning ersätter din rättelse av den efterbearbetade texten.",

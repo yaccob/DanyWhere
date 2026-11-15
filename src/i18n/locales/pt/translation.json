@@ -968,6 +968,18 @@
       "windowFilter": "Janela: {{window}} ({{count}})",
       "showAll": "Mostrar tudo",
       "showWindowEntries": "Mostrar só os ditados desta janela",
+      "search": {
+        "text": "Pesquisar no histórico",
+        "textTooltip": "Pesquisa nas transcrições, nos textos pós-processados e nas suas correções",
+        "window": "App ou título da janela",
+        "windowTooltip": "Corresponde ao app, ao título da janela ou à linha mostrada abaixo de uma entrada",
+        "regex": "Expressões regulares (ambos os campos)",
+        "caseSensitive": "Diferenciar maiúsculas e minúsculas",
+        "wholeWord": "Somente palavras inteiras",
+        "invalidPattern": "Expressão regular inválida",
+        "noMatches": "Nenhuma entrada corresponde à pesquisa.",
+        "clear": "Limpar"
+      },
       "contextEntryJump": "Mostrar no histórico para corrigir",
       "confirmReplaceTitle": "Substituir sua correção?",
       "confirmPostProcessReplacesCorrection": "Pós-processar novamente substitui sua correção do texto pós-processado.",

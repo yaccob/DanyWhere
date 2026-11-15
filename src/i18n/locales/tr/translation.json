@@ -968,6 +968,18 @@
       "windowFilter": "Pencere: {{window}} ({{count}})",
       "showAll": "Tümünü göster",
       "showWindowEntries": "Yalnızca bu pencerenin diktelerini göster",
+      "search": {
+        "text": "Geçmişte ara",
+        "textTooltip": "Transkripsiyonlarda, son işlemden geçmiş metinlerde ve düzeltmelerinizde arar",
+        "window": "Uygulama veya pencere başlığı",
+        "windowTooltip": "Uygulamayla, pencere başlığıyla veya bir kaydın altında gösterilen satırla eşleşir",
+        "regex": "Düzenli ifadeler (iki alan da)",
+        "caseSensitive": "Büyük/küçük harf duyarlı",
+        "wholeWord": "Yalnızca tam sözcükler",
+        "invalidPattern": "Geçerli bir düzenli ifade değil",
+        "noMatches": "Aramayla eşleşen kayıt yok.",
+        "clear": "Temizle"
+      },
       "contextEntryJump": "Düzeltmek için geçmişte göster",
       "confirmReplaceTitle": "Düzeltmeniz değiştirilsin mi?",
       "confirmPostProcessReplacesCorrection": "Son işlemi yeniden uygulamak, son işlem sonucundaki düzeltmenizin yerini alır.",

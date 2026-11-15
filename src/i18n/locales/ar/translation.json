@@ -968,6 +968,18 @@
       "windowFilter": "النافذة: {{window}} ({{count}})",
       "showAll": "عرض الكل",
       "showWindowEntries": "عرض إملاءات هذه النافذة فقط",
+      "search": {
+        "text": "ابحث في السجل",
+        "textTooltip": "يبحث في التفريغات النصية والنصوص المعالجة وتصحيحاتك",
+        "window": "التطبيق أو عنوان النافذة",
+        "windowTooltip": "يطابق التطبيق أو عنوان النافذة أو السطر الظاهر تحت الإدخال",
+        "regex": "تعبيرات نمطية (كلا الحقلين)",
+        "caseSensitive": "مطابقة حالة الأحرف",
+        "wholeWord": "كلمات كاملة فقط",
+        "invalidPattern": "تعبير نمطي غير صالح",
+        "noMatches": "لا توجد إدخالات تطابق البحث.",
+        "clear": "مسح"
+      },
       "contextEntryJump": "عرضه في السجل لتصحيحه",
       "confirmReplaceTitle": "استبدال تصحيحك؟",
       "confirmPostProcessReplacesCorrection": "إعادة المعالجة اللاحقة تستبدل تصحيحك للنص المعالج.",

@@ -968,6 +968,18 @@
       "windowFilter": "Finestra: {{window}} ({{count}})",
       "showAll": "Mostra tutto",
       "showWindowEntries": "Mostra solo le dettature di questa finestra",
+      "search": {
+        "text": "Cerca nella cronologia",
+        "textTooltip": "Cerca nelle trascrizioni, nei testi post-elaborati e nelle tue correzioni",
+        "window": "App o titolo della finestra",
+        "windowTooltip": "Corrisponde all'app, al titolo della finestra o alla riga mostrata sotto un elemento",
+        "regex": "Espressioni regolari (entrambi i campi)",
+        "caseSensitive": "Maiuscole/minuscole",
+        "wholeWord": "Solo parole intere",
+        "invalidPattern": "Espressione regolare non valida",
+        "noMatches": "Nessun elemento corrisponde alla ricerca.",
+        "clear": "Cancella"
+      },
       "contextEntryJump": "Mostrala nella cronologia per correggerla",
       "confirmReplaceTitle": "Sostituire la tua correzione?",
       "confirmPostProcessReplacesCorrection": "Una nuova post-elaborazione sostituisce la tua correzione del testo post-elaborato.",

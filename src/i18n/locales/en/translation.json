@@ -968,6 +968,18 @@
       "windowFilter": "Window: {{window}} ({{count}})",
       "showAll": "Show all",
       "showWindowEntries": "Show only dictations from this window",
+      "search": {
+        "text": "Search History",
+        "textTooltip": "Searches the transcriptions, the post-processed texts and your corrections",
+        "window": "App or window title",
+        "windowTooltip": "Matches the app, the window title or the line shown under an entry",
+        "regex": "Regular expressions (both fields)",
+        "caseSensitive": "Match case",
+        "wholeWord": "Match whole words only",
+        "invalidPattern": "Not a valid regular expression",
+        "noMatches": "No entries match the search.",
+        "clear": "Clear"
+      },
       "contextEntryJump": "Show it in the History to correct it",
       "confirmReplaceTitle": "Replace your correction?",
       "confirmPostProcessReplacesCorrection": "Post-processing again replaces your correction of the post-processed text.",

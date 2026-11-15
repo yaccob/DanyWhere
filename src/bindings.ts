@@ -1318,6 +1318,33 @@ async getHistoryEntriesByIds(ids: number[]) : Promise<Result<HistoryEntry[], str
 }
 },
 /**
+ * One page of History's entries that match `query`, newest first, older
+ * than the entry `cursor` (`None`: from the newest). Errors:
+ * `invalid_text_pattern` / `invalid_window_pattern` when that field's
+ * regular expression doesn't compile.
+ */
+async searchHistoryEntries(query: HistorySearchQuery, cursor: number | null, limit: number) : Promise<Result<PaginatedHistory, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("search_history_entries", { query, cursor, limit }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Whether the entry `id` matches `query`: a new or changed entry joins a
+ * search History shows only if it does. Errors as for
+ * [`search_history_entries`].
+ */
+async historyEntryMatchesSearch(id: number, query: HistorySearchQuery) : Promise<Result<boolean, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("history_entry_matches_search", { id, query }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
  * How DanyWhere learns window titles here, for the settings.
  */
 async getWindowTitleAccess() : Promise<WindowTitleAccess> {
@@ -1848,6 +1875,36 @@ post_processing_outdated: boolean;
  * post-processing (`dictation_context`).
  */
 window_context: EntryWindowContext }
+/**
+ * What History is searched for. An empty field asks for nothing.
+ */
+export type HistorySearchQuery = { 
+/**
+ * Searched in the entry's texts.
+ */
+text: string; 
+/**
+ * Searched in the window it was dictated in; an entry without one
+ * never matches it.
+ */
+window: string; 
+/**
+ * Both fields are regular expressions.
+ */
+regex: boolean; 
+/**
+ * The text matches case; the window always ignores it.
+ */
+case_sensitive: boolean; 
+/**
+ * The text matches whole words only.
+ */
+whole_word: boolean; 
+/**
+ * Only entries dictated in exactly this window (History's "same
+ * window" filter).
+ */
+same_window: SameWindow | null }
 export type HistoryUpdatePayload = { action: "added"; entry: HistoryEntry } | { action: "updated"; entry: HistoryEntry } | { action: "deleted"; id: number } | { action: "toggled"; id: number }
 /**
  * Result of changing keyboard implementation
@@ -2219,6 +2276,10 @@ export type ReprocessMode =
  * A retired ONNX model found on disk.
  */
 export type RetiredModel = { id: string; name: string; size_mb: number; replacement_repo: string }
+/**
+ * One window, as History's "same window" filter names it.
+ */
+export type SameWindow = { app_id: string; title: string }
 export type SecretMap = Partial<{ [key in string]: string }>
 export type SecureInputStatus = { 
 /**

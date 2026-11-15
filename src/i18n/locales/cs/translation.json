@@ -968,6 +968,18 @@
       "windowFilter": "Okno: {{window}} ({{count}})",
       "showAll": "Zobrazit vše",
       "showWindowEntries": "Zobrazit jen diktáty z tohoto okna",
+      "search": {
+        "text": "Hledat v historii",
+        "textTooltip": "Hledá v přepisech, zpracovaných textech a vašich opravách",
+        "window": "Aplikace nebo název okna",
+        "windowTooltip": "Odpovídá aplikaci, názvu okna nebo řádku pod záznamem",
+        "regex": "Regulární výrazy (obě pole)",
+        "caseSensitive": "Rozlišovat velká a malá písmena",
+        "wholeWord": "Jen celá slova",
+        "invalidPattern": "Neplatný regulární výraz",
+        "noMatches": "Hledání neodpovídá žádný záznam.",
+        "clear": "Vymazat"
+      },
       "contextEntryJump": "Zobrazit v historii a opravit",
       "confirmReplaceTitle": "Nahradit vaši opravu?",
       "confirmPostProcessReplacesCorrection": "Nové následné zpracování nahradí vaši opravu zpracovaného textu.",

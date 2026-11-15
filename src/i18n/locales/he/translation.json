@@ -968,6 +968,18 @@
       "windowFilter": "חלון: {{window}} ({{count}})",
       "showAll": "הצג הכול",
       "showWindowEntries": "הצג רק הכתבות מהחלון הזה",
+      "search": {
+        "text": "חיפוש בהיסטוריה",
+        "textTooltip": "מחפש בתמלולים, בטקסטים המעובדים ובתיקונים שלך",
+        "window": "אפליקציה או כותרת חלון",
+        "windowTooltip": "תואם את האפליקציה, את כותרת החלון או את השורה שמתחת לרשומה",
+        "regex": "ביטויים רגולריים (שני השדות)",
+        "caseSensitive": "התאמת רישיות",
+        "wholeWord": "מילים שלמות בלבד",
+        "invalidPattern": "ביטוי רגולרי לא תקין",
+        "noMatches": "אין רשומות שתואמות לחיפוש.",
+        "clear": "נקה"
+      },
       "contextEntryJump": "הצג בהיסטוריה כדי לתקן",
       "confirmReplaceTitle": "להחליף את התיקון שלך?",
       "confirmPostProcessReplacesCorrection": "עיבוד משלים חדש מחליף את התיקון שלך לטקסט המעובד.",
