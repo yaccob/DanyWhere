@@ -12,7 +12,7 @@
     "autoLanguage": "تلقائي",
     "otherLanguages": "لغات أخرى",
     "wordList": "قائمة الكلمات",
-    "onlyGlobalWordList": "قائمة الكلمات العامة فقط",
+    "onlyGlobalWordList": "بدون قائمة إضافية",
     "profile": "الملف الشخصي",
     "defaultProfile": "افتراضي"
   },
@@ -1181,7 +1181,7 @@
     "readyNoShortcut": "جاهز – أدرجه من قائمة الخدمات",
     "notReady": "لم يجهز بعد",
     "wordList": "قائمة الكلمات: {{name}}",
-    "wordListGlobalOnly": "قائمة الكلمات العامة فقط",
+    "wordListGlobalOnly": "بدون قائمة إضافية",
     "profile": "الملف الشخصي: {{name}}"
   },
   "secureInput": {

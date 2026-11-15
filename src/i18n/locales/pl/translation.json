@@ -12,7 +12,7 @@
     "autoLanguage": "Automatycznie",
     "otherLanguages": "Inne języki",
     "wordList": "Lista słów",
-    "onlyGlobalWordList": "Tylko globalna lista słów",
+    "onlyGlobalWordList": "Bez dodatkowej listy",
     "profile": "Profil",
     "defaultProfile": "Domyślny"
   },
@@ -1181,7 +1181,7 @@
     "readyNoShortcut": "Gotowe – wstaw z menu Usługi",
     "notReady": "Jeszcze niegotowe",
     "wordList": "Lista słów: {{name}}",
-    "wordListGlobalOnly": "Tylko globalna lista słów",
+    "wordListGlobalOnly": "Bez dodatkowej listy",
     "profile": "Profil: {{name}}"
   },
   "secureInput": {

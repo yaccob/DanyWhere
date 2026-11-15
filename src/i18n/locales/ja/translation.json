@@ -12,7 +12,7 @@
     "autoLanguage": "自動",
     "otherLanguages": "その他の言語",
     "wordList": "単語リスト",
-    "onlyGlobalWordList": "グローバル単語リストのみ",
+    "onlyGlobalWordList": "追加のリストなし",
     "profile": "プロファイル",
     "defaultProfile": "デフォルト"
   },
@@ -1181,7 +1181,7 @@
     "readyNoShortcut": "準備完了 – サービスメニューから挿入",
     "notReady": "まだ準備中です",
     "wordList": "単語リスト: {{name}}",
-    "wordListGlobalOnly": "グローバル単語リストのみ",
+    "wordListGlobalOnly": "追加のリストなし",
     "profile": "プロファイル: {{name}}"
   },
   "secureInput": {

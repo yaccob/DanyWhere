@@ -12,7 +12,7 @@
     "autoLanguage": "Otomatik",
     "otherLanguages": "Diğer Diller",
     "wordList": "Kelime Listesi",
-    "onlyGlobalWordList": "Yalnızca Genel Kelime Listesi",
+    "onlyGlobalWordList": "Ek Liste Yok",
     "profile": "Profil",
     "defaultProfile": "Varsayılan"
   },
@@ -1181,7 +1181,7 @@
     "readyNoShortcut": "Hazır – Servisler menüsünden ekleyin",
     "notReady": "Henüz hazır değil",
     "wordList": "Kelime listesi: {{name}}",
-    "wordListGlobalOnly": "Yalnızca genel kelime listesi",
+    "wordListGlobalOnly": "Ek liste yok",
     "profile": "Profil: {{name}}"
   },
   "secureInput": {

@@ -12,7 +12,7 @@
     "autoLanguage": "Automatisk",
     "otherLanguages": "Andre sprog",
     "wordList": "Ordliste",
-    "onlyGlobalWordList": "Kun den globale ordliste",
+    "onlyGlobalWordList": "Ingen ekstra liste",
     "profile": "Profil",
     "defaultProfile": "Standard"
   },
@@ -1181,7 +1181,7 @@
     "readyNoShortcut": "Klar – indsæt fra menuen Tjenester",
     "notReady": "Ikke klar endnu",
     "wordList": "Ordliste: {{name}}",
-    "wordListGlobalOnly": "Kun den globale ordliste",
+    "wordListGlobalOnly": "Ingen ekstra liste",
     "profile": "Profil: {{name}}"
   },
   "secureInput": {

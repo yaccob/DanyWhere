@@ -12,7 +12,7 @@
     "autoLanguage": "Авто",
     "otherLanguages": "Другие языки",
     "wordList": "Список слов",
-    "onlyGlobalWordList": "Только общий список слов",
+    "onlyGlobalWordList": "Без дополнительного списка",
     "profile": "Профиль",
     "defaultProfile": "По умолчанию"
   },
@@ -1181,7 +1181,7 @@
     "readyNoShortcut": "Готово – вставьте через меню «Службы»",
     "notReady": "Ещё не готово",
     "wordList": "Список слов: {{name}}",
-    "wordListGlobalOnly": "Только общий список слов",
+    "wordListGlobalOnly": "Без дополнительного списка",
     "profile": "Профиль: {{name}}"
   },
   "secureInput": {

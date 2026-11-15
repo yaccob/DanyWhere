@@ -12,7 +12,7 @@
     "autoLanguage": "Automàtica",
     "otherLanguages": "Altres llengües",
     "wordList": "Llista de paraules",
-    "onlyGlobalWordList": "Només la llista de paraules global",
+    "onlyGlobalWordList": "Cap llista addicional",
     "profile": "Perfil",
     "defaultProfile": "Predeterminat"
   },
@@ -1181,7 +1181,7 @@
     "readyNoShortcut": "A punt – inseriu-lo des del menú Serveis",
     "notReady": "Encara no està a punt",
     "wordList": "Llista de paraules: {{name}}",
-    "wordListGlobalOnly": "Només la llista de paraules global",
+    "wordListGlobalOnly": "Cap llista addicional",
     "profile": "Perfil: {{name}}"
   },
   "secureInput": {

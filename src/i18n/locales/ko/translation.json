@@ -12,7 +12,7 @@
     "autoLanguage": "자동",
     "otherLanguages": "기타 언어",
     "wordList": "단어 목록",
-    "onlyGlobalWordList": "전역 단어 목록만",
+    "onlyGlobalWordList": "추가 목록 없음",
     "profile": "프로필",
     "defaultProfile": "기본"
   },
@@ -1181,7 +1181,7 @@
     "readyNoShortcut": "준비됨 – 서비스 메뉴에서 삽입",
     "notReady": "아직 준비되지 않음",
     "wordList": "단어 목록: {{name}}",
-    "wordListGlobalOnly": "전역 단어 목록만",
+    "wordListGlobalOnly": "추가 목록 없음",
     "profile": "프로필: {{name}}"
   },
   "secureInput": {

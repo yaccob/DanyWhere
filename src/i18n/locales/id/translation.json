@@ -12,7 +12,7 @@
     "autoLanguage": "Otomatis",
     "otherLanguages": "Bahasa Lain",
     "wordList": "Daftar Kata",
-    "onlyGlobalWordList": "Hanya Daftar Kata Global",
+    "onlyGlobalWordList": "Tanpa Daftar Tambahan",
     "profile": "Profil",
     "defaultProfile": "Bawaan"
   },
@@ -1181,7 +1181,7 @@
     "readyNoShortcut": "Siap – sisipkan dari menu Layanan",
     "notReady": "Belum siap",
     "wordList": "Daftar kata: {{name}}",
-    "wordListGlobalOnly": "Hanya daftar kata global",
+    "wordListGlobalOnly": "Tanpa daftar tambahan",
     "profile": "Profil: {{name}}"
   },
   "secureInput": {

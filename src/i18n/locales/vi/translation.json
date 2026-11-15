@@ -12,7 +12,7 @@
     "autoLanguage": "Tự động",
     "otherLanguages": "Ngôn ngữ khác",
     "wordList": "Danh sách từ",
-    "onlyGlobalWordList": "Chỉ danh sách từ chung",
+    "onlyGlobalWordList": "Không có danh sách bổ sung",
     "profile": "Hồ sơ",
     "defaultProfile": "Mặc định"
   },
@@ -1181,7 +1181,7 @@
     "readyNoShortcut": "Sẵn sàng – chèn từ menu Dịch vụ",
     "notReady": "Chưa sẵn sàng",
     "wordList": "Danh sách từ: {{name}}",
-    "wordListGlobalOnly": "Chỉ danh sách từ chung",
+    "wordListGlobalOnly": "Không có danh sách bổ sung",
     "profile": "Hồ sơ: {{name}}"
   },
   "secureInput": {

@@ -12,7 +12,7 @@
     "autoLanguage": "Automaticky",
     "otherLanguages": "Další jazyky",
     "wordList": "Seznam slov",
-    "onlyGlobalWordList": "Jen globální seznam slov",
+    "onlyGlobalWordList": "Žádný doplňkový seznam",
     "profile": "Profil",
     "defaultProfile": "Výchozí"
   },
@@ -1181,7 +1181,7 @@
     "readyNoShortcut": "Připraveno – vložte z nabídky Služby",
     "notReady": "Ještě není hotovo",
     "wordList": "Seznam slov: {{name}}",
-    "wordListGlobalOnly": "Jen globální seznam slov",
+    "wordListGlobalOnly": "Žádný doplňkový seznam",
     "profile": "Profil: {{name}}"
   },
   "secureInput": {

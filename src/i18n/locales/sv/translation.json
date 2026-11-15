@@ -12,7 +12,7 @@
     "autoLanguage": "Automatiskt",
     "otherLanguages": "Andra språk",
     "wordList": "Ordlista",
-    "onlyGlobalWordList": "Endast global ordlista",
+    "onlyGlobalWordList": "Ingen extra lista",
     "profile": "Profil",
     "defaultProfile": "Standard"
   },
@@ -1181,7 +1181,7 @@
     "readyNoShortcut": "Klar – infoga från menyn Tjänster",
     "notReady": "Inte klar än",
     "wordList": "Ordlista: {{name}}",
-    "wordListGlobalOnly": "Endast global ordlista",
+    "wordListGlobalOnly": "Ingen extra lista",
     "profile": "Profil: {{name}}"
   },
   "secureInput": {

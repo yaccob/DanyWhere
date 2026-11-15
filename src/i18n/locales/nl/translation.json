@@ -12,7 +12,7 @@
     "autoLanguage": "Automatisch",
     "otherLanguages": "Andere talen",
     "wordList": "Woordenlijst",
-    "onlyGlobalWordList": "Alleen algemene woordenlijst",
+    "onlyGlobalWordList": "Geen extra lijst",
     "profile": "Profiel",
     "defaultProfile": "Standaard"
   },
@@ -1181,7 +1181,7 @@
     "readyNoShortcut": "Klaar – voeg in via het menu Voorzieningen",
     "notReady": "Nog niet klaar",
     "wordList": "Woordenlijst: {{name}}",
-    "wordListGlobalOnly": "Alleen algemene woordenlijst",
+    "wordListGlobalOnly": "Geen extra lijst",
     "profile": "Profiel: {{name}}"
   },
   "secureInput": {

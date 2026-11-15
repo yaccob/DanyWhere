@@ -12,7 +12,7 @@
     "autoLanguage": "אוטומטי",
     "otherLanguages": "שפות אחרות",
     "wordList": "רשימת מילים",
-    "onlyGlobalWordList": "רשימת המילים הכללית בלבד",
+    "onlyGlobalWordList": "ללא רשימה נוספת",
     "profile": "פרופיל",
     "defaultProfile": "ברירת מחדל"
   },
@@ -1181,7 +1181,7 @@
     "readyNoShortcut": "מוכן – הוסף מתפריט השירותים",
     "notReady": "עדיין לא מוכן",
     "wordList": "רשימת מילים: {{name}}",
-    "wordListGlobalOnly": "רשימת המילים הכללית בלבד",
+    "wordListGlobalOnly": "ללא רשימה נוספת",
     "profile": "פרופיל: {{name}}"
   },
   "secureInput": {

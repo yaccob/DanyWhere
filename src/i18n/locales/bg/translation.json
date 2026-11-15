@@ -12,7 +12,7 @@
     "autoLanguage": "Автоматично",
     "otherLanguages": "Други езици",
     "wordList": "Списък с думи",
-    "onlyGlobalWordList": "Само общият списък с думи",
+    "onlyGlobalWordList": "Без допълнителен списък",
     "profile": "Профил",
     "defaultProfile": "По подразбиране"
   },
@@ -1181,7 +1181,7 @@
     "readyNoShortcut": "Готово – вмъкнете от менюто „Услуги“",
     "notReady": "Още не е готово",
     "wordList": "Списък с думи: {{name}}",
-    "wordListGlobalOnly": "Само общият списък с думи",
+    "wordListGlobalOnly": "Без допълнителен списък",
     "profile": "Профил: {{name}}"
   },
   "secureInput": {

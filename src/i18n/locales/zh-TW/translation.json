@@ -12,7 +12,7 @@
     "autoLanguage": "自動",
     "otherLanguages": "其他語言",
     "wordList": "詞彙清單",
-    "onlyGlobalWordList": "僅全域詞彙清單",
+    "onlyGlobalWordList": "無附加清單",
     "profile": "設定檔",
     "defaultProfile": "預設"
   },
@@ -1181,7 +1181,7 @@
     "readyNoShortcut": "就緒 – 從「服務」選單插入",
     "notReady": "尚未就緒",
     "wordList": "詞彙清單：{{name}}",
-    "wordListGlobalOnly": "僅全域詞彙清單",
+    "wordListGlobalOnly": "無附加清單",
     "profile": "設定檔：{{name}}"
   },
   "secureInput": {

@@ -12,7 +12,7 @@
     "autoLanguage": "स्वतः",
     "otherLanguages": "अन्य भाषाहरू",
     "wordList": "शब्द सूची",
-    "onlyGlobalWordList": "ग्लोबल शब्द सूची मात्र",
+    "onlyGlobalWordList": "कुनै अतिरिक्त सूची छैन",
     "profile": "प्रोफाइल",
     "defaultProfile": "पूर्वनिर्धारित"
   },
@@ -1181,7 +1181,7 @@
     "readyNoShortcut": "तयार – सेवाहरू मेनुबाट घुसाउनुहोस्",
     "notReady": "अझै तयार छैन",
     "wordList": "शब्द सूची: {{name}}",
-    "wordListGlobalOnly": "ग्लोबल शब्द सूची मात्र",
+    "wordListGlobalOnly": "कुनै अतिरिक्त सूची छैन",
     "profile": "प्रोफाइल: {{name}}"
   },
   "secureInput": {

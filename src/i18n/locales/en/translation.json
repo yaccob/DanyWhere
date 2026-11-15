@@ -12,7 +12,7 @@
     "autoLanguage": "Auto",
     "otherLanguages": "Other Languages",
     "wordList": "Word List",
-    "onlyGlobalWordList": "Global Word List Only",
+    "onlyGlobalWordList": "No Additional List",
     "profile": "Profile",
     "defaultProfile": "Default"
   },
@@ -1181,7 +1181,7 @@
     "readyNoShortcut": "Ready – insert it from the Services menu",
     "notReady": "Not ready yet",
     "wordList": "Word list: {{name}}",
-    "wordListGlobalOnly": "Global word list only",
+    "wordListGlobalOnly": "No additional list",
     "profile": "Profile: {{name}}"
   },
   "secureInput": {
