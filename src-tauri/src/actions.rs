@@ -1232,19 +1232,23 @@ impl ShortcutAction for TranscribeAction {
                                         } else {
                                             None
                                         };
-                                        // DanyWhere: a sound says the text waits
-                                        // to be pasted or inserted, also when post-
-                                        // processing failed; not while a newer
-                                        // session records.
-                                        if outcome == TranscriptionOutcome::Typed
-                                            && owns_ui()
-                                            && !inserted_by_service
-                                        {
-                                            crate::delivery::play_sound_if_waiting_for_user(
-                                                &ah_clone,
-                                                put_on_clipboard.is_some(),
-                                            );
-                                        }
+                                        // DanyWhere: one sound says the dictation
+                                        // is done, post-processing included, also
+                                        // when post-processing failed (or, with
+                                        // that sound off, that its text waits to
+                                        // be pasted or inserted); not while a
+                                        // newer session records.
+                                        crate::delivery::play_sound_after_dictation(
+                                            &ah_clone,
+                                            crate::delivery::DictationEnd {
+                                                outcome,
+                                                cancelled: rm_for_paste
+                                                    .was_cancelled_since(cancel_generation),
+                                                inserted_by_service,
+                                                put_on_clipboard: put_on_clipboard.is_some(),
+                                                owns_ui: owns_ui(),
+                                            },
+                                        );
                                         match (owns_ui(), notice, &put_on_clipboard) {
                                             (true, Some(notice), _) => {
                                                 notices::raise(&ah_clone, notice)

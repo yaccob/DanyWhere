@@ -595,6 +595,10 @@
         "label": "Feedback de Áudio",
         "description": "Reproduzir som quando a gravação iniciar e parar, e quando uma transcrição estiver esperando para você colar ou inserir"
       },
+      "doneSound": {
+        "label": "Som ao concluir",
+        "description": "Reproduzir um som quando um ditado estiver totalmente concluído, pós-processamento incluído, seja colado, deixado na área de transferência ou pronto para inserir"
+      },
       "outputDevice": {
         "title": "Dispositivo de Saída",
         "description": "Selecione seu dispositivo de saída de áudio preferido para sons de feedback",

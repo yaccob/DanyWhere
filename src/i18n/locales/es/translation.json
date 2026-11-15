@@ -595,6 +595,10 @@
         "label": "Retroalimentación de audio",
         "description": "Reproducir sonido cuando la grabación inicia y se detiene, y cuando una transcripción espera a que la pegues o insertes"
       },
+      "doneSound": {
+        "label": "Sonido al terminar",
+        "description": "Reproducir un sonido cuando un dictado haya terminado por completo, post proceso incluido, ya sea que se haya pegado, dejado en el portapapeles o esté listo para insertar"
+      },
       "outputDevice": {
         "title": "Dispositivo de salida",
         "description": "Selecciona tu dispositivo de salida de audio preferido para los sonidos de retroalimentación",

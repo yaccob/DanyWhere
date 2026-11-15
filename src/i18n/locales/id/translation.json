@@ -595,6 +595,10 @@
         "label": "Umpan Balik Audio",
         "description": "Putar suara saat perekaman dimulai dan dihentikan, dan saat transkripsi menunggu untuk Anda tempel atau sisipkan"
       },
+      "doneSound": {
+        "label": "Suara Saat Selesai",
+        "description": "Putar suara saat dikte benar-benar selesai, termasuk pascaproses, baik ditempel, ditinggalkan di papan klip, maupun siap disisipkan"
+      },
       "outputDevice": {
         "title": "Perangkat Keluaran",
         "description": "Pilih perangkat keluaran audio yang Anda inginkan untuk suara umpan balik",

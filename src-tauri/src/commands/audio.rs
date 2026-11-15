@@ -316,6 +316,7 @@ pub async fn play_test_sound(app: AppHandle, sound_type: String) {
         "start" => audio_feedback::SoundType::Start,
         "stop" => audio_feedback::SoundType::Stop,
         "clipboard" => audio_feedback::SoundType::Clipboard,
+        "done" => audio_feedback::SoundType::Done,
         _ => {
             warn!("Unknown sound type: {}", sound_type);
             return;

@@ -595,6 +595,10 @@
         "label": "Audio-Feedback",
         "description": "Töne bei Start und Ende der Aufnahme abspielen und wenn ein Transkript darauf wartet, dass du es einfügst"
       },
+      "doneSound": {
+        "label": "Ton, wenn alles fertig ist",
+        "description": "Einen Ton abspielen, sobald ein Diktat ganz fertig ist, Nachbearbeitung eingeschlossen – egal ob es eingefügt wurde, in der Zwischenablage liegt oder zum Einfügen bereitsteht"
+      },
       "outputDevice": {
         "title": "Ausgabegerät",
         "description": "Bevorzugtes Audioausgabegerät für Feedback-Töne auswählen",

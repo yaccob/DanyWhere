@@ -595,6 +595,10 @@
         "label": "Ljudåterkoppling",
         "description": "Spela upp ljud när inspelningen startar och stoppar, och när en transkription väntar på att du klistrar in eller infogar den"
       },
+      "doneSound": {
+        "label": "Ljud när allt är klart",
+        "description": "Spela upp ett ljud när en diktering är helt klar, efterbearbetning inräknad, oavsett om den klistrades in, lämnades i urklipp eller är redo att infogas"
+      },
       "outputDevice": {
         "title": "Utmatningsenhet",
         "description": "Välj din föredragna ljudutmatningsenhet för återkopplingsljud",

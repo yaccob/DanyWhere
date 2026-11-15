@@ -19,10 +19,16 @@ pub enum SoundType {
     /// DanyWhere: the transcript was left on the clipboard, and the user has
     /// to paste it.
     Clipboard,
+    /// DanyWhere: a dictation is completely done, post-processing included,
+    /// however it was delivered (`delivery::sound_after_dictation`).
+    Done,
 }
 
 /// The custom theme's optional clipboard sound, in the app data folder.
 const CUSTOM_CLIPBOARD_SOUND: &str = "custom_clipboard.wav";
+
+/// The custom theme's optional done sound, in the app data folder.
+const CUSTOM_DONE_SOUND: &str = "custom_done.wav";
 
 /// Where a feedback sound's file is.
 #[derive(Debug, PartialEq, Eq)]
@@ -47,9 +53,14 @@ fn sound_location(
         (SoundTheme::Custom, SoundType::Stop) => {
             SoundLocation::AppData("custom_stop.wav".to_string())
         }
+        (SoundTheme::Custom, SoundType::Done) if custom_exists(CUSTOM_DONE_SOUND) => {
+            SoundLocation::AppData(CUSTOM_DONE_SOUND.to_string())
+        }
         // A custom theme needs only a start and a stop sound; without a
-        // clipboard sound of its own it borrows the default theme's.
-        (SoundTheme::Custom, SoundType::Clipboard) => {
+        // clipboard sound of its own it borrows the default theme's. The done
+        // sound is the high clipboard sound (user, 2026-11-15), so without a
+        // file of its own it is the theme's clipboard sound.
+        (SoundTheme::Custom, SoundType::Clipboard | SoundType::Done) => {
             if custom_exists(CUSTOM_CLIPBOARD_SOUND) {
                 SoundLocation::AppData(CUSTOM_CLIPBOARD_SOUND.to_string())
             } else {
@@ -58,7 +69,9 @@ fn sound_location(
         }
         (theme, SoundType::Start) => SoundLocation::Resource(theme.to_start_path()),
         (theme, SoundType::Stop) => SoundLocation::Resource(theme.to_stop_path()),
-        (theme, SoundType::Clipboard) => SoundLocation::Resource(theme.to_clipboard_path()),
+        (theme, SoundType::Clipboard | SoundType::Done) => {
+            SoundLocation::Resource(theme.to_clipboard_path())
+        }
     }
 }
 
@@ -271,6 +284,54 @@ mod tests {
     fn the_custom_theme_falls_back_to_the_marimba_clipboard_sound() {
         assert_eq!(
             sound_location(SoundTheme::Custom, SoundType::Clipboard, NO_CUSTOM_FILES),
+            resource("resources/marimba_clipboard.wav")
+        );
+    }
+
+    #[test]
+    fn the_done_sound_is_the_themes_high_clipboard_sound() {
+        // The user's wish (2026-11-15): the high E that ends every dictation
+        // without Accessibility.
+        assert_eq!(
+            sound_location(SoundTheme::Marimba, SoundType::Done, NO_CUSTOM_FILES),
+            resource("resources/marimba_clipboard.wav")
+        );
+        assert_eq!(
+            sound_location(SoundTheme::Pop, SoundType::Done, NO_CUSTOM_FILES),
+            resource("resources/pop_clipboard.wav")
+        );
+    }
+
+    #[test]
+    fn the_custom_theme_uses_its_own_done_sound_when_there_is_one() {
+        assert_eq!(
+            sound_location(SoundTheme::Custom, SoundType::Done, |file| {
+                file == "custom_done.wav" || file == "custom_clipboard.wav"
+            }),
+            app_data("custom_done.wav")
+        );
+    }
+
+    #[test]
+    fn without_a_done_sound_the_custom_theme_uses_its_clipboard_sound() {
+        assert_eq!(
+            sound_location(SoundTheme::Custom, SoundType::Done, |file| {
+                file == "custom_clipboard.wav"
+            }),
+            app_data("custom_clipboard.wav")
+        );
+        assert_eq!(
+            sound_location(SoundTheme::Custom, SoundType::Done, NO_CUSTOM_FILES),
+            resource("resources/marimba_clipboard.wav")
+        );
+    }
+
+    #[test]
+    fn the_clipboard_sound_never_takes_the_custom_done_sound() {
+        assert_eq!(
+            sound_location(SoundTheme::Custom, SoundType::Clipboard, |file| {
+                file == "custom_done.wav"
+            }),
             resource("resources/marimba_clipboard.wav")
         );
     }

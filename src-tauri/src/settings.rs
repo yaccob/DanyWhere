@@ -487,6 +487,11 @@ pub struct AppSettings {
     pub audio_feedback_volume: f32,
     #[serde(default = "default_sound_theme")]
     pub sound_theme: SoundTheme,
+    /// DanyWhere: a sound once a dictation is completely done, post-processing
+    /// included, however it was delivered (user, 2026-11-15). Plays only
+    /// while `audio_feedback` is on. See `delivery::sound_after_dictation`.
+    #[serde(default = "default_done_sound")]
+    pub done_sound: bool,
     #[serde(default = "default_start_hidden")]
     pub start_hidden: bool,
     #[serde(default = "default_autostart_enabled")]
@@ -851,6 +856,10 @@ fn default_audio_feedback_volume() -> f32 {
 
 fn default_sound_theme() -> SoundTheme {
     SoundTheme::Marimba
+}
+
+fn default_done_sound() -> bool {
+    true
 }
 
 fn default_theme() -> Theme {
@@ -1274,6 +1283,7 @@ pub fn get_default_settings() -> AppSettings {
         audio_feedback: false,
         audio_feedback_volume: default_audio_feedback_volume(),
         sound_theme: default_sound_theme(),
+        done_sound: default_done_sound(),
         start_hidden: default_start_hidden(),
         autostart_enabled: default_autostart_enabled(),
         update_checks_enabled: default_update_checks_enabled(),
@@ -2038,6 +2048,16 @@ mod tests {
         assert!(settings.filler_word_removal_enabled);
         // Bindings default to empty; the load path merges the real defaults in.
         assert!(settings.bindings.is_empty());
+    }
+
+    /// DanyWhere: the done sound is on for new installations and for every
+    /// store written before it existed.
+    #[test]
+    fn a_store_without_the_done_sound_turns_it_on() {
+        let settings: AppSettings = serde_json::from_value(serde_json::json!({}))
+            .expect("all AppSettings fields need serde defaults");
+        assert!(settings.done_sound);
+        assert!(get_default_settings().done_sound);
     }
 
     /// Frozen snapshot of a real v0.9.0-era settings store, as written to
