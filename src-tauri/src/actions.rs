@@ -114,6 +114,9 @@ pub fn current_recording_session() -> u64 {
 struct FinishGuard(AppHandle, Arc<TranscriptionManager>);
 impl Drop for FinishGuard {
     fn drop(&mut self) {
+        // DanyWhere: the dictation's own profile ends with it, before the
+        // coordinator may start the next one.
+        crate::app_profiles::end_dictation();
         self.1.maybe_unload_immediately("transcription session");
         if let Some(c) = self.0.try_state::<TranscriptionCoordinator>() {
             c.notify_processing_finished();
@@ -547,7 +550,8 @@ pub(crate) async fn process_transcription_output(
     post_process: bool,
     context: &crate::dictation_context::ContextQuery,
 ) -> ProcessedTranscription {
-    let settings = get_settings(app);
+    // DanyWhere: with the values of the dictation's own profile, if any.
+    let settings = crate::app_profiles::dictation_settings(app);
     let mut final_text = transcription.to_string();
     let mut post_processed_text: Option<String> = None;
     let mut post_process_prompt: Option<String> = None;
@@ -622,10 +626,14 @@ impl ShortcutAction for TranscribeAction {
         let tm = app.state::<Arc<TranscriptionManager>>();
         let rm = app.state::<Arc<AudioRecordingManager>>();
 
+        // DanyWhere: the profile of the app in front, when it has one of
+        // its own (`app_profiles`); its values apply until the dictation ends.
+        let dictation_profile = crate::app_profiles::begin_dictation(app);
+
         // Load ASR model and VAD model in parallel
         let kickoff_started = Instant::now();
         // An empty selection has nothing to load; the check below says so.
-        let selected_model = get_settings(app).selected_model;
+        let selected_model = crate::app_profiles::dictation_settings(app).selected_model;
         let load_started = !selected_model.is_empty() && tm.initiate_model_load(true);
         let rm_clone = Arc::clone(&rm);
         std::thread::spawn(move || {
@@ -637,9 +645,11 @@ impl ShortcutAction for TranscribeAction {
 
         // Don't open the mic if nothing can transcribe the recording. A load
         // started above reports its own failure; one already running doesn't.
-        if !tm.is_model_loaded() {
+        // DanyWhere: also when another model than this dictation's is loaded.
+        if !tm.is_model_loaded() || tm.get_current_model().as_deref() != Some(&selected_model) {
             if selected_model.is_empty() {
                 warn!("Not starting recording: no model is selected");
+                crate::app_profiles::end_dictation();
                 tm.raise_no_model_selected();
                 return;
             }
@@ -648,6 +658,7 @@ impl ShortcutAction for TranscribeAction {
                 .get_model_path(&selected_model)
             {
                 warn!("Not starting recording: no model can transcribe it ({})", e);
+                crate::app_profiles::end_dictation();
                 if !load_started {
                     tm.raise_model_load_failed(&selected_model, &e);
                 }
@@ -666,7 +677,8 @@ impl ShortcutAction for TranscribeAction {
 
         // Get the microphone mode to determine audio feedback timing
         let plan_started = Instant::now();
-        let settings = get_settings(app);
+        // DanyWhere: with the values of the dictation's own profile, if any.
+        let settings = crate::app_profiles::dictation_settings(app);
         let is_always_on = settings.always_on_microphone;
 
         let selected_model_info = app
@@ -703,6 +715,8 @@ impl ShortcutAction for TranscribeAction {
         // doesn't stream (or whose capability is not known yet) gets the compact
         // pill instead of an oversized transparent live window.
         let overlay_started = Instant::now();
+        // DanyWhere: the overlay names a profile that isn't the active one.
+        crate::overlay::set_dictation_profile(app, dictation_profile);
         match settings.overlay_style {
             OverlayStyle::Live if model_supports_streaming => utils::show_streaming_overlay(app),
             OverlayStyle::Live | OverlayStyle::Minimal => show_recording_overlay(app),
@@ -784,6 +798,7 @@ impl ShortcutAction for TranscribeAction {
             // Starting failed (for example due to blocked microphone permissions).
             // Revert UI state so we don't stay stuck in the recording overlay.
             tm.cancel_stream();
+            crate::app_profiles::end_dictation();
             set_tray_state(app, TrayIconState::Idle);
             if let Some(err) = recording_error {
                 notices::raise(
@@ -839,8 +854,13 @@ impl ShortcutAction for TranscribeAction {
         play_feedback_sound(app, SoundType::Stop);
 
         let binding_id = binding_id.to_string(); // Clone binding_id for the async task
-        let post_process = self.post_process;
-        let with_context = self.post_process && self.with_context;
+                                                 // DanyWhere: a dictation profile other than the active one decides
+                                                 // with its own switch whether to post-process (`app_profiles`).
+        let post_process = crate::app_profiles::effective_post_process(
+            self.post_process,
+            crate::app_profiles::dictation_values().as_ref(),
+        );
+        let with_context = post_process && self.with_context;
         // DanyWhere: the recording whose window was captured at its start.
         let context_session = RECORDING_SESSION.load(Ordering::SeqCst);
         let cancel_generation = rm.cancel_generation();
@@ -1314,6 +1334,19 @@ impl ShortcutAction for CycleWordListAction {
     }
 }
 
+// Choose Profile by Application on/off (DanyWhere, `app_profiles`)
+struct ToggleProfileAutoAction;
+
+impl ShortcutAction for ToggleProfileAutoAction {
+    fn start(&self, _app: &AppHandle, _binding_id: &str, _shortcut_str: &str) {
+        // Switched on release, so a held key or key repeat switches once.
+    }
+
+    fn stop(&self, app: &AppHandle, _binding_id: &str, _shortcut_str: &str) {
+        crate::app_profiles::toggle_from_shortcut(app);
+    }
+}
+
 // Test Action
 struct TestAction;
 
@@ -1378,6 +1411,10 @@ pub static ACTION_MAP: Lazy<HashMap<String, Arc<dyn ShortcutAction>>> = Lazy::ne
     map.insert(
         "cycle_word_list".to_string(),
         Arc::new(CycleWordListAction) as Arc<dyn ShortcutAction>,
+    );
+    map.insert(
+        crate::app_profiles::TOGGLE_BINDING.to_string(),
+        Arc::new(ToggleProfileAutoAction) as Arc<dyn ShortcutAction>,
     );
     map.insert(
         "test".to_string(),

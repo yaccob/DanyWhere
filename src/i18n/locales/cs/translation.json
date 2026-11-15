@@ -14,7 +14,8 @@
     "wordList": "Seznam slov",
     "onlyGlobalWordList": "Žádný doplňkový seznam",
     "profile": "Profil",
-    "defaultProfile": "Výchozí"
+    "defaultProfile": "Výchozí",
+    "profileAutoByApp": "Vybírat profil podle aplikace"
   },
   "sidebar": {
     "general": "Obecné",
@@ -373,6 +374,10 @@
           "cycle_word_list": {
             "name": "Přepnout seznam slov",
             "description": "Zapne další doplňkový seznam slov aktivního profilu; po posledním není zapnutý žádný."
+          },
+          "toggle_profile_auto": {
+            "name": "Vybírat profil podle aplikace",
+            "description": "Zapne nebo vypne výběr profilu podle aplikace. Funguje, dokud jsou nějakému profilu přiřazeny aplikace."
           }
         },
         "errors": {
@@ -465,11 +470,29 @@
         "models": "Zde zvolený model patří k profilu „{{name}}“.",
         "postProcessing": "Poskytovatel, model, prompty a limity kontextu patří k profilu „{{name}}“; API klíče platí pro všechny profily."
       },
+      "apps": {
+        "label": "Automaticky se používá v:",
+        "none": "zatím v žádné aplikaci",
+        "remove": "Odebrat {{name}}",
+        "add": "Přidat aplikaci…",
+        "running": "běží",
+        "movesFrom": "nyní v „{{name}}“, přesune se sem",
+        "idPlaceholder": "Program, např. Code.exe",
+        "addTyped": "Přidat"
+      },
+      "autoByApp": {
+        "label": "Vybírat profil podle aplikace",
+        "description": "Diktování do aplikace přiřazené profilu použije tento profil; všude jinde aktivní profil. Přepnout to lze i v nabídce v oznamovací oblasti a klávesovou zkratkou.",
+        "noApps": "Přiřaďte aplikace profilu pod jeho názvem; do té doby to nemá žádný účinek.",
+        "short": "Podle aplikace"
+      },
       "errors": {
         "switch": "Profil se nepodařilo přepnout",
         "duplicate": "Profil se nepodařilo duplikovat",
         "rename": "Profil se nepodařilo přejmenovat",
-        "delete": "Profil se nepodařilo smazat"
+        "delete": "Profil se nepodařilo smazat",
+        "apps": "Aplikace se nepodařilo přiřadit",
+        "autoByApp": "Výběr podle aplikace se nepodařilo přepnout"
       }
     },
     "profileTransfer": {
@@ -489,6 +512,8 @@
       "exportDone": "Exportováno",
       "importDone": "„{{name}}“ importován",
       "importDoneWithKey": "„{{name}}“ importován s API klíčem pro {{provider}}",
+      "droppedAppsTitle": "Aplikace zůstávají u jiných profilů",
+      "droppedApps": "Již používá „{{name}}“: {{apps}}.",
       "exportFailed": "Profil se nepodařilo exportovat",
       "importFailed": "Profil se nepodařilo importovat",
       "replaceKeyTitle": "Nahradit API klíč?",
@@ -1217,7 +1242,10 @@
     "notReady": "Ještě není hotovo",
     "wordList": "Seznam slov: {{name}}",
     "wordListGlobalOnly": "Žádný doplňkový seznam",
-    "profile": "Profil: {{name}}"
+    "profile": "Profil: {{name}}",
+    "profileAutoOn": "Profil podle aplikace: zapnuto",
+    "profileAutoOff": "Profil podle aplikace: vypnuto",
+    "withProfile": "{{label}} · {{name}}"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} může blokovat 1 zkratku",

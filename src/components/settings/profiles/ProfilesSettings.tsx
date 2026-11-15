@@ -1,11 +1,13 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { Profile } from "@/bindings";
+import { commands, type ApplicationInfo, type Profile } from "@/bindings";
 import { useProfiles } from "@/hooks/useProfiles";
 import { canDeleteProfile, profileAfterDelete } from "@/lib/utils/profiles";
 import { Button } from "../../ui/Button";
 import { Dialog } from "../../ui/Dialog";
 import { SettingsGroup } from "../../ui/SettingsGroup";
+import { ProfileApps } from "./ProfileApps";
+import { ProfileAutoByApp } from "./ProfileAutoByApp";
 import { ProfileNameDialog } from "./ProfileNameDialog";
 import { ProfileExportButton } from "./ProfileExportButton";
 import { ProfileImportButton } from "./ProfileImportButton";
@@ -30,9 +32,21 @@ export const ProfilesSettings: React.FC = () => {
     duplicate,
     rename,
     remove,
+    setApps,
   } = useProfiles();
   const [pending, setPending] = useState<Pending>(null);
   const close = () => setPending(null);
+  // DanyWhere: the applications to assign (`app_profiles.rs`), from two
+  // profiles on, when assigning means anything.
+  const [applications, setApplications] = useState<ApplicationInfo[]>([]);
+  const several = profiles.length > 1;
+  useEffect(() => {
+    if (!several) return;
+    commands
+      .listApplications()
+      .then(setApplications)
+      .catch(() => setApplications([]));
+  }, [several]);
 
   if (profiles.length === 0) return null;
 
@@ -55,70 +69,80 @@ export const ProfilesSettings: React.FC = () => {
           const isActive = profile.id === active?.id;
           const deletable = canDeleteProfile(profiles, profile.id);
           return (
-            <div
-              key={profile.id}
-              className="flex items-center justify-between gap-3 min-h-12 px-4 p-2"
-            >
-              <div className="flex items-center gap-2 min-w-0">
-                <span
-                  className="text-sm font-medium truncate"
-                  title={displayName(profile)}
-                >
-                  {displayName(profile)}
-                </span>
-                {isActive && (
-                  <span className="shrink-0 rounded-full bg-logo-primary/20 px-2 py-0.5 text-xs font-medium">
-                    {t("settings.profiles.active")}
+            <div key={profile.id}>
+              <div className="flex items-center justify-between gap-3 min-h-12 px-4 p-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span
+                    className="text-sm font-medium truncate"
+                    title={displayName(profile)}
+                  >
+                    {displayName(profile)}
                   </span>
-                )}
-              </div>
-              <div className="flex items-center gap-1 shrink-0">
-                {!isActive && (
+                  {isActive && (
+                    <span className="shrink-0 rounded-full bg-logo-primary/20 px-2 py-0.5 text-xs font-medium">
+                      {t("settings.profiles.active")}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  {!isActive && (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => switchTo(profile.id)}
+                      disabled={busy}
+                    >
+                      {t("settings.profiles.use")}
+                    </Button>
+                  )}
                   <Button
-                    variant="secondary"
+                    variant="ghost"
                     size="sm"
-                    onClick={() => switchTo(profile.id)}
+                    onClick={() => setPending({ kind: "duplicate", profile })}
                     disabled={busy}
                   >
-                    {t("settings.profiles.use")}
+                    {t("settings.profiles.duplicate")}
                   </Button>
-                )}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setPending({ kind: "duplicate", profile })}
-                  disabled={busy}
-                >
-                  {t("settings.profiles.duplicate")}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setPending({ kind: "rename", profile })}
-                  disabled={busy}
-                >
-                  {t("settings.profiles.rename")}
-                </Button>
-                <ProfileExportButton
-                  profileId={profile.id}
-                  displayName={displayName(profile)}
-                  disabled={busy}
-                />
-                <Button
-                  variant="danger-ghost"
-                  size="sm"
-                  onClick={() => setPending({ kind: "delete", profile })}
-                  disabled={busy || !deletable}
-                  title={
-                    deletable ? undefined : t("settings.profiles.lastProfile")
-                  }
-                >
-                  {t("settings.profiles.delete")}
-                </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setPending({ kind: "rename", profile })}
+                    disabled={busy}
+                  >
+                    {t("settings.profiles.rename")}
+                  </Button>
+                  <ProfileExportButton
+                    profileId={profile.id}
+                    displayName={displayName(profile)}
+                    disabled={busy}
+                  />
+                  <Button
+                    variant="danger-ghost"
+                    size="sm"
+                    onClick={() => setPending({ kind: "delete", profile })}
+                    disabled={busy || !deletable}
+                    title={
+                      deletable ? undefined : t("settings.profiles.lastProfile")
+                    }
+                  >
+                    {t("settings.profiles.delete")}
+                  </Button>
+                </div>
               </div>
+              {several && (
+                <ProfileApps
+                  profile={profile}
+                  profiles={profiles}
+                  applications={applications}
+                  displayName={displayName}
+                  busy={busy}
+                  onChange={(apps) => void setApps(profile.id, apps)}
+                />
+              )}
             </div>
           );
         })}
+        <ProfileAutoByApp />
         <div className="flex items-center justify-end gap-3 min-h-12 px-4 p-2">
           <ProfileImportButton />
         </div>

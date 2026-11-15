@@ -14,7 +14,8 @@
     "wordList": "Word List",
     "onlyGlobalWordList": "No Additional List",
     "profile": "Profile",
-    "defaultProfile": "Default"
+    "defaultProfile": "Default",
+    "profileAutoByApp": "Choose Profile by Application"
   },
   "sidebar": {
     "general": "General",
@@ -373,6 +374,10 @@
           "cycle_word_list": {
             "name": "Switch Word List",
             "description": "Switches on the next additional word list of the active profile; after the last one, none is on."
+          },
+          "toggle_profile_auto": {
+            "name": "Choose Profile by Application",
+            "description": "Turns choosing the profile by application on or off. Works while applications are assigned to a profile."
           }
         },
         "errors": {
@@ -465,11 +470,29 @@
         "models": "The model chosen here belongs to the profile “{{name}}”.",
         "postProcessing": "Provider, model, prompts and context limits belong to the profile “{{name}}”; API keys apply to all profiles."
       },
+      "apps": {
+        "label": "Used automatically in:",
+        "none": "no application yet",
+        "remove": "Remove {{name}}",
+        "add": "Add application…",
+        "running": "running",
+        "movesFrom": "now in “{{name}}”, moves here",
+        "idPlaceholder": "Program, e.g. Code.exe",
+        "addTyped": "Add"
+      },
+      "autoByApp": {
+        "label": "Choose Profile by Application",
+        "description": "Dictating into an application assigned to a profile uses that profile; everywhere else, the active one. The tray menu and a shortcut switch this too.",
+        "noApps": "Assign applications to a profile below its name; until then this has no effect.",
+        "short": "By application"
+      },
       "errors": {
         "switch": "Couldn't switch profiles",
         "duplicate": "Couldn't duplicate the profile",
         "rename": "Couldn't rename the profile",
-        "delete": "Couldn't delete the profile"
+        "delete": "Couldn't delete the profile",
+        "apps": "Couldn't assign the applications",
+        "autoByApp": "Couldn't switch choosing by application"
       }
     },
     "profileTransfer": {
@@ -489,6 +512,8 @@
       "exportDone": "Exported",
       "importDone": "\"{{name}}\" imported",
       "importDoneWithKey": "\"{{name}}\" imported with the API key for {{provider}}",
+      "droppedAppsTitle": "Applications Kept by Other Profiles",
+      "droppedApps": "Already used by “{{name}}”: {{apps}}.",
       "exportFailed": "Couldn't Export Profile",
       "importFailed": "Couldn't Import Profile",
       "replaceKeyTitle": "Replace API Key?",
@@ -1217,7 +1242,10 @@
     "notReady": "Not ready yet",
     "wordList": "Word list: {{name}}",
     "wordListGlobalOnly": "No additional list",
-    "profile": "Profile: {{name}}"
+    "profile": "Profile: {{name}}",
+    "profileAutoOn": "Profile by application: on",
+    "profileAutoOff": "Profile by application: off",
+    "withProfile": "{{label}} · {{name}}"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} may be blocking 1 shortcut",

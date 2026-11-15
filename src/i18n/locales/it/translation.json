@@ -14,7 +14,8 @@
     "wordList": "Elenco di parole",
     "onlyGlobalWordList": "Nessun elenco aggiuntivo",
     "profile": "Profilo",
-    "defaultProfile": "Predefinito"
+    "defaultProfile": "Predefinito",
+    "profileAutoByApp": "Scegli il profilo in base all'applicazione"
   },
   "sidebar": {
     "general": "Generale",
@@ -373,6 +374,10 @@
           "cycle_word_list": {
             "name": "Cambia elenco di parole",
             "description": "Attiva l'elenco di parole aggiuntivo successivo del profilo attivo; dopo l'ultimo non ne resta attivo nessuno."
+          },
+          "toggle_profile_auto": {
+            "name": "Scegli il profilo in base all'applicazione",
+            "description": "Attiva o disattiva la scelta del profilo in base all'applicazione. Funziona finché ci sono applicazioni assegnate a un profilo."
           }
         },
         "errors": {
@@ -465,11 +470,29 @@
         "models": "Il modello scelto qui appartiene al profilo «{{name}}».",
         "postProcessing": "Provider, modello, prompt e limiti del contesto appartengono al profilo «{{name}}»; le chiavi API valgono per tutti i profili."
       },
+      "apps": {
+        "label": "Usato automaticamente in:",
+        "none": "ancora nessuna applicazione",
+        "remove": "Rimuovi {{name}}",
+        "add": "Aggiungi applicazione…",
+        "running": "in esecuzione",
+        "movesFrom": "ora in «{{name}}», passa qui",
+        "idPlaceholder": "Programma, ad es. Code.exe",
+        "addTyped": "Aggiungi"
+      },
+      "autoByApp": {
+        "label": "Scegli il profilo in base all'applicazione",
+        "description": "Dettare in un'applicazione assegnata a un profilo usa quel profilo; ovunque altrove, quello attivo. Anche il menu dell'area di notifica e una scorciatoia lo cambiano.",
+        "noApps": "Assegna applicazioni a un profilo sotto il suo nome; fino ad allora questo non ha effetto.",
+        "short": "In base all'applicazione"
+      },
       "errors": {
         "switch": "Impossibile cambiare profilo",
         "duplicate": "Impossibile duplicare il profilo",
         "rename": "Impossibile rinominare il profilo",
-        "delete": "Impossibile eliminare il profilo"
+        "delete": "Impossibile eliminare il profilo",
+        "apps": "Impossibile assegnare le applicazioni",
+        "autoByApp": "Impossibile cambiare la scelta in base all'applicazione"
       }
     },
     "profileTransfer": {
@@ -489,6 +512,8 @@
       "exportDone": "Esportato",
       "importDone": "«{{name}}» importato",
       "importDoneWithKey": "«{{name}}» importato con la chiave API per {{provider}}",
+      "droppedAppsTitle": "Applicazioni che restano ad altri profili",
+      "droppedApps": "Già usate da «{{name}}»: {{apps}}.",
       "exportFailed": "Impossibile esportare il profilo",
       "importFailed": "Impossibile importare il profilo",
       "replaceKeyTitle": "Sostituire la chiave API?",
@@ -1217,7 +1242,10 @@
     "notReady": "Non ancora pronto",
     "wordList": "Elenco di parole: {{name}}",
     "wordListGlobalOnly": "Nessun elenco aggiuntivo",
-    "profile": "Profilo: {{name}}"
+    "profile": "Profilo: {{name}}",
+    "profileAutoOn": "Profilo in base all'applicazione: attivo",
+    "profileAutoOff": "Profilo in base all'applicazione: disattivo",
+    "withProfile": "{{label}} · {{name}}"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} potrebbe bloccare 1 scorciatoia",

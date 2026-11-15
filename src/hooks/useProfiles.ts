@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, type Profile, type Result } from "@/bindings";
 import { activeProfile, profileDisplayName } from "@/lib/utils/profiles";
+import { hasAssignments } from "@/lib/utils/profileApps";
 import { useModelStore } from "@/stores/modelStore";
 import { notify } from "@/stores/noticeStore";
 import { useSettings } from "./useSettings";
@@ -19,6 +20,9 @@ export const useProfiles = () => {
 
   const profiles = getSetting("profiles") ?? [];
   const active = activeProfile(profiles, getSetting("active_profile_id"));
+  // DanyWhere: choosing the profile by application (`app_profiles.rs`).
+  const autoByApp = getSetting("profile_auto_by_app") ?? true;
+  const assigned = hasAssignments(profiles);
   // The same translated name the tray and the overlay use (strand T1).
   const defaultName = t("tray.defaultProfile");
   const displayName = useCallback(
@@ -78,9 +82,25 @@ export const useProfiles = () => {
       true,
     );
 
+  const setApps = (id: string, apps: string[]) =>
+    run(
+      () => commands.setProfileApps(id, apps),
+      t("settings.profiles.errors.apps"),
+    );
+
+  const setAutoByApp = (enabled: boolean) =>
+    run(
+      () => commands.setProfileAutoByApp(enabled),
+      t("settings.profiles.errors.autoByApp"),
+    );
+
   return {
     profiles,
     active,
+    autoByApp,
+    assigned,
+    setApps,
+    setAutoByApp,
     busy,
     defaultName,
     displayName,

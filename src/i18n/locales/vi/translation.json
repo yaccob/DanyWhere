@@ -14,7 +14,8 @@
     "wordList": "Danh sách từ",
     "onlyGlobalWordList": "Không có danh sách bổ sung",
     "profile": "Hồ sơ",
-    "defaultProfile": "Mặc định"
+    "defaultProfile": "Mặc định",
+    "profileAutoByApp": "Chọn hồ sơ theo ứng dụng"
   },
   "sidebar": {
     "general": "Chung",
@@ -373,6 +374,10 @@
           "cycle_word_list": {
             "name": "Đổi danh sách từ",
             "description": "Bật danh sách từ bổ sung tiếp theo của hồ sơ đang dùng; sau danh sách cuối cùng, không danh sách nào được bật."
+          },
+          "toggle_profile_auto": {
+            "name": "Chọn hồ sơ theo ứng dụng",
+            "description": "Bật hoặc tắt việc chọn hồ sơ theo ứng dụng. Có tác dụng khi có ứng dụng được gán cho một hồ sơ."
           }
         },
         "errors": {
@@ -465,11 +470,29 @@
         "models": "Mô hình chọn ở đây thuộc hồ sơ “{{name}}”.",
         "postProcessing": "Nhà cung cấp, mô hình, câu lệnh và giới hạn ngữ cảnh thuộc hồ sơ “{{name}}”; khóa API áp dụng cho mọi hồ sơ."
       },
+      "apps": {
+        "label": "Tự động dùng trong:",
+        "none": "chưa có ứng dụng nào",
+        "remove": "Xóa {{name}}",
+        "add": "Thêm ứng dụng…",
+        "running": "đang chạy",
+        "movesFrom": "hiện ở “{{name}}”, sẽ chuyển sang đây",
+        "idPlaceholder": "Chương trình, vd. Code.exe",
+        "addTyped": "Thêm"
+      },
+      "autoByApp": {
+        "label": "Chọn hồ sơ theo ứng dụng",
+        "description": "Đọc chính tả vào ứng dụng được gán cho một hồ sơ sẽ dùng hồ sơ đó; ở mọi nơi khác dùng hồ sơ đang hoạt động. Menu khay hệ thống và một phím tắt cũng chuyển đổi điều này.",
+        "noApps": "Gán ứng dụng cho một hồ sơ bên dưới tên của nó; trước đó điều này không có tác dụng.",
+        "short": "Theo ứng dụng"
+      },
       "errors": {
         "switch": "Không thể chuyển hồ sơ",
         "duplicate": "Không thể nhân bản hồ sơ",
         "rename": "Không thể đổi tên hồ sơ",
-        "delete": "Không thể xóa hồ sơ"
+        "delete": "Không thể xóa hồ sơ",
+        "apps": "Không thể gán các ứng dụng",
+        "autoByApp": "Không thể chuyển đổi việc chọn theo ứng dụng"
       }
     },
     "profileTransfer": {
@@ -489,6 +512,8 @@
       "exportDone": "Đã xuất",
       "importDone": "Đã nhập \"{{name}}\"",
       "importDoneWithKey": "Đã nhập \"{{name}}\" cùng khóa API cho {{provider}}",
+      "droppedAppsTitle": "Ứng dụng vẫn thuộc hồ sơ khác",
+      "droppedApps": "Đã được “{{name}}” sử dụng: {{apps}}.",
       "exportFailed": "Không thể xuất hồ sơ",
       "importFailed": "Không thể nhập hồ sơ",
       "replaceKeyTitle": "Thay khóa API?",
@@ -1217,7 +1242,10 @@
     "notReady": "Chưa sẵn sàng",
     "wordList": "Danh sách từ: {{name}}",
     "wordListGlobalOnly": "Không có danh sách bổ sung",
-    "profile": "Hồ sơ: {{name}}"
+    "profile": "Hồ sơ: {{name}}",
+    "profileAutoOn": "Hồ sơ theo ứng dụng: bật",
+    "profileAutoOff": "Hồ sơ theo ứng dụng: tắt",
+    "withProfile": "{{label}} · {{name}}"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} có thể đang chặn 1 phím tắt",

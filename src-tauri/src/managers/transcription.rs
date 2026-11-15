@@ -695,6 +695,11 @@ impl TranscriptionManager {
     /// Starts loading the model in the background unless it's loaded or
     /// loading, and returns whether it did. Only a dictation sets
     /// `raise_notice`: file jobs and Settings report their own failures.
+    ///
+    /// DanyWhere: the model is the one the dictation's profile has
+    /// (`app_profiles::dictation_settings`, the selected one outside a
+    /// dictation into an app with its own profile), and another loaded model
+    /// is replaced by it (see [`needs_model_load`]).
     pub fn initiate_model_load(&self, raise_notice: bool) -> bool {
         let mut is_loading = self.is_loading.lock().unwrap();
         if *is_loading {
@@ -702,7 +707,14 @@ impl TranscriptionManager {
         }
 
         let reload_pending = self.reload_model_on_next_use.load(Ordering::Acquire);
-        if !reload_pending && self.is_model_loaded() {
+        let wanted = crate::app_profiles::dictation_settings(&self.app_handle).selected_model;
+        if !needs_model_load(
+            &wanted,
+            self.get_current_model().as_deref(),
+            self.is_model_loaded(),
+            reload_pending,
+            self.job_active(),
+        ) {
             return false;
         }
 
@@ -714,11 +726,10 @@ impl TranscriptionManager {
                     .reload_model_on_next_use
                     .store(false, Ordering::Release);
             }
-            let settings = get_settings(&self_clone.app_handle);
-            if let Err(e) = self_clone.load_model(&settings.selected_model) {
-                error!("Failed to load model {}: {}", settings.selected_model, e);
+            if let Err(e) = self_clone.load_model(&wanted) {
+                error!("Failed to load model {}: {}", wanted, e);
                 if raise_notice {
-                    self_clone.raise_model_load_failed(&settings.selected_model, &e);
+                    self_clone.raise_model_load_failed(&wanted, &e);
                 }
             }
             let mut is_loading = self_clone.is_loading.lock().unwrap();
@@ -1020,7 +1031,8 @@ impl TranscriptionManager {
             Some(outcome) => outcome,
             None => self.decode_batch(audio)?,
         };
-        let settings = get_settings(&self.app_handle);
+        // DanyWhere: with the values of the dictation's own profile, if any.
+        let settings = crate::app_profiles::dictation_settings(&self.app_handle);
         let language = outcome
             .setup
             .spoken_language(outcome.model_detected_language.as_deref());
@@ -1085,7 +1097,8 @@ impl TranscriptionManager {
             return Err(anyhow::anyhow!("Model is not loaded for transcription."));
         };
 
-        let settings = get_settings(&self.app_handle);
+        // DanyWhere: with the values of the dictation's own profile, if any.
+        let settings = crate::app_profiles::dictation_settings(&self.app_handle);
         // Validate against the model that's actually loaded (which can differ
         // from settings.selected_model when a caller loaded a specific model —
         // e.g. the --transcribe-file path's --model), not the persisted
@@ -1616,6 +1629,26 @@ fn with_model_detected_language(
         }
         (evidence, _) => evidence,
     }
+}
+
+/// DanyWhere: whether the model `wanted` has to be loaded before it is used:
+/// nothing is loaded, a reload is pending, or another model is loaded (a
+/// dictation into an app whose profile has another model, or the first one
+/// after it). A file job in progress (`job_active`) keeps the model it holds.
+pub(crate) fn needs_model_load(
+    wanted: &str,
+    loaded: Option<&str>,
+    engine_loaded: bool,
+    reload_pending: bool,
+    job_active: bool,
+) -> bool {
+    if reload_pending || !engine_loaded {
+        return true;
+    }
+    if job_active {
+        return false;
+    }
+    !wanted.is_empty() && loaded != Some(wanted)
 }
 
 /// Custom words for transcribe-cpp's `vocabulary` slot, in priority order:
@@ -2664,5 +2697,54 @@ impl Drop for TranscriptionManager {
                 debug!("Idle watcher thread joined successfully");
             }
         }
+    }
+}
+
+/// DanyWhere: which model a use has to load first (`app_profiles`).
+#[cfg(test)]
+mod model_load_tests {
+    use super::needs_model_load;
+
+    #[test]
+    fn loads_when_nothing_is_loaded_or_a_reload_is_pending() {
+        assert!(needs_model_load("parakeet", None, false, false, false));
+        assert!(needs_model_load(
+            "parakeet",
+            Some("parakeet"),
+            true,
+            true,
+            false
+        ));
+        assert!(!needs_model_load(
+            "parakeet",
+            Some("parakeet"),
+            true,
+            false,
+            false
+        ));
+    }
+
+    #[test]
+    fn replaces_another_loaded_model() {
+        assert!(needs_model_load(
+            "whisper",
+            Some("parakeet"),
+            true,
+            false,
+            false
+        ));
+        assert!(needs_model_load("whisper", None, true, false, false));
+    }
+
+    #[test]
+    fn keeps_the_model_a_file_job_holds_and_an_empty_wish_changes_nothing() {
+        assert!(!needs_model_load(
+            "whisper",
+            Some("parakeet"),
+            true,
+            false,
+            true
+        ));
+        assert!(!needs_model_load("", Some("parakeet"), true, false, false));
     }
 }

@@ -1,4 +1,5 @@
 mod actions;
+mod app_profiles;
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 mod apple_intelligence;
 mod audio_feedback;
@@ -274,7 +275,8 @@ fn initialize_core_logic(app_handle: &AppHandle) {
     let initial_theme = tray::get_current_theme(app_handle);
 
     // Choose the appropriate initial icon based on theme
-    let initial_icon_path = tray::get_icon_path(initial_theme, tray::TrayIconState::Idle, false);
+    let initial_icon_path =
+        tray::get_icon_path(initial_theme, tray::TrayIconState::Idle, false, false);
 
     let mut tray_builder = TrayIconBuilder::new()
         .icon(
@@ -401,6 +403,9 @@ fn initialize_core_logic(app_handle: &AppHandle) {
                 }
                 // Re-picking the checked item unchecks it natively; rebuild.
                 tray::rebuild_tray_menu(app);
+            }
+            tray::PROFILE_AUTO_ID => {
+                app_profiles::toggle_from_tray(app);
             }
             id if id.starts_with(tray::PROFILE_SELECT_PREFIX) => {
                 let profile_id = id
@@ -796,6 +801,9 @@ pub fn run(cli_args: CliArgs) {
             profile_transfer::export_profile,
             profile_transfer::inspect_profile_import,
             profile_transfer::import_profile,
+            app_profiles::set_profile_apps,
+            app_profiles::set_profile_auto_by_app,
+            app_profiles::list_applications,
             shortcut::suspend_all_bindings,
             shortcut::resume_all_bindings,
             shortcut::change_mute_while_recording_setting,

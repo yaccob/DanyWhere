@@ -13,6 +13,8 @@ import { useSettings } from "@/hooks/useSettings";
 import { Button } from "../../ui/Button";
 import { ProfilePasswordDialog } from "./ProfilePasswordDialog";
 import { transferErrorKey } from "@/lib/profileTransfer";
+import { appLabel, droppedByOwner } from "@/lib/utils/profileApps";
+import { profileDisplayName } from "@/lib/utils/profiles";
 import { notify } from "@/stores/noticeStore";
 import { useTransientStatus } from "./useTransientStatus";
 
@@ -50,10 +52,30 @@ export const ProfileImportButton: React.FC = () => {
     });
   };
 
+  // DanyWhere: the file's applications another profile here already has
+  // stay with that profile (`app_profiles`); say which, per profile.
+  const reportDroppedApps = async (dropped: string[]) => {
+    const groups = droppedByOwner(dropped, settings?.profiles ?? []);
+    if (groups.length === 0) return;
+    const applications = await commands.listApplications().catch(() => []);
+    notify({
+      title: t("settings.profileTransfer.droppedAppsTitle"),
+      detail: groups
+        .map(({ profile, apps }) =>
+          t("settings.profileTransfer.droppedApps", {
+            name: profileDisplayName(profile, t("tray.defaultProfile")),
+            apps: apps.map((app) => appLabel(app, applications)).join(", "),
+          }),
+        )
+        .join(" "),
+    });
+  };
+
   const finish = (result: ImportResult) => {
     setPending(null);
     setPasswordError(null);
     if (!result.profile) return;
+    void reportDroppedApps(result.dropped_apps);
     const name = result.profile.name;
     setStatus(
       result.key === "added" || result.key === "replaced"

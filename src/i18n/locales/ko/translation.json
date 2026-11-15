@@ -14,7 +14,8 @@
     "wordList": "단어 목록",
     "onlyGlobalWordList": "추가 목록 없음",
     "profile": "프로필",
-    "defaultProfile": "기본"
+    "defaultProfile": "기본",
+    "profileAutoByApp": "앱에 따라 프로필 선택"
   },
   "sidebar": {
     "general": "일반",
@@ -373,6 +374,10 @@
           "cycle_word_list": {
             "name": "단어 목록 전환",
             "description": "활성 프로필의 다음 추가 단어 목록을 켭니다. 마지막 목록 다음에는 아무 목록도 켜지지 않습니다."
+          },
+          "toggle_profile_auto": {
+            "name": "앱에 따라 프로필 선택",
+            "description": "앱에 따른 프로필 선택을 켜거나 끕니다. 프로필에 앱이 지정되어 있는 동안 작동합니다."
           }
         },
         "errors": {
@@ -465,11 +470,29 @@
         "models": "여기서 선택한 모델은 ‘{{name}}’ 프로필에 속합니다.",
         "postProcessing": "제공자, 모델, 프롬프트, 컨텍스트 한도는 ‘{{name}}’ 프로필에 속합니다. API 키는 모든 프로필에 적용됩니다."
       },
+      "apps": {
+        "label": "자동으로 사용되는 앱:",
+        "none": "아직 없음",
+        "remove": "{{name}} 제거",
+        "add": "앱 추가…",
+        "running": "실행 중",
+        "movesFrom": "현재 “{{name}}”, 여기로 이동",
+        "idPlaceholder": "프로그램, 예: Code.exe",
+        "addTyped": "추가"
+      },
+      "autoByApp": {
+        "label": "앱에 따라 프로필 선택",
+        "description": "프로필에 지정된 앱에 받아쓰기하면 그 프로필을 사용하고, 그 밖의 곳에서는 활성 프로필을 사용합니다. 트레이 메뉴와 단축키로도 전환할 수 있습니다.",
+        "noApps": "프로필 이름 아래에서 앱을 지정하세요. 그 전까지는 효과가 없습니다.",
+        "short": "앱에 따라"
+      },
       "errors": {
         "switch": "프로필을 전환하지 못했습니다",
         "duplicate": "프로필을 복제하지 못했습니다",
         "rename": "프로필 이름을 바꾸지 못했습니다",
-        "delete": "프로필을 삭제하지 못했습니다"
+        "delete": "프로필을 삭제하지 못했습니다",
+        "apps": "앱을 지정할 수 없습니다",
+        "autoByApp": "앱에 따른 선택을 전환할 수 없습니다"
       }
     },
     "profileTransfer": {
@@ -489,6 +512,8 @@
       "exportDone": "내보냄",
       "importDone": "\"{{name}}\" 가져옴",
       "importDoneWithKey": "\"{{name}}\"을(를) {{provider}} API 키와 함께 가져옴",
+      "droppedAppsTitle": "다른 프로필에 남은 앱",
+      "droppedApps": "이미 “{{name}}”에서 사용 중: {{apps}}.",
       "exportFailed": "프로필을 내보낼 수 없음",
       "importFailed": "프로필을 가져올 수 없음",
       "replaceKeyTitle": "API 키를 바꿀까요?",
@@ -1217,7 +1242,10 @@
     "notReady": "아직 준비되지 않음",
     "wordList": "단어 목록: {{name}}",
     "wordListGlobalOnly": "추가 목록 없음",
-    "profile": "프로필: {{name}}"
+    "profile": "프로필: {{name}}",
+    "profileAutoOn": "앱에 따른 프로필: 켬",
+    "profileAutoOff": "앱에 따른 프로필: 끔",
+    "withProfile": "{{label}} · {{name}}"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}}이(가) 단축키 1개를 차단하고 있을 수 있습니다",

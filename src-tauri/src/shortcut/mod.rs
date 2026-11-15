@@ -1210,7 +1210,10 @@ pub fn sync_post_process_shortcuts(app: &AppHandle, settings: &settings::AppSett
         crate::dictation_context::CONTEXT_BINDING,
     ] {
         if let Some(binding) = settings.bindings.get(id).cloned() {
-            if settings.post_process_enabled {
+            // DanyWhere: also while a profile with applications
+            // post-processes (`app_profiles::post_processing_reachable`).
+            if settings::registers_binding(id, settings, crate::delivery::INSERT_SERVICE_AVAILABLE)
+            {
                 let _ = register_shortcut(app, binding);
             } else {
                 let _ = unregister_shortcut(app, binding);
@@ -1218,6 +1221,21 @@ pub fn sync_post_process_shortcuts(app: &AppHandle, settings: &settings::AppSett
         }
     }
 
+    crate::secure_input::reconcile_fallback(app);
+}
+
+/// DanyWhere: registers the shortcut that turns choosing the profile by
+/// application on and off while applications are assigned, so that it takes
+/// no key from other apps before it is of use (`app_profiles`).
+pub fn sync_profile_toggle_shortcut(app: &AppHandle, settings: &settings::AppSettings) {
+    let id = crate::app_profiles::TOGGLE_BINDING;
+    if let Some(binding) = settings.bindings.get(id).cloned() {
+        if settings::registers_binding(id, settings, crate::delivery::INSERT_SERVICE_AVAILABLE) {
+            let _ = register_shortcut(app, binding);
+        } else {
+            let _ = unregister_shortcut(app, binding);
+        }
+    }
     crate::secure_input::reconcile_fallback(app);
 }
 
@@ -1702,6 +1720,27 @@ mod tests {
         assert!(super::handy_keys::validate_shortcut(raw).is_ok());
         assert!(
             crate::actions::ACTION_MAP.contains_key("cycle_word_list"),
+            "the shortcut has an action"
+        );
+    }
+
+    /// DanyWhere: turns choosing the profile by application on and off.
+    #[test]
+    fn has_a_default_shortcut_to_toggle_choosing_the_profile_by_app() {
+        let settings = crate::settings::get_default_settings();
+        let binding = settings
+            .bindings
+            .get(crate::app_profiles::TOGGLE_BINDING)
+            .expect("default binding 'toggle_profile_auto'");
+        #[cfg(target_os = "macos")]
+        assert_eq!(binding.default_binding, "ctrl+shift+a");
+        #[cfg(not(target_os = "macos"))]
+        assert_eq!(binding.default_binding, "alt+shift+a");
+        let raw = &binding.current_binding;
+        assert_eq!(super::tauri_impl::validate_shortcut(raw), Ok(()));
+        assert!(super::handy_keys::validate_shortcut(raw).is_ok());
+        assert!(
+            crate::actions::ACTION_MAP.contains_key(crate::app_profiles::TOGGLE_BINDING),
             "the shortcut has an action"
         );
     }

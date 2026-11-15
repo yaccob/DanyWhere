@@ -83,7 +83,7 @@ fn overlay_dimensions(state: &str) -> (f64, f64) {
         (OVERLAY_STREAM_WIDTH, OVERLAY_STREAM_HEIGHT)
     } else if matches!(
         state,
-        "clipboard" | "ready" | "not_ready" | "word_list" | "profile"
+        "clipboard" | "ready" | "not_ready" | "word_list" | "profile" | "profile_auto"
     ) {
         (OVERLAY_NOTICE_WIDTH, OVERLAY_HEIGHT)
     } else {
@@ -850,6 +850,32 @@ pub fn show_profile_notice(app_handle: &AppHandle, name: String, duration: std::
         let _ = overlay_window.emit("overlay-profile", serde_json::json!({ "name": name }));
     }
     show_timed_state(app_handle, "profile", duration);
+}
+
+/// DanyWhere: says for `duration` whether choosing the profile by
+/// application is now on (`app_profiles`). The caller skips it while a
+/// recording or transcription owns the overlay.
+pub fn show_profile_auto_notice(app_handle: &AppHandle, on: bool, duration: std::time::Duration) {
+    // Sent before the state, so the overlay has it when it renders.
+    if let Some(overlay_window) = app_handle.get_webview_window("recording_overlay") {
+        let _ = overlay_window.emit("overlay-profile-auto", serde_json::json!({ "on": on }));
+    }
+    show_timed_state(app_handle, "profile_auto", duration);
+}
+
+/// DanyWhere: the profile a dictation uses when it isn't the active one
+/// (`app_profiles`), shown with the dictation's working states; `None`
+/// clears it. Sent at the start of every dictation.
+pub fn set_dictation_profile(app_handle: &AppHandle, name: Option<String>) {
+    if !OVERLAY_ENABLED.load(Ordering::Relaxed) {
+        return;
+    }
+    if let Some(overlay_window) = app_handle.get_webview_window("recording_overlay") {
+        let _ = overlay_window.emit(
+            "overlay-dictation-profile",
+            serde_json::json!({ "name": name }),
+        );
+    }
 }
 
 /// Shows `state` for `duration`, then hides the overlay unless something else

@@ -14,7 +14,8 @@
     "wordList": "単語リスト",
     "onlyGlobalWordList": "追加のリストなし",
     "profile": "プロファイル",
-    "defaultProfile": "デフォルト"
+    "defaultProfile": "デフォルト",
+    "profileAutoByApp": "アプリごとにプロファイルを選択"
   },
   "sidebar": {
     "general": "一般",
@@ -373,6 +374,10 @@
           "cycle_word_list": {
             "name": "単語リストを切り替え",
             "description": "有効なプロファイルの次の追加単語リストをオンにします。最後のリストの次はどれもオンになりません。"
+          },
+          "toggle_profile_auto": {
+            "name": "アプリごとにプロファイルを選択",
+            "description": "アプリごとのプロファイル選択をオン/オフにします。プロファイルにアプリが割り当てられている間だけ働きます。"
           }
         },
         "errors": {
@@ -465,11 +470,29 @@
         "models": "ここで選んだモデルはプロファイル「{{name}}」に属します。",
         "postProcessing": "プロバイダー、モデル、プロンプト、コンテキストの上限はプロファイル「{{name}}」に属します。API キーはすべてのプロファイルに共通です。"
       },
+      "apps": {
+        "label": "自動で使うアプリ:",
+        "none": "まだありません",
+        "remove": "{{name}} を削除",
+        "add": "アプリを追加…",
+        "running": "実行中",
+        "movesFrom": "現在「{{name}}」、ここへ移動",
+        "idPlaceholder": "プログラム（例: Code.exe）",
+        "addTyped": "追加"
+      },
+      "autoByApp": {
+        "label": "アプリごとにプロファイルを選択",
+        "description": "プロファイルに割り当てたアプリへの音声入力はそのプロファイルを使い、それ以外ではアクティブなプロファイルを使います。トレイメニューとショートカットでも切り替えられます。",
+        "noApps": "プロファイル名の下でアプリを割り当ててください。それまでは効果がありません。",
+        "short": "アプリごと"
+      },
       "errors": {
         "switch": "プロファイルを切り替えられませんでした",
         "duplicate": "プロファイルを複製できませんでした",
         "rename": "プロファイルの名前を変更できませんでした",
-        "delete": "プロファイルを削除できませんでした"
+        "delete": "プロファイルを削除できませんでした",
+        "apps": "アプリを割り当てられませんでした",
+        "autoByApp": "アプリごとの選択を切り替えられませんでした"
       }
     },
     "profileTransfer": {
@@ -489,6 +512,8 @@
       "exportDone": "書き出しました",
       "importDone": "「{{name}}」を読み込みました",
       "importDoneWithKey": "「{{name}}」を {{provider}} の API キーと一緒に読み込みました",
+      "droppedAppsTitle": "他のプロファイルに残ったアプリ",
+      "droppedApps": "すでに「{{name}}」で使用中: {{apps}}。",
       "exportFailed": "プロファイルを書き出せませんでした",
       "importFailed": "プロファイルを読み込めませんでした",
       "replaceKeyTitle": "API キーを置き換えますか？",
@@ -1217,7 +1242,10 @@
     "notReady": "まだ準備中です",
     "wordList": "単語リスト: {{name}}",
     "wordListGlobalOnly": "追加のリストなし",
-    "profile": "プロファイル: {{name}}"
+    "profile": "プロファイル: {{name}}",
+    "profileAutoOn": "アプリごとのプロファイル: オン",
+    "profileAutoOff": "アプリごとのプロファイル: オフ",
+    "withProfile": "{{label}} · {{name}}"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} が1個のショートカットをブロックしている可能性があります",

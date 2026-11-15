@@ -14,7 +14,8 @@
     "wordList": "Lista słów",
     "onlyGlobalWordList": "Bez dodatkowej listy",
     "profile": "Profil",
-    "defaultProfile": "Domyślny"
+    "defaultProfile": "Domyślny",
+    "profileAutoByApp": "Wybieraj profil według aplikacji"
   },
   "sidebar": {
     "general": "Ogólne",
@@ -373,6 +374,10 @@
           "cycle_word_list": {
             "name": "Przełącz listę słów",
             "description": "Włącza następną dodatkową listę słów aktywnego profilu; po ostatniej żadna nie jest włączona."
+          },
+          "toggle_profile_auto": {
+            "name": "Wybieraj profil według aplikacji",
+            "description": "Włącza lub wyłącza wybór profilu według aplikacji. Działa, dopóki do jakiegoś profilu są przypisane aplikacje."
           }
         },
         "errors": {
@@ -465,11 +470,29 @@
         "models": "Wybrany tutaj model należy do profilu „{{name}}”.",
         "postProcessing": "Dostawca, model, prompty i limity kontekstu należą do profilu „{{name}}”; klucze API obowiązują we wszystkich profilach."
       },
+      "apps": {
+        "label": "Używany automatycznie w:",
+        "none": "jeszcze w żadnej aplikacji",
+        "remove": "Usuń {{name}}",
+        "add": "Dodaj aplikację…",
+        "running": "uruchomiona",
+        "movesFrom": "teraz w „{{name}}”, przejdzie tutaj",
+        "idPlaceholder": "Program, np. Code.exe",
+        "addTyped": "Dodaj"
+      },
+      "autoByApp": {
+        "label": "Wybieraj profil według aplikacji",
+        "description": "Dyktowanie do aplikacji przypisanej do profilu używa tego profilu; wszędzie indziej – aktywnego. Przełącza to też menu w zasobniku i skrót klawiszowy.",
+        "noApps": "Przypisz aplikacje do profilu pod jego nazwą; do tego czasu nie ma to żadnego efektu.",
+        "short": "Według aplikacji"
+      },
       "errors": {
         "switch": "Nie udało się przełączyć profilu",
         "duplicate": "Nie udało się zduplikować profilu",
         "rename": "Nie udało się zmienić nazwy profilu",
-        "delete": "Nie udało się usunąć profilu"
+        "delete": "Nie udało się usunąć profilu",
+        "apps": "Nie udało się przypisać aplikacji",
+        "autoByApp": "Nie udało się przełączyć wyboru według aplikacji"
       }
     },
     "profileTransfer": {
@@ -489,6 +512,8 @@
       "exportDone": "Wyeksportowano",
       "importDone": "Zaimportowano „{{name}}”",
       "importDoneWithKey": "Zaimportowano „{{name}}” z kluczem API dla {{provider}}",
+      "droppedAppsTitle": "Aplikacje zostają przy innych profilach",
+      "droppedApps": "Już używane przez „{{name}}”: {{apps}}.",
       "exportFailed": "Nie udało się wyeksportować profilu",
       "importFailed": "Nie udało się zaimportować profilu",
       "replaceKeyTitle": "Zastąpić klucz API?",
@@ -1217,7 +1242,10 @@
     "notReady": "Jeszcze niegotowe",
     "wordList": "Lista słów: {{name}}",
     "wordListGlobalOnly": "Bez dodatkowej listy",
-    "profile": "Profil: {{name}}"
+    "profile": "Profil: {{name}}",
+    "profileAutoOn": "Profil według aplikacji: wł.",
+    "profileAutoOff": "Profil według aplikacji: wył.",
+    "withProfile": "{{label}} · {{name}}"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} może blokować 1 skrót",

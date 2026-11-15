@@ -14,7 +14,8 @@
     "wordList": "Llista de paraules",
     "onlyGlobalWordList": "Cap llista addicional",
     "profile": "Perfil",
-    "defaultProfile": "Predeterminat"
+    "defaultProfile": "Predeterminat",
+    "profileAutoByApp": "Tria el perfil segons l'aplicació"
   },
   "sidebar": {
     "general": "General",
@@ -373,6 +374,10 @@
           "cycle_word_list": {
             "name": "Canvia la llista de paraules",
             "description": "Activa la següent llista de paraules addicional del perfil actiu; després de l'última, no n'hi ha cap d'activa."
+          },
+          "toggle_profile_auto": {
+            "name": "Tria el perfil segons l'aplicació",
+            "description": "Activa o desactiva la tria del perfil segons l'aplicació. Funciona mentre hi hagi aplicacions assignades a un perfil."
           }
         },
         "errors": {
@@ -465,11 +470,29 @@
         "models": "El model triat aquí pertany al perfil «{{name}}».",
         "postProcessing": "El proveïdor, el model, les indicacions i els límits del context pertanyen al perfil «{{name}}»; les claus de l'API valen per a tots els perfils."
       },
+      "apps": {
+        "label": "S'usa automàticament a:",
+        "none": "encara cap aplicació",
+        "remove": "Elimina {{name}}",
+        "add": "Afegeix una aplicació…",
+        "running": "en execució",
+        "movesFrom": "ara a «{{name}}», es mou aquí",
+        "idPlaceholder": "Programa, p. ex. Code.exe",
+        "addTyped": "Afegeix"
+      },
+      "autoByApp": {
+        "label": "Tria el perfil segons l'aplicació",
+        "description": "Dictar en una aplicació assignada a un perfil fa servir aquest perfil; a la resta, l'actiu. El menú de la safata i una drecera també ho canvien.",
+        "noApps": "Assigna aplicacions a un perfil sota el seu nom; fins aleshores això no té cap efecte.",
+        "short": "Segons l'aplicació"
+      },
       "errors": {
         "switch": "No s'ha pogut canviar de perfil",
         "duplicate": "No s'ha pogut duplicar el perfil",
         "rename": "No s'ha pogut canviar el nom del perfil",
-        "delete": "No s'ha pogut suprimir el perfil"
+        "delete": "No s'ha pogut suprimir el perfil",
+        "apps": "No s'han pogut assignar les aplicacions",
+        "autoByApp": "No s'ha pogut canviar la tria segons l'aplicació"
       }
     },
     "profileTransfer": {
@@ -489,6 +512,8 @@
       "exportDone": "Exportat",
       "importDone": "«{{name}}» importat",
       "importDoneWithKey": "«{{name}}» importat amb la clau API per a {{provider}}",
+      "droppedAppsTitle": "Aplicacions que es queden en altres perfils",
+      "droppedApps": "Ja les fa servir «{{name}}»: {{apps}}.",
       "exportFailed": "No s'ha pogut exportar el perfil",
       "importFailed": "No s'ha pogut importar el perfil",
       "replaceKeyTitle": "Vols substituir la clau API?",
@@ -1217,7 +1242,10 @@
     "notReady": "Encara no està a punt",
     "wordList": "Llista de paraules: {{name}}",
     "wordListGlobalOnly": "Cap llista addicional",
-    "profile": "Perfil: {{name}}"
+    "profile": "Perfil: {{name}}",
+    "profileAutoOn": "Perfil segons l'aplicació: activat",
+    "profileAutoOff": "Perfil segons l'aplicació: desactivat",
+    "withProfile": "{{label}} · {{name}}"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} pot estar blocant 1 drecera",

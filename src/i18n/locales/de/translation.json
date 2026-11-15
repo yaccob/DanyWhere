@@ -14,7 +14,8 @@
     "wordList": "Wortliste",
     "onlyGlobalWordList": "Keine zusätzliche Liste",
     "profile": "Profil",
-    "defaultProfile": "Standard"
+    "defaultProfile": "Standard",
+    "profileAutoByApp": "Profil nach Anwendung wählen"
   },
   "sidebar": {
     "general": "Allgemein",
@@ -373,6 +374,10 @@
           "cycle_word_list": {
             "name": "Wortliste wechseln",
             "description": "Schaltet die nächste zusätzliche Wortliste des aktiven Profils ein; nach der letzten ist keine mehr an."
+          },
+          "toggle_profile_auto": {
+            "name": "Profil nach Anwendung wählen",
+            "description": "Schaltet die Wahl des Profils nach Anwendung ein oder aus. Wirkt, solange einem Profil Anwendungen zugeordnet sind."
           }
         },
         "errors": {
@@ -465,11 +470,29 @@
         "models": "Das hier gewählte Modell gehört zum Profil „{{name}}“.",
         "postProcessing": "Anbieter, Modell, Prompts und die Grenzen für den Kontext gehören zum Profil „{{name}}“; API-Schlüssel gelten für alle Profile."
       },
+      "apps": {
+        "label": "Automatisch verwenden in:",
+        "none": "noch keiner Anwendung",
+        "remove": "{{name}} entfernen",
+        "add": "Anwendung hinzufügen…",
+        "running": "läuft",
+        "movesFrom": "jetzt in „{{name}}“, wechselt hierher",
+        "idPlaceholder": "Programm, z. B. Code.exe",
+        "addTyped": "Hinzufügen"
+      },
+      "autoByApp": {
+        "label": "Profil nach Anwendung wählen",
+        "description": "Ein Diktat in eine Anwendung, die einem Profil zugeordnet ist, verwendet dieses Profil; überall sonst gilt das aktive. Auch das Tray-Menü und eine Tastenkombination schalten das um.",
+        "noApps": "Ordne einem Profil unter seinem Namen Anwendungen zu; bis dahin bewirkt das nichts.",
+        "short": "Nach Anwendung"
+      },
       "errors": {
         "switch": "Profil konnte nicht gewechselt werden",
         "duplicate": "Profil konnte nicht dupliziert werden",
         "rename": "Profil konnte nicht umbenannt werden",
-        "delete": "Profil konnte nicht gelöscht werden"
+        "delete": "Profil konnte nicht gelöscht werden",
+        "apps": "Die Anwendungen konnten nicht zugeordnet werden",
+        "autoByApp": "Die Wahl nach Anwendung konnte nicht umgeschaltet werden"
       }
     },
     "profileTransfer": {
@@ -489,6 +512,8 @@
       "exportDone": "Exportiert",
       "importDone": "„{{name}}“ importiert",
       "importDoneWithKey": "„{{name}}“ mit dem API-Schlüssel für {{provider}} importiert",
+      "droppedAppsTitle": "Anwendungen bleiben bei anderen Profilen",
+      "droppedApps": "Schon verwendet von „{{name}}“: {{apps}}.",
       "exportFailed": "Profil konnte nicht exportiert werden",
       "importFailed": "Profil konnte nicht importiert werden",
       "replaceKeyTitle": "API-Schlüssel ersetzen?",
@@ -1217,7 +1242,10 @@
     "notReady": "Noch nicht fertig",
     "wordList": "Wortliste: {{name}}",
     "wordListGlobalOnly": "Keine zusätzliche Liste",
-    "profile": "Profil: {{name}}"
+    "profile": "Profil: {{name}}",
+    "profileAutoOn": "Profil nach Anwendung: an",
+    "profileAutoOff": "Profil nach Anwendung: aus",
+    "withProfile": "{{label}} · {{name}}"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} blockiert möglicherweise 1 Tastenkürzel",

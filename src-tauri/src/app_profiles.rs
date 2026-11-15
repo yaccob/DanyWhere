@@ -1,0 +1,479 @@
+//! DanyWhere: profiles per application. A profile can be assigned
+//! applications; while "choose the profile by application" is on, a dictation
+//! into one of them uses that profile's values, without switching the active
+//! profile. The profile chosen in the sidebar and the tray applies to every
+//! other application.
+//!
+//! The values of such a dictation are held here from the start of its
+//! recording until its pipeline finishes or is cancelled; the code on the
+//! dictation path reads them through [`dictation_settings`].
+
+use std::sync::Mutex;
+
+use serde::{Deserialize, Serialize};
+use specta::Type;
+use tauri::{AppHandle, Emitter};
+
+use crate::profiles::{Profile, ProfileValues};
+use crate::settings::{self, AppSettings};
+
+/// The shortcut that turns choosing the profile by application on and off.
+pub const TOGGLE_BINDING: &str = "toggle_profile_auto";
+
+/// How long the overlay says whether choosing by application is now on.
+const TOGGLE_NOTICE: std::time::Duration = std::time::Duration::from_millis(2000);
+
+/// An application that can be assigned to a profile.
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Type)]
+pub struct ApplicationInfo {
+    /// Bundle id on macOS, executable name on Windows.
+    pub id: String,
+    pub name: String,
+    pub running: bool,
+}
+
+/// The id of the profile a dictation into `frontmost_app` uses: the profile
+/// the application is assigned to while `auto_by_app` is on, otherwise the
+/// active one.
+pub fn profile_for_dictation<'a>(
+    profiles: &'a [Profile],
+    active_id: &'a str,
+    auto_by_app: bool,
+    frontmost_app: Option<&str>,
+) -> &'a str {
+    if auto_by_app {
+        if let Some(app) = frontmost_app {
+            if let Some(profile) = profiles
+                .iter()
+                .find(|profile| profile.apps.iter().any(|assigned| assigned == app))
+            {
+                return &profile.id;
+            }
+        }
+    }
+    active_id
+}
+
+/// Whether any profile has applications assigned.
+pub fn has_assignments(settings: &AppSettings) -> bool {
+    settings
+        .profiles
+        .iter()
+        .any(|profile| !profile.apps.is_empty())
+}
+
+/// Whether choosing by application is switched off while it would do
+/// something: the tray marks its idle icon then.
+pub fn manual_mode(settings: &AppSettings) -> bool {
+    !settings.profile_auto_by_app && has_assignments(settings)
+}
+
+/// Whether some dictation can post-process: the active profile does, or,
+/// while choosing by application is on, a profile with applications does.
+/// The post-processing shortcuts are registered only then.
+pub fn post_processing_reachable(settings: &AppSettings) -> bool {
+    // The flat fields hold the active profile's latest values.
+    settings.post_process_enabled
+        || (settings.profile_auto_by_app
+            && settings.profiles.iter().any(|profile| {
+                profile.id != settings.active_profile_id
+                    && !profile.apps.is_empty()
+                    && profile.values.post_process_enabled
+            }))
+}
+
+/// Assigns `apps` to profile `id`, each at most once and to no other profile.
+pub fn set_apps(settings: &mut AppSettings, id: &str, apps: Vec<String>) -> Result<(), String> {
+    let index = settings
+        .profiles
+        .iter()
+        .position(|profile| profile.id == id)
+        .ok_or_else(|| format!("Profile '{id}' not found"))?;
+    let mut clean: Vec<String> = Vec::new();
+    for app in apps {
+        let app = app.trim();
+        if !app.is_empty() && !clean.iter().any(|kept| kept == app) {
+            clean.push(app.to_string());
+        }
+    }
+    for (other, profile) in settings.profiles.iter_mut().enumerate() {
+        if other != index {
+            profile.apps.retain(|app| !clean.contains(app));
+        }
+    }
+    settings.profiles[index].apps = clean;
+    Ok(())
+}
+
+/// Turns choosing by application on or off; returns the new state.
+pub fn toggle_auto(settings: &mut AppSettings) -> bool {
+    settings.profile_auto_by_app = !settings.profile_auto_by_app;
+    settings.profile_auto_by_app
+}
+
+/// The profile a dictation into `frontmost_app` uses when it is not the
+/// active one; `None`: the active profile's values (the flat fields) apply.
+pub fn dictation_profile<'a>(
+    settings: &'a AppSettings,
+    frontmost_app: Option<&str>,
+) -> Option<&'a Profile> {
+    let id = profile_for_dictation(
+        &settings.profiles,
+        &settings.active_profile_id,
+        settings.profile_auto_by_app,
+        frontmost_app,
+    );
+    if id == settings.active_profile_id {
+        return None;
+    }
+    settings.profiles.iter().find(|profile| profile.id == id)
+}
+
+/// `settings` with `values` in its profile fields, if any.
+pub fn with_values(settings: &AppSettings, values: Option<&ProfileValues>) -> AppSettings {
+    let mut settings = settings.clone();
+    if let Some(values) = values {
+        values.apply_to(&mut settings);
+    }
+    settings
+}
+
+/// Whether a dictation that asked for post-processing (`requested`) does
+/// post-process: a dictation profile other than the active one decides with
+/// its own switch, since its shortcut may be registered for another profile.
+pub fn effective_post_process(requested: bool, dictation_values: Option<&ProfileValues>) -> bool {
+    requested && dictation_values.is_none_or(|values| values.post_process_enabled)
+}
+
+/// The applications to offer: the running ones first, then the installed
+/// ones, each once, by name, without DanyWhere itself (`own_id`).
+pub fn merge_applications(
+    running: Vec<(String, String)>,
+    installed: Vec<(String, String)>,
+    own_id: &str,
+) -> Vec<ApplicationInfo> {
+    let mut apps: Vec<ApplicationInfo> = Vec::new();
+    let mut add = |(id, name): (String, String), running: bool| {
+        if id.is_empty() || id == own_id || apps.iter().any(|app| app.id == id) {
+            return;
+        }
+        apps.push(ApplicationInfo { id, name, running });
+    };
+    for app in running {
+        add(app, true);
+    }
+    for app in installed {
+        add(app, false);
+    }
+    apps.sort_by(|a, b| {
+        b.running
+            .cmp(&a.running)
+            .then_with(|| a.name.to_lowercase().cmp(&b.name.to_lowercase()))
+    });
+    apps
+}
+
+/// The profile of the dictation in progress, when it isn't the active one.
+struct DictationProfile {
+    id: String,
+    values: ProfileValues,
+}
+
+static DICTATION_PROFILE: Mutex<Option<DictationProfile>> = Mutex::new(None);
+
+fn dictation_lock() -> std::sync::MutexGuard<'static, Option<DictationProfile>> {
+    DICTATION_PROFILE
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
+}
+
+/// Decides the profile of a dictation that starts now, from the application
+/// in front. Returns its shown name when it isn't the active profile.
+pub fn begin_dictation(app: &AppHandle) -> Option<String> {
+    let settings = settings::get_settings(app);
+    let frontmost = if settings.profile_auto_by_app && has_assignments(&settings) {
+        crate::window_capture::frontmost_app().map(|(id, _)| id)
+    } else {
+        None
+    };
+    let chosen = dictation_profile(&settings, frontmost.as_deref()).map(|profile| {
+        let name = crate::profiles::display_name(
+            profile,
+            &crate::profiles::default_profile_name(&settings),
+        );
+        (
+            DictationProfile {
+                id: profile.id.clone(),
+                values: profile.values.clone(),
+            },
+            name,
+        )
+    });
+    let mut current = dictation_lock();
+    match chosen {
+        Some((profile, name)) => {
+            log::info!(
+                "Dictation into {} uses profile {}",
+                frontmost.as_deref().unwrap_or("?"),
+                profile.id
+            );
+            *current = Some(profile);
+            Some(name)
+        }
+        None => {
+            *current = None;
+            None
+        }
+    }
+}
+
+/// Ends the dictation's own profile: the active profile applies again.
+pub fn end_dictation() {
+    *dictation_lock() = None;
+}
+
+/// The values of the dictation in progress, when its profile isn't the active
+/// one.
+pub fn dictation_values() -> Option<ProfileValues> {
+    dictation_lock()
+        .as_ref()
+        .map(|profile| profile.values.clone())
+}
+
+/// The settings a dictation reads: the stored ones, with the values of the
+/// dictation's own profile over them while one applies. Never store these.
+pub fn dictation_settings(app: &AppHandle) -> AppSettings {
+    with_values(&settings::get_settings(app), dictation_values().as_ref())
+}
+
+/// Everything that follows a change of the assignments or of the switch:
+/// shortcuts, the window, the tray menu and icon.
+fn after_change(app: &AppHandle, settings: &AppSettings) {
+    crate::shortcut::sync_post_process_shortcuts(app, settings);
+    crate::shortcut::sync_profile_toggle_shortcut(app, settings);
+    let _ = app.emit(
+        "settings-changed",
+        serde_json::json!({ "setting": "profiles" }),
+    );
+    crate::tray::rebuild_tray_menu(app);
+}
+
+fn set_auto(app: &AppHandle, change: impl FnOnce(&mut AppSettings) -> bool) -> bool {
+    let mut settings = settings::get_settings(app);
+    let on = change(&mut settings);
+    log::info!(
+        "Choosing the profile by application is {}",
+        if on { "on" } else { "off" }
+    );
+    settings::write_settings(app, settings.clone());
+    after_change(app, &settings);
+    on
+}
+
+/// The shortcut's action: switch choosing by application over and say so in
+/// the overlay.
+pub fn toggle_from_shortcut(app: &AppHandle) {
+    let on = set_auto(app, toggle_auto);
+    if !crate::overlay::is_session_showing() {
+        crate::overlay::show_profile_auto_notice(app, on, TOGGLE_NOTICE);
+    }
+}
+
+/// The tray's check item.
+pub fn toggle_from_tray(app: &AppHandle) {
+    set_auto(app, toggle_auto);
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn set_profile_auto_by_app(app: AppHandle, enabled: bool) -> Result<(), String> {
+    set_auto(&app, |settings| {
+        settings.profile_auto_by_app = enabled;
+        enabled
+    });
+    Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn set_profile_apps(app: AppHandle, id: String, apps: Vec<String>) -> Result<(), String> {
+    let mut settings = settings::get_settings(&app);
+    set_apps(&mut settings, &id, apps)?;
+    settings::write_settings(&app, settings.clone());
+    after_change(&app, &settings);
+    Ok(())
+}
+
+/// The applications that can be assigned, running ones first. Only macOS
+/// lists them; elsewhere the list is empty and ids are typed in.
+#[tauri::command]
+#[specta::specta]
+pub fn list_applications(app: AppHandle) -> Vec<ApplicationInfo> {
+    let own_id = app.config().identifier.clone();
+    merge_applications(
+        crate::window_capture::running_applications(),
+        crate::window_capture::installed_applications(),
+        &own_id,
+    )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::profiles::{ensure_profiles, DEFAULT_PROFILE_ID};
+
+    fn strings(words: &[&str]) -> Vec<String> {
+        words.iter().map(|w| w.to_string()).collect()
+    }
+
+    /// The default profile (active, Parakeet, no post-processing) and "mail"
+    /// (Whisper, post-processing on) assigned to Mail.
+    fn with_mail_profile() -> AppSettings {
+        let mut settings = AppSettings {
+            selected_model: "parakeet".to_string(),
+            post_process_enabled: false,
+            custom_words: strings(&["Sayuri"]),
+            ..Default::default()
+        };
+        ensure_profiles(&mut settings);
+        let mut mail = settings.profiles[0].clone();
+        mail.id = "mail".to_string();
+        mail.name = "Mail".to_string();
+        mail.values.selected_model = "whisper".to_string();
+        mail.values.post_process_enabled = true;
+        mail.values.profile_words = strings(&["Grüezi"]);
+        mail.apps = strings(&["com.apple.mail"]);
+        settings.profiles.push(mail);
+        settings
+    }
+
+    #[test]
+    fn an_assigned_app_picks_its_profile_while_choosing_by_app_is_on() {
+        let settings = with_mail_profile();
+        assert_eq!(
+            profile_for_dictation(
+                &settings.profiles,
+                DEFAULT_PROFILE_ID,
+                true,
+                Some("com.apple.mail")
+            ),
+            "mail"
+        );
+    }
+
+    #[test]
+    fn the_active_profile_applies_elsewhere_and_while_off() {
+        let settings = with_mail_profile();
+        let profiles = &settings.profiles;
+        assert_eq!(
+            profile_for_dictation(
+                profiles,
+                DEFAULT_PROFILE_ID,
+                true,
+                Some("com.apple.TextEdit")
+            ),
+            DEFAULT_PROFILE_ID
+        );
+        assert_eq!(
+            profile_for_dictation(profiles, DEFAULT_PROFILE_ID, true, None),
+            DEFAULT_PROFILE_ID
+        );
+        assert_eq!(
+            profile_for_dictation(profiles, DEFAULT_PROFILE_ID, false, Some("com.apple.mail")),
+            DEFAULT_PROFILE_ID
+        );
+    }
+
+    #[test]
+    fn assigning_moves_an_app_away_from_its_other_profile() {
+        let mut settings = with_mail_profile();
+        set_apps(
+            &mut settings,
+            DEFAULT_PROFILE_ID,
+            strings(&[" com.apple.mail ", "com.apple.Notes", "com.apple.Notes", ""]),
+        )
+        .unwrap();
+        assert_eq!(
+            settings.profiles[0].apps,
+            strings(&["com.apple.mail", "com.apple.Notes"])
+        );
+        assert!(settings.profiles[1].apps.is_empty());
+        assert!(set_apps(&mut settings, "nope", Vec::new()).is_err());
+    }
+
+    #[test]
+    fn manual_mode_needs_the_switch_off_and_an_assignment() {
+        let mut settings = with_mail_profile();
+        assert!(has_assignments(&settings));
+        assert!(settings.profile_auto_by_app);
+        assert!(!manual_mode(&settings));
+        assert!(!toggle_auto(&mut settings));
+        assert!(manual_mode(&settings));
+        set_apps(&mut settings, "mail", Vec::new()).unwrap();
+        assert!(!has_assignments(&settings));
+        assert!(!manual_mode(&settings));
+        assert!(toggle_auto(&mut settings));
+    }
+
+    #[test]
+    fn post_processing_is_reachable_through_an_app_profile() {
+        let mut settings = with_mail_profile();
+        assert!(!settings.post_process_enabled);
+        assert!(post_processing_reachable(&settings));
+        toggle_auto(&mut settings);
+        assert!(!post_processing_reachable(&settings));
+        toggle_auto(&mut settings);
+        set_apps(&mut settings, "mail", Vec::new()).unwrap();
+        assert!(!post_processing_reachable(&settings));
+    }
+
+    #[test]
+    fn a_dictation_into_an_assigned_app_reads_that_profiles_values() {
+        let settings = with_mail_profile();
+        let profile = dictation_profile(&settings, Some("com.apple.mail")).expect("mail");
+        assert_eq!(profile.id, "mail");
+        let effective = with_values(&settings, Some(&profile.values));
+        assert_eq!(effective.selected_model, "whisper");
+        assert!(effective.post_process_enabled);
+        assert_eq!(effective.profile_words, strings(&["Grüezi"]));
+        // Global values stay, and the active profile isn't switched.
+        assert_eq!(effective.custom_words, strings(&["Sayuri"]));
+        assert_eq!(effective.active_profile_id, DEFAULT_PROFILE_ID);
+        assert!(dictation_profile(&settings, Some("com.apple.TextEdit")).is_none());
+    }
+
+    #[test]
+    fn an_app_profile_without_post_processing_does_not_post_process() {
+        let mut settings = with_mail_profile();
+        settings.profiles[1].values.post_process_enabled = false;
+        assert!(!effective_post_process(
+            true,
+            Some(&settings.profiles[1].values)
+        ));
+        assert!(effective_post_process(true, None));
+        assert!(!effective_post_process(false, None));
+    }
+
+    #[test]
+    fn applications_running_first_each_once_without_danywhere() {
+        let running = vec![
+            ("com.apple.mail".to_string(), "Mail".to_string()),
+            ("com.yaccob.danywhere".to_string(), "DanyWhere".to_string()),
+        ];
+        let installed = vec![
+            ("com.apple.TextEdit".to_string(), "TextEdit".to_string()),
+            ("com.apple.mail".to_string(), "Mail".to_string()),
+            ("com.apple.Notes".to_string(), "Notes".to_string()),
+        ];
+        let apps = merge_applications(running, installed, "com.yaccob.danywhere");
+        let ids: Vec<(&str, bool)> = apps.iter().map(|a| (a.id.as_str(), a.running)).collect();
+        assert_eq!(
+            ids,
+            vec![
+                ("com.apple.mail", true),
+                ("com.apple.Notes", false),
+                ("com.apple.TextEdit", false),
+            ]
+        );
+    }
+}

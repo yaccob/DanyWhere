@@ -14,7 +14,8 @@
     "wordList": "Kelime Listesi",
     "onlyGlobalWordList": "Ek Liste Yok",
     "profile": "Profil",
-    "defaultProfile": "Varsayılan"
+    "defaultProfile": "Varsayılan",
+    "profileAutoByApp": "Profili uygulamaya göre seç"
   },
   "sidebar": {
     "general": "Genel",
@@ -373,6 +374,10 @@
           "cycle_word_list": {
             "name": "Kelime Listesini Değiştir",
             "description": "Etkin profilin sonraki ek kelime listesini açar; sonuncusundan sonra hiçbiri açık kalmaz."
+          },
+          "toggle_profile_auto": {
+            "name": "Profili uygulamaya göre seç",
+            "description": "Profilin uygulamaya göre seçilmesini açar veya kapatır. Bir profile uygulama atanmış olduğu sürece çalışır."
           }
         },
         "errors": {
@@ -465,11 +470,29 @@
         "models": "Burada seçilen model “{{name}}” profiline aittir.",
         "postProcessing": "Sağlayıcı, model, prompt'lar ve bağlam sınırları “{{name}}” profiline aittir; API anahtarları tüm profiller için geçerlidir."
       },
+      "apps": {
+        "label": "Otomatik kullanıldığı yerler:",
+        "none": "henüz uygulama yok",
+        "remove": "{{name}} öğesini kaldır",
+        "add": "Uygulama ekle…",
+        "running": "çalışıyor",
+        "movesFrom": "şu an “{{name}}” içinde, buraya taşınır",
+        "idPlaceholder": "Program, ör. Code.exe",
+        "addTyped": "Ekle"
+      },
+      "autoByApp": {
+        "label": "Profili uygulamaya göre seç",
+        "description": "Bir profile atanmış bir uygulamaya dikte, o profili kullanır; diğer her yerde etkin profil kullanılır. Tepsi menüsü ve bir kısayol da bunu değiştirir.",
+        "noApps": "Bir profile, adının altından uygulama atayın; o zamana kadar bunun bir etkisi yoktur.",
+        "short": "Uygulamaya göre"
+      },
       "errors": {
         "switch": "Profil değiştirilemedi",
         "duplicate": "Profil çoğaltılamadı",
         "rename": "Profil yeniden adlandırılamadı",
-        "delete": "Profil silinemedi"
+        "delete": "Profil silinemedi",
+        "apps": "Uygulamalar atanamadı",
+        "autoByApp": "Uygulamaya göre seçim değiştirilemedi"
       }
     },
     "profileTransfer": {
@@ -489,6 +512,8 @@
       "exportDone": "Dışa aktarıldı",
       "importDone": "\"{{name}}\" içe aktarıldı",
       "importDoneWithKey": "\"{{name}}\", {{provider}} API anahtarıyla içe aktarıldı",
+      "droppedAppsTitle": "Uygulamalar diğer profillerde kalıyor",
+      "droppedApps": "Zaten “{{name}}” kullanıyor: {{apps}}.",
       "exportFailed": "Profil dışa aktarılamadı",
       "importFailed": "Profil içe aktarılamadı",
       "replaceKeyTitle": "API anahtarı değiştirilsin mi?",
@@ -1217,7 +1242,10 @@
     "notReady": "Henüz hazır değil",
     "wordList": "Kelime listesi: {{name}}",
     "wordListGlobalOnly": "Ek liste yok",
-    "profile": "Profil: {{name}}"
+    "profile": "Profil: {{name}}",
+    "profileAutoOn": "Uygulamaya göre profil: açık",
+    "profileAutoOff": "Uygulamaya göre profil: kapalı",
+    "withProfile": "{{label}} · {{name}}"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} 1 kısayolu engelliyor olabilir",

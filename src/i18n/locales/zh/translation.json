@@ -14,7 +14,8 @@
     "wordList": "词汇列表",
     "onlyGlobalWordList": "无附加列表",
     "profile": "配置文件",
-    "defaultProfile": "默认"
+    "defaultProfile": "默认",
+    "profileAutoByApp": "按应用选择配置文件"
   },
   "sidebar": {
     "general": "通用",
@@ -373,6 +374,10 @@
           "cycle_word_list": {
             "name": "切换词汇列表",
             "description": "启用当前配置文件的下一个附加词汇列表；最后一个之后不启用任何列表。"
+          },
+          "toggle_profile_auto": {
+            "name": "按应用选择配置文件",
+            "description": "开启或关闭按应用选择配置文件。只要有应用分配给某个配置文件就会生效。"
           }
         },
         "errors": {
@@ -465,11 +470,29 @@
         "models": "此处选择的模型属于配置文件“{{name}}”。",
         "postProcessing": "提供商、模型、提示词和上下文限制属于配置文件“{{name}}”；API 密钥适用于所有配置文件。"
       },
+      "apps": {
+        "label": "自动用于：",
+        "none": "尚无应用",
+        "remove": "移除 {{name}}",
+        "add": "添加应用…",
+        "running": "正在运行",
+        "movesFrom": "当前在“{{name}}”，将移到这里",
+        "idPlaceholder": "程序，例如 Code.exe",
+        "addTyped": "添加"
+      },
+      "autoByApp": {
+        "label": "按应用选择配置文件",
+        "description": "向分配给某个配置文件的应用听写时使用该配置文件；其他地方使用当前配置文件。托盘菜单和快捷键也可以切换此项。",
+        "noApps": "在配置文件名称下方为其分配应用；在此之前此项不起作用。",
+        "short": "按应用"
+      },
       "errors": {
         "switch": "无法切换配置文件",
         "duplicate": "无法复制配置文件",
         "rename": "无法重命名配置文件",
-        "delete": "无法删除配置文件"
+        "delete": "无法删除配置文件",
+        "apps": "无法分配应用",
+        "autoByApp": "无法切换按应用选择"
       }
     },
     "profileTransfer": {
@@ -489,6 +512,8 @@
       "exportDone": "已导出",
       "importDone": "已导入“{{name}}”",
       "importDoneWithKey": "已导入“{{name}}”及 {{provider}} 的 API 密钥",
+      "droppedAppsTitle": "保留在其他配置文件中的应用",
+      "droppedApps": "已被“{{name}}”使用：{{apps}}。",
       "exportFailed": "无法导出配置文件",
       "importFailed": "无法导入配置文件",
       "replaceKeyTitle": "替换 API 密钥？",
@@ -1217,7 +1242,10 @@
     "notReady": "尚未就绪",
     "wordList": "词汇列表：{{name}}",
     "wordListGlobalOnly": "无附加列表",
-    "profile": "配置文件：{{name}}"
+    "profile": "配置文件：{{name}}",
+    "profileAutoOn": "按应用选择配置文件：开",
+    "profileAutoOff": "按应用选择配置文件：关",
+    "withProfile": "{{label}} · {{name}}"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} 可能正在阻止 1 个快捷键",

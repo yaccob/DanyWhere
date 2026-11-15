@@ -14,7 +14,8 @@
     "wordList": "Liste de mots",
     "onlyGlobalWordList": "Aucune liste supplémentaire",
     "profile": "Profil",
-    "defaultProfile": "Par défaut"
+    "defaultProfile": "Par défaut",
+    "profileAutoByApp": "Choisir le profil selon l'application"
   },
   "sidebar": {
     "general": "Général",
@@ -373,6 +374,10 @@
           "cycle_word_list": {
             "name": "Changer de liste de mots",
             "description": "Active la liste de mots supplémentaire suivante du profil actif ; après la dernière, aucune n'est active."
+          },
+          "toggle_profile_auto": {
+            "name": "Choisir le profil selon l'application",
+            "description": "Active ou désactive le choix du profil selon l'application. Fonctionne tant que des applications sont attribuées à un profil."
           }
         },
         "errors": {
@@ -465,11 +470,29 @@
         "models": "Le modèle choisi ici appartient au profil « {{name}} ».",
         "postProcessing": "Le fournisseur, le modèle, les prompts et les limites du contexte appartiennent au profil « {{name}} » ; les clés API valent pour tous les profils."
       },
+      "apps": {
+        "label": "Utilisé automatiquement dans :",
+        "none": "aucune application pour l'instant",
+        "remove": "Retirer {{name}}",
+        "add": "Ajouter une application…",
+        "running": "en cours",
+        "movesFrom": "actuellement dans « {{name}} », passe ici",
+        "idPlaceholder": "Programme, p. ex. Code.exe",
+        "addTyped": "Ajouter"
+      },
+      "autoByApp": {
+        "label": "Choisir le profil selon l'application",
+        "description": "Dicter dans une application attribuée à un profil utilise ce profil ; partout ailleurs, le profil actif. Le menu de la barre système et un raccourci le changent aussi.",
+        "noApps": "Attribuez des applications à un profil sous son nom ; d'ici là, cela n'a aucun effet.",
+        "short": "Selon l'application"
+      },
       "errors": {
         "switch": "Impossible de changer de profil",
         "duplicate": "Impossible de dupliquer le profil",
         "rename": "Impossible de renommer le profil",
-        "delete": "Impossible de supprimer le profil"
+        "delete": "Impossible de supprimer le profil",
+        "apps": "Impossible d'attribuer les applications",
+        "autoByApp": "Impossible de changer le choix selon l'application"
       }
     },
     "profileTransfer": {
@@ -489,6 +512,8 @@
       "exportDone": "Exporté",
       "importDone": "« {{name}} » importé",
       "importDoneWithKey": "« {{name}} » importé avec la clé API pour {{provider}}",
+      "droppedAppsTitle": "Applications conservées par d'autres profils",
+      "droppedApps": "Déjà utilisées par « {{name}} » : {{apps}}.",
       "exportFailed": "Impossible d'exporter le profil",
       "importFailed": "Impossible d'importer le profil",
       "replaceKeyTitle": "Remplacer la clé API ?",
@@ -1217,7 +1242,10 @@
     "notReady": "Pas encore prêt",
     "wordList": "Liste de mots : {{name}}",
     "wordListGlobalOnly": "Aucune liste supplémentaire",
-    "profile": "Profil : {{name}}"
+    "profile": "Profil : {{name}}",
+    "profileAutoOn": "Profil selon l'application : activé",
+    "profileAutoOff": "Profil selon l'application : désactivé",
+    "withProfile": "{{label}} · {{name}}"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} bloque peut-être 1 raccourci",

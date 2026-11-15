@@ -14,7 +14,8 @@
     "wordList": "Lista de Palavras",
     "onlyGlobalWordList": "Sem Lista Adicional",
     "profile": "Perfil",
-    "defaultProfile": "Padrão"
+    "defaultProfile": "Padrão",
+    "profileAutoByApp": "Escolher perfil por aplicativo"
   },
   "sidebar": {
     "general": "Geral",
@@ -373,6 +374,10 @@
           "cycle_word_list": {
             "name": "Trocar Lista de Palavras",
             "description": "Ativa a próxima lista de palavras adicional do perfil ativo; depois da última, nenhuma fica ativa."
+          },
+          "toggle_profile_auto": {
+            "name": "Escolher perfil por aplicativo",
+            "description": "Ativa ou desativa a escolha do perfil por aplicativo. Funciona enquanto houver aplicativos atribuídos a um perfil."
           }
         },
         "errors": {
@@ -465,11 +470,29 @@
         "models": "O modelo escolhido aqui pertence ao perfil “{{name}}”.",
         "postProcessing": "Provedor, modelo, prompts e limites de contexto pertencem ao perfil “{{name}}”; as chaves da API valem para todos os perfis."
       },
+      "apps": {
+        "label": "Usado automaticamente em:",
+        "none": "nenhum aplicativo ainda",
+        "remove": "Remover {{name}}",
+        "add": "Adicionar aplicativo…",
+        "running": "em execução",
+        "movesFrom": "agora em “{{name}}”, passa para cá",
+        "idPlaceholder": "Programa, p. ex. Code.exe",
+        "addTyped": "Adicionar"
+      },
+      "autoByApp": {
+        "label": "Escolher perfil por aplicativo",
+        "description": "Ditar em um aplicativo atribuído a um perfil usa esse perfil; em qualquer outro lugar, o ativo. O menu da bandeja e um atalho também alternam isso.",
+        "noApps": "Atribua aplicativos a um perfil abaixo do nome dele; até lá isso não tem efeito.",
+        "short": "Por aplicativo"
+      },
       "errors": {
         "switch": "Não foi possível trocar de perfil",
         "duplicate": "Não foi possível duplicar o perfil",
         "rename": "Não foi possível renomear o perfil",
-        "delete": "Não foi possível excluir o perfil"
+        "delete": "Não foi possível excluir o perfil",
+        "apps": "Não foi possível atribuir os aplicativos",
+        "autoByApp": "Não foi possível alternar a escolha por aplicativo"
       }
     },
     "profileTransfer": {
@@ -489,6 +512,8 @@
       "exportDone": "Exportado",
       "importDone": "\"{{name}}\" importado",
       "importDoneWithKey": "\"{{name}}\" importado com a chave de API para {{provider}}",
+      "droppedAppsTitle": "Aplicativos que ficam em outros perfis",
+      "droppedApps": "Já usados por “{{name}}”: {{apps}}.",
       "exportFailed": "Não foi possível exportar o perfil",
       "importFailed": "Não foi possível importar o perfil",
       "replaceKeyTitle": "Substituir a chave de API?",
@@ -1217,7 +1242,10 @@
     "notReady": "Ainda não está pronto",
     "wordList": "Lista de palavras: {{name}}",
     "wordListGlobalOnly": "Sem lista adicional",
-    "profile": "Perfil: {{name}}"
+    "profile": "Perfil: {{name}}",
+    "profileAutoOn": "Perfil por aplicativo: ativado",
+    "profileAutoOff": "Perfil por aplicativo: desativado",
+    "withProfile": "{{label}} · {{name}}"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} pode estar bloqueando 1 atalho",

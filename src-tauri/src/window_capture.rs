@@ -196,6 +196,25 @@ pub fn take_capture(session: u64) -> Option<CapturedWindow> {
     SLOT.take(session, CAPTURE_LIMIT)
 }
 
+/// DanyWhere: the frontmost application's id and name, without its window
+/// title, for choosing a dictation's profile (`app_profiles`). Quick: neither
+/// Accessibility nor an Apple event. `None` for DanyWhere itself and on Linux.
+pub fn frontmost_app() -> Option<(String, String)> {
+    platform::frontmost_app()
+}
+
+/// DanyWhere: `(id, name)` of the running applications with a window in the
+/// Dock, for assigning them to profiles. Only macOS lists them.
+pub fn running_applications() -> Vec<(String, String)> {
+    platform::running_applications()
+}
+
+/// DanyWhere: `(id, name)` of the installed applications, for assigning them
+/// to profiles. Only macOS lists them.
+pub fn installed_applications() -> Vec<(String, String)> {
+    platform::installed_applications()
+}
+
 /// The frontmost window as a [`CapturedWindow`], unless its app is excluded,
 /// is DanyWhere itself or has no usable title.
 fn frontmost_window(excluded: &[String]) -> Option<CapturedWindow> {
@@ -254,8 +273,8 @@ mod platform {
     use std::process::{Command, Stdio};
     use std::time::{Duration, Instant};
 
-    use objc2_app_kit::NSWorkspace;
-    use objc2_foundation::NSString;
+    use objc2_app_kit::{NSApplicationActivationPolicy, NSWorkspace};
+    use objc2_foundation::{NSBundle, NSString};
 
     use super::{
         automation_script, status_from_os, AutomationApp, AutomationStatus, WindowTitleAccess,
@@ -346,9 +365,8 @@ mod platform {
         status_from_os(status)
     }
 
-    /// The frontmost app's id and name, and the title of its window if
-    /// DanyWhere may learn it.
-    pub fn frontmost() -> Option<(String, String, Option<String>)> {
+    /// The frontmost app's id, name and process id, unless it is DanyWhere.
+    fn frontmost_app_with_pid() -> Option<(String, String, i32)> {
         let workspace = NSWorkspace::sharedWorkspace();
         let app = workspace.frontmostApplication()?;
         let bundle_id = app.bundleIdentifier()?.to_string();
@@ -360,6 +378,73 @@ mod platform {
         if pid == std::process::id() as i32 {
             return None;
         }
+        Some((bundle_id, name, pid))
+    }
+
+    pub fn frontmost_app() -> Option<(String, String)> {
+        frontmost_app_with_pid().map(|(bundle_id, name, _)| (bundle_id, name))
+    }
+
+    pub fn running_applications() -> Vec<(String, String)> {
+        let own = std::process::id() as i32;
+        NSWorkspace::sharedWorkspace()
+            .runningApplications()
+            .iter()
+            .filter(|app| {
+                app.activationPolicy() == NSApplicationActivationPolicy::Regular
+                    && app.processIdentifier() != own
+            })
+            .filter_map(|app| {
+                let bundle_id = app.bundleIdentifier()?.to_string();
+                let name = app
+                    .localizedName()
+                    .map(|n| n.to_string())
+                    .unwrap_or_else(|| bundle_id.clone());
+                Some((bundle_id, name))
+            })
+            .collect()
+    }
+
+    pub fn installed_applications() -> Vec<(String, String)> {
+        let mut folders = vec![
+            std::path::PathBuf::from("/Applications"),
+            std::path::PathBuf::from("/Applications/Utilities"),
+            std::path::PathBuf::from("/System/Applications"),
+            std::path::PathBuf::from("/System/Applications/Utilities"),
+        ];
+        if let Some(home) = std::env::var_os("HOME") {
+            folders.push(std::path::PathBuf::from(home).join("Applications"));
+        }
+        let mut apps = Vec::new();
+        for folder in folders {
+            let Ok(entries) = std::fs::read_dir(&folder) else {
+                continue;
+            };
+            for path in entries.flatten().map(|entry| entry.path()) {
+                if path.extension().is_none_or(|ext| ext != "app") {
+                    continue;
+                }
+                let Some(bundle_id) = path
+                    .to_str()
+                    .and_then(|p| NSBundle::bundleWithPath(&NSString::from_str(p)))
+                    .and_then(|bundle| bundle.bundleIdentifier())
+                else {
+                    continue;
+                };
+                let name = path
+                    .file_stem()
+                    .map(|stem| stem.to_string_lossy().to_string())
+                    .unwrap_or_else(|| bundle_id.to_string());
+                apps.push((bundle_id.to_string(), name));
+            }
+        }
+        apps
+    }
+
+    /// The frontmost app's id and name, and the title of its window if
+    /// DanyWhere may learn it.
+    pub fn frontmost() -> Option<(String, String, Option<String>)> {
+        let (bundle_id, name, pid) = frontmost_app_with_pid()?;
         // SAFETY: a plain query without side effects.
         let title = if unsafe { AXIsProcessTrusted() } {
             accessibility_title(pid)
@@ -509,6 +594,18 @@ mod platform {
         GetForegroundWindow, GetWindowTextLengthW, GetWindowTextW, GetWindowThreadProcessId,
     };
 
+    pub fn frontmost_app() -> Option<(String, String)> {
+        frontmost().map(|(exe, name, _)| (exe, name))
+    }
+
+    pub fn running_applications() -> Vec<(String, String)> {
+        Vec::new()
+    }
+
+    pub fn installed_applications() -> Vec<(String, String)> {
+        Vec::new()
+    }
+
     /// The foreground window's program (exe file name), its name, and the
     /// window's title.
     pub fn frontmost() -> Option<(String, String, Option<String>)> {
@@ -576,6 +673,18 @@ mod platform {
     /// Linux: not yet, so dictations there have no context.
     pub fn frontmost() -> Option<(String, String, Option<String>)> {
         None
+    }
+
+    pub fn frontmost_app() -> Option<(String, String)> {
+        None
+    }
+
+    pub fn running_applications() -> Vec<(String, String)> {
+        Vec::new()
+    }
+
+    pub fn installed_applications() -> Vec<(String, String)> {
+        Vec::new()
     }
 
     pub fn access() -> WindowTitleAccess {

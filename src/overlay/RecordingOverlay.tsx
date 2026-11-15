@@ -27,7 +27,8 @@ type OverlayState =
   | "ready"
   | "not_ready"
   | "word_list"
-  | "profile";
+  | "profile"
+  | "profile_auto";
 
 const isNoticeState = (state: OverlayState) =>
   state === "notice" || state === "live_notice";
@@ -90,6 +91,12 @@ const RecordingOverlay: React.FC = () => {
   const [wordListName, setWordListName] = useState<string | null>(null);
   // The profile just switched to, by its shown name.
   const [profileName, setProfileName] = useState<string>("");
+  // DanyWhere: whether choosing the profile by application was just
+  // switched on (`app_profiles`).
+  const [profileAutoOn, setProfileAutoOn] = useState<boolean>(true);
+  // DanyWhere: the profile this dictation uses when it isn't the active one
+  // (the app in front has a profile of its own); null: the active one.
+  const [dictationProfile, setDictationProfile] = useState<string | null>(null);
   // The "Insert Last Dictation" service's shortcut, e.g. ⌃⇧V; null: none.
   const [insertKeys, setInsertKeys] = useState<string | null>(null);
   const [noticeWidth, setNoticeWidth] = useState<number>();
@@ -119,6 +126,16 @@ const RecordingOverlay: React.FC = () => {
       const unlistenProfile = await listen<{ name: string }>(
         "overlay-profile",
         (event) => setProfileName(event.payload.name),
+      );
+
+      const unlistenProfileAuto = await listen<{ on: boolean }>(
+        "overlay-profile-auto",
+        (event) => setProfileAutoOn(event.payload.on),
+      );
+
+      const unlistenDictationProfile = await listen<{ name: string | null }>(
+        "overlay-dictation-profile",
+        (event) => setDictationProfile(event.payload.name),
       );
 
       const unlistenInsertKeys = await listen<{ keys: string | null }>(
@@ -234,6 +251,8 @@ const RecordingOverlay: React.FC = () => {
         unlistenNotice();
         unlistenWordList();
         unlistenProfile();
+        unlistenProfileAuto();
+        unlistenDictationProfile();
         unlistenInsertKeys();
         unlistenShow();
         unlistenHide();
@@ -308,6 +327,11 @@ const RecordingOverlay: React.FC = () => {
   const transcribingLabel = modelLoading
     ? t("overlay.loadingModel")
     : t("overlay.transcribing");
+  // DanyWhere: names the dictation's own profile, if it has one.
+  const withDictationProfile = (label: string) =>
+    dictationProfile
+      ? t("overlay.withProfile", { label, name: dictationProfile })
+      : label;
 
   // ---- Shared building blocks (one visual language for every overlay form) ----
   const waveform = (
@@ -449,9 +473,11 @@ const RecordingOverlay: React.FC = () => {
             ? noticeRow
             : working
               ? workingRow(
-                  workKind === "polishing"
-                    ? t("overlay.processing")
-                    : transcribingLabel,
+                  withDictationProfile(
+                    workKind === "polishing"
+                      ? t("overlay.processing")
+                      : transcribingLabel,
+                  ),
                   true,
                 )
               : listeningRow(open, true)}
@@ -519,6 +545,30 @@ const RecordingOverlay: React.FC = () => {
     );
   }
 
+  // ---- Choosing the profile by application was switched on or off.
+  if (state === "profile_auto") {
+    return (
+      <div
+        dir={direction}
+        className={`ov-stage ${position} ov-fade ${isVisible ? "show" : ""}`}
+      >
+        <div className="scard compact">
+          <div className="sbase">
+            <div className="sbase-l">
+              <span className="sdot ready" />
+            </div>
+            <span className="swork-label">
+              {profileAutoOn
+                ? t("overlay.profileAutoOn")
+                : t("overlay.profileAutoOff")}
+            </span>
+            <div className="sbase-r" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // ---- Profile notice: another profile is now active.
   if (state === "profile") {
     return (
@@ -545,8 +595,9 @@ const RecordingOverlay: React.FC = () => {
   // spinner + label (transcribing / processing). Never both. The pill animates its
   // width between them; the cancel button is in both rows so it stays put.
   const working = state === "transcribing" || state === "processing";
-  const workLabel =
-    state === "processing" ? t("overlay.processing") : transcribingLabel;
+  const workLabel = withDictationProfile(
+    state === "processing" ? t("overlay.processing") : transcribingLabel,
+  );
 
   return (
     <div

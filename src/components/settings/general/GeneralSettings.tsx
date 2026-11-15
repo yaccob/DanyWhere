@@ -52,6 +52,8 @@ export const GeneralSettings: React.FC = () => {
         <ShortcutInput shortcutId="paste_last_transcript" grouped={true} />
         <ShortcutInput shortcutId="copy_last_transcript" grouped={true} />
         <ShortcutInput shortcutId="cycle_word_list" grouped={true} />
+        {/* DanyWhere: turns choosing the profile by application on and off. */}
+        <ShortcutInput shortcutId="toggle_profile_auto" grouped={true} />
         {/* Cancel shortcut remains hidden on Linux because of dynamic shortcut instability. */}
         {!isLinux && <ShortcutInput shortcutId="cancel" grouped={true} />}
       </SettingsGroup>

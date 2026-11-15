@@ -85,6 +85,9 @@ struct ProfileMenu {
     active: String,
     /// `(id, shown name)` of the profiles, in their settings order.
     profiles: Vec<(String, String)>,
+    /// The check item "Choose Profile by Application" and its state, while
+    /// some profile has applications assigned.
+    auto_by_app: Option<bool>,
 }
 
 /// What the word list submenu shows: "only the global list" plus each
@@ -236,7 +239,27 @@ fn windows_taskbar_theme() -> Option<AppTheme> {
 /// `badge` marks the idle icon while something needs attention (a notice, or
 /// macOS Secure Input). Busy states keep their normal icons. The menu line says
 /// what's wrong, so the badge doesn't vary by level.
-pub fn get_icon_path(theme: AppTheme, state: TrayIconState, badge: bool) -> &'static str {
+///
+/// DanyWhere: `manual` marks the idle icon while choosing the profile by
+/// application is off although applications are assigned
+/// (`app_profiles::manual_mode`): a padlock at the bottom left, in every
+/// theme.
+pub fn get_icon_path(
+    theme: AppTheme,
+    state: TrayIconState,
+    badge: bool,
+    manual: bool,
+) -> &'static str {
+    if manual && state == TrayIconState::Idle {
+        match (&theme, badge) {
+            (AppTheme::Dark, false) => return "resources/tray_idle_manual.png",
+            (AppTheme::Dark, true) => return "resources/tray_idle_manual_warning.png",
+            (AppTheme::Light, false) => return "resources/tray_idle_manual_dark.png",
+            (AppTheme::Light, true) => return "resources/tray_idle_manual_warning_dark.png",
+            (AppTheme::Colored, false) => return "resources/handy_manual.png",
+            (AppTheme::Colored, true) => return "resources/handy_manual_warning.png",
+        }
+    }
     if badge && state == TrayIconState::Idle {
         return match theme {
             AppTheme::Dark => "resources/tray_idle_warning.png",
@@ -430,7 +453,7 @@ fn compute_desired(app: &AppHandle, icon_state: TrayIconState) -> TrayDesired {
         profile_menu(&settings, &crate::profiles::default_profile_name(&settings))
     };
     TrayDesired {
-        icon_path: get_icon_path(theme, icon_state, badge),
+        icon_path: icon_path_for(theme, icon_state, badge, &settings),
         menu: MenuInputs {
             busy: icon_state.is_busy(),
             models_locked,
@@ -530,6 +553,21 @@ fn word_list_menu(settings: &settings::AppSettings) -> Option<WordListMenu> {
     })
 }
 
+/// The icon for `state` with the marks `settings` call for.
+fn icon_path_for(
+    theme: AppTheme,
+    state: TrayIconState,
+    badge: bool,
+    settings: &settings::AppSettings,
+) -> &'static str {
+    get_icon_path(
+        theme,
+        state,
+        badge,
+        crate::app_profiles::manual_mode(settings),
+    )
+}
+
 /// The profile submenu for `settings`; `None` while there is only one
 /// profile. `default_name` is the default profile's translated name.
 fn profile_menu(settings: &settings::AppSettings, default_name: &str) -> Option<ProfileMenu> {
@@ -537,6 +575,8 @@ fn profile_menu(settings: &settings::AppSettings, default_name: &str) -> Option<
         return None;
     }
     Some(ProfileMenu {
+        auto_by_app: crate::app_profiles::has_assignments(settings)
+            .then_some(settings.profile_auto_by_app),
         active: settings.active_profile_id.clone(),
         profiles: settings
             .profiles
@@ -553,6 +593,10 @@ fn profile_menu(settings: &settings::AppSettings, default_name: &str) -> Option<
 
 /// Menu item ids of the profile submenu, followed by the profile's id.
 pub const PROFILE_SELECT_PREFIX: &str = "profile_select:";
+
+/// DanyWhere: the profile submenu's check item "Choose Profile by
+/// Application" (`app_profiles`).
+pub const PROFILE_AUTO_ID: &str = "profile_auto_by_app";
 
 fn profile_submenu(
     app: &AppHandle,
@@ -578,6 +622,17 @@ fn profile_submenu(
             name,
             true,
             *id == menu.active,
+            None::<&str>,
+        )?)?;
+    }
+    if let Some(auto_by_app) = menu.auto_by_app {
+        submenu.append(&PredefinedMenuItem::separator(app)?)?;
+        submenu.append(&CheckMenuItem::with_id(
+            app,
+            PROFILE_AUTO_ID,
+            &strings.profile_auto_by_app,
+            true,
+            auto_by_app,
             None::<&str>,
         )?)?;
     }
@@ -1037,9 +1092,9 @@ pub fn copy_last_transcript(app: &AppHandle) {
 #[cfg(test)]
 mod tests {
     use super::{
-        get_icon_path, language_menu, last_transcript_text, load_tray_icon, profile_menu,
-        word_list_menu, AppTheme, MenuInputs, ProfileMenu, TrayDesired, TrayIconState,
-        WordListMenu,
+        get_icon_path, icon_path_for, language_menu, last_transcript_text, load_tray_icon,
+        profile_menu, word_list_menu, AppTheme, MenuInputs, ProfileMenu, TrayDesired,
+        TrayIconState, WordListMenu,
     };
     use crate::managers::history::HistoryEntry;
     use crate::managers::model::{ModelInfo, ModelSource};
@@ -1249,8 +1304,93 @@ mod tests {
             Some(ProfileMenu {
                 active: "default".to_string(),
                 profiles: expected,
+                auto_by_app: None,
             })
         );
+    }
+
+    /// Two profiles, "mail" assigned to Mail.
+    fn with_mail_profile() -> AppSettings {
+        let mut settings = get_default_settings();
+        crate::profiles::ensure_profiles(&mut settings);
+        let mut mail = settings.profiles[0].clone();
+        mail.id = "mail".to_string();
+        mail.name = "Mail".to_string();
+        mail.apps = vec!["com.apple.mail".to_string()];
+        settings.profiles.push(mail);
+        settings
+    }
+
+    // DanyWhere: the check item "Choose Profile by Application".
+    #[test]
+    fn profile_menu_has_the_auto_check_item_while_apps_are_assigned() {
+        let mut settings = with_mail_profile();
+        let menu = profile_menu(&settings, "Standard").unwrap();
+        assert_eq!(menu.auto_by_app, Some(true));
+        crate::app_profiles::toggle_auto(&mut settings);
+        let menu = profile_menu(&settings, "Standard").unwrap();
+        assert_eq!(menu.auto_by_app, Some(false));
+        crate::app_profiles::set_apps(&mut settings, "mail", Vec::new()).unwrap();
+        let menu = profile_menu(&settings, "Standard").unwrap();
+        assert_eq!(menu.auto_by_app, None);
+    }
+
+    // DanyWhere: the idle icon is marked while choosing by application is
+    // off although applications are assigned.
+    #[test]
+    fn the_manual_mark_shows_at_idle_only_and_exists() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+        for theme in [AppTheme::Dark, AppTheme::Light, AppTheme::Colored] {
+            let plain = get_icon_path(theme.clone(), TrayIconState::Idle, false, false);
+            let manual = get_icon_path(theme.clone(), TrayIconState::Idle, false, true);
+            let badged = get_icon_path(theme.clone(), TrayIconState::Idle, true, false);
+            let both = get_icon_path(theme.clone(), TrayIconState::Idle, true, true);
+            assert_ne!(manual, plain);
+            assert_ne!(both, badged);
+            assert_ne!(both, manual);
+            for path in [manual, both] {
+                assert!(root.join(path).is_file(), "{path} is missing");
+            }
+            for state in [TrayIconState::Recording, TrayIconState::Transcribing] {
+                assert_eq!(
+                    get_icon_path(theme.clone(), state, false, true),
+                    get_icon_path(theme.clone(), state, false, false)
+                );
+            }
+        }
+        assert_eq!(
+            get_icon_path(AppTheme::Dark, TrayIconState::Idle, false, true),
+            "resources/tray_idle_manual.png"
+        );
+        assert_eq!(
+            get_icon_path(AppTheme::Light, TrayIconState::Idle, true, true),
+            "resources/tray_idle_manual_warning_dark.png"
+        );
+        // The colored theme (Linux) has its own, petrol ones.
+        assert_eq!(
+            get_icon_path(AppTheme::Colored, TrayIconState::Idle, false, true),
+            "resources/handy_manual.png"
+        );
+        assert_eq!(
+            get_icon_path(AppTheme::Colored, TrayIconState::Idle, true, true),
+            "resources/handy_manual_warning.png"
+        );
+    }
+
+    #[test]
+    fn toggling_and_assigning_change_the_idle_icon() {
+        let mut settings = with_mail_profile();
+        let idle = |s: &AppSettings| icon_path_for(AppTheme::Dark, TrayIconState::Idle, false, s);
+        assert_eq!(idle(&settings), "resources/tray_idle.png");
+        crate::app_profiles::toggle_auto(&mut settings);
+        assert_eq!(idle(&settings), "resources/tray_idle_manual.png");
+        crate::app_profiles::set_apps(&mut settings, "mail", Vec::new()).unwrap();
+        assert_eq!(idle(&settings), "resources/tray_idle.png");
+        crate::app_profiles::set_apps(&mut settings, "mail", vec!["com.apple.mail".into()])
+            .unwrap();
+        assert_eq!(idle(&settings), "resources/tray_idle_manual.png");
+        crate::app_profiles::toggle_auto(&mut settings);
+        assert_eq!(idle(&settings), "resources/tray_idle.png");
     }
 
     #[test]
@@ -1313,15 +1453,15 @@ mod tests {
     fn the_badge_shows_at_idle_only_and_exists() {
         let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
         for theme in [AppTheme::Dark, AppTheme::Light, AppTheme::Colored] {
-            let badged = get_icon_path(theme.clone(), TrayIconState::Idle, true);
+            let badged = get_icon_path(theme.clone(), TrayIconState::Idle, true, false);
             assert_ne!(
                 badged,
-                get_icon_path(theme.clone(), TrayIconState::Idle, false)
+                get_icon_path(theme.clone(), TrayIconState::Idle, false, false)
             );
             assert!(root.join(badged).is_file(), "{badged} is missing");
             assert_eq!(
-                get_icon_path(theme.clone(), TrayIconState::Recording, true),
-                get_icon_path(theme, TrayIconState::Recording, false)
+                get_icon_path(theme.clone(), TrayIconState::Recording, true, false),
+                get_icon_path(theme, TrayIconState::Recording, false, false)
             );
         }
     }
@@ -1368,12 +1508,16 @@ mod artwork_tests {
                 TrayIconState::Transcribing,
             ] {
                 for warning in [false, true] {
-                    let path = get_icon_path(theme.clone(), state, warning);
-                    let bytes = std::fs::read(manifest_dir.join(path))
-                        .unwrap_or_else(|e| panic!("{path}: {e}"));
-                    let hash = format!("{:x}", Sha256::digest(&bytes));
-                    if HANDY_TRAY_ARTWORK.contains(&hash.as_str()) {
-                        still_handys.push(path);
+                    // DanyWhere: the icons marked for choosing the profile by
+                    // hand too.
+                    for manual in [false, true] {
+                        let path = get_icon_path(theme.clone(), state, warning, manual);
+                        let bytes = std::fs::read(manifest_dir.join(path))
+                            .unwrap_or_else(|e| panic!("{path}: {e}"));
+                        let hash = format!("{:x}", Sha256::digest(&bytes));
+                        if HANDY_TRAY_ARTWORK.contains(&hash.as_str()) {
+                            still_handys.push(path);
+                        }
                     }
                 }
             }

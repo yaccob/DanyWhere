@@ -235,6 +235,9 @@ pub fn cancel_current_operation(app: &AppHandle) {
     tm.cancel_stream();
     tm.cancel_transcription();
 
+    // DanyWhere: the dictation's own profile ends with it.
+    crate::app_profiles::end_dictation();
+
     // Update tray icon and hide overlay
     set_tray_state(app, crate::tray::TrayIconState::Idle);
     hide_recording_overlay(app);

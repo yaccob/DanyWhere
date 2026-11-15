@@ -14,7 +14,8 @@
     "wordList": "Woordenlijst",
     "onlyGlobalWordList": "Geen extra lijst",
     "profile": "Profiel",
-    "defaultProfile": "Standaard"
+    "defaultProfile": "Standaard",
+    "profileAutoByApp": "Profiel kiezen per app"
   },
   "sidebar": {
     "general": "Algemeen",
@@ -373,6 +374,10 @@
           "cycle_word_list": {
             "name": "Woordenlijst wisselen",
             "description": "Zet de volgende extra woordenlijst van het actieve profiel aan; na de laatste staat er geen meer aan."
+          },
+          "toggle_profile_auto": {
+            "name": "Profiel kiezen per app",
+            "description": "Zet het kiezen van het profiel per app aan of uit. Werkt zolang er apps aan een profiel zijn toegewezen."
           }
         },
         "errors": {
@@ -465,11 +470,29 @@
         "models": "Het model dat je hier kiest, hoort bij het profiel „{{name}}”.",
         "postProcessing": "Provider, model, prompts en de grenzen voor context horen bij het profiel „{{name}}”; API-sleutels gelden voor alle profielen."
       },
+      "apps": {
+        "label": "Automatisch gebruikt in:",
+        "none": "nog geen app",
+        "remove": "{{name}} verwijderen",
+        "add": "App toevoegen…",
+        "running": "actief",
+        "movesFrom": "nu in ‘{{name}}’, gaat hierheen",
+        "idPlaceholder": "Programma, bijv. Code.exe",
+        "addTyped": "Toevoegen"
+      },
+      "autoByApp": {
+        "label": "Profiel kiezen per app",
+        "description": "Dicteren in een app die aan een profiel is toegewezen gebruikt dat profiel; overal elders het actieve. Ook het systeemvakmenu en een sneltoets schakelen dit.",
+        "noApps": "Wijs onder de naam van een profiel apps toe; tot die tijd heeft dit geen effect.",
+        "short": "Per app"
+      },
       "errors": {
         "switch": "Kan niet van profiel wisselen",
         "duplicate": "Kan het profiel niet dupliceren",
         "rename": "Kan het profiel niet hernoemen",
-        "delete": "Kan het profiel niet verwijderen"
+        "delete": "Kan het profiel niet verwijderen",
+        "apps": "De apps konden niet worden toegewezen",
+        "autoByApp": "Kiezen per app kon niet worden omgeschakeld"
       }
     },
     "profileTransfer": {
@@ -489,6 +512,8 @@
       "exportDone": "Geëxporteerd",
       "importDone": "\"{{name}}\" geïmporteerd",
       "importDoneWithKey": "\"{{name}}\" geïmporteerd met de API-sleutel voor {{provider}}",
+      "droppedAppsTitle": "Apps blijven bij andere profielen",
+      "droppedApps": "Al in gebruik door ‘{{name}}’: {{apps}}.",
       "exportFailed": "Profiel kon niet worden geëxporteerd",
       "importFailed": "Profiel kon niet worden geïmporteerd",
       "replaceKeyTitle": "API-sleutel vervangen?",
@@ -1217,7 +1242,10 @@
     "notReady": "Nog niet klaar",
     "wordList": "Woordenlijst: {{name}}",
     "wordListGlobalOnly": "Geen extra lijst",
-    "profile": "Profiel: {{name}}"
+    "profile": "Profiel: {{name}}",
+    "profileAutoOn": "Profiel per app: aan",
+    "profileAutoOff": "Profiel per app: uit",
+    "withProfile": "{{label}} · {{name}}"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} blokkeert mogelijk 1 sneltoets",

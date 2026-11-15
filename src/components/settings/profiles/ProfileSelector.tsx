@@ -2,6 +2,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { useProfiles } from "@/hooks/useProfiles";
 import { Dropdown } from "../../ui/Dropdown";
+import { ProfileAutoByAppCompact } from "./ProfileAutoByApp";
 
 /** DanyWhere: the profile in use, at the top of the sidebar on every page.
  * Hidden until the settings carry profiles. */
@@ -26,6 +27,7 @@ export const ProfileSelector: React.FC = () => {
         disabled={busy}
         className="w-full"
       />
+      <ProfileAutoByAppCompact />
     </div>
   );
 };

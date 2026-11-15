@@ -14,7 +14,8 @@
     "wordList": "Ordliste",
     "onlyGlobalWordList": "Ingen ekstra liste",
     "profile": "Profil",
-    "defaultProfile": "Standard"
+    "defaultProfile": "Standard",
+    "profileAutoByApp": "Vælg profil efter program"
   },
   "sidebar": {
     "general": "Generelt",
@@ -373,6 +374,10 @@
           "cycle_word_list": {
             "name": "Skift ordliste",
             "description": "Slår den næste ekstra ordliste i den aktive profil til; efter den sidste er ingen slået til."
+          },
+          "toggle_profile_auto": {
+            "name": "Vælg profil efter program",
+            "description": "Slår valg af profil efter program til eller fra. Virker, så længe programmer er tildelt en profil."
           }
         },
         "errors": {
@@ -465,11 +470,29 @@
         "models": "Den model, du vælger her, hører til profilen »{{name}}«.",
         "postProcessing": "Udbyder, model, prompts og grænserne for kontekst hører til profilen »{{name}}«; API-nøgler gælder for alle profiler."
       },
+      "apps": {
+        "label": "Bruges automatisk i:",
+        "none": "endnu intet program",
+        "remove": "Fjern {{name}}",
+        "add": "Tilføj program…",
+        "running": "kører",
+        "movesFrom": "nu i “{{name}}”, flyttes hertil",
+        "idPlaceholder": "Program, f.eks. Code.exe",
+        "addTyped": "Tilføj"
+      },
+      "autoByApp": {
+        "label": "Vælg profil efter program",
+        "description": "Diktat i et program, der er tildelt en profil, bruger den profil; alle andre steder den aktive. Bakkemenuen og en genvej skifter det også.",
+        "noApps": "Tildel programmer til en profil under dens navn; indtil da har dette ingen virkning.",
+        "short": "Efter program"
+      },
       "errors": {
         "switch": "Kunne ikke skifte profil",
         "duplicate": "Kunne ikke duplikere profilen",
         "rename": "Kunne ikke omdøbe profilen",
-        "delete": "Kunne ikke slette profilen"
+        "delete": "Kunne ikke slette profilen",
+        "apps": "Programmerne kunne ikke tildeles",
+        "autoByApp": "Valg efter program kunne ikke skiftes"
       }
     },
     "profileTransfer": {
@@ -489,6 +512,8 @@
       "exportDone": "Eksporteret",
       "importDone": "\"{{name}}\" importeret",
       "importDoneWithKey": "\"{{name}}\" importeret med API-nøglen til {{provider}}",
+      "droppedAppsTitle": "Programmer bliver hos andre profiler",
+      "droppedApps": "Bruges allerede af “{{name}}”: {{apps}}.",
       "exportFailed": "Profilen kunne ikke eksporteres",
       "importFailed": "Profilen kunne ikke importeres",
       "replaceKeyTitle": "Erstat API-nøgle?",
@@ -1217,7 +1242,10 @@
     "notReady": "Ikke klar endnu",
     "wordList": "Ordliste: {{name}}",
     "wordListGlobalOnly": "Ingen ekstra liste",
-    "profile": "Profil: {{name}}"
+    "profile": "Profil: {{name}}",
+    "profileAutoOn": "Profil efter program: til",
+    "profileAutoOff": "Profil efter program: fra",
+    "withProfile": "{{label}} · {{name}}"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} blokerer muligvis 1 genvej",

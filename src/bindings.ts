@@ -535,6 +535,29 @@ async importProfile(path: string, password: string | null, keyConflict: KeyConfl
     else return { status: "error", error: e  as any };
 }
 },
+async setProfileApps(id: string, apps: string[]) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("set_profile_apps", { id, apps }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async setProfileAutoByApp(enabled: boolean) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("set_profile_auto_by_app", { enabled }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * The applications that can be assigned, running ones first. Only macOS
+ * lists them; elsewhere the list is empty and ids are typed in.
+ */
+async listApplications() : Promise<ApplicationInfo[]> {
+    return await TAURI_INVOKE("list_applications");
+},
 /**
  * Temporarily unregister all bindings while the user is recording a
  * shortcut in the UI. This avoids firing actions while keys are recorded.
@@ -1590,6 +1613,14 @@ profile_words?: string[];
  * into it. Not used yet.
  */
 profile_auto_by_app?: boolean }
+/**
+ * An application that can be assigned to a profile.
+ */
+export type ApplicationInfo = { 
+/**
+ * Bundle id on macOS, executable name on Windows.
+ */
+id: string; name: string; running: boolean }
 export type AudioDevice = { index: string; name: string; is_default: boolean }
 export type AutoSubmitKey = "enter" | "ctrl_enter" | "cmd_enter"
 export type AutoUnavailableReason = 

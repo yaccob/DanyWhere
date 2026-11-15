@@ -1233,6 +1233,24 @@ pub fn get_default_settings() -> AppSettings {
             current_binding: default_cycle_word_list_shortcut.to_string(),
         },
     );
+    // DanyWhere: turns choosing the profile by application on and off
+    // (`app_profiles`). A for "application"; Control/Alt+Shift like the
+    // word list shortcut. Registered only while applications are assigned.
+    #[cfg(target_os = "macos")]
+    let default_toggle_profile_auto_shortcut = "ctrl+shift+a";
+    #[cfg(not(target_os = "macos"))]
+    let default_toggle_profile_auto_shortcut = "alt+shift+a";
+
+    bindings.insert(
+        crate::app_profiles::TOGGLE_BINDING.to_string(),
+        ShortcutBinding {
+            id: crate::app_profiles::TOGGLE_BINDING.to_string(),
+            name: "Choose Profile by Application".to_string(),
+            description: "Turns choosing the profile by application on or off.".to_string(),
+            default_binding: default_toggle_profile_auto_shortcut.to_string(),
+            current_binding: default_toggle_profile_auto_shortcut.to_string(),
+        },
+    );
     bindings.insert(
         "cancel".to_string(),
         ShortcutBinding {
@@ -1393,7 +1411,15 @@ pub fn binding_needs_post_processing(id: &str) -> bool {
 /// so tests cover every platform. The cancel shortcut is registered only
 /// while recording, by its callers' own rule.
 pub fn registers_binding(id: &str, settings: &AppSettings, service_available: bool) -> bool {
-    if binding_needs_post_processing(id) && !settings.post_process_enabled {
+    // DanyWhere: also while a profile with applications post-processes, and
+    // the profile toggle only while applications are assigned.
+    if binding_needs_post_processing(id)
+        && !crate::app_profiles::post_processing_reachable(settings)
+    {
+        return false;
+    }
+    if id == crate::app_profiles::TOGGLE_BINDING && !crate::app_profiles::has_assignments(settings)
+    {
         return false;
     }
     if id == crate::insert_service::PASTE_LAST_BINDING {
@@ -1865,6 +1891,45 @@ mod tests {
         assert!(registers_binding("paste_last_transcript", &settings, false));
         let settings = with_paste_last(without_accessibility(), "option+shift+v");
         assert!(registers_binding("paste_last_transcript", &settings, true));
+    }
+
+    /// DanyWhere: two profiles, "mail" (post-processing on) assigned to Mail;
+    /// the active one has post-processing off.
+    fn with_mail_profile() -> AppSettings {
+        let mut settings = get_default_settings();
+        settings.post_process_enabled = false;
+        crate::profiles::ensure_profiles(&mut settings);
+        let mut mail = settings.profiles[0].clone();
+        mail.id = "mail".to_string();
+        mail.values.post_process_enabled = true;
+        mail.apps = vec!["com.apple.mail".to_string()];
+        settings.profiles.push(mail);
+        settings
+    }
+
+    #[test]
+    fn the_profile_toggle_is_registered_only_while_apps_are_assigned() {
+        let toggle = crate::app_profiles::TOGGLE_BINDING;
+        let mut settings = with_mail_profile();
+        assert!(registers_binding(toggle, &settings, true));
+        crate::app_profiles::set_apps(&mut settings, "mail", Vec::new()).unwrap();
+        assert!(!registers_binding(toggle, &settings, true));
+    }
+
+    #[test]
+    fn an_app_profile_with_post_processing_keeps_its_shortcuts_registered() {
+        let mut settings = with_mail_profile();
+        assert!(registers_binding(
+            "transcribe_with_post_process",
+            &settings,
+            true
+        ));
+        crate::app_profiles::toggle_auto(&mut settings);
+        assert!(!registers_binding(
+            "transcribe_with_post_process",
+            &settings,
+            true
+        ));
     }
 
     #[test]

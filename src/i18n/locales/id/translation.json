@@ -14,7 +14,8 @@
     "wordList": "Daftar Kata",
     "onlyGlobalWordList": "Tanpa Daftar Tambahan",
     "profile": "Profil",
-    "defaultProfile": "Bawaan"
+    "defaultProfile": "Bawaan",
+    "profileAutoByApp": "Pilih profil menurut aplikasi"
   },
   "sidebar": {
     "general": "Umum",
@@ -373,6 +374,10 @@
           "cycle_word_list": {
             "name": "Ganti Daftar Kata",
             "description": "Mengaktifkan daftar kata tambahan berikutnya dari profil yang aktif; setelah yang terakhir, tidak ada yang aktif."
+          },
+          "toggle_profile_auto": {
+            "name": "Pilih profil menurut aplikasi",
+            "description": "Mengaktifkan atau menonaktifkan pemilihan profil menurut aplikasi. Berlaku selama ada aplikasi yang ditetapkan ke suatu profil."
           }
         },
         "errors": {
@@ -465,11 +470,29 @@
         "models": "Model yang dipilih di sini milik profil “{{name}}”.",
         "postProcessing": "Penyedia, model, prompt, dan batas konteks milik profil “{{name}}”; kunci API berlaku untuk semua profil."
       },
+      "apps": {
+        "label": "Otomatis digunakan di:",
+        "none": "belum ada aplikasi",
+        "remove": "Hapus {{name}}",
+        "add": "Tambah aplikasi…",
+        "running": "berjalan",
+        "movesFrom": "sekarang di “{{name}}”, pindah ke sini",
+        "idPlaceholder": "Program, mis. Code.exe",
+        "addTyped": "Tambah"
+      },
+      "autoByApp": {
+        "label": "Pilih profil menurut aplikasi",
+        "description": "Mendikte ke aplikasi yang ditetapkan ke suatu profil memakai profil itu; di tempat lain, profil aktif. Menu baki dan pintasan juga mengubahnya.",
+        "noApps": "Tetapkan aplikasi ke profil di bawah namanya; sampai saat itu ini tidak berpengaruh.",
+        "short": "Menurut aplikasi"
+      },
       "errors": {
         "switch": "Tidak dapat beralih profil",
         "duplicate": "Tidak dapat menduplikat profil",
         "rename": "Tidak dapat mengganti nama profil",
-        "delete": "Tidak dapat menghapus profil"
+        "delete": "Tidak dapat menghapus profil",
+        "apps": "Aplikasi tidak dapat ditetapkan",
+        "autoByApp": "Pemilihan menurut aplikasi tidak dapat diubah"
       }
     },
     "profileTransfer": {
@@ -489,6 +512,8 @@
       "exportDone": "Diekspor",
       "importDone": "\"{{name}}\" diimpor",
       "importDoneWithKey": "\"{{name}}\" diimpor dengan kunci API untuk {{provider}}",
+      "droppedAppsTitle": "Aplikasi tetap di profil lain",
+      "droppedApps": "Sudah dipakai oleh “{{name}}”: {{apps}}.",
       "exportFailed": "Profil Tidak Dapat Diekspor",
       "importFailed": "Profil Tidak Dapat Diimpor",
       "replaceKeyTitle": "Ganti Kunci API?",
@@ -1217,7 +1242,10 @@
     "notReady": "Belum siap",
     "wordList": "Daftar kata: {{name}}",
     "wordListGlobalOnly": "Tanpa daftar tambahan",
-    "profile": "Profil: {{name}}"
+    "profile": "Profil: {{name}}",
+    "profileAutoOn": "Profil menurut aplikasi: aktif",
+    "profileAutoOff": "Profil menurut aplikasi: nonaktif",
+    "withProfile": "{{label}} · {{name}}"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} mungkin memblokir 1 pintasan",
