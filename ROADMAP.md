@@ -16,7 +16,19 @@ Planned work on DanyWhere, roughly in priority order within each section. Items 
 
 **Idea (user, 2026-11-14):** save and load a whole DanyWhere configuration, e.g. one that combines a speech model with a post-processing setup, or prompts for particular topics. A new installation starts with a default configuration; an update from a version without configurations saves the settings in use as that default.
 
-**To settle:** what a configuration includes (everything, or only what decides how a dictation is processed, with shortcuts, microphone, API keys and interface staying global), whether a change goes into the active configuration at once, where to switch (at the top of General, or in the sidebar and the tray menu), whether prompts and word lists are shared or copied, and export to a file without API keys.
+**Decided (user, 2026-11-15):** they are called **profiles**. A profile holds what decides how a dictation is processed (speech model, languages, post-processing provider, model and prompts, context limits, filler words); shortcuts, microphone, API keys and interface stay global. A change goes into the active profile at once; "Duplicate" makes a new one. The profile is chosen at the top of the sidebar and in the tray menu, and managed under General. Each profile has its own copies of its prompts, so they can drift apart. Profiles are stored with the app and can be exported to and imported from a YAML file; an API key in that file is encrypted with a password.
+
+**To settle:** whether each profile has its own prompt list or exactly one prompt; whether word lists are copied too or stay shared.
+
+### API keys out of the settings file
+
+**Idea (user, 2026-11-15):** API keys should never be stored unencrypted. Today they sit in plain text in `settings_store.json`, so backups, copies of the folder and bug reports carry them.
+
+**Proposed:** keep them in the system's credential store (macOS Keychain, Windows Credential Manager, Secret Service on Linux), with a password-encrypted file as the fallback where no such store exists. The frontend then only learns whether a key is set. For a profile export, the key is encrypted with an export password (Argon2id, XChaCha20-Poly1305), and including it is optional.
+
+### Profiles per application
+
+**Idea (user, 2026-11-15, to be discussed):** associate applications with profiles, so that dictating into a given application uses its profile. Proposed: the frontmost application at the start of a dictation, which DanyWhere already looks up for the context feature, picks the profile for that dictation; the profile chosen in the sidebar stays as it is and applies to every other application.
 
 ### Keep the transcript when there is nowhere to paste it
 
