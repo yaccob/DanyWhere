@@ -472,6 +472,41 @@
         "delete": "Không thể xóa hồ sơ"
       }
     },
+    "profileTransfer": {
+      "export": "Xuất",
+      "import": "Nhập",
+      "importButton": "Nhập hồ sơ",
+      "exportTitle": "Xuất \"{{name}}\"",
+      "exportDescription": "Tệp chứa cài đặt, lời nhắc và danh sách từ của hồ sơ này, không có cài đặt nào khác. Khóa API của nhà cung cấp được mã hóa bằng mật khẩu này; muốn nhập khóa cần cùng mật khẩu.",
+      "importTitle": "Nhập \"{{name}}\"",
+      "importDescription": "Tệp chứa khóa API cho {{provider}}, được mã hóa bằng mật khẩu. Hãy nhập mật khẩu, hoặc nhập hồ sơ mà không có khóa.",
+      "password": "Mật khẩu",
+      "confirmPassword": "Nhập lại mật khẩu",
+      "passwordMismatch": "Hai mật khẩu khác nhau.",
+      "withoutKey": "Nhập không có khóa",
+      "cancel": "Hủy",
+      "working": "Chờ một chút…",
+      "exportDone": "Đã xuất",
+      "importDone": "Đã nhập \"{{name}}\"",
+      "importDoneWithKey": "Đã nhập \"{{name}}\" cùng khóa API cho {{provider}}",
+      "exportFailed": "Không thể xuất hồ sơ",
+      "importFailed": "Không thể nhập hồ sơ",
+      "replaceKeyTitle": "Thay khóa API?",
+      "replaceKey": "Khóa API cho {{provider}} trong tệp khác với khóa đã thiết lập ở đây. Dùng khóa trong tệp? Khi đó khóa sẽ áp dụng cho mọi hồ sơ dùng {{provider}}.",
+      "replace": "Khóa trong tệp",
+      "keep": "Giữ khóa hiện tại",
+      "fileFilter": "Hồ sơ DanyWhere",
+      "errors": {
+        "profile_not_found": "Hồ sơ không còn tồn tại.",
+        "password_required": "Hồ sơ này có khóa API nên cần mật khẩu.",
+        "empty_password": "Hãy nhập mật khẩu.",
+        "wrong_password": "Sai mật khẩu, hoặc tệp đã bị thay đổi.",
+        "unsupported_format": "Đây không phải hồ sơ DanyWhere, hoặc nó đến từ phiên bản mới hơn.",
+        "malformed": "Tệp bị hỏng hoặc không đầy đủ.",
+        "io": "Không thể đọc hoặc ghi tệp.",
+        "internal": "Đã xảy ra lỗi. Chi tiết có trong nhật ký."
+      }
+    },
     "models": {
       "title": "Mô hình",
       "changeLanguages": "Đổi ngôn ngữ",

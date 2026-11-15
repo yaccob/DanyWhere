@@ -472,6 +472,41 @@
         "delete": "Kunne ikke slette profilen"
       }
     },
+    "profileTransfer": {
+      "export": "Eksportér",
+      "import": "Importér",
+      "importButton": "Importér profil",
+      "exportTitle": "Eksportér \"{{name}}\"",
+      "exportDescription": "Filen indeholder denne profils indstillinger, prompts og ordlister, ingen andre indstillinger. API-nøglen til dens udbyder krypteres med denne adgangskode; for at importere nøglen kræves samme adgangskode.",
+      "importTitle": "Importér \"{{name}}\"",
+      "importDescription": "Filen indeholder en API-nøgle til {{provider}}, krypteret med en adgangskode. Indtast den, eller importér profilen uden nøglen.",
+      "password": "Adgangskode",
+      "confirmPassword": "Gentag adgangskoden",
+      "passwordMismatch": "De to adgangskoder er forskellige.",
+      "withoutKey": "Importér uden nøgle",
+      "cancel": "Annuller",
+      "working": "Et øjeblik …",
+      "exportDone": "Eksporteret",
+      "importDone": "\"{{name}}\" importeret",
+      "importDoneWithKey": "\"{{name}}\" importeret med API-nøglen til {{provider}}",
+      "exportFailed": "Profilen kunne ikke eksporteres",
+      "importFailed": "Profilen kunne ikke importeres",
+      "replaceKeyTitle": "Erstat API-nøgle?",
+      "replaceKey": "API-nøglen til {{provider}} i filen er forskellig fra den, der er sat op her. Brug filens nøgle? Den gælder så for alle profiler, der bruger {{provider}}.",
+      "replace": "Brug filens nøgle",
+      "keep": "Behold nuværende",
+      "fileFilter": "DanyWhere-profil",
+      "errors": {
+        "profile_not_found": "Profilen findes ikke længere.",
+        "password_required": "Denne profil indeholder en API-nøgle og kræver derfor en adgangskode.",
+        "empty_password": "Indtast en adgangskode.",
+        "wrong_password": "Forkert adgangskode, eller filen er blevet ændret.",
+        "unsupported_format": "Dette er ikke en DanyWhere-profil, eller den stammer fra en nyere version.",
+        "malformed": "Filen er beskadiget eller ufuldstændig.",
+        "io": "Filen kunne ikke læses eller skrives.",
+        "internal": "Noget gik galt. Detaljerne står i loggen."
+      }
+    },
     "models": {
       "title": "Modeller",
       "changeLanguages": "Skift sprog",

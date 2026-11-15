@@ -486,6 +486,56 @@ async deleteProfile(id: string) : Promise<Result<null, string>> {
 }
 },
 /**
+ * Whether exporting profile `id` asks for a password, i.e. whether it
+ * carries an API key.
+ */
+async profileExportNeedsPassword(id: string) : Promise<Result<boolean, TransferError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("profile_export_needs_password", { id }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Writes profile `id` to `path` (`.yaml` is appended when it has no
+ * extension). The key derivation takes about a second, so it runs off the
+ * main thread; the password is wiped afterwards.
+ */
+async exportProfile(id: string, path: string, password: string | null) : Promise<Result<null, TransferError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("export_profile", { id, path, password }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * What the import dialog shows about the file at `path`, before asking for
+ * a password.
+ */
+async inspectProfileImport(path: string) : Promise<Result<ImportPreview, TransferError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("inspect_profile_import", { path }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Imports the profile at `path` as a new profile, without switching to it.
+ * With a password the file's key is decrypted and stored as `key_conflict`
+ * says; without one the key is left out. The password is wiped afterwards.
+ */
+async importProfile(path: string, password: string | null, keyConflict: KeyConflictChoice) : Promise<Result<ImportResult, TransferError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("import_profile", { path, password, keyConflict }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
  * Temporarily unregister all bindings while the user is recording a
  * shortcut in the UI. This avoids firing actions while keys are recorded.
  */
@@ -1710,6 +1760,82 @@ export type ImplementationChangeResult = { success: boolean;
  * List of binding IDs that were reset to defaults due to incompatibility
  */
 reset_bindings: string[] }
+/**
+ * What the import dialog needs to know about a file before asking for a
+ * password.
+ */
+export type ImportPreview = { 
+/**
+ * The profile's name as stored in the file.
+ */
+name: string; 
+/**
+ * Whether the file carries an encrypted API key.
+ */
+has_api_key: boolean; 
+/**
+ * The provider the key belongs to.
+ */
+provider_id: string | null }
+/**
+ * The result of an import.
+ */
+export type ImportResult = { 
+/**
+ * The new profile; `None` when the import stopped at a key conflict.
+ */
+profile: Profile | null; key: ImportedKey; 
+/**
+ * Set when the file's key differs from the stored one and the choice was
+ * [`KeyConflictChoice::Ask`]; nothing was imported then.
+ */
+conflict_provider_id: string | null; 
+/**
+ * Applications of the file's profile that another profile here is
+ * already used for, so the new profile doesn't get them.
+ */
+dropped_apps: string[] }
+/**
+ * What happened to the file's API key.
+ */
+export type ImportedKey = 
+/**
+ * The file had none, or it was left out.
+ */
+"none" | 
+/**
+ * No key was stored for the provider; the file's is now.
+ */
+"added" | 
+/**
+ * The stored key was replaced by the file's.
+ */
+"replaced" | 
+/**
+ * The stored key differs and was kept.
+ */
+"kept" | 
+/**
+ * The stored key is the same as the file's.
+ */
+"same"
+/**
+ * What to do when the file's key differs from the key stored here for the
+ * same provider.
+ */
+export type KeyConflictChoice = 
+/**
+ * Import nothing and report the conflict, so the user can be asked.
+ */
+"ask" | 
+/**
+ * Store the file's key instead.
+ */
+"replace" | 
+/**
+ * Keep the stored key and import the profile.
+ */
+"keep"
 export type KeyboardDiagnosticReport = { secure_input_enabled: boolean; culprit_pid: number | null; culprit_name: string | null; 
 /**
  * Counts only — key identity is deliberately never captured.
@@ -2122,6 +2248,35 @@ export type TranscriptionOutcome =
  * Transcribing or pasting failed.
  */
 "failed"
+/**
+ * An error of an export or import: a code and, for the log, what only Rust
+ * knows.
+ */
+export type TransferError = { code: TransferErrorCode; detail: string | null }
+/**
+ * What went wrong, as a code the frontend translates.
+ */
+export type TransferErrorCode = "profile_not_found" | 
+/**
+ * The profile carries an API key, so the export needs a password.
+ */
+"password_required" | "empty_password" | 
+/**
+ * Wrong password, or the encrypted key in the file was changed.
+ */
+"wrong_password" | 
+/**
+ * Not a profile file, or one from a newer DanyWhere.
+ */
+"unsupported_format" | 
+/**
+ * A damaged or incomplete file.
+ */
+"malformed" | 
+/**
+ * The file could not be read or written.
+ */
+"io" | "internal"
 export type TypingTool = "auto" | "wtype" | "kwtype" | "dotool" | "ydotool" | "xdotool"
 export type VadBackend = "silero" | "earshot"
 /**

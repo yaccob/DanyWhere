@@ -472,6 +472,41 @@
         "delete": "Profil konnte nicht gelöscht werden"
       }
     },
+    "profileTransfer": {
+      "export": "Exportieren",
+      "import": "Importieren",
+      "importButton": "Profil importieren",
+      "exportTitle": "„{{name}}“ exportieren",
+      "exportDescription": "Die Datei enthält die Einstellungen, Prompts und Wortlisten dieses Profils, keine anderen Einstellungen. Der API-Schlüssel seines Anbieters wird mit diesem Passwort verschlüsselt; wer den Schlüssel importiert, braucht dasselbe Passwort.",
+      "importTitle": "„{{name}}“ importieren",
+      "importDescription": "Die Datei enthält einen mit einem Passwort verschlüsselten API-Schlüssel für {{provider}}. Gib das Passwort ein oder importiere das Profil ohne den Schlüssel.",
+      "password": "Passwort",
+      "confirmPassword": "Passwort wiederholen",
+      "passwordMismatch": "Die beiden Passwörter sind verschieden.",
+      "withoutKey": "Ohne Schlüssel importieren",
+      "cancel": "Abbrechen",
+      "working": "Einen Moment …",
+      "exportDone": "Exportiert",
+      "importDone": "„{{name}}“ importiert",
+      "importDoneWithKey": "„{{name}}“ mit dem API-Schlüssel für {{provider}} importiert",
+      "exportFailed": "Profil konnte nicht exportiert werden",
+      "importFailed": "Profil konnte nicht importiert werden",
+      "replaceKeyTitle": "API-Schlüssel ersetzen?",
+      "replaceKey": "Der API-Schlüssel für {{provider}} in der Datei unterscheidet sich von dem hier eingerichteten. Den Schlüssel aus der Datei verwenden? Er gilt dann für jedes Profil, das {{provider}} verwendet.",
+      "replace": "Schlüssel aus der Datei",
+      "keep": "Bisherigen behalten",
+      "fileFilter": "DanyWhere-Profil",
+      "errors": {
+        "profile_not_found": "Das Profil gibt es nicht mehr.",
+        "password_required": "Dieses Profil enthält einen API-Schlüssel und braucht deshalb ein Passwort.",
+        "empty_password": "Gib ein Passwort ein.",
+        "wrong_password": "Falsches Passwort, oder die Datei wurde verändert.",
+        "unsupported_format": "Das ist kein DanyWhere-Profil, oder es stammt aus einer neueren Version.",
+        "malformed": "Die Datei ist beschädigt oder unvollständig.",
+        "io": "Die Datei konnte nicht gelesen oder geschrieben werden.",
+        "internal": "Etwas ist schiefgegangen. Einzelheiten stehen im Log."
+      }
+    },
     "models": {
       "title": "Modelle",
       "changeLanguages": "Sprachen ändern",

@@ -472,6 +472,41 @@
         "delete": "Profil silinemedi"
       }
     },
+    "profileTransfer": {
+      "export": "Dışa aktar",
+      "import": "İçe aktar",
+      "importButton": "Profili içe aktar",
+      "exportTitle": "\"{{name}}\" dışa aktar",
+      "exportDescription": "Dosya bu profilin ayarlarını, istemlerini ve kelime listelerini içerir, başka ayar içermez. Sağlayıcısının API anahtarı bu parolayla şifrelenir; anahtarı içe aktarmak için aynı parola gerekir.",
+      "importTitle": "\"{{name}}\" içe aktar",
+      "importDescription": "Dosya, parolayla şifrelenmiş bir {{provider}} API anahtarı içeriyor. Parolayı girin veya profili anahtar olmadan içe aktarın.",
+      "password": "Parola",
+      "confirmPassword": "Parolayı tekrarlayın",
+      "passwordMismatch": "İki parola farklı.",
+      "withoutKey": "Anahtar olmadan içe aktar",
+      "cancel": "İptal",
+      "working": "Bir saniye…",
+      "exportDone": "Dışa aktarıldı",
+      "importDone": "\"{{name}}\" içe aktarıldı",
+      "importDoneWithKey": "\"{{name}}\", {{provider}} API anahtarıyla içe aktarıldı",
+      "exportFailed": "Profil dışa aktarılamadı",
+      "importFailed": "Profil içe aktarılamadı",
+      "replaceKeyTitle": "API anahtarı değiştirilsin mi?",
+      "replaceKey": "Dosyadaki {{provider}} API anahtarı burada ayarlı olandan farklı. Dosyadaki anahtar kullanılsın mı? Bu durumda {{provider}} kullanan her profil için geçerli olur.",
+      "replace": "Dosyadaki anahtar",
+      "keep": "Mevcut olanı koru",
+      "fileFilter": "DanyWhere profili",
+      "errors": {
+        "profile_not_found": "Profil artık yok.",
+        "password_required": "Bu profil bir API anahtarı içerdiğinden parola gerekiyor.",
+        "empty_password": "Bir parola girin.",
+        "wrong_password": "Parola yanlış ya da dosya değiştirilmiş.",
+        "unsupported_format": "Bu bir DanyWhere profili değil ya da daha yeni bir sürümden.",
+        "malformed": "Dosya bozuk ya da eksik.",
+        "io": "Dosya okunamadı ya da yazılamadı.",
+        "internal": "Bir şeyler ters gitti. Ayrıntılar günlükte."
+      }
+    },
     "models": {
       "title": "Modeller",
       "changeLanguages": "Dilleri değiştir",

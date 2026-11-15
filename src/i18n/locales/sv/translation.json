@@ -472,6 +472,41 @@
         "delete": "Det gick inte att ta bort profilen"
       }
     },
+    "profileTransfer": {
+      "export": "Exportera",
+      "import": "Importera",
+      "importButton": "Importera profil",
+      "exportTitle": "Exportera ”{{name}}”",
+      "exportDescription": "Filen innehåller den här profilens inställningar, promptar och ordlistor, inga andra inställningar. API-nyckeln för dess leverantör krypteras med det här lösenordet; för att importera nyckeln krävs samma lösenord.",
+      "importTitle": "Importera ”{{name}}”",
+      "importDescription": "Filen innehåller en API-nyckel för {{provider}}, krypterad med ett lösenord. Ange det, eller importera profilen utan nyckeln.",
+      "password": "Lösenord",
+      "confirmPassword": "Upprepa lösenordet",
+      "passwordMismatch": "Lösenorden skiljer sig åt.",
+      "withoutKey": "Importera utan nyckel",
+      "cancel": "Avbryt",
+      "working": "Ett ögonblick …",
+      "exportDone": "Exporterad",
+      "importDone": "”{{name}}” importerad",
+      "importDoneWithKey": "”{{name}}” importerad med API-nyckeln för {{provider}}",
+      "exportFailed": "Profilen kunde inte exporteras",
+      "importFailed": "Profilen kunde inte importeras",
+      "replaceKeyTitle": "Ersätta API-nyckeln?",
+      "replaceKey": "API-nyckeln för {{provider}} i filen skiljer sig från den som är inställd här. Använda filens nyckel? Den gäller då för alla profiler som använder {{provider}}.",
+      "replace": "Filens nyckel",
+      "keep": "Behåll nuvarande",
+      "fileFilter": "DanyWhere-profil",
+      "errors": {
+        "profile_not_found": "Profilen finns inte längre.",
+        "password_required": "Den här profilen innehåller en API-nyckel och behöver därför ett lösenord.",
+        "empty_password": "Ange ett lösenord.",
+        "wrong_password": "Fel lösenord, eller så har filen ändrats.",
+        "unsupported_format": "Det här är ingen DanyWhere-profil, eller så kommer den från en nyare version.",
+        "malformed": "Filen är skadad eller ofullständig.",
+        "io": "Filen kunde inte läsas eller skrivas.",
+        "internal": "Något gick fel. Detaljerna finns i loggen."
+      }
+    },
     "models": {
       "title": "Modeller",
       "changeLanguages": "Ändra språk",

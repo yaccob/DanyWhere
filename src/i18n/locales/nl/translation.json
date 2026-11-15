@@ -472,6 +472,41 @@
         "delete": "Kan het profiel niet verwijderen"
       }
     },
+    "profileTransfer": {
+      "export": "Exporteren",
+      "import": "Importeren",
+      "importButton": "Profiel importeren",
+      "exportTitle": "\"{{name}}\" exporteren",
+      "exportDescription": "Het bestand bevat de instellingen, prompts en woordenlijsten van dit profiel, geen andere instellingen. De API-sleutel van de aanbieder wordt met dit wachtwoord versleuteld; voor het importeren van de sleutel is hetzelfde wachtwoord nodig.",
+      "importTitle": "\"{{name}}\" importeren",
+      "importDescription": "Het bestand bevat een API-sleutel voor {{provider}}, versleuteld met een wachtwoord. Voer het in, of importeer het profiel zonder de sleutel.",
+      "password": "Wachtwoord",
+      "confirmPassword": "Herhaal het wachtwoord",
+      "passwordMismatch": "De twee wachtwoorden verschillen.",
+      "withoutKey": "Importeren zonder sleutel",
+      "cancel": "Annuleren",
+      "working": "Een moment…",
+      "exportDone": "Geëxporteerd",
+      "importDone": "\"{{name}}\" geïmporteerd",
+      "importDoneWithKey": "\"{{name}}\" geïmporteerd met de API-sleutel voor {{provider}}",
+      "exportFailed": "Profiel kon niet worden geëxporteerd",
+      "importFailed": "Profiel kon niet worden geïmporteerd",
+      "replaceKeyTitle": "API-sleutel vervangen?",
+      "replaceKey": "De API-sleutel voor {{provider}} in het bestand verschilt van die hier is ingesteld. De sleutel uit het bestand gebruiken? Die geldt dan voor elk profiel dat {{provider}} gebruikt.",
+      "replace": "Sleutel uit bestand",
+      "keep": "Huidige behouden",
+      "fileFilter": "DanyWhere-profiel",
+      "errors": {
+        "profile_not_found": "Het profiel bestaat niet meer.",
+        "password_required": "Dit profiel bevat een API-sleutel en heeft daarom een wachtwoord nodig.",
+        "empty_password": "Voer een wachtwoord in.",
+        "wrong_password": "Verkeerd wachtwoord, of het bestand is gewijzigd.",
+        "unsupported_format": "Dit is geen DanyWhere-profiel, of het komt uit een nieuwere versie.",
+        "malformed": "Het bestand is beschadigd of onvolledig.",
+        "io": "Het bestand kon niet worden gelezen of geschreven.",
+        "internal": "Er ging iets mis. De details staan in het logboek."
+      }
+    },
     "models": {
       "title": "Modellen",
       "changeLanguages": "Talen wijzigen",

@@ -472,6 +472,41 @@
         "delete": "Couldn't delete the profile"
       }
     },
+    "profileTransfer": {
+      "export": "Export",
+      "import": "Import",
+      "importButton": "Import Profile",
+      "exportTitle": "Export \"{{name}}\"",
+      "exportDescription": "The file holds this profile's settings, prompts and word lists, no other settings. Its provider's API key is encrypted with this password; importing the key needs the same password.",
+      "importTitle": "Import \"{{name}}\"",
+      "importDescription": "The file contains an API key for {{provider}}, encrypted with a password. Enter it, or import the profile without the key.",
+      "password": "Password",
+      "confirmPassword": "Repeat password",
+      "passwordMismatch": "The two passwords differ.",
+      "withoutKey": "Import Without Key",
+      "cancel": "Cancel",
+      "working": "Working…",
+      "exportDone": "Exported",
+      "importDone": "\"{{name}}\" imported",
+      "importDoneWithKey": "\"{{name}}\" imported with the API key for {{provider}}",
+      "exportFailed": "Couldn't Export Profile",
+      "importFailed": "Couldn't Import Profile",
+      "replaceKeyTitle": "Replace API Key?",
+      "replaceKey": "The file's API key for {{provider}} differs from the one set up here. Use the file's key? It then applies to every profile that uses {{provider}}.",
+      "replace": "Use File's Key",
+      "keep": "Keep Current Key",
+      "fileFilter": "DanyWhere Profile",
+      "errors": {
+        "profile_not_found": "The profile no longer exists.",
+        "password_required": "This profile carries an API key, so it needs a password.",
+        "empty_password": "Enter a password.",
+        "wrong_password": "Wrong password, or the file was changed.",
+        "unsupported_format": "This is not a DanyWhere profile, or it comes from a newer version.",
+        "malformed": "The file is damaged or incomplete.",
+        "io": "The file couldn't be read or written.",
+        "internal": "Something went wrong. The log has the details."
+      }
+    },
     "models": {
       "title": "Models",
       "changeLanguages": "Change languages",

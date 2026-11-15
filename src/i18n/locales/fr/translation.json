@@ -472,6 +472,41 @@
         "delete": "Impossible de supprimer le profil"
       }
     },
+    "profileTransfer": {
+      "export": "Exporter",
+      "import": "Importer",
+      "importButton": "Importer un profil",
+      "exportTitle": "Exporter « {{name}} »",
+      "exportDescription": "Le fichier contient les réglages, les invites et les listes de mots de ce profil, aucun autre réglage. La clé API de son fournisseur est chiffrée avec ce mot de passe ; importer la clé demande le même mot de passe.",
+      "importTitle": "Importer « {{name}} »",
+      "importDescription": "Le fichier contient une clé API pour {{provider}}, chiffrée avec un mot de passe. Saisissez-le, ou importez le profil sans la clé.",
+      "password": "Mot de passe",
+      "confirmPassword": "Répétez le mot de passe",
+      "passwordMismatch": "Les deux mots de passe diffèrent.",
+      "withoutKey": "Importer sans la clé",
+      "cancel": "Annuler",
+      "working": "Un instant…",
+      "exportDone": "Exporté",
+      "importDone": "« {{name}} » importé",
+      "importDoneWithKey": "« {{name}} » importé avec la clé API pour {{provider}}",
+      "exportFailed": "Impossible d'exporter le profil",
+      "importFailed": "Impossible d'importer le profil",
+      "replaceKeyTitle": "Remplacer la clé API ?",
+      "replaceKey": "La clé API pour {{provider}} du fichier diffère de celle configurée ici. Utiliser celle du fichier ? Elle s'appliquera alors à tous les profils qui utilisent {{provider}}.",
+      "replace": "Clé du fichier",
+      "keep": "Garder l'actuelle",
+      "fileFilter": "Profil DanyWhere",
+      "errors": {
+        "profile_not_found": "Le profil n'existe plus.",
+        "password_required": "Ce profil contient une clé API, il lui faut donc un mot de passe.",
+        "empty_password": "Saisissez un mot de passe.",
+        "wrong_password": "Mot de passe erroné, ou le fichier a été modifié.",
+        "unsupported_format": "Ce n'est pas un profil DanyWhere, ou il provient d'une version plus récente.",
+        "malformed": "Le fichier est endommagé ou incomplet.",
+        "io": "Impossible de lire ou d'écrire le fichier.",
+        "internal": "Une erreur s'est produite. Les détails figurent dans le journal."
+      }
+    },
     "models": {
       "title": "Modèles",
       "changeLanguages": "Modifier les langues",

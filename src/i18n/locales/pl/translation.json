@@ -472,6 +472,41 @@
         "delete": "Nie udało się usunąć profilu"
       }
     },
+    "profileTransfer": {
+      "export": "Eksportuj",
+      "import": "Importuj",
+      "importButton": "Importuj profil",
+      "exportTitle": "Eksportuj „{{name}}”",
+      "exportDescription": "Plik zawiera ustawienia, prompty i listy słów tego profilu, bez innych ustawień. Klucz API jego dostawcy jest szyfrowany tym hasłem; import klucza wymaga tego samego hasła.",
+      "importTitle": "Importuj „{{name}}”",
+      "importDescription": "Plik zawiera klucz API dla {{provider}} zaszyfrowany hasłem. Wpisz je albo zaimportuj profil bez klucza.",
+      "password": "Hasło",
+      "confirmPassword": "Powtórz hasło",
+      "passwordMismatch": "Hasła się różnią.",
+      "withoutKey": "Importuj bez klucza",
+      "cancel": "Anuluj",
+      "working": "Chwileczkę…",
+      "exportDone": "Wyeksportowano",
+      "importDone": "Zaimportowano „{{name}}”",
+      "importDoneWithKey": "Zaimportowano „{{name}}” z kluczem API dla {{provider}}",
+      "exportFailed": "Nie udało się wyeksportować profilu",
+      "importFailed": "Nie udało się zaimportować profilu",
+      "replaceKeyTitle": "Zastąpić klucz API?",
+      "replaceKey": "Klucz API dla {{provider}} w pliku różni się od ustawionego tutaj. Użyć klucza z pliku? Będzie on wtedy obowiązywał w każdym profilu, który używa {{provider}}.",
+      "replace": "Klucz z pliku",
+      "keep": "Zachowaj obecny",
+      "fileFilter": "Profil DanyWhere",
+      "errors": {
+        "profile_not_found": "Profil już nie istnieje.",
+        "password_required": "Ten profil zawiera klucz API, więc potrzebuje hasła.",
+        "empty_password": "Wpisz hasło.",
+        "wrong_password": "Błędne hasło albo plik został zmieniony.",
+        "unsupported_format": "To nie jest profil DanyWhere albo pochodzi z nowszej wersji.",
+        "malformed": "Plik jest uszkodzony lub niekompletny.",
+        "io": "Nie udało się odczytać ani zapisać pliku.",
+        "internal": "Coś poszło nie tak. Szczegóły są w dzienniku."
+      }
+    },
     "models": {
       "title": "Modele",
       "changeLanguages": "Zmień języki",

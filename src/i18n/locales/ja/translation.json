@@ -472,6 +472,41 @@
         "delete": "プロファイルを削除できませんでした"
       }
     },
+    "profileTransfer": {
+      "export": "書き出し",
+      "import": "読み込み",
+      "importButton": "プロファイルを読み込む",
+      "exportTitle": "「{{name}}」を書き出す",
+      "exportDescription": "ファイルにはこのプロファイルの設定、プロンプト、単語リストが含まれ、ほかの設定は含まれません。プロバイダーの API キーはこのパスワードで暗号化されます。キーを読み込むには同じパスワードが必要です。",
+      "importTitle": "「{{name}}」を読み込む",
+      "importDescription": "このファイルには、パスワードで暗号化された {{provider}} の API キーが含まれています。パスワードを入力するか、キーなしでプロファイルを読み込んでください。",
+      "password": "パスワード",
+      "confirmPassword": "パスワード（確認）",
+      "passwordMismatch": "2 つのパスワードが一致しません。",
+      "withoutKey": "キーなしで読み込む",
+      "cancel": "キャンセル",
+      "working": "処理中…",
+      "exportDone": "書き出しました",
+      "importDone": "「{{name}}」を読み込みました",
+      "importDoneWithKey": "「{{name}}」を {{provider}} の API キーと一緒に読み込みました",
+      "exportFailed": "プロファイルを書き出せませんでした",
+      "importFailed": "プロファイルを読み込めませんでした",
+      "replaceKeyTitle": "API キーを置き換えますか？",
+      "replaceKey": "ファイル内の {{provider}} の API キーは、ここで設定されているキーと異なります。ファイルのキーを使いますか？ その場合、{{provider}} を使うすべてのプロファイルに適用されます。",
+      "replace": "ファイルのキーを使う",
+      "keep": "現在のキーを保持",
+      "fileFilter": "DanyWhere プロファイル",
+      "errors": {
+        "profile_not_found": "このプロファイルはもう存在しません。",
+        "password_required": "このプロファイルには API キーが含まれるため、パスワードが必要です。",
+        "empty_password": "パスワードを入力してください。",
+        "wrong_password": "パスワードが違うか、ファイルが変更されています。",
+        "unsupported_format": "DanyWhere のプロファイルではないか、新しいバージョンのものです。",
+        "malformed": "ファイルが壊れているか不完全です。",
+        "io": "ファイルを読み書きできませんでした。",
+        "internal": "問題が発生しました。詳細はログにあります。"
+      }
+    },
     "models": {
       "title": "モデル",
       "changeLanguages": "言語を変更",

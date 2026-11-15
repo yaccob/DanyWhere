@@ -472,6 +472,41 @@
         "delete": "Profil se nepodařilo smazat"
       }
     },
+    "profileTransfer": {
+      "export": "Exportovat",
+      "import": "Importovat",
+      "importButton": "Importovat profil",
+      "exportTitle": "Exportovat „{{name}}“",
+      "exportDescription": "Soubor obsahuje nastavení, výzvy a seznamy slov tohoto profilu, žádná jiná nastavení. API klíč jeho poskytovatele se zašifruje tímto heslem; import klíče vyžaduje stejné heslo.",
+      "importTitle": "Importovat „{{name}}“",
+      "importDescription": "Soubor obsahuje API klíč pro {{provider}} zašifrovaný heslem. Zadejte ho, nebo importujte profil bez klíče.",
+      "password": "Heslo",
+      "confirmPassword": "Zopakujte heslo",
+      "passwordMismatch": "Hesla se liší.",
+      "withoutKey": "Importovat bez klíče",
+      "cancel": "Zrušit",
+      "working": "Okamžik…",
+      "exportDone": "Exportováno",
+      "importDone": "„{{name}}“ importován",
+      "importDoneWithKey": "„{{name}}“ importován s API klíčem pro {{provider}}",
+      "exportFailed": "Profil se nepodařilo exportovat",
+      "importFailed": "Profil se nepodařilo importovat",
+      "replaceKeyTitle": "Nahradit API klíč?",
+      "replaceKey": "API klíč pro {{provider}} v souboru se liší od zde nastaveného. Použít klíč ze souboru? Pak bude platit pro každý profil, který používá {{provider}}.",
+      "replace": "Klíč ze souboru",
+      "keep": "Ponechat stávající",
+      "fileFilter": "Profil DanyWhere",
+      "errors": {
+        "profile_not_found": "Profil už neexistuje.",
+        "password_required": "Tento profil obsahuje API klíč, a proto potřebuje heslo.",
+        "empty_password": "Zadejte heslo.",
+        "wrong_password": "Špatné heslo, nebo byl soubor změněn.",
+        "unsupported_format": "Toto není profil DanyWhere, nebo pochází z novější verze.",
+        "malformed": "Soubor je poškozený nebo neúplný.",
+        "io": "Soubor se nepodařilo přečíst ani zapsat.",
+        "internal": "Něco se pokazilo. Podrobnosti jsou v protokolu."
+      }
+    },
     "models": {
       "title": "Modely",
       "changeLanguages": "Změnit jazyky",

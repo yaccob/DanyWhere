@@ -472,6 +472,41 @@
         "delete": "לא ניתן היה למחוק את הפרופיל"
       }
     },
+    "profileTransfer": {
+      "export": "ייצוא",
+      "import": "ייבוא",
+      "importButton": "ייבוא פרופיל",
+      "exportTitle": "ייצוא \"{{name}}\"",
+      "exportDescription": "הקובץ מכיל את ההגדרות, ההנחיות ורשימות המילים של פרופיל זה, ללא הגדרות אחרות. מפתח ה-API של הספק שלו מוצפן בסיסמה זו; ייבוא המפתח דורש את אותה סיסמה.",
+      "importTitle": "ייבוא \"{{name}}\"",
+      "importDescription": "הקובץ מכיל מפתח API עבור {{provider}}, מוצפן בסיסמה. הזן אותה, או ייבא את הפרופיל בלי המפתח.",
+      "password": "סיסמה",
+      "confirmPassword": "חזור על הסיסמה",
+      "passwordMismatch": "שתי הסיסמאות שונות.",
+      "withoutKey": "ייבוא בלי מפתח",
+      "cancel": "ביטול",
+      "working": "רגע…",
+      "exportDone": "יוצא",
+      "importDone": "\"{{name}}\" יובא",
+      "importDoneWithKey": "\"{{name}}\" יובא עם מפתח ה-API עבור {{provider}}",
+      "exportFailed": "לא ניתן לייצא את הפרופיל",
+      "importFailed": "לא ניתן לייבא את הפרופיל",
+      "replaceKeyTitle": "להחליף את מפתח ה-API?",
+      "replaceKey": "מפתח ה-API עבור {{provider}} בקובץ שונה מזה שהוגדר כאן. להשתמש במפתח מהקובץ? הוא יחול אז על כל פרופיל שמשתמש ב-{{provider}}.",
+      "replace": "המפתח מהקובץ",
+      "keep": "השאר את הנוכחי",
+      "fileFilter": "פרופיל DanyWhere",
+      "errors": {
+        "profile_not_found": "הפרופיל כבר לא קיים.",
+        "password_required": "פרופיל זה מכיל מפתח API ולכן נדרשת סיסמה.",
+        "empty_password": "הזן סיסמה.",
+        "wrong_password": "סיסמה שגויה, או שהקובץ שונה.",
+        "unsupported_format": "זה אינו פרופיל של DanyWhere, או שהוא מגרסה חדשה יותר.",
+        "malformed": "הקובץ פגום או חלקי.",
+        "io": "לא ניתן לקרוא או לכתוב את הקובץ.",
+        "internal": "משהו השתבש. הפרטים נמצאים ביומן."
+      }
+    },
     "models": {
       "title": "מודלים",
       "changeLanguages": "שנה שפות",

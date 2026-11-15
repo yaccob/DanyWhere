@@ -472,6 +472,41 @@
         "delete": "無法刪除設定檔"
       }
     },
+    "profileTransfer": {
+      "export": "匯出",
+      "import": "匯入",
+      "importButton": "匯入設定檔",
+      "exportTitle": "匯出「{{name}}」",
+      "exportDescription": "檔案包含此設定檔的設定、提示詞和詞彙清單，不含其他設定。其服務商的 API 金鑰會以此密碼加密；匯入金鑰需要相同的密碼。",
+      "importTitle": "匯入「{{name}}」",
+      "importDescription": "檔案包含 {{provider}} 的 API 金鑰，已用密碼加密。請輸入密碼，或不含金鑰匯入設定檔。",
+      "password": "密碼",
+      "confirmPassword": "再次輸入密碼",
+      "passwordMismatch": "兩次輸入的密碼不同。",
+      "withoutKey": "不含金鑰匯入",
+      "cancel": "取消",
+      "working": "請稍候…",
+      "exportDone": "已匯出",
+      "importDone": "已匯入「{{name}}」",
+      "importDoneWithKey": "已匯入「{{name}}」及 {{provider}} 的 API 金鑰",
+      "exportFailed": "無法匯出設定檔",
+      "importFailed": "無法匯入設定檔",
+      "replaceKeyTitle": "要取代 API 金鑰嗎？",
+      "replaceKey": "檔案中 {{provider}} 的 API 金鑰與此處設定的不同。要使用檔案中的金鑰嗎？之後它將套用到所有使用 {{provider}} 的設定檔。",
+      "replace": "使用檔案中的金鑰",
+      "keep": "保留目前的金鑰",
+      "fileFilter": "DanyWhere 設定檔",
+      "errors": {
+        "profile_not_found": "此設定檔已不存在。",
+        "password_required": "此設定檔帶有 API 金鑰，因此需要密碼。",
+        "empty_password": "請輸入密碼。",
+        "wrong_password": "密碼錯誤，或檔案已被修改。",
+        "unsupported_format": "這不是 DanyWhere 設定檔，或來自較新的版本。",
+        "malformed": "檔案已損毀或不完整。",
+        "io": "無法讀取或寫入檔案。",
+        "internal": "發生錯誤。詳細資訊請見記錄檔。"
+      }
+    },
     "models": {
       "title": "模型",
       "changeLanguages": "變更語言",

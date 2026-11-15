@@ -472,6 +472,41 @@
         "delete": "无法删除配置文件"
       }
     },
+    "profileTransfer": {
+      "export": "导出",
+      "import": "导入",
+      "importButton": "导入配置文件",
+      "exportTitle": "导出“{{name}}”",
+      "exportDescription": "文件包含此配置文件的设置、提示词和词表，不含其他设置。其服务商的 API 密钥会用此密码加密；导入密钥需要同一密码。",
+      "importTitle": "导入“{{name}}”",
+      "importDescription": "文件包含 {{provider}} 的 API 密钥，已用密码加密。请输入密码，或不带密钥导入配置文件。",
+      "password": "密码",
+      "confirmPassword": "再次输入密码",
+      "passwordMismatch": "两次输入的密码不同。",
+      "withoutKey": "不带密钥导入",
+      "cancel": "取消",
+      "working": "请稍候…",
+      "exportDone": "已导出",
+      "importDone": "已导入“{{name}}”",
+      "importDoneWithKey": "已导入“{{name}}”及 {{provider}} 的 API 密钥",
+      "exportFailed": "无法导出配置文件",
+      "importFailed": "无法导入配置文件",
+      "replaceKeyTitle": "替换 API 密钥？",
+      "replaceKey": "文件中 {{provider}} 的 API 密钥与此处设置的不同。要使用文件中的密钥吗？之后它将适用于所有使用 {{provider}} 的配置文件。",
+      "replace": "使用文件中的密钥",
+      "keep": "保留当前密钥",
+      "fileFilter": "DanyWhere 配置文件",
+      "errors": {
+        "profile_not_found": "该配置文件已不存在。",
+        "password_required": "此配置文件带有 API 密钥，因此需要密码。",
+        "empty_password": "请输入密码。",
+        "wrong_password": "密码错误，或文件已被修改。",
+        "unsupported_format": "这不是 DanyWhere 配置文件，或来自更新的版本。",
+        "malformed": "文件已损坏或不完整。",
+        "io": "无法读取或写入文件。",
+        "internal": "出错了。详情见日志。"
+      }
+    },
     "models": {
       "title": "模型",
       "changeLanguages": "更改语言",

@@ -472,6 +472,41 @@
         "delete": "No se pudo eliminar el perfil"
       }
     },
+    "profileTransfer": {
+      "export": "Exportar",
+      "import": "Importar",
+      "importButton": "Importar perfil",
+      "exportTitle": "Exportar «{{name}}»",
+      "exportDescription": "El archivo contiene la configuración, las instrucciones y las listas de palabras de este perfil, ninguna otra configuración. La clave API de su proveedor se cifra con esta contraseña; para importar la clave se necesita la misma contraseña.",
+      "importTitle": "Importar «{{name}}»",
+      "importDescription": "El archivo contiene una clave API para {{provider}} cifrada con una contraseña. Introdúcela o importa el perfil sin la clave.",
+      "password": "Contraseña",
+      "confirmPassword": "Repite la contraseña",
+      "passwordMismatch": "Las dos contraseñas son distintas.",
+      "withoutKey": "Importar sin la clave",
+      "cancel": "Cancelar",
+      "working": "Un momento…",
+      "exportDone": "Exportado",
+      "importDone": "«{{name}}» importado",
+      "importDoneWithKey": "«{{name}}» importado con la clave API para {{provider}}",
+      "exportFailed": "No se pudo exportar el perfil",
+      "importFailed": "No se pudo importar el perfil",
+      "replaceKeyTitle": "¿Reemplazar la clave API?",
+      "replaceKey": "La clave API para {{provider}} del archivo es distinta de la configurada aquí. ¿Usar la del archivo? Entonces se aplicará a todos los perfiles que usan {{provider}}.",
+      "replace": "Clave del archivo",
+      "keep": "Mantener la actual",
+      "fileFilter": "Perfil de DanyWhere",
+      "errors": {
+        "profile_not_found": "El perfil ya no existe.",
+        "password_required": "Este perfil lleva una clave API, así que necesita una contraseña.",
+        "empty_password": "Introduce una contraseña.",
+        "wrong_password": "Contraseña incorrecta, o el archivo se modificó.",
+        "unsupported_format": "No es un perfil de DanyWhere, o es de una versión más reciente.",
+        "malformed": "El archivo está dañado o incompleto.",
+        "io": "No se pudo leer ni escribir el archivo.",
+        "internal": "Algo salió mal. Los detalles están en el registro."
+      }
+    },
     "models": {
       "title": "Modelos",
       "changeLanguages": "Cambiar idiomas",

@@ -472,6 +472,41 @@
         "delete": "Tidak dapat menghapus profil"
       }
     },
+    "profileTransfer": {
+      "export": "Ekspor",
+      "import": "Impor",
+      "importButton": "Impor Profil",
+      "exportTitle": "Ekspor \"{{name}}\"",
+      "exportDescription": "File berisi pengaturan, prompt, dan daftar kata profil ini, tanpa pengaturan lain. Kunci API penyedianya dienkripsi dengan kata sandi ini; mengimpor kunci memerlukan kata sandi yang sama.",
+      "importTitle": "Impor \"{{name}}\"",
+      "importDescription": "File berisi kunci API untuk {{provider}} yang dienkripsi dengan kata sandi. Masukkan kata sandinya, atau impor profil tanpa kunci.",
+      "password": "Kata sandi",
+      "confirmPassword": "Ulangi kata sandi",
+      "passwordMismatch": "Kedua kata sandi berbeda.",
+      "withoutKey": "Impor Tanpa Kunci",
+      "cancel": "Batal",
+      "working": "Sebentar…",
+      "exportDone": "Diekspor",
+      "importDone": "\"{{name}}\" diimpor",
+      "importDoneWithKey": "\"{{name}}\" diimpor dengan kunci API untuk {{provider}}",
+      "exportFailed": "Profil Tidak Dapat Diekspor",
+      "importFailed": "Profil Tidak Dapat Diimpor",
+      "replaceKeyTitle": "Ganti Kunci API?",
+      "replaceKey": "Kunci API untuk {{provider}} di file berbeda dari yang diatur di sini. Gunakan kunci dari file? Kunci itu lalu berlaku untuk setiap profil yang memakai {{provider}}.",
+      "replace": "Kunci dari File",
+      "keep": "Pertahankan yang Sekarang",
+      "fileFilter": "Profil DanyWhere",
+      "errors": {
+        "profile_not_found": "Profil sudah tidak ada.",
+        "password_required": "Profil ini membawa kunci API, jadi memerlukan kata sandi.",
+        "empty_password": "Masukkan kata sandi.",
+        "wrong_password": "Kata sandi salah, atau file telah diubah.",
+        "unsupported_format": "Ini bukan profil DanyWhere, atau berasal dari versi yang lebih baru.",
+        "malformed": "File rusak atau tidak lengkap.",
+        "io": "File tidak dapat dibaca atau ditulis.",
+        "internal": "Terjadi kesalahan. Detailnya ada di log."
+      }
+    },
     "models": {
       "title": "Model",
       "changeLanguages": "Ubah bahasa",

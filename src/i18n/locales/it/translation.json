@@ -472,6 +472,41 @@
         "delete": "Impossibile eliminare il profilo"
       }
     },
+    "profileTransfer": {
+      "export": "Esporta",
+      "import": "Importa",
+      "importButton": "Importa profilo",
+      "exportTitle": "Esporta «{{name}}»",
+      "exportDescription": "Il file contiene le impostazioni, i prompt e gli elenchi di parole di questo profilo, nessun'altra impostazione. La chiave API del suo fornitore viene cifrata con questa password; per importare la chiave serve la stessa password.",
+      "importTitle": "Importa «{{name}}»",
+      "importDescription": "Il file contiene una chiave API per {{provider}}, cifrata con una password. Inseriscila oppure importa il profilo senza la chiave.",
+      "password": "Password",
+      "confirmPassword": "Ripeti la password",
+      "passwordMismatch": "Le due password sono diverse.",
+      "withoutKey": "Importa senza chiave",
+      "cancel": "Annulla",
+      "working": "Un momento…",
+      "exportDone": "Esportato",
+      "importDone": "«{{name}}» importato",
+      "importDoneWithKey": "«{{name}}» importato con la chiave API per {{provider}}",
+      "exportFailed": "Impossibile esportare il profilo",
+      "importFailed": "Impossibile importare il profilo",
+      "replaceKeyTitle": "Sostituire la chiave API?",
+      "replaceKey": "La chiave API per {{provider}} nel file è diversa da quella configurata qui. Usare quella del file? Varrà poi per ogni profilo che usa {{provider}}.",
+      "replace": "Chiave del file",
+      "keep": "Mantieni l'attuale",
+      "fileFilter": "Profilo DanyWhere",
+      "errors": {
+        "profile_not_found": "Il profilo non esiste più.",
+        "password_required": "Questo profilo contiene una chiave API, quindi serve una password.",
+        "empty_password": "Inserisci una password.",
+        "wrong_password": "Password errata, oppure il file è stato modificato.",
+        "unsupported_format": "Non è un profilo DanyWhere, oppure proviene da una versione più recente.",
+        "malformed": "Il file è danneggiato o incompleto.",
+        "io": "Impossibile leggere o scrivere il file.",
+        "internal": "Qualcosa è andato storto. I dettagli sono nel registro."
+      }
+    },
     "models": {
       "title": "Modelli",
       "changeLanguages": "Cambia lingue",

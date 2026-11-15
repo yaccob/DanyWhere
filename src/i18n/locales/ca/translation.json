@@ -472,6 +472,41 @@
         "delete": "No s'ha pogut suprimir el perfil"
       }
     },
+    "profileTransfer": {
+      "export": "Exporta",
+      "import": "Importa",
+      "importButton": "Importa un perfil",
+      "exportTitle": "Exporta «{{name}}»",
+      "exportDescription": "El fitxer conté la configuració, les indicacions i les llistes de paraules d'aquest perfil, cap altra configuració. La clau API del seu proveïdor es xifra amb aquesta contrasenya; per importar la clau cal la mateixa contrasenya.",
+      "importTitle": "Importa «{{name}}»",
+      "importDescription": "El fitxer conté una clau API per a {{provider}} xifrada amb una contrasenya. Introdueix-la o importa el perfil sense la clau.",
+      "password": "Contrasenya",
+      "confirmPassword": "Repeteix la contrasenya",
+      "passwordMismatch": "Les dues contrasenyes són diferents.",
+      "withoutKey": "Importa sense la clau",
+      "cancel": "Cancel·la",
+      "working": "Un moment…",
+      "exportDone": "Exportat",
+      "importDone": "«{{name}}» importat",
+      "importDoneWithKey": "«{{name}}» importat amb la clau API per a {{provider}}",
+      "exportFailed": "No s'ha pogut exportar el perfil",
+      "importFailed": "No s'ha pogut importar el perfil",
+      "replaceKeyTitle": "Vols substituir la clau API?",
+      "replaceKey": "La clau API per a {{provider}} del fitxer és diferent de la configurada aquí. Vols fer servir la del fitxer? Llavors s'aplicarà a tots els perfils que fan servir {{provider}}.",
+      "replace": "Clau del fitxer",
+      "keep": "Mantén l'actual",
+      "fileFilter": "Perfil de DanyWhere",
+      "errors": {
+        "profile_not_found": "El perfil ja no existeix.",
+        "password_required": "Aquest perfil porta una clau API, per això necessita una contrasenya.",
+        "empty_password": "Introdueix una contrasenya.",
+        "wrong_password": "Contrasenya incorrecta, o el fitxer s'ha modificat.",
+        "unsupported_format": "Això no és un perfil de DanyWhere, o és d'una versió més nova.",
+        "malformed": "El fitxer està malmès o incomplet.",
+        "io": "No s'ha pogut llegir ni escriure el fitxer.",
+        "internal": "Alguna cosa ha fallat. Els detalls són al registre."
+      }
+    },
     "models": {
       "title": "Models",
       "changeLanguages": "Canvia les llengües",

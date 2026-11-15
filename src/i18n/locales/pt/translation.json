@@ -472,6 +472,41 @@
         "delete": "Não foi possível excluir o perfil"
       }
     },
+    "profileTransfer": {
+      "export": "Exportar",
+      "import": "Importar",
+      "importButton": "Importar perfil",
+      "exportTitle": "Exportar \"{{name}}\"",
+      "exportDescription": "O arquivo contém as configurações, os prompts e as listas de palavras deste perfil, nenhuma outra configuração. A chave de API do provedor é criptografada com esta senha; importar a chave exige a mesma senha.",
+      "importTitle": "Importar \"{{name}}\"",
+      "importDescription": "O arquivo contém uma chave de API para {{provider}}, criptografada com uma senha. Digite-a ou importe o perfil sem a chave.",
+      "password": "Senha",
+      "confirmPassword": "Repita a senha",
+      "passwordMismatch": "As duas senhas são diferentes.",
+      "withoutKey": "Importar sem a chave",
+      "cancel": "Cancelar",
+      "working": "Um momento…",
+      "exportDone": "Exportado",
+      "importDone": "\"{{name}}\" importado",
+      "importDoneWithKey": "\"{{name}}\" importado com a chave de API para {{provider}}",
+      "exportFailed": "Não foi possível exportar o perfil",
+      "importFailed": "Não foi possível importar o perfil",
+      "replaceKeyTitle": "Substituir a chave de API?",
+      "replaceKey": "A chave de API para {{provider}} no arquivo é diferente da configurada aqui. Usar a do arquivo? Ela passará a valer para todos os perfis que usam {{provider}}.",
+      "replace": "Chave do arquivo",
+      "keep": "Manter a atual",
+      "fileFilter": "Perfil do DanyWhere",
+      "errors": {
+        "profile_not_found": "O perfil não existe mais.",
+        "password_required": "Este perfil leva uma chave de API, por isso precisa de uma senha.",
+        "empty_password": "Digite uma senha.",
+        "wrong_password": "Senha errada, ou o arquivo foi alterado.",
+        "unsupported_format": "Este não é um perfil do DanyWhere, ou vem de uma versão mais nova.",
+        "malformed": "O arquivo está danificado ou incompleto.",
+        "io": "Não foi possível ler nem gravar o arquivo.",
+        "internal": "Algo deu errado. Os detalhes estão no log."
+      }
+    },
     "models": {
       "title": "Modelos",
       "changeLanguages": "Alterar idiomas",

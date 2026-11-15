@@ -472,6 +472,41 @@
         "delete": "프로필을 삭제하지 못했습니다"
       }
     },
+    "profileTransfer": {
+      "export": "내보내기",
+      "import": "가져오기",
+      "importButton": "프로필 가져오기",
+      "exportTitle": "\"{{name}}\" 내보내기",
+      "exportDescription": "파일에는 이 프로필의 설정, 프롬프트, 단어 목록이 들어 있으며 다른 설정은 들어 있지 않습니다. 제공자의 API 키는 이 비밀번호로 암호화되며, 키를 가져오려면 같은 비밀번호가 필요합니다.",
+      "importTitle": "\"{{name}}\" 가져오기",
+      "importDescription": "파일에 비밀번호로 암호화된 {{provider}}용 API 키가 있습니다. 비밀번호를 입력하거나 키 없이 프로필을 가져오세요.",
+      "password": "비밀번호",
+      "confirmPassword": "비밀번호 다시 입력",
+      "passwordMismatch": "두 비밀번호가 다릅니다.",
+      "withoutKey": "키 없이 가져오기",
+      "cancel": "취소",
+      "working": "잠시만요…",
+      "exportDone": "내보냄",
+      "importDone": "\"{{name}}\" 가져옴",
+      "importDoneWithKey": "\"{{name}}\"을(를) {{provider}} API 키와 함께 가져옴",
+      "exportFailed": "프로필을 내보낼 수 없음",
+      "importFailed": "프로필을 가져올 수 없음",
+      "replaceKeyTitle": "API 키를 바꿀까요?",
+      "replaceKey": "파일의 {{provider}} API 키가 여기에 설정된 키와 다릅니다. 파일의 키를 사용할까요? 그러면 {{provider}}를 사용하는 모든 프로필에 적용됩니다.",
+      "replace": "파일의 키 사용",
+      "keep": "현재 키 유지",
+      "fileFilter": "DanyWhere 프로필",
+      "errors": {
+        "profile_not_found": "프로필이 더 이상 없습니다.",
+        "password_required": "이 프로필에는 API 키가 있어서 비밀번호가 필요합니다.",
+        "empty_password": "비밀번호를 입력하세요.",
+        "wrong_password": "비밀번호가 틀렸거나 파일이 변경되었습니다.",
+        "unsupported_format": "DanyWhere 프로필이 아니거나 더 새로운 버전의 파일입니다.",
+        "malformed": "파일이 손상되었거나 불완전합니다.",
+        "io": "파일을 읽거나 쓸 수 없습니다.",
+        "internal": "문제가 발생했습니다. 자세한 내용은 로그에 있습니다."
+      }
+    },
     "models": {
       "title": "모델",
       "changeLanguages": "언어 변경",

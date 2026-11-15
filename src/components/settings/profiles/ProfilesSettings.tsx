@@ -7,6 +7,8 @@ import { Button } from "../../ui/Button";
 import { Dialog } from "../../ui/Dialog";
 import { SettingsGroup } from "../../ui/SettingsGroup";
 import { ProfileNameDialog } from "./ProfileNameDialog";
+import { ProfileExportButton } from "./ProfileExportButton";
+import { ProfileImportButton } from "./ProfileImportButton";
 
 type Pending = {
   kind: "duplicate" | "rename" | "delete";
@@ -97,6 +99,11 @@ export const ProfilesSettings: React.FC = () => {
                 >
                   {t("settings.profiles.rename")}
                 </Button>
+                <ProfileExportButton
+                  profileId={profile.id}
+                  displayName={displayName(profile)}
+                  disabled={busy}
+                />
                 <Button
                   variant="danger-ghost"
                   size="sm"
@@ -112,6 +119,9 @@ export const ProfilesSettings: React.FC = () => {
             </div>
           );
         })}
+        <div className="flex items-center justify-end gap-3 min-h-12 px-4 p-2">
+          <ProfileImportButton />
+        </div>
       </SettingsGroup>
 
       <ProfileNameDialog
