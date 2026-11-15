@@ -20,9 +20,13 @@ Planned work on DanyWhere, roughly in priority order within each section. Items 
 
 Each profile has its own prompt list with one prompt selected, as the post-processing settings have today. Word lists come in three tiers: the Global Word List applies in every profile, each profile has a list of its own that always applies in it, and each profile has its own additional lists, of which at most one is switched on, as today. An exported profile always carries its provider's API key, encrypted; importing without the key is always possible.
 
+**Done (2026-11-15, not released yet):** all of the above, checked in real runs. The first start of the new version turns the settings in use into the default profile.
+
 ### Profiles per application
 
-**Idea (user, 2026-11-15, to be discussed):** associate applications with profiles, so that dictating into a given application uses its profile. Proposed: the frontmost application at the start of a dictation, which DanyWhere already looks up for the context feature, picks the profile for that dictation; the profile chosen in the sidebar stays as it is and applies to every other application. A "choose the profile by application" switch in the tray, also toggled by a shortcut that reports the new state, gets past an association without editing it.
+**Idea (user, 2026-11-15):** associate applications with profiles, so that dictating into a given application uses its profile.
+
+**Done (2026-11-15, not released yet):** each profile lists the applications it is used for, and an application belongs to at most one profile. The frontmost application at the start of a dictation picks the profile for that dictation, speech model included; the profile chosen in the sidebar stays as it is and applies to every other application. A "choose the profile by application" switch in the tray, the sidebar and the profile settings, also toggled by a shortcut (⌃⇧A on macOS, Alt+Shift+A elsewhere) that reports the new state, gets past an association without editing it; while it is off and an association exists, the tray icon shows a padlock. macOS lists the applications to choose from; on Windows their executable names are typed in; Linux has no frontmost application yet.
 
 ### Word lists behave differently per speech model
 
