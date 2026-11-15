@@ -978,7 +978,8 @@
         "wholeWord": "Kun hele ord",
         "invalidPattern": "Ikke et gyldigt regulært udtryk",
         "noMatches": "Ingen poster matcher søgningen.",
-        "clear": "Ryd"
+        "clear": "Ryd",
+        "matchBeforeCorrection": "Match i versionen før din rettelse"
       },
       "contextEntryJump": "Vis i historikken for at rette",
       "confirmReplaceTitle": "Erstat din rettelse?",

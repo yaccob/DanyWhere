@@ -978,7 +978,8 @@
         "wholeWord": "Jen celá slova",
         "invalidPattern": "Neplatný regulární výraz",
         "noMatches": "Hledání neodpovídá žádný záznam.",
-        "clear": "Vymazat"
+        "clear": "Vymazat",
+        "matchBeforeCorrection": "Shoda ve verzi před vaší opravou"
       },
       "contextEntryJump": "Zobrazit v historii a opravit",
       "confirmReplaceTitle": "Nahradit vaši opravu?",

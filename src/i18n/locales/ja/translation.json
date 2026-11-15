@@ -978,7 +978,8 @@
         "wholeWord": "単語単位で検索",
         "invalidPattern": "正規表現が正しくありません",
         "noMatches": "検索に一致するエントリーはありません。",
-        "clear": "クリア"
+        "clear": "クリア",
+        "matchBeforeCorrection": "修正前のテキストに一致"
       },
       "contextEntryJump": "修正するために履歴で表示",
       "confirmReplaceTitle": "修正を置き換えますか？",

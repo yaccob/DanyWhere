@@ -77,6 +77,7 @@ import {
   SEARCH_DELAY_MS,
   invalidField,
   isSearchActive,
+  matchesOnlyBeforeCorrection,
   matchRanges,
   mergeSearchUpdate,
   searchQuery,
@@ -777,6 +778,12 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
       entry.source_name ? matchRanges(entry.source_name, windowHighlight) : [],
     [entry.source_name, windowHighlight],
   );
+  // DanyWhere: the search matched only a text a correction replaced, which
+  // no view shows; the entry says so instead of a highlight.
+  const matchBeforeCorrection = useMemo(
+    () => matchesOnlyBeforeCorrection(entry, highlight),
+    [entry, highlight],
+  );
 
   // Offer "Show more" only when the folded text is actually cut off.
   useLayoutEffect(() => {
@@ -1101,6 +1108,11 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
               {t("settings.history.postProcessingOutdated")}
             </p>
           )}
+        {matchBeforeCorrection && !retrying && editing === null && (
+          <p className="text-xs text-ink-3">
+            {t("settings.history.search.matchBeforeCorrection")}
+          </p>
+        )}
         {hasTranscription &&
           !retrying &&
           editing === null &&

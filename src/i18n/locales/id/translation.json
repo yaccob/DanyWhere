@@ -978,7 +978,8 @@
         "wholeWord": "Hanya kata utuh",
         "invalidPattern": "Bukan ekspresi reguler yang valid",
         "noMatches": "Tidak ada entri yang cocok dengan pencarian.",
-        "clear": "Hapus"
+        "clear": "Hapus",
+        "matchBeforeCorrection": "Cocok di versi sebelum koreksi Anda"
       },
       "contextEntryJump": "Tampilkan di riwayat untuk mengoreksinya",
       "confirmReplaceTitle": "Ganti koreksi Anda?",

@@ -978,7 +978,8 @@
         "wholeWord": "Match whole words only",
         "invalidPattern": "Not a valid regular expression",
         "noMatches": "No entries match the search.",
-        "clear": "Clear"
+        "clear": "Clear",
+        "matchBeforeCorrection": "Match in the version before your correction"
       },
       "contextEntryJump": "Show it in the History to correct it",
       "confirmReplaceTitle": "Replace your correction?",

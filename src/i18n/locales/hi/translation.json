@@ -978,7 +978,8 @@
         "wholeWord": "केवल पूरे शब्द",
         "invalidPattern": "मान्य रेगुलर एक्सप्रेशन नहीं है",
         "noMatches": "खोज से कोई एंट्री मेल नहीं खाती.",
-        "clear": "साफ़ करें"
+        "clear": "साफ़ करें",
+        "matchBeforeCorrection": "आपके सुधार से पहले वाले संस्करण में मेल मिला"
       },
       "contextEntryJump": "सुधारने के लिए इतिहास में दिखाएँ",
       "confirmReplaceTitle": "अपना सुधार बदलें?",

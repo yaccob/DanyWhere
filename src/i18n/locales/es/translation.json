@@ -978,7 +978,8 @@
         "wholeWord": "Solo palabras completas",
         "invalidPattern": "No es una expresión regular válida",
         "noMatches": "Ninguna entrada coincide con la búsqueda.",
-        "clear": "Borrar"
+        "clear": "Borrar",
+        "matchBeforeCorrection": "Coincidencia en la versión anterior a tu corrección"
       },
       "contextEntryJump": "Mostrarlo en el historial para corregirlo",
       "confirmReplaceTitle": "¿Reemplazar tu corrección?",

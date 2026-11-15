@@ -978,7 +978,8 @@
         "wholeWord": "Només paraules senceres",
         "invalidPattern": "No és una expressió regular vàlida",
         "noMatches": "Cap entrada coincideix amb la cerca.",
-        "clear": "Esborra"
+        "clear": "Esborra",
+        "matchBeforeCorrection": "Coincidència a la versió anterior a la vostra correcció"
       },
       "contextEntryJump": "Mostra-ho a l'historial per corregir-ho",
       "confirmReplaceTitle": "Voleu substituir la correcció?",

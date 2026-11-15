@@ -978,7 +978,8 @@
         "wholeWord": "מילים שלמות בלבד",
         "invalidPattern": "ביטוי רגולרי לא תקין",
         "noMatches": "אין רשומות שתואמות לחיפוש.",
-        "clear": "נקה"
+        "clear": "נקה",
+        "matchBeforeCorrection": "התאמה בגרסה שלפני התיקון שלך"
       },
       "contextEntryJump": "הצג בהיסטוריה כדי לתקן",
       "confirmReplaceTitle": "להחליף את התיקון שלך?",

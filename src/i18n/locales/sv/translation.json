@@ -978,7 +978,8 @@
         "wholeWord": "Endast hela ord",
         "invalidPattern": "Inte ett giltigt reguljärt uttryck",
         "noMatches": "Inga poster matchar sökningen.",
-        "clear": "Rensa"
+        "clear": "Rensa",
+        "matchBeforeCorrection": "Träff i versionen före din rättelse"
       },
       "contextEntryJump": "Visa i historiken för att rätta",
       "confirmReplaceTitle": "Ersätta din rättelse?",

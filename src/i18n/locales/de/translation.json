@@ -978,7 +978,8 @@
         "wholeWord": "Nur ganze Wörter",
         "invalidPattern": "Kein gültiger regulärer Ausdruck",
         "noMatches": "Keine Einträge passen zur Suche.",
-        "clear": "Leeren"
+        "clear": "Leeren",
+        "matchBeforeCorrection": "Treffer in der Fassung vor deiner Korrektur"
       },
       "contextEntryJump": "Im Verlauf zeigen, um es zu korrigieren",
       "confirmReplaceTitle": "Korrektur ersetzen?",

@@ -978,7 +978,8 @@
         "wholeWord": "كلمات كاملة فقط",
         "invalidPattern": "تعبير نمطي غير صالح",
         "noMatches": "لا توجد إدخالات تطابق البحث.",
-        "clear": "مسح"
+        "clear": "مسح",
+        "matchBeforeCorrection": "تطابق في النسخة السابقة لتصحيحك"
       },
       "contextEntryJump": "عرضه في السجل لتصحيحه",
       "confirmReplaceTitle": "استبدال تصحيحك؟",

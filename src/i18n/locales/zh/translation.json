@@ -978,7 +978,8 @@
         "wholeWord": "仅全字匹配",
         "invalidPattern": "不是有效的正则表达式",
         "noMatches": "没有与搜索匹配的条目。",
-        "clear": "清除"
+        "clear": "清除",
+        "matchBeforeCorrection": "匹配内容在你更正之前的版本中"
       },
       "contextEntryJump": "在历史记录中显示以便更正",
       "confirmReplaceTitle": "替换你的更正？",

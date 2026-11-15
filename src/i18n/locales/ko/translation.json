@@ -978,7 +978,8 @@
         "wholeWord": "단어 단위로만",
         "invalidPattern": "올바른 정규식이 아닙니다",
         "noMatches": "검색과 일치하는 항목이 없습니다.",
-        "clear": "지우기"
+        "clear": "지우기",
+        "matchBeforeCorrection": "수정하기 전의 내용과 일치"
       },
       "contextEntryJump": "수정하려면 히스토리에서 보기",
       "confirmReplaceTitle": "수정 내용을 바꿀까요?",
