@@ -151,7 +151,10 @@ export const HistorySearchBar: React.FC<{
   );
 };
 
-/** `text` with the parts in `ranges` highlighted. */
+/** `text` with the parts in `ranges` highlighted. A match gets no
+ * horizontal padding or shadow: WebKit paints either over the letter before
+ * a match that starts mid-word. `box-decoration-clone` rounds each line of a
+ * match that wraps. */
 export const Highlighted: React.FC<{
   text: string;
   ranges: [number, number][];
@@ -163,7 +166,7 @@ export const Highlighted: React.FC<{
         part.mark ? (
           <mark
             key={index}
-            className="bg-logo-primary/25 text-inherit rounded-sm"
+            className="bg-search-match text-search-match-text rounded-sm box-decoration-clone"
           >
             {part.text}
           </mark>
