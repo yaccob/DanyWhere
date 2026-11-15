@@ -840,6 +840,23 @@
           "placeholderWithOptions": "Cari atau pilih model",
           "placeholderNoOptions": "Ketik nama model",
           "refreshModels": "Segarkan model"
+        },
+        "effort": {
+          "title": "Upaya berpikir",
+          "description": "Seberapa banyak model berpikir sebelum menjawab: upaya lebih besar lebih teliti, tetapi lebih lambat dan lebih mahal. “Bawaan model” tidak mengirim tingkat apa pun; dengan OpenRouter dan penyedia kustom, DanyWhere seperti sebelumnya meminta model untuk tidak berpikir.",
+          "guessed": "DanyWhere tidak tahu tingkat mana yang diterima model ini. Jika model menolak salah satunya, teks datang dengan bawaan model, disertai peringatan.",
+          "notSupported": "Model ini tidak punya pengaturan upaya.",
+          "refused": "Model menolak tingkat ini, jadi DanyWhere memakai bawaannya. Pilih tingkat lain.",
+          "levels": {
+            "default": "Bawaan model",
+            "none": "Tidak ada",
+            "minimal": "Minimal",
+            "low": "Rendah",
+            "medium": "Sedang",
+            "high": "Tinggi",
+            "xhigh": "Sangat tinggi",
+            "max": "Maksimal"
+          }
         }
       },
       "prompts": {
@@ -1209,6 +1226,8 @@
     "appMissedShortcut": "{{app}} sudah terbuka saat DanyWhere menyiapkan pintasan dikte, jadi aplikasi itu baru mengenalinya setelah dimulai ulang. Teksnya ada di papan klip.",
     "outdatedPromptsTitle": "Perbarui Prompt",
     "outdatedPrompts": "Kini DanyWhere mengirimkan transkripsi beserta penjelasannya bersama setiap prompt. Hapus ${output}, tag <transcript>, dan setiap kalimat yang menjelaskannya dari prompt berikut: {{prompts}}. Sampai saat itu, prompt dengan ${output} dikirim seperti sebelumnya.",
+    "postProcessEffortRefusedTitle": "Upaya Ditolak",
+    "postProcessEffortRefused": "{{model}} menolak upaya yang dipilih, jadi teks datang dengan bawaan model. Pilih upaya lain, atau “Bawaan model”, di samping model pascaproses.",
     "fileTranscriptionFailedTitle": "Transkripsi File Gagal",
     "transcriptionFailedTitle": "Transkripsi Gagal"
   },

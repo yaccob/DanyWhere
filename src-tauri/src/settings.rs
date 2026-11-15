@@ -598,6 +598,10 @@ pub struct AppSettings {
     pub post_process_api_keys: SecretMap,
     #[serde(default = "default_post_process_models")]
     pub post_process_models: HashMap<String, String>,
+    /// DanyWhere: the effort per provider (`post_process_effort`); none
+    /// stored = the model's default.
+    #[serde(default)]
+    pub post_process_efforts: HashMap<String, String>,
     #[serde(default = "default_post_process_prompts")]
     pub post_process_prompts: Vec<LLMPrompt>,
     #[serde(default)]
@@ -1311,6 +1315,7 @@ pub fn get_default_settings() -> AppSettings {
         post_process_providers: default_post_process_providers(),
         post_process_api_keys: default_post_process_api_keys(),
         post_process_models: default_post_process_models(),
+        post_process_efforts: HashMap::new(),
         post_process_prompts: default_post_process_prompts(),
         post_process_selected_prompt_id: None,
         post_process_timeout_secs: crate::llm_timeouts::default_post_process_timeout_secs(),
@@ -2147,6 +2152,8 @@ mod tests {
 
         assert_eq!(settings.selected_model, "whisper-large-v3-turbo");
         assert!(!settings.accessibility_skipped);
+        // DanyWhere: no effort stored yet = every model's default.
+        assert!(settings.post_process_efforts.is_empty());
         assert_eq!(settings.clipboard_notice_ms, 2500);
         assert_eq!(settings.bindings["transcribe"].current_binding, "f13");
         assert_eq!(settings.log_level, LogLevel::Debug);

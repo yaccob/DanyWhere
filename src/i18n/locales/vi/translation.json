@@ -840,6 +840,23 @@
           "placeholderWithOptions": "Tìm kiếm hoặc chọn một mô hình",
           "placeholderNoOptions": "Nhập tên mô hình",
           "refreshModels": "Làm mới mô hình"
+        },
+        "effort": {
+          "title": "Mức suy nghĩ",
+          "description": "Mô hình suy nghĩ bao nhiêu trước khi trả lời: mức cao hơn kỹ lưỡng hơn, nhưng chậm hơn và đắt hơn. “Mặc định của mô hình” không gửi mức nào; với OpenRouter và nhà cung cấp tùy chỉnh, DanyWhere vẫn như trước yêu cầu mô hình không suy nghĩ.",
+          "guessed": "DanyWhere không biết mô hình này nhận những mức nào. Nếu mô hình từ chối một mức, văn bản sẽ đến với mặc định của mô hình kèm cảnh báo.",
+          "notSupported": "Mô hình này không có thiết lập mức suy nghĩ.",
+          "refused": "Mô hình đã từ chối mức này, nên DanyWhere dùng mặc định của nó. Hãy chọn mức khác.",
+          "levels": {
+            "default": "Mặc định của mô hình",
+            "none": "Không",
+            "minimal": "Tối thiểu",
+            "low": "Thấp",
+            "medium": "Trung bình",
+            "high": "Cao",
+            "xhigh": "Rất cao",
+            "max": "Tối đa"
+          }
         }
       },
       "prompts": {
@@ -1209,6 +1226,8 @@
     "appMissedShortcut": "{{app}} đã mở sẵn khi DanyWhere thiết lập phím tắt đọc chính tả, nên chỉ nhận ra phím tắt sau khi khởi động lại. Văn bản đang ở trong bảng nhớ tạm.",
     "outdatedPromptsTitle": "Cập nhật prompt",
     "outdatedPrompts": "Giờ đây DanyWhere gửi bản chép lời và phần giải thích về nó kèm theo mọi prompt. Hãy xóa ${output}, các thẻ <transcript> và mọi câu giải thích chúng khỏi các prompt sau: {{prompts}}. Cho đến lúc đó, prompt có ${output} vẫn được gửi như trước.",
+    "postProcessEffortRefusedTitle": "Mức suy nghĩ bị từ chối",
+    "postProcessEffortRefused": "{{model}} đã từ chối mức suy nghĩ đã chọn, nên văn bản đến với mặc định của mô hình. Hãy chọn mức khác, hoặc “Mặc định của mô hình”, bên cạnh mô hình xử lý sau.",
     "fileTranscriptionFailedTitle": "Phiên âm tệp thất bại",
     "transcriptionFailedTitle": "Phiên âm thất bại"
   },

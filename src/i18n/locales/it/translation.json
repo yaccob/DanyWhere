@@ -840,6 +840,23 @@
           "placeholderWithOptions": "Cerca o scegli un modello",
           "placeholderNoOptions": "Digita il nome di un modello",
           "refreshModels": "Aggiorna modelli"
+        },
+        "effort": {
+          "title": "Sforzo di ragionamento",
+          "description": "Quanto ragiona il modello prima di rispondere: più sforzo è più accurato, ma più lento e più costoso. «Predefinito del modello» non invia alcun livello; con OpenRouter e i provider personalizzati DanyWhere chiede come prima al modello di non ragionare.",
+          "guessed": "DanyWhere non sa quali livelli accetta questo modello. Se ne rifiuta uno, il testo arriva con l'impostazione predefinita del modello e un avviso.",
+          "notSupported": "Questo modello non ha un'impostazione di sforzo.",
+          "refused": "Il modello ha rifiutato questo livello, quindi DanyWhere usa la sua impostazione predefinita. Scegline un altro.",
+          "levels": {
+            "default": "Predefinito del modello",
+            "none": "Nessuno",
+            "minimal": "Minimo",
+            "low": "Basso",
+            "medium": "Medio",
+            "high": "Alto",
+            "xhigh": "Molto alto",
+            "max": "Massimo"
+          }
         }
       },
       "prompts": {
@@ -1209,6 +1226,8 @@
     "appMissedShortcut": "{{app}} era già aperta quando DanyWhere ha impostato la scorciatoia di dettatura, quindi la riconoscerà solo dopo un riavvio. Il testo è negli appunti.",
     "outdatedPromptsTitle": "Aggiorna i prompt",
     "outdatedPrompts": "Ora DanyWhere invia con ogni prompt la trascrizione e una sua spiegazione. Rimuovi da questi prompt ${output}, i tag <transcript> e ogni frase che li spiega: {{prompts}}. Fino ad allora, un prompt con ${output} viene inviato come prima.",
+    "postProcessEffortRefusedTitle": "Sforzo rifiutato",
+    "postProcessEffortRefused": "{{model}} ha rifiutato lo sforzo scelto, quindi il testo è arrivato con l'impostazione predefinita del modello. Scegli un altro sforzo, o «Predefinito del modello», accanto al modello di post-elaborazione.",
     "fileTranscriptionFailedTitle": "Trascrizione del file non riuscita",
     "transcriptionFailedTitle": "Trascrizione non riuscita"
   },

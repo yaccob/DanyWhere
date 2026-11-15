@@ -840,6 +840,23 @@
           "placeholderWithOptions": "Wyszukaj lub wybierz model",
           "placeholderNoOptions": "Wpisz nazwę modelu",
           "refreshModels": "Odśwież modele"
+        },
+        "effort": {
+          "title": "Wysiłek rozumowania",
+          "description": "Ile model myśli, zanim odpowie: większy wysiłek jest dokładniejszy, ale wolniejszy i droższy. „Domyślny modelu” nie wysyła żadnego poziomu; przy OpenRouter i niestandardowych dostawcach DanyWhere jak dotąd prosi model, by nie myślał.",
+          "guessed": "DanyWhere nie wie, jakie poziomy przyjmuje ten model. Jeśli odrzuci któryś, tekst przyjdzie z ustawieniem domyślnym modelu i z ostrzeżeniem.",
+          "notSupported": "Ten model nie ma ustawienia wysiłku.",
+          "refused": "Model odrzucił ten poziom, więc DanyWhere używa jego ustawienia domyślnego. Wybierz inny.",
+          "levels": {
+            "default": "Domyślny modelu",
+            "none": "Brak",
+            "minimal": "Minimalny",
+            "low": "Niski",
+            "medium": "Średni",
+            "high": "Wysoki",
+            "xhigh": "Bardzo wysoki",
+            "max": "Maksymalny"
+          }
         }
       },
       "prompts": {
@@ -1209,6 +1226,8 @@
     "appMissedShortcut": "{{app}} była już otwarta, gdy DanyWhere ustawił skrót dyktowania, więc rozpozna go dopiero po ponownym uruchomieniu. Tekst jest w schowku.",
     "outdatedPromptsTitle": "Zaktualizuj prompty",
     "outdatedPrompts": "DanyWhere wysyła teraz z każdym promptem transkrypcję i jej wyjaśnienie. Usuń z tych promptów ${output}, tagi <transcript> i każde zdanie, które je wyjaśnia: {{prompts}}. Do tego czasu prompt z ${output} jest wysyłany jak dotąd.",
+    "postProcessEffortRefusedTitle": "Wysiłek odrzucony",
+    "postProcessEffortRefused": "{{model}} odrzucił wybrany wysiłek, więc tekst przyszedł z ustawieniem domyślnym modelu. Wybierz inny wysiłek albo „Domyślny modelu” obok modelu postprocesu.",
     "fileTranscriptionFailedTitle": "Transkrypcja pliku nie powiodła się",
     "transcriptionFailedTitle": "Transkrypcja nie powiodła się"
   },

@@ -64,6 +64,10 @@ pub enum NoticeCode {
     /// which the fixed frame makes unnecessary (`prompt_frame`). Detail:
     /// their names.
     OutdatedPrompts,
+    /// DanyWhere: the post-processing model refused the profile's effort, so
+    /// the text came at its default (`post_process_effort`). Detail: the
+    /// model.
+    PostProcessEffortRefused,
 }
 
 impl NoticeCode {
@@ -83,7 +87,8 @@ impl NoticeCode {
             Self::PostProcessFailed
             | Self::FilePostProcessFailed
             | Self::AppMissedShortcut
-            | Self::OutdatedPrompts => NoticeLevel::Warning,
+            | Self::OutdatedPrompts
+            | Self::PostProcessEffortRefused => NoticeLevel::Warning,
         }
     }
 
@@ -105,6 +110,7 @@ impl NoticeCode {
             Self::HistoryPostProcessFailed => &strings.history_post_process_failed_title,
             Self::AppMissedShortcut => &strings.app_missed_shortcut_title,
             Self::OutdatedPrompts => &strings.outdated_prompts_title,
+            Self::PostProcessEffortRefused => &strings.post_process_effort_refused_title,
         }
     }
 }
@@ -320,6 +326,15 @@ mod tests {
                 dictation(NoticeCode::PostProcessFailed),
                 file(NoticeCode::FileTranscriptionFailed),
             ]
+        );
+    }
+
+    #[test]
+    fn a_refused_effort_is_a_warning() {
+        // The text came, at the model's default instead of the chosen effort.
+        assert_eq!(
+            NoticeCode::PostProcessEffortRefused.level(),
+            NoticeLevel::Warning
         );
     }
 

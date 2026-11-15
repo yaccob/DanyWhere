@@ -54,6 +54,8 @@ pub struct ProfileValues {
     pub post_process_enabled: bool,
     pub post_process_provider_id: String,
     pub post_process_models: HashMap<String, String>,
+    /// The effort per provider (`post_process_effort`).
+    pub post_process_efforts: HashMap<String, String>,
     pub post_process_prompts: Vec<LLMPrompt>,
     pub post_process_selected_prompt_id: Option<String>,
     /// `dictation_context.age_limit_minutes`
@@ -91,6 +93,7 @@ impl ProfileValues {
             post_process_enabled: settings.post_process_enabled,
             post_process_provider_id: settings.post_process_provider_id.clone(),
             post_process_models: settings.post_process_models.clone(),
+            post_process_efforts: settings.post_process_efforts.clone(),
             post_process_prompts: settings.post_process_prompts.clone(),
             post_process_selected_prompt_id: settings.post_process_selected_prompt_id.clone(),
             context_age_limit_minutes: settings.dictation_context.age_limit_minutes,
@@ -118,6 +121,7 @@ impl ProfileValues {
         settings.post_process_enabled = self.post_process_enabled;
         settings.post_process_provider_id = self.post_process_provider_id.clone();
         settings.post_process_models = self.post_process_models.clone();
+        settings.post_process_efforts = self.post_process_efforts.clone();
         settings.post_process_prompts = self.post_process_prompts.clone();
         settings.post_process_selected_prompt_id = self.post_process_selected_prompt_id.clone();
         settings.dictation_context.age_limit_minutes = self.context_age_limit_minutes;
@@ -501,6 +505,7 @@ mod tests {
             post_process_enabled: false,
             post_process_provider_id: "openai".to_string(),
             post_process_models: HashMap::from([("openai".to_string(), "gpt-x".to_string())]),
+            post_process_efforts: HashMap::from([("openai".to_string(), "high".to_string())]),
             post_process_prompts: vec![prompt("p9", "Email", "Make an email out of it.")],
             post_process_selected_prompt_id: Some("p9".to_string()),
             context_age_limit_minutes: 11,
@@ -652,6 +657,40 @@ mod tests {
         assert_eq!(s.selected_language, "it");
         assert_eq!(s.selected_model, "parakeet");
         assert_eq!(s.profiles[1].values, other_values());
+    }
+
+    #[test]
+    fn the_effort_belongs_to_the_profile() {
+        let mut s = two_profiles();
+        s.post_process_efforts
+            .insert("anthropic".to_string(), "xhigh".to_string());
+        sync_active_profile(&mut s);
+        assert_eq!(
+            s.profiles[0].values.post_process_efforts.get("anthropic"),
+            Some(&"xhigh".to_string())
+        );
+        switch_to(&mut s, "work", false).expect("switched");
+        assert_eq!(
+            s.post_process_efforts,
+            HashMap::from([("openai".to_string(), "high".to_string())])
+        );
+        switch_to(&mut s, DEFAULT_PROFILE_ID, false).expect("switched back");
+        assert_eq!(
+            s.post_process_efforts.get("anthropic"),
+            Some(&"xhigh".to_string())
+        );
+    }
+
+    #[test]
+    fn a_stored_profile_without_an_effort_loads_with_the_models_default() {
+        let mut stored = serde_json::to_value(other_values()).unwrap();
+        stored
+            .as_object_mut()
+            .unwrap()
+            .remove("post_process_efforts");
+        let values: ProfileValues = serde_json::from_value(stored).unwrap();
+        assert!(values.post_process_efforts.is_empty());
+        assert_eq!(values.selected_model, "whisper-large");
     }
 
     #[test]

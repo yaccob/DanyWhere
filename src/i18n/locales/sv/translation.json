@@ -840,6 +840,23 @@
           "placeholderWithOptions": "Sök eller välj en modell",
           "placeholderNoOptions": "Ange ett modellnamn",
           "refreshModels": "Uppdatera modeller"
+        },
+        "effort": {
+          "title": "Tankeansträngning",
+          "description": "Hur mycket modellen tänker innan den svarar: mer ansträngning är grundligare, men långsammare och dyrare. ”Modellens standard” skickar ingen nivå; med OpenRouter och anpassade leverantörer ber DanyWhere som tidigare modellen att inte tänka.",
+          "guessed": "DanyWhere vet inte vilka nivåer den här modellen tar emot. Avvisar den en, kommer texten med modellens standard och en varning.",
+          "notSupported": "Den här modellen har ingen inställning för ansträngning.",
+          "refused": "Modellen avvisade den här nivån, så DanyWhere använder dess standard. Välj en annan.",
+          "levels": {
+            "default": "Modellens standard",
+            "none": "Ingen",
+            "minimal": "Minimal",
+            "low": "Låg",
+            "medium": "Medel",
+            "high": "Hög",
+            "xhigh": "Mycket hög",
+            "max": "Maximal"
+          }
         }
       },
       "prompts": {
@@ -1209,6 +1226,8 @@
     "appMissedShortcut": "{{app}} var redan öppen när DanyWhere ställde in kortkommandot för diktering, så den känner till det först efter en omstart. Texten finns i urklipp.",
     "outdatedPromptsTitle": "Uppdatera prompterna",
     "outdatedPrompts": "DanyWhere skickar nu transkriptionen och en förklaring av den tillsammans med varje prompt. Ta bort ${output}, <transcript>-taggarna och varje mening som förklarar dem från de här prompterna: {{prompts}}. Fram till dess skickas en prompt med ${output} som tidigare.",
+    "postProcessEffortRefusedTitle": "Ansträngning avvisad",
+    "postProcessEffortRefused": "{{model}} avvisade den valda ansträngningen, så texten kom med modellens standard. Välj en annan ansträngning, eller ”Modellens standard”, bredvid modellen för efterbearbetning.",
     "fileTranscriptionFailedTitle": "Transkriptionen av filen misslyckades",
     "transcriptionFailedTitle": "Transkriptionen misslyckades"
   },

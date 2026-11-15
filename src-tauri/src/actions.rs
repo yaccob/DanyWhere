@@ -263,6 +263,23 @@ enum PostProcessOutcome {
     Failed,
 }
 
+/// DanyWhere: a post-processing outcome, and the model that refused the
+/// profile's effort (`post_process_effort`), so the text came at its default.
+#[derive(Debug, PartialEq, Eq)]
+struct PostProcessReport {
+    outcome: PostProcessOutcome,
+    effort_refused_by: Option<String>,
+}
+
+impl From<PostProcessOutcome> for PostProcessReport {
+    fn from(outcome: PostProcessOutcome) -> Self {
+        Self {
+            outcome,
+            effort_refused_by: None,
+        }
+    }
+}
+
 /// DanyWhere: [`post_process_transcription`] under the time limit from the
 /// settings (Handy: a fixed 60 s). On timeout it falls back like any other
 /// failure, so the original transcription goes out.
@@ -270,7 +287,7 @@ async fn post_process_within_time_limit(
     settings: &AppSettings,
     transcription: &str,
     context: Option<&crate::dictation_context::ContextBlock>,
-) -> PostProcessOutcome {
+) -> PostProcessReport {
     let limit = crate::llm_timeouts::post_process_timeout(settings);
     match tokio::time::timeout(
         limit,
@@ -278,23 +295,46 @@ async fn post_process_within_time_limit(
     )
     .await
     {
-        Ok(outcome) => outcome,
+        Ok(report) => report,
         Err(_) => {
             warn!(
                 "Post-processing timed out after {:?}; pasting the original transcription",
                 limit
             );
-            PostProcessOutcome::Failed
+            PostProcessOutcome::Failed.into()
         }
     }
 }
 
 /// DanyWhere: `context` (earlier dictations from the same window, see
-/// `dictation_context`) goes after the selected prompt, in every path.
+/// `dictation_context`) goes after the selected prompt, in every path; the
+/// report also says whether the profile's effort was refused.
 async fn post_process_transcription(
     settings: &AppSettings,
     transcription: &str,
     context: Option<&crate::dictation_context::ContextBlock>,
+) -> PostProcessReport {
+    let mut effort_refused = false;
+    let outcome = post_process_outcome(settings, transcription, context, &mut effort_refused).await;
+    let model = settings
+        .active_post_process_provider()
+        .and_then(|provider| settings.post_process_models.get(&provider.id))
+        .cloned()
+        .unwrap_or_default();
+    PostProcessReport {
+        effort_refused_by: (effort_refused && matches!(outcome, PostProcessOutcome::Done(_)))
+            .then_some(model),
+        outcome,
+    }
+}
+
+/// Handy's post-processing. DanyWhere: sets `effort_refused` when the reply
+/// came without the profile's effort (`llm_client::Completion`).
+async fn post_process_outcome(
+    settings: &AppSettings,
+    transcription: &str,
+    context: Option<&crate::dictation_context::ContextBlock>,
+    effort_refused: &mut bool,
 ) -> PostProcessOutcome {
     if is_blank_transcription(transcription) {
         debug!("Post-processing skipped because the transcription is empty");
@@ -371,7 +411,14 @@ async fn post_process_transcription(
     // Ask these providers to skip reasoning/thinking — post-processing rarely
     // benefits from it and it adds seconds of latency. llm_client picks the
     // field the endpoint understands and retries without it if rejected.
-    let disable_reasoning = matches!(provider.id.as_str(), "custom" | "openrouter");
+    // DanyWhere: an effort chosen for the profile wins over this.
+    let reasoning = crate::llm_client::ReasoningRequest {
+        disable_by_default: matches!(provider.id.as_str(), "custom" | "openrouter"),
+        effort: crate::post_process_effort::for_request(settings, &provider, &model),
+    };
+    if let Some(effort) = &reasoning.effort {
+        log::info!("Post-processing with effort '{effort}'");
+    }
 
     if provider.supports_structured_output {
         debug!("Using structured outputs for provider '{}'", provider.id);
@@ -445,11 +492,15 @@ async fn post_process_transcription(
             user_content,
             Some(system_prompt),
             Some(json_schema),
-            disable_reasoning,
+            &reasoning,
         )
         .await
         {
-            Ok(Some(content)) => {
+            Ok(crate::llm_client::Completion {
+                content: Some(content),
+                effort_ignored,
+            }) => {
+                *effort_refused = effort_ignored;
                 // Parse the JSON response to extract the transcription field
                 let content = strip_think_block(&content);
                 match serde_json::from_str::<serde_json::Value>(content) {
@@ -478,7 +529,7 @@ async fn post_process_transcription(
                     }
                 }
             }
-            Ok(None) => {
+            Ok(crate::llm_client::Completion { content: None, .. }) => {
                 error!("LLM API response has no content");
                 return PostProcessOutcome::Failed;
             }
@@ -503,11 +554,15 @@ async fn post_process_transcription(
         api_key,
         &model,
         processed_prompt,
-        disable_reasoning,
+        &reasoning,
     )
     .await
     {
-        Ok(Some(content)) => {
+        Ok(crate::llm_client::Completion {
+            content: Some(content),
+            effort_ignored,
+        }) => {
+            *effort_refused = effort_ignored;
             let content = strip_invisible_chars(strip_think_block(&content));
             debug!(
                 "LLM post-processing succeeded for provider '{}'. Output length: {} chars",
@@ -516,7 +571,7 @@ async fn post_process_transcription(
             );
             PostProcessOutcome::Done(content)
         }
-        Ok(None) => {
+        Ok(crate::llm_client::Completion { content: None, .. }) => {
             error!("LLM API response has no content");
             PostProcessOutcome::Failed
         }
@@ -537,6 +592,9 @@ pub(crate) struct ProcessedTranscription {
     pub post_process_prompt: Option<String>,
     /// `final_text` is the bare transcript because post-processing failed.
     pub post_process_failed: bool,
+    /// DanyWhere: the model that refused the profile's effort, so the text
+    /// came at its default (`post_process_effort`).
+    pub post_process_effort_refused_by: Option<String>,
     /// DanyWhere: the earlier entries sent along as context
     /// (`dictation_context`).
     pub context_entry_ids: Vec<i64>,
@@ -556,6 +614,7 @@ pub(crate) async fn process_transcription_output(
     let mut post_processed_text: Option<String> = None;
     let mut post_process_prompt: Option<String> = None;
     let mut post_process_failed = false;
+    let mut post_process_effort_refused_by: Option<String> = None;
     let mut context_entry_ids: Vec<i64> = Vec::new();
 
     if post_process {
@@ -574,14 +633,16 @@ pub(crate) async fn process_transcription_output(
             crate::dictation_context::context_for(app, &settings, &selected_prompt, context)
         };
         // A reply that's blank once cleaned is no better than none.
-        let outcome =
-            match post_process_within_time_limit(&settings, &final_text, context_block.as_ref())
-                .await
-            {
-                PostProcessOutcome::Done(text) => non_blank_post_processed_text(text)
-                    .map_or(PostProcessOutcome::Failed, PostProcessOutcome::Done),
-                outcome => outcome,
-            };
+        let report =
+            post_process_within_time_limit(&settings, &final_text, context_block.as_ref()).await;
+        let outcome = match report.outcome {
+            PostProcessOutcome::Done(text) => non_blank_post_processed_text(text)
+                .map_or(PostProcessOutcome::Failed, PostProcessOutcome::Done),
+            outcome => outcome,
+        };
+        if matches!(outcome, PostProcessOutcome::Done(_)) {
+            post_process_effort_refused_by = report.effort_refused_by;
+        }
         // The request was made, so the context left the computer.
         if outcome != PostProcessOutcome::Skipped {
             if let Some(block) = &context_block {
@@ -613,8 +674,30 @@ pub(crate) async fn process_transcription_output(
         post_processed_text,
         post_process_prompt,
         post_process_failed,
+        post_process_effort_refused_by,
         context_entry_ids,
     }
+}
+
+/// DanyWhere: the notice a pasted dictation gets: a failed post-processing,
+/// else a refused effort (the text came, but at the model's default).
+fn pasted_dictation_notice(
+    post_process_failed: bool,
+    effort_refused_by: Option<&str>,
+) -> Option<Notice> {
+    if post_process_failed {
+        return Some(Notice::new(
+            NoticeCode::PostProcessFailed,
+            NoticeSource::Dictation,
+        ));
+    }
+    effort_refused_by.map(|model| {
+        Notice::new(
+            NoticeCode::PostProcessEffortRefused,
+            NoticeSource::Dictation,
+        )
+        .with_detail(model.to_string())
+    })
 }
 
 impl ShortcutAction for TranscribeAction {
@@ -1051,6 +1134,8 @@ impl ShortcutAction for TranscribeAction {
                                 let ah_clone = ah.clone();
                                 let paste_time = Instant::now();
                                 let post_process_failed = processed.post_process_failed;
+                                let effort_refused_by =
+                                    processed.post_process_effort_refused_by.clone();
                                 let rm_for_paste = Arc::clone(&rm);
                                 // Taken before the paste thread exists, and so
                                 // before the next session can start.
@@ -1099,12 +1184,10 @@ impl ShortcutAction for TranscribeAction {
                                                             NoticeSource::Dictation,
                                                         );
                                                     }
-                                                    let notice = post_process_failed.then(|| {
-                                                        Notice::new(
-                                                            NoticeCode::PostProcessFailed,
-                                                            NoticeSource::Dictation,
-                                                        )
-                                                    });
+                                                    let notice = pasted_dictation_notice(
+                                                        post_process_failed,
+                                                        effort_refused_by.as_deref(),
+                                                    );
                                                     (TranscriptionOutcome::Typed, notice)
                                                 }
                                                 Ok(utils::PasteOutcome::Blocked) => (
@@ -1434,9 +1517,11 @@ pub static ACTION_MAP: Lazy<HashMap<String, Arc<dyn ShortcutAction>>> = Lazy::ne
 mod tests {
     use super::{
         complete_unless_cancelled, is_blank_transcription, non_blank_post_processed_text,
-        post_process_transcription, post_process_within_time_limit, should_use_streaming_overlay,
-        strip_invisible_chars, strip_think_block, PostProcessOutcome,
+        pasted_dictation_notice, post_process_transcription, post_process_within_time_limit,
+        should_use_streaming_overlay, strip_invisible_chars, strip_think_block, PostProcessOutcome,
+        PostProcessReport,
     };
+    use crate::notices::{Notice, NoticeCode, NoticeSource};
     use crate::settings::{get_default_settings, AppSettings, OverlayStyle};
     use std::future;
     use std::io::{Read, Write};
@@ -1514,6 +1599,7 @@ mod tests {
                 post_process_within_time_limit(&settings, "hello", None),
             )
             .await
+            .map(|report| report.outcome)
         });
         let elapsed = started.elapsed();
 
@@ -1530,6 +1616,7 @@ mod tests {
 
     fn run_post_process(settings: &AppSettings, transcription: &str) -> PostProcessOutcome {
         tauri::async_runtime::block_on(post_process_transcription(settings, transcription, None))
+            .outcome
     }
 
     fn marker_block() -> crate::dictation_context::ContextBlock {
@@ -1592,7 +1679,8 @@ mod tests {
             &settings,
             "hello",
             Some(&marker_block()),
-        ));
+        ))
+        .outcome;
         assert_eq!(outcome, PostProcessOutcome::Done("polished".to_string()));
         let request = request.recv_timeout(Duration::from_secs(5)).unwrap();
         assert!(request.contains("LEGACY-MARKER"), "{request}");
@@ -1612,7 +1700,8 @@ mod tests {
             &settings,
             "hello",
             Some(&marker_block()),
-        ));
+        ))
+        .outcome;
         assert_eq!(outcome, PostProcessOutcome::Done("polished".to_string()));
         let request = request.recv_timeout(Duration::from_secs(5)).unwrap();
         assert!(!request.contains("LEGACY-MARKER"), "{request}");
@@ -1640,6 +1729,143 @@ mod tests {
         // DanyWhere: the default prompt is framed, so the transcript comes
         // in tags (`prompt_frame`).
         assert_eq!(user["content"], "<transcript>\nhello\n</transcript>");
+    }
+
+    // DanyWhere: the effort (`post_process_effort`), on the request that
+    // leaves the computer.
+
+    /// Answers one request per entry of `responses` (status line, body), in
+    /// turn, and hands over each request's JSON body.
+    fn serve_in_turn(
+        responses: Vec<(&'static str, &'static str)>,
+    ) -> (String, std::sync::mpsc::Receiver<serde_json::Value>) {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let address = listener.local_addr().unwrap();
+        let (tx, rx) = std::sync::mpsc::channel();
+        thread::spawn(move || {
+            for (status, body) in responses {
+                let (mut stream, _) = listener.accept().unwrap();
+                let mut request = Vec::new();
+                let mut buffer = [0; 8192];
+                loop {
+                    let n = stream.read(&mut buffer).unwrap_or(0);
+                    if n == 0 {
+                        break;
+                    }
+                    request.extend_from_slice(&buffer[..n]);
+                    let text = String::from_utf8_lossy(&request).to_string();
+                    if let Some(end) = text.find("\r\n\r\n") {
+                        let length = text[..end]
+                            .lines()
+                            .find_map(|line| {
+                                line.to_ascii_lowercase()
+                                    .strip_prefix("content-length:")
+                                    .map(|v| v.trim().parse::<usize>().unwrap_or(0))
+                            })
+                            .unwrap_or(0);
+                        if request.len() >= end + 4 + length {
+                            let _ = tx.send(
+                                serde_json::from_str(&text[end + 4..])
+                                    .unwrap_or(serde_json::Value::Null),
+                            );
+                            break;
+                        }
+                    }
+                }
+                let response = format!(
+                    "HTTP/1.1 {status}\r\ncontent-type: application/json\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{}",
+                    body.len(),
+                    body
+                );
+                stream.write_all(response.as_bytes()).unwrap();
+            }
+        });
+        (format!("http://{address}"), rx)
+    }
+
+    fn settings_with_effort(base_url: &str, effort: &str) -> AppSettings {
+        let mut settings = post_process_settings(base_url);
+        let provider_id = settings.post_process_provider_id.clone();
+        settings
+            .post_process_efforts
+            .insert(provider_id, effort.to_string());
+        settings
+    }
+
+    #[test]
+    fn the_profiles_effort_goes_with_the_request() {
+        let (url, bodies) = serve_in_turn(vec![("200 OK", POLISHED)]);
+        let settings = settings_with_effort(&url, "high");
+        let report =
+            tauri::async_runtime::block_on(post_process_transcription(&settings, "hello", None));
+        assert_eq!(
+            report,
+            PostProcessReport {
+                outcome: PostProcessOutcome::Done("polished".to_string()),
+                effort_refused_by: None,
+            }
+        );
+        let body = bodies.recv_timeout(Duration::from_secs(5)).unwrap();
+        assert_eq!(body["reasoning_effort"], "high", "{body}");
+    }
+
+    #[test]
+    fn without_an_effort_the_request_has_no_reasoning_field() {
+        let (url, bodies) = serve_in_turn(vec![("200 OK", POLISHED)]);
+        let settings = post_process_settings(&url);
+        assert_eq!(
+            run_post_process(&settings, "hello"),
+            PostProcessOutcome::Done("polished".to_string())
+        );
+        let body = bodies.recv_timeout(Duration::from_secs(5)).unwrap();
+        assert!(body.get("reasoning_effort").is_none(), "{body}");
+    }
+
+    #[test]
+    fn a_refused_effort_still_gives_the_text_and_names_the_model() {
+        let (url, bodies) = serve_in_turn(vec![
+            (
+                "400 Bad Request",
+                r#"{"error":"unsupported reasoning_effort"}"#,
+            ),
+            ("200 OK", POLISHED),
+        ]);
+        let settings = settings_with_effort(&url, "xhigh");
+        let report =
+            tauri::async_runtime::block_on(post_process_transcription(&settings, "hello", None));
+        assert_eq!(
+            report,
+            PostProcessReport {
+                outcome: PostProcessOutcome::Done("polished".to_string()),
+                effort_refused_by: Some("model".to_string()),
+            }
+        );
+        let first = bodies.recv_timeout(Duration::from_secs(5)).unwrap();
+        assert_eq!(first["reasoning_effort"], "xhigh");
+        let retry = bodies.recv_timeout(Duration::from_secs(5)).unwrap();
+        assert!(retry.get("reasoning_effort").is_none(), "{retry}");
+    }
+
+    #[test]
+    fn a_refused_effort_is_a_warning_unless_post_processing_failed() {
+        assert_eq!(pasted_dictation_notice(false, None), None);
+        assert_eq!(
+            pasted_dictation_notice(false, Some("claude-sonnet-4-6")),
+            Some(
+                Notice::new(
+                    NoticeCode::PostProcessEffortRefused,
+                    NoticeSource::Dictation
+                )
+                .with_detail("claude-sonnet-4-6".to_string())
+            )
+        );
+        assert_eq!(
+            pasted_dictation_notice(true, Some("claude-sonnet-4-6")),
+            Some(Notice::new(
+                NoticeCode::PostProcessFailed,
+                NoticeSource::Dictation
+            ))
+        );
     }
 
     // DanyWhere: the fixed frame (`prompt_frame`), checked on the request
@@ -1677,7 +1903,8 @@ mod tests {
             &settings,
             transcription,
             context,
-        ));
+        ))
+        .outcome;
         assert_eq!(outcome, PostProcessOutcome::Done("polished".to_string()));
         let request = request.recv_timeout(Duration::from_secs(5)).unwrap();
         let body = &request[request.find("\r\n\r\n").unwrap() + 4..];

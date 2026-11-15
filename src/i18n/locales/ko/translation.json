@@ -840,6 +840,23 @@
           "placeholderWithOptions": "모델 검색 또는 선택",
           "placeholderNoOptions": "모델 이름 입력",
           "refreshModels": "모델 새로고침"
+        },
+        "effort": {
+          "title": "사고 수준",
+          "description": "모델이 답하기 전에 얼마나 생각할지 정합니다. 수준이 높을수록 꼼꼼하지만 느리고 비쌉니다. “모델 기본값”은 수준을 보내지 않습니다. OpenRouter와 사용자 정의 제공자에서는 DanyWhere가 이전처럼 모델에 생각하지 말라고 요청합니다.",
+          "guessed": "DanyWhere는 이 모델이 어떤 수준을 받는지 모릅니다. 모델이 하나를 거부하면 텍스트는 모델 기본값으로 오고 경고가 표시됩니다.",
+          "notSupported": "이 모델에는 사고 수준 설정이 없습니다.",
+          "refused": "모델이 이 수준을 거부해 DanyWhere가 모델 기본값을 사용합니다. 다른 수준을 선택하세요.",
+          "levels": {
+            "default": "모델 기본값",
+            "none": "없음",
+            "minimal": "최소",
+            "low": "낮음",
+            "medium": "보통",
+            "high": "높음",
+            "xhigh": "매우 높음",
+            "max": "최대"
+          }
         }
       },
       "prompts": {
@@ -1209,6 +1226,8 @@
     "appMissedShortcut": "DanyWhere가 받아쓰기 단축키를 설정할 때 {{app}}이(가) 이미 열려 있어서, 다시 시작한 후에야 단축키를 인식합니다. 텍스트는 클립보드에 있습니다.",
     "outdatedPromptsTitle": "프롬프트를 수정하세요",
     "outdatedPrompts": "이제 DanyWhere는 모든 프롬프트와 함께 변환된 텍스트와 그 설명을 보냅니다. 다음 프롬프트에서 ${output}, <transcript> 태그, 그리고 이를 설명하는 문장을 지우세요: {{prompts}}. 그때까지 ${output}이 들어 있는 프롬프트는 이전처럼 전송됩니다.",
+    "postProcessEffortRefusedTitle": "사고 수준 거부됨",
+    "postProcessEffortRefused": "{{model}}이(가) 선택한 사고 수준을 거부해 텍스트가 모델 기본값으로 왔습니다. 후처리 모델 옆에서 다른 수준이나 “모델 기본값”을 선택하세요.",
     "fileTranscriptionFailedTitle": "파일 음성 인식 실패",
     "transcriptionFailedTitle": "음성 인식 실패"
   },

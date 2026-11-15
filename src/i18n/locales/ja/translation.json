@@ -840,6 +840,23 @@
           "placeholderWithOptions": "モデルを検索または選択",
           "placeholderNoOptions": "モデル名を入力",
           "refreshModels": "モデルを更新"
+        },
+        "effort": {
+          "title": "思考レベル",
+          "description": "回答する前にモデルがどれだけ考えるか。レベルを上げると丁寧になりますが、遅く高価になります。「モデルの既定」はレベルを送りません。OpenRouter とカスタムプロバイダーでは、DanyWhere はこれまでどおり考えないようモデルに求めます。",
+          "guessed": "DanyWhere はこのモデルが受け付けるレベルを知りません。拒否された場合、テキストはモデルの既定で届き、警告が表示されます。",
+          "notSupported": "このモデルには思考レベルの設定がありません。",
+          "refused": "モデルがこのレベルを拒否したため、DanyWhere はモデルの既定を使います。別のレベルを選んでください。",
+          "levels": {
+            "default": "モデルの既定",
+            "none": "なし",
+            "minimal": "最小",
+            "low": "低",
+            "medium": "中",
+            "high": "高",
+            "xhigh": "非常に高",
+            "max": "最大"
+          }
         }
       },
       "prompts": {
@@ -1209,6 +1226,8 @@
     "appMissedShortcut": "DanyWhere が音声入力のショートカットを設定したとき {{app}} はすでに開いていたため、再起動するまでショートカットを認識しません。テキストはクリップボードにあります。",
     "outdatedPromptsTitle": "プロンプトの更新が必要です",
     "outdatedPrompts": "DanyWhere は、すべてのプロンプトと一緒に文字起こしとその説明を送信するようになりました。次のプロンプトから ${output}、<transcript> タグ、およびそれらを説明する文を削除してください：{{prompts}}。それまでは、${output} を含むプロンプトは以前と同じように送信されます。",
+    "postProcessEffortRefusedTitle": "思考レベルが拒否されました",
+    "postProcessEffortRefused": "{{model}} が選択した思考レベルを拒否したため、テキストはモデルの既定で届きました。後処理モデルの横で別のレベルか「モデルの既定」を選んでください。",
     "fileTranscriptionFailedTitle": "ファイルの文字起こしに失敗しました",
     "transcriptionFailedTitle": "文字起こしに失敗しました"
   },

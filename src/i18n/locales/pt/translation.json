@@ -840,6 +840,23 @@
           "placeholderWithOptions": "Buscar ou selecionar um modelo",
           "placeholderNoOptions": "Digite o nome de um modelo",
           "refreshModels": "Atualizar modelos"
+        },
+        "effort": {
+          "title": "Esforço de raciocínio",
+          "description": "Quanto o modelo pensa antes de responder: mais esforço é mais cuidadoso, mas mais lento e mais caro. “Padrão do modelo” não envia nenhum nível; com o OpenRouter e provedores personalizados, o DanyWhere pede ao modelo, como antes, que não pense.",
+          "guessed": "O DanyWhere não sabe quais níveis este modelo aceita. Se ele recusar um, o texto chega com o padrão do modelo e um aviso.",
+          "notSupported": "Este modelo não tem ajuste de esforço.",
+          "refused": "O modelo recusou este nível, por isso o DanyWhere usa o padrão dele. Escolha outro.",
+          "levels": {
+            "default": "Padrão do modelo",
+            "none": "Nenhum",
+            "minimal": "Mínimo",
+            "low": "Baixo",
+            "medium": "Médio",
+            "high": "Alto",
+            "xhigh": "Muito alto",
+            "max": "Máximo"
+          }
         }
       },
       "prompts": {
@@ -1209,6 +1226,8 @@
     "appMissedShortcut": "{{app}} já estava aberto quando o DanyWhere configurou o atalho de ditado, por isso só o reconhece depois de reiniciado. O texto está na área de transferência.",
     "outdatedPromptsTitle": "Atualize os prompts",
     "outdatedPrompts": "Agora o DanyWhere envia com cada prompt a transcrição e uma explicação sobre ela. Remova destes prompts ${output}, as tags <transcript> e qualquer frase que as explique: {{prompts}}. Até lá, um prompt com ${output} é enviado como antes.",
+    "postProcessEffortRefusedTitle": "Esforço recusado",
+    "postProcessEffortRefused": "{{model}} recusou o esforço escolhido, por isso o texto chegou com o padrão do modelo. Escolha outro esforço, ou “Padrão do modelo”, ao lado do modelo de pós-processamento.",
     "fileTranscriptionFailedTitle": "Falha na transcrição do arquivo",
     "transcriptionFailedTitle": "Falha na transcrição"
   },

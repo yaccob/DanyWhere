@@ -840,6 +840,23 @@
           "placeholderWithOptions": "搜索或选择模型",
           "placeholderNoOptions": "输入模型名称",
           "refreshModels": "刷新模型"
+        },
+        "effort": {
+          "title": "思考程度",
+          "description": "模型在回答前思考多少：程度越高越周到，但更慢也更贵。“模型默认”不发送任何程度；对于 OpenRouter 和自定义提供商，DanyWhere 仍像以前一样请模型不要思考。",
+          "guessed": "DanyWhere 不知道此模型接受哪些程度。如果模型拒绝其中一个，文本会以模型默认值返回，并显示警告。",
+          "notSupported": "此模型没有思考程度设置。",
+          "refused": "模型拒绝了此程度，因此 DanyWhere 使用其默认值。请选择其他程度。",
+          "levels": {
+            "default": "模型默认",
+            "none": "无",
+            "minimal": "最低",
+            "low": "低",
+            "medium": "中",
+            "high": "高",
+            "xhigh": "很高",
+            "max": "最高"
+          }
         }
       },
       "prompts": {
@@ -1209,6 +1226,8 @@
     "appMissedShortcut": "DanyWhere 设置听写快捷键时 {{app}} 已经打开，因此要重启后才能识别该快捷键。文本已在剪贴板中。",
     "outdatedPromptsTitle": "请更新提示词",
     "outdatedPrompts": "DanyWhere 现在会随每个提示词一起发送转录及其说明。请从以下提示词中删除 ${output}、<transcript> 标签以及解释它们的每个句子：{{prompts}}。在此之前，包含 ${output} 的提示词仍按原来的方式发送。",
+    "postProcessEffortRefusedTitle": "思考程度被拒绝",
+    "postProcessEffortRefused": "{{model}} 拒绝了所选的思考程度，因此文本以模型默认值返回。请在后处理模型旁边选择其他程度或“模型默认”。",
     "fileTranscriptionFailedTitle": "文件转录失败",
     "transcriptionFailedTitle": "转录失败"
   },

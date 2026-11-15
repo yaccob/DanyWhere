@@ -658,6 +658,36 @@ mod tests {
     }
 
     #[test]
+    fn the_effort_travels_with_the_exported_profile() {
+        let mut s = settings();
+        s.post_process_efforts
+            .insert("anthropic".to_string(), "xhigh".to_string());
+        let yaml = export(&s, "default", Some("geheim")).expect("export");
+        let (profile, _) = read_import(&yaml, None).expect("import");
+        assert_eq!(
+            profile.values.post_process_efforts.get("anthropic"),
+            Some(&"xhigh".to_string())
+        );
+    }
+
+    #[test]
+    fn a_file_from_before_the_effort_imports_with_the_models_default() {
+        let s = settings();
+        let yaml = export(&s, "work", None).expect("export");
+        let line = yaml
+            .lines()
+            .find(|line| line.trim_start().starts_with("post_process_efforts:"))
+            .expect("the export names the efforts")
+            .to_string();
+        assert!(line.ends_with("{}"), "{line}");
+        let older = yaml.replace(&format!("{line}\n"), "");
+        assert!(!older.contains("post_process_efforts"), "{older}");
+        let (profile, _) = read_import(&older, None).expect("import");
+        assert!(profile.values.post_process_efforts.is_empty());
+        assert_eq!(profile.name, "Work");
+    }
+
+    #[test]
     fn a_wrong_password_is_reported_and_no_password_leaves_the_key_out() {
         let s = settings();
         let yaml = export(&s, "default", Some("geheim")).expect("export");

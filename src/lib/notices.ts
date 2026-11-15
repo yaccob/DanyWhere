@@ -78,6 +78,14 @@ const NOTICE_DISPLAY: Record<NoticeCode, NoticeDisplay> = {
       t("errors.outdatedPrompts", { prompts: detail ?? "" }),
     detailInExplanation: true,
   },
+  // DanyWhere: the detail is the post-processing model that refused the
+  // profile's effort (src-tauri/src/post_process_effort.rs).
+  PostProcessEffortRefused: {
+    title: "errors.postProcessEffortRefusedTitle",
+    explanation: (t, detail) =>
+      t("errors.postProcessEffortRefused", { model: detail ?? "" }),
+    detailInExplanation: true,
+  },
 };
 
 export const noticeDisplay = (code: NoticeCode) => NOTICE_DISPLAY[code];

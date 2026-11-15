@@ -840,6 +840,23 @@
           "placeholderWithOptions": "Cerqueu o seleccioneu un model",
           "placeholderNoOptions": "Escriviu el nom d'un model",
           "refreshModels": "Actualitzeu els models"
+        },
+        "effort": {
+          "title": "Esforç de raonament",
+          "description": "Quant pensa el model abans de respondre: més esforç és més acurat, però més lent i més car. «Per defecte del model» no envia cap nivell; amb OpenRouter i els proveïdors personalitzats, DanyWhere demana com abans al model que no pensi.",
+          "guessed": "DanyWhere no sap quins nivells accepta aquest model. Si en rebutja un, el text arriba amb el valor per defecte del model i un avís.",
+          "notSupported": "Aquest model no té cap ajust d'esforç.",
+          "refused": "El model ha rebutjat aquest nivell, així que DanyWhere fa servir el seu valor per defecte. Trieu-ne un altre.",
+          "levels": {
+            "default": "Per defecte del model",
+            "none": "Cap",
+            "minimal": "Mínim",
+            "low": "Baix",
+            "medium": "Mitjà",
+            "high": "Alt",
+            "xhigh": "Molt alt",
+            "max": "Màxim"
+          }
         }
       },
       "prompts": {
@@ -1209,6 +1226,8 @@
     "appMissedShortcut": "{{app}} ja estava obert quan DanyWhere va configurar la drecera de dictat, així que només la reconeixerà després de reiniciar-lo. El text és al porta-retalls.",
     "outdatedPromptsTitle": "Actualitzeu les indicacions",
     "outdatedPrompts": "Ara DanyWhere envia amb cada indicació la transcripció i una explicació sobre ella. Elimineu d'aquestes indicacions ${output}, les etiquetes <transcript> i qualsevol frase que les expliqui: {{prompts}}. Fins aleshores, una indicació amb ${output} s'envia com abans.",
+    "postProcessEffortRefusedTitle": "Esforç rebutjat",
+    "postProcessEffortRefused": "{{model}} ha rebutjat l'esforç triat, així que el text ha arribat amb el valor per defecte del model. Trieu un altre esforç, o «Per defecte del model», al costat del model de postprocessament.",
     "fileTranscriptionFailedTitle": "La transcripció del fitxer ha fallat",
     "transcriptionFailedTitle": "La transcripció ha fallat"
   },

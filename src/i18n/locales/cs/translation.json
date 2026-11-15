@@ -840,6 +840,23 @@
           "placeholderWithOptions": "Vyhledejte nebo vyberte model",
           "placeholderNoOptions": "Zadejte název modelu",
           "refreshModels": "Obnovit modely"
+        },
+        "effort": {
+          "title": "Úsilí přemýšlení",
+          "description": "Kolik model přemýšlí, než odpoví: větší úsilí je důkladnější, ale pomalejší a dražší. „Výchozí modelu“ neposílá žádnou úroveň; u OpenRouteru a vlastních poskytovatelů DanyWhere jako dosud žádá model, aby nepřemýšlel.",
+          "guessed": "DanyWhere neví, které úrovně tento model přijímá. Pokud nějakou odmítne, text přijde s výchozím nastavením modelu a s upozorněním.",
+          "notSupported": "Tento model nemá nastavení úsilí.",
+          "refused": "Model tuto úroveň odmítl, proto DanyWhere používá jeho výchozí nastavení. Zvolte jinou.",
+          "levels": {
+            "default": "Výchozí modelu",
+            "none": "Žádné",
+            "minimal": "Minimální",
+            "low": "Nízké",
+            "medium": "Střední",
+            "high": "Vysoké",
+            "xhigh": "Velmi vysoké",
+            "max": "Maximální"
+          }
         }
       },
       "prompts": {
@@ -1209,6 +1226,8 @@
     "appMissedShortcut": "{{app}} už byla otevřená, když DanyWhere nastavil zkratku diktování, takže ji rozpozná až po restartu. Text je ve schránce.",
     "outdatedPromptsTitle": "Upravte prompty",
     "outdatedPrompts": "DanyWhere teď s každým promptem posílá přepis a jeho vysvětlení. Odstraňte z těchto promptů ${output}, značky <transcript> a každou větu, která je vysvětluje: {{prompts}}. Do té doby se prompt s ${output} odesílá jako dřív.",
+    "postProcessEffortRefusedTitle": "Úsilí odmítnuto",
+    "postProcessEffortRefused": "{{model}} odmítl zvolené úsilí, proto text přišel s výchozím nastavením modelu. Zvolte jiné úsilí nebo „Výchozí modelu“ vedle modelu následného zpracování.",
     "fileTranscriptionFailedTitle": "Přepis souboru selhal",
     "transcriptionFailedTitle": "Přepis selhal"
   },

@@ -361,6 +361,22 @@ async fetchPostProcessModels(providerId: string) : Promise<Result<string[], stri
     else return { status: "error", error: e  as any };
 }
 },
+async getPostProcessEffortOptions(providerId: string, model: string) : Promise<Result<EffortOptions, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_post_process_effort_options", { providerId, model }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async changePostProcessEffortSetting(providerId: string, effort: string | null) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_post_process_effort_setting", { providerId, effort }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async addPostProcessPrompt(name: string, prompt: string) : Promise<Result<LLMPrompt, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("add_post_process_prompt", { name, prompt }) };
@@ -1538,7 +1554,12 @@ dictation_context?: DictationContextSettings; model_unload_timeout?: ModelUnload
 /**
  * Migrated from `recording_retention_period` in `apply_settings_migrations`.
  */
-recording_storage_limit?: RecordingStorageLimit; paste_method?: PasteMethod; clipboard_handling?: ClipboardHandling; auto_submit?: boolean; auto_submit_key?: AutoSubmitKey; post_process_enabled?: boolean; post_process_provider_id?: string; post_process_providers?: PostProcessProvider[]; post_process_api_keys?: SecretMap; post_process_models?: Partial<{ [key in string]: string }>; post_process_prompts?: LLMPrompt[]; post_process_selected_prompt_id?: string | null; 
+recording_storage_limit?: RecordingStorageLimit; paste_method?: PasteMethod; clipboard_handling?: ClipboardHandling; auto_submit?: boolean; auto_submit_key?: AutoSubmitKey; post_process_enabled?: boolean; post_process_provider_id?: string; post_process_providers?: PostProcessProvider[]; post_process_api_keys?: SecretMap; post_process_models?: Partial<{ [key in string]: string }>; 
+/**
+ * DanyWhere: the effort per provider (`post_process_effort`); none
+ * stored = the model's default.
+ */
+post_process_efforts?: Partial<{ [key in string]: string }>; post_process_prompts?: LLMPrompt[]; post_process_selected_prompt_id?: string | null; 
 /**
  * DanyWhere: time limit for the whole post-processing step, retries
  * included, in seconds (Handy: a fixed 60 s; see `llm_timeouts`).
@@ -1721,6 +1742,34 @@ export type DictationServiceWhenIdle =
  * inserts it ("noch besser", the user's choice as the default).
  */
 "start_recording" | "do_nothing"
+/**
+ * What the settings page offers for a provider's model.
+ */
+export type EffortOptions = { 
+/**
+ * In [`LEVELS`] order, without the model's default (always offered).
+ */
+levels: string[]; source: EffortSource; 
+/**
+ * Levels the endpoint refused for this model while the app runs.
+ */
+rejected: string[] }
+/**
+ * Where the offered levels come from.
+ */
+export type EffortSource = 
+/**
+ * The provider's model list names them for this model.
+ */
+"listed" | 
+/**
+ * The provider's documentation names them for this model family.
+ */
+"documented" | 
+/**
+ * Nothing is known; the common levels, which the endpoint may refuse.
+ */
+"common"
 /**
  * What a History entry knows about its window and its context.
  */
@@ -1994,7 +2043,13 @@ export type NoticeCode = "TranscriptionFailed" | "PasteFailed" | "PasteBlockedEl
  * which the fixed frame makes unnecessary (`prompt_frame`). Detail:
  * their names.
  */
-"OutdatedPrompts"
+"OutdatedPrompts" | 
+/**
+ * DanyWhere: the post-processing model refused the profile's effort, so
+ * the text came at its default (`post_process_effort`). Detail: the
+ * model.
+ */
+"PostProcessEffortRefused"
 export type NoticeLevel = 
 /**
  * Nothing came out, or Handy can't do its job.
@@ -2062,7 +2117,11 @@ apps?: string[] }
  * Everything that is per profile. Mirrors fields of [`AppSettings`] with the
  * same names and types; the context limits mirror `dictation_context`.
  */
-export type ProfileValues = { selected_model: string; selected_language: string; spoken_languages: string[]; language_detection: LanguageDetectionMode; language_detection_window_secs: number; translate_to_english: boolean; chinese_script: ChineseScript; profile_words: string[]; word_lists: WordList[]; active_word_list_id: string | null; post_process_enabled: boolean; post_process_provider_id: string; post_process_models: Partial<{ [key in string]: string }>; post_process_prompts: LLMPrompt[]; post_process_selected_prompt_id: string | null; 
+export type ProfileValues = { selected_model: string; selected_language: string; spoken_languages: string[]; language_detection: LanguageDetectionMode; language_detection_window_secs: number; translate_to_english: boolean; chinese_script: ChineseScript; profile_words: string[]; word_lists: WordList[]; active_word_list_id: string | null; post_process_enabled: boolean; post_process_provider_id: string; post_process_models: Partial<{ [key in string]: string }>; 
+/**
+ * The effort per provider (`post_process_effort`).
+ */
+post_process_efforts: Partial<{ [key in string]: string }>; post_process_prompts: LLMPrompt[]; post_process_selected_prompt_id: string | null; 
 /**
  * `dictation_context.age_limit_minutes`
  */

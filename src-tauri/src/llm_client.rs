@@ -8,20 +8,20 @@ use std::error::Error as StdError;
 use std::sync::{Mutex, OnceLock};
 use std::time::Duration;
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 struct ChatMessage {
     role: String,
     content: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 struct JsonSchema {
     name: String,
     strict: bool,
     schema: Value,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 struct ResponseFormat {
     #[serde(rename = "type")]
     format_type: String,
@@ -36,9 +36,10 @@ struct ReasoningConfig {
     exclude: Option<bool>,
 }
 
-/// Request fields used to ask an endpoint to skip reasoning/thinking.
-/// Providers disagree on the field name and accepted values, so at most one of
-/// these is set per request (see `reasoning_disable_params`).
+/// Request fields used to ask an endpoint to skip reasoning/thinking, or
+/// (DanyWhere) to think with a chosen effort. Providers disagree on the field
+/// name and accepted values, so at most one of these is set per request (see
+/// `reasoning_disable_params` and `effort_params`).
 #[derive(Debug, Serialize, Clone, Default, PartialEq)]
 struct ReasoningParams {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -47,12 +48,6 @@ struct ReasoningParams {
     reasoning: Option<ReasoningConfig>,
     #[serde(skip_serializing_if = "Option::is_none")]
     thinking: Option<Value>,
-}
-
-impl ReasoningParams {
-    fn is_empty(&self) -> bool {
-        self.reasoning_effort.is_none() && self.reasoning.is_none() && self.thinking.is_none()
-    }
 }
 
 /// Pick the reasoning-disable request fields an endpoint understands.
@@ -85,16 +80,195 @@ fn reasoning_disable_params(provider: &PostProcessProvider) -> ReasoningParams {
     }
 }
 
+/// DanyWhere: the request fields for an effort (`post_process_effort`).
+/// OpenRouter nests it like the reasoning-disable fields; every other
+/// OpenAI-compatible endpoint DanyWhere knows (OpenAI, Groq, Cerebras, Z.AI,
+/// DeepSeek, Bedrock Mantle, Ollama) takes the top-level `reasoning_effort`.
+fn effort_params(provider: &PostProcessProvider, level: &str) -> ReasoningParams {
+    if provider.id == "openrouter" {
+        // exclude:true keeps the reasoning text out of the response, as for
+        // the reasoning-disable fields.
+        ReasoningParams {
+            reasoning: Some(ReasoningConfig {
+                effort: Some(level.to_string()),
+                exclude: Some(true),
+            }),
+            ..Default::default()
+        }
+    } else {
+        ReasoningParams {
+            reasoning_effort: Some(level.to_string()),
+            ..Default::default()
+        }
+    }
+}
+
+/// DanyWhere: what is asked of the endpoint about reasoning.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct ReasoningRequest {
+    /// Without an effort, ask the endpoint to skip reasoning (Handy's
+    /// `disable_reasoning`, for custom endpoints and OpenRouter).
+    pub disable_by_default: bool,
+    /// The effort chosen for the profile; `None` = the model's default.
+    pub effort: Option<String>,
+}
+
+/// DanyWhere: an answer, and whether it came without the chosen effort.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Completion {
+    pub content: Option<String>,
+    /// An effort was chosen, but the endpoint refused it (in this request or
+    /// an earlier one), so the answer came at the model's default.
+    pub effort_ignored: bool,
+}
+
+/// DanyWhere: what to send, in order: each body with the key under which a
+/// refusal of its reasoning fields is remembered (none for the last, plain
+/// one). See [`post_until_accepted`].
+#[derive(Debug, PartialEq)]
+struct Plan<B> {
+    attempts: Vec<(B, Option<String>)>,
+    /// The first body carries the chosen effort.
+    tries_effort: bool,
+    /// The chosen effort was refused before, so it isn't tried again.
+    effort_skipped: bool,
+}
+
+impl<B> Plan<B> {
+    fn plain(body: B) -> Self {
+        Self {
+            attempts: vec![(body, None)],
+            tries_effort: false,
+            effort_skipped: false,
+        }
+    }
+
+    /// Whether the answer to body `used` came without the chosen effort.
+    fn effort_ignored(&self, used: usize) -> bool {
+        self.effort_skipped || (self.tries_effort && used > 0)
+    }
+
+    fn map<C>(self, mut body: impl FnMut(B) -> C) -> Plan<C> {
+        Plan {
+            attempts: self
+                .attempts
+                .into_iter()
+                .map(|(b, key)| (body(b), key))
+                .collect(),
+            tries_effort: self.tries_effort,
+            effort_skipped: self.effort_skipped,
+        }
+    }
+}
+
+/// `effort` and the plain body after it, unless the endpoint refused the
+/// effort before; `fallback` when no effort is chosen.
+fn with_effort<B>(
+    provider: &PostProcessProvider,
+    model: &str,
+    effort: Option<&str>,
+    effort_body: impl FnOnce(&str) -> B,
+    plain: B,
+    fallback: impl FnOnce(B) -> Plan<B>,
+) -> Plan<B> {
+    let Some(level) = effort else {
+        return fallback(plain);
+    };
+    let key = effort_rejection_key(provider, model, level);
+    if is_known_rejected(&key) {
+        return Plan {
+            effort_skipped: true,
+            ..Plan::plain(plain)
+        };
+    }
+    Plan {
+        attempts: vec![(effort_body(level), Some(key)), (plain, None)],
+        tries_effort: true,
+        effort_skipped: false,
+    }
+}
+
+/// The reasoning fields for an OpenAI-compatible request: the chosen effort,
+/// or else Handy's reasoning-disable fields where asked for, each followed by
+/// a plain request in case the endpoint refuses them.
+fn reasoning_attempts(
+    provider: &PostProcessProvider,
+    model: &str,
+    reasoning: &ReasoningRequest,
+) -> Plan<ReasoningParams> {
+    with_effort(
+        provider,
+        model,
+        reasoning.effort.as_deref(),
+        |level| effort_params(provider, level),
+        ReasoningParams::default(),
+        |plain| {
+            let key = endpoint_key(provider, model);
+            if reasoning.disable_by_default && !is_known_rejected(&key) {
+                Plan {
+                    attempts: vec![
+                        (reasoning_disable_params(provider), Some(key)),
+                        (plain, None),
+                    ],
+                    tries_effort: false,
+                    effort_skipped: false,
+                }
+            } else {
+                Plan::plain(plain)
+            }
+        },
+    )
+}
+
+/// The Messages requests for `prompt`: with the chosen effort, then without.
+fn anthropic_attempts(
+    provider: &PostProcessProvider,
+    model: &str,
+    prompt: String,
+    effort: Option<&str>,
+) -> Plan<AnthropicMessagesRequest> {
+    with_effort(
+        provider,
+        model,
+        effort,
+        |level| anthropic_request(provider, model, prompt.clone(), Some(level)),
+        anthropic_request(provider, model, prompt.clone(), None),
+        Plan::plain,
+    )
+}
+
 /// Endpoints (base_url|model) that rejected the reasoning-disable fields with a
 /// 4xx. Remembered for the lifetime of the process so every dictation after the
 /// first skips the doomed attempt and goes straight to a plain request.
+/// DanyWhere: also the efforts an endpoint refused (`effort_rejection_key`).
 fn reasoning_rejections() -> &'static Mutex<HashSet<String>> {
     static REJECTED: OnceLock<Mutex<HashSet<String>>> = OnceLock::new();
     REJECTED.get_or_init(|| Mutex::new(HashSet::new()))
 }
 
-fn endpoint_key(provider: &PostProcessProvider, model: &str) -> String {
+pub(crate) fn endpoint_key(provider: &PostProcessProvider, model: &str) -> String {
     format!("{}|{}", provider.base_url.trim_end_matches('/'), model)
+}
+
+/// DanyWhere: the key under which a refused effort is remembered.
+fn effort_rejection_key(provider: &PostProcessProvider, model: &str, level: &str) -> String {
+    format!("{}|effort:{}", endpoint_key(provider, model), level)
+}
+
+/// DanyWhere: remembers that the endpoint refused `level` for `model`; in
+/// the app, [`post_until_accepted`] does this.
+#[cfg(test)]
+pub(crate) fn remember_effort_rejection(provider: &PostProcessProvider, model: &str, level: &str) {
+    remember_rejection(effort_rejection_key(provider, model, level));
+}
+
+/// DanyWhere: the levels the endpoint refused for `model` while the app runs.
+pub(crate) fn rejected_efforts(provider: &PostProcessProvider, model: &str) -> Vec<String> {
+    crate::post_process_effort::LEVELS
+        .iter()
+        .filter(|level| is_known_rejected(&effort_rejection_key(provider, model, level)))
+        .map(|level| level.to_string())
+        .collect()
 }
 
 fn is_known_rejected(key: &str) -> bool {
@@ -110,7 +284,7 @@ fn remember_rejection(key: String) {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 struct ChatCompletionRequest {
     model: String,
     messages: Vec<ChatMessage>,
@@ -141,11 +315,60 @@ struct ChatMessageResponse {
 /// required. Ample for a cleaned-up dictation.
 const ANTHROPIC_MAX_TOKENS: u32 = 4096;
 
-#[derive(Debug, Serialize)]
+/// DanyWhere: the budget with an effort, where thinking counts towards it.
+/// Claude Haiku 5.5 used up to 2137 output tokens for short dictations at
+/// `xhigh` (qa/2026-11-15_1450), so a long dictation at `max` could pass
+/// 4096. 16000 is Anthropic's suggestion for requests without streaming, far
+/// below the output limit of every model that takes an effort (64K and more);
+/// only tokens used are paid for.
+const ANTHROPIC_MAX_TOKENS_WITH_EFFORT: u32 = 16000;
+
+#[derive(Debug, Serialize, Clone)]
+struct AnthropicOutputConfig {
+    effort: String,
+}
+
+#[derive(Debug, Serialize, Clone)]
 struct AnthropicMessagesRequest {
     model: String,
     max_tokens: u32,
     messages: Vec<ChatMessage>,
+    /// DanyWhere: the effort (`post_process_effort`).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    output_config: Option<AnthropicOutputConfig>,
+    /// DanyWhere: `{"type": "adaptive"}` with an effort, for the models that
+    /// think only when asked to.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    thinking: Option<Value>,
+}
+
+/// DanyWhere: the Messages request for `prompt`, with `effort` if one is
+/// chosen.
+fn anthropic_request(
+    provider: &PostProcessProvider,
+    model: &str,
+    prompt: String,
+    effort: Option<&str>,
+) -> AnthropicMessagesRequest {
+    let thinking = effort
+        .filter(|_| crate::post_process_effort::wants_adaptive_thinking(provider, model))
+        .map(|_| serde_json::json!({ "type": "adaptive" }));
+    AnthropicMessagesRequest {
+        model: model.to_string(),
+        max_tokens: if effort.is_some() {
+            ANTHROPIC_MAX_TOKENS_WITH_EFFORT
+        } else {
+            ANTHROPIC_MAX_TOKENS
+        },
+        messages: vec![ChatMessage {
+            role: "user".to_string(),
+            content: prompt,
+        }],
+        output_config: effort.map(|effort| AnthropicOutputConfig {
+            effort: effort.to_string(),
+        }),
+        thinking,
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -374,27 +597,92 @@ fn report_reqwest_error(context: &str, error: &reqwest::Error) -> String {
 /// Send a chat completion request to an OpenAI-compatible API
 /// Returns Ok(Some(content)) on success, Ok(None) if response has no content,
 /// or Err on actual errors (HTTP, parsing, etc.)
+/// DanyWhere: the content comes in a [`Completion`], which also says whether
+/// the chosen effort was refused.
 pub async fn send_chat_completion(
     provider: &PostProcessProvider,
     api_key: String,
     model: &str,
     prompt: String,
-    disable_reasoning: bool,
-) -> Result<Option<String>, String> {
+    reasoning: &ReasoningRequest,
+) -> Result<Completion, String> {
     if provider.api_format == PostProcessApiFormat::Anthropic {
-        return send_anthropic_message(provider, api_key, model, prompt).await;
+        return send_anthropic_message(
+            provider,
+            api_key,
+            model,
+            prompt,
+            reasoning.effort.as_deref(),
+        )
+        .await;
     }
 
-    send_chat_completion_with_schema(
-        provider,
-        api_key,
-        model,
-        prompt,
-        None,
-        None,
-        disable_reasoning,
-    )
-    .await
+    send_chat_completion_with_schema(provider, api_key, model, prompt, None, None, reasoning).await
+}
+
+/// DanyWhere: sends the plan's bodies in turn until one is not refused with
+/// 400/422, the answer endpoints give to fields they don't take. When a later
+/// body gets through, the keys of the refused ones are remembered, so the
+/// next request skips them. Returns the response and which body it answers.
+async fn post_until_accepted<B: Serialize>(
+    client: &ProviderClient,
+    url: &str,
+    plan: &Plan<B>,
+    what: &str,
+) -> Result<(reqwest::Response, usize), String> {
+    let mut used = 0;
+    loop {
+        let Some((body, _)) = plan.attempts.get(used) else {
+            return Err("No request to send".to_string());
+        };
+        let context = if used == 0 {
+            "HTTP request failed"
+        } else {
+            "HTTP retry failed"
+        };
+        let response = client
+            .post(url)
+            .json(body)
+            .send()
+            .await
+            .map_err(|e| report_reqwest_error(context, &e))?;
+        let status = response.status();
+        debug!(
+            "{} response received with status {} over {:?} from {}",
+            what,
+            status,
+            response.version(),
+            sanitized_url(response.url())
+        );
+
+        // A 400/422 on a request carrying reasoning fields is almost always
+        // the endpoint rejecting those fields — retry without them.
+        if matches!(status.as_u16(), 400 | 422) && used + 1 < plan.attempts.len() {
+            let error_text = response.text().await.unwrap_or_else(|e| {
+                report_reqwest_error("Failed to read reasoning rejection response", &e)
+            });
+            info!(
+                "Endpoint rejected the request's reasoning fields (status {}): {}. Retrying without them",
+                status, error_text
+            );
+            used += 1;
+            continue;
+        }
+
+        if status.is_success() && used > 0 {
+            info!(
+                "Retry without the reasoning fields succeeded; '{}' will skip them from now on",
+                sanitized_url_for_log(url)
+            );
+            for key in plan.attempts[..used]
+                .iter()
+                .filter_map(|(_, key)| key.clone())
+            {
+                remember_rejection(key);
+            }
+        }
+        return Ok((response, used));
+    }
 }
 
 /// Send a chat completion request with structured output support.
@@ -407,6 +695,8 @@ pub async fn send_chat_completion(
 /// upstreams reject with 400), so a 400/422 answer to such a request triggers
 /// one retry without the fields, and the rejection is remembered per
 /// (base_url, model) so later requests skip the failing attempt entirely.
+/// DanyWhere: `reasoning` holds Handy's `disable_reasoning` and the chosen
+/// effort, which wins over it and is retried and remembered the same way.
 pub async fn send_chat_completion_with_schema(
     provider: &PostProcessProvider,
     api_key: String,
@@ -414,8 +704,8 @@ pub async fn send_chat_completion_with_schema(
     user_content: String,
     system_prompt: Option<String>,
     json_schema: Option<Value>,
-    disable_reasoning: bool,
-) -> Result<Option<String>, String> {
+    reasoning: &ReasoningRequest,
+) -> Result<Completion, String> {
     let base_url = provider.base_url.trim_end_matches('/');
     let url = format!("{}/chat/completions", base_url);
 
@@ -453,72 +743,18 @@ pub async fn send_chat_completion_with_schema(
         },
     });
 
-    let key = endpoint_key(provider, model);
-    let reasoning = if disable_reasoning && !is_known_rejected(&key) {
-        reasoning_disable_params(provider)
-    } else {
-        ReasoningParams::default()
-    };
-
-    let mut request_body = ChatCompletionRequest {
-        model: model.to_string(),
-        messages,
-        stream: false,
-        response_format,
-        reasoning,
-    };
-
-    let mut response = client
-        .post(&url)
-        .json(&request_body)
-        .send()
-        .await
-        .map_err(|e| report_reqwest_error("HTTP request failed", &e))?;
-    let mut status = response.status();
-    debug!(
-        "Chat completion response received with status {} over {:?} from {}",
-        status,
-        response.version(),
-        sanitized_url(response.url())
-    );
-
-    // A 400/422 on a request carrying reasoning-disable fields is almost always
-    // the endpoint rejecting those fields — retry once without them.
-    if !status.is_success()
-        && matches!(status.as_u16(), 400 | 422)
-        && !request_body.reasoning.is_empty()
-    {
-        let error_text = response.text().await.unwrap_or_else(|e| {
-            report_reqwest_error("Failed to read reasoning rejection response", &e)
+    let plan =
+        reasoning_attempts(provider, model, reasoning).map(|reasoning| ChatCompletionRequest {
+            model: model.to_string(),
+            messages: messages.clone(),
+            stream: false,
+            response_format: response_format.clone(),
+            reasoning,
         });
-        info!(
-            "Endpoint rejected request with reasoning disabled (status {}): {}. Retrying without reasoning fields",
-            status, error_text
-        );
 
-        request_body.reasoning = ReasoningParams::default();
-        response = client
-            .post(&url)
-            .json(&request_body)
-            .send()
-            .await
-            .map_err(|e| report_reqwest_error("HTTP retry failed", &e))?;
-        status = response.status();
-        debug!(
-            "Chat completion retry response received with status {} over {:?} from {}",
-            status,
-            response.version(),
-            sanitized_url(response.url())
-        );
-
-        if status.is_success() {
-            info!(
-                "Retry without reasoning fields succeeded; '{}' (model '{}') will skip them from now on",
-                sanitized_url_for_log(base_url), model
-            );
-            remember_rejection(key);
-        }
-    }
+    let (response, used) = post_until_accepted(&client, &url, &plan, "Chat completion").await?;
+    let effort_ignored = plan.effort_ignored(used);
+    let status = response.status();
 
     if !status.is_success() {
         let error_text = response
@@ -537,7 +773,10 @@ pub async fn send_chat_completion_with_schema(
         .map_err(|e| report_reqwest_error("Failed to parse API response", &e))?;
 
     let Some(choice) = completion.choices.into_iter().next() else {
-        return Ok(None);
+        return Ok(Completion {
+            content: None,
+            effort_ignored,
+        });
     };
 
     // A response cut off at the provider's output limit is incomplete; pasting
@@ -547,20 +786,30 @@ pub async fn send_chat_completion_with_schema(
         return Err("Response was truncated at the provider's output token limit".to_string());
     }
 
-    Ok(choice.message.content)
+    Ok(Completion {
+        content: choice.message.content,
+        effort_ignored,
+    })
 }
 
 /// Send a single-prompt request to an Anthropic Messages API (`/messages`).
 /// Used by every provider with the Anthropic format (the built-in Anthropic
 /// provider and a custom provider set to it). None of them use structured
-/// output, and thinking is off unless requested, so no reasoning fields are
-/// needed.
+/// output, so no reasoning-disable fields are needed.
+///
+/// DanyWhere: without an effort, nothing about thinking is sent, as before:
+/// the Claude 5 models then think adaptively at their default effort (and
+/// rarely on a short dictation), the 4.x models don't think. With an effort,
+/// `output_config.effort` goes along, adaptive thinking for the models that
+/// need it asked for, and a larger `max_tokens`, since thinking counts
+/// towards it; an endpoint that refuses them gets the plain request again.
 async fn send_anthropic_message(
     provider: &PostProcessProvider,
     api_key: String,
     model: &str,
     prompt: String,
-) -> Result<Option<String>, String> {
+    effort: Option<&str>,
+) -> Result<Completion, String> {
     let url = format!("{}/messages", provider.base_url.trim_end_matches('/'));
 
     debug!(
@@ -568,28 +817,15 @@ async fn send_anthropic_message(
         sanitized_url_for_log(&url)
     );
 
-    let request_body = AnthropicMessagesRequest {
-        model: model.to_string(),
-        max_tokens: ANTHROPIC_MAX_TOKENS,
-        messages: vec![ChatMessage {
-            role: "user".to_string(),
-            content: prompt,
-        }],
-    };
-
-    let response = create_client(provider, &api_key)?
-        .post(&url)
-        .json(&request_body)
-        .send()
-        .await
-        .map_err(|e| report_reqwest_error("HTTP request failed", &e))?;
+    let plan = anthropic_attempts(provider, model, prompt, effort);
+    let client = create_client(provider, &api_key)?;
+    let (response, used) = post_until_accepted(&client, &url, &plan, "Anthropic Messages").await?;
+    let effort_ignored = plan.effort_ignored(used);
+    let max_tokens = plan
+        .attempts
+        .get(used)
+        .map_or(ANTHROPIC_MAX_TOKENS, |(body, _)| body.max_tokens);
     let status = response.status();
-    debug!(
-        "Anthropic Messages response received with status {} over {:?} from {}",
-        status,
-        response.version(),
-        sanitized_url(response.url())
-    );
 
     if !status.is_success() {
         let error_text = response
@@ -612,11 +848,14 @@ async fn send_anthropic_message(
     if message.stop_reason.as_deref() == Some("max_tokens") {
         return Err(format!(
             "Response was truncated at the {} token limit",
-            ANTHROPIC_MAX_TOKENS
+            max_tokens
         ));
     }
 
-    Ok(message.into_text())
+    Ok(Completion {
+        content: message.into_text(),
+        effort_ignored,
+    })
 }
 
 /// Fetch available models from an OpenAI-compatible API
@@ -663,6 +902,9 @@ pub async fn fetch_models(
         .json()
         .await
         .map_err(|e| report_reqwest_error("Failed to parse model list response", &e))?;
+
+    // DanyWhere: what the list says about each model's effort.
+    crate::post_process_effort::remember_listing(provider, &parsed);
 
     let mut models = Vec::new();
 
@@ -908,21 +1150,6 @@ mod tests {
     }
 
     #[test]
-    fn reasoning_params_is_empty_tracks_all_fields() {
-        assert!(ReasoningParams::default().is_empty());
-        assert!(!ReasoningParams {
-            reasoning_effort: Some("none".to_string()),
-            ..Default::default()
-        }
-        .is_empty());
-        assert!(!ReasoningParams {
-            thinking: Some(serde_json::json!({ "type": "disabled" })),
-            ..Default::default()
-        }
-        .is_empty());
-    }
-
-    #[test]
     fn rejection_memo_is_keyed_by_base_url_and_model() {
         let deepseek = provider("custom", "https://api.deepseek.com/");
         let key = endpoint_key(&deepseek, "deepseek-chat");
@@ -953,14 +1180,12 @@ mod tests {
 
     #[test]
     fn anthropic_request_carries_required_max_tokens() {
-        let request = AnthropicMessagesRequest {
-            model: "claude-haiku".to_string(),
-            max_tokens: ANTHROPIC_MAX_TOKENS,
-            messages: vec![ChatMessage {
-                role: "user".to_string(),
-                content: "hi".to_string(),
-            }],
-        };
+        let request = anthropic_request(
+            &anthropic_format_provider("https://example.com/v1"),
+            "claude-haiku",
+            "hi".to_string(),
+            None,
+        );
         let json = serde_json::to_value(&request).unwrap();
         assert_eq!(json["max_tokens"], ANTHROPIC_MAX_TOKENS);
         assert_eq!(json["messages"][0]["role"], "user");
@@ -992,10 +1217,19 @@ mod tests {
             "key".to_string(),
             "claude-haiku",
             "raw text".to_string(),
-            true,
+            &ReasoningRequest {
+                disable_by_default: true,
+                effort: None,
+            },
         )
         .await;
-        assert_eq!(result, Ok(Some("Cleaned text".to_string())));
+        assert_eq!(
+            result,
+            Ok(Completion {
+                content: Some("Cleaned text".to_string()),
+                effort_ignored: false,
+            })
+        );
     }
 
     #[tokio::test]
@@ -1010,7 +1244,7 @@ mod tests {
             "key".to_string(),
             "test-model",
             "raw text".to_string(),
-            false,
+            &ReasoningRequest::default(),
         )
         .await;
         assert!(result.unwrap_err().contains("truncated"));
@@ -1028,9 +1262,371 @@ mod tests {
             "key".to_string(),
             "claude-haiku",
             "raw text".to_string(),
-            true,
+            &ReasoningRequest {
+                disable_by_default: true,
+                effort: None,
+            },
         )
         .await;
         assert!(result.unwrap_err().contains("truncated"));
+    }
+
+    // ---- DanyWhere: the effort (`post_process_effort`) ------------------
+
+    fn effort(level: &str) -> ReasoningRequest {
+        ReasoningRequest {
+            disable_by_default: false,
+            effort: Some(level.to_string()),
+        }
+    }
+
+    fn first_attempt(
+        provider: &PostProcessProvider,
+        model: &str,
+        reasoning: &ReasoningRequest,
+    ) -> Value {
+        request_json(
+            reasoning_attempts(provider, model, reasoning).attempts[0]
+                .0
+                .clone(),
+        )
+    }
+
+    #[test]
+    fn an_effort_goes_into_the_field_the_provider_understands() {
+        for (id, base_url) in [
+            ("openai", "https://api.openai.com/v1"),
+            ("groq", "https://api.groq.com/openai/v1"),
+            ("cerebras", "https://api.cerebras.ai/v1"),
+            ("zai", "https://api.z.ai/api/paas/v4"),
+            (
+                "bedrock_mantle",
+                "https://bedrock-mantle.us-east-1.api.aws/v1",
+            ),
+            ("custom", "https://api.deepseek.com"),
+            ("custom", "http://localhost:11434/v1"),
+        ] {
+            let json = first_attempt(&provider(id, base_url), "m", &effort("high"));
+            assert_eq!(json["reasoning_effort"], "high", "{id} {base_url}");
+            assert!(json.get("reasoning").is_none(), "{id}");
+            assert!(json.get("thinking").is_none(), "{id}");
+        }
+        let json = first_attempt(
+            &provider("openrouter", "https://openrouter.ai/api/v1"),
+            "m",
+            &effort("xhigh"),
+        );
+        assert!(json.get("reasoning_effort").is_none());
+        assert_eq!(json["reasoning"]["effort"], "xhigh");
+        assert_eq!(json["reasoning"]["exclude"], true);
+    }
+
+    #[test]
+    fn an_effort_wins_over_switching_reasoning_off() {
+        let reasoning = ReasoningRequest {
+            disable_by_default: true,
+            effort: Some("low".to_string()),
+        };
+        let json = first_attempt(
+            &provider("custom", "https://api.deepseek.com"),
+            "m",
+            &reasoning,
+        );
+        assert_eq!(json["reasoning_effort"], "low");
+        assert!(json.get("thinking").is_none());
+    }
+
+    #[test]
+    fn the_models_default_sends_what_was_sent_before() {
+        let custom = provider("custom", "http://127.0.0.1:9/default-before");
+        let plan = reasoning_attempts(
+            &custom,
+            "m",
+            &ReasoningRequest {
+                disable_by_default: true,
+                effort: None,
+            },
+        );
+        assert_eq!(
+            plan.attempts,
+            vec![
+                (
+                    reasoning_disable_params(&custom),
+                    Some(endpoint_key(&custom, "m"))
+                ),
+                (ReasoningParams::default(), None),
+            ]
+        );
+        assert!(!plan.effort_ignored(1));
+        let plan = reasoning_attempts(
+            &provider("openai", "https://api.openai.com/v1"),
+            "gpt-5",
+            &ReasoningRequest::default(),
+        );
+        assert_eq!(plan.attempts, vec![(ReasoningParams::default(), None)]);
+    }
+
+    #[test]
+    fn a_refused_effort_is_followed_by_the_plain_request() {
+        let custom = provider("custom", "http://127.0.0.1:9/effort-plan");
+        let plan = reasoning_attempts(&custom, "m", &effort("xhigh"));
+        assert_eq!(plan.attempts.len(), 2);
+        assert_eq!(plan.attempts[1], (ReasoningParams::default(), None));
+        assert!(!plan.effort_ignored(0));
+        assert!(plan.effort_ignored(1));
+    }
+
+    #[test]
+    fn an_effort_refused_before_is_not_sent_again() {
+        let custom = provider("custom", "http://127.0.0.1:9/effort-known");
+        remember_effort_rejection(&custom, "m", "xhigh");
+        assert_eq!(rejected_efforts(&custom, "m"), vec!["xhigh".to_string()]);
+        let plan = reasoning_attempts(&custom, "m", &effort("xhigh"));
+        assert_eq!(plan.attempts, vec![(ReasoningParams::default(), None)]);
+        assert!(plan.effort_ignored(0));
+        // Another level, or another model, is tried.
+        assert!(reasoning_attempts(&custom, "m", &effort("high")).tries_effort);
+        assert!(reasoning_attempts(&custom, "n", &effort("xhigh")).tries_effort);
+    }
+
+    #[test]
+    fn an_anthropic_effort_goes_into_output_config_with_room_to_think() {
+        let anthropic = PostProcessProvider {
+            id: "anthropic".to_string(),
+            ..anthropic_format_provider("https://api.anthropic.com/v1")
+        };
+        let json = serde_json::to_value(anthropic_request(
+            &anthropic,
+            "claude-sonnet-5-5",
+            "hi".to_string(),
+            Some("xhigh"),
+        ))
+        .unwrap();
+        assert_eq!(json["output_config"]["effort"], "xhigh");
+        assert_eq!(json["thinking"]["type"], "adaptive");
+        assert_eq!(json["max_tokens"], ANTHROPIC_MAX_TOKENS_WITH_EFFORT);
+        assert_eq!(json["messages"][0]["content"], "hi");
+
+        // Opus 4.5 takes an effort, but no adaptive thinking.
+        let json = serde_json::to_value(anthropic_request(
+            &anthropic,
+            "claude-opus-4-5",
+            "hi".to_string(),
+            Some("low"),
+        ))
+        .unwrap();
+        assert_eq!(json["output_config"]["effort"], "low");
+        assert!(json.get("thinking").is_none());
+
+        // Nothing known about a proxy's model: only the effort.
+        let json = serde_json::to_value(anthropic_request(
+            &anthropic_format_provider("https://example.com/v1"),
+            "my-proxy-model",
+            "hi".to_string(),
+            Some("high"),
+        ))
+        .unwrap();
+        assert_eq!(json["output_config"]["effort"], "high");
+        assert!(json.get("thinking").is_none());
+    }
+
+    #[test]
+    fn the_anthropic_models_default_sends_what_was_sent_before() {
+        let json = serde_json::to_value(anthropic_request(
+            &anthropic_format_provider("https://api.anthropic.com/v1"),
+            "claude-sonnet-5-5",
+            "hi".to_string(),
+            None,
+        ))
+        .unwrap();
+        let mut keys: Vec<&str> = json
+            .as_object()
+            .unwrap()
+            .keys()
+            .map(String::as_str)
+            .collect();
+        keys.sort_unstable();
+        assert_eq!(keys, vec!["max_tokens", "messages", "model"]);
+        assert_eq!(json["max_tokens"], ANTHROPIC_MAX_TOKENS);
+    }
+
+    /// Answers one request per entry of `responses`, in turn, and keeps the
+    /// JSON bodies of the requests.
+    async fn serve_in_turn(
+        responses: Vec<(&'static str, &'static str)>,
+    ) -> (String, std::sync::Arc<Mutex<Vec<Value>>>) {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let bodies = std::sync::Arc::new(Mutex::new(Vec::new()));
+        let kept = bodies.clone();
+        tokio::spawn(async move {
+            for (status, body) in responses {
+                let (mut stream, _) = listener.accept().await.unwrap();
+                let mut request = Vec::new();
+                let mut buffer = [0_u8; 8192];
+                loop {
+                    let n = stream.read(&mut buffer).await.unwrap_or(0);
+                    if n == 0 {
+                        break;
+                    }
+                    request.extend_from_slice(&buffer[..n]);
+                    let text = String::from_utf8_lossy(&request).to_string();
+                    if let Some(end) = text.find("\r\n\r\n") {
+                        let length = text[..end]
+                            .lines()
+                            .find_map(|line| {
+                                line.to_ascii_lowercase()
+                                    .strip_prefix("content-length:")
+                                    .map(|v| v.trim().parse::<usize>().unwrap_or(0))
+                            })
+                            .unwrap_or(0);
+                        if request.len() >= end + 4 + length {
+                            let json =
+                                serde_json::from_str(&text[end + 4..]).unwrap_or(Value::Null);
+                            kept.lock().unwrap().push(json);
+                            break;
+                        }
+                    }
+                }
+                let response = format!(
+                    "HTTP/1.1 {status}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                    body.len()
+                );
+                stream.write_all(response.as_bytes()).await.unwrap();
+            }
+        });
+        (format!("http://{address}"), bodies)
+    }
+
+    const CHAT_OK: &str =
+        r#"{"choices":[{"message":{"content":"Cleaned"},"finish_reason":"stop"}]}"#;
+    const MESSAGES_OK: &str = r#"{"type":"message","stop_reason":"end_turn","content":[{"type":"thinking","thinking":""},{"type":"text","text":"Cleaned"}]}"#;
+    const REFUSED: &str = r#"{"error":{"message":"Unsupported value: 'reasoning_effort'"}}"#;
+
+    #[tokio::test]
+    async fn an_accepted_effort_goes_along_and_is_not_reported() {
+        let (base_url, bodies) = serve_in_turn(vec![("200 OK", CHAT_OK)]).await;
+        let reply = send_chat_completion(
+            &provider("custom", &base_url),
+            "key".to_string(),
+            "model",
+            "raw".to_string(),
+            &effort("low"),
+        )
+        .await;
+        assert_eq!(
+            reply,
+            Ok(Completion {
+                content: Some("Cleaned".to_string()),
+                effort_ignored: false,
+            })
+        );
+        assert_eq!(bodies.lock().unwrap()[0]["reasoning_effort"], "low");
+    }
+
+    #[tokio::test]
+    async fn a_refused_effort_is_retried_without_it_remembered_and_reported() {
+        let (base_url, bodies) = serve_in_turn(vec![
+            ("400 Bad Request", REFUSED),
+            ("200 OK", CHAT_OK),
+            ("200 OK", CHAT_OK),
+        ])
+        .await;
+        let custom = provider("custom", &base_url);
+        for _ in 0..2 {
+            let reply = send_chat_completion(
+                &custom,
+                "key".to_string(),
+                "model",
+                "raw".to_string(),
+                &effort("xhigh"),
+            )
+            .await;
+            assert_eq!(
+                reply,
+                Ok(Completion {
+                    content: Some("Cleaned".to_string()),
+                    effort_ignored: true,
+                })
+            );
+        }
+        let bodies = bodies.lock().unwrap();
+        assert_eq!(bodies.len(), 3);
+        assert_eq!(bodies[0]["reasoning_effort"], "xhigh");
+        // The retry and the next dictation go without it.
+        assert!(bodies[1].get("reasoning_effort").is_none(), "{}", bodies[1]);
+        assert!(bodies[2].get("reasoning_effort").is_none(), "{}", bodies[2]);
+        assert_eq!(
+            rejected_efforts(&custom, "model"),
+            vec!["xhigh".to_string()]
+        );
+    }
+
+    #[tokio::test]
+    async fn a_refused_anthropic_effort_is_retried_with_the_plain_request() {
+        let (base_url, bodies) =
+            serve_in_turn(vec![("400 Bad Request", REFUSED), ("200 OK", MESSAGES_OK)]).await;
+        let reply = send_chat_completion(
+            &anthropic_format_provider(&base_url),
+            "key".to_string(),
+            "claude-sonnet-5-5",
+            "raw".to_string(),
+            &effort("max"),
+        )
+        .await;
+        assert_eq!(
+            reply,
+            Ok(Completion {
+                content: Some("Cleaned".to_string()),
+                effort_ignored: true,
+            })
+        );
+        let bodies = bodies.lock().unwrap();
+        assert_eq!(bodies[0]["output_config"]["effort"], "max");
+        assert_eq!(bodies[0]["max_tokens"], ANTHROPIC_MAX_TOKENS_WITH_EFFORT);
+        assert!(bodies[1].get("output_config").is_none(), "{}", bodies[1]);
+        assert!(bodies[1].get("thinking").is_none(), "{}", bodies[1]);
+        assert_eq!(bodies[1]["max_tokens"], ANTHROPIC_MAX_TOKENS);
+    }
+
+    #[tokio::test]
+    async fn an_anthropic_answer_with_thinking_gives_only_its_text() {
+        let (base_url, bodies) = serve_in_turn(vec![("200 OK", MESSAGES_OK)]).await;
+        let reply = send_chat_completion(
+            &anthropic_format_provider(&base_url),
+            "key".to_string(),
+            "claude-haiku-5-5",
+            "raw".to_string(),
+            &effort("high"),
+        )
+        .await;
+        assert_eq!(
+            reply,
+            Ok(Completion {
+                content: Some("Cleaned".to_string()),
+                effort_ignored: false,
+            })
+        );
+        assert_eq!(bodies.lock().unwrap()[0]["output_config"]["effort"], "high");
+    }
+
+    #[tokio::test]
+    async fn a_request_failing_for_another_reason_remembers_nothing() {
+        let (base_url, _bodies) = serve_in_turn(vec![
+            ("400 Bad Request", REFUSED),
+            ("400 Bad Request", REFUSED),
+        ])
+        .await;
+        let custom = provider("custom", &base_url);
+        let reply = send_chat_completion(
+            &custom,
+            "key".to_string(),
+            "model",
+            "raw".to_string(),
+            &effort("high"),
+        )
+        .await;
+        assert!(reply.is_err());
+        assert!(rejected_efforts(&custom, "model").is_empty());
     }
 }

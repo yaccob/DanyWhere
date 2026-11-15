@@ -840,6 +840,23 @@
           "placeholderWithOptions": "搜尋或選擇模型",
           "placeholderNoOptions": "輸入模型名稱",
           "refreshModels": "重新整理模型"
+        },
+        "effort": {
+          "title": "思考程度",
+          "description": "模型在回答前思考多少：程度越高越周到，但更慢也更貴。「模型預設」不會傳送任何程度；對於 OpenRouter 和自訂供應商，DanyWhere 仍像以前一樣請模型不要思考。",
+          "guessed": "DanyWhere 不知道此模型接受哪些程度。如果模型拒絕其中一個，文字會以模型預設值傳回，並顯示警告。",
+          "notSupported": "此模型沒有思考程度設定。",
+          "refused": "模型拒絕了此程度，因此 DanyWhere 使用其預設值。請選擇其他程度。",
+          "levels": {
+            "default": "模型預設",
+            "none": "無",
+            "minimal": "最低",
+            "low": "低",
+            "medium": "中",
+            "high": "高",
+            "xhigh": "很高",
+            "max": "最高"
+          }
         }
       },
       "prompts": {
@@ -1209,6 +1226,8 @@
     "appMissedShortcut": "DanyWhere 設定聽寫快捷鍵時 {{app}} 已經開著，因此要重新啟動後才能辨識該快捷鍵。文字已在剪貼簿中。",
     "outdatedPromptsTitle": "請更新提示詞",
     "outdatedPrompts": "DanyWhere 現在會隨每個提示詞一起傳送轉錄及其說明。請從以下提示詞中刪除 ${output}、<transcript> 標籤以及解釋它們的每個句子：{{prompts}}。在此之前，包含 ${output} 的提示詞仍按原本的方式傳送。",
+    "postProcessEffortRefusedTitle": "思考程度遭拒",
+    "postProcessEffortRefused": "{{model}} 拒絕了所選的思考程度，因此文字以模型預設值傳回。請在後處理模型旁邊選擇其他程度或「模型預設」。",
     "fileTranscriptionFailedTitle": "檔案轉錄失敗",
     "transcriptionFailedTitle": "轉錄失敗"
   },

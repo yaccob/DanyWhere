@@ -840,6 +840,23 @@
           "placeholderWithOptions": "Model ara veya seç",
           "placeholderNoOptions": "Model adı yazın",
           "refreshModels": "Modelleri Yenile"
+        },
+        "effort": {
+          "title": "Düşünme düzeyi",
+          "description": "Modelin yanıt vermeden önce ne kadar düşündüğü: daha yüksek düzey daha titizdir, ama daha yavaş ve daha pahalıdır. “Model varsayılanı” hiçbir düzey göndermez; OpenRouter ve özel sağlayıcılarda DanyWhere eskisi gibi modelden düşünmemesini ister.",
+          "guessed": "DanyWhere bu modelin hangi düzeyleri kabul ettiğini bilmiyor. Birini reddederse metin, modelin varsayılanıyla ve bir uyarıyla gelir.",
+          "notSupported": "Bu modelin düşünme düzeyi ayarı yok.",
+          "refused": "Model bu düzeyi reddetti, bu yüzden DanyWhere modelin varsayılanını kullanıyor. Başka bir düzey seçin.",
+          "levels": {
+            "default": "Model varsayılanı",
+            "none": "Yok",
+            "minimal": "En düşük",
+            "low": "Düşük",
+            "medium": "Orta",
+            "high": "Yüksek",
+            "xhigh": "Çok yüksek",
+            "max": "En yüksek"
+          }
         }
       },
       "prompts": {
@@ -1209,6 +1226,8 @@
     "appMissedShortcut": "DanyWhere dikte kısayolunu ayarladığında {{app}} zaten açıktı, bu yüzden kısayolu ancak yeniden başlatıldıktan sonra tanır. Metin panoda.",
     "outdatedPromptsTitle": "Promptları güncelleyin",
     "outdatedPrompts": "DanyWhere artık her promptla birlikte transkripti ve onun bir açıklamasını gönderiyor. Bu promptlardan ${output} ifadesini, <transcript> etiketlerini ve bunları açıklayan her cümleyi kaldırın: {{prompts}}. O zamana kadar ${output} içeren bir prompt eskisi gibi gönderilir.",
+    "postProcessEffortRefusedTitle": "Düşünme düzeyi reddedildi",
+    "postProcessEffortRefused": "{{model}} seçilen düşünme düzeyini reddetti, bu yüzden metin modelin varsayılanıyla geldi. Son işlem modelinin yanında başka bir düzey veya “Model varsayılanı” seçin.",
     "fileTranscriptionFailedTitle": "Dosya transkripsiyonu başarısız oldu",
     "transcriptionFailedTitle": "Transkripsiyon başarısız oldu"
   },

@@ -840,6 +840,23 @@
           "placeholderWithOptions": "Search or select a model",
           "placeholderNoOptions": "Type a model name",
           "refreshModels": "Refresh models"
+        },
+        "effort": {
+          "title": "Effort",
+          "description": "How much the model thinks before it answers: more effort is more thorough, but slower and more expensive. Model Default sends no level; with OpenRouter and custom providers DanyWhere asks the model not to think, as before.",
+          "guessed": "DanyWhere doesn't know which levels this model takes. If it refuses one, the text comes at the model's default, with a warning.",
+          "notSupported": "This model has no effort setting.",
+          "refused": "The model refused this level, so DanyWhere uses its default. Choose another one.",
+          "levels": {
+            "default": "Model Default",
+            "none": "None",
+            "minimal": "Minimal",
+            "low": "Low",
+            "medium": "Medium",
+            "high": "High",
+            "xhigh": "Extra High",
+            "max": "Max"
+          }
         }
       },
       "prompts": {
@@ -1209,6 +1226,8 @@
     "appMissedShortcut": "{{app}} was already open when DanyWhere set up the dictation shortcut, so it only knows it after a restart. Your text is on the clipboard.",
     "outdatedPromptsTitle": "Prompts Need Updating",
     "outdatedPrompts": "DanyWhere now sends the transcript and an explanation of it along with every prompt. Remove ${output}, the <transcript> tags and any sentence that explains them from these prompts: {{prompts}}. Until then, a prompt with ${output} is sent as before.",
+    "postProcessEffortRefusedTitle": "Effort Not Accepted",
+    "postProcessEffortRefused": "{{model}} refused the chosen effort, so the text came at the model's default. Choose another effort, or Model Default, next to the post-processing model.",
     "fileTranscriptionFailedTitle": "File Transcription Failed",
     "transcriptionFailedTitle": "Transcription Failed"
   },

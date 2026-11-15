@@ -840,6 +840,23 @@
           "placeholderWithOptions": "Zoek of selecteer een model",
           "placeholderNoOptions": "Typ een modelnaam",
           "refreshModels": "Modellen verversen"
+        },
+        "effort": {
+          "title": "Denkinspanning",
+          "description": "Hoeveel het model nadenkt voordat het antwoordt: meer inspanning is grondiger, maar trager en duurder. ‘Standaard van het model’ stuurt geen niveau mee; bij OpenRouter en aangepaste providers vraagt DanyWhere het model zoals voorheen om niet na te denken.",
+          "guessed": "DanyWhere weet niet welke niveaus dit model accepteert. Weigert het er een, dan komt de tekst met de standaard van het model en een waarschuwing.",
+          "notSupported": "Dit model heeft geen instelling voor inspanning.",
+          "refused": "Het model weigerde dit niveau, dus gebruikt DanyWhere zijn standaard. Kies een ander.",
+          "levels": {
+            "default": "Standaard van het model",
+            "none": "Geen",
+            "minimal": "Minimaal",
+            "low": "Laag",
+            "medium": "Gemiddeld",
+            "high": "Hoog",
+            "xhigh": "Zeer hoog",
+            "max": "Maximaal"
+          }
         }
       },
       "prompts": {
@@ -1209,6 +1226,8 @@
     "appMissedShortcut": "{{app}} was al open toen DanyWhere de dicteersneltoets instelde, dus kent die pas na een herstart. De tekst staat op het klembord.",
     "outdatedPromptsTitle": "Prompts bijwerken",
     "outdatedPrompts": "DanyWhere stuurt nu bij elke prompt de transcriptie en een uitleg ervan mee. Verwijder uit deze prompts ${output}, de <transcript>-tags en elke zin die ze uitlegt: {{prompts}}. Tot dan wordt een prompt met ${output} verstuurd zoals voorheen.",
+    "postProcessEffortRefusedTitle": "Inspanning geweigerd",
+    "postProcessEffortRefused": "{{model}} weigerde de gekozen inspanning, dus kwam de tekst met de standaard van het model. Kies naast het naverwerkingsmodel een andere inspanning of ‘Standaard van het model’.",
     "fileTranscriptionFailedTitle": "Transcriptie van bestand mislukt",
     "transcriptionFailedTitle": "Transcriptie mislukt"
   },

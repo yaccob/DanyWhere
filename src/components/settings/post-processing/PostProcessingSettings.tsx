@@ -18,6 +18,7 @@ import { ProviderSelect } from "../PostProcessingSettingsApi/ProviderSelect";
 import { BaseUrlField } from "../PostProcessingSettingsApi/BaseUrlField";
 import { ApiKeyField } from "../PostProcessingSettingsApi/ApiKeyField";
 import { ModelSelect } from "../PostProcessingSettingsApi/ModelSelect";
+import { EffortSetting } from "../PostProcessingSettingsApi/EffortSetting";
 import { usePostProcessProviderState } from "../PostProcessingSettingsApi/usePostProcessProviderState";
 import { ShortcutInput } from "../ShortcutInput";
 import { useSettings } from "../../../hooks/useSettings";
@@ -182,6 +183,14 @@ const PostProcessingSettingsApiComponent: React.FC = () => {
             </ResetButton>
           </div>
         </SettingContainer>
+      )}
+
+      {/* DanyWhere: how much the model thinks, per profile. */}
+      {!state.isAppleProvider && (
+        <EffortSetting
+          providerId={state.selectedProviderId}
+          model={state.model}
+        />
       )}
     </>
   );

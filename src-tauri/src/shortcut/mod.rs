@@ -1348,7 +1348,11 @@ pub fn change_post_process_model_setting(
 ) -> Result<(), String> {
     let mut settings = settings::get_settings(&app);
     validate_provider_exists(&settings, &provider_id)?;
-    settings.post_process_models.insert(provider_id, model);
+    settings
+        .post_process_models
+        .insert(provider_id.clone(), model);
+    // DanyWhere: an effort the new model doesn't take shows "Model Default".
+    crate::post_process_effort::drop_if_unsupported(&mut settings, &provider_id);
     settings::write_settings(&app, settings);
     Ok(())
 }

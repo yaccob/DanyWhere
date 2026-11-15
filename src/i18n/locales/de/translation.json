@@ -840,6 +840,23 @@
           "placeholderWithOptions": "Modell suchen oder auswählen",
           "placeholderNoOptions": "Modellnamen eingeben",
           "refreshModels": "Modelle aktualisieren"
+        },
+        "effort": {
+          "title": "Denkaufwand",
+          "description": "Wie viel das Modell nachdenkt, bevor es antwortet: mehr Denkaufwand ist gründlicher, aber langsamer und teurer. „Standard des Modells“ schickt keine Stufe mit; bei OpenRouter und benutzerdefinierten Anbietern bittet DanyWhere wie bisher darum, nicht zu denken.",
+          "guessed": "DanyWhere weiß nicht, welche Stufen dieses Modell annimmt. Lehnt es eine ab, kommt der Text mit dem Standard des Modells und einer Warnung.",
+          "notSupported": "Dieses Modell hat keine Einstellung für den Denkaufwand.",
+          "refused": "Das Modell hat diese Stufe abgelehnt, darum nimmt DanyWhere seinen Standard. Wähle eine andere.",
+          "levels": {
+            "default": "Standard des Modells",
+            "none": "Keiner",
+            "minimal": "Minimal",
+            "low": "Niedrig",
+            "medium": "Mittel",
+            "high": "Hoch",
+            "xhigh": "Sehr hoch",
+            "max": "Maximal"
+          }
         }
       },
       "prompts": {
@@ -1209,6 +1226,8 @@
     "appMissedShortcut": "{{app}} war schon offen, als DanyWhere die Tastenkombination fürs Diktieren eingerichtet hat, und kennt sie erst nach einem Neustart. Der Text liegt in der Zwischenablage.",
     "outdatedPromptsTitle": "Prompts anpassen",
     "outdatedPrompts": "DanyWhere schickt die Transkription und eine Erklärung dazu jetzt mit jedem Prompt mit. Entferne aus diesen Prompts ${output}, die <transcript>-Tags und jeden Satz, der sie erklärt: {{prompts}}. Bis dahin geht ein Prompt mit ${output} wie bisher hinaus.",
+    "postProcessEffortRefusedTitle": "Denkaufwand abgelehnt",
+    "postProcessEffortRefused": "{{model}} hat den gewählten Denkaufwand abgelehnt, darum kam der Text mit dem Standard des Modells. Wähle neben dem Modell der Nachbearbeitung einen anderen Denkaufwand oder „Standard des Modells“.",
     "fileTranscriptionFailedTitle": "Dateitranskription fehlgeschlagen",
     "transcriptionFailedTitle": "Transkription fehlgeschlagen"
   },

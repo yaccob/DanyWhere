@@ -840,6 +840,23 @@
           "placeholderWithOptions": "Søg eller vælg en model",
           "placeholderNoOptions": "Skriv et modelnavn",
           "refreshModels": "Opdater modeller"
+        },
+        "effort": {
+          "title": "Tænkeindsats",
+          "description": "Hvor meget modellen tænker, før den svarer: mere indsats er grundigere, men langsommere og dyrere. „Modellens standard“ sender intet niveau; med OpenRouter og brugerdefinerede udbydere beder DanyWhere som hidtil modellen om ikke at tænke.",
+          "guessed": "DanyWhere ved ikke, hvilke niveauer denne model tager imod. Afviser den et, kommer teksten med modellens standard og en advarsel.",
+          "notSupported": "Denne model har ingen indstilling for indsats.",
+          "refused": "Modellen afviste dette niveau, så DanyWhere bruger dens standard. Vælg et andet.",
+          "levels": {
+            "default": "Modellens standard",
+            "none": "Ingen",
+            "minimal": "Minimal",
+            "low": "Lav",
+            "medium": "Middel",
+            "high": "Høj",
+            "xhigh": "Meget høj",
+            "max": "Maksimal"
+          }
         }
       },
       "prompts": {
@@ -1209,6 +1226,8 @@
     "appMissedShortcut": "{{app}} var allerede åben, da DanyWhere satte dikteringsgenvejen op, så den kender den først efter en genstart. Teksten er i udklipsholderen.",
     "outdatedPromptsTitle": "Opdatér prompts",
     "outdatedPrompts": "DanyWhere sender nu transskriptionen og en forklaring af den med hver prompt. Fjern ${output}, <transcript>-tags og enhver sætning, der forklarer dem, fra disse prompts: {{prompts}}. Indtil da sendes en prompt med ${output} som hidtil.",
+    "postProcessEffortRefusedTitle": "Indsats afvist",
+    "postProcessEffortRefused": "{{model}} afviste den valgte indsats, så teksten kom med modellens standard. Vælg en anden indsats, eller „Modellens standard“, ved siden af modellen til efterbehandling.",
     "fileTranscriptionFailedTitle": "Transskription af fil mislykkedes",
     "transcriptionFailedTitle": "Transskription mislykkedes"
   },

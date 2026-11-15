@@ -840,6 +840,23 @@
           "placeholderWithOptions": "Buscar o seleccionar un modelo",
           "placeholderNoOptions": "Escribe un nombre de modelo",
           "refreshModels": "Actualizar modelos"
+        },
+        "effort": {
+          "title": "Esfuerzo de razonamiento",
+          "description": "Cuánto piensa el modelo antes de responder: más esfuerzo es más minucioso, pero más lento y más caro. «Predeterminado del modelo» no envía ningún nivel; con OpenRouter y los proveedores personalizados, DanyWhere pide como antes que el modelo no piense.",
+          "guessed": "DanyWhere no sabe qué niveles acepta este modelo. Si rechaza uno, el texto llega con el valor predeterminado del modelo y una advertencia.",
+          "notSupported": "Este modelo no tiene ajuste de esfuerzo.",
+          "refused": "El modelo rechazó este nivel, así que DanyWhere usa su valor predeterminado. Elige otro.",
+          "levels": {
+            "default": "Predeterminado del modelo",
+            "none": "Ninguno",
+            "minimal": "Mínimo",
+            "low": "Bajo",
+            "medium": "Medio",
+            "high": "Alto",
+            "xhigh": "Muy alto",
+            "max": "Máximo"
+          }
         }
       },
       "prompts": {
@@ -1209,6 +1226,8 @@
     "appMissedShortcut": "{{app}} ya estaba abierta cuando DanyWhere configuró el atajo de dictado, así que solo lo reconocerá tras reiniciarla. El texto está en el portapapeles.",
     "outdatedPromptsTitle": "Actualiza los prompts",
     "outdatedPrompts": "Ahora DanyWhere envía con cada prompt la transcripción y una explicación de ella. Quita de estos prompts ${output}, las etiquetas <transcript> y cualquier frase que las explique: {{prompts}}. Hasta entonces, un prompt con ${output} se envía como antes.",
+    "postProcessEffortRefusedTitle": "Esfuerzo rechazado",
+    "postProcessEffortRefused": "{{model}} rechazó el esfuerzo elegido, así que el texto llegó con el valor predeterminado del modelo. Elige otro esfuerzo, o «Predeterminado del modelo», junto al modelo de post proceso.",
     "fileTranscriptionFailedTitle": "Error al transcribir el archivo",
     "transcriptionFailedTitle": "Error de transcripción"
   },

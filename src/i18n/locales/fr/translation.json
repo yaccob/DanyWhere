@@ -840,6 +840,23 @@
           "placeholderWithOptions": "Rechercher ou sélectionner un modèle",
           "placeholderNoOptions": "Tapez un nom de modèle",
           "refreshModels": "Actualiser les modèles"
+        },
+        "effort": {
+          "title": "Effort de réflexion",
+          "description": "Combien le modèle réfléchit avant de répondre : plus d'effort est plus approfondi, mais plus lent et plus cher. « Par défaut du modèle » n'envoie aucun niveau ; avec OpenRouter et les fournisseurs personnalisés, DanyWhere demande comme avant au modèle de ne pas réfléchir.",
+          "guessed": "DanyWhere ne sait pas quels niveaux ce modèle accepte. S'il en refuse un, le texte arrive avec le réglage par défaut du modèle et un avertissement.",
+          "notSupported": "Ce modèle n'a pas de réglage d'effort.",
+          "refused": "Le modèle a refusé ce niveau, DanyWhere utilise donc son réglage par défaut. Choisissez-en un autre.",
+          "levels": {
+            "default": "Par défaut du modèle",
+            "none": "Aucun",
+            "minimal": "Minimal",
+            "low": "Faible",
+            "medium": "Moyen",
+            "high": "Élevé",
+            "xhigh": "Très élevé",
+            "max": "Maximal"
+          }
         }
       },
       "prompts": {
@@ -1209,6 +1226,8 @@
     "appMissedShortcut": "{{app}} était déjà ouverte quand DanyWhere a configuré le raccourci de dictée ; elle ne le reconnaîtra qu'après un redémarrage. Le texte est dans le presse-papiers.",
     "outdatedPromptsTitle": "Mettez à jour les prompts",
     "outdatedPrompts": "DanyWhere envoie désormais avec chaque prompt la transcription et une explication de celle-ci. Supprimez de ces prompts ${output}, les balises <transcript> et toute phrase qui les explique : {{prompts}}. D'ici là, un prompt contenant ${output} est envoyé comme avant.",
+    "postProcessEffortRefusedTitle": "Effort refusé",
+    "postProcessEffortRefused": "{{model}} a refusé l'effort choisi, le texte est donc arrivé avec le réglage par défaut du modèle. Choisissez un autre effort, ou « Par défaut du modèle », à côté du modèle de post-traitement.",
     "fileTranscriptionFailedTitle": "Échec de la transcription du fichier",
     "transcriptionFailedTitle": "Échec de la transcription"
   },
