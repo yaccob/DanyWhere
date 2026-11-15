@@ -672,7 +672,8 @@
       },
       "pasteMethod": {
         "title": "Método de Colar",
-        "description": "Escolha como o texto é inserido. Direto: simula digitação via entrada do sistema. Nenhum: ignora colar, apenas atualiza histórico/área de transferência.",
+        "description": "Como um ditado terminado chega à app em primeiro plano. Área de Transferência (Ctrl+V): o Handy coloca o texto na área de transferência e prime Ctrl+V por si; Ctrl+Shift+V e Shift+Insert fazem o mesmo com essas teclas, por exemplo para terminais. Direto: escreve o texto através da entrada do sistema. Script externo (só Linux): passa o texto ao seu script. Nenhum: o Handy não insere nada; o texto fica no histórico e, conforme «Manipulação da Área de Transferência», na área de transferência. «Colar a última transcrição» insere da mesma forma; com «Nenhum» coloca o texto na área de transferência.",
+        "descriptionMacos": "Como um ditado terminado chega à app em primeiro plano. Área de Transferência (Cmd+V): o Handy coloca o texto na área de transferência e prime ⌘V por si; isto requer Acessibilidade. Nenhum: o Handy não insere nada; o texto fica no histórico e, conforme «Manipulação da Área de Transferência», na área de transferência. «Colar a última transcrição» insere da mesma forma; com «Nenhum» coloca o texto na área de transferência. Sem Acessibilidade, em vez disso um serviço do macOS insere o ditado.",
         "options": {
           "clipboard": "Área de Transferência ({{modifier}}+V)",
           "clipboardCtrlShiftV": "Área de Transferência (Ctrl+Shift+V)",

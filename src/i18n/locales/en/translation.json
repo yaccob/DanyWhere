@@ -672,7 +672,8 @@
       },
       "pasteMethod": {
         "title": "Paste Method",
-        "description": "Choose how text is inserted. Direct: simulates typing via system input. None: skips paste, only updates history/clipboard.",
+        "description": "How a finished dictation gets into the app in front. Clipboard (Ctrl+V): Handy puts the text on the clipboard and presses Ctrl+V for you; Ctrl+Shift+V and Shift+Insert do the same with those keys, e.g. for terminals. Direct: types the text through system input. External Script (Linux only): passes the text to your script. None: Handy inserts nothing; the text is in the history and, depending on Clipboard Handling, on the clipboard. Paste Last Transcript inserts the same way; with None it puts the text on the clipboard.",
+        "descriptionMacos": "How a finished dictation gets into the app in front. Clipboard (Cmd+V): Handy puts the text on the clipboard and presses ⌘V for you; this needs Accessibility. None: Handy inserts nothing; the text is in the history and, depending on Clipboard Handling, on the clipboard. Paste Last Transcript inserts the same way; with None it puts the text on the clipboard. Without Accessibility, a macOS service inserts the dictation instead.",
         "options": {
           "clipboard": "Clipboard ({{modifier}}+V)",
           "clipboardCtrlShiftV": "Clipboard (Ctrl+Shift+V)",

@@ -672,7 +672,8 @@
       },
       "pasteMethod": {
         "title": "Mètode d'enganxament",
-        "description": "Trieu com s'insereix el text. Directe: simula l'escriptura mitjançant l'entrada del sistema. Cap: no enganxa el text, només actualitza l'historial i el porta-retalls.",
+        "description": "Com arriba un dictat acabat a l'aplicació de davant. Porta-retalls (Ctrl+V): Handy posa el text al porta-retalls i prem Ctrl+V per tu; Ctrl+Maj+V i Maj+Insert fan el mateix amb aquestes tecles, per exemple per a terminals. Directe: escriu el text mitjançant l'entrada del sistema. Script extern (només Linux): passa el text al teu script. Cap: Handy no insereix res; el text queda a l'historial i, segons «Gestió del porta-retalls», al porta-retalls. «Enganxa l'última transcripció» insereix de la mateixa manera; amb «Cap» posa el text al porta-retalls.",
+        "descriptionMacos": "Com arriba un dictat acabat a l'aplicació de davant. Porta-retalls (Cmd+V): Handy posa el text al porta-retalls i prem ⌘V per tu; cal l'accessibilitat. Cap: Handy no insereix res; el text queda a l'historial i, segons «Gestió del porta-retalls», al porta-retalls. «Enganxa l'última transcripció» insereix de la mateixa manera; amb «Cap» posa el text al porta-retalls. Sense accessibilitat, en lloc d'això un servei de macOS insereix el dictat.",
         "options": {
           "clipboard": "Porta-retalls ({{modifier}}+V)",
           "clipboardCtrlShiftV": "Porta-retalls (Ctrl+Maj+V)",

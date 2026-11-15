@@ -672,7 +672,8 @@
       },
       "pasteMethod": {
         "title": "Indsætningsmetode",
-        "description": "Vælg, hvordan tekst indsættes. Direkte: simulerer tastetryk via systeminput. Ingen: springer indsætning over, opdaterer kun historik/udklipsholder.",
+        "description": "Sådan når en færdig diktering frem til appen forrest. Udklipsholder (Ctrl+V): Handy lægger teksten på udklipsholderen og trykker Ctrl+V for dig; Ctrl+Shift+V og Shift+Insert gør det samme med de taster, f.eks. til terminaler. Direkte: skriver teksten via systeminput. Eksternt script (kun Linux): giver teksten videre til dit script. Ingen: Handy indsætter intet; teksten ligger i historikken og, afhængigt af Håndtering af udklipsholder, på udklipsholderen. Indsæt seneste transskription indsætter på samme måde; med Ingen lægger den teksten på udklipsholderen.",
+        "descriptionMacos": "Sådan når en færdig diktering frem til appen forrest. Udklipsholder (Cmd+V): Handy lægger teksten på udklipsholderen og trykker ⌘V for dig; det kræver Hjælpemidler. Ingen: Handy indsætter intet; teksten ligger i historikken og, afhængigt af Håndtering af udklipsholder, på udklipsholderen. Indsæt seneste transskription indsætter på samme måde; med Ingen lægger den teksten på udklipsholderen. Uden Hjælpemidler indsætter en macOS-tjeneste i stedet dikteringen.",
         "options": {
           "clipboard": "Udklipsholder ({{modifier}}+V)",
           "clipboardCtrlShiftV": "Udklipsholder (Ctrl+Shift+V)",

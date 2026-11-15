@@ -672,7 +672,8 @@
       },
       "pasteMethod": {
         "title": "Plakmethode",
-        "description": "Kies hoe tekst wordt ingevoegd. 'Direct' simuleert typen via het systeem. 'Geen' slaat het plakken over en werkt alleen de geschiedenis en het klembord bij.",
+        "description": "Hoe een klaar dictaat in de app vooraan komt. 'Klembord (Ctrl+V)': Handy zet de tekst op het klembord en drukt Ctrl+V voor je; Ctrl+Shift+V en Shift+Insert doen hetzelfde met die toetsen, bijvoorbeeld voor terminals. 'Direct': typt de tekst via de systeeminvoer. 'Extern script' (alleen Linux): geeft de tekst door aan je script. 'Geen': Handy voegt niets in; de tekst staat in de geschiedenis en, afhankelijk van 'Klembordbeheer', op het klembord. 'Laatste transcriptie plakken' voegt op dezelfde manier in; bij 'Geen' zet het de tekst op het klembord.",
+        "descriptionMacos": "Hoe een klaar dictaat in de app vooraan komt. 'Klembord (Cmd+V)': Handy zet de tekst op het klembord en drukt ⌘V voor je; daarvoor is Toegankelijkheid nodig. 'Geen': Handy voegt niets in; de tekst staat in de geschiedenis en, afhankelijk van 'Klembordbeheer', op het klembord. 'Laatste transcriptie plakken' voegt op dezelfde manier in; bij 'Geen' zet het de tekst op het klembord. Zonder Toegankelijkheid voegt in plaats daarvan een macOS-dienst het dictaat in.",
         "options": {
           "clipboard": "Klembord ({{modifier}}+V)",
           "clipboardCtrlShiftV": "Klembord (Ctrl+Shift+V)",

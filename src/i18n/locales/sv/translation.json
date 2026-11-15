@@ -672,7 +672,8 @@
       },
       "pasteMethod": {
         "title": "Klistra-in-metod",
-        "description": "Välj hur text infogas. Direkt: simulerar skrivande via systeminmatning. Ingen: hoppar över klistra in, uppdaterar endast historik/urklipp.",
+        "description": "Hur en färdig diktering når appen längst fram. Urklipp (Ctrl+V): Handy lägger texten i urklipp och trycker Ctrl+V åt dig; Ctrl+Shift+V och Shift+Insert gör samma sak med de tangenterna, t.ex. för terminaler. Direkt: skriver texten via systeminmatning. Externt skript (endast Linux): skickar texten till ditt skript. Ingen: Handy infogar ingenting; texten finns i historiken och, beroende på Hantering av urklipp, i urklipp. Klistra in senaste transkriptionen infogar på samma sätt; med Ingen lägger den texten i urklipp.",
+        "descriptionMacos": "Hur en färdig diktering når appen längst fram. Urklipp (Cmd+V): Handy lägger texten i urklipp och trycker ⌘V åt dig; det kräver hjälpmedel. Ingen: Handy infogar ingenting; texten finns i historiken och, beroende på Hantering av urklipp, i urklipp. Klistra in senaste transkriptionen infogar på samma sätt; med Ingen lägger den texten i urklipp. Utan hjälpmedel infogar i stället en macOS-tjänst dikteringen.",
         "options": {
           "clipboard": "Urklipp ({{modifier}}+V)",
           "clipboardCtrlShiftV": "Urklipp (Ctrl+Shift+V)",

@@ -672,7 +672,8 @@
       },
       "pasteMethod": {
         "title": "Einfügemethode",
-        "description": "Wähle, wie Text eingefügt wird. Direkt: simuliert Tippen über Systemeingabe. Keine: überspringt Einfügen, aktualisiert nur Verlauf/Zwischenablage.",
+        "description": "Wie ein fertiges Diktat in die App vorn kommt. Zwischenablage (Ctrl+V): Handy legt den Text in die Zwischenablage und drückt Strg+V für dich; Strg+Umschalt+V und Umschalt+Einfg tun dasselbe mit diesen Tasten, z. B. für Terminals. Direkt: tippt den Text über die Systemeingabe. Externes Skript (nur Linux): übergibt den Text deinem Skript. Keine: Handy fügt nichts ein, der Text steht im Verlauf und, je nach Zwischenablage-Verhalten, in der Zwischenablage. „Letzte Transkription einfügen“ fügt genauso ein, bei „Keine“ legt es den Text in die Zwischenablage.",
+        "descriptionMacos": "Wie ein fertiges Diktat in die App vorn kommt. Zwischenablage (Cmd+V): Handy legt den Text in die Zwischenablage und drückt ⌘V für dich; das braucht die Bedienungshilfen. Keine: Handy fügt nichts ein, der Text steht im Verlauf und, je nach Zwischenablage-Verhalten, in der Zwischenablage. „Letzte Transkription einfügen“ fügt genauso ein, bei „Keine“ legt es den Text in die Zwischenablage. Ohne Bedienungshilfen fügt stattdessen ein macOS-Dienst das Diktat ein.",
         "options": {
           "clipboard": "Zwischenablage ({{modifier}}+V)",
           "clipboardCtrlShiftV": "Zwischenablage (Strg+Umschalt+V)",

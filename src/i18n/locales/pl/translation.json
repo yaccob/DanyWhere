@@ -672,7 +672,8 @@
       },
       "pasteMethod": {
         "title": "Metoda wklejania",
-        "description": "Wybierz sposób wstawiania tekstu. Direct: symuluje wpisywanie. None: pomija wklejanie, tylko aktualizuje historię/clipboard.",
+        "description": "Jak gotowe dyktowanie trafia do aplikacji na pierwszym planie. Schowek (Ctrl+V): Handy umieszcza tekst w schowku i naciska za Ciebie Ctrl+V; Ctrl+Shift+V i Shift+Insert robią to samo tymi klawiszami, np. dla terminali. Bezpośrednio: wpisuje tekst przez wejście systemowe. Skrypt zewnętrzny (tylko Linux): przekazuje tekst do Twojego skryptu. Brak: Handy niczego nie wstawia; tekst jest w historii i, zależnie od ustawienia „Obsługa schowka”, w schowku. „Wklej ostatnią transkrypcję” wstawia w ten sam sposób; przy „Brak” umieszcza tekst w schowku.",
+        "descriptionMacos": "Jak gotowe dyktowanie trafia do aplikacji na pierwszym planie. Schowek (Cmd+V): Handy umieszcza tekst w schowku i naciska za Ciebie ⌘V; wymaga to dostępności. Brak: Handy niczego nie wstawia; tekst jest w historii i, zależnie od ustawienia „Obsługa schowka”, w schowku. „Wklej ostatnią transkrypcję” wstawia w ten sam sposób; przy „Brak” umieszcza tekst w schowku. Bez dostępności zamiast tego dyktowanie wstawia usługa macOS.",
         "options": {
           "clipboard": "Schowek ({{modifier}}+V)",
           "clipboardCtrlShiftV": "Schowek (Ctrl+Shift+V)",

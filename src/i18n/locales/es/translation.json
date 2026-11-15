@@ -672,7 +672,8 @@
       },
       "pasteMethod": {
         "title": "Método de pegado",
-        "description": "Elige cómo se inserta el texto. Directo: simula escritura mediante entrada del sistema. Ninguno: omite el pegado, solo actualiza historial/portapapeles.",
+        "description": "Cómo llega un dictado terminado a la app en primer plano. Portapapeles (Ctrl+V): Handy pone el texto en el portapapeles y pulsa Ctrl+V por ti; Ctrl+Shift+V y Shift+Insert hacen lo mismo con esas teclas, por ejemplo para terminales. Directo: escribe el texto mediante la entrada del sistema. Script externo (solo Linux): pasa el texto a tu script. Ninguno: Handy no inserta nada; el texto queda en el historial y, según «Manejo del portapapeles», en el portapapeles. «Pegar la última transcripción» inserta de la misma forma; con «Ninguno» pone el texto en el portapapeles.",
+        "descriptionMacos": "Cómo llega un dictado terminado a la app en primer plano. Portapapeles (Cmd+V): Handy pone el texto en el portapapeles y pulsa ⌘V por ti; esto requiere Accesibilidad. Ninguno: Handy no inserta nada; el texto queda en el historial y, según «Manejo del portapapeles», en el portapapeles. «Pegar la última transcripción» inserta de la misma forma; con «Ninguno» pone el texto en el portapapeles. Sin Accesibilidad, en su lugar un servicio de macOS inserta el dictado.",
         "options": {
           "clipboard": "Portapapeles ({{modifier}}+V)",
           "clipboardCtrlShiftV": "Portapapeles (Ctrl+Shift+V)",

@@ -672,7 +672,8 @@
       },
       "pasteMethod": {
         "title": "Yapıştırma Yöntemi",
-        "description": "Metnin nasıl ekleneceğini seçin. Doğrudan: sistem girişiyle yazmayı simüle eder. Yok: yapıştırmayı atlar, sadece geçmişi/panoyu günceller.",
+        "description": "Biten bir dikte öndeki uygulamaya nasıl ulaşır. Pano (Ctrl+V): Handy metni panoya koyar ve sizin yerinize Ctrl+V'ye basar; Ctrl+Shift+V ve Shift+Insert aynı işi bu tuşlarla yapar, örneğin terminaller için. Doğrudan: metni sistem girişiyle yazar. Harici Betik (yalnızca Linux): metni betiğinize iletir. Yok: Handy hiçbir şey eklemez; metin geçmişte ve Pano Yönetimi ayarına göre panoda kalır. Son transkripti yapıştır da aynı şekilde ekler; Yok seçiliyken metni panoya koyar.",
+        "descriptionMacos": "Biten bir dikte öndeki uygulamaya nasıl ulaşır. Pano (Cmd+V): Handy metni panoya koyar ve sizin yerinize ⌘V'ye basar; bunun için Erişilebilirlik gerekir. Yok: Handy hiçbir şey eklemez; metin geçmişte ve Pano Yönetimi ayarına göre panoda kalır. Son transkripti yapıştır da aynı şekilde ekler; Yok seçiliyken metni panoya koyar. Erişilebilirlik olmadan bunun yerine dikteyi bir macOS hizmeti ekler.",
         "options": {
           "clipboard": "Pano ({{modifier}}+V)",
           "clipboardCtrlShiftV": "Pano (Ctrl+Shift+V)",
