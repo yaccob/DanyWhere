@@ -390,7 +390,7 @@ pub fn prompt_with_context(prompt: &str, block: Option<&str>) -> String {
 }
 
 /// Entries from the same window between `since` and the query's bound,
-/// newest first, with what each "is" (`history_corrections::entry_text`).
+/// newest first, with what each "is" (`history_versions::entry_text`).
 /// Entries of apps on the exclusion list never count, also when they were
 /// excluded only later.
 pub(crate) fn context_candidates(
@@ -434,7 +434,7 @@ pub(crate) fn context_candidates(
         }
         found.push((
             entry.id,
-            crate::history_corrections::entry_text(&entry).to_string(),
+            crate::history_versions::entry_text(&entry).to_string(),
         ));
     }
     Ok(found)
@@ -1058,6 +1058,24 @@ mod tests {
         let found =
             context_candidates(&conn, &query(Some(iterm), 200, i64::MAX), 0, &[]).expect("query");
         assert_eq!(found, candidates(&[(id, "der Build ist fertig")]));
+    }
+
+    #[test]
+    fn candidates_use_the_top_version() {
+        let conn = database();
+        let iterm = window("com.googlecode.iterm2", "Release");
+        let id = insert(&conn, 100, "das Bild ist fertig", Some(&iterm));
+        conn.execute(
+            "UPDATE transcription_history SET versions = ?1 WHERE id = ?2",
+            params![
+                r#"[{"text":"Der Build ist fertig.","steps":[{"by":"ai","at":null,"prompt_name":null}]},{"text":"Der Build ist durch.","steps":[{"by":"user","at":5,"prompt_name":null}]}]"#,
+                id
+            ],
+        )
+        .expect("store versions");
+        let found =
+            context_candidates(&conn, &query(Some(iterm), 200, i64::MAX), 0, &[]).expect("query");
+        assert_eq!(found, candidates(&[(id, "Der Build ist durch.")]));
     }
 
     #[test]

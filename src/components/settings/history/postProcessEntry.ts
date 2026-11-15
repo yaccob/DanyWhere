@@ -1,5 +1,4 @@
-import type { AppSettings, HistoryEntry, ReprocessMode } from "@/bindings";
-import { correctionOf, shownPart } from "./corrections";
+import type { AppSettings, ReprocessMode } from "@/bindings";
 
 export type { ReprocessMode };
 
@@ -15,37 +14,6 @@ type PostProcessSettings = Pick<
   | "post_process_selected_prompt_id"
   | "post_process_prompts"
 >;
-
-/** The entry's post-processed text, or null when it has none to show. */
-export const postProcessedText = (
-  entry: Pick<HistoryEntry, "post_processed_text">,
-): string | null => {
-  const text = entry.post_processed_text;
-  return text && text.trim().length > 0 ? text : null;
-};
-
-/**
- * The text an entry shows and copies: its post-processed text when it has
- * one, unless the original is asked for. DanyWhere: the user's correction of
- * the shown part replaces it.
- */
-export const shownText = (
-  entry: Pick<HistoryEntry, "transcription_text" | "post_processed_text"> &
-    Partial<
-      Pick<
-        HistoryEntry,
-        "transcription_correction" | "post_processed_correction"
-      >
-    >,
-  showOriginal: boolean,
-): string => {
-  const part = shownPart(entry, showOriginal);
-  const corrected = correctionOf(entry, part);
-  if (corrected !== null) return corrected;
-  return part === "post_processing"
-    ? (postProcessedText(entry) ?? entry.transcription_text)
-    : entry.transcription_text;
-};
 
 /**
  * Mirrors what the backend checks before it calls the provider: switched

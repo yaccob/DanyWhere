@@ -2,15 +2,17 @@
 //! and a filter by the window it was dictated in, over the whole history
 //! rather than the page History has loaded.
 //!
-//! The text is searched in the transcription, the post-processed text and
-//! the user's corrections of both; the window in the app's name, the
-//! window's title and the line History shows for them ("App – Title"), and
-//! in the name of the file a transcribed file's entry shows instead. Both
-//! are substrings by default, ignoring case. The text can also match case
-//! and whole words only, and both can be regular expressions (the `regex`
-//! crate's syntax, which runs in linear time whatever is typed). The two
-//! fields combine with each other and with History's "same window" filter.
+//! The text is searched in every version of the entry (`history_versions`),
+//! from the transcription up to the one History shows; the window in the
+//! app's name, the window's title and the line History shows for them ("App
+//! – Title"), and in the name of the file a transcribed file's entry shows
+//! instead. Both are substrings by default, ignoring case. The text can also
+//! match case and whole words only, and both can be regular expressions (the
+//! `regex` crate's syntax, which runs in linear time whatever is typed). The
+//! two fields combine with each other and with History's "same window"
+//! filter.
 
+use std::borrow::Cow;
 use std::sync::Arc;
 
 use anyhow::Result;
@@ -66,10 +68,10 @@ impl InvalidField {
 }
 
 /// The parts of an entry a search looks at.
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct Searched<'a> {
-    /// The transcription, the post-processed text and their corrections.
-    pub texts: [Option<&'a str>; 4],
+    /// The texts of the entry's versions, the transcription first.
+    pub texts: Vec<Cow<'a, str>>,
     pub app_id: Option<&'a str>,
     pub app_name: Option<&'a str>,
     pub title: Option<&'a str>,
@@ -82,12 +84,11 @@ impl<'a> Searched<'a> {
     pub fn of_entry(entry: &'a HistoryEntry) -> Self {
         let window = &entry.window_context;
         Self {
-            texts: [
-                Some(entry.transcription_text.as_str()),
-                entry.post_processed_text.as_deref(),
-                entry.transcription_correction.as_deref(),
-                entry.post_processed_correction.as_deref(),
-            ],
+            texts: entry
+                .versions
+                .iter()
+                .map(|version| Cow::Borrowed(version.text.as_str()))
+                .collect(),
             app_id: window.window_app_id.as_deref(),
             app_name: window.window_app_name.as_deref(),
             title: window.window_title.as_deref(),
@@ -220,11 +221,7 @@ impl Search {
             }
         }
         match &self.text {
-            Some(text) => entry
-                .texts
-                .iter()
-                .flatten()
-                .any(|t| self.text_matches(text, t)),
+            Some(text) => entry.texts.iter().any(|t| self.text_matches(text, t)),
             None => true,
         }
     }
@@ -260,7 +257,7 @@ impl Search {
 
 /// The text of `column`, without copying it; `None` for NULL or a text that
 /// isn't UTF-8.
-fn text_ref<'a>(row: &'a Row<'_>, column: &str) -> rusqlite::Result<Option<&'a str>> {
+pub(crate) fn text_ref<'a>(row: &'a Row<'_>, column: &str) -> rusqlite::Result<Option<&'a str>> {
     Ok(match row.get_ref(column)? {
         ValueRef::Text(bytes) => std::str::from_utf8(bytes).ok(),
         _ => None,
@@ -270,12 +267,8 @@ fn text_ref<'a>(row: &'a Row<'_>, column: &str) -> rusqlite::Result<Option<&'a s
 /// What a search looks at in a row read with the entry's columns.
 fn searched_row<'a>(row: &'a Row<'_>) -> rusqlite::Result<Searched<'a>> {
     Ok(Searched {
-        texts: [
-            text_ref(row, "transcription_text")?,
-            text_ref(row, "post_processed_text")?,
-            text_ref(row, "transcription_correction")?,
-            text_ref(row, "post_processed_correction")?,
-        ],
+        // The same versions the entry read from this row has.
+        texts: crate::history_versions::StackColumns::from_row(row)?.texts(),
         app_id: text_ref(row, "window_app_id")?,
         app_name: text_ref(row, "window_app_name")?,
         title: text_ref(row, "window_title")?,
@@ -398,16 +391,20 @@ mod tests {
         }
     }
 
+    fn texts<'a>(texts: &[&'a str]) -> Vec<Cow<'a, str>> {
+        texts.iter().map(|t| Cow::Borrowed(*t)).collect()
+    }
+
     fn text(text: &str) -> Searched<'_> {
         Searched {
-            texts: [Some(text), None, None, None],
+            texts: texts(&[text]),
             ..Default::default()
         }
     }
 
     fn in_window<'a>(app_id: &'a str, app_name: &'a str, title: &'a str) -> Searched<'a> {
         Searched {
-            texts: [Some("words"), None, None, None],
+            texts: texts(&["words"]),
             app_id: Some(app_id),
             app_name: Some(app_name),
             title: Some(title),
@@ -417,7 +414,7 @@ mod tests {
 
     fn from_file(name: &str) -> Searched<'_> {
         Searched {
-            texts: [Some("words"), None, None, None],
+            texts: texts(&["words"]),
             file: Some(name),
             ..Default::default()
         }
@@ -438,16 +435,19 @@ mod tests {
     }
 
     #[test]
-    fn finds_the_text_in_every_text_of_an_entry() {
+    fn finds_the_text_in_every_version_of_an_entry() {
         let q = query("needle");
         for slot in 0..4 {
-            let mut entry = Searched::default();
-            entry.texts[0] = Some("hay");
-            entry.texts[slot] = Some("a needle in it");
-            assert!(matches(&q, &entry), "text {slot}");
+            let mut versions = vec!["hay", "more hay", "straw", "chaff"];
+            versions[slot] = "a needle in it";
+            let entry = Searched {
+                texts: texts(&versions),
+                ..Default::default()
+            };
+            assert!(matches(&q, &entry), "version {slot}");
         }
         let none = Searched {
-            texts: [Some("hay"), Some("more hay"), None, Some("straw")],
+            texts: texts(&["hay", "more hay", "straw"]),
             ..Default::default()
         };
         assert!(!matches(&q, &none));
@@ -636,7 +636,7 @@ mod tests {
     #[test]
     fn a_files_name_combines_with_the_text() {
         let file = Searched {
-            texts: [Some("the budget for next year"), None, None, None],
+            texts: texts(&["the budget for next year"]),
             file: Some("Meeting.m4a"),
             ..Default::default()
         };
@@ -655,7 +655,7 @@ mod tests {
     #[test]
     fn text_window_and_same_window_combine() {
         let entry = Searched {
-            texts: [Some("the build hangs"), None, None, None],
+            texts: texts(&["the build hangs"]),
             app_id: Some("com.apple.Safari"),
             app_name: Some("Safari"),
             title: Some("CI"),
@@ -815,6 +815,77 @@ mod tests {
         let page = search_entries(&conn, &compiled(&q), None, 30).expect("search");
         let ids: Vec<i64> = page.entries.iter().map(|e| e.id).collect();
         assert_eq!(ids, vec![b, a]);
+    }
+
+    fn set(conn: &Connection, id: i64, column: &str, value: &str) {
+        conn.execute(
+            &format!("UPDATE transcription_history SET {column} = ?1 WHERE id = ?2"),
+            params![value, id],
+        )
+        .expect("set column");
+    }
+
+    /// The ids `text` finds, newest first, checked against `entry_matches`.
+    fn found(conn: &Connection, text: &str, ids: &[i64]) -> Vec<i64> {
+        let search = compiled(&query(text));
+        let page = search_entries(conn, &search, None, 30).expect("search");
+        let found: Vec<i64> = page.entries.iter().map(|e| e.id).collect();
+        for id in ids {
+            assert_eq!(
+                entry_matches(conn, *id, &search).expect("check"),
+                found.contains(id),
+                "entry {id} for {text:?}"
+            );
+        }
+        found
+    }
+
+    #[test]
+    fn a_search_finds_every_version_of_a_stored_stack() {
+        let conn = database();
+        let id = insert(&conn, "raw words", None);
+        let other = insert(&conn, "hay", None);
+        set(
+            &conn,
+            id,
+            "versions",
+            r#"[{"text":"Clean words.","steps":[{"by":"ai","at":1,"prompt_name":null}]},{"text":"Clean words, mine.","steps":[{"by":"user","at":2,"prompt_name":null}]}]"#,
+        );
+        let ids = [id, other];
+        assert_eq!(found(&conn, "raw", &ids), vec![id]);
+        assert_eq!(found(&conn, "clean words.", &ids), vec![id]);
+        assert_eq!(found(&conn, "mine", &ids), vec![id]);
+        assert_eq!(found(&conn, "hay", &ids), vec![other]);
+    }
+
+    #[test]
+    fn a_search_finds_the_versions_derived_from_the_columns_of_before() {
+        let conn = database();
+        let id = insert(&conn, "raw words", None);
+        set(&conn, id, "post_processed_text", "Clean words.");
+        set(&conn, id, "post_processed_correction", "Clean words, mine.");
+        assert_eq!(found(&conn, "clean words.", &[id]), vec![id]);
+        assert_eq!(found(&conn, "mine", &[id]), vec![id]);
+    }
+
+    #[test]
+    fn a_correction_left_out_of_the_stack_is_not_found() {
+        let conn = database();
+        let id = insert(&conn, "raw words", None);
+        set(&conn, id, "post_processed_text", "Clean words.");
+        set(&conn, id, "transcription_correction", "corrected after it");
+        assert_eq!(found(&conn, "corrected", &[id]), Vec::<i64>::new());
+        assert_eq!(found(&conn, "clean", &[id]), vec![id]);
+    }
+
+    #[test]
+    fn once_stored_the_corrections_of_before_are_not_found() {
+        let conn = database();
+        let id = insert(&conn, "raw words", None);
+        set(&conn, id, "transcription_correction", "old correction");
+        set(&conn, id, "versions", "[]");
+        assert_eq!(found(&conn, "old correction", &[id]), Vec::<i64>::new());
+        assert_eq!(found(&conn, "raw", &[id]), vec![id]);
     }
 
     #[test]
