@@ -94,6 +94,8 @@ Each profile has its own prompt list with one prompt selected, as the post-proce
 
 **Idea (user, 2026-11-15), with it:** the newest entry shows more of its text from the start, but bounded; more generally each entry's text could sit in a box of fixed height that scrolls instead of "Show more", and that box could be the editable text itself. To be settled together with the model: the heights, scrolling inside a box versus scrolling the list, editing on a click or always, and highlighting search matches while editing.
 
+**Idea (user, 2026-11-15, later the same evening), replacing the single edited text:** a stack of versions per entry. The bottom is the transcription, never edited by a click (re-transcribing replaces it and drops everything above, after a warning). Each layer above is one edit, by the AI or by the user, and remembers and shows which; the top layer is the entry's result. Layers can be deleted from the top down; editing a layer that isn't on top warns that all later layers will go. Every entry is as tall as its text up to a maximum, larger for the newest; a click opens the text for editing, and only then does it scroll. Claude's assessment and the open points (when a new layer starts, how the layers are shown, what the search covers, how existing entries migrate) are in the sidecar note.
+
 ### Keep the transcript when there is nowhere to paste it
 
 **Problem:** when the focus is not on something that accepts text (the desktop, a non-editable window), recording and transcription work, but the text ends up nowhere. Inherited from Handy: the paste is sent without checking for an editable target, and the clipboard is restored afterwards.
