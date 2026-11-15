@@ -1,3 +1,4 @@
+use crate::app_profiles::OverlayProfile;
 use crate::input;
 use crate::notices::Notice;
 use crate::settings;
@@ -46,9 +47,12 @@ tauri_panel! {
 //
 // Compact overlay (Minimal / transcribing / processing): the 40h pill animates
 // width from 172 (--ov-rest-w) to 216 (--ov-work-w) and expands from center, so
-// the window must fit the widest state plus a little slack. The longest notice
-// titles need nearly all of it.
-const OVERLAY_WIDTH: f64 = 266.0;
+// the window must fit the widest state plus a little slack. DanyWhere: from two
+// profiles on, the pill also names the dictation's profile and grows with it
+// (src/lib/overlayProfile.ts); 320 lets the working pill keep a 90px name next
+// to "Transcribing...". Handy's 266 left 215px for a notice title, the limit
+// AGENTS.md still names.
+const OVERLAY_WIDTH: f64 = 320.0;
 const OVERLAY_HEIGHT: f64 = 50.0;
 
 // Actual is 394x118, just a little extra
@@ -83,7 +87,7 @@ fn overlay_dimensions(state: &str) -> (f64, f64) {
         (OVERLAY_STREAM_WIDTH, OVERLAY_STREAM_HEIGHT)
     } else if matches!(
         state,
-        "clipboard" | "ready" | "not_ready" | "word_list" | "profile" | "profile_auto"
+        "clipboard" | "ready" | "not_ready" | "word_list" | "profile"
     ) {
         (OVERLAY_NOTICE_WIDTH, OVERLAY_HEIGHT)
     } else {
@@ -841,40 +845,33 @@ pub fn show_word_list_notice(
     show_timed_state(app_handle, "word_list", duration);
 }
 
-/// DanyWhere: shows which profile is now active for `duration`, like the
-/// word list notice. The caller skips it while a recording or transcription
+/// DanyWhere: shows a profile for `duration`, as the glyph of choosing the
+/// profile by application and the profile's name, like the word list notice:
+/// after a switch in the sidebar or the tray, and after the switch's shortcut
+/// (`app_profiles`). The caller skips it while a recording or transcription
 /// owns the overlay.
-pub fn show_profile_notice(app_handle: &AppHandle, name: String, duration: std::time::Duration) {
-    // Sent before the state, so the overlay has the name when it renders.
+pub fn show_profile_notice(
+    app_handle: &AppHandle,
+    profile: OverlayProfile,
+    duration: std::time::Duration,
+) {
+    // Sent before the state, so the overlay has the profile when it renders.
     if let Some(overlay_window) = app_handle.get_webview_window("recording_overlay") {
-        let _ = overlay_window.emit("overlay-profile", serde_json::json!({ "name": name }));
+        let _ = overlay_window.emit("overlay-profile", profile);
     }
     show_timed_state(app_handle, "profile", duration);
 }
 
-/// DanyWhere: says for `duration` whether choosing the profile by
-/// application is now on (`app_profiles`). The caller skips it while a
-/// recording or transcription owns the overlay.
-pub fn show_profile_auto_notice(app_handle: &AppHandle, on: bool, duration: std::time::Duration) {
-    // Sent before the state, so the overlay has it when it renders.
-    if let Some(overlay_window) = app_handle.get_webview_window("recording_overlay") {
-        let _ = overlay_window.emit("overlay-profile-auto", serde_json::json!({ "on": on }));
-    }
-    show_timed_state(app_handle, "profile_auto", duration);
-}
-
-/// DanyWhere: the profile a dictation uses when it isn't the active one
-/// (`app_profiles`), shown with the dictation's working states; `None`
-/// clears it. Sent at the start of every dictation.
-pub fn set_dictation_profile(app_handle: &AppHandle, name: Option<String>) {
+/// DanyWhere: the profile a dictation runs with and the glyph of choosing
+/// the profile by application, shown next to its waveform and its working
+/// label (`app_profiles`); `None` (a single profile) shows neither. Sent at
+/// the start of every dictation.
+pub fn set_dictation_profile(app_handle: &AppHandle, profile: Option<OverlayProfile>) {
     if !OVERLAY_ENABLED.load(Ordering::Relaxed) {
         return;
     }
     if let Some(overlay_window) = app_handle.get_webview_window("recording_overlay") {
-        let _ = overlay_window.emit(
-            "overlay-dictation-profile",
-            serde_json::json!({ "name": name }),
-        );
+        let _ = overlay_window.emit("overlay-dictation-profile", profile);
     }
 }
 
@@ -1057,7 +1054,7 @@ mod tests {
                 OVERLAY_HEIGHT,
                 OverlayPosition::Bottom,
             ),
-            (3641, 2025, 399, 75)
+            (3600, 2025, 480, 75)
         );
         assert_eq!(
             windows_overlay_bounds(
@@ -1069,7 +1066,7 @@ mod tests {
                 OVERLAY_HEIGHT,
                 OverlayPosition::Top,
             ),
-            (3641, 6, 399, 75)
+            (3600, 6, 480, 75)
         );
     }
 

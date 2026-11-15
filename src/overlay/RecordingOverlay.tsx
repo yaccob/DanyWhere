@@ -11,8 +11,16 @@ import type {
   StreamWorkKind,
 } from "@/bindings";
 import { NoticeBadgeIcon } from "@/components/icons/NoticeBadgeIcon";
+import { ProfileGlyphIcon } from "@/components/icons/ProfileGlyphIcon";
 import i18n, { syncLanguageFromSettings } from "@/i18n";
 import { noticeDisplay } from "@/lib/notices";
+import {
+  profileGlyph,
+  profileNoticeLayout,
+  recordingLayout,
+  workingLayout,
+} from "@/lib/overlayProfile";
+import type { OverlayProfile, ProfileGlyph } from "@/lib/overlayProfile";
 import type { ModelStateEvent } from "@/lib/types/events";
 import { getLanguageDirection } from "@/lib/utils/rtl";
 
@@ -27,8 +35,7 @@ type OverlayState =
   | "ready"
   | "not_ready"
   | "word_list"
-  | "profile"
-  | "profile_auto";
+  | "profile";
 
 const isNoticeState = (state: OverlayState) =>
   state === "notice" || state === "live_notice";
@@ -89,14 +96,21 @@ const RecordingOverlay: React.FC = () => {
   // The additional word list the switch shortcut just turned on; null: only
   // the global list.
   const [wordListName, setWordListName] = useState<string | null>(null);
-  // The profile just switched to, by its shown name.
-  const [profileName, setProfileName] = useState<string>("");
-  // DanyWhere: whether choosing the profile by application was just
-  // switched on (`app_profiles`).
-  const [profileAutoOn, setProfileAutoOn] = useState<boolean>(true);
-  // DanyWhere: the profile this dictation uses when it isn't the active one
-  // (the app in front has a profile of its own); null: the active one.
-  const [dictationProfile, setDictationProfile] = useState<string | null>(null);
+  // DanyWhere: the profile a switch (sidebar, tray, or the shortcut of
+  // choosing the profile by application) names, with that switch's state.
+  const [noticeProfile, setNoticeProfile] = useState<OverlayProfile | null>(
+    null,
+  );
+  // DanyWhere: the profile this dictation runs with, shown next to its
+  // waveform and working label; null: only one profile, nothing to show.
+  const [dictationProfile, setDictationProfile] =
+    useState<OverlayProfile | null>(null);
+  // DanyWhere: measured widths of the profile's name and the working label,
+  // since a pill that shows a profile is as wide as its content.
+  const [profileNameWidth, setProfileNameWidth] = useState(0);
+  const [workLabelWidth, setWorkLabelWidth] = useState(0);
+  const profileProbeRef = useRef<HTMLSpanElement>(null);
+  const labelProbeRef = useRef<HTMLSpanElement>(null);
   // The "Insert Last Dictation" service's shortcut, e.g. ⌃⇧V; null: none.
   const [insertKeys, setInsertKeys] = useState<string | null>(null);
   const [noticeWidth, setNoticeWidth] = useState<number>();
@@ -123,19 +137,14 @@ const RecordingOverlay: React.FC = () => {
         (event) => setWordListName(event.payload.name),
       );
 
-      const unlistenProfile = await listen<{ name: string }>(
+      const unlistenProfile = await listen<OverlayProfile>(
         "overlay-profile",
-        (event) => setProfileName(event.payload.name),
+        (event) => setNoticeProfile(event.payload),
       );
 
-      const unlistenProfileAuto = await listen<{ on: boolean }>(
-        "overlay-profile-auto",
-        (event) => setProfileAutoOn(event.payload.on),
-      );
-
-      const unlistenDictationProfile = await listen<{ name: string | null }>(
+      const unlistenDictationProfile = await listen<OverlayProfile | null>(
         "overlay-dictation-profile",
-        (event) => setDictationProfile(event.payload.name),
+        (event) => setDictationProfile(event.payload),
       );
 
       const unlistenInsertKeys = await listen<{ keys: string | null }>(
@@ -251,7 +260,6 @@ const RecordingOverlay: React.FC = () => {
         unlistenNotice();
         unlistenWordList();
         unlistenProfile();
-        unlistenProfileAuto();
         unlistenDictationProfile();
         unlistenInsertKeys();
         unlistenShow();
@@ -312,6 +320,28 @@ const RecordingOverlay: React.FC = () => {
     );
   }, [noticeTitle, isVisible]);
 
+  const transcribingLabel = modelLoading
+    ? t("overlay.loadingModel")
+    : t("overlay.transcribing");
+  const workLabel = (
+    state === "streaming" ? workKind === "polishing" : state === "processing"
+  )
+    ? t("overlay.processing")
+    : transcribingLabel;
+  // DanyWhere: the profile a pill shows: the switch's in its notice, the
+  // dictation's in a session.
+  const probedProfile = state === "profile" ? noticeProfile : dictationProfile;
+
+  // Like the notice: a pill that shows a profile gets a measured width.
+  useLayoutEffect(() => {
+    const name = profileProbeRef.current;
+    if (name)
+      setProfileNameWidth(Math.ceil(name.getBoundingClientRect().width));
+    const label = labelProbeRef.current;
+    if (label)
+      setWorkLabelWidth(Math.ceil(label.getBoundingClientRect().width));
+  }, [probedProfile?.name, workLabel, isVisible, state]);
+
   if (!isVisible && !shownNotice) return null;
 
   // Re-pin when the user is within ~a line of the bottom; unpin otherwise.
@@ -323,15 +353,6 @@ const RecordingOverlay: React.FC = () => {
 
   const fmtTime = (s: number) =>
     `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
-
-  const transcribingLabel = modelLoading
-    ? t("overlay.loadingModel")
-    : t("overlay.transcribing");
-  // DanyWhere: names the dictation's own profile, if it has one.
-  const withDictationProfile = (label: string) =>
-    dictationProfile
-      ? t("overlay.withProfile", { label, name: dictationProfile })
-      : label;
 
   // ---- Shared building blocks (one visual language for every overlay form) ----
   const waveform = (
@@ -364,14 +385,62 @@ const RecordingOverlay: React.FC = () => {
     </button>
   );
 
+  // DanyWhere: the glyph of choosing the profile by application.
+  const glyphElement = (glyph: ProfileGlyph | null) =>
+    glyph === "dot" ? (
+      <span className="sglyph dot">
+        <span className="sdot ready" />
+      </span>
+    ) : glyph ? (
+      <ProfileGlyphIcon glyph={glyph} className={`sglyph ${glyph}`} />
+    ) : null;
+  const dictationGlyph = dictationProfile
+    ? profileGlyph(dictationProfile.mode, "dictation")
+    : null;
+  // DanyWhere: separator, glyph and name of the dictation's profile, after
+  // the waveform or the working label; `nameMax` cuts a long name.
+  const profileSegment = (nameMax: number) =>
+    dictationProfile && (
+      <span className="sprofile">
+        <span className="ssep" />
+        {glyphElement(dictationGlyph)}
+        <span className="sprofile-name" style={{ maxWidth: nameMax }}>
+          {dictationProfile.name}
+        </span>
+      </span>
+    );
+  // The full name and working label, measured for the pill's width.
+  const profileProbes = probedProfile && (
+    <>
+      <span ref={profileProbeRef} className="sprobe" aria-hidden="true">
+        {probedProfile.name}
+      </span>
+      <span ref={labelProbeRef} className="sprobe" aria-hidden="true">
+        {workLabel}
+      </span>
+    </>
+  );
+
   // dot (left) | waveform (center) | timer + cancel (right) — same structure for
-  // pill & panel, so the Live morph is a pure width change.
-  const listeningRow = (showTimer: boolean, showCancel: boolean) => (
+  // pill & panel, so the Live morph is a pure width change. DanyWhere: from two
+  // profiles on, the dictation's profile follows the waveform.
+  const listeningRow = (
+    showTimer: boolean,
+    showCancel: boolean,
+    nameMax: number,
+  ) => (
     <div className="sbase">
       <div className="sbase-l">
         <span className={`sdot ${captureReady ? "ready" : "arming"}`} />
       </div>
-      {waveform}
+      {dictationProfile ? (
+        <div className="scenter">
+          {waveform}
+          {profileSegment(nameMax)}
+        </div>
+      ) : (
+        waveform
+      )}
       <div className="sbase-r">
         {showTimer && <span className="stimer">{fmtTime(elapsed)}</span>}
         {showCancel && cancelBtn}
@@ -380,13 +449,21 @@ const RecordingOverlay: React.FC = () => {
   );
 
   // spinner (left) | label (center) | cancel (right) — same 3-zone grid as the
-  // listening row, so the label is centered.
-  const workingRow = (label: string, showCancel: boolean) => (
+  // listening row, so the label is centered. DanyWhere: from two profiles on,
+  // the dictation's profile follows the label.
+  const workingRow = (label: string, showCancel: boolean, nameMax: number) => (
     <div className="sbase">
       <div className="sbase-l">
         <span className="sspinner" />
       </div>
-      <span className="swork-label">{label}</span>
+      {dictationProfile ? (
+        <div className="scenter">
+          <span className="swork-label">{label}</span>
+          {profileSegment(nameMax)}
+        </div>
+      ) : (
+        <span className="swork-label">{label}</span>
+      )}
       <div className="sbase-r">{showCancel && cancelBtn}</div>
     </div>
   );
@@ -430,16 +507,33 @@ const RecordingOverlay: React.FC = () => {
       ? hasText || !!noticeText
       : hasText || loadingNotice || (loadNoticeShown && !working);
     const collapsed = working && !hasText;
+    // DanyWhere: the pill grows with the dictation's profile; the open panel
+    // keeps its width.
+    const liveLayout = working
+      ? workingLayout(
+          workLabelWidth,
+          profileNameWidth,
+          dictationGlyph !== null,
+          true,
+        )
+      : recordingLayout(profileNameWidth, dictationGlyph !== null, true);
+    const liveStyle =
+      liveNotice && !open
+        ? { width: noticeWidth }
+        : dictationProfile && !liveNotice && !open
+          ? { width: liveLayout.width }
+          : undefined;
 
     return (
       <div dir={direction} className={`ov-stage ${position}`}>
         {noticeProbe}
+        {profileProbes}
         <div
           key={session}
           className={`scard ${open ? "open" : ""} ${collapsed ? "working" : ""} ${
             isVisible ? "" : "leaving"
           } ${noticeClass}`}
-          style={liveNotice && !open ? { width: noticeWidth } : undefined}
+          style={liveStyle}
           onClick={dismissNotice}
         >
           <div className="stext">
@@ -472,15 +566,8 @@ const RecordingOverlay: React.FC = () => {
           {liveNotice
             ? noticeRow
             : working
-              ? workingRow(
-                  withDictationProfile(
-                    workKind === "polishing"
-                      ? t("overlay.processing")
-                      : transcribingLabel,
-                  ),
-                  true,
-                )
-              : listeningRow(open, true)}
+              ? workingRow(workLabel, true, liveLayout.nameMax)
+              : listeningRow(open, true, liveLayout.nameMax)}
         </div>
       </div>
     );
@@ -545,46 +632,26 @@ const RecordingOverlay: React.FC = () => {
     );
   }
 
-  // ---- Choosing the profile by application was switched on or off.
-  if (state === "profile_auto") {
-    return (
-      <div
-        dir={direction}
-        className={`ov-stage ${position} ov-fade ${isVisible ? "show" : ""}`}
-      >
-        <div className="scard compact">
-          <div className="sbase">
-            <div className="sbase-l">
-              <span className="sdot ready" />
-            </div>
-            <span className="swork-label">
-              {profileAutoOn
-                ? t("overlay.profileAutoOn")
-                : t("overlay.profileAutoOff")}
-            </span>
-            <div className="sbase-r" />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // ---- Profile notice: another profile is now active.
+  // ---- DanyWhere: profile notice, after a switch in the sidebar or the tray
+  // or the shortcut of choosing the profile by application: the switch's
+  // glyph (the dot without assignments) and the profile's name, as wide as
+  // they are.
   if (state === "profile") {
+    const { width, nameMax } = profileNoticeLayout(profileNameWidth);
     return (
       <div
         dir={direction}
         className={`ov-stage ${position} ov-fade ${isVisible ? "show" : ""}`}
       >
-        <div className="scard compact">
-          <div className="sbase">
-            <div className="sbase-l">
-              <span className="sdot ready" />
-            </div>
-            <span className="swork-label">
-              {t("overlay.profile", { name: profileName })}
+        {profileProbes}
+        <div className="scard compact" style={{ width }}>
+          <div className="sbase snotice">
+            {glyphElement(
+              profileGlyph(noticeProfile?.mode ?? "none", "notice"),
+            )}
+            <span className="nlabel" style={{ maxWidth: nameMax }}>
+              {noticeProfile?.name}
             </span>
-            <div className="sbase-r" />
           </div>
         </div>
       </div>
@@ -595,9 +662,10 @@ const RecordingOverlay: React.FC = () => {
   // spinner + label (transcribing / processing). Never both. The pill animates its
   // width between them; the cancel button is in both rows so it stays put.
   const working = state === "transcribing" || state === "processing";
-  const workLabel = withDictationProfile(
-    state === "processing" ? t("overlay.processing") : transcribingLabel,
-  );
+  // DanyWhere: the pill grows with the dictation's profile.
+  const compactLayout = working
+    ? workingLayout(workLabelWidth, profileNameWidth, dictationGlyph !== null)
+    : recordingLayout(profileNameWidth, dictationGlyph !== null);
 
   return (
     <div
@@ -605,16 +673,23 @@ const RecordingOverlay: React.FC = () => {
       className={`ov-stage ${position} ov-fade ${isVisible ? "show" : ""}`}
     >
       {noticeProbe}
+      {profileProbes}
       <div
         className={`scard compact ${working && isVisible ? "cworking" : ""} ${noticeClass}`}
-        style={shownNotice ? { width: noticeWidth } : undefined}
+        style={
+          shownNotice
+            ? { width: noticeWidth }
+            : dictationProfile
+              ? { width: compactLayout.width }
+              : undefined
+        }
         onClick={dismissNotice}
       >
         {shownNotice
           ? noticeRow
           : working
-            ? workingRow(workLabel, true)
-            : listeningRow(false, true)}
+            ? workingRow(workLabel, true, compactLayout.nameMax)
+            : listeningRow(false, true, compactLayout.nameMax)}
       </div>
     </div>
   );

@@ -1241,11 +1241,7 @@
     "readyNoShortcut": "Připraveno – vložte z nabídky Služby",
     "notReady": "Ještě není hotovo",
     "wordList": "Seznam slov: {{name}}",
-    "wordListGlobalOnly": "Žádný doplňkový seznam",
-    "profile": "Profil: {{name}}",
-    "profileAutoOn": "Profil podle aplikace: zapnuto",
-    "profileAutoOff": "Profil podle aplikace: vypnuto",
-    "withProfile": "{{label}} · {{name}}"
+    "wordListGlobalOnly": "Žádný doplňkový seznam"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} může blokovat 1 zkratku",

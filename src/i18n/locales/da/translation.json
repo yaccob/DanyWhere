@@ -1241,11 +1241,7 @@
     "readyNoShortcut": "Klar – indsæt fra menuen Tjenester",
     "notReady": "Ikke klar endnu",
     "wordList": "Ordliste: {{name}}",
-    "wordListGlobalOnly": "Ingen ekstra liste",
-    "profile": "Profil: {{name}}",
-    "profileAutoOn": "Profil efter program: til",
-    "profileAutoOff": "Profil efter program: fra",
-    "withProfile": "{{label}} · {{name}}"
+    "wordListGlobalOnly": "Ingen ekstra liste"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} blokerer muligvis 1 genvej",

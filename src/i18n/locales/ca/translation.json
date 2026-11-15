@@ -1241,11 +1241,7 @@
     "readyNoShortcut": "A punt – inseriu-lo des del menú Serveis",
     "notReady": "Encara no està a punt",
     "wordList": "Llista de paraules: {{name}}",
-    "wordListGlobalOnly": "Cap llista addicional",
-    "profile": "Perfil: {{name}}",
-    "profileAutoOn": "Perfil segons l'aplicació: activat",
-    "profileAutoOff": "Perfil segons l'aplicació: desactivat",
-    "withProfile": "{{label}} · {{name}}"
+    "wordListGlobalOnly": "Cap llista addicional"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} pot estar blocant 1 drecera",

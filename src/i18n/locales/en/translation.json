@@ -1241,11 +1241,7 @@
     "readyNoShortcut": "Ready – insert it from the Services menu",
     "notReady": "Not ready yet",
     "wordList": "Word list: {{name}}",
-    "wordListGlobalOnly": "No additional list",
-    "profile": "Profile: {{name}}",
-    "profileAutoOn": "Profile by application: on",
-    "profileAutoOff": "Profile by application: off",
-    "withProfile": "{{label}} · {{name}}"
+    "wordListGlobalOnly": "No additional list"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} may be blocking 1 shortcut",

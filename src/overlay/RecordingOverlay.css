@@ -151,7 +151,8 @@
    grow). The resting pill hugs the waveform; the working pill is roomy enough to
    center the longest label — the .swork-label ellipsis is only a safety net past it.
    A notice hugs its title instead, so RecordingOverlay.tsx measures that width and
-   sets it inline, which keeps it animatable. */
+   sets it inline, which keeps it animatable. DanyWhere: so does a pill that shows
+   a profile (src/lib/overlayProfile.ts). */
 .scard.compact {
   animation: none;
   width: var(--ov-rest-w);
@@ -430,6 +431,71 @@
 }
 .sx:active {
   transform: scale(0.95);
+}
+
+/* DanyWhere: the dictation's profile after the waveform or the working label
+   (separator, glyph of choosing the profile by application, name), and the
+   glyph in the notice after a profile switch. A pill that shows a profile is as
+   wide as its content: src/lib/overlayProfile.ts computes it from these sizes,
+   so keep both in step. */
+.scenter {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+.scenter .swork-label {
+  flex: none; /* a long name gives way, never the label */
+}
+.sprofile {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+.ssep {
+  width: 1px;
+  height: 18px;
+  margin-right: 7px;
+  flex: none;
+  background: var(--s-border);
+}
+.sglyph {
+  display: block;
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+.sglyph.dot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sprofile .sglyph {
+  margin-right: 5px;
+}
+.sglyph.window {
+  color: var(--color-moss);
+}
+.sglyph.lock {
+  color: var(--color-text);
+}
+.sprofile .sglyph.lock {
+  color: var(--s-muted);
+}
+.sprofile-name {
+  font-size: 12px;
+  color: var(--s-muted);
+  white-space: nowrap;
+  padding-right: 6px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* Measures a full name or label, since the visible one can be cut off. */
+.sprobe {
+  position: absolute;
+  visibility: hidden;
+  white-space: nowrap;
+  font-size: 12px;
 }
 
 /* working state (transcribing / polishing) — spinner + label */

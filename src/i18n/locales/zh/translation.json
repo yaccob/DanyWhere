@@ -1241,11 +1241,7 @@
     "readyNoShortcut": "就绪 – 从“服务”菜单插入",
     "notReady": "尚未就绪",
     "wordList": "词汇列表：{{name}}",
-    "wordListGlobalOnly": "无附加列表",
-    "profile": "配置文件：{{name}}",
-    "profileAutoOn": "按应用选择配置文件：开",
-    "profileAutoOff": "按应用选择配置文件：关",
-    "withProfile": "{{label}} · {{name}}"
+    "wordListGlobalOnly": "无附加列表"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} 可能正在阻止 1 个快捷键",

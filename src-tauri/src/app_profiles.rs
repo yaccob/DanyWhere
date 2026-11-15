@@ -20,7 +20,7 @@ use crate::settings::{self, AppSettings};
 /// The shortcut that turns choosing the profile by application on and off.
 pub const TOGGLE_BINDING: &str = "toggle_profile_auto";
 
-/// How long the overlay says whether choosing by application is now on.
+/// How long the overlay shows the switch's new state and profile.
 const TOGGLE_NOTICE: std::time::Duration = std::time::Duration::from_millis(2000);
 
 /// An application that can be assigned to a profile.
@@ -80,6 +80,82 @@ pub fn post_processing_reachable(settings: &AppSettings) -> bool {
                     && !profile.apps.is_empty()
                     && profile.values.post_process_enabled
             }))
+}
+
+/// What the overlay shows about choosing the profile by application, as a
+/// glyph before the profile's name: nothing while no application is assigned
+/// (the switch does nothing then), a window while it is on, the tray's padlock
+/// while it is off.
+#[derive(Serialize, Debug, Clone, Copy, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum ProfileMode {
+    None,
+    Auto,
+    Lock,
+}
+
+/// A profile as the overlay shows it: its name and the state of the switch.
+#[derive(Serialize, Debug, Clone, PartialEq, Eq)]
+pub struct OverlayProfile {
+    pub name: String,
+    pub mode: ProfileMode,
+}
+
+/// The state of the switch as the overlay shows it; the padlock under the
+/// same condition as the tray's ([`manual_mode`]).
+pub fn profile_mode(settings: &AppSettings) -> ProfileMode {
+    if !has_assignments(settings) {
+        ProfileMode::None
+    } else if settings.profile_auto_by_app {
+        ProfileMode::Auto
+    } else {
+        ProfileMode::Lock
+    }
+}
+
+/// Profile `id` as the overlay shows it; `default_name` is the translated
+/// name of the default profile.
+pub fn overlay_profile(
+    settings: &AppSettings,
+    id: &str,
+    default_name: &str,
+) -> Option<OverlayProfile> {
+    let profile = settings.profiles.iter().find(|profile| profile.id == id)?;
+    Some(OverlayProfile {
+        name: crate::profiles::display_name(profile, default_name),
+        mode: profile_mode(settings),
+    })
+}
+
+/// The profile a dictation's pills name: `id`, the one the dictation runs
+/// with, whether an assignment chose it or not. `None` with only one
+/// profile, where the pills stay as they were.
+pub fn dictation_overlay_profile(
+    settings: &AppSettings,
+    id: &str,
+    default_name: &str,
+) -> Option<OverlayProfile> {
+    if settings.profiles.len() < 2 {
+        return None;
+    }
+    overlay_profile(settings, id, default_name)
+}
+
+/// What the overlay says after the switch was turned over (`settings` hold
+/// its new state): the profile a dictation into `frontmost_app` gets now,
+/// its own while the switch is on, otherwise the active one.
+pub fn toggle_notice_profile(
+    settings: &AppSettings,
+    frontmost_app: Option<&str>,
+    default_name: &str,
+) -> Option<OverlayProfile> {
+    let id = profile_for_dictation(
+        &settings.profiles,
+        &settings.active_profile_id,
+        settings.profile_auto_by_app,
+        frontmost_app,
+    );
+    overlay_profile(settings, id, default_name)
 }
 
 /// Assigns `apps` to profile `id`, each at most once and to no other profile.
@@ -187,44 +263,42 @@ fn dictation_lock() -> std::sync::MutexGuard<'static, Option<DictationProfile>> 
         .unwrap_or_else(|poisoned| poisoned.into_inner())
 }
 
-/// Decides the profile of a dictation that starts now, from the application
-/// in front. Returns its shown name when it isn't the active profile.
-pub fn begin_dictation(app: &AppHandle) -> Option<String> {
-    let settings = settings::get_settings(app);
-    let frontmost = if settings.profile_auto_by_app && has_assignments(&settings) {
+/// The application in front, looked up only while it can choose the profile.
+fn frontmost_if_choosing(settings: &AppSettings) -> Option<String> {
+    if settings.profile_auto_by_app && has_assignments(settings) {
         crate::window_capture::frontmost_app().map(|(id, _)| id)
     } else {
         None
-    };
-    let chosen = dictation_profile(&settings, frontmost.as_deref()).map(|profile| {
-        let name = crate::profiles::display_name(
-            profile,
-            &crate::profiles::default_profile_name(&settings),
-        );
-        (
-            DictationProfile {
-                id: profile.id.clone(),
-                values: profile.values.clone(),
-            },
-            name,
-        )
-    });
-    let mut current = dictation_lock();
-    match chosen {
-        Some((profile, name)) => {
-            log::info!(
-                "Dictation into {} uses profile {}",
-                frontmost.as_deref().unwrap_or("?"),
-                profile.id
-            );
-            *current = Some(profile);
-            Some(name)
-        }
-        None => {
-            *current = None;
-            None
-        }
     }
+}
+
+/// Decides the profile of a dictation that starts now, from the application
+/// in front. Returns what the dictation's pills show of it (from two
+/// profiles on).
+pub fn begin_dictation(app: &AppHandle) -> Option<OverlayProfile> {
+    let settings = settings::get_settings(app);
+    let frontmost = frontmost_if_choosing(&settings);
+    let chosen = dictation_profile(&settings, frontmost.as_deref());
+    let shown = dictation_overlay_profile(
+        &settings,
+        chosen.map_or(settings.active_profile_id.as_str(), |profile| {
+            profile.id.as_str()
+        }),
+        &crate::profiles::default_profile_name(&settings),
+    );
+    let chosen = chosen.map(|profile| DictationProfile {
+        id: profile.id.clone(),
+        values: profile.values.clone(),
+    });
+    if let Some(profile) = &chosen {
+        log::info!(
+            "Dictation into {} uses profile {}",
+            frontmost.as_deref().unwrap_or("?"),
+            profile.id
+        );
+    }
+    *dictation_lock() = chosen;
+    shown
 }
 
 /// Ends the dictation's own profile: the active profile applies again.
@@ -270,12 +344,24 @@ fn set_auto(app: &AppHandle, change: impl FnOnce(&mut AppSettings) -> bool) -> b
     on
 }
 
-/// The shortcut's action: switch choosing by application over and say so in
-/// the overlay.
+/// The shortcut's action: switch choosing by application over and show in
+/// the overlay the new state and the profile a dictation into the
+/// application in front gets now. Runs off the shortcut thread (see
+/// `ToggleProfileAutoAction`), and the application in front is looked up
+/// outside the settings store.
 pub fn toggle_from_shortcut(app: &AppHandle) {
-    let on = set_auto(app, toggle_auto);
-    if !crate::overlay::is_session_showing() {
-        crate::overlay::show_profile_auto_notice(app, on, TOGGLE_NOTICE);
+    set_auto(app, toggle_auto);
+    if crate::overlay::is_session_showing() {
+        return;
+    }
+    let settings = settings::get_settings(app);
+    let frontmost = frontmost_if_choosing(&settings);
+    if let Some(shown) = toggle_notice_profile(
+        &settings,
+        frontmost.as_deref(),
+        &crate::profiles::default_profile_name(&settings),
+    ) {
+        crate::overlay::show_profile_notice(app, shown, TOGGLE_NOTICE);
     }
 }
 
@@ -452,6 +538,120 @@ mod tests {
         ));
         assert!(effective_post_process(true, None));
         assert!(!effective_post_process(false, None));
+    }
+
+    fn shown(name: &str, mode: ProfileMode) -> Option<OverlayProfile> {
+        Some(OverlayProfile {
+            name: name.to_string(),
+            mode,
+        })
+    }
+
+    #[test]
+    fn the_overlay_shows_no_glyph_without_assignments_a_window_while_on_a_padlock_while_off() {
+        let mut settings = with_mail_profile();
+        assert_eq!(profile_mode(&settings), ProfileMode::Auto);
+        toggle_auto(&mut settings);
+        assert_eq!(profile_mode(&settings), ProfileMode::Lock);
+        set_apps(&mut settings, "mail", Vec::new()).unwrap();
+        assert_eq!(profile_mode(&settings), ProfileMode::None);
+        toggle_auto(&mut settings);
+        assert_eq!(profile_mode(&settings), ProfileMode::None);
+    }
+
+    #[test]
+    fn a_switch_names_the_new_profile_with_the_state_of_the_switch() {
+        let mut settings = with_mail_profile();
+        assert_eq!(
+            overlay_profile(&settings, DEFAULT_PROFILE_ID, "Standard"),
+            shown("Standard", ProfileMode::Auto)
+        );
+        toggle_auto(&mut settings);
+        assert_eq!(
+            overlay_profile(&settings, "mail", "Standard"),
+            shown("Mail", ProfileMode::Lock)
+        );
+        set_apps(&mut settings, "mail", Vec::new()).unwrap();
+        assert_eq!(
+            overlay_profile(&settings, "mail", "Standard"),
+            shown("Mail", ProfileMode::None)
+        );
+        assert_eq!(overlay_profile(&settings, "nope", "Standard"), None);
+    }
+
+    #[test]
+    fn a_dictation_names_its_profile_from_two_profiles_on_even_the_active_one() {
+        let mut settings = with_mail_profile();
+        assert_eq!(
+            dictation_overlay_profile(&settings, "mail", "Standard"),
+            shown("Mail", ProfileMode::Auto)
+        );
+        // The app in front has no profile of its own: the glyph still shows
+        // the switch, not whether an assignment applied.
+        assert_eq!(
+            dictation_overlay_profile(&settings, DEFAULT_PROFILE_ID, "Standard"),
+            shown("Standard", ProfileMode::Auto)
+        );
+        toggle_auto(&mut settings);
+        assert_eq!(
+            dictation_overlay_profile(&settings, DEFAULT_PROFILE_ID, "Standard"),
+            shown("Standard", ProfileMode::Lock)
+        );
+        // With only one profile the pills stay as they were.
+        settings.profiles.truncate(1);
+        assert_eq!(
+            dictation_overlay_profile(&settings, DEFAULT_PROFILE_ID, "Standard"),
+            None
+        );
+    }
+
+    #[test]
+    fn switching_on_names_the_profile_a_dictation_into_the_app_in_front_gets() {
+        let mut settings = with_mail_profile();
+        toggle_auto(&mut settings);
+        assert!(toggle_auto(&mut settings));
+        assert_eq!(
+            toggle_notice_profile(&settings, Some("com.apple.mail"), "Standard"),
+            shown("Mail", ProfileMode::Auto)
+        );
+        assert_eq!(
+            toggle_notice_profile(&settings, Some("com.apple.TextEdit"), "Standard"),
+            shown("Standard", ProfileMode::Auto)
+        );
+        assert_eq!(
+            toggle_notice_profile(&settings, None, "Standard"),
+            shown("Standard", ProfileMode::Auto)
+        );
+    }
+
+    #[test]
+    fn switching_off_names_the_active_profile() {
+        let mut settings = with_mail_profile();
+        assert!(!toggle_auto(&mut settings));
+        assert_eq!(
+            toggle_notice_profile(&settings, Some("com.apple.mail"), "Standard"),
+            shown("Standard", ProfileMode::Lock)
+        );
+    }
+
+    #[test]
+    fn the_overlay_reads_the_mode_in_snake_case() {
+        assert_eq!(
+            serde_json::to_value(shown("Mail", ProfileMode::Lock)).unwrap(),
+            serde_json::json!({ "name": "Mail", "mode": "lock" })
+        );
+        assert_eq!(
+            serde_json::to_value(ProfileMode::Auto).unwrap(),
+            serde_json::json!("auto")
+        );
+        assert_eq!(
+            serde_json::to_value(ProfileMode::None).unwrap(),
+            serde_json::json!("none")
+        );
+        assert_eq!(
+            serde_json::to_value(None::<OverlayProfile>).unwrap(),
+            serde_json::Value::Null
+        );
     }
 
     #[test]

@@ -1241,11 +1241,7 @@
     "readyNoShortcut": "Klaar – voeg in via het menu Voorzieningen",
     "notReady": "Nog niet klaar",
     "wordList": "Woordenlijst: {{name}}",
-    "wordListGlobalOnly": "Geen extra lijst",
-    "profile": "Profiel: {{name}}",
-    "profileAutoOn": "Profiel per app: aan",
-    "profileAutoOff": "Profiel per app: uit",
-    "withProfile": "{{label}} · {{name}}"
+    "wordListGlobalOnly": "Geen extra lijst"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} blokkeert mogelijk 1 sneltoets",

@@ -1241,11 +1241,7 @@
     "readyNoShortcut": "מוכן – הוסף מתפריט השירותים",
     "notReady": "עדיין לא מוכן",
     "wordList": "רשימת מילים: {{name}}",
-    "wordListGlobalOnly": "ללא רשימה נוספת",
-    "profile": "פרופיל: {{name}}",
-    "profileAutoOn": "פרופיל לפי יישום: מופעל",
-    "profileAutoOff": "פרופיל לפי יישום: כבוי",
-    "withProfile": "{{label}} · {{name}}"
+    "wordListGlobalOnly": "ללא רשימה נוספת"
   },
   "secureInput": {
     "blockedWithCulprit_one": "ייתכן ש-{{name}} חוסם קיצור דרך אחד",

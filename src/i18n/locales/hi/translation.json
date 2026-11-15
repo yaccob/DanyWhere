@@ -1241,11 +1241,7 @@
     "readyNoShortcut": "तैयार – सर्विसेज़ मेनू से इन्सर्ट करें",
     "notReady": "अभी तैयार नहीं",
     "wordList": "शब्द सूची: {{name}}",
-    "wordListGlobalOnly": "कोई अतिरिक्त सूची नहीं",
-    "profile": "प्रोफ़ाइल: {{name}}",
-    "profileAutoOn": "ऐप के अनुसार प्रोफ़ाइल: चालू",
-    "profileAutoOff": "ऐप के अनुसार प्रोफ़ाइल: बंद",
-    "withProfile": "{{label}} · {{name}}"
+    "wordListGlobalOnly": "कोई अतिरिक्त सूची नहीं"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} शायद 1 शॉर्टकट को ब्लॉक कर रहा है",

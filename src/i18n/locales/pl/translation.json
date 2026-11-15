@@ -1241,11 +1241,7 @@
     "readyNoShortcut": "Gotowe – wstaw z menu Usługi",
     "notReady": "Jeszcze niegotowe",
     "wordList": "Lista słów: {{name}}",
-    "wordListGlobalOnly": "Bez dodatkowej listy",
-    "profile": "Profil: {{name}}",
-    "profileAutoOn": "Profil według aplikacji: wł.",
-    "profileAutoOff": "Profil według aplikacji: wył.",
-    "withProfile": "{{label}} · {{name}}"
+    "wordListGlobalOnly": "Bez dodatkowej listy"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} może blokować 1 skrót",

@@ -1241,11 +1241,7 @@
     "readyNoShortcut": "準備完了 – サービスメニューから挿入",
     "notReady": "まだ準備中です",
     "wordList": "単語リスト: {{name}}",
-    "wordListGlobalOnly": "追加のリストなし",
-    "profile": "プロファイル: {{name}}",
-    "profileAutoOn": "アプリごとのプロファイル: オン",
-    "profileAutoOff": "アプリごとのプロファイル: オフ",
-    "withProfile": "{{label}} · {{name}}"
+    "wordListGlobalOnly": "追加のリストなし"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} が1個のショートカットをブロックしている可能性があります",

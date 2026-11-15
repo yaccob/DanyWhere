@@ -1241,11 +1241,7 @@
     "readyNoShortcut": "Bereit – über das Dienste-Menü einfügen",
     "notReady": "Noch nicht fertig",
     "wordList": "Wortliste: {{name}}",
-    "wordListGlobalOnly": "Keine zusätzliche Liste",
-    "profile": "Profil: {{name}}",
-    "profileAutoOn": "Profil nach Anwendung: an",
-    "profileAutoOff": "Profil nach Anwendung: aus",
-    "withProfile": "{{label}} · {{name}}"
+    "wordListGlobalOnly": "Keine zusätzliche Liste"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} blockiert möglicherweise 1 Tastenkürzel",
