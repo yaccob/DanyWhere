@@ -12,7 +12,7 @@
     "autoLanguage": "Automatiskt",
     "otherLanguages": "Andra språk",
     "wordList": "Ordlista",
-    "onlyGlobalWordList": "Endast global ordlista",
+    "onlyGlobalWordList": "Ingen extra lista",
     "profile": "Profil",
     "defaultProfile": "Standard"
   },
@@ -23,7 +23,8 @@
     "postProcessing": "Efterbearbetning",
     "history": "Historik",
     "debug": "Felsökning",
-    "about": "Om"
+    "about": "Om",
+    "profile": "Profil"
   },
   "onboarding": {
     "customModelDescription": "Stöds inte officiellt",
@@ -371,7 +372,7 @@
           },
           "cycle_word_list": {
             "name": "Byt ordlista",
-            "description": "Slår på nästa extra ordlista; efter den sista gäller bara den globala ordlistan."
+            "description": "Slår på nästa extra ordlista i den aktiva profilen; efter den sista är ingen påslagen."
           }
         },
         "errors": {
@@ -429,6 +430,46 @@
           "startRecording": "Starta en inspelning",
           "doNothing": "Gör ingenting"
         }
+      }
+    },
+    "profiles": {
+      "title": "Profiler",
+      "description": "En profil omfattar modellen, språken, ordlistorna och efterbearbetningen. Ändringar sparas alltid i den aktiva profilen.",
+      "active": "Aktiv",
+      "use": "Använd",
+      "duplicate": "Duplicera",
+      "rename": "Byt namn",
+      "delete": "Ta bort",
+      "lastProfile": "Den sista profilen kan inte tas bort",
+      "cancel": "Avbryt",
+      "nameLabel": "Namn",
+      "namePlaceholder": "t.ex. Arbete",
+      "nameTaken": "Det finns redan en profil med det här namnet",
+      "duplicateDialog": {
+        "title": "Duplicera ”{{name}}”",
+        "description": "Den nya profilen börjar som en kopia av den här. Den blir inte aktiv; byt till den med ”Använd” eller i sidofältet.",
+        "confirm": "Duplicera"
+      },
+      "renameDialog": {
+        "title": "Byt namn på ”{{name}}”",
+        "defaultHint": "Lämna fältet tomt för att visa ”{{defaultName}}” på appens språk.",
+        "confirm": "Byt namn"
+      },
+      "deleteDialog": {
+        "title": "Ta bort ”{{name}}”?",
+        "description": "Dess modellval, språk, ordlistor och prompter tas bort tillsammans med den. Det går inte att ångra.",
+        "switchesTo": "Det är den aktiva profilen, så ”{{name}}” blir aktiv först.",
+        "confirm": "Ta bort profil"
+      },
+      "scope": {
+        "models": "Modellen du väljer här hör till profilen ”{{name}}”.",
+        "postProcessing": "Leverantör, modell, prompter och gränserna för kontext hör till profilen ”{{name}}”; API-nycklar gäller för alla profiler."
+      },
+      "errors": {
+        "switch": "Det gick inte att byta profil",
+        "duplicate": "Det gick inte att duplicera profilen",
+        "rename": "Det gick inte att byta namn på profilen",
+        "delete": "Det gick inte att ta bort profilen"
       }
     },
     "models": {
@@ -631,12 +672,16 @@
         "duplicate": "\"{{word}}\" finns redan"
       },
       "wordLists": {
-        "globalTitle": "Global ordlista",
-        "activeTitle": "Aktiv ordlista",
-        "activeDescription": "Dess ord ges till modellen före orden i den globala ordlistan, som alltid gäller. Byt den med kortkommandot eller från menyn i menyraden.",
-        "onlyGlobal": "Ingen (endast global ordlista)",
-        "title": "Extra ordlistor",
-        "description": "Namngivna listor som du kan slå på utöver den globala ordlistan, t.ex. en per ämne. En i taget.",
+        "groupTitle": "Ordlistor",
+        "groupDescription": "Modellen får först orden i den aktiva extra listan, sedan orden i profilens ordlista och sist orden i den globala ordlistan.",
+        "globalTitle": "Global ordlista (alla profiler)",
+        "profileTitle": "Ordlista för profilen ”{{name}}”",
+        "profileDescription": "Gäller alltid i den här profilen, tillsammans med den globala ordlistan. Ord för ett sammanhang hör hemma här, ord du behöver överallt i den globala listan.",
+        "activeTitle": "Aktiv extra lista",
+        "activeDescription": "Dess ord ges först till modellen, före orden i profilens ordlista och den globala ordlistan, som alltid gäller. Byt den med kortkommandot eller från menyn i menyraden.",
+        "onlyGlobal": "Ingen",
+        "title": "Extra listor för profilen ”{{name}}”",
+        "description": "Namngivna listor i den här profilen som du kan slå på därutöver, t.ex. en per ämne. En i taget.",
         "selectList": "Välj en lista",
         "createNew": "Ny lista",
         "namePlaceholder": "Listans namn, t.ex. Arbete",
@@ -1136,7 +1181,7 @@
     "readyNoShortcut": "Klar – infoga från menyn Tjänster",
     "notReady": "Inte klar än",
     "wordList": "Ordlista: {{name}}",
-    "wordListGlobalOnly": "Endast global ordlista",
+    "wordListGlobalOnly": "Ingen extra lista",
     "profile": "Profil: {{name}}"
   },
   "secureInput": {

@@ -2,7 +2,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { ShowOverlay } from "../ShowOverlay";
 import { ModelUnloadTimeoutSetting } from "../ModelUnloadTimeout";
-import { CustomWords } from "../CustomWords";
+import { CustomWords, ProfileWords } from "../CustomWords";
 import { ActiveWordList, WordLists } from "../WordLists";
 import { SettingsGroup } from "../../ui/SettingsGroup";
 import { StartHidden } from "../StartHidden";
@@ -57,14 +57,23 @@ export const AdvancedSettings: React.FC = () => {
         <VoiceActivityDetection descriptionMode="tooltip" grouped={true} />
         <LongFormChunking descriptionMode="tooltip" grouped={true} />
         <FillerWordRemoval descriptionMode="tooltip" grouped={true} />
-        <CustomWords descriptionMode="tooltip" grouped />
-        <ActiveWordList descriptionMode="tooltip" grouped />
-        <WordLists descriptionMode="tooltip" grouped />
         {/* DanyWhere: post-processing is used daily, so its switch is not
             hidden behind the experimental features. */}
         <PostProcessingToggle descriptionMode="tooltip" grouped={true} />
         <PostProcessTimeouts descriptionMode="tooltip" grouped={true} />
         <AppendTrailingSpace descriptionMode="tooltip" grouped={true} />
+      </SettingsGroup>
+
+      {/* DanyWhere: the word lists in their three tiers: for all profiles,
+          the profile's own, and the profile's additional lists. */}
+      <SettingsGroup
+        title={t("settings.advanced.wordLists.groupTitle")}
+        description={t("settings.advanced.wordLists.groupDescription")}
+      >
+        <CustomWords descriptionMode="tooltip" grouped />
+        <ProfileWords descriptionMode="tooltip" grouped />
+        <ActiveWordList descriptionMode="tooltip" grouped />
+        <WordLists descriptionMode="tooltip" grouped />
       </SettingsGroup>
 
       <SettingsGroup title={t("settings.advanced.groups.history")}>

@@ -12,7 +12,7 @@
     "autoLanguage": "Otomatik",
     "otherLanguages": "Diğer Diller",
     "wordList": "Kelime Listesi",
-    "onlyGlobalWordList": "Yalnızca Genel Kelime Listesi",
+    "onlyGlobalWordList": "Ek Liste Yok",
     "profile": "Profil",
     "defaultProfile": "Varsayılan"
   },
@@ -23,7 +23,8 @@
     "postProcessing": "Son İşlem",
     "history": "Geçmiş",
     "debug": "Hata Ayıklama",
-    "about": "Hakkında"
+    "about": "Hakkında",
+    "profile": "Profil"
   },
   "onboarding": {
     "customModelDescription": "Resmi olarak desteklenmiyor",
@@ -371,7 +372,7 @@
           },
           "cycle_word_list": {
             "name": "Kelime Listesini Değiştir",
-            "description": "Sonraki ek kelime listesini açar; sonuncusundan sonra yalnızca genel liste geçerli olur."
+            "description": "Etkin profilin sonraki ek kelime listesini açar; sonuncusundan sonra hiçbiri açık kalmaz."
           }
         },
         "errors": {
@@ -429,6 +430,46 @@
           "startRecording": "Kaydı başlat",
           "doNothing": "Hiçbir şey yapma"
         }
+      }
+    },
+    "profiles": {
+      "title": "Profiller",
+      "description": "Bir profil modeli, dilleri, kelime listelerini ve son işlemi kapsar. Değişiklikler her zaman etkin profile kaydedilir.",
+      "active": "Etkin",
+      "use": "Kullan",
+      "duplicate": "Çoğalt",
+      "rename": "Yeniden Adlandır",
+      "delete": "Sil",
+      "lastProfile": "Son profil silinemez",
+      "cancel": "İptal",
+      "nameLabel": "Ad",
+      "namePlaceholder": "ör. İş",
+      "nameTaken": "Bu adda bir profil zaten var",
+      "duplicateDialog": {
+        "title": "“{{name}}” profilini çoğalt",
+        "description": "Yeni profil bunun bir kopyası olarak başlar. Etkin hale gelmez; ona “Kullan” ile veya kenar çubuğundan geçin.",
+        "confirm": "Çoğalt"
+      },
+      "renameDialog": {
+        "title": "“{{name}}” profilini yeniden adlandır",
+        "defaultHint": "Uygulamanın dilinde “{{defaultName}}” gösterilmesi için boş bırakın.",
+        "confirm": "Yeniden Adlandır"
+      },
+      "deleteDialog": {
+        "title": "“{{name}}” silinsin mi?",
+        "description": "Model seçimi, dilleri, kelime listeleri ve prompt'ları da onunla birlikte silinir. Bu işlem geri alınamaz.",
+        "switchesTo": "Bu etkin profil olduğundan önce “{{name}}” etkin hale gelir.",
+        "confirm": "Profili Sil"
+      },
+      "scope": {
+        "models": "Burada seçilen model “{{name}}” profiline aittir.",
+        "postProcessing": "Sağlayıcı, model, prompt'lar ve bağlam sınırları “{{name}}” profiline aittir; API anahtarları tüm profiller için geçerlidir."
+      },
+      "errors": {
+        "switch": "Profil değiştirilemedi",
+        "duplicate": "Profil çoğaltılamadı",
+        "rename": "Profil yeniden adlandırılamadı",
+        "delete": "Profil silinemedi"
       }
     },
     "models": {
@@ -631,12 +672,16 @@
         "duplicate": "\"{{word}}\" zaten mevcut"
       },
       "wordLists": {
-        "globalTitle": "Genel Kelime Listesi",
-        "activeTitle": "Etkin Kelime Listesi",
-        "activeDescription": "Kelimeleri, her zaman geçerli olan genel listedeki kelimelerden önce modele verilir. Kısayolla veya tepsi menüsünden değiştirin.",
-        "onlyGlobal": "Hiçbiri (yalnızca genel kelime listesi)",
-        "title": "Ek Kelime Listeleri",
-        "description": "Genel kelime listesine ek olarak açabileceğiniz adlandırılmış listeler, örneğin her konu için bir tane. Aynı anda yalnızca bir tane.",
+        "groupTitle": "Kelime Listeleri",
+        "groupDescription": "Model önce etkin ek listenin kelimelerini, sonra profilin kelime listesini, en son da genel kelime listesini alır.",
+        "globalTitle": "Genel Kelime Listesi (Tüm Profiller)",
+        "profileTitle": "“{{name}}” Profilinin Kelime Listesi",
+        "profileDescription": "Bu profilde genel kelime listesiyle birlikte her zaman geçerlidir. Tek bir bağlama ait kelimeleri buraya, her yerde gereken kelimeleri genel listeye ekleyin.",
+        "activeTitle": "Etkin Ek Liste",
+        "activeDescription": "Kelimeleri modele ilk verilir; her zaman geçerli olan profil listesinden ve genel listeden de önce. Kısayolla veya tepsi menüsünden değiştirin.",
+        "onlyGlobal": "Hiçbiri",
+        "title": "“{{name}}” Profilinin Ek Listeleri",
+        "description": "Bu profile ait, ek olarak açabileceğiniz adlandırılmış listeler, örneğin her konu için bir tane. Aynı anda yalnızca bir tane.",
         "selectList": "Bir liste seçin",
         "createNew": "Yeni Liste",
         "namePlaceholder": "Liste adı, örn. İş",
@@ -1136,7 +1181,7 @@
     "readyNoShortcut": "Hazır – Servisler menüsünden ekleyin",
     "notReady": "Henüz hazır değil",
     "wordList": "Kelime listesi: {{name}}",
-    "wordListGlobalOnly": "Yalnızca genel kelime listesi",
+    "wordListGlobalOnly": "Ek liste yok",
     "profile": "Profil: {{name}}"
   },
   "secureInput": {

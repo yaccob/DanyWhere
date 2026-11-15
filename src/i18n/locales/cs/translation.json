@@ -12,7 +12,7 @@
     "autoLanguage": "Automaticky",
     "otherLanguages": "Další jazyky",
     "wordList": "Seznam slov",
-    "onlyGlobalWordList": "Jen globální seznam slov",
+    "onlyGlobalWordList": "Žádný doplňkový seznam",
     "profile": "Profil",
     "defaultProfile": "Výchozí"
   },
@@ -23,7 +23,8 @@
     "postProcessing": "Následné zpracování",
     "history": "Historie",
     "debug": "Ladění",
-    "about": "O aplikaci"
+    "about": "O aplikaci",
+    "profile": "Profil"
   },
   "onboarding": {
     "customModelDescription": "Oficiálně nepodporováno",
@@ -371,7 +372,7 @@
           },
           "cycle_word_list": {
             "name": "Přepnout seznam slov",
-            "description": "Zapne další doplňkový seznam slov; po posledním platí jen globální seznam."
+            "description": "Zapne další doplňkový seznam slov aktivního profilu; po posledním není zapnutý žádný."
           }
         },
         "errors": {
@@ -429,6 +430,46 @@
           "startRecording": "Spustit nahrávání",
           "doNothing": "Nedělat nic"
         }
+      }
+    },
+    "profiles": {
+      "title": "Profily",
+      "description": "Profil zahrnuje model, jazyky, seznamy slov a následné zpracování. Změny se vždy ukládají do aktivního profilu.",
+      "active": "Aktivní",
+      "use": "Použít",
+      "duplicate": "Duplikovat",
+      "rename": "Přejmenovat",
+      "delete": "Smazat",
+      "lastProfile": "Poslední profil nelze smazat",
+      "cancel": "Zrušit",
+      "nameLabel": "Název",
+      "namePlaceholder": "např. Práce",
+      "nameTaken": "Profil s tímto názvem už existuje",
+      "duplicateDialog": {
+        "title": "Duplikovat „{{name}}“",
+        "description": "Nový profil začíná jako kopie tohoto. Nestane se aktivním; přepnete na něj tlačítkem „Použít“ nebo v postranním panelu.",
+        "confirm": "Duplikovat"
+      },
+      "renameDialog": {
+        "title": "Přejmenovat „{{name}}“",
+        "defaultHint": "Nechte pole prázdné, aby se zobrazoval název „{{defaultName}}“ v jazyce aplikace.",
+        "confirm": "Přejmenovat"
+      },
+      "deleteDialog": {
+        "title": "Smazat „{{name}}“?",
+        "description": "Spolu s ním se smaže volba modelu, jazyky, seznamy slov a prompty. Tuto akci nelze vrátit.",
+        "switchesTo": "Je to aktivní profil, proto se nejprve aktivuje „{{name}}“.",
+        "confirm": "Smazat profil"
+      },
+      "scope": {
+        "models": "Zde zvolený model patří k profilu „{{name}}“.",
+        "postProcessing": "Poskytovatel, model, prompty a limity kontextu patří k profilu „{{name}}“; API klíče platí pro všechny profily."
+      },
+      "errors": {
+        "switch": "Profil se nepodařilo přepnout",
+        "duplicate": "Profil se nepodařilo duplikovat",
+        "rename": "Profil se nepodařilo přejmenovat",
+        "delete": "Profil se nepodařilo smazat"
       }
     },
     "models": {
@@ -631,12 +672,16 @@
         "duplicate": "\"{{word}}\" již existuje"
       },
       "wordLists": {
-        "globalTitle": "Globální seznam slov",
-        "activeTitle": "Aktivní seznam slov",
-        "activeDescription": "Jeho slova dostane model před slovy z globálního seznamu, který platí vždy. Přepnete ho klávesovou zkratkou nebo z nabídky v liště.",
-        "onlyGlobal": "Žádný (jen globální seznam slov)",
-        "title": "Doplňkové seznamy slov",
-        "description": "Pojmenované seznamy, které můžete zapnout navíc ke globálnímu seznamu slov, např. jeden pro každé téma. Vždy jen jeden.",
+        "groupTitle": "Seznamy slov",
+        "groupDescription": "Model dostane nejprve slova z aktivního doplňkového seznamu, pak ze seznamu slov profilu a nakonec z globálního seznamu slov.",
+        "globalTitle": "Globální seznam slov (všechny profily)",
+        "profileTitle": "Seznam slov profilu „{{name}}“",
+        "profileDescription": "V tomto profilu platí vždy, spolu s globálním seznamem slov. Patří sem slova pro jeden kontext; slova, která potřebujete všude, patří do globálního seznamu.",
+        "activeTitle": "Aktivní doplňkový seznam",
+        "activeDescription": "Jeho slova dostane model jako první, před slovy ze seznamu profilu a z globálního seznamu, které platí vždy. Přepnete ho klávesovou zkratkou nebo z nabídky v liště.",
+        "onlyGlobal": "Žádný",
+        "title": "Doplňkové seznamy profilu „{{name}}“",
+        "description": "Pojmenované seznamy tohoto profilu, které můžete navíc zapnout, např. jeden pro každé téma. Vždy jen jeden.",
         "selectList": "Vyberte seznam",
         "createNew": "Nový seznam",
         "namePlaceholder": "Název seznamu, např. Práce",
@@ -1136,7 +1181,7 @@
     "readyNoShortcut": "Připraveno – vložte z nabídky Služby",
     "notReady": "Ještě není hotovo",
     "wordList": "Seznam slov: {{name}}",
-    "wordListGlobalOnly": "Jen globální seznam slov",
+    "wordListGlobalOnly": "Žádný doplňkový seznam",
     "profile": "Profil: {{name}}"
   },
   "secureInput": {

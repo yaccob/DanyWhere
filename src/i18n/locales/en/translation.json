@@ -12,7 +12,7 @@
     "autoLanguage": "Auto",
     "otherLanguages": "Other Languages",
     "wordList": "Word List",
-    "onlyGlobalWordList": "Global Word List Only",
+    "onlyGlobalWordList": "No Additional List",
     "profile": "Profile",
     "defaultProfile": "Default"
   },
@@ -23,7 +23,8 @@
     "postProcessing": "Post Process",
     "history": "History",
     "debug": "Debug",
-    "about": "About"
+    "about": "About",
+    "profile": "Profile"
   },
   "onboarding": {
     "customModelDescription": "Not officially supported",
@@ -371,7 +372,7 @@
           },
           "cycle_word_list": {
             "name": "Switch Word List",
-            "description": "Switches on the next additional word list; after the last one, only the global word list applies."
+            "description": "Switches on the next additional word list of the active profile; after the last one, none is on."
           }
         },
         "errors": {
@@ -429,6 +430,46 @@
           "startRecording": "Start a recording",
           "doNothing": "Do nothing"
         }
+      }
+    },
+    "profiles": {
+      "title": "Profiles",
+      "description": "A profile holds the model, the languages, the word lists and post-processing. Changes always go into the active profile.",
+      "active": "Active",
+      "use": "Use",
+      "duplicate": "Duplicate",
+      "rename": "Rename",
+      "delete": "Delete",
+      "lastProfile": "The last profile can't be deleted",
+      "cancel": "Cancel",
+      "nameLabel": "Name",
+      "namePlaceholder": "e.g. Work",
+      "nameTaken": "A profile with this name already exists",
+      "duplicateDialog": {
+        "title": "Duplicate “{{name}}”",
+        "description": "The new profile starts as a copy of this one. It doesn't become active; switch to it with Use or in the sidebar.",
+        "confirm": "Duplicate"
+      },
+      "renameDialog": {
+        "title": "Rename “{{name}}”",
+        "defaultHint": "Leave it empty to show “{{defaultName}}” in the app's language.",
+        "confirm": "Rename"
+      },
+      "deleteDialog": {
+        "title": "Delete “{{name}}”?",
+        "description": "Its model choice, languages, word lists and prompts are deleted with it. This can't be undone.",
+        "switchesTo": "It is the active profile, so “{{name}}” becomes active first.",
+        "confirm": "Delete Profile"
+      },
+      "scope": {
+        "models": "The model chosen here belongs to the profile “{{name}}”.",
+        "postProcessing": "Provider, model, prompts and context limits belong to the profile “{{name}}”; API keys apply to all profiles."
+      },
+      "errors": {
+        "switch": "Couldn't switch profiles",
+        "duplicate": "Couldn't duplicate the profile",
+        "rename": "Couldn't rename the profile",
+        "delete": "Couldn't delete the profile"
       }
     },
     "models": {
@@ -631,12 +672,16 @@
         "duplicate": "\"{{word}}\" already exists"
       },
       "wordLists": {
-        "globalTitle": "Global Word List",
-        "activeTitle": "Active Word List",
-        "activeDescription": "Its words go to the model before those of the global word list, which always applies. Switch it with the shortcut or from the tray menu.",
-        "onlyGlobal": "None (global word list only)",
-        "title": "Additional Word Lists",
-        "description": "Named lists to switch on in addition to the global word list, e.g. one per topic. One at a time.",
+        "groupTitle": "Word Lists",
+        "groupDescription": "The model gets the words of the active additional list first, then those of the profile's word list, then those of the global word list.",
+        "globalTitle": "Global Word List (All Profiles)",
+        "profileTitle": "Word List of Profile “{{name}}”",
+        "profileDescription": "Always applies in this profile, together with the global word list. Put words for one context here and words you need everywhere in the global list.",
+        "activeTitle": "Active Additional List",
+        "activeDescription": "Its words go to the model first, before those of the profile's word list and the global word list, which always apply. Switch it with the shortcut or from the tray menu.",
+        "onlyGlobal": "None",
+        "title": "Additional Lists of Profile “{{name}}”",
+        "description": "Named lists of this profile to switch on in addition, e.g. one per topic. One at a time.",
         "selectList": "Select a list",
         "createNew": "New List",
         "namePlaceholder": "List name, e.g. Work",
@@ -1136,7 +1181,7 @@
     "readyNoShortcut": "Ready – insert it from the Services menu",
     "notReady": "Not ready yet",
     "wordList": "Word list: {{name}}",
-    "wordListGlobalOnly": "Global word list only",
+    "wordListGlobalOnly": "No additional list",
     "profile": "Profile: {{name}}"
   },
   "secureInput": {

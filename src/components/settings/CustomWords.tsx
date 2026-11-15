@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { notify } from "@/stores/noticeStore";
 import { useSettings } from "../../hooks/useSettings";
+import { useProfiles } from "../../hooks/useProfiles";
 import { isComposingKeyEvent } from "../../lib/utils/keyboard";
 import {
   MAX_WORD_LENGTH,
@@ -133,7 +134,45 @@ export const WordChips: React.FC<WordChipsProps> = ({
   );
 };
 
-/** The global word list: always given to the model. */
+/** DanyWhere: the active profile's own word list, always given to the model
+ * in that profile, before the global list. Hidden until the settings carry
+ * profiles. */
+export const ProfileWords: React.FC<CustomWordsProps> = React.memo(
+  ({ descriptionMode = "tooltip", grouped = false }) => {
+    const { t } = useTranslation();
+    const { getSetting, updateSetting, isUpdating } = useSettings();
+    const { profiles, active, displayName } = useProfiles();
+    if (profiles.length === 0 || !active) return null;
+
+    const words = getSetting("profile_words") || [];
+    const updating = isUpdating("profile_words");
+    const save = (next: string[]) => updateSetting("profile_words", next);
+
+    return (
+      <>
+        <SettingContainer
+          title={t("settings.advanced.wordLists.profileTitle", {
+            name: displayName(active),
+          })}
+          description={t("settings.advanced.wordLists.profileDescription")}
+          descriptionMode={descriptionMode}
+          grouped={grouped}
+        >
+          <WordInput words={words} onChange={save} disabled={updating} />
+        </SettingContainer>
+        <WordChips
+          words={words}
+          onChange={save}
+          disabled={updating}
+          className={`px-4 p-2 ${grouped ? "" : "rounded-lg border border-line"}`}
+        />
+      </>
+    );
+  },
+);
+ProfileWords.displayName = "ProfileWords";
+
+/** The global word list: always given to the model, in every profile. */
 export const CustomWords: React.FC<CustomWordsProps> = React.memo(
   ({ descriptionMode = "tooltip", grouped = false }) => {
     const { t } = useTranslation();

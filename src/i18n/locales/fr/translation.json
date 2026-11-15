@@ -12,7 +12,7 @@
     "autoLanguage": "Automatique",
     "otherLanguages": "Autres langues",
     "wordList": "Liste de mots",
-    "onlyGlobalWordList": "Liste de mots globale uniquement",
+    "onlyGlobalWordList": "Aucune liste supplémentaire",
     "profile": "Profil",
     "defaultProfile": "Par défaut"
   },
@@ -23,7 +23,8 @@
     "postProcessing": "Post-traitement",
     "history": "Historique",
     "debug": "Débogage",
-    "about": "À propos"
+    "about": "À propos",
+    "profile": "Profil"
   },
   "onboarding": {
     "customModelDescription": "Non officiellement pris en charge",
@@ -371,7 +372,7 @@
           },
           "cycle_word_list": {
             "name": "Changer de liste de mots",
-            "description": "Active la liste de mots supplémentaire suivante ; après la dernière, seule la liste globale s'applique."
+            "description": "Active la liste de mots supplémentaire suivante du profil actif ; après la dernière, aucune n'est active."
           }
         },
         "errors": {
@@ -429,6 +430,46 @@
           "startRecording": "Démarrer un enregistrement",
           "doNothing": "Ne rien faire"
         }
+      }
+    },
+    "profiles": {
+      "title": "Profils",
+      "description": "Un profil comprend le modèle, les langues, les listes de mots et le post-traitement. Les modifications vont toujours dans le profil actif.",
+      "active": "Actif",
+      "use": "Utiliser",
+      "duplicate": "Dupliquer",
+      "rename": "Renommer",
+      "delete": "Supprimer",
+      "lastProfile": "Le dernier profil ne peut pas être supprimé",
+      "cancel": "Annuler",
+      "nameLabel": "Nom",
+      "namePlaceholder": "p. ex. Travail",
+      "nameTaken": "Un profil porte déjà ce nom",
+      "duplicateDialog": {
+        "title": "Dupliquer « {{name}} »",
+        "description": "Le nouveau profil commence comme une copie de celui-ci. Il ne devient pas actif ; passez-y avec « Utiliser » ou dans la barre latérale.",
+        "confirm": "Dupliquer"
+      },
+      "renameDialog": {
+        "title": "Renommer « {{name}} »",
+        "defaultHint": "Laissez le champ vide pour afficher « {{defaultName}} » dans la langue de l'application.",
+        "confirm": "Renommer"
+      },
+      "deleteDialog": {
+        "title": "Supprimer « {{name}} » ?",
+        "description": "Son choix de modèle, ses langues, ses listes de mots et ses prompts sont supprimés avec lui. Cette action est irréversible.",
+        "switchesTo": "C'est le profil actif : « {{name}} » devient d'abord actif.",
+        "confirm": "Supprimer le profil"
+      },
+      "scope": {
+        "models": "Le modèle choisi ici appartient au profil « {{name}} ».",
+        "postProcessing": "Le fournisseur, le modèle, les prompts et les limites du contexte appartiennent au profil « {{name}} » ; les clés API valent pour tous les profils."
+      },
+      "errors": {
+        "switch": "Impossible de changer de profil",
+        "duplicate": "Impossible de dupliquer le profil",
+        "rename": "Impossible de renommer le profil",
+        "delete": "Impossible de supprimer le profil"
       }
     },
     "models": {
@@ -631,12 +672,16 @@
         "duplicate": "\"{{word}}\" existe déjà"
       },
       "wordLists": {
-        "globalTitle": "Liste de mots globale",
-        "activeTitle": "Liste de mots active",
-        "activeDescription": "Ses mots sont transmis au modèle avant ceux de la liste globale, qui s'applique toujours. Changez-la avec le raccourci ou depuis le menu de la barre.",
-        "onlyGlobal": "Aucune (liste de mots globale uniquement)",
-        "title": "Listes de mots supplémentaires",
-        "description": "Listes nommées à activer en plus de la liste de mots globale, par exemple une par sujet. Une seule à la fois.",
+        "groupTitle": "Listes de mots",
+        "groupDescription": "Le modèle reçoit d'abord les mots de la liste supplémentaire active, puis ceux de la liste du profil, puis ceux de la liste de mots globale.",
+        "globalTitle": "Liste de mots globale (tous les profils)",
+        "profileTitle": "Liste de mots du profil « {{name}} »",
+        "profileDescription": "S'applique toujours dans ce profil, avec la liste de mots globale. Mettez ici les mots d'un contexte, et dans la liste globale ceux dont vous avez besoin partout.",
+        "activeTitle": "Liste supplémentaire active",
+        "activeDescription": "Ses mots sont transmis en premier au modèle, avant ceux de la liste du profil et de la liste globale, qui s'appliquent toujours. Changez-la avec le raccourci ou depuis le menu de la barre.",
+        "onlyGlobal": "Aucune",
+        "title": "Listes supplémentaires du profil « {{name}} »",
+        "description": "Listes nommées de ce profil à activer en plus, par exemple une par sujet. Une seule à la fois.",
         "selectList": "Choisir une liste",
         "createNew": "Nouvelle liste",
         "namePlaceholder": "Nom de la liste, par ex. Travail",
@@ -1136,7 +1181,7 @@
     "readyNoShortcut": "Prêt – insérez-le depuis le menu Services",
     "notReady": "Pas encore prêt",
     "wordList": "Liste de mots : {{name}}",
-    "wordListGlobalOnly": "Liste de mots globale uniquement",
+    "wordListGlobalOnly": "Aucune liste supplémentaire",
     "profile": "Profil : {{name}}"
   },
   "secureInput": {

@@ -12,7 +12,7 @@
     "autoLanguage": "Automatisch",
     "otherLanguages": "Weitere Sprachen",
     "wordList": "Wortliste",
-    "onlyGlobalWordList": "Nur globale Wortliste",
+    "onlyGlobalWordList": "Keine zusätzliche Liste",
     "profile": "Profil",
     "defaultProfile": "Standard"
   },
@@ -23,7 +23,8 @@
     "postProcessing": "Nachbearbeitung",
     "history": "Verlauf",
     "debug": "Debug",
-    "about": "Info"
+    "about": "Info",
+    "profile": "Profil"
   },
   "onboarding": {
     "customModelDescription": "Nicht offiziell unterstützt",
@@ -371,7 +372,7 @@
           },
           "cycle_word_list": {
             "name": "Wortliste wechseln",
-            "description": "Schaltet die nächste zusätzliche Wortliste ein; nach der letzten gilt nur noch die globale Wortliste."
+            "description": "Schaltet die nächste zusätzliche Wortliste des aktiven Profils ein; nach der letzten ist keine mehr an."
           }
         },
         "errors": {
@@ -429,6 +430,46 @@
           "startRecording": "Aufnahme starten",
           "doNothing": "Nichts tun"
         }
+      }
+    },
+    "profiles": {
+      "title": "Profile",
+      "description": "Ein Profil umfasst das Modell, die Sprachen, die Wortlisten und die Nachbearbeitung. Änderungen gehen immer ins aktive Profil.",
+      "active": "Aktiv",
+      "use": "Verwenden",
+      "duplicate": "Duplizieren",
+      "rename": "Umbenennen",
+      "delete": "Löschen",
+      "lastProfile": "Das letzte Profil lässt sich nicht löschen",
+      "cancel": "Abbrechen",
+      "nameLabel": "Name",
+      "namePlaceholder": "z. B. Arbeit",
+      "nameTaken": "Ein Profil mit diesem Namen gibt es schon",
+      "duplicateDialog": {
+        "title": "„{{name}}“ duplizieren",
+        "description": "Das neue Profil beginnt als Kopie dieses Profils. Es wird nicht aktiv; wähle es mit „Verwenden“ oder in der Seitenleiste.",
+        "confirm": "Duplizieren"
+      },
+      "renameDialog": {
+        "title": "„{{name}}“ umbenennen",
+        "defaultHint": "Lass das Feld leer, damit „{{defaultName}}“ in der Sprache der Oberfläche erscheint.",
+        "confirm": "Umbenennen"
+      },
+      "deleteDialog": {
+        "title": "„{{name}}“ löschen?",
+        "description": "Seine Modellwahl, Sprachen, Wortlisten und Prompts werden mit gelöscht. Das lässt sich nicht rückgängig machen.",
+        "switchesTo": "Es ist das aktive Profil, deshalb wird vorher „{{name}}“ aktiv.",
+        "confirm": "Profil löschen"
+      },
+      "scope": {
+        "models": "Das hier gewählte Modell gehört zum Profil „{{name}}“.",
+        "postProcessing": "Anbieter, Modell, Prompts und die Grenzen für den Kontext gehören zum Profil „{{name}}“; API-Schlüssel gelten für alle Profile."
+      },
+      "errors": {
+        "switch": "Profil konnte nicht gewechselt werden",
+        "duplicate": "Profil konnte nicht dupliziert werden",
+        "rename": "Profil konnte nicht umbenannt werden",
+        "delete": "Profil konnte nicht gelöscht werden"
       }
     },
     "models": {
@@ -631,12 +672,16 @@
         "duplicate": "\"{{word}}\" existiert bereits"
       },
       "wordLists": {
-        "globalTitle": "Globale Wortliste",
-        "activeTitle": "Aktive Wortliste",
-        "activeDescription": "Ihre Wörter bekommt das Modell vor denen der globalen Wortliste, die immer gilt. Umschalten mit dem Tastenkürzel oder im Tray-Menü.",
-        "onlyGlobal": "Keine (nur globale Wortliste)",
-        "title": "Zusätzliche Wortlisten",
-        "description": "Benannte Listen, die du zusätzlich zur globalen Wortliste einschalten kannst, z. B. eine pro Thema. Immer nur eine.",
+        "groupTitle": "Wortlisten",
+        "groupDescription": "Das Modell bekommt zuerst die Wörter der aktiven zusätzlichen Liste, dann die der Wortliste des Profils, dann die der globalen Wortliste.",
+        "globalTitle": "Globale Wortliste (alle Profile)",
+        "profileTitle": "Wortliste des Profils „{{name}}“",
+        "profileDescription": "Gilt in diesem Profil immer, zusammen mit der globalen Wortliste. Wörter für einen Zusammenhang gehören hierher, Wörter, die du überall brauchst, in die globale Liste.",
+        "activeTitle": "Aktive zusätzliche Liste",
+        "activeDescription": "Ihre Wörter bekommt das Modell zuerst, vor denen der Wortliste des Profils und der globalen Wortliste, die immer gelten. Umschalten mit dem Tastenkürzel oder im Tray-Menü.",
+        "onlyGlobal": "Keine",
+        "title": "Zusätzliche Listen des Profils „{{name}}“",
+        "description": "Benannte Listen dieses Profils, die du zusätzlich einschalten kannst, z. B. eine pro Thema. Immer nur eine.",
         "selectList": "Liste auswählen",
         "createNew": "Neue Liste",
         "namePlaceholder": "Name der Liste, z. B. Arbeit",
@@ -1136,7 +1181,7 @@
     "readyNoShortcut": "Bereit – über das Dienste-Menü einfügen",
     "notReady": "Noch nicht fertig",
     "wordList": "Wortliste: {{name}}",
-    "wordListGlobalOnly": "Nur globale Wortliste",
+    "wordListGlobalOnly": "Keine zusätzliche Liste",
     "profile": "Profil: {{name}}"
   },
   "secureInput": {

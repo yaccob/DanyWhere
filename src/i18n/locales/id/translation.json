@@ -12,7 +12,7 @@
     "autoLanguage": "Otomatis",
     "otherLanguages": "Bahasa Lain",
     "wordList": "Daftar Kata",
-    "onlyGlobalWordList": "Hanya Daftar Kata Global",
+    "onlyGlobalWordList": "Tanpa Daftar Tambahan",
     "profile": "Profil",
     "defaultProfile": "Bawaan"
   },
@@ -23,7 +23,8 @@
     "postProcessing": "Pascaproses",
     "history": "Riwayat",
     "debug": "Debug",
-    "about": "Tentang"
+    "about": "Tentang",
+    "profile": "Profil"
   },
   "onboarding": {
     "customModelDescription": "Tidak didukung secara resmi",
@@ -371,7 +372,7 @@
           },
           "cycle_word_list": {
             "name": "Ganti Daftar Kata",
-            "description": "Mengaktifkan daftar kata tambahan berikutnya; setelah yang terakhir, hanya daftar global yang berlaku."
+            "description": "Mengaktifkan daftar kata tambahan berikutnya dari profil yang aktif; setelah yang terakhir, tidak ada yang aktif."
           }
         },
         "errors": {
@@ -429,6 +430,46 @@
           "startRecording": "Mulai merekam",
           "doNothing": "Tidak melakukan apa pun"
         }
+      }
+    },
+    "profiles": {
+      "title": "Profil",
+      "description": "Profil mencakup model, bahasa, daftar kata, dan pascaproses. Perubahan selalu masuk ke profil yang aktif.",
+      "active": "Aktif",
+      "use": "Gunakan",
+      "duplicate": "Duplikat",
+      "rename": "Ganti Nama",
+      "delete": "Hapus",
+      "lastProfile": "Profil terakhir tidak dapat dihapus",
+      "cancel": "Batal",
+      "nameLabel": "Nama",
+      "namePlaceholder": "mis. Kerja",
+      "nameTaken": "Profil dengan nama ini sudah ada",
+      "duplicateDialog": {
+        "title": "Duplikat “{{name}}”",
+        "description": "Profil baru dimulai sebagai salinan profil ini. Profil itu tidak menjadi aktif; beralihlah ke sana dengan “Gunakan” atau di bilah samping.",
+        "confirm": "Duplikat"
+      },
+      "renameDialog": {
+        "title": "Ganti nama “{{name}}”",
+        "defaultHint": "Biarkan kosong agar “{{defaultName}}” tampil dalam bahasa aplikasi.",
+        "confirm": "Ganti Nama"
+      },
+      "deleteDialog": {
+        "title": "Hapus “{{name}}”?",
+        "description": "Pilihan model, bahasa, daftar kata, dan prompt-nya ikut terhapus. Tindakan ini tidak dapat dibatalkan.",
+        "switchesTo": "Ini profil yang aktif, jadi “{{name}}” diaktifkan lebih dulu.",
+        "confirm": "Hapus Profil"
+      },
+      "scope": {
+        "models": "Model yang dipilih di sini milik profil “{{name}}”.",
+        "postProcessing": "Penyedia, model, prompt, dan batas konteks milik profil “{{name}}”; kunci API berlaku untuk semua profil."
+      },
+      "errors": {
+        "switch": "Tidak dapat beralih profil",
+        "duplicate": "Tidak dapat menduplikat profil",
+        "rename": "Tidak dapat mengganti nama profil",
+        "delete": "Tidak dapat menghapus profil"
       }
     },
     "models": {
@@ -631,12 +672,16 @@
         "duplicate": "\"{{word}}\" sudah ada"
       },
       "wordLists": {
-        "globalTitle": "Daftar Kata Global",
-        "activeTitle": "Daftar Kata Aktif",
-        "activeDescription": "Kata-katanya diberikan ke model sebelum kata dari daftar global, yang selalu berlaku. Ganti dengan pintasan atau dari menu baki.",
-        "onlyGlobal": "Tidak ada (hanya daftar kata global)",
-        "title": "Daftar Kata Tambahan",
-        "description": "Daftar bernama yang bisa Anda aktifkan selain daftar kata global, misalnya satu per topik. Hanya satu sekaligus.",
+        "groupTitle": "Daftar Kata",
+        "groupDescription": "Model mendapat kata dari daftar tambahan yang aktif lebih dulu, lalu dari daftar kata profil, lalu dari daftar kata global.",
+        "globalTitle": "Daftar Kata Global (Semua Profil)",
+        "profileTitle": "Daftar Kata Profil “{{name}}”",
+        "profileDescription": "Selalu berlaku di profil ini, bersama daftar kata global. Taruh kata untuk satu konteks di sini, dan kata yang Anda perlukan di mana saja di daftar global.",
+        "activeTitle": "Daftar Tambahan Aktif",
+        "activeDescription": "Kata-katanya diberikan ke model paling awal, sebelum kata dari daftar kata profil dan daftar global, yang selalu berlaku. Ganti dengan pintasan atau dari menu baki.",
+        "onlyGlobal": "Tidak ada",
+        "title": "Daftar Tambahan Profil “{{name}}”",
+        "description": "Daftar bernama milik profil ini yang bisa Anda aktifkan sebagai tambahan, misalnya satu per topik. Hanya satu sekaligus.",
         "selectList": "Pilih daftar",
         "createNew": "Daftar Baru",
         "namePlaceholder": "Nama daftar, misalnya Kerja",
@@ -1136,7 +1181,7 @@
     "readyNoShortcut": "Siap – sisipkan dari menu Layanan",
     "notReady": "Belum siap",
     "wordList": "Daftar kata: {{name}}",
-    "wordListGlobalOnly": "Hanya daftar kata global",
+    "wordListGlobalOnly": "Tanpa daftar tambahan",
     "profile": "Profil: {{name}}"
   },
   "secureInput": {
