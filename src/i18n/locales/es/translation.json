@@ -971,8 +971,8 @@
       "search": {
         "text": "Buscar en el historial",
         "textTooltip": "Busca en las transcripciones, los textos post procesados y tus correcciones",
-        "window": "Aplicación o título de ventana",
-        "windowTooltip": "Coincide con la aplicación, el título de la ventana o la línea que se muestra bajo una entrada",
+        "window": "Aplicación, título de ventana o archivo",
+        "windowTooltip": "Coincide con la aplicación, el título de la ventana, la línea que se muestra bajo una entrada o el nombre de un archivo transcrito",
         "regex": "Expresiones regulares (ambos campos)",
         "caseSensitive": "Distinguir mayúsculas y minúsculas",
         "wholeWord": "Solo palabras completas",

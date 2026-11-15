@@ -971,8 +971,8 @@
       "search": {
         "text": "Rechercher dans l'historique",
         "textTooltip": "Recherche dans les transcriptions, les textes post-traités et vos corrections",
-        "window": "Application ou titre de fenêtre",
-        "windowTooltip": "Correspond à l'application, au titre de la fenêtre ou à la ligne affichée sous une entrée",
+        "window": "Application, titre de fenêtre ou fichier",
+        "windowTooltip": "Correspond à l'application, au titre de la fenêtre, à la ligne affichée sous une entrée ou au nom d'un fichier transcrit",
         "regex": "Expressions régulières (les deux champs)",
         "caseSensitive": "Respecter la casse",
         "wholeWord": "Mots entiers uniquement",

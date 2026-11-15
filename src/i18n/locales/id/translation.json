@@ -971,8 +971,8 @@
       "search": {
         "text": "Cari di Riwayat",
         "textTooltip": "Mencari di transkripsi, teks hasil pascaproses, dan koreksi Anda",
-        "window": "Aplikasi atau judul jendela",
-        "windowTooltip": "Cocok dengan aplikasi, judul jendela, atau baris yang ditampilkan di bawah entri",
+        "window": "Aplikasi, judul jendela, atau file",
+        "windowTooltip": "Cocok dengan aplikasi, judul jendela, baris yang ditampilkan di bawah entri, atau nama file yang ditranskripsikan",
         "regex": "Ekspresi reguler (kedua kolom)",
         "caseSensitive": "Cocokkan huruf besar/kecil",
         "wholeWord": "Hanya kata utuh",

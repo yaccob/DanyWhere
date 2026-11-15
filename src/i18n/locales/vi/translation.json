@@ -971,8 +971,8 @@
       "search": {
         "text": "Tìm trong lịch sử",
         "textTooltip": "Tìm trong các bản phiên âm, văn bản đã xử lý và các chỉnh sửa của bạn",
-        "window": "Ứng dụng hoặc tiêu đề cửa sổ",
-        "windowTooltip": "Khớp với ứng dụng, tiêu đề cửa sổ hoặc dòng hiển thị dưới một mục",
+        "window": "Ứng dụng, tiêu đề cửa sổ hoặc tệp",
+        "windowTooltip": "Khớp với ứng dụng, tiêu đề cửa sổ, dòng hiển thị dưới một mục hoặc tên của tệp đã chép lời",
         "regex": "Biểu thức chính quy (cả hai ô)",
         "caseSensitive": "Phân biệt hoa thường",
         "wholeWord": "Chỉ toàn bộ từ",

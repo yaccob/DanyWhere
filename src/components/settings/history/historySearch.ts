@@ -1,8 +1,17 @@
 // DanyWhere: searching History (`history_search.rs`). The backend searches
-// and pages; these helpers build its query, keep a shown search up to date
-// and find what to highlight in an entry's text.
-import type { HistoryEntry, HistorySearchQuery } from "@/bindings";
-import type { WindowFilter } from "../dictation-context/dictationContext";
+// and pages; these helpers build its query, keep a shown search up to date,
+// choose which of an entry's texts it shows, and find what to highlight in
+// that text, in the window line and in a file's name.
+import type {
+  EntryWindowContext,
+  HistoryEntry,
+  HistorySearchQuery,
+} from "@/bindings";
+import {
+  windowLabel,
+  type WindowFilter,
+} from "../dictation-context/dictationContext";
+import { postProcessedText, shownText } from "./postProcessEntry";
 
 /** What the search fields and their toggles hold. */
 export type SearchFields = {
@@ -79,20 +88,37 @@ export type TextMatcher = { regex: RegExp; wholeWord: boolean };
 // which allows escaping no others.
 const SYNTAX = /[\\^$.*+?()[\]{}|/]/g;
 
-export const textMatcher = (fields: SearchFields): TextMatcher | null => {
-  if (fields.text.length === 0) return null;
-  const source = fields.regex
-    ? fields.text
-    : fields.text.replace(SYNTAX, "\\$&");
+/** `needle` as a matcher: as typed with `regex`, else literally. */
+const compileMatcher = (
+  needle: string,
+  regex: boolean,
+  ignoreCase: boolean,
+  wholeWord: boolean,
+): TextMatcher | null => {
+  if (needle.length === 0) return null;
+  const source = regex ? needle : needle.replace(SYNTAX, "\\$&");
   try {
     return {
-      regex: new RegExp(source, fields.case_sensitive ? "gu" : "giu"),
-      wholeWord: fields.whole_word,
+      regex: new RegExp(source, ignoreCase ? "giu" : "gu"),
+      wholeWord,
     };
   } catch {
     return null;
   }
 };
+
+export const textMatcher = (fields: SearchFields): TextMatcher | null =>
+  compileMatcher(
+    fields.text,
+    fields.regex,
+    !fields.case_sensitive,
+    fields.whole_word,
+  );
+
+/** The search for the window field, as `textMatcher` for the text: always
+ * ignoring case and never by whole words, as the backend's window field. */
+export const windowMatcher = (fields: SearchFields): TextMatcher | null =>
+  compileMatcher(fields.window, fields.regex, true, false);
 
 // A letter, digit or underscore, as Rust's `char::is_alphanumeric` and `_`.
 const WORD_CHAR = /^[\p{Alphabetic}\p{N}_]$/u;
@@ -166,6 +192,69 @@ export const matchRanges = (
     }
   }
   return found;
+};
+
+// What `windowLabel` puts between the app and the title.
+const LINE_SEPARATOR = " – ";
+
+/** `ranges` sorted, with overlapping ones joined. */
+const joinRanges = (ranges: [number, number][]): [number, number][] => {
+  const joined: [number, number][] = [];
+  for (const [start, end] of [...ranges].sort((a, b) => a[0] - b[0])) {
+    const last = joined[joined.length - 1];
+    if (last && start <= last[1]) {
+      last[1] = Math.max(last[1], end);
+    } else {
+      joined.push([start, end]);
+    }
+  }
+  return joined;
+};
+
+/** Where `matcher` matches in the window line under an entry ("App –
+ * Title", `windowLabel`): as the backend matches the window, in the app, in
+ * the title and in the whole line, so `^Inbox` marks the title and `^Mail$`
+ * the app. Empty when the entry shows no window line. */
+export const windowLineRanges = (
+  context: EntryWindowContext | null | undefined,
+  matcher: TextMatcher | null,
+): [number, number][] => {
+  const label = windowLabel(context);
+  const title = context?.window_title?.trim();
+  if (!matcher || !label || !title) return [];
+  const titleStart = label.length - title.length;
+  const ranges: [number, number][] = matchRanges(title, matcher).map(
+    ([start, end]) => [start + titleStart, end + titleStart],
+  );
+  if (titleStart > 0) {
+    // "App – Title": the app ends before the separator.
+    const app = label.slice(0, titleStart - LINE_SEPARATOR.length);
+    ranges.push(...matchRanges(app, matcher), ...matchRanges(label, matcher));
+  }
+  return joinRanges(ranges);
+};
+
+type ShownTextFields = Parameters<typeof shownText>[0];
+
+/** Whether an entry shows its original during a search: as the user chose
+ * (`showOriginal`), unless that text has no match and the other one has;
+ * then it shows the other, as if switched by hand. With matches in both it
+ * keeps the user's choice. Without a text to search, with a pattern
+ * JavaScript can't read (`matcher` null), or once the user switched it by
+ * hand during this search (`pinned`), it shows what the user chose. */
+export const showsOriginal = (
+  entry: ShownTextFields,
+  matcher: TextMatcher | null,
+  showOriginal: boolean,
+  pinned = false,
+): boolean => {
+  if (pinned || !matcher || postProcessedText(entry) === null) {
+    return showOriginal;
+  }
+  const matches = (original: boolean) =>
+    matchRanges(shownText(entry, original), matcher).length > 0;
+  if (matches(showOriginal) || !matches(!showOriginal)) return showOriginal;
+  return !showOriginal;
 };
 
 /** `text` cut into the parts to show plain and highlighted. */

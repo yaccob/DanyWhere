@@ -971,8 +971,8 @@
       "search": {
         "text": "Sök i historiken",
         "textTooltip": "Söker i transkriptionerna, de efterbearbetade texterna och dina rättelser",
-        "window": "App eller fönstertitel",
-        "windowTooltip": "Matchar appen, fönstertiteln eller raden under en post",
+        "window": "App, fönstertitel eller fil",
+        "windowTooltip": "Matchar appen, fönstertiteln, raden under en post eller namnet på en transkriberad fil",
         "regex": "Reguljära uttryck (båda fälten)",
         "caseSensitive": "Matcha versaler/gemener",
         "wholeWord": "Endast hela ord",

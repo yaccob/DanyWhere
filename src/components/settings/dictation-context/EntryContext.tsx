@@ -9,6 +9,8 @@ import { AppWindow, ChevronDown, ChevronRight, Send, X } from "lucide-react";
 import { commands, type HistoryEntry } from "@/bindings";
 import { formatDateTime } from "@/utils/dateFormat";
 import { shownText } from "../history/postProcessEntry";
+import { windowLineRanges, type TextMatcher } from "../history/historySearch";
+import { Highlighted } from "../history/HistorySearchBar";
 import {
   firstWords,
   windowFilterOf,
@@ -22,14 +24,17 @@ const PREVIEW_WORDS = 8;
 export type ShowWindow = (filter: WindowFilter, focusId?: number) => void;
 
 /** The window an entry was dictated in, on a line of its own so a long
- * title stays readable; a click shows only that window's entries. */
+ * title stays readable; a click shows only that window's entries. Where the
+ * search's window field (`highlight`) matches is highlighted. */
 export const EntryWindowLine: React.FC<{
   entry: HistoryEntry;
   onShowWindow: ShowWindow;
-}> = ({ entry, onShowWindow }) => {
+  highlight?: TextMatcher | null;
+}> = ({ entry, onShowWindow, highlight = null }) => {
   const { t } = useTranslation();
   const filter = windowFilterOf(entry.window_context);
   if (!filter) return null;
+  const ranges = windowLineRanges(entry.window_context, highlight);
   return (
     <button
       type="button"
@@ -38,7 +43,9 @@ export const EntryWindowLine: React.FC<{
       className="flex items-start gap-1 w-full text-start text-xs text-ink-3 hover:text-logo-primary cursor-pointer"
     >
       <AppWindow width={12} height={12} className="shrink-0 mt-0.5" />
-      <span className="line-clamp-2 break-words">{filter.label}</span>
+      <span className="line-clamp-2 break-words">
+        <Highlighted text={filter.label} ranges={ranges} />
+      </span>
     </button>
   );
 };

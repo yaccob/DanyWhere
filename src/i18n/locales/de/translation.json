@@ -971,8 +971,8 @@
       "search": {
         "text": "Verlauf durchsuchen",
         "textTooltip": "Sucht in den Transkriptionen, den nachbearbeiteten Texten und deinen Korrekturen",
-        "window": "App oder Fenstertitel",
-        "windowTooltip": "Passt auf die App, den Fenstertitel oder die Zeile unter einem Eintrag",
+        "window": "App, Fenstertitel oder Datei",
+        "windowTooltip": "Passt auf die App, den Fenstertitel, die Zeile unter einem Eintrag oder den Namen einer transkribierten Datei",
         "regex": "Reguläre Ausdrücke (beide Felder)",
         "caseSensitive": "Groß-/Kleinschreibung beachten",
         "wholeWord": "Nur ganze Wörter",

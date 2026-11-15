@@ -971,8 +971,8 @@
       "search": {
         "text": "Pesquisar no histórico",
         "textTooltip": "Pesquisa nas transcrições, nos textos pós-processados e nas suas correções",
-        "window": "App ou título da janela",
-        "windowTooltip": "Corresponde ao app, ao título da janela ou à linha mostrada abaixo de uma entrada",
+        "window": "App, título da janela ou arquivo",
+        "windowTooltip": "Corresponde ao app, ao título da janela, à linha mostrada abaixo de uma entrada ou ao nome de um arquivo transcrito",
         "regex": "Expressões regulares (ambos os campos)",
         "caseSensitive": "Diferenciar maiúsculas e minúsculas",
         "wholeWord": "Somente palavras inteiras",

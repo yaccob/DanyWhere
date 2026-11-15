@@ -971,8 +971,8 @@
       "search": {
         "text": "Cerca nella cronologia",
         "textTooltip": "Cerca nelle trascrizioni, nei testi post-elaborati e nelle tue correzioni",
-        "window": "App o titolo della finestra",
-        "windowTooltip": "Corrisponde all'app, al titolo della finestra o alla riga mostrata sotto un elemento",
+        "window": "App, titolo della finestra o file",
+        "windowTooltip": "Corrisponde all'app, al titolo della finestra, alla riga mostrata sotto un elemento o al nome di un file trascritto",
         "regex": "Espressioni regolari (entrambi i campi)",
         "caseSensitive": "Maiuscole/minuscole",
         "wholeWord": "Solo parole intere",
