@@ -92,6 +92,8 @@ Each profile has its own prompt list with one prompt selected, as the post-proce
 
 **Idea (user, 2026-11-15):** editing a transcription is post-processing too, only by the user instead of the AI, and editing a post-processed text changes the post-processing. So each entry keeps its transcription exactly as transcribed and has one "Edited" text, a copy of the transcription from the start, which is the only text that can be changed, by the AI or by the user. History calls it "Edited"; the transcription is shown only on demand, and offered only when it differs. This replaces today's two corrections, the stale post-processing and the hint for a match before a correction. Open (sidecar note): what the wand takes as input, an undo step, a mark for who edited, how existing entries migrate.
 
+**Idea (user, 2026-11-15), with it:** the newest entry shows more of its text from the start, but bounded; more generally each entry's text could sit in a box of fixed height that scrolls instead of "Show more", and that box could be the editable text itself. To be settled together with the model: the heights, scrolling inside a box versus scrolling the list, editing on a click or always, and highlighting search matches while editing.
+
 ### Keep the transcript when there is nowhere to paste it
 
 **Problem:** when the focus is not on something that accepts text (the desktop, a non-editable window), recording and transcription work, but the text ends up nowhere. Inherited from Handy: the paste is sent without checking for an editable target, and the clipboard is restored afterwards.
