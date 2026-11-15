@@ -18,13 +18,15 @@ Planned work on DanyWhere, roughly in priority order within each section. Items 
 
 **Decided (user, 2026-11-15):** they are called **profiles**. A profile holds what decides how a dictation is processed (speech model, languages, post-processing provider, model and prompts, context limits, filler words); shortcuts, microphone, API keys and interface stay global. A change goes into the active profile at once; "Duplicate" makes a new one. The profile is chosen at the top of the sidebar and in the tray menu, and managed under General. Each profile has its own copies of its prompts, so they can drift apart. Profiles are stored with the app and can be exported to and imported from a YAML file. An API key in that file is encrypted with a password chosen at export and asked for at import, through a deliberately slow key derivation (Argon2id); how strong the password is stays the user's choice, with no password rules. In the app's own settings file the keys stay as they are.
 
-Each profile has its own prompt list with one prompt selected, as the post-processing settings have today.
-
-**To settle:** which word lists belong to a profile: the list that always applies (today's Global Word List) and the additional lists can each be shared by all profiles or copied per profile.
+Each profile has its own prompt list with one prompt selected, as the post-processing settings have today. Word lists come in three tiers: the Global Word List applies in every profile, each profile has a list of its own that always applies in it, and each profile has its own additional lists, of which at most one is switched on, as today. An exported profile always carries its provider's API key, encrypted; importing without the key is always possible.
 
 ### Profiles per application
 
-**Idea (user, 2026-11-15, to be discussed):** associate applications with profiles, so that dictating into a given application uses its profile. Proposed: the frontmost application at the start of a dictation, which DanyWhere already looks up for the context feature, picks the profile for that dictation; the profile chosen in the sidebar stays as it is and applies to every other application. The user agreed in principle and wants a way past an association without editing it, e.g. a switch in the tray and sidebar that turns the automatic choice off.
+**Idea (user, 2026-11-15, to be discussed):** associate applications with profiles, so that dictating into a given application uses its profile. Proposed: the frontmost application at the start of a dictation, which DanyWhere already looks up for the context feature, picks the profile for that dictation; the profile chosen in the sidebar stays as it is and applies to every other application. A "choose the profile by application" switch in the tray, also toggled by a shortcut that reports the new state, gets past an association without editing it.
+
+### Word lists behave differently per speech model
+
+**Found (2026-11-12, to be discussed):** models that take a vocabulary, such as Whisper, get the word lists as one and skip the replacement afterwards. Models without, such as Parakeet, get a fuzzy replacement of similar words after the transcription, which turned every "Bild" into "Build" once "Build" was in a list. The same list therefore helps with one model and harms with another.
 
 ### Keep the transcript when there is nowhere to paste it
 
