@@ -1816,7 +1816,7 @@ mod tests {
         );
     }
 
-    /// DanyWhere: turns the active profile's "Send Context" over.
+    /// DanyWhere: turns "Send Context" over for the app in front's profile.
     #[test]
     fn has_a_default_shortcut_to_toggle_sending_context() {
         let settings = crate::settings::get_default_settings();

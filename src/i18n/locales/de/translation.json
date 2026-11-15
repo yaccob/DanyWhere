@@ -379,7 +379,7 @@
           },
           "toggle_send_context": {
             "name": "Kontext senden",
-            "description": "Schaltet das Senden von Kontext bei der Nachbearbeitung für das aktive Profil ein oder aus. Wirkt, solange die Nachbearbeitung an ist."
+            "description": "Schaltet das Senden von Kontext bei der Nachbearbeitung für das Profil ein oder aus, das ein Diktat in die App vorn verwendet. Wirkt, solange die Nachbearbeitung an ist."
           }
         },
         "errors": {

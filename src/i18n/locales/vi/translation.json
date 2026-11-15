@@ -379,7 +379,7 @@
           },
           "toggle_send_context": {
             "name": "Gửi ngữ cảnh",
-            "description": "Bật hoặc tắt việc gửi ngữ cảnh khi hậu xử lý cho hồ sơ đang hoạt động. Có tác dụng khi hậu xử lý đang bật."
+            "description": "Bật hoặc tắt việc gửi ngữ cảnh khi hậu xử lý cho hồ sơ mà việc đọc chính tả vào ứng dụng phía trước sử dụng. Có tác dụng khi hậu xử lý đang bật."
           }
         },
         "errors": {

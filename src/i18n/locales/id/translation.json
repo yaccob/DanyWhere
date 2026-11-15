@@ -379,7 +379,7 @@
           },
           "toggle_send_context": {
             "name": "Kirim Konteks",
-            "description": "Mengaktifkan atau menonaktifkan pengiriman konteks dengan pascaproses untuk profil aktif. Berlaku selama pascaproses aktif."
+            "description": "Mengaktifkan atau menonaktifkan pengiriman konteks dengan pascaproses untuk profil yang dipakai dikte ke aplikasi di depan. Berlaku selama pascaproses aktif."
           }
         },
         "errors": {

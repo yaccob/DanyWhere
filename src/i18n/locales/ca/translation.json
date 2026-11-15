@@ -379,7 +379,7 @@
           },
           "toggle_send_context": {
             "name": "Envia el context",
-            "description": "Activa o desactiva l'enviament de context amb el postprocessament per al perfil actiu. Funciona mentre el postprocessament està activat."
+            "description": "Activa o desactiva l'enviament de context amb el postprocessament per al perfil que fa servir un dictat a l'aplicació de davant. Funciona mentre el postprocessament està activat."
           }
         },
         "errors": {

@@ -379,7 +379,7 @@
           },
           "toggle_send_context": {
             "name": "Posílat kontext",
-            "description": "Zapne nebo vypne posílání kontextu při následném zpracování pro aktivní profil. Funguje, dokud je následné zpracování zapnuté."
+            "description": "Zapne nebo vypne posílání kontextu při následném zpracování pro profil, který používá diktát do aplikace v popředí. Funguje, dokud je následné zpracování zapnuté."
           }
         },
         "errors": {
