@@ -2,7 +2,8 @@
  * greys (ink-2, ink-3, line-strong, line, wash) for text, edges and fills;
  * logo-primary / background-ui for brand and primary actions; plum for keys
  * and picks (onboarding); moss / warning / error (+ -wash) for status;
- * search-match (+ -text) for what a search found; on-accent, switch-thumb,
+ * search-match (+ -text) for what a search found, shown-version for the
+ * version a History entry shows; on-accent, switch-thumb,
  * backdrop, invalid and shadow-* for the rest of the controls.
  * demo-*, wordmark and mascot are illustration, not UI.
  *
@@ -37,15 +38,23 @@
   --light-color-moss: #2f7d5b;
   --dark-color-moss: #86c9a4;
 
-  /* A search match (History): a solid amber fill with dark text, apart from
-     the petrol accent and the text selection. The fill stands 3:1 off the
-     background and its text reads at 4.5:1 (searchMatchContrast.test.ts);
-     on the light background that takes a deep amber, as a pale yellow
-     would barely show. */
-  --light-color-search-match: #c47e00;
-  --dark-color-search-match: #f5c542;
+  /* A search match (History): a solid petrol fill, as the user chose it on
+     2026-11-15. Dark: the selected sidebar item's petrol (logo-primary at
+     80 % over the background) with white text, 3.19:1 by the user's choice;
+     light: logo-primary just dark enough to stand 3:1 off the background,
+     with dark text at 5.74:1 (searchMatchContrast.test.ts). */
+  --light-color-search-match: #3999a7;
+  --dark-color-search-match: color-mix(
+    in srgb,
+    var(--dark-color-logo-primary) 80%,
+    var(--dark-color-background)
+  );
   --light-color-search-match-text: var(--light-color-text);
-  --dark-color-search-match-text: var(--light-color-text);
+  --dark-color-search-match-text: var(--dark-color-text);
+  /* The ring around the version chip the History entry shows, outside the
+     chip with a gap: a petrol edge would vanish on the petrol match fill. */
+  --light-color-shown-version: var(--light-color-logo-primary);
+  --dark-color-shown-version: var(--dark-color-logo-primary);
 
   /* Plum: the ink for keycaps and picked items. */
   --light-color-plum: var(--light-color-logo-stroke);
@@ -196,6 +205,7 @@
   --color-error-wash: var(--light-color-error-wash);
   --color-search-match: var(--light-color-search-match);
   --color-search-match-text: var(--light-color-search-match-text);
+  --color-shown-version: var(--light-color-shown-version);
 
   /* Grey steps: secondary text, hints/icons, control edges, dividers, hover fill. */
   --color-ink-2: color-mix(in srgb, var(--color-text) 60%, transparent);
@@ -236,6 +246,7 @@
     --color-error-wash: var(--dark-color-error-wash);
     --color-search-match: var(--dark-color-search-match);
     --color-search-match-text: var(--dark-color-search-match-text);
+    --color-shown-version: var(--dark-color-shown-version);
   }
 }
 
@@ -271,6 +282,7 @@
   --color-error-wash: var(--light-color-error-wash);
   --color-search-match: var(--light-color-search-match);
   --color-search-match-text: var(--light-color-search-match-text);
+  --color-shown-version: var(--light-color-shown-version);
 }
 
 :root[data-theme="dark"] {
@@ -295,4 +307,5 @@
   --color-error-wash: var(--dark-color-error-wash);
   --color-search-match: var(--dark-color-search-match);
   --color-search-match-text: var(--dark-color-search-match-text);
+  --color-shown-version: var(--dark-color-shown-version);
 }

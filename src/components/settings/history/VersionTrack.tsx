@@ -158,11 +158,14 @@ export const VersionTrack: React.FC<VersionTrackProps> = ({
                     aria-pressed={isShown}
                     title={chipTitle(version, index)}
                     className={`flex items-center rounded-md border px-1.5 py-0.5 cursor-pointer transition-colors ${
+                      // The shown chip gets a ring outside, with a gap of
+                      // the surface: a petrol edge would vanish on the
+                      // petrol match fill.
                       isShown
-                        ? "border-logo-primary font-medium"
+                        ? "border-line font-medium ring-1 ring-shown-version ring-offset-1 ring-offset-background"
                         : "border-line hover:border-logo-primary"
                     } ${
-                      // A match keeps its dark text: petrol on the match
+                      // A match keeps the match text: petrol on the match
                       // fill would hardly show.
                       matches
                         ? "bg-search-match text-search-match-text"

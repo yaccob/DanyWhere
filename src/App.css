@@ -27,6 +27,7 @@
   --color-line-strong: var(--color-line-strong);
   --color-search-match: var(--color-search-match);
   --color-search-match-text: var(--color-search-match-text);
+  --color-shown-version: var(--color-shown-version);
   --color-on-accent: var(--color-on-accent);
   --color-switch-thumb: var(--color-switch-thumb);
   --color-backdrop: var(--color-backdrop);
