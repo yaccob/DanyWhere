@@ -54,7 +54,7 @@ Each profile has its own prompt list with one prompt selected, as the post-proce
 
 ### Settings: drop the "Experimental Features" switch
 
-**Question (user, 2026-11-15):** DanyWhere uses Handy's switch for nothing of its own; it only shows six Handy settings (keyboard implementation, acceleration, lazy stream close, AirPods mode, VAD backend, language detection). Proposed: remove the switch and move the six to the Debug page, where "Append Trailing Space" already is. Not decided yet.
+**Question (user, 2026-11-15):** DanyWhere uses Handy's switch for nothing of its own; it only shows six Handy settings (keyboard implementation, acceleration, lazy stream close, AirPods mode, VAD backend, language detection). Proposed: remove the switch and move the six to the hidden Debug page (⌘⇧D), next to similar technical settings. Not decided yet.
 
 ### Settings: explain the paste method
 
