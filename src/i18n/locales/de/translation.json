@@ -952,12 +952,9 @@
       "save": "Transkription speichern",
       "unsave": "Aus Gespeicherten entfernen",
       "delete": "Eintrag löschen",
-      "deletePostProcessing": "Nachbearbeitung löschen",
       "deleteError": "Eintrag konnte nicht gelöscht werden. Bitte versuche es erneut.",
-      "deletePostProcessingError": "Die Nachbearbeitung konnte nicht gelöscht werden. Bitte versuche es erneut.",
       "retranscribe": "Erneut transkribieren",
       "retranscribeShift": "Erneut transkribieren (mit Umschalt: und nachbearbeiten)",
-      "postProcess": "Nachbearbeiten",
       "postProcessOff": "Die Nachbearbeitung ist in den Einstellungen ausgeschaltet",
       "postProcessNotSetUp": "Wähle zuerst unter Nachbearbeitung einen Anbieter, ein Modell und einen Prompt",
       "recordingRemoved": "Aufnahme gelöscht, um im Speicherlimit zu bleiben",
@@ -979,15 +976,7 @@
         "resizeNewest": "Ziehen ändert die Höhe des neuesten Eintrags. Doppelklick: Standardhöhe",
         "resizeOther": "Ziehen ändert die Höhe aller älteren Einträge. Doppelklick: Standardhöhe"
       },
-      "showOriginal": "Original anzeigen",
-      "showPostProcessed": "Nachbearbeitung anzeigen",
       "edit": "Text korrigieren",
-      "saveCorrection": "Speichern",
-      "cancelCorrection": "Abbrechen",
-      "corrected": "Korrigiert",
-      "revertCorrection": "Korrektur zurücknehmen",
-      "correctError": "Die Korrektur konnte nicht gespeichert werden. Bitte versuche es erneut.",
-      "postProcessingOutdated": "Diese Nachbearbeitung stammt aus einer früheren Fassung der Transkription. Mit dem Zauberstab wird sie neu erstellt.",
       "contextSent": "Als Kontext gesendet",
       "contextSentTooltip": "Ging am {{date}} als Kontext eines späteren Diktats an den Anbieter der Nachbearbeitung.",
       "contextUsed": "Frühere Diktate als Kontext: {{count}}",
@@ -1004,8 +993,7 @@
         "wholeWord": "Nur ganze Wörter",
         "invalidPattern": "Kein gültiger regulärer Ausdruck",
         "noMatches": "Keine Einträge passen zur Suche.",
-        "clear": "Leeren",
-        "matchBeforeCorrection": "Treffer in der Fassung vor deiner Korrektur"
+        "clear": "Leeren"
       },
       "versions": {
         "transcription": "Transkription",
@@ -1025,6 +1013,7 @@
         "saveAsNew": "Als neue Fassung speichern",
         "saveAsNewHint": "Behält diese Fassung und legt deinen Text als neue darüber.",
         "cancel": "Abbrechen",
+        "withShortcut": "{{hint}} ({{keys}})",
         "postProcessFurther": "Weiter nachbearbeiten",
         "postProcessFurtherHint": "Bearbeitet die neueste Fassung nach; das Ergebnis kommt als neue Fassung darüber.",
         "postProcessThis": "Diese Fassung nachbearbeiten",
@@ -1065,10 +1054,6 @@
         "goBackError": "Zurück auf die Fassung hat nicht geklappt. Bitte versuche es noch einmal."
       },
       "contextEntryJump": "Im Verlauf zeigen, um es zu korrigieren",
-      "confirmReplaceTitle": "Korrektur ersetzen?",
-      "confirmPostProcessReplacesCorrection": "Eine neue Nachbearbeitung ersetzt deine Korrektur des nachbearbeiteten Texts.",
-      "confirmRetranscribeReplacesCorrection": "Erneutes Transkribieren ersetzt deine Korrekturen an diesem Eintrag.",
-      "confirmReplace": "Ersetzen",
       "dropTitle": "Zum Transkribieren ablegen",
       "dropDescription": "Es erscheint im Verlauf."
     },

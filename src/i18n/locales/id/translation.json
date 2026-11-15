@@ -952,12 +952,9 @@
       "save": "Simpan transkripsi",
       "unsave": "Hapus dari daftar tersimpan",
       "delete": "Hapus entri",
-      "deletePostProcessing": "Hapus pascaproses",
       "deleteError": "Gagal menghapus entri. Silakan coba lagi.",
-      "deletePostProcessingError": "Gagal menghapus pascaproses. Silakan coba lagi.",
       "retranscribe": "Transkripsikan ulang",
       "retranscribeShift": "Transkripsikan ulang (dengan Shift: dan pascaproses)",
-      "postProcess": "Pascaproses",
       "postProcessOff": "Pascaproses dinonaktifkan di pengaturan",
       "postProcessNotSetUp": "Pilih penyedia, model, dan prompt di Pascaproses terlebih dahulu",
       "recordingRemoved": "Rekaman dihapus agar tetap dalam batas penyimpanan",
@@ -979,15 +976,7 @@
         "resizeNewest": "Seret untuk mengubah tinggi entri terbaru. Klik dua kali: tinggi bawaan",
         "resizeOther": "Seret untuk mengubah tinggi semua entri yang lebih lama. Klik dua kali: tinggi bawaan"
       },
-      "showOriginal": "Tampilkan asli",
-      "showPostProcessed": "Tampilkan hasil pascaproses",
       "edit": "Koreksi teks",
-      "saveCorrection": "Simpan",
-      "cancelCorrection": "Batal",
-      "corrected": "Dikoreksi",
-      "revertCorrection": "Urungkan koreksi",
-      "correctError": "Gagal menyimpan koreksi. Silakan coba lagi.",
-      "postProcessingOutdated": "Dipascaproses dari versi transkripsi yang lebih lama. Tongkat ajaib akan memascaprosesnya lagi.",
       "contextSent": "Terkirim sebagai konteks",
       "contextSentTooltip": "Terkirim pada {{date}} ke penyedia pascaproses sebagai konteks dikte berikutnya.",
       "contextUsed": "Dikte sebelumnya sebagai konteks: {{count}}",
@@ -1004,8 +993,7 @@
         "wholeWord": "Hanya kata utuh",
         "invalidPattern": "Bukan ekspresi reguler yang valid",
         "noMatches": "Tidak ada entri yang cocok dengan pencarian.",
-        "clear": "Hapus",
-        "matchBeforeCorrection": "Cocok di versi sebelum koreksi Anda"
+        "clear": "Hapus"
       },
       "versions": {
         "transcription": "Transkripsi",
@@ -1025,6 +1013,7 @@
         "saveAsNew": "Simpan sebagai versi baru",
         "saveAsNewHint": "Mempertahankan versi ini dan menambahkan teks Anda di atasnya sebagai versi baru.",
         "cancel": "Batal",
+        "withShortcut": "{{hint}} ({{keys}})",
         "postProcessFurther": "Pascaproses lebih lanjut",
         "postProcessFurtherHint": "Memascaproses versi terbaru; hasilnya menjadi versi baru di atasnya.",
         "postProcessThis": "Pascaproses versi ini",
@@ -1065,10 +1054,6 @@
         "goBackError": "Gagal kembali ke versi tersebut. Silakan coba lagi."
       },
       "contextEntryJump": "Tampilkan di riwayat untuk mengoreksinya",
-      "confirmReplaceTitle": "Ganti koreksi Anda?",
-      "confirmPostProcessReplacesCorrection": "Pascaproses ulang mengganti koreksi Anda pada teks hasil pascaproses.",
-      "confirmRetranscribeReplacesCorrection": "Transkripsi ulang mengganti koreksi Anda pada entri ini.",
-      "confirmReplace": "Ganti",
       "dropTitle": "Lepaskan untuk mentranskripsi",
       "dropDescription": "Akan muncul di Riwayat."
     },

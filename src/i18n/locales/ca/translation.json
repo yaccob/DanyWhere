@@ -952,12 +952,9 @@
       "save": "Desa la transcripció",
       "unsave": "Treu de les desades",
       "delete": "Suprimeix l'entrada",
-      "deletePostProcessing": "Suprimeix el postprocessament",
       "deleteError": "No s'ha pogut suprimir l'entrada. Torneu-ho a provar.",
-      "deletePostProcessingError": "No s'ha pogut suprimir el postprocessament. Torneu-ho a provar.",
       "retranscribe": "Torneu a transcriure",
       "retranscribeShift": "Torneu a transcriure (amb Maj: i postprocesseu)",
-      "postProcess": "Postprocessa",
       "postProcessOff": "El postprocessament està desactivat a la configuració",
       "postProcessNotSetUp": "Primer trieu un proveïdor, un model i una indicació a Postprocessament",
       "recordingRemoved": "Enregistrament eliminat per no superar el límit d'espai",
@@ -979,15 +976,7 @@
         "resizeNewest": "Arrossegueu per canviar l'alçada de l'entrada més recent. Doble clic: alçada predeterminada",
         "resizeOther": "Arrossegueu per canviar l'alçada de totes les entrades més antigues. Doble clic: alçada predeterminada"
       },
-      "showOriginal": "Mostra l'original",
-      "showPostProcessed": "Mostra el text postprocessat",
       "edit": "Corregeix el text",
-      "saveCorrection": "Desa",
-      "cancelCorrection": "Cancel·la",
-      "corrected": "Corregit",
-      "revertCorrection": "Desfés la correcció",
-      "correctError": "No s'ha pogut desar la correcció. Torneu-ho a provar.",
-      "postProcessingOutdated": "Postprocessat a partir d'una versió anterior de la transcripció. La vareta el torna a postprocessar.",
       "contextSent": "Enviat com a context",
       "contextSentTooltip": "Es va enviar el {{date}} al proveïdor del postprocessament com a context d'un dictat posterior.",
       "contextUsed": "Dictats anteriors com a context: {{count}}",
@@ -1004,8 +993,7 @@
         "wholeWord": "Només paraules senceres",
         "invalidPattern": "No és una expressió regular vàlida",
         "noMatches": "Cap entrada coincideix amb la cerca.",
-        "clear": "Esborra",
-        "matchBeforeCorrection": "Coincidència a la versió anterior a la vostra correcció"
+        "clear": "Esborra"
       },
       "versions": {
         "transcription": "Transcripció",
@@ -1025,6 +1013,7 @@
         "saveAsNew": "Desa com a versió nova",
         "saveAsNewHint": "Conserva aquesta versió i afegeix el vostre text a sobre com una de nova.",
         "cancel": "Cancel·la",
+        "withShortcut": "{{hint}} ({{keys}})",
         "postProcessFurther": "Continua postprocessant",
         "postProcessFurtherHint": "Postprocessa la versió més recent; el resultat s'afegeix a sobre com a versió nova.",
         "postProcessThis": "Postprocessa aquesta versió",
@@ -1065,10 +1054,6 @@
         "goBackError": "No s'ha pogut tornar a aquesta versió. Torneu-ho a provar."
       },
       "contextEntryJump": "Mostra-ho a l'historial per corregir-ho",
-      "confirmReplaceTitle": "Voleu substituir la correcció?",
-      "confirmPostProcessReplacesCorrection": "Postprocessar de nou substitueix la vostra correcció del text postprocessat.",
-      "confirmRetranscribeReplacesCorrection": "Tornar a transcriure substitueix les vostres correccions d'aquesta entrada.",
-      "confirmReplace": "Substitueix",
       "dropTitle": "Deixa anar per transcriure",
       "dropDescription": "Apareixerà a l'historial."
     },

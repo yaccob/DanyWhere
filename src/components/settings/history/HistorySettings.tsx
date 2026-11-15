@@ -6,7 +6,6 @@ import React, {
   useState,
 } from "react";
 import { readFile } from "@tauri-apps/plugin-fs";
-import { ask } from "@tauri-apps/plugin-dialog";
 import {
   Check,
   Copy,
@@ -17,20 +16,20 @@ import {
   RotateCcw,
   Star,
   Trash2,
-  WandSparkles,
   X,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useSettings } from "../../../hooks/useSettings";
+import { useOsType } from "../../../hooks/useOsType";
 import { notify } from "@/stores/noticeStore";
 import {
   commands,
   events,
-  type CorrectionPart,
   type HistoryEntry,
   type HistorySearchQuery,
   type HistoryUpdatePayload,
   type Result,
+  type SaveVersionMode,
 } from "@/bindings";
 import {
   useTranscriptionJobsStore,
@@ -41,16 +40,8 @@ import { AudioPlayer, AudioPlayerGroup } from "../../ui/AudioPlayer";
 import { Button } from "../../ui/Button";
 import { copyToClipboard } from "./clipboard";
 import {
-  correctionsLostBy,
-  isCorrected,
-  isSaveShortcut,
-  shownPart,
-} from "./corrections";
-import {
   postProcessAvailability,
-  postProcessedText,
   retranscribeMode,
-  shownText,
   type PostProcessAvailability,
   type ReprocessMode,
 } from "./postProcessEntry";
@@ -76,11 +67,9 @@ import {
   SEARCH_DELAY_MS,
   invalidField,
   isSearchActive,
-  matchesOnlyBeforeCorrection,
   matchRanges,
   mergeSearchUpdate,
   searchQuery,
-  showsOriginal,
   textMatcher,
   windowMatcher,
   type SearchFields,
@@ -89,6 +78,21 @@ import {
 import { Highlighted, HistorySearchBar } from "./HistorySearchBar";
 // DanyWhere: the text in a box that scrolls and can be resized.
 import { HistoryTextBox } from "./HistoryTextBox";
+// DanyWhere: the versions of an entry: what shows, the track, ✨'s menu.
+import { confirmLoss } from "./confirmLoss";
+import { PostProcessButton } from "./PostProcessButton";
+import { VersionTrack } from "./VersionTrack";
+import {
+  defaultSaveMode,
+  isSaveShortcut,
+  matchingVersions,
+  retranscribeNeedsConfirm,
+  saveModes,
+  shownVersion,
+  versionText,
+  versionsLostByEditing,
+  type PostProcessAction,
+} from "./versions";
 
 const IconButton: React.FC<{
   onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
@@ -630,8 +634,8 @@ export const HistorySettings: React.FC = () => {
                 postProcess={postProcess}
                 reprocess={commands.reprocessHistoryEntry}
                 cancelTranscription={commands.cancelHistoryEntryTranscription}
-                correct={commands.correctHistoryEntry}
-                deletePostProcessing={commands.deleteHistoryEntryPostProcessing}
+                saveVersion={commands.saveHistoryVersion}
+                revertToVersion={commands.revertHistoryEntryToVersion}
               />
             ))}
           </div>
@@ -708,14 +712,20 @@ interface HistoryEntryProps {
   postProcess: PostProcessAvailability;
   reprocess: (id: number, mode: ReprocessMode) => Promise<void>;
   cancelTranscription: (id: number) => Promise<void>;
-  // DanyWhere: corrections in History.
-  correct: (
+  // DanyWhere: the entry's versions (`history_versions`).
+  saveVersion: (
     id: number,
-    part: CorrectionPart,
-    text: string | null,
+    base: number,
+    text: string,
+    mode: SaveVersionMode,
   ) => Promise<Result<HistoryEntry, string>>;
-  deletePostProcessing: (id: number) => Promise<Result<HistoryEntry, string>>;
+  revertToVersion: (
+    id: number,
+    keep: number,
+  ) => Promise<Result<HistoryEntry, string>>;
 }
+
+const VERSIONS = "settings.history.versions";
 
 const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
   entry,
@@ -731,22 +741,21 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
   postProcess,
   reprocess,
   cancelTranscription,
-  correct,
-  deletePostProcessing,
+  saveVersion,
+  revertToVersion,
 }) => {
   const { t, i18n } = useTranslation();
+  const osType = useOsType();
   const [showCopied, setShowCopied] = useState(false);
   // Pressed cancel: a running job stops after its current chunk.
   const [cancelling, setCancelling] = useState(false);
-  // A post-processed entry shows the post-processed text unless the
-  // original is asked for.
-  const [showOriginal, setShowOriginal] = useState(false);
-  // DanyWhere: the search during which the user switched the text by hand;
-  // during it the entry keeps their choice instead of showing the text
-  // that matches.
+  // DanyWhere: the version the user chose on the track (null: the top), and
+  // the search during which they chose it; during that search the entry
+  // keeps their choice instead of showing the version that matches.
+  const [chosen, setChosen] = useState<number | null>(null);
   const [switchedIn, setSwitchedIn] = useState<TextMatcher | null>(null);
-  // DanyWhere: the part being corrected, and the text typed so far.
-  const [editing, setEditing] = useState<CorrectionPart | null>(null);
+  // DanyWhere: the version being edited, and the text typed so far.
+  const [editing, setEditing] = useState<number | null>(null);
   const [draft, setDraft] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -756,17 +765,18 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
     if (!retrying) setCancelling(false);
   }, [retrying]);
   const hasTranscription = entry.transcription_text.trim().length > 0;
-  const hasPostProcessed = postProcessedText(entry) !== null;
-  // DanyWhere: during a search, the text that matches when only one does.
-  const original = showsOriginal(
+  // DanyWhere: the version shown; during a search the one that matches.
+  const shown = shownVersion(
     entry,
     highlight,
-    showOriginal,
+    chosen,
     highlight !== null && switchedIn === highlight,
   );
-  const text = shownText(entry, original);
-  const part = shownPart(entry, original);
-  const corrected = isCorrected(entry, part);
+  const text = versionText(entry, shown);
+  const matching = useMemo(
+    () => matchingVersions(entry, highlight),
+    [entry, highlight],
+  );
   // DanyWhere: where the search matches the shown text and the file name.
   const highlights = useMemo(
     () => matchRanges(text, highlight),
@@ -777,12 +787,12 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
       entry.source_name ? matchRanges(entry.source_name, windowHighlight) : [],
     [entry.source_name, windowHighlight],
   );
-  // DanyWhere: the search matched only a text a correction replaced, which
-  // no view shows; the entry says so instead of a highlight.
-  const matchBeforeCorrection = useMemo(
-    () => matchesOnlyBeforeCorrection(entry, highlight),
-    [entry, highlight],
-  );
+
+  /** Shows version `index` (null: the top) as the user's choice. */
+  const show = (index: number | null) => {
+    setChosen(index);
+    setSwitchedIn(highlight);
+  };
 
   const handleLoadAudio = useCallback(
     () => getAudioUrl(entry.file_name),
@@ -804,63 +814,92 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
     setTimeout(() => setShowCopied(false), 2000);
   };
 
-  const startEditing = () => {
-    setDraft(text);
-    setEditing(part);
+  // DanyWhere: editing a version below the top asks first, since saving a
+  // change there deletes the versions above it.
+  const startEditing = async (base: number) => {
+    if (retrying || editing !== null || saving) return;
+    const lost = versionsLostByEditing(entry, base);
+    if (lost > 0) {
+      const agreed = await confirmLoss({
+        title: t(`${VERSIONS}.confirmEditTitle`),
+        message: t(`${VERSIONS}.confirmEditMessage`, { count: lost }),
+        okLabel: t(`${VERSIONS}.confirmEdit`),
+        cancelLabel: t(`${VERSIONS}.cancel`),
+      });
+      if (!agreed) return;
+    }
+    setDraft(versionText(entry, base));
+    setEditing(base);
   };
 
-  const saveCorrection = async () => {
-    if (editing === null || draft.trim().length === 0) return;
+  const saveModesOfEdit = editing === null ? [] : saveModes(entry, editing);
+  const defaultMode = editing === null ? null : defaultSaveMode(entry, editing);
+
+  const saveEdit = async (mode: SaveVersionMode) => {
+    if (editing === null || saving || draft.trim().length === 0) return;
+    // Unchanged: nothing to save, and nothing above it goes.
+    if (draft.trim() === versionText(entry, editing).trim()) {
+      setEditing(null);
+      return;
+    }
     setSaving(true);
     try {
-      const result = await correct(entry.id, editing, draft);
+      const result = await saveVersion(entry.id, editing, draft, mode);
       if (result.status !== "ok") throw new Error(String(result.error));
       setEditing(null);
+      // What was saved is the top now.
+      show(null);
     } catch (error) {
-      console.error("Failed to save the correction:", error);
-      notify({ title: t("settings.history.correctError") });
+      console.error("Failed to save the version:", error);
+      notify({ title: t(`${VERSIONS}.saveError`) });
     } finally {
       setSaving(false);
     }
   };
 
-  const revertCorrection = async () => {
-    try {
-      const result = await correct(entry.id, part, null);
-      if (result.status !== "ok") throw new Error(String(result.error));
-    } catch (error) {
-      console.error("Failed to undo the correction:", error);
-      notify({ title: t("settings.history.correctError") });
+  const handleEditKeyDown = (
+    event: React.KeyboardEvent<HTMLTextAreaElement>,
+  ) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      setEditing(null);
+    } else if (isSaveShortcut(event) && defaultMode !== null) {
+      event.preventDefault();
+      void saveEdit(defaultMode);
     }
   };
 
-  const handleDeletePostProcessing = async () => {
+  const goBack = async (keep: number) => {
     try {
-      const result = await deletePostProcessing(entry.id);
+      const result = await revertToVersion(entry.id, keep);
       if (result.status !== "ok") throw new Error(String(result.error));
-      setShowOriginal(false);
+      // The version gone back to is the top now.
+      show(null);
     } catch (error) {
-      console.error("Failed to delete the post-processing:", error);
-      notify({ title: t("settings.history.deletePostProcessingError") });
+      console.error("Failed to go back to a version:", error);
+      notify({ title: t(`${VERSIONS}.goBackError`) });
     }
   };
 
-  // Post-processing or transcribing again replaces corrections: ask first.
-  const runReprocess = async (mode: ReprocessMode, message: string) => {
-    if (correctionsLostBy(entry, mode)) {
-      let replace = false;
-      try {
-        replace = await ask(message, {
-          title: t("settings.history.confirmReplaceTitle"),
-          kind: "warning",
-          okLabel: t("settings.history.confirmReplace"),
-          cancelLabel: t("settings.history.cancelCorrection"),
-        });
-      } catch (error) {
-        console.error("Failed to ask before replacing a correction:", error);
-      }
-      if (!replace) return;
+  // DanyWhere: the result of ✨ lands on top, so the entry shows the top.
+  const runPostProcess = (action: PostProcessAction) => {
+    show(null);
+    void reprocess(entry.id, action);
+  };
+
+  // DanyWhere: re-transcribing replaces the transcription and drops every
+  // version above it; asks first unless the same comes back.
+  const runRetranscribe = async (mode: ReprocessMode) => {
+    if (retranscribeNeedsConfirm(entry, mode)) {
+      const agreed = await confirmLoss({
+        title: t(`${VERSIONS}.confirmRetranscribeTitle`),
+        message: t(`${VERSIONS}.confirmRetranscribeMessage`),
+        okLabel: t(`${VERSIONS}.confirmRetranscribe`),
+        cancelLabel: t(`${VERSIONS}.cancel`),
+      });
+      if (!agreed) return;
     }
+    show(null);
     void reprocess(entry.id, mode);
   };
 
@@ -874,6 +913,7 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
   };
 
   const formattedDate = formatDateTime(String(entry.timestamp), i18n.language);
+  const saveKeys = osType === "macos" ? "⌘↩" : "Ctrl+Enter";
 
   let progressText = t("settings.history.transcribing");
   if (job?.state === "queued") {
@@ -919,8 +959,10 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
             )}
           </IconButton>
           <IconButton
-            onClick={startEditing}
-            disabled={!hasTranscription || retrying || editing !== null}
+            onClick={() => void startEditing(shown)}
+            disabled={
+              !hasTranscription || retrying || editing !== null || saving
+            }
             title={t("settings.history.edit")}
           >
             <Pencil width={16} height={16} />
@@ -953,38 +995,23 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
             </IconButton>
           ) : (
             <>
+              {/* DanyWhere: ✨ with its menu of what the stack allows. */}
               {hasTranscription && (
-                <IconButton
-                  onClick={() =>
-                    void runReprocess(
-                      "post_process",
-                      t(
-                        "settings.history.confirmPostProcessReplacesCorrection",
-                      ),
-                    )
-                  }
-                  unavailable={postProcess !== "ready"}
-                  title={
-                    postProcess === "ready"
-                      ? t("settings.history.postProcess")
-                      : postProcess === "off"
-                        ? t("settings.history.postProcessOff")
-                        : t("settings.history.postProcessNotSetUp")
-                  }
-                >
-                  <WandSparkles width={16} height={16} />
-                </IconButton>
+                <PostProcessButton
+                  entry={entry}
+                  availability={postProcess}
+                  onRun={runPostProcess}
+                  disabled={editing !== null || saving}
+                />
               )}
               {!entry.recording_removed && (
                 <IconButton
                   onClick={(event) =>
-                    void runReprocess(
+                    void runRetranscribe(
                       retranscribeMode(event.shiftKey, postProcess),
-                      t(
-                        "settings.history.confirmRetranscribeReplacesCorrection",
-                      ),
                     )
                   }
+                  disabled={editing !== null || saving}
                   title={
                     postProcess === "ready"
                       ? t("settings.history.retranscribeShift")
@@ -1013,53 +1040,27 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
       />
 
       <div className="flex flex-col items-start gap-1 pb-2">
-        {editing !== null && (
-          <div className="w-full flex flex-col gap-2">
-            <textarea
-              value={draft}
-              onChange={(event) => setDraft(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Escape") {
-                  event.preventDefault();
-                  setEditing(null);
-                } else if (isSaveShortcut(event)) {
-                  event.preventDefault();
-                  void saveCorrection();
-                }
-              }}
-              autoFocus
-              rows={Math.min(12, Math.max(3, draft.split("\n").length + 1))}
-              aria-label={t("settings.history.edit")}
-              className="w-full italic text-sm text-text bg-background border border-line rounded-md p-2 resize-y focus:outline-none focus:border-logo-primary"
-            />
-            <div className="flex items-center gap-2">
-              <Button
-                size="sm"
-                onClick={() => void saveCorrection()}
-                disabled={saving || draft.trim().length === 0}
-              >
-                {t("settings.history.saveCorrection")}
-              </Button>
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => setEditing(null)}
-              >
-                {t("settings.history.cancelCorrection")}
-              </Button>
-            </div>
-          </div>
-        )}
-        {/* DanyWhere: the text in a box that scrolls and can be resized. */}
-        {editing === null && hasTranscription && !retrying && (
+        {/* DanyWhere: the text in a box that scrolls and can be resized; a
+            click into it (or the pencil) edits the version shown. */}
+        {hasTranscription && !retrying && (
           <HistoryTextBox
             text={text}
             highlights={highlights}
             newest={newest}
+            editing={editing !== null}
+            draft={draft}
+            onDraftChange={setDraft}
+            onKeyDown={handleEditKeyDown}
+            onActivate={
+              editing === null && !saving
+                ? () => void startEditing(shown)
+                : undefined
+            }
+            editLabel={t("settings.history.edit")}
             className="italic"
           />
         )}
-        {editing === null && (retrying || !hasTranscription) && (
+        {(retrying || !hasTranscription) && (
           <p
             className={`italic text-sm w-full ${retrying ? "" : "text-ink-3"}`}
             style={retrying ? TRANSCRIBE_PULSE : undefined}
@@ -1073,67 +1074,59 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
                 : t("settings.history.transcriptionFailed")}
           </p>
         )}
-        {hasPostProcessed &&
-          entry.post_processing_outdated &&
-          part === "post_processing" &&
-          !retrying &&
-          editing === null && (
-            <p className="text-xs text-ink-3">
-              {t("settings.history.postProcessingOutdated")}
-            </p>
-          )}
-        {matchBeforeCorrection && !retrying && editing === null && (
-          <p className="text-xs text-ink-3">
-            {t("settings.history.search.matchBeforeCorrection")}
-          </p>
+        {/* DanyWhere: the saves the version allows; the default one is
+            highlighted and on ⌘↩. */}
+        {editing !== null && !retrying && (
+          <div className="flex flex-wrap items-center gap-2 pt-1">
+            {saveModesOfEdit.map((mode) => {
+              const label =
+                mode === "replace"
+                  ? t(`${VERSIONS}.save`)
+                  : t(`${VERSIONS}.saveAsNew`);
+              const hint =
+                mode === "replace"
+                  ? t(`${VERSIONS}.saveHint`)
+                  : t(`${VERSIONS}.saveAsNewHint`);
+              return (
+                <Button
+                  key={mode}
+                  size="sm"
+                  variant={mode === defaultMode ? "primary" : "secondary"}
+                  onClick={() => void saveEdit(mode)}
+                  disabled={saving || draft.trim().length === 0}
+                  title={
+                    mode === defaultMode
+                      ? t(`${VERSIONS}.withShortcut`, {
+                          hint,
+                          keys: saveKeys,
+                        })
+                      : hint
+                  }
+                >
+                  {label}
+                </Button>
+              );
+            })}
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => setEditing(null)}
+            >
+              {t(`${VERSIONS}.cancel`)}
+            </Button>
+          </div>
         )}
-        {hasTranscription &&
-          !retrying &&
-          editing === null &&
-          (hasPostProcessed || corrected) && (
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-              {hasPostProcessed && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    // DanyWhere: switches from what is shown, which a
-                    // search may have chosen, and keeps it for that search.
-                    setShowOriginal(!original);
-                    setSwitchedIn(highlight);
-                  }}
-                  className="text-xs font-medium text-ink-3 hover:text-logo-primary cursor-pointer"
-                >
-                  {original
-                    ? t("settings.history.showPostProcessed")
-                    : t("settings.history.showOriginal")}
-                </button>
-              )}
-              {hasPostProcessed && (
-                <button
-                  type="button"
-                  onClick={() => void handleDeletePostProcessing()}
-                  className="text-xs font-medium text-ink-3 hover:text-logo-primary cursor-pointer"
-                >
-                  {t("settings.history.deletePostProcessing")}
-                </button>
-              )}
-              {corrected && (
-                <span className="flex items-center gap-2">
-                  <span className="flex items-center gap-1 text-xs text-ink-3">
-                    <Pencil width={12} height={12} />
-                    {t("settings.history.corrected")}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => void revertCorrection()}
-                    className="text-xs font-medium text-ink-3 hover:text-logo-primary cursor-pointer"
-                  >
-                    {t("settings.history.revertCorrection")}
-                  </button>
-                </span>
-              )}
-            </div>
-          )}
+        {/* DanyWhere: the versions, when there is more than one. */}
+        {hasTranscription && !retrying && editing === null && (
+          <VersionTrack
+            entry={entry}
+            shown={shown}
+            matching={matching}
+            onShow={show}
+            onGoBack={(keep) => void goBack(keep)}
+            disabled={saving}
+          />
+        )}
         {/* DanyWhere: its context, and whether it went out as context. */}
         {!retrying && editing === null && (
           <EntryContextInfo entry={entry} onShowWindow={onShowWindow} />

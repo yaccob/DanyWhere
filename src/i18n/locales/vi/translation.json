@@ -952,12 +952,9 @@
       "save": "Lưu bản ghi",
       "unsave": "Xóa khỏi đã lưu",
       "delete": "Xóa mục",
-      "deletePostProcessing": "Xóa kết quả xử lý sau",
       "deleteError": "Không thể xóa mục. Vui lòng thử lại.",
-      "deletePostProcessingError": "Không xóa được kết quả xử lý sau. Vui lòng thử lại.",
       "retranscribe": "Phiên âm lại",
       "retranscribeShift": "Phiên âm lại (giữ Shift: và xử lý sau)",
-      "postProcess": "Xử lý sau",
       "postProcessOff": "Xử lý sau đang tắt trong cài đặt",
       "postProcessNotSetUp": "Hãy chọn nhà cung cấp, mô hình và lời nhắc trong mục Xử lý sau trước",
       "recordingRemoved": "Đã xóa bản ghi âm để không vượt giới hạn dung lượng",
@@ -979,15 +976,7 @@
         "resizeNewest": "Kéo để thay đổi chiều cao của mục mới nhất. Nhấp đúp: chiều cao mặc định",
         "resizeOther": "Kéo để thay đổi chiều cao của tất cả các mục cũ hơn. Nhấp đúp: chiều cao mặc định"
       },
-      "showOriginal": "Hiện bản gốc",
-      "showPostProcessed": "Hiện bản đã xử lý",
       "edit": "Sửa văn bản",
-      "saveCorrection": "Lưu",
-      "cancelCorrection": "Hủy",
-      "corrected": "Đã sửa",
-      "revertCorrection": "Hoàn tác chỉnh sửa",
-      "correctError": "Không lưu được chỉnh sửa. Vui lòng thử lại.",
-      "postProcessingOutdated": "Được xử lý sau từ phiên bản cũ hơn của bản phiên âm. Cây đũa phép sẽ xử lý sau lại.",
       "contextSent": "Đã gửi làm ngữ cảnh",
       "contextSentTooltip": "Đã được gửi vào {{date}} đến nhà cung cấp hậu xử lý làm ngữ cảnh cho một lần đọc chính tả sau.",
       "contextUsed": "Các lần đọc chính tả trước làm ngữ cảnh: {{count}}",
@@ -1004,8 +993,7 @@
         "wholeWord": "Chỉ toàn bộ từ",
         "invalidPattern": "Không phải biểu thức chính quy hợp lệ",
         "noMatches": "Không có mục nào khớp với tìm kiếm.",
-        "clear": "Xóa",
-        "matchBeforeCorrection": "Khớp trong phiên bản trước khi bạn chỉnh sửa"
+        "clear": "Xóa"
       },
       "versions": {
         "transcription": "Bản phiên âm",
@@ -1025,6 +1013,7 @@
         "saveAsNew": "Lưu thành phiên bản mới",
         "saveAsNewHint": "Giữ phiên bản này và thêm văn bản của bạn lên trên như một phiên bản mới.",
         "cancel": "Hủy",
+        "withShortcut": "{{hint}} ({{keys}})",
         "postProcessFurther": "Xử lý sau tiếp",
         "postProcessFurtherHint": "Xử lý sau phiên bản mới nhất; kết quả thành một phiên bản mới phía trên.",
         "postProcessThis": "Xử lý sau phiên bản này",
@@ -1065,10 +1054,6 @@
         "goBackError": "Không thể quay lại phiên bản đó. Vui lòng thử lại."
       },
       "contextEntryJump": "Hiện trong lịch sử để sửa",
-      "confirmReplaceTitle": "Thay thế chỉnh sửa của bạn?",
-      "confirmPostProcessReplacesCorrection": "Xử lý sau lại sẽ thay thế chỉnh sửa của bạn đối với văn bản đã xử lý.",
-      "confirmRetranscribeReplacesCorrection": "Phiên âm lại sẽ thay thế các chỉnh sửa của bạn cho mục này.",
-      "confirmReplace": "Thay thế",
       "dropTitle": "Thả để chép lời",
       "dropDescription": "Nó sẽ xuất hiện trong Lịch sử."
     },

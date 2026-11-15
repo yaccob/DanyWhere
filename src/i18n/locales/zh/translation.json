@@ -952,12 +952,9 @@
       "save": "保存转录",
       "unsave": "从已保存中移除",
       "delete": "删除条目",
-      "deletePostProcessing": "删除后处理结果",
       "deleteError": "删除条目失败，请重试。",
-      "deletePostProcessingError": "删除后处理结果失败。请重试。",
       "retranscribe": "重新转录",
       "retranscribeShift": "重新转录（按住 Shift：并进行后处理）",
-      "postProcess": "后处理",
       "postProcessOff": "设置中已关闭后处理",
       "postProcessNotSetUp": "请先在“后处理”中选择提供商、模型和提示词",
       "recordingRemoved": "为保持在存储上限内，已删除录音",
@@ -979,15 +976,7 @@
         "resizeNewest": "拖动可更改最新条目的高度。双击：恢复默认高度",
         "resizeOther": "拖动可更改所有较早条目的高度。双击：恢复默认高度"
       },
-      "showOriginal": "显示原文",
-      "showPostProcessed": "显示后处理结果",
       "edit": "更正文本",
-      "saveCorrection": "保存",
-      "cancelCorrection": "取消",
-      "corrected": "已更正",
-      "revertCorrection": "撤销更正",
-      "correctError": "保存更正失败。请重试。",
-      "postProcessingOutdated": "此后处理基于转录的早期版本。点击魔杖可重新后处理。",
       "contextSent": "已作为上下文发送",
       "contextSentTooltip": "已于 {{date}} 作为之后某次听写的上下文发送给后处理服务商。",
       "contextUsed": "作为上下文的早前听写：{{count}}",
@@ -1004,8 +993,7 @@
         "wholeWord": "仅全字匹配",
         "invalidPattern": "不是有效的正则表达式",
         "noMatches": "没有与搜索匹配的条目。",
-        "clear": "清除",
-        "matchBeforeCorrection": "匹配内容在你更正之前的版本中"
+        "clear": "清除"
       },
       "versions": {
         "transcription": "转录",
@@ -1025,6 +1013,7 @@
         "saveAsNew": "另存为新版本",
         "saveAsNewHint": "保留此版本，并将你的文本作为新版本添加在其上。",
         "cancel": "取消",
+        "withShortcut": "{{hint}}（{{keys}}）",
         "postProcessFurther": "继续后处理",
         "postProcessFurtherHint": "对最新版本进行后处理；结果作为新版本添加在其上。",
         "postProcessThis": "后处理此版本",
@@ -1065,10 +1054,6 @@
         "goBackError": "无法回到该版本。请重试。"
       },
       "contextEntryJump": "在历史记录中显示以便更正",
-      "confirmReplaceTitle": "替换你的更正？",
-      "confirmPostProcessReplacesCorrection": "重新后处理会替换你对后处理文本的更正。",
-      "confirmRetranscribeReplacesCorrection": "重新转录会替换你对此条目的更正。",
-      "confirmReplace": "替换",
       "dropTitle": "拖放到此处进行转录",
       "dropDescription": "它会出现在历史记录中。"
     },

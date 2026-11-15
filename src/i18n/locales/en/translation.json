@@ -952,12 +952,9 @@
       "save": "Save transcription",
       "unsave": "Remove from saved",
       "delete": "Delete entry",
-      "deletePostProcessing": "Delete post-processing",
       "deleteError": "Failed to delete entry. Please try again.",
-      "deletePostProcessingError": "Failed to delete the post-processing. Please try again.",
       "retranscribe": "Re-transcribe",
       "retranscribeShift": "Re-transcribe (with Shift: and post-process)",
-      "postProcess": "Post-process",
       "postProcessOff": "Post Process is turned off in the settings",
       "postProcessNotSetUp": "Choose a provider, a model and a prompt under Post Process first",
       "recordingRemoved": "Recording deleted to stay within the storage limit",
@@ -979,15 +976,7 @@
         "resizeNewest": "Drag to change the height of the newest entry. Double-click: default height",
         "resizeOther": "Drag to change the height of all older entries. Double-click: default height"
       },
-      "showOriginal": "Show original",
-      "showPostProcessed": "Show post-processed",
       "edit": "Correct the text",
-      "saveCorrection": "Save",
-      "cancelCorrection": "Cancel",
-      "corrected": "Corrected",
-      "revertCorrection": "Undo correction",
-      "correctError": "Failed to save the correction. Please try again.",
-      "postProcessingOutdated": "Post-processed from an earlier version of the transcription. The wand post-processes it again.",
       "contextSent": "Sent as context",
       "contextSentTooltip": "Went to the post-processing provider as context of a later dictation on {{date}}.",
       "contextUsed": "Earlier dictations as context: {{count}}",
@@ -1004,8 +993,7 @@
         "wholeWord": "Match whole words only",
         "invalidPattern": "Not a valid regular expression",
         "noMatches": "No entries match the search.",
-        "clear": "Clear",
-        "matchBeforeCorrection": "Match in the version before your correction"
+        "clear": "Clear"
       },
       "versions": {
         "transcription": "Transcription",
@@ -1025,6 +1013,7 @@
         "saveAsNew": "Save as New Version",
         "saveAsNewHint": "Keeps this version and adds your text above it as a new one.",
         "cancel": "Cancel",
+        "withShortcut": "{{hint}} ({{keys}})",
         "postProcessFurther": "Post-Process Further",
         "postProcessFurtherHint": "Post-processes the newest version; the result becomes a new version above it.",
         "postProcessThis": "Post-Process This Version",
@@ -1065,10 +1054,6 @@
         "goBackError": "Failed to go back to that version. Please try again."
       },
       "contextEntryJump": "Show it in the History to correct it",
-      "confirmReplaceTitle": "Replace your correction?",
-      "confirmPostProcessReplacesCorrection": "Post-processing again replaces your correction of the post-processed text.",
-      "confirmRetranscribeReplacesCorrection": "Re-transcribing replaces your corrections of this entry.",
-      "confirmReplace": "Replace",
       "dropTitle": "Drop to transcribe",
       "dropDescription": "It'll show up in History."
     },

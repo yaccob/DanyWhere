@@ -163,6 +163,36 @@ export const describeStep = (step: VersionStep): StepDescription => {
   };
 };
 
+/** When step `stepIndex` of version `index` was made, in seconds, for the
+ * chip's tooltip. A step without a time (from before versions existed, or
+ * derived from the old fields) gets the entry's own time only where that is
+ * when it happened: the transcription, and the post-processing a dictation
+ * did right away (the first step of version 1). Any other has none. */
+export const stepSeconds = (
+  entry: Pick<HistoryEntry, "versions" | "timestamp" | "source_name">,
+  index: number,
+  stepIndex: number,
+): number | null => {
+  const step = entry.versions[index]?.steps[stepIndex];
+  if (!step) return null;
+  const { atSeconds } = describeStep(step);
+  if (atSeconds !== null) return atSeconds;
+  const transcribed = index === 0 && step.by === "transcription";
+  const dictationPostProcessed =
+    index === 1 &&
+    stepIndex === 0 &&
+    step.by === "ai" &&
+    entry.source_name === null;
+  return transcribed || dictationPostProcessed ? entry.timestamp : null;
+};
+
+/** ⌘Enter (Ctrl+Enter off macOS) saves an edit. */
+export const isSaveShortcut = (event: {
+  key: string;
+  metaKey: boolean;
+  ctrlKey: boolean;
+}): boolean => event.key === "Enter" && (event.metaKey || event.ctrlKey);
+
 export const versionMark = (version: HistoryVersion): VersionMark => {
   const ai = version.steps.some((step) => step.by === "ai");
   const user = version.steps.some((step) => step.by === "user");

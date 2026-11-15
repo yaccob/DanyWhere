@@ -8,7 +8,7 @@ import { useTranslation } from "react-i18next";
 import { AppWindow, ChevronDown, ChevronRight, Send, X } from "lucide-react";
 import { commands, type HistoryEntry } from "@/bindings";
 import { formatDateTime } from "@/utils/dateFormat";
-import { shownText } from "../history/postProcessEntry";
+import { entryText } from "../history/versions";
 import { windowLineRanges, type TextMatcher } from "../history/historySearch";
 import { Highlighted } from "../history/HistorySearchBar";
 import {
@@ -136,7 +136,7 @@ export const EntryContextInfo: React.FC<{
                     <span className="font-medium">
                       {formatDateTime(String(earlier.timestamp), i18n.language)}
                     </span>{" "}
-                    {firstWords(shownText(earlier, false), PREVIEW_WORDS)}
+                    {firstWords(entryText(earlier), PREVIEW_WORDS)}
                   </button>
                 </li>
               );

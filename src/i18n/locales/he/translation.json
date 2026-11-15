@@ -952,12 +952,9 @@
       "save": "שמור תמלול",
       "unsave": "הסר משמורים",
       "delete": "מחק רשומה",
-      "deletePostProcessing": "מחק עיבוד משלים",
       "deleteError": "מחיקת הרשומה נכשלה. נסה שוב.",
-      "deletePostProcessingError": "מחיקת העיבוד המשלים נכשלה. נסה שוב.",
       "retranscribe": "תמלל מחדש",
       "retranscribeShift": "תמלל מחדש (עם Shift: ועבד)",
-      "postProcess": "עיבוד משלים",
       "postProcessOff": "העיבוד המשלים כבוי בהגדרות",
       "postProcessNotSetUp": "בחר תחילה ספק, מודל והנחיה תחת עיבוד משלים",
       "recordingRemoved": "ההקלטה נמחקה כדי לא לחרוג ממגבלת האחסון",
@@ -979,15 +976,7 @@
         "resizeNewest": "גרור כדי לשנות את הגובה של הרשומה החדשה ביותר. לחיצה כפולה: גובה ברירת מחדל",
         "resizeOther": "גרור כדי לשנות את הגובה של כל הרשומות הישנות יותר. לחיצה כפולה: גובה ברירת מחדל"
       },
-      "showOriginal": "הצג את המקור",
-      "showPostProcessed": "הצג את הטקסט המעובד",
       "edit": "תקן את הטקסט",
-      "saveCorrection": "שמור",
-      "cancelCorrection": "ביטול",
-      "corrected": "תוקן",
-      "revertCorrection": "בטל תיקון",
-      "correctError": "שמירת התיקון נכשלה. נסה שוב.",
-      "postProcessingOutdated": "העיבוד המשלים נעשה מגרסה קודמת של התמלול. שרביט הקסמים מעבד אותו מחדש.",
       "contextSent": "נשלחה כהקשר",
       "contextSentTooltip": "נשלחה ב-{{date}} לספק העיבוד המשלים כהקשר של הכתבה מאוחרת יותר.",
       "contextUsed": "הכתבות קודמות כהקשר: {{count}}",
@@ -1004,8 +993,7 @@
         "wholeWord": "מילים שלמות בלבד",
         "invalidPattern": "ביטוי רגולרי לא תקין",
         "noMatches": "אין רשומות שתואמות לחיפוש.",
-        "clear": "נקה",
-        "matchBeforeCorrection": "התאמה בגרסה שלפני התיקון שלך"
+        "clear": "נקה"
       },
       "versions": {
         "transcription": "תמלול",
@@ -1025,6 +1013,7 @@
         "saveAsNew": "שמור כגרסה חדשה",
         "saveAsNewHint": "שומר על גרסה זו ומוסיף את הטקסט שלך מעליה כגרסה חדשה.",
         "cancel": "ביטול",
+        "withShortcut": "{{hint}} ({{keys}})",
         "postProcessFurther": "המשך עיבוד משלים",
         "postProcessFurtherHint": "מעבד את הגרסה החדשה ביותר; התוצאה נוספת מעליה כגרסה חדשה.",
         "postProcessThis": "עיבוד משלים לגרסה זו",
@@ -1065,10 +1054,6 @@
         "goBackError": "החזרה לגרסה זו נכשלה. נסה שוב."
       },
       "contextEntryJump": "הצג בהיסטוריה כדי לתקן",
-      "confirmReplaceTitle": "להחליף את התיקון שלך?",
-      "confirmPostProcessReplacesCorrection": "עיבוד משלים חדש מחליף את התיקון שלך לטקסט המעובד.",
-      "confirmRetranscribeReplacesCorrection": "תמלול מחדש מחליף את התיקונים שלך ברשומה זו.",
-      "confirmReplace": "החלף",
       "dropTitle": "שחררו כדי לתמלל",
       "dropDescription": "הוא יופיע בהיסטוריה."
     },

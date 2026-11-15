@@ -952,12 +952,9 @@
       "save": "儲存轉錄",
       "unsave": "從已儲存中移除",
       "delete": "刪除條目",
-      "deletePostProcessing": "刪除後處理結果",
       "deleteError": "刪除條目失敗，請重試",
-      "deletePostProcessingError": "刪除後處理結果失敗。請重試。",
       "retranscribe": "重新轉錄",
       "retranscribeShift": "重新轉錄（按住 Shift：並進行後處理）",
-      "postProcess": "後處理",
       "postProcessOff": "設定中已關閉後處理",
       "postProcessNotSetUp": "請先在「後處理」中選擇提供者、模型和提示詞",
       "recordingRemoved": "為維持在儲存上限內，已刪除錄音",
@@ -979,15 +976,7 @@
         "resizeNewest": "拖曳可變更最新項目的高度。按兩下：恢復預設高度",
         "resizeOther": "拖曳可變更所有較早項目的高度。按兩下：恢復預設高度"
       },
-      "showOriginal": "顯示原文",
-      "showPostProcessed": "顯示後處理結果",
       "edit": "更正文字",
-      "saveCorrection": "儲存",
-      "cancelCorrection": "取消",
-      "corrected": "已更正",
-      "revertCorrection": "復原更正",
-      "correctError": "儲存更正失敗。請重試。",
-      "postProcessingOutdated": "此後處理是根據轉錄的較早版本。點選魔杖可重新後處理。",
       "contextSent": "已作為上下文傳送",
       "contextSentTooltip": "已於 {{date}} 作為之後某次聽寫的上下文傳送給後處理服務商。",
       "contextUsed": "作為上下文的先前聽寫：{{count}}",
@@ -1004,8 +993,7 @@
         "wholeWord": "僅全字相符",
         "invalidPattern": "不是有效的規則運算式",
         "noMatches": "沒有符合搜尋的項目。",
-        "clear": "清除",
-        "matchBeforeCorrection": "符合的內容在你更正之前的版本中"
+        "clear": "清除"
       },
       "versions": {
         "transcription": "轉錄",
@@ -1025,6 +1013,7 @@
         "saveAsNew": "另存為新版本",
         "saveAsNewHint": "保留此版本，並將你的文字作為新版本加在其上。",
         "cancel": "取消",
+        "withShortcut": "{{hint}}（{{keys}}）",
         "postProcessFurther": "繼續後處理",
         "postProcessFurtherHint": "對最新版本進行後處理；結果作為新版本加在其上。",
         "postProcessThis": "後處理此版本",
@@ -1065,10 +1054,6 @@
         "goBackError": "無法回到該版本。請再試一次。"
       },
       "contextEntryJump": "在記錄中顯示以便更正",
-      "confirmReplaceTitle": "要取代你的更正嗎？",
-      "confirmPostProcessReplacesCorrection": "重新後處理會取代你對後處理文字的更正。",
-      "confirmRetranscribeReplacesCorrection": "重新轉錄會取代你對此項目的更正。",
-      "confirmReplace": "取代",
       "dropTitle": "拖放到此處進行轉錄",
       "dropDescription": "它會出現在歷史記錄中。"
     },

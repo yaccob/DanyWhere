@@ -952,12 +952,9 @@
       "save": "Salvar transcrição",
       "unsave": "Remover dos salvos",
       "delete": "Excluir entrada",
-      "deletePostProcessing": "Excluir pós-processamento",
       "deleteError": "Falha ao excluir entrada. Por favor, tente novamente.",
-      "deletePostProcessingError": "Falha ao excluir o pós-processamento. Por favor, tente novamente.",
       "retranscribe": "Re-transcrever",
       "retranscribeShift": "Re-transcrever (com Shift: e pós-processar)",
-      "postProcess": "Pós-processar",
       "postProcessOff": "O pós-processamento está desativado nas configurações",
       "postProcessNotSetUp": "Escolha primeiro um provedor, um modelo e um prompt em Pós-processamento",
       "recordingRemoved": "Gravação excluída para ficar dentro do limite de espaço",
@@ -979,15 +976,7 @@
         "resizeNewest": "Arraste para alterar a altura da entrada mais recente. Clique duplo: altura padrão",
         "resizeOther": "Arraste para alterar a altura de todas as entradas mais antigas. Clique duplo: altura padrão"
       },
-      "showOriginal": "Mostrar original",
-      "showPostProcessed": "Mostrar pós-processado",
       "edit": "Corrigir o texto",
-      "saveCorrection": "Salvar",
-      "cancelCorrection": "Cancelar",
-      "corrected": "Corrigido",
-      "revertCorrection": "Desfazer correção",
-      "correctError": "Falha ao salvar a correção. Por favor, tente novamente.",
-      "postProcessingOutdated": "Pós-processado a partir de uma versão anterior da transcrição. A varinha o pós-processa novamente.",
       "contextSent": "Enviado como contexto",
       "contextSentTooltip": "Foi em {{date}} para o fornecedor do pós-processamento como contexto de um ditado posterior.",
       "contextUsed": "Ditados anteriores como contexto: {{count}}",
@@ -1004,8 +993,7 @@
         "wholeWord": "Somente palavras inteiras",
         "invalidPattern": "Expressão regular inválida",
         "noMatches": "Nenhuma entrada corresponde à pesquisa.",
-        "clear": "Limpar",
-        "matchBeforeCorrection": "Correspondência na versão anterior à sua correção"
+        "clear": "Limpar"
       },
       "versions": {
         "transcription": "Transcrição",
@@ -1025,6 +1013,7 @@
         "saveAsNew": "Salvar como nova versão",
         "saveAsNewHint": "Mantém esta versão e adiciona seu texto acima como uma nova.",
         "cancel": "Cancelar",
+        "withShortcut": "{{hint}} ({{keys}})",
         "postProcessFurther": "Continuar pós-processando",
         "postProcessFurtherHint": "Pós-processa a versão mais recente; o resultado vira uma nova versão acima dela.",
         "postProcessThis": "Pós-processar esta versão",
@@ -1065,10 +1054,6 @@
         "goBackError": "Falha ao voltar para essa versão. Tente novamente."
       },
       "contextEntryJump": "Mostrar no histórico para corrigir",
-      "confirmReplaceTitle": "Substituir sua correção?",
-      "confirmPostProcessReplacesCorrection": "Pós-processar novamente substitui sua correção do texto pós-processado.",
-      "confirmRetranscribeReplacesCorrection": "Re-transcrever substitui suas correções desta entrada.",
-      "confirmReplace": "Substituir",
       "dropTitle": "Solte para transcrever",
       "dropDescription": "Ele aparecerá no histórico."
     },

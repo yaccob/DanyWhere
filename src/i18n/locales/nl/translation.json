@@ -952,12 +952,9 @@
       "save": "Transcriptie opslaan",
       "unsave": "Verwijderen uit opgeslagen",
       "delete": "Item verwijderen",
-      "deletePostProcessing": "Naverwerking verwijderen",
       "deleteError": "Item verwijderen mislukt. Probeer het opnieuw.",
-      "deletePostProcessingError": "Naverwerking verwijderen mislukt. Probeer het opnieuw.",
       "retranscribe": "Opnieuw transcriberen",
       "retranscribeShift": "Opnieuw transcriberen (met Shift: en naverwerken)",
-      "postProcess": "Naverwerken",
       "postProcessOff": "Naverwerking staat uit in de instellingen",
       "postProcessNotSetUp": "Kies eerst een aanbieder, een model en een prompt onder Naverwerking",
       "recordingRemoved": "Opname verwijderd om binnen de opslaglimiet te blijven",
@@ -979,15 +976,7 @@
         "resizeNewest": "Sleep om de hoogte van het nieuwste item te wijzigen. Dubbelklik: standaardhoogte",
         "resizeOther": "Sleep om de hoogte van alle oudere items te wijzigen. Dubbelklik: standaardhoogte"
       },
-      "showOriginal": "Origineel tonen",
-      "showPostProcessed": "Naverwerkte tekst tonen",
       "edit": "Tekst corrigeren",
-      "saveCorrection": "Opslaan",
-      "cancelCorrection": "Annuleren",
-      "corrected": "Gecorrigeerd",
-      "revertCorrection": "Correctie ongedaan maken",
-      "correctError": "Correctie opslaan mislukt. Probeer het opnieuw.",
-      "postProcessingOutdated": "Naverwerkt vanuit een eerdere versie van de transcriptie. De toverstaf verwerkt hem opnieuw na.",
       "contextSent": "Als context verstuurd",
       "contextSentTooltip": "Ging op {{date}} als context van een latere dictering naar de aanbieder van de naverwerking.",
       "contextUsed": "Eerdere dicteringen als context: {{count}}",
@@ -1004,8 +993,7 @@
         "wholeWord": "Alleen hele woorden",
         "invalidPattern": "Geen geldige reguliere expressie",
         "noMatches": "Geen items komen overeen met de zoekopdracht.",
-        "clear": "Wissen",
-        "matchBeforeCorrection": "Overeenkomst in de versie van vóór je correctie"
+        "clear": "Wissen"
       },
       "versions": {
         "transcription": "Transcriptie",
@@ -1025,6 +1013,7 @@
         "saveAsNew": "Opslaan als nieuwe versie",
         "saveAsNewHint": "Behoudt deze versie en zet je tekst er als nieuwe boven.",
         "cancel": "Annuleren",
+        "withShortcut": "{{hint}} ({{keys}})",
         "postProcessFurther": "Verder naverwerken",
         "postProcessFurtherHint": "Verwerkt de nieuwste versie na; het resultaat komt er als nieuwe versie boven.",
         "postProcessThis": "Deze versie naverwerken",
@@ -1065,10 +1054,6 @@
         "goBackError": "Kan niet terug naar die versie. Probeer het opnieuw."
       },
       "contextEntryJump": "In de geschiedenis tonen om te corrigeren",
-      "confirmReplaceTitle": "Je correctie vervangen?",
-      "confirmPostProcessReplacesCorrection": "Opnieuw naverwerken vervangt je correctie van de naverwerkte tekst.",
-      "confirmRetranscribeReplacesCorrection": "Opnieuw transcriberen vervangt je correcties van dit item.",
-      "confirmReplace": "Vervangen",
       "dropTitle": "Loslaten om te transcriberen",
       "dropDescription": "Het verschijnt in de geschiedenis."
     },

@@ -952,12 +952,9 @@
       "save": "Uložit přepis",
       "unsave": "Odebrat z uložených",
       "delete": "Smazat záznam",
-      "deletePostProcessing": "Smazat následné zpracování",
       "deleteError": "Nepodařilo se smazat záznam. Zkuste to prosím znovu.",
-      "deletePostProcessingError": "Nepodařilo se smazat následné zpracování. Zkuste to prosím znovu.",
       "retranscribe": "Přepsat znovu",
       "retranscribeShift": "Přepsat znovu (s Shiftem: a následně zpracovat)",
-      "postProcess": "Následně zpracovat",
       "postProcessOff": "Následné zpracování je v nastavení vypnuté",
       "postProcessNotSetUp": "Nejprve v Následném zpracování vyberte poskytovatele, model a prompt",
       "recordingRemoved": "Nahrávka smazána kvůli limitu místa",
@@ -979,15 +976,7 @@
         "resizeNewest": "Přetažením změníte výšku nejnovějšího záznamu. Dvojklik: výchozí výška",
         "resizeOther": "Přetažením změníte výšku všech starších záznamů. Dvojklik: výchozí výška"
       },
-      "showOriginal": "Zobrazit originál",
-      "showPostProcessed": "Zobrazit zpracovaný text",
       "edit": "Opravit text",
-      "saveCorrection": "Uložit",
-      "cancelCorrection": "Zrušit",
-      "corrected": "Opraveno",
-      "revertCorrection": "Vrátit opravu",
-      "correctError": "Nepodařilo se uložit opravu. Zkuste to prosím znovu.",
-      "postProcessingOutdated": "Zpracováno ze starší verze přepisu. Kouzelná hůlka ho zpracuje znovu.",
       "contextSent": "Odesláno jako kontext",
       "contextSentTooltip": "Odešlo {{date}} poskytovateli následného zpracování jako kontext pozdějšího diktátu.",
       "contextUsed": "Dřívější diktáty jako kontext: {{count}}",
@@ -1004,8 +993,7 @@
         "wholeWord": "Jen celá slova",
         "invalidPattern": "Neplatný regulární výraz",
         "noMatches": "Hledání neodpovídá žádný záznam.",
-        "clear": "Vymazat",
-        "matchBeforeCorrection": "Shoda ve verzi před vaší opravou"
+        "clear": "Vymazat"
       },
       "versions": {
         "transcription": "Přepis",
@@ -1025,6 +1013,7 @@
         "saveAsNew": "Uložit jako novou verzi",
         "saveAsNewHint": "Ponechá tuto verzi a přidá váš text nad ni jako novou.",
         "cancel": "Zrušit",
+        "withShortcut": "{{hint}} ({{keys}})",
         "postProcessFurther": "Dále zpracovat",
         "postProcessFurtherHint": "Následně zpracuje nejnovější verzi; výsledek bude nová verze nad ní.",
         "postProcessThis": "Zpracovat tuto verzi",
@@ -1065,10 +1054,6 @@
         "goBackError": "Návrat k této verzi se nezdařil. Zkuste to znovu."
       },
       "contextEntryJump": "Zobrazit v historii a opravit",
-      "confirmReplaceTitle": "Nahradit vaši opravu?",
-      "confirmPostProcessReplacesCorrection": "Nové následné zpracování nahradí vaši opravu zpracovaného textu.",
-      "confirmRetranscribeReplacesCorrection": "Nový přepis nahradí vaše opravy tohoto záznamu.",
-      "confirmReplace": "Nahradit",
       "dropTitle": "Pusťte pro přepis",
       "dropDescription": "Zobrazí se v historii."
     },

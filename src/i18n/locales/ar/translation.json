@@ -952,12 +952,9 @@
       "save": "حفظ التفريغ",
       "unsave": "إزالة من المحفوظات",
       "delete": "حذف الإدخال",
-      "deletePostProcessing": "حذف المعالجة اللاحقة",
       "deleteError": ".فشل حذف الإدخال. يرجى المحاولة مرة أخرى",
-      "deletePostProcessingError": "فشل حذف المعالجة اللاحقة. يرجى المحاولة مرة أخرى.",
       "retranscribe": "إعادة النسخ",
       "retranscribeShift": "إعادة النسخ (مع Shift: ومعالجة لاحقة)",
-      "postProcess": "معالجة لاحقة",
       "postProcessOff": "المعالجة اللاحقة متوقفة في الإعدادات",
       "postProcessNotSetUp": "اختر أولاً مزوّدًا ونموذجًا وموجّهًا ضمن المعالجة اللاحقة",
       "recordingRemoved": "حُذف التسجيل للبقاء ضمن حد المساحة",
@@ -979,15 +976,7 @@
         "resizeNewest": "اسحب لتغيير ارتفاع أحدث إدخال. نقر مزدوج: الارتفاع الافتراضي",
         "resizeOther": "اسحب لتغيير ارتفاع كل الإدخالات الأقدم. نقر مزدوج: الارتفاع الافتراضي"
       },
-      "showOriginal": "عرض الأصل",
-      "showPostProcessed": "عرض النص المعالج",
       "edit": "تصحيح النص",
-      "saveCorrection": "حفظ",
-      "cancelCorrection": "إلغاء",
-      "corrected": "مُصحَّح",
-      "revertCorrection": "التراجع عن التصحيح",
-      "correctError": "فشل حفظ التصحيح. يرجى المحاولة مرة أخرى.",
-      "postProcessingOutdated": "تمت المعالجة اللاحقة لنسخة سابقة من التفريغ. يعيد زر العصا السحرية المعالجة اللاحقة.",
       "contextSent": "أُرسل كسياق",
       "contextSentTooltip": "أُرسل في {{date}} إلى مزوّد المعالجة اللاحقة كسياق لإملاء لاحق.",
       "contextUsed": "الإملاءات السابقة كسياق: {{count}}",
@@ -1004,8 +993,7 @@
         "wholeWord": "كلمات كاملة فقط",
         "invalidPattern": "تعبير نمطي غير صالح",
         "noMatches": "لا توجد إدخالات تطابق البحث.",
-        "clear": "مسح",
-        "matchBeforeCorrection": "تطابق في النسخة السابقة لتصحيحك"
+        "clear": "مسح"
       },
       "versions": {
         "transcription": "التفريغ",
@@ -1025,6 +1013,7 @@
         "saveAsNew": "حفظ كنسخة جديدة",
         "saveAsNewHint": "يُبقي هذه النسخة ويضيف نصك فوقها كنسخة جديدة.",
         "cancel": "إلغاء",
+        "withShortcut": "{{hint}} ({{keys}})",
         "postProcessFurther": "متابعة المعالجة اللاحقة",
         "postProcessFurtherHint": "يُجري المعالجة اللاحقة على أحدث نسخة، وتصبح النتيجة نسخة جديدة فوقها.",
         "postProcessThis": "معالجة لاحقة لهذه النسخة",
@@ -1065,10 +1054,6 @@
         "goBackError": "تعذّر الرجوع إلى تلك النسخة. يُرجى المحاولة مرة أخرى."
       },
       "contextEntryJump": "عرضه في السجل لتصحيحه",
-      "confirmReplaceTitle": "استبدال تصحيحك؟",
-      "confirmPostProcessReplacesCorrection": "إعادة المعالجة اللاحقة تستبدل تصحيحك للنص المعالج.",
-      "confirmRetranscribeReplacesCorrection": "إعادة النسخ تستبدل تصحيحاتك لهذا الإدخال.",
-      "confirmReplace": "استبدال",
       "dropTitle": "أفلت الملف لنسخه",
       "dropDescription": "سيظهر في السجل."
     },

@@ -39,12 +39,15 @@ interface PostProcessButtonProps {
   /** Runs an action the user chose (and agreed to, for a redo that loses
    * their edits). */
   onRun: (action: PostProcessAction) => void;
+  /** While the user edits the text: nothing may change the stack. */
+  disabled?: boolean;
 }
 
 export const PostProcessButton: React.FC<PostProcessButtonProps> = ({
   entry,
   availability,
   onRun,
+  disabled = false,
 }) => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -56,6 +59,7 @@ export const PostProcessButton: React.FC<PostProcessButtonProps> = ({
   const ready = availability === "ready";
   const more = postProcessActions(entry).filter((a) => a !== "post_process");
   const showMenu = ready && more.length > 0;
+  const usable = ready && !disabled;
 
   // Close on a press outside; the first item takes the focus on opening.
   useEffect(() => {
@@ -68,10 +72,11 @@ export const PostProcessButton: React.FC<PostProcessButtonProps> = ({
     return () => document.removeEventListener("mousedown", onDown);
   }, [open]);
 
-  // The stack changed so that no other action is left: nothing to show.
+  // The stack changed so that no other action is left, or editing began:
+  // nothing to show.
   useEffect(() => {
-    if (!showMenu) setOpen(false);
-  }, [showMenu]);
+    if (!showMenu || disabled) setOpen(false);
+  }, [showMenu, disabled]);
 
   const close = () => {
     setOpen(false);
@@ -118,7 +123,7 @@ export const PostProcessButton: React.FC<PostProcessButtonProps> = ({
       ? t("settings.history.postProcessOff")
       : t("settings.history.postProcessNotSetUp");
 
-  const iconClass = ready
+  const iconClass = usable
     ? "cursor-pointer text-ink-3 hover:text-logo-primary"
     : "cursor-not-allowed text-text/20";
 
@@ -126,8 +131,8 @@ export const PostProcessButton: React.FC<PostProcessButtonProps> = ({
     <div ref={rootRef} className="relative flex items-center">
       <button
         type="button"
-        onClick={ready ? () => onRun("post_process") : undefined}
-        aria-disabled={!ready || undefined}
+        onClick={usable ? () => onRun("post_process") : undefined}
+        aria-disabled={!usable || undefined}
         title={mainTitle}
         className={`p-1.5 rounded-md flex items-center justify-center transition-colors ${iconClass} ${
           showMenu ? "pe-0.5" : ""
@@ -139,6 +144,7 @@ export const PostProcessButton: React.FC<PostProcessButtonProps> = ({
         <button
           ref={chevronRef}
           type="button"
+          disabled={disabled}
           onClick={() => (open ? close() : setOpen(true))}
           onKeyDown={(event) => {
             if (!open && event.key === "ArrowDown") {

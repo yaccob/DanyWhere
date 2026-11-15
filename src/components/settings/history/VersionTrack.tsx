@@ -15,6 +15,7 @@ import { formatDateTime } from "@/utils/dateFormat";
 import { confirmLoss } from "./confirmLoss";
 import {
   describeStep,
+  stepSeconds,
   topIndex,
   versionMark,
   versionsLostByGoingBack,
@@ -23,7 +24,7 @@ import {
 const KEYS = "settings.history.versions";
 
 interface VersionTrackProps {
-  entry: Pick<HistoryEntry, "versions">;
+  entry: Pick<HistoryEntry, "versions" | "timestamp" | "source_name">;
   /** The version the entry shows (`shownVersion`). */
   shown: number;
   /** The versions the search matches (`matchingVersions`). */
@@ -72,20 +73,23 @@ export const VersionTrack: React.FC<VersionTrackProps> = ({
   // which one it is and the way back.
   const open = expanded || belowTop;
 
-  const stepLine = (step: VersionStep) => {
-    const { key, prompt, atSeconds } = describeStep(step);
+  const stepLine = (step: VersionStep, index: number, stepIndex: number) => {
+    const { key, prompt } = describeStep(step);
     const name = t(`${KEYS}.step.${key}`, { prompt });
-    return atSeconds === null
+    const seconds = stepSeconds(entry, index, stepIndex);
+    return seconds === null
       ? name
       : t(`${KEYS}.step.withTime`, {
           step: name,
-          time: formatDateTime(String(atSeconds), i18n.language),
+          time: formatDateTime(String(seconds), i18n.language),
         });
   };
 
   const chipTitle = (version: HistoryVersion, index: number) =>
     [
-      ...version.steps.map(stepLine),
+      ...version.steps.map((step, stepIndex) =>
+        stepLine(step, index, stepIndex),
+      ),
       ...(matching.includes(index) ? [t(`${KEYS}.searchMatch`)] : []),
       index === shown ? t(`${KEYS}.shown`) : t(`${KEYS}.showVersion`),
     ].join("\n");

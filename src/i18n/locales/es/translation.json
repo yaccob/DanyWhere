@@ -952,12 +952,9 @@
       "save": "Guardar transcripción",
       "unsave": "Eliminar de guardados",
       "delete": "Eliminar entrada",
-      "deletePostProcessing": "Eliminar post proceso",
       "deleteError": "Error al eliminar la entrada. Por favor, intenta de nuevo.",
-      "deletePostProcessingError": "Error al eliminar el post proceso. Por favor, intenta de nuevo.",
       "retranscribe": "Re-transcribir",
       "retranscribeShift": "Re-transcribir (con Mayús: y post procesar)",
-      "postProcess": "Post procesar",
       "postProcessOff": "El post proceso está desactivado en la configuración",
       "postProcessNotSetUp": "Primero elige un proveedor, un modelo y un prompt en Post proceso",
       "recordingRemoved": "Grabación eliminada para no superar el límite de espacio",
@@ -979,15 +976,7 @@
         "resizeNewest": "Arrastra para cambiar la altura de la entrada más reciente. Doble clic: altura predeterminada",
         "resizeOther": "Arrastra para cambiar la altura de todas las entradas anteriores. Doble clic: altura predeterminada"
       },
-      "showOriginal": "Mostrar original",
-      "showPostProcessed": "Mostrar post procesado",
       "edit": "Corregir el texto",
-      "saveCorrection": "Guardar",
-      "cancelCorrection": "Cancelar",
-      "corrected": "Corregido",
-      "revertCorrection": "Deshacer corrección",
-      "correctError": "Error al guardar la corrección. Por favor, intenta de nuevo.",
-      "postProcessingOutdated": "Post procesado a partir de una versión anterior de la transcripción. La varita lo vuelve a post procesar.",
       "contextSent": "Enviado como contexto",
       "contextSentTooltip": "Se envió el {{date}} al proveedor del post procesamiento como contexto de un dictado posterior.",
       "contextUsed": "Dictados anteriores como contexto: {{count}}",
@@ -1004,8 +993,7 @@
         "wholeWord": "Solo palabras completas",
         "invalidPattern": "No es una expresión regular válida",
         "noMatches": "Ninguna entrada coincide con la búsqueda.",
-        "clear": "Borrar",
-        "matchBeforeCorrection": "Coincidencia en la versión anterior a tu corrección"
+        "clear": "Borrar"
       },
       "versions": {
         "transcription": "Transcripción",
@@ -1025,6 +1013,7 @@
         "saveAsNew": "Guardar como versión nueva",
         "saveAsNewHint": "Conserva esta versión y añade tu texto encima como una nueva.",
         "cancel": "Cancelar",
+        "withShortcut": "{{hint}} ({{keys}})",
         "postProcessFurther": "Seguir post procesando",
         "postProcessFurtherHint": "Post procesa la versión más reciente; el resultado se añade encima como versión nueva.",
         "postProcessThis": "Post procesar esta versión",
@@ -1065,10 +1054,6 @@
         "goBackError": "No se pudo volver a esa versión. Inténtalo de nuevo."
       },
       "contextEntryJump": "Mostrarlo en el historial para corregirlo",
-      "confirmReplaceTitle": "¿Reemplazar tu corrección?",
-      "confirmPostProcessReplacesCorrection": "Post procesar de nuevo reemplaza tu corrección del texto post procesado.",
-      "confirmRetranscribeReplacesCorrection": "Re-transcribir reemplaza tus correcciones de esta entrada.",
-      "confirmReplace": "Reemplazar",
       "dropTitle": "Suelta para transcribir",
       "dropDescription": "Aparecerá en el historial."
     },

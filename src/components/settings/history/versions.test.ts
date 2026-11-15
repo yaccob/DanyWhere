@@ -10,12 +10,14 @@ import {
   defaultSaveMode,
   describeStep,
   entryText,
+  isSaveShortcut,
   matchingVersions,
   postProcessActions,
   redoNeedsConfirm,
   retranscribeNeedsConfirm,
   saveModes,
   shownVersion,
+  stepSeconds,
   topIndex,
   versionMark,
   versionText,
@@ -439,6 +441,80 @@ check("a step's time is in seconds, as History formats dates", () => {
     1_763_240_000,
   );
   assert.equal(describeStep(step("user", null)).atSeconds, null);
+});
+
+// ---- The time a chip's tooltip names for a step ---------------------------
+
+type Timed = Pick<HistoryEntry, "versions" | "timestamp" | "source_name">;
+const DICTATED_AT = 1_763_200_000;
+const timed = (
+  versions: HistoryVersion[],
+  source_name: string | null = null,
+): Timed => ({ versions, timestamp: DICTATED_AT, source_name });
+
+check("a step with a time keeps it, in seconds", () => {
+  const entry = timed([
+    transcription(),
+    { text: "x", steps: [step("user", 1_763_240_000_999)] },
+  ]);
+  assert.equal(stepSeconds(entry, 1, 0), 1_763_240_000);
+});
+
+check("the transcription without a time is the entry's", () => {
+  assert.equal(stepSeconds(timed([transcription()]), 0, 0), DICTATED_AT);
+  assert.equal(
+    stepSeconds(timed([transcription()], "talk.m4a"), 0, 0),
+    DICTATED_AT,
+  );
+});
+
+check("a dictation's own post-processing without a time is the entry's", () => {
+  const dictated = timed([transcription(), version("Polished.", "ai")]);
+  assert.equal(stepSeconds(dictated, 1, 0), DICTATED_AT);
+});
+
+check("other steps without a time have none", () => {
+  // A file's post-processing may have come later.
+  const file = timed([transcription(), version("Polished.", "ai")], "a.m4a");
+  assert.equal(stepSeconds(file, 1, 0), null);
+  // Migrated edits.
+  const edited = timed([transcription(), version("fixed", "user")]);
+  assert.equal(stepSeconds(edited, 1, 0), null);
+  // Post-processing of an edit, and a later step of the first version.
+  const later = timed([
+    transcription(),
+    version("fixed", "user"),
+    version("Polished.", "ai"),
+  ]);
+  assert.equal(stepSeconds(later, 2, 0), null);
+  const second = timed([transcription(), version("x", "user", "ai")]);
+  assert.equal(stepSeconds(second, 1, 1), null);
+});
+
+check("a step the stack doesn't have has no time", () => {
+  assert.equal(stepSeconds(timed([transcription()]), 1, 0), null);
+  assert.equal(stepSeconds(timed([transcription()]), 0, 1), null);
+});
+
+// ---- The save shortcut ---------------------------------------------------
+
+check("Cmd+Enter and Ctrl+Enter save, Enter alone doesn't", () => {
+  assert.equal(
+    isSaveShortcut({ key: "Enter", metaKey: true, ctrlKey: false }),
+    true,
+  );
+  assert.equal(
+    isSaveShortcut({ key: "Enter", metaKey: false, ctrlKey: true }),
+    true,
+  );
+  assert.equal(
+    isSaveShortcut({ key: "Enter", metaKey: false, ctrlKey: false }),
+    false,
+  );
+  assert.equal(
+    isSaveShortcut({ key: "s", metaKey: true, ctrlKey: false }),
+    false,
+  );
 });
 
 if (failures > 0) {

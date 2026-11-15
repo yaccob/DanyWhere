@@ -952,12 +952,9 @@
       "save": "Gem transskription",
       "unsave": "Fjern fra gemte",
       "delete": "Slet post",
-      "deletePostProcessing": "Slet efterbehandling",
       "deleteError": "Kunne ikke slette posten. Prøv igen.",
-      "deletePostProcessingError": "Kunne ikke slette efterbehandlingen. Prøv igen.",
       "retranscribe": "Transskribér igen",
       "retranscribeShift": "Transskribér igen (med Skift: og efterbehandl)",
-      "postProcess": "Efterbehandl",
       "postProcessOff": "Efterbehandling er slået fra i indstillingerne",
       "postProcessNotSetUp": "Vælg først en udbyder, en model og en prompt under Efterbehandling",
       "recordingRemoved": "Optagelse slettet for at holde lagergrænsen",
@@ -979,15 +976,7 @@
         "resizeNewest": "Træk for at ændre højden på den nyeste post. Dobbeltklik: standardhøjde",
         "resizeOther": "Træk for at ændre højden på alle ældre poster. Dobbeltklik: standardhøjde"
       },
-      "showOriginal": "Vis original",
-      "showPostProcessed": "Vis efterbehandlet",
       "edit": "Ret teksten",
-      "saveCorrection": "Gem",
-      "cancelCorrection": "Annuller",
-      "corrected": "Rettet",
-      "revertCorrection": "Fortryd rettelse",
-      "correctError": "Kunne ikke gemme rettelsen. Prøv igen.",
-      "postProcessingOutdated": "Efterbehandlet fra en tidligere version af transskriptionen. Tryllestaven efterbehandler den igen.",
       "contextSent": "Sendt som kontekst",
       "contextSentTooltip": "Blev sendt {{date}} til udbyderen af efterbehandlingen som kontekst til en senere diktering.",
       "contextUsed": "Tidligere dikteringer som kontekst: {{count}}",
@@ -1004,8 +993,7 @@
         "wholeWord": "Kun hele ord",
         "invalidPattern": "Ikke et gyldigt regulært udtryk",
         "noMatches": "Ingen poster matcher søgningen.",
-        "clear": "Ryd",
-        "matchBeforeCorrection": "Match i versionen før din rettelse"
+        "clear": "Ryd"
       },
       "versions": {
         "transcription": "Transskription",
@@ -1025,6 +1013,7 @@
         "saveAsNew": "Gem som ny version",
         "saveAsNewHint": "Beholder denne version og lægger din tekst ovenover som en ny.",
         "cancel": "Annuller",
+        "withShortcut": "{{hint}} ({{keys}})",
         "postProcessFurther": "Efterbehandl videre",
         "postProcessFurtherHint": "Efterbehandler den nyeste version; resultatet bliver en ny version ovenover.",
         "postProcessThis": "Efterbehandl denne version",
@@ -1065,10 +1054,6 @@
         "goBackError": "Kunne ikke gå tilbage til den version. Prøv igen."
       },
       "contextEntryJump": "Vis i historikken for at rette",
-      "confirmReplaceTitle": "Erstat din rettelse?",
-      "confirmPostProcessReplacesCorrection": "En ny efterbehandling erstatter din rettelse af den efterbehandlede tekst.",
-      "confirmRetranscribeReplacesCorrection": "At transskribere igen erstatter dine rettelser af denne post.",
-      "confirmReplace": "Erstat",
       "dropTitle": "Slip for at transskribere",
       "dropDescription": "Den vises i historikken."
     },

@@ -1,10 +1,5 @@
 import assert from "node:assert/strict";
-import {
-  postProcessAvailability,
-  postProcessedText,
-  retranscribeMode,
-  shownText,
-} from "./postProcessEntry";
+import { postProcessAvailability, retranscribeMode } from "./postProcessEntry";
 
 let failures = 0;
 const check = (name: string, run: () => void) => {
@@ -15,33 +10,6 @@ const check = (name: string, run: () => void) => {
     console.error(`FAILED: ${name}\n  ${(error as Error).message}`);
   }
 };
-
-const raw = { transcription_text: "raw words", post_processed_text: null };
-const processed = {
-  transcription_text: "raw words",
-  post_processed_text: "Clean words.",
-};
-
-check("an entry without post-processing has no post-processed text", () => {
-  assert.equal(postProcessedText(raw), null);
-});
-check("a blank post-processing counts as none", () => {
-  assert.equal(postProcessedText({ post_processed_text: "  \n" }), null);
-});
-check("the post-processed text is the stored one", () => {
-  assert.equal(postProcessedText(processed), "Clean words.");
-});
-
-check("an entry without post-processing shows its transcript", () => {
-  assert.equal(shownText(raw, false), "raw words");
-  assert.equal(shownText(raw, true), "raw words");
-});
-check("a post-processed entry shows the post-processed text", () => {
-  assert.equal(shownText(processed, false), "Clean words.");
-});
-check("a post-processed entry shows the original when asked", () => {
-  assert.equal(shownText(processed, true), "raw words");
-});
 
 const ready = {
   post_process_enabled: true,

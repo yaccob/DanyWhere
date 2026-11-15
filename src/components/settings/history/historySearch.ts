@@ -1,7 +1,7 @@
 // DanyWhere: searching History (`history_search.rs`). The backend searches
 // and pages; these helpers build its query, keep a shown search up to date,
-// choose which of an entry's texts it shows, and find what to highlight in
-// that text, in the window line and in a file's name.
+// and find what to highlight in a text, in the window line and in a file's
+// name. Which of an entry's versions a search shows: `versions.ts`.
 import type {
   EntryWindowContext,
   HistoryEntry,
@@ -11,8 +11,6 @@ import {
   windowLabel,
   type WindowFilter,
 } from "../dictation-context/dictationContext";
-import { isCorrected, type CorrectionPart } from "./corrections";
-import { postProcessedText, shownText } from "./postProcessEntry";
 
 /** What the search fields and their toggles hold. */
 export type SearchFields = {
@@ -233,54 +231,6 @@ export const windowLineRanges = (
     ranges.push(...matchRanges(app, matcher), ...matchRanges(label, matcher));
   }
   return joinRanges(ranges);
-};
-
-type ShownTextFields = Parameters<typeof shownText>[0];
-
-/** Whether an entry shows its original during a search: as the user chose
- * (`showOriginal`), unless that text has no match and the other one has;
- * then it shows the other, as if switched by hand. With matches in both it
- * keeps the user's choice. Without a text to search, with a pattern
- * JavaScript can't read (`matcher` null), or once the user switched it by
- * hand during this search (`pinned`), it shows what the user chose. */
-export const showsOriginal = (
-  entry: ShownTextFields,
-  matcher: TextMatcher | null,
-  showOriginal: boolean,
-  pinned = false,
-): boolean => {
-  if (pinned || !matcher || postProcessedText(entry) === null) {
-    return showOriginal;
-  }
-  const matches = (original: boolean) =>
-    matchRanges(shownText(entry, original), matcher).length > 0;
-  if (matches(showOriginal) || !matches(!showOriginal)) return showOriginal;
-  return !showOriginal;
-};
-
-/** Whether the search matches the entry only in a text the user's
- * correction replaced (the backend searches those too), so neither view
- * shows the match and the entry says why it was found instead. `false`
- * without a text to search or with a pattern JavaScript can't read. */
-export const matchesOnlyBeforeCorrection = (
-  entry: ShownTextFields,
-  matcher: TextMatcher | null,
-): boolean => {
-  if (!matcher) return false;
-  const matches = (text: string | null) =>
-    text !== null && matchRanges(text, matcher).length > 0;
-  if (matches(shownText(entry, false)) || matches(shownText(entry, true))) {
-    return false;
-  }
-  const replaced = (part: CorrectionPart) =>
-    isCorrected(entry, part)
-      ? part === "transcription"
-        ? entry.transcription_text
-        : postProcessedText(entry)
-      : null;
-  return (
-    matches(replaced("transcription")) || matches(replaced("post_processing"))
-  );
 };
 
 /** `text` cut into the parts to show plain and highlighted. */
