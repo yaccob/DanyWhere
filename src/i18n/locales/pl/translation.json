@@ -379,7 +379,7 @@
           },
           "toggle_send_context": {
             "name": "Wysyłaj kontekst",
-            "description": "Włącza lub wyłącza wysyłanie kontekstu z postprocesem dla aktywnego profilu. Działa, dopóki postproces jest włączony."
+            "description": "Włącza lub wyłącza wysyłanie kontekstu z postprocesem dla profilu, którego używa dyktowanie do aplikacji na pierwszym planie. Działa, dopóki postproces jest włączony."
           }
         },
         "errors": {

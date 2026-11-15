@@ -379,7 +379,7 @@
           },
           "toggle_send_context": {
             "name": "Send kontekst",
-            "description": "Slår afsendelse af kontekst med efterbehandlingen til eller fra for den aktive profil. Virker, så længe efterbehandlingen er slået til."
+            "description": "Slår afsendelse af kontekst med efterbehandlingen til eller fra for den profil, en diktering i appen forrest bruger. Virker, så længe efterbehandlingen er slået til."
           }
         },
         "errors": {

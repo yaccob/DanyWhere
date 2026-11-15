@@ -379,7 +379,7 @@
           },
           "toggle_send_context": {
             "name": "Send Context",
-            "description": "Turns sending context with post-processing on or off for the active profile. Works while post-processing is on."
+            "description": "Turns sending context with post-processing on or off for the profile a dictation into the app in front uses. Works while post-processing is on."
           }
         },
         "errors": {

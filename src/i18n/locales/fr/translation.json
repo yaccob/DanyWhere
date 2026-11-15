@@ -379,7 +379,7 @@
           },
           "toggle_send_context": {
             "name": "Envoyer le contexte",
-            "description": "Active ou désactive l'envoi du contexte avec le post-traitement pour le profil actif. Fonctionne tant que le post-traitement est activé."
+            "description": "Active ou désactive l'envoi du contexte avec le post-traitement pour le profil qu'utilise une dictée dans l'app au premier plan. Fonctionne tant que le post-traitement est activé."
           }
         },
         "errors": {

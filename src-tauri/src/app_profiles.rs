@@ -264,7 +264,10 @@ fn dictation_lock() -> std::sync::MutexGuard<'static, Option<DictationProfile>> 
 }
 
 /// The application in front, looked up only while it can choose the profile.
-fn frontmost_if_choosing(settings: &AppSettings) -> Option<String> {
+/// A dictation's start and the shortcut "Send Context" (`send_context`) both
+/// look it up here and pass it to [`dictation_profile`], so the shortcut
+/// turns over the switch of the profile the next dictation gets.
+pub fn frontmost_if_choosing(settings: &AppSettings) -> Option<String> {
     if settings.profile_auto_by_app && has_assignments(settings) {
         crate::window_capture::frontmost_app().map(|(id, _)| id)
     } else {
@@ -299,6 +302,34 @@ pub fn begin_dictation(app: &AppHandle) -> Option<OverlayProfile> {
     }
     *dictation_lock() = chosen;
     shown
+}
+
+/// The id of the profile the dictation in progress uses, when it isn't the
+/// active one.
+pub fn dictation_profile_id() -> Option<String> {
+    dictation_lock().as_ref().map(|profile| profile.id.clone())
+}
+
+/// Carries profile `id`'s "Send Context", just turned over to `on`, into the
+/// dictation in progress (`dictation`) when that runs with the profile, so
+/// its recording follows the switch as one with the active profile does
+/// (`send_context` decides when the recording stops). Its other values stay
+/// as they were at its start. Returns whether it runs with that profile.
+fn carry_send_context(dictation: &mut Option<DictationProfile>, id: &str, on: bool) -> bool {
+    match dictation {
+        Some(profile) if profile.id == id => {
+            profile.values.send_context = on;
+            true
+        }
+        _ => false,
+    }
+}
+
+/// [`carry_send_context`] for the dictation in progress.
+pub fn carry_send_context_into_dictation(id: &str, on: bool) {
+    if carry_send_context(&mut dictation_lock(), id, on) {
+        log::info!("The recording with profile {id} follows Send Context");
+    }
 }
 
 /// Ends the dictation's own profile: the active profile applies again.
@@ -538,6 +569,37 @@ mod tests {
         ));
         assert!(effective_post_process(true, None));
         assert!(!effective_post_process(false, None));
+    }
+
+    #[test]
+    fn a_turned_over_send_context_reaches_the_recording_of_that_profile_only() {
+        let settings = with_mail_profile();
+        let mut dictation = Some(DictationProfile {
+            id: "mail".to_string(),
+            values: settings.profiles[1].values.clone(),
+        });
+        let values = |dictation: &Option<DictationProfile>| {
+            dictation.as_ref().expect("a profile").values.clone()
+        };
+        assert!(!values(&dictation).send_context);
+        assert!(carry_send_context(&mut dictation, "mail", true));
+        assert!(values(&dictation).send_context);
+        // Another profile's switch leaves the recording's values.
+        assert!(!carry_send_context(
+            &mut dictation,
+            DEFAULT_PROFILE_ID,
+            false
+        ));
+        assert!(values(&dictation).send_context);
+        // Its other values stay as they were at its start.
+        assert_eq!(values(&dictation).selected_model, "whisper");
+        assert!(carry_send_context(&mut dictation, "mail", false));
+        assert!(!values(&dictation).send_context);
+        // A recording with the active profile holds no values of its own: it
+        // reads the stored switch anyway.
+        let mut active = None;
+        assert!(!carry_send_context(&mut active, "mail", true));
+        assert!(active.is_none());
     }
 
     fn shown(name: &str, mode: ProfileMode) -> Option<OverlayProfile> {

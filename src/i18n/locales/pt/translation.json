@@ -379,7 +379,7 @@
           },
           "toggle_send_context": {
             "name": "Enviar contexto",
-            "description": "Ativa ou desativa o envio de contexto com o pós-processamento para o perfil ativo. Funciona enquanto o pós-processamento estiver ativado."
+            "description": "Ativa ou desativa o envio de contexto com o pós-processamento para o perfil que um ditado na app em primeiro plano usa. Funciona enquanto o pós-processamento estiver ativado."
           }
         },
         "errors": {

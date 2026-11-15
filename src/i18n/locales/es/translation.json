@@ -379,7 +379,7 @@
           },
           "toggle_send_context": {
             "name": "Enviar contexto",
-            "description": "Activa o desactiva el envío de contexto con el post proceso para el perfil activo. Funciona mientras el post proceso está activado."
+            "description": "Activa o desactiva el envío de contexto con el post proceso para el perfil que usa un dictado en la app en primer plano. Funciona mientras el post proceso está activado."
           }
         },
         "errors": {

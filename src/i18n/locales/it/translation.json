@@ -379,7 +379,7 @@
           },
           "toggle_send_context": {
             "name": "Invia contesto",
-            "description": "Attiva o disattiva l'invio del contesto con la post-elaborazione per il profilo attivo. Funziona finché la post-elaborazione è attiva."
+            "description": "Attiva o disattiva l'invio del contesto con la post-elaborazione per il profilo che usa una dettatura nell'app in primo piano. Funziona finché la post-elaborazione è attiva."
           }
         },
         "errors": {

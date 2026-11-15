@@ -1246,10 +1246,10 @@ pub fn get_default_settings() -> AppSettings {
             current_binding: default_toggle_profile_auto_shortcut.to_string(),
         },
     );
-    // DanyWhere: turns the active profile's "Send Context" on and off
-    // (`send_context`). K for "Kontext"/context (C is Copy Last
-    // Transcript); Control/Alt+Shift like the profile toggle. Registered only
-    // while some dictation can post-process.
+    // DanyWhere: turns "Send Context" on and off for the profile a dictation
+    // into the app in front uses (`send_context`). K for "Kontext"/context
+    // (C is Copy Last Transcript); Control/Alt+Shift like the profile
+    // toggle. Registered only while some dictation can post-process.
     #[cfg(target_os = "macos")]
     let default_toggle_send_context_shortcut = "ctrl+shift+k";
     #[cfg(not(target_os = "macos"))]
@@ -1261,7 +1261,7 @@ pub fn get_default_settings() -> AppSettings {
             id: crate::send_context::TOGGLE_BINDING.to_string(),
             name: "Send Context".to_string(),
             description:
-                "Turns sending context with post-processing on or off for the active profile."
+                "Turns sending context with post-processing on or off for the profile a dictation into the app in front uses."
                     .to_string(),
             default_binding: default_toggle_send_context_shortcut.to_string(),
             current_binding: default_toggle_send_context_shortcut.to_string(),

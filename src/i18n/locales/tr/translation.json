@@ -379,7 +379,7 @@
           },
           "toggle_send_context": {
             "name": "Bağlam Gönder",
-            "description": "Etkin profil için son işlemle birlikte bağlam gönderilmesini açar veya kapatır. Son işlem açık olduğu sürece çalışır."
+            "description": "Öndeki uygulamaya yapılan bir diktenin kullandığı profil için son işlemle birlikte bağlam gönderilmesini açar veya kapatır. Son işlem açık olduğu sürece çalışır."
           }
         },
         "errors": {

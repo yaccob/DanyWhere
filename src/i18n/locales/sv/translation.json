@@ -379,7 +379,7 @@
           },
           "toggle_send_context": {
             "name": "Skicka kontext",
-            "description": "Slår på eller av att skicka kontext med efterbearbetningen för den aktiva profilen. Fungerar så länge efterbearbetningen är på."
+            "description": "Slår på eller av att skicka kontext med efterbearbetningen för den profil som en diktering i appen längst fram använder. Fungerar så länge efterbearbetningen är på."
           }
         },
         "errors": {

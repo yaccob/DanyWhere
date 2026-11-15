@@ -379,7 +379,7 @@
           },
           "toggle_send_context": {
             "name": "Context meesturen",
-            "description": "Zet het meesturen van context bij de naverwerking aan of uit voor het actieve profiel. Werkt zolang de naverwerking aan staat."
+            "description": "Zet het meesturen van context bij de naverwerking aan of uit voor het profiel dat een dictaat in de app vooraan gebruikt. Werkt zolang de naverwerking aan staat."
           }
         },
         "errors": {
