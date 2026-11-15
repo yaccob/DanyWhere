@@ -92,18 +92,7 @@ export function recordingLayout(
   glyph: boolean,
   live = false,
 ): PillLayout {
-  const min = live ? PILL.live : PILL.rest;
-  const chrome = live
-    ? PILL.live + segment(glyph)
-    : ROW_PAD + SIDES + WAVE + segment(glyph);
-  const content =
-    (live ? OVERLAY_WINDOW.live : OVERLAY_WINDOW.session) - BORDER;
-  return layout(
-    chrome,
-    nameWidth,
-    Math.min(RECORDING_NAME_MAX, content - chrome),
-    min,
-  );
+  return recordingPill(nameWidth, { named: true, glyph, context: false }, live);
 }
 
 /**
@@ -116,7 +105,76 @@ export function workingLayout(
   glyph: boolean,
   live = false,
 ): PillLayout {
-  const chrome = ROW_PAD + SIDES + LABEL_PAD + labelWidth + segment(glyph);
+  return workingPill(
+    labelWidth,
+    nameWidth,
+    { named: true, glyph, context: false },
+    live,
+  );
+}
+
+// DanyWhere: "Send Context" (`send_context.rs`). A dictation that sends
+// earlier dictations as context shows a speech bubble after its profile's
+// name, or, with a single profile, alone after the separator.
+
+/** The bubble's state, as a glyph. */
+export type ContextGlyph = "context" | "context-off";
+
+/** What a dictation's pill shows after its waveform or working label. */
+export interface DictationSegment {
+  /** The profile's name (from two profiles on). */
+  named: boolean;
+  /** The glyph of choosing the profile by application before the name. */
+  glyph: boolean;
+  /** The speech bubble: this dictation sends context. */
+  context: boolean;
+}
+
+const SEPARATOR = 8; // .ssep: 1px and 7px after it
+const CONTEXT = 20; // .sctx: 14px and 6px after it
+
+/**
+ * The bubble: in the notice after turning the switch over its new state
+ * (crossed out while off), in a dictation's pill only while it sends context.
+ */
+export function contextGlyph(
+  sends: boolean,
+  where: "notice" | "dictation",
+): ContextGlyph | null {
+  if (sends) return "context";
+  return where === "notice" ? "context-off" : null;
+}
+
+/** The segment's width without the name, which `layout` adds. */
+const segmentChrome = (s: DictationSegment) =>
+  (s.named ? segment(s.glyph) : SEPARATOR) + (s.context ? CONTEXT : 0);
+
+/** The recording pill with `segment` after the waveform. */
+export function recordingPill(
+  nameWidth: number,
+  s: DictationSegment,
+  live = false,
+): PillLayout {
+  const min = live ? PILL.live : PILL.rest;
+  const chrome = (live ? PILL.live : ROW_PAD + SIDES + WAVE) + segmentChrome(s);
+  const content =
+    (live ? OVERLAY_WINDOW.live : OVERLAY_WINDOW.session) - BORDER;
+  return layout(
+    chrome,
+    s.named ? nameWidth : 0,
+    Math.min(RECORDING_NAME_MAX, content - chrome),
+    min,
+  );
+}
+
+/** The working pill with `segment` after the label. */
+export function workingPill(
+  labelWidth: number,
+  nameWidth: number,
+  s: DictationSegment,
+  live = false,
+): PillLayout {
+  const chrome = ROW_PAD + SIDES + LABEL_PAD + labelWidth + segmentChrome(s);
   const content = live ? PILL.open : OVERLAY_WINDOW.session - BORDER;
-  return layout(chrome, nameWidth, content - chrome, PILL.work);
+  return layout(chrome, s.named ? nameWidth : 0, content - chrome, PILL.work);
 }

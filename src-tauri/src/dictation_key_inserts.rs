@@ -5,7 +5,7 @@
 //! macOS lets an app ask DanyWhere for text only when a key press reaches
 //! that app and calls a service there (`insert_service`). So while a locked
 //! recording runs (toggle, or hold-or-toggle after a tap), DanyWhere releases
-//! its dictation shortcuts (plain, with post-processing, with context): their
+//! its dictation shortcuts (plain, with post-processing): their
 //! next press reaches the app being typed in, where it is the key equivalent
 //! of that shortcut's "end dictation" service, which ends the recording and
 //! answers with the text. As soon as the recording ends, for whatever reason,
@@ -37,11 +37,7 @@ use crate::settings::ShortcutBinding;
 use crate::tray::TrayIconState;
 
 /// The dictation shortcuts, each with an "end dictation" service.
-const DICTATION_BINDINGS: [&str; 3] = [
-    "transcribe",
-    "transcribe_with_post_process",
-    crate::dictation_context::CONTEXT_BINDING,
-];
+const DICTATION_BINDINGS: [&str; 2] = ["transcribe", "transcribe_with_post_process"];
 
 /// The dictation shortcuts to release and take back. Those that need
 /// post-processing are registered only while it is on (`shortcut`), so
@@ -599,10 +595,6 @@ mod tests {
         bindings(&[
             ("transcribe", "ctrl+space"),
             ("transcribe_with_post_process", "ctrl+shift+space"),
-            (
-                crate::dictation_context::CONTEXT_BINDING,
-                "ctrl+shift+command+space",
-            ),
         ])
     }
 
@@ -741,10 +733,6 @@ mod tests {
         let bindings = bindings(&[
             ("transcribe", "option+space"),
             ("transcribe_with_post_process", "ctrl+shift+space"),
-            (
-                crate::dictation_context::CONTEXT_BINDING,
-                "option+shift+space",
-            ),
         ]);
         assert_eq!(
             bindings_to_release(true, &bindings),
@@ -837,10 +825,10 @@ mod tests {
     }
 
     #[test]
-    fn the_context_shortcut_is_released_too() {
-        // Its second press must reach the app as well, where its own service
-        // ends the dictation with context (2026-11-13).
-        assert!(DICTATION_BINDINGS.contains(&crate::dictation_context::CONTEXT_BINDING));
+    fn both_dictation_shortcuts_are_released_and_no_context_shortcut() {
+        // The context shortcut and its service are gone (2026-11-15); the
+        // post-process shortcut's service follows "Send Context".
+        assert!(!DICTATION_BINDINGS.contains(&crate::send_context::RETIRED_BINDING));
         assert!(DICTATION_BINDINGS.contains(&"transcribe"));
         assert!(DICTATION_BINDINGS.contains(&"transcribe_with_post_process"));
     }
@@ -878,8 +866,8 @@ mod tests {
             "ctrl+shift+space"
         );
         assert_eq!(
-            settings.bindings[crate::dictation_context::CONTEXT_BINDING].default_binding,
-            "ctrl+shift+command+space"
+            settings.bindings[crate::send_context::TOGGLE_BINDING].default_binding,
+            "ctrl+shift+k"
         );
         assert_eq!(
             settings.bindings["paste_last_transcript"].default_binding,

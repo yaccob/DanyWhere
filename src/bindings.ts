@@ -586,6 +586,12 @@ async listApplications() : Promise<ApplicationInfo[]> {
     return await TAURI_INVOKE("list_applications");
 },
 /**
+ * The switch in the sidebar and on the Context settings.
+ */
+async setSendContext(enabled: boolean) : Promise<void> {
+    await TAURI_INVOKE("set_send_context", { enabled });
+},
+/**
  * Temporarily unregister all bindings while the user is recording a
  * shortcut in the UI. This avoids firing actions while keys are recorded.
  */
@@ -1677,7 +1683,13 @@ profile_words?: string[];
  * DanyWhere: whether an application's profile is used for dictations
  * into it. Not used yet.
  */
-profile_auto_by_app?: boolean }
+profile_auto_by_app?: boolean; 
+/**
+ * DanyWhere: the active profile's switch "Send Context": a dictation
+ * with post-processing sends earlier dictations of the same window as
+ * context (`send_context`).
+ */
+send_context?: boolean }
 /**
  * An application that can be assigned to a profile.
  */
@@ -1819,8 +1831,8 @@ export type EffortSource =
  */
 export type EntryWindowContext = { window_app_id: string | null; window_app_name: string | null; window_title: string | null; 
 /**
- * It was dictated (or post-processed again) with the context shortcut,
- * so re-processing it from the History uses context again.
+ * It was dictated (or post-processed again) with context, so
+ * re-processing it from the History uses context again.
  */
 context_requested: boolean; 
 /**
@@ -2207,7 +2219,11 @@ context_max_entries: number;
 /**
  * `dictation_context.char_budget`
  */
-context_char_budget: number; filler_word_removal_enabled: boolean; custom_filler_words: string[] | null; append_trailing_space: boolean }
+context_char_budget: number; 
+/**
+ * The switch "Send Context" (`send_context`).
+ */
+send_context: boolean; filler_word_removal_enabled: boolean; custom_filler_words: string[] | null; append_trailing_space: boolean }
 /**
  * Recording phase events for windows that follow along (onboarding's Try it).
  */

@@ -12,6 +12,7 @@ import { Button } from "../../ui/Button";
 import { Input } from "../../ui/Input";
 import { useSettings } from "../../../hooks/useSettings";
 import { ShortcutInput } from "../ShortcutInput";
+import { SendContextSwitch } from "./SendContextSwitch";
 import {
   LIMITS,
   filled,
@@ -175,8 +176,8 @@ const WindowTitles: React.FC = () => {
   );
 };
 
-/** The shortcut that dictates with context, the limits, the exclusion list
- * and the window titles. */
+/** The switch "Send Context" and its shortcut, the limits, the exclusion
+ * list and the window titles. */
 export const DictationContextSettings: React.FC = () => {
   const { t } = useTranslation();
   const { getSetting, updateSetting, isUpdating } = useSettings();
@@ -191,8 +192,9 @@ export const DictationContextSettings: React.FC = () => {
 
   return (
     <>
+      <SendContextSwitch />
       <ShortcutInput
-        shortcutId="transcribe_with_context"
+        shortcutId="toggle_send_context"
         descriptionMode="tooltip"
         grouped={true}
       />

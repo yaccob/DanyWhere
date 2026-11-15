@@ -429,8 +429,7 @@ impl TranscriptionJobManager {
             self.emit(entry.id, TranscriptionJobStatus::PostProcessing);
         }
         // DanyWhere: the entries made before it in the same window go along
-        // as context when it was dictated with the context shortcut
-        // (`dictation_context`).
+        // as context when it was dictated with context (`dictation_context`).
         let with_context = post_process && entry.window_context.context_requested;
         let mut context_query =
             crate::dictation_context::ContextQuery::for_entry(&entry, word_replacements.clone());
@@ -486,7 +485,7 @@ impl TranscriptionJobManager {
             return Err(anyhow!("The entry has no transcript to post-process"));
         }
         // DanyWhere: the entries made before it in the same window go along
-        // as context when it was dictated with the context shortcut; the
+        // as context when it was dictated with context; the
         // word-list hint only fits the transcription as the model wrote it,
         // not the user's correction.
         let with_context = entry.window_context.context_requested;

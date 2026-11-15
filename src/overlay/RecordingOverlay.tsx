@@ -10,17 +10,23 @@ import type {
   StreamTextEvent,
   StreamWorkKind,
 } from "@/bindings";
+import { ContextGlyphIcon } from "@/components/icons/ContextGlyphIcon";
 import { NoticeBadgeIcon } from "@/components/icons/NoticeBadgeIcon";
 import { ProfileGlyphIcon } from "@/components/icons/ProfileGlyphIcon";
 import i18n, { syncLanguageFromSettings } from "@/i18n";
 import { noticeDisplay } from "@/lib/notices";
 import {
+  contextGlyph,
   profileGlyph,
   profileNoticeLayout,
-  recordingLayout,
-  workingLayout,
+  recordingPill,
+  workingPill,
 } from "@/lib/overlayProfile";
-import type { OverlayProfile, ProfileGlyph } from "@/lib/overlayProfile";
+import type {
+  DictationSegment,
+  OverlayProfile,
+  ProfileGlyph,
+} from "@/lib/overlayProfile";
 import type { ModelStateEvent } from "@/lib/types/events";
 import { getLanguageDirection } from "@/lib/utils/rtl";
 
@@ -35,7 +41,8 @@ type OverlayState =
   | "ready"
   | "not_ready"
   | "word_list"
-  | "profile";
+  | "profile"
+  | "context";
 
 const isNoticeState = (state: OverlayState) =>
   state === "notice" || state === "live_notice";
@@ -105,6 +112,14 @@ const RecordingOverlay: React.FC = () => {
   // waveform and working label; null: only one profile, nothing to show.
   const [dictationProfile, setDictationProfile] =
     useState<OverlayProfile | null>(null);
+  // DanyWhere: "Send Context" (`send_context.rs`): the profile and new state
+  // its shortcut or tray item names, and whether this dictation sends
+  // context, shown as a speech bubble after its profile.
+  const [noticeContext, setNoticeContext] = useState<{
+    name: string;
+    sends: boolean;
+  } | null>(null);
+  const [dictationContext, setDictationContext] = useState(false);
   // DanyWhere: measured widths of the profile's name and the working label,
   // since a pill that shows a profile is as wide as its content.
   const [profileNameWidth, setProfileNameWidth] = useState(0);
@@ -145,6 +160,16 @@ const RecordingOverlay: React.FC = () => {
       const unlistenDictationProfile = await listen<OverlayProfile | null>(
         "overlay-dictation-profile",
         (event) => setDictationProfile(event.payload),
+      );
+
+      const unlistenContext = await listen<{ name: string; sends: boolean }>(
+        "overlay-context",
+        (event) => setNoticeContext(event.payload),
+      );
+
+      const unlistenDictationContext = await listen<boolean>(
+        "overlay-dictation-context",
+        (event) => setDictationContext(event.payload),
       );
 
       const unlistenInsertKeys = await listen<{ keys: string | null }>(
@@ -261,6 +286,8 @@ const RecordingOverlay: React.FC = () => {
         unlistenWordList();
         unlistenProfile();
         unlistenDictationProfile();
+        unlistenContext();
+        unlistenDictationContext();
         unlistenInsertKeys();
         unlistenShow();
         unlistenHide();
@@ -328,9 +355,19 @@ const RecordingOverlay: React.FC = () => {
   )
     ? t("overlay.processing")
     : transcribingLabel;
-  // DanyWhere: the profile a pill shows: the switch's in its notice, the
-  // dictation's in a session.
-  const probedProfile = state === "profile" ? noticeProfile : dictationProfile;
+  // DanyWhere: the profile name a pill shows: the switch's in its notice
+  // (choosing by application, or Send Context), the dictation's in a session.
+  const probedName =
+    state === "profile"
+      ? noticeProfile?.name
+      : state === "context"
+        ? noticeContext?.name
+        : dictationProfile?.name;
+  // A dictation's pill shows a segment after its waveform or label for its
+  // profile (from two profiles on) or the bubble of Send Context.
+  const dictationContextGlyph = contextGlyph(dictationContext, "dictation");
+  const segmentShown =
+    dictationProfile !== null || dictationContextGlyph !== null;
 
   // Like the notice: a pill that shows a profile gets a measured width.
   useLayoutEffect(() => {
@@ -340,7 +377,7 @@ const RecordingOverlay: React.FC = () => {
     const label = labelProbeRef.current;
     if (label)
       setWorkLabelWidth(Math.ceil(label.getBoundingClientRect().width));
-  }, [probedProfile?.name, workLabel, isVisible, state]);
+  }, [probedName, segmentShown, workLabel, isVisible, state]);
 
   if (!isVisible && !shownNotice) return null;
 
@@ -397,24 +434,38 @@ const RecordingOverlay: React.FC = () => {
   const dictationGlyph = dictationProfile
     ? profileGlyph(dictationProfile.mode, "dictation")
     : null;
-  // DanyWhere: separator, glyph and name of the dictation's profile, after
-  // the waveform or the working label; `nameMax` cuts a long name.
+  // What the pill's segment holds, for its width (`overlayProfile.ts`).
+  const segmentParts: DictationSegment = {
+    named: dictationProfile !== null,
+    glyph: dictationGlyph !== null,
+    context: dictationContextGlyph !== null,
+  };
+  // DanyWhere: separator, glyph and name of the dictation's profile, then
+  // the bubble while it sends context, after the waveform or the working
+  // label; `nameMax` cuts a long name.
   const profileSegment = (nameMax: number) =>
-    dictationProfile && (
+    segmentShown && (
       <span className="sprofile">
         <span className="ssep" />
-        {glyphElement(dictationGlyph)}
-        <span className="sprofile-name" style={{ maxWidth: nameMax }}>
-          {dictationProfile.name}
-        </span>
+        {dictationProfile && glyphElement(dictationGlyph)}
+        {dictationProfile && (
+          <span className="sprofile-name" style={{ maxWidth: nameMax }}>
+            {dictationProfile.name}
+          </span>
+        )}
+        {dictationContextGlyph && (
+          <ContextGlyphIcon glyph={dictationContextGlyph} className="sctx" />
+        )}
       </span>
     );
   // The full name and working label, measured for the pill's width.
-  const profileProbes = probedProfile && (
+  const profileProbes = (probedName !== undefined || segmentShown) && (
     <>
-      <span ref={profileProbeRef} className="sprobe" aria-hidden="true">
-        {probedProfile.name}
-      </span>
+      {probedName !== undefined && (
+        <span ref={profileProbeRef} className="sprobe" aria-hidden="true">
+          {probedName}
+        </span>
+      )}
       <span ref={labelProbeRef} className="sprobe" aria-hidden="true">
         {workLabel}
       </span>
@@ -433,7 +484,7 @@ const RecordingOverlay: React.FC = () => {
       <div className="sbase-l">
         <span className={`sdot ${captureReady ? "ready" : "arming"}`} />
       </div>
-      {dictationProfile ? (
+      {segmentShown ? (
         <div className="scenter">
           {waveform}
           {profileSegment(nameMax)}
@@ -456,7 +507,7 @@ const RecordingOverlay: React.FC = () => {
       <div className="sbase-l">
         <span className="sspinner" />
       </div>
-      {dictationProfile ? (
+      {segmentShown ? (
         <div className="scenter">
           <span className="swork-label">{label}</span>
           {profileSegment(nameMax)}
@@ -510,17 +561,12 @@ const RecordingOverlay: React.FC = () => {
     // DanyWhere: the pill grows with the dictation's profile; the open panel
     // keeps its width.
     const liveLayout = working
-      ? workingLayout(
-          workLabelWidth,
-          profileNameWidth,
-          dictationGlyph !== null,
-          true,
-        )
-      : recordingLayout(profileNameWidth, dictationGlyph !== null, true);
+      ? workingPill(workLabelWidth, profileNameWidth, segmentParts, true)
+      : recordingPill(profileNameWidth, segmentParts, true);
     const liveStyle =
       liveNotice && !open
         ? { width: noticeWidth }
-        : dictationProfile && !liveNotice && !open
+        : segmentShown && !liveNotice && !open
           ? { width: liveLayout.width }
           : undefined;
 
@@ -635,9 +681,14 @@ const RecordingOverlay: React.FC = () => {
   // ---- DanyWhere: profile notice, after a switch in the sidebar or the tray
   // or the shortcut of choosing the profile by application: the switch's
   // glyph (the dot without assignments) and the profile's name, as wide as
-  // they are.
-  if (state === "profile") {
+  // they are. After turning Send Context over by its shortcut or the tray,
+  // the same notice with the speech bubble (crossed out while off).
+  if (state === "profile" || state === "context") {
     const { width, nameMax } = profileNoticeLayout(profileNameWidth);
+    const noticeContextGlyph = contextGlyph(
+      noticeContext?.sends ?? false,
+      "notice",
+    );
     return (
       <div
         dir={direction}
@@ -646,11 +697,18 @@ const RecordingOverlay: React.FC = () => {
         {profileProbes}
         <div className="scard compact" style={{ width }}>
           <div className="sbase snotice">
-            {glyphElement(
-              profileGlyph(noticeProfile?.mode ?? "none", "notice"),
+            {state === "context" && noticeContextGlyph ? (
+              <ContextGlyphIcon
+                glyph={noticeContextGlyph}
+                className={`sglyph ${noticeContextGlyph}`}
+              />
+            ) : (
+              glyphElement(
+                profileGlyph(noticeProfile?.mode ?? "none", "notice"),
+              )
             )}
             <span className="nlabel" style={{ maxWidth: nameMax }}>
-              {noticeProfile?.name}
+              {probedName}
             </span>
           </div>
         </div>
@@ -662,10 +720,10 @@ const RecordingOverlay: React.FC = () => {
   // spinner + label (transcribing / processing). Never both. The pill animates its
   // width between them; the cancel button is in both rows so it stays put.
   const working = state === "transcribing" || state === "processing";
-  // DanyWhere: the pill grows with the dictation's profile.
+  // DanyWhere: the pill grows with the dictation's profile and bubble.
   const compactLayout = working
-    ? workingLayout(workLabelWidth, profileNameWidth, dictationGlyph !== null)
-    : recordingLayout(profileNameWidth, dictationGlyph !== null);
+    ? workingPill(workLabelWidth, profileNameWidth, segmentParts)
+    : recordingPill(profileNameWidth, segmentParts);
 
   return (
     <div
@@ -679,7 +737,7 @@ const RecordingOverlay: React.FC = () => {
         style={
           shownNotice
             ? { width: noticeWidth }
-            : dictationProfile
+            : segmentShown
               ? { width: compactLayout.width }
               : undefined
         }

@@ -2,6 +2,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { useProfiles } from "@/hooks/useProfiles";
 import { Dropdown } from "../../ui/Dropdown";
+import { SendContextCompact } from "../dictation-context/SendContextSwitch";
 import { ProfileAutoByAppCompact } from "./ProfileAutoByApp";
 
 /** DanyWhere: the profile in use, at the top of the sidebar on every page.
@@ -28,6 +29,7 @@ export const ProfileSelector: React.FC = () => {
         className="w-full"
       />
       <ProfileAutoByAppCompact />
+      <SendContextCompact />
     </div>
   );
 };

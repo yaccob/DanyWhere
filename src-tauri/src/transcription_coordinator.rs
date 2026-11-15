@@ -425,9 +425,8 @@ impl CoordinatorState {
                     debug!("Ignoring press for '{}': key is held", input.binding_id);
                 }
                 // DanyWhere: generalized from Handy's "post-process shortcut
-                // stops a plain recording" to every binding that does more,
-                // so the context shortcut finishes a plain or post-processed
-                // recording too.
+                // stops a plain recording" to every binding that does more
+                // ([`finish_rank`]).
                 Stage::Recording(id)
                     if is_transcribe_binding(&input.binding_id)
                         && finish_rank(&input.binding_id) > finish_rank(id)
@@ -563,9 +562,8 @@ impl CoordinatorState {
     /// dictation" service: `finish_as` is that shortcut's binding. Like a
     /// press of that shortcut during a locked recording, the recording ends
     /// with whichever of its own binding and `finish_as` does more
-    /// ([`finish_rank`]): the post-process and context services add
-    /// post-processing or context, and post-processing or context chosen up
-    /// front is never lost (2026-11-13).
+    /// ([`finish_rank`]): the post-process service adds post-processing, and
+    /// post-processing chosen up front is never lost (2026-11-13).
     fn on_finish_as(&mut self, finish_as: Option<&str>) -> Option<Effect> {
         let Stage::Recording(binding_id) = &self.stage else {
             return None;
@@ -667,20 +665,16 @@ pub struct TranscriptionCoordinator {
 }
 
 pub fn is_transcribe_binding(id: &str) -> bool {
-    // DanyWhere: also the shortcut that post-processes with context.
-    id == "transcribe"
-        || id == "transcribe_with_post_process"
-        || id == crate::dictation_context::CONTEXT_BINDING
+    id == "transcribe" || id == "transcribe_with_post_process"
 }
 
-/// DanyWhere: how much a transcribe binding does after recording: plain,
-/// post-processing, post-processing with context. A locked recording can be
-/// finished by a binding that does more, never by one that does less.
+/// DanyWhere: how much a transcribe binding does after recording: plain or
+/// post-processing (context follows the profile's "Send Context" since
+/// 2026-11-15). A locked recording can be finished by a binding that does
+/// more, never by one that does less.
 fn finish_rank(binding_id: &str) -> u8 {
     match binding_id {
-        "transcribe" => 0,
         "transcribe_with_post_process" => 1,
-        id if id == crate::dictation_context::CONTEXT_BINDING => 2,
         _ => 0,
     }
 }
@@ -875,7 +869,7 @@ impl TranscriptionCoordinator {
 
     /// DanyWhere: [`TranscriptionCoordinator::finish_recording`] for the
     /// "end dictation" service of the shortcut `finish_as`: adds that
-    /// shortcut's post-processing or context, never takes the recording's own
+    /// shortcut's post-processing, never takes the recording's own
     /// away (see `CoordinatorState::on_finish_as`).
     pub fn finish_recording_as(&self, finish_as: Option<&str>) {
         if self
@@ -1490,53 +1484,21 @@ mod tests {
         assert_eq!(state.stage, Stage::Idle);
     }
 
-    // DanyWhere: the context shortcut's service (2026-11-13). A service ends
-    // a recording as its shortcut's press would: with the action that does
-    // more, so it can add context but never take it away.
+    // DanyWhere: the context shortcut and its service are gone (2026-11-15);
+    // context follows the profile's switch "Send Context" (`send_context`).
+    const RETIRED_CONTEXT: &str = crate::send_context::RETIRED_BINDING;
 
     #[test]
-    fn the_context_service_ends_a_plain_recording_with_context() {
+    fn the_retired_context_shortcut_is_no_transcribe_binding() {
+        assert!(!is_transcribe_binding(RETIRED_CONTEXT));
+    }
+
+    #[test]
+    fn a_call_naming_the_retired_context_shortcut_ends_a_recording_as_it_is() {
         let mut state = CoordinatorState::new();
         let now = Instant::now();
         state.on_input(toggle_input(false), now);
-        assert_stop(state.on_finish_as(Some(CONTEXT)), BINDING, CONTEXT);
-    }
-
-    #[test]
-    fn the_context_service_ends_a_post_process_recording_with_context() {
-        let mut state = CoordinatorState::new();
-        let now = Instant::now();
-        state.on_input(toggle_input_for(OTHER_BINDING, false), now);
-        assert_stop(state.on_finish_as(Some(CONTEXT)), OTHER_BINDING, CONTEXT);
-    }
-
-    #[test]
-    fn the_post_process_service_keeps_a_context_recording_s_context() {
-        let mut state = CoordinatorState::new();
-        let now = Instant::now();
-        state.on_input(toggle_input_for(CONTEXT, false), now);
-        assert_stop(state.on_finish_as(Some(OTHER_BINDING)), CONTEXT, CONTEXT);
-    }
-
-    #[test]
-    fn the_plain_service_and_insert_last_dictation_keep_a_context_recording_s_context() {
-        for finish_as in [Some(BINDING), None] {
-            let mut state = CoordinatorState::new();
-            let now = Instant::now();
-            state.on_input(toggle_input_for(CONTEXT, false), now);
-            assert_stop(state.on_finish_as(finish_as), CONTEXT, CONTEXT);
-        }
-    }
-
-    #[test]
-    fn the_context_service_while_idle_starts_a_context_recording() {
-        let mut state = CoordinatorState::new();
-        let now = Instant::now();
-        assert!(matches!(
-            state.on_start_locked(CONTEXT.to_string(), now),
-            Some(Effect::Start { binding_id, .. }) if binding_id == CONTEXT
-        ));
-        assert_stop(state.on_finish_as(Some(CONTEXT)), CONTEXT, CONTEXT);
+        assert_stop(state.on_finish_as(Some(RETIRED_CONTEXT)), BINDING, BINDING);
     }
 
     #[test]
@@ -1710,72 +1672,6 @@ mod tests {
             BINDING,
             BINDING,
         );
-    }
-
-    // DanyWhere: the context shortcut finishes a locked recording started with
-    // the plain or the post-process shortcut with context, as the post-process
-    // shortcut does for a plain one; context chosen up front is never lost.
-    const CONTEXT: &str = "transcribe_with_context";
-
-    #[test]
-    fn a_plain_recording_stopped_with_the_context_shortcut_gets_context() {
-        let mode = ShortcutActivation::Toggle;
-        let mut state = CoordinatorState::new();
-        let t0 = Instant::now();
-        state.on_input(input_for(BINDING, mode, true), t0);
-        assert_stop(
-            state.on_input(
-                input_for(CONTEXT, mode, true),
-                t0 + Duration::from_millis(1000),
-            ),
-            BINDING,
-            CONTEXT,
-        );
-    }
-
-    #[test]
-    fn a_post_processed_recording_stopped_with_the_context_shortcut_gets_context() {
-        let mode = ShortcutActivation::Toggle;
-        let mut state = CoordinatorState::new();
-        let t0 = Instant::now();
-        state.on_input(input_for(OTHER_BINDING, mode, true), t0);
-        assert_stop(
-            state.on_input(
-                input_for(CONTEXT, mode, true),
-                t0 + Duration::from_millis(1000),
-            ),
-            OTHER_BINDING,
-            CONTEXT,
-        );
-    }
-
-    #[test]
-    fn a_context_recording_keeps_its_context() {
-        let mode = ShortcutActivation::Toggle;
-        let mut state = CoordinatorState::new();
-        let t0 = Instant::now();
-        state.on_input(input_for(CONTEXT, mode, true), t0);
-        for other in [BINDING, OTHER_BINDING] {
-            assert!(state
-                .on_input(
-                    input_for(other, mode, true),
-                    t0 + Duration::from_millis(1000)
-                )
-                .is_none());
-        }
-        assert_stop(
-            state.on_input(
-                input_for(CONTEXT, mode, true),
-                t0 + Duration::from_millis(2000),
-            ),
-            CONTEXT,
-            CONTEXT,
-        );
-    }
-
-    #[test]
-    fn the_context_shortcut_is_a_transcribe_binding() {
-        assert!(is_transcribe_binding(CONTEXT));
     }
 
     /// Unchanged: a recording started with post-processing cannot be stopped

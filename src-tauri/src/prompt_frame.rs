@@ -3,7 +3,7 @@
 //! A prompt says only what should happen to the transcript. DanyWhere puts
 //! the frame before it, which tells the model what it gets and how to
 //! answer, and the transcript in `<transcript>` tags after it (after the
-//! context block, when the context shortcut asked for one). A prompt from
+//! context block, when "Send Context" asked for one). A prompt from
 //! before the frame still has `${output}` and runs as it did, without the
 //! frame, until the user removes it: with the frame the transcript would go
 //! out twice. Prompts with such old parts get a notice at startup.
