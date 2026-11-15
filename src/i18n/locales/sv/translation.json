@@ -714,7 +714,7 @@
       },
       "appendText": {
         "title": "Lägg till",
-        "description": "Läggs till efter varje diktering i den här profilen. Text som den skrivs; \\s mellanslag, \\n ny rad, \\t tabb, \\\\ omvänt snedstreck, \\{ och \\} klammerparenteser. I slutet tangenttryck: {Enter}, {Tab}, {Shift+Enter}, {Cmd+Enter} (Super+Enter på Windows och Linux), {Ctrl+Enter}. Tangenttryck skickas bara när texten klistras in.",
+        "description": "Läggs till efter varje diktering i den här profilen. Text som den skrivs; \\s mellanslag, \\n ny rad, \\t tabb, \\\\ omvänt snedstreck, \\{ och \\} klammerparenteser. I slutet tangenttryck: {Enter}, {Tab}, {Shift+Enter}, {{cmdEnter}}, {Ctrl+Enter}. Tangenttryck skickas bara när texten klistras in.",
         "noAccessibility": "Utan hjälpmedel skickas inga tangenttryck; texten läggs ändå till.",
         "notSaved": "Inte sparat; det senaste giltiga värdet gäller fortfarande.",
         "preview": {
@@ -732,7 +732,12 @@
           "unknownKey": "Okänt tangenttryck {{key}}",
           "unclosedKey": "En { saknar sin }; skriv \\{ för en klammer",
           "unmatchedBrace": "En } saknar sin {; skriv \\} för en klammer",
-          "textAfterKey": "Efter ett tangenttryck får bara tangenttryck följa"
+          "textAfterKey": "Efter ett tangenttryck får bara tangenttryck följa",
+          "foreignKeyName": {
+            "macos": "På Mac heter den här tangenten {{name}}: {{key}}",
+            "windows": "I Windows heter den här tangenten {{name}}: {{key}}",
+            "linux": "I Linux heter den här tangenten {{name}}: {{key}}"
+          }
         }
       },
       "translateToEnglish": {

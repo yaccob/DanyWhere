@@ -714,7 +714,7 @@
       },
       "appendText": {
         "title": "Ajouter à la fin",
-        "description": "Ajouté après chaque dictée de ce profil. Le texte tel quel ; \\s espace, \\n saut de ligne, \\t tabulation, \\\\ barre oblique inverse, \\{ et \\} accolades. À la fin, des touches : {Enter}, {Tab}, {Shift+Enter}, {Cmd+Enter} (Super+Enter sous Windows et Linux), {Ctrl+Enter}. Les touches ne sont envoyées que si le texte est collé.",
+        "description": "Ajouté après chaque dictée de ce profil. Le texte tel quel ; \\s espace, \\n saut de ligne, \\t tabulation, \\\\ barre oblique inverse, \\{ et \\} accolades. À la fin, des touches : {Enter}, {Tab}, {Shift+Enter}, {{cmdEnter}}, {Ctrl+Enter}. Les touches ne sont envoyées que si le texte est collé.",
         "noAccessibility": "Sans l'accessibilité, aucune touche n'est envoyée ; le texte est quand même ajouté.",
         "notSaved": "Non enregistré ; la dernière valeur valide reste en vigueur.",
         "preview": {
@@ -732,7 +732,12 @@
           "unknownKey": "Touche inconnue {{key}}",
           "unclosedKey": "Une { attend sa } ; écrivez \\{ pour une accolade",
           "unmatchedBrace": "Une } attend sa { ; écrivez \\} pour une accolade",
-          "textAfterKey": "Après une touche, seules d'autres touches peuvent suivre"
+          "textAfterKey": "Après une touche, seules d'autres touches peuvent suivre",
+          "foreignKeyName": {
+            "macos": "Sur Mac, cette touche s'appelle {{name}} : {{key}}",
+            "windows": "Sous Windows, cette touche s'appelle {{name}} : {{key}}",
+            "linux": "Sous Linux, cette touche s'appelle {{name}} : {{key}}"
+          }
         }
       },
       "translateToEnglish": {

@@ -714,7 +714,7 @@
       },
       "appendText": {
         "title": "Sona ekle",
-        "description": "Bu profilin her diktesinin sonuna eklenir. Metin yazıldığı gibi; \\s boşluk, \\n yeni satır, \\t sekme, \\\\ ters eğik çizgi, \\{ ve \\} süslü parantez. Sonda tuş basışları: {Enter}, {Tab}, {Shift+Enter}, {Cmd+Enter} (Windows ve Linux'ta Super+Enter), {Ctrl+Enter}. Tuşlar yalnızca metin yapıştırıldığında gönderilir.",
+        "description": "Bu profilin her diktesinin sonuna eklenir. Metin yazıldığı gibi; \\s boşluk, \\n yeni satır, \\t sekme, \\\\ ters eğik çizgi, \\{ ve \\} süslü parantez. Sonda tuş basışları: {Enter}, {Tab}, {Shift+Enter}, {{cmdEnter}}, {Ctrl+Enter}. Tuşlar yalnızca metin yapıştırıldığında gönderilir.",
         "noAccessibility": "Erişilebilirlik olmadan tuş gönderilmez; metin yine de eklenir.",
         "notSaved": "Kaydedilmedi; son geçerli değer geçerliliğini korur.",
         "preview": {
@@ -732,7 +732,12 @@
           "unknownKey": "Bilinmeyen tuş basışı {{key}}",
           "unclosedKey": "{ için } eksik; \\{ parantezi metin olarak yazar",
           "unmatchedBrace": "} için { eksik; \\} parantezi metin olarak yazar",
-          "textAfterKey": "Bir tuş basışından sonra yalnızca tuş basışları gelebilir"
+          "textAfterKey": "Bir tuş basışından sonra yalnızca tuş basışları gelebilir",
+          "foreignKeyName": {
+            "macos": "Mac'te bu tuşun adı {{name}}: {{key}}",
+            "windows": "Windows'ta bu tuşun adı {{name}}: {{key}}",
+            "linux": "Linux'ta bu tuşun adı {{name}}: {{key}}"
+          }
         }
       },
       "translateToEnglish": {

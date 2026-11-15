@@ -1,33 +1,22 @@
-import type { AppendKey, AppendPart, AppendTextError } from "../bindings";
-import type { OSType } from "./utils/keyboard";
+import type {
+  AppendKeyNames,
+  AppendPart,
+  AppendTextError,
+  KeyPlatform,
+} from "../bindings";
 
 /**
  * DanyWhere: the words for the "Append" field (append_text.rs). Rust parses
- * the field, the one source of truth for its syntax; this only names the
- * parts it returns, and its errors.
+ * the field and names its keys as this system writes them, the one source
+ * of truth for its syntax; this only puts the parts it returns, and its
+ * errors, into words.
  */
 
 type Translate = (key: string, options?: Record<string, unknown>) => string;
 
 const PREFIX = "settings.advanced.appendText";
 
-/** A key press as the field writes it; Cmd is Super off macOS. */
-export const appendKeyLabel = (key: AppendKey, osType: OSType): string => {
-  switch (key) {
-    case "enter":
-      return "Enter";
-    case "tab":
-      return "Tab";
-    case "shift_enter":
-      return "Shift+Enter";
-    case "cmd_enter":
-      return osType === "macos" ? "Cmd+Enter" : "Super+Enter";
-    case "ctrl_enter":
-      return "Ctrl+Enter";
-  }
-};
-
-const partWords = (part: AppendPart, t: Translate, osType: OSType): string => {
+const partWords = (part: AppendPart, t: Translate): string => {
   switch (part.kind) {
     case "text":
       return t(`${PREFIX}.preview.text`, { text: part.text });
@@ -38,9 +27,7 @@ const partWords = (part: AppendPart, t: Translate, osType: OSType): string => {
     case "tab":
       return t(`${PREFIX}.preview.tab`);
     case "key":
-      return t(`${PREFIX}.preview.key`, {
-        key: appendKeyLabel(part.key, osType),
-      });
+      return t(`${PREFIX}.preview.key`, { key: part.name });
   }
 };
 
@@ -51,20 +38,24 @@ const partWords = (part: AppendPart, t: Translate, osType: OSType): string => {
 export const describeAppend = (
   parts: AppendPart[],
   t: Translate,
-  osType: OSType,
   locale?: string,
 ): string => {
   if (parts.length === 0) return t(`${PREFIX}.preview.nothing`);
   const sentence = parts
-    .map((part) => partWords(part, t, osType))
+    .map((part) => partWords(part, t))
     .reduce((first, next) => t(`${PREFIX}.preview.then`, { first, next }));
   return sentence.charAt(0).toLocaleUpperCase(locale) + sentence.slice(1);
 };
 
-/** Why a value is invalid, in words. */
+/** The field's description, with this system's name of the Cmd key press. */
+export const appendDescription = (t: Translate, names: AppendKeyNames) =>
+  t(`${PREFIX}.description`, { cmdEnter: `{${names.cmd_enter}}` });
+
+/** Why a value is invalid, in words; `platform` is the one Rust parsed for. */
 export const appendErrorMessage = (
   error: AppendTextError,
   t: Translate,
+  platform: KeyPlatform,
 ): string => {
   switch (error.code) {
     case "unknown_escape":
@@ -79,5 +70,10 @@ export const appendErrorMessage = (
       return t(`${PREFIX}.errors.unmatchedBrace`);
     case "text_after_key":
       return t(`${PREFIX}.errors.textAfterKey`);
+    case "foreign_key_name":
+      return t(`${PREFIX}.errors.foreignKeyName.${platform}`, {
+        name: error.detail,
+        key: `{${error.suggestion}}`,
+      });
   }
 };

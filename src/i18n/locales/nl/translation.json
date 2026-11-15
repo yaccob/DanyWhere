@@ -714,7 +714,7 @@
       },
       "appendText": {
         "title": "Toevoegen",
-        "description": "Wordt na elk dictaat van dit profiel toegevoegd. Tekst zoals geschreven; \\s spatie, \\n nieuwe regel, \\t tab, \\\\ backslash, \\{ en \\} accolades. Aan het eind toetsaanslagen: {Enter}, {Tab}, {Shift+Enter}, {Cmd+Enter} (Super+Enter op Windows en Linux), {Ctrl+Enter}. Toetsaanslagen worden alleen verstuurd als de tekst wordt geplakt.",
+        "description": "Wordt na elk dictaat van dit profiel toegevoegd. Tekst zoals geschreven; \\s spatie, \\n nieuwe regel, \\t tab, \\\\ backslash, \\{ en \\} accolades. Aan het eind toetsaanslagen: {Enter}, {Tab}, {Shift+Enter}, {{cmdEnter}}, {Ctrl+Enter}. Toetsaanslagen worden alleen verstuurd als de tekst wordt geplakt.",
         "noAccessibility": "Zonder Toegankelijkheid worden geen toetsaanslagen verstuurd; de tekst wordt wel toegevoegd.",
         "notSaved": "Niet opgeslagen; de laatste geldige waarde blijft van kracht.",
         "preview": {
@@ -732,7 +732,12 @@
           "unknownKey": "Onbekende toetsaanslag {{key}}",
           "unclosedKey": "Een { heeft een } nodig; schrijf \\{ voor een accolade",
           "unmatchedBrace": "Een } heeft een { nodig; schrijf \\} voor een accolade",
-          "textAfterKey": "Na een toetsaanslag mogen alleen toetsaanslagen volgen"
+          "textAfterKey": "Na een toetsaanslag mogen alleen toetsaanslagen volgen",
+          "foreignKeyName": {
+            "macos": "Op de Mac heet deze toets {{name}}: {{key}}",
+            "windows": "Op Windows heet deze toets {{name}}: {{key}}",
+            "linux": "Op Linux heet deze toets {{name}}: {{key}}"
+          }
         }
       },
       "translateToEnglish": {

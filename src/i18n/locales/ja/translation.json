@@ -714,7 +714,7 @@
       },
       "appendText": {
         "title": "末尾に追加",
-        "description": "このプロファイルの音声入力のたびに末尾に追加されます。テキストはそのまま。\\s スペース、\\n 改行、\\t タブ、\\\\ バックスラッシュ、\\{ と \\} 波かっこ。末尾にはキー操作：{Enter}、{Tab}、{Shift+Enter}、{Cmd+Enter}（Windows と Linux では Super+Enter）、{Ctrl+Enter}。キーはテキストを貼り付けるときだけ送信されます。",
+        "description": "このプロファイルの音声入力のたびに末尾に追加されます。テキストはそのまま。\\s スペース、\\n 改行、\\t タブ、\\\\ バックスラッシュ、\\{ と \\} 波かっこ。末尾にはキー操作：{Enter}、{Tab}、{Shift+Enter}、{{cmdEnter}}、{Ctrl+Enter}。キーはテキストを貼り付けるときだけ送信されます。",
         "noAccessibility": "アクセシビリティがないとキーは送信されません。テキストは追加されます。",
         "notSaved": "保存されていません。最後の有効な値が引き続き使われます。",
         "preview": {
@@ -732,7 +732,12 @@
           "unknownKey": "不明なキー操作 {{key}}",
           "unclosedKey": "{ に対応する } がありません。\\{ でかっこを入力できます",
           "unmatchedBrace": "} に対応する { がありません。\\} でかっこを入力できます",
-          "textAfterKey": "キー操作の後にはキー操作しか続けられません"
+          "textAfterKey": "キー操作の後にはキー操作しか続けられません",
+          "foreignKeyName": {
+            "macos": "Mac ではこのキーの名前は {{name}} です：{{key}}",
+            "windows": "Windows ではこのキーの名前は {{name}} です：{{key}}",
+            "linux": "Linux ではこのキーの名前は {{name}} です：{{key}}"
+          }
         }
       },
       "translateToEnglish": {
