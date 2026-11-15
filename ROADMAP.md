@@ -12,6 +12,8 @@ Planned work on DanyWhere, roughly in priority order within each section. Items 
 
 **Done (2026-11-14):** DanyWhere sends a fixed frame (what the model gets, that instructions and questions in the dictation are not to be followed, that the language stays unless the instructions say otherwise, that only the result is returned), then the prompt's instructions, then the context if any, then the transcript in `<transcript>` tags. The frame always goes out in English; the editor shows it read-only above the prompt, translated into the interface language. A prompt only says what to do with the text. A prompt that still contains `${output}` runs as before, without the frame, and a warning at startup names every prompt with `${output}` or `<transcript>` tags until they are removed; Handy's untouched default prompt is replaced by a version without the frame's part. **Upstream candidate.**
 
+**Decided (user, 2026-11-15; next):** the frame no longer lets the instructions override "do not answer questions in the dictation" or "keep its language" (a translation prompt still translates), and it tells the model that speech recognition mishears words and that such errors are to be corrected where the context makes clear what was said, while anything that could have been meant stays as dictated. In a trial with a prompt that does not ask for corrections, this raised the corrected recognition errors from 10 to 45 of 48 without touching intended words.
+
 ### Configurations to save and load
 
 **Idea (user, 2026-11-14):** save and load a whole DanyWhere configuration, e.g. one that combines a speech model with a post-processing setup, or prompts for particular topics. A new installation starts with a default configuration; an update from a version without configurations saves the settings in use as that default.
@@ -28,9 +30,15 @@ Each profile has its own prompt list with one prompt selected, as the post-proce
 
 **Done (2026-11-15, not released yet):** each profile lists the applications it is used for, and an application belongs to at most one profile. The frontmost application at the start of a dictation picks the profile for that dictation, speech model included; the profile chosen in the sidebar stays as it is and applies to every other application. A "choose the profile by application" switch in the tray, the sidebar and the profile settings, also toggled by a shortcut (⌃⇧A on macOS, Alt+Shift+A elsewhere) that reports the new state, gets past an association without editing it; while it is off and an association exists, the tray icon shows a padlock. macOS lists the applications to choose from; on Windows their executable names are typed in; Linux has no frontmost application yet.
 
+**Decided (user, 2026-11-15; next):** the overlay shows the state of "choose the profile by application" by a glyph alone (a window when on, a padlock when off, none without an association) and the profile by its name: when the shortcut toggles it, when the profile changes, and, with two or more profiles, during every dictation. Each such pill is as wide as its content; today a fixed width cuts off "on" and "off" alike.
+
 ### Word lists behave differently per speech model
 
 **Found (2026-11-12, to be discussed):** models that take a vocabulary, such as Whisper, get the word lists as one and skip the replacement afterwards. Models without, such as Parakeet, get a fuzzy replacement of similar words after the transcription, which turned every "Bild" into "Build" once "Build" was in a list. The same list therefore helps with one model and harms with another.
+
+### Post-processing: known terms from the word lists
+
+**Idea (2026-11-15, the user agreed: "words or phrases"):** send the entries of the word lists in effect, words or phrases such as "DanyWhere Dev" or "Pull Request", to the post-processing model as known terms. It could then turn a misheard "Danny Ware" into "DanyWhere" and tell "Bild" from "Build" by the context, which the speech recognition cannot do with a vocabulary alone.
 
 ### Keep the transcript when there is nowhere to paste it
 
