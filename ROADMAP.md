@@ -40,6 +40,10 @@ Each profile has its own prompt list with one prompt selected, as the post-proce
 
 **Idea (2026-11-15, the user agreed: "words or phrases"):** send the entries of the word lists in effect, words or phrases such as "DanyWhere Dev" or "Pull Request", to the post-processing model as known terms. It could then turn a misheard "Danny Ware" into "DanyWhere" and tell "Bild" from "Build" by the context, which the speech recognition cannot do with a vocabulary alone.
 
+### Post-processing: choose the effort next to the model
+
+**Idea (user, 2026-11-15):** choose the effort (how much the model thinks) next to the post-processing model, per profile. In a trial, Claude Sonnet 5.5 sometimes wrote its own correction into the result ("Wait — I must not add words. Corrected output:" and the text a second time), because it does not think on short dictations at its default effort; at effort `xhigh` it never did. Claude Haiku 5.5 hardly ever slips this way, but at its default it often smooths the grammar silently against a prompt that asks to keep the text unchanged; `high` reduces that at about 2 s more per dictation. Anthropic's Models API reports for every model which effort levels it accepts (`capabilities.effort`; none for Claude Haiku 4.5 and Sonnet 4.5, no `xhigh` for the 4.6 models), so the choice can offer exactly those, with the model's default as the first entry; other providers keep their behavior for now.
+
 ### Keep the transcript when there is nowhere to paste it
 
 **Problem:** when the focus is not on something that accepts text (the desktop, a non-editable window), recording and transcription work, but the text ends up nowhere. Inherited from Handy: the paste is sent without checking for an editable target, and the clipboard is restored afterwards.
