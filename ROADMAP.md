@@ -4,6 +4,10 @@ Planned work on DanyWhere, roughly in priority order within each section. Items 
 
 ## Features and improvements
 
+### Tray menu: History of its own, no "Copy Last Transcript"
+
+**Idea (user, 2026-11-16; next after 0.2.0):** the History is not a setting, yet the tray menu reaches it only through "Settings...". It should get a menu item of its own, or the window should open on the History and offer a button to the settings there. The tray's "Copy Last Transcript" can go, since the shortcut (⌃⇧C, Alt+Shift+C elsewhere) does the same.
+
 ### Post-processing: a fixed frame around every prompt
 
 **Idea (user, 2026-11-14; next):** the part of a prompt that tells the model what it gets — a speech-recognition transcript between `<transcript>` tags, to be processed rather than answered — should be sent by DanyWhere itself, so a prompt only says what to do with the text. Today every prompt has to contain it, and a prompt that gets it wrong produces nonsense.
