@@ -1,7 +1,8 @@
 /* Handy Colors: every color the app uses comes from here. Pick by job:
  * greys (ink-2, ink-3, line-strong, line, wash) for text, edges and fills;
  * logo-primary / background-ui for brand and primary actions; plum for keys
- * and picks (onboarding); moss / warning / error (+ -wash) for status.
+ * and picks (onboarding); moss / warning / error (+ -wash) for status;
+ * search-match (+ -text) for what a search found.
  * demo-*, wordmark and mascot are illustration, not UI.
  */
 
@@ -28,6 +29,16 @@
   /* Success. Pink already means "recording", so it gets its own hue. */
   --light-color-moss: #2f7d5b;
   --dark-color-moss: #86c9a4;
+
+  /* A search match (History): a solid amber fill with dark text, apart from
+     the petrol accent and the text selection. The fill stands 3:1 off the
+     background and its text reads at 4.5:1 (searchMatchContrast.test.ts);
+     on the light background that takes a deep amber, as a pale yellow
+     would barely show. */
+  --light-color-search-match: #c47e00;
+  --dark-color-search-match: #f5c542;
+  --light-color-search-match-text: var(--light-color-text);
+  --dark-color-search-match-text: var(--light-color-text);
 
   /* Plum: the ink for keycaps and picked items. */
   --light-color-plum: var(--light-color-logo-stroke);
@@ -149,6 +160,8 @@
   --color-moss-wash: var(--light-color-moss-wash);
   --color-warning-wash: var(--light-color-warning-wash);
   --color-error-wash: var(--light-color-error-wash);
+  --color-search-match: var(--light-color-search-match);
+  --color-search-match-text: var(--light-color-search-match-text);
 
   /* Grey steps: secondary text, hints/icons, control edges, dividers, hover fill. */
   --color-ink-2: color-mix(in srgb, var(--color-text) 60%, transparent);
@@ -187,6 +200,8 @@
     --color-moss-wash: var(--dark-color-moss-wash);
     --color-warning-wash: var(--dark-color-warning-wash);
     --color-error-wash: var(--dark-color-error-wash);
+    --color-search-match: var(--dark-color-search-match);
+    --color-search-match-text: var(--dark-color-search-match-text);
   }
 }
 
@@ -220,6 +235,8 @@
   --color-moss-wash: var(--light-color-moss-wash);
   --color-warning-wash: var(--light-color-warning-wash);
   --color-error-wash: var(--light-color-error-wash);
+  --color-search-match: var(--light-color-search-match);
+  --color-search-match-text: var(--light-color-search-match-text);
 }
 
 :root[data-theme="dark"] {
@@ -242,4 +259,6 @@
   --color-moss-wash: var(--dark-color-moss-wash);
   --color-warning-wash: var(--dark-color-warning-wash);
   --color-error-wash: var(--dark-color-error-wash);
+  --color-search-match: var(--dark-color-search-match);
+  --color-search-match-text: var(--dark-color-search-match-text);
 }

@@ -1,6 +1,7 @@
 // DanyWhere: the track under a History entry with more than one version:
 // Transcription → ✨ → ✎ …, one chip per version, bottom to top. A click
-// shows that version; below the top it offers "Go Back to This Version".
+// shows it as the current version; below the top it offers "Reset to the
+// Current Version".
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -158,9 +159,17 @@ export const VersionTrack: React.FC<VersionTrackProps> = ({
                     title={chipTitle(version, index)}
                     className={`flex items-center rounded-md border px-1.5 py-0.5 cursor-pointer transition-colors ${
                       isShown
-                        ? "border-logo-primary text-logo-primary font-medium"
-                        : "border-line hover:text-logo-primary hover:border-logo-primary"
-                    } ${matches ? "bg-logo-primary/25" : ""}`}
+                        ? "border-logo-primary font-medium"
+                        : "border-line hover:border-logo-primary"
+                    } ${
+                      // A match keeps its dark text: petrol on the match
+                      // fill would hardly show.
+                      matches
+                        ? "bg-search-match text-search-match-text"
+                        : isShown
+                          ? "text-logo-primary"
+                          : "hover:text-logo-primary"
+                    }`}
                   >
                     <ChipMark version={version} />
                   </button>

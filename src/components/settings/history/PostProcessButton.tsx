@@ -1,8 +1,9 @@
-// DanyWhere: History's ✨ button for an entry with versions. A click
-// post-processes the newest version further (a new version above it, which
-// never loses anything); a small chevron next to it opens the other actions
-// the stack allows: post-processing the newest version in place, and redoing
-// the post-processing from the version below it.
+// DanyWhere: History's ✨ button for an entry with versions. It works on the
+// current version, the one the entry shows. A click post-processes it
+// further (its result a new version); a small chevron next to it opens the
+// other actions the current version allows: post-processing it and replacing
+// it, and redoing the post-processing from the previous version. Below the
+// top, each first deletes the versions above the current one, after asking.
 import React, { useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ChevronDown, WandSparkles } from "lucide-react";
@@ -11,7 +12,7 @@ import { confirmLoss } from "./confirmLoss";
 import type { PostProcessAvailability } from "./postProcessEntry";
 import {
   postProcessActions,
-  redoNeedsConfirm,
+  postProcessQuestion,
   type PostProcessAction,
 } from "./versions";
 
@@ -25,19 +26,21 @@ const ACTION_TEXT: Record<PostProcessAction, { label: string; hint: string }> =
       hint: "postProcessFurtherHint",
     },
     post_process_replace: {
-      label: "postProcessThis",
-      hint: "postProcessThisHint",
+      label: "postProcessReplace",
+      hint: "postProcessReplaceHint",
     },
     post_process_redo: { label: "redo", hint: "redoHint" },
   };
 
 interface PostProcessButtonProps {
   entry: Pick<HistoryEntry, "versions">;
+  /** The current version, the one the entry shows (`shownVersion`). */
+  shown: number;
   /** Whether post-processing can run with the current settings; when it
    * can't, the button says why and the menu is gone. */
   availability: PostProcessAvailability;
-  /** Runs an action the user chose (and agreed to, for a redo that loses
-   * their edits). */
+  /** Runs an action the user chose on the current version, once they agreed
+   * to what it deletes (the versions above it, their edits under a redo). */
   onRun: (action: PostProcessAction) => void;
   /** While the user edits the text: nothing may change the stack. */
   disabled?: boolean;
@@ -45,6 +48,7 @@ interface PostProcessButtonProps {
 
 export const PostProcessButton: React.FC<PostProcessButtonProps> = ({
   entry,
+  shown,
   availability,
   onRun,
   disabled = false,
@@ -57,7 +61,9 @@ export const PostProcessButton: React.FC<PostProcessButtonProps> = ({
   const menuId = useId();
 
   const ready = availability === "ready";
-  const more = postProcessActions(entry).filter((a) => a !== "post_process");
+  const more = postProcessActions(entry, shown).filter(
+    (a) => a !== "post_process",
+  );
   const showMenu = ready && more.length > 0;
   const usable = ready && !disabled;
 
@@ -83,13 +89,24 @@ export const PostProcessButton: React.FC<PostProcessButtonProps> = ({
     chevronRef.current?.focus({ preventScroll: true });
   };
 
+  // One question for everything the action deletes: the versions above the
+  // current one, the user's edits in it under a redo, or both.
   const run = async (action: PostProcessAction) => {
     setOpen(false);
-    if (action === "post_process_redo" && redoNeedsConfirm(entry)) {
+    const question = postProcessQuestion(entry, shown, action);
+    if (question) {
+      const redo = action === "post_process_redo";
       const agreed = await confirmLoss({
-        title: t(`${KEYS}.confirmRedoTitle`),
-        message: t(`${KEYS}.confirmRedoMessage`),
-        okLabel: t(`${KEYS}.confirmRedo`),
+        title: t(
+          `${KEYS}.${redo ? "confirmRedoTitle" : "confirmPostProcessTitle"}`,
+        ),
+        message:
+          question.kind === "above"
+            ? t(`${KEYS}.confirmPostProcessMessage`, { count: question.count })
+            : question.kind === "redo_above"
+              ? t(`${KEYS}.confirmRedoAboveMessage`, { count: question.count })
+              : t(`${KEYS}.confirmRedoMessage`),
+        okLabel: t(`${KEYS}.${redo ? "confirmRedo" : "confirmPostProcess"}`),
         cancelLabel: t(`${KEYS}.cancel`),
       });
       if (!agreed) return;
@@ -131,7 +148,7 @@ export const PostProcessButton: React.FC<PostProcessButtonProps> = ({
     <div ref={rootRef} className="relative flex items-center">
       <button
         type="button"
-        onClick={usable ? () => onRun("post_process") : undefined}
+        onClick={usable ? () => void run("post_process") : undefined}
         aria-disabled={!usable || undefined}
         title={mainTitle}
         className={`p-1.5 rounded-md flex items-center justify-center transition-colors ${iconClass} ${
