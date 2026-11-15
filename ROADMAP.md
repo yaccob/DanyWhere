@@ -46,6 +46,34 @@ Each profile has its own prompt list with one prompt selected, as the post-proce
 
 **Built (2026-11-15, `feat/post-process-effort`):** a choice "Effort" under the post-processing model, stored per profile and provider (exported and imported with the profile), for every provider except Apple Intelligence. "Model Default" sends what was sent before. The levels come from the model list where it names them (Anthropic `capabilities.effort`, OpenRouter `reasoning.supported_efforts`, DeepSeek `effort.supported_levels`), else from what the provider documents per model family (OpenAI gpt-5.x and o-series, Groq, Cerebras, Z.AI, DeepSeek), else low/medium/high. Anthropic gets `output_config.effort`, adaptive thinking where the model thinks only on request, and `max_tokens` 16000; OpenRouter `reasoning.effort`; everyone else `reasoning_effort`. An endpoint that refuses the level gets the request again without it, the refusal is remembered while the app runs, and the dictation shows the warning "Effort Not Accepted".
 
+### A sound when everything is done
+
+**Decided (user, 2026-11-15; in progress):** a third feedback sound that plays once a dictation is delivered, post-processing included: right after the stop sound without post-processing, after the post-processing with it. It doesn't matter whether the text was pasted or left on the clipboard. A long post-processing (e.g. at effort `xhigh`) otherwise goes unnoticed when the user looks elsewhere. Candidate sound: the high tone that already says a dictation waits on the clipboard.
+
+### Settings: drop the "Experimental Features" switch
+
+**Question (user, 2026-11-15):** DanyWhere uses Handy's switch for nothing of its own; it only shows six Handy settings (keyboard implementation, acceleration, lazy stream close, AirPods mode, VAD backend, language detection). Proposed: remove the switch and move the six to the Debug page, where "Append Trailing Space" already is. Not decided yet.
+
+### Settings: explain the paste method
+
+**Found (user, 2026-11-15):** the description of "Paste Method" names "Direct", which macOS doesn't offer, and doesn't say what "Clipboard (⌘V)" does or that "Paste Last Transcript" follows the same method. Proposed text: what each option does on this platform, that ⌘V needs Accessibility, and that with "None" the text stays in the History and, depending on the clipboard setting, on the clipboard.
+
+### Profiles on a page of their own
+
+**Idea (user, 2026-11-15):** the profile settings (the list, applications per profile, export and import) move from "General" to a page "Profiles" of their own in the sidebar; choosing the profile at the top of the sidebar stays as it is.
+
+### Context by a switch instead of its own shortcut
+
+**Idea (user, 2026-11-15):** a switch "send context", toggled like "choose the profile by application" (tray, sidebar, a shortcut), decides whether a dictation with post-processing sends earlier dictations as context; without post-processing never. Per application it follows the profile if the switch is a profile value. Open: whether the Context Hotkey goes, whether the switch is global or per profile, and how the overlay shows it.
+
+### Append any text, and actions per finishing key
+
+**Idea (user, 2026-11-15):** append any string to the result, control characters included, instead of only a trailing space ("Append Trailing Space") or an auto-submit key ("Auto Submit"); and let the key that ends a recording choose what follows, e.g. Ctrl+Enter ends and presses Enter, Shift+Enter ends and adds a new line, a second press of the dictation shortcut adds a space. Claude's proposals (one "Append" field with `\n`, `\t` and key marks such as `{Enter}`, per profile; finishing keys grabbed only while recording, like Escape; key presses only with Accessibility) are in the sidecar note; to be settled with the user.
+
+### History: search and filter by window title
+
+**Idea (user, 2026-11-15):** a search field in the History over transcriptions, post-processed texts and corrections, optionally as a regular expression, and a filter by the window title or a part of it (the title's first part is usually the application). Today the History can only filter by one window, with a click on its line.
+
 ### Keep the transcript when there is nowhere to paste it
 
 **Problem:** when the focus is not on something that accepts text (the desktop, a non-editable window), recording and transcription work, but the text ends up nowhere. Inherited from Handy: the paste is sent without checking for an editable target, and the clipboard is restored afterwards.
