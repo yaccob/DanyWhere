@@ -414,8 +414,19 @@ fn now_millis() -> i64 {
     chrono::Utc::now().timestamp_millis()
 }
 
+/// Whether saving on version `base` dropped any of the `before` versions:
+/// those above it, or `base` itself when it became equal to the one below
+/// (`after` versions are left).
+fn save_drops_versions(before: usize, base: u32, after: usize) -> bool {
+    let base = base as usize;
+    base + 1 < before || after <= base
+}
+
 /// See [`save_version`]; stores the stack and returns the entry as it is
-/// now. Errors: [`VersionError`], or the database's.
+/// now. When saving drops versions, the entry counts as post-processed only
+/// while a version with a ✨ step stays, as after going back to a version;
+/// otherwise that stays as it was. Errors: [`VersionError`], or the
+/// database's.
 pub(crate) fn save_version_with_conn(
     conn: &Connection,
     id: i64,
@@ -428,9 +439,14 @@ pub(crate) fn save_version_with_conn(
     let Some(versions) = save_version(&entry.versions, base, text, mode, at)? else {
         return Ok(entry);
     };
+    let requested = save_drops_versions(entry.versions.len(), base, versions.len())
+        .then(|| has_ai_step(&versions));
     conn.execute(
-        "UPDATE transcription_history SET versions = ?1 WHERE id = ?2",
-        params![stored_json(&versions)?, id],
+        "UPDATE transcription_history
+         SET versions = ?1,
+             post_process_requested = COALESCE(?2, post_process_requested)
+         WHERE id = ?3",
+        params![stored_json(&versions)?, requested, id],
     )?;
     HistoryManager::entry_with_conn(conn, id)
 }
@@ -1311,6 +1327,70 @@ mod tests {
             assert_eq!(error.to_string(), code);
         }
         assert_eq!(stored_column(&conn, id), None);
+    }
+
+    fn requested(conn: &Connection, id: i64) -> bool {
+        get(conn, id).post_process_requested
+    }
+
+    #[test]
+    fn saving_that_drops_the_post_processing_marks_the_entry_not_post_processed() {
+        let conn = database();
+        let id = insert(&conn, "raw", Some("Clean."));
+        assert!(requested(&conn, id));
+
+        let e = save_version_with_conn(&conn, id, 0, "raw fixed", SaveVersionMode::New, 42)
+            .expect("save");
+
+        assert_eq!(texts(&e.versions), vec!["raw", "raw fixed"]);
+        assert!(!e.post_process_requested);
+        assert!(!requested(&conn, id));
+    }
+
+    #[test]
+    fn saving_that_makes_a_post_processing_equal_to_below_drops_it_and_the_mark() {
+        let conn = database();
+        let id = insert(&conn, "raw", Some("Clean."));
+
+        let e = save_version_with_conn(&conn, id, 1, "raw", SaveVersionMode::Replace, 42)
+            .expect("save");
+
+        assert_eq!(texts(&e.versions), vec!["raw"]);
+        assert!(!e.post_process_requested);
+    }
+
+    #[test]
+    fn saving_that_drops_only_the_users_versions_keeps_the_entry_post_processed() {
+        let conn = database();
+        let id = insert(&conn, "raw", Some("Clean."));
+        save_version_with_conn(&conn, id, 1, "Clean, mine.", SaveVersionMode::New, 42)
+            .expect("save");
+
+        let e = save_version_with_conn(&conn, id, 1, "Clean, other.", SaveVersionMode::New, 43)
+            .expect("save below the top");
+
+        assert_eq!(texts(&e.versions), vec!["raw", "Clean.", "Clean, other."]);
+        assert!(e.post_process_requested);
+    }
+
+    #[test]
+    fn saving_that_drops_nothing_leaves_the_mark_as_it_was() {
+        let conn = database();
+        // Dictated with post-processing that failed: marked, but no ✨.
+        let id = insert(&conn, "raw", None);
+        conn.execute(
+            "UPDATE transcription_history SET post_process_requested = 1 WHERE id = ?1",
+            params![id],
+        )
+        .expect("mark");
+
+        let e = save_version_with_conn(&conn, id, 0, "raw fixed", SaveVersionMode::New, 42)
+            .expect("save");
+        assert!(e.post_process_requested);
+        let e = save_version_with_conn(&conn, id, 1, "raw, mine", SaveVersionMode::Replace, 43)
+            .expect("save again");
+        assert_eq!(texts(&e.versions), vec!["raw", "raw, mine"]);
+        assert!(e.post_process_requested);
     }
 
     #[test]
