@@ -23,6 +23,12 @@ export const activeProfile = <P extends ProfileLike>(
 ): P | null =>
   profiles.find((profile) => profile.id === activeId) ?? profiles[0] ?? null;
 
+/** Whether the sidebar shows the page "Profiles": once the settings carry
+ * profiles, from one on (it can be duplicated or renamed there). */
+export const profilesPageEnabled = (
+  settings: { profiles?: readonly unknown[] | null } | null | undefined,
+): boolean => (settings?.profiles?.length ?? 0) > 0;
+
 /** Whether profile `id` may be deleted: it exists and isn't the last one. */
 export const canDeleteProfile = (
   profiles: ProfileLike[],

@@ -19,6 +19,7 @@
   },
   "sidebar": {
     "general": "כללי",
+    "profiles": "פרופילים",
     "models": "מודלים",
     "advanced": "מתקדם",
     "postProcessing": "עיבוד משלים",

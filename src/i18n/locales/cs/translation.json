@@ -19,6 +19,7 @@
   },
   "sidebar": {
     "general": "Obecné",
+    "profiles": "Profily",
     "models": "Modely",
     "advanced": "Pokročilé",
     "postProcessing": "Následné zpracování",

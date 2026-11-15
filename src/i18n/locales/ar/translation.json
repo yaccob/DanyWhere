@@ -19,6 +19,7 @@
   },
   "sidebar": {
     "general": "عام",
+    "profiles": "الملفات الشخصية",
     "advanced": "متقدم",
     "postProcessing": "معالجة لاحقة",
     "history": "السجل",

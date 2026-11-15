@@ -19,6 +19,7 @@
   },
   "sidebar": {
     "general": "Общие",
+    "profiles": "Профили",
     "models": "Модели",
     "advanced": "Продвинутые",
     "postProcessing": "Постобработка",

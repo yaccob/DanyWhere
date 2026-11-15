@@ -17,7 +17,7 @@ type Pending = {
   profile: Profile;
 } | null;
 
-/** DanyWhere: the profiles, managed at the top of General: which one is
+/** DanyWhere: the profiles, managed on the page "Profiles": which one is
  * active, and duplicate, rename or delete one. Hidden until the settings
  * carry profiles. */
 export const ProfilesSettings: React.FC = () => {

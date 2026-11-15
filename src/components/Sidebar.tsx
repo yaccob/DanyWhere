@@ -14,6 +14,10 @@ import {
 } from "./settings";
 // DanyWhere: the profile in use, on every page.
 import { ProfileSelector } from "./settings/profiles/ProfileSelector";
+// DanyWhere: the profiles are managed on a page of their own.
+import { Layers } from "lucide-react";
+import { ProfilesPage } from "./settings/profiles/ProfilesPage";
+import { profilesPageEnabled } from "@/lib/utils/profiles";
 // DanyWhere: names a test build (Dev, NoAX) under the wordmark.
 import VariantBadge from "./VariantBadge";
 
@@ -41,6 +45,13 @@ export const SECTIONS_CONFIG = {
     icon: HandyHand,
     component: GeneralSettings,
     enabled: () => true,
+  },
+  // DanyWhere: the profiles, right after General.
+  profiles: {
+    labelKey: "sidebar.profiles",
+    icon: Layers,
+    component: ProfilesPage,
+    enabled: profilesPageEnabled,
   },
   history: {
     labelKey: "sidebar.history",

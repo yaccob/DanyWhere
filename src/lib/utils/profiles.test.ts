@@ -6,6 +6,7 @@ import {
   checkProfileName,
   profileAfterDelete,
   profileDisplayName,
+  profilesPageEnabled,
 } from "./profiles";
 
 // Every check runs, so a run reports how many fail, not just the first.
@@ -64,6 +65,24 @@ check("missing id falls back to the first", () =>
 );
 check("no profiles, no active one", () =>
   assert.equal(activeProfile([], "p1"), null),
+);
+
+// The page "Profiles" shows once the settings carry profiles (from one on,
+// so that one can be duplicated or renamed); not before they are loaded.
+check("profiles page: settings not loaded", () =>
+  assert.equal(profilesPageEnabled(null), false),
+);
+check("profiles page: settings without profiles", () =>
+  assert.equal(profilesPageEnabled({}), false),
+);
+check("profiles page: empty profile list", () =>
+  assert.equal(profilesPageEnabled({ profiles: [] }), false),
+);
+check("profiles page: one profile", () =>
+  assert.equal(profilesPageEnabled({ profiles: [standard] }), true),
+);
+check("profiles page: several profiles", () =>
+  assert.equal(profilesPageEnabled({ profiles }), true),
 );
 
 // The last profile can't be deleted; an unknown id can't either.

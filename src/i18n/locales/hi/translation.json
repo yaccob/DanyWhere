@@ -19,6 +19,7 @@
   },
   "sidebar": {
     "general": "सामान्य",
+    "profiles": "प्रोफ़ाइल",
     "models": "मॉडल",
     "advanced": "ऐडवांस",
     "postProcessing": "पोस्ट प्रोसेस",
