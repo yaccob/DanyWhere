@@ -54,11 +54,15 @@ Each profile has its own prompt list with one prompt selected, as the post-proce
 
 ### Settings: drop the "Experimental Features" switch
 
-**Question (user, 2026-11-15):** DanyWhere uses Handy's switch for nothing of its own; it only shows six Handy settings (keyboard implementation, acceleration, lazy stream close, AirPods mode, VAD backend, language detection). Proposed: remove the switch and move the six to the hidden Debug page (⌘⇧D), next to similar technical settings. Not decided yet.
+**Question (user, 2026-11-15):** DanyWhere uses Handy's switch for nothing of its own; it only shows six Handy settings (keyboard implementation, acceleration, lazy stream close, AirPods mode, VAD backend, language detection). Proposed: remove the switch and move the six to the hidden Debug page (⌘⇧D), next to similar technical settings.
+
+**Done (2026-11-15, not released yet):** the switch is gone from Advanced; the six settings always show on the Debug page in a group "Experimental" of their own, after the debug group. The setting `experimental_enabled` stays for Handy's sake, but nothing reads it any more.
 
 ### Settings: explain the paste method
 
 **Found (user, 2026-11-15):** the description of "Paste Method" names "Direct", which macOS doesn't offer, and doesn't say what "Clipboard (⌘V)" does or that "Paste Last Transcript" follows the same method. Proposed text: what each option does on this platform, that ⌘V needs Accessibility, and that with "None" the text stays in the History and, depending on the clipboard setting, on the clipboard.
+
+**Done (2026-11-15, not released yet):** the text depends on the system. On macOS it explains "Clipboard (Cmd+V)" (needs Accessibility) and "None", that "Paste Last Transcript" inserts the same way and with "None" puts the text on the clipboard, and that without Accessibility a macOS service inserts the dictation. On Windows and Linux it explains every option offered there, "Direct" and "External Script" (Linux only) included.
 
 ### Profiles on a page of their own
 
@@ -76,7 +80,9 @@ Each profile has its own prompt list with one prompt selected, as the post-proce
 
 ### History: search and filter by window title
 
-**Idea (user, 2026-11-15):** a search field in the History over transcriptions, post-processed texts and corrections, optionally as a regular expression, and a filter by the window title or a part of it (the title's first part is usually the application). Today the History can only filter by one window, with a click on its line.
+**Idea (user, 2026-11-15):** a search field in the History over transcriptions, post-processed texts and corrections, optionally as a regular expression, and a filter by the window title or a part of it (the title's first part is usually the application). Until then the History could only filter by one window, with a click on its line.
+
+**Done (2026-11-15, not released yet):** two fields above the list, "Search History" and "App or window title", with three toggles: match case, whole words, regular expression. The search covers the whole History, not only the loaded pages, and matches in transcription, post-processed text and both corrections; matches in the shown text are highlighted. The window field matches the application, the title, or the line "app – title" as shown, always ignoring case; the regex toggle applies to both fields. Both fields combine with each other and with the one-window filter. An invalid pattern marks its field and keeps the last results. 20,000 entries take 9 to 89 ms for a full scan.
 
 ### Keep the transcript when there is nowhere to paste it
 
