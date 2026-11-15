@@ -13,6 +13,7 @@ import {
   isSaveShortcut,
   matchingVersions,
   postProcessActions,
+  postProcessQuestion,
   redoNeedsConfirm,
   retranscribeNeedsConfirm,
   saveModes,
@@ -23,6 +24,7 @@ import {
   versionText,
   versionsLostByEditing,
   versionsLostByGoingBack,
+  versionsLostByPostProcessing,
 } from "./versions";
 
 let checks = 0;
@@ -247,21 +249,23 @@ check("the default keeps the AI's text and adds a new version", () => {
   assert.equal(defaultSaveMode(userThenAi, 1), "new");
 });
 
-// ---- Post-processing -----------------------------------------------------
+// ---- Post-processing the current version -----------------------------------
+// ✨ works on the current version, the one the entry shows (`shown`); on the
+// top as before, below it after deleting the versions above it.
 
 check("on the transcription only post-processing further", () => {
-  assert.deepEqual(postProcessActions(entry([transcription()])), [
+  assert.deepEqual(postProcessActions(entry([transcription()]), 0), [
     "post_process",
   ]);
 });
 
-check("on a version of the user's: further and this version", () => {
+check("on a version of the user's: further and replacing it", () => {
   const edited = entry([transcription(), version("fixed", "user")]);
-  assert.deepEqual(postProcessActions(edited), [
+  assert.deepEqual(postProcessActions(edited, 1), [
     "post_process",
     "post_process_replace",
   ]);
-  assert.deepEqual(postProcessActions(threeLayers), [
+  assert.deepEqual(postProcessActions(threeLayers, 2), [
     "post_process",
     "post_process_replace",
   ]);
@@ -269,7 +273,7 @@ check("on a version of the user's: further and this version", () => {
 
 check("on a version the AI made: redoing it too", () => {
   const processed = entry([transcription(), version("Polished.", "ai")]);
-  assert.deepEqual(postProcessActions(processed), [
+  assert.deepEqual(postProcessActions(processed, 1), [
     "post_process",
     "post_process_replace",
     "post_process_redo",
@@ -278,7 +282,7 @@ check("on a version the AI made: redoing it too", () => {
     transcription(),
     version("Polished, fixed.", "ai", "user"),
   ]);
-  assert.deepEqual(postProcessActions(aiThenUser), [
+  assert.deepEqual(postProcessActions(aiThenUser, 1), [
     "post_process",
     "post_process_replace",
     "post_process_redo",
@@ -290,20 +294,144 @@ check("a version the user started isn't redone, even with an AI step", () => {
     transcription(),
     version("Polished again.", "user", "ai"),
   ]);
-  assert.deepEqual(postProcessActions(userThenAi), [
+  assert.deepEqual(postProcessActions(userThenAi, 1), [
     "post_process",
     "post_process_replace",
   ]);
 });
 
+check("the transcription below the top: only post-processing further", () => {
+  assert.deepEqual(postProcessActions(threeLayers, 0), ["post_process"]);
+});
+
+check("the AI's version below the top: redoing it too", () => {
+  assert.deepEqual(postProcessActions(threeLayers, 1), [
+    "post_process",
+    "post_process_replace",
+    "post_process_redo",
+  ]);
+});
+
+check("the user's version below an AI one isn't redone", () => {
+  const userBelowAi = entry([
+    transcription(),
+    version("Polished again.", "user", "ai"),
+    version("Polished twice.", "ai"),
+  ]);
+  assert.deepEqual(postProcessActions(userBelowAi, 1), [
+    "post_process",
+    "post_process_replace",
+  ]);
+});
+
+check("a current version the stack doesn't have counts as the top", () => {
+  assert.deepEqual(postProcessActions(threeLayers, 9), [
+    "post_process",
+    "post_process_replace",
+  ]);
+  assert.equal(versionsLostByPostProcessing(threeLayers, 9), 0);
+});
+
 check("redoing asks first only over the user's own steps", () => {
   const processed = entry([transcription(), version("Polished.", "ai")]);
-  assert.equal(redoNeedsConfirm(processed), false);
+  assert.equal(redoNeedsConfirm(processed, 1), false);
   const aiThenUser = entry([
     transcription(),
     version("Polished, fixed.", "ai", "user"),
   ]);
-  assert.equal(redoNeedsConfirm(aiThenUser), true);
+  assert.equal(redoNeedsConfirm(aiThenUser, 1), true);
+});
+
+check(
+  "redoing asks over the current version's own steps, not the top's",
+  () => {
+    const editedBelow = entry([
+      transcription(),
+      version("Polished, fixed.", "ai", "user"),
+      version("Polished twice.", "ai"),
+    ]);
+    assert.equal(redoNeedsConfirm(editedBelow, 1), true);
+    assert.equal(redoNeedsConfirm(editedBelow, 2), false);
+    // threeLayers' top is the user's, the AI's version below it is not.
+    assert.equal(redoNeedsConfirm(threeLayers, 1), false);
+  },
+);
+
+check("✨ on the top deletes nothing", () => {
+  assert.equal(versionsLostByPostProcessing(threeLayers, 2), 0);
+  assert.equal(versionsLostByPostProcessing(entry([transcription()]), 0), 0);
+});
+
+check("✨ below the top deletes the versions above the current one", () => {
+  assert.equal(versionsLostByPostProcessing(threeLayers, 1), 1);
+  assert.equal(versionsLostByPostProcessing(threeLayers, 0), 2);
+});
+
+// ---- What ✨ asks first ----------------------------------------------------
+
+check(
+  "✨ on the top asks nothing, unless a redo loses the user's steps",
+  () => {
+    assert.equal(postProcessQuestion(threeLayers, 2, "post_process"), null);
+    assert.equal(
+      postProcessQuestion(threeLayers, 2, "post_process_replace"),
+      null,
+    );
+    const processed = entry([transcription(), version("Polished.", "ai")]);
+    assert.equal(postProcessQuestion(processed, 1, "post_process_redo"), null);
+    const aiThenUser = entry([
+      transcription(),
+      version("Polished, fixed.", "ai", "user"),
+    ]);
+    assert.deepEqual(postProcessQuestion(aiThenUser, 1, "post_process_redo"), {
+      kind: "redo",
+    });
+  },
+);
+
+check("✨ further below the top asks about the versions above it", () => {
+  assert.deepEqual(postProcessQuestion(threeLayers, 1, "post_process"), {
+    kind: "above",
+    count: 1,
+  });
+  assert.deepEqual(postProcessQuestion(threeLayers, 0, "post_process"), {
+    kind: "above",
+    count: 2,
+  });
+});
+
+check("replacing below the top asks about the versions above it", () => {
+  // Replacing post-processes the current version itself, so the user's
+  // steps in it live on in the result: only the versions above go.
+  const editedBelow = entry([
+    transcription(),
+    version("Polished, fixed.", "ai", "user"),
+    version("Polished twice.", "ai"),
+  ]);
+  assert.deepEqual(
+    postProcessQuestion(editedBelow, 1, "post_process_replace"),
+    { kind: "above", count: 1 },
+  );
+});
+
+check("redoing below the top asks about the versions above it", () => {
+  assert.deepEqual(postProcessQuestion(threeLayers, 1, "post_process_redo"), {
+    kind: "above",
+    count: 1,
+  });
+});
+
+check("redoing over the user's steps below the top asks once for both", () => {
+  const editedBelow = entry([
+    transcription(),
+    version("Polished, fixed.", "ai", "user"),
+    version("Polished twice.", "ai"),
+    version("Polished thrice.", "ai"),
+  ]);
+  assert.deepEqual(postProcessQuestion(editedBelow, 1, "post_process_redo"), {
+    kind: "redo_above",
+    count: 2,
+  });
 });
 
 // ---- What goes, and when History asks first ------------------------------

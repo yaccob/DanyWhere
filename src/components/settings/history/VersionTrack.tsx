@@ -1,6 +1,7 @@
 // DanyWhere: the track under a History entry with more than one version:
 // Transcription → ✨ → ✎ …, one chip per version, bottom to top. A click
-// shows that version; below the top it offers "Go Back to This Version".
+// shows it as the current version; below the top it offers "Reset to the
+// Current Version".
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {

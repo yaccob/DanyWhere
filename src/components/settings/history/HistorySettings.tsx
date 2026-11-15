@@ -91,6 +91,7 @@ import {
   shownVersion,
   versionText,
   versionsLostByEditing,
+  versionsLostByPostProcessing,
   type PostProcessAction,
 } from "./versions";
 
@@ -881,8 +882,25 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
     }
   };
 
-  // DanyWhere: the result of ✨ lands on top, so the entry shows the top.
-  const runPostProcess = (action: PostProcessAction) => {
+  // DanyWhere: ✨ works on the current version (the one shown; the user
+  // agreed to what it deletes). Below the top it first goes back to it, so
+  // it's the top, which is what post-processing takes; the entry then shows
+  // the top, where the result lands.
+  const runPostProcess = async (action: PostProcessAction) => {
+    const base = shown;
+    if (versionsLostByPostProcessing(entry, base) > 0) {
+      setSaving(true);
+      try {
+        const result = await revertToVersion(entry.id, base);
+        if (result.status !== "ok") throw new Error(String(result.error));
+      } catch (error) {
+        console.error("Failed to go back before post-processing:", error);
+        notify({ title: t(`${VERSIONS}.goBackError`) });
+        return;
+      } finally {
+        setSaving(false);
+      }
+    }
     show(null);
     void reprocess(entry.id, action);
   };
@@ -999,8 +1017,9 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
               {hasTranscription && (
                 <PostProcessButton
                   entry={entry}
+                  shown={shown}
                   availability={postProcess}
-                  onRun={runPostProcess}
+                  onRun={(action) => void runPostProcess(action)}
                   disabled={editing !== null || saving}
                 />
               )}

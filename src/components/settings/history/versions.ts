@@ -92,32 +92,77 @@ export type PostProcessAction = Extract<
   "post_process" | "post_process_replace" | "post_process_redo"
 >;
 
-/** The top version's steps; none when it's the transcription. */
-const topSteps = (entry: Stack) =>
-  topIndex(entry) > 0 ? (entry.versions[topIndex(entry)]?.steps ?? []) : [];
+/** The current version: the one the entry shows (`shown`), which every
+ * action works on; one the stack doesn't have counts as the top. */
+const current = (entry: Stack, shown: number): number =>
+  hasVersion(entry, shown) ? shown : topIndex(entry);
 
-/** ✨'s actions, the click's first: post-processing the top further (always);
- * post-processing the top in place (not the transcription); and redoing the
- * post-processing from the version below (only when the AI made the top). */
-export const postProcessActions = (entry: Stack): PostProcessAction[] => {
+/** The current version's steps; none when it's the transcription. */
+const currentSteps = (entry: Stack, shown: number) => {
+  const index = current(entry, shown);
+  return index > 0 ? (entry.versions[index]?.steps ?? []) : [];
+};
+
+/** ✨'s actions on the current version, the click's first: post-processing
+ * it further (always); post-processing it and replacing it (not the
+ * transcription); and redoing the post-processing from the previous version
+ * (only when the AI made the current one). Below the top, each first deletes
+ * the versions above the current one, which makes it the top. */
+export const postProcessActions = (
+  entry: Stack,
+  shown: number,
+): PostProcessAction[] => {
   const actions: PostProcessAction[] = ["post_process"];
-  if (topIndex(entry) === 0) return actions;
+  if (current(entry, shown) === 0) return actions;
   actions.push("post_process_replace");
-  if (topSteps(entry)[0]?.by === "ai") actions.push("post_process_redo");
+  if (currentSteps(entry, shown)[0]?.by === "ai") {
+    actions.push("post_process_redo");
+  }
   return actions;
 };
 
-/** Redoing replaces the top: History asks first when that loses the user's
- * own steps in it. */
-export const redoNeedsConfirm = (entry: Stack): boolean =>
-  topSteps(entry).some((step) => step.by === "user");
+/** Redoing replaces the current version with the AI's result for the
+ * previous one: History asks first when that loses the user's own steps in
+ * the current version. */
+export const redoNeedsConfirm = (entry: Stack, shown: number): boolean =>
+  currentSteps(entry, shown).some((step) => step.by === "user");
+
+/** How many versions ✨ deletes before it runs: the ones above the current
+ * version. */
+export const versionsLostByPostProcessing = (
+  entry: Stack,
+  shown: number,
+): number => Math.max(0, topIndex(entry) - current(entry, shown));
+
+/** What ✨ asks before an action: the versions above the current one go
+ * (`above`, their count), a redo replaces the user's own steps in the
+ * current version (`redo`), or both at once, asked in one question
+ * (`redo_above`). */
+export type PostProcessQuestion =
+  | { kind: "above"; count: number }
+  | { kind: "redo" }
+  | { kind: "redo_above"; count: number };
+
+export const postProcessQuestion = (
+  entry: Stack,
+  shown: number,
+  action: PostProcessAction,
+): PostProcessQuestion | null => {
+  const count = versionsLostByPostProcessing(entry, shown);
+  const overEdits =
+    action === "post_process_redo" && redoNeedsConfirm(entry, shown);
+  if (overEdits) {
+    return count > 0 ? { kind: "redo_above", count } : { kind: "redo" };
+  }
+  return count > 0 ? { kind: "above", count } : null;
+};
 
 /** How many versions go when the user edits version `base`: the ones above
  * it (History asks first when there are any). */
 export const versionsLostByEditing = (entry: Stack, base: number): number =>
   Math.max(0, topIndex(entry) - base);
 
-/** How many versions "Go Back to This Version" deletes for `keep`. */
+/** How many versions "Reset to the Current Version" deletes for `keep`. */
 export const versionsLostByGoingBack = (entry: Stack, keep: number): number =>
   Math.max(0, topIndex(entry) - keep);
 
