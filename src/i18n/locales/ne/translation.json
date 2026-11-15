@@ -12,7 +12,9 @@
     "autoLanguage": "स्वतः",
     "otherLanguages": "अन्य भाषाहरू",
     "wordList": "शब्द सूची",
-    "onlyGlobalWordList": "ग्लोबल शब्द सूची मात्र"
+    "onlyGlobalWordList": "ग्लोबल शब्द सूची मात्र",
+    "profile": "प्रोफाइल",
+    "defaultProfile": "पूर्वनिर्धारित"
   },
   "sidebar": {
     "general": "सामान्य",
@@ -1134,7 +1136,8 @@
     "readyNoShortcut": "तयार – सेवाहरू मेनुबाट घुसाउनुहोस्",
     "notReady": "अझै तयार छैन",
     "wordList": "शब्द सूची: {{name}}",
-    "wordListGlobalOnly": "ग्लोबल शब्द सूची मात्र"
+    "wordListGlobalOnly": "ग्लोबल शब्द सूची मात्र",
+    "profile": "प्रोफाइल: {{name}}"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} ले 1 सर्टकट रोकिरहेको हुन सक्छ",

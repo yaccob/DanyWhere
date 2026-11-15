@@ -1197,24 +1197,28 @@ pub fn change_post_process_enabled_setting(app: AppHandle, enabled: bool) -> Res
     let mut settings = settings::get_settings(&app);
     settings.post_process_enabled = enabled;
     settings::write_settings(&app, settings.clone());
+    sync_post_process_shortcuts(&app, &settings);
+    Ok(())
+}
 
-    // Register or unregister the post-processing shortcuts (DanyWhere: the
-    // context shortcut too).
+/// Registers the post-processing shortcuts (DanyWhere: the context shortcut
+/// too) while post-processing is on in `settings`, and unregisters them while
+/// it's off. DanyWhere: also after a profile switch turned it on or off.
+pub fn sync_post_process_shortcuts(app: &AppHandle, settings: &settings::AppSettings) {
     for id in [
         "transcribe_with_post_process",
         crate::dictation_context::CONTEXT_BINDING,
     ] {
         if let Some(binding) = settings.bindings.get(id).cloned() {
-            if enabled {
-                let _ = register_shortcut(&app, binding);
+            if settings.post_process_enabled {
+                let _ = register_shortcut(app, binding);
             } else {
-                let _ = unregister_shortcut(&app, binding);
+                let _ = unregister_shortcut(app, binding);
             }
         }
     }
 
-    crate::secure_input::reconcile_fallback(&app);
-    Ok(())
+    crate::secure_input::reconcile_fallback(app);
 }
 
 #[tauri::command]

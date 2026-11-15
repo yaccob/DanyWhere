@@ -67,10 +67,58 @@ pub fn outdated_prompt_names(prompts: &[LLMPrompt]) -> Vec<String> {
         .collect()
 }
 
+/// DanyWhere: the prompts with old parts in every profile, in profile order.
+/// With several profiles each is named "Profile – Prompt"; with one, by its
+/// name alone, as before profiles. `default_name` is the default profile's
+/// translated name.
+pub fn outdated_prompt_labels(
+    settings: &crate::settings::AppSettings,
+    default_name: &str,
+) -> Vec<String> {
+    if settings.profiles.is_empty() {
+        return outdated_prompt_names(&settings.post_process_prompts);
+    }
+    let several = settings.profiles.len() > 1;
+    let mut labels = Vec::new();
+    for profile in &settings.profiles {
+        // The active profile's latest prompts are the flat ones.
+        let prompts = if profile.id == settings.active_profile_id {
+            &settings.post_process_prompts
+        } else {
+            &profile.values.post_process_prompts
+        };
+        for name in outdated_prompt_names(prompts) {
+            labels.push(if several {
+                format!(
+                    "{} – {}",
+                    crate::profiles::display_name(profile, default_name),
+                    name
+                )
+            } else {
+                name
+            });
+        }
+    }
+    labels
+}
+
+/// The warning about the prompts with old parts in every profile, naming
+/// them; `None` while no prompt has any.
+pub fn outdated_prompts_notice_for(
+    settings: &crate::settings::AppSettings,
+    default_name: &str,
+) -> Option<Notice> {
+    notice_naming(outdated_prompt_labels(settings, default_name))
+}
+
 /// The warning about the prompts with old parts, naming them; `None` while
 /// no prompt has any.
+#[cfg(test)]
 pub fn outdated_prompts_notice(prompts: &[LLMPrompt]) -> Option<Notice> {
-    let names = outdated_prompt_names(prompts);
+    notice_naming(outdated_prompt_names(prompts))
+}
+
+fn notice_naming(names: Vec<String>) -> Option<Notice> {
     if names.is_empty() {
         return None;
     }
@@ -88,7 +136,8 @@ pub fn outdated_prompts_notice(prompts: &[LLMPrompt]) -> Option<Notice> {
 #[specta::specta]
 pub fn check_prompts_for_old_parts(app: AppHandle) {
     let settings = crate::settings::get_settings(&app);
-    match outdated_prompts_notice(&settings.post_process_prompts) {
+    let default_name = crate::profiles::default_profile_name(&settings);
+    match outdated_prompts_notice_for(&settings, &default_name) {
         Some(notice) => {
             log::info!(
                 "Prompts with ${{output}} or <transcript> tags: {}",
@@ -105,7 +154,8 @@ pub fn check_prompts_for_old_parts(app: AppHandle) {
 /// up again. A dismissed one stays away until the next start.
 pub fn prompts_changed(app: &AppHandle) {
     let settings = crate::settings::get_settings(app);
-    match outdated_prompts_notice(&settings.post_process_prompts) {
+    let default_name = crate::profiles::default_profile_name(&settings);
+    match outdated_prompts_notice_for(&settings, &default_name) {
         Some(notice) => notices::update_if_active(app, notice),
         None => notices::clear(app, NoticeSource::Prompts),
     }
@@ -252,6 +302,56 @@ mod tests {
         assert_eq!(notice.source, NoticeSource::Prompts);
         assert_eq!(notice.level, crate::notices::NoticeLevel::Warning);
         assert_eq!(notice.detail.as_deref(), Some("Diktat (DE/EN), Old"));
+    }
+
+    // DanyWhere: prompts of every profile.
+    #[test]
+    fn with_one_profile_the_warning_names_the_prompts_alone() {
+        let mut settings = crate::settings::AppSettings {
+            post_process_prompts: vec![
+                prompt("a", "Diktat (DE/EN)", "<transcript>${output}</transcript>"),
+                prompt("b", "Email", "Make an email out of it."),
+            ],
+            ..Default::default()
+        };
+        crate::profiles::ensure_profiles(&mut settings);
+        assert_eq!(
+            outdated_prompt_labels(&settings, "Standard"),
+            vec!["Diktat (DE/EN)".to_string()]
+        );
+    }
+
+    #[test]
+    fn with_several_profiles_the_warning_names_profile_and_prompt_of_each() {
+        let mut settings = crate::settings::AppSettings {
+            post_process_prompts: vec![prompt(
+                "a",
+                "Diktat (DE/EN)",
+                "<transcript>${output}</transcript>",
+            )],
+            ..Default::default()
+        };
+        crate::profiles::ensure_profiles(&mut settings);
+        let mut work = settings.profiles[0].clone();
+        work.id = "work".to_string();
+        work.name = "Work".to_string();
+        work.values.post_process_prompts = vec![
+            prompt("b", "Email", "Make an email out of it."),
+            prompt("c", "Old", "Fix: ${output}"),
+        ];
+        settings.profiles.push(work);
+        assert_eq!(
+            outdated_prompt_labels(&settings, "Standard"),
+            vec![
+                "Standard – Diktat (DE/EN)".to_string(),
+                "Work – Old".to_string()
+            ]
+        );
+        let notice = outdated_prompts_notice_for(&settings, "Standard").expect("a warning");
+        assert_eq!(
+            notice.detail.as_deref(),
+            Some("Standard – Diktat (DE/EN), Work – Old")
+        );
     }
 
     #[test]

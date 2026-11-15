@@ -31,6 +31,7 @@ mod paste_tx;
 pub mod portable;
 #[cfg(target_os = "linux")]
 mod primary_selection;
+mod profiles;
 mod prompt_frame;
 mod secure_input;
 mod settings;
@@ -395,6 +396,16 @@ fn initialize_core_logic(app_handle: &AppHandle) {
                     .filter(|list_id| !list_id.is_empty());
                 if let Err(e) = word_lists::select_from_tray(app, list_id) {
                     log::error!("Failed to switch word list via tray: {}", e);
+                }
+                // Re-picking the checked item unchecks it natively; rebuild.
+                tray::rebuild_tray_menu(app);
+            }
+            id if id.starts_with(tray::PROFILE_SELECT_PREFIX) => {
+                let profile_id = id
+                    .strip_prefix(tray::PROFILE_SELECT_PREFIX)
+                    .unwrap_or_default();
+                if let Err(e) = profiles::select_from_tray(app, profile_id) {
+                    log::error!("Failed to switch profile via tray: {}", e);
                 }
                 // Re-picking the checked item unchecks it natively; rebuild.
                 tray::rebuild_tray_menu(app);
@@ -774,6 +785,11 @@ pub fn run(cli_args: CliArgs) {
             word_lists::set_word_list_words,
             word_lists::delete_word_list,
             word_lists::set_active_word_list,
+            word_lists::update_profile_words,
+            profiles::switch_profile,
+            profiles::duplicate_profile,
+            profiles::rename_profile,
+            profiles::delete_profile,
             shortcut::suspend_all_bindings,
             shortcut::resume_all_bindings,
             shortcut::change_mute_while_recording_setting,

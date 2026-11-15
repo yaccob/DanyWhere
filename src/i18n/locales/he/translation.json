@@ -12,7 +12,9 @@
     "autoLanguage": "אוטומטי",
     "otherLanguages": "שפות אחרות",
     "wordList": "רשימת מילים",
-    "onlyGlobalWordList": "רשימת המילים הכללית בלבד"
+    "onlyGlobalWordList": "רשימת המילים הכללית בלבד",
+    "profile": "פרופיל",
+    "defaultProfile": "ברירת מחדל"
   },
   "sidebar": {
     "general": "כללי",
@@ -1134,7 +1136,8 @@
     "readyNoShortcut": "מוכן – הוסף מתפריט השירותים",
     "notReady": "עדיין לא מוכן",
     "wordList": "רשימת מילים: {{name}}",
-    "wordListGlobalOnly": "רשימת המילים הכללית בלבד"
+    "wordListGlobalOnly": "רשימת המילים הכללית בלבד",
+    "profile": "פרופיל: {{name}}"
   },
   "secureInput": {
     "blockedWithCulprit_one": "ייתכן ש-{{name}} חוסם קיצור דרך אחד",

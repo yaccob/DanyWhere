@@ -12,7 +12,9 @@
     "autoLanguage": "Otomatik",
     "otherLanguages": "Diğer Diller",
     "wordList": "Kelime Listesi",
-    "onlyGlobalWordList": "Yalnızca Genel Kelime Listesi"
+    "onlyGlobalWordList": "Yalnızca Genel Kelime Listesi",
+    "profile": "Profil",
+    "defaultProfile": "Varsayılan"
   },
   "sidebar": {
     "general": "Genel",
@@ -1134,7 +1136,8 @@
     "readyNoShortcut": "Hazır – Servisler menüsünden ekleyin",
     "notReady": "Henüz hazır değil",
     "wordList": "Kelime listesi: {{name}}",
-    "wordListGlobalOnly": "Yalnızca genel kelime listesi"
+    "wordListGlobalOnly": "Yalnızca genel kelime listesi",
+    "profile": "Profil: {{name}}"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} 1 kısayolu engelliyor olabilir",

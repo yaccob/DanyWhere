@@ -12,7 +12,9 @@
     "autoLanguage": "Автоматично",
     "otherLanguages": "Други езици",
     "wordList": "Списък с думи",
-    "onlyGlobalWordList": "Само общият списък с думи"
+    "onlyGlobalWordList": "Само общият списък с думи",
+    "profile": "Профил",
+    "defaultProfile": "По подразбиране"
   },
   "sidebar": {
     "general": "Общи",
@@ -1134,7 +1136,8 @@
     "readyNoShortcut": "Готово – вмъкнете от менюто „Услуги“",
     "notReady": "Още не е готово",
     "wordList": "Списък с думи: {{name}}",
-    "wordListGlobalOnly": "Само общият списък с думи"
+    "wordListGlobalOnly": "Само общият списък с думи",
+    "profile": "Профил: {{name}}"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} може да блокира 1 бърз клавиш",

@@ -12,7 +12,9 @@
     "autoLanguage": "Automatisk",
     "otherLanguages": "Andre sprog",
     "wordList": "Ordliste",
-    "onlyGlobalWordList": "Kun den globale ordliste"
+    "onlyGlobalWordList": "Kun den globale ordliste",
+    "profile": "Profil",
+    "defaultProfile": "Standard"
   },
   "sidebar": {
     "general": "Generelt",
@@ -1134,7 +1136,8 @@
     "readyNoShortcut": "Klar – indsæt fra menuen Tjenester",
     "notReady": "Ikke klar endnu",
     "wordList": "Ordliste: {{name}}",
-    "wordListGlobalOnly": "Kun den globale ordliste"
+    "wordListGlobalOnly": "Kun den globale ordliste",
+    "profile": "Profil: {{name}}"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} blokerer muligvis 1 genvej",

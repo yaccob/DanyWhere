@@ -74,6 +74,17 @@ struct MenuInputs {
     language: Option<LanguageMenu>,
     /// The word list submenu, when there are additional lists to switch on.
     word_lists: Option<WordListMenu>,
+    /// DanyWhere: the profile submenu, when there are profiles to switch to.
+    profiles: Option<ProfileMenu>,
+}
+
+/// What the profile submenu shows: each profile by its shown name, the
+/// active one checked.
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct ProfileMenu {
+    active: String,
+    /// `(id, shown name)` of the profiles, in their settings order.
+    profiles: Vec<(String, String)>,
 }
 
 /// What the word list submenu shows: "only the global list" plus each
@@ -412,6 +423,12 @@ fn compute_desired(app: &AppHandle, icon_state: TrayIconState) -> TrayDesired {
     } else {
         word_list_menu(&settings)
     };
+    // Switching is refused during a dictation, so only in the idle menu too.
+    let profiles = if icon_state.is_busy() {
+        None
+    } else {
+        profile_menu(&settings, &crate::profiles::default_profile_name(&settings))
+    };
     TrayDesired {
         icon_path: get_icon_path(theme, icon_state, badge),
         menu: MenuInputs {
@@ -426,6 +443,7 @@ fn compute_desired(app: &AppHandle, icon_state: TrayIconState) -> TrayDesired {
             update_checks_enabled: settings.update_checks_enabled,
             language,
             word_lists,
+            profiles,
         },
     }
 }
@@ -510,6 +528,60 @@ fn word_list_menu(settings: &settings::AppSettings) -> Option<WordListMenu> {
             .map(|list| (list.id.clone(), list.name.clone()))
             .collect(),
     })
+}
+
+/// The profile submenu for `settings`; `None` while there is only one
+/// profile. `default_name` is the default profile's translated name.
+fn profile_menu(settings: &settings::AppSettings, default_name: &str) -> Option<ProfileMenu> {
+    if settings.profiles.len() < 2 {
+        return None;
+    }
+    Some(ProfileMenu {
+        active: settings.active_profile_id.clone(),
+        profiles: settings
+            .profiles
+            .iter()
+            .map(|profile| {
+                (
+                    profile.id.clone(),
+                    crate::profiles::display_name(profile, default_name),
+                )
+            })
+            .collect(),
+    })
+}
+
+/// Menu item ids of the profile submenu, followed by the profile's id.
+pub const PROFILE_SELECT_PREFIX: &str = "profile_select:";
+
+fn profile_submenu(
+    app: &AppHandle,
+    strings: &crate::tray_i18n::TrayStrings,
+    menu: &ProfileMenu,
+) -> tauri::Result<Submenu<tauri::Wry>> {
+    let active_label = menu
+        .profiles
+        .iter()
+        .find(|(id, _)| *id == menu.active)
+        .map(|(_, name)| name.clone())
+        .unwrap_or_default();
+    let submenu = Submenu::with_id(
+        app,
+        "profile_submenu",
+        format!("{} ({})", strings.profile, active_label),
+        true,
+    )?;
+    for (id, name) in &menu.profiles {
+        submenu.append(&CheckMenuItem::with_id(
+            app,
+            format!("{PROFILE_SELECT_PREFIX}{id}"),
+            name,
+            true,
+            *id == menu.active,
+            None::<&str>,
+        )?)?;
+    }
+    Ok(submenu)
 }
 
 /// Menu item ids of the word list submenu: `word_list_select:` alone means
@@ -844,6 +916,12 @@ fn build_menu(app: &AppHandle, inputs: &MenuInputs) -> tauri::Result<(Menu<tauri
         )?;
         // Right below the model submenu: version, separator, copy, separator, model.
         let mut position = 5;
+        // DanyWhere: the profile right above the model, since it decides the
+        // model, the language and the word lists.
+        if let Some(profiles) = &inputs.profiles {
+            menu.insert(&profile_submenu(app, &strings, profiles)?, 4)?;
+            position += 1;
+        }
         if let Some(language) = &inputs.language {
             menu.insert(&language_submenu(app, &strings, language)?, position)?;
             position += 1;
@@ -959,8 +1037,9 @@ pub fn copy_last_transcript(app: &AppHandle) {
 #[cfg(test)]
 mod tests {
     use super::{
-        get_icon_path, language_menu, last_transcript_text, load_tray_icon, word_list_menu,
-        AppTheme, MenuInputs, TrayDesired, TrayIconState, WordListMenu,
+        get_icon_path, language_menu, last_transcript_text, load_tray_icon, profile_menu,
+        word_list_menu, AppTheme, MenuInputs, ProfileMenu, TrayDesired, TrayIconState,
+        WordListMenu,
     };
     use crate::managers::history::HistoryEntry;
     use crate::managers::model::{ModelInfo, ModelSource};
@@ -1091,6 +1170,7 @@ mod tests {
             update_checks_enabled: true,
             language: None,
             word_lists: None,
+            profiles: None,
         }
     }
 
@@ -1139,6 +1219,36 @@ mod tests {
             Some(WordListMenu {
                 active: None,
                 lists,
+            })
+        );
+    }
+
+    // DanyWhere: the profile submenu.
+    #[test]
+    fn profile_menu_hidden_with_only_one_profile() {
+        let mut settings = get_default_settings();
+        crate::profiles::ensure_profiles(&mut settings);
+        assert_eq!(settings.profiles.len(), 1);
+        assert_eq!(profile_menu(&settings, "Standard"), None);
+    }
+
+    #[test]
+    fn profile_menu_lists_the_profiles_by_name_with_the_active_one() {
+        let mut settings = get_default_settings();
+        crate::profiles::ensure_profiles(&mut settings);
+        let mut work = settings.profiles[0].clone();
+        work.id = "work".to_string();
+        work.name = "Work".to_string();
+        settings.profiles.push(work);
+        let expected = vec![
+            ("default".to_string(), "Standard".to_string()),
+            ("work".to_string(), "Work".to_string()),
+        ];
+        assert_eq!(
+            profile_menu(&settings, "Standard"),
+            Some(ProfileMenu {
+                active: "default".to_string(),
+                profiles: expected,
             })
         );
     }

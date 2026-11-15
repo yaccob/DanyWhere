@@ -12,7 +12,9 @@
     "autoLanguage": "Automatisch",
     "otherLanguages": "Weitere Sprachen",
     "wordList": "Wortliste",
-    "onlyGlobalWordList": "Nur globale Wortliste"
+    "onlyGlobalWordList": "Nur globale Wortliste",
+    "profile": "Profil",
+    "defaultProfile": "Standard"
   },
   "sidebar": {
     "general": "Allgemein",
@@ -1134,7 +1136,8 @@
     "readyNoShortcut": "Bereit – über das Dienste-Menü einfügen",
     "notReady": "Noch nicht fertig",
     "wordList": "Wortliste: {{name}}",
-    "wordListGlobalOnly": "Nur globale Wortliste"
+    "wordListGlobalOnly": "Nur globale Wortliste",
+    "profile": "Profil: {{name}}"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} blockiert möglicherweise 1 Tastenkürzel",

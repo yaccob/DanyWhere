@@ -12,7 +12,9 @@
     "autoLanguage": "Tự động",
     "otherLanguages": "Ngôn ngữ khác",
     "wordList": "Danh sách từ",
-    "onlyGlobalWordList": "Chỉ danh sách từ chung"
+    "onlyGlobalWordList": "Chỉ danh sách từ chung",
+    "profile": "Hồ sơ",
+    "defaultProfile": "Mặc định"
   },
   "sidebar": {
     "general": "Chung",
@@ -1134,7 +1136,8 @@
     "readyNoShortcut": "Sẵn sàng – chèn từ menu Dịch vụ",
     "notReady": "Chưa sẵn sàng",
     "wordList": "Danh sách từ: {{name}}",
-    "wordListGlobalOnly": "Chỉ danh sách từ chung"
+    "wordListGlobalOnly": "Chỉ danh sách từ chung",
+    "profile": "Hồ sơ: {{name}}"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} có thể đang chặn 1 phím tắt",

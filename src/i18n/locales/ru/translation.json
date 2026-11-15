@@ -12,7 +12,9 @@
     "autoLanguage": "Авто",
     "otherLanguages": "Другие языки",
     "wordList": "Список слов",
-    "onlyGlobalWordList": "Только общий список слов"
+    "onlyGlobalWordList": "Только общий список слов",
+    "profile": "Профиль",
+    "defaultProfile": "По умолчанию"
   },
   "sidebar": {
     "general": "Общие",
@@ -1134,7 +1136,8 @@
     "readyNoShortcut": "Готово – вставьте через меню «Службы»",
     "notReady": "Ещё не готово",
     "wordList": "Список слов: {{name}}",
-    "wordListGlobalOnly": "Только общий список слов"
+    "wordListGlobalOnly": "Только общий список слов",
+    "profile": "Профиль: {{name}}"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} может блокировать 1 сочетание клавиш",

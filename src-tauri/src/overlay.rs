@@ -81,7 +81,10 @@ fn notice_state(session_is_live: bool) -> &'static str {
 fn overlay_dimensions(state: &str) -> (f64, f64) {
     if is_live_state(state) {
         (OVERLAY_STREAM_WIDTH, OVERLAY_STREAM_HEIGHT)
-    } else if matches!(state, "clipboard" | "ready" | "not_ready" | "word_list") {
+    } else if matches!(
+        state,
+        "clipboard" | "ready" | "not_ready" | "word_list" | "profile"
+    ) {
         (OVERLAY_NOTICE_WIDTH, OVERLAY_HEIGHT)
     } else {
         (OVERLAY_WIDTH, OVERLAY_HEIGHT)
@@ -836,6 +839,17 @@ pub fn show_word_list_notice(
         let _ = overlay_window.emit("overlay-word-list", serde_json::json!({ "name": name }));
     }
     show_timed_state(app_handle, "word_list", duration);
+}
+
+/// DanyWhere: shows which profile is now active for `duration`, like the
+/// word list notice. The caller skips it while a recording or transcription
+/// owns the overlay.
+pub fn show_profile_notice(app_handle: &AppHandle, name: String, duration: std::time::Duration) {
+    // Sent before the state, so the overlay has the name when it renders.
+    if let Some(overlay_window) = app_handle.get_webview_window("recording_overlay") {
+        let _ = overlay_window.emit("overlay-profile", serde_json::json!({ "name": name }));
+    }
+    show_timed_state(app_handle, "profile", duration);
 }
 
 /// Shows `state` for `duration`, then hides the overlay unless something else

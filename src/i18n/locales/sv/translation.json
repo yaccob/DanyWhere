@@ -12,7 +12,9 @@
     "autoLanguage": "Automatiskt",
     "otherLanguages": "Andra språk",
     "wordList": "Ordlista",
-    "onlyGlobalWordList": "Endast global ordlista"
+    "onlyGlobalWordList": "Endast global ordlista",
+    "profile": "Profil",
+    "defaultProfile": "Standard"
   },
   "sidebar": {
     "general": "Allmänt",
@@ -1134,7 +1136,8 @@
     "readyNoShortcut": "Klar – infoga från menyn Tjänster",
     "notReady": "Inte klar än",
     "wordList": "Ordlista: {{name}}",
-    "wordListGlobalOnly": "Endast global ordlista"
+    "wordListGlobalOnly": "Endast global ordlista",
+    "profile": "Profil: {{name}}"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} kanske blockerar 1 kortkommando",

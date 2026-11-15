@@ -26,7 +26,8 @@ type OverlayState =
   | "clipboard"
   | "ready"
   | "not_ready"
-  | "word_list";
+  | "word_list"
+  | "profile";
 
 const isNoticeState = (state: OverlayState) =>
   state === "notice" || state === "live_notice";
@@ -87,6 +88,8 @@ const RecordingOverlay: React.FC = () => {
   // The additional word list the switch shortcut just turned on; null: only
   // the global list.
   const [wordListName, setWordListName] = useState<string | null>(null);
+  // The profile just switched to, by its shown name.
+  const [profileName, setProfileName] = useState<string>("");
   // The "Insert Last Dictation" service's shortcut, e.g. ⌃⇧V; null: none.
   const [insertKeys, setInsertKeys] = useState<string | null>(null);
   const [noticeWidth, setNoticeWidth] = useState<number>();
@@ -111,6 +114,11 @@ const RecordingOverlay: React.FC = () => {
       const unlistenWordList = await listen<{ name: string | null }>(
         "overlay-word-list",
         (event) => setWordListName(event.payload.name),
+      );
+
+      const unlistenProfile = await listen<{ name: string }>(
+        "overlay-profile",
+        (event) => setProfileName(event.payload.name),
       );
 
       const unlistenInsertKeys = await listen<{ keys: string | null }>(
@@ -225,6 +233,7 @@ const RecordingOverlay: React.FC = () => {
       return () => {
         unlistenNotice();
         unlistenWordList();
+        unlistenProfile();
         unlistenInsertKeys();
         unlistenShow();
         unlistenHide();
@@ -502,6 +511,28 @@ const RecordingOverlay: React.FC = () => {
               {wordListName
                 ? t("overlay.wordList", { name: wordListName })
                 : t("overlay.wordListGlobalOnly")}
+            </span>
+            <div className="sbase-r" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ---- Profile notice: another profile is now active.
+  if (state === "profile") {
+    return (
+      <div
+        dir={direction}
+        className={`ov-stage ${position} ov-fade ${isVisible ? "show" : ""}`}
+      >
+        <div className="scard compact">
+          <div className="sbase">
+            <div className="sbase-l">
+              <span className="sdot ready" />
+            </div>
+            <span className="swork-label">
+              {t("overlay.profile", { name: profileName })}
             </span>
             <div className="sbase-r" />
           </div>

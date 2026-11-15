@@ -87,7 +87,7 @@ pub struct ShortcutBinding {
     pub current_binding: String,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Type)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Type)]
 pub struct LLMPrompt {
     pub id: String,
     pub name: String,
@@ -689,6 +689,24 @@ pub struct AppSettings {
     /// `overlay_position` (position `none` → style `None`).
     #[serde(default = "default_overlay_style")]
     pub overlay_style: OverlayStyle,
+    /// DanyWhere: the profiles (`profiles`). The flat fields above hold the
+    /// active profile's values.
+    #[serde(default)]
+    pub profiles: Vec<crate::profiles::Profile>,
+    #[serde(default)]
+    pub active_profile_id: String,
+    /// DanyWhere: the active profile's own word list, which always applies
+    /// in it; `custom_words` applies in every profile.
+    #[serde(default)]
+    pub profile_words: Vec<String>,
+    /// DanyWhere: whether an application's profile is used for dictations
+    /// into it. Not used yet.
+    #[serde(default = "default_profile_auto_by_app")]
+    pub profile_auto_by_app: bool,
+}
+
+fn default_profile_auto_by_app() -> bool {
+    true
 }
 
 fn default_model() -> String {
@@ -1306,6 +1324,10 @@ pub fn get_default_settings() -> AppSettings {
         language_detection: LanguageDetectionMode::default(),
         language_detection_window_secs: default_language_detection_window_secs(),
         overlay_style: default_overlay_style(),
+        profiles: Vec::new(),
+        active_profile_id: String::new(),
+        profile_words: Vec::new(),
+        profile_auto_by_app: default_profile_auto_by_app(),
     }
 }
 
@@ -1437,6 +1459,12 @@ pub fn get_settings(app: &AppHandle) -> AppSettings {
     };
 
     if ensure_post_process_defaults(&mut settings) {
+        store.set("settings", serde_json::to_value(&settings).unwrap());
+    }
+
+    // DanyWhere: the default profile on a new installation or an update from
+    // a version without profiles, and the active profile's latest values.
+    if crate::profiles::ensure_profiles(&mut settings) {
         store.set("settings", serde_json::to_value(&settings).unwrap());
     }
 
@@ -1764,6 +1792,10 @@ pub fn write_settings(app: &AppHandle, settings: AppSettings) {
     let store = app
         .store(crate::portable::store_path(SETTINGS_STORE_PATH))
         .expect("Failed to initialize store");
+
+    // DanyWhere: every change lands in the active profile.
+    let mut settings = settings;
+    let _ = crate::profiles::sync_active_profile(&mut settings);
 
     store.set("settings", serde_json::to_value(&settings).unwrap());
 }

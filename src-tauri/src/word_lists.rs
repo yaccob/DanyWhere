@@ -38,6 +38,7 @@ pub fn merged_vocabulary(settings: &AppSettings) -> Vec<String> {
     for word in additional
         .unwrap_or_default()
         .iter()
+        .chain(&settings.profile_words)
         .chain(&settings.custom_words)
     {
         if !merged.contains(word) {
@@ -218,6 +219,17 @@ pub fn set_active_word_list(app: AppHandle, id: Option<String>) -> Result<(), St
     change(&app, |settings| set_active(settings, id.as_deref()))
 }
 
+/// DanyWhere: replaces the active profile's own word list, which always
+/// applies in that profile (`custom_words` applies in every profile).
+#[tauri::command]
+#[specta::specta]
+pub fn update_profile_words(app: AppHandle, words: Vec<String>) -> Result<(), String> {
+    let mut settings = settings::get_settings(&app);
+    settings.profile_words = words;
+    settings::write_settings(&app, settings);
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -283,6 +295,40 @@ mod tests {
         assert_eq!(
             merged_vocabulary(&s),
             strings(&["Rust", "Claude", "Sayuri"])
+        );
+    }
+
+    // DanyWhere: three tiers with profiles.
+    #[test]
+    fn the_model_gets_the_additional_then_the_profile_then_the_global_words() {
+        let mut s = settings(
+            &["Sayuri", "DanyWhere"],
+            vec![list("code", &["Rust"])],
+            Some("code"),
+        );
+        s.profile_words = strings(&["Kubernetes", "Helm"]);
+        assert_eq!(
+            merged_vocabulary(&s),
+            strings(&["Rust", "Kubernetes", "Helm", "Sayuri", "DanyWhere"])
+        );
+        s.active_word_list_id = None;
+        assert_eq!(
+            merged_vocabulary(&s),
+            strings(&["Kubernetes", "Helm", "Sayuri", "DanyWhere"])
+        );
+    }
+
+    #[test]
+    fn a_word_in_several_tiers_goes_to_the_model_once_at_its_first_place() {
+        let mut s = settings(
+            &["Helm", "Sayuri"],
+            vec![list("code", &["Rust", "Helm"])],
+            Some("code"),
+        );
+        s.profile_words = strings(&["Rust", "Kubernetes"]);
+        assert_eq!(
+            merged_vocabulary(&s),
+            strings(&["Rust", "Helm", "Kubernetes", "Sayuri"])
         );
     }
 

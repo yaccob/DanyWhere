@@ -12,7 +12,9 @@
     "autoLanguage": "Automatycznie",
     "otherLanguages": "Inne języki",
     "wordList": "Lista słów",
-    "onlyGlobalWordList": "Tylko globalna lista słów"
+    "onlyGlobalWordList": "Tylko globalna lista słów",
+    "profile": "Profil",
+    "defaultProfile": "Domyślny"
   },
   "sidebar": {
     "general": "Ogólne",
@@ -1134,7 +1136,8 @@
     "readyNoShortcut": "Gotowe – wstaw z menu Usługi",
     "notReady": "Jeszcze niegotowe",
     "wordList": "Lista słów: {{name}}",
-    "wordListGlobalOnly": "Tylko globalna lista słów"
+    "wordListGlobalOnly": "Tylko globalna lista słów",
+    "profile": "Profil: {{name}}"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} może blokować 1 skrót",

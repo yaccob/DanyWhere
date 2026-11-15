@@ -12,7 +12,9 @@
     "autoLanguage": "Automaticky",
     "otherLanguages": "Další jazyky",
     "wordList": "Seznam slov",
-    "onlyGlobalWordList": "Jen globální seznam slov"
+    "onlyGlobalWordList": "Jen globální seznam slov",
+    "profile": "Profil",
+    "defaultProfile": "Výchozí"
   },
   "sidebar": {
     "general": "Obecné",
@@ -1134,7 +1136,8 @@
     "readyNoShortcut": "Připraveno – vložte z nabídky Služby",
     "notReady": "Ještě není hotovo",
     "wordList": "Seznam slov: {{name}}",
-    "wordListGlobalOnly": "Jen globální seznam slov"
+    "wordListGlobalOnly": "Jen globální seznam slov",
+    "profile": "Profil: {{name}}"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} může blokovat 1 zkratku",

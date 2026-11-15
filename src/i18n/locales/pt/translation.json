@@ -12,7 +12,9 @@
     "autoLanguage": "Automático",
     "otherLanguages": "Outros idiomas",
     "wordList": "Lista de Palavras",
-    "onlyGlobalWordList": "Só a Lista de Palavras Global"
+    "onlyGlobalWordList": "Só a Lista de Palavras Global",
+    "profile": "Perfil",
+    "defaultProfile": "Padrão"
   },
   "sidebar": {
     "general": "Geral",
@@ -1134,7 +1136,8 @@
     "readyNoShortcut": "Pronto – insira pelo menu Serviços",
     "notReady": "Ainda não está pronto",
     "wordList": "Lista de palavras: {{name}}",
-    "wordListGlobalOnly": "Só a lista de palavras global"
+    "wordListGlobalOnly": "Só a lista de palavras global",
+    "profile": "Perfil: {{name}}"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} pode estar bloqueando 1 atalho",

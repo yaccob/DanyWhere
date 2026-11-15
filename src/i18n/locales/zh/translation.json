@@ -12,7 +12,9 @@
     "autoLanguage": "自动",
     "otherLanguages": "其他语言",
     "wordList": "词汇列表",
-    "onlyGlobalWordList": "仅全局词汇列表"
+    "onlyGlobalWordList": "仅全局词汇列表",
+    "profile": "配置文件",
+    "defaultProfile": "默认"
   },
   "sidebar": {
     "general": "通用",
@@ -1134,7 +1136,8 @@
     "readyNoShortcut": "就绪 – 从“服务”菜单插入",
     "notReady": "尚未就绪",
     "wordList": "词汇列表：{{name}}",
-    "wordListGlobalOnly": "仅全局词汇列表"
+    "wordListGlobalOnly": "仅全局词汇列表",
+    "profile": "配置文件：{{name}}"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} 可能正在阻止 1 个快捷键",

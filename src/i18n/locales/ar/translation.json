@@ -12,7 +12,9 @@
     "autoLanguage": "تلقائي",
     "otherLanguages": "لغات أخرى",
     "wordList": "قائمة الكلمات",
-    "onlyGlobalWordList": "قائمة الكلمات العامة فقط"
+    "onlyGlobalWordList": "قائمة الكلمات العامة فقط",
+    "profile": "الملف الشخصي",
+    "defaultProfile": "افتراضي"
   },
   "sidebar": {
     "general": "عام",
@@ -1134,7 +1136,8 @@
     "readyNoShortcut": "جاهز – أدرجه من قائمة الخدمات",
     "notReady": "لم يجهز بعد",
     "wordList": "قائمة الكلمات: {{name}}",
-    "wordListGlobalOnly": "قائمة الكلمات العامة فقط"
+    "wordListGlobalOnly": "قائمة الكلمات العامة فقط",
+    "profile": "الملف الشخصي: {{name}}"
   },
   "secureInput": {
     "blockedWithCulprit_one": "قد يحظر {{name}} اختصارًا واحدًا",

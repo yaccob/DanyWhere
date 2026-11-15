@@ -12,7 +12,9 @@
     "autoLanguage": "Otomatis",
     "otherLanguages": "Bahasa Lain",
     "wordList": "Daftar Kata",
-    "onlyGlobalWordList": "Hanya Daftar Kata Global"
+    "onlyGlobalWordList": "Hanya Daftar Kata Global",
+    "profile": "Profil",
+    "defaultProfile": "Bawaan"
   },
   "sidebar": {
     "general": "Umum",
@@ -1134,7 +1136,8 @@
     "readyNoShortcut": "Siap – sisipkan dari menu Layanan",
     "notReady": "Belum siap",
     "wordList": "Daftar kata: {{name}}",
-    "wordListGlobalOnly": "Hanya daftar kata global"
+    "wordListGlobalOnly": "Hanya daftar kata global",
+    "profile": "Profil: {{name}}"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} mungkin memblokir 1 pintasan",

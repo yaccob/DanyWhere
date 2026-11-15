@@ -12,7 +12,9 @@
     "autoLanguage": "Automatisch",
     "otherLanguages": "Andere talen",
     "wordList": "Woordenlijst",
-    "onlyGlobalWordList": "Alleen algemene woordenlijst"
+    "onlyGlobalWordList": "Alleen algemene woordenlijst",
+    "profile": "Profiel",
+    "defaultProfile": "Standaard"
   },
   "sidebar": {
     "general": "Algemeen",
@@ -1134,7 +1136,8 @@
     "readyNoShortcut": "Klaar – voeg in via het menu Voorzieningen",
     "notReady": "Nog niet klaar",
     "wordList": "Woordenlijst: {{name}}",
-    "wordListGlobalOnly": "Alleen algemene woordenlijst"
+    "wordListGlobalOnly": "Alleen algemene woordenlijst",
+    "profile": "Profiel: {{name}}"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} blokkeert mogelijk 1 sneltoets",

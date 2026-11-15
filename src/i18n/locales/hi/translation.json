@@ -12,7 +12,9 @@
     "autoLanguage": "ऑटो",
     "otherLanguages": "अन्य भाषाएँ",
     "wordList": "शब्द सूची",
-    "onlyGlobalWordList": "सिर्फ़ ग्लोबल शब्द सूची"
+    "onlyGlobalWordList": "सिर्फ़ ग्लोबल शब्द सूची",
+    "profile": "प्रोफ़ाइल",
+    "defaultProfile": "डिफ़ॉल्ट"
   },
   "sidebar": {
     "general": "सामान्य",
@@ -1134,7 +1136,8 @@
     "readyNoShortcut": "तैयार – सर्विसेज़ मेनू से इन्सर्ट करें",
     "notReady": "अभी तैयार नहीं",
     "wordList": "शब्द सूची: {{name}}",
-    "wordListGlobalOnly": "सिर्फ़ ग्लोबल शब्द सूची"
+    "wordListGlobalOnly": "सिर्फ़ ग्लोबल शब्द सूची",
+    "profile": "प्रोफ़ाइल: {{name}}"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} शायद 1 शॉर्टकट को ब्लॉक कर रहा है",
