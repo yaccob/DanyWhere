@@ -335,7 +335,8 @@ pub fn default_profile_name(settings: &AppSettings) -> String {
 
 /// What a switch needs beyond storing: load the speech model, (un)register
 /// the post-processing shortcuts, tell the window and the tray, and show the
-/// name in the overlay unless a dictation owns it.
+/// name, with the glyph of choosing the profile by application, in the
+/// overlay unless a dictation owns it.
 fn after_switch(app: &AppHandle, settings: &AppSettings, changes: SwitchChanges) {
     if changes.post_process_enabled_changed {
         crate::shortcut::sync_post_process_shortcuts(app, settings);
@@ -357,9 +358,12 @@ fn after_switch(app: &AppHandle, settings: &AppSettings, changes: SwitchChanges)
     crate::tray::rebuild_tray_menu(app);
     crate::prompt_frame::prompts_changed(app);
     if !crate::overlay::is_session_showing() {
-        if let Some(profile) = active_profile(settings) {
-            let name = display_name(profile, &default_profile_name(settings));
-            crate::overlay::show_profile_notice(app, name, SWITCH_NOTICE);
+        if let Some(shown) = crate::app_profiles::overlay_profile(
+            settings,
+            &settings.active_profile_id,
+            &default_profile_name(settings),
+        ) {
+            crate::overlay::show_profile_notice(app, shown, SWITCH_NOTICE);
         }
     }
 }

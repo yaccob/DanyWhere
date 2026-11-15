@@ -1241,11 +1241,7 @@
     "readyNoShortcut": "جاهز – أدرجه من قائمة الخدمات",
     "notReady": "لم يجهز بعد",
     "wordList": "قائمة الكلمات: {{name}}",
-    "wordListGlobalOnly": "بدون قائمة إضافية",
-    "profile": "الملف الشخصي: {{name}}",
-    "profileAutoOn": "الملف الشخصي حسب التطبيق: تشغيل",
-    "profileAutoOff": "الملف الشخصي حسب التطبيق: إيقاف",
-    "withProfile": "{{label}} · {{name}}"
+    "wordListGlobalOnly": "بدون قائمة إضافية"
   },
   "secureInput": {
     "blockedWithCulprit_one": "قد يحظر {{name}} اختصارًا واحدًا",

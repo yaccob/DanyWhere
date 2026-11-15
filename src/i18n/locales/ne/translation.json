@@ -1241,11 +1241,7 @@
     "readyNoShortcut": "तयार – सेवाहरू मेनुबाट घुसाउनुहोस्",
     "notReady": "अझै तयार छैन",
     "wordList": "शब्द सूची: {{name}}",
-    "wordListGlobalOnly": "कुनै अतिरिक्त सूची छैन",
-    "profile": "प्रोफाइल: {{name}}",
-    "profileAutoOn": "एप्लिकेसन अनुसार प्रोफाइल: चालु",
-    "profileAutoOff": "एप्लिकेसन अनुसार प्रोफाइल: बन्द",
-    "withProfile": "{{label}} · {{name}}"
+    "wordListGlobalOnly": "कुनै अतिरिक्त सूची छैन"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} ले 1 सर्टकट रोकिरहेको हुन सक्छ",

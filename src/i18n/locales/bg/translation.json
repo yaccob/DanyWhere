@@ -1241,11 +1241,7 @@
     "readyNoShortcut": "Готово – вмъкнете от менюто „Услуги“",
     "notReady": "Още не е готово",
     "wordList": "Списък с думи: {{name}}",
-    "wordListGlobalOnly": "Без допълнителен списък",
-    "profile": "Профил: {{name}}",
-    "profileAutoOn": "Профил според приложението: вкл.",
-    "profileAutoOff": "Профил според приложението: изкл.",
-    "withProfile": "{{label}} · {{name}}"
+    "wordListGlobalOnly": "Без допълнителен списък"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} може да блокира 1 бърз клавиш",

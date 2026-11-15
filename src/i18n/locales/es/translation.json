@@ -1241,11 +1241,7 @@
     "readyNoShortcut": "Listo – insértalo desde el menú Servicios",
     "notReady": "Aún no está listo",
     "wordList": "Lista de palabras: {{name}}",
-    "wordListGlobalOnly": "Ninguna lista adicional",
-    "profile": "Perfil: {{name}}",
-    "profileAutoOn": "Perfil según la aplicación: activado",
-    "profileAutoOff": "Perfil según la aplicación: desactivado",
-    "withProfile": "{{label}} · {{name}}"
+    "wordListGlobalOnly": "Ninguna lista adicional"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} puede estar bloqueando 1 atajo",

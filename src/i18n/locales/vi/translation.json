@@ -1241,11 +1241,7 @@
     "readyNoShortcut": "Sẵn sàng – chèn từ menu Dịch vụ",
     "notReady": "Chưa sẵn sàng",
     "wordList": "Danh sách từ: {{name}}",
-    "wordListGlobalOnly": "Không có danh sách bổ sung",
-    "profile": "Hồ sơ: {{name}}",
-    "profileAutoOn": "Hồ sơ theo ứng dụng: bật",
-    "profileAutoOff": "Hồ sơ theo ứng dụng: tắt",
-    "withProfile": "{{label}} · {{name}}"
+    "wordListGlobalOnly": "Không có danh sách bổ sung"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} có thể đang chặn 1 phím tắt",

@@ -628,6 +628,7 @@ impl ShortcutAction for TranscribeAction {
 
         // DanyWhere: the profile of the app in front, when it has one of
         // its own (`app_profiles`); its values apply until the dictation ends.
+        // What the overlay shows of the dictation's profile comes back.
         let dictation_profile = crate::app_profiles::begin_dictation(app);
 
         // Load ASR model and VAD model in parallel
@@ -715,7 +716,8 @@ impl ShortcutAction for TranscribeAction {
         // doesn't stream (or whose capability is not known yet) gets the compact
         // pill instead of an oversized transparent live window.
         let overlay_started = Instant::now();
-        // DanyWhere: the overlay names a profile that isn't the active one.
+        // DanyWhere: from two profiles on, the overlay names the dictation's
+        // profile with the glyph of choosing it by application.
         crate::overlay::set_dictation_profile(app, dictation_profile);
         match settings.overlay_style {
             OverlayStyle::Live if model_supports_streaming => utils::show_streaming_overlay(app),

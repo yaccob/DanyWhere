@@ -1241,11 +1241,7 @@
     "readyNoShortcut": "Klar – infoga från menyn Tjänster",
     "notReady": "Inte klar än",
     "wordList": "Ordlista: {{name}}",
-    "wordListGlobalOnly": "Ingen extra lista",
-    "profile": "Profil: {{name}}",
-    "profileAutoOn": "Profil efter app: på",
-    "profileAutoOff": "Profil efter app: av",
-    "withProfile": "{{label}} · {{name}}"
+    "wordListGlobalOnly": "Ingen extra lista"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} kanske blockerar 1 kortkommando",

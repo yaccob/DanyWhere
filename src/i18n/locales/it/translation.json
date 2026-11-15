@@ -1241,11 +1241,7 @@
     "readyNoShortcut": "Pronto – inseriscilo dal menu Servizi",
     "notReady": "Non ancora pronto",
     "wordList": "Elenco di parole: {{name}}",
-    "wordListGlobalOnly": "Nessun elenco aggiuntivo",
-    "profile": "Profilo: {{name}}",
-    "profileAutoOn": "Profilo in base all'applicazione: attivo",
-    "profileAutoOff": "Profilo in base all'applicazione: disattivo",
-    "withProfile": "{{label}} · {{name}}"
+    "wordListGlobalOnly": "Nessun elenco aggiuntivo"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} potrebbe bloccare 1 scorciatoia",

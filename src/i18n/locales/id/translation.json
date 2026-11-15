@@ -1241,11 +1241,7 @@
     "readyNoShortcut": "Siap – sisipkan dari menu Layanan",
     "notReady": "Belum siap",
     "wordList": "Daftar kata: {{name}}",
-    "wordListGlobalOnly": "Tanpa daftar tambahan",
-    "profile": "Profil: {{name}}",
-    "profileAutoOn": "Profil menurut aplikasi: aktif",
-    "profileAutoOff": "Profil menurut aplikasi: nonaktif",
-    "withProfile": "{{label}} · {{name}}"
+    "wordListGlobalOnly": "Tanpa daftar tambahan"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} mungkin memblokir 1 pintasan",
