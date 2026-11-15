@@ -99,6 +99,15 @@ fn schedule_cancel_reconcile(app: &AppHandle) {
     });
 }
 
+/// DanyWhere: runs `work` off the shortcut handler thread. Shortcut actions
+/// run on the handy-keys manager thread, which also serves registrations, so
+/// an action whose work registers or unregisters shortcuts, directly or
+/// through a settings change, would wait for itself and every shortcut would
+/// stop (2026-11-15, ⌃⌥A). The same rule as `schedule_cancel_reconcile`.
+pub fn off_handler_thread(work: impl FnOnce() + Send + 'static) {
+    std::thread::spawn(work);
+}
+
 fn reconcile_cancel_shortcut(app: &AppHandle) {
     // Cancel shortcut is disabled on Linux due to instability with dynamic shortcut registration
     #[cfg(target_os = "linux")]
@@ -1676,6 +1685,38 @@ pub async fn get_available_accelerators(
 mod tests {
     use handy_keys::Hotkey;
     use tauri_plugin_global_shortcut::Shortcut;
+
+    /// A shortcut action runs on the handy-keys manager thread, which also
+    /// serves registrations. Work that registers a shortcut and waits for the
+    /// answer must not run on that thread, or it waits for itself: on
+    /// 2026-11-15 ⌃⌥A (choose the profile by application) froze every shortcut.
+    #[test]
+    fn work_that_registers_does_not_wait_for_the_handler_thread() {
+        use std::sync::mpsc;
+        use std::time::Duration;
+
+        let (command_tx, command_rx) = mpsc::channel::<mpsc::Sender<()>>();
+        let (done_tx, done_rx) = mpsc::channel::<()>();
+        // The manager thread: one shortcut event, then it serves commands.
+        let manager = std::thread::spawn(move || {
+            super::off_handler_thread(move || {
+                let (reply_tx, reply_rx) = mpsc::channel();
+                command_tx.send(reply_tx).expect("manager gone");
+                if reply_rx.recv_timeout(Duration::from_secs(5)).is_ok() {
+                    let _ = done_tx.send(());
+                }
+            });
+            if let Ok(reply) = command_rx.recv_timeout(Duration::from_secs(8)) {
+                let _ = reply.send(());
+            }
+        });
+        let done = done_rx.recv_timeout(Duration::from_secs(4));
+        manager.join().expect("manager thread panicked");
+        assert!(
+            done.is_ok(),
+            "the action's registration waited for the handler thread it runs on"
+        );
+    }
 
     #[test]
     fn compound_shortcut_keys_parse_on_both_backends() {

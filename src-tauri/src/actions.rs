@@ -1343,7 +1343,12 @@ impl ShortcutAction for ToggleProfileAutoAction {
     }
 
     fn stop(&self, app: &AppHandle, _binding_id: &str, _shortcut_str: &str) {
-        crate::app_profiles::toggle_from_shortcut(app);
+        // Switching registers and unregisters shortcuts, which the handler
+        // thread itself serves: off that thread, or it waits for itself.
+        let app = app.clone();
+        crate::shortcut::off_handler_thread(move || {
+            crate::app_profiles::toggle_from_shortcut(&app);
+        });
     }
 }
 
