@@ -1310,10 +1310,10 @@ async reprocessHistoryEntry(id: number, mode: ReprocessMode) : Promise<void> {
     await TAURI_INVOKE("reprocess_history_entry", { id, mode });
 },
 /**
- * Saves the user's `text` for the entry's version `base`: the versions above
- * it go, then `Replace` changes `base` and `New` adds a version above it.
- * Errors: `blank`, `no_such_version`, `transcription_is_fixed`, or the
- * database's message.
+ * Saves the user's `text` on version `base` of the entry: `replace`
+ * changes that version, `new` puts a new one on top of it; the versions
+ * above `base` drop. Errors: `blank`, `transcription_is_fixed` (replacing
+ * version 0), `no_such_version`, or the database's message.
  */
 async saveHistoryVersion(id: number, base: number, text: string, mode: SaveVersionMode) : Promise<Result<HistoryEntry, string>> {
     try {
@@ -1324,7 +1324,7 @@ async saveHistoryVersion(id: number, base: number, text: string, mode: SaveVersi
 }
 },
 /**
- * Keeps the entry's versions `0..=keep` and deletes the ones above them.
+ * Goes back to version `keep` of the entry: every version above it drops.
  */
 async revertHistoryEntryToVersion(id: number, keep: number) : Promise<Result<HistoryEntry, string>> {
     try {
@@ -1974,12 +1974,12 @@ language_source: LanguageSource | null;
  * The storage limit deleted the recording; the transcript stays, but
  * there is nothing to play or transcribe again.
  */
-recording_removed: boolean;
+recording_removed: boolean; 
 /**
- * DanyWhere: the entry's versions, oldest first: `versions[0]` is the
- * transcription, the last one the entry's result (see `history_versions`).
+ * DanyWhere: the entry's versions, a stack of edits: at least one, the
+ * transcription first, the entry's result last (`history_versions`).
  */
-versions: HistoryVersion[];
+versions: HistoryVersion[]; 
 /**
  * DanyWhere: the window it was dictated in and its context for
  * post-processing (`dictation_context`).
@@ -2017,9 +2017,13 @@ whole_word: boolean;
 same_window: SameWindow | null }
 export type HistoryUpdatePayload = { action: "added"; entry: HistoryEntry } | { action: "updated"; entry: HistoryEntry } | { action: "deleted"; id: number } | { action: "toggled"; id: number }
 /**
- * One version of a History entry: its text and the steps that made it.
+ * One version of an entry's text.
  */
-export type HistoryVersion = { text: string; steps: VersionStep[] }
+export type HistoryVersion = { text: string; 
+/**
+ * What made it, oldest first; never empty.
+ */
+steps: VersionStep[] }
 /**
  * Result of changing keyboard implementation
  */
@@ -2392,18 +2396,19 @@ export type ReprocessMode =
  */
 "transcribe_and_post_process" | 
 /**
- * Post-process the top version further; the result is a new version.
- * Needs no recording.
+ * Keep the transcript and post-process the entry's top version; the
+ * result is a new version on top (`history_versions`). Needs no
+ * recording.
  */
-"post_process" |
+"post_process" | 
 /**
- * Post-process the top version; the result replaces it (not on the
- * transcription).
+ * Post-process the top version; the result replaces it. Never the
+ * transcription.
  */
-"post_process_replace" |
+"post_process_replace" | 
 /**
- * Post-process the version below the top again; the result replaces the
- * top (only when the top was made by post-processing).
+ * Post-process the version below the top again; the result replaces
+ * the top, which a post-processing made.
  */
 "post_process_redo"
 /**
@@ -2415,9 +2420,17 @@ export type RetiredModel = { id: string; name: string; size_mb: number; replacem
  */
 export type SameWindow = { app_id: string; title: string }
 /**
- * Whether saving changes the version or adds a new one above it.
+ * What saving an edited version does.
  */
-export type SaveVersionMode = "replace" | "new"
+export type SaveVersionMode = 
+/**
+ * The version gets the new text and one more step.
+ */
+"replace" | 
+/**
+ * The new text is a new version on top of it.
+ */
+"new"
 export type SecretMap = Partial<{ [key in string]: string }>
 export type SecureInputStatus = { 
 /**
@@ -2586,17 +2599,29 @@ export type TransferErrorCode = "profile_not_found" |
 export type TypingTool = "auto" | "wtype" | "kwtype" | "dotool" | "ydotool" | "xdotool"
 export type VadBackend = "silero" | "earshot"
 /**
- * Who made a step of a version.
+ * Who made a version, or one step of it.
  */
-export type VersionAuthor = "transcription" | "ai" | "user"
+export type VersionAuthor = 
 /**
- * One step that made a version.
+ * The speech model; only version 0.
  */
-export type VersionStep = { by: VersionAuthor;
+"transcription" | 
+/**
+ * Post-processing.
+ */
+"ai" | 
+/**
+ * The user, editing it in History.
+ */
+"user"
+/**
+ * One change that made a version what it is.
+ */
+export type VersionStep = { by: VersionAuthor; 
 /**
  * Unix milliseconds; None for steps migrated from before versions existed.
  */
-at: number | null;
+at: number | null; 
 /**
  * For an AI step: the prompt's name, when known.
  */

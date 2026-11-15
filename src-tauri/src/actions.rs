@@ -587,6 +587,9 @@ pub(crate) struct ProcessedTranscription {
     pub final_text: String,
     pub post_processed_text: Option<String>,
     pub post_process_prompt: Option<String>,
+    /// DanyWhere: the name of that prompt, for History's versions
+    /// (`history_versions`).
+    pub post_process_prompt_name: Option<String>,
     /// `final_text` is the bare transcript because post-processing failed.
     pub post_process_failed: bool,
     /// DanyWhere: the model that refused the profile's effort, so the text
@@ -610,6 +613,7 @@ pub(crate) async fn process_transcription_output(
     let mut final_text = transcription.to_string();
     let mut post_processed_text: Option<String> = None;
     let mut post_process_prompt: Option<String> = None;
+    let mut post_process_prompt_name: Option<String> = None;
     let mut post_process_failed = false;
     let mut post_process_effort_refused_by: Option<String> = None;
     let mut context_entry_ids: Vec<i64> = Vec::new();
@@ -660,6 +664,7 @@ pub(crate) async fn process_transcription_output(
                         .find(|prompt| &prompt.id == prompt_id)
                     {
                         post_process_prompt = Some(prompt.prompt.clone());
+                        post_process_prompt_name = Some(prompt.name.clone());
                     }
                 }
             }
@@ -670,6 +675,7 @@ pub(crate) async fn process_transcription_output(
         final_text,
         post_processed_text,
         post_process_prompt,
+        post_process_prompt_name,
         post_process_failed,
         post_process_effort_refused_by,
         context_entry_ids,

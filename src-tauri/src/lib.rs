@@ -15,9 +15,9 @@ mod delivery;
 mod dictation_key_inserts;
 pub mod engine_supervisor;
 mod helpers;
-// DanyWhere: corrections in History.
+// DanyWhere: versions of History entries.
 mod dictation_context;
-mod history_corrections;
+mod history_versions;
 // DanyWhere: searching History.
 mod history_search;
 // DanyWhere: the height of History's text boxes.
@@ -910,9 +910,9 @@ pub fn run(cli_args: CliArgs) {
             commands::history::delete_history_entry,
             commands::history::retry_history_entry_transcription,
             commands::history::reprocess_history_entry,
-            // DanyWhere: corrections in History.
-            history_corrections::correct_history_entry,
-            history_corrections::delete_history_entry_post_processing,
+            // DanyWhere: versions of History entries.
+            history_versions::save_history_version,
+            history_versions::revert_history_entry_to_version,
             dictation_context::set_dictation_context_settings,
             dictation_context::get_history_entries_in_window,
             dictation_context::get_history_entries_by_ids,
