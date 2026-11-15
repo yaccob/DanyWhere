@@ -1047,9 +1047,9 @@ fn build_menu(app: &AppHandle, inputs: &MenuInputs) -> tauri::Result<(Menu<tauri
 }
 
 pub(crate) fn last_transcript_text(entry: &HistoryEntry) -> &str {
-    // DanyWhere: the user's corrections from History count, in the same order
-    // History shows them.
-    crate::history_corrections::entry_text(entry)
+    // DanyWhere: the entry's top version, which the user may have edited in
+    // History (`history_versions`).
+    crate::history_versions::entry_text(entry)
 }
 
 pub fn set_tray_visibility(app: &AppHandle, visible: bool) {
@@ -1233,9 +1233,7 @@ mod tests {
             language: None,
             language_source: None,
             recording_removed: false,
-            transcription_correction: None,
-            post_processed_correction: None,
-            post_processing_outdated: false,
+            versions: crate::history_versions::versions_of_new_entry(transcription, post_processed),
             window_context: Default::default(),
         }
     }
@@ -1434,19 +1432,25 @@ mod tests {
         assert_eq!(last_transcript_text(&entry), "raw");
     }
 
-    // DanyWhere: a correction made in History is what gets pasted again.
+    // DanyWhere: the top version, which the user may have edited in History,
+    // is what gets pasted again.
     #[test]
-    fn uses_the_corrected_post_processed_text() {
+    fn uses_the_top_version() {
+        use crate::history_versions::{test_version, VersionAuthor};
         let mut entry = build_entry("raw", Some("processed"));
-        entry.transcription_correction = Some("raw, corrected".to_string());
-        entry.post_processed_correction = Some("processed, corrected".to_string());
+        entry
+            .versions
+            .push(test_version("processed, corrected", VersionAuthor::User));
         assert_eq!(last_transcript_text(&entry), "processed, corrected");
     }
 
     #[test]
-    fn uses_the_corrected_transcription_without_post_processing() {
+    fn uses_the_users_version_of_the_transcription() {
+        use crate::history_versions::{test_version, VersionAuthor};
         let mut entry = build_entry("raw", None);
-        entry.transcription_correction = Some("raw, corrected".to_string());
+        entry
+            .versions
+            .push(test_version("raw, corrected", VersionAuthor::User));
         assert_eq!(last_transcript_text(&entry), "raw, corrected");
     }
 
