@@ -975,6 +975,10 @@
       "readingFile": "Lettura del file in corso...",
       "showMore": "Mostra di più",
       "showLess": "Mostra di meno",
+      "box": {
+        "resizeNewest": "Trascina per cambiare l'altezza dell'elemento più recente. Doppio clic: altezza predefinita",
+        "resizeOther": "Trascina per cambiare l'altezza di tutti gli elementi meno recenti. Doppio clic: altezza predefinita"
+      },
       "showOriginal": "Mostra l'originale",
       "showPostProcessed": "Mostra il testo post-elaborato",
       "edit": "Correggi il testo",

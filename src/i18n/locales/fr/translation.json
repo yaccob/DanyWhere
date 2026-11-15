@@ -975,6 +975,10 @@
       "readingFile": "Lecture du fichier...",
       "showMore": "Afficher plus",
       "showLess": "Afficher moins",
+      "box": {
+        "resizeNewest": "Faites glisser pour modifier la hauteur de l'entrée la plus récente. Double-clic : hauteur par défaut",
+        "resizeOther": "Faites glisser pour modifier la hauteur de toutes les entrées plus anciennes. Double-clic : hauteur par défaut"
+      },
       "showOriginal": "Afficher l'original",
       "showPostProcessed": "Afficher le texte post-traité",
       "edit": "Corriger le texte",

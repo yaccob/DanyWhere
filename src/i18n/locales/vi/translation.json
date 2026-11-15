@@ -975,6 +975,10 @@
       "readingFile": "Đang đọc tệp...",
       "showMore": "Xem thêm",
       "showLess": "Thu gọn",
+      "box": {
+        "resizeNewest": "Kéo để thay đổi chiều cao của mục mới nhất. Nhấp đúp: chiều cao mặc định",
+        "resizeOther": "Kéo để thay đổi chiều cao của tất cả các mục cũ hơn. Nhấp đúp: chiều cao mặc định"
+      },
       "showOriginal": "Hiện bản gốc",
       "showPostProcessed": "Hiện bản đã xử lý",
       "edit": "Sửa văn bản",

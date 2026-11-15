@@ -975,6 +975,10 @@
       "readingFile": "Lendo arquivo...",
       "showMore": "Mostrar mais",
       "showLess": "Mostrar menos",
+      "box": {
+        "resizeNewest": "Arraste para alterar a altura da entrada mais recente. Clique duplo: altura padrão",
+        "resizeOther": "Arraste para alterar a altura de todas as entradas mais antigas. Clique duplo: altura padrão"
+      },
       "showOriginal": "Mostrar original",
       "showPostProcessed": "Mostrar pós-processado",
       "edit": "Corrigir o texto",

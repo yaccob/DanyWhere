@@ -975,6 +975,10 @@
       "readingFile": "Načítám soubor...",
       "showMore": "Zobrazit více",
       "showLess": "Zobrazit méně",
+      "box": {
+        "resizeNewest": "Přetažením změníte výšku nejnovějšího záznamu. Dvojklik: výchozí výška",
+        "resizeOther": "Přetažením změníte výšku všech starších záznamů. Dvojklik: výchozí výška"
+      },
       "showOriginal": "Zobrazit originál",
       "showPostProcessed": "Zobrazit zpracovaný text",
       "edit": "Opravit text",

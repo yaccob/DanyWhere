@@ -1,7 +1,6 @@
 import React, {
   useCallback,
   useEffect,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -88,6 +87,8 @@ import {
   type TextMatcher,
 } from "./historySearch";
 import { Highlighted, HistorySearchBar } from "./HistorySearchBar";
+// DanyWhere: the text in a box that scrolls and can be resized.
+import { HistoryTextBox } from "./HistoryTextBox";
 
 const IconButton: React.FC<{
   onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
@@ -117,9 +118,6 @@ const IconButton: React.FC<{
 );
 
 const PAGE_SIZE = 30;
-
-// Long text folds to this many lines until "Show more".
-const FOLDED_LINES = 4;
 
 // The pulse of an entry's text while it's being transcribed.
 const TRANSCRIBE_PULSE = {
@@ -616,10 +614,11 @@ export const HistorySettings: React.FC = () => {
             {reads.map((read) => (
               <FileReadRow key={`read-${read.id}`} read={read} />
             ))}
-            {shownEntries.map((entry) => (
+            {shownEntries.map((entry, index) => (
               <HistoryEntryComponent
                 key={entry.id}
                 entry={entry}
+                newest={index === 0}
                 onShowWindow={showWindow}
                 highlight={matcher}
                 windowHighlight={windowHighlight}
@@ -692,6 +691,9 @@ export const HistorySettings: React.FC = () => {
 
 interface HistoryEntryProps {
   entry: HistoryEntry;
+  // DanyWhere: the first entry of the list shown, whose text box has a
+  // height of its own.
+  newest: boolean;
   // DanyWhere: shows the History of one window.
   onShowWindow: ShowWindow;
   // DanyWhere: what the search highlights in the text, and in the window
@@ -717,6 +719,7 @@ interface HistoryEntryProps {
 
 const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
   entry,
+  newest,
   onShowWindow,
   highlight,
   windowHighlight,
@@ -735,8 +738,6 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
   const [showCopied, setShowCopied] = useState(false);
   // Pressed cancel: a running job stops after its current chunk.
   const [cancelling, setCancelling] = useState(false);
-  const [expanded, setExpanded] = useState(false);
-  const [overflows, setOverflows] = useState(false);
   // A post-processed entry shows the post-processed text unless the
   // original is asked for.
   const [showOriginal, setShowOriginal] = useState(false);
@@ -744,7 +745,6 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
   // during it the entry keeps their choice instead of showing the text
   // that matches.
   const [switchedIn, setSwitchedIn] = useState<TextMatcher | null>(null);
-  const textRef = useRef<HTMLParagraphElement>(null);
   // DanyWhere: the part being corrected, and the text typed so far.
   const [editing, setEditing] = useState<CorrectionPart | null>(null);
   const [draft, setDraft] = useState("");
@@ -767,7 +767,6 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
   const text = shownText(entry, original);
   const part = shownPart(entry, original);
   const corrected = isCorrected(entry, part);
-  const folded = hasTranscription && !retrying && !expanded;
   // DanyWhere: where the search matches the shown text and the file name.
   const highlights = useMemo(
     () => matchRanges(text, highlight),
@@ -784,18 +783,6 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
     () => matchesOnlyBeforeCorrection(entry, highlight),
     [entry, highlight],
   );
-
-  // Offer "Show more" only when the folded text is actually cut off.
-  useLayoutEffect(() => {
-    const el = textRef.current;
-    if (!el || !folded) return;
-    const measure = () => setOverflows(el.scrollHeight > el.clientHeight + 1);
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(el);
-    return () => observer.disconnect();
-    // DanyWhere: `editing` remounts the paragraph after a correction.
-  }, [folded, text, editing]);
 
   const handleLoadAudio = useCallback(
     () => getAudioUrl(entry.file_name),
@@ -1063,40 +1050,27 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
             </div>
           </div>
         )}
-        {editing === null && (
+        {/* DanyWhere: the text in a box that scrolls and can be resized. */}
+        {editing === null && hasTranscription && !retrying && (
+          <HistoryTextBox
+            text={text}
+            highlights={highlights}
+            newest={newest}
+            className="italic"
+          />
+        )}
+        {editing === null && (retrying || !hasTranscription) && (
           <p
-            ref={textRef}
-            className={`italic text-sm w-full ${
-              retrying
-                ? ""
-                : hasTranscription
-                  ? "text-text select-text cursor-text whitespace-pre-wrap break-words"
-                  : "text-ink-3"
-            }`}
-            style={
-              retrying
-                ? TRANSCRIBE_PULSE
-                : folded
-                  ? {
-                      display: "-webkit-box",
-                      WebkitLineClamp: FOLDED_LINES,
-                      WebkitBoxOrient: "vertical",
-                      overflow: "hidden",
-                    }
-                  : undefined
-            }
+            className={`italic text-sm w-full ${retrying ? "" : "text-ink-3"}`}
+            style={retrying ? TRANSCRIBE_PULSE : undefined}
           >
             {retrying && <TranscribePulseKeyframes />}
-            {retrying ? (
-              progressText
-            ) : hasTranscription ? (
-              <Highlighted text={text} ranges={highlights} />
-            ) : entry.source_name ? (
-              // Cancelled, interrupted by a quit, or failed.
-              t("settings.history.notTranscribed")
-            ) : (
-              t("settings.history.transcriptionFailed")
-            )}
+            {retrying
+              ? progressText
+              : entry.source_name
+                ? // Cancelled, interrupted by a quit, or failed.
+                  t("settings.history.notTranscribed")
+                : t("settings.history.transcriptionFailed")}
           </p>
         )}
         {hasPostProcessed &&
@@ -1116,19 +1090,8 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
         {hasTranscription &&
           !retrying &&
           editing === null &&
-          (expanded || overflows || hasPostProcessed || corrected) && (
+          (hasPostProcessed || corrected) && (
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-              {(expanded || overflows) && (
-                <button
-                  type="button"
-                  onClick={() => setExpanded(!expanded)}
-                  className="text-xs font-medium text-ink-3 hover:text-logo-primary cursor-pointer"
-                >
-                  {expanded
-                    ? t("settings.history.showLess")
-                    : t("settings.history.showMore")}
-                </button>
-              )}
               {hasPostProcessed && (
                 <button
                   type="button"

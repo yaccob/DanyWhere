@@ -975,6 +975,10 @@
       "readingFile": "Læser fil...",
       "showMore": "Vis mere",
       "showLess": "Vis mindre",
+      "box": {
+        "resizeNewest": "Træk for at ændre højden på den nyeste post. Dobbeltklik: standardhøjde",
+        "resizeOther": "Træk for at ændre højden på alle ældre poster. Dobbeltklik: standardhøjde"
+      },
       "showOriginal": "Vis original",
       "showPostProcessed": "Vis efterbehandlet",
       "edit": "Ret teksten",

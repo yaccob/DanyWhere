@@ -975,6 +975,10 @@
       "readingFile": "正在读取文件...",
       "showMore": "显示更多",
       "showLess": "收起",
+      "box": {
+        "resizeNewest": "拖动可更改最新条目的高度。双击：恢复默认高度",
+        "resizeOther": "拖动可更改所有较早条目的高度。双击：恢复默认高度"
+      },
       "showOriginal": "显示原文",
       "showPostProcessed": "显示后处理结果",
       "edit": "更正文本",

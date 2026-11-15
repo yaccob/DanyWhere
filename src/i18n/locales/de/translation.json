@@ -975,6 +975,10 @@
       "readingFile": "Datei wird gelesen...",
       "showMore": "Mehr anzeigen",
       "showLess": "Weniger anzeigen",
+      "box": {
+        "resizeNewest": "Ziehen ändert die Höhe des neuesten Eintrags. Doppelklick: Standardhöhe",
+        "resizeOther": "Ziehen ändert die Höhe aller älteren Einträge. Doppelklick: Standardhöhe"
+      },
       "showOriginal": "Original anzeigen",
       "showPostProcessed": "Nachbearbeitung anzeigen",
       "edit": "Text korrigieren",
