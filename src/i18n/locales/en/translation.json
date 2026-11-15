@@ -711,6 +711,29 @@
           "ctrlEnter": "Ctrl+Enter"
         }
       },
+      "appendText": {
+        "title": "Append",
+        "description": "Added after every dictation of this profile. Text as written; \\s space, \\n new line, \\t tab, \\\\ backslash, \\{ and \\} braces. Key presses at the end: {Enter}, {Tab}, {Shift+Enter}, {Cmd+Enter} (Super+Enter on Windows and Linux), {Ctrl+Enter}. Key presses are sent only when the text is pasted.",
+        "noAccessibility": "Without Accessibility, key presses aren't sent; the text is still appended.",
+        "notSaved": "Not saved; the last valid value stays in effect.",
+        "preview": {
+          "nothing": "Nothing is appended",
+          "space": "space",
+          "newLine": "new line",
+          "tab": "tab character",
+          "text": "“{{text}}”",
+          "key": "the {{key}} key",
+          "then": "{{first}}, then {{next}}"
+        },
+        "errors": {
+          "unknownEscape": "Unknown escape {{escape}}: use \\s, \\n, \\t, \\\\, \\{ or \\}",
+          "trailingBackslash": "A backslash needs a letter after it: \\s, \\n, \\t, \\\\, \\{ or \\}",
+          "unknownKey": "Unknown key press {{key}}",
+          "unclosedKey": "A { needs its }; write \\{ for a brace",
+          "unmatchedBrace": "A } needs its {; write \\} for a brace",
+          "textAfterKey": "Only key presses can follow a key press"
+        }
+      },
       "translateToEnglish": {
         "label": "Translate to English",
         "description": "Automatically translate speech from other languages to English during transcription."

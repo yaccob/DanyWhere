@@ -12,10 +12,9 @@ import { PasteMethodSetting } from "../PasteMethod";
 import { TypingToolSetting } from "../TypingTool";
 import { ClipboardHandlingSetting } from "../ClipboardHandling";
 import { ClipboardNoticeSetting } from "../ClipboardNotice";
-import { AutoSubmit } from "../AutoSubmit";
+import { AppendText } from "../AppendText";
 import { PostProcessingToggle } from "../PostProcessingToggle";
 import { PostProcessTimeouts } from "../PostProcessTimeouts";
-import { AppendTrailingSpace } from "../AppendTrailingSpace";
 import { RecordingStorageLimitSetting } from "../RecordingStorageLimit";
 import { VoiceActivityDetection } from "../VoiceActivityDetection";
 import { LongFormChunking } from "../LongFormChunking";
@@ -41,7 +40,9 @@ export const AdvancedSettings: React.FC = () => {
         <TypingToolSetting descriptionMode="tooltip" grouped={true} />
         <ClipboardHandlingSetting descriptionMode="tooltip" grouped={true} />
         <ClipboardNoticeSetting descriptionMode="tooltip" grouped={true} />
-        <AutoSubmit descriptionMode="tooltip" grouped={true} />
+        {/* DanyWhere: the profile's "Append" field instead of "Auto Submit"
+            and "Append Trailing Space" (append_text.rs). */}
+        <AppendText descriptionMode="tooltip" grouped={true} />
       </SettingsGroup>
 
       <SettingsGroup title={t("settings.advanced.groups.transcription")}>
@@ -52,7 +53,6 @@ export const AdvancedSettings: React.FC = () => {
             hidden behind the experimental features. */}
         <PostProcessingToggle descriptionMode="tooltip" grouped={true} />
         <PostProcessTimeouts descriptionMode="tooltip" grouped={true} />
-        <AppendTrailingSpace descriptionMode="tooltip" grouped={true} />
       </SettingsGroup>
 
       {/* DanyWhere: the word lists in their three tiers: for all profiles,

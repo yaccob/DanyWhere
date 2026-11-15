@@ -711,6 +711,29 @@
           "ctrlEnter": "Ctrl+Enter"
         }
       },
+      "appendText": {
+        "title": "Sona ekle",
+        "description": "Bu profilin her diktesinin sonuna eklenir. Metin yazıldığı gibi; \\s boşluk, \\n yeni satır, \\t sekme, \\\\ ters eğik çizgi, \\{ ve \\} süslü parantez. Sonda tuş basışları: {Enter}, {Tab}, {Shift+Enter}, {Cmd+Enter} (Windows ve Linux'ta Super+Enter), {Ctrl+Enter}. Tuşlar yalnızca metin yapıştırıldığında gönderilir.",
+        "noAccessibility": "Erişilebilirlik olmadan tuş gönderilmez; metin yine de eklenir.",
+        "notSaved": "Kaydedilmedi; son geçerli değer geçerliliğini korur.",
+        "preview": {
+          "nothing": "Hiçbir şey eklenmez",
+          "space": "boşluk",
+          "newLine": "yeni satır",
+          "tab": "sekme karakteri",
+          "text": "“{{text}}”",
+          "key": "{{key}} tuşu",
+          "then": "{{first}}, ardından {{next}}"
+        },
+        "errors": {
+          "unknownEscape": "Bilinmeyen kaçış dizisi {{escape}}: \\s, \\n, \\t, \\\\, \\{ veya \\} kullanın",
+          "trailingBackslash": "Ters eğik çizgiden sonra bir harf gelmeli: \\s, \\n, \\t, \\\\, \\{ veya \\}",
+          "unknownKey": "Bilinmeyen tuş basışı {{key}}",
+          "unclosedKey": "{ için } eksik; \\{ parantezi metin olarak yazar",
+          "unmatchedBrace": "} için { eksik; \\} parantezi metin olarak yazar",
+          "textAfterKey": "Bir tuş basışından sonra yalnızca tuş basışları gelebilir"
+        }
+      },
       "translateToEnglish": {
         "label": "İngilizce'ye Çevir",
         "description": "Transkripsiyon sırasında diğer dillerden İngilizce'ye otomatik olarak çevirir."

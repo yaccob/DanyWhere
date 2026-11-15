@@ -711,6 +711,29 @@
           "ctrlEnter": "Ctrl+Entrée"
         }
       },
+      "appendText": {
+        "title": "Ajouter à la fin",
+        "description": "Ajouté après chaque dictée de ce profil. Le texte tel quel ; \\s espace, \\n saut de ligne, \\t tabulation, \\\\ barre oblique inverse, \\{ et \\} accolades. À la fin, des touches : {Enter}, {Tab}, {Shift+Enter}, {Cmd+Enter} (Super+Enter sous Windows et Linux), {Ctrl+Enter}. Les touches ne sont envoyées que si le texte est collé.",
+        "noAccessibility": "Sans l'accessibilité, aucune touche n'est envoyée ; le texte est quand même ajouté.",
+        "notSaved": "Non enregistré ; la dernière valeur valide reste en vigueur.",
+        "preview": {
+          "nothing": "Rien n'est ajouté",
+          "space": "espace",
+          "newLine": "saut de ligne",
+          "tab": "caractère de tabulation",
+          "text": "« {{text}} »",
+          "key": "la touche {{key}}",
+          "then": "{{first}}, puis {{next}}"
+        },
+        "errors": {
+          "unknownEscape": "Séquence d'échappement inconnue {{escape}} : utilisez \\s, \\n, \\t, \\\\, \\{ ou \\}",
+          "trailingBackslash": "Une barre oblique inverse doit être suivie d'une lettre : \\s, \\n, \\t, \\\\, \\{ ou \\}",
+          "unknownKey": "Touche inconnue {{key}}",
+          "unclosedKey": "Une { attend sa } ; écrivez \\{ pour une accolade",
+          "unmatchedBrace": "Une } attend sa { ; écrivez \\} pour une accolade",
+          "textAfterKey": "Après une touche, seules d'autres touches peuvent suivre"
+        }
+      },
       "translateToEnglish": {
         "label": "Traduire en anglais",
         "description": "Traduire automatiquement la parole d'autres langues vers l'anglais pendant la transcription."

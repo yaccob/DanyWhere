@@ -26,9 +26,9 @@ use windows::Win32::Foundation::{
 };
 
 use super::{evaluate, send_chord, TxState, WaitDecision};
-use crate::clipboard::send_return_key;
+use crate::append_text::{send_keys, AppendKey};
 use crate::input::EnigoState;
-use crate::settings::{AutoSubmitKey, ClipboardHandling, PasteMethod};
+use crate::settings::{ClipboardHandling, PasteMethod};
 use windows::Win32::Foundation::GlobalFree;
 use windows::Win32::System::DataExchange::{
     CloseClipboard, EmptyClipboard, EnumClipboardFormats, GetClipboardData, GetClipboardOwner,
@@ -71,8 +71,8 @@ pub(super) struct WinTxShared {
     saved_bitmap: Mutex<Option<usize>>,
     sequence: Mutex<u32>,
     app_handle: tauri::AppHandle,
-    auto_submit: bool,
-    auto_submit_key: AutoSubmitKey,
+    /// DanyWhere: the "Append" field's key presses instead of auto submit.
+    append_keys: Vec<AppendKey>,
     /// ClipboardHandling::CopyToClipboard — settle by leaving the transcript
     /// on the clipboard as plain text instead of restoring the snapshot.
     preserve_transcript: bool,
@@ -106,7 +106,7 @@ fn send_auto_submit(shared: &WinTxShared) {
     if let Some(enigo_state) = shared.app_handle.try_state::<EnigoState>() {
         match enigo_state.0.try_lock() {
             Ok(mut enigo) => {
-                let _ = send_return_key(&mut enigo, shared.auto_submit_key);
+                let _ = send_keys(&mut enigo, &shared.append_keys);
             }
             Err(_) => warn!("[reliable-paste] skipping auto-submit: input state busy"),
         }
@@ -229,7 +229,7 @@ fn flush_pending() {
         st.cancelled = true;
         st.any_receipt_after_injection()
     };
-    if previous.auto_submit && receipt {
+    if !previous.append_keys.is_empty() && receipt {
         send_auto_submit(&previous);
     }
     let sequence = *previous.sequence.lock().unwrap();
@@ -456,7 +456,7 @@ fn on_timer(_hwnd: HWND, shared: &WinTxShared) {
 
     // Auto-submit only once the target demonstrably read the transcript;
     // pressing Enter after an unconfirmed paste could submit stale content.
-    if shared.auto_submit && receipt {
+    if !shared.append_keys.is_empty() && receipt {
         send_auto_submit(shared);
     }
 
@@ -576,8 +576,7 @@ pub(super) fn run(
     app_handle: &tauri::AppHandle,
     paste_method: &PasteMethod,
     enigo: &mut enigo::Enigo,
-    auto_submit: bool,
-    auto_submit_key: AutoSubmitKey,
+    append_keys: Vec<AppendKey>,
     clipboard_handling: ClipboardHandling,
 ) -> Result<(), String> {
     let shared = Arc::new(WinTxShared {
@@ -587,8 +586,7 @@ pub(super) fn run(
         saved_bitmap: Mutex::new(None),
         sequence: Mutex::new(0),
         app_handle: app_handle.clone(),
-        auto_submit,
-        auto_submit_key,
+        append_keys,
         preserve_transcript: clipboard_handling == ClipboardHandling::CopyToClipboard,
     });
 

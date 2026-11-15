@@ -711,6 +711,29 @@
           "ctrlEnter": "Ctrl+Enter"
         }
       },
+      "appendText": {
+        "title": "Dołącz",
+        "description": "Dołączane po każdym dyktowaniu w tym profilu. Tekst tak, jak został wpisany; \\s spacja, \\n nowy wiersz, \\t tabulator, \\\\ ukośnik wsteczny, \\{ i \\} nawiasy klamrowe. Na końcu naciśnięcia klawiszy: {Enter}, {Tab}, {Shift+Enter}, {Cmd+Enter} (Super+Enter w Windows i Linuksie), {Ctrl+Enter}. Klawisze są wysyłane tylko wtedy, gdy tekst jest wklejany.",
+        "noAccessibility": "Bez dostępności klawisze nie są wysyłane; tekst i tak zostanie dołączony.",
+        "notSaved": "Nie zapisano; nadal obowiązuje ostatnia poprawna wartość.",
+        "preview": {
+          "nothing": "Nic nie jest dołączane",
+          "space": "spacja",
+          "newLine": "nowy wiersz",
+          "tab": "znak tabulacji",
+          "text": "„{{text}}”",
+          "key": "klawisz {{key}}",
+          "then": "{{first}}, potem {{next}}"
+        },
+        "errors": {
+          "unknownEscape": "Nieznana sekwencja {{escape}}: użyj \\s, \\n, \\t, \\\\, \\{ lub \\}",
+          "trailingBackslash": "Po ukośniku wstecznym musi być litera: \\s, \\n, \\t, \\\\, \\{ lub \\}",
+          "unknownKey": "Nieznany klawisz {{key}}",
+          "unclosedKey": "Do { brakuje }; \\{ wpisuje nawias",
+          "unmatchedBrace": "Do } brakuje {; \\} wpisuje nawias",
+          "textAfterKey": "Po klawiszu mogą następować tylko kolejne klawisze"
+        }
+      },
       "translateToEnglish": {
         "label": "Tłumacz na angielski",
         "description": "Automatycznie tłumacz mowę z innych języków na angielski podczas transkrypcji."

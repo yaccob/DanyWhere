@@ -25,9 +25,9 @@ use tauri::{AppHandle, Manager};
 use tauri_plugin_clipboard_manager::ClipboardExt;
 
 use super::{evaluate, send_chord, TxState, WaitDecision};
-use crate::clipboard::send_return_key;
+use crate::append_text::{send_keys, AppendKey};
 use crate::input::EnigoState;
-use crate::settings::{AutoSubmitKey, ClipboardHandling, PasteMethod};
+use crate::settings::{ClipboardHandling, PasteMethod};
 
 /// Concealment marker types declared alongside the text so that well-behaved
 /// third-party clipboard managers (Maccy, Paste, ...) skip the transcript.
@@ -99,8 +99,8 @@ struct MacPending {
     saved_image: Option<tauri::image::Image<'static>>,
     change_count: NSInteger,
     provider: Option<Retained<HandyPasteProvider>>,
-    auto_submit: bool,
-    auto_submit_key: AutoSubmitKey,
+    /// DanyWhere: the "Append" field's key presses instead of auto submit.
+    append_keys: Vec<AppendKey>,
     /// ClipboardHandling::CopyToClipboard — instead of restoring, settle by
     /// re-writing the transcript as plain text (without the concealment
     /// markers), so clipboard managers record it and it outlives the promise.
@@ -139,15 +139,15 @@ fn settle(
 
     // Auto-submit only once the target demonstrably read the transcript;
     // pressing Enter after an unconfirmed paste could submit stale content.
-    if p.auto_submit && receipt_seen {
+    if !p.append_keys.is_empty() && receipt_seen {
         match enigo {
             Some(e) => {
-                let _ = send_return_key(e, p.auto_submit_key);
+                let _ = send_keys(e, &p.append_keys);
             }
             None => {
                 if let Some(enigo_state) = app_handle.try_state::<EnigoState>() {
                     if let Ok(mut e) = enigo_state.0.lock() {
-                        let _ = send_return_key(&mut e, p.auto_submit_key);
+                        let _ = send_keys(&mut e, &p.append_keys);
                     }
                 }
             }
@@ -258,8 +258,7 @@ pub(super) fn run(
     app_handle: &AppHandle,
     paste_method: &PasteMethod,
     enigo: &mut enigo::Enigo,
-    auto_submit: bool,
-    auto_submit_key: AutoSubmitKey,
+    append_keys: Vec<AppendKey>,
     clipboard_handling: ClipboardHandling,
 ) -> Result<(), String> {
     // Settle any previous transaction first so the snapshot below captures the
@@ -321,8 +320,7 @@ pub(super) fn run(
         saved_image,
         change_count,
         provider: Some(provider),
-        auto_submit,
-        auto_submit_key,
+        append_keys,
         preserve_transcript: clipboard_handling == ClipboardHandling::CopyToClipboard,
         transcript: text.to_string(),
         settled: false,

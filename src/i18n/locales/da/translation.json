@@ -711,6 +711,29 @@
           "ctrlEnter": "Ctrl+Enter"
         }
       },
+      "appendText": {
+        "title": "Tilføj",
+        "description": "Tilføjes efter hver diktering i denne profil. Tekst som skrevet; \\s mellemrum, \\n ny linje, \\t tabulator, \\\\ omvendt skråstreg, \\{ og \\} krøllede parenteser. Til sidst tastetryk: {Enter}, {Tab}, {Shift+Enter}, {Cmd+Enter} (Super+Enter på Windows og Linux), {Ctrl+Enter}. Tastetryk sendes kun, når teksten indsættes.",
+        "noAccessibility": "Uden tilgængelighed sendes ingen tastetryk; teksten tilføjes stadig.",
+        "notSaved": "Ikke gemt; den sidste gyldige værdi gælder fortsat.",
+        "preview": {
+          "nothing": "Der tilføjes intet",
+          "space": "mellemrum",
+          "newLine": "ny linje",
+          "tab": "tabulatortegn",
+          "text": "“{{text}}”",
+          "key": "tasten {{key}}",
+          "then": "{{first}}, derefter {{next}}"
+        },
+        "errors": {
+          "unknownEscape": "Ukendt escape-sekvens {{escape}}: brug \\s, \\n, \\t, \\\\, \\{ eller \\}",
+          "trailingBackslash": "En omvendt skråstreg skal efterfølges af et bogstav: \\s, \\n, \\t, \\\\, \\{ eller \\}",
+          "unknownKey": "Ukendt tastetryk {{key}}",
+          "unclosedKey": "En { mangler sin }; skriv \\{ for en krøllet parentes",
+          "unmatchedBrace": "En } mangler sin {; skriv \\} for en krøllet parentes",
+          "textAfterKey": "Efter et tastetryk må kun tastetryk følge"
+        }
+      },
       "translateToEnglish": {
         "label": "Oversæt til engelsk",
         "description": "Oversæt automatisk tale fra andre sprog til engelsk under transskription."

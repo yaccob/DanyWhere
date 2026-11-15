@@ -711,6 +711,29 @@
           "ctrlEnter": "Ctrl+Invio"
         }
       },
+      "appendText": {
+        "title": "Aggiungi alla fine",
+        "description": "Aggiunto dopo ogni dettatura di questo profilo. Testo così com'è; \\s spazio, \\n a capo, \\t tabulazione, \\\\ barra rovesciata, \\{ e \\} parentesi graffe. Alla fine, pressioni di tasti: {Enter}, {Tab}, {Shift+Enter}, {Cmd+Enter} (Super+Enter su Windows e Linux), {Ctrl+Enter}. I tasti vengono inviati solo quando il testo viene incollato.",
+        "noAccessibility": "Senza Accessibilità i tasti non vengono inviati; il testo viene comunque aggiunto.",
+        "notSaved": "Non salvato; resta in vigore l'ultimo valore valido.",
+        "preview": {
+          "nothing": "Non viene aggiunto nulla",
+          "space": "spazio",
+          "newLine": "a capo",
+          "tab": "carattere di tabulazione",
+          "text": "«{{text}}»",
+          "key": "il tasto {{key}}",
+          "then": "{{first}}, poi {{next}}"
+        },
+        "errors": {
+          "unknownEscape": "Sequenza di escape sconosciuta {{escape}}: usa \\s, \\n, \\t, \\\\, \\{ o \\}",
+          "trailingBackslash": "Una barra rovesciata richiede una lettera dopo: \\s, \\n, \\t, \\\\, \\{ o \\}",
+          "unknownKey": "Tasto sconosciuto {{key}}",
+          "unclosedKey": "Una { richiede la sua }; scrivi \\{ per una graffa",
+          "unmatchedBrace": "Una } richiede la sua {; scrivi \\} per una graffa",
+          "textAfterKey": "Dopo un tasto possono seguire solo altri tasti"
+        }
+      },
       "translateToEnglish": {
         "label": "Traduci in inglese",
         "description": "Traduci automaticamente in inglese la voce in altre lingue durante la trascrizione."
