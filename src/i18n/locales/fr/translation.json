@@ -673,7 +673,8 @@
       },
       "pasteMethod": {
         "title": "Méthode de collage",
-        "description": "Choisissez comment le texte est inséré. Direct : simule la frappe via l'entrée système. Aucun : ignore le collage, met uniquement à jour l'historique/presse-papiers.",
+        "description": "Comment une dictée terminée arrive dans l'app au premier plan. Presse-papiers (Ctrl+V) : Handy place le texte dans le presse-papiers et appuie sur Ctrl+V pour vous ; Ctrl+Shift+V et Shift+Insert font de même avec ces touches, par exemple pour les terminaux. Direct : tape le texte via l'entrée système. Script externe (Linux uniquement) : transmet le texte à votre script. Aucun : Handy n'insère rien ; le texte est dans l'historique et, selon « Gestion du presse-papiers », dans le presse-papiers. « Coller la dernière transcription » insère de la même façon ; avec « Aucun », il place le texte dans le presse-papiers.",
+        "descriptionMacos": "Comment une dictée terminée arrive dans l'app au premier plan. Presse-papiers (Cmd+V) : Handy place le texte dans le presse-papiers et appuie sur ⌘V pour vous ; cela nécessite l'accessibilité. Aucun : Handy n'insère rien ; le texte est dans l'historique et, selon « Gestion du presse-papiers », dans le presse-papiers. « Coller la dernière transcription » insère de la même façon ; avec « Aucun », il place le texte dans le presse-papiers. Sans l'accessibilité, un service de macOS insère la dictée à la place.",
         "options": {
           "clipboard": "Presse-papiers ({{modifier}}+V)",
           "clipboardCtrlShiftV": "Presse-papiers (Ctrl+Shift+V)",

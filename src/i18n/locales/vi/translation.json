@@ -673,7 +673,8 @@
       },
       "pasteMethod": {
         "title": "Phương thức dán",
-        "description": "Chọn cách chèn văn bản. Trực tiếp: mô phỏng gõ phím qua đầu vào hệ thống. Không có: bỏ qua dán, chỉ cập nhật lịch sử/clipboard.",
+        "description": "Cách một bản đọc chính tả đã xong đến được ứng dụng phía trước. Bảng nhớ tạm (Ctrl+V): Handy đặt văn bản vào bảng nhớ tạm và nhấn Ctrl+V giúp bạn; Ctrl+Shift+V và Shift+Insert làm điều tương tự bằng các phím đó, ví dụ cho terminal. Trực tiếp: gõ văn bản qua đầu vào hệ thống. Script bên ngoài (chỉ Linux): chuyển văn bản cho script của bạn. Không có: Handy không chèn gì; văn bản nằm trong lịch sử và, tùy theo Xử lý Clipboard, trong bảng nhớ tạm. Dán bản chép gần nhất cũng chèn theo cách đó; với Không có, nó đặt văn bản vào bảng nhớ tạm.",
+        "descriptionMacos": "Cách một bản đọc chính tả đã xong đến được ứng dụng phía trước. Bảng nhớ tạm (Cmd+V): Handy đặt văn bản vào bảng nhớ tạm và nhấn ⌘V giúp bạn; việc này cần Trợ năng. Không có: Handy không chèn gì; văn bản nằm trong lịch sử và, tùy theo Xử lý Clipboard, trong bảng nhớ tạm. Dán bản chép gần nhất cũng chèn theo cách đó; với Không có, nó đặt văn bản vào bảng nhớ tạm. Khi không có Trợ năng, thay vào đó một dịch vụ của macOS sẽ chèn bản đọc.",
         "options": {
           "clipboard": "Bảng nhớ tạm ({{modifier}}+V)",
           "clipboardCtrlShiftV": "Bảng nhớ tạm (Ctrl+Shift+V)",

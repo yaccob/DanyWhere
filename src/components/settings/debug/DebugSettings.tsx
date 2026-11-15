@@ -17,6 +17,13 @@ import { WhatsNewPreview } from "./WhatsNewPreview";
 import { KeyboardDiagnostic } from "./KeyboardDiagnostic";
 import { DebugRun, OnboardingPreview } from "./OnboardingPreview";
 import type { OnboardingStep } from "../../onboarding/onboardingStore";
+// DanyWhere: the experimental settings, formerly behind a switch in Advanced.
+import { KeyboardImplementationSelector } from "./KeyboardImplementationSelector";
+import { AccelerationSelector } from "../AccelerationSelector";
+import { LazyStreamClose } from "../LazyStreamClose";
+import { AirPodsMode } from "../AirPodsMode";
+import { VadBackendSelector } from "../VadBackendSelector";
+import { LanguageDetection } from "../LanguageDetection";
 
 interface DebugSettingsProps {
   onPreviewOnboarding: (step: OnboardingStep) => void;
@@ -75,6 +82,20 @@ export const DebugSettings: React.FC<DebugSettingsProps> = ({
         <ClamshellMicrophoneSelector descriptionMode="tooltip" grouped={true} />
         <KeyboardDiagnostic />
         <LiveLogViewer descriptionMode="tooltip" grouped={true} />
+      </SettingsGroup>
+
+      {/* DanyWhere: the experimental settings live here, always shown,
+          instead of behind the "Experimental Features" switch in Advanced. */}
+      <SettingsGroup title={t("settings.advanced.groups.experimental")}>
+        <KeyboardImplementationSelector
+          descriptionMode="tooltip"
+          grouped={true}
+        />
+        <AccelerationSelector descriptionMode="tooltip" grouped={true} />
+        <LazyStreamClose descriptionMode="tooltip" grouped={true} />
+        <AirPodsMode descriptionMode="tooltip" grouped={true} />
+        <VadBackendSelector descriptionMode="tooltip" grouped={true} />
+        <LanguageDetection descriptionMode="tooltip" grouped={true} />
       </SettingsGroup>
     </div>
   );

@@ -673,7 +673,8 @@
       },
       "pasteMethod": {
         "title": "Způsob vložení",
-        "description": "Vyberte, jak se text vkládá. Přímé: simuluje psaní přes systémový vstup. Žádné: přeskočí vložení a aktualizuje pouze historii/schránku.",
+        "description": "Jak se hotový diktát dostane do aplikace v popředí. Schránka (Ctrl+V): Handy vloží text do schránky a stiskne za vás Ctrl+V; Ctrl+Shift+V a Shift+Insert dělají totéž s těmito klávesami, např. pro terminály. Přímé: napíše text přes systémový vstup. Externí skript (jen Linux): předá text vašemu skriptu. Žádné: Handy nic nevloží; text je v historii a podle nastavení „Práce se schránkou“ ve schránce. „Vložit poslední přepis“ vkládá stejně, při „Žádné“ dá text do schránky.",
+        "descriptionMacos": "Jak se hotový diktát dostane do aplikace v popředí. Schránka (Cmd+V): Handy vloží text do schránky a stiskne za vás ⌘V; k tomu je potřeba zpřístupnění. Žádné: Handy nic nevloží; text je v historii a podle nastavení „Práce se schránkou“ ve schránce. „Vložit poslední přepis“ vkládá stejně, při „Žádné“ dá text do schránky. Bez zpřístupnění diktát místo toho vloží služba macOS.",
         "options": {
           "clipboard": "Schránka ({{modifier}}+V)",
           "clipboardCtrlShiftV": "Schránka (Ctrl+Shift+V)",

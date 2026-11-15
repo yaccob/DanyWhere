@@ -673,7 +673,8 @@
       },
       "pasteMethod": {
         "title": "Metode Tempel",
-        "description": "Pilih cara teks dimasukkan. Langsung: mensimulasikan pengetikan melalui masukan sistem. Tidak Ada: melewati proses tempel dan hanya memperbarui riwayat/papan klip.",
+        "description": "Cara dikte yang sudah selesai sampai ke aplikasi di depan. Papan klip (Ctrl+V): Handy menaruh teks di papan klip dan menekan Ctrl+V untuk Anda; Ctrl+Shift+V dan Shift+Insert melakukan hal yang sama dengan tombol tersebut, misalnya untuk terminal. Langsung: mengetik teks melalui masukan sistem. Skrip Eksternal (hanya Linux): meneruskan teks ke skrip Anda. Tidak Ada: Handy tidak menyisipkan apa pun; teks ada di riwayat dan, tergantung Penanganan Papan Klip, di papan klip. Tempel transkripsi terakhir menyisipkan dengan cara yang sama; dengan Tidak Ada, teks ditaruh di papan klip.",
+        "descriptionMacos": "Cara dikte yang sudah selesai sampai ke aplikasi di depan. Papan klip (Cmd+V): Handy menaruh teks di papan klip dan menekan ⌘V untuk Anda; ini memerlukan Aksesibilitas. Tidak Ada: Handy tidak menyisipkan apa pun; teks ada di riwayat dan, tergantung Penanganan Papan Klip, di papan klip. Tempel transkripsi terakhir menyisipkan dengan cara yang sama; dengan Tidak Ada, teks ditaruh di papan klip. Tanpa Aksesibilitas, layanan macOS yang menyisipkan dikte sebagai gantinya.",
         "options": {
           "clipboard": "Papan klip ({{modifier}}+V)",
           "clipboardCtrlShiftV": "Papan klip (Ctrl+Shift+V)",

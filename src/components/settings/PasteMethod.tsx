@@ -6,6 +6,7 @@ import { Input } from "../ui/Input";
 import { useSettings } from "../../hooks/useSettings";
 import { useOsType } from "../../hooks/useOsType";
 import type { PasteMethod } from "@/bindings";
+import { pasteMethodDescriptionKey } from "@/lib/pasteMethodDescription";
 
 interface PasteMethodProps {
   descriptionMode?: "inline" | "tooltip";
@@ -84,7 +85,8 @@ export const PasteMethodSetting: React.FC<PasteMethodProps> = React.memo(
     return (
       <SettingContainer
         title={t("settings.advanced.pasteMethod.title")}
-        description={t("settings.advanced.pasteMethod.description")}
+        // DanyWhere: macOS offers only two of the methods; it explains those.
+        description={t(pasteMethodDescriptionKey(osType))}
         descriptionMode={descriptionMode}
         grouped={grouped}
         tooltipPosition="bottom"
