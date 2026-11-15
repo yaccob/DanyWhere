@@ -714,9 +714,10 @@
       },
       "appendText": {
         "title": "Aggiungi alla fine",
-        "description": "Aggiunto dopo ogni dettatura di questo profilo. Testo così com'è; \\s spazio, \\n a capo, \\t tabulazione, \\\\ barra rovesciata, \\{ e \\} parentesi graffe. Alla fine, pressioni di tasti: {Enter}, {Tab}, {Shift+Enter}, {{cmdEnter}}, {Ctrl+Enter}. I tasti vengono inviati solo quando il testo viene incollato.",
+        "description": "Aggiunto dopo ogni dettatura di questo profilo: il testo, poi il tasto che scegli. Nel testo \\s è uno spazio, \\n un a capo, \\t una tabulazione e \\\\ una barra rovesciata; tutto il resto viene aggiunto così com'è scritto. Il tasto viene inviato solo quando il testo viene incollato.",
         "noAccessibility": "Senza Accessibilità i tasti non vengono inviati; il testo viene comunque aggiunto.",
-        "notSaved": "Non salvato; resta in vigore l'ultimo valore valido.",
+        "keyNone": "Nessun tasto",
+        "keyKept": "Mantenuto da prima; non disponibile su questo sistema",
         "preview": {
           "nothing": "Non viene aggiunto nulla",
           "space": "spazio",
@@ -725,19 +726,6 @@
           "text": "«{{text}}»",
           "key": "il tasto {{key}}",
           "then": "{{first}}, poi {{next}}"
-        },
-        "errors": {
-          "unknownEscape": "Sequenza di escape sconosciuta {{escape}}: usa \\s, \\n, \\t, \\\\, \\{ o \\}",
-          "trailingBackslash": "Una barra rovesciata richiede una lettera dopo: \\s, \\n, \\t, \\\\, \\{ o \\}",
-          "unknownKey": "Tasto sconosciuto {{key}}",
-          "unclosedKey": "Una { richiede la sua }; scrivi \\{ per una graffa",
-          "unmatchedBrace": "Una } richiede la sua {; scrivi \\} per una graffa",
-          "textAfterKey": "Dopo un tasto possono seguire solo altri tasti",
-          "foreignKeyName": {
-            "macos": "Su Mac questo tasto si chiama {{name}}: {{key}}",
-            "windows": "Su Windows questo tasto si chiama {{name}}: {{key}}",
-            "linux": "Su Linux questo tasto si chiama {{name}}: {{key}}"
-          }
         }
       },
       "translateToEnglish": {

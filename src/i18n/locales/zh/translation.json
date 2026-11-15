@@ -714,9 +714,10 @@
       },
       "appendText": {
         "title": "末尾追加",
-        "description": "在此配置文件的每次听写后追加。文本按原样；\\s 空格，\\n 换行，\\t 制表符，\\\\ 反斜杠，\\{ 和 \\} 花括号。末尾可加按键：{Enter}、{Tab}、{Shift+Enter}、{{cmdEnter}}、{Ctrl+Enter}。仅在粘贴文本时发送按键。",
+        "description": "在此配置文件的每次听写后追加：先是文本，然后是你选择的按键。文本中 \\s 表示空格，\\n 表示换行，\\t 表示制表符，\\\\ 表示反斜杠；其他内容按原样追加。仅在粘贴文本时才发送按键。",
         "noAccessibility": "没有辅助功能权限时不发送按键；文本仍会追加。",
-        "notSaved": "未保存；最后一个有效值继续生效。",
+        "keyNone": "无按键",
+        "keyKept": "沿用之前的设置；此系统不提供",
         "preview": {
           "nothing": "不追加任何内容",
           "space": "空格",
@@ -725,19 +726,6 @@
           "text": "“{{text}}”",
           "key": "{{key}} 键",
           "then": "{{first}}，然后 {{next}}"
-        },
-        "errors": {
-          "unknownEscape": "未知转义 {{escape}}：可用 \\s、\\n、\\t、\\\\、\\{ 或 \\}",
-          "trailingBackslash": "反斜杠后需要一个字母：\\s、\\n、\\t、\\\\、\\{ 或 \\}",
-          "unknownKey": "未知按键 {{key}}",
-          "unclosedKey": "{ 缺少对应的 }；\\{ 表示花括号本身",
-          "unmatchedBrace": "} 缺少对应的 {；\\} 表示花括号本身",
-          "textAfterKey": "按键之后只能跟按键",
-          "foreignKeyName": {
-            "macos": "在 Mac 上，此键名为 {{name}}：{{key}}",
-            "windows": "在 Windows 上，此键名为 {{name}}：{{key}}",
-            "linux": "在 Linux 上，此键名为 {{name}}：{{key}}"
-          }
         }
       },
       "translateToEnglish": {

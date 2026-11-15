@@ -714,9 +714,10 @@
       },
       "appendText": {
         "title": "Ajouter à la fin",
-        "description": "Ajouté après chaque dictée de ce profil. Le texte tel quel ; \\s espace, \\n saut de ligne, \\t tabulation, \\\\ barre oblique inverse, \\{ et \\} accolades. À la fin, des touches : {Enter}, {Tab}, {Shift+Enter}, {{cmdEnter}}, {Ctrl+Enter}. Les touches ne sont envoyées que si le texte est collé.",
+        "description": "Ajouté après chaque dictée de ce profil : le texte, puis la touche que vous choisissez. Dans le texte, \\s est une espace, \\n un saut de ligne, \\t une tabulation et \\\\ une barre oblique inverse ; tout le reste est ajouté tel qu'écrit. La touche n'est envoyée que lorsque le texte est collé.",
         "noAccessibility": "Sans l'accessibilité, aucune touche n'est envoyée ; le texte est quand même ajouté.",
-        "notSaved": "Non enregistré ; la dernière valeur valide reste en vigueur.",
+        "keyNone": "Aucune touche",
+        "keyKept": "Conservé d'avant ; non proposé sur ce système",
         "preview": {
           "nothing": "Rien n'est ajouté",
           "space": "espace",
@@ -725,19 +726,6 @@
           "text": "« {{text}} »",
           "key": "la touche {{key}}",
           "then": "{{first}}, puis {{next}}"
-        },
-        "errors": {
-          "unknownEscape": "Séquence d'échappement inconnue {{escape}} : utilisez \\s, \\n, \\t, \\\\, \\{ ou \\}",
-          "trailingBackslash": "Une barre oblique inverse doit être suivie d'une lettre : \\s, \\n, \\t, \\\\, \\{ ou \\}",
-          "unknownKey": "Touche inconnue {{key}}",
-          "unclosedKey": "Une { attend sa } ; écrivez \\{ pour une accolade",
-          "unmatchedBrace": "Une } attend sa { ; écrivez \\} pour une accolade",
-          "textAfterKey": "Après une touche, seules d'autres touches peuvent suivre",
-          "foreignKeyName": {
-            "macos": "Sur Mac, cette touche s'appelle {{name}} : {{key}}",
-            "windows": "Sous Windows, cette touche s'appelle {{name}} : {{key}}",
-            "linux": "Sous Linux, cette touche s'appelle {{name}} : {{key}}"
-          }
         }
       },
       "translateToEnglish": {

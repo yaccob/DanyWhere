@@ -714,9 +714,10 @@
       },
       "appendText": {
         "title": "Tambahkan di akhir",
-        "description": "Ditambahkan setelah setiap dikte di profil ini. Teks seperti ditulis; \\s spasi, \\n baris baru, \\t tab, \\\\ garis miring terbalik, \\{ dan \\} kurung kurawal. Di akhir, penekanan tombol: {Enter}, {Tab}, {Shift+Enter}, {{cmdEnter}}, {Ctrl+Enter}. Tombol hanya dikirim saat teks ditempel.",
+        "description": "Ditambahkan setelah setiap dikte di profil ini: teksnya, lalu tombol yang Anda pilih. Dalam teks, \\s adalah spasi, \\n baris baru, \\t tab, dan \\\\ garis miring terbalik; selebihnya ditambahkan seperti yang tertulis. Tombol hanya dikirim saat teks ditempelkan.",
         "noAccessibility": "Tanpa Aksesibilitas, tombol tidak dikirim; teks tetap ditambahkan.",
-        "notSaved": "Tidak disimpan; nilai valid terakhir tetap berlaku.",
+        "keyNone": "Tanpa tombol",
+        "keyKept": "Dipertahankan dari sebelumnya; tidak ditawarkan di sistem ini",
         "preview": {
           "nothing": "Tidak ada yang ditambahkan",
           "space": "spasi",
@@ -725,19 +726,6 @@
           "text": "“{{text}}”",
           "key": "tombol {{key}}",
           "then": "{{first}}, lalu {{next}}"
-        },
-        "errors": {
-          "unknownEscape": "Escape tidak dikenal {{escape}}: gunakan \\s, \\n, \\t, \\\\, \\{ atau \\}",
-          "trailingBackslash": "Garis miring terbalik harus diikuti huruf: \\s, \\n, \\t, \\\\, \\{ atau \\}",
-          "unknownKey": "Tombol tidak dikenal {{key}}",
-          "unclosedKey": "{ belum ditutup dengan }; \\{ menulis kurung",
-          "unmatchedBrace": "} tidak punya {; \\} menulis kurung",
-          "textAfterKey": "Setelah penekanan tombol hanya boleh ada penekanan tombol",
-          "foreignKeyName": {
-            "macos": "Di Mac, tombol ini bernama {{name}}: {{key}}",
-            "windows": "Di Windows, tombol ini bernama {{name}}: {{key}}",
-            "linux": "Di Linux, tombol ini bernama {{name}}: {{key}}"
-          }
         }
       },
       "translateToEnglish": {

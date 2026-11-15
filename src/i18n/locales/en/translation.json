@@ -714,9 +714,10 @@
       },
       "appendText": {
         "title": "Append",
-        "description": "Added after every dictation of this profile. Text as written; \\s space, \\n new line, \\t tab, \\\\ backslash, \\{ and \\} braces. Key presses at the end: {Enter}, {Tab}, {Shift+Enter}, {{cmdEnter}}, {Ctrl+Enter}. Key presses are sent only when the text is pasted.",
+        "description": "Added after every dictation of this profile: the text, then the key press you choose. In the text, \\s is a space, \\n a new line, \\t a tab and \\\\ a backslash; everything else is appended as written. The key press is sent only when the text is pasted.",
         "noAccessibility": "Without Accessibility, key presses aren't sent; the text is still appended.",
-        "notSaved": "Not saved; the last valid value stays in effect.",
+        "keyNone": "No key press",
+        "keyKept": "Kept from before; not offered on this system",
         "preview": {
           "nothing": "Nothing is appended",
           "space": "space",
@@ -725,19 +726,6 @@
           "text": "“{{text}}”",
           "key": "the {{key}} key",
           "then": "{{first}}, then {{next}}"
-        },
-        "errors": {
-          "unknownEscape": "Unknown escape {{escape}}: use \\s, \\n, \\t, \\\\, \\{ or \\}",
-          "trailingBackslash": "A backslash needs a letter after it: \\s, \\n, \\t, \\\\, \\{ or \\}",
-          "unknownKey": "Unknown key press {{key}}",
-          "unclosedKey": "A { needs its }; write \\{ for a brace",
-          "unmatchedBrace": "A } needs its {; write \\} for a brace",
-          "textAfterKey": "Only key presses can follow a key press",
-          "foreignKeyName": {
-            "macos": "On the Mac this key is called {{name}}: {{key}}",
-            "windows": "On Windows this key is called {{name}}: {{key}}",
-            "linux": "On Linux this key is called {{name}}: {{key}}"
-          }
         }
       },
       "translateToEnglish": {

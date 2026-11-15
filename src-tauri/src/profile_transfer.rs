@@ -701,11 +701,11 @@ mod tests {
     }
 
     /// A profile written on any system, with any system's name of the
-    /// ⌘ / Windows / Super key, imports as a valid value that means the same
-    /// key presses here.
+    /// ⌘ / Windows / Super key, imports with this system's names and means
+    /// the same key presses here.
     #[test]
     fn an_import_writes_another_systems_key_names_as_this_system_does() {
-        use crate::append_text::{parse, Append, AppendKey, KeyPlatform};
+        use crate::append_text::{localize, parse, Append, AppendKey, KeyPlatform};
         for written in [
             r"\s{Cmd+Enter}",
             r"\s{Command+Enter}",
@@ -717,10 +717,10 @@ mod tests {
             s.append_text = written.to_string();
             let yaml = export(&s, "default", Some("geheim")).expect("export");
             let (profile, _) = read_import(&yaml, None).expect("import");
-            let parts = parse(&profile.values.append_text, KeyPlatform::current())
-                .unwrap_or_else(|e| panic!("{written} imported as invalid: {e}"));
+            let imported = &profile.values.append_text;
+            assert_eq!(&localize(imported, KeyPlatform::current()), imported);
             assert_eq!(
-                Append::from_parts(&parts),
+                Append::from_parts(&parse(imported)),
                 Append {
                     text: " ".to_string(),
                     keys: vec![AppendKey::CmdEnter],

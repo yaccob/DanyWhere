@@ -1,27 +1,25 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { type } from "@tauri-apps/plugin-os";
 import {
   commands,
-  type AppendKeyNames,
+  type AppendChoice,
+  type AppendKey,
   type AppendPart,
-  type AppendTextError,
 } from "@/bindings";
+import { Dropdown } from "../ui/Dropdown";
 import { Input } from "../ui/Input";
 import { SettingContainer } from "../ui/SettingContainer";
 import { useSettings } from "../../hooks/useSettings";
+import { useOsType } from "../../hooks/useOsType";
 import {
-  appendDescription,
-  appendErrorMessage,
   describeAppend,
+  keyOptions,
+  keysOfOption,
+  selectedKeyOption,
 } from "@/lib/appendText";
 
-/** How long typing pauses before the field is parsed for the preview. */
+/** How long typing pauses before the preview follows the text. */
 const PREVIEW_DELAY_MS = 250;
-
-type Parsed =
-  | { value: string; parts: AppendPart[] }
-  | { value: string; error: AppendTextError };
 
 interface AppendTextProps {
   descriptionMode?: "inline" | "tooltip";
@@ -30,101 +28,116 @@ interface AppendTextProps {
 
 /**
  * DanyWhere: the profile's "Append" field (append_text.rs), which replaced
- * "Append Trailing Space" and "Auto Submit". Rust parses it, for the
- * preview in words under the field and when it is stored; an invalid value
- * shows its error and is not stored. Key names are this system's, as Rust
- * gives them (append_key_names, and each key part's name).
+ * "Append Trailing Space" and "Auto Submit": a text field and a selection
+ * of the key press after the text, neither of which can show an error.
+ * Rust splits the stored value into both and composes it again; the
+ * preview in words under them says what a dictation gets.
  */
 export const AppendText: React.FC<AppendTextProps> = React.memo(
   ({ descriptionMode = "tooltip", grouped = false }) => {
     const { t, i18n } = useTranslation();
+    const os = useOsType();
     const { getSetting, updateSetting, isUpdating } = useSettings();
     const stored = getSetting("append_text") ?? "";
     const withoutAccessibility =
-      type() === "macos" && getSetting("accessibility_skipped") === true;
-    const [draft, setDraft] = useState(stored);
-    const [parsed, setParsed] = useState<Parsed | null>(null);
-    const [names, setNames] = useState<AppendKeyNames | null>(null);
+      os === "macos" && getSetting("accessibility_skipped") === true;
+    const [offered, setOffered] = useState<AppendKey[]>([]);
+    const [choice, setChoice] = useState<AppendChoice | null>(null);
+    const [draft, setDraft] = useState("");
+    const [parts, setParts] = useState<AppendPart[] | null>(null);
+    // The value this field just stored, so storing it doesn't reset the text
+    // field (a lone backslash may come back written as two).
+    const saved = useRef<string | null>(null);
 
     useEffect(() => {
       let current = true;
-      commands.appendKeyNames().then((loaded) => {
-        if (current) setNames(loaded);
+      commands.appendKeyOptions().then((keys) => {
+        if (current) setOffered(keys);
       });
       return () => {
         current = false;
       };
     }, []);
 
-    // Follow changes from elsewhere (a profile switch, another window).
-    useEffect(() => setDraft(stored), [stored]);
-
-    // Parse while typing, once typing pauses.
+    // Follow the stored value, also changes from elsewhere (a profile
+    // switch, another window).
     useEffect(() => {
+      let current = true;
+      const own = stored === saved.current;
+      saved.current = null;
+      commands.splitAppendText(stored).then((split) => {
+        if (!current) return;
+        setChoice(split);
+        if (!own) setDraft(split.text);
+      });
+      return () => {
+        current = false;
+      };
+    }, [stored]);
+
+    // The preview follows the text once typing pauses, a stored value at once.
+    useEffect(() => {
+      if (!choice) return;
       let current = true;
       const timer = setTimeout(
         async () => {
-          const result = await commands.parseAppendText(draft);
-          if (!current) return;
-          setParsed(
-            result.status === "ok"
-              ? { value: draft, parts: result.data }
-              : { value: draft, error: result.error },
-          );
+          const composed = await commands.composeAppendText(draft, choice.keys);
+          if (current) setParts(composed.parts);
         },
-        draft === stored ? 0 : PREVIEW_DELAY_MS,
+        draft === choice.text ? 0 : PREVIEW_DELAY_MS,
       );
       return () => {
         current = false;
         clearTimeout(timer);
       };
-    }, [draft, stored]);
+    }, [draft, choice]);
 
-    const commit = async () => {
-      if (draft === stored) return;
-      const result = await commands.parseAppendText(draft);
-      if (result.status === "error") {
-        setParsed({ value: draft, error: result.error });
-        return;
-      }
-      await updateSetting("append_text", draft);
+    const save = async (text: string, newKeys: AppendKey[]) => {
+      const composed = await commands.composeAppendText(text, newKeys);
+      setParts(composed.parts);
+      if (composed.value === stored) return;
+      saved.current = composed.value;
+      await updateSetting("append_text", composed.value);
     };
-
-    const error = parsed && "error" in parsed ? parsed.error : null;
 
     return (
       <SettingContainer
         title={t("settings.advanced.appendText.title")}
-        description={names ? appendDescription(t, names) : ""}
+        description={t("settings.advanced.appendText.description")}
         descriptionMode={descriptionMode}
         grouped={grouped}
         grow
       >
         <div className="flex w-full max-w-sm flex-col gap-1">
-          <Input
-            variant="compact"
-            className={`w-full font-mono ${error ? "border-red-500" : ""}`}
-            value={draft}
-            spellCheck={false}
-            autoCorrect="off"
-            autoCapitalize="off"
-            aria-invalid={error !== null}
-            onChange={(event) => setDraft(event.target.value)}
-            onBlur={commit}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") event.currentTarget.blur();
-            }}
-            disabled={isUpdating("append_text")}
-          />
-          {parsed && "parts" in parsed && (
+          <div className="flex w-full items-center gap-2">
+            <Input
+              variant="compact"
+              className="min-w-0 flex-1 font-mono"
+              value={draft}
+              spellCheck={false}
+              autoCorrect="off"
+              autoCapitalize="off"
+              onChange={(event) => setDraft(event.target.value)}
+              onBlur={() => choice && save(draft, choice.keys)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") event.currentTarget.blur();
+              }}
+              disabled={isUpdating("append_text") || choice === null}
+            />
+            <Dropdown
+              compact
+              className="w-40 shrink-0"
+              options={choice ? keyOptions(offered, choice, t, os) : []}
+              selectedValue={choice ? selectedKeyOption(choice) : null}
+              onSelect={(value) => {
+                if (choice) save(draft, keysOfOption(value, choice));
+              }}
+              disabled={choice === null || withoutAccessibility}
+            />
+          </div>
+          {parts && (
             <p className="text-xs text-text/70">
-              {describeAppend(parsed.parts, t, i18n.language)}
-            </p>
-          )}
-          {error && names && (
-            <p className="text-xs text-red-500">
-              {appendErrorMessage(error, t, names.platform)}{" "}
-              {draft !== stored && t("settings.advanced.appendText.notSaved")}
+              {describeAppend(parts, t, os, i18n.language)}
             </p>
           )}
           {withoutAccessibility && (

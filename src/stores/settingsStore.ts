@@ -206,10 +206,10 @@ const settingUpdaters: {
     commands.changeMuteWhileRecordingSetting(value as boolean),
   append_trailing_space: (value) =>
     commands.changeAppendTrailingSpaceSetting(value as boolean),
-  // DanyWhere: the "Append" field; Rust refuses an invalid value.
+  // DanyWhere: the "Append" field, as composeAppendText made it.
   append_text: async (value) => {
     const result = await commands.changeAppendTextSetting(value as string);
-    if (result.status === "error") throw new Error(result.error.code);
+    if (result.status === "error") throw new Error(result.error);
   },
   dictation_key_inserts: (value) =>
     commands.changeDictationKeyInsertsSetting(value as boolean),
