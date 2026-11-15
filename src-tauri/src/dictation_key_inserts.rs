@@ -867,7 +867,7 @@ mod tests {
         );
         assert_eq!(
             settings.bindings[crate::send_context::TOGGLE_BINDING].default_binding,
-            "ctrl+shift+k"
+            "ctrl+shift+x"
         );
         assert_eq!(
             settings.bindings["paste_last_transcript"].default_binding,
