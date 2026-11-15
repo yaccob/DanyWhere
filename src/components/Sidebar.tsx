@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Cog, FlaskConical, History, Info, Sparkles, Cpu } from "lucide-react";
 import HandyTextLogo from "./icons/HandyTextLogo";
@@ -12,6 +12,8 @@ import {
   PostProcessingSettings,
   ModelsSettings,
 } from "./settings";
+// DanyWhere: the profile in use, on every page.
+import { ProfileSelector } from "./settings/profiles/ProfileSelector";
 
 export type SidebarSection = keyof typeof SECTIONS_CONFIG;
 
@@ -92,9 +94,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
     .filter(([_, config]) => config.enabled(settings))
     .map(([id, config]) => ({ id: id as SidebarSection, ...config }));
 
+  // DanyWhere: a profile switch can hide the page on screen (Post Process
+  // without post-processing); go back to General then.
+  const activeHidden =
+    settings !== null && !SECTIONS_CONFIG[activeSection].enabled(settings);
+  useEffect(() => {
+    if (activeHidden) onSectionChange("general");
+  }, [activeHidden, onSectionChange]);
+
   return (
     <div className="flex flex-col w-40 h-full border-e border-line items-center px-2">
       <HandyTextLogo width={120} className="m-4" />
+      <ProfileSelector />
       <div className="flex flex-col w-full items-center gap-1 pt-2 border-t border-line">
         {availableSections.map((section) => {
           const Icon = section.icon;

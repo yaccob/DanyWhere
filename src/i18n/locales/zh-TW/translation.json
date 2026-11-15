@@ -23,7 +23,8 @@
     "postProcessing": "後處理",
     "history": "歷史紀錄",
     "debug": "偵錯",
-    "about": "關於"
+    "about": "關於",
+    "profile": "設定檔"
   },
   "onboarding": {
     "customModelDescription": "官方不支援",
@@ -371,7 +372,7 @@
           },
           "cycle_word_list": {
             "name": "切換詞彙清單",
-            "description": "啟用下一個附加詞彙清單；最後一個之後只使用全域詞彙清單。"
+            "description": "啟用目前設定檔的下一個附加詞彙清單；最後一個之後不啟用任何清單。"
           }
         },
         "errors": {
@@ -429,6 +430,46 @@
           "startRecording": "開始錄音",
           "doNothing": "不執行任何動作"
         }
+      }
+    },
+    "profiles": {
+      "title": "設定檔",
+      "description": "設定檔包含模型、語言、詞彙清單和後處理。變更一律儲存到目前的設定檔。",
+      "active": "使用中",
+      "use": "使用",
+      "duplicate": "複製",
+      "rename": "重新命名",
+      "delete": "刪除",
+      "lastProfile": "無法刪除最後一個設定檔",
+      "cancel": "取消",
+      "nameLabel": "名稱",
+      "namePlaceholder": "例如：工作",
+      "nameTaken": "已有同名的設定檔",
+      "duplicateDialog": {
+        "title": "複製「{{name}}」",
+        "description": "新設定檔會以此設定檔的副本開始，不會自動啟用；可透過「使用」或在側邊欄切換過去。",
+        "confirm": "複製"
+      },
+      "renameDialog": {
+        "title": "重新命名「{{name}}」",
+        "defaultHint": "留空即以 App 的語言顯示「{{defaultName}}」。",
+        "confirm": "重新命名"
+      },
+      "deleteDialog": {
+        "title": "要刪除「{{name}}」嗎？",
+        "description": "其模型選擇、語言、詞彙清單和提示詞會一併刪除。此動作無法復原。",
+        "switchesTo": "這是目前使用中的設定檔，因此會先切換到「{{name}}」。",
+        "confirm": "刪除設定檔"
+      },
+      "scope": {
+        "models": "在此選擇的模型屬於設定檔「{{name}}」。",
+        "postProcessing": "供應商、模型、提示詞和上下文限制屬於設定檔「{{name}}」；API 金鑰適用於所有設定檔。"
+      },
+      "errors": {
+        "switch": "無法切換設定檔",
+        "duplicate": "無法複製設定檔",
+        "rename": "無法重新命名設定檔",
+        "delete": "無法刪除設定檔"
       }
     },
     "models": {
@@ -631,12 +672,16 @@
         "duplicate": "「{{word}}」已存在"
       },
       "wordLists": {
-        "globalTitle": "全域詞彙清單",
-        "activeTitle": "目前的詞彙清單",
-        "activeDescription": "其中的詞彙會先於一律生效的全域詞彙清單提供給模型。可用快捷鍵或系統匣選單切換。",
-        "onlyGlobal": "無（僅全域詞彙清單）",
-        "title": "附加詞彙清單",
-        "description": "可在全域詞彙清單之外額外啟用的具名清單，例如每個主題一個。一次只能啟用一個。",
+        "groupTitle": "詞彙清單",
+        "groupDescription": "模型會先取得目前附加清單的詞彙，接著是設定檔的詞彙清單，最後是全域詞彙清單。",
+        "globalTitle": "全域詞彙清單（所有設定檔）",
+        "profileTitle": "設定檔「{{name}}」的詞彙清單",
+        "profileDescription": "在此設定檔中一律生效，與全域詞彙清單一起使用。特定情境的詞彙放在這裡，到處都需要的詞彙放在全域清單。",
+        "activeTitle": "目前的附加清單",
+        "activeDescription": "其中的詞彙會最先提供給模型，先於一律生效的設定檔詞彙清單和全域詞彙清單。可用快捷鍵或系統匣選單切換。",
+        "onlyGlobal": "無",
+        "title": "設定檔「{{name}}」的附加清單",
+        "description": "此設定檔中可額外啟用的具名清單，例如每個主題一個。一次只能啟用一個。",
         "selectList": "選擇清單",
         "createNew": "新增清單",
         "namePlaceholder": "清單名稱，例如 工作",

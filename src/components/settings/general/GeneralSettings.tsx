@@ -17,6 +17,8 @@ import { ModelSettingsCard } from "./ModelSettingsCard";
 import { PreferredLanguages } from "../PreferredLanguages";
 import { ChineseScriptSetting } from "../ChineseScript";
 import { isChinese } from "@/lib/utils/languageSuggestions";
+// DanyWhere: profiles are managed at the top of General.
+import { ProfilesSettings } from "../profiles/ProfilesSettings";
 
 export const GeneralSettings: React.FC = () => {
   const { t } = useTranslation();
@@ -31,6 +33,7 @@ export const GeneralSettings: React.FC = () => {
     (getSetting("chinese_script") ?? "as_transcribed") !== "as_transcribed";
   return (
     <div className="max-w-3xl w-full mx-auto space-y-6">
+      <ProfilesSettings />
       <SettingsGroup title={t("settings.general.title")}>
         <ShortcutInput shortcutId="transcribe" grouped={true} />
         <ShortcutActivationSetting descriptionMode="tooltip" grouped={true} />

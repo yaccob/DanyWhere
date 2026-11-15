@@ -23,7 +23,8 @@
     "postProcessing": "후처리",
     "history": "히스토리",
     "debug": "디버그",
-    "about": "정보"
+    "about": "정보",
+    "profile": "프로필"
   },
   "onboarding": {
     "customModelDescription": "공식 지원되지 않음",
@@ -371,7 +372,7 @@
           },
           "cycle_word_list": {
             "name": "단어 목록 전환",
-            "description": "다음 추가 단어 목록을 켭니다. 마지막 목록 다음에는 전역 단어 목록만 적용됩니다."
+            "description": "활성 프로필의 다음 추가 단어 목록을 켭니다. 마지막 목록 다음에는 아무 목록도 켜지지 않습니다."
           }
         },
         "errors": {
@@ -429,6 +430,46 @@
           "startRecording": "녹음 시작",
           "doNothing": "아무것도 하지 않음"
         }
+      }
+    },
+    "profiles": {
+      "title": "프로필",
+      "description": "프로필에는 모델, 언어, 단어 목록, 후처리가 포함됩니다. 변경 사항은 항상 활성 프로필에 저장됩니다.",
+      "active": "활성",
+      "use": "사용",
+      "duplicate": "복제",
+      "rename": "이름 바꾸기",
+      "delete": "삭제",
+      "lastProfile": "마지막 프로필은 삭제할 수 없습니다",
+      "cancel": "취소",
+      "nameLabel": "이름",
+      "namePlaceholder": "예: 업무",
+      "nameTaken": "이 이름의 프로필이 이미 있습니다",
+      "duplicateDialog": {
+        "title": "‘{{name}}’ 복제",
+        "description": "새 프로필은 이 프로필의 복사본으로 시작합니다. 활성화되지 않으니 ‘사용’ 또는 사이드바에서 전환하세요.",
+        "confirm": "복제"
+      },
+      "renameDialog": {
+        "title": "‘{{name}}’ 이름 바꾸기",
+        "defaultHint": "비워 두면 앱 언어로 ‘{{defaultName}}’이(가) 표시됩니다.",
+        "confirm": "이름 바꾸기"
+      },
+      "deleteDialog": {
+        "title": "‘{{name}}’을(를) 삭제할까요?",
+        "description": "모델 선택, 언어, 단어 목록, 프롬프트도 함께 삭제됩니다. 되돌릴 수 없습니다.",
+        "switchesTo": "활성 프로필이므로 먼저 ‘{{name}}’이(가) 활성화됩니다.",
+        "confirm": "프로필 삭제"
+      },
+      "scope": {
+        "models": "여기서 선택한 모델은 ‘{{name}}’ 프로필에 속합니다.",
+        "postProcessing": "제공자, 모델, 프롬프트, 컨텍스트 한도는 ‘{{name}}’ 프로필에 속합니다. API 키는 모든 프로필에 적용됩니다."
+      },
+      "errors": {
+        "switch": "프로필을 전환하지 못했습니다",
+        "duplicate": "프로필을 복제하지 못했습니다",
+        "rename": "프로필 이름을 바꾸지 못했습니다",
+        "delete": "프로필을 삭제하지 못했습니다"
       }
     },
     "models": {
@@ -631,12 +672,16 @@
         "duplicate": "\"{{word}}\"이(가) 이미 존재합니다"
       },
       "wordLists": {
-        "globalTitle": "전역 단어 목록",
-        "activeTitle": "활성 단어 목록",
-        "activeDescription": "이 목록의 단어는 항상 적용되는 전역 단어 목록의 단어보다 먼저 모델에 전달됩니다. 단축키나 트레이 메뉴에서 전환하세요.",
-        "onlyGlobal": "없음(전역 단어 목록만)",
-        "title": "추가 단어 목록",
-        "description": "전역 단어 목록에 더해 켤 수 있는 이름 있는 목록입니다(예: 주제별로 하나). 한 번에 하나만 켤 수 있습니다.",
+        "groupTitle": "단어 목록",
+        "groupDescription": "모델은 먼저 활성 추가 목록의 단어를, 그다음 프로필 단어 목록의 단어를, 마지막으로 전역 단어 목록의 단어를 받습니다.",
+        "globalTitle": "전역 단어 목록(모든 프로필)",
+        "profileTitle": "‘{{name}}’ 프로필의 단어 목록",
+        "profileDescription": "이 프로필에서 전역 단어 목록과 함께 항상 적용됩니다. 한 가지 상황에 쓰는 단어는 여기에, 어디서나 필요한 단어는 전역 목록에 넣으세요.",
+        "activeTitle": "활성 추가 목록",
+        "activeDescription": "이 목록의 단어는 항상 적용되는 프로필 단어 목록과 전역 단어 목록보다 먼저 모델에 전달됩니다. 단축키나 트레이 메뉴에서 전환하세요.",
+        "onlyGlobal": "없음",
+        "title": "‘{{name}}’ 프로필의 추가 목록",
+        "description": "이 프로필에서 추가로 켤 수 있는 이름 있는 목록입니다(예: 주제별로 하나). 한 번에 하나만 켤 수 있습니다.",
         "selectList": "목록 선택",
         "createNew": "새 목록",
         "namePlaceholder": "목록 이름(예: 업무)",

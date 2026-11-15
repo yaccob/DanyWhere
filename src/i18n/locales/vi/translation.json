@@ -23,7 +23,8 @@
     "postProcessing": "Xử lý sau",
     "history": "Lịch sử",
     "debug": "Gỡ lỗi",
-    "about": "Giới thiệu"
+    "about": "Giới thiệu",
+    "profile": "Hồ sơ"
   },
   "onboarding": {
     "customModelDescription": "Không được hỗ trợ chính thức",
@@ -371,7 +372,7 @@
           },
           "cycle_word_list": {
             "name": "Đổi danh sách từ",
-            "description": "Bật danh sách từ bổ sung tiếp theo; sau danh sách cuối cùng, chỉ danh sách chung được áp dụng."
+            "description": "Bật danh sách từ bổ sung tiếp theo của hồ sơ đang dùng; sau danh sách cuối cùng, không danh sách nào được bật."
           }
         },
         "errors": {
@@ -429,6 +430,46 @@
           "startRecording": "Bắt đầu ghi âm",
           "doNothing": "Không làm gì"
         }
+      }
+    },
+    "profiles": {
+      "title": "Hồ sơ",
+      "description": "Một hồ sơ gồm mô hình, ngôn ngữ, danh sách từ và xử lý sau. Thay đổi luôn được lưu vào hồ sơ đang dùng.",
+      "active": "Đang dùng",
+      "use": "Dùng",
+      "duplicate": "Nhân bản",
+      "rename": "Đổi tên",
+      "delete": "Xóa",
+      "lastProfile": "Không thể xóa hồ sơ cuối cùng",
+      "cancel": "Hủy",
+      "nameLabel": "Tên",
+      "namePlaceholder": "ví dụ: Công việc",
+      "nameTaken": "Đã có hồ sơ với tên này",
+      "duplicateDialog": {
+        "title": "Nhân bản “{{name}}”",
+        "description": "Hồ sơ mới bắt đầu là bản sao của hồ sơ này. Nó không được dùng ngay; chuyển sang nó bằng “Dùng” hoặc ở thanh bên.",
+        "confirm": "Nhân bản"
+      },
+      "renameDialog": {
+        "title": "Đổi tên “{{name}}”",
+        "defaultHint": "Để trống để hiển thị “{{defaultName}}” theo ngôn ngữ của ứng dụng.",
+        "confirm": "Đổi tên"
+      },
+      "deleteDialog": {
+        "title": "Xóa “{{name}}”?",
+        "description": "Lựa chọn mô hình, ngôn ngữ, danh sách từ và câu lệnh của hồ sơ cũng bị xóa theo. Không thể hoàn tác.",
+        "switchesTo": "Đây là hồ sơ đang dùng, nên “{{name}}” sẽ được dùng trước.",
+        "confirm": "Xóa hồ sơ"
+      },
+      "scope": {
+        "models": "Mô hình chọn ở đây thuộc hồ sơ “{{name}}”.",
+        "postProcessing": "Nhà cung cấp, mô hình, câu lệnh và giới hạn ngữ cảnh thuộc hồ sơ “{{name}}”; khóa API áp dụng cho mọi hồ sơ."
+      },
+      "errors": {
+        "switch": "Không thể chuyển hồ sơ",
+        "duplicate": "Không thể nhân bản hồ sơ",
+        "rename": "Không thể đổi tên hồ sơ",
+        "delete": "Không thể xóa hồ sơ"
       }
     },
     "models": {
@@ -631,12 +672,16 @@
         "duplicate": "\"{{word}}\" đã tồn tại"
       },
       "wordLists": {
-        "globalTitle": "Danh sách từ chung",
-        "activeTitle": "Danh sách từ đang dùng",
-        "activeDescription": "Các từ trong danh sách được đưa cho mô hình trước các từ của danh sách chung, vốn luôn được áp dụng. Đổi bằng phím tắt hoặc từ menu khay.",
-        "onlyGlobal": "Không có (chỉ danh sách từ chung)",
-        "title": "Danh sách từ bổ sung",
-        "description": "Các danh sách có tên mà bạn có thể bật thêm ngoài danh sách từ chung, ví dụ mỗi chủ đề một danh sách. Mỗi lần chỉ một.",
+        "groupTitle": "Danh sách từ",
+        "groupDescription": "Mô hình nhận trước các từ của danh sách bổ sung đang dùng, rồi đến danh sách từ của hồ sơ, cuối cùng là danh sách từ chung.",
+        "globalTitle": "Danh sách từ chung (mọi hồ sơ)",
+        "profileTitle": "Danh sách từ của hồ sơ “{{name}}”",
+        "profileDescription": "Luôn áp dụng trong hồ sơ này, cùng với danh sách từ chung. Đặt ở đây các từ cho một ngữ cảnh, còn các từ cần ở mọi nơi thì đặt vào danh sách chung.",
+        "activeTitle": "Danh sách bổ sung đang dùng",
+        "activeDescription": "Các từ trong danh sách được đưa cho mô hình đầu tiên, trước danh sách từ của hồ sơ và danh sách chung, vốn luôn được áp dụng. Đổi bằng phím tắt hoặc từ menu khay.",
+        "onlyGlobal": "Không có",
+        "title": "Danh sách bổ sung của hồ sơ “{{name}}”",
+        "description": "Các danh sách có tên của hồ sơ này mà bạn có thể bật thêm, ví dụ mỗi chủ đề một danh sách. Mỗi lần chỉ một.",
         "selectList": "Chọn danh sách",
         "createNew": "Danh sách mới",
         "namePlaceholder": "Tên danh sách, ví dụ Công việc",

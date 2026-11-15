@@ -13,6 +13,7 @@ import RetiredModelsNotice from "./RetiredModelsNotice";
 import { ModelRow } from "./ModelRow";
 import { Legend } from "./Legend";
 import { useModelEntries } from "./modelEntries";
+import { ProfileScopeHint } from "../profiles/ProfileScopeHint";
 
 /** Past this many models on disk, the rest fold under "Show N more". */
 const YOURS_LIMIT = 5;
@@ -140,7 +141,13 @@ export const ModelsSettings: React.FC<ModelsSettingsProps> = ({
       {/* The title, and across from it where to change the languages the
           grades are for. */}
       <div className="mb-[16px] flex flex-none items-center justify-between gap-[12px] px-[12px]">
-        <h1 className="text-xl font-semibold">{t("settings.models.title")}</h1>
+        <div className="min-w-0">
+          <h1 className="text-xl font-semibold">
+            {t("settings.models.title")}
+          </h1>
+          {/* DanyWhere: the chosen model belongs to the active profile. */}
+          <ProfileScopeHint page="models" className="mt-[2px]" />
+        </div>
         {onChangeLanguages && (
           <button
             type="button"
