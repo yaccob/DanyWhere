@@ -714,7 +714,7 @@
       },
       "appendText": {
         "title": "Thêm vào cuối",
-        "description": "Được thêm sau mỗi lần đọc chính tả của hồ sơ này. Văn bản như đã viết; \\s dấu cách, \\n xuống dòng, \\t tab, \\\\ dấu gạch chéo ngược, \\{ và \\} dấu ngoặc nhọn. Ở cuối là các lần nhấn phím: {Enter}, {Tab}, {Shift+Enter}, {Cmd+Enter} (Super+Enter trên Windows và Linux), {Ctrl+Enter}. Phím chỉ được gửi khi văn bản được dán.",
+        "description": "Được thêm sau mỗi lần đọc chính tả của hồ sơ này. Văn bản như đã viết; \\s dấu cách, \\n xuống dòng, \\t tab, \\\\ dấu gạch chéo ngược, \\{ và \\} dấu ngoặc nhọn. Ở cuối là các lần nhấn phím: {Enter}, {Tab}, {Shift+Enter}, {{cmdEnter}}, {Ctrl+Enter}. Phím chỉ được gửi khi văn bản được dán.",
         "noAccessibility": "Không có Trợ năng thì không gửi phím; văn bản vẫn được thêm.",
         "notSaved": "Chưa lưu; giá trị hợp lệ cuối cùng vẫn có hiệu lực.",
         "preview": {
@@ -732,7 +732,12 @@
           "unknownKey": "Phím không xác định {{key}}",
           "unclosedKey": "{ thiếu }; \\{ viết dấu ngoặc",
           "unmatchedBrace": "} thiếu {; \\} viết dấu ngoặc",
-          "textAfterKey": "Sau một lần nhấn phím chỉ được có các lần nhấn phím"
+          "textAfterKey": "Sau một lần nhấn phím chỉ được có các lần nhấn phím",
+          "foreignKeyName": {
+            "macos": "Trên Mac, phím này tên là {{name}}: {{key}}",
+            "windows": "Trên Windows, phím này tên là {{name}}: {{key}}",
+            "linux": "Trên Linux, phím này tên là {{name}}: {{key}}"
+          }
         }
       },
       "translateToEnglish": {

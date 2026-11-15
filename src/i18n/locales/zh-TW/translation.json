@@ -714,7 +714,7 @@
       },
       "appendText": {
         "title": "結尾附加",
-        "description": "在此設定檔的每次聽寫後附加。文字照原樣；\\s 空格，\\n 換行，\\t 定位字元，\\\\ 反斜線，\\{ 和 \\} 大括號。結尾可加按鍵：{Enter}、{Tab}、{Shift+Enter}、{Cmd+Enter}（Windows 和 Linux 上為 Super+Enter）、{Ctrl+Enter}。僅在貼上文字時傳送按鍵。",
+        "description": "在此設定檔的每次聽寫後附加。文字照原樣；\\s 空格，\\n 換行，\\t 定位字元，\\\\ 反斜線，\\{ 和 \\} 大括號。結尾可加按鍵：{Enter}、{Tab}、{Shift+Enter}、{{cmdEnter}}、{Ctrl+Enter}。僅在貼上文字時傳送按鍵。",
         "noAccessibility": "沒有輔助使用權限時不傳送按鍵；文字仍會附加。",
         "notSaved": "未儲存；最後一個有效值繼續生效。",
         "preview": {
@@ -732,7 +732,12 @@
           "unknownKey": "未知的按鍵 {{key}}",
           "unclosedKey": "{ 缺少對應的 }；\\{ 表示大括號本身",
           "unmatchedBrace": "} 缺少對應的 {；\\} 表示大括號本身",
-          "textAfterKey": "按鍵之後只能接按鍵"
+          "textAfterKey": "按鍵之後只能接按鍵",
+          "foreignKeyName": {
+            "macos": "在 Mac 上，此鍵名為 {{name}}：{{key}}",
+            "windows": "在 Windows 上，此鍵名為 {{name}}：{{key}}",
+            "linux": "在 Linux 上，此鍵名為 {{name}}：{{key}}"
+          }
         }
       },
       "translateToEnglish": {

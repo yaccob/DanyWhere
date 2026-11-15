@@ -714,7 +714,7 @@
       },
       "appendText": {
         "title": "Añadir al final",
-        "description": "Se añade tras cada dictado de este perfil. Texto tal cual; \\s espacio, \\n salto de línea, \\t tabulación, \\\\ barra invertida, \\{ y \\} llaves. Al final, pulsaciones de teclas: {Enter}, {Tab}, {Shift+Enter}, {Cmd+Enter} (Super+Enter en Windows y Linux), {Ctrl+Enter}. Las teclas solo se envían cuando el texto se pega.",
+        "description": "Se añade tras cada dictado de este perfil. Texto tal cual; \\s espacio, \\n salto de línea, \\t tabulación, \\\\ barra invertida, \\{ y \\} llaves. Al final, pulsaciones de teclas: {Enter}, {Tab}, {Shift+Enter}, {{cmdEnter}}, {Ctrl+Enter}. Las teclas solo se envían cuando el texto se pega.",
         "noAccessibility": "Sin accesibilidad no se envían teclas; el texto se añade igualmente.",
         "notSaved": "No guardado; sigue vigente el último valor válido.",
         "preview": {
@@ -732,7 +732,12 @@
           "unknownKey": "Tecla desconocida {{key}}",
           "unclosedKey": "Una { necesita su }; escribe \\{ para una llave",
           "unmatchedBrace": "Una } necesita su {; escribe \\} para una llave",
-          "textAfterKey": "Tras una tecla solo pueden seguir otras teclas"
+          "textAfterKey": "Tras una tecla solo pueden seguir otras teclas",
+          "foreignKeyName": {
+            "macos": "En el Mac, esta tecla se llama {{name}}: {{key}}",
+            "windows": "En Windows, esta tecla se llama {{name}}: {{key}}",
+            "linux": "En Linux, esta tecla se llama {{name}}: {{key}}"
+          }
         }
       },
       "translateToEnglish": {

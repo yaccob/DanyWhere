@@ -714,7 +714,7 @@
       },
       "appendText": {
         "title": "Připojit",
-        "description": "Připojí se za každý diktát tohoto profilu. Text tak, jak je napsán; \\s mezera, \\n nový řádek, \\t tabulátor, \\\\ zpětné lomítko, \\{ a \\} složené závorky. Na konci stisky kláves: {Enter}, {Tab}, {Shift+Enter}, {Cmd+Enter} (Super+Enter ve Windows a Linuxu), {Ctrl+Enter}. Klávesy se odešlou jen tehdy, když se text vkládá.",
+        "description": "Připojí se za každý diktát tohoto profilu. Text tak, jak je napsán; \\s mezera, \\n nový řádek, \\t tabulátor, \\\\ zpětné lomítko, \\{ a \\} složené závorky. Na konci stisky kláves: {Enter}, {Tab}, {Shift+Enter}, {{cmdEnter}}, {Ctrl+Enter}. Klávesy se odešlou jen tehdy, když se text vkládá.",
         "noAccessibility": "Bez usnadnění se žádné klávesy neodešlou; text se přesto připojí.",
         "notSaved": "Neuloženo; dál platí poslední platná hodnota.",
         "preview": {
@@ -732,7 +732,12 @@
           "unknownKey": "Neznámý stisk klávesy {{key}}",
           "unclosedKey": "Ke { chybí }; \\{ zapíše závorku",
           "unmatchedBrace": "K } chybí {; \\} zapíše závorku",
-          "textAfterKey": "Po stisku klávesy mohou následovat jen další stisky kláves"
+          "textAfterKey": "Po stisku klávesy mohou následovat jen další stisky kláves",
+          "foreignKeyName": {
+            "macos": "Na Macu se tato klávesa jmenuje {{name}}: {{key}}",
+            "windows": "Ve Windows se tato klávesa jmenuje {{name}}: {{key}}",
+            "linux": "V Linuxu se tato klávesa jmenuje {{name}}: {{key}}"
+          }
         }
       },
       "translateToEnglish": {

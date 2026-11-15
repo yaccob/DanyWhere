@@ -260,8 +260,9 @@ pub fn read_import(
         _ => None,
     };
     let mut profile = file.profile;
-    // DanyWhere: a file from before the "Append" field.
-    crate::append_text::fill_from_older_export(text, &mut profile.values);
+    // DanyWhere: a file from before the "Append" field, or with another
+    // system's key names in it.
+    crate::append_text::prepare_import(text, &mut profile.values);
     Ok((profile, key))
 }
 
@@ -697,6 +698,36 @@ mod tests {
         let yaml = export(&s, "default", Some("geheim")).expect("export");
         let (profile, _) = read_import(&yaml, None).expect("import");
         assert_eq!(profile.values.append_text, r"\s{Enter}");
+    }
+
+    /// A profile written on any system, with any system's name of the
+    /// ⌘ / Windows / Super key, imports as a valid value that means the same
+    /// key presses here.
+    #[test]
+    fn an_import_writes_another_systems_key_names_as_this_system_does() {
+        use crate::append_text::{parse, Append, AppendKey, KeyPlatform};
+        for written in [
+            r"\s{Cmd+Enter}",
+            r"\s{Command+Enter}",
+            r"\s{Win+Enter}",
+            r"\s{Super+Enter}",
+            r"\s{Meta+Return}",
+        ] {
+            let mut s = settings();
+            s.append_text = written.to_string();
+            let yaml = export(&s, "default", Some("geheim")).expect("export");
+            let (profile, _) = read_import(&yaml, None).expect("import");
+            let parts = parse(&profile.values.append_text, KeyPlatform::current())
+                .unwrap_or_else(|e| panic!("{written} imported as invalid: {e}"));
+            assert_eq!(
+                Append::from_parts(&parts),
+                Append {
+                    text: " ".to_string(),
+                    keys: vec![AppendKey::CmdEnter],
+                },
+                "{written}"
+            );
+        }
     }
 
     #[test]

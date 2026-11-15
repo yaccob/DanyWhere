@@ -642,6 +642,13 @@ async parseAppendText(value: string) : Promise<Result<AppendPart[], AppendTextEr
 }
 },
 /**
+ * This system and its name of the ⌘ / Windows / Super key press, for the
+ * field's description and the wording of its errors.
+ */
+async appendKeyNames() : Promise<AppendKeyNames> {
+    return await TAURI_INVOKE("append_key_names");
+},
+/**
  * Stores the field in the active profile; an invalid value is refused and
  * the stored one stays.
  */
@@ -1724,10 +1731,23 @@ send_context?: boolean }
  */
 export type AppendKey = "enter" | "tab" | "shift_enter" | 
 /**
- * Cmd+Enter on macOS, Super (Windows key)+Enter elsewhere, as Handy's
- * `AutoSubmitKey::CmdEnter`.
+ * Cmd+Enter on macOS, Win+Enter on Windows, Super+Enter on Linux, as
+ * Handy's `AutoSubmitKey::CmdEnter`.
  */
 "cmd_enter" | "ctrl_enter"
+/**
+ * What the frontend needs to name the field's keys on this system.
+ */
+export type AppendKeyNames = { 
+/**
+ * The system; picks the wording of `ForeignKeyName`.
+ */
+platform: KeyPlatform; 
+/**
+ * `AppendKey::CmdEnter` as this system writes it, for the field's
+ * description: `Cmd+Enter`, `Win+Enter` or `Super+Enter`.
+ */
+cmd_enter: string }
 /**
  * One part of the field, in order; what the preview names.
  */
@@ -1735,12 +1755,20 @@ export type AppendPart =
 /**
  * Text as written. Spaces at its ends are parts of their own.
  */
-{ kind: "text"; text: string } | { kind: "space" } | { kind: "new_line" } | { kind: "tab" } | { kind: "key"; key: AppendKey }
+{ kind: "text"; text: string } | { kind: "space" } | { kind: "new_line" } | { kind: "tab" } | 
+/**
+ * A key press, with its `name` as this system writes it (`Win+Enter`),
+ * whichever of its names was typed.
+ */
+{ kind: "key"; key: AppendKey; name: string }
 /**
  * An invalid value: the code and what it is about, the escape (`\x`) for
- * `UnknownEscape`, the name between the braces for `UnknownKey`, else empty.
+ * `UnknownEscape`, the name between the braces for `UnknownKey`, this
+ * system's name of the key for `ForeignKeyName` (`Cmd`), else empty.
+ * `suggestion` is, for `ForeignKeyName` only, the key press as this system
+ * writes it, without the braces (`Cmd+Enter`).
  */
-export type AppendTextError = { code: AppendTextErrorCode; detail: string }
+export type AppendTextError = { code: AppendTextErrorCode; detail: string; suggestion: string }
 /**
  * Why a value is invalid, as a code the frontend translates.
  */
@@ -1768,7 +1796,12 @@ export type AppendTextErrorCode =
 /**
  * Text after a key press.
  */
-"text_after_key"
+"text_after_key" | 
+/**
+ * A known key press written with another system's name of a key, such
+ * as `{Win+Enter}` on the Mac or `{Return}` on Windows.
+ */
+"foreign_key_name"
 /**
  * An application that can be assigned to a profile.
  */
@@ -2081,6 +2114,10 @@ export type KeyConflictChoice =
  * Keep the stored key and import the profile.
  */
 "keep"
+/**
+ * The system whose key names the field uses.
+ */
+export type KeyPlatform = "macos" | "windows" | "linux"
 export type KeyboardDiagnosticReport = { secure_input_enabled: boolean; culprit_pid: number | null; culprit_name: string | null; 
 /**
  * Counts only — key identity is deliberately never captured.

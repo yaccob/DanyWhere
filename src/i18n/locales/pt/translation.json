@@ -714,7 +714,7 @@
       },
       "appendText": {
         "title": "Acrescentar",
-        "description": "Acrescentado após cada ditado deste perfil. Texto como escrito; \\s espaço, \\n nova linha, \\t tabulação, \\\\ barra invertida, \\{ e \\} chaves. No final, teclas: {Enter}, {Tab}, {Shift+Enter}, {Cmd+Enter} (Super+Enter no Windows e Linux), {Ctrl+Enter}. As teclas só são enviadas quando o texto é colado.",
+        "description": "Acrescentado após cada ditado deste perfil. Texto como escrito; \\s espaço, \\n nova linha, \\t tabulação, \\\\ barra invertida, \\{ e \\} chaves. No final, teclas: {Enter}, {Tab}, {Shift+Enter}, {{cmdEnter}}, {Ctrl+Enter}. As teclas só são enviadas quando o texto é colado.",
         "noAccessibility": "Sem Acessibilidade, as teclas não são enviadas; o texto continua sendo acrescentado.",
         "notSaved": "Não salvo; continua valendo o último valor válido.",
         "preview": {
@@ -732,7 +732,12 @@
           "unknownKey": "Tecla desconhecida {{key}}",
           "unclosedKey": "Uma { precisa da sua }; escreva \\{ para uma chave",
           "unmatchedBrace": "Uma } precisa da sua {; escreva \\} para uma chave",
-          "textAfterKey": "Depois de uma tecla só podem vir outras teclas"
+          "textAfterKey": "Depois de uma tecla só podem vir outras teclas",
+          "foreignKeyName": {
+            "macos": "No Mac, esta tecla se chama {{name}}: {{key}}",
+            "windows": "No Windows, esta tecla se chama {{name}}: {{key}}",
+            "linux": "No Linux, esta tecla se chama {{name}}: {{key}}"
+          }
         }
       },
       "translateToEnglish": {

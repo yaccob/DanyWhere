@@ -714,7 +714,7 @@
       },
       "appendText": {
         "title": "Afegeix al final",
-        "description": "S'afegeix després de cada dictat d'aquest perfil. Text tal com s'escriu; \\s espai, \\n salt de línia, \\t tabulació, \\\\ barra inversa, \\{ i \\} claus. Al final, pulsacions de tecles: {Enter}, {Tab}, {Shift+Enter}, {Cmd+Enter} (Super+Enter a Windows i Linux), {Ctrl+Enter}. Les tecles només s'envien quan s'enganxa el text.",
+        "description": "S'afegeix després de cada dictat d'aquest perfil. Text tal com s'escriu; \\s espai, \\n salt de línia, \\t tabulació, \\\\ barra inversa, \\{ i \\} claus. Al final, pulsacions de tecles: {Enter}, {Tab}, {Shift+Enter}, {{cmdEnter}}, {Ctrl+Enter}. Les tecles només s'envien quan s'enganxa el text.",
         "noAccessibility": "Sense accessibilitat no s'envien tecles; el text s'afegeix igualment.",
         "notSaved": "No desat; continua vigent l'últim valor vàlid.",
         "preview": {
@@ -732,7 +732,12 @@
           "unknownKey": "Tecla desconeguda {{key}}",
           "unclosedKey": "Una { necessita la seva }; escriu \\{ per a una clau",
           "unmatchedBrace": "Una } necessita la seva {; escriu \\} per a una clau",
-          "textAfterKey": "Després d'una tecla només poden venir altres tecles"
+          "textAfterKey": "Després d'una tecla només poden venir altres tecles",
+          "foreignKeyName": {
+            "macos": "Al Mac aquesta tecla es diu {{name}}: {{key}}",
+            "windows": "A Windows aquesta tecla es diu {{name}}: {{key}}",
+            "linux": "A Linux aquesta tecla es diu {{name}}: {{key}}"
+          }
         }
       },
       "translateToEnglish": {

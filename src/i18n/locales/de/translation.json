@@ -714,7 +714,7 @@
       },
       "appendText": {
         "title": "Anhängen",
-        "description": "Wird nach jedem Diktat dieses Profils angehängt. Text wie geschrieben; \\s Leerzeichen, \\n Zeilenumbruch, \\t Tabulator, \\\\ Backslash, \\{ und \\} geschweifte Klammern. Am Ende Tastendrücke: {Enter}, {Tab}, {Shift+Enter}, {Cmd+Enter} (Super+Enter unter Windows und Linux), {Ctrl+Enter}. Tastendrücke werden nur gesendet, wenn der Text eingefügt wird.",
+        "description": "Wird nach jedem Diktat dieses Profils angehängt. Text wie geschrieben; \\s Leerzeichen, \\n Zeilenumbruch, \\t Tabulator, \\\\ Backslash, \\{ und \\} geschweifte Klammern. Am Ende Tastendrücke: {Enter}, {Tab}, {Shift+Enter}, {{cmdEnter}}, {Ctrl+Enter}. Tastendrücke werden nur gesendet, wenn der Text eingefügt wird.",
         "noAccessibility": "Ohne Bedienungshilfen werden keine Tastendrücke gesendet; der Text wird trotzdem angehängt.",
         "notSaved": "Nicht gespeichert; es gilt weiter der letzte gültige Wert.",
         "preview": {
@@ -732,7 +732,12 @@
           "unknownKey": "Unbekannter Tastendruck {{key}}",
           "unclosedKey": "Zu einer { fehlt die }; \\{ schreibt eine Klammer",
           "unmatchedBrace": "Zu einer } fehlt die {; \\} schreibt eine Klammer",
-          "textAfterKey": "Nach einem Tastendruck dürfen nur noch Tastendrücke folgen"
+          "textAfterKey": "Nach einem Tastendruck dürfen nur noch Tastendrücke folgen",
+          "foreignKeyName": {
+            "macos": "Auf dem Mac heißt diese Taste {{name}}: {{key}}",
+            "windows": "Unter Windows heißt diese Taste {{name}}: {{key}}",
+            "linux": "Unter Linux heißt diese Taste {{name}}: {{key}}"
+          }
         }
       },
       "translateToEnglish": {

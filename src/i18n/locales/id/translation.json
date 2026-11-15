@@ -714,7 +714,7 @@
       },
       "appendText": {
         "title": "Tambahkan di akhir",
-        "description": "Ditambahkan setelah setiap dikte di profil ini. Teks seperti ditulis; \\s spasi, \\n baris baru, \\t tab, \\\\ garis miring terbalik, \\{ dan \\} kurung kurawal. Di akhir, penekanan tombol: {Enter}, {Tab}, {Shift+Enter}, {Cmd+Enter} (Super+Enter di Windows dan Linux), {Ctrl+Enter}. Tombol hanya dikirim saat teks ditempel.",
+        "description": "Ditambahkan setelah setiap dikte di profil ini. Teks seperti ditulis; \\s spasi, \\n baris baru, \\t tab, \\\\ garis miring terbalik, \\{ dan \\} kurung kurawal. Di akhir, penekanan tombol: {Enter}, {Tab}, {Shift+Enter}, {{cmdEnter}}, {Ctrl+Enter}. Tombol hanya dikirim saat teks ditempel.",
         "noAccessibility": "Tanpa Aksesibilitas, tombol tidak dikirim; teks tetap ditambahkan.",
         "notSaved": "Tidak disimpan; nilai valid terakhir tetap berlaku.",
         "preview": {
@@ -732,7 +732,12 @@
           "unknownKey": "Tombol tidak dikenal {{key}}",
           "unclosedKey": "{ belum ditutup dengan }; \\{ menulis kurung",
           "unmatchedBrace": "} tidak punya {; \\} menulis kurung",
-          "textAfterKey": "Setelah penekanan tombol hanya boleh ada penekanan tombol"
+          "textAfterKey": "Setelah penekanan tombol hanya boleh ada penekanan tombol",
+          "foreignKeyName": {
+            "macos": "Di Mac, tombol ini bernama {{name}}: {{key}}",
+            "windows": "Di Windows, tombol ini bernama {{name}}: {{key}}",
+            "linux": "Di Linux, tombol ini bernama {{name}}: {{key}}"
+          }
         }
       },
       "translateToEnglish": {

@@ -2366,6 +2366,44 @@ mod tests {
         assert_eq!(settings.profiles[0].values.append_text, r"\s{Ctrl+Enter}");
     }
 
+    /// DanyWhere: a store written on another system (or by hand) gets this
+    /// system's key names in "Append" when it is read, in the flat value and
+    /// in every profile, so none of them turns invalid by moving.
+    #[test]
+    fn reading_the_store_gives_append_the_systems_key_names() {
+        use crate::append_text::{parse, Append, AppendKey, KeyPlatform};
+        // Every system's name of the key, so at least two are foreign here.
+        let written = "{Cmd+Enter}{Win+Enter}{Super+Enter}{Return}";
+        let mut settings = get_default_settings();
+        settings.append_text = written.to_string();
+        crate::profiles::ensure_profiles(&mut settings);
+        let raw = serde_json::to_value(&settings).expect("serializes");
+        let mut settings: AppSettings = serde_json::from_value(raw.clone()).expect("parses");
+        assert!(apply_settings_migrations(&mut settings, &raw));
+        for value in [
+            &settings.append_text,
+            &settings.profiles[0].values.append_text,
+        ] {
+            let parts = parse(value, KeyPlatform::current())
+                .unwrap_or_else(|e| panic!("{value} is invalid here: {e}"));
+            assert_eq!(
+                Append::from_parts(&parts).keys,
+                vec![
+                    AppendKey::CmdEnter,
+                    AppendKey::CmdEnter,
+                    AppendKey::CmdEnter,
+                    AppendKey::Enter
+                ],
+                "{value}"
+            );
+        }
+
+        // Once stored, the next read changes nothing.
+        let raw = serde_json::to_value(&settings).expect("serializes");
+        let mut again: AppSettings = serde_json::from_value(raw.clone()).expect("parses");
+        assert!(!apply_settings_migrations(&mut again, &raw));
+    }
+
     #[test]
     fn legacy_none_overlay_position_deserializes_to_bottom() {
         // A persisted "none" must not fail the whole settings load; the serde

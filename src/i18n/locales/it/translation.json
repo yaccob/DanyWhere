@@ -714,7 +714,7 @@
       },
       "appendText": {
         "title": "Aggiungi alla fine",
-        "description": "Aggiunto dopo ogni dettatura di questo profilo. Testo così com'è; \\s spazio, \\n a capo, \\t tabulazione, \\\\ barra rovesciata, \\{ e \\} parentesi graffe. Alla fine, pressioni di tasti: {Enter}, {Tab}, {Shift+Enter}, {Cmd+Enter} (Super+Enter su Windows e Linux), {Ctrl+Enter}. I tasti vengono inviati solo quando il testo viene incollato.",
+        "description": "Aggiunto dopo ogni dettatura di questo profilo. Testo così com'è; \\s spazio, \\n a capo, \\t tabulazione, \\\\ barra rovesciata, \\{ e \\} parentesi graffe. Alla fine, pressioni di tasti: {Enter}, {Tab}, {Shift+Enter}, {{cmdEnter}}, {Ctrl+Enter}. I tasti vengono inviati solo quando il testo viene incollato.",
         "noAccessibility": "Senza Accessibilità i tasti non vengono inviati; il testo viene comunque aggiunto.",
         "notSaved": "Non salvato; resta in vigore l'ultimo valore valido.",
         "preview": {
@@ -732,7 +732,12 @@
           "unknownKey": "Tasto sconosciuto {{key}}",
           "unclosedKey": "Una { richiede la sua }; scrivi \\{ per una graffa",
           "unmatchedBrace": "Una } richiede la sua {; scrivi \\} per una graffa",
-          "textAfterKey": "Dopo un tasto possono seguire solo altri tasti"
+          "textAfterKey": "Dopo un tasto possono seguire solo altri tasti",
+          "foreignKeyName": {
+            "macos": "Su Mac questo tasto si chiama {{name}}: {{key}}",
+            "windows": "Su Windows questo tasto si chiama {{name}}: {{key}}",
+            "linux": "Su Linux questo tasto si chiama {{name}}: {{key}}"
+          }
         }
       },
       "translateToEnglish": {
