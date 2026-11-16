@@ -4,9 +4,20 @@ Planned work on DanyWhere, roughly in priority order within each section. Items 
 
 ## Features and improvements
 
-### Tray menu: History of its own, no "Copy Last Transcript"
+### Tray menu and main window: DanyWhere as a normal application
 
 **Idea (user, 2026-11-16; next after 0.2.0):** the History is not a setting, yet the tray menu reaches it only through "Settings...". It should get a menu item of its own, or the window should open on the History and offer a button to the settings there. The tray's "Copy Last Transcript" can go, since the shortcut (⌃⇧C, Alt+Shift+C elsewhere) does the same.
+
+**Idea (user, 2026-11-16, later; noted for later, not to be started yet):** this is a larger topic than the tray menu. The main window, which would then hold the History, should behave like a normal application rather than a tray utility that only has settings, and the settings would be opened from within that application.
+
+**Claude's ideas (not decided):**
+
+- The window opens on the History as its home. The settings move out of the History's sidebar into a place of their own: on macOS a separate Settings window behind ⌘, and "DanyWhere → Settings…", as Mac applications do; on Windows and Linux the same window, or a section reached from the window's foot.
+- A real menu bar on macOS: DanyWhere (About, Settings…, Check for Updates, Quit), Edit (editing History texts needs it anyway), View (e.g. search with ⌘F), Window and Help. Windows and Linux get the same commands in the window and the tray.
+- The Dock icon: today it appears only while the window is open and goes away when the window is closed (activation policy `Accessory`). A setting "Show in Dock" (always / only while the window is open) would let DanyWhere be reached with ⌘Tab like any application; the tray stays for status and quick actions.
+- What closing the window and ⌘Q do, to be decided with this: today closing only hides the window and DanyWhere stays in the tray. Dictation keeps working in the background either way.
+- The tray menu shrinks to status, profile, "Open DanyWhere" (the History), "Settings…", updates and quit; "Copy Last Transcript" goes.
+- The window keeps its size, position and the page last open.
 
 ### Profiles per application: decide where the text goes, not where the recording starts
 
@@ -116,7 +127,7 @@ Each profile has its own prompt list with one prompt selected, as the post-proce
 
 **Done (2026-11-15, ships with 0.2.0), with Claude's refinements as the user approved them:** every History entry is a stack of versions, the transcription at the bottom and each version made from the one below it, each remembering its steps (AI or user, time, the prompt's name when known). A click into the text or the pencil edits the shown version inside its box; "Save" changes it, "Save as New Version" adds one on top; the default is highlighted and on ⌘↩ ("Save" on a version the user changed last, else a new version; the transcription itself is never changed). The wand post-processes the top version into a new one; its menu replaces the top version or redoes it from the version below (only on a version the AI made). Editing a lower version, going back to one, redoing over the user's own changes and re-transcribing ask first when text would be lost. A collapsed track under the text lists the versions, shows one on a click and goes back to it. The search covers every version; the track marks those that match, and an entry shows its topmost matching version during a search unless the user picked one. Copying, pasting again, the tray and the context take the top version. Existing entries keep their texts: while the new column `versions` is empty the stack is derived from the former correction fields; a transcription correction the post-processing wasn't made from is left out. Re-transcribing starts the stack anew. The texts sit in boxes as tall as their text up to 15 lines for the newest entry and 4 for the others; they scroll where the pointer is, and dragging the grip at the bottom sets the height for every box of that kind (double-click: back to the default). "Show more", "Show original", "Delete post-processing" and "Undo correction" are gone.
 
-**Follow-ups after the user tried it (2026-11-15, ships with 0.2.0):** every action works on the version the user sees, the "current version": the wand on a lower version first asks, deletes the versions above it and then post-processes it. The strings use only "current", "previous" and "new version" in all locales ("newest" is gone). Search matches are a solid petrol, the selected sidebar item's colour with white text in dark mode and `#3999a7` with dark text in light mode, instead of a faint 25 % tint; the shown version chip in the track gets a ring so it stays distinguishable from a match. Open: the user finds "Save" next to "Save as New Version" confusing; the History star (which keeps a recording beyond the storage limit) needs clearer wording.
+**Follow-ups after the user tried it (2026-11-15, ships with 0.2.0):** every action works on the version the user sees, the "current version": the wand on a lower version first asks, deletes the versions above it and then post-processes it. The strings use only "current", "previous" and "new version" in all locales ("newest" is gone). Search matches are a solid petrol, the selected sidebar item's colour with white text in dark mode and `#3999a7` with dark text in light mode, instead of a faint 25 % tint; the shown version chip in the track gets a ring so it stays distinguishable from a match. "Save" next to "Save as New Version", which the user first found confusing, is clear enough as it is (user, 2026-11-16): nothing to change. Open: the History star (which keeps a recording beyond the storage limit) needs clearer wording.
 
 ### Restyle without a rebuild: a theme file
 
