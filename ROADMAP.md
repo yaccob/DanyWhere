@@ -37,6 +37,12 @@ Planned work on DanyWhere, roughly in priority order within each section. Items 
 
 **To check first (Claude):** whether the text box can be reached and opened for editing from the keyboard (Tab, then Enter or Space) without the pencil; if not, the box needs that before the pencil goes. Related open point: a double-click on a word starts editing at the first click, so selecting a word to copy it opens the editor.
 
+### README: rework "What DanyWhere adds to Handy"
+
+**Idea (user, 2026-11-16; one of the next steps, soon):** the README's list needs a rework. Its last point, "Installs next to Handy", is true but nothing DanyWhere adds to Handy (Claude's idea: move it to "Install"). And important features built since are missing.
+
+**Missing (Claude's list from the done items here, to be weighed with the user):** profiles and profiles per application, with the profile following where the text goes; the History with versions, search and post-processing on demand; context from earlier dictations of the same window; the fixed frame around every post-processing prompt and the effort per profile; "Append" with a key press; the sound when everything is done; the overlay on the screen being worked on; the theme file; "What's new" after an update. To check: whether the existing points are still right, e.g. "Decide on post-processing at the end".
+
 ### Post-processing: a fixed frame around every prompt
 
 **Idea (user, 2026-11-14; next):** the part of a prompt that tells the model what it gets — a speech-recognition transcript between `<transcript>` tags, to be processed rather than answered — should be sent by DanyWhere itself, so a prompt only says what to do with the text. Today every prompt has to contain it, and a prompt that gets it wrong produces nonsense.
