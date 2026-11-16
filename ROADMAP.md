@@ -43,6 +43,8 @@ Planned work on DanyWhere, roughly in priority order within each section. Items 
 
 **Missing (Claude's list from the done items here, to be weighed with the user):** profiles and profiles per application, with the profile following where the text goes; the History with versions, search and post-processing on demand; context from earlier dictations of the same window; the fixed frame around every post-processing prompt and the effort per profile; "Append" with a key press; the sound when everything is done; the overlay on the screen being worked on; the theme file; "What's new" after an update. To check: whether the existing points are still right, e.g. "Decide on post-processing at the end".
 
+**Done (2026-11-16), as Claude proposed and the user approved:** 17 points under seven headings (profiles, post-processing, History, without Accessibility, inserting and copying, speech models and word lists, also new), all from the done items here; "Decide on post-processing at the end" is still in the code and stays. "Installs next to Handy" opens "Install" as one sentence, and the introduction says "with additions" instead of "with a few additions".
+
 ### Post-processing: a fixed frame around every prompt
 
 **Idea (user, 2026-11-14; next):** the part of a prompt that tells the model what it gets — a speech-recognition transcript between `<transcript>` tags, to be processed rather than answered — should be sent by DanyWhere itself, so a prompt only says what to do with the text. Today every prompt has to contain it, and a prompt that gets it wrong produces nonsense.

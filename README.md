@@ -2,7 +2,7 @@
 
 **Dictate anywhere.** DanyWhere is a personal distribution of [Handy](https://github.com/cjpais/Handy), the free, open-source, offline speech-to-text app by CJ Pais and contributors.
 
-The hard problems — local speech recognition, voice activity detection, global shortcuts and pasting into any app on three platforms — are solved in Handy. DanyWhere admires that work and builds on it with a few additions its author needs in daily use, for example running on managed Macs where the Accessibility permission is blocked. Anything here that is useful to Handy is happily offered upstream.
+The hard problems — local speech recognition, voice activity detection, global shortcuts and pasting into any app on three platforms — are solved in Handy. DanyWhere admires that work and builds on it with additions its author needs in daily use, for example running on managed Macs where the Accessibility permission is blocked. Anything here that is useful to Handy is happily offered upstream.
 
 - **Not affiliated with or endorsed by Handy or CJ Pais.** The Handy name, logo and icon belong to the Handy project; DanyWhere uses its own branding.
 - **Report DanyWhere problems in this repository**, not in Handy's issue tracker.
@@ -13,17 +13,49 @@ The hard problems — local speech recognition, voice activity detection, global
 
 ## What DanyWhere adds to Handy
 
-- **Works without the Accessibility permission (macOS).** On managed Macs where this permission is blocked, choose "Continue without Accessibility" during setup: a dictation waits in DanyWhere until you insert it with Control+Shift+V or a second press of the dictation shortcut, in apps that support macOS services, and your clipboard stays as it was. Control+Shift+C puts it on the clipboard instead, for apps where inserting doesn't work. Shortcuts with the fn key are not available in this mode.
-- **Paste the last transcript again.** Control+Shift+V (Alt+Shift+V on Windows and Linux) puts the most recent transcript where the cursor is now, for example after a dictation went nowhere because no text field had focus.
-- **A small model selection for laptops.** Six models that are fast enough for dictation on a MacBook: Parakeet Ultra (25 European languages), Whisper large-v3-turbo (100 languages), Canary 1B v2 (translates to English), Parakeet unified EN 0.6B (English with live preview), Whisper small and Canary 180M flash. Setup recommends one for the languages you speak and starts downloading it while you grant permissions. Models and the language detector some of them use download from DanyWhere's own mirror, [yaccob/DanyWhere-models](https://github.com/yaccob/DanyWhere-models), with Hugging Face as a fallback, and every file is checked against its SHA-256 hash.
-- **A long history that stays small.** Recordings are stored as Opus, about 12 times smaller than WAV, and a storage limit (500 MB by default, about 54 hours of dictation, or unlimited) replaces the count of five recent entries. When old recordings are removed, their transcripts stay in the history.
-- **Word lists per topic.** The custom words are a global word list that always applies. Named additional lists, for example one per project, can be switched on one at a time in the settings, from the tray menu or with Control+Shift+L (Alt+Shift+L on Windows and Linux); their words go to the model first.
+### Profiles
+
+- **Profiles for different kinds of dictation.** A profile holds everything that decides how a dictation is processed: speech model, languages, post-processing with its own prompts, filler words, word lists, context and what is appended. Shortcuts, microphone, API keys and the interface are the same in every profile. Switch profiles at the top of the sidebar or in the tray, and export a profile to a file to import it elsewhere; its API key is encrypted with a password you choose.
+- **A profile per application.** Give a profile the applications it is for, for example one for your terminal and another for your messenger. The application in front when the recording ends decides, and when the text later goes into another application, DanyWhere redoes only what that application's profile does differently. Control+Shift+A (Alt+Shift+A on Windows) switches this off and on. On Windows you type the program names; Linux can't tell the application in front yet.
+
+### Post-processing
+
+- **Post-processing that works on your text instead of answering it.** DanyWhere tells the model itself that it gets a speech-recognition transcript to work on, not a question to answer, that its language stays, and that misheard words are to be corrected where the context makes clear what was said. A prompt only says what to do with the text. **Effort**, next to the model, chooses how much the model thinks.
+- **Earlier dictations as context.** While **Send Context** is on, a dictation with post-processing sends your earlier dictations from the same window along, so the model knows what the conversation is about. It starts off; turn it on in the tray or with Control+Shift+X (Alt+Shift+X on Windows and Linux).
 - **Decide on post-processing at the end.** In toggle mode, the post-processing shortcut also stops a recording that was started with the plain shortcut, and the transcript is post-processed.
-- **Installs next to Handy.** DanyWhere has its own app name, settings, process name (`danywhere`) and update channel, so both apps can be installed at the same time. Give them different shortcuts.
+
+### History
+
+- **Every edit kept as a version.** Each entry is a stack of versions: the transcription at the bottom, and every edit, yours or the post-processing's, on top of the version it was made from. Click into the text to edit it; the wand post-processes an entry again, long after the dictation too.
+- **Search the whole History,** every version included, with match case, whole words and regular expressions, and filter by app, window title or file name.
+- **A long history that stays small.** Recordings are stored as Opus, about 12 times smaller than WAV, and a storage limit (500 MB by default, about 54 hours of dictation, or unlimited) replaces the count of five recent entries. When old recordings are removed, their transcripts stay in the History; a star keeps a recording permanently.
+
+### Without the Accessibility permission (macOS)
+
+- **Works where this permission is blocked.** On managed Macs, choose "Continue without Accessibility" during setup: a dictation waits in DanyWhere until you insert it with Control+Shift+V or a second press of the dictation shortcut, in apps that support macOS services, and your clipboard stays as it was. Control+Shift+C puts it on the clipboard instead, for apps where inserting doesn't work. Shortcuts with the fn key are not available in this mode.
+
+### Inserting and copying
+
+- **Paste or copy the last transcript again.** Control+Shift+V (Alt+Shift+V on Windows and Linux) puts the most recent transcript where the cursor is now, for example after a dictation went nowhere because no text field had focus. Control+Shift+C (Alt+Shift+C) puts it on the clipboard.
+- **Append text and a key press.** Each profile can add text after every dictation, such as a space or a new line, and then a key press such as Enter to send a message right away.
+
+### Speech models and word lists
+
+- **A small model selection for laptops.** Six models that are fast enough for dictation on a MacBook: Parakeet Ultra (25 European languages), Whisper large-v3-turbo (100 languages), Canary 1B v2 (translates to English), Parakeet unified EN 0.6B (English with live preview), Whisper small and Canary 180M flash. Setup recommends one for the languages you speak and starts downloading it while you grant permissions. Models and the language detector some of them use download from DanyWhere's own mirror, [yaccob/DanyWhere-models](https://github.com/yaccob/DanyWhere-models), with Hugging Face as a fallback, and every file is checked against its SHA-256 hash.
+- **Word lists per topic.** A global word list always applies, each profile has a list of its own, and named additional lists, for example one per project, can be switched on one at a time in the settings, from the tray or with Control+Shift+L (Alt+Shift+L on Windows and Linux); their words go to the model first.
+
+### Also new
+
+- **A sound when everything is done,** post-processing included, so you know when to look back.
+- **The overlay on the screen you work on**, the one with the window in front, with or without Accessibility (macOS and Windows).
+- **Your own colours** in a `theme.css` next to the settings, applied without a restart (Debug → Open Theme File).
+- **What's new after an update,** in English or German.
 
 Everything else works as in Handy.
 
 ## Install
+
+DanyWhere has its own app name, settings, process name (`danywhere`) and update channel, so it can be installed next to Handy; give the two apps different shortcuts.
 
 The download links below are for DanyWhere 0.2.1; all releases are on this repository's [releases](https://github.com/yaccob/DanyWhere/releases) page. DanyWhere checks the releases for updates on every platform; updates are signed with DanyWhere's own key.
 
