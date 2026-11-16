@@ -1,8 +1,10 @@
-//! DanyWhere: which window a dictation starts in, for context from earlier
-//! dictations in the same window (`dictation_context`).
+//! DanyWhere: which window a dictation ends in, for context from earlier
+//! dictations in the same window (`dictation_context`). Its text goes there,
+//! and its profile is chosen by that window's app too (`app_profiles`, user,
+//! 2026-11-16).
 //!
-//! When a recording starts, a background thread asks for the frontmost app
-//! and the title of its window, with a short time limit, so the start of the
+//! When a recording ends, a background thread asks for the frontmost app
+//! and the title of its window, with a short time limit, so the end of the
 //! recording never waits for it:
 //!
 //! - macOS with Accessibility: the focused window's title, read through the
@@ -195,7 +197,7 @@ pub fn begin_capture(app: &AppHandle, session: u64) {
         .ok();
 }
 
-/// The window captured when the recording `session` started.
+/// The window captured when the recording `session` ended.
 pub fn take_capture(session: u64) -> Option<CapturedWindow> {
     SLOT.take(session, CAPTURE_LIMIT)
 }

@@ -11,7 +11,7 @@
 //! often works on several things at once, and a wrong context is worse than
 //! none (decided with the user on 2026-11-12).
 //!
-//! The window is captured when a recording starts (`window_capture`) and
+//! The window is captured when a recording ends (`window_capture`) and
 //! stored on the History entry, so re-processing an entry later uses the
 //! entries made before it in the same window. Every entry that went out as
 //! context is marked in the History, because an entry that was never

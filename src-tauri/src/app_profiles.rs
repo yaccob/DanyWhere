@@ -6,7 +6,11 @@
 //!
 //! The values of such a dictation are held here from the start of its
 //! recording until its pipeline finishes or is cancelled; the code on the
-//! dictation path reads them through [`dictation_settings`].
+//! dictation path reads them through [`dictation_settings`]. The profile is
+//! chosen when the recording starts, so its model loads and the pills name
+//! it, and again when it ends ([`settle_dictation`]), by the application in
+//! front then, which is where its text goes (user, 2026-11-16). Where the
+//! text is inserted later, `profile_redo` looks once more.
 
 use std::sync::Mutex;
 
@@ -304,6 +308,118 @@ pub fn begin_dictation(app: &AppHandle) -> Option<OverlayProfile> {
     shown
 }
 
+/// The profile a dictation that started with profile `start_id` ends with,
+/// chosen by the application in front when its recording ends
+/// (`frontmost_at_end`), as the user decided on 2026-11-16: that is where
+/// its text goes. `None` when it stays with `start_id`: choosing by
+/// application is off or does nothing, the application is unknown, or it
+/// gets the same profile.
+pub fn profile_at_end(
+    settings: &AppSettings,
+    start_id: &str,
+    frontmost_at_end: Option<&str>,
+) -> Option<String> {
+    if !(settings.profile_auto_by_app && has_assignments(settings)) {
+        return None;
+    }
+    let end_id = profile_for_dictation(
+        &settings.profiles,
+        &settings.active_profile_id,
+        true,
+        Some(frontmost_at_end?),
+    );
+    (end_id != start_id).then(|| end_id.to_string())
+}
+
+/// What changed when the recording ended in an application with another
+/// profile than the one it started in.
+pub struct EndChange {
+    /// What the dictation's pills show of its profile from now on.
+    pub shown: Option<OverlayProfile>,
+    /// The transcription runs with other values (model, languages, word
+    /// lists, filler words): a live decode of the recording no longer fits.
+    pub transcription_differs: bool,
+}
+
+/// Chooses the dictation's profile again when its recording ends, from the
+/// application in front then (the one a service call came from, without
+/// Accessibility). The start's profile had its model preloaded and its
+/// pills shown; from here on the end's profile applies. `None` when it
+/// stays.
+pub fn settle_dictation(app: &AppHandle) -> Option<EndChange> {
+    let settings = settings::get_settings(app);
+    if !(settings.profile_auto_by_app && has_assignments(&settings)) {
+        return None;
+    }
+    let frontmost = crate::window_capture::frontmost_app().map(|(id, _)| id);
+    let start_id = dictation_profile_id().unwrap_or_else(|| settings.active_profile_id.clone());
+    let end_id = profile_at_end(&settings, &start_id, frontmost.as_deref())?;
+    let end_values = crate::profile_redo::values_of(&settings, &end_id)?;
+    let start_values =
+        dictation_values().unwrap_or_else(|| ProfileValues::from_settings(&settings));
+    let transcription_differs =
+        crate::profile_redo::transcription_differs(&settings, &start_values, &end_values);
+    log::info!(
+        "The recording ends in {}: profile {end_id} instead of {start_id}{}",
+        frontmost.as_deref().unwrap_or("?"),
+        if transcription_differs {
+            ", transcribed with its values"
+        } else {
+            ""
+        }
+    );
+    *dictation_lock() = (end_id != settings.active_profile_id).then(|| DictationProfile {
+        id: end_id.clone(),
+        values: end_values,
+    });
+    Some(EndChange {
+        shown: dictation_overlay_profile(
+            &settings,
+            &end_id,
+            &crate::profiles::default_profile_name(&settings),
+        ),
+        transcription_differs,
+    })
+}
+
+thread_local! {
+    /// Profile values a redo (`profile_redo`) runs with on its own thread,
+    /// over whatever dictation is in progress.
+    static VALUES_HERE: std::cell::RefCell<Option<ProfileValues>> =
+        const { std::cell::RefCell::new(None) };
+}
+
+/// Runs `run` with `values` as the dictation's values on this thread only
+/// (see [`dictation_values`]): a redo for another profile reads them through
+/// the same code a dictation does, while a dictation on another thread keeps
+/// its own.
+pub fn with_values_here<R>(values: ProfileValues, run: impl FnOnce() -> R) -> R {
+    /// Puts back what this thread had before, also when `run` panics.
+    struct Restore(Option<ProfileValues>);
+    impl Drop for Restore {
+        fn drop(&mut self) {
+            let previous = self.0.take();
+            VALUES_HERE.with(|here| *here.borrow_mut() = previous);
+        }
+    }
+    let previous = VALUES_HERE.with(|here| here.borrow_mut().replace(values));
+    let _restore = Restore(previous);
+    run()
+}
+
+/// The profile the dictation in progress runs with and its values, as they
+/// are now (its "Send Context" may have been turned over while recording).
+pub fn dictation_profile_and_values(app: &AppHandle) -> (String, ProfileValues) {
+    if let Some(profile) = dictation_lock().as_ref() {
+        return (profile.id.clone(), profile.values.clone());
+    }
+    let settings = settings::get_settings(app);
+    (
+        settings.active_profile_id.clone(),
+        ProfileValues::from_settings(&settings),
+    )
+}
+
 /// The id of the profile the dictation in progress uses, when it isn't the
 /// active one.
 pub fn dictation_profile_id() -> Option<String> {
@@ -338,8 +454,12 @@ pub fn end_dictation() {
 }
 
 /// The values of the dictation in progress, when its profile isn't the active
-/// one.
+/// one; on a thread that redoes a dictation, the values it redoes it with
+/// ([`with_values_here`]).
 pub fn dictation_values() -> Option<ProfileValues> {
+    if let Some(values) = VALUES_HERE.with(|here| here.borrow().clone()) {
+        return Some(values);
+    }
     dictation_lock()
         .as_ref()
         .map(|profile| profile.values.clone())
@@ -714,6 +834,67 @@ mod tests {
             serde_json::to_value(None::<OverlayProfile>).unwrap(),
             serde_json::Value::Null
         );
+    }
+
+    #[test]
+    fn the_app_in_front_at_the_end_chooses_the_profile() {
+        let settings = with_mail_profile();
+        assert_eq!(
+            profile_at_end(&settings, DEFAULT_PROFILE_ID, Some("com.apple.mail")),
+            Some("mail".to_string())
+        );
+        assert_eq!(
+            profile_at_end(&settings, "mail", Some("com.apple.TextEdit")),
+            Some(DEFAULT_PROFILE_ID.to_string())
+        );
+    }
+
+    #[test]
+    fn the_profile_stays_when_the_end_gives_the_same_or_nothing_to_go_by() {
+        let mut settings = with_mail_profile();
+        assert_eq!(
+            profile_at_end(&settings, "mail", Some("com.apple.mail")),
+            None
+        );
+        assert_eq!(profile_at_end(&settings, "mail", None), None);
+        toggle_auto(&mut settings);
+        assert_eq!(
+            profile_at_end(&settings, DEFAULT_PROFILE_ID, Some("com.apple.mail")),
+            None
+        );
+        toggle_auto(&mut settings);
+        set_apps(&mut settings, "mail", Vec::new()).unwrap();
+        assert_eq!(
+            profile_at_end(&settings, "mail", Some("com.apple.TextEdit")),
+            None
+        );
+    }
+
+    #[test]
+    fn values_set_for_a_thread_apply_on_that_thread_only() {
+        let settings = with_mail_profile();
+        let mail = settings.profiles[1].values.clone();
+        assert_eq!(dictation_values(), None);
+        let (inside, elsewhere) = with_values_here(mail.clone(), || {
+            (
+                dictation_values(),
+                std::thread::spawn(dictation_values).join().unwrap(),
+            )
+        });
+        assert_eq!(inside, Some(mail.clone()));
+        assert_eq!(elsewhere, None);
+        assert_eq!(dictation_values(), None);
+        // Nested runs restore the outer values.
+        let mut other = mail.clone();
+        other.selected_model = "moonshine".to_string();
+        let (nested, after) = with_values_here(mail.clone(), || {
+            (
+                with_values_here(other.clone(), dictation_values),
+                dictation_values(),
+            )
+        });
+        assert_eq!(nested, Some(other));
+        assert_eq!(after, Some(mail));
     }
 
     #[test]

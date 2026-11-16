@@ -682,6 +682,35 @@ pub(crate) async fn process_transcription_output(
     }
 }
 
+/// DanyWhere: looks at a finished dictation (`entry_id`, the History entry
+/// it was saved as) going into the application in front right away, pasted
+/// or inserted by the service call waiting for it, and redoes it for that
+/// application's profile when needed (`profile_redo::for_insert`). `None`:
+/// it goes as it is, with its own profile's values; as when it is copied
+/// ("Copy Last Transcript" during the dictation) or waits to be inserted.
+fn redo_for_app_in_front(
+    app: &AppHandle,
+    hm: &HistoryManager,
+    entry_id: Option<i64>,
+    session: u64,
+    show: &dyn Fn(crate::profile_redo::Working),
+) -> Option<crate::profile_redo::ForInsert> {
+    let entry_id = entry_id?;
+    if crate::dictation_key_inserts::copies_instead_of_pasting(session)
+        || !crate::delivery::goes_into_app_in_front(
+            &get_settings(app),
+            crate::delivery::INSERT_SERVICE_AVAILABLE,
+            crate::insert_service::call_waiting(),
+        )
+    {
+        return None;
+    }
+    let entry = tauri::async_runtime::block_on(hm.get_entry_by_id(entry_id))
+        .ok()
+        .flatten()?;
+    crate::profile_redo::for_insert(app, &entry, show)
+}
+
 /// DanyWhere: the notice a pasted dictation gets: a failed post-processing,
 /// else a refused effort (the text came, but at the model's default).
 fn pasted_dictation_notice(
@@ -754,10 +783,9 @@ impl ShortcutAction for TranscribeAction {
         }
 
         let binding_id = binding_id.to_string();
-        let session = RECORDING_SESSION.fetch_add(1, Ordering::SeqCst) + 1;
-        // DanyWhere: which window this dictation starts in, for context from
-        // earlier dictations there (`dictation_context`). In the background.
-        crate::window_capture::begin_capture(app, session);
+        // DanyWhere: the dictation's window is captured when its recording
+        // ends (`stop`), as its profile is chosen then.
+        RECORDING_SESSION.fetch_add(1, Ordering::SeqCst);
         let tray_started = Instant::now();
         set_tray_state(app, TrayIconState::Recording);
         let tray_elapsed = tray_started.elapsed();
@@ -922,6 +950,24 @@ impl ShortcutAction for TranscribeAction {
         let tm = Arc::clone(&app.state::<Arc<TranscriptionManager>>());
         let hm = Arc::clone(&app.state::<Arc<HistoryManager>>());
 
+        // DanyWhere: the dictation's profile is chosen again now, by the
+        // application in front when the recording ends, which is where its
+        // text goes (user, 2026-11-16; `app_profiles::settle_dictation`).
+        // The pills name it from here on. A live decode made with the
+        // start's values no longer fits: the recording is transcribed in one
+        // go with the end's values, its model loading meanwhile.
+        let transcribed_with_end_values = match crate::app_profiles::settle_dictation(app) {
+            Some(change) => {
+                crate::overlay::set_dictation_profile(app, change.shown);
+                if change.transcription_differs {
+                    tm.cancel_stream();
+                    tm.initiate_model_load(true);
+                }
+                change.transcription_differs
+            }
+            None => false,
+        };
+
         set_tray_state(app, TrayIconState::Transcribing);
         // Stop should give immediate visual feedback. Live streaming can keep
         // the larger panel, but it still switches from listening to a working
@@ -953,8 +999,14 @@ impl ShortcutAction for TranscribeAction {
         // DanyWhere: and with the profile's "Send Context" whether earlier
         // dictations go along (`send_context`).
         let with_context = crate::send_context::decide_at_stop(app, post_process);
-        // DanyWhere: the recording whose window was captured at its start.
+        // DanyWhere: the window this dictation ends in, for context from
+        // earlier dictations there (`dictation_context`). In the background.
         let context_session = RECORDING_SESSION.load(Ordering::SeqCst);
+        crate::window_capture::begin_capture(app, context_session);
+        // DanyWhere: what it is made with, for redoing it when its text goes
+        // into an application with another profile (`profile_redo`).
+        let (profile_id, profile_values) = crate::app_profiles::dictation_profile_and_values(app);
+        let post_process_requested = self.post_process;
         let cancel_generation = rm.cancel_generation();
 
         tauri::async_runtime::spawn(async move {
@@ -1013,6 +1065,11 @@ impl ShortcutAction for TranscribeAction {
                     // otherwise a batch run of the samples. A cancel is surfaced
                     // as an error, so it never starts a batch run.
                     let transcription_time = Instant::now();
+                    // DanyWhere: the end's model, also when the start's was
+                    // still loading at the end of the recording.
+                    if transcribed_with_end_values {
+                        tm.load_wanted_model_after_current(true);
+                    }
                     let transcription_result = tm.transcribe_recording(samples);
 
                     // Await the saved and verified recording
@@ -1093,6 +1150,7 @@ impl ShortcutAction for TranscribeAction {
                             }
 
                             // Save to history if WAV was saved
+                            let mut saved_entry_id: Option<i64> = None;
                             if wav_saved {
                                 match hm.save_entry(
                                     file_name,
@@ -1102,8 +1160,18 @@ impl ShortcutAction for TranscribeAction {
                                     processed.post_process_prompt.clone(),
                                     language,
                                 ) {
-                                    // DanyWhere: its window and context.
+                                    // DanyWhere: its window and context, and
+                                    // what it was made with.
                                     Ok(entry) => {
+                                        saved_entry_id = Some(entry.id);
+                                        crate::profile_redo::remember(
+                                            crate::profile_redo::MadeWith {
+                                                entry_id: entry.id,
+                                                profile_id,
+                                                values: profile_values,
+                                                post_process_requested,
+                                            },
+                                        );
                                         if let Err(err) = hm.record_entry_context(
                                             entry.id,
                                             window.as_ref(),
@@ -1144,6 +1212,8 @@ impl ShortcutAction for TranscribeAction {
                                 let effort_refused_by =
                                     processed.post_process_effort_refused_by.clone();
                                 let rm_for_paste = Arc::clone(&rm);
+                                let hm_for_paste = Arc::clone(&hm);
+                                let tm_for_paste = Arc::clone(&tm);
                                 // Taken before the paste thread exists, and so
                                 // before the next session can start.
                                 let session = RECORDING_SESSION.load(Ordering::SeqCst);
@@ -1169,6 +1239,58 @@ impl ShortcutAction for TranscribeAction {
                                         // UI while this paste ran.
                                         let owns_ui =
                                             || RECORDING_SESSION.load(Ordering::SeqCst) == session;
+                                        // DanyWhere: the text goes into the
+                                        // application in front now, or the one
+                                        // whose service call waits for it. When
+                                        // that application's profile differs from
+                                        // the dictation's, the dictation is redone
+                                        // for it from the first step that differs,
+                                        // and its "Append" text applies
+                                        // (`profile_redo`).
+                                        let (final_text, dictation_values, post_process_failed, effort_refused_by) =
+                                            match redo_for_app_in_front(
+                                                &ah_clone,
+                                                &hm_for_paste,
+                                                saved_entry_id,
+                                                session,
+                                                &|working| match (use_streaming_overlay, working) {
+                                                    (true, crate::profile_redo::Working::Transcribing) => {
+                                                        tm_for_paste.emit_stream_working(StreamWorkKind::Transcribing)
+                                                    }
+                                                    (true, crate::profile_redo::Working::PostProcessing) => {
+                                                        tm_for_paste.emit_stream_working(StreamWorkKind::Polishing)
+                                                    }
+                                                    (false, crate::profile_redo::Working::Transcribing) => {
+                                                        show_transcribing_overlay(&ah_clone)
+                                                    }
+                                                    (false, crate::profile_redo::Working::PostProcessing) => {
+                                                        show_processing_overlay(&ah_clone)
+                                                    }
+                                                },
+                                            ) {
+                                                Some(insert) => match insert.text {
+                                                    Some(text) => (
+                                                        tauri::async_runtime::block_on(
+                                                            crate::transcription_hook::apply(&ah_clone, text),
+                                                        ),
+                                                        Some(insert.values),
+                                                        insert.post_process_failed,
+                                                        None,
+                                                    ),
+                                                    None => (
+                                                        final_text,
+                                                        Some(insert.values),
+                                                        post_process_failed,
+                                                        effort_refused_by,
+                                                    ),
+                                                },
+                                                None => (
+                                                    final_text,
+                                                    dictation_values,
+                                                    post_process_failed,
+                                                    effort_refused_by,
+                                                ),
+                                            };
                                         // DanyWhere: the "Insert Last Dictation"
                                         // service may be waiting for this text.
                                         let text_for_service = final_text.clone();
