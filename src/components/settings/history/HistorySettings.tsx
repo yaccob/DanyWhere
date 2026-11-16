@@ -78,6 +78,8 @@ import {
 import { Highlighted, HistorySearchBar } from "./HistorySearchBar";
 // DanyWhere: the text in a box that scrolls and can be resized.
 import { HistoryTextBox } from "./HistoryTextBox";
+// DanyWhere: the star's tooltip says it keeps the recording.
+import { keepRecordingTooltip } from "./keepRecording";
 // DanyWhere: the versions of an entry: what shows, the track, ✨'s menu.
 import { confirmLoss } from "./confirmLoss";
 import { PostProcessButton } from "./PostProcessButton";
@@ -988,11 +990,7 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
           <IconButton
             onClick={onToggleSaved}
             active={entry.saved}
-            title={
-              entry.saved
-                ? t("settings.history.unsave")
-                : t("settings.history.save")
-            }
+            title={keepRecordingTooltip(entry.saved, (key) => t(key))}
           >
             <Star
               width={16}

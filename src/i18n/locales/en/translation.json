@@ -951,6 +951,12 @@
       "copyError": "Failed to copy transcription to clipboard.",
       "save": "Save transcription",
       "unsave": "Remove from saved",
+      "keepRecording": {
+        "label": "Keep recording permanently",
+        "description": "Never deleted, even when the storage for recordings is full.",
+        "keptLabel": "Recording kept permanently",
+        "keptDescription": "A click undoes this: it can then be deleted when the storage for recordings is full."
+      },
       "delete": "Delete entry",
       "deleteError": "Failed to delete entry. Please try again.",
       "retranscribe": "Re-transcribe",
@@ -1156,10 +1162,10 @@
       },
       "recordingStorage": {
         "title": "Storage for Recordings",
-        "description": "When all recordings together take more space than this, the oldest are deleted. Their transcripts stay in History. Saved entries and transcribed files are never deleted automatically.",
+        "description": "When all recordings together take more space than this, the oldest are deleted. Their transcripts stay in History. Recordings kept permanently (★) and transcribed files are never deleted automatically.",
         "unlimited": "Unlimited",
         "usage": "Recordings take {{size}}",
-        "protectedOverLimit": "Saved entries and transcribed files alone take {{size}}, more than this limit. Of the other recordings, only the newest is kept."
+        "protectedOverLimit": "Recordings kept permanently and transcribed files alone take {{size}}, more than this limit. Of the other recordings, only the newest is kept."
       },
       "alwaysOnMicrophone": {
         "label": "Always-On Microphone",

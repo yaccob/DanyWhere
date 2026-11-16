@@ -951,6 +951,12 @@
       "copyError": "Kunne ikke kopiere transskriptionen til udklipsholderen.",
       "save": "Gem transskription",
       "unsave": "Fjern fra gemte",
+      "keepRecording": {
+        "label": "Behold optagelsen permanent",
+        "description": "Slettes aldrig, heller ikke når lagerpladsen til optagelser er fuld.",
+        "keptLabel": "Optagelsen beholdes permanent",
+        "keptDescription": "Et klik fortryder dette: Så kan den slettes, når lagerpladsen til optagelser er fuld."
+      },
       "delete": "Slet post",
       "deleteError": "Kunne ikke slette posten. Prøv igen.",
       "retranscribe": "Transskribér igen",
@@ -1156,10 +1162,10 @@
       },
       "recordingStorage": {
         "title": "Lagerplads til optagelser",
-        "description": "Når alle optagelser tilsammen fylder mere end dette, slettes de ældste. Deres transskriptioner bliver i historikken. Gemte poster og transskriberede filer slettes aldrig automatisk.",
+        "description": "Når alle optagelser tilsammen fylder mere end dette, slettes de ældste. Deres transskriptioner bliver i historikken. Permanent beholdte optagelser (★) og transskriberede filer slettes aldrig automatisk.",
         "unlimited": "Ubegrænset",
         "usage": "Optagelser fylder {{size}}",
-        "protectedOverLimit": "Gemte poster og transskriberede filer fylder alene {{size}}, mere end denne grænse. Af de øvrige optagelser beholdes kun den nyeste."
+        "protectedOverLimit": "Permanent beholdte optagelser og transskriberede filer fylder alene {{size}}, mere end denne grænse. Af de øvrige optagelser beholdes kun den nyeste."
       },
       "alwaysOnMicrophone": {
         "label": "Altid aktiv mikrofon",

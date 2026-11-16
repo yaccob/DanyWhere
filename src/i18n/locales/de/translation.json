@@ -951,6 +951,12 @@
       "copyError": "Transkription konnte nicht in die Zwischenablage kopiert werden.",
       "save": "Transkription speichern",
       "unsave": "Aus Gespeicherten entfernen",
+      "keepRecording": {
+        "label": "Aufnahme dauerhaft behalten",
+        "description": "Wird nie gelöscht, auch wenn der Speicherplatz für Aufnahmen voll ist.",
+        "keptLabel": "Aufnahme wird dauerhaft behalten",
+        "keptDescription": "Ein Klick hebt das auf: Dann kann sie gelöscht werden, wenn der Speicherplatz für Aufnahmen voll ist."
+      },
       "delete": "Eintrag löschen",
       "deleteError": "Eintrag konnte nicht gelöscht werden. Bitte versuche es erneut.",
       "retranscribe": "Erneut transkribieren",
@@ -1156,10 +1162,10 @@
       },
       "recordingStorage": {
         "title": "Speicherplatz für Aufnahmen",
-        "description": "Brauchen alle Aufnahmen zusammen mehr Platz, werden die ältesten gelöscht. Ihre Transkripte bleiben im Verlauf. Gespeicherte Einträge und transkribierte Dateien werden nie automatisch gelöscht.",
+        "description": "Brauchen alle Aufnahmen zusammen mehr Platz, werden die ältesten gelöscht. Ihre Transkripte bleiben im Verlauf. Dauerhaft behaltene Aufnahmen (★) und transkribierte Dateien werden nie automatisch gelöscht.",
         "unlimited": "Unbegrenzt",
         "usage": "Aufnahmen belegen {{size}}",
-        "protectedOverLimit": "Gespeicherte Einträge und transkribierte Dateien allein belegen {{size}}, mehr als dieses Limit. Von den übrigen Aufnahmen bleibt nur die neueste erhalten."
+        "protectedOverLimit": "Dauerhaft behaltene Aufnahmen und transkribierte Dateien allein belegen {{size}}, mehr als dieses Limit. Von den übrigen Aufnahmen bleibt nur die neueste erhalten."
       },
       "alwaysOnMicrophone": {
         "label": "Mikrofon immer aktiv",

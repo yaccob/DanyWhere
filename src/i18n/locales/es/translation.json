@@ -951,6 +951,12 @@
       "copyError": "No se pudo copiar la transcripción al portapapeles.",
       "save": "Guardar transcripción",
       "unsave": "Eliminar de guardados",
+      "keepRecording": {
+        "label": "Conservar la grabación de forma permanente",
+        "description": "Nunca se elimina, ni siquiera cuando el espacio para grabaciones está lleno.",
+        "keptLabel": "Grabación conservada de forma permanente",
+        "keptDescription": "Un clic lo deshace: entonces se puede eliminar cuando el espacio para grabaciones esté lleno."
+      },
       "delete": "Eliminar entrada",
       "deleteError": "Error al eliminar la entrada. Por favor, intenta de nuevo.",
       "retranscribe": "Re-transcribir",
@@ -1156,10 +1162,10 @@
       },
       "recordingStorage": {
         "title": "Espacio para grabaciones",
-        "description": "Cuando todas las grabaciones juntas ocupan más espacio que este, se eliminan las más antiguas. Sus transcripciones permanecen en el historial. Las entradas guardadas y los archivos transcritos nunca se eliminan automáticamente.",
+        "description": "Cuando todas las grabaciones juntas ocupan más espacio que este, se eliminan las más antiguas. Sus transcripciones permanecen en el historial. Las grabaciones conservadas de forma permanente (★) y los archivos transcritos nunca se eliminan automáticamente.",
         "unlimited": "Ilimitado",
         "usage": "Las grabaciones ocupan {{size}}",
-        "protectedOverLimit": "Las entradas guardadas y los archivos transcritos ocupan por sí solos {{size}}, más que este límite. De las demás grabaciones solo se conserva la más reciente."
+        "protectedOverLimit": "Las grabaciones conservadas de forma permanente y los archivos transcritos ocupan por sí solos {{size}}, más que este límite. De las demás grabaciones solo se conserva la más reciente."
       },
       "alwaysOnMicrophone": {
         "label": "Micrófono siempre activo",

@@ -951,6 +951,12 @@
       "copyError": "Không thể sao chép bản ghi vào bộ nhớ tạm.",
       "save": "Lưu bản ghi",
       "unsave": "Xóa khỏi đã lưu",
+      "keepRecording": {
+        "label": "Giữ bản ghi âm vĩnh viễn",
+        "description": "Không bao giờ bị xóa, kể cả khi dung lượng cho bản ghi âm đã đầy.",
+        "keptLabel": "Bản ghi âm được giữ vĩnh viễn",
+        "keptDescription": "Nhấp một lần để hủy: khi đó bản ghi âm có thể bị xóa khi dung lượng cho bản ghi âm đã đầy."
+      },
       "delete": "Xóa mục",
       "deleteError": "Không thể xóa mục. Vui lòng thử lại.",
       "retranscribe": "Phiên âm lại",
@@ -1156,10 +1162,10 @@
       },
       "recordingStorage": {
         "title": "Dung lượng cho bản ghi âm",
-        "description": "Khi tất cả bản ghi âm cộng lại chiếm nhiều dung lượng hơn mức này, các bản cũ nhất sẽ bị xóa. Bản chép lời của chúng vẫn còn trong lịch sử. Mục đã lưu và tệp đã chép lời không bao giờ bị xóa tự động.",
+        "description": "Khi tất cả bản ghi âm cộng lại chiếm nhiều dung lượng hơn mức này, các bản cũ nhất sẽ bị xóa. Bản chép lời của chúng vẫn còn trong lịch sử. Bản ghi âm được giữ vĩnh viễn (★) và tệp đã chép lời không bao giờ bị xóa tự động.",
         "unlimited": "Không giới hạn",
         "usage": "Bản ghi âm chiếm {{size}}",
-        "protectedOverLimit": "Chỉ riêng mục đã lưu và tệp đã chép lời đã chiếm {{size}}, vượt quá giới hạn này. Trong các bản ghi âm khác, chỉ bản mới nhất được giữ lại."
+        "protectedOverLimit": "Chỉ riêng bản ghi âm được giữ vĩnh viễn và tệp đã chép lời đã chiếm {{size}}, vượt quá giới hạn này. Trong các bản ghi âm khác, chỉ bản mới nhất được giữ lại."
       },
       "alwaysOnMicrophone": {
         "label": "Micrô luôn bật",

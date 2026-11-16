@@ -951,6 +951,12 @@
       "copyError": "Impossible de copier la transcription dans le presse-papiers.",
       "save": "Enregistrer la transcription",
       "unsave": "Retirer des favoris",
+      "keepRecording": {
+        "label": "Conserver l'enregistrement définitivement",
+        "description": "Jamais supprimé, même quand l'espace pour les enregistrements est plein.",
+        "keptLabel": "Enregistrement conservé définitivement",
+        "keptDescription": "Un clic annule cela : il pourra alors être supprimé quand l'espace pour les enregistrements est plein."
+      },
       "delete": "Supprimer l'entrée",
       "deleteError": "Échec de la suppression de l'entrée. Veuillez réessayer.",
       "retranscribe": "Re-transcrire",
@@ -1156,10 +1162,10 @@
       },
       "recordingStorage": {
         "title": "Espace pour les enregistrements",
-        "description": "Quand l'ensemble des enregistrements dépasse cet espace, les plus anciens sont supprimés. Leurs transcriptions restent dans l'historique. Les entrées enregistrées et les fichiers transcrits ne sont jamais supprimés automatiquement.",
+        "description": "Quand l'ensemble des enregistrements dépasse cet espace, les plus anciens sont supprimés. Leurs transcriptions restent dans l'historique. Les enregistrements conservés définitivement (★) et les fichiers transcrits ne sont jamais supprimés automatiquement.",
         "unlimited": "Illimité",
         "usage": "Les enregistrements occupent {{size}}",
-        "protectedOverLimit": "Les entrées enregistrées et les fichiers transcrits occupent à eux seuls {{size}}, plus que cette limite. Parmi les autres enregistrements, seul le plus récent est conservé."
+        "protectedOverLimit": "Les enregistrements conservés définitivement et les fichiers transcrits occupent à eux seuls {{size}}, plus que cette limite. Parmi les autres enregistrements, seul le plus récent est conservé."
       },
       "alwaysOnMicrophone": {
         "label": "Microphone toujours actif",

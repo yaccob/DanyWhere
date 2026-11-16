@@ -951,6 +951,12 @@
       "copyError": "Transcriptie naar het klembord kopiëren mislukt.",
       "save": "Transcriptie opslaan",
       "unsave": "Verwijderen uit opgeslagen",
+      "keepRecording": {
+        "label": "Opname permanent bewaren",
+        "description": "Wordt nooit verwijderd, ook niet als de opslag voor opnames vol is.",
+        "keptLabel": "Opname wordt permanent bewaard",
+        "keptDescription": "Een klik maakt dit ongedaan: dan kan ze worden verwijderd als de opslag voor opnames vol is."
+      },
       "delete": "Item verwijderen",
       "deleteError": "Item verwijderen mislukt. Probeer het opnieuw.",
       "retranscribe": "Opnieuw transcriberen",
@@ -1156,10 +1162,10 @@
       },
       "recordingStorage": {
         "title": "Opslag voor opnames",
-        "description": "Nemen alle opnames samen meer ruimte in dan dit, dan worden de oudste verwijderd. Hun transcripties blijven in de geschiedenis. Opgeslagen items en getranscribeerde bestanden worden nooit automatisch verwijderd.",
+        "description": "Nemen alle opnames samen meer ruimte in dan dit, dan worden de oudste verwijderd. Hun transcripties blijven in de geschiedenis. Permanent bewaarde opnames (★) en getranscribeerde bestanden worden nooit automatisch verwijderd.",
         "unlimited": "Onbeperkt",
         "usage": "Opnames nemen {{size}} in beslag",
-        "protectedOverLimit": "Opgeslagen items en getranscribeerde bestanden nemen alleen al {{size}} in, meer dan deze limiet. Van de overige opnames blijft alleen de nieuwste bewaard."
+        "protectedOverLimit": "Permanent bewaarde opnames en getranscribeerde bestanden nemen alleen al {{size}} in, meer dan deze limiet. Van de overige opnames blijft alleen de nieuwste bewaard."
       },
       "alwaysOnMicrophone": {
         "label": "Microfoon altijd aan",

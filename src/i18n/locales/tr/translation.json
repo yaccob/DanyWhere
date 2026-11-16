@@ -951,6 +951,12 @@
       "copyError": "Transkripsiyon panoya kopyalanamadı.",
       "save": "Transkripsiyonu kaydet",
       "unsave": "Kaydedilenlerden kaldır",
+      "keepRecording": {
+        "label": "Kaydı kalıcı olarak sakla",
+        "description": "Kayıtlar için depolama dolduğunda bile asla silinmez.",
+        "keptLabel": "Kayıt kalıcı olarak saklanıyor",
+        "keptDescription": "Bir tıklama bunu geri alır: Kayıt, kayıtlar için depolama dolduğunda silinebilir."
+      },
       "delete": "Kaydı sil",
       "deleteError": "Kayıt silinemedi. Lütfen tekrar deneyin.",
       "retranscribe": "Yeniden transkribe et",
@@ -1156,10 +1162,10 @@
       },
       "recordingStorage": {
         "title": "Kayıtlar İçin Depolama",
-        "description": "Tüm kayıtlar birlikte bundan fazla yer kaplarsa en eskileri silinir. Transkripsiyonları geçmişte kalır. Kaydedilen girişler ve transkribe edilen dosyalar hiçbir zaman otomatik olarak silinmez.",
+        "description": "Tüm kayıtlar birlikte bundan fazla yer kaplarsa en eskileri silinir. Transkripsiyonları geçmişte kalır. Kalıcı olarak saklanan kayıtlar (★) ve transkribe edilen dosyalar hiçbir zaman otomatik olarak silinmez.",
         "unlimited": "Sınırsız",
         "usage": "Kayıtlar {{size}} yer kaplıyor",
-        "protectedOverLimit": "Yalnızca kaydedilen girişler ve transkribe edilen dosyalar {{size}} yer kaplıyor, bu sınırdan fazla. Diğer kayıtlardan yalnızca en yenisi saklanır."
+        "protectedOverLimit": "Yalnızca kalıcı olarak saklanan kayıtlar ve transkribe edilen dosyalar {{size}} yer kaplıyor, bu sınırdan fazla. Diğer kayıtlardan yalnızca en yenisi saklanır."
       },
       "alwaysOnMicrophone": {
         "label": "Mikrofon Her Zaman Açık",

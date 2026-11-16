@@ -951,6 +951,12 @@
       "copyError": "Det gick inte att kopiera transkriptionen till urklipp.",
       "save": "Spara transkription",
       "unsave": "Ta bort från sparade",
+      "keepRecording": {
+        "label": "Behåll inspelningen permanent",
+        "description": "Raderas aldrig, inte ens när lagringsutrymmet för inspelningar är fullt.",
+        "keptLabel": "Inspelningen behålls permanent",
+        "keptDescription": "Ett klick ångrar detta: då kan den raderas när lagringsutrymmet för inspelningar är fullt."
+      },
       "delete": "Ta bort post",
       "deleteError": "Misslyckades med att ta bort post. Försök igen.",
       "retranscribe": "Transkribera igen",
@@ -1156,10 +1162,10 @@
       },
       "recordingStorage": {
         "title": "Lagringsutrymme för inspelningar",
-        "description": "När alla inspelningar tillsammans tar mer plats än så raderas de äldsta. Deras transkriptioner finns kvar i historiken. Sparade poster och transkriberade filer raderas aldrig automatiskt.",
+        "description": "När alla inspelningar tillsammans tar mer plats än så raderas de äldsta. Deras transkriptioner finns kvar i historiken. Permanent behållna inspelningar (★) och transkriberade filer raderas aldrig automatiskt.",
         "unlimited": "Obegränsat",
         "usage": "Inspelningar tar {{size}}",
-        "protectedOverLimit": "Sparade poster och transkriberade filer tar ensamma {{size}}, mer än denna gräns. Av de övriga inspelningarna behålls bara den senaste."
+        "protectedOverLimit": "Permanent behållna inspelningar och transkriberade filer tar ensamma {{size}}, mer än denna gräns. Av de övriga inspelningarna behålls bara den senaste."
       },
       "alwaysOnMicrophone": {
         "label": "Alltid påslagen mikrofon",

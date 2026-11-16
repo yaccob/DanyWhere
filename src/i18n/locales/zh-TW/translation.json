@@ -951,6 +951,12 @@
       "copyError": "無法將轉錄複製到剪貼簿。",
       "save": "儲存轉錄",
       "unsave": "從已儲存中移除",
+      "keepRecording": {
+        "label": "永久保留錄音",
+        "description": "即使錄音儲存空間已滿，也不會被刪除。",
+        "keptLabel": "錄音已永久保留",
+        "keptDescription": "按一下可取消：之後錄音儲存空間已滿時，它可能會被刪除。"
+      },
       "delete": "刪除條目",
       "deleteError": "刪除條目失敗，請重試",
       "retranscribe": "重新轉錄",
@@ -1156,10 +1162,10 @@
       },
       "recordingStorage": {
         "title": "錄音儲存空間",
-        "description": "當所有錄音合計超過此容量時，會刪除最舊的錄音。其轉錄會保留在歷史紀錄中。已儲存的項目和已轉錄的檔案永遠不會被自動刪除。",
+        "description": "當所有錄音合計超過此容量時，會刪除最舊的錄音。其轉錄會保留在歷史紀錄中。永久保留的錄音（★）和已轉錄的檔案永遠不會被自動刪除。",
         "unlimited": "不限",
         "usage": "錄音佔用 {{size}}",
-        "protectedOverLimit": "僅已儲存的項目和已轉錄的檔案就佔用了 {{size}}，超過此上限。其他錄音只保留最新的一個。"
+        "protectedOverLimit": "僅永久保留的錄音和已轉錄的檔案就佔用了 {{size}}，超過此上限。其他錄音只保留最新的一個。"
       },
       "alwaysOnMicrophone": {
         "label": "麥克風常開",

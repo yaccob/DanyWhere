@@ -951,6 +951,12 @@
       "copyError": "Gagal menyalin transkripsi ke papan klip.",
       "save": "Simpan transkripsi",
       "unsave": "Hapus dari daftar tersimpan",
+      "keepRecording": {
+        "label": "Simpan rekaman secara permanen",
+        "description": "Tidak pernah dihapus, bahkan saat penyimpanan untuk rekaman penuh.",
+        "keptLabel": "Rekaman disimpan secara permanen",
+        "keptDescription": "Satu klik membatalkannya: rekaman lalu dapat dihapus saat penyimpanan untuk rekaman penuh."
+      },
       "delete": "Hapus entri",
       "deleteError": "Gagal menghapus entri. Silakan coba lagi.",
       "retranscribe": "Transkripsikan ulang",
@@ -1156,10 +1162,10 @@
       },
       "recordingStorage": {
         "title": "Penyimpanan untuk Rekaman",
-        "description": "Jika semua rekaman bersama-sama memakai lebih banyak ruang dari ini, rekaman tertua dihapus. Transkripsinya tetap ada di riwayat. Entri yang disimpan dan file yang ditranskripsi tidak pernah dihapus otomatis.",
+        "description": "Jika semua rekaman bersama-sama memakai lebih banyak ruang dari ini, rekaman tertua dihapus. Transkripsinya tetap ada di riwayat. Rekaman yang disimpan permanen (★) dan file yang ditranskripsi tidak pernah dihapus otomatis.",
         "unlimited": "Tanpa Batas",
         "usage": "Rekaman memakai {{size}}",
-        "protectedOverLimit": "Entri yang disimpan dan file yang ditranskripsi saja sudah memakai {{size}}, lebih dari batas ini. Dari rekaman lainnya, hanya yang terbaru yang disimpan."
+        "protectedOverLimit": "Rekaman yang disimpan permanen dan file yang ditranskripsi saja sudah memakai {{size}}, lebih dari batas ini. Dari rekaman lainnya, hanya yang terbaru yang disimpan."
       },
       "alwaysOnMicrophone": {
         "label": "Mikrofon Selalu Aktif",

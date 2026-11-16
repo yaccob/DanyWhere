@@ -951,6 +951,12 @@
       "copyError": "No s'ha pogut copiar la transcripció al porta-retalls.",
       "save": "Desa la transcripció",
       "unsave": "Treu de les desades",
+      "keepRecording": {
+        "label": "Conserva l'enregistrament permanentment",
+        "description": "No s'elimina mai, ni tan sols quan l'espai per als enregistraments és ple.",
+        "keptLabel": "Enregistrament conservat permanentment",
+        "keptDescription": "Un clic ho desfà: llavors es pot eliminar quan l'espai per als enregistraments és ple."
+      },
       "delete": "Suprimeix l'entrada",
       "deleteError": "No s'ha pogut suprimir l'entrada. Torneu-ho a provar.",
       "retranscribe": "Torneu a transcriure",
@@ -1156,10 +1162,10 @@
       },
       "recordingStorage": {
         "title": "Espai per als enregistraments",
-        "description": "Quan tots els enregistraments junts ocupen més espai que aquest, s'eliminen els més antics. Les transcripcions es queden a l'historial. Les entrades desades i els fitxers transcrits no s'eliminen mai automàticament.",
+        "description": "Quan tots els enregistraments junts ocupen més espai que aquest, s'eliminen els més antics. Les transcripcions es queden a l'historial. Els enregistraments conservats permanentment (★) i els fitxers transcrits no s'eliminen mai automàticament.",
         "unlimited": "Il·limitat",
         "usage": "Els enregistraments ocupen {{size}}",
-        "protectedOverLimit": "Les entrades desades i els fitxers transcrits ja ocupen {{size}}, més que aquest límit. Dels altres enregistraments només es conserva el més recent."
+        "protectedOverLimit": "Els enregistraments conservats permanentment i els fitxers transcrits ja ocupen {{size}}, més que aquest límit. Dels altres enregistraments només es conserva el més recent."
       },
       "alwaysOnMicrophone": {
         "label": "Micròfon sempre actiu",

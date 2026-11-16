@@ -951,6 +951,12 @@
       "copyError": "Nie udało się skopiować transkrypcji do schowka.",
       "save": "Zapisz transkrypcję",
       "unsave": "Usuń z zapisanych",
+      "keepRecording": {
+        "label": "Zachowaj nagranie na stałe",
+        "description": "Nigdy nie jest usuwane, nawet gdy miejsce na nagrania jest pełne.",
+        "keptLabel": "Nagranie zachowane na stałe",
+        "keptDescription": "Kliknięcie to cofa: wtedy nagranie może zostać usunięte, gdy miejsce na nagrania jest pełne."
+      },
       "delete": "Usuń wpis",
       "deleteError": "Nie udało się usunąć wpisu. Spróbuj ponownie.",
       "retranscribe": "Transkrybuj ponownie",
@@ -1156,10 +1162,10 @@
       },
       "recordingStorage": {
         "title": "Miejsce na nagrania",
-        "description": "Gdy wszystkie nagrania razem zajmują więcej miejsca, najstarsze są usuwane. Ich transkrypcje zostają w historii. Zapisane wpisy i transkrybowane pliki nigdy nie są usuwane automatycznie.",
+        "description": "Gdy wszystkie nagrania razem zajmują więcej miejsca, najstarsze są usuwane. Ich transkrypcje zostają w historii. Nagrania zachowane na stałe (★) i transkrybowane pliki nigdy nie są usuwane automatycznie.",
         "unlimited": "Bez limitu",
         "usage": "Nagrania zajmują {{size}}",
-        "protectedOverLimit": "Same zapisane wpisy i transkrybowane pliki zajmują {{size}}, więcej niż ten limit. Z pozostałych nagrań zachowywane jest tylko najnowsze."
+        "protectedOverLimit": "Same nagrania zachowane na stałe i transkrybowane pliki zajmują {{size}}, więcej niż ten limit. Z pozostałych nagrań zachowywane jest tylko najnowsze."
       },
       "alwaysOnMicrophone": {
         "label": "Mikrofon zawsze aktywny",
