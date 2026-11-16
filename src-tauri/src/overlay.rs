@@ -3,6 +3,7 @@ use crate::input;
 use crate::notices::Notice;
 use crate::settings;
 use crate::settings::{OverlayPosition, OverlayStyle};
+use crate::window_capture::{self, ScreenRect};
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tauri::{AppHandle, Emitter, Manager, PhysicalPosition, PhysicalSize};
@@ -208,59 +209,112 @@ fn force_overlay_topmost(overlay_window: &tauri::webview::WebviewWindow) {
     });
 }
 
-fn get_monitor_with_cursor(app_handle: &AppHandle) -> Option<tauri::Monitor> {
-    if let Some(mouse_location) = input::get_cursor_position(app_handle) {
-        if let Ok(monitors) = app_handle.available_monitors() {
-            for monitor in monitors {
-                // On Windows both the cursor (enigo -> GetCursorPos) and the
-                // monitor bounds are physical pixels, so compare them directly.
-                #[cfg(target_os = "windows")]
-                if is_mouse_within_monitor(mouse_location, monitor.position(), monitor.size()) {
-                    return Some(monitor);
-                }
+/// DanyWhere: the monitor the overlay goes to, chosen anew at every change of
+/// its state (recording, transcribing, processing, a notice) and not followed
+/// in between: the one holding most of the frontmost window, else the one
+/// with the mouse pointer, else the main screen.
+///
+/// Handy took the monitor with the mouse pointer, which it learned from
+/// Enigo. Without Accessibility Enigo doesn't start, so on macOS the overlay
+/// then always showed on the main screen. The window frame and the pointer
+/// now come from `window_capture`, which needs no permission on macOS or
+/// Windows; Enigo still tells the pointer on Linux.
+fn overlay_monitor(app_handle: &AppHandle) -> Option<tauri::Monitor> {
+    let monitors = app_handle.available_monitors().unwrap_or_default();
+    let screens: Vec<ScreenRect> = monitors
+        .iter()
+        .map(|monitor| {
+            // Windows compares everything in physical pixels; macOS and Linux
+            // in points (see `monitor_bounds`).
+            let divisor = if cfg!(target_os = "windows") {
+                1.0
+            } else {
+                monitor.scale_factor()
+            };
+            monitor_bounds(*monitor.position(), *monitor.size(), divisor)
+        })
+        .collect();
+    let window = window_capture::frontmost_window_frame();
+    let cursor = window_capture::cursor_location()
+        .or_else(|| input::get_cursor_position(app_handle).map(|(x, y)| (x as f64, y as f64)));
+    let choice = choose_overlay_screen(window, cursor, &screens);
+    // Only how the screen was chosen, never anything about the window.
+    log::debug!(
+        "Overlay screen: {:?} of {} screen(s)",
+        choice,
+        screens.len()
+    );
+    match choice {
+        OverlayScreen::Window(index) | OverlayScreen::Cursor(index) => {
+            monitors.into_iter().nth(index)
+        }
+        OverlayScreen::Primary => app_handle.primary_monitor().ok().flatten(),
+    }
+}
 
-                // macOS/Linux: enigo returns logical coords, so scale the bounds down.
-                #[cfg(not(target_os = "windows"))]
-                {
-                    let scale = monitor.scale_factor();
-                    let pos = PhysicalPosition::new(
-                        (monitor.position().x as f64 / scale) as i32,
-                        (monitor.position().y as f64 / scale) as i32,
-                    );
-                    let size = PhysicalSize::new(
-                        (monitor.size().width as f64 / scale) as u32,
-                        (monitor.size().height as f64 / scale) as u32,
-                    );
-                    if is_mouse_within_monitor(mouse_location, &pos, &size) {
-                        return Some(monitor);
-                    }
-                }
+/// DanyWhere: which screen the overlay goes to, and why (for the log).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum OverlayScreen {
+    /// The screen at this index holds most of the frontmost window.
+    Window(usize),
+    /// The screen at this index has the mouse pointer.
+    Cursor(usize),
+    /// Neither told: the main screen.
+    Primary,
+}
+
+/// A monitor's bounds as tao reports them, in the space the window frame and
+/// the cursor use. `divisor` is the monitor's own scale on macOS and Linux:
+/// tao multiplies each monitor's origin and size in points by that monitor's
+/// scale, so dividing by it gives points again, even with mixed scales. On
+/// Windows it is 1, everything there being physical pixels.
+fn monitor_bounds(
+    position: PhysicalPosition<i32>,
+    size: PhysicalSize<u32>,
+    divisor: f64,
+) -> ScreenRect {
+    ScreenRect {
+        x: position.x as f64 / divisor,
+        y: position.y as f64 / divisor,
+        width: size.width as f64 / divisor,
+        height: size.height as f64 / divisor,
+    }
+}
+
+/// Chooses the overlay's screen from the frontmost window's frame, the mouse
+/// pointer and the screens' bounds, all in one space:
+///
+/// 1. the screen sharing the largest area with the window; on a tie the one
+///    with the pointer, if it is among them, else the first in the list;
+/// 2. with no window, or one on no screen (e.g. minimized), the screen with
+///    the pointer;
+/// 3. else the main screen.
+fn choose_overlay_screen(
+    window: Option<ScreenRect>,
+    cursor: Option<(f64, f64)>,
+    screens: &[ScreenRect],
+) -> OverlayScreen {
+    let cursor_screen =
+        cursor.and_then(|point| screens.iter().position(|screen| screen.contains(point)));
+    if let Some(window) = window {
+        let areas: Vec<f64> = screens
+            .iter()
+            .map(|screen| screen.overlap_area(&window))
+            .collect();
+        let largest = areas.iter().copied().fold(0.0, f64::max);
+        if largest > 0.0 {
+            let index = cursor_screen
+                .filter(|&index| areas[index] == largest)
+                .or_else(|| areas.iter().position(|&area| area == largest));
+            if let Some(index) = index {
+                return OverlayScreen::Window(index);
             }
         }
     }
-
-    app_handle.primary_monitor().ok().flatten()
-}
-
-fn is_mouse_within_monitor(
-    mouse_pos: (i32, i32),
-    monitor_pos: &PhysicalPosition<i32>,
-    monitor_size: &PhysicalSize<u32>,
-) -> bool {
-    let (mouse_x, mouse_y) = mouse_pos;
-    let PhysicalPosition {
-        x: monitor_x,
-        y: monitor_y,
-    } = *monitor_pos;
-    let PhysicalSize {
-        width: monitor_width,
-        height: monitor_height,
-    } = *monitor_size;
-
-    mouse_x >= monitor_x
-        && mouse_x < (monitor_x + monitor_width as i32)
-        && mouse_y >= monitor_y
-        && mouse_y < (monitor_y + monitor_height as i32)
+    match cursor_screen {
+        Some(index) => OverlayScreen::Cursor(index),
+        None => OverlayScreen::Primary,
+    }
 }
 
 /// Returns overlay position in logical coordinates (points on macOS).
@@ -281,7 +335,7 @@ fn calculate_overlay_position(
     width: f64,
     height: f64,
 ) -> Option<(f64, f64)> {
-    let monitor = get_monitor_with_cursor(app_handle)?;
+    let monitor = overlay_monitor(app_handle)?;
     let scale = monitor.scale_factor();
     let monitor_x = monitor.position().x as f64 / scale;
     let monitor_y = monitor.position().y as f64 / scale;
@@ -377,8 +431,8 @@ fn place_windows_overlay(
 ) -> Result<(), String> {
     use windows::Win32::UI::WindowsAndMessaging::{SetWindowPos, SWP_NOACTIVATE, SWP_NOZORDER};
 
-    let monitor = get_monitor_with_cursor(app_handle)
-        .ok_or_else(|| "failed to determine the monitor containing the cursor".to_string())?;
+    let monitor = overlay_monitor(app_handle)
+        .ok_or_else(|| "failed to determine the overlay's monitor".to_string())?;
     let text_scale = windows_text_scale_factor();
     let (x, y, width, height) = windows_overlay_bounds(
         *monitor.position(),
@@ -1040,42 +1094,236 @@ mod tests {
         assert_eq!(overlay_dimensions("context"), overlay_dimensions("profile"));
     }
 
-    #[test]
-    fn monitor_hit_test_uses_half_open_physical_bounds() {
-        let position = PhysicalPosition::new(-2560, -200);
-        let size = PhysicalSize::new(2560, 1440);
-
-        assert!(is_mouse_within_monitor((-2560, -200), &position, &size));
-        assert!(is_mouse_within_monitor((-1, 1239), &position, &size));
-        assert!(!is_mouse_within_monitor((0, 0), &position, &size));
-        assert!(!is_mouse_within_monitor((-1, 1240), &position, &size));
+    fn rect(x: f64, y: f64, width: f64, height: f64) -> ScreenRect {
+        ScreenRect {
+            x,
+            y,
+            width,
+            height,
+        }
     }
 
-    #[cfg(target_os = "windows")]
+    /// A MacBook (1512x982 points) and a screen to its right, 200 points
+    /// higher.
+    fn two_screens() -> [ScreenRect; 2] {
+        [
+            rect(0.0, 0.0, 1512.0, 982.0),
+            rect(1512.0, -200.0, 2560.0, 1440.0),
+        ]
+    }
+
     #[test]
-    fn windows_cursor_hit_test_does_not_scale_physical_monitor_bounds() {
-        let position = PhysicalPosition::new(1920, 0);
-        let size = PhysicalSize::new(3840, 2160);
-        let cursor = (5000, 1000);
-
-        assert!(is_mouse_within_monitor(cursor, &position, &size));
-
-        // This is the old mixed-coordinate comparison. It excludes a cursor
-        // that is visibly inside a secondary display running at 150%.
-        let scale = 1.5;
-        let logical_position = PhysicalPosition::new(
-            (position.x as f64 / scale) as i32,
-            (position.y as f64 / scale) as i32,
+    fn the_screen_holding_most_of_the_window_gets_the_overlay() {
+        let screens = two_screens();
+        // 312 points on the left screen, 688 on the right one.
+        let window = rect(1200.0, 100.0, 1000.0, 600.0);
+        assert_eq!(
+            choose_overlay_screen(Some(window), Some((100.0, 100.0)), &screens),
+            OverlayScreen::Window(1),
+            "the window wins over the cursor"
         );
-        let logical_size = PhysicalSize::new(
-            (size.width as f64 / scale) as u32,
-            (size.height as f64 / scale) as u32,
+        let window = rect(100.0, 100.0, 800.0, 600.0);
+        assert_eq!(
+            choose_overlay_screen(Some(window), Some((2000.0, 0.0)), &screens),
+            OverlayScreen::Window(0)
         );
-        assert!(!is_mouse_within_monitor(
-            cursor,
-            &logical_position,
-            &logical_size
-        ));
+        assert_eq!(
+            choose_overlay_screen(Some(window), None, &screens),
+            OverlayScreen::Window(0)
+        );
+    }
+
+    #[test]
+    fn without_a_window_the_cursor_picks_the_screen() {
+        let screens = two_screens();
+        assert_eq!(
+            choose_overlay_screen(None, Some((2000.0, -150.0)), &screens),
+            OverlayScreen::Cursor(1)
+        );
+        assert_eq!(
+            choose_overlay_screen(None, Some((1511.5, 981.0)), &screens),
+            OverlayScreen::Cursor(0)
+        );
+    }
+
+    /// A minimized window on Windows sits at -32000, -32000.
+    #[test]
+    fn a_window_on_no_screen_leaves_the_choice_to_the_cursor() {
+        let screens = two_screens();
+        let window = rect(-32000.0, -32000.0, 160.0, 28.0);
+        assert_eq!(
+            choose_overlay_screen(Some(window), Some((2000.0, 0.0)), &screens),
+            OverlayScreen::Cursor(1)
+        );
+    }
+
+    #[test]
+    fn without_window_or_cursor_on_a_screen_the_main_screen_gets_it() {
+        let screens = two_screens();
+        assert_eq!(
+            choose_overlay_screen(None, None, &screens),
+            OverlayScreen::Primary
+        );
+        assert_eq!(
+            choose_overlay_screen(None, Some((9000.0, 9000.0)), &screens),
+            OverlayScreen::Primary
+        );
+        let window = rect(100.0, 100.0, 800.0, 600.0);
+        assert_eq!(
+            choose_overlay_screen(Some(window), Some((100.0, 100.0)), &[]),
+            OverlayScreen::Primary,
+            "no screen listed"
+        );
+    }
+
+    /// A window split exactly in half goes to the screen with the cursor;
+    /// without one there, to the first screen in the list.
+    #[test]
+    fn a_tie_goes_to_the_cursors_screen_else_to_the_first() {
+        let screens = [
+            rect(0.0, 0.0, 1000.0, 800.0),
+            rect(1000.0, 0.0, 1000.0, 800.0),
+        ];
+        let window = rect(500.0, 100.0, 1000.0, 400.0);
+        assert_eq!(
+            choose_overlay_screen(Some(window), Some((1500.0, 50.0)), &screens),
+            OverlayScreen::Window(1)
+        );
+        assert_eq!(
+            choose_overlay_screen(Some(window), Some((9000.0, 50.0)), &screens),
+            OverlayScreen::Window(0)
+        );
+        assert_eq!(
+            choose_overlay_screen(Some(window), None, &screens),
+            OverlayScreen::Window(0)
+        );
+    }
+
+    /// macOS, Retina (2.0) on the left, a plain screen (1.0) to its right:
+    /// tao reports each monitor's points times its own scale.
+    #[test]
+    fn mixed_scales_retina_left_plain_right() {
+        let screens = [
+            monitor_bounds(
+                PhysicalPosition::new(0, 0),
+                PhysicalSize::new(3024, 1964),
+                2.0,
+            ),
+            monitor_bounds(
+                PhysicalPosition::new(1512, -200),
+                PhysicalSize::new(2560, 1440),
+                1.0,
+            ),
+        ];
+        assert_eq!(screens, two_screens());
+        let window = rect(1700.0, 100.0, 900.0, 600.0);
+        assert_eq!(
+            choose_overlay_screen(Some(window), Some((100.0, 100.0)), &screens),
+            OverlayScreen::Window(1)
+        );
+    }
+
+    /// macOS, a plain screen on the left and Retina to its right: the Retina
+    /// screen starts at 1920 points, which tao reports as 3840.
+    #[test]
+    fn mixed_scales_plain_left_retina_right() {
+        let position = PhysicalPosition::new(3840, 0);
+        let size = PhysicalSize::new(3024, 1964);
+        let screens = [
+            monitor_bounds(
+                PhysicalPosition::new(0, 0),
+                PhysicalSize::new(1920, 1080),
+                1.0,
+            ),
+            monitor_bounds(position, size, 2.0),
+        ];
+        assert_eq!(screens[1], rect(1920.0, 0.0, 1512.0, 982.0));
+        let window = rect(2000.0, 100.0, 800.0, 600.0);
+        assert_eq!(
+            choose_overlay_screen(Some(window), None, &screens),
+            OverlayScreen::Window(1)
+        );
+        // Comparing tao's values as they are, the window would be on no
+        // screen at all.
+        let unscaled = [screens[0], monitor_bounds(position, size, 1.0)];
+        assert_ne!(
+            choose_overlay_screen(Some(window), None, &unscaled),
+            OverlayScreen::Window(1)
+        );
+    }
+
+    /// macOS, a plain screen left of the Retina main screen and higher, so
+    /// its origin is negative.
+    #[test]
+    fn mixed_scales_with_a_negative_origin() {
+        let screens = [
+            monitor_bounds(
+                PhysicalPosition::new(-2560, -200),
+                PhysicalSize::new(2560, 1440),
+                1.0,
+            ),
+            monitor_bounds(
+                PhysicalPosition::new(0, 0),
+                PhysicalSize::new(3024, 1964),
+                2.0,
+            ),
+        ];
+        assert_eq!(screens[0], rect(-2560.0, -200.0, 2560.0, 1440.0));
+        assert_eq!(screens[1], rect(0.0, 0.0, 1512.0, 982.0));
+        assert_eq!(
+            choose_overlay_screen(
+                Some(rect(-1800.0, 100.0, 1200.0, 800.0)),
+                Some((700.0, 500.0)),
+                &screens
+            ),
+            OverlayScreen::Window(0)
+        );
+        // 300 points on the left screen, 900 on the main one.
+        assert_eq!(
+            choose_overlay_screen(
+                Some(rect(-300.0, 100.0, 1200.0, 700.0)),
+                Some((-1000.0, 500.0)),
+                &screens
+            ),
+            OverlayScreen::Window(1)
+        );
+    }
+
+    /// Windows: monitors, the cursor and the foreground window's monitor
+    /// (from MonitorFromWindow) are all physical pixels, compared unscaled.
+    #[test]
+    fn on_windows_everything_is_compared_in_physical_pixels() {
+        let screens = [
+            monitor_bounds(
+                PhysicalPosition::new(0, 0),
+                PhysicalSize::new(1920, 1080),
+                1.0,
+            ),
+            monitor_bounds(
+                PhysicalPosition::new(1920, 0),
+                PhysicalSize::new(3840, 2160),
+                1.0,
+            ),
+        ];
+        // The second monitor runs at 150 %; MonitorFromWindow reports its
+        // bounds as they are.
+        let foreground_monitor = rect(1920.0, 0.0, 3840.0, 2160.0);
+        assert_eq!(
+            choose_overlay_screen(Some(foreground_monitor), Some((100.0, 100.0)), &screens),
+            OverlayScreen::Window(1)
+        );
+        assert_eq!(
+            choose_overlay_screen(None, Some((5000.0, 1000.0)), &screens),
+            OverlayScreen::Cursor(1)
+        );
+        // Scaling the bounds down as on macOS would miss a cursor that is
+        // visibly on the monitor at 150 %.
+        let scaled = monitor_bounds(
+            PhysicalPosition::new(1920, 0),
+            PhysicalSize::new(3840, 2160),
+            1.5,
+        );
+        assert!(!scaled.contains((5000.0, 1000.0)));
     }
 
     #[cfg(target_os = "windows")]

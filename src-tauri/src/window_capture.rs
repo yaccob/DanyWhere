@@ -18,6 +18,10 @@
 //! - Linux: nothing yet, so no context.
 //!
 //! Apps on the user's exclusion list are not captured at all.
+//!
+//! It also tells where the frontmost window and the mouse pointer are, so the
+//! recording overlay shows on that window's screen (`overlay`); that needs no
+//! permission on macOS or Windows.
 
 use std::sync::{Condvar, Mutex};
 use std::time::{Duration, Instant};
@@ -215,6 +219,90 @@ pub fn installed_applications() -> Vec<(String, String)> {
     platform::installed_applications()
 }
 
+/// DanyWhere: a rectangle on the screens, for putting the recording overlay
+/// on the screen of the frontmost window (`overlay`). macOS: points in the
+/// global display space, origin at the top left of the main screen. Windows:
+/// physical pixels.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct ScreenRect {
+    pub x: f64,
+    pub y: f64,
+    pub width: f64,
+    pub height: f64,
+}
+
+impl ScreenRect {
+    /// Whether `point` lies inside, the left and top edges included and the
+    /// right and bottom ones not, so a point on the line between two screens
+    /// belongs to exactly one.
+    pub fn contains(&self, (x, y): (f64, f64)) -> bool {
+        x >= self.x && x < self.x + self.width && y >= self.y && y < self.y + self.height
+    }
+
+    /// The area this rectangle shares with `other`, 0 when they don't overlap.
+    pub fn overlap_area(&self, other: &ScreenRect) -> f64 {
+        let width = (self.x + self.width).min(other.x + other.width) - self.x.max(other.x);
+        let height = (self.y + self.height).min(other.y + other.height) - self.y.max(other.y);
+        if width > 0.0 && height > 0.0 {
+            width * height
+        } else {
+            0.0
+        }
+    }
+}
+
+/// DanyWhere: the frame of the frontmost window, for putting the recording
+/// overlay on its screen (`overlay`).
+///
+/// - macOS: the frontmost app's frontmost window, from the window list. Its
+///   owner, layer and bounds need neither Accessibility nor Screen Recording;
+///   only window names would, and they are not read.
+/// - Windows: the bounds of the monitor Windows puts the foreground window on
+///   (the one holding most of it).
+/// - Linux: `None`.
+pub fn frontmost_window_frame() -> Option<ScreenRect> {
+    platform::frontmost_window_frame()
+}
+
+/// DanyWhere: the mouse pointer, in the space of [`ScreenRect`], without
+/// Enigo, which needs Accessibility on macOS. `None` on Linux.
+pub fn cursor_location() -> Option<(f64, f64)> {
+    platform::cursor_location()
+}
+
+/// One entry of macOS's list of the windows on screen, which runs from the
+/// frontmost window to the backmost.
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+#[derive(Debug, Clone, Copy, PartialEq)]
+struct ListedWindow {
+    owner_pid: i32,
+    layer: i32,
+    alpha: f64,
+    bounds: ScreenRect,
+}
+
+/// Windows narrower or lower than this (points) don't count: helper windows
+/// some apps keep on screen.
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+const MIN_WINDOW_SIDE: f64 = 20.0;
+
+/// The frame of `pid`'s frontmost window in `windows` (front to back): the
+/// first one on the normal window layer (0; menus, the Dock and status items
+/// sit higher) that can be seen.
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+fn frontmost_window_of(windows: &[ListedWindow], pid: i32) -> Option<ScreenRect> {
+    windows
+        .iter()
+        .find(|window| {
+            window.owner_pid == pid
+                && window.layer == 0
+                && window.alpha > 0.0
+                && window.bounds.width >= MIN_WINDOW_SIDE
+                && window.bounds.height >= MIN_WINDOW_SIDE
+        })
+        .map(|window| window.bounds)
+}
+
 /// The frontmost window as a [`CapturedWindow`], unless its app is excluded,
 /// is DanyWhere itself or has no usable title.
 fn frontmost_window(excluded: &[String]) -> Option<CapturedWindow> {
@@ -277,12 +365,58 @@ mod platform {
     use objc2_foundation::{NSBundle, NSString};
 
     use super::{
-        automation_script, status_from_os, AutomationApp, AutomationStatus, WindowTitleAccess,
-        AUTOMATION_APPS,
+        automation_script, frontmost_window_of, status_from_os, AutomationApp, AutomationStatus,
+        ListedWindow, ScreenRect, WindowTitleAccess, AUTOMATION_APPS,
     };
 
     type CFTypeRef = *const c_void;
     type AXUIElementRef = *const c_void;
+    type CFArrayRef = *const c_void;
+    type CFDictionaryRef = *const c_void;
+
+    #[repr(C)]
+    #[derive(Clone, Copy, Default)]
+    struct CGPoint {
+        x: f64,
+        y: f64,
+    }
+
+    #[repr(C)]
+    #[derive(Clone, Copy, Default)]
+    struct CGSize {
+        width: f64,
+        height: f64,
+    }
+
+    #[repr(C)]
+    #[derive(Clone, Copy, Default)]
+    struct CGRect {
+        origin: CGPoint,
+        size: CGSize,
+    }
+
+    /// `kCGWindowListOptionOnScreenOnly | kCGWindowListExcludeDesktopElements`.
+    const ON_SCREEN_WITHOUT_DESKTOP: u32 = (1 << 0) | (1 << 4);
+    /// `kCGNullWindowID`: every window, not just those above or below one.
+    const NULL_WINDOW_ID: u32 = 0;
+    /// `kCFNumberSInt32Type`.
+    const CF_NUMBER_SINT32: isize = 3;
+    /// `kCFNumberFloat64Type`.
+    const CF_NUMBER_FLOAT64: isize = 6;
+
+    #[link(name = "CoreGraphics", kind = "framework")]
+    #[allow(non_upper_case_globals)]
+    extern "C" {
+        static kCGWindowOwnerPID: CFTypeRef;
+        static kCGWindowLayer: CFTypeRef;
+        static kCGWindowAlpha: CFTypeRef;
+        static kCGWindowBounds: CFTypeRef;
+        fn CGWindowListCopyWindowInfo(option: u32, relative_to_window: u32) -> CFArrayRef;
+        fn CGRectMakeWithDictionaryRepresentation(dict: CFDictionaryRef, rect: *mut CGRect)
+            -> bool;
+        fn CGEventCreate(source: CFTypeRef) -> CFTypeRef;
+        fn CGEventGetLocation(event: CFTypeRef) -> CGPoint;
+    }
 
     #[link(name = "ApplicationServices", kind = "framework")]
     extern "C" {
@@ -301,6 +435,12 @@ mod platform {
         fn CFRelease(cf: CFTypeRef);
         fn CFGetTypeID(cf: CFTypeRef) -> usize;
         fn CFStringGetTypeID() -> usize;
+        fn CFNumberGetTypeID() -> usize;
+        fn CFDictionaryGetTypeID() -> usize;
+        fn CFArrayGetCount(array: CFArrayRef) -> isize;
+        fn CFArrayGetValueAtIndex(array: CFArrayRef, index: isize) -> CFTypeRef;
+        fn CFDictionaryGetValue(dict: CFDictionaryRef, key: CFTypeRef) -> CFTypeRef;
+        fn CFNumberGetValue(number: CFTypeRef, number_type: isize, value: *mut c_void) -> u8;
     }
 
     #[repr(C)]
@@ -383,6 +523,107 @@ mod platform {
 
     pub fn frontmost_app() -> Option<(String, String)> {
         frontmost_app_with_pid().map(|(bundle_id, name, _)| (bundle_id, name))
+    }
+
+    /// The frontmost app's process id. Unlike [`frontmost_app_with_pid`] it
+    /// includes DanyWhere: its own settings window can be the one in front.
+    fn frontmost_pid() -> Option<i32> {
+        let app = NSWorkspace::sharedWorkspace().frontmostApplication()?;
+        Some(app.processIdentifier())
+    }
+
+    pub fn frontmost_window_frame() -> Option<ScreenRect> {
+        let pid = frontmost_pid()?;
+        frontmost_window_of(&on_screen_windows(), pid)
+    }
+
+    /// The windows on screen, front to back, without the desktop.
+    fn on_screen_windows() -> Vec<ListedWindow> {
+        // SAFETY: the list comes from a Copy function, so it is ours; its
+        // entries are read while it lives and it is released at the end.
+        unsafe {
+            let list = CGWindowListCopyWindowInfo(ON_SCREEN_WITHOUT_DESKTOP, NULL_WINDOW_ID);
+            if list.is_null() {
+                return Vec::new();
+            }
+            let windows = (0..CFArrayGetCount(list))
+                .filter_map(|index| listed_window(CFArrayGetValueAtIndex(list, index)))
+                .collect();
+            CFRelease(list);
+            windows
+        }
+    }
+
+    /// One entry of the window list, or `None` when it lacks a field.
+    ///
+    /// # Safety
+    ///
+    /// `entry` must be null or a CFDictionary that lives for the call.
+    unsafe fn listed_window(entry: CFDictionaryRef) -> Option<ListedWindow> {
+        if entry.is_null() || CFGetTypeID(entry) != CFDictionaryGetTypeID() {
+            return None;
+        }
+        let owner_pid = number_i32(CFDictionaryGetValue(entry, kCGWindowOwnerPID))?;
+        let layer = number_i32(CFDictionaryGetValue(entry, kCGWindowLayer))?;
+        let alpha = number_f64(CFDictionaryGetValue(entry, kCGWindowAlpha)).unwrap_or(1.0);
+        let bounds = CFDictionaryGetValue(entry, kCGWindowBounds);
+        if bounds.is_null() || CFGetTypeID(bounds) != CFDictionaryGetTypeID() {
+            return None;
+        }
+        let mut rect = CGRect::default();
+        if !CGRectMakeWithDictionaryRepresentation(bounds, &mut rect) {
+            return None;
+        }
+        Some(ListedWindow {
+            owner_pid,
+            layer,
+            alpha,
+            bounds: ScreenRect {
+                x: rect.origin.x,
+                y: rect.origin.y,
+                width: rect.size.width,
+                height: rect.size.height,
+            },
+        })
+    }
+
+    /// # Safety
+    ///
+    /// `number` must be null or a CF object that lives for the call.
+    unsafe fn number_i32(number: CFTypeRef) -> Option<i32> {
+        if number.is_null() || CFGetTypeID(number) != CFNumberGetTypeID() {
+            return None;
+        }
+        let mut value = 0i32;
+        let exact = CFNumberGetValue(number, CF_NUMBER_SINT32, (&mut value as *mut i32).cast());
+        (exact != 0).then_some(value)
+    }
+
+    /// # Safety
+    ///
+    /// `number` must be null or a CF object that lives for the call.
+    unsafe fn number_f64(number: CFTypeRef) -> Option<f64> {
+        if number.is_null() || CFGetTypeID(number) != CFNumberGetTypeID() {
+            return None;
+        }
+        let mut value = 0f64;
+        let exact = CFNumberGetValue(number, CF_NUMBER_FLOAT64, (&mut value as *mut f64).cast());
+        (exact != 0).then_some(value)
+    }
+
+    /// The mouse pointer, from the location of an empty event, which needs
+    /// no permission.
+    pub fn cursor_location() -> Option<(f64, f64)> {
+        // SAFETY: the event is created here and released after reading it.
+        unsafe {
+            let event = CGEventCreate(std::ptr::null());
+            if event.is_null() {
+                return None;
+            }
+            let point = CGEventGetLocation(event);
+            CFRelease(event);
+            Some((point.x, point.y))
+        }
     }
 
     pub fn running_applications() -> Vec<(String, String)> {
@@ -583,19 +824,62 @@ mod platform {
 
 #[cfg(target_os = "windows")]
 mod platform {
-    use super::{AutomationStatus, WindowTitleAccess};
+    use super::{AutomationStatus, ScreenRect, WindowTitleAccess};
     use windows::core::PWSTR;
-    use windows::Win32::Foundation::{CloseHandle, MAX_PATH};
+    use windows::Win32::Foundation::{CloseHandle, MAX_PATH, POINT};
+    use windows::Win32::Graphics::Gdi::{
+        GetMonitorInfoW, MonitorFromWindow, MONITORINFO, MONITOR_DEFAULTTONULL,
+    };
     use windows::Win32::System::Threading::{
         OpenProcess, QueryFullProcessImageNameW, PROCESS_NAME_WIN32,
         PROCESS_QUERY_LIMITED_INFORMATION,
     };
     use windows::Win32::UI::WindowsAndMessaging::{
-        GetForegroundWindow, GetWindowTextLengthW, GetWindowTextW, GetWindowThreadProcessId,
+        GetCursorPos, GetForegroundWindow, GetWindowTextLengthW, GetWindowTextW,
+        GetWindowThreadProcessId,
     };
 
     pub fn frontmost_app() -> Option<(String, String)> {
         frontmost().map(|(exe, name, _)| (exe, name))
+    }
+
+    /// The bounds of the monitor Windows puts the foreground window on, in
+    /// physical pixels, which match the monitor's own bounds exactly.
+    pub fn frontmost_window_frame() -> Option<ScreenRect> {
+        // SAFETY: Win32 calls on the foreground window handle; `info` is
+        // written by GetMonitorInfoW, which reads its size from `cbSize`.
+        unsafe {
+            let window = GetForegroundWindow();
+            if window.0.is_null() {
+                return None;
+            }
+            let monitor = MonitorFromWindow(window, MONITOR_DEFAULTTONULL);
+            if monitor.is_invalid() {
+                return None;
+            }
+            let mut info = MONITORINFO {
+                cbSize: std::mem::size_of::<MONITORINFO>() as u32,
+                ..Default::default()
+            };
+            if !GetMonitorInfoW(monitor, &mut info).as_bool() {
+                return None;
+            }
+            let bounds = info.rcMonitor;
+            Some(ScreenRect {
+                x: bounds.left as f64,
+                y: bounds.top as f64,
+                width: (bounds.right - bounds.left) as f64,
+                height: (bounds.bottom - bounds.top) as f64,
+            })
+        }
+    }
+
+    /// The mouse pointer in physical pixels.
+    pub fn cursor_location() -> Option<(f64, f64)> {
+        let mut point = POINT::default();
+        // SAFETY: GetCursorPos writes into `point`.
+        unsafe { GetCursorPos(&mut point) }.ok()?;
+        Some((point.x as f64, point.y as f64))
     }
 
     pub fn running_applications() -> Vec<(String, String)> {
@@ -668,10 +952,19 @@ mod platform {
 
 #[cfg(not(any(target_os = "macos", target_os = "windows")))]
 mod platform {
-    use super::{AutomationStatus, WindowTitleAccess};
+    use super::{AutomationStatus, ScreenRect, WindowTitleAccess};
 
     /// Linux: not yet, so dictations there have no context.
     pub fn frontmost() -> Option<(String, String, Option<String>)> {
+        None
+    }
+
+    /// Linux: not yet; the overlay asks Enigo for the cursor instead.
+    pub fn frontmost_window_frame() -> Option<ScreenRect> {
+        None
+    }
+
+    pub fn cursor_location() -> Option<(f64, f64)> {
         None
     }
 
@@ -768,6 +1061,74 @@ mod tests {
         assert_eq!(slot.take(2, Duration::ZERO), None);
         slot.finish(2, Some(window("New")));
         assert_eq!(slot.take(1, Duration::ZERO), None);
+    }
+
+    fn listed(owner_pid: i32, layer: i32, x: f64, width: f64) -> ListedWindow {
+        ListedWindow {
+            owner_pid,
+            layer,
+            alpha: 1.0,
+            bounds: ScreenRect {
+                x,
+                y: 40.0,
+                width,
+                height: 600.0,
+            },
+        }
+    }
+
+    /// The list runs front to back: the first normal window of the app wins,
+    /// past other apps' windows and the app's own menus and status items.
+    #[test]
+    fn the_frontmost_normal_window_of_the_app_gives_the_frame() {
+        let windows = [
+            listed(400, 25, 0.0, 30.0),    // a status item of another app
+            listed(77, 101, 10.0, 200.0),  // the app's open menu
+            listed(500, 0, 20.0, 900.0),   // another app's window in front
+            listed(77, 0, 1600.0, 1000.0), // the app's frontmost window
+            listed(77, 0, 30.0, 800.0),    // the app's window behind it
+        ];
+        assert_eq!(
+            frontmost_window_of(&windows, 77),
+            Some(windows[3].bounds),
+            "the app's first window on layer 0"
+        );
+        assert_eq!(frontmost_window_of(&windows, 500), Some(windows[2].bounds));
+    }
+
+    /// Invisible and tiny windows some apps keep on screen don't count.
+    #[test]
+    fn invisible_and_tiny_windows_dont_count() {
+        let mut invisible = listed(77, 0, 0.0, 1000.0);
+        invisible.alpha = 0.0;
+        let mut tiny = listed(77, 0, 0.0, 1.0);
+        tiny.bounds.height = 1.0;
+        let window = listed(77, 0, 1600.0, 900.0);
+        assert_eq!(
+            frontmost_window_of(&[invisible, tiny, window], 77),
+            Some(window.bounds)
+        );
+    }
+
+    #[test]
+    fn an_app_without_a_window_on_screen_has_no_frame() {
+        let windows = [listed(500, 0, 0.0, 900.0), listed(77, 25, 0.0, 30.0)];
+        assert_eq!(frontmost_window_of(&windows, 77), None);
+        assert_eq!(frontmost_window_of(&[], 77), None);
+    }
+
+    #[test]
+    fn a_point_on_the_line_between_two_screens_belongs_to_one() {
+        let left = ScreenRect {
+            x: -2560.0,
+            y: -200.0,
+            width: 2560.0,
+            height: 1440.0,
+        };
+        assert!(left.contains((-2560.0, -200.0)));
+        assert!(left.contains((-0.5, 1239.5)));
+        assert!(!left.contains((0.0, 0.0)));
+        assert!(!left.contains((-1.0, 1240.0)));
     }
 
     #[test]
