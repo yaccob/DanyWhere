@@ -288,16 +288,22 @@ struct ListedWindow {
 #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 const MIN_WINDOW_SIDE: f64 = 20.0;
 
+/// The highest window layer an app's own window in front can have: normal
+/// windows (0), floating windows such as palettes (3) and modal dialogs (8,
+/// `kCGModalPanelWindowLevel`). The Dock (20), the menu bar (24), status
+/// items and DanyWhere's overlay (25) and menus sit higher.
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+const MAX_WINDOW_LAYER: i32 = 8;
+
 /// The frame of `pid`'s frontmost window in `windows` (front to back): the
-/// first one on the normal window layer (0; menus, the Dock and status items
-/// sit higher) that can be seen.
+/// first one on a layer up to [`MAX_WINDOW_LAYER`] that can be seen.
 #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 fn frontmost_window_of(windows: &[ListedWindow], pid: i32) -> Option<ScreenRect> {
     windows
         .iter()
         .find(|window| {
             window.owner_pid == pid
-                && window.layer == 0
+                && (0..=MAX_WINDOW_LAYER).contains(&window.layer)
                 && window.alpha > 0.0
                 && window.bounds.width >= MIN_WINDOW_SIDE
                 && window.bounds.height >= MIN_WINDOW_SIDE
@@ -1093,9 +1099,27 @@ mod tests {
         assert_eq!(
             frontmost_window_of(&windows, 77),
             Some(windows[3].bounds),
-            "the app's first window on layer 0"
+            "the app's first window, past menus and status items"
         );
         assert_eq!(frontmost_window_of(&windows, 500), Some(windows[2].bounds));
+    }
+
+    /// A dialog in front is a modal panel (layer 8, as a real run with a
+    /// Finder dialog showed on 2026-11-16), a palette a floating window
+    /// (layer 3): either is the window in front. The overlay itself (status
+    /// level, 25) and the Dock (20) are not.
+    #[test]
+    fn a_dialog_or_floating_window_in_front_gives_the_frame() {
+        let windows = [
+            listed(77, 25, 0.0, 400.0),    // DanyWhere's overlay, status level
+            listed(77, 8, 546.0, 420.0),   // the app's dialog
+            listed(77, 0, 1600.0, 1000.0), // the app's window behind it
+        ];
+        assert_eq!(frontmost_window_of(&windows, 77), Some(windows[1].bounds));
+        let floating = [listed(77, 3, 1600.0, 300.0), listed(77, 0, 0.0, 1000.0)];
+        assert_eq!(frontmost_window_of(&floating, 77), Some(floating[0].bounds));
+        let dock = [listed(77, 20, 0.0, 1512.0), listed(77, 0, 1600.0, 1000.0)];
+        assert_eq!(frontmost_window_of(&dock, 77), Some(dock[1].bounds));
     }
 
     /// Invisible and tiny windows some apps keep on screen don't count.
