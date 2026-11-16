@@ -21,7 +21,7 @@ use tauri::{AppHandle, Manager};
 use tauri_plugin_clipboard_manager::ClipboardExt;
 
 use crate::audio_feedback::{play_feedback_sound, SoundType};
-use crate::managers::history::HistoryManager;
+use crate::managers::history::{HistoryEntry, HistoryManager};
 use crate::settings::{get_settings, AppSettings, ClipboardHandling, PasteMethod};
 
 /// How the last transcript reaches the user.
@@ -79,6 +79,18 @@ pub fn dictation_target(settings: &AppSettings, service_available: bool) -> Dict
     }
 }
 
+/// Whether a finished dictation's text goes into the application in front
+/// right away: pasted there, or inserted by the service call it made
+/// (`call_waiting`). Only then can that application's profile redo it
+/// (`profile_redo`); a text that waits is looked at when it is inserted.
+pub fn goes_into_app_in_front(
+    settings: &AppSettings,
+    service_available: bool,
+    call_waiting: bool,
+) -> bool {
+    call_waiting || dictation_target(settings, service_available) == DictationTarget::Pasted
+}
+
 /// Whether a dictation's text is written to the clipboard after it was
 /// delivered.
 pub fn copies_dictation_to_clipboard(settings: &AppSettings, service_available: bool) -> bool {
@@ -120,9 +132,9 @@ pub fn clipboard_notice_duration(settings: &AppSettings) -> Option<std::time::Du
         .then(|| std::time::Duration::from_millis(settings.clipboard_notice_ms))
 }
 
-/// The most recent completed transcript (the post-processed text if there is
-/// one), or `None` when there is none or it is empty.
-pub fn latest_transcript_text(app: &AppHandle) -> Option<String> {
+/// The most recent completed dictation and its text (the post-processed
+/// text if there is one), or `None` when there is none or it is empty.
+pub fn latest_entry_and_text(app: &AppHandle) -> Option<(HistoryEntry, String)> {
     let history = app.state::<Arc<HistoryManager>>();
     let entry = match history.get_latest_completed_entry() {
         Ok(Some(entry)) => entry,
@@ -140,7 +152,7 @@ pub fn latest_transcript_text(app: &AppHandle) -> Option<String> {
         warn!("Last transcript is empty; nothing to deliver.");
         return None;
     }
-    Some(text)
+    Some((entry, text))
 }
 
 /// Puts `text` on the clipboard with the clipboard sound and the "on the
@@ -164,23 +176,35 @@ fn put_on_clipboard_with_notice(app: &AppHandle, text: String) {
 /// What "Copy Last Transcript" puts on the clipboard outside a dictation:
 /// the last dictation, `latest`, with the "Append" text of the profile in
 /// use, as the "Insert Last Dictation" service inserts it (user,
-/// 2026-11-16). Key presses have no place on the clipboard.
-pub fn text_to_copy(latest: String, settings: &AppSettings) -> String {
-    crate::append_text::text_to_paste(latest, settings)
+/// 2026-11-16). Key presses have no place on the clipboard. The profile is
+/// the dictation's (`dictation`, its values), when DanyWhere knows it
+/// (`profile_redo::made_with`): copying has no target application that
+/// could choose another; else the active one.
+pub fn text_to_copy(
+    latest: String,
+    settings: &AppSettings,
+    dictation: Option<&crate::profiles::ProfileValues>,
+) -> String {
+    let settings = crate::app_profiles::with_values(settings, dictation);
+    crate::append_text::text_to_paste(latest, &settings)
 }
 
 /// DanyWhere: puts the most recent completed transcript on the clipboard,
 /// for "Copy Last Transcript".
 pub fn copy_last_transcript_now(app: &AppHandle) {
-    if let Some(text) = latest_transcript_text(app) {
-        put_on_clipboard_with_notice(app, text_to_copy(text, &get_settings(app)));
+    if let Some((entry, text)) = latest_entry_and_text(app) {
+        let dictation = crate::profile_redo::made_with(entry.id).map(|made| made.values);
+        put_on_clipboard_with_notice(
+            app,
+            text_to_copy(text, &get_settings(app), dictation.as_ref()),
+        );
     }
 }
 
 /// Delivers the most recent completed transcript (the post-processed text if
 /// there is one), pasting it or leaving it on the clipboard per `delivery_for`.
 pub fn deliver_last_transcript(app: &AppHandle) {
-    let Some(text) = latest_transcript_text(app) else {
+    let Some((entry, text)) = latest_entry_and_text(app) else {
         return;
     };
 
@@ -192,12 +216,28 @@ pub fn deliver_last_transcript(app: &AppHandle) {
             let app = app.clone();
             let spawned = std::thread::Builder::new()
                 .name("paste-last".into())
-                .spawn(move || match crate::utils::paste(text, app) {
-                    Ok(crate::utils::PasteOutcome::Pasted) => info!("Pasted the last transcript."),
-                    Ok(crate::utils::PasteOutcome::Blocked) => error!(
-                        "Couldn't paste the last transcript: the focused window takes no input"
-                    ),
-                    Err(err) => error!("Failed to paste the last transcript: {}", err),
+                .spawn(move || {
+                    // DanyWhere: redone for the profile of the application
+                    // in front, if it differs from the dictation's
+                    // (`profile_redo`); its "Append" text in any case.
+                    let pasted =
+                        match crate::profile_redo::for_insert_outside_dictation(&app, &entry) {
+                            Some(insert) => crate::utils::paste_with_values(
+                                insert.text.unwrap_or(text),
+                                app,
+                                Some(insert.values),
+                            ),
+                            None => crate::utils::paste(text, app),
+                        };
+                    match pasted {
+                        Ok(crate::utils::PasteOutcome::Pasted) => {
+                            info!("Pasted the last transcript.")
+                        }
+                        Ok(crate::utils::PasteOutcome::Blocked) => error!(
+                            "Couldn't paste the last transcript: the focused window takes no input"
+                        ),
+                        Err(err) => error!("Failed to paste the last transcript: {}", err),
+                    }
                 });
             if let Err(err) = spawned {
                 error!("Failed to start the paste thread: {:?}", err);
@@ -329,8 +369,9 @@ pub fn change_clipboard_notice_ms_setting(app: AppHandle, ms: u64) -> Result<(),
 mod tests {
     use super::{
         clipboard_notice_duration, copies_dictation_to_clipboard, delivery_for, dictation_notice,
-        dictation_target, dictation_waits_for_user, plays_waiting_sound, sound_after_dictation,
-        text_to_copy, Delivery, DictationEnd, DictationNotice, DictationTarget,
+        dictation_target, dictation_waits_for_user, goes_into_app_in_front, plays_waiting_sound,
+        sound_after_dictation, text_to_copy, Delivery, DictationEnd, DictationNotice,
+        DictationTarget,
     };
     use crate::actions::TranscriptionOutcome;
     use crate::audio_feedback::SoundType;
@@ -742,20 +783,47 @@ mod tests {
     #[test]
     fn copy_last_transcript_copies_the_append_text_too() {
         let settings = with_append(r"\s[XYZ]");
-        assert_eq!(text_to_copy("Hallo".into(), &settings), "Hallo [XYZ]");
+        assert_eq!(text_to_copy("Hallo".into(), &settings, None), "Hallo [XYZ]");
         let settings = with_append(r"\nMfG");
-        assert_eq!(text_to_copy("Hallo".into(), &settings), "Hallo\nMfG");
+        assert_eq!(text_to_copy("Hallo".into(), &settings, None), "Hallo\nMfG");
     }
 
     #[test]
     fn copy_last_transcript_copies_no_key_press() {
         // A key press has nowhere to go on the clipboard: only the text.
         let settings = with_append(r"\s{Enter}");
-        assert_eq!(text_to_copy("Hallo".into(), &settings), "Hallo ");
+        assert_eq!(text_to_copy("Hallo".into(), &settings, None), "Hallo ");
+    }
+
+    #[test]
+    fn copy_last_transcript_takes_the_append_text_of_the_dictations_profile() {
+        let settings = with_append(r"\s");
+        let mut dictation = crate::profiles::ProfileValues::from_settings(&settings);
+        dictation.append_text = r"\nMfG".to_string();
+        assert_eq!(
+            text_to_copy("Hallo".into(), &settings, Some(&dictation)),
+            "Hallo\nMfG"
+        );
+        assert_eq!(text_to_copy("Hallo".into(), &settings, None), "Hallo ");
+    }
+
+    #[test]
+    fn a_pasted_dictation_or_one_a_call_waits_for_goes_into_the_app_in_front() {
+        let pasting = get_default_settings();
+        assert!(goes_into_app_in_front(&pasting, true, false));
+        let mut waiting = without_accessibility();
+        assert!(!goes_into_app_in_front(&waiting, true, false));
+        assert!(goes_into_app_in_front(&waiting, true, true));
+        waiting.accessibility_skipped = false;
+        waiting.paste_method = PasteMethod::None;
+        assert!(!goes_into_app_in_front(&waiting, true, false));
     }
 
     #[test]
     fn copy_last_transcript_without_append_copies_the_dictation() {
-        assert_eq!(text_to_copy("Hallo".into(), &with_append("")), "Hallo");
+        assert_eq!(
+            text_to_copy("Hallo".into(), &with_append(""), None),
+            "Hallo"
+        );
     }
 }

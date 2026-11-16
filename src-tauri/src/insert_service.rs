@@ -241,6 +241,11 @@ impl WaitSlot {
         }
     }
 
+    /// Whether a call waits for a text that hasn't arrived yet.
+    pub fn is_waiting(&self) -> bool {
+        matches!(*self.lock(), WaitState::Waiting)
+    }
+
     /// The call stops waiting. Returns a text delivered at the last moment,
     /// so it is inserted rather than lost.
     pub fn give_up(&self) -> Option<String> {
@@ -299,6 +304,12 @@ static WAITING_CALL: WaitSlot = WaitSlot::new();
 /// plays, see `delivery::sound_after_dictation`).
 pub fn deliver_to_waiting_call(text: &str) -> bool {
     WAITING_CALL.deliver(text)
+}
+
+/// Whether a service call waits for the dictation being finished: its text
+/// goes into the application that called (`profile_redo`).
+pub fn call_waiting() -> bool {
+    WAITING_CALL.is_waiting()
 }
 
 /// When the "end dictation" services last got a shortcut, as DanyWhere keeps
@@ -616,15 +627,77 @@ pub fn shows_not_ready_notice(overlay_shows_session: bool) -> bool {
 /// How long the "Not ready yet" notice stays.
 const NOT_READY_NOTICE: std::time::Duration = std::time::Duration::from_millis(1500);
 
-/// Answers a call of the service: the text to insert, or `None`.
-fn answer_call(app: &tauri::AppHandle) -> Option<String> {
+/// How long redoing the last dictation for the calling application took.
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+enum Redone {
+    Done(Option<Box<crate::profile_redo::ForInsert>>),
+    /// Longer than [`WAIT_FOR_DICTATION`]: the redo goes on and stores its
+    /// result; the call inserts nothing.
+    GaveUp,
+}
+
+/// Looks at inserting `entry` into the calling application on a thread of
+/// its own (`profile_redo`), while `pump` keeps the main thread going.
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+fn redo_for_caller(
+    app: &tauri::AppHandle,
+    entry: crate::managers::history::HistoryEntry,
+    mut pump: impl FnMut(),
+) -> Redone {
+    let (sender, receiver) = std::sync::mpsc::channel();
+    let worker_app = app.clone();
+    let spawned = std::thread::Builder::new()
+        .name("insert-redo".into())
+        .spawn(move || {
+            let _ = sender.send(crate::profile_redo::for_insert_outside_dictation(
+                &worker_app,
+                &entry,
+            ));
+        });
+    if let Err(err) = spawned {
+        log::error!("Couldn't start the thread that looks at the insert: {err}");
+        return Redone::Done(None);
+    }
+    let started = std::time::Instant::now();
+    loop {
+        match receiver.try_recv() {
+            Ok(insert) => return Redone::Done(insert.map(Box::new)),
+            Err(std::sync::mpsc::TryRecvError::Disconnected) => return Redone::Done(None),
+            Err(std::sync::mpsc::TryRecvError::Empty)
+                if started.elapsed() >= WAIT_FOR_DICTATION =>
+            {
+                return Redone::GaveUp
+            }
+            Err(std::sync::mpsc::TryRecvError::Empty) => pump(),
+        }
+    }
+}
+
+/// Answers a call of the service: the text to insert, or `None`. DanyWhere:
+/// the last dictation is redone for the calling application's profile when
+/// that differs from the dictation's, and gets its "Append" text
+/// (`profile_redo`).
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+fn answer_call(app: &tauri::AppHandle, pump: impl FnMut()) -> Option<String> {
     let settings = crate::settings::get_settings(app);
     let in_progress = crate::tray::dictation_in_progress(app);
-    let latest = if in_progress {
-        None
-    } else {
-        crate::delivery::latest_transcript_text(app)
+    let (latest, values) = match (!in_progress)
+        .then(|| crate::delivery::latest_entry_and_text(app))
+        .flatten()
+    {
+        Some((entry, text)) => match redo_for_caller(app, entry, pump) {
+            Redone::Done(Some(insert)) => (Some(insert.text.unwrap_or(text)), Some(insert.values)),
+            Redone::Done(None) => (Some(text), None),
+            Redone::GaveUp => {
+                log::info!(
+                    "Insert Last Dictation: redoing the last dictation for this application took too long; inserting nothing."
+                );
+                return None;
+            }
+        },
+        None => (None, None),
     };
+    let settings = crate::app_profiles::with_values(&settings, values.as_ref());
     match service_reply(
         in_progress,
         latest.as_deref(),
@@ -731,7 +804,7 @@ fn answer_service(app: &tauri::AppHandle, kind: ServiceKind, pump: impl FnMut())
     let phase = crate::tray::dictation_phase(app);
     let Some(binding_id) = kind.binding_id() else {
         return match plan_call(waits_for_service, phase) {
-            CallPlan::AnswerNow => answer_call(app),
+            CallPlan::AnswerNow => answer_call(app, pump),
             plan => answer_waiting_call(app, plan, None, pump),
         };
     };
@@ -1258,6 +1331,18 @@ mod tests {
         assert_eq!(slot.take(), None, "nothing delivered yet");
         assert!(slot.deliver("Hallo Welt"));
         assert_eq!(slot.take(), Some("Hallo Welt".to_string()));
+    }
+
+    #[test]
+    fn a_call_waits_until_its_text_is_delivered() {
+        let slot = WaitSlot::new();
+        assert!(!slot.is_waiting());
+        assert!(slot.begin());
+        assert!(slot.is_waiting());
+        assert!(slot.deliver("Hallo Welt"));
+        assert!(!slot.is_waiting(), "the text is there");
+        assert_eq!(slot.take(), Some("Hallo Welt".to_string()));
+        assert!(!slot.is_waiting());
     }
 
     #[test]

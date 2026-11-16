@@ -39,6 +39,7 @@ mod post_process_effort;
 #[cfg(target_os = "linux")]
 mod primary_selection;
 mod profile_export;
+mod profile_redo;
 mod profile_transfer;
 mod profiles;
 mod prompt_frame;

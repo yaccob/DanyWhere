@@ -739,6 +739,22 @@ impl TranscriptionManager {
         true
     }
 
+    /// DanyWhere: [`initiate_model_load`](Self::initiate_model_load) after
+    /// a load already under way, which may be of the model of the profile a
+    /// recording started with, while another profile applies since it ended
+    /// (`app_profiles::settle_dictation`) or a dictation is redone for
+    /// another one (`profile_redo`). Returns once the load has started; a
+    /// transcription waits for it.
+    pub fn load_wanted_model_after_current(&self, raise_notice: bool) {
+        {
+            let mut is_loading = self.is_loading.lock().unwrap();
+            while *is_loading {
+                is_loading = self.loading_condvar.wait(is_loading).unwrap();
+            }
+        }
+        self.initiate_model_load(raise_notice);
+    }
+
     /// Ends when a model next loads.
     pub fn model_load_notice(
         &self,
@@ -990,6 +1006,14 @@ impl TranscriptionManager {
     /// a file from the CLI.
     pub fn transcribe(&self, audio: Vec<f32>) -> Result<String> {
         Ok(self.complete(Instant::now(), audio, None)?.text)
+    }
+
+    /// DanyWhere: [`transcribe`](Self::transcribe) with the language and the
+    /// word list's replacements, for redoing a dictation for another profile
+    /// (`profile_redo`). Never touches a live decode, which may belong to a
+    /// dictation in progress.
+    pub fn transcribe_batch(&self, audio: Vec<f32>) -> Result<Transcription> {
+        self.complete(Instant::now(), audio, None)
     }
 
     /// Transcribe a finished recording: what its live decode produced, or a
