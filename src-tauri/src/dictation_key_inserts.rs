@@ -492,7 +492,8 @@ pub fn copies_instead_of_pasting(session: u64) -> bool {
     CLIPBOARD_REQUEST.copy_requested(session)
 }
 
-/// Called with a finished dictation's text: puts it on the clipboard if
+/// Called with a finished dictation's text, its profile's "Append" text
+/// included (`append_text::with_dictation_text`): puts it on the clipboard if
 /// "Copy Last Transcript" asked for it during this `session`, or the app in
 /// front didn't know the shortcut; returns why when it did.
 pub fn put_on_clipboard_if_requested(

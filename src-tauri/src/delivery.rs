@@ -161,11 +161,19 @@ fn put_on_clipboard_with_notice(app: &AppHandle, text: String) {
     }
 }
 
+/// What "Copy Last Transcript" puts on the clipboard outside a dictation:
+/// the last dictation, `latest`, with the "Append" text of the profile in
+/// use, as the "Insert Last Dictation" service inserts it (user,
+/// 2026-11-16). Key presses have no place on the clipboard.
+pub fn text_to_copy(latest: String, settings: &AppSettings) -> String {
+    crate::append_text::text_to_paste(latest, settings)
+}
+
 /// DanyWhere: puts the most recent completed transcript on the clipboard,
 /// for "Copy Last Transcript".
 pub fn copy_last_transcript_now(app: &AppHandle) {
     if let Some(text) = latest_transcript_text(app) {
-        put_on_clipboard_with_notice(app, text);
+        put_on_clipboard_with_notice(app, text_to_copy(text, &get_settings(app)));
     }
 }
 
@@ -322,7 +330,7 @@ mod tests {
     use super::{
         clipboard_notice_duration, copies_dictation_to_clipboard, delivery_for, dictation_notice,
         dictation_target, dictation_waits_for_user, plays_waiting_sound, sound_after_dictation,
-        Delivery, DictationEnd, DictationNotice, DictationTarget,
+        text_to_copy, Delivery, DictationEnd, DictationNotice, DictationTarget,
     };
     use crate::actions::TranscriptionOutcome;
     use crate::audio_feedback::SoundType;
@@ -720,5 +728,34 @@ mod tests {
         settings.accessibility_skipped = true;
         settings.paste_method = PasteMethod::CtrlV;
         assert_eq!(delivery_for(&settings), Delivery::Clipboard);
+    }
+
+    fn with_append(append_text: &str) -> AppSettings {
+        AppSettings {
+            append_text: append_text.to_string(),
+            ..get_default_settings()
+        }
+    }
+
+    // User, 2026-11-16 ("Ja" to: should Copy Last Transcript copy the
+    // "Append" text too, as Insert Last Dictation inserts it?).
+    #[test]
+    fn copy_last_transcript_copies_the_append_text_too() {
+        let settings = with_append(r"\s[XYZ]");
+        assert_eq!(text_to_copy("Hallo".into(), &settings), "Hallo [XYZ]");
+        let settings = with_append(r"\nMfG");
+        assert_eq!(text_to_copy("Hallo".into(), &settings), "Hallo\nMfG");
+    }
+
+    #[test]
+    fn copy_last_transcript_copies_no_key_press() {
+        // A key press has nowhere to go on the clipboard: only the text.
+        let settings = with_append(r"\s{Enter}");
+        assert_eq!(text_to_copy("Hallo".into(), &settings), "Hallo ");
+    }
+
+    #[test]
+    fn copy_last_transcript_without_append_copies_the_dictation() {
+        assert_eq!(text_to_copy("Hallo".into(), &with_append("")), "Hallo");
     }
 }

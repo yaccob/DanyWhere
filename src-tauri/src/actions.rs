@@ -1236,7 +1236,9 @@ impl ShortcutAction for TranscribeAction {
                                         // DanyWhere: "Copy Last Transcript"
                                         // during this dictation, or an app that
                                         // didn't know the dictation shortcut,
-                                        // asked for its text on the clipboard.
+                                        // asked for its text on the clipboard,
+                                        // with its "Append" text as the service
+                                        // would have inserted it (user, 2026-11-16).
                                         let put_on_clipboard = if outcome
                                             == TranscriptionOutcome::Typed
                                             && !inserted_by_service
@@ -1244,7 +1246,7 @@ impl ShortcutAction for TranscribeAction {
                                             crate::dictation_key_inserts::put_on_clipboard_if_requested(
                                                 &ah_clone,
                                                 session,
-                                                &text_for_service,
+                                                &service_text,
                                             )
                                         } else {
                                             None

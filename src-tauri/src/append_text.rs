@@ -28,7 +28,10 @@
 //!
 //! The text is appended wherever the trailing space was: to the pasted text,
 //! to the clipboard copy after a paste, and to the reply of the "Insert Last
-//! Dictation" service. The key presses follow the paste where auto submit
+//! Dictation" service; since 2026-11-16 also to what "Copy Last Transcript"
+//! puts on the clipboard, during a dictation or after it, and to a dictation
+//! left on the clipboard because the app in front didn't know the shortcut
+//! (both stand in for the service). The key presses follow the paste where auto submit
 //! was sent; none with paste method "None" (as auto submit) and none without
 //! Accessibility, where they would go nowhere.
 
