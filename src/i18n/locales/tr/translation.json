@@ -832,7 +832,14 @@
         "title": "API",
         "provider": {
           "title": "Sağlayıcı",
-          "description": "OpenAI veya Anthropic uyumlu bir sağlayıcı seçin."
+          "description": "OpenAI veya Anthropic uyumlu bir sağlayıcı seçin.",
+          "location": {
+            "onThisMac": "Bu Mac'te",
+            "onThisComputer": "Bu bilgisayarda",
+            "cloud": "Bulut",
+            "localHint": "Son işleme bu bilgisayarda çalışır. Dikte metinleriniz bilgisayardan çıkmaz.",
+            "cloudHint": "Son işleme her diktenin metnini bu bilgisayarın dışındaki bu sağlayıcıya gönderir."
+          }
         },
         "apiFormat": {
           "title": "API Biçimi",

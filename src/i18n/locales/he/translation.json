@@ -832,7 +832,14 @@
         "title": "API",
         "provider": {
           "title": "ספק",
-          "description": "בחר ספק שתואם ל-OpenAI או ל-Anthropic."
+          "description": "בחר ספק שתואם ל-OpenAI או ל-Anthropic.",
+          "location": {
+            "onThisMac": "במק הזה",
+            "onThisComputer": "במחשב הזה",
+            "cloud": "ענן",
+            "localHint": "העיבוד שלאחר ההכתבה פועל במחשב הזה. טקסט ההכתבות לא יוצא ממנו.",
+            "cloudHint": "העיבוד שלאחר ההכתבה שולח את טקסט כל הכתבה לספק הזה, אל מחוץ למחשב."
+          }
         },
         "apiFormat": {
           "title": "פורמט API",

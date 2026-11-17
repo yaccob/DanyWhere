@@ -832,7 +832,14 @@
         "title": "API",
         "provider": {
           "title": "Provider",
-          "description": "Select an OpenAI-compatible or Anthropic-compatible provider."
+          "description": "Select an OpenAI-compatible or Anthropic-compatible provider.",
+          "location": {
+            "onThisMac": "On this Mac",
+            "onThisComputer": "On this computer",
+            "cloud": "Cloud",
+            "localHint": "Post-processing runs on this computer. The text of your dictations doesn't leave it.",
+            "cloudHint": "Post-processing sends the text of each dictation to this provider, outside this computer."
+          }
         },
         "apiFormat": {
           "title": "API Format",

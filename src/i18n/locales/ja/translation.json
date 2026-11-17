@@ -832,7 +832,14 @@
         "title": "API",
         "provider": {
           "title": "プロバイダー",
-          "description": "OpenAI 互換または Anthropic 互換のプロバイダーを選択。"
+          "description": "OpenAI 互換または Anthropic 互換のプロバイダーを選択。",
+          "location": {
+            "onThisMac": "この Mac 上",
+            "onThisComputer": "このコンピュータ上",
+            "cloud": "クラウド",
+            "localHint": "後処理はこのコンピュータ上で行われます。音声入力のテキストは外部に送信されません。",
+            "cloudHint": "後処理では、各音声入力のテキストをこのコンピュータの外にあるこのプロバイダーへ送信します。"
+          }
         },
         "apiFormat": {
           "title": "API 形式",

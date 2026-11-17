@@ -832,7 +832,14 @@
         "title": "API",
         "provider": {
           "title": "प्रोवाइडर",
-          "description": "कोई OpenAI-संगत या Anthropic-संगत प्रोवाइडर चुनें."
+          "description": "कोई OpenAI-संगत या Anthropic-संगत प्रोवाइडर चुनें.",
+          "location": {
+            "onThisMac": "इस Mac पर",
+            "onThisComputer": "इस कंप्यूटर पर",
+            "cloud": "क्लाउड",
+            "localHint": "पोस्ट-प्रोसेसिंग इसी कंप्यूटर पर चलती है। आपके डिक्टेशन का पाठ इससे बाहर नहीं जाता।",
+            "cloudHint": "पोस्ट-प्रोसेसिंग हर डिक्टेशन का पाठ इस कंप्यूटर से बाहर इस प्रदाता को भेजती है।"
+          }
         },
         "apiFormat": {
           "title": "API फ़ॉर्मेट",

@@ -31,6 +31,8 @@ mod llm_timeouts;
 mod managers;
 mod memory;
 mod model_selection;
+// DanyWhere: loads a local post-processing model when a dictation starts.
+mod model_warmup;
 mod notices;
 mod overlay;
 mod paste_tx;

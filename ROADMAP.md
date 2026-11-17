@@ -6,7 +6,7 @@ Planned work on DanyWhere, roughly in priority order within each section. Items 
 
 ### Transcription in the cloud, post-processing on this Mac
 
-**Idea (user, 2026-11-17; under discussion, nothing decided):** transcription is local only, post-processing in practice cloud only. Both should work either way: transcription by a subscribed cloud service, which might be faster thanks to the providers' hardware, and post-processing by a language model installed on this Mac.
+**Idea (user, 2026-11-17; partly decided, see below):** transcription is local only, post-processing in practice cloud only. Both should work either way: transcription by a subscribed cloud service, which might be faster thanks to the providers' hardware, and post-processing by a language model installed on this Mac.
 
 **Found (2026-11-17):**
 
@@ -14,6 +14,17 @@ Planned work on DanyWhere, roughly in priority order within each section. Items 
 - The wait is in post-processing (median 7 s, up to 20 s, with Claude Haiku 5.5 at effort `xhigh`).
 - Post-processing on this Mac works today without code changes: the "Custom" provider points at Ollama, needs no key and asks the model not to think. Measured with the user's prompt on an M1 Pro with 16 GB: of Qwen 3.5 4B and 9B, Ministral 3 8B and Gemma 4 12B, only Gemma 4 12B followed the prompt well enough, at about 3 s for short and 18–27 s for long dictations, a 31 s cold start and about 8 GB of memory. The smaller ones left dictation commands in, kept misheard names or wrote text of their own into the result. Local post-processing is therefore a matter of privacy, not speed. Ollama loads models with a 4096-token context, which the frame and a long prompt nearly fill.
 - Apple Intelligence is listed but has never worked in a release: the macOS releases are built with the Command Line Tools only, which compile the provider as a stub.
+- Apple's on-device model itself (FoundationModels, macOS 26) was measured the way DanyWhere asks it without guided generation, with a small tool that builds with the Command Line Tools: it took the long prompt without a context error but hardly followed it. Dictation commands and misheard names stayed, the transcript often came back with its tags, and once it translated the English sentence into German. Unusable for this prompt; whether guided generation (`@Generable`, which needs full Xcode) does better is untested.
+
+**Decided (2026-11-17; the user's answers, the rest decided by Claude on the user's behalf):**
+
+- Compare OpenAI's transcription models with the local ones on 20–30 real recordings from the History (the user allowed real recordings to leave the Mac for this); OpenAI only, since no other key is at hand.
+- No cloud transcription in 0.2.2. If the comparison shows clearly fewer mishearings, a branch builds it for the user to look at first.
+- Apple Intelligence is not repaired for now (finding above).
+- A small part of the local providers comes first: the warm-up and the mark (below). The switch "Only on this Mac", dedicated Ollama and LM Studio providers, the context size and the History recording where each step ran stay for later, with the user.
+- The company Mac is an M4 Pro with 24 GB: Gemma 4 12B fits there, and Gemma 4 26B-A4B (a mixture of experts, about 16 GB) is worth a try there.
+
+**Done (2026-11-18):** when a recording starts for a dictation that post-processes with a provider on this computer (its address is `localhost` or a loopback address), DanyWhere asks the model for a one-token answer, so a local server such as Ollama or LM Studio loads it while the user speaks instead of after the recording. The request runs on its own, one at a time, never holds up the recording, and its errors only go to the log. Next to the post-processing provider, the settings say "On this Mac" (elsewhere "On this computer") or "Cloud", by the same rule.
 
 **Claude's ideas (not decided):** a cloud transcription provider per profile speaking OpenAI's `/v1/audio/transcriptions`, uploading the chunks during the recording and falling back to the local model; dedicated "Ollama" and "LM Studio" providers that load the model when the recording starts and send the context size; every provider marked "On this Mac" or "Cloud" by its address, the History recording where each step ran, and a switch "Only on this Mac" for the company Mac; macOS releases built with Xcode so Apple Intelligence works.
 

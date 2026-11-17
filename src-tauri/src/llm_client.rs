@@ -930,6 +930,50 @@ pub async fn fetch_models(
     Ok(models)
 }
 
+/// DanyWhere: asks `provider` for a one-token answer from `model`, so that a
+/// server on this computer loads the model (`model_warmup`). The answer
+/// itself is thrown away; only whether the server took the request counts.
+pub async fn send_warmup(
+    provider: &PostProcessProvider,
+    api_key: &str,
+    model: &str,
+    time_limit: Duration,
+) -> Result<(), String> {
+    let base_url = provider.base_url.trim_end_matches('/');
+    let url = if provider.api_format == PostProcessApiFormat::Anthropic {
+        format!("{}/messages", base_url)
+    } else {
+        format!("{}/chat/completions", base_url)
+    };
+    // The same body suits both formats: one short message, one token back.
+    let body = serde_json::json!({
+        "model": model,
+        "max_tokens": 1,
+        "messages": [{ "role": "user", "content": "Hi" }],
+    });
+    let client = create_client(provider, api_key)?;
+    let response = client
+        .post(&url)
+        .json(&body)
+        .timeout(time_limit)
+        .send()
+        .await
+        .map_err(|e| report_reqwest_error("Warm-up request failed", &e))?;
+    let status = response.status();
+    if status.is_success() {
+        return Ok(());
+    }
+    let error_text = response
+        .text()
+        .await
+        .unwrap_or_else(|e| report_reqwest_error("Failed to read warm-up error", &e));
+    let error_text: String = error_text.chars().take(300).collect();
+    Err(format!(
+        "Warm-up request failed ({}): {}",
+        status, error_text
+    ))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1628,5 +1672,54 @@ mod tests {
         .await;
         assert!(reply.is_err());
         assert!(rejected_efforts(&custom, "model").is_empty());
+    }
+
+    #[tokio::test]
+    async fn a_warmup_asks_for_one_token_of_the_model() {
+        let (base_url, bodies) = serve_in_turn(vec![("200 OK", CHAT_OK)]).await;
+        let reply = send_warmup(
+            &provider("custom", &base_url),
+            "",
+            "gemma4:12b",
+            Duration::from_secs(5),
+        )
+        .await;
+        assert_eq!(reply, Ok(()));
+        let bodies = bodies.lock().unwrap();
+        assert_eq!(bodies.len(), 1);
+        assert_eq!(bodies[0]["model"], "gemma4:12b");
+        assert_eq!(bodies[0]["max_tokens"], 1);
+        assert_eq!(bodies[0]["messages"][0]["role"], "user");
+    }
+
+    #[tokio::test]
+    async fn an_anthropic_format_warmup_asks_for_one_token_too() {
+        let (base_url, bodies) = serve_in_turn(vec![("200 OK", MESSAGES_OK)]).await;
+        let reply = send_warmup(
+            &anthropic_format_provider(&base_url),
+            "",
+            "local-model",
+            Duration::from_secs(5),
+        )
+        .await;
+        assert_eq!(reply, Ok(()));
+        let bodies = bodies.lock().unwrap();
+        assert_eq!(bodies.len(), 1);
+        assert_eq!(bodies[0]["model"], "local-model");
+        assert_eq!(bodies[0]["max_tokens"], 1);
+    }
+
+    #[tokio::test]
+    async fn a_refused_warmup_is_an_error() {
+        let (base_url, _bodies) =
+            serve_in_turn(vec![("404 Not Found", r#"{"error":"model not found"}"#)]).await;
+        let reply = send_warmup(
+            &provider("custom", &base_url),
+            "",
+            "missing",
+            Duration::from_secs(5),
+        )
+        .await;
+        assert!(reply.is_err());
     }
 }

@@ -832,7 +832,14 @@
         "title": "API",
         "provider": {
           "title": "Provider",
-          "description": "Selecteer een OpenAI- of Anthropic-compatibele provider."
+          "description": "Selecteer een OpenAI- of Anthropic-compatibele provider.",
+          "location": {
+            "onThisMac": "Op deze Mac",
+            "onThisComputer": "Op deze computer",
+            "cloud": "Cloud",
+            "localHint": "Nabewerking draait op deze computer. De tekst van je dictaten verlaat hem niet.",
+            "cloudHint": "Nabewerking stuurt de tekst van elk dictaat naar deze provider, buiten deze computer."
+          }
         },
         "apiFormat": {
           "title": "API-indeling",

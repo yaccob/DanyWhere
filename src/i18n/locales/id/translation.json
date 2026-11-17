@@ -832,7 +832,14 @@
         "title": "API",
         "provider": {
           "title": "Penyedia",
-          "description": "Pilih penyedia yang kompatibel dengan OpenAI atau Anthropic."
+          "description": "Pilih penyedia yang kompatibel dengan OpenAI atau Anthropic.",
+          "location": {
+            "onThisMac": "Di Mac ini",
+            "onThisComputer": "Di komputer ini",
+            "cloud": "Cloud",
+            "localHint": "Pascaproses berjalan di komputer ini. Teks dikte Anda tidak meninggalkannya.",
+            "cloudHint": "Pascaproses mengirim teks setiap dikte ke penyedia ini, di luar komputer ini."
+          }
         },
         "apiFormat": {
           "title": "Format API",

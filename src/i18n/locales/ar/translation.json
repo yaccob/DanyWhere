@@ -832,7 +832,14 @@
         "title": "API",
         "provider": {
           "title": "المزود",
-          "description": "اختر مزوداً متوافقاً مع OpenAI أو Anthropic."
+          "description": "اختر مزوداً متوافقاً مع OpenAI أو Anthropic.",
+          "location": {
+            "onThisMac": "على هذا الـ Mac",
+            "onThisComputer": "على هذا الكمبيوتر",
+            "cloud": "سحابة",
+            "localHint": "تتم المعالجة اللاحقة على هذا الكمبيوتر. لا يغادره نص الإملاء.",
+            "cloudHint": "ترسل المعالجة اللاحقة نص كل إملاء إلى هذا المزوّد خارج هذا الكمبيوتر."
+          }
         },
         "apiFormat": {
           "title": "تنسيق API",

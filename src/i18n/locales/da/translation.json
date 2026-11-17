@@ -832,7 +832,14 @@
         "title": "API",
         "provider": {
           "title": "Udbyder",
-          "description": "Vælg en OpenAI- eller Anthropic-kompatibel udbyder."
+          "description": "Vælg en OpenAI- eller Anthropic-kompatibel udbyder.",
+          "location": {
+            "onThisMac": "På denne Mac",
+            "onThisComputer": "På denne computer",
+            "cloud": "Sky",
+            "localHint": "Efterbehandlingen kører på denne computer. Teksten i dine dikteringer forlader den ikke.",
+            "cloudHint": "Efterbehandlingen sender teksten i hver diktering til denne udbyder uden for denne computer."
+          }
         },
         "apiFormat": {
           "title": "API-format",
