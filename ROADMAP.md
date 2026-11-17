@@ -169,6 +169,8 @@ Each profile has its own prompt list with one prompt selected, as the post-proce
 
 **Idea (user, 2026-11-17): the second press where nothing can be inserted.** Without Accessibility, a second press of the dictation shortcut where no service can take it (the Finder, no text field) does nothing and the recording keeps running; pressed again in a text field, it inserts at once. The user likes that and wants a notice in addition, and the same behavior with Accessibility. To be settled: without Accessibility DanyWhere doesn't see a press it released to the services (Input Monitoring might let it listen without Accessibility); with Accessibility it can ask the focused element whether it takes text.
 
+Decided (user, 2026-11-17, following Claude's proposal): with Accessibility, the second press keeps the recording running and shows a notice where the focused element certainly takes no text, and ends and pastes as today wherever that is uncertain, so a press never goes nowhere where pasting would have worked. A read-only probe that records what the focused element reports in the user's own applications, without taking the focus, settles which elements count as "certainly no text". Without Accessibility, a notice depends on whether Input Monitoring can be granted on the company Mac; researched first.
+
 ### Space between consecutive dictations
 
 **Problem:** dictating into the same text field in several separate recordings (record, stop, record again) glues the pieces together: "…end of sentence.Next sentence…".
