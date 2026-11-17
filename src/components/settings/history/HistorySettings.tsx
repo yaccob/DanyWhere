@@ -1048,8 +1048,9 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
 
       <div className="flex flex-col items-start gap-1 pb-2">
         {/* DanyWhere: the text in a box that scrolls and can be resized; a
-            click into it, or Enter or Space on it, edits the version shown
-            (no pencil since the user found it superfluous, 2026-11-16). */}
+            click into it, or its hidden edit button (Tab, then Enter or
+            Space), edits the version shown (no pencil since the user found
+            it superfluous, 2026-11-16). */}
         {hasTranscription && !retrying && (
           <HistoryTextBox
             text={text}

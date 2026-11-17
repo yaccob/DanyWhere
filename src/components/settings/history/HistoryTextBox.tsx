@@ -3,9 +3,11 @@
 // others); beyond it the box scrolls inside, under the pointer, and the list
 // scrolls on once the box reaches its end. The grip at its bottom edge sets
 // that maximum for every box of the kind; a double-click on it goes back to
-// the default. A click into the text edits it, and so does Enter or Space
-// on the box, which Tab reaches; there is no button for editing. The logic
-// lives in `historyBox.ts`.
+// the default. A click into the text edits it. For the keyboard, screen
+// readers and scripts a hidden button named like the edit field sits next to
+// the text, as in Atlassian's inline edit: Tab reaches it, Enter or Space
+// press it, and the box shows its focus ring; the text itself stays plain
+// text. The logic lives in `historyBox.ts`.
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSettingsStore } from "@/stores/settingsStore";
@@ -13,12 +15,10 @@ import { Highlighted } from "./HistorySearchBar";
 import {
   FALLBACK_METRICS,
   activatesEditing,
-  activatesEditingByKey,
   boxHeightSetting,
   boxKind,
   boxMetrics,
   boxSize,
-  boxTabIndex,
   clampBoxHeight,
   dragHeight,
   editBoxHeight,
@@ -45,11 +45,12 @@ export interface HistoryTextBoxProps {
   /** Keys in the textarea (e.g. Escape, ⌘↩). */
   onKeyDown?: (event: React.KeyboardEvent<HTMLTextAreaElement>) => void;
   /** A click on the shown text that selected nothing (a drag that selects
-   * text doesn't count), or Enter or Space on the focused box. `caret` is
-   * where in `text` it was clicked, the end for a key; editing that starts
-   * right after it puts the caret there. While set, Tab reaches the box. */
+   * text doesn't count), or a press of the hidden edit button. `caret` is
+   * where in `text` it was clicked, the end for the button; editing that
+   * starts right after it puts the caret there. While set, the box has
+   * that button. */
   onActivate?: (caret: number) => void;
-  /** The textarea's accessible name. */
+  /** The accessible name of the textarea and of the hidden edit button. */
   editLabel?: string;
   /** Classes added to the text and the textarea, e.g. `italic`. */
   className?: string;
@@ -112,6 +113,7 @@ export const HistoryTextBox: React.FC<HistoryTextBoxProps> = ({
 
   const viewRef = useRef<HTMLDivElement>(null);
   const areaRef = useRef<HTMLTextAreaElement>(null);
+  const editButtonRef = useRef<HTMLButtonElement>(null);
   const [metrics, setMetrics] = useState(FALLBACK_METRICS);
   // The height while the grip is dragged; null otherwise.
   const [dragged, setDragged] = useState<number | null>(null);
@@ -173,9 +175,9 @@ export const HistoryTextBox: React.FC<HistoryTextBoxProps> = ({
   }, [editing]);
 
   // Each field takes over the other's scroll position; the edit field
-  // also the focus and the caret where the text was clicked, and the shown
-  // box the focus back when a key ended the edit (Escape, ⌘↩, Enter on Save
-  // or Cancel), so the keyboard goes on from the entry instead of the
+  // also the focus and the caret where the text was clicked, and the edit
+  // button the focus back when a key ended the edit (Escape, ⌘↩, Enter on
+  // Save or Cancel), so the keyboard goes on from the entry instead of the
   // window's start.
   const editedBefore = useRef(editing);
   useLayoutEffect(() => {
@@ -203,7 +205,7 @@ export const HistoryTextBox: React.FC<HistoryTextBoxProps> = ({
           byKey: lastPressByKey.current,
         })
       ) {
-        view.focus({ preventScroll: true });
+        editButtonRef.current?.focus({ preventScroll: true });
       }
     }
   }, [editing]);
@@ -342,11 +344,11 @@ export const HistoryTextBox: React.FC<HistoryTextBoxProps> = ({
     );
   };
 
-  // Enter or Space edits, with the caret at the end of the text.
-  const handleViewKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (!onActivate || !activatesEditingByKey(event.nativeEvent)) return;
-    event.preventDefault();
-    activate(event.currentTarget, text.length);
+  // The hidden edit button (Enter, Space, a screen reader) edits with the
+  // caret at the end of the text.
+  const handleEditButton = () => {
+    const view = viewRef.current;
+    if (view) activate(view, text.length);
   };
 
   const activate = (view: HTMLDivElement, caret: number) => {
@@ -377,20 +379,30 @@ export const HistoryTextBox: React.FC<HistoryTextBoxProps> = ({
           className={`${BOX} resize-none bg-wash border-logo-primary focus:outline-none ${className}`}
         />
       ) : (
-        <div
-          ref={viewRef}
-          tabIndex={boxTabIndex(onActivate !== undefined)}
-          onMouseDown={handleMouseDown}
-          onMouseUp={handleMouseUp}
-          onKeyDown={handleViewKeyDown}
-          onScroll={(event) => {
-            scrollTop.current = event.currentTarget.scrollTop;
-          }}
-          style={size}
-          className={`${BOX} select-text cursor-text border-line hover:border-line-strong transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-logo-primary ${className}`}
-        >
-          <Highlighted text={text} ranges={highlights} />
-        </div>
+        <>
+          {/* Before the text, so the box can show its focus (`peer`). */}
+          {onActivate && (
+            <button
+              ref={editButtonRef}
+              type="button"
+              aria-label={editLabel}
+              onClick={handleEditButton}
+              className="peer sr-only"
+            />
+          )}
+          <div
+            ref={viewRef}
+            onMouseDown={handleMouseDown}
+            onMouseUp={handleMouseUp}
+            onScroll={(event) => {
+              scrollTop.current = event.currentTarget.scrollTop;
+            }}
+            style={size}
+            className={`${BOX} select-text cursor-text border-line hover:border-line-strong transition-colors peer-focus-visible:ring-1 peer-focus-visible:ring-logo-primary ${className}`}
+          >
+            <Highlighted text={text} ranges={highlights} />
+          </div>
+        </>
       )}
       <div
         role="separator"

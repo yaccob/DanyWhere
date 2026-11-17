@@ -8,12 +8,10 @@ import {
   MAX_BOX_HEIGHT_PX,
   MIN_BOX_LINES,
   activatesEditing,
-  activatesEditingByKey,
   boxHeightSetting,
   boxKind,
   boxMetrics,
   boxSize,
-  boxTabIndex,
   clampBoxHeight,
   dragHeight,
   editBoxHeight,
@@ -157,44 +155,9 @@ check("selecting text, dragging, the scroll bar or other buttons don't", () => {
   assert.equal(activatesEditing({ ...click, button: 2 }), false);
 });
 
-// Without the pencil (user, 2026-11-16) the keyboard reaches the editor
-// through the box itself: Tab to it, then Enter or Space, as on a button.
-const press = {
-  key: "Enter",
-  metaKey: false,
-  ctrlKey: false,
-  altKey: false,
-  shiftKey: false,
-  repeat: false,
-  isComposing: false,
-};
-
-check("Enter or Space on the focused box starts editing", () => {
-  assert.equal(activatesEditingByKey(press), true);
-  assert.equal(activatesEditingByKey({ ...press, key: " " }), true);
-});
-
-check("other keys, modifiers, held keys and IME input don't", () => {
-  for (const key of ["a", "Tab", "Escape", "ArrowDown", "PageDown"]) {
-    assert.equal(activatesEditingByKey({ ...press, key }), false, key);
-  }
-  for (const modifier of ["metaKey", "ctrlKey", "altKey", "shiftKey"]) {
-    assert.equal(
-      activatesEditingByKey({ ...press, [modifier]: true }),
-      false,
-      modifier,
-    );
-  }
-  assert.equal(activatesEditingByKey({ ...press, repeat: true }), false);
-  assert.equal(activatesEditingByKey({ ...press, isComposing: true }), false);
-});
-
-check("the box is in the tab order while it can be edited", () => {
-  assert.equal(boxTabIndex(true), 0);
-  assert.equal(boxTabIndex(false), undefined);
-});
-
-check("a key that ends an edit gives the box the focus back", () => {
+// A key that ends an edit (Escape, ⌘↩, Enter on Save or Cancel) gives the
+// hidden edit button next to the text the focus back.
+check("a key that ends an edit gives the focus back", () => {
   // Escape or ⌘↩ in the edit field, Enter on Save or Cancel.
   const ended = { endedEditing: true, nothingFocused: true, byKey: true };
   assert.equal(returnsFocusAfterEditing(ended), true);
