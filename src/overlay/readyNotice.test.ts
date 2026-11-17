@@ -17,6 +17,15 @@ import type { ReadyNoticeState } from "./ReadyNotice";
 
 const LOCALES = join(fileURLToPath(import.meta.url), "../../i18n/locales");
 
+// The pill measures its label in the browser (`LabelPill.tsx`); a server
+// render only has the text, and React says so on every render.
+const consoleError = console.error;
+console.error = (...args: unknown[]) => {
+  if (String(args[0]).includes("useLayoutEffect does nothing on the server"))
+    return;
+  consoleError(...args);
+};
+
 type Translate = (key: string, options?: { keys: string }) => string;
 
 /** A locale's translate function, with i18next's `{{name}}` interpolation. */

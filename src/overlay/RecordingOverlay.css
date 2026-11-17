@@ -152,7 +152,9 @@
    center the longest label — the .swork-label ellipsis is only a safety net past it.
    A notice hugs its title instead, so RecordingOverlay.tsx measures that width and
    sets it inline, which keeps it animatable. DanyWhere: so does a pill that shows
-   a profile (src/lib/overlayProfile.ts). */
+   a profile, and a pill with one label (where the text went, which word list is
+   on), whose texts are mostly longer than the resting pill (src/lib/overlayProfile.ts,
+   src/overlay/LabelPill.tsx). */
 .scard.compact {
   animation: none;
   width: var(--ov-rest-w);

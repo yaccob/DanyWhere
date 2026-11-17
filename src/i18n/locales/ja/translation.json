@@ -1367,7 +1367,7 @@
     "transcribing": "文字起こし中…",
     "processing": "処理中…",
     "loadingModel": "モデルを読み込み中…",
-    "clipboard": "クリップボードにコピーしました – {{keys}} で貼り付け",
+    "clipboard": "クリップボードにあります – {{keys}} で貼り付け",
     "ready": "準備完了 – {{keys}} で挿入",
     "readyNoShortcut": "準備完了 – サービスメニューから挿入",
     "notReady": "まだ準備中です",

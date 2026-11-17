@@ -29,6 +29,7 @@ import type {
 } from "@/lib/overlayProfile";
 import type { ModelStateEvent } from "@/lib/types/events";
 import { getLanguageDirection } from "@/lib/utils/rtl";
+import { LabelPill } from "./LabelPill";
 import { ReadyNotice } from "./ReadyNotice";
 
 type OverlayState =
@@ -647,19 +648,13 @@ const RecordingOverlay: React.FC = () => {
         dir={direction}
         className={`ov-stage ${position} ov-fade ${isVisible ? "show" : ""}`}
       >
-        <div className="scard compact">
-          <div className="sbase">
-            <div className="sbase-l">
-              <span className="sdot ready" />
-            </div>
-            <span className="swork-label">
-              {wordListName
-                ? t("overlay.wordList", { name: wordListName })
-                : t("overlay.wordListGlobalOnly")}
-            </span>
-            <div className="sbase-r" />
-          </div>
-        </div>
+        <LabelPill
+          label={
+            wordListName
+              ? t("overlay.wordList", { name: wordListName })
+              : t("overlay.wordListGlobalOnly")
+          }
+        />
       </div>
     );
   }

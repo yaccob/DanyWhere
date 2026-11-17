@@ -1,4 +1,5 @@
 import React from "react";
+import { LabelPill } from "./LabelPill";
 
 /** The overlay states whose pill says where the dictation's text went. */
 export type ReadyNoticeState = "clipboard" | "ready" | "not_ready";
@@ -31,15 +32,5 @@ export const ReadyNotice: React.FC<ReadyNoticeProps> = ({
         : insertKeys
           ? t("overlay.ready", { keys: insertKeys })
           : t("overlay.readyNoShortcut");
-  return (
-    <div className="scard compact">
-      <div className="sbase">
-        <div className="sbase-l">
-          <span className="sdot ready" />
-        </div>
-        <span className="swork-label">{label}</span>
-        <div className="sbase-r" />
-      </div>
-    </div>
-  );
+  return <LabelPill label={label} />;
 };

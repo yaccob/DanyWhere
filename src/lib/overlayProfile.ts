@@ -1,6 +1,8 @@
 // DanyWhere: how the overlay shows a profile, as a glyph for the state of
 // "choose the profile by application" and the profile's name, and how wide
-// each pill that shows one is. Pure, so `overlayProfile.test.ts` can check it.
+// each pill that shows one is; also how wide a pill with one label is (where
+// the text went, which word list is on). Pure, so `overlayProfile.test.ts`
+// can check it.
 
 /** The state of the switch, as `app_profiles::ProfileMode` sends it. */
 export type ProfileMode = "none" | "auto" | "lock";
@@ -165,6 +167,17 @@ export function recordingPill(
     Math.min(RECORDING_NAME_MAX, content - chrome),
     min,
   );
+}
+
+/**
+ * A pill with the dot and one label (`LabelPill.tsx`): where the text went,
+ * or which word list is on. As wide as the label, at least the resting
+ * pill, and cut only at the edge of the notice window it shows in.
+ */
+export function labelPill(labelWidth: number): number {
+  const chrome = ROW_PAD + SIDES + LABEL_PAD;
+  const content = OVERLAY_WINDOW.notice - BORDER;
+  return Math.min(content, Math.max(PILL.rest, chrome + labelWidth));
 }
 
 /** The working pill with `segment` after the label. */

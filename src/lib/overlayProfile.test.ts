@@ -6,6 +6,7 @@ import {
   OVERLAY_WINDOW,
   PILL,
   contextGlyph,
+  labelPill,
   profileGlyph,
   profileNoticeLayout,
   recordingLayout,
@@ -221,6 +222,54 @@ const cases: Array<[string, () => void]> = [
           assert.ok(fits(workingPill(LABEL, name, named, true).width, 394));
         }
       }
+    },
+  ],
+  // DanyWhere: the pills with the dot and one label (`LabelPill.tsx`): where
+  // the text went, or which word list is on. A fixed 172px cut all but the
+  // shortest of them (2026-11-17).
+  [
+    "a label pill is as wide as its label",
+    () => {
+      // 20px row padding, 44px side columns, 16px label padding, the label.
+      assert.strictEqual(labelPill(200), 280);
+      assert.strictEqual(labelPill(240) - labelPill(200), 40);
+    },
+  ],
+  [
+    "a short label keeps the resting pill's width",
+    () => {
+      assert.strictEqual(labelPill(40), PILL.rest);
+      assert.strictEqual(labelPill(0), PILL.rest);
+    },
+  ],
+  [
+    "a label pill cuts its label only at its window's edge",
+    () => {
+      assert.strictEqual(labelPill(258), OVERLAY_WINDOW.notice - 2);
+      assert.strictEqual(labelPill(1000), OVERLAY_WINDOW.notice - 2);
+    },
+  ],
+  [
+    "no label pill gets wider than its window",
+    () => {
+      for (let label = 0; label <= 600; label += 25) {
+        assert.ok(fits(labelPill(label), OVERLAY_WINDOW.notice));
+      }
+    },
+  ],
+  [
+    "the label pills show in overlay.rs's notice window",
+    () => {
+      const source = readFileSync(
+        new URL("../../src-tauri/src/overlay.rs", import.meta.url),
+        "utf8",
+      );
+      const body = source.match(/fn overlay_dimensions[\s\S]*?\n\}/)?.[0] ?? "";
+      const states = body.match(/matches!\([\s\S]*?\)\s*\{/)?.[0] ?? "";
+      for (const state of ["clipboard", "ready", "not_ready", "word_list"]) {
+        assert.ok(states.includes(`"${state}"`), state);
+      }
+      assert.match(body, /\{\s*\(OVERLAY_NOTICE_WIDTH, OVERLAY_HEIGHT\)/);
     },
   ],
   [
