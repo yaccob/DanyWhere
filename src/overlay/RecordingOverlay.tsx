@@ -29,6 +29,7 @@ import type {
 } from "@/lib/overlayProfile";
 import type { ModelStateEvent } from "@/lib/types/events";
 import { getLanguageDirection } from "@/lib/utils/rtl";
+import { ReadyNotice } from "./ReadyNotice";
 
 type OverlayState =
   | "recording"
@@ -619,37 +620,22 @@ const RecordingOverlay: React.FC = () => {
     );
   }
 
-  // ---- Clipboard notice: the text was put on the clipboard instead of pasted.
-  // Ready notice: the text waits for the "Insert Last Dictation" service.
-  // Not ready: that service was called while a dictation was still running.
+  // ---- Clipboard, ready and not-ready notices (`ReadyNotice.tsx`).
   if (state === "clipboard" || state === "ready" || state === "not_ready") {
     const pasteKeys = navigator.platform.toLowerCase().includes("mac")
       ? "⌘V"
       : "Ctrl+V";
-    const label =
-      state === "clipboard"
-        ? t("overlay.clipboard", { keys: pasteKeys })
-        : state === "not_ready"
-          ? t("overlay.notReady")
-          : insertKeys
-            ? t("overlay.ready", { keys: insertKeys })
-            : t("overlay.readyNoShortcut");
     return (
       <div
         dir={direction}
         className={`ov-stage ${position} ov-fade ${isVisible ? "show" : ""}`}
       >
-        <div className="scard compact">
-          <div className="sbase">
-            <div className="sbase-l">
-              <span className="sdot ready" />
-            </div>
-            <span className="swork-label">
-              {t("overlay.clipboard", { keys: pasteKeys })}
-            </span>
-            <div className="sbase-r" />
-          </div>
-        </div>
+        <ReadyNotice
+          state={state}
+          pasteKeys={pasteKeys}
+          insertKeys={insertKeys}
+          t={t}
+        />
       </div>
     );
   }
