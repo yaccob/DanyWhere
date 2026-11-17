@@ -4,6 +4,19 @@ Planned work on DanyWhere, roughly in priority order within each section. Items 
 
 ## Features and improvements
 
+### Transcription in the cloud, post-processing on this Mac
+
+**Idea (user, 2026-11-17; under discussion, nothing decided):** transcription is local only, post-processing in practice cloud only. Both should work either way: transcription by a subscribed cloud service, which might be faster thanks to the providers' hardware, and post-processing by a language model installed on this Mac.
+
+**Found (2026-11-17):**
+
+- Transcription is already fast: Canary 1B v2 decodes during the recording, so the text is there about 1 s after the key is released (median 1.1 s over 13 dictations of up to 134 s). Uploading the recording to a cloud service takes about as long; only streaming services (about 0.3 s) would be faster. A cloud service could still hear better: German, German mixed with English, and names from the word lists given as vocabulary. Costs would be 1–5 USD a month. Handy declines cloud transcription on principle ("local-only"), so this would be DanyWhere's own.
+- The wait is in post-processing (median 7 s, up to 20 s, with Claude Haiku 5.5 at effort `xhigh`).
+- Post-processing on this Mac works today without code changes: the "Custom" provider points at Ollama, needs no key and asks the model not to think. Measured with the user's prompt on an M1 Pro with 16 GB: of Qwen 3.5 4B and 9B, Ministral 3 8B and Gemma 4 12B, only Gemma 4 12B followed the prompt well enough, at about 3 s for short and 18–27 s for long dictations, a 31 s cold start and about 8 GB of memory. The smaller ones left dictation commands in, kept misheard names or wrote text of their own into the result. Local post-processing is therefore a matter of privacy, not speed. Ollama loads models with a 4096-token context, which the frame and a long prompt nearly fill.
+- Apple Intelligence is listed but has never worked in a release: the macOS releases are built with the Command Line Tools only, which compile the provider as a stub.
+
+**Claude's ideas (not decided):** a cloud transcription provider per profile speaking OpenAI's `/v1/audio/transcriptions`, uploading the chunks during the recording and falling back to the local model; dedicated "Ollama" and "LM Studio" providers that load the model when the recording starts and send the context size; every provider marked "On this Mac" or "Cloud" by its address, the History recording where each step ran, and a switch "Only on this Mac" for the company Mac; macOS releases built with Xcode so Apple Intelligence works.
+
 ### Tray menu and main window: DanyWhere as a normal application
 
 **Idea (user, 2026-11-16; next after 0.2.0):** the History is not a setting, yet the tray menu reaches it only through "Settings...". It should get a menu item of its own, or the window should open on the History and offer a button to the settings there. The tray's "Copy Last Transcript" can go, since the shortcut (⌃⇧C, Alt+Shift+C elsewhere) does the same.
