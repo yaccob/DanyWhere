@@ -31,6 +31,12 @@ Planned work on DanyWhere, roughly in priority order within each section. Items 
 
 **Done (2026-11-16, ships with 0.2.1):** as proposed for macOS. On Windows the overlay takes the monitor the foreground window is on (`MonitorFromWindow`) and the pointer from `GetCursorPos`; on Linux it still takes the pointer from Enigo. On a tie the screen with the pointer wins.
 
+**Follow-up (user, 2026-11-17):** the overlay keeps the screen it took when its state last changed: switching to a window on another screen during the recording or the transcription leaves it behind. It should follow the screen of the focused window for as long as it shows a dictation, and the profile it names should follow the application in front the same way (the profile is chosen again when the recording ends and checked again on inserting, see "Profiles per application: decide where the text goes, not where the recording starts").
+
+### Window titles without Accessibility: find the apps instead of a fixed list
+
+**Idea (user, 2026-11-13):** the company Mac has Edge, not Chrome. Instead of a fixed list (iTerm2, Terminal, Chrome, Safari, the classic Outlook), find out which applications can tell their window title. Claude's finding: an app's `Info.plist` and scripting definition (`.sdef`, with the standard suite it includes) tell, without sending it an Apple event, whether and how to ask it: Chromium browsers (`active tab`, and `mode` for incognito windows), Safari-like browsers (`current tab`), iTerm2 (a rule of its own), and every app whose dictionary has the standard suite's window name. Decided (user, 2026-11-17, following Claude's recommendations): the settings list at least every running app that can tell a title, more where useful; an app without a rule of its own gets the name of its front window; private windows of browsers that don't mark them (Safari) are read as with Accessibility, Chromium's incognito windows stay out. Every app still needs the user's "Allow …".
+
 ### History: drop the pencil
 
 **Idea (user, 2026-11-16; for one of the next steps):** the pencil next to an entry is superfluous now: a click into the text already opens it for editing. The wand (post-processing) stays.
@@ -160,6 +166,8 @@ Each profile has its own prompt list with one prompt selected, as the post-proce
 **Done:** the "Paste Last Transcript" shortcut (Option+Shift+V on macOS) puts the most recent transcript where the cursor is now; without Accessibility it goes to the clipboard, and a notice tells the user where the text is (duration configurable under Advanced, 0 = off).
 
 **Possible later addition:** detect automatically that a paste went nowhere and leave the text on the clipboard with the same notice. Handy's experimental receipt-based paste (`reliable_paste`, `src-tauri/src/paste_tx/macos.rs`) gets a callback when an app actually reads the pasteboard and already detects "no read within timeout". Clipboard managers that read eagerly need checking. **Upstream candidate.**
+
+**Idea (user, 2026-11-17): the second press where nothing can be inserted.** Without Accessibility, a second press of the dictation shortcut where no service can take it (the Finder, no text field) does nothing and the recording keeps running; pressed again in a text field, it inserts at once. The user likes that and wants a notice in addition, and the same behavior with Accessibility. To be settled: without Accessibility DanyWhere doesn't see a press it released to the services (Input Monitoring might let it listen without Accessibility); with Accessibility it can ask the focused element whether it takes text.
 
 ### Space between consecutive dictations
 
