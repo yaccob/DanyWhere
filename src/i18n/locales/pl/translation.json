@@ -934,6 +934,7 @@
         "windowTitlesUnsupported": "Handy nie zna jeszcze tytułów okien w tym systemie, więc nie ma tu kontekstu.",
         "windowTitlesAutomation": "Bez Dostępności Handy może zapytać te aplikacje o tytuł okna. macOS pyta cię o to raz dla każdej aplikacji; Handy odczytuje tylko tytuł.",
         "windowTitlesOtherApps": "Inne aplikacje bez Dostępności nie podają tytułu; dyktowania w nich nie mają kontekstu.",
+        "windowTitlesNotRunning": "Zainstalowane, nie działają",
         "allow": "Zezwól…",
         "statusAllowed": "Dozwolone",
         "statusNotAsked": "Jeszcze nie zapytano",

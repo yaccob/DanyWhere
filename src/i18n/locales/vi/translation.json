@@ -934,6 +934,7 @@
         "windowTitlesUnsupported": "Handy chưa biết tiêu đề cửa sổ trên hệ thống này, nên ở đây không có ngữ cảnh.",
         "windowTitlesAutomation": "Không có Trợ năng, Handy có thể hỏi các ứng dụng này tiêu đề cửa sổ. macOS hỏi bạn một lần cho mỗi ứng dụng; Handy chỉ đọc tiêu đề.",
         "windowTitlesOtherApps": "Các ứng dụng khác không cho biết tiêu đề khi không có Trợ năng; các lần đọc chính tả ở đó không có ngữ cảnh.",
+        "windowTitlesNotRunning": "Đã cài đặt, không chạy",
         "allow": "Cho phép…",
         "statusAllowed": "Đã cho phép",
         "statusNotAsked": "Chưa hỏi",

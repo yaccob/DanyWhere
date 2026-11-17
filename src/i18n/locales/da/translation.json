@@ -934,6 +934,7 @@
         "windowTitlesUnsupported": "Handy kender endnu ikke vinduestitler på dette system, så her er der ingen kontekst.",
         "windowTitlesAutomation": "Uden Hjælpemidler kan Handy spørge disse apps om deres vinduestitel. macOS spørger dig én gang pr. app; Handy læser kun titlen.",
         "windowTitlesOtherApps": "Andre apps giver ingen titel uden Hjælpemidler; dikteringer der har ingen kontekst.",
+        "windowTitlesNotRunning": "Installeret, kører ikke",
         "allow": "Tillad…",
         "statusAllowed": "Tilladt",
         "statusNotAsked": "Ikke spurgt endnu",

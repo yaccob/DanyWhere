@@ -934,6 +934,7 @@
         "windowTitlesUnsupported": "Handy belum mengetahui judul jendela di sistem ini, jadi di sini tidak ada konteks.",
         "windowTitlesAutomation": "Tanpa Aksesibilitas, Handy dapat menanyakan judul jendela kepada aplikasi ini. macOS menanyakannya kepada Anda sekali per aplikasi; Handy hanya membaca judulnya.",
         "windowTitlesOtherApps": "Aplikasi lain tidak memberi judul tanpa Aksesibilitas; dikte di sana tidak punya konteks.",
+        "windowTitlesNotRunning": "Terpasang, tidak berjalan",
         "allow": "Izinkan…",
         "statusAllowed": "Diizinkan",
         "statusNotAsked": "Belum ditanyakan",

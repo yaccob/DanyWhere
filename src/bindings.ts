@@ -1839,7 +1839,14 @@ export type AutoUnavailableReason =
  * None of their languages fit the model.
  */
 { kind: "no_match" }
-export type AutomationApp = { bundle_id: string; name: string; status: AutomationStatus }
+/**
+ * An app that can tell its window title by Apple event.
+ */
+export type AutomationApp = { bundle_id: string; name: string; 
+/**
+ * Only a running app can be allowed: macOS asks only about one.
+ */
+running: boolean; status: AutomationStatus }
 /**
  * Whether DanyWhere may ask an app for its window title by Apple event.
  */
@@ -2658,8 +2665,9 @@ supported: boolean;
  */
 accessibility: boolean; 
 /**
- * macOS without Accessibility: the scriptable apps and whether DanyWhere
- * may ask them.
+ * macOS without Accessibility: the apps that can tell their window title
+ * and whether DanyWhere may ask them, the running ones first, then the
+ * installed ones that aren't running, each by name.
  */
 apps: AutomationApp[] }
 export type WindowsMicrophonePermissionStatus = { supported: boolean; overall_access: PermissionAccess; device_access: PermissionAccess; app_access: PermissionAccess; desktop_app_access: PermissionAccess }

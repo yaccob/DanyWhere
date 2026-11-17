@@ -934,6 +934,7 @@
         "windowTitlesUnsupported": "Handy känner ännu inte till fönstertitlar på det här systemet, så här finns ingen kontext.",
         "windowTitlesAutomation": "Utan Hjälpmedel kan Handy fråga de här apparna om deras fönstertitel. macOS frågar dig en gång per app; Handy läser bara titeln.",
         "windowTitlesOtherApps": "Andra appar ger ingen titel utan Hjälpmedel; dikteringar där har ingen kontext.",
+        "windowTitlesNotRunning": "Installerade, körs inte",
         "allow": "Tillåt…",
         "statusAllowed": "Tillåten",
         "statusNotAsked": "Inte frågad än",

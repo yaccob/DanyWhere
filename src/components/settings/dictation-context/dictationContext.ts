@@ -1,6 +1,10 @@
 // DanyWhere: context from earlier dictations in the same window
 // (`dictation_context.rs`). Helpers for the settings and History.
-import type { DictationContextSettings, EntryWindowContext } from "@/bindings";
+import type {
+  AutomationApp,
+  DictationContextSettings,
+  EntryWindowContext,
+} from "@/bindings";
 
 /** The settings with every field filled in, as the backend defaults them. */
 export type ContextSettings = Required<DictationContextSettings>;
@@ -90,3 +94,13 @@ export const firstWords = (text: string, count: number): string => {
   const shown = words.slice(0, count).join(" ");
   return words.length > count ? `${shown} …` : shown;
 };
+
+/** The apps that can tell their window title, as the settings list them:
+ * the running ones, which can be allowed, and below them the installed ones
+ * that aren't running. Keeps the backend's order within each group. */
+export const titleAppGroups = (
+  apps: AutomationApp[],
+): { running: AutomationApp[]; notRunning: AutomationApp[] } => ({
+  running: apps.filter((app) => app.running),
+  notRunning: apps.filter((app) => !app.running),
+});

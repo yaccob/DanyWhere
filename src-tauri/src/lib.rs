@@ -51,6 +51,8 @@ mod signal_handle;
 mod sound_queue;
 mod system_languages;
 mod theme_file;
+#[cfg(target_os = "macos")]
+mod title_query;
 mod transcription_coordinator;
 mod transcription_hook;
 mod tray;
@@ -264,6 +266,10 @@ fn initialize_core_logic(app_handle: &AppHandle) {
             }
         });
     }
+
+    // DanyWhere: without Accessibility, read in the background which apps can
+    // tell their window title, so a dictation's capture finds it in a cache.
+    window_capture::warm_up();
 
     // Note: Shortcuts are NOT initialized here.
     // The frontend is responsible for calling the `initialize_shortcuts` command

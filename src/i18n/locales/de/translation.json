@@ -934,6 +934,7 @@
         "windowTitlesUnsupported": "Auf diesem System kennt Handy noch keine Fenstertitel, daher gibt es hier keinen Kontext.",
         "windowTitlesAutomation": "Ohne Bedienungshilfen kann Handy diese Apps nach ihrem Fenstertitel fragen. macOS fragt dich dafür einmal pro App; Handy liest nur den Titel.",
         "windowTitlesOtherApps": "Andere Apps nennen ohne Bedienungshilfen keinen Titel; Diktate dort haben keinen Kontext.",
+        "windowTitlesNotRunning": "Installiert, nicht gestartet",
         "allow": "Erlauben …",
         "statusAllowed": "Erlaubt",
         "statusNotAsked": "Noch nicht gefragt",

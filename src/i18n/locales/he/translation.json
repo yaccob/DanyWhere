@@ -934,6 +934,7 @@
         "windowTitlesUnsupported": "Handy עדיין לא מכיר כותרות חלונות במערכת הזו, ולכן אין כאן הקשר.",
         "windowTitlesAutomation": "בלי נגישות, Handy יכול לבקש מהאפליקציות האלה את כותרת החלון שלהן. macOS ישאל אותך פעם אחת לכל אפליקציה; Handy קורא רק את הכותרת.",
         "windowTitlesOtherApps": "אפליקציות אחרות לא מוסרות כותרת בלי נגישות; להכתבות בהן אין הקשר.",
+        "windowTitlesNotRunning": "מותקנות, לא פועלות",
         "allow": "לאפשר…",
         "statusAllowed": "מותר",
         "statusNotAsked": "עדיין לא נשאל",

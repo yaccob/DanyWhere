@@ -934,6 +934,7 @@
         "windowTitlesUnsupported": "Handy non conosce ancora i titoli delle finestre su questo sistema, quindi qui non c'è contesto.",
         "windowTitlesAutomation": "Senza Accessibilità, Handy può chiedere a queste app il titolo della finestra. macOS te lo chiede una volta per app; Handy legge solo il titolo.",
         "windowTitlesOtherApps": "Le altre app non danno un titolo senza Accessibilità; le dettature lì non hanno contesto.",
+        "windowTitlesNotRunning": "Installate, non in esecuzione",
         "allow": "Consenti…",
         "statusAllowed": "Consentito",
         "statusNotAsked": "Non ancora chiesto",
