@@ -37,6 +37,8 @@ Planned work on DanyWhere, roughly in priority order within each section. Items 
 
 **To check first (Claude):** whether the text box can be reached and opened for editing from the keyboard (Tab, then Enter or Space) without the pencil; if not, the box needs that before the pencil goes. Related open point: a double-click on a word starts editing at the first click, so selecting a word to copy it opens the editor.
 
+**Done (2026-11-17):** the check found that the box could not be reached from the keyboard; the pencil was the only way there. Now Tab reaches the box while it can be edited and shows a focus ring; plain Enter or Space edits it with the caret at the end (not with a modifier, a held key or during IME input). When a key ends the edit (Escape, ⌘↩, Enter on Save or Cancel), the focus goes back to the box, so the keyboard goes on from the entry; after a click it doesn't, so no ring is left behind. The pencil next to the entry is gone; the pencil that marks a version the user changed stays. The double-click point above stays as it is (user, 2026-11-17): a trial in which a click waited for the double-click interval, as in the Finder, felt less practical than opening at once, and there is no single convention to follow.
+
 ### README: rework "What DanyWhere adds to Handy"
 
 **Idea (user, 2026-11-16; one of the next steps, soon):** the README's list needs a rework. Its last point, "Installs next to Handy", is true but nothing DanyWhere adds to Handy (Claude's idea: move it to "Install"). And important features built since are missing.

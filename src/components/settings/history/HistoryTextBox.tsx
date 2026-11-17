@@ -3,7 +3,9 @@
 // others); beyond it the box scrolls inside, under the pointer, and the list
 // scrolls on once the box reaches its end. The grip at its bottom edge sets
 // that maximum for every box of the kind; a double-click on it goes back to
-// the default. The logic lives in `historyBox.ts`.
+// the default. A click into the text edits it, and so does Enter or Space
+// on the box, which Tab reaches; there is no button for editing. The logic
+// lives in `historyBox.ts`.
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSettingsStore } from "@/stores/settingsStore";
@@ -11,15 +13,18 @@ import { Highlighted } from "./HistorySearchBar";
 import {
   FALLBACK_METRICS,
   activatesEditing,
+  activatesEditingByKey,
   boxHeightSetting,
   boxKind,
   boxMetrics,
   boxSize,
+  boxTabIndex,
   clampBoxHeight,
   dragHeight,
   editBoxHeight,
   heightOnRelease,
   maxBoxHeight,
+  returnsFocusAfterEditing,
   scrollToShow,
 } from "./historyBox";
 
@@ -40,8 +45,9 @@ export interface HistoryTextBoxProps {
   /** Keys in the textarea (e.g. Escape, ⌘↩). */
   onKeyDown?: (event: React.KeyboardEvent<HTMLTextAreaElement>) => void;
   /** A click on the shown text that selected nothing (a drag that selects
-   * text doesn't count). `caret` is where in `text` it was clicked; editing
-   * that starts right after it puts the caret there. */
+   * text doesn't count), or Enter or Space on the focused box. `caret` is
+   * where in `text` it was clicked, the end for a key; editing that starts
+   * right after it puts the caret there. While set, Tab reaches the box. */
   onActivate?: (caret: number) => void;
   /** The textarea's accessible name. */
   editLabel?: string;
@@ -146,9 +152,35 @@ export const HistoryTextBox: React.FC<HistoryTextBoxProps> = ({
     );
   }, []);
 
+  // Whether the last press while editing was a key or the pointer, so only
+  // a key that ends the edit brings the focus back to the box.
+  const lastPressByKey = useRef(false);
+  useEffect(() => {
+    if (!editing) return;
+    lastPressByKey.current = false;
+    const byKey = () => {
+      lastPressByKey.current = true;
+    };
+    const byPointer = () => {
+      lastPressByKey.current = false;
+    };
+    document.addEventListener("keydown", byKey, true);
+    document.addEventListener("pointerdown", byPointer, true);
+    return () => {
+      document.removeEventListener("keydown", byKey, true);
+      document.removeEventListener("pointerdown", byPointer, true);
+    };
+  }, [editing]);
+
   // Each field takes over the other's scroll position; the edit field
-  // also the focus and the caret where the text was clicked.
+  // also the focus and the caret where the text was clicked, and the shown
+  // box the focus back when a key ended the edit (Escape, ⌘↩, Enter on Save
+  // or Cancel), so the keyboard goes on from the entry instead of the
+  // window's start.
+  const editedBefore = useRef(editing);
   useLayoutEffect(() => {
+    const endedEditing = editedBefore.current && !editing;
+    editedBefore.current = editing;
     if (editing) {
       const area = areaRef.current;
       if (!area) return;
@@ -161,7 +193,18 @@ export const HistoryTextBox: React.FC<HistoryTextBoxProps> = ({
       area.focus({ preventScroll: true });
       area.setSelectionRange(caret, caret);
     } else if (viewRef.current) {
-      viewRef.current.scrollTop = scrollTop.current;
+      const view = viewRef.current;
+      view.scrollTop = scrollTop.current;
+      const active = document.activeElement;
+      if (
+        returnsFocusAfterEditing({
+          endedEditing,
+          nothingFocused: active === null || active === document.body,
+          byKey: lastPressByKey.current,
+        })
+      ) {
+        view.focus({ preventScroll: true });
+      }
     }
   }, [editing]);
 
@@ -293,12 +336,24 @@ export const HistoryTextBox: React.FC<HistoryTextBoxProps> = ({
     };
     if (!activatesEditing(click)) return;
     const view = event.currentTarget;
-    const caret =
-      clickedOffset(view, event.clientX, event.clientY) ?? text.length;
+    activate(
+      view,
+      clickedOffset(view, event.clientX, event.clientY) ?? text.length,
+    );
+  };
+
+  // Enter or Space edits, with the caret at the end of the text.
+  const handleViewKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!onActivate || !activatesEditingByKey(event.nativeEvent)) return;
+    event.preventDefault();
+    activate(event.currentTarget, text.length);
+  };
+
+  const activate = (view: HTMLDivElement, caret: number) => {
     pendingCaret.current = caret;
     scrollTop.current = view.scrollTop;
     viewHeight.current = view.getBoundingClientRect().height;
-    onActivate(caret);
+    onActivate?.(caret);
   };
 
   const gripTitle =
@@ -324,13 +379,15 @@ export const HistoryTextBox: React.FC<HistoryTextBoxProps> = ({
       ) : (
         <div
           ref={viewRef}
+          tabIndex={boxTabIndex(onActivate !== undefined)}
           onMouseDown={handleMouseDown}
           onMouseUp={handleMouseUp}
+          onKeyDown={handleViewKeyDown}
           onScroll={(event) => {
             scrollTop.current = event.currentTarget.scrollTop;
           }}
           style={size}
-          className={`${BOX} select-text cursor-text border-line hover:border-line-strong transition-colors ${className}`}
+          className={`${BOX} select-text cursor-text border-line hover:border-line-strong transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-logo-primary ${className}`}
         >
           <Highlighted text={text} ranges={highlights} />
         </div>

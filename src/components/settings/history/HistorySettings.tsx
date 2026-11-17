@@ -12,7 +12,6 @@ import {
   FileAudio,
   FilePlus,
   FolderOpen,
-  Pencil,
   RotateCcw,
   Star,
   Trash2,
@@ -979,15 +978,6 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
             )}
           </IconButton>
           <IconButton
-            onClick={() => void startEditing(shown)}
-            disabled={
-              !hasTranscription || retrying || editing !== null || saving
-            }
-            title={t("settings.history.edit")}
-          >
-            <Pencil width={16} height={16} />
-          </IconButton>
-          <IconButton
             onClick={onToggleSaved}
             active={entry.saved}
             title={keepRecordingTooltip(entry.saved, (key) => t(key))}
@@ -1058,7 +1048,8 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
 
       <div className="flex flex-col items-start gap-1 pb-2">
         {/* DanyWhere: the text in a box that scrolls and can be resized; a
-            click into it (or the pencil) edits the version shown. */}
+            click into it, or Enter or Space on it, edits the version shown
+            (no pencil since the user found it superfluous, 2026-11-16). */}
         {hasTranscription && !retrying && (
           <HistoryTextBox
             text={text}

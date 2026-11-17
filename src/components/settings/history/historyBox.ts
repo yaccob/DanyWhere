@@ -153,6 +153,42 @@ export const activatesEditing = (click: {
   click.distance <= CLICK_SLOP_PX &&
   !click.onScrollbar;
 
+/** Whether a key pressed on the focused box starts editing: a plain Enter
+ * or Space, as on a button; not with a modifier, not a held key repeating,
+ * not while an input method composes. */
+export const activatesEditingByKey = (key: {
+  key: string;
+  metaKey: boolean;
+  ctrlKey: boolean;
+  altKey: boolean;
+  shiftKey: boolean;
+  repeat: boolean;
+  isComposing: boolean;
+}): boolean =>
+  (key.key === "Enter" || key.key === " ") &&
+  !key.metaKey &&
+  !key.ctrlKey &&
+  !key.altKey &&
+  !key.shiftKey &&
+  !key.repeat &&
+  !key.isComposing;
+
+/** The shown box's `tabIndex`: in the tab order while it can be edited, so
+ * the keyboard reaches the editor without a button for it. */
+export const boxTabIndex = (canEdit: boolean): number | undefined =>
+  canEdit ? 0 : undefined;
+
+/** Whether the shown box takes the focus when editing ends: when a key
+ * ended it (Escape or ⌘↩ in the edit field, Enter on Save or Cancel) and
+ * the focus went nowhere with the edit field and its buttons; never away
+ * from where the user went on, and not after a click, which would leave a
+ * focus ring around the box. */
+export const returnsFocusAfterEditing = (state: {
+  endedEditing: boolean;
+  nothingFocused: boolean;
+  byKey: boolean;
+}): boolean => state.endedEditing && state.nothingFocused && state.byKey;
+
 /** The scroll position that shows a part at `top` with `height` (both
  * within the box's content), centred; null if it shows already. */
 export const scrollToShow = (part: {
