@@ -277,8 +277,23 @@ fn frontmost_window_of(windows: &[ListedWindow], pid: i32) -> Option<ScreenRect>
 /// The frontmost window as a [`CapturedWindow`], unless its app is excluded,
 /// is DanyWhere itself or has no usable title.
 fn frontmost_window(excluded: &[String]) -> Option<CapturedWindow> {
-    let (app_id, app_name, raw_title) = platform::frontmost()?;
-    if dictation_context::is_excluded_app(&app_id, &app_name, excluded) {
+    capture_front(platform::frontmost, excluded)
+}
+
+/// Whether DanyWhere may ask the app with this id and name for its title.
+type WantsTitle<'a> = &'a dyn Fn(&str, &str) -> bool;
+
+/// [`frontmost_window`] with the app in front given by `front`, which asks
+/// for the title only when its argument says so: an excluded app gets no
+/// Apple event and no Accessibility query.
+fn capture_front(
+    front: impl FnOnce(WantsTitle) -> Option<(String, String, Option<String>)>,
+    excluded: &[String],
+) -> Option<CapturedWindow> {
+    let not_excluded =
+        |id: &str, name: &str| !dictation_context::is_excluded_app(id, name, excluded);
+    let (app_id, app_name, raw_title) = front(&not_excluded)?;
+    if !not_excluded(&app_id, &app_name) {
         log::debug!("The frontmost app is excluded from context");
         return None;
     }
@@ -356,7 +371,7 @@ mod platform {
 
     use super::{
         frontmost_window_of, status_from_os, AutomationApp, AutomationStatus, ListedWindow,
-        ScreenRect, WindowTitleAccess,
+        ScreenRect, WantsTitle, WindowTitleAccess,
     };
     use crate::title_query::{self, Bundle};
 
@@ -715,11 +730,13 @@ mod platform {
     }
 
     /// The frontmost app's id and name, and the title of its window if
-    /// DanyWhere may learn it.
-    pub fn frontmost() -> Option<(String, String, Option<String>)> {
+    /// DanyWhere may learn it and `wants_title` allows asking.
+    pub fn frontmost(wants_title: WantsTitle) -> Option<(String, String, Option<String>)> {
         let (bundle_id, name, pid) = frontmost_app_with_pid()?;
         // SAFETY: a plain query without side effects.
-        let title = if unsafe { AXIsProcessTrusted() } {
+        let title = if !wants_title(&bundle_id, &name) {
+            None
+        } else if unsafe { AXIsProcessTrusted() } {
             accessibility_title(pid)
         } else {
             automation_title(&bundle_id, pid)
@@ -899,7 +916,7 @@ mod platform {
 
 #[cfg(target_os = "windows")]
 mod platform {
-    use super::{AutomationStatus, ScreenRect, WindowTitleAccess};
+    use super::{AutomationStatus, ScreenRect, WantsTitle, WindowTitleAccess};
     use windows::core::PWSTR;
     use windows::Win32::Foundation::{CloseHandle, MAX_PATH, POINT};
     use windows::Win32::Graphics::Gdi::{
@@ -915,7 +932,7 @@ mod platform {
     };
 
     pub fn frontmost_app() -> Option<(String, String)> {
-        frontmost().map(|(exe, name, _)| (exe, name))
+        frontmost(&|_: &str, _: &str| false).map(|(exe, name, _)| (exe, name))
     }
 
     /// The bounds of the monitor Windows puts the foreground window on, in
@@ -966,8 +983,8 @@ mod platform {
     }
 
     /// The foreground window's program (exe file name), its name, and the
-    /// window's title.
-    pub fn frontmost() -> Option<(String, String, Option<String>)> {
+    /// window's title when `wants_title` allows it.
+    pub fn frontmost(wants_title: WantsTitle) -> Option<(String, String, Option<String>)> {
         // SAFETY: Win32 calls on the foreground window handle and a process
         // handle opened and closed here.
         unsafe {
@@ -1008,6 +1025,7 @@ mod platform {
                 .file_stem()
                 .map(|stem| stem.to_string_lossy().to_string())
                 .unwrap_or_else(|| exe.clone());
+            let title = title.filter(|_| wants_title(&exe, &name));
             Some((exe, name, title))
         }
     }
@@ -1030,10 +1048,10 @@ mod platform {
 
 #[cfg(not(any(target_os = "macos", target_os = "windows")))]
 mod platform {
-    use super::{AutomationStatus, ScreenRect, WindowTitleAccess};
+    use super::{AutomationStatus, ScreenRect, WantsTitle, WindowTitleAccess};
 
     /// Linux: not yet, so dictations there have no context.
-    pub fn frontmost() -> Option<(String, String, Option<String>)> {
+    pub fn frontmost(_wants_title: WantsTitle) -> Option<(String, String, Option<String>)> {
         None
     }
 
@@ -1076,6 +1094,44 @@ mod platform {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::cell::Cell;
+
+    /// The app in front as `capture_front` gets it: it records whether its
+    /// title was asked for, as an Apple event or Accessibility query would be.
+    fn front_app<'a>(
+        id: &'a str,
+        name: &'a str,
+        asked: &'a Cell<bool>,
+    ) -> impl FnOnce(WantsTitle) -> Option<(String, String, Option<String>)> + 'a {
+        move |wants_title| {
+            let title = wants_title(id, name).then(|| {
+                asked.set(true);
+                "Notes about the trip".to_string()
+            });
+            Some((id.to_string(), name.to_string(), title))
+        }
+    }
+
+    #[test]
+    fn an_excluded_app_is_never_asked_for_its_title() {
+        let excluded = vec!["com.example.vault".to_string(), "Mail".to_string()];
+        for (id, name) in [("com.example.vault", "Vault"), ("com.apple.mail", "Mail")] {
+            let asked = Cell::new(false);
+            assert_eq!(capture_front(front_app(id, name, &asked), &excluded), None);
+            assert!(!asked.get(), "{name} was asked for its title");
+        }
+    }
+
+    #[test]
+    fn an_app_that_is_not_excluded_is_asked_for_its_title() {
+        let excluded = vec!["com.example.vault".to_string()];
+        let asked = Cell::new(false);
+        let captured = capture_front(front_app("com.apple.Notes", "Notes", &asked), &excluded);
+        assert!(asked.get());
+        let captured = captured.expect("a window");
+        assert_eq!(captured.app_id, "com.apple.Notes");
+        assert_eq!(captured.title, "Notes about the trip");
+    }
 
     fn window(title: &str) -> CapturedWindow {
         CapturedWindow {
