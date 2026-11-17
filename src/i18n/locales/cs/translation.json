@@ -832,7 +832,14 @@
         "title": "API",
         "provider": {
           "title": "Poskytovatel",
-          "description": "Vyberte poskytovatele kompatibilního s OpenAI nebo Anthropic."
+          "description": "Vyberte poskytovatele kompatibilního s OpenAI nebo Anthropic.",
+          "location": {
+            "onThisMac": "Na tomto Macu",
+            "onThisComputer": "Na tomto počítači",
+            "cloud": "Cloud",
+            "localHint": "Následné zpracování běží na tomto počítači. Text diktátů ho neopouští.",
+            "cloudHint": "Následné zpracování posílá text každého diktátu tomuto poskytovateli, mimo tento počítač."
+          }
         },
         "apiFormat": {
           "title": "Formát API",

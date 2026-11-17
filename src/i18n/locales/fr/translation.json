@@ -832,7 +832,14 @@
         "title": "API",
         "provider": {
           "title": "Fournisseur",
-          "description": "Sélectionnez un fournisseur compatible OpenAI ou Anthropic."
+          "description": "Sélectionnez un fournisseur compatible OpenAI ou Anthropic.",
+          "location": {
+            "onThisMac": "Sur ce Mac",
+            "onThisComputer": "Sur cet ordinateur",
+            "cloud": "Cloud",
+            "localHint": "Le post-traitement s’exécute sur cet ordinateur. Le texte de vos dictées ne le quitte pas.",
+            "cloudHint": "Le post-traitement envoie le texte de chaque dictée à ce fournisseur, hors de cet ordinateur."
+          }
         },
         "apiFormat": {
           "title": "Format d'API",

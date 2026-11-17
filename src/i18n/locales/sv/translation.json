@@ -832,7 +832,14 @@
         "title": "API",
         "provider": {
           "title": "Leverantör",
-          "description": "Välj en OpenAI- eller Anthropic-kompatibel leverantör."
+          "description": "Välj en OpenAI- eller Anthropic-kompatibel leverantör.",
+          "location": {
+            "onThisMac": "På den här Macen",
+            "onThisComputer": "På den här datorn",
+            "cloud": "Moln",
+            "localHint": "Efterbearbetningen körs på den här datorn. Texten i dina dikteringar lämnar den inte.",
+            "cloudHint": "Efterbearbetningen skickar texten i varje diktering till den här leverantören, utanför den här datorn."
+          }
         },
         "apiFormat": {
           "title": "API-format",

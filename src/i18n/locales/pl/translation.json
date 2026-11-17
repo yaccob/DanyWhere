@@ -832,7 +832,14 @@
         "title": "API",
         "provider": {
           "title": "Dostawca",
-          "description": "Wybierz dostawcę zgodnego z OpenAI lub Anthropic."
+          "description": "Wybierz dostawcę zgodnego z OpenAI lub Anthropic.",
+          "location": {
+            "onThisMac": "Na tym Macu",
+            "onThisComputer": "Na tym komputerze",
+            "cloud": "Chmura",
+            "localHint": "Przetwarzanie końcowe odbywa się na tym komputerze. Tekst dyktowania go nie opuszcza.",
+            "cloudHint": "Przetwarzanie końcowe wysyła tekst każdego dyktowania do tego dostawcy, poza ten komputer."
+          }
         },
         "apiFormat": {
           "title": "Format API",

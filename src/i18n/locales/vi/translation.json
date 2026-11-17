@@ -832,7 +832,14 @@
         "title": "API",
         "provider": {
           "title": "Nhà cung cấp",
-          "description": "Chọn một nhà cung cấp tương thích OpenAI hoặc Anthropic."
+          "description": "Chọn một nhà cung cấp tương thích OpenAI hoặc Anthropic.",
+          "location": {
+            "onThisMac": "Trên máy Mac này",
+            "onThisComputer": "Trên máy tính này",
+            "cloud": "Đám mây",
+            "localHint": "Hậu xử lý chạy trên máy tính này. Văn bản đọc chính tả không rời khỏi máy.",
+            "cloudHint": "Hậu xử lý gửi văn bản của mỗi lần đọc chính tả đến nhà cung cấp này, ra ngoài máy tính này."
+          }
         },
         "apiFormat": {
           "title": "Định dạng API",

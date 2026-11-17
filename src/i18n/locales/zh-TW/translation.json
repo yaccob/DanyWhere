@@ -832,7 +832,14 @@
         "title": "API",
         "provider": {
           "title": "供應商",
-          "description": "選擇一個相容 OpenAI 或 Anthropic 的供應商"
+          "description": "選擇一個相容 OpenAI 或 Anthropic 的供應商",
+          "location": {
+            "onThisMac": "在這台 Mac 上",
+            "onThisComputer": "在這台電腦上",
+            "cloud": "雲端",
+            "localHint": "後處理在這台電腦上執行，聽寫文字不會離開這台電腦。",
+            "cloudHint": "後處理會將每次聽寫的文字傳送到這台電腦以外的此供應商。"
+          }
         },
         "apiFormat": {
           "title": "API 格式",

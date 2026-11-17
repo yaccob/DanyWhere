@@ -832,7 +832,14 @@
         "title": "API",
         "provider": {
           "title": "Anbieter",
-          "description": "Wähle einen OpenAI- oder Anthropic-kompatiblen Anbieter."
+          "description": "Wähle einen OpenAI- oder Anthropic-kompatiblen Anbieter.",
+          "location": {
+            "onThisMac": "Auf diesem Mac",
+            "onThisComputer": "Auf diesem Computer",
+            "cloud": "Cloud",
+            "localHint": "Die Nachbearbeitung läuft auf diesem Computer. Der Text deiner Diktate verlässt ihn nicht.",
+            "cloudHint": "Die Nachbearbeitung schickt den Text jedes Diktats an diesen Anbieter, außerhalb dieses Computers."
+          }
         },
         "apiFormat": {
           "title": "API-Format",

@@ -912,6 +912,15 @@ impl ShortcutAction for TranscribeAction {
         if recording_error.is_none() {
             // Dynamically register the cancel shortcut in a separate task to avoid deadlock
             shortcut::register_cancel_shortcut(app);
+            // DanyWhere: a post-processing model on this computer starts
+            // loading now, so its cold start falls into the speaking time.
+            crate::model_warmup::start(
+                &settings,
+                crate::app_profiles::effective_post_process(
+                    self.post_process,
+                    crate::app_profiles::dictation_values().as_ref(),
+                ),
+            );
         } else {
             // Starting failed (for example due to blocked microphone permissions).
             // Revert UI state so we don't stay stuck in the recording overlay.
