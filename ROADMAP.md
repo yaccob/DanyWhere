@@ -4,6 +4,18 @@ Planned work on DanyWhere, roughly in priority order within each section. Items 
 
 ## Features and improvements
 
+### Post-processing: several prompts, chained or as alternatives, chosen and ordered per profile
+
+**Idea (user, 2026-11-18; to be discussed next):** there can still be several post-processing prompts, but they are no longer alternatives to each other: the user decides which of them run and in which order, so they can be chained or used as alternatives, every combination. The order is set by drag and drop or by numbers, best both. The prompts exist in every profile; which of them a profile uses, and in which order, belongs to the profile.
+
+### History: post-processing always adds a version on top
+
+**Idea (user, 2026-11-18; to be discussed next):** today, post-processing a lower version first deletes the versions above it. That isn't necessary: whichever version is post-processed, the result always goes on top of the stack, which is also simpler to use. So that the stack doesn't grow too large when an entry is post-processed often, single versions could be deleted, at the bottom, at the top or in the middle, except the transcription itself (or except the recording; still to be thought through).
+
+### Shortcuts: start per profile, end with what follows
+
+**Idea (user, 2026-11-18; to be discussed next; picks up the finishing keys still open under "Append any text, and actions per finishing key"):** a recording starts with a shortcut of its profile. It ends with one of several shortcuts, each set up with (1) what is appended, (2) whether the text is post-processed, (3) whether the context from earlier dictations goes along. Then the context would need no switch of its own any more; the user isn't sure about the third point yet.
+
 ### Transcription in the cloud, post-processing on this Mac
 
 **Idea (user, 2026-11-17; partly decided, see below):** transcription is local only, post-processing in practice cloud only. Both should work either way: transcription by a subscribed cloud service, which might be faster thanks to the providers' hardware, and post-processing by a language model installed on this Mac.
