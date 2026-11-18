@@ -859,6 +859,10 @@ impl ShortcutAction for TranscribeAction {
                     "Recording request accepted in {:?}; waiting for first microphone samples",
                     recording_start_time.elapsed()
                 );
+                // DanyWhere: an app that answers its first Apple event slowly
+                // is asked now, so the window title comes in time when the
+                // recording ends (`window_capture`, macOS without Accessibility).
+                crate::window_capture::prime_title_query(app);
                 let generation = readiness.generation();
                 let app_clone = app.clone();
                 let rm_clone = Arc::clone(&rm);
