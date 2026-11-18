@@ -110,6 +110,8 @@ DanyWhere comes for x64 and ARM64 as a `.deb`, an `.rpm` and an AppImage:
 3. Start DanyWhere and follow the setup: allow microphone access and pick a model.
 4. Press Ctrl+Alt+Space and speak; Ctrl+Alt+Shift+Space does the same with post-processing. On Wayland, global shortcuts usually have to be set up in the desktop environment: bind them to `danywhere --toggle-transcription` and `danywhere --toggle-post-process` (see [Command line](#command-line)).
 
+On a Wayland desktop the AppImage runs as a Wayland app, like the deb and rpm, so its window follows your display scaling. If it misbehaves there, start it with `HANDY_GDK_BACKEND=x11 ./DanyWhere_0.2.4_amd64.AppImage` to run it through Xwayland instead.
+
 ## Command line
 
 DanyWhere accepts the same flags as Handy:

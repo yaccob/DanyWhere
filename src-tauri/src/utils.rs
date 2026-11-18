@@ -336,25 +336,103 @@ pub fn gamescope_wsi_disabled_by_handy() -> bool {
 
 /// The `GDK_BACKEND` value requested through `HANDY_GDK_BACKEND`, if any.
 /// Empty or whitespace-only values count as unset.
-#[cfg(target_os = "linux")]
+#[cfg_attr(not(target_os = "linux"), allow(dead_code))]
 fn requested_gdk_backend(value: Option<&str>) -> Option<&str> {
     value.map(str::trim).filter(|v| !v.is_empty())
 }
 
-/// Copy `HANDY_GDK_BACKEND` into `GDK_BACKEND` when it is set.
+/// What DanyWhere puts into `GDK_BACKEND` before GTK starts.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[cfg_attr(not(target_os = "linux"), allow(dead_code))]
+enum GdkBackendOverride<'a> {
+    /// The user's `HANDY_GDK_BACKEND`.
+    Requested(&'a str),
+    /// Native Wayland with X11 as fallback, for the AppImage on a Wayland
+    /// session.
+    AppImageOnWayland,
+}
+
+#[cfg_attr(not(target_os = "linux"), allow(dead_code))]
+impl<'a> GdkBackendOverride<'a> {
+    /// The value for `GDK_BACKEND`.
+    fn value(self) -> &'a str {
+        match self {
+            GdkBackendOverride::Requested(backend) => backend,
+            // GTK tries the backends in order, so X11 stays the fallback.
+            GdkBackendOverride::AppImageOnWayland => "wayland,x11",
+        }
+    }
+}
+
+/// The `GDK_BACKEND` value to set before GTK starts, if any.
+///
+/// Inputs are the environment as DanyWhere finds it: `HANDY_GDK_BACKEND`,
+/// `GDK_BACKEND`, whether it runs from the AppImage (`APPIMAGE` or `APPDIR`
+/// set) and `WAYLAND_DISPLAY`.
+///
+/// `HANDY_GDK_BACKEND` always wins. Without it, the AppImage on a Wayland
+/// session replaces the `x11` its GTK hook forces with native Wayland:
+/// under Xwayland GTK only learns an integer scale from the X11 side, so the
+/// window misses the compositor's (fractional) scaling and comes out too
+/// small or blurry (yaccob/DanyWhere#1). The deb and rpm have no such hook
+/// and already run on Wayland there.
+#[cfg_attr(not(target_os = "linux"), allow(dead_code))]
+fn gdk_backend_override<'a>(
+    handy_gdk_backend: Option<&'a str>,
+    gdk_backend: Option<&str>,
+    in_appimage: bool,
+    wayland_display: Option<&str>,
+) -> Option<GdkBackendOverride<'a>> {
+    if let Some(backend) = requested_gdk_backend(handy_gdk_backend) {
+        return Some(GdkBackendOverride::Requested(backend));
+    }
+    let hook_forced_x11 = in_appimage && gdk_backend.map(str::trim) == Some("x11");
+    let wayland_session = wayland_display.is_some_and(|d| !d.trim().is_empty());
+    (hook_forced_x11 && wayland_session).then_some(GdkBackendOverride::AppImageOnWayland)
+}
+
+// This and the two functions below compile everywhere, so builds on other
+// platforms check them too; only Linux calls them.
+#[cfg_attr(not(target_os = "linux"), allow(dead_code))]
+static GDK_BACKEND_SET_BY: std::sync::OnceLock<&'static str> = std::sync::OnceLock::new();
+
+/// Set `GDK_BACKEND` from `HANDY_GDK_BACKEND`, or to native Wayland for the
+/// AppImage on a Wayland session (see [`gdk_backend_override`]).
 ///
 /// The AppImage's `apprun-hooks/linuxdeploy-plugin-gtk.sh` unconditionally
 /// runs `export GDK_BACKEND=x11` (a workaround for tauri-apps/tauri#8541) after
 /// the user's environment, so `GDK_BACKEND=wayland ./Handy.AppImage` never
 /// reaches Handy. The hook cannot overwrite a variable it does not know about,
-/// so `HANDY_GDK_BACKEND=wayland ./Handy.AppImage` is the opt-in to native
-/// Wayland (cjpais/Handy#1729, #2034). Must run before GTK initializes.
-#[cfg(target_os = "linux")]
+/// so `HANDY_GDK_BACKEND=x11 ./DanyWhere.AppImage` keeps X11 and
+/// `HANDY_GDK_BACKEND=wayland` forces Wayland (cjpais/Handy#1729, #2034).
+/// Must run before GTK initializes.
+#[cfg_attr(not(target_os = "linux"), allow(dead_code))]
 pub fn apply_handy_gdk_backend() {
-    let requested = std::env::var("HANDY_GDK_BACKEND").ok();
-    if let Some(backend) = requested_gdk_backend(requested.as_deref()) {
-        std::env::set_var("GDK_BACKEND", backend);
+    let env = |name: &str| std::env::var(name).ok();
+    let in_appimage = ["APPIMAGE", "APPDIR"]
+        .iter()
+        .any(|name| std::env::var_os(name).is_some_and(|v| !v.is_empty()));
+    let requested = env("HANDY_GDK_BACKEND");
+    let current = env("GDK_BACKEND");
+    let wayland_display = env("WAYLAND_DISPLAY");
+    if let Some(choice) = gdk_backend_override(
+        requested.as_deref(),
+        current.as_deref(),
+        in_appimage,
+        wayland_display.as_deref(),
+    ) {
+        std::env::set_var("GDK_BACKEND", choice.value());
+        let _ = GDK_BACKEND_SET_BY.set(match choice {
+            GdkBackendOverride::Requested(_) => "HANDY_GDK_BACKEND",
+            GdkBackendOverride::AppImageOnWayland => "AppImage on Wayland",
+        });
     }
+}
+
+/// What made [`apply_handy_gdk_backend`] set `GDK_BACKEND`, for the log.
+#[cfg_attr(not(target_os = "linux"), allow(dead_code))]
+pub fn gdk_backend_set_by() -> &'static str {
+    GDK_BACKEND_SET_BY.get().copied().unwrap_or("nothing")
 }
 
 #[cfg(test)]
@@ -387,7 +465,6 @@ mod tests {
         assert!(!should_disable_gamescope_wsi(Some(OsStr::new(""))));
     }
 
-    #[cfg(target_os = "linux")]
     #[test]
     fn requested_gdk_backend_ignores_unset_and_blank() {
         assert_eq!(requested_gdk_backend(None), None);
@@ -395,7 +472,6 @@ mod tests {
         assert_eq!(requested_gdk_backend(Some("  ")), None);
     }
 
-    #[cfg(target_os = "linux")]
     #[test]
     fn requested_gdk_backend_keeps_the_value() {
         assert_eq!(requested_gdk_backend(Some("wayland")), Some("wayland"));
@@ -404,6 +480,61 @@ mod tests {
             requested_gdk_backend(Some("wayland,x11")),
             Some("wayland,x11")
         );
+    }
+
+    // The AppImage's GTK hook always exports GDK_BACKEND=x11; under Xwayland
+    // the window then misses the compositor's scaling (yaccob/DanyWhere#1).
+    const HOOK_X11: Option<&str> = Some("x11");
+    const WAYLAND: Option<&str> = Some("wayland-0");
+
+    #[test]
+    fn appimage_on_wayland_gets_native_wayland_with_x11_fallback() {
+        let choice = gdk_backend_override(None, HOOK_X11, true, WAYLAND);
+        assert_eq!(choice, Some(GdkBackendOverride::AppImageOnWayland));
+        assert_eq!(choice.map(|c| c.value()), Some("wayland,x11"));
+    }
+
+    #[test]
+    fn blank_handy_gdk_backend_leaves_the_appimage_rule_in_charge() {
+        assert_eq!(
+            gdk_backend_override(Some("  "), HOOK_X11, true, WAYLAND),
+            Some(GdkBackendOverride::AppImageOnWayland)
+        );
+    }
+
+    #[test]
+    fn handy_gdk_backend_wins_over_the_appimage_rule() {
+        assert_eq!(
+            gdk_backend_override(Some("x11"), HOOK_X11, true, WAYLAND),
+            Some(GdkBackendOverride::Requested("x11"))
+        );
+        assert_eq!(
+            gdk_backend_override(Some(" wayland "), None, false, None),
+            Some(GdkBackendOverride::Requested("wayland"))
+        );
+    }
+
+    #[test]
+    fn appimage_rule_needs_a_wayland_session() {
+        assert_eq!(gdk_backend_override(None, HOOK_X11, true, None), None);
+        assert_eq!(gdk_backend_override(None, HOOK_X11, true, Some("")), None);
+    }
+
+    #[test]
+    fn appimage_rule_only_replaces_the_hooks_x11() {
+        // Nothing forced, or a future hook that keeps the user's value.
+        assert_eq!(gdk_backend_override(None, None, true, WAYLAND), None);
+        assert_eq!(
+            gdk_backend_override(None, Some("wayland"), true, WAYLAND),
+            None
+        );
+    }
+
+    #[test]
+    fn deb_and_rpm_keep_the_users_gdk_backend() {
+        // Without the AppImage, GDK_BACKEND=x11 is the user's own choice.
+        assert_eq!(gdk_backend_override(None, HOOK_X11, false, WAYLAND), None);
+        assert_eq!(gdk_backend_override(None, None, false, WAYLAND), None);
     }
 
     #[test]
