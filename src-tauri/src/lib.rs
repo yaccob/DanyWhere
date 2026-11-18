@@ -1081,10 +1081,10 @@ pub fn run(cli_args: CliArgs) {
             );
             #[cfg(target_os = "linux")]
             log::info!(
-                "GTK backend: GDK_BACKEND={:?}, HANDY_GDK_BACKEND={:?} (applied: {})",
+                "GTK backend: GDK_BACKEND={:?}, HANDY_GDK_BACKEND={:?} (set from: {})",
                 std::env::var_os("GDK_BACKEND"),
                 std::env::var_os("HANDY_GDK_BACKEND"),
-                std::env::var("HANDY_GDK_BACKEND").is_ok_and(|v| !v.trim().is_empty()),
+                utils::gdk_backend_set_by(),
             );
             #[cfg(target_os = "linux")]
             log::info!(

@@ -7,8 +7,10 @@ use handy_app_lib::CliArgs;
 fn main() {
     // Let users pick GTK's display backend even inside the AppImage, whose
     // launch hook forces GDK_BACKEND=x11 over the user's own value (#1729,
-    // #2034; hook workaround for tauri-apps/tauri#8541). Runs first so GTK
-    // never sees the forced value.
+    // #2034; hook workaround for tauri-apps/tauri#8541), and give the
+    // AppImage native Wayland on a Wayland session, so the window follows the
+    // compositor's scaling (yaccob/DanyWhere#1). Runs first so GTK never sees
+    // the forced value.
     #[cfg(target_os = "linux")]
     handy_app_lib::apply_handy_gdk_backend();
 
