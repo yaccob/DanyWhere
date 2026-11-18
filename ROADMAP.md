@@ -8,6 +8,14 @@ Planned work on DanyWhere, roughly in priority order within each section. Items 
 
 **Idea (user, 2026-11-18; to be discussed next):** there can still be several post-processing prompts, but they are no longer alternatives to each other: the user decides which of them run and in which order, so they can be chained or used as alternatives, every combination. The order is set by drag and drop or by numbers, best both. The prompts exist in every profile; which of them a profile uses, and in which order, belongs to the profile.
 
+**Decided (user, 2026-11-18):**
+
+- One shared prompt library instead of a copy per profile; a profile stores only which prompts are active and their order. A change to a prompt applies wherever it is active; a variant for one profile is a duplicate under a new name. On the first start, identical prompts become one, and different texts under the same name become separate prompts named after their profile, each profile keeping the prompt it uses today (Claude's proposal, not objected to).
+- The library is an editable list like the History's entries: each prompt shows part of its text in a scrollable box that opens for editing, and entries can be moved (dragged, plus number and arrow keys). The checkbox is called "Active".
+- If prompts ever run in more than one request, model and effort can be set per request.
+
+**Open (next):** whether all active prompts go into one request (the user's original idea; as fast as today) or the list can be cut into several requests, each getting the previous one's result. Claude's recommendation: one request now, built so that cuts can be added later without migrating anything.
+
 ### History: post-processing always adds a version on top
 
 **Idea (user, 2026-11-18; to be discussed next):** today, post-processing a lower version first deletes the versions above it. That isn't necessary: whichever version is post-processed, the result always goes on top of the stack, which is also simpler to use. So that the stack doesn't grow too large when an entry is post-processed often, single versions could be deleted, at the bottom, at the top or in the middle, except the transcription itself (or except the recording; still to be thought through).
