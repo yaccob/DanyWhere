@@ -15,7 +15,9 @@
 //!   a dictation, only from the settings (sidecar note
 //!   `qa/2026-11-12_2140_automation-fenstertitel.md`). Which apps can be
 //!   asked, and how, comes from their bundles' scripting definitions
-//!   (`title_query`).
+//!   (`title_query`). An app that hasn't answered yet is asked once when the
+//!   recording starts, because a first Apple event can be too slow for the
+//!   time limit at the end ([`prime_title_query`]).
 //! - Windows: the foreground window's title and its program, which need no
 //!   permission.
 //! - Linux: nothing yet, so no context.
@@ -349,6 +351,83 @@ pub fn warm_up() {
     platform::warm_up();
 }
 
+/// DanyWhere: the apps that have answered a title query by Apple event, by
+/// bundle id and process id. An app's first Apple event can be slow: on
+/// 2026-11-18 TextEdit, just allowed, took more than the 700 ms a capture
+/// gives it, and later ones about 250 ms. So a recording asks an app that
+/// hasn't answered yet once when it starts ([`prime_title_query`]); one that
+/// has isn't asked again.
+#[derive(Default)]
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+pub struct AnsweredApps {
+    apps: std::collections::HashSet<(String, i32)>,
+}
+
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+impl AnsweredApps {
+    /// More entries than this (old processes) start the set afresh.
+    const LIMIT: usize = 256;
+
+    /// Whether the app `id` running as `pid` should be asked ahead.
+    pub fn needs_priming(&self, id: &str, pid: i32) -> bool {
+        !self.apps.contains(&(id.to_string(), pid))
+    }
+
+    /// The app `id` running as `pid` has answered.
+    pub fn mark(&mut self, id: &str, pid: i32) {
+        if self.apps.len() >= Self::LIMIT {
+            self.apps.clear();
+        }
+        self.apps.insert((id.to_string(), pid));
+    }
+}
+
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+static ANSWERED: std::sync::LazyLock<Mutex<AnsweredApps>> =
+    std::sync::LazyLock::new(Default::default);
+
+/// Asks the app in front (`front`: id, name, process id) for its title
+/// ahead with `ask`, which says whether it answered, unless `wants_title`
+/// rules it out or it has answered before; an answer is remembered in
+/// `answered`. `None` when it wasn't asked.
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+fn prime_front(
+    front: impl FnOnce() -> Option<(String, String, i32)>,
+    wants_title: WantsTitle,
+    answered: &Mutex<AnsweredApps>,
+    ask: impl FnOnce(&str, i32) -> bool,
+) -> Option<bool> {
+    let (id, name, pid) = front()?;
+    if !wants_title(&id, &name) {
+        return None;
+    }
+    let lock = || answered.lock().unwrap_or_else(|e| e.into_inner());
+    if !lock().needs_priming(&id, pid) {
+        return None;
+    }
+    let answer = ask(&id, pid);
+    if answer {
+        lock().mark(&id, pid);
+    }
+    Some(answer)
+}
+
+/// DanyWhere: when a recording starts, asks the app in front for its window
+/// title once in the background, if it never answered one (macOS without
+/// Accessibility only), so its answer when the recording ends comes in time.
+pub fn prime_title_query(app: &AppHandle) {
+    let settings = settings::get_settings(app);
+    if !dictation_context::capture_wanted(&settings) {
+        return;
+    }
+    let excluded = settings.dictation_context.excluded_apps.clone();
+    std::thread::Builder::new()
+        .name("title-query-prime".into())
+        .spawn(move || platform::prime(&excluded))
+        .map_err(|e| log::warn!("Could not start asking the app in front ahead: {e}"))
+        .ok();
+}
+
 /// Shows macOS's dialog asking whether DanyWhere may control the app
 /// `bundle_id` (only reads its window title). The app has to be running.
 #[tauri::command]
@@ -370,10 +449,16 @@ mod platform {
     use objc2_foundation::{NSBundle, NSString};
 
     use super::{
-        frontmost_window_of, status_from_os, AutomationApp, AutomationStatus, ListedWindow,
-        ScreenRect, WantsTitle, WindowTitleAccess,
+        frontmost_window_of, prime_front, status_from_os, AutomationApp, AutomationStatus,
+        ListedWindow, ScreenRect, WantsTitle, WindowTitleAccess, ANSWERED,
     };
+    use crate::dictation_context;
     use crate::title_query::{self, Bundle};
+
+    /// How long a capture's Apple event may take.
+    const TITLE_LIMIT: Duration = Duration::from_millis(700);
+    /// How long the question ahead may take: it runs while the user speaks.
+    const PRIME_LIMIT: Duration = Duration::from_secs(5);
 
     type CFTypeRef = *const c_void;
     type AXUIElementRef = *const c_void;
@@ -791,6 +876,18 @@ mod platform {
     /// control; never shows the consent dialog. How to ask the app comes from
     /// its scripting definition, usually from the cache [`warm_up`] filled.
     fn automation_title(bundle_id: &str, pid: i32) -> Option<String> {
+        let title = query_title(bundle_id, pid, TITLE_LIMIT)?;
+        ANSWERED
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .mark(bundle_id, pid);
+        Some(title)
+    }
+
+    /// The window title of the app `bundle_id` running as `pid` by Apple
+    /// event, if it answers within `limit`; `None` without permission, query
+    /// or title.
+    fn query_title(bundle_id: &str, pid: i32, limit: Duration) -> Option<String> {
         let bundle = bundle_path_of(pid)?;
         let query = title_query::title_query(bundle_id, &bundle)?;
         let script = title_query::script(query, bundle_id)?;
@@ -807,7 +904,7 @@ mod platform {
             .stderr(Stdio::null())
             .spawn()
             .ok()?;
-        let deadline = Instant::now() + Duration::from_millis(700);
+        let deadline = Instant::now() + limit;
         loop {
             match child.try_wait() {
                 Ok(Some(status)) if status.success() => break,
@@ -886,6 +983,35 @@ mod platform {
     /// Without Accessibility, reads in the background how to ask the running
     /// and installed apps for their window title, so dictations find it in
     /// the cache. With Accessibility nothing is needed.
+    /// Asks the app in front ahead for its window title (see
+    /// [`super::prime_title_query`]): only without Accessibility, only an
+    /// app that isn't excluded and hasn't answered yet.
+    pub fn prime(excluded: &[String]) {
+        // SAFETY: a plain query without side effects.
+        if unsafe { AXIsProcessTrusted() } {
+            return;
+        }
+        let not_excluded =
+            |id: &str, name: &str| !dictation_context::is_excluded_app(id, name, excluded);
+        let started = Instant::now();
+        let mut asked = String::new();
+        let answered = prime_front(
+            frontmost_app_with_pid,
+            &not_excluded,
+            &ANSWERED,
+            |id, pid| {
+                asked = id.to_string();
+                query_title(id, pid, PRIME_LIMIT).is_some()
+            },
+        );
+        if let Some(answered) = answered {
+            log::debug!(
+                "Asked {asked} ahead for its window title in {:?} (answered: {answered})",
+                started.elapsed()
+            );
+        }
+    }
+
     pub fn warm_up() {
         // SAFETY: a plain query without side effects.
         if unsafe { AXIsProcessTrusted() } {
@@ -1041,6 +1167,8 @@ mod platform {
     /// Windows needs no permission for titles, so nothing to read ahead.
     pub fn warm_up() {}
 
+    pub fn prime(_excluded: &[String]) {}
+
     pub fn request(_bundle_id: &str) -> AutomationStatus {
         AutomationStatus::Unknown
     }
@@ -1086,6 +1214,8 @@ mod platform {
 
     pub fn warm_up() {}
 
+    pub fn prime(_excluded: &[String]) {}
+
     pub fn request(_bundle_id: &str) -> AutomationStatus {
         AutomationStatus::Unknown
     }
@@ -1120,6 +1250,95 @@ mod tests {
             assert_eq!(capture_front(front_app(id, name, &asked), &excluded), None);
             assert!(!asked.get(), "{name} was asked for its title");
         }
+    }
+
+    /// `prime_front` with TextEdit in front as process `pid`, counting the
+    /// questions and answering with `answers`.
+    fn prime_textedit(
+        pid: i32,
+        excluded: bool,
+        answered: &Mutex<AnsweredApps>,
+        asked: &Cell<u32>,
+        answers: bool,
+    ) -> Option<bool> {
+        let wants = move |_: &str, _: &str| !excluded;
+        prime_front(
+            || {
+                Some((
+                    "com.apple.TextEdit".to_string(),
+                    "TextEdit".to_string(),
+                    pid,
+                ))
+            },
+            &wants,
+            answered,
+            |_, _| {
+                asked.set(asked.get() + 1);
+                answers
+            },
+        )
+    }
+
+    #[test]
+    fn a_new_app_is_asked_ahead_until_it_has_answered() {
+        let answered = Mutex::new(AnsweredApps::default());
+        let asked = Cell::new(0);
+        assert_eq!(
+            prime_textedit(42, false, &answered, &asked, true),
+            Some(true)
+        );
+        assert_eq!(prime_textedit(42, false, &answered, &asked, true), None);
+        assert_eq!(asked.get(), 1, "an app that answered was asked again");
+    }
+
+    #[test]
+    fn an_app_that_did_not_answer_is_asked_ahead_again() {
+        let answered = Mutex::new(AnsweredApps::default());
+        let asked = Cell::new(0);
+        assert_eq!(
+            prime_textedit(42, false, &answered, &asked, false),
+            Some(false)
+        );
+        assert_eq!(
+            prime_textedit(42, false, &answered, &asked, true),
+            Some(true)
+        );
+        assert_eq!(asked.get(), 2);
+    }
+
+    #[test]
+    fn an_excluded_app_is_not_asked_ahead() {
+        let answered = Mutex::new(AnsweredApps::default());
+        let asked = Cell::new(0);
+        assert_eq!(prime_textedit(42, true, &answered, &asked, true), None);
+        assert_eq!(asked.get(), 0);
+    }
+
+    #[test]
+    fn a_new_process_of_the_app_is_asked_ahead_again() {
+        let answered = Mutex::new(AnsweredApps::default());
+        let asked = Cell::new(0);
+        assert_eq!(
+            prime_textedit(42, false, &answered, &asked, true),
+            Some(true)
+        );
+        assert_eq!(
+            prime_textedit(43, false, &answered, &asked, true),
+            Some(true)
+        );
+        assert_eq!(asked.get(), 2);
+    }
+
+    #[test]
+    fn the_answered_apps_stay_few() {
+        let mut answered = AnsweredApps::default();
+        for pid in 0..=(AnsweredApps::LIMIT as i32) {
+            answered.mark("com.example.app", pid);
+        }
+        assert!(answered.apps.len() <= AnsweredApps::LIMIT);
+        let newest = AnsweredApps::LIMIT as i32;
+        assert!(!answered.needs_priming("com.example.app", newest));
+        assert!(answered.needs_priming("com.example.app", newest + 1));
     }
 
     #[test]
