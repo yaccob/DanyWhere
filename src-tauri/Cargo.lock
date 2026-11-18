@@ -2650,6 +2650,8 @@ dependencies = [
  "once_cell",
  "opusic-c",
  "opusic-sys",
+ "plist",
+ "quick-xml",
  "rdev",
  "regex",
  "reqwest 0.12.28",

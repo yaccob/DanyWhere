@@ -941,6 +941,7 @@
         "windowTitlesUnsupported": "لا يعرف Handy عناوين النوافذ على هذا النظام بعد، لذلك لا يوجد سياق هنا.",
         "windowTitlesAutomation": "بدون إمكانية الوصول يمكن لـ Handy أن يسأل هذه التطبيقات عن عنوان نافذتها. يسألك macOS مرة واحدة لكل تطبيق؛ ولا يقرأ Handy إلا العنوان.",
         "windowTitlesOtherApps": "لا تعطي التطبيقات الأخرى عنواناً بدون إمكانية الوصول؛ ولا سياق للإملاءات فيها.",
+        "windowTitlesNotRunning": "مثبّتة، لا تعمل",
         "allow": "السماح…",
         "statusAllowed": "مسموح",
         "statusNotAsked": "لم يُسأل بعد",

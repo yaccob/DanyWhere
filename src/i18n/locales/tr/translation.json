@@ -941,6 +941,7 @@
         "windowTitlesUnsupported": "Handy bu sistemde henüz pencere başlıklarını bilmiyor, bu yüzden burada bağlam yok.",
         "windowTitlesAutomation": "Erişilebilirlik olmadan Handy bu uygulamalardan pencere başlığını isteyebilir. macOS bunu size her uygulama için bir kez sorar; Handy yalnızca başlığı okur.",
         "windowTitlesOtherApps": "Diğer uygulamalar Erişilebilirlik olmadan başlık vermez; oradaki diktelerin bağlamı olmaz.",
+        "windowTitlesNotRunning": "Yüklü, çalışmıyor",
         "allow": "İzin ver…",
         "statusAllowed": "İzin verildi",
         "statusNotAsked": "Henüz sorulmadı",

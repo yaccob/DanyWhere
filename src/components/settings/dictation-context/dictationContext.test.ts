@@ -7,6 +7,7 @@ import {
   inWindow,
   parseExcludedApps,
   parseLimit,
+  titleAppGroups,
   windowFilterOf,
   windowLabel,
 } from "./dictationContext";
@@ -102,6 +103,32 @@ check("a preview shows the first words", () => {
   assert.equal(firstWords("eins zwei drei vier", 2), "eins zwei …");
   assert.equal(firstWords("  eins   zwei ", 5), "eins zwei");
   assert.equal(firstWords("", 3), "");
+});
+
+check("running apps come first, the others below them", () => {
+  const edge = {
+    bundle_id: "com.microsoft.edgemac",
+    name: "Microsoft Edge",
+    running: true,
+    status: "not_asked" as const,
+  };
+  const terminal = {
+    bundle_id: "com.apple.Terminal",
+    name: "Terminal",
+    running: true,
+    status: "allowed" as const,
+  };
+  const mail = {
+    bundle_id: "com.apple.mail",
+    name: "Mail",
+    running: false,
+    status: "not_running" as const,
+  };
+  assert.deepEqual(titleAppGroups([edge, terminal, mail]), {
+    running: [edge, terminal],
+    notRunning: [mail],
+  });
+  assert.deepEqual(titleAppGroups([]), { running: [], notRunning: [] });
 });
 
 if (failures > 0) {

@@ -941,6 +941,7 @@
         "windowTitlesUnsupported": "Handy kent op dit systeem nog geen venstertitels, dus hier is geen context.",
         "windowTitlesAutomation": "Zonder Toegankelijkheid kan Handy deze apps om hun venstertitel vragen. macOS vraagt je dat één keer per app; Handy leest alleen de titel.",
         "windowTitlesOtherApps": "Andere apps geven zonder Toegankelijkheid geen titel; dicteringen daar hebben geen context.",
+        "windowTitlesNotRunning": "Geïnstalleerd, niet actief",
         "allow": "Toestaan…",
         "statusAllowed": "Toegestaan",
         "statusNotAsked": "Nog niet gevraagd",

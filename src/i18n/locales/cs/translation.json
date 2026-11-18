@@ -941,6 +941,7 @@
         "windowTitlesUnsupported": "Handy na tomto systému zatím nezná názvy oken, takže zde žádný kontext není.",
         "windowTitlesAutomation": "Bez Zpřístupnění se Handy může těchto aplikací zeptat na název okna. macOS se tě zeptá jednou pro každou aplikaci; Handy čte jen název.",
         "windowTitlesOtherApps": "Jiné aplikace bez Zpřístupnění název nesdělí; diktáty v nich nemají kontext.",
+        "windowTitlesNotRunning": "Nainstalované, neběží",
         "allow": "Povolit…",
         "statusAllowed": "Povoleno",
         "statusNotAsked": "Zatím nedotázáno",

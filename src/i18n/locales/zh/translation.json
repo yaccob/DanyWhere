@@ -941,6 +941,7 @@
         "windowTitlesUnsupported": "Handy 尚不能获取此系统上的窗口标题，因此这里没有上下文。",
         "windowTitlesAutomation": "没有辅助功能权限时，Handy 可以向这些应用询问窗口标题。macOS 会针对每个应用询问你一次；Handy 只读取标题。",
         "windowTitlesOtherApps": "其他应用在没有辅助功能权限时不提供标题；在其中的听写没有上下文。",
+        "windowTitlesNotRunning": "已安装，未运行",
         "allow": "允许…",
         "statusAllowed": "已允许",
         "statusNotAsked": "尚未询问",

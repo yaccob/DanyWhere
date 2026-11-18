@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   commands,
+  type AutomationApp,
   type AutomationStatus,
   type WindowTitleAccess,
 } from "@/bindings";
@@ -18,6 +19,7 @@ import {
   filled,
   parseExcludedApps,
   parseLimit,
+  titleAppGroups,
   type ContextSettings,
 } from "./dictationContext";
 
@@ -96,7 +98,9 @@ const STATUS_KEYS: Record<AutomationStatus, string> = {
 };
 
 /** Where window titles come from on this computer, and on a Mac without
- * Accessibility the apps DanyWhere may ask for theirs. */
+ * Accessibility the apps DanyWhere may ask for theirs: the running ones, and
+ * below them the installed ones that aren't running (macOS can only ask
+ * about a running app). */
 const WindowTitles: React.FC = () => {
   const { t } = useTranslation();
   const [access, setAccess] = useState<WindowTitleAccess | null>(null);
@@ -112,6 +116,10 @@ const WindowTitles: React.FC = () => {
 
   useEffect(() => {
     void load();
+    // Back from starting an app or from System Settings: show what changed.
+    const reload = () => void load();
+    window.addEventListener("focus", reload);
+    return () => window.removeEventListener("focus", reload);
   }, [load]);
 
   if (!access) return null;
@@ -127,6 +135,29 @@ const WindowTitles: React.FC = () => {
   };
 
   const automation = access.supported && !access.accessibility;
+  const { running, notRunning } = titleAppGroups(access.apps);
+
+  const row = (app: AutomationApp) => (
+    <div
+      key={app.bundle_id}
+      className="flex items-center justify-between gap-3"
+    >
+      <div className="min-w-0">
+        <p className="text-sm font-medium">{app.name}</p>
+        <p className="text-xs text-ink-3">{t(STATUS_KEYS[app.status])}</p>
+      </div>
+      {app.running && app.status === "not_asked" && (
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => void ask(app.bundle_id)}
+          disabled={asking !== null}
+        >
+          {t("settings.postProcessing.context.allow")}
+        </Button>
+      )}
+    </div>
+  );
 
   return (
     <SettingContainer
@@ -144,29 +175,15 @@ const WindowTitles: React.FC = () => {
     >
       {automation && (
         <div className="space-y-2">
-          {access.apps.map((app) => (
-            <div
-              key={app.bundle_id}
-              className="flex items-center justify-between gap-3"
-            >
-              <div className="min-w-0">
-                <p className="text-sm font-medium">{app.name}</p>
-                <p className="text-xs text-ink-3">
-                  {t(STATUS_KEYS[app.status])}
-                </p>
-              </div>
-              {app.status === "not_asked" && (
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => void ask(app.bundle_id)}
-                  disabled={asking !== null}
-                >
-                  {t("settings.postProcessing.context.allow")}
-                </Button>
-              )}
-            </div>
-          ))}
+          {running.map(row)}
+          {notRunning.length > 0 && (
+            <>
+              <p className="pt-2 text-xs font-medium text-ink-3">
+                {t("settings.postProcessing.context.windowTitlesNotRunning")}
+              </p>
+              {notRunning.map(row)}
+            </>
+          )}
           <p className="text-xs text-ink-3">
             {t("settings.postProcessing.context.windowTitlesOtherApps")}
           </p>

@@ -941,6 +941,7 @@
         "windowTitlesUnsupported": "このシステムではHandyはまだウインドウのタイトルを取得できないため、ここではコンテキストはありません。",
         "windowTitlesAutomation": "アクセシビリティなしでも、Handyはこれらのアプリにウインドウのタイトルを問い合わせられます。macOSがアプリごとに一度確認します。Handyが読み取るのはタイトルだけです。",
         "windowTitlesOtherApps": "その他のアプリはアクセシビリティなしではタイトルを返さないため、そこでの音声入力にはコンテキストがありません。",
+        "windowTitlesNotRunning": "インストール済み・未起動",
         "allow": "許可…",
         "statusAllowed": "許可済み",
         "statusNotAsked": "まだ確認していません",

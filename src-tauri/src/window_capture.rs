@@ -9,12 +9,13 @@
 //!
 //! - macOS with Accessibility: the focused window's title, read through the
 //!   Accessibility API.
-//! - macOS without it: for a few scriptable apps (iTerm2, Terminal, Chrome,
-//!   Safari, legacy Outlook) the app is asked for its title by Apple event
-//!   ("Automation"), but only when the user has already allowed DanyWhere to
-//!   control that app; the consent dialog is never shown during a dictation,
-//!   only from the settings (sidecar note
-//!   `qa/2026-11-12_2140_automation-fenstertitel.md`).
+//! - macOS without it: a scriptable app is asked for its title by Apple
+//!   event ("Automation"), but only when the user has already allowed
+//!   DanyWhere to control that app; the consent dialog is never shown during
+//!   a dictation, only from the settings (sidecar note
+//!   `qa/2026-11-12_2140_automation-fenstertitel.md`). Which apps can be
+//!   asked, and how, comes from their bundles' scripting definitions
+//!   (`title_query`).
 //! - Windows: the foreground window's title and its program, which need no
 //!   permission.
 //! - Linux: nothing yet, so no context.
@@ -62,44 +63,6 @@ pub fn status_from_os(code: i32) -> AutomationStatus {
         -600 => AutomationStatus::NotRunning, // procNotFound
         _ => AutomationStatus::Unknown,
     }
-}
-
-/// The scriptable apps whose window title DanyWhere can ask for, by bundle
-/// id, with their usual name.
-#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
-pub const AUTOMATION_APPS: &[(&str, &str)] = &[
-    ("com.googlecode.iterm2", "iTerm2"),
-    ("com.apple.Terminal", "Terminal"),
-    ("com.google.Chrome", "Google Chrome"),
-    ("com.apple.Safari", "Safari"),
-    ("com.microsoft.Outlook", "Microsoft Outlook"),
-];
-
-/// The AppleScript that asks the app with `bundle_id` for its title. An
-/// incognito window in Chrome answers nothing, so it is never captured.
-#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
-pub fn automation_script(bundle_id: &str) -> Option<&'static str> {
-    Some(match bundle_id {
-        "com.googlecode.iterm2" => {
-            r#"tell application id "com.googlecode.iterm2" to return name of current session of current window"#
-        }
-        "com.apple.Terminal" => {
-            r#"tell application id "com.apple.Terminal" to return name of front window"#
-        }
-        "com.google.Chrome" => {
-            r#"tell application id "com.google.Chrome"
-if mode of front window is "incognito" then return ""
-return title of active tab of front window
-end tell"#
-        }
-        "com.apple.Safari" => {
-            r#"tell application id "com.apple.Safari" to return name of current tab of front window"#
-        }
-        "com.microsoft.Outlook" => {
-            r#"tell application id "com.microsoft.Outlook" to return name of front window"#
-        }
-        _ => return None,
-    })
 }
 
 /// One capture per recording, handed from the capture thread to the end of
@@ -314,8 +277,23 @@ fn frontmost_window_of(windows: &[ListedWindow], pid: i32) -> Option<ScreenRect>
 /// The frontmost window as a [`CapturedWindow`], unless its app is excluded,
 /// is DanyWhere itself or has no usable title.
 fn frontmost_window(excluded: &[String]) -> Option<CapturedWindow> {
-    let (app_id, app_name, raw_title) = platform::frontmost()?;
-    if dictation_context::is_excluded_app(&app_id, &app_name, excluded) {
+    capture_front(platform::frontmost, excluded)
+}
+
+/// Whether DanyWhere may ask the app with this id and name for its title.
+type WantsTitle<'a> = &'a dyn Fn(&str, &str) -> bool;
+
+/// [`frontmost_window`] with the app in front given by `front`, which asks
+/// for the title only when its argument says so: an excluded app gets no
+/// Apple event and no Accessibility query.
+fn capture_front(
+    front: impl FnOnce(WantsTitle) -> Option<(String, String, Option<String>)>,
+    excluded: &[String],
+) -> Option<CapturedWindow> {
+    let not_excluded =
+        |id: &str, name: &str| !dictation_context::is_excluded_app(id, name, excluded);
+    let (app_id, app_name, raw_title) = front(&not_excluded)?;
+    if !not_excluded(&app_id, &app_name) {
         log::debug!("The frontmost app is excluded from context");
         return None;
     }
@@ -334,23 +312,41 @@ pub struct WindowTitleAccess {
     pub supported: bool,
     /// macOS: DanyWhere has Accessibility, so it reads every window's title.
     pub accessibility: bool,
-    /// macOS without Accessibility: the scriptable apps and whether DanyWhere
-    /// may ask them.
+    /// macOS without Accessibility: the apps that can tell their window title
+    /// and whether DanyWhere may ask them, the running ones first, then the
+    /// installed ones that aren't running, each by name.
     pub apps: Vec<AutomationApp>,
 }
 
+/// An app that can tell its window title by Apple event.
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Type)]
 pub struct AutomationApp {
     pub bundle_id: String,
     pub name: String,
+    /// Only a running app can be allowed: macOS asks only about one.
+    pub running: bool,
     pub status: AutomationStatus,
 }
 
 /// How DanyWhere learns window titles here, for the settings.
 #[tauri::command]
 #[specta::specta]
-pub fn get_window_title_access() -> WindowTitleAccess {
-    platform::access()
+pub async fn get_window_title_access(app: AppHandle) -> WindowTitleAccess {
+    let own_id = app.config().identifier.clone();
+    tauri::async_runtime::spawn_blocking(move || platform::access(&own_id))
+        .await
+        .unwrap_or(WindowTitleAccess {
+            supported: false,
+            accessibility: false,
+            apps: Vec::new(),
+        })
+}
+
+/// DanyWhere: finds out in the background which apps can tell their window
+/// title (macOS without Accessibility), so a dictation finds the answer in a
+/// cache instead of reading the app's scripting definition.
+pub fn warm_up() {
+    platform::warm_up();
 }
 
 /// Shows macOS's dialog asking whether DanyWhere may control the app
@@ -366,16 +362,18 @@ pub async fn request_window_title_access(bundle_id: String) -> AutomationStatus 
 #[cfg(target_os = "macos")]
 mod platform {
     use std::ffi::c_void;
+    use std::path::PathBuf;
     use std::process::{Command, Stdio};
     use std::time::{Duration, Instant};
 
-    use objc2_app_kit::{NSApplicationActivationPolicy, NSWorkspace};
+    use objc2_app_kit::{NSApplicationActivationPolicy, NSRunningApplication, NSWorkspace};
     use objc2_foundation::{NSBundle, NSString};
 
     use super::{
-        automation_script, frontmost_window_of, status_from_os, AutomationApp, AutomationStatus,
-        ListedWindow, ScreenRect, WindowTitleAccess, AUTOMATION_APPS,
+        frontmost_window_of, status_from_os, AutomationApp, AutomationStatus, ListedWindow,
+        ScreenRect, WantsTitle, WindowTitleAccess,
     };
+    use crate::title_query::{self, Bundle};
 
     type CFTypeRef = *const c_void;
     type AXUIElementRef = *const c_void;
@@ -655,6 +653,43 @@ mod platform {
     }
 
     pub fn installed_applications() -> Vec<(String, String)> {
+        installed_bundles()
+            .into_iter()
+            .map(|bundle| (bundle.id, bundle.name))
+            .collect()
+    }
+
+    /// The running applications with a window in the Dock, with where their
+    /// bundles lie.
+    fn running_bundles() -> Vec<Bundle> {
+        let own = std::process::id() as i32;
+        NSWorkspace::sharedWorkspace()
+            .runningApplications()
+            .iter()
+            .filter(|app| {
+                app.activationPolicy() == NSApplicationActivationPolicy::Regular
+                    && app.processIdentifier() != own
+            })
+            .filter_map(|app| {
+                let id = app.bundleIdentifier()?.to_string();
+                let path = PathBuf::from(app.bundleURL()?.path()?.to_string());
+                let name = app
+                    .localizedName()
+                    .map(|n| n.to_string())
+                    .unwrap_or_else(|| id.clone());
+                Some(Bundle { id, name, path })
+            })
+            .collect()
+    }
+
+    /// Where the bundle of the running app with process id `pid` lies.
+    fn bundle_path_of(pid: i32) -> Option<PathBuf> {
+        let app = NSRunningApplication::runningApplicationWithProcessIdentifier(pid)?;
+        Some(PathBuf::from(app.bundleURL()?.path()?.to_string()))
+    }
+
+    /// The installed applications in the usual folders, with their bundles.
+    fn installed_bundles() -> Vec<Bundle> {
         let mut folders = vec![
             std::path::PathBuf::from("/Applications"),
             std::path::PathBuf::from("/Applications/Utilities"),
@@ -684,21 +719,27 @@ mod platform {
                     .file_stem()
                     .map(|stem| stem.to_string_lossy().to_string())
                     .unwrap_or_else(|| bundle_id.to_string());
-                apps.push((bundle_id.to_string(), name));
+                apps.push(Bundle {
+                    id: bundle_id.to_string(),
+                    name,
+                    path,
+                });
             }
         }
         apps
     }
 
     /// The frontmost app's id and name, and the title of its window if
-    /// DanyWhere may learn it.
-    pub fn frontmost() -> Option<(String, String, Option<String>)> {
+    /// DanyWhere may learn it and `wants_title` allows asking.
+    pub fn frontmost(wants_title: WantsTitle) -> Option<(String, String, Option<String>)> {
         let (bundle_id, name, pid) = frontmost_app_with_pid()?;
         // SAFETY: a plain query without side effects.
-        let title = if unsafe { AXIsProcessTrusted() } {
+        let title = if !wants_title(&bundle_id, &name) {
+            None
+        } else if unsafe { AXIsProcessTrusted() } {
             accessibility_title(pid)
         } else {
-            automation_title(&bundle_id)
+            automation_title(&bundle_id, pid)
         };
         Some((bundle_id, name, title))
     }
@@ -746,10 +787,13 @@ mod platform {
         }
     }
 
-    /// The title by Apple event, for the scriptable apps DanyWhere may
-    /// already control; never shows the consent dialog.
-    fn automation_title(bundle_id: &str) -> Option<String> {
-        let script = automation_script(bundle_id)?;
+    /// The title by Apple event, for a scriptable app DanyWhere may already
+    /// control; never shows the consent dialog. How to ask the app comes from
+    /// its scripting definition, usually from the cache [`warm_up`] filled.
+    fn automation_title(bundle_id: &str, pid: i32) -> Option<String> {
+        let bundle = bundle_path_of(pid)?;
+        let query = title_query::title_query(bundle_id, &bundle)?;
+        let script = title_query::script(query, bundle_id)?;
         if automation_permission(bundle_id, false) != AutomationStatus::Allowed {
             return None;
         }
@@ -757,7 +801,7 @@ mod platform {
         // not osascript), and can be stopped when the app doesn't answer.
         let mut child = Command::new("/usr/bin/osascript")
             .arg("-e")
-            .arg(script)
+            .arg(&script)
             .stdin(Stdio::null())
             .stdout(Stdio::piped())
             .stderr(Stdio::null())
@@ -786,53 +830,93 @@ mod platform {
         (!title.is_empty()).then_some(title)
     }
 
-    fn running(bundle_id: &str) -> bool {
-        let workspace = NSWorkspace::sharedWorkspace();
-        workspace.runningApplications().iter().any(|app| {
-            app.bundleIdentifier()
-                .is_some_and(|id| id.to_string() == bundle_id)
-        })
-    }
-
-    fn status_of(bundle_id: &str, ask: bool) -> AutomationStatus {
-        if !running(bundle_id) {
-            return AutomationStatus::NotRunning;
-        }
-        automation_permission(bundle_id, ask)
-    }
-
-    pub fn access() -> WindowTitleAccess {
+    /// With Accessibility every title comes from it; otherwise the apps that
+    /// can tell theirs by Apple event, running ones with their permission
+    /// (asked without a dialog).
+    pub fn access(own_id: &str) -> WindowTitleAccess {
         // SAFETY: a plain query without side effects.
         let accessibility = unsafe { AXIsProcessTrusted() };
+        let apps = if accessibility {
+            Vec::new()
+        } else {
+            title_query::title_apps(
+                running_bundles(),
+                installed_bundles(),
+                own_id,
+                title_query::title_query,
+            )
+            .into_iter()
+            .map(|app| AutomationApp {
+                status: if app.running {
+                    automation_permission(&app.id, false)
+                } else {
+                    AutomationStatus::NotRunning
+                },
+                bundle_id: app.id,
+                name: app.name,
+                running: app.running,
+            })
+            .collect()
+        };
         WindowTitleAccess {
             supported: true,
             accessibility,
-            apps: AUTOMATION_APPS
-                .iter()
-                .map(|(bundle_id, name)| AutomationApp {
-                    bundle_id: bundle_id.to_string(),
-                    name: name.to_string(),
-                    status: if accessibility {
-                        AutomationStatus::Unknown
-                    } else {
-                        status_of(bundle_id, false)
-                    },
-                })
-                .collect(),
+            apps,
         }
     }
 
+    /// Asks the user whether DanyWhere may control `bundle_id`: only for a
+    /// running app that can tell its window title.
     pub fn request(bundle_id: &str) -> AutomationStatus {
-        if !AUTOMATION_APPS.iter().any(|(id, _)| *id == bundle_id) {
+        if !title_query::valid_bundle_id(bundle_id) {
             return AutomationStatus::Unknown;
         }
-        status_of(bundle_id, true)
+        let Some(bundle) = running_bundles()
+            .into_iter()
+            .find(|bundle| bundle.id == bundle_id)
+        else {
+            return AutomationStatus::NotRunning;
+        };
+        if title_query::title_query(bundle_id, &bundle.path).is_none() {
+            return AutomationStatus::Unknown;
+        }
+        automation_permission(bundle_id, true)
+    }
+
+    /// Without Accessibility, reads in the background how to ask the running
+    /// and installed apps for their window title, so dictations find it in
+    /// the cache. With Accessibility nothing is needed.
+    pub fn warm_up() {
+        // SAFETY: a plain query without side effects.
+        if unsafe { AXIsProcessTrusted() } {
+            return;
+        }
+        std::thread::Builder::new()
+            .name("title-query-warm-up".into())
+            .spawn(|| {
+                let started = Instant::now();
+                let bundles: Vec<Bundle> = running_bundles()
+                    .into_iter()
+                    .chain(installed_bundles())
+                    .collect();
+                let found = bundles
+                    .iter()
+                    .filter(|bundle| title_query::title_query(&bundle.id, &bundle.path).is_some())
+                    .count();
+                log::debug!(
+                    "{found} of {} apps can tell their window title by Apple event (read in {:?})",
+                    bundles.len(),
+                    started.elapsed()
+                );
+            })
+            .map_err(|e| log::warn!("Could not start reading the apps' scripting definitions: {e}"))
+            .ok();
     }
 }
 
 #[cfg(target_os = "windows")]
 mod platform {
-    use super::{AutomationStatus, ScreenRect, WindowTitleAccess};
+    use super::{AutomationStatus, ScreenRect, WantsTitle, WindowTitleAccess};
     use windows::core::PWSTR;
     use windows::Win32::Foundation::{CloseHandle, MAX_PATH, POINT};
     use windows::Win32::Graphics::Gdi::{
@@ -848,7 +932,7 @@ mod platform {
     };
 
     pub fn frontmost_app() -> Option<(String, String)> {
-        frontmost().map(|(exe, name, _)| (exe, name))
+        frontmost(&|_: &str, _: &str| false).map(|(exe, name, _)| (exe, name))
     }
 
     /// The bounds of the monitor Windows puts the foreground window on, in
@@ -899,8 +983,8 @@ mod platform {
     }
 
     /// The foreground window's program (exe file name), its name, and the
-    /// window's title.
-    pub fn frontmost() -> Option<(String, String, Option<String>)> {
+    /// window's title when `wants_title` allows it.
+    pub fn frontmost(wants_title: WantsTitle) -> Option<(String, String, Option<String>)> {
         // SAFETY: Win32 calls on the foreground window handle and a process
         // handle opened and closed here.
         unsafe {
@@ -941,17 +1025,21 @@ mod platform {
                 .file_stem()
                 .map(|stem| stem.to_string_lossy().to_string())
                 .unwrap_or_else(|| exe.clone());
+            let title = title.filter(|_| wants_title(&exe, &name));
             Some((exe, name, title))
         }
     }
 
-    pub fn access() -> WindowTitleAccess {
+    pub fn access(_own_id: &str) -> WindowTitleAccess {
         WindowTitleAccess {
             supported: true,
             accessibility: true,
             apps: Vec::new(),
         }
     }
+
+    /// Windows needs no permission for titles, so nothing to read ahead.
+    pub fn warm_up() {}
 
     pub fn request(_bundle_id: &str) -> AutomationStatus {
         AutomationStatus::Unknown
@@ -960,10 +1048,10 @@ mod platform {
 
 #[cfg(not(any(target_os = "macos", target_os = "windows")))]
 mod platform {
-    use super::{AutomationStatus, ScreenRect, WindowTitleAccess};
+    use super::{AutomationStatus, ScreenRect, WantsTitle, WindowTitleAccess};
 
     /// Linux: not yet, so dictations there have no context.
-    pub fn frontmost() -> Option<(String, String, Option<String>)> {
+    pub fn frontmost(_wants_title: WantsTitle) -> Option<(String, String, Option<String>)> {
         None
     }
 
@@ -988,13 +1076,15 @@ mod platform {
         Vec::new()
     }
 
-    pub fn access() -> WindowTitleAccess {
+    pub fn access(_own_id: &str) -> WindowTitleAccess {
         WindowTitleAccess {
             supported: false,
             accessibility: false,
             apps: Vec::new(),
         }
     }
+
+    pub fn warm_up() {}
 
     pub fn request(_bundle_id: &str) -> AutomationStatus {
         AutomationStatus::Unknown
@@ -1004,6 +1094,44 @@ mod platform {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::cell::Cell;
+
+    /// The app in front as `capture_front` gets it: it records whether its
+    /// title was asked for, as an Apple event or Accessibility query would be.
+    fn front_app<'a>(
+        id: &'a str,
+        name: &'a str,
+        asked: &'a Cell<bool>,
+    ) -> impl FnOnce(WantsTitle) -> Option<(String, String, Option<String>)> + 'a {
+        move |wants_title| {
+            let title = wants_title(id, name).then(|| {
+                asked.set(true);
+                "Notes about the trip".to_string()
+            });
+            Some((id.to_string(), name.to_string(), title))
+        }
+    }
+
+    #[test]
+    fn an_excluded_app_is_never_asked_for_its_title() {
+        let excluded = vec!["com.example.vault".to_string(), "Mail".to_string()];
+        for (id, name) in [("com.example.vault", "Vault"), ("com.apple.mail", "Mail")] {
+            let asked = Cell::new(false);
+            assert_eq!(capture_front(front_app(id, name, &asked), &excluded), None);
+            assert!(!asked.get(), "{name} was asked for its title");
+        }
+    }
+
+    #[test]
+    fn an_app_that_is_not_excluded_is_asked_for_its_title() {
+        let excluded = vec!["com.example.vault".to_string()];
+        let asked = Cell::new(false);
+        let captured = capture_front(front_app("com.apple.Notes", "Notes", &asked), &excluded);
+        assert!(asked.get());
+        let captured = captured.expect("a window");
+        assert_eq!(captured.app_id, "com.apple.Notes");
+        assert_eq!(captured.title, "Notes about the trip");
+    }
 
     fn window(title: &str) -> CapturedWindow {
         CapturedWindow {
@@ -1020,22 +1148,6 @@ mod tests {
         assert_eq!(status_from_os(-1743), AutomationStatus::Denied);
         assert_eq!(status_from_os(-600), AutomationStatus::NotRunning);
         assert_eq!(status_from_os(-50), AutomationStatus::Unknown);
-    }
-
-    #[test]
-    fn every_scriptable_app_has_a_script_for_its_title() {
-        for (bundle_id, _) in AUTOMATION_APPS {
-            let script = automation_script(bundle_id).expect("a script");
-            assert!(script.contains(bundle_id), "{script}");
-        }
-        assert!(automation_script("com.microsoft.VSCode").is_none());
-    }
-
-    #[test]
-    fn chrome_answers_nothing_for_an_incognito_window() {
-        let script = automation_script("com.google.Chrome").expect("a script");
-        assert!(script.contains("incognito"));
-        assert!(script.contains("title of active tab of front window"));
     }
 
     #[test]
