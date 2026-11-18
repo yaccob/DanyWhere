@@ -14,7 +14,9 @@ Planned work on DanyWhere, roughly in priority order within each section. Items 
 - The library is an editable list like the History's entries: each prompt shows part of its text in a scrollable box that opens for editing, and entries can be moved (dragged, plus number and arrow keys). The checkbox is called "Active".
 - If prompts ever run in more than one request, model and effort can be set per request.
 
-**Open (next):** whether all active prompts go into one request (the user's original idea; as fast as today) or the list can be cut into several requests, each getting the previous one's result. Claude's recommendation: one request now, built so that cuts can be added later without migrating anything.
+- All active prompts go into one request, in their order, each under its name; the frame tells the model that they apply in turn and that a later one wins where two contradict. A prompt that still contains `${output}` can't be combined: while it is active it runs alone, as today, and the startup warning says so. A new prompt is active in no profile until checked; numbers go to active prompts only; each profile keeps the order of the whole list (Claude's recommendations, accepted by the user).
+
+**Wanted later (user, 2026-11-18; a few things to settle first):** cutting the list into several requests. The list stays one row; a switch "new request" between two active prompts ends a request there, and the next one gets its result instead of the transcription. Without a cut this is the single request above, so it can be added without migrating anything. Still to settle then: what a later request's frame says (Claude: no "correct misheard words", context still sent), the time limit per request, how its versions show in the History, and what is inserted when a later request fails (Claude: the last good result, with a warning).
 
 ### History: post-processing always adds a version on top
 
