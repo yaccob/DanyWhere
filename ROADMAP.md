@@ -32,6 +32,8 @@ Planned work on DanyWhere, roughly in priority order within each section. Items 
 
 **Idea (user, 2026-11-18; to be discussed next; picks up the finishing keys still open under "Append any text, and actions per finishing key"):** a recording starts with a shortcut of its profile. It ends with one of several shortcuts, each set up with (1) what is appended, (2) whether the text is post-processed, (3) whether the context from earlier dictations goes along. Then the context would need no switch of its own any more; the user isn't sure about the third point yet.
 
+**Decided (user, 2026-11-19):** the start shortcut is a value of the profile and doesn't choose the profile. The profile is chosen as before (the application in front, or the profile fixed by hand), and there only that profile's start shortcut starts a recording; the start shortcuts of other profiles have no effect there and reach the application. Profiles may share a start shortcut, and usually all will; a profile gets its own only where the user wants one.
+
 ### Transcription in the cloud, post-processing on this Mac
 
 **Idea (user, 2026-11-17; partly decided, see below):** transcription is local only, post-processing in practice cloud only. Both should work either way: transcription by a subscribed cloud service, which might be faster thanks to the providers' hardware, and post-processing by a language model installed on this Mac.
