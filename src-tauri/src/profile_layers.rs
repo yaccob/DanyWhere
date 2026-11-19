@@ -49,7 +49,6 @@
 //! where a value goes ([`Scope`]).
 
 use std::collections::{BTreeMap, BTreeSet};
-use std::sync::OnceLock;
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -114,13 +113,17 @@ pub struct ListField {
 /// ListField { field: "end_keys", key: EntryKey::Property("id") }, // Vec<EndKey>
 /// ```
 ///
-/// The model and the effort of post-processing are kept per provider, so a
-/// profile that picks its own model for one provider still follows the
-/// defaults for the others (the user's table counts "model (Anthropic)" as
-/// one value).
+/// Post-processing is kept per provider (its settings, model, effort and
+/// API key), so a profile that picks its own model or key for one provider
+/// still follows the defaults for the others (the user's table counts
+/// "model (Anthropic)" as one value).
 pub const LIST_FIELDS: &[ListField] = &[
     ListField {
         field: "word_lists",
+        key: EntryKey::Property("id"),
+    },
+    ListField {
+        field: "post_process_providers",
         key: EntryKey::Property("id"),
     },
     ListField {
@@ -129,6 +132,10 @@ pub const LIST_FIELDS: &[ListField] = &[
     },
     ListField {
         field: "post_process_efforts",
+        key: EntryKey::MapKey,
+    },
+    ListField {
+        field: "post_process_api_keys",
         key: EntryKey::MapKey,
     },
 ];
@@ -177,17 +184,10 @@ fn list_key(lists: &[ListField], field: &str) -> Option<EntryKey> {
         .map(|list| list.key)
 }
 
-/// The serde names of the fields of [`ProfileValues`], sorted.
+/// The serde names of the fields of [`ProfileValues`], sorted
+/// (`profiles::value_names`).
 pub fn field_names() -> Vec<String> {
-    static NAMES: OnceLock<Vec<String>> = OnceLock::new();
-    NAMES
-        .get_or_init(|| {
-            to_fields(&ProfileValues::default())
-                .keys()
-                .cloned()
-                .collect()
-        })
-        .clone()
+    profiles::value_names().to_vec()
 }
 
 /// Every field of [`ProfileValues`] with how it couples.
@@ -582,6 +582,28 @@ pub fn migrate_to_defaults(settings: &mut AppSettings) -> bool {
     true
 }
 
+/// Contract V5 for the defaults: a value the stored defaults lack (a field
+/// added since they were stored) gets the flat value it had, as a stored
+/// profile does (`profiles::fill_missing_values_from_flat`): every field
+/// added so far was a setting for everything before. `raw` is the stored
+/// settings as JSON. Returns whether one was missing.
+pub fn fill_missing_defaults_from_flat(
+    settings: &mut AppSettings,
+    raw: &serde_json::Value,
+) -> bool {
+    let Some(stored) = raw
+        .get("default_values")
+        .and_then(|values| values.as_object())
+    else {
+        return false;
+    };
+    let flat = ProfileValues::from_settings(settings);
+    match settings.default_values.as_mut() {
+        Some(defaults) => profiles::fill_missing_values(defaults, stored, &flat),
+        None => false,
+    }
+}
+
 /// Couples the fields and entries of `profile` that equal `defaults` and
 /// makes the others its own (the switch and an import, P1).
 pub fn couple_equal(profile: &mut Profile, defaults: &ProfileValues) {
@@ -702,18 +724,15 @@ fn commit<T>(
 /// Checks and normalizes `field` of `values` after a change (`entry`: the
 /// one entry that changed), as the field's own change command does. Other
 /// strands add their fields' checks here.
-fn validate(
-    settings: &AppSettings,
-    values: &mut ProfileValues,
-    field: &str,
-    entry: Option<&str>,
-) -> Result<(), String> {
+fn validate(values: &mut ProfileValues, field: &str, entry: Option<&str>) -> Result<(), String> {
+    // The providers are profile values too: the ones of the changed layer.
+    let providers: Vec<String> = values
+        .post_process_providers
+        .iter()
+        .map(|provider| provider.id.clone())
+        .collect();
     let provider = |id: &str| {
-        if settings
-            .post_process_providers
-            .iter()
-            .any(|provider| provider.id == id)
-        {
+        if providers.iter().any(|known| known == id) {
             Ok(())
         } else {
             Err(format!("Provider '{id}' not found"))
@@ -721,15 +740,15 @@ fn validate(
     };
     match field {
         "post_process_provider_id" => provider(&values.post_process_provider_id),
-        "post_process_models" | "post_process_efforts" => {
-            let map = if field == "post_process_models" {
-                &values.post_process_models
-            } else {
-                &values.post_process_efforts
+        "post_process_models" | "post_process_efforts" | "post_process_api_keys" => {
+            let keys: Vec<String> = match field {
+                "post_process_models" => values.post_process_models.keys().cloned().collect(),
+                "post_process_efforts" => values.post_process_efforts.keys().cloned().collect(),
+                _ => values.post_process_api_keys.keys().cloned().collect(),
             };
             match entry {
                 Some(id) => provider(id),
-                None => map.keys().try_for_each(|id| provider(id)),
+                None => keys.iter().try_for_each(|id| provider(id)),
             }
         }
         "language_detection_window_secs" => {
@@ -770,7 +789,7 @@ pub fn set_value(
             let mut fields = defaults_fields(s);
             fields.insert(field.to_string(), value);
             let mut values = from_fields(fields)?;
-            validate(s, &mut values, field, None)?;
+            validate(&mut values, field, None)?;
             s.default_values = Some(values);
             Ok(())
         }
@@ -781,7 +800,7 @@ pub fn set_value(
             let old = fields.get(field).cloned();
             fields.insert(field.to_string(), value);
             let mut values = from_fields(fields)?;
-            validate(s, &mut values, field, None)?;
+            validate(&mut values, field, None)?;
             let new = to_fields(&values).get(field).cloned();
             let profile = &mut s.profiles[index];
             match key {
@@ -935,7 +954,7 @@ pub fn set_entry(
             let mut fields = defaults_fields(s);
             with_entry(&mut fields);
             let mut values = from_fields(fields)?;
-            validate(s, &mut values, field, Some(entry_id))?;
+            validate(&mut values, field, Some(entry_id))?;
             s.default_values = Some(values);
             Ok(())
         }
@@ -944,7 +963,7 @@ pub fn set_entry(
             let mut fields = to_fields(&s.profiles[index].values);
             with_entry(&mut fields);
             let mut values = from_fields(fields)?;
-            validate(s, &mut values, field, Some(entry_id))?;
+            validate(&mut values, field, Some(entry_id))?;
             let profile = &mut s.profiles[index];
             profile.values = values;
             let held = profile.own_entries.entry(field.to_string()).or_default();
@@ -1614,6 +1633,50 @@ mod tests {
         assert_eq!(s.active_profile_id, "playground");
         assert!(profile(&s, "playground").own.is_empty());
         assert!(profile(&s, "arbeit").own.contains("post_process_prompts"));
+    }
+
+    // ---- Values added since the defaults were stored (V5) ----------------
+
+    #[test]
+    fn a_value_the_stored_defaults_lack_takes_the_flat_one() {
+        let mut s = migrated();
+        s.selected_microphone = Some("USB Mic".to_string());
+        let mut raw = serde_json::to_value(&s).unwrap();
+        raw["default_values"]
+            .as_object_mut()
+            .unwrap()
+            .remove("selected_microphone");
+        let mut read: AppSettings = serde_json::from_value(raw.clone()).unwrap();
+        assert_eq!(defaults(&read).selected_microphone, None);
+        assert!(fill_missing_defaults_from_flat(&mut read, &raw));
+        assert_eq!(
+            defaults(&read).selected_microphone.as_deref(),
+            Some("USB Mic")
+        );
+        // Stored with every value: nothing to fill.
+        let raw = serde_json::to_value(&read).unwrap();
+        assert!(!fill_missing_defaults_from_flat(&mut read, &raw));
+    }
+
+    #[test]
+    fn a_repair_of_the_flat_values_reaches_the_defaults_not_in_use() {
+        let mut s = migrated();
+        let repaired = crate::profiles::ensure_in_every_profile(&mut s, |flat| {
+            flat.post_process_timeout_secs = 77;
+            true
+        });
+        assert!(repaired);
+        assert_eq!(defaults(&s).post_process_timeout_secs, 77);
+        // With the defaults in use the flat values are theirs: repaired there.
+        crate::profiles::switch_to(&mut s, DEFAULT_PROFILE_ID, false).unwrap();
+        let mut d = defaults(&s);
+        d.post_process_timeout_secs = 5;
+        s.default_values = Some(d);
+        crate::profiles::ensure_in_every_profile(&mut s, |flat| {
+            flat.post_process_timeout_secs = 88;
+            true
+        });
+        assert_eq!(defaults(&s).post_process_timeout_secs, 5);
     }
 
     // ---- Coupled and own values ----------------------------------------

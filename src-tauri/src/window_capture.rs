@@ -36,7 +36,6 @@ use specta::Type;
 use tauri::AppHandle;
 
 use crate::dictation_context::{self, CapturedWindow};
-use crate::settings;
 
 /// How long a capture may take before the dictation goes on without it.
 const CAPTURE_LIMIT: Duration = Duration::from_millis(800);
@@ -133,7 +132,8 @@ static SLOT: CaptureSlot = CaptureSlot::new();
 /// Starts capturing the frontmost window for the recording `session`, when
 /// context from earlier dictations is in use.
 pub fn begin_capture(app: &AppHandle, session: u64) {
-    let settings = settings::get_settings(app);
+    // The dictation's profile's excluded applications.
+    let settings = crate::app_profiles::dictation_settings(app);
     if !dictation_context::capture_wanted(&settings) {
         return;
     }
@@ -416,7 +416,8 @@ fn prime_front(
 /// title once in the background, if it never answered one (macOS without
 /// Accessibility only), so its answer when the recording ends comes in time.
 pub fn prime_title_query(app: &AppHandle) {
-    let settings = settings::get_settings(app);
+    // The dictation's profile's excluded applications.
+    let settings = crate::app_profiles::dictation_settings(app);
     if !dictation_context::capture_wanted(&settings) {
         return;
     }

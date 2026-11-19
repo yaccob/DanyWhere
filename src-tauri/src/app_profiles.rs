@@ -415,6 +415,14 @@ pub fn with_values_here<R>(values: ProfileValues, run: impl FnOnce() -> R) -> R 
     run()
 }
 
+/// Makes `values` the dictation's values on this thread for the rest of its
+/// life (see [`dictation_values`]): the thread that pastes a dictation's
+/// text runs after the dictation ended, and its sounds and notices still
+/// follow the dictation's profile.
+pub fn keep_values_here(values: ProfileValues) {
+    VALUES_HERE.with(|here| *here.borrow_mut() = Some(values));
+}
+
 /// The profile the dictation in progress runs with and its values, as they
 /// are now (its "Send Context" may have been turned over while recording).
 pub fn dictation_profile_and_values(app: &AppHandle) -> (String, ProfileValues) {
@@ -688,6 +696,64 @@ mod tests {
         assert_eq!(effective.custom_words, strings(&["Sayuri"]));
         assert_eq!(effective.active_profile_id, DEFAULT_PROFILE_ID);
         assert!(dictation_profile(&settings, Some("com.apple.TextEdit")).is_none());
+    }
+
+    #[test]
+    fn a_dictation_into_an_assigned_app_gets_all_it_needs_from_that_profile() {
+        let mut settings = with_mail_profile();
+        let extra = serde_json::json!({
+            "selected_microphone": "AirPods",
+            "audio_feedback": true,
+            "sound_theme": "pop",
+            "overlay_position": "top",
+            "overlay_style": "minimal",
+            "paste_method": "direct",
+            "clipboard_handling": "copy_to_clipboard",
+            "custom_words": ["Grüezi mitenand"],
+            "context_excluded_apps": ["Slack"],
+            "post_process_api_keys": { "anthropic": "sk-mail" },
+            "post_process_timeout_secs": 12,
+            "vad_enabled": false,
+            "long_form_chunking": false,
+        });
+        settings.profiles[0].values =
+            crate::profiles::testing::values_with(&settings.profiles[0].values, extra.clone());
+        let profile = dictation_profile(&settings, Some("com.apple.mail")).expect("mail");
+        let effective = serde_json::to_value(with_values(&settings, Some(&profile.values)))
+            .expect("serializes");
+        for (name, value) in extra.as_object().unwrap() {
+            let got = match name.as_str() {
+                "context_excluded_apps" => &effective["dictation_context"]["excluded_apps"],
+                "post_process_api_keys" => &effective[name]["anthropic"],
+                _ => &effective[name],
+            };
+            let want = match name.as_str() {
+                "post_process_api_keys" => &value["anthropic"],
+                _ => value,
+            };
+            assert_eq!(got, want, "{name}");
+        }
+        // The stored settings and the active profile stay as they were.
+        assert_eq!(settings.selected_microphone, None);
+        assert_eq!(effective["active_profile_id"], DEFAULT_PROFILE_ID);
+    }
+
+    #[test]
+    fn values_kept_on_a_thread_apply_there_for_the_rest_of_its_life() {
+        let settings = with_mail_profile();
+        let mail = settings.profiles[0].values.clone();
+        let (here, elsewhere) = std::thread::spawn(move || {
+            keep_values_here(mail);
+            (
+                dictation_values().map(|values| values.selected_model),
+                std::thread::spawn(dictation_values).join().unwrap(),
+            )
+        })
+        .join()
+        .unwrap();
+        assert_eq!(here.as_deref(), Some("whisper"));
+        assert_eq!(elsewhere, None);
+        assert_eq!(dictation_values(), None);
     }
 
     #[test]
