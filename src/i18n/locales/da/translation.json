@@ -20,13 +20,20 @@
   },
   "sidebar": {
     "general": "Generelt",
-    "profiles": "Profiler",
     "models": "Modeller",
     "advanced": "Avanceret",
     "postProcessing": "Efterbehandling",
     "history": "Historik",
     "debug": "Fejlfinding",
     "about": "Om",
+    "areas": {
+      "defaults": "Grundindstillinger",
+      "profiles": "Profilindstillinger",
+      "application": "Programindstillinger"
+    },
+    "inUse": "I brug",
+    "updates": "Opdateringer",
+    "storage": "Lagring",
     "profile": "Profil"
   },
   "onboarding": {
@@ -472,6 +479,7 @@
         "models": "Den model, du vælger her, hører til profilen »{{name}}«.",
         "postProcessing": "Udbyder, model, prompts og grænserne for kontekst hører til profilen »{{name}}«; API-nøgler gælder for alle profiler."
       },
+      "pagePlaceholder": "Kommer snart: Denne side viser indstillingerne for »{{name}}«, hver markeret som at følge grundindstillingerne eller som en egen værdi.",
       "apps": {
         "label": "Bruges automatisk i:",
         "none": "endnu intet program",

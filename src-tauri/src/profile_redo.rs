@@ -9,8 +9,9 @@
 //! the profile of the application in front again. When it differs, the
 //! dictation is redone from the first step whose settings differ:
 //!
-//! - speech model, languages, word lists or filler words: the recording is
-//!   transcribed again, then post-processed as the target profile says;
+//! - speech model, languages, word lists, filler words or long-audio
+//!   decoding: the recording is transcribed again, then post-processed as the
+//!   target profile says;
 //! - only post-processing: the transcription is post-processed again;
 //! - only the "Append" field: the text stays, the target's "Append" applies.
 //!
@@ -64,8 +65,8 @@ fn applied(base: &AppSettings, values: &ProfileValues) -> AppSettings {
 
 /// Whether a transcription with `a` can come out other than with `b`, on
 /// the global values of `base`: another model, language settings, words the
-/// model gets or finds (the active additional list counts, not the others)
-/// or filler words.
+/// model gets or finds (the active additional list counts, not the others),
+/// filler words or the decoding of long audio.
 pub fn transcription_differs(base: &AppSettings, a: &ProfileValues, b: &ProfileValues) -> bool {
     let words =
         |values: &ProfileValues| crate::word_lists::merged_vocabulary(&applied(base, values));
@@ -78,6 +79,7 @@ pub fn transcription_differs(base: &AppSettings, a: &ProfileValues, b: &ProfileV
         || a.chinese_script != b.chinese_script
         || a.filler_word_removal_enabled != b.filler_word_removal_enabled
         || a.custom_filler_words != b.custom_filler_words
+        || a.long_form_chunking != b.long_form_chunking
         || words(a) != words(b)
 }
 
@@ -91,9 +93,10 @@ fn requested_instructions(library: &[LLMPrompt], values: &ProfileValues) -> Stri
 }
 
 /// Whether post-processing with `a` can come out other than with `b`, both
-/// post-processing with the prompts of `library`: another provider, the
-/// provider's model or effort, other instructions (the texts of the active
-/// prompts in their order), or other context.
+/// post-processing with the prompts of `library`: another provider or
+/// endpoint, the provider's model or effort, other instructions (the texts
+/// of the active prompts in their order), or other context. The key and the
+/// time limit don't change the text.
 fn post_processing_differs(library: &[LLMPrompt], a: &ProfileValues, b: &ProfileValues) -> bool {
     let provider = &a.post_process_provider_id;
     let context_limits = |values: &ProfileValues| {
@@ -103,7 +106,15 @@ fn post_processing_differs(library: &[LLMPrompt], a: &ProfileValues, b: &Profile
             values.context_char_budget,
         )
     };
+    let endpoint = |values: &ProfileValues| {
+        values
+            .post_process_providers
+            .iter()
+            .find(|candidate| candidate.id == *provider)
+            .cloned()
+    };
     a.post_process_provider_id != b.post_process_provider_id
+        || endpoint(a) != endpoint(b)
         || a.post_process_models.get(provider) != b.post_process_models.get(provider)
         || a.post_process_efforts.get(provider) != b.post_process_efforts.get(provider)
         || requested_instructions(library, a) != requested_instructions(library, b)
@@ -616,11 +627,11 @@ mod tests {
     }
 
     fn redo(change: impl FnOnce(&mut ProfileValues), requested: bool) -> RedoFrom {
-        redo_with(|_| {}, change, requested)
+        redo_on(|_| {}, change, requested)
     }
 
     /// [`redo`] on settings changed by `library` first, e.g. their prompts.
-    fn redo_with(
+    fn redo_on(
         library: impl FnOnce(&mut AppSettings),
         change: impl FnOnce(&mut ProfileValues),
         requested: bool,
@@ -706,6 +717,75 @@ mod tests {
         );
     }
 
+    /// `change` applied to the target through serde names.
+    fn redo_with(extra: serde_json::Value, requested: bool) -> RedoFrom {
+        redo(
+            |target| *target = crate::profiles::testing::values_with(target, extra),
+            requested,
+        )
+    }
+
+    #[test]
+    fn other_words_or_long_audio_handling_transcribe_again() {
+        assert_eq!(
+            redo_with(serde_json::json!({ "custom_words": ["Grüezi"] }), false),
+            RedoFrom::Transcription
+        );
+        let chunking = settings_with_mail().long_form_chunking;
+        assert_eq!(
+            redo_with(
+                serde_json::json!({ "long_form_chunking": !chunking }),
+                false
+            ),
+            RedoFrom::Transcription
+        );
+    }
+
+    #[test]
+    fn another_custom_endpoint_post_processes_again() {
+        let settings = settings_with_mail();
+        let mut providers =
+            serde_json::to_value(&settings.post_process_providers).expect("serializes");
+        for provider in providers.as_array_mut().unwrap() {
+            if provider["id"] == "anthropic" {
+                provider["base_url"] = serde_json::json!("https://proxy.example.com/v1");
+            }
+        }
+        assert_eq!(
+            redo_with(
+                serde_json::json!({ "post_process_providers": providers.clone() }),
+                true
+            ),
+            RedoFrom::PostProcessing
+        );
+        // Without post-processing it makes no difference.
+        assert_eq!(
+            redo_with(
+                serde_json::json!({ "post_process_providers": providers }),
+                false
+            ),
+            RedoFrom::Nothing
+        );
+    }
+
+    #[test]
+    fn what_changes_no_text_redoes_nothing() {
+        assert_eq!(
+            redo_with(
+                serde_json::json!({
+                    "selected_microphone": "AirPods",
+                    "audio_feedback": true,
+                    "overlay_position": "top",
+                    "paste_method": "direct",
+                    "post_process_api_keys": { "anthropic": "sk-other" },
+                    "post_process_timeout_secs": 5,
+                }),
+                true
+            ),
+            RedoFrom::Nothing
+        );
+    }
+
     #[test]
     fn another_prompt_post_processes_again_while_post_processing() {
         assert_eq!(redo(formal, true), RedoFrom::PostProcessing);
@@ -713,7 +793,7 @@ mod tests {
         assert_eq!(redo(formal, false), RedoFrom::Nothing);
         // The same prompt text under another id is the same.
         assert_eq!(
-            redo_with(
+            redo_on(
                 |s| s.post_process_prompts[1].prompt = "Clean it up.".to_string(),
                 formal,
                 true
@@ -736,7 +816,7 @@ mod tests {
                 vec![order_entry("clean", true), order_entry("formal", true)]
         };
         assert_eq!(
-            redo_with(
+            redo_on(
                 reversed,
                 |t| {
                     t.post_process_prompt_order =

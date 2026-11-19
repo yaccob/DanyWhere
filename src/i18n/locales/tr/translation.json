@@ -20,13 +20,20 @@
   },
   "sidebar": {
     "general": "Genel",
-    "profiles": "Profiller",
     "models": "Modeller",
     "advanced": "Gelişmiş",
     "postProcessing": "Son İşlem",
     "history": "Geçmiş",
     "debug": "Hata Ayıklama",
     "about": "Hakkında",
+    "areas": {
+      "defaults": "Temel Ayarlar",
+      "profiles": "Profil Ayarları",
+      "application": "Uygulama Ayarları"
+    },
+    "inUse": "Kullanımda",
+    "updates": "Güncellemeler",
+    "storage": "Depolama",
     "profile": "Profil"
   },
   "onboarding": {
@@ -472,6 +479,7 @@
         "models": "Burada seçilen model “{{name}}” profiline aittir.",
         "postProcessing": "Sağlayıcı, model, prompt'lar ve bağlam sınırları “{{name}}” profiline aittir; API anahtarları tüm profiller için geçerlidir."
       },
+      "pagePlaceholder": "Yakında: bu sayfa “{{name}}” profilinin ayarlarını gösterecek; her ayar, temel ayarları izliyor ya da kendi değerine sahip olarak işaretlenecek.",
       "apps": {
         "label": "Otomatik kullanıldığı yerler:",
         "none": "henüz uygulama yok",

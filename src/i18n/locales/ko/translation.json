@@ -20,13 +20,20 @@
   },
   "sidebar": {
     "general": "일반",
-    "profiles": "프로필",
     "models": "모델",
     "advanced": "고급",
     "postProcessing": "후처리",
     "history": "히스토리",
     "debug": "디버그",
     "about": "정보",
+    "areas": {
+      "defaults": "기본 설정",
+      "profiles": "프로필 설정",
+      "application": "애플리케이션 설정"
+    },
+    "inUse": "사용 중",
+    "updates": "업데이트",
+    "storage": "저장 공간",
     "profile": "프로필"
   },
   "onboarding": {
@@ -472,6 +479,7 @@
         "models": "여기서 선택한 모델은 ‘{{name}}’ 프로필에 속합니다.",
         "postProcessing": "제공자, 모델, 프롬프트, 컨텍스트 한도는 ‘{{name}}’ 프로필에 속합니다. API 키는 모든 프로필에 적용됩니다."
       },
+      "pagePlaceholder": "곧 제공: 이 페이지에 ‘{{name}}’의 설정이 표시되며, 각 설정이 기본 설정을 따르는지 고유한 값인지 표시됩니다.",
       "apps": {
         "label": "자동으로 사용되는 앱:",
         "none": "아직 없음",

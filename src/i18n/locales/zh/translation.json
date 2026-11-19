@@ -20,13 +20,20 @@
   },
   "sidebar": {
     "general": "通用",
-    "profiles": "配置文件",
     "models": "模型",
     "advanced": "高级",
     "postProcessing": "后处理",
     "history": "历史记录",
     "debug": "调试",
     "about": "关于",
+    "areas": {
+      "defaults": "基本设置",
+      "profiles": "配置文件设置",
+      "application": "应用程序设置"
+    },
+    "inUse": "正在使用",
+    "updates": "更新",
+    "storage": "存储",
     "profile": "配置文件"
   },
   "onboarding": {
@@ -472,6 +479,7 @@
         "models": "此处选择的模型属于配置文件“{{name}}”。",
         "postProcessing": "提供商、模型、提示词和上下文限制属于配置文件“{{name}}”；API 密钥适用于所有配置文件。"
       },
+      "pagePlaceholder": "即将推出：此页面将显示“{{name}}”的设置，每项都会标明是沿用基本设置还是使用自己的值。",
       "apps": {
         "label": "自动用于：",
         "none": "尚无应用",

@@ -20,13 +20,20 @@
   },
   "sidebar": {
     "general": "Umum",
-    "profiles": "Profil",
     "models": "Model",
     "advanced": "Lanjutan",
     "postProcessing": "Pascaproses",
     "history": "Riwayat",
     "debug": "Debug",
     "about": "Tentang",
+    "areas": {
+      "defaults": "Pengaturan Dasar",
+      "profiles": "Pengaturan Profil",
+      "application": "Pengaturan Aplikasi"
+    },
+    "inUse": "Sedang Digunakan",
+    "updates": "Pembaruan",
+    "storage": "Penyimpanan",
     "profile": "Profil"
   },
   "onboarding": {
@@ -472,6 +479,7 @@
         "models": "Model yang dipilih di sini milik profil “{{name}}”.",
         "postProcessing": "Penyedia, model, prompt, dan batas konteks milik profil “{{name}}”; kunci API berlaku untuk semua profil."
       },
+      "pagePlaceholder": "Segera hadir: halaman ini akan menampilkan pengaturan “{{name}}”, masing-masing ditandai mengikuti pengaturan dasar atau memiliki nilai sendiri.",
       "apps": {
         "label": "Otomatis digunakan di:",
         "none": "belum ada aplikasi",

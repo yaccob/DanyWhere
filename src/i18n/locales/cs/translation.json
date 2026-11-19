@@ -20,13 +20,20 @@
   },
   "sidebar": {
     "general": "Obecné",
-    "profiles": "Profily",
     "models": "Modely",
     "advanced": "Pokročilé",
     "postProcessing": "Následné zpracování",
     "history": "Historie",
     "debug": "Ladění",
     "about": "O aplikaci",
+    "areas": {
+      "defaults": "Základní nastavení",
+      "profiles": "Nastavení profilů",
+      "application": "Nastavení aplikace"
+    },
+    "inUse": "Používá se",
+    "updates": "Aktualizace",
+    "storage": "Úložiště",
     "profile": "Profil"
   },
   "onboarding": {
@@ -472,6 +479,7 @@
         "models": "Zde zvolený model patří k profilu „{{name}}“.",
         "postProcessing": "Poskytovatel, model, prompty a limity kontextu patří k profilu „{{name}}“; API klíče platí pro všechny profily."
       },
+      "pagePlaceholder": "Již brzy: tato stránka zobrazí nastavení profilu „{{name}}“, každé označené jako převzaté ze základního nastavení nebo s vlastní hodnotou.",
       "apps": {
         "label": "Automaticky se používá v:",
         "none": "zatím v žádné aplikaci",

@@ -20,13 +20,20 @@
   },
   "sidebar": {
     "general": "Allmänt",
-    "profiles": "Profiler",
     "models": "Modeller",
     "advanced": "Avancerat",
     "postProcessing": "Efterbearbetning",
     "history": "Historik",
     "debug": "Felsökning",
     "about": "Om",
+    "areas": {
+      "defaults": "Grundinställningar",
+      "profiles": "Profilinställningar",
+      "application": "Programinställningar"
+    },
+    "inUse": "Används",
+    "updates": "Uppdateringar",
+    "storage": "Lagring",
     "profile": "Profil"
   },
   "onboarding": {
@@ -472,6 +479,7 @@
         "models": "Modellen du väljer här hör till profilen ”{{name}}”.",
         "postProcessing": "Leverantör, modell, prompter och gränserna för kontext hör till profilen ”{{name}}”; API-nycklar gäller för alla profiler."
       },
+      "pagePlaceholder": "Kommer snart: den här sidan visar inställningarna för ”{{name}}”, var och en markerad som att den följer grundinställningarna eller har ett eget värde.",
       "apps": {
         "label": "Används automatiskt i:",
         "none": "ännu ingen app",

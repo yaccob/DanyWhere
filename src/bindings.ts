@@ -501,7 +501,7 @@ async setActiveWordList(id: string | null) : Promise<Result<null, string>> {
 },
 /**
  * DanyWhere: replaces the active profile's own word list, which always
- * applies in that profile (`custom_words` applies in every profile).
+ * applies in that profile, before `custom_words`.
  */
 async updateProfileWords(words: string[]) : Promise<Result<null, string>> {
     try {
@@ -1688,7 +1688,8 @@ selected_channel?: number | null; clamshell_microphone?: string | null; selected
  */
 spoken_languages?: string[]; overlay_position?: OverlayPosition; debug_mode?: boolean; log_level?: LogLevel; 
 /**
- * The global word list: always given to the model (see `word_lists`).
+ * The word list every dictation gets (see `word_lists`); a profile
+ * value (`profiles`), the same in every profile until one differs.
  */
 custom_words?: string[]; 
 /**
@@ -1796,7 +1797,7 @@ overlay_style?: OverlayStyle;
 profiles?: Profile[]; active_profile_id?: string; 
 /**
  * DanyWhere: the active profile's own word list, which always applies
- * in it; `custom_words` applies in every profile.
+ * in it, before `custom_words`.
  */
 profile_words?: string[]; 
 /**
@@ -2135,7 +2136,9 @@ export type ImportResult = {
 profile: Profile | null; key: ImportedKey; 
 /**
  * Set when the file's key differs from the stored one and the choice was
- * [`KeyConflictChoice::Ask`]; nothing was imported then.
+ * [`KeyConflictChoice::Ask`]; nothing was imported then. DanyWhere:
+ * never set since the keys are profile values: the imported profile
+ * gets its own key and no other profile's key changes.
  */
 conflict_provider_id: string | null; 
 /**
@@ -2383,7 +2386,9 @@ name: string; values: ProfileValues;
 apps?: string[] }
 /**
  * Everything that is per profile. Mirrors fields of [`AppSettings`] with the
- * same names and types; the context limits mirror `dictation_context`.
+ * same names and types; the context settings mirror `dictation_context`.
+ * New fields go at the end; `setting_classes` checks that every setting is
+ * a profile value or classified otherwise.
  */
 export type ProfileValues = { selected_model: string; selected_language: string; spoken_languages: string[]; language_detection: LanguageDetectionMode; language_detection_window_secs: number; translate_to_english: boolean; chinese_script: ChineseScript; profile_words: string[]; word_lists: WordList[]; active_word_list_id: string | null; post_process_enabled: boolean; post_process_provider_id: string; post_process_models: Partial<{ [key in string]: string }>; 
 /**
@@ -2415,7 +2420,59 @@ send_context: boolean; filler_word_removal_enabled: boolean; custom_filler_words
  * The "Append" field (`append_text`), which replaced the trailing space;
  * stored profiles got it from theirs (`append_text::migrate`).
  */
-append_text: string }
+append_text: string; 
+/**
+ * How the dictation shortcut's presses drive a recording. Read when a
+ * key event comes, so from the profile in use.
+ */
+shortcut_activation: ShortcutActivation; 
+/**
+ * The feedback sounds, their volume and theme, the done sound.
+ */
+audio_feedback: boolean; audio_feedback_volume: number; sound_theme: SoundTheme; done_sound: boolean; 
+/**
+ * Mute the computer's sound while recording.
+ */
+mute_while_recording: boolean; 
+/**
+ * The microphone stays open between dictations; follows the profile in
+ * use (`profile_effects`).
+ */
+always_on_microphone: boolean; 
+/**
+ * The microphone a dictation records with (`dictation_microphone`).
+ */
+selected_microphone: string | null; selected_channel: number | null; clamshell_microphone: string | null; 
+/**
+ * Where the feedback sounds play.
+ */
+selected_output_device: string | null; airpods_mode: boolean; 
+/**
+ * Where the recording overlay sits and how it shows (`overlay_look`).
+ */
+overlay_position: OverlayPosition; overlay_style: OverlayStyle; 
+/**
+ * How the text gets into the application.
+ */
+paste_method: PasteMethod; clipboard_handling: ClipboardHandling; clipboard_notice_ms: number; typing_tool: TypingTool; external_script_path: string | null; 
+/**
+ * The word list every dictation with this profile gets, after its own
+ * (`profile_words`); the same in every profile until one differs.
+ */
+custom_words: string[]; 
+/**
+ * `dictation_context.excluded_apps`
+ */
+context_excluded_apps: string[]; 
+/**
+ * The post-processing providers with their endpoints, their API keys
+ * (never exported, see `profile_transfer`) and the time limit.
+ */
+post_process_providers: PostProcessProvider[]; post_process_api_keys: SecretMap; post_process_timeout_secs: number; 
+/**
+ * Drop silence from recordings; decode long audio in chunks.
+ */
+vad_enabled: boolean; long_form_chunking: boolean }
 /**
  * One prompt of the library in a profile's list.
  */

@@ -106,7 +106,7 @@ pub enum PostProcessApiFormat {
     Anthropic,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Type)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Type)]
 pub struct PostProcessProvider {
     pub id: String,
     pub label: String,
@@ -427,7 +427,7 @@ pub enum LanguageDetectionMode {
     Always,
 }
 
-#[derive(Clone, Serialize, Deserialize, Type)]
+#[derive(Clone, PartialEq, Serialize, Deserialize, Type)]
 #[serde(transparent)]
 pub(crate) struct SecretMap(HashMap<String, String>);
 
@@ -561,7 +561,8 @@ pub struct AppSettings {
     pub debug_mode: bool,
     #[serde(default = "default_log_level")]
     pub log_level: LogLevel,
-    /// The global word list: always given to the model (see `word_lists`).
+    /// The word list every dictation gets (see `word_lists`); a profile
+    /// value (`profiles`), the same in every profile until one differs.
     #[serde(default)]
     pub custom_words: Vec<String>,
     /// Named lists that can be switched on in addition to the global one.
@@ -717,7 +718,7 @@ pub struct AppSettings {
     #[serde(default)]
     pub active_profile_id: String,
     /// DanyWhere: the active profile's own word list, which always applies
-    /// in it; `custom_words` applies in every profile.
+    /// in it, before `custom_words`.
     #[serde(default)]
     pub profile_words: Vec<String>,
     /// DanyWhere: whether an application's profile is used for dictations
@@ -1142,6 +1143,15 @@ fn ensure_post_process_defaults(settings: &mut AppSettings) -> bool {
     changed
 }
 
+/// DanyWhere: [`ensure_post_process_defaults`] for the flat values and
+/// every profile, since the providers, their keys and models are profile
+/// values: a provider a new version brings reaches every profile.
+fn ensure_post_process_defaults_everywhere(settings: &mut AppSettings) -> bool {
+    let flat = ensure_post_process_defaults(settings);
+    let profiles = crate::profiles::ensure_in_every_profile(settings, ensure_post_process_defaults);
+    flat || profiles
+}
+
 pub const SETTINGS_STORE_PATH: &str = "settings_store.json";
 
 pub fn get_default_settings() -> AppSettings {
@@ -1524,7 +1534,7 @@ pub fn get_settings(app: &AppHandle) -> AppSettings {
         default_settings
     };
 
-    if ensure_post_process_defaults(&mut settings) {
+    if ensure_post_process_defaults_everywhere(&mut settings) {
         store.set("settings", serde_json::to_value(&settings).unwrap());
     }
 
@@ -1723,12 +1733,6 @@ fn apply_settings_migrations(
         updated = true;
     }
 
-    // DanyWhere: one-time "Append" migration from the trailing space and
-    // auto submit, for the settings and every stored profile.
-    if crate::append_text::migrate(settings, settings_value) {
-        updated = true;
-    }
-
     // One-time overlay migration (only while the new key is absent): the retired
     // overlay_position `none` meant "hide the overlay" → OverlayStyle::None; any
     // other position had it visible → Live. The position enum no longer has a
@@ -1744,6 +1748,19 @@ fn apply_settings_migrations(
         } else {
             OverlayStyle::Live
         };
+        updated = true;
+    }
+
+    // DanyWhere: a stored profile without a profile value gets the flat
+    // value it had (contract V5), after the migrations of the flat values
+    // above and before those of a profile's own below, which win.
+    if crate::profiles::fill_missing_values_from_flat(settings, settings_value) {
+        updated = true;
+    }
+
+    // DanyWhere: one-time "Append" migration from the trailing space and
+    // auto submit, for the settings and every stored profile.
+    if crate::append_text::migrate(settings, settings_value) {
         updated = true;
     }
 
@@ -2859,6 +2876,76 @@ mod tests {
         assert!(!debug_output.contains("sk-proj-secret-key-12345"));
         assert!(!debug_output.contains("sk-ant-secret-key-67890"));
         assert!(debug_output.contains("[REDACTED]"));
+    }
+
+    // ---- DanyWhere: profile values (P6) -----------------------------------
+
+    /// A store from before the newer profile values: flat ones for them, a
+    /// second profile without them, which still has Handy's trailing space.
+    fn stored_before_new_profile_values() -> serde_json::Value {
+        serde_json::json!({
+            "selected_microphone": "USB Mic",
+            "overlay_position": "top",
+            "overlay_style": "minimal",
+            "custom_words": ["Sayuri"],
+            "append_text": "{Enter}",
+            "active_profile_id": "default",
+            "profiles": [
+                { "id": "default", "name": "", "values": { "append_text": "{Enter}" } },
+                { "id": "old", "name": "Old",
+                  "values": { "selected_language": "fr", "append_trailing_space": true } }
+            ]
+        })
+    }
+
+    #[test]
+    fn a_stored_profile_gets_the_flat_values_it_lacks_when_loaded() {
+        let raw = stored_before_new_profile_values();
+        let mut settings: AppSettings = serde_json::from_value(raw.clone()).expect("parses");
+        assert!(apply_settings_migrations(&mut settings, &raw));
+        let old = serde_json::to_value(&settings.profiles[1].values).expect("serializes");
+        assert_eq!(old["selected_microphone"], "USB Mic");
+        assert_eq!(old["overlay_position"], "top");
+        assert_eq!(old["overlay_style"], "minimal");
+        assert_eq!(old["custom_words"], serde_json::json!(["Sayuri"]));
+        assert_eq!(old["selected_language"], "fr");
+        // A migration of its own still wins over the flat value: the
+        // profile's trailing space, not the flat "Append" text.
+        assert_eq!(old["append_text"], r"\s");
+    }
+
+    #[test]
+    fn a_new_built_in_provider_reaches_every_profile() {
+        let mut settings = get_default_settings();
+        crate::profiles::ensure_profiles(&mut settings);
+        let mut other = settings.profiles[0].clone();
+        other.id = "other".to_string();
+        other.values = crate::profiles::testing::values_with(
+            &other.values,
+            serde_json::json!({
+                "post_process_providers": [{
+                    "id": "openai",
+                    "label": "OpenAI",
+                    "base_url": "https://api.openai.com/v1",
+                }],
+                "post_process_api_keys": { "openai": "sk-other" },
+            }),
+        );
+        settings.profiles.push(other);
+        assert!(ensure_post_process_defaults_everywhere(&mut settings));
+        let values = serde_json::to_value(&settings.profiles[1].values).expect("serializes");
+        let ids: Vec<&str> = values["post_process_providers"]
+            .as_array()
+            .expect("providers")
+            .iter()
+            .filter_map(|provider| provider["id"].as_str())
+            .collect();
+        for provider in default_post_process_providers() {
+            assert!(ids.contains(&provider.id.as_str()), "{}", provider.id);
+        }
+        assert_eq!(values["post_process_api_keys"]["openai"], "sk-other");
+        assert_eq!(values["post_process_api_keys"]["anthropic"], "");
+        assert!(!ensure_post_process_defaults_everywhere(&mut settings));
     }
 
     #[test]
