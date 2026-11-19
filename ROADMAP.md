@@ -26,7 +26,7 @@ Planned work on DanyWhere, roughly in priority order within each section. Items 
 
 **Decided (user, 2026-11-19, later):** all versions are alike: they can be moved up and down freely (dragged in the track, or "to the top", "up", "down" in a version's menu) and deleted, the original transcription included, as long as one version is left; the top one is the entry's result. Deleting the transcription clears its own database column too. Deleting never asks. The wand's "replace" and "redo from the previous version" go; a click applies the profile's active prompts to the shown version and puts the result on top.
 
-**Open:** whether a version remembers which one it came from (Claude: no; its steps already say who made it and when, and an origin that has to follow moves and deletions would confuse more than help), and whether the wand's menu lists every prompt of the library for applying it once (Claude: yes, so a prompt that isn't active in the profile, such as a translation, can be used on demand).
+**Decided (user, 2026-11-19, last):** a version doesn't remember which one it came from; its steps (who, when, which prompt) stay. The wand's menu lists every prompt of the library by name, in the profile's order with the active ones checked, the full name and the text's first lines in a tooltip; choosing one applies only that prompt to the shown version and puts the result on top. Prompts that aren't active in the profile are offered too. With the shared library, prompt names are unique (Claude's proposal): saving under a name already taken is refused with a notice.
 
 ### Shortcuts: start per profile, end with what follows
 
