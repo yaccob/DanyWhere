@@ -74,8 +74,10 @@ const NOTICE_DISPLAY: Record<NoticeCode, NoticeDisplay> = {
   // DanyWhere: the detail names the prompts (src-tauri/src/prompt_frame.rs).
   OutdatedPrompts: {
     title: "errors.outdatedPromptsTitle",
+    // DanyWhere: and that such a prompt runs alone while it is active
+    // (src-tauri/src/prompt_library.rs).
     explanation: (t, detail) =>
-      t("errors.outdatedPrompts", { prompts: detail ?? "" }),
+      `${t("errors.outdatedPrompts", { prompts: detail ?? "" })} ${t("errors.outdatedPromptsAlone")}`,
     detailInExplanation: true,
   },
   // DanyWhere: the detail is the post-processing model that refused the

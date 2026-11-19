@@ -1,13 +1,14 @@
 //! DanyWhere: profiles. The values that concern a dictation (the user's
 //! decision P6 of 2026-11-19; [`ProfileValues`]: speech model, languages,
-//! word lists, post-processing with its providers, keys and prompts,
-//! context, filler words, microphone, sounds, overlay and how the text is
-//! inserted) have defaults (`AppSettings::default_values`, the
-//! "Grundeinstellungen"), and a profile overrides what it needs: each of its
-//! values is coupled to the default or its own (`profile_layers`, decisions
-//! P1–P11). What concerns the machine, the app or the interface stays
-//! global (`setting_classes`); so do the shortcuts until they become profile
-//! values.
+//! word lists, post-processing with its providers, keys and which prompts
+//! run in what order, context, filler words, microphone, sounds, overlay and
+//! how the text is inserted) have defaults (`AppSettings::default_values`,
+//! the "Grundeinstellungen"), and a profile overrides what it needs: each of
+//! its values is coupled to the default or its own (`profile_layers`,
+//! decisions P1–P11). What concerns the machine, the app or the interface
+//! stays global (`setting_classes`); so do the shortcuts until they become
+//! profile values, and the prompts themselves, one library for all
+//! (`prompt_library`).
 //!
 //! What is in use is a profile or the defaults (`active_profile_id ==
 //! DEFAULT_PROFILE_ID`). The flat fields of [`AppSettings`] always hold its
@@ -23,10 +24,11 @@ use specta::Type;
 use tauri::{AppHandle, Emitter};
 
 use crate::profile_layers::OwnEntries;
+use crate::prompt_library::PromptOrderEntry;
 use crate::settings::{
-    self, AppSettings, ChineseScript, ClipboardHandling, LLMPrompt, LanguageDetectionMode,
-    OverlayPosition, OverlayStyle, PasteMethod, PostProcessProvider, SecretMap, ShortcutActivation,
-    SoundTheme, TypingTool,
+    self, AppSettings, ChineseScript, ClipboardHandling, LanguageDetectionMode, OverlayPosition,
+    OverlayStyle, PasteMethod, PostProcessProvider, SecretMap, ShortcutActivation, SoundTheme,
+    TypingTool,
 };
 use crate::word_lists::WordList;
 
@@ -98,8 +100,9 @@ pub struct ProfileValues {
     pub post_process_models: HashMap<String, String>,
     /// The effort per provider (`post_process_effort`).
     pub post_process_efforts: HashMap<String, String>,
-    pub post_process_prompts: Vec<LLMPrompt>,
-    pub post_process_selected_prompt_id: Option<String>,
+    /// Which prompts of the library run, and the order of the whole list
+    /// (`prompt_library`). The prompts themselves are shared by all profiles.
+    pub post_process_prompt_order: Vec<PromptOrderEntry>,
     /// `dictation_context.age_limit_minutes`
     pub context_age_limit_minutes: u32,
     /// `dictation_context.max_entries`
@@ -182,8 +185,7 @@ impl ProfileValues {
             post_process_provider_id: settings.post_process_provider_id.clone(),
             post_process_models: settings.post_process_models.clone(),
             post_process_efforts: settings.post_process_efforts.clone(),
-            post_process_prompts: settings.post_process_prompts.clone(),
-            post_process_selected_prompt_id: settings.post_process_selected_prompt_id.clone(),
+            post_process_prompt_order: settings.post_process_prompt_order.clone(),
             context_age_limit_minutes: settings.dictation_context.age_limit_minutes,
             context_max_entries: settings.dictation_context.max_entries,
             context_char_budget: settings.dictation_context.char_budget,
@@ -237,8 +239,7 @@ impl ProfileValues {
         settings.post_process_provider_id = self.post_process_provider_id.clone();
         settings.post_process_models = self.post_process_models.clone();
         settings.post_process_efforts = self.post_process_efforts.clone();
-        settings.post_process_prompts = self.post_process_prompts.clone();
-        settings.post_process_selected_prompt_id = self.post_process_selected_prompt_id.clone();
+        settings.post_process_prompt_order = self.post_process_prompt_order.clone();
         settings.dictation_context.age_limit_minutes = self.context_age_limit_minutes;
         settings.dictation_context.max_entries = self.context_max_entries;
         settings.dictation_context.char_budget = self.context_char_budget;
@@ -498,9 +499,9 @@ pub fn profile_for_test(
 /// one-time switch to the defaults (`profile_layers::migrate_to_defaults`),
 /// the defaults in use when the id in use names no profile, the flat values
 /// (the latest of what is in use) sent where they belong
-/// (`profile_layers::route_flat`), and Handy's untouched default prompt
-/// replaced in the defaults and every profile. Returns whether anything
-/// changed.
+/// (`profile_layers::route_flat`), and every prompt order (the flat one,
+/// the defaults' and every profile's) covering the library
+/// (`prompt_library::normalize_orders`). Returns whether anything changed.
 pub fn ensure_profiles(settings: &mut AppSettings) -> bool {
     let mut changed = crate::profile_layers::migrate_to_defaults(settings);
     if settings.active_profile_id != DEFAULT_PROFILE_ID && active_profile(settings).is_none() {
@@ -517,17 +518,7 @@ pub fn ensure_profiles(settings: &mut AppSettings) -> bool {
     if crate::profile_layers::route_flat(settings) {
         changed = true;
     }
-    let mut replaced = false;
-    if let Some(values) = settings.default_values.as_mut() {
-        replaced |=
-            crate::prompt_frame::replace_untouched_handy_default(&mut values.post_process_prompts);
-    }
-    for profile in settings.profiles.iter_mut() {
-        replaced |= crate::prompt_frame::replace_untouched_handy_default(
-            &mut profile.values.post_process_prompts,
-        );
-    }
-    if replaced {
+    if crate::prompt_library::normalize_orders(settings) {
         crate::profile_layers::propagate(settings);
         changed = true;
     }
@@ -785,6 +776,8 @@ mod tests {
     use super::*;
     use crate::profile_layers::couple_equal;
 
+    use crate::settings::LLMPrompt;
+
     fn prompt(id: &str, name: &str, text: &str) -> LLMPrompt {
         LLMPrompt {
             id: id.to_string(),
@@ -803,6 +796,10 @@ mod tests {
 
     fn strings(words: &[&str]) -> Vec<String> {
         words.iter().map(|w| w.to_string()).collect()
+    }
+
+    fn entry(id: &str, active: bool) -> PromptOrderEntry {
+        PromptOrderEntry::new(id, active)
     }
 
     /// Whether `actual` holds `expected`: equal, or for objects every entry
@@ -864,8 +861,11 @@ mod tests {
             spoken_languages: strings(&["de", "en"]),
             post_process_enabled: true,
             post_process_provider_id: "anthropic".to_string(),
-            post_process_prompts: vec![prompt("p1", "Diktat (DE/EN)", "Clean it up.")],
-            post_process_selected_prompt_id: Some("p1".to_string()),
+            post_process_prompts: vec![
+                prompt("p1", "Diktat (DE/EN)", "Clean it up."),
+                prompt("p9", "Email", "Make an email out of it."),
+            ],
+            post_process_prompt_order: vec![entry("p1", true), entry("p9", false)],
             word_lists: vec![list("code", &["Rust", "Tauri"])],
             active_word_list_id: Some("code".to_string()),
             custom_words: strings(&["Sayuri"]),
@@ -890,8 +890,7 @@ mod tests {
             post_process_provider_id: "openai".to_string(),
             post_process_models: HashMap::from([("openai".to_string(), "gpt-x".to_string())]),
             post_process_efforts: HashMap::from([("openai".to_string(), "high".to_string())]),
-            post_process_prompts: vec![prompt("p9", "Email", "Make an email out of it.")],
-            post_process_selected_prompt_id: Some("p9".to_string()),
+            post_process_prompt_order: vec![entry("p9", true), entry("p1", false)],
             context_age_limit_minutes: 11,
             context_max_entries: 2,
             context_char_budget: 999,
@@ -971,7 +970,10 @@ mod tests {
         let values = default_values(&s);
         assert_eq!(values.selected_model, "parakeet");
         assert_eq!(values.selected_language, "de");
-        assert_eq!(values.post_process_prompts[0].name, "Diktat (DE/EN)");
+        assert_eq!(
+            values.post_process_prompt_order,
+            vec![entry("p1", true), entry("p9", false)]
+        );
         assert_eq!(values.word_lists, vec![list("code", &["Rust", "Tauri"])]);
         assert_eq!(values.active_word_list_id.as_deref(), Some("code"));
         assert!(s.profiles.is_empty());
@@ -999,24 +1001,18 @@ mod tests {
     }
 
     #[test]
-    fn handys_untouched_default_prompt_is_replaced_in_the_defaults_and_every_profile() {
+    fn every_prompt_order_covers_the_library() {
         let mut s = two_profiles();
-        let handy = crate::prompt_frame::HANDY_IMPROVE_TRANSCRIPTIONS[0];
         let index = s.profiles.iter().position(|p| p.id == "work").unwrap();
-        s.profiles[index].values.post_process_prompts = vec![prompt("h", "Improve", handy)];
-        s.post_process_prompts = vec![prompt("h", "Improve", handy)];
+        s.profiles[index].values.post_process_prompt_order = vec![entry("gone", true)];
         assert!(ensure_profiles(&mut s));
         assert_eq!(
-            work(&s).values.post_process_prompts[0].prompt,
-            crate::prompt_frame::IMPROVE_TRANSCRIPTIONS
+            work(&s).values.post_process_prompt_order,
+            vec![entry("p1", false), entry("p9", false)]
         );
         assert_eq!(
-            default_values(&s).post_process_prompts[0].prompt,
-            crate::prompt_frame::IMPROVE_TRANSCRIPTIONS
-        );
-        assert_eq!(
-            s.post_process_prompts[0].prompt,
-            crate::prompt_frame::IMPROVE_TRANSCRIPTIONS
+            default_values(&s).post_process_prompt_order.len(),
+            s.post_process_prompts.len()
         );
     }
 
@@ -1197,8 +1193,13 @@ mod tests {
         let mut s = two_profiles();
         switch_to(&mut s, "work", false).expect("switched");
         s.selected_language = "it".to_string();
+        s.post_process_prompt_order = vec![entry("p9", true), entry("p1", true)];
         crate::profile_layers::route_flat(&mut s);
         assert_eq!(work(&s).values.selected_language, "it");
+        assert_eq!(
+            work(&s).values.post_process_prompt_order,
+            vec![entry("p9", true), entry("p1", true)]
+        );
         assert_eq!(default_values(&s).selected_language, "de");
     }
 
@@ -1230,6 +1231,8 @@ mod tests {
         );
         assert_eq!(s.app_language, before.app_language);
         assert_eq!(s.debug_mode, before.debug_mode);
+        // The prompt library is shared, not a profile value.
+        assert_eq!(s.post_process_prompts, before.post_process_prompts);
         // And back again.
         switch_to(&mut s, DEFAULT_PROFILE_ID, false).expect("switched back");
         assert_eq!(s.active_profile_id, DEFAULT_PROFILE_ID);
@@ -1326,6 +1329,29 @@ mod tests {
         assert_eq!(copy.values, default_values(&s));
         assert_eq!(s.profiles.len(), 2);
         assert_eq!(s.active_profile_id, DEFAULT_PROFILE_ID);
+
+        // A change of a coupled order while the new profile is in use
+        // changes the defaults' order, which it follows.
+        switch_to(&mut s, &copy.id, false).expect("switched");
+        s.post_process_prompt_order = vec![entry("p9", true), entry("p1", false)];
+        crate::profile_layers::route_flat(&mut s);
+        assert_eq!(
+            default_values(&s).post_process_prompt_order,
+            vec![entry("p9", true), entry("p1", false)]
+        );
+    }
+
+    #[test]
+    fn a_prompts_text_is_the_same_in_every_profile() {
+        let mut s = two_profiles();
+        s.post_process_prompts[1].prompt = "Write a short email.".to_string();
+        switch_to(&mut s, "work", false).expect("switched");
+        assert_eq!(s.post_process_prompts[1].prompt, "Write a short email.");
+        let request = crate::prompt_library::requested(&s);
+        assert_eq!(
+            crate::prompt_library::request_instructions(&request),
+            "Write a short email."
+        );
     }
 
     #[test]

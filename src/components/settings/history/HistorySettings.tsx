@@ -633,7 +633,11 @@ export const HistorySettings: React.FC = () => {
                 getAudioUrl={getAudioUrl}
                 deleteAudio={deleteAudioEntry}
                 postProcess={postProcess}
-                reprocess={commands.reprocessHistoryEntry}
+                // DanyWhere: with the profile's active prompts (the wand
+                // menu will pass chosen ones, `prompt_library`).
+                reprocess={(id, mode, version) =>
+                  commands.reprocessHistoryEntry(id, mode, version, null)
+                }
                 cancelTranscription={commands.cancelHistoryEntryTranscription}
                 saveVersion={commands.saveHistoryVersion}
                 moveVersion={commands.moveHistoryVersion}

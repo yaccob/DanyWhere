@@ -17,7 +17,7 @@ use std::time::Duration;
 use tauri::{AppHandle, Manager};
 use tauri_specta::Event;
 
-use crate::actions::process_transcription_output;
+use crate::actions::process_transcription_output_with;
 use crate::audio_toolkit::{decode_audio_file, recording_file_name, save_recording};
 use crate::history_versions::{NewTranscription, PostProcessTarget, PostProcessed, VersionError};
 use crate::managers::history::{HistoryEntry, HistoryManager};
@@ -122,11 +122,14 @@ struct Running {
 }
 
 /// What a job does to its entry.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 struct Work {
     mode: ReprocessMode,
     /// The version a post-processing starts from; `None`: the top.
     version: Option<u32>,
+    /// DanyWhere: the prompts of the library its post-processing runs, in
+    /// this order; `None`: the profile's active ones (`prompt_library`).
+    prompt_ids: Option<Vec<String>>,
 }
 
 impl Work {
@@ -134,6 +137,7 @@ impl Work {
     const TRANSCRIBE: Work = Work {
         mode: ReprocessMode::Transcribe,
         version: None,
+        prompt_ids: None,
     };
 }
 
@@ -276,7 +280,27 @@ impl TranscriptionJobManager {
     /// any file. `version`: the version a post-processing starts from
     /// (`None`: the top); its result goes on top.
     pub fn reprocess(&self, entry_id: i64, mode: ReprocessMode, version: Option<u32>) {
-        self.queue(entry_id, Some(Work { mode, version }));
+        self.reprocess_with_prompts(entry_id, mode, version, None);
+    }
+
+    /// DanyWhere: [`Self::reprocess`]; with `prompt_ids` its post-processing
+    /// runs exactly those prompts of the library, in that order, instead of
+    /// the profile's active ones (History's wand menu, `prompt_library`).
+    pub fn reprocess_with_prompts(
+        &self,
+        entry_id: i64,
+        mode: ReprocessMode,
+        version: Option<u32>,
+        prompt_ids: Option<Vec<String>>,
+    ) {
+        self.queue(
+            entry_id,
+            Some(Work {
+                mode,
+                version,
+                prompt_ids,
+            }),
+        );
     }
 
     /// Queues the entry's job, unless it already has one. `None` is a file,
@@ -426,8 +450,9 @@ impl TranscriptionJobManager {
         let hm = Arc::clone(&self.app.state::<Arc<HistoryManager>>());
         let entry = tauri::async_runtime::block_on(hm.get_entry_by_id(entry_id))?
             .ok_or_else(|| anyhow!("History entry {} not found", entry_id))?;
+        let prompts = work.prompt_ids.as_deref();
         if !work.mode.transcribes() {
-            return self.post_process_again(&hm, &entry, work.version, cancelled);
+            return self.post_process_again(&hm, &entry, work.version, cancelled, prompts);
         }
         let post_process = work.mode.post_processes(entry.post_process_requested);
 
@@ -470,11 +495,12 @@ impl TranscriptionJobManager {
         if !with_context {
             context_query.window = None;
         }
-        let processed = tauri::async_runtime::block_on(process_transcription_output(
+        let processed = tauri::async_runtime::block_on(process_transcription_output_with(
             &self.app,
             &text,
             post_process,
             &context_query,
+            prompts,
         ));
         // Post-processing can take a while; a cancel during it still wins.
         if cancelled.load(Ordering::Acquire) {
@@ -521,6 +547,7 @@ impl TranscriptionJobManager {
         entry: &HistoryEntry,
         version: Option<u32>,
         cancelled: &AtomicBool,
+        prompts: Option<&[String]>,
     ) -> Result<JobEnd> {
         let (transcript, replacements) = post_process_input(entry, version)?;
         if transcript.trim().is_empty() {
@@ -534,11 +561,12 @@ impl TranscriptionJobManager {
         if !with_context {
             context_query.window = None;
         }
-        let processed = tauri::async_runtime::block_on(process_transcription_output(
+        let processed = tauri::async_runtime::block_on(process_transcription_output_with(
             &self.app,
             transcript,
             true,
             &context_query,
+            prompts,
         ));
         if cancelled.load(Ordering::Acquire) {
             return Ok(JobEnd::Cancelled);
@@ -643,7 +671,27 @@ mod tests {
     use ReprocessMode::{PostProcess, Transcribe, TranscribeAndPostProcess};
 
     fn work(mode: ReprocessMode, version: Option<u32>) -> Option<Work> {
-        Some(Work { mode, version })
+        Some(Work {
+            mode,
+            version,
+            prompt_ids: None,
+        })
+    }
+
+    // DanyWhere: History's wand menu asks for exactly some prompts
+    // (`prompt_library`).
+    #[test]
+    fn a_job_keeps_the_prompts_it_was_asked_for() {
+        let mut jobs = Jobs::default();
+        let chosen = Work {
+            mode: PostProcess,
+            version: Some(1),
+            prompt_ids: Some(vec!["b".to_string(), "a".to_string()]),
+        };
+        assert!(jobs.push(1, Some(chosen.clone())));
+        assert!(jobs.push(2, work(PostProcess, None)));
+        assert_eq!(jobs.next(), Some((1, chosen)));
+        assert_eq!(jobs.next(), Some((2, work(PostProcess, None).unwrap())));
     }
 
     #[test]

@@ -92,7 +92,11 @@ pub const GLOBAL: &[&str] = &[
 ];
 
 /// Fields shared by all profiles, which choose from them.
-pub const SHARED: &[&str] = &[];
+pub const SHARED: &[&str] = &[
+    // The prompt library; each profile's `post_process_prompt_order` says
+    // which of them run, in what order (`prompt_library`).
+    "post_process_prompts",
+];
 
 /// The profiles and how one is chosen.
 pub const PROFILES: &[&str] = &[
@@ -114,13 +118,15 @@ pub const INTERNAL: &[&str] = &[
 ];
 
 /// Fields only a migration reads: the storage limit replaced the first two,
-/// the "Append" field (`append_text`) the other three.
+/// the "Append" field (`append_text`) the next three, the prompt order
+/// (`prompt_library`) Handy's selected prompt.
 pub const LEGACY: &[&str] = &[
     "history_limit",
     "recording_retention_period",
     "auto_submit",
     "auto_submit_key",
     "append_trailing_space",
+    "post_process_selected_prompt_id",
 ];
 
 /// Flat fields that are a struct whose parts are profile values of other

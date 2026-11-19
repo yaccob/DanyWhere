@@ -18,8 +18,14 @@ const ready = {
     { id: "anthropic", label: "Anthropic", base_url: "https://api" },
   ],
   post_process_models: { anthropic: "claude" },
-  post_process_selected_prompt_id: "p1",
-  post_process_prompts: [{ id: "p1", name: "Clean", prompt: "Fix it" }],
+  post_process_prompts: [
+    { id: "p1", name: "Clean", prompt: "Fix it" },
+    { id: "p2", name: "Mail", prompt: "Make an email" },
+  ],
+  post_process_prompt_order: [
+    { id: "p2", active: false },
+    { id: "p1", active: true },
+  ],
 };
 
 check("post-processing is ready when everything is set", () => {
@@ -51,20 +57,34 @@ check("post-processing needs a model for the provider", () => {
     "not_set_up",
   );
 });
-check("post-processing needs a selected prompt that exists", () => {
+// DanyWhere: the prompt library (src/lib/promptLibrary.ts).
+check("post-processing needs at least one active prompt that exists", () => {
   assert.equal(
     postProcessAvailability({
       ...ready,
-      post_process_selected_prompt_id: null,
+      post_process_prompt_order: [
+        { id: "p1", active: false },
+        { id: "p2", active: false },
+      ],
     }),
     "not_set_up",
   );
   assert.equal(
     postProcessAvailability({
       ...ready,
-      post_process_selected_prompt_id: "deleted",
+      post_process_prompt_order: [{ id: "deleted", active: true }],
     }),
     "not_set_up",
+  );
+  assert.equal(
+    postProcessAvailability({
+      ...ready,
+      post_process_prompt_order: [
+        { id: "p1", active: true },
+        { id: "p2", active: true },
+      ],
+    }),
+    "ready",
   );
 });
 

@@ -1188,20 +1188,34 @@ mod tests {
         }
     }
 
-    /// The user's two prompts, with the dictation prompt's text per profile.
-    fn prompts(dictation: &str) -> Vec<LLMPrompt> {
-        vec![
-            LLMPrompt {
-                id: "improve".to_string(),
-                name: "Improve Transcriptions".to_string(),
-                prompt: "Improve it.".to_string(),
-            },
-            LLMPrompt {
-                id: "diktat_de".to_string(),
-                name: "Diktat (DE/EN)".to_string(),
-                prompt: dictation.to_string(),
-            },
-        ]
+    /// The prompt library after the migration of idea 1 (one library for
+    /// all; each profile's own text of "Diktat (DE/EN)" became a prompt of
+    /// its own, `prompt_library::migrate`).
+    const LIBRARY: [&str; 5] = [
+        "improve",
+        "diktat_de",
+        "diktat_privat",
+        "diktat_arbeit",
+        "diktat_playground",
+    ];
+
+    fn library() -> Vec<LLMPrompt> {
+        LIBRARY
+            .iter()
+            .map(|id| LLMPrompt {
+                id: id.to_string(),
+                name: id.to_string(),
+                prompt: "Text.".to_string(),
+            })
+            .collect()
+    }
+
+    /// A profile's prompt order over the whole library, `active` running.
+    fn order(active: &str) -> Vec<crate::prompt_library::PromptOrderEntry> {
+        LIBRARY
+            .iter()
+            .map(|id| crate::prompt_library::PromptOrderEntry::new(id, *id == active))
+            .collect()
     }
 
     // The user's constellation before the switch, as the sidecar note
@@ -1221,8 +1235,7 @@ mod tests {
                 ("openai", ""),
             ]),
             post_process_efforts: HashMap::new(),
-            post_process_prompts: prompts("Dictation."),
-            post_process_selected_prompt_id: Some("diktat_de".to_string()),
+            post_process_prompt_order: order("diktat_de"),
             word_lists: vec![list("names", &["Sayuri"])],
             active_word_list_id: Some("names".to_string()),
             append_text: String::new(),
@@ -1234,7 +1247,7 @@ mod tests {
     /// Privat: only its own prompt texts.
     fn privat_values() -> ProfileValues {
         ProfileValues {
-            post_process_prompts: prompts("Dictation, privately."),
+            post_process_prompt_order: order("diktat_privat"),
             ..standard_values()
         }
     }
@@ -1245,7 +1258,7 @@ mod tests {
             selected_model: CANARY.to_string(),
             post_process_efforts: map(&[("anthropic", "xhigh")]),
             append_text: r"\n\n".to_string(),
-            post_process_prompts: prompts("Dictation at work."),
+            post_process_prompt_order: order("diktat_arbeit"),
             ..standard_values()
         };
         values
@@ -1261,7 +1274,7 @@ mod tests {
             selected_model: CANARY.to_string(),
             post_process_provider_id: "custom".to_string(),
             post_process_efforts: map(&[("anthropic", "xhigh")]),
-            post_process_prompts: prompts("Dictation, playing."),
+            post_process_prompt_order: order("diktat_playground"),
             ..standard_values()
         };
         values
@@ -1278,6 +1291,7 @@ mod tests {
     fn users_store() -> AppSettings {
         let mut s = AppSettings {
             app_language: "de".to_string(),
+            post_process_prompts: library(),
             ..Default::default()
         };
         playground_values().apply_to(&mut s);
@@ -1353,7 +1367,10 @@ mod tests {
         assert_eq!(kinds.get("post_process_models"), Some(&FieldKind::Map));
         assert_eq!(kinds.get("post_process_efforts"), Some(&FieldKind::Map));
         assert_eq!(kinds.get("selected_model"), Some(&FieldKind::Value));
-        assert_eq!(kinds.get("post_process_prompts"), Some(&FieldKind::Value));
+        assert_eq!(
+            kinds.get("post_process_prompt_order"),
+            Some(&FieldKind::Value)
+        );
     }
 
     // ---- The engine works on any fields (test-only registry) ------------
@@ -1496,14 +1513,14 @@ mod tests {
     fn the_users_profiles_keep_only_what_differs_as_their_own() {
         let s = migrated();
         let privat = profile(&s, "privat");
-        assert_eq!(privat.own, set(&["post_process_prompts"]));
+        assert_eq!(privat.own, set(&["post_process_prompt_order"]));
         assert!(privat.own_entries.values().all(OwnEntries::is_empty));
         assert_eq!(own_count(privat), 1);
 
         let arbeit = profile(&s, "arbeit");
         assert_eq!(
             arbeit.own,
-            set(&["append_text", "post_process_prompts", "selected_model"])
+            set(&["append_text", "post_process_prompt_order", "selected_model"])
         );
         assert_eq!(
             entries_of(arbeit, "post_process_models").map(|e| e.own.clone()),
@@ -1522,7 +1539,7 @@ mod tests {
         assert_eq!(
             playground.own,
             set(&[
-                "post_process_prompts",
+                "post_process_prompt_order",
                 "post_process_provider_id",
                 "selected_model"
             ])
@@ -1632,7 +1649,9 @@ mod tests {
         assert_eq!(s.default_values, Some(playground_values()));
         assert_eq!(s.active_profile_id, "playground");
         assert!(profile(&s, "playground").own.is_empty());
-        assert!(profile(&s, "arbeit").own.contains("post_process_prompts"));
+        assert!(profile(&s, "arbeit")
+            .own
+            .contains("post_process_prompt_order"));
     }
 
     // ---- Values added since the defaults were stored (V5) ----------------
