@@ -20,13 +20,20 @@
   },
   "sidebar": {
     "general": "Chung",
-    "profiles": "Hồ sơ",
     "models": "Mô hình",
     "advanced": "Nâng cao",
     "postProcessing": "Xử lý sau",
     "history": "Lịch sử",
     "debug": "Gỡ lỗi",
     "about": "Giới thiệu",
+    "areas": {
+      "defaults": "Cài đặt cơ bản",
+      "profiles": "Cài đặt hồ sơ",
+      "application": "Cài đặt ứng dụng"
+    },
+    "inUse": "Đang dùng",
+    "updates": "Cập nhật",
+    "storage": "Lưu trữ",
     "profile": "Hồ sơ"
   },
   "onboarding": {
@@ -472,6 +479,7 @@
         "models": "Mô hình chọn ở đây thuộc hồ sơ “{{name}}”.",
         "postProcessing": "Nhà cung cấp, mô hình, câu lệnh và giới hạn ngữ cảnh thuộc hồ sơ “{{name}}”; khóa API áp dụng cho mọi hồ sơ."
       },
+      "pagePlaceholder": "Sắp ra mắt: trang này sẽ hiển thị cài đặt của “{{name}}”, mỗi mục được đánh dấu là theo cài đặt cơ bản hoặc có giá trị riêng.",
       "apps": {
         "label": "Tự động dùng trong:",
         "none": "chưa có ứng dụng nào",

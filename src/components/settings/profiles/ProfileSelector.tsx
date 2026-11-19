@@ -5,7 +5,9 @@ import { Dropdown } from "../../ui/Dropdown";
 import { SendContextCompact } from "../dictation-context/SendContextSwitch";
 import { ProfileAutoByAppCompact } from "./ProfileAutoByApp";
 
-/** DanyWhere: the profile in use, at the top of the sidebar on every page.
+/** DanyWhere: the box "In Use" at the top of the sidebar on every page: the
+ * profile dictations use, and choosing it by application (qa 2026-11-19_1711
+ * P2). Only for using a profile; editing goes through the navigation below.
  * Hidden until the settings carry profiles. */
 export const ProfileSelector: React.FC = () => {
   const { t } = useTranslation();
@@ -13,9 +15,9 @@ export const ProfileSelector: React.FC = () => {
   if (profiles.length === 0) return null;
 
   return (
-    <div className="w-full pb-3">
+    <div className="w-full mb-3 rounded-lg border border-line p-2">
       <p className="px-1 pb-1 text-xs font-medium text-ink-3 uppercase tracking-wide">
-        {t("sidebar.profile")}
+        {t("sidebar.inUse")}
       </p>
       <Dropdown
         compact

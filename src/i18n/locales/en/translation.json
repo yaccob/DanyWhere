@@ -20,13 +20,20 @@
   },
   "sidebar": {
     "general": "General",
-    "profiles": "Profiles",
     "models": "Models",
     "advanced": "Advanced",
     "postProcessing": "Post Process",
     "history": "History",
     "debug": "Debug",
     "about": "About",
+    "areas": {
+      "defaults": "Defaults",
+      "profiles": "Profile Settings",
+      "application": "Application Settings"
+    },
+    "inUse": "In Use",
+    "updates": "Updates",
+    "storage": "Storage",
     "profile": "Profile"
   },
   "onboarding": {
@@ -472,6 +479,7 @@
         "models": "The model chosen here belongs to the profile “{{name}}”.",
         "postProcessing": "Provider, model, prompts and context limits belong to the profile “{{name}}”; API keys apply to all profiles."
       },
+      "pagePlaceholder": "Coming soon: this page will show the settings of “{{name}}”, each marked as following the defaults or as its own value.",
       "apps": {
         "label": "Used automatically in:",
         "none": "no application yet",

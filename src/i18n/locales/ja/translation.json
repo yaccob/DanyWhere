@@ -20,13 +20,20 @@
   },
   "sidebar": {
     "general": "一般",
-    "profiles": "プロファイル",
     "models": "モデル",
     "advanced": "詳細設定",
     "postProcessing": "後処理",
     "history": "履歴",
     "debug": "デバッグ",
     "about": "概要",
+    "areas": {
+      "defaults": "基本設定",
+      "profiles": "プロファイル設定",
+      "application": "アプリケーション設定"
+    },
+    "inUse": "使用中",
+    "updates": "アップデート",
+    "storage": "ストレージ",
     "profile": "プロファイル"
   },
   "onboarding": {
@@ -472,6 +479,7 @@
         "models": "ここで選んだモデルはプロファイル「{{name}}」に属します。",
         "postProcessing": "プロバイダー、モデル、プロンプト、コンテキストの上限はプロファイル「{{name}}」に属します。API キーはすべてのプロファイルに共通です。"
       },
+      "pagePlaceholder": "近日公開: このページには「{{name}}」の設定が表示され、各設定が基本設定に従うか独自の値かが示されます。",
       "apps": {
         "label": "自動で使うアプリ:",
         "none": "まだありません",

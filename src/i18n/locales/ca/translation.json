@@ -20,13 +20,20 @@
   },
   "sidebar": {
     "general": "General",
-    "profiles": "Perfils",
     "models": "Models",
     "advanced": "Avançat",
     "postProcessing": "Postprocessament",
     "history": "Historial",
     "debug": "Depuració",
     "about": "Quant a",
+    "areas": {
+      "defaults": "Configuració bàsica",
+      "profiles": "Configuració dels perfils",
+      "application": "Configuració de l'aplicació"
+    },
+    "inUse": "En ús",
+    "updates": "Actualitzacions",
+    "storage": "Emmagatzematge",
     "profile": "Perfil"
   },
   "onboarding": {
@@ -472,6 +479,7 @@
         "models": "El model triat aquí pertany al perfil «{{name}}».",
         "postProcessing": "El proveïdor, el model, les indicacions i els límits del context pertanyen al perfil «{{name}}»; les claus de l'API valen per a tots els perfils."
       },
+      "pagePlaceholder": "Properament: aquesta pàgina mostrarà la configuració de «{{name}}», cada opció marcada com a lligada a la configuració bàsica o amb un valor propi.",
       "apps": {
         "label": "S'usa automàticament a:",
         "none": "encara cap aplicació",
