@@ -24,7 +24,9 @@ Planned work on DanyWhere, roughly in priority order within each section. Items 
 
 **Decided (user, 2026-11-19):** one rule for everything that makes a version: post-processing, the user's own edit of a lower version and re-transcribing all put their result on top, and nothing is deleted on the way (re-transcribing keeps the old transcription below; this part is Claude's idea). Changing a version in place ("Save") is offered only on the top one. No limit per entry.
 
-**Proposed by the user (2026-11-19), Claude agrees, to be confirmed:** all versions are alike: they can be moved up and down freely and deleted, the original transcription included, as long as one version is left; the top one is the entry's result. This needs each version to remember the version it came from independently of its position, the transcription's own database column to be cleared when it is deleted, and a question before deleting text that can't come back.
+**Decided (user, 2026-11-19, later):** all versions are alike: they can be moved up and down freely (dragged in the track, or "to the top", "up", "down" in a version's menu) and deleted, the original transcription included, as long as one version is left; the top one is the entry's result. Deleting the transcription clears its own database column too. Deleting never asks. The wand's "replace" and "redo from the previous version" go; a click applies the profile's active prompts to the shown version and puts the result on top.
+
+**Open:** whether a version remembers which one it came from (Claude: no; its steps already say who made it and when, and an origin that has to follow moves and deletions would confuse more than help), and whether the wand's menu lists every prompt of the library for applying it once (Claude: yes, so a prompt that isn't active in the profile, such as a translation, can be used on demand).
 
 ### Shortcuts: start per profile, end with what follows
 
