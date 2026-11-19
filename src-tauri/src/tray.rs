@@ -1236,7 +1236,11 @@ mod tests {
             language: None,
             language_source: None,
             recording_removed: false,
-            versions: crate::history_versions::versions_of_new_entry(transcription, post_processed),
+            versions: crate::history_versions::versions_of_new_entry(
+                transcription,
+                post_processed,
+                None,
+            ),
             window_context: Default::default(),
         }
     }

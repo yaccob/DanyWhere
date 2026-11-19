@@ -937,7 +937,8 @@ pub fn run(cli_args: CliArgs) {
             commands::history::reprocess_history_entry,
             // DanyWhere: versions of History entries.
             history_versions::save_history_version,
-            history_versions::revert_history_entry_to_version,
+            history_versions::delete_history_version,
+            history_versions::move_history_version,
             dictation_context::set_dictation_context_settings,
             dictation_context::get_history_entries_in_window,
             dictation_context::get_history_entries_by_ids,

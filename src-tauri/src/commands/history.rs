@@ -117,15 +117,19 @@ pub fn retry_history_entry_transcription(jobs: State<'_, Arc<TranscriptionJobMan
 }
 
 /// Queues the entry to be transcribed or post-processed again, as `mode`
-/// says. Its progress and outcome arrive as `TranscriptionJob` events.
+/// says. DanyWhere: `version` is the version a post-processing starts from
+/// (`None`: the top); its result, like a new transcription's, goes on top
+/// (`history_versions`). Its progress and outcome arrive as
+/// `TranscriptionJob` events.
 #[tauri::command]
 #[specta::specta]
 pub fn reprocess_history_entry(
     jobs: State<'_, Arc<TranscriptionJobManager>>,
     id: i64,
     mode: ReprocessMode,
+    version: Option<u32>,
 ) {
-    jobs.reprocess(id, mode);
+    jobs.reprocess(id, mode, version);
 }
 
 /// Stops the entry's background transcription: a queued one is dropped, a

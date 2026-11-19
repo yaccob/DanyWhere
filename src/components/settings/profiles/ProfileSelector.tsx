@@ -6,37 +6,34 @@ import { Dropdown } from "../../ui/Dropdown";
 import { SendContextCompact } from "../dictation-context/SendContextSwitch";
 import { ProfileAutoByAppCompact } from "./ProfileAutoByApp";
 
-/** DanyWhere: what is in use, at the top of the sidebar on every page: the
- * defaults first, then the profiles (P2). The choice shows once there is a
- * profile to choose. */
+/** DanyWhere: the box "In Use" at the top of the sidebar on every page: what
+ * dictations use, the defaults as the first entry, then the profiles, and
+ * choosing the profile by application (qa 2026-11-19_1711 P2). Only for
+ * using; editing goes through the navigation below. */
 export const ProfileSelector: React.FC = () => {
   const { t } = useTranslation();
   const { profiles, activeId, busy, defaultName, displayName, switchTo } =
     useProfiles();
 
   return (
-    <div className="w-full pb-3">
-      {profiles.length > 0 && (
-        <>
-          <p className="px-1 pb-1 text-xs font-medium text-ink-3 uppercase tracking-wide">
-            {t("sidebar.profile")}
-          </p>
-          <Dropdown
-            compact
-            selectedValue={activeId}
-            options={[
-              { value: DEFAULT_PROFILE_ID, label: defaultName },
-              ...profiles.map((profile) => ({
-                value: profile.id,
-                label: displayName(profile),
-              })),
-            ]}
-            onSelect={switchTo}
-            disabled={busy}
-            className="w-full"
-          />
-        </>
-      )}
+    <div className="w-full mb-3 rounded-lg border border-line p-2">
+      <p className="px-1 pb-1 text-xs font-medium text-ink-3 uppercase tracking-wide">
+        {t("sidebar.inUse")}
+      </p>
+      <Dropdown
+        compact
+        selectedValue={activeId}
+        options={[
+          { value: DEFAULT_PROFILE_ID, label: defaultName },
+          ...profiles.map((profile) => ({
+            value: profile.id,
+            label: displayName(profile),
+          })),
+        ]}
+        onSelect={switchTo}
+        disabled={busy || profiles.length === 0}
+        className="w-full"
+      />
       <ProfileAutoByAppCompact />
       <SendContextCompact />
     </div>

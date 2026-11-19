@@ -889,6 +889,47 @@ mod tests {
     }
 
     #[test]
+    fn a_deleted_version_is_not_found_any_more() {
+        use crate::history_versions::{
+            delete_version_with_conn, store_post_processing_with_conn, PostProcessTarget,
+            PostProcessed,
+        };
+        let conn = database();
+        let id = insert(&conn, "raw words", None);
+        store_post_processing_with_conn(
+            &conn,
+            id,
+            PostProcessTarget::OnTop,
+            PostProcessed {
+                text: "Clean words.".into(),
+                ..Default::default()
+            },
+            1,
+        )
+        .expect("post-process");
+        assert_eq!(found(&conn, "raw", &[id]), vec![id]);
+
+        delete_version_with_conn(&conn, id, 0).expect("delete the transcription");
+
+        assert_eq!(found(&conn, "raw", &[id]), Vec::<i64>::new());
+        assert_eq!(found(&conn, "clean", &[id]), vec![id]);
+    }
+
+    #[test]
+    fn a_whole_stack_is_searched_without_the_transcription_column() {
+        let conn = database();
+        let id = insert(&conn, "stale words", None);
+        set(
+            &conn,
+            id,
+            "versions",
+            r#"{"stack":[{"text":"Clean words.","steps":[{"by":"ai","at":1,"prompt_name":null}]}]}"#,
+        );
+        assert_eq!(found(&conn, "stale", &[id]), Vec::<i64>::new());
+        assert_eq!(found(&conn, "clean", &[id]), vec![id]);
+    }
+
+    #[test]
     fn a_changed_entry_is_checked_against_the_search() {
         let conn = database();
         let yes = insert(&conn, "the needle", Some(("m", "Mail", "Inbox")));

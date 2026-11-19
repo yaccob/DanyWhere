@@ -1512,8 +1512,10 @@ mod tests {
     #[test]
     fn reading_the_store_gives_the_defaults_the_systems_key_names_too() {
         let mut stored = stored_with("{Cmd+Enter}", ["{Cmd+Enter}", "{Cmd+Enter}"]);
-        let mut defaults = crate::profiles::ProfileValues::default();
-        defaults.append_text = "{Cmd+Enter}".to_string();
+        let defaults = crate::profiles::ProfileValues {
+            append_text: "{Cmd+Enter}".to_string(),
+            ..Default::default()
+        };
         stored["default_values"] = serde_json::to_value(defaults).expect("serializes");
         let mut settings = read(&stored);
         assert!(migrate_on(&mut settings, &stored, WINDOWS));
