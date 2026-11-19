@@ -538,12 +538,9 @@ mod tests {
         let mut work = ProfileValues::from_settings(&s);
         work.post_process_enabled = false;
         work.post_process_provider_id = "openai".to_string();
-        s.profiles.push(Profile {
-            id: "work".to_string(),
-            name: "Work".to_string(),
-            values: work,
-            apps: vec!["com.apple.mail".to_string()],
-        });
+        let mut profile = Profile::new("work", "Work", work);
+        profile.apps = vec!["com.apple.mail".to_string()];
+        s.profiles.push(profile);
         s
     }
 

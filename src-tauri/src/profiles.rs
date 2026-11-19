@@ -9,12 +9,13 @@
 //! change lands in the active profile; switching loads another profile's
 //! values into the flat fields.
 
-use std::collections::HashMap;
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 use serde::{Deserialize, Serialize};
 use specta::Type;
 use tauri::{AppHandle, Emitter};
 
+use crate::profile_layers::OwnEntries;
 use crate::settings::{self, AppSettings, ChineseScript, LLMPrompt, LanguageDetectionMode};
 use crate::word_lists::WordList;
 
@@ -34,6 +35,31 @@ pub struct Profile {
     /// macOS, executable names on Windows. Not used yet.
     #[serde(default)]
     pub apps: Vec<String>,
+    /// The serde names of the fields of [`ProfileValues`] this profile holds
+    /// as its own values; every other field is coupled to the defaults
+    /// (`profile_layers`). Lists that deviate entry by entry are never named
+    /// here: their entries are in `own_entries`.
+    #[serde(default)]
+    pub own: BTreeSet<String>,
+    /// Per list field (`profile_layers::LIST_FIELDS`), the entries this
+    /// profile changed or added and the defaults' entries it switched off.
+    #[serde(default)]
+    pub own_entries: BTreeMap<String, OwnEntries>,
+}
+
+impl Profile {
+    /// A profile with `values` that follows the defaults in everything and
+    /// is used for no application.
+    pub fn new(id: impl Into<String>, name: impl Into<String>, values: ProfileValues) -> Self {
+        Self {
+            id: id.into(),
+            name: name.into(),
+            values,
+            apps: Vec::new(),
+            own: BTreeSet::new(),
+            own_entries: BTreeMap::new(),
+        }
+    }
 }
 
 /// Everything that is per profile. Mirrors fields of [`AppSettings`] with the
@@ -156,6 +182,23 @@ pub fn active_profile(settings: &AppSettings) -> Option<&Profile> {
         .find(|profile| profile.id == settings.active_profile_id)
 }
 
+/// The defaults ("Grundeinstellungen", contract V3 of the build plan): the
+/// values every profile's coupled fields follow and that apply while no
+/// profile is in use.
+pub fn default_values(settings: &AppSettings) -> ProfileValues {
+    if let Some(values) = &settings.default_values {
+        return values.clone();
+    }
+    match settings
+        .profiles
+        .iter()
+        .find(|profile| profile.id == DEFAULT_PROFILE_ID)
+    {
+        Some(profile) if profile.id != settings.active_profile_id => profile.values.clone(),
+        _ => ProfileValues::from_settings(settings),
+    }
+}
+
 /// The name to show for `profile`: its own, or `default_name` (translated
 /// "Standard") while the default profile has none.
 pub fn display_name(profile: &Profile, default_name: &str) -> String {
@@ -176,12 +219,11 @@ pub fn ensure_profiles(settings: &mut AppSettings) -> bool {
     let mut changed = false;
     if settings.profiles.is_empty() {
         log::info!("No profiles yet; the settings in use become the default profile");
-        settings.profiles.push(Profile {
-            id: DEFAULT_PROFILE_ID.to_string(),
-            name: String::new(),
-            values: ProfileValues::from_settings(settings),
-            apps: Vec::new(),
-        });
+        settings.profiles.push(Profile::new(
+            DEFAULT_PROFILE_ID,
+            String::new(),
+            ProfileValues::from_settings(settings),
+        ));
         settings.active_profile_id = DEFAULT_PROFILE_ID.to_string();
         changed = true;
     }
@@ -289,12 +331,7 @@ pub fn duplicate(
         suffix += 1;
         id = format!("{base}_{suffix}");
     }
-    let profile = Profile {
-        id,
-        name,
-        values: settings.profiles[index].values.clone(),
-        apps: Vec::new(),
-    };
+    let profile = Profile::new(id, name, settings.profiles[index].values.clone());
     settings.profiles.push(profile.clone());
     Ok(profile)
 }
@@ -424,6 +461,14 @@ pub fn duplicate_profile(
     Ok(profile)
 }
 
+/// A new profile named `name` that follows the defaults in everything (P9).
+/// It isn't switched to.
+#[tauri::command]
+#[specta::specta]
+pub fn create_profile(app: AppHandle, name: String) -> Result<Profile, String> {
+    duplicate_profile(app, DEFAULT_PROFILE_ID.to_string(), name)
+}
+
 #[tauri::command]
 #[specta::specta]
 pub fn rename_profile(app: AppHandle, id: String, name: String) -> Result<(), String> {
@@ -529,12 +574,8 @@ mod tests {
     fn two_profiles() -> AppSettings {
         let mut s = settings_in_use();
         ensure_profiles(&mut s);
-        s.profiles.push(Profile {
-            id: "work".to_string(),
-            name: "Work".to_string(),
-            values: other_values(),
-            apps: Vec::new(),
-        });
+        s.profiles
+            .push(Profile::new("work", "Work", other_values()));
         s
     }
 

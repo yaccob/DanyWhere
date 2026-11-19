@@ -709,6 +709,13 @@ pub struct AppSettings {
     pub profiles: Vec<crate::profiles::Profile>,
     #[serde(default)]
     pub active_profile_id: String,
+    /// DanyWhere: the defaults ("Grundeinstellungen"): the values every
+    /// profile's coupled fields follow and that apply while no profile is in
+    /// use (`profile_layers`). `None` only in a store from before them, which
+    /// `profiles::ensure_profiles` migrates; read them through
+    /// `profiles::default_values`.
+    #[serde(default)]
+    pub default_values: Option<crate::profiles::ProfileValues>,
     /// DanyWhere: the active profile's own word list, which always applies
     /// in it; `custom_words` applies in every profile.
     #[serde(default)]
@@ -1370,6 +1377,7 @@ pub fn get_default_settings() -> AppSettings {
         overlay_style: default_overlay_style(),
         profiles: Vec::new(),
         active_profile_id: String::new(),
+        default_values: None,
         profile_words: Vec::new(),
         profile_auto_by_app: default_profile_auto_by_app(),
         send_context: false,

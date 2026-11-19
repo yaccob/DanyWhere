@@ -508,6 +508,18 @@ async duplicateProfile(sourceId: string, name: string) : Promise<Result<Profile,
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * A new profile named `name` that follows the defaults in everything (P9).
+ * It isn't switched to.
+ */
+async createProfile(name: string) : Promise<Result<Profile, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("create_profile", { name }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async renameProfile(id: string, name: string) : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("rename_profile", { id, name }) };
@@ -519,6 +531,106 @@ async renameProfile(id: string, name: string) : Promise<Result<null, string>> {
 async deleteProfile(id: string) : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("delete_profile", { id }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Every field of a profile's values with how it couples: the interface
+ * shows chains and counts by it.
+ */
+async getProfileFields() : Promise<ProfileField[]> {
+    return await TAURI_INVOKE("get_profile_fields");
+},
+/**
+ * Sets a value in the defaults or in a profile (P7.3: in a profile it
+ * becomes the profile's own). `value` is checked against the field's type
+ * and validated like the field's own change command validates it.
+ */
+async setProfileValue(scope: Scope, field: string, value: JsonValue) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("set_profile_value", { scope, field, value }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Holds a value of profile `id` as its own without changing it (P4).
+ */
+async holdProfileValue(id: string, field: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("hold_profile_value", { id, field }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Couples values of profile `id` to the defaults again: one, or the values
+ * of a page (P8).
+ */
+async resetProfileValues(id: string, fields: string[]) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("reset_profile_values", { id, fields }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Couples every value of profile `id` to the defaults again (P8); name and
+ * applications stay.
+ */
+async resetWholeProfile(id: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("reset_whole_profile", { id }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * "Change the default instead" (P7.3).
+ */
+async useProfileValueAsDefault(id: string, field: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("use_profile_value_as_default", { id, field }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Sets or adds an entry of a list in the defaults or in a profile (P10).
+ */
+async setProfileEntry(scope: Scope, field: string, entryId: string, entry: JsonValue) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("set_profile_entry", { scope, field, entryId, entry }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Removes an entry of a list from the defaults, or switches it off in a
+ * profile (P10).
+ */
+async removeProfileEntry(scope: Scope, field: string, entryId: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("remove_profile_entry", { scope, field, entryId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Couples an entry of a list in profile `id` to the defaults again (P10).
+ */
+async resetProfileEntry(id: string, field: string, entryId: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("reset_profile_entry", { id, field, entryId }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -1745,6 +1857,14 @@ overlay_style?: OverlayStyle;
  */
 profiles?: Profile[]; active_profile_id?: string; 
 /**
+ * DanyWhere: the defaults ("Grundeinstellungen"): the values every
+ * profile's coupled fields follow and that apply while no profile is in
+ * use (`profile_layers`). `None` only in a store from before them, which
+ * `profiles::ensure_profiles` migrates; read them through
+ * `profiles::default_values`.
+ */
+default_values?: ProfileValues | null; 
+/**
  * DanyWhere: the active profile's own word list, which always applies
  * in it; `custom_words` applies in every profile.
  */
@@ -1969,6 +2089,22 @@ sent_as_context_at: number | null;
  * What the word list replaced in its transcription.
  */
 word_replacements: WordReplacement[] }
+/**
+ * How a field of [`ProfileValues`] couples, for the interface.
+ */
+export type FieldKind = 
+/**
+ * One value, coupled or own as a whole.
+ */
+{ kind: "value" } | 
+/**
+ * A list of objects told apart by the property `key`, entry by entry.
+ */
+{ kind: "list"; key: string } | 
+/**
+ * A map whose entries are told apart by their keys, entry by entry.
+ */
+{ kind: "map" }
 export type GpuDeviceOption = { id: string; name: string; total_vram_mb: number }
 /**
  * The two kinds of entry that have a height of their own.
@@ -2117,6 +2253,7 @@ export type ImportedKey =
  * The stored key is the same as the file's.
  */
 "same"
+export type JsonValue = null | boolean | number | string | JsonValue[] | Partial<{ [key in string]: JsonValue }>
 /**
  * What to do when the file's key differs from the key stored here for the
  * same provider.
@@ -2304,6 +2441,19 @@ export type OverlayPosition = "top" | "bottom"
  * streaming mode (that is driven purely by model capability).
  */
 export type OverlayStyle = "none" | "minimal" | "live"
+/**
+ * A profile's own entries of one list field (P10).
+ */
+export type OwnEntries = { 
+/**
+ * Entries the profile changed or added, by id: they stay as they are in
+ * the profile when the defaults change.
+ */
+own?: string[]; 
+/**
+ * Entries of the defaults the profile switched off, by id.
+ */
+off?: string[] }
 export type PaginatedHistory = { entries: HistoryEntry[]; has_more: boolean }
 export type PasteMethod = "ctrl_v" | "direct" | "none" | "shift_insert" | "ctrl_shift_v" | "external_script"
 export type PermissionAccess = "allowed" | "denied" | "unknown"
@@ -2330,7 +2480,23 @@ name: string; values: ProfileValues;
  * Applications this profile is used for automatically: bundle ids on
  * macOS, executable names on Windows. Not used yet.
  */
-apps?: string[] }
+apps?: string[]; 
+/**
+ * The serde names of the fields of [`ProfileValues`] this profile holds
+ * as its own values; every other field is coupled to the defaults
+ * (`profile_layers`). Lists that deviate entry by entry are never named
+ * here: their entries are in `own_entries`.
+ */
+own?: string[]; 
+/**
+ * Per list field (`profile_layers::LIST_FIELDS`), the entries this
+ * profile changed or added and the defaults' entries it switched off.
+ */
+own_entries?: Partial<{ [key in string]: OwnEntries }> }
+/**
+ * A field of [`ProfileValues`]: its serde name and how it couples.
+ */
+export type ProfileField = { name: string; kind: FieldKind }
 /**
  * Everything that is per profile. Mirrors fields of [`AppSettings`] with the
  * same names and types; the context limits mirror `dictation_context`.
@@ -2457,6 +2623,18 @@ export type SaveVersionMode =
  * The new text is a new version on top of it.
  */
 "new"
+/**
+ * Where a command sets or removes a value: in the defaults or in a profile.
+ */
+export type Scope = 
+/**
+ * The defaults ("Grundeinstellungen").
+ */
+{ kind: "defaults" } | 
+/**
+ * The profile with this id.
+ */
+{ kind: "profile"; id: string }
 export type SecretMap = Partial<{ [key in string]: string }>
 export type SecureInputStatus = { 
 /**

@@ -40,7 +40,9 @@ pub mod portable;
 mod post_process_effort;
 #[cfg(target_os = "linux")]
 mod primary_selection;
+mod profile_effects;
 mod profile_export;
+mod profile_layers;
 mod profile_redo;
 mod profile_transfer;
 mod profiles;
@@ -821,8 +823,18 @@ pub fn run(cli_args: CliArgs) {
             word_lists::update_profile_words,
             profiles::switch_profile,
             profiles::duplicate_profile,
+            profiles::create_profile,
             profiles::rename_profile,
             profiles::delete_profile,
+            profile_layers::get_profile_fields,
+            profile_layers::set_profile_value,
+            profile_layers::hold_profile_value,
+            profile_layers::reset_profile_values,
+            profile_layers::reset_whole_profile,
+            profile_layers::use_profile_value_as_default,
+            profile_layers::set_profile_entry,
+            profile_layers::remove_profile_entry,
+            profile_layers::reset_profile_entry,
             profile_transfer::profile_export_needs_password,
             profile_transfer::export_profile,
             profile_transfer::inspect_profile_import,
