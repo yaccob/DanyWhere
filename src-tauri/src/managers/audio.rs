@@ -6,6 +6,7 @@ use crate::audio_toolkit::{
     },
     CaptureSink, CaptureVad, SileroVad, SpeechScorer, VadPolicy, VoiceActivityDetector,
 };
+use crate::dictation_microphone::MicrophoneChoice;
 use crate::helpers::clamshell;
 use crate::managers::transcription::StreamRouter;
 use crate::notices::NoticeCode;
@@ -513,6 +514,9 @@ pub struct AudioRecordingManager {
     cached_device: Arc<Mutex<Option<(String, String)>>>,
     /// The last recording was all-zero samples, not just audio without speech.
     last_input_silent: Arc<AtomicBool>,
+    /// DanyWhere: what the open stream was opened with, so a recording whose
+    /// profile has another microphone opens it again (`dictation_microphone`).
+    opened_for: Arc<Mutex<Option<MicrophoneChoice>>>,
 }
 
 impl AudioRecordingManager {
@@ -555,6 +559,7 @@ impl AudioRecordingManager {
             capture_generation: Arc::new(AtomicU64::new(0)),
             cached_device: Arc::new(Mutex::new(None)),
             last_input_silent: Arc::new(AtomicBool::new(false)),
+            opened_for: Arc::new(Mutex::new(None)),
         };
 
         // Always-on?  Open immediately.
@@ -591,6 +596,46 @@ impl AudioRecordingManager {
 
     pub fn invalidate_device_cache(&self) {
         *self.cached_device.lock().unwrap() = None;
+    }
+
+    /// DanyWhere: the settings a stream resolves its device with and the
+    /// microphone it opens: the dictation's profile's while one applies,
+    /// else the settings in use with the channel and headset option held
+    /// here (`dictation_microphone::choose`).
+    fn wanted_microphone(&self) -> (AppSettings, MicrophoneChoice) {
+        crate::dictation_microphone::choose(
+            &get_settings(&self.app_handle),
+            *self.selected_channel.lock().unwrap(),
+            self.airpods_mode.load(Ordering::Acquire),
+            crate::app_profiles::dictation_values().as_ref(),
+        )
+    }
+
+    /// DanyWhere: takes the channel and headset option of the profile now
+    /// in use (`profile_effects`) and opens a warm stream again when it was
+    /// opened with another microphone. Refused while recording.
+    pub fn use_profile_microphone(
+        &self,
+        channel: Option<u16>,
+        take_headset: bool,
+    ) -> Result<(), anyhow::Error> {
+        let state = self.state.lock().unwrap();
+        if !matches!(*state, RecordingState::Idle) {
+            return Err(anyhow::anyhow!(
+                "Cannot change the microphone while recording"
+            ));
+        }
+        *self.selected_channel.lock().unwrap() = channel;
+        self.airpods_mode.store(take_headset, Ordering::Release);
+        self.invalidate_device_cache();
+        let was_open = *self.is_open.lock().unwrap();
+        if was_open {
+            self.close_generation.fetch_add(1, Ordering::SeqCst);
+            // Reopens only when the stream has another microphone.
+            self.start_microphone_stream()?;
+        }
+        drop(state);
+        Ok(())
     }
 
     fn resolve_microphone_device(&self, settings: &AppSettings) -> MicrophoneResolution {
@@ -761,7 +806,8 @@ impl AudioRecordingManager {
     /// Snapshots the system's prior mute state first so `remove_mute` can
     /// restore it instead of unconditionally unmuting.
     pub fn apply_mute(&self) {
-        let settings = get_settings(&self.app_handle);
+        // DanyWhere: the dictation's profile's switch, if it has its own.
+        let settings = crate::app_profiles::dictation_settings(&self.app_handle);
         if !settings.mute_while_recording {
             return;
         }
@@ -799,6 +845,9 @@ impl AudioRecordingManager {
 
     pub fn start_microphone_stream(&self) -> Result<(), anyhow::Error> {
         let mut open_flag = self.is_open.lock().unwrap();
+        // DanyWhere: the microphone of the dictation's profile, if it has
+        // its own (`dictation_microphone`).
+        let (settings, wanted) = self.wanted_microphone();
         if *open_flag {
             // `is_open` only records that we opened a stream, not that it is
             // still running. If the recorder has since failed (mic unplugged,
@@ -810,8 +859,10 @@ impl AudioRecordingManager {
                 .unwrap()
                 .as_ref()
                 .is_none_or(OpenMicrophone::needs_reopen);
+            // DanyWhere: or it was opened with another profile's microphone.
+            let other_microphone = self.opened_for.lock().unwrap().as_ref() != Some(&wanted);
 
-            if !needs_reopen {
+            if !needs_reopen && !other_microphone {
                 // trace, not debug: with the aliveness check in
                 // try_start_recording this now fires on every keypress in
                 // always-on mode.
@@ -819,7 +870,11 @@ impl AudioRecordingManager {
                 return Ok(());
             }
 
-            warn!("Microphone stream failed; reopening");
+            if needs_reopen {
+                warn!("Microphone stream failed; reopening");
+            } else {
+                info!("Opening the microphone of the dictation's profile");
+            }
 
             // Torn down inline rather than via stop_microphone_stream(), which
             // takes the `is_open` lock we are already holding.
@@ -858,7 +913,6 @@ impl AudioRecordingManager {
         // No pre-flight enumeration here: when nothing is configured the
         // recorder resolves the system default itself, and a machine with no
         // input devices at all fails inside open() with `DeviceUnavailable`.
-        let settings = get_settings(&self.app_handle);
         let resolve_started = Instant::now();
         let mut resolution = self.resolve_microphone_device(&settings);
         let resolve_elapsed = resolve_started.elapsed();
@@ -869,8 +923,7 @@ impl AudioRecordingManager {
         let frames_per_chunk = self.vad_frame_samples()?;
         let vad_elapsed = vad_started.elapsed();
 
-        let channel = *self.selected_channel.lock().unwrap();
-        let take_headset = self.airpods_mode.load(Ordering::Acquire);
+        let (channel, take_headset) = (wanted.channel, wanted.take_headset);
         let open_started = Instant::now();
         let microphone = match open_microphone_on_channel(
             resolution.device.clone(),
@@ -901,6 +954,7 @@ impl AudioRecordingManager {
             open_started.elapsed()
         );
         *self.recorder.lock().unwrap() = Some(microphone);
+        *self.opened_for.lock().unwrap() = Some(wanted);
 
         *open_flag = true;
         if let Some(unavailable_name) = resolution.unavailable_selected_microphone {

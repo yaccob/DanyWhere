@@ -13,6 +13,7 @@ mod clipboard;
 mod commands;
 mod delivery;
 mod dictation_key_inserts;
+mod dictation_microphone;
 mod end_keys;
 pub mod engine_supervisor;
 mod helpers;
@@ -36,11 +37,13 @@ mod model_selection;
 mod model_warmup;
 mod notices;
 mod overlay;
+mod overlay_look;
 mod paste_tx;
 pub mod portable;
 mod post_process_effort;
 #[cfg(target_os = "linux")]
 mod primary_selection;
+mod profile_effects;
 mod profile_export;
 mod profile_redo;
 mod profile_transfer;
@@ -48,6 +51,7 @@ mod profiles;
 mod prompt_frame;
 mod secure_input;
 mod send_context;
+mod setting_classes;
 mod settings;
 mod shortcut;
 mod signal_handle;
@@ -920,7 +924,8 @@ pub fn run(cli_args: CliArgs) {
             commands::history::reprocess_history_entry,
             // DanyWhere: versions of History entries.
             history_versions::save_history_version,
-            history_versions::revert_history_entry_to_version,
+            history_versions::delete_history_version,
+            history_versions::move_history_version,
             dictation_context::set_dictation_context_settings,
             dictation_context::get_history_entries_in_window,
             dictation_context::get_history_entries_by_ids,

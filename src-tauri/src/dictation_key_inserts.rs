@@ -536,7 +536,9 @@ pub fn put_on_clipboard_if_requested(
 pub fn show_on_clipboard_notice(app: &AppHandle, reason: &ClipboardReason) {
     match reason {
         ClipboardReason::CopyLast => {
-            let settings = crate::settings::get_settings(app);
+            // The dictation's profile's notice (the paste thread keeps its
+            // values).
+            let settings = crate::app_profiles::dictation_settings(app);
             match crate::delivery::clipboard_notice_duration(&settings) {
                 Some(duration) => crate::overlay::show_clipboard_notice(app, duration),
                 None => crate::overlay::hide_recording_overlay(app),

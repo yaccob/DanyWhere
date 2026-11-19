@@ -108,8 +108,8 @@ pub struct HistoryEntry {
     /// The storage limit deleted the recording; the transcript stays, but
     /// there is nothing to play or transcribe again.
     pub recording_removed: bool,
-    /// DanyWhere: the entry's versions, a stack of edits: at least one, the
-    /// transcription first, the entry's result last (`history_versions`).
+    /// DanyWhere: the entry's versions, a stack of texts: at least one, the
+    /// entry's result last (`history_versions`).
     pub versions: Vec<crate::history_versions::HistoryVersion>,
     /// DanyWhere: the window it was dictated in and its context for
     /// post-processing (`dictation_context`).
@@ -412,15 +412,17 @@ impl HistoryManager {
         language: Option<LanguageDecision>,
     ) -> Result<HistoryEntry> {
         let (language, language_source) = split_language(language);
+        let timestamp = Utc::now().timestamp();
         // DanyWhere: as reading it back gives it (`history_versions`).
         let versions = crate::history_versions::versions_of_new_entry(
             &transcription_text,
             post_processed_text.as_deref(),
+            Some(timestamp.saturating_mul(1000)),
         );
         let entry = self.insert_entry(HistoryEntry {
             id: 0,
             file_name,
-            timestamp: Utc::now().timestamp(),
+            timestamp,
             saved: false,
             title: String::new(),
             transcription_text,
@@ -444,10 +446,11 @@ impl HistoryManager {
     /// The storage limit never removes it (only deleting it does); never
     /// post-processed.
     pub fn save_file_entry(&self, file_name: String, source_name: String) -> Result<HistoryEntry> {
+        let timestamp = Utc::now().timestamp();
         let entry = self.insert_entry(HistoryEntry {
             id: 0,
             file_name,
-            timestamp: Utc::now().timestamp(),
+            timestamp,
             saved: false,
             title: String::new(),
             transcription_text: String::new(),
@@ -458,7 +461,11 @@ impl HistoryManager {
             language: None,
             language_source: None,
             recording_removed: false,
-            versions: crate::history_versions::versions_of_new_entry("", None),
+            versions: crate::history_versions::versions_of_new_entry(
+                "",
+                None,
+                Some(timestamp.saturating_mul(1000)),
+            ),
             window_context: Default::default(),
         })?;
 

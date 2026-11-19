@@ -482,7 +482,7 @@ async setActiveWordList(id: string | null) : Promise<Result<null, string>> {
 },
 /**
  * DanyWhere: replaces the active profile's own word list, which always
- * applies in that profile (`custom_words` applies in every profile).
+ * applies in that profile, before `custom_words`.
  */
 async updateProfileWords(words: string[]) : Promise<Result<null, string>> {
     try {
@@ -1309,16 +1309,19 @@ async retryHistoryEntryTranscription(id: number) : Promise<void> {
 },
 /**
  * Queues the entry to be transcribed or post-processed again, as `mode`
- * says. Its progress and outcome arrive as `TranscriptionJob` events.
+ * says. DanyWhere: `version` is the version a post-processing starts from
+ * (`None`: the top); its result, like a new transcription's, goes on top
+ * (`history_versions`). Its progress and outcome arrive as
+ * `TranscriptionJob` events.
  */
-async reprocessHistoryEntry(id: number, mode: ReprocessMode) : Promise<void> {
-    await TAURI_INVOKE("reprocess_history_entry", { id, mode });
+async reprocessHistoryEntry(id: number, mode: ReprocessMode, version: number | null) : Promise<void> {
+    await TAURI_INVOKE("reprocess_history_entry", { id, mode, version });
 },
 /**
- * Saves the user's `text` on version `base` of the entry: `replace`
- * changes that version, `new` puts a new one on top of it; the versions
- * above `base` drop. Errors: `blank`, `transcription_is_fixed` (replacing
- * version 0), `no_such_version`, or the database's message.
+ * Saves the user's `text`, an edit of version `base` of the entry:
+ * `replace` changes the top version (only the top), `new` puts a new
+ * version on top. Errors: `blank`, `not_top` (replacing a version below
+ * the top), `no_such_version`, or the database's message.
  */
 async saveHistoryVersion(id: number, base: number, text: string, mode: SaveVersionMode) : Promise<Result<HistoryEntry, string>> {
     try {
@@ -1329,11 +1332,26 @@ async saveHistoryVersion(id: number, base: number, text: string, mode: SaveVersi
 }
 },
 /**
- * Goes back to version `keep` of the entry: every version above it drops.
+ * Deletes version `index` of the entry, without asking: any version, the
+ * transcription too. Errors: `last_version` (the only one),
+ * `no_such_version`, or the database's message.
  */
-async revertHistoryEntryToVersion(id: number, keep: number) : Promise<Result<HistoryEntry, string>> {
+async deleteHistoryVersion(id: number, index: number) : Promise<Result<HistoryEntry, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("revert_history_entry_to_version", { id, keep }) };
+    return { status: "ok", data: await TAURI_INVOKE("delete_history_version", { id, index }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Moves version `from` of the entry to place `to` (counted from the
+ * bottom, as it is afterwards); the top one is the entry's result. Errors:
+ * `no_such_version`, or the database's message.
+ */
+async moveHistoryVersion(id: number, from: number, to: number) : Promise<Result<HistoryEntry, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("move_history_version", { id, from, to }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -1654,7 +1672,8 @@ selected_channel?: number | null; clamshell_microphone?: string | null; selected
  */
 spoken_languages?: string[]; overlay_position?: OverlayPosition; debug_mode?: boolean; log_level?: LogLevel; 
 /**
- * The global word list: always given to the model (see `word_lists`).
+ * The word list every dictation gets (see `word_lists`); a profile
+ * value (`profiles`), the same in every profile until one differs.
  */
 custom_words?: string[]; 
 /**
@@ -1745,7 +1764,7 @@ overlay_style?: OverlayStyle;
 profiles?: Profile[]; active_profile_id?: string; 
 /**
  * DanyWhere: the active profile's own word list, which always applies
- * in it; `custom_words` applies in every profile.
+ * in it, before `custom_words`.
  */
 profile_words?: string[]; 
 /**
@@ -2034,8 +2053,8 @@ language_source: LanguageSource | null;
  */
 recording_removed: boolean; 
 /**
- * DanyWhere: the entry's versions, a stack of edits: at least one, the
- * transcription first, the entry's result last (`history_versions`).
+ * DanyWhere: the entry's versions, a stack of texts: at least one, the
+ * entry's result last (`history_versions`).
  */
 versions: HistoryVersion[]; 
 /**
@@ -2117,7 +2136,9 @@ export type ImportResult = {
 profile: Profile | null; key: ImportedKey; 
 /**
  * Set when the file's key differs from the stored one and the choice was
- * [`KeyConflictChoice::Ask`]; nothing was imported then.
+ * [`KeyConflictChoice::Ask`]; nothing was imported then. DanyWhere:
+ * never set since the keys are profile values: the imported profile
+ * gets its own key and no other profile's key changes.
  */
 conflict_provider_id: string | null; 
 /**
@@ -2365,7 +2386,9 @@ name: string; values: ProfileValues;
 apps?: string[] }
 /**
  * Everything that is per profile. Mirrors fields of [`AppSettings`] with the
- * same names and types; the context limits mirror `dictation_context`.
+ * same names and types; the context settings mirror `dictation_context`.
+ * New fields go at the end; `setting_classes` checks that every setting is
+ * a profile value or classified otherwise.
  */
 export type ProfileValues = { selected_model: string; selected_language: string; spoken_languages: string[]; language_detection: LanguageDetectionMode; language_detection_window_secs: number; translate_to_english: boolean; chinese_script: ChineseScript; profile_words: string[]; word_lists: WordList[]; active_word_list_id: string | null; post_process_enabled: boolean; post_process_provider_id: string; post_process_models: Partial<{ [key in string]: string }>; 
 /**
@@ -2384,6 +2407,58 @@ context_max_entries: number;
  * `dictation_context.char_budget`
  */
 context_char_budget: number; filler_word_removal_enabled: boolean; custom_filler_words: string[] | null; 
+/**
+ * How the dictation shortcut's presses drive a recording. Read when a
+ * key event comes, so from the profile in use.
+ */
+shortcut_activation: ShortcutActivation; 
+/**
+ * The feedback sounds, their volume and theme, the done sound.
+ */
+audio_feedback: boolean; audio_feedback_volume: number; sound_theme: SoundTheme; done_sound: boolean; 
+/**
+ * Mute the computer's sound while recording.
+ */
+mute_while_recording: boolean; 
+/**
+ * The microphone stays open between dictations; follows the profile in
+ * use (`profile_effects`).
+ */
+always_on_microphone: boolean; 
+/**
+ * The microphone a dictation records with (`dictation_microphone`).
+ */
+selected_microphone: string | null; selected_channel: number | null; clamshell_microphone: string | null; 
+/**
+ * Where the feedback sounds play.
+ */
+selected_output_device: string | null; airpods_mode: boolean; 
+/**
+ * Where the recording overlay sits and how it shows (`overlay_look`).
+ */
+overlay_position: OverlayPosition; overlay_style: OverlayStyle; 
+/**
+ * How the text gets into the application.
+ */
+paste_method: PasteMethod; clipboard_handling: ClipboardHandling; clipboard_notice_ms: number; typing_tool: TypingTool; external_script_path: string | null; 
+/**
+ * The word list every dictation with this profile gets, after its own
+ * (`profile_words`); the same in every profile until one differs.
+ */
+custom_words: string[]; 
+/**
+ * `dictation_context.excluded_apps`
+ */
+context_excluded_apps: string[]; 
+/**
+ * The post-processing providers with their endpoints, their API keys
+ * (never exported, see `profile_transfer`) and the time limit.
+ */
+post_process_providers: PostProcessProvider[]; post_process_api_keys: SecretMap; post_process_timeout_secs: number; 
+/**
+ * Drop silence from recordings; decode long audio in chunks.
+ */
+vad_enabled: boolean; long_form_chunking: boolean; 
 /**
  * The shortcuts (`bindings`), entry by binding id: the start shortcuts
  * apply only while this profile does (`shortcut::profile_sync`).
@@ -2459,21 +2534,11 @@ export type ReprocessMode =
  */
 "transcribe_and_post_process" | 
 /**
- * Keep the transcript and post-process the entry's top version; the
- * result is a new version on top (`history_versions`). Needs no
- * recording.
+ * Keep the versions and post-process one of them, the top unless the
+ * job names another; the result is a new version on top
+ * (`history_versions`). Needs no recording.
  */
-"post_process" | 
-/**
- * Post-process the top version; the result replaces it. Never the
- * transcription.
- */
-"post_process_replace" | 
-/**
- * Post-process the version below the top again; the result replaces
- * the top, which a post-processing made.
- */
-"post_process_redo"
+"post_process"
 /**
  * A retired ONNX model found on disk.
  */
@@ -2487,11 +2552,11 @@ export type SameWindow = { app_id: string; title: string }
  */
 export type SaveVersionMode = 
 /**
- * The version gets the new text and one more step.
+ * The top version gets the new text and one more step.
  */
 "replace" | 
 /**
- * The new text is a new version on top of it.
+ * The new text is a new version on top.
  */
 "new"
 export type SecretMap = Partial<{ [key in string]: string }>
@@ -2666,7 +2731,7 @@ export type VadBackend = "silero" | "earshot"
  */
 export type VersionAuthor = 
 /**
- * The speech model; only version 0.
+ * The speech model.
  */
 "transcription" | 
 /**
@@ -2682,7 +2747,8 @@ export type VersionAuthor =
  */
 export type VersionStep = { by: VersionAuthor; 
 /**
- * Unix milliseconds; None for steps migrated from before versions existed.
+ * Unix milliseconds; None where it isn't known (steps from before
+ * versions existed that happened after the entry was made).
  */
 at: number | null; 
 /**

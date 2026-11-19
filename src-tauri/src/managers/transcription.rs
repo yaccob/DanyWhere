@@ -914,7 +914,8 @@ impl TranscriptionManager {
         );
         let mode = live_decode(
             ModelTraits::of(&info),
-            get_settings(&self.app_handle).long_form_chunking,
+            // DanyWhere: the dictation's profile's switch.
+            crate::app_profiles::dictation_settings(&self.app_handle).long_form_chunking,
         );
         let Some(mut session) = LiveSession::begin(self, mode, &info, &model_id) else {
             // Nothing to decode live: the recording is transcribed in batch.

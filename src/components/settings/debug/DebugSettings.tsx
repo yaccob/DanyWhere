@@ -7,24 +7,18 @@ import { PasteDelay } from "./PasteDelay";
 import { HoldThreshold } from "./HoldThreshold";
 import { ReliablePasteToggle } from "./ReliablePaste";
 import { RecordingBuffer } from "./RecordingBuffer";
-import { LanguageDetectionWindow } from "./LanguageDetectionWindow";
 import { SettingsGroup } from "../../ui/SettingsGroup";
-import { AlwaysOnMicrophone } from "../AlwaysOnMicrophone";
-import { SoundPicker } from "../SoundPicker";
-import { ClamshellMicrophoneSelector } from "../ClamshellMicrophoneSelector";
-import { UpdateChecksToggle } from "../UpdateChecksToggle";
 import { WhatsNewPreview } from "./WhatsNewPreview";
 import { ThemeFile } from "./ThemeFile";
 import { KeyboardDiagnostic } from "./KeyboardDiagnostic";
 import { DebugRun, OnboardingPreview } from "./OnboardingPreview";
 import type { OnboardingStep } from "../../onboarding/onboardingStore";
 // DanyWhere: the experimental settings, formerly behind a switch in Advanced.
-import { KeyboardImplementationSelector } from "./KeyboardImplementationSelector";
+// Those of a dictation moved to the defaults' Advanced page, the keyboard
+// implementation and the update checks to the application settings.
 import { AccelerationSelector } from "../AccelerationSelector";
 import { LazyStreamClose } from "../LazyStreamClose";
-import { AirPodsMode } from "../AirPodsMode";
 import { VadBackendSelector } from "../VadBackendSelector";
-import { LanguageDetection } from "../LanguageDetection";
 
 interface DebugSettingsProps {
   onPreviewOnboarding: (step: OnboardingStep) => void;
@@ -62,11 +56,6 @@ export const DebugSettings: React.FC<DebugSettingsProps> = ({
           descriptionMode="tooltip"
           grouped={true}
         />
-        <UpdateChecksToggle descriptionMode="tooltip" grouped={true} />
-        <SoundPicker
-          label={t("settings.debug.soundTheme.label")}
-          description={t("settings.debug.soundTheme.description")}
-        />
         <WordCorrectionThreshold descriptionMode="tooltip" grouped={true} />
         <PasteDelay descriptionMode="tooltip" grouped={true} />
         <PasteDelay
@@ -79,9 +68,6 @@ export const DebugSettings: React.FC<DebugSettingsProps> = ({
         <ReliablePasteToggle descriptionMode="tooltip" grouped={true} />
         <HoldThreshold descriptionMode="tooltip" grouped={true} />
         <RecordingBuffer descriptionMode="tooltip" grouped={true} />
-        <LanguageDetectionWindow descriptionMode="tooltip" grouped={true} />
-        <AlwaysOnMicrophone descriptionMode="tooltip" grouped={true} />
-        <ClamshellMicrophoneSelector descriptionMode="tooltip" grouped={true} />
         <KeyboardDiagnostic />
         <LiveLogViewer descriptionMode="tooltip" grouped={true} />
       </SettingsGroup>
@@ -89,15 +75,9 @@ export const DebugSettings: React.FC<DebugSettingsProps> = ({
       {/* DanyWhere: the experimental settings live here, always shown,
           instead of behind the "Experimental Features" switch in Advanced. */}
       <SettingsGroup title={t("settings.advanced.groups.experimental")}>
-        <KeyboardImplementationSelector
-          descriptionMode="tooltip"
-          grouped={true}
-        />
         <AccelerationSelector descriptionMode="tooltip" grouped={true} />
         <LazyStreamClose descriptionMode="tooltip" grouped={true} />
-        <AirPodsMode descriptionMode="tooltip" grouped={true} />
         <VadBackendSelector descriptionMode="tooltip" grouped={true} />
-        <LanguageDetection descriptionMode="tooltip" grouped={true} />
       </SettingsGroup>
     </div>
   );

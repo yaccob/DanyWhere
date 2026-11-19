@@ -5,11 +5,6 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 import { SettingsGroup } from "../../ui/SettingsGroup";
 import { SettingContainer } from "../../ui/SettingContainer";
 import { Button } from "../../ui/Button";
-import { AppDataDirectory } from "../AppDataDirectory";
-import { AppLanguageSelector } from "../AppLanguageSelector";
-import { ShowWhatsNewOnUpdate } from "../ShowWhatsNewOnUpdate";
-import { ThemeSelector } from "../ThemeSelector";
-import { LogDirectory } from "../debug";
 import { SOURCE_CODE_URL, UPSTREAM_URL } from "../../../lib/constants/branding";
 
 export const AboutSettings: React.FC = () => {
@@ -41,8 +36,9 @@ export const AboutSettings: React.FC = () => {
   return (
     <div className="max-w-3xl w-full mx-auto space-y-6">
       <SettingsGroup title={t("settings.about.title")}>
-        <AppLanguageSelector descriptionMode="tooltip" grouped={true} />
-        <ThemeSelector descriptionMode="tooltip" grouped={true} />
+        {/* DanyWhere: the interface language, the appearance, "What's New"
+            and the folders are in the application settings (General,
+            Updates, Storage). */}
         <SettingContainer
           title={t("settings.about.version.title")}
           description={t("settings.about.version.description")}
@@ -51,8 +47,6 @@ export const AboutSettings: React.FC = () => {
           {/* eslint-disable-next-line i18next/no-literal-string */}
           <span className="text-sm font-mono">v{version}</span>
         </SettingContainer>
-
-        <ShowWhatsNewOnUpdate descriptionMode="tooltip" grouped={true} />
 
         <SettingContainer
           title={t("settings.about.supportDevelopment.title")}
@@ -77,9 +71,6 @@ export const AboutSettings: React.FC = () => {
             {t("settings.about.sourceCode.button")}
           </Button>
         </SettingContainer>
-
-        <AppDataDirectory descriptionMode="tooltip" grouped={true} />
-        <LogDirectory grouped={true} />
       </SettingsGroup>
 
       <SettingsGroup title={t("settings.about.acknowledgments.title")}>

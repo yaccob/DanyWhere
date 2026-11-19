@@ -9,7 +9,7 @@ use crate::managers::transcription::policy::{live_decode, LiveDecode, ModelTrait
 use crate::managers::transcription::StreamWorkKind;
 use crate::managers::transcription::{Transcription, TranscriptionManager};
 use crate::notices::{self, Notice, NoticeCode, NoticeSource};
-use crate::settings::{get_settings, AppSettings, OverlayStyle, APPLE_INTELLIGENCE_PROVIDER_ID};
+use crate::settings::{AppSettings, OverlayStyle, APPLE_INTELLIGENCE_PROVIDER_ID};
 use crate::shortcut;
 use crate::tray::{set_tray_state, TrayIconState};
 use crate::utils::{
@@ -697,7 +697,8 @@ fn redo_for_app_in_front(
     let entry_id = entry_id?;
     if crate::dictation_key_inserts::copies_instead_of_pasting(session)
         || !crate::delivery::goes_into_app_in_front(
-            &get_settings(app),
+            // DanyWhere: the dictation's paste method (this thread's values).
+            &crate::app_profiles::dictation_settings(app),
             crate::delivery::INSERT_SERVICE_AVAILABLE,
             crate::insert_service::call_waiting(),
         )
@@ -1013,7 +1014,8 @@ pub fn stop_transcription(
         // the larger panel, but it still switches from listening to a working
         // spinner while the stream finalizes. Non-streaming paths use the
         // compact transcribing pill (None no-ops in show_*).
-        let style = get_settings(app).overlay_style;
+        // DanyWhere: the dictation's profile's style.
+        let style = crate::app_profiles::dictation_settings(app).overlay_style;
         // Capture this before finalizing the stream so every later working state
         // targets the same overlay that was shown for this transcription.
         let use_streaming_overlay = should_use_streaming_overlay(style, tm.is_streaming());
@@ -1265,11 +1267,16 @@ pub fn stop_transcription(
                                 // paste and its "Append" field, taken now: the
                                 // profile ends when this task returns.
                                 let dictation_values = crate::app_profiles::dictation_values();
+                                // DanyWhere: and all of them for the paste
+                                // thread's sounds and notices.
+                                let (_, values_here) =
+                                    crate::app_profiles::dictation_profile_and_values(&ah);
                                 // Off the main thread: paste sleeps between steps, and a
                                 // paste into Handy's own windows needs the main thread free.
                                 std::thread::Builder::new()
                                     .name("paste".into())
                                     .spawn(move || {
+                                        crate::app_profiles::keep_values_here(values_here);
                                         if rm_for_paste.was_cancelled_since(cancel_generation) {
                                             debug!(
                                                 "Transcription operation cancelled before paste"

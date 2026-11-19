@@ -5,8 +5,6 @@ import { MicrophoneSelector } from "../MicrophoneSelector";
 import { ChannelSelector } from "../ChannelSelector";
 import { ShortcutInput } from "../ShortcutInput";
 import { EndKeysSettings } from "../end-keys/EndKeysSettings";
-import { DictationKeyInserts } from "../DictationKeyInserts";
-import { DictationServiceWhenIdleSetting } from "../DictationServiceWhenIdle";
 import { SettingsGroup } from "../../ui/SettingsGroup";
 import { OutputDeviceSelector } from "../OutputDeviceSelector";
 import { ShortcutActivationSetting } from "../ShortcutActivation";
@@ -24,9 +22,6 @@ export const GeneralSettings: React.FC = () => {
   const { t } = useTranslation();
   const { audioFeedbackEnabled, getSetting } = useSettings();
   const isLinux = type() === "linux";
-  const isMacOS = type() === "macos";
-  const accessibilitySkipped = getSetting("accessibility_skipped") === true;
-  const dictationKeyInserts = getSetting("dictation_key_inserts") ?? true;
   // Only for Chinese speakers, or anyone who already picked a script.
   const speaksChinese =
     (getSetting("spoken_languages") ?? []).some(isChinese) ||
@@ -36,16 +31,8 @@ export const GeneralSettings: React.FC = () => {
       <SettingsGroup title={t("settings.general.title")}>
         <ShortcutInput shortcutId="transcribe" grouped={true} />
         <ShortcutActivationSetting descriptionMode="tooltip" grouped={true} />
-        {/* DanyWhere: the dictation shortcut's second press inserts too. */}
-        {isMacOS && accessibilitySkipped && (
-          <DictationKeyInserts descriptionMode="tooltip" grouped={true} />
-        )}
-        {isMacOS && accessibilitySkipped && dictationKeyInserts && (
-          <DictationServiceWhenIdleSetting
-            descriptionMode="tooltip"
-            grouped={true}
-          />
-        )}
+        {/* DanyWhere: the two switches of the mode without Accessibility
+            are in Application settings › Accessibility. */}
         {/* DanyWhere: without Accessibility, on macOS, the paste shortcut is
             the "Insert Last Dictation" service's (insert_service.rs). */}
         <ShortcutInput shortcutId="paste_last_transcript" grouped={true} />

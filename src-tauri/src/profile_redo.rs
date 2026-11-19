@@ -9,8 +9,9 @@
 //! the profile of the application in front again. When it differs, the
 //! dictation is redone from the first step whose settings differ:
 //!
-//! - speech model, languages, word lists or filler words: the recording is
-//!   transcribed again, then post-processed as the target profile says;
+//! - speech model, languages, word lists, filler words or long-audio
+//!   decoding: the recording is transcribed again, then post-processed as the
+//!   target profile says;
 //! - only post-processing: the transcription is post-processed again;
 //! - only the "Append" field: the text stays, the target's "Append" applies.
 //!
@@ -24,11 +25,13 @@
 //! (an edit, or more versions than its own post-processing) is not redone:
 //! the user's text wins, only its "Append" text follows the target.
 //!
-//! What a redo stores in History follows "Transcribe Again" and the
-//! post-processing from History (`history_versions`): transcribing again
-//! replaces the entry's stack, post-processing again replaces the
-//! post-processing the dictation made, or puts a new version on top of a
-//! transcription that had none.
+//! What a redo stores in History: transcribing again replaces the entry's
+//! stack, post-processing again replaces the post-processing the dictation
+//! made, or puts a new version on top of a transcription that had none. It
+//! is the one place that replaces versions (History's own actions always put
+//! their result on top, `history_versions`): it redoes only what the
+//! dictation itself made, while the stack is still that, so nothing of the
+//! user's goes. The transcript is found by its step, not by its place.
 
 use std::sync::{Arc, Mutex};
 
@@ -67,8 +70,8 @@ fn applied(base: &AppSettings, values: &ProfileValues) -> AppSettings {
 
 /// Whether a transcription with `a` can come out other than with `b`, on
 /// the global values of `base`: another model, language settings, words the
-/// model gets or finds (the active additional list counts, not the others)
-/// or filler words.
+/// model gets or finds (the active additional list counts, not the others),
+/// filler words or the decoding of long audio.
 pub fn transcription_differs(base: &AppSettings, a: &ProfileValues, b: &ProfileValues) -> bool {
     let words =
         |values: &ProfileValues| crate::word_lists::merged_vocabulary(&applied(base, values));
@@ -81,6 +84,7 @@ pub fn transcription_differs(base: &AppSettings, a: &ProfileValues, b: &ProfileV
         || a.chinese_script != b.chinese_script
         || a.filler_word_removal_enabled != b.filler_word_removal_enabled
         || a.custom_filler_words != b.custom_filler_words
+        || a.long_form_chunking != b.long_form_chunking
         || words(a) != words(b)
 }
 
@@ -96,8 +100,9 @@ fn selected_prompt(values: &ProfileValues) -> Option<&str> {
 
 /// Whether post-processing with `a` (ending with `a_end`) can come out other
 /// than with `b` (ending with `b_end`), both post-processing: another
-/// provider, the provider's model or effort, another prompt text, or other
-/// context.
+/// provider or endpoint, the provider's model or effort, another prompt
+/// text, or other context. The key and the time limit don't change the
+/// text.
 fn post_processing_differs(
     a: &ProfileValues,
     b: &ProfileValues,
@@ -112,7 +117,15 @@ fn post_processing_differs(
             values.context_char_budget,
         )
     };
+    let endpoint = |values: &ProfileValues| {
+        values
+            .post_process_providers
+            .iter()
+            .find(|candidate| candidate.id == *provider)
+            .cloned()
+    };
     a.post_process_provider_id != b.post_process_provider_id
+        || endpoint(a) != endpoint(b)
         || a.post_process_models.get(provider) != b.post_process_models.get(provider)
         || a.post_process_efforts.get(provider) != b.post_process_efforts.get(provider)
         || selected_prompt(a) != selected_prompt(b)
@@ -191,16 +204,26 @@ pub fn target_for(
     Some((id.to_string(), values_of(settings, id)?))
 }
 
+/// The entry's transcript, found by its step; the entry's text once the user
+/// deleted every transcription.
+fn transcript_text(entry: &HistoryEntry) -> &str {
+    crate::history_versions::transcript(&entry.versions).map_or_else(
+        || crate::history_versions::entry_text(entry),
+        |version| version.text.as_str(),
+    )
+}
+
 /// Whether the entry's versions are still those its dictation made: the
-/// transcription alone, or with one post-processing on it.
+/// transcription alone, or with one post-processing on it, as the speech
+/// model and the AI left them and in that order.
 pub fn redoable(versions: &[HistoryVersion]) -> bool {
+    let as_made = |version: &HistoryVersion, by: VersionAuthor| {
+        version.made_by(by) && !version.edited_by_user()
+    };
     match versions {
-        [transcription] => !edited_by_user(transcription),
-        [_, top] => {
-            top.steps
-                .first()
-                .is_some_and(|step| step.by == VersionAuthor::Ai)
-                && !edited_by_user(top)
+        [transcription] => as_made(transcription, VersionAuthor::Transcription),
+        [transcription, top] => {
+            as_made(transcription, VersionAuthor::Transcription) && as_made(top, VersionAuthor::Ai)
         }
         _ => false,
     }
@@ -236,8 +259,8 @@ pub fn plan(from: RedoFrom, entry: &HistoryEntry, target_post_processes: bool) -
     }
     let post_processed = entry.versions.len() == 2;
     match (target_post_processes, post_processed) {
-        (true, true) => RedoPlan::PostProcess(PostProcessTarget::Redo),
-        (true, false) => RedoPlan::PostProcess(PostProcessTarget::New),
+        (true, true) => RedoPlan::PostProcess(PostProcessTarget::InPlaceOfAiTop),
+        (true, false) => RedoPlan::PostProcess(PostProcessTarget::OnTop),
         (false, true) => RedoPlan::UseTranscription,
         (false, false) => RedoPlan::Keep,
     }
@@ -412,18 +435,10 @@ fn run(
     };
     match plan {
         RedoPlan::Keep => (None, false),
-        RedoPlan::UseTranscription => (
-            entry.versions.first().map(|version| version.text.clone()),
-            false,
-        ),
+        RedoPlan::UseTranscription => (Some(transcript_text(entry).to_string()), false),
         RedoPlan::PostProcess(where_to) => {
             show(Working::PostProcessing);
-            let transcription = entry
-                .versions
-                .first()
-                .map_or(entry.transcription_text.as_str(), |version| {
-                    version.text.as_str()
-                });
+            let transcription = transcript_text(entry);
             match crate::app_profiles::with_values_here(target.clone(), || {
                 post_process_again(app, entry, transcription, where_to, target_end.send_context)
             }) {
@@ -569,14 +584,6 @@ fn transcribe_again(
         warn!("Failed to store the entry's context: {e}");
     }
     Ok((processed.final_text, processed.post_process_failed))
-}
-
-/// Whether a version was made by the user, in any step.
-fn edited_by_user(version: &HistoryVersion) -> bool {
-    version
-        .steps
-        .iter()
-        .any(|step| step.by == VersionAuthor::User)
 }
 
 #[cfg(test)]
@@ -742,6 +749,75 @@ mod tests {
         );
     }
 
+    /// `change` applied to the target through serde names.
+    fn redo_with(extra: serde_json::Value, requested: bool) -> RedoFrom {
+        redo(
+            |target| *target = crate::profiles::testing::values_with(target, extra),
+            requested,
+        )
+    }
+
+    #[test]
+    fn other_words_or_long_audio_handling_transcribe_again() {
+        assert_eq!(
+            redo_with(serde_json::json!({ "custom_words": ["Grüezi"] }), false),
+            RedoFrom::Transcription
+        );
+        let chunking = settings_with_mail().long_form_chunking;
+        assert_eq!(
+            redo_with(
+                serde_json::json!({ "long_form_chunking": !chunking }),
+                false
+            ),
+            RedoFrom::Transcription
+        );
+    }
+
+    #[test]
+    fn another_custom_endpoint_post_processes_again() {
+        let settings = settings_with_mail();
+        let mut providers =
+            serde_json::to_value(&settings.post_process_providers).expect("serializes");
+        for provider in providers.as_array_mut().unwrap() {
+            if provider["id"] == "anthropic" {
+                provider["base_url"] = serde_json::json!("https://proxy.example.com/v1");
+            }
+        }
+        assert_eq!(
+            redo_with(
+                serde_json::json!({ "post_process_providers": providers.clone() }),
+                true
+            ),
+            RedoFrom::PostProcessing
+        );
+        // Without post-processing it makes no difference.
+        assert_eq!(
+            redo_with(
+                serde_json::json!({ "post_process_providers": providers }),
+                false
+            ),
+            RedoFrom::Nothing
+        );
+    }
+
+    #[test]
+    fn what_changes_no_text_redoes_nothing() {
+        assert_eq!(
+            redo_with(
+                serde_json::json!({
+                    "selected_microphone": "AirPods",
+                    "audio_feedback": true,
+                    "overlay_position": "top",
+                    "paste_method": "direct",
+                    "post_process_api_keys": { "anthropic": "sk-other" },
+                    "post_process_timeout_secs": 5,
+                }),
+                true
+            ),
+            RedoFrom::Nothing
+        );
+    }
+
     #[test]
     fn another_prompt_post_processes_again_while_post_processing() {
         let formal =
@@ -898,6 +974,48 @@ mod tests {
         assert!(!redoable(&[]));
     }
 
+    #[test]
+    fn a_stack_the_user_rearranged_is_not_redone() {
+        // The transcription moved up, or deleted under the user's text.
+        assert!(!redoable(&[
+            test_version("A", VersionAuthor::Ai),
+            transcription("a")
+        ]));
+        assert!(!redoable(&[
+            test_version("mine", VersionAuthor::User),
+            test_version("A", VersionAuthor::Ai)
+        ]));
+        assert!(!redoable(&[test_version("A", VersionAuthor::Ai)]));
+        // Transcribed again from History.
+        assert!(!redoable(&[transcription("a"), transcription("b")]));
+        // The transcription changed in place by the user.
+        let mut edited = transcription("a, mine");
+        edited.steps = vec![
+            crate::history_versions::VersionStep {
+                by: VersionAuthor::Transcription,
+                at: None,
+                prompt_name: None,
+            },
+            crate::history_versions::VersionStep {
+                by: VersionAuthor::User,
+                at: Some(1),
+                prompt_name: None,
+            },
+        ];
+        assert!(!redoable(&[edited]));
+    }
+
+    #[test]
+    fn the_transcript_is_found_by_its_step() {
+        let moved = entry(vec![
+            test_version("A", VersionAuthor::Ai),
+            transcription("a"),
+        ]);
+        assert_eq!(transcript_text(&moved), "a");
+        let deleted = entry(vec![test_version("A", VersionAuthor::Ai)]);
+        assert_eq!(transcript_text(&deleted), "A");
+    }
+
     fn entry(versions: Vec<HistoryVersion>) -> HistoryEntry {
         test_entry(versions)
     }
@@ -920,12 +1038,12 @@ mod tests {
         ]);
         assert_eq!(
             plan(RedoFrom::PostProcessing, &processed, true),
-            RedoPlan::PostProcess(PostProcessTarget::Redo)
+            RedoPlan::PostProcess(PostProcessTarget::InPlaceOfAiTop)
         );
         let bare = entry(vec![transcription("a")]);
         assert_eq!(
             plan(RedoFrom::PostProcessing, &bare, true),
-            RedoPlan::PostProcess(PostProcessTarget::New)
+            RedoPlan::PostProcess(PostProcessTarget::OnTop)
         );
     }
 
@@ -957,7 +1075,7 @@ mod tests {
         gone.recording_removed = true;
         assert_eq!(
             plan(RedoFrom::Transcription, &gone, true),
-            RedoPlan::PostProcess(PostProcessTarget::Redo)
+            RedoPlan::PostProcess(PostProcessTarget::InPlaceOfAiTop)
         );
         assert_eq!(
             plan(RedoFrom::Transcription, &gone, false),
