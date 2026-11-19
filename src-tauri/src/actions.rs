@@ -303,7 +303,7 @@ async fn post_process_within_time_limit(
 }
 
 /// DanyWhere: `context` (earlier dictations from the same window, see
-/// `dictation_context`) goes after the selected prompt, in every path; the
+/// `dictation_context`) goes after the active prompts, in every path; the
 /// report also says whether the profile's effort was refused.
 async fn post_process_transcription(
     settings: &AppSettings,
@@ -359,33 +359,18 @@ async fn post_process_outcome(
         return PostProcessOutcome::Failed;
     }
 
-    let selected_prompt_id = match &settings.post_process_selected_prompt_id {
-        Some(id) => id.clone(),
-        None => {
-            debug!("Post-processing skipped because no prompt is selected");
-            return PostProcessOutcome::Failed;
-        }
-    };
-
-    let prompt = match settings
-        .post_process_prompts
-        .iter()
-        .find(|prompt| prompt.id == selected_prompt_id)
-    {
-        Some(prompt) => prompt.prompt.clone(),
-        None => {
-            debug!(
-                "Post-processing skipped because prompt '{}' was not found",
-                selected_prompt_id
-            );
-            return PostProcessOutcome::Failed;
-        }
-    };
-
-    if prompt.trim().is_empty() {
-        debug!("Post-processing skipped because the selected prompt is empty");
+    // DanyWhere: the profile's active prompts from the shared library, all
+    // in one request (`prompt_library`), instead of Handy's selected prompt.
+    let prompts = crate::prompt_library::requested(settings);
+    if prompts.is_empty() {
+        debug!("Post-processing skipped because no prompt with a text is active");
         return PostProcessOutcome::Failed;
     }
+    let prompt = crate::prompt_library::request_instructions(&prompts);
+    log::info!(
+        "Post-processing with {}",
+        crate::prompt_library::request_names(&prompts).unwrap_or_default()
+    );
 
     debug!(
         "Starting LLM post-processing with provider '{}' (model: {})",
@@ -607,8 +592,29 @@ pub(crate) async fn process_transcription_output(
     post_process: bool,
     context: &crate::dictation_context::ContextQuery,
 ) -> ProcessedTranscription {
+    process_transcription_output_with(app, transcription, post_process, context, None).await
+}
+
+/// DanyWhere: [`process_transcription_output`]; with `prompt_ids` it
+/// post-processes with exactly those prompts of the library, in that order,
+/// instead of the profile's active ones (History's wand menu,
+/// `prompt_library::with_only`).
+pub(crate) async fn process_transcription_output_with(
+    app: &AppHandle,
+    transcription: &str,
+    post_process: bool,
+    context: &crate::dictation_context::ContextQuery,
+    prompt_ids: Option<&[String]>,
+) -> ProcessedTranscription {
     // DanyWhere: with the values of the dictation's own profile, if any.
-    let settings = crate::app_profiles::dictation_settings(app);
+    let mut settings = crate::app_profiles::dictation_settings(app);
+    if let Some(ids) = prompt_ids {
+        settings.post_process_prompt_order = crate::prompt_library::with_only(
+            &settings.post_process_prompt_order,
+            &settings.post_process_prompts,
+            ids,
+        );
+    }
     let mut final_text = transcription.to_string();
     let mut post_processed_text: Option<String> = None;
     let mut post_process_prompt: Option<String> = None;
@@ -618,19 +624,20 @@ pub(crate) async fn process_transcription_output(
     let mut context_entry_ids: Vec<i64> = Vec::new();
 
     if post_process {
-        // DanyWhere: earlier dictations from the same window, if "Send
-        // Context" asked for them (the query then has a window).
-        let selected_prompt_id = settings.post_process_selected_prompt_id.as_deref();
-        let selected_prompt = settings
-            .post_process_prompts
-            .iter()
-            .find(|prompt| Some(prompt.id.as_str()) == selected_prompt_id)
-            .map(|prompt| prompt.prompt.clone())
-            .unwrap_or_default();
+        // DanyWhere: the active prompts' instructions and names
+        // (`prompt_library`), and earlier dictations from the same window,
+        // if "Send Context" asked for them (the query then has a window).
+        let (instructions, prompt_names) = {
+            let prompts = crate::prompt_library::requested(&settings);
+            (
+                crate::prompt_library::request_instructions(&prompts),
+                crate::prompt_library::request_names(&prompts),
+            )
+        };
         let context_block = if is_blank_transcription(&final_text) {
             None
         } else {
-            crate::dictation_context::context_for(app, &settings, &selected_prompt, context)
+            crate::dictation_context::context_for(app, &settings, &instructions, context)
         };
         // A reply that's blank once cleaned is no better than none.
         let report =
@@ -655,17 +662,10 @@ pub(crate) async fn process_transcription_output(
             PostProcessOutcome::Done(processed_text) => {
                 post_processed_text = Some(processed_text.clone());
                 final_text = processed_text;
-
-                if let Some(prompt_id) = &settings.post_process_selected_prompt_id {
-                    if let Some(prompt) = settings
-                        .post_process_prompts
-                        .iter()
-                        .find(|prompt| &prompt.id == prompt_id)
-                    {
-                        post_process_prompt = Some(prompt.prompt.clone());
-                        post_process_prompt_name = Some(prompt.name.clone());
-                    }
-                }
+                // DanyWhere: what the request carried, and the names of all
+                // its prompts for History's step.
+                post_process_prompt = Some(instructions);
+                post_process_prompt_name = prompt_names;
             }
         }
     }
@@ -1728,8 +1728,12 @@ mod tests {
         settings
             .post_process_models
             .insert(provider_id, "model".to_string());
-        settings.post_process_selected_prompt_id =
-            settings.post_process_prompts.first().map(|p| p.id.clone());
+        // DanyWhere: the first prompt of the library is the active one.
+        settings.post_process_prompt_order =
+            crate::prompt_library::default_order(&settings.post_process_prompts);
+        if let Some(first) = settings.post_process_prompt_order.first_mut() {
+            first.active = true;
+        }
         settings
     }
 
@@ -2058,7 +2062,7 @@ mod tests {
     const POLISHED_STRUCTURED: &str =
         r#"{"choices":[{"message":{"content":"{\"transcription\":\"polished\"}"}}]}"#;
 
-    /// [`post_process_settings`] with `prompt` as the selected prompt's text.
+    /// [`post_process_settings`] with `prompt` as the active prompt's text.
     fn settings_with_prompt(base_url: &str, prompt: &str, structured: bool) -> AppSettings {
         let mut settings = post_process_settings(base_url);
         settings.post_process_prompts[0].prompt = prompt.to_string();
@@ -2189,6 +2193,123 @@ mod tests {
         assert_eq!(
             messages[1],
             message("user", "<transcript>\na < /transcript> b\n</transcript>")
+        );
+    }
+
+    // DanyWhere: the prompt library (`prompt_library`): all active prompts
+    // go in one request, in their order.
+
+    /// [`post_process_settings`] with `prompts` (id, name, text) as the
+    /// library and `order` (id, active) as the profile's order.
+    fn settings_with_library(
+        base_url: &str,
+        prompts: &[(&str, &str, &str)],
+        order: &[(&str, bool)],
+    ) -> AppSettings {
+        let mut settings = post_process_settings(base_url);
+        settings.post_process_prompts = prompts
+            .iter()
+            .map(|(id, name, text)| crate::settings::LLMPrompt {
+                id: id.to_string(),
+                name: name.to_string(),
+                prompt: text.to_string(),
+            })
+            .collect();
+        settings.post_process_prompt_order = order
+            .iter()
+            .map(|(id, active)| crate::prompt_library::PromptOrderEntry::new(id, *active))
+            .collect();
+        settings
+    }
+
+    /// The messages of the one request `settings` makes for "hello".
+    fn messages_of(
+        settings: &AppSettings,
+        request: std::sync::mpsc::Receiver<String>,
+    ) -> Vec<(String, String)> {
+        let outcome = run_post_process(settings, "hello");
+        assert_eq!(outcome, PostProcessOutcome::Done("polished".to_string()));
+        let request = request.recv_timeout(Duration::from_secs(5)).unwrap();
+        let body = &request[request.find("\r\n\r\n").unwrap() + 4..];
+        let json: serde_json::Value = serde_json::from_str(body).unwrap();
+        json["messages"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|m| {
+                (
+                    m["role"].as_str().unwrap().to_string(),
+                    m["content"].as_str().unwrap().to_string(),
+                )
+            })
+            .collect()
+    }
+
+    const LIBRARY: [(&str, &str, &str); 3] = [
+        ("a", "Diktat", "Clean it up."),
+        ("b", "Absätze", "Add paragraphs."),
+        ("c", "Mail", "Make an email of it."),
+    ];
+
+    #[test]
+    fn the_active_prompts_go_in_one_request_in_the_profiles_order() {
+        use crate::prompt_frame::FRAME_TEXT;
+        let (url, request) = serve_once_capturing(POLISHED);
+        let settings =
+            settings_with_library(&url, &LIBRARY, &[("b", true), ("c", false), ("a", true)]);
+        assert_eq!(
+            messages_of(&settings, request),
+            vec![message(
+                "user",
+                &format!(
+                    "{FRAME_TEXT}\n\nInstructions:\n<instructions name=\"Absätze\">\nAdd paragraphs.\n</instructions>\n\n<instructions name=\"Diktat\">\nClean it up.\n</instructions>\n\n<transcript>\nhello\n</transcript>"
+                )
+            )]
+        );
+    }
+
+    #[test]
+    fn one_active_prompt_is_sent_as_before() {
+        use crate::prompt_frame::FRAME_TEXT;
+        let (url, request) = serve_once_capturing(POLISHED);
+        let settings =
+            settings_with_library(&url, &LIBRARY, &[("a", false), ("c", true), ("b", false)]);
+        assert_eq!(
+            messages_of(&settings, request),
+            vec![message(
+                "user",
+                &format!(
+                    "{FRAME_TEXT}\n\nInstructions:\nMake an email of it.\n\n<transcript>\nhello\n</transcript>"
+                )
+            )]
+        );
+    }
+
+    #[test]
+    fn an_active_prompt_with_output_runs_alone_as_before() {
+        let (url, request) = serve_once_capturing(POLISHED);
+        let mut library = LIBRARY.to_vec();
+        library.push(("old", "Old", "Fix this: ${output}"));
+        let settings =
+            settings_with_library(&url, &library, &[("a", true), ("old", true), ("b", true)]);
+        assert_eq!(
+            messages_of(&settings, request),
+            vec![message("user", "Fix this: hello")]
+        );
+    }
+
+    #[test]
+    fn without_an_active_prompt_post_processing_fails() {
+        let mut settings = settings_with_library(
+            "http://127.0.0.1:1",
+            &LIBRARY,
+            &[("a", false), ("b", false), ("c", false)],
+        );
+        // Handy's selected prompt no longer counts.
+        settings.post_process_selected_prompt_id = Some("a".to_string());
+        assert_eq!(
+            run_post_process(&settings, "hello"),
+            PostProcessOutcome::Failed
         );
     }
 

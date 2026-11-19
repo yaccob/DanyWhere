@@ -1,4 +1,5 @@
 import type { AppSettings, ReprocessMode } from "@/bindings";
+import { hasActivePrompt } from "@/lib/promptLibrary";
 
 export type { ReprocessMode };
 
@@ -11,13 +12,14 @@ type PostProcessSettings = Pick<
   | "post_process_provider_id"
   | "post_process_providers"
   | "post_process_models"
-  | "post_process_selected_prompt_id"
   | "post_process_prompts"
+  | "post_process_prompt_order"
 >;
 
 /**
  * Mirrors what the backend checks before it calls the provider: switched
- * on, and a provider with a model and a selected prompt.
+ * on, and a provider with a model and (DanyWhere, the prompt library) at
+ * least one active prompt.
  */
 export const postProcessAvailability = (
   settings: Partial<PostProcessSettings> | null | undefined,
@@ -28,8 +30,10 @@ export const postProcessAvailability = (
     (p) => p.id === providerId,
   );
   const model = providerId ? settings.post_process_models?.[providerId] : "";
-  const promptId = settings.post_process_selected_prompt_id;
-  const prompt = settings.post_process_prompts?.find((p) => p.id === promptId);
+  const prompt = hasActivePrompt(
+    settings.post_process_prompts,
+    settings.post_process_prompt_order,
+  );
   return provider && model?.trim() && prompt ? "ready" : "not_set_up";
 };
 

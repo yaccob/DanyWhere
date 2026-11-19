@@ -49,6 +49,7 @@ mod profile_redo;
 mod profile_transfer;
 mod profiles;
 mod prompt_frame;
+mod prompt_library;
 mod secure_input;
 mod send_context;
 mod setting_classes;
@@ -814,6 +815,8 @@ pub fn run(cli_args: CliArgs) {
             shortcut::update_post_process_prompt,
             shortcut::delete_post_process_prompt,
             shortcut::set_post_process_selected_prompt,
+            prompt_library::change_post_process_prompt_order_setting,
+            prompt_library::profiles_using_prompt,
             shortcut::update_custom_words,
             word_lists::add_word_list,
             word_lists::rename_word_list,

@@ -13,6 +13,7 @@ import type {
   RecordingStorageLimit,
   DictationServiceWhenIdle,
   DictationContextSettings,
+  PromptOrderEntry,
 } from "@/bindings";
 import { commands } from "@/bindings";
 import { notify } from "@/stores/noticeStore";
@@ -207,6 +208,14 @@ const settingUpdaters: {
     commands.changePostProcessEnabledSetting(value as boolean),
   post_process_selected_prompt_id: (value) =>
     commands.setPostProcessSelectedPrompt(value as string),
+  // DanyWhere: which prompts of the library the active profile runs, and
+  // their order (src-tauri/src/prompt_library.rs).
+  post_process_prompt_order: async (value) => {
+    const result = await commands.changePostProcessPromptOrderSetting(
+      value as PromptOrderEntry[],
+    );
+    if (result.status === "error") throw new Error(result.error);
+  },
   mute_while_recording: (value) =>
     commands.changeMuteWhileRecordingSetting(value as boolean),
   append_trailing_space: (value) =>
