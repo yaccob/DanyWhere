@@ -21,11 +21,13 @@
 //! (an edit, or more versions than its own post-processing) is not redone:
 //! the user's text wins, only its "Append" text follows the target.
 //!
-//! What a redo stores in History follows "Transcribe Again" and the
-//! post-processing from History (`history_versions`): transcribing again
-//! replaces the entry's stack, post-processing again replaces the
-//! post-processing the dictation made, or puts a new version on top of a
-//! transcription that had none.
+//! What a redo stores in History: transcribing again replaces the entry's
+//! stack, post-processing again replaces the post-processing the dictation
+//! made, or puts a new version on top of a transcription that had none. It
+//! is the one place that replaces versions (History's own actions always put
+//! their result on top, `history_versions`): it redoes only what the
+//! dictation itself made, while the stack is still that, so nothing of the
+//! user's goes. The transcript is found by its step, not by its place.
 
 use std::sync::{Arc, Mutex};
 
@@ -178,16 +180,26 @@ pub fn target_for(
     Some((id.to_string(), values_of(settings, id)?))
 }
 
+/// The entry's transcript, found by its step; the entry's text once the user
+/// deleted every transcription.
+fn transcript_text(entry: &HistoryEntry) -> &str {
+    crate::history_versions::transcript(&entry.versions).map_or_else(
+        || crate::history_versions::entry_text(entry),
+        |version| version.text.as_str(),
+    )
+}
+
 /// Whether the entry's versions are still those its dictation made: the
-/// transcription alone, or with one post-processing on it.
+/// transcription alone, or with one post-processing on it, as the speech
+/// model and the AI left them and in that order.
 pub fn redoable(versions: &[HistoryVersion]) -> bool {
+    let as_made = |version: &HistoryVersion, by: VersionAuthor| {
+        version.made_by(by) && !version.edited_by_user()
+    };
     match versions {
-        [transcription] => !edited_by_user(transcription),
-        [_, top] => {
-            top.steps
-                .first()
-                .is_some_and(|step| step.by == VersionAuthor::Ai)
-                && !edited_by_user(top)
+        [transcription] => as_made(transcription, VersionAuthor::Transcription),
+        [transcription, top] => {
+            as_made(transcription, VersionAuthor::Transcription) && as_made(top, VersionAuthor::Ai)
         }
         _ => false,
     }
@@ -223,8 +235,8 @@ pub fn plan(from: RedoFrom, entry: &HistoryEntry, target_post_processes: bool) -
     }
     let post_processed = entry.versions.len() == 2;
     match (target_post_processes, post_processed) {
-        (true, true) => RedoPlan::PostProcess(PostProcessTarget::Redo),
-        (true, false) => RedoPlan::PostProcess(PostProcessTarget::New),
+        (true, true) => RedoPlan::PostProcess(PostProcessTarget::InPlaceOfAiTop),
+        (true, false) => RedoPlan::PostProcess(PostProcessTarget::OnTop),
         (false, true) => RedoPlan::UseTranscription,
         (false, false) => RedoPlan::Keep,
     }
@@ -386,18 +398,10 @@ fn run(
     };
     match plan {
         RedoPlan::Keep => (None, false),
-        RedoPlan::UseTranscription => (
-            entry.versions.first().map(|version| version.text.clone()),
-            false,
-        ),
+        RedoPlan::UseTranscription => (Some(transcript_text(entry).to_string()), false),
         RedoPlan::PostProcess(where_to) => {
             show(Working::PostProcessing);
-            let transcription = entry
-                .versions
-                .first()
-                .map_or(entry.transcription_text.as_str(), |version| {
-                    version.text.as_str()
-                });
+            let transcription = transcript_text(entry);
             match crate::app_profiles::with_values_here(target.clone(), || {
                 post_process_again(app, entry, transcription, where_to)
             }) {
@@ -542,14 +546,6 @@ fn transcribe_again(
         warn!("Failed to store the entry's context: {e}");
     }
     Ok((processed.final_text, processed.post_process_failed))
-}
-
-/// Whether a version was made by the user, in any step.
-fn edited_by_user(version: &HistoryVersion) -> bool {
-    version
-        .steps
-        .iter()
-        .any(|step| step.by == VersionAuthor::User)
 }
 
 #[cfg(test)]
@@ -898,6 +894,48 @@ mod tests {
         assert!(!redoable(&[]));
     }
 
+    #[test]
+    fn a_stack_the_user_rearranged_is_not_redone() {
+        // The transcription moved up, or deleted under the user's text.
+        assert!(!redoable(&[
+            test_version("A", VersionAuthor::Ai),
+            transcription("a")
+        ]));
+        assert!(!redoable(&[
+            test_version("mine", VersionAuthor::User),
+            test_version("A", VersionAuthor::Ai)
+        ]));
+        assert!(!redoable(&[test_version("A", VersionAuthor::Ai)]));
+        // Transcribed again from History.
+        assert!(!redoable(&[transcription("a"), transcription("b")]));
+        // The transcription changed in place by the user.
+        let mut edited = transcription("a, mine");
+        edited.steps = vec![
+            crate::history_versions::VersionStep {
+                by: VersionAuthor::Transcription,
+                at: None,
+                prompt_name: None,
+            },
+            crate::history_versions::VersionStep {
+                by: VersionAuthor::User,
+                at: Some(1),
+                prompt_name: None,
+            },
+        ];
+        assert!(!redoable(&[edited]));
+    }
+
+    #[test]
+    fn the_transcript_is_found_by_its_step() {
+        let moved = entry(vec![
+            test_version("A", VersionAuthor::Ai),
+            transcription("a"),
+        ]);
+        assert_eq!(transcript_text(&moved), "a");
+        let deleted = entry(vec![test_version("A", VersionAuthor::Ai)]);
+        assert_eq!(transcript_text(&deleted), "A");
+    }
+
     fn entry(versions: Vec<HistoryVersion>) -> HistoryEntry {
         test_entry(versions)
     }
@@ -920,12 +958,12 @@ mod tests {
         ]);
         assert_eq!(
             plan(RedoFrom::PostProcessing, &processed, true),
-            RedoPlan::PostProcess(PostProcessTarget::Redo)
+            RedoPlan::PostProcess(PostProcessTarget::InPlaceOfAiTop)
         );
         let bare = entry(vec![transcription("a")]);
         assert_eq!(
             plan(RedoFrom::PostProcessing, &bare, true),
-            RedoPlan::PostProcess(PostProcessTarget::New)
+            RedoPlan::PostProcess(PostProcessTarget::OnTop)
         );
     }
 
@@ -957,7 +995,7 @@ mod tests {
         gone.recording_removed = true;
         assert_eq!(
             plan(RedoFrom::Transcription, &gone, true),
-            RedoPlan::PostProcess(PostProcessTarget::Redo)
+            RedoPlan::PostProcess(PostProcessTarget::InPlaceOfAiTop)
         );
         assert_eq!(
             plan(RedoFrom::Transcription, &gone, false),
