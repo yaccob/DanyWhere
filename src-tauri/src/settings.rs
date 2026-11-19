@@ -609,8 +609,15 @@ pub struct AppSettings {
     pub post_process_efforts: HashMap<String, String>,
     #[serde(default = "default_post_process_prompts")]
     pub post_process_prompts: Vec<LLMPrompt>,
+    /// DanyWhere: unused since the prompt library (`prompt_library`), which
+    /// reads it once to migrate and then clears it.
     #[serde(default)]
     pub post_process_selected_prompt_id: Option<String>,
+    /// DanyWhere: which prompts of the library (`post_process_prompts`, shared
+    /// by all profiles) the active profile runs, and the order of the whole
+    /// list (`prompt_library`). A profile value.
+    #[serde(default)]
+    pub post_process_prompt_order: Vec<crate::prompt_library::PromptOrderEntry>,
     /// DanyWhere: time limit for the whole post-processing step, retries
     /// included, in seconds (Handy: a fixed 60 s; see `llm_timeouts`).
     #[serde(default = "crate::llm_timeouts::default_post_process_timeout_secs")]
@@ -1338,6 +1345,9 @@ pub fn get_default_settings() -> AppSettings {
         post_process_efforts: HashMap::new(),
         post_process_prompts: default_post_process_prompts(),
         post_process_selected_prompt_id: None,
+        post_process_prompt_order: crate::prompt_library::default_order(
+            &default_post_process_prompts(),
+        ),
         post_process_timeout_secs: crate::llm_timeouts::default_post_process_timeout_secs(),
         model_list_timeout_secs: crate::llm_timeouts::default_model_list_timeout_secs(),
         mute_while_recording: false,
@@ -1739,6 +1749,12 @@ fn apply_settings_migrations(
 
     // DanyWhere: the context shortcut gave way to "Send Context".
     if crate::send_context::drop_retired_binding(settings) {
+        updated = true;
+    }
+
+    // DanyWhere: one-time prompt library migration: the profiles' own copies
+    // of their prompts become one library for all.
+    if crate::prompt_library::migrate(settings, settings_value) {
         updated = true;
     }
 
@@ -2756,7 +2772,9 @@ mod tests {
             "chinese_script": "as_transcribed",
             "recording_storage_limit": "mb_500",
             "transcribe_accelerator": "gpu",
-            "transcribe_gpu_device": settings.transcribe_gpu_device
+            "transcribe_gpu_device": settings.transcribe_gpu_device,
+            // DanyWhere: the prompt library is there already.
+            "post_process_prompt_order": []
         });
 
         assert!(!apply_settings_migrations(&mut settings, &raw));
@@ -2798,6 +2816,28 @@ mod tests {
             crate::prompt_frame::IMPROVE_TRANSCRIPTIONS
         );
         assert!(!ensure_post_process_defaults(&mut settings));
+    }
+
+    /// DanyWhere: the prompt library (`prompt_library`) is made on the first
+    /// read of settings from before it.
+    #[test]
+    fn the_prompt_library_is_made_when_older_settings_load() {
+        let raw = serde_json::json!({
+            "post_process_prompts": [
+                {"id": "p1", "name": "Diktat", "prompt": "Clean it up."},
+                {"id": "p2", "name": "Mail", "prompt": "Make an email."}
+            ],
+            "post_process_selected_prompt_id": "p2"
+        });
+        let mut settings: AppSettings = serde_json::from_value(raw.clone()).unwrap();
+        apply_settings_migrations(&mut settings, &raw);
+        assert_eq!(
+            settings.post_process_prompt_order,
+            vec![
+                crate::prompt_library::PromptOrderEntry::new("p1", false),
+                crate::prompt_library::PromptOrderEntry::new("p2", true),
+            ]
+        );
     }
 
     #[test]

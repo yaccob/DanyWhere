@@ -1,18 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useTranslation } from "react-i18next";
 import { RefreshCcw } from "lucide-react";
-import { commands, type PostProcessApiFormat } from "@/bindings";
+import type { PostProcessApiFormat } from "@/bindings";
 
 import { Alert } from "../../ui/Alert";
-import {
-  Dropdown,
-  SettingContainer,
-  SettingsGroup,
-  Textarea,
-} from "@/components/ui";
-import { Button } from "../../ui/Button";
+import { Dropdown, SettingContainer, SettingsGroup } from "@/components/ui";
 import { ResetButton } from "../../ui/ResetButton";
-import { Input } from "../../ui/Input";
 
 import { ProviderSelect } from "../PostProcessingSettingsApi/ProviderSelect";
 import { ProviderLocationBadge } from "../PostProcessingSettingsApi/ProviderLocationBadge";
@@ -25,8 +18,8 @@ import { ShortcutInput } from "../ShortcutInput";
 import { useSettings } from "../../../hooks/useSettings";
 // DanyWhere: context from earlier dictations in the same window.
 import { DictationContextSettings } from "../dictation-context/DictationContextSettings";
-// DanyWhere: the fixed frame around every prompt.
-import { PromptFrameText, PromptFrameTip } from "./PromptFrame";
+// DanyWhere: one prompt library for all profiles.
+import { PromptLibrary } from "./PromptLibrary";
 // DanyWhere: most of this page belongs to the active profile.
 import { ProfileScopeHint } from "../profiles/ProfileScopeHint";
 
@@ -199,280 +192,14 @@ const PostProcessingSettingsApiComponent: React.FC = () => {
   );
 };
 
-const PostProcessingSettingsPromptsComponent: React.FC = () => {
-  const { t } = useTranslation();
-  const { getSetting, updateSetting, isUpdating, refreshSettings } =
-    useSettings();
-  const [isCreating, setIsCreating] = useState(false);
-  const [draftName, setDraftName] = useState("");
-  const [draftText, setDraftText] = useState("");
-
-  const prompts = getSetting("post_process_prompts") || [];
-  const selectedPromptId = getSetting("post_process_selected_prompt_id") || "";
-  const selectedPrompt =
-    prompts.find((prompt) => prompt.id === selectedPromptId) || null;
-
-  useEffect(() => {
-    if (isCreating) return;
-
-    if (selectedPrompt) {
-      setDraftName(selectedPrompt.name);
-      setDraftText(selectedPrompt.prompt);
-    } else {
-      setDraftName("");
-      setDraftText("");
-    }
-  }, [
-    isCreating,
-    selectedPromptId,
-    selectedPrompt?.name,
-    selectedPrompt?.prompt,
-  ]);
-
-  const handlePromptSelect = (promptId: string | null) => {
-    if (!promptId) return;
-    updateSetting("post_process_selected_prompt_id", promptId);
-    setIsCreating(false);
-  };
-
-  const handleCreatePrompt = async () => {
-    if (!draftName.trim() || !draftText.trim()) return;
-
-    try {
-      const result = await commands.addPostProcessPrompt(
-        draftName.trim(),
-        draftText.trim(),
-      );
-      if (result.status === "ok") {
-        await refreshSettings();
-        updateSetting("post_process_selected_prompt_id", result.data.id);
-        setIsCreating(false);
-      }
-    } catch (error) {
-      console.error("Failed to create prompt:", error);
-    }
-  };
-
-  const handleUpdatePrompt = async () => {
-    if (!selectedPromptId || !draftName.trim() || !draftText.trim()) return;
-
-    try {
-      await commands.updatePostProcessPrompt(
-        selectedPromptId,
-        draftName.trim(),
-        draftText.trim(),
-      );
-      await refreshSettings();
-    } catch (error) {
-      console.error("Failed to update prompt:", error);
-    }
-  };
-
-  const handleDeletePrompt = async (promptId: string) => {
-    if (!promptId) return;
-
-    try {
-      await commands.deletePostProcessPrompt(promptId);
-      await refreshSettings();
-      setIsCreating(false);
-    } catch (error) {
-      console.error("Failed to delete prompt:", error);
-    }
-  };
-
-  const handleCancelCreate = () => {
-    setIsCreating(false);
-    if (selectedPrompt) {
-      setDraftName(selectedPrompt.name);
-      setDraftText(selectedPrompt.prompt);
-    } else {
-      setDraftName("");
-      setDraftText("");
-    }
-  };
-
-  const handleStartCreate = () => {
-    setIsCreating(true);
-    setDraftName("");
-    setDraftText("");
-  };
-
-  const hasPrompts = prompts.length > 0;
-  const isDirty =
-    !!selectedPrompt &&
-    (draftName.trim() !== selectedPrompt.name ||
-      draftText.trim() !== selectedPrompt.prompt.trim());
-
-  return (
-    <SettingContainer
-      title={t("settings.postProcessing.prompts.selectedPrompt.title")}
-      // DanyWhere: a prompt no longer needs ${output}.
-      description={t("settings.postProcessing.prompts.frame.description")}
-      descriptionMode="tooltip"
-      layout="stacked"
-      grouped={true}
-    >
-      <div className="space-y-3">
-        <div className="flex gap-2 min-w-0">
-          <Dropdown
-            selectedValue={selectedPromptId || null}
-            options={prompts.map((p) => ({
-              value: p.id,
-              label: p.name,
-            }))}
-            onSelect={(value) => handlePromptSelect(value)}
-            placeholder={
-              prompts.length === 0
-                ? t("settings.postProcessing.prompts.noPrompts")
-                : t("settings.postProcessing.prompts.selectPrompt")
-            }
-            disabled={
-              isUpdating("post_process_selected_prompt_id") || isCreating
-            }
-            className="flex-1 min-w-0"
-          />
-          <Button
-            onClick={handleStartCreate}
-            variant="primary"
-            size="md"
-            disabled={isCreating}
-            className="shrink-0"
-          >
-            {t("settings.postProcessing.prompts.createNew")}
-          </Button>
-        </div>
-
-        {!isCreating && hasPrompts && selectedPrompt && (
-          <div className="space-y-3">
-            <div className="space-y-2 flex flex-col">
-              <label className="text-sm font-semibold">
-                {t("settings.postProcessing.prompts.promptLabel")}
-              </label>
-              <Input
-                type="text"
-                value={draftName}
-                onChange={(e) => setDraftName(e.target.value)}
-                placeholder={t(
-                  "settings.postProcessing.prompts.promptLabelPlaceholder",
-                )}
-                variant="compact"
-              />
-            </div>
-
-            <div className="space-y-2 flex flex-col">
-              <label className="text-sm font-semibold">
-                {t("settings.postProcessing.prompts.promptInstructions")}
-              </label>
-              {/* DanyWhere: the fixed frame before the instructions */}
-              <PromptFrameText />
-              <Textarea
-                value={draftText}
-                onChange={(e) => setDraftText(e.target.value)}
-                placeholder={t(
-                  "settings.postProcessing.prompts.frame.placeholder",
-                )}
-              />
-              {/* DanyWhere */}
-              <PromptFrameTip prompt={draftText} />
-            </div>
-
-            <div className="flex gap-2 pt-2">
-              <Button
-                onClick={handleUpdatePrompt}
-                variant="primary"
-                size="md"
-                disabled={!draftName.trim() || !draftText.trim() || !isDirty}
-              >
-                {t("settings.postProcessing.prompts.updatePrompt")}
-              </Button>
-              <Button
-                onClick={() => handleDeletePrompt(selectedPromptId)}
-                variant="secondary"
-                size="md"
-                disabled={!selectedPromptId || prompts.length <= 1}
-              >
-                {t("settings.postProcessing.prompts.deletePrompt")}
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {!isCreating && !selectedPrompt && (
-          <div className="p-3 bg-wash rounded-md border border-line">
-            <p className="text-sm text-ink-3">
-              {hasPrompts
-                ? t("settings.postProcessing.prompts.selectToEdit")
-                : t("settings.postProcessing.prompts.createFirst")}
-            </p>
-          </div>
-        )}
-
-        {isCreating && (
-          <div className="space-y-3">
-            <div className="space-y-2 block flex flex-col">
-              <label className="text-sm font-semibold text-text">
-                {t("settings.postProcessing.prompts.promptLabel")}
-              </label>
-              <Input
-                type="text"
-                value={draftName}
-                onChange={(e) => setDraftName(e.target.value)}
-                placeholder={t(
-                  "settings.postProcessing.prompts.promptLabelPlaceholder",
-                )}
-                variant="compact"
-              />
-            </div>
-
-            <div className="space-y-2 flex flex-col">
-              <label className="text-sm font-semibold">
-                {t("settings.postProcessing.prompts.promptInstructions")}
-              </label>
-              {/* DanyWhere: the fixed frame before the instructions */}
-              <PromptFrameText />
-              <Textarea
-                value={draftText}
-                onChange={(e) => setDraftText(e.target.value)}
-                placeholder={t(
-                  "settings.postProcessing.prompts.frame.placeholder",
-                )}
-              />
-              {/* DanyWhere */}
-              <PromptFrameTip prompt={draftText} />
-            </div>
-
-            <div className="flex gap-2 pt-2">
-              <Button
-                onClick={handleCreatePrompt}
-                variant="primary"
-                size="md"
-                disabled={!draftName.trim() || !draftText.trim()}
-              >
-                {t("settings.postProcessing.prompts.createPrompt")}
-              </Button>
-              <Button
-                onClick={handleCancelCreate}
-                variant="secondary"
-                size="md"
-              >
-                {t("settings.postProcessing.prompts.cancel")}
-              </Button>
-            </div>
-          </div>
-        )}
-      </div>
-    </SettingContainer>
-  );
-};
-
 export const PostProcessingSettingsApi = React.memo(
   PostProcessingSettingsApiComponent,
 );
 PostProcessingSettingsApi.displayName = "PostProcessingSettingsApi";
 
-export const PostProcessingSettingsPrompts = React.memo(
-  PostProcessingSettingsPromptsComponent,
-);
+// DanyWhere: the prompt library with the active profile's order, instead
+// of Handy's one selected prompt.
+export const PostProcessingSettingsPrompts = React.memo(PromptLibrary);
 PostProcessingSettingsPrompts.displayName = "PostProcessingSettingsPrompts";
 
 export const PostProcessingSettings: React.FC = () => {

@@ -432,6 +432,25 @@ async setPostProcessSelectedPrompt(id: string) : Promise<Result<null, string>> {
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * Sets which prompts the active profile runs, and their order (the whole
+ * list). The list editor sends it after every tick, drag or arrow key.
+ */
+async changePostProcessPromptOrderSetting(order: PromptOrderEntry[]) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_post_process_prompt_order_setting", { order }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * The shown names of the profiles that have prompt `id` active, so deleting
+ * it can name them first.
+ */
+async profilesUsingPrompt(id: string) : Promise<string[]> {
+    return await TAURI_INVOKE("profiles_using_prompt", { id });
+},
 async updateCustomWords(words: string[]) : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("update_custom_words", { words }) };
@@ -1305,9 +1324,12 @@ async retryHistoryEntryTranscription(id: number) : Promise<void> {
 /**
  * Queues the entry to be transcribed or post-processed again, as `mode`
  * says. Its progress and outcome arrive as `TranscriptionJob` events.
+ * DanyWhere: `prompt_ids` post-processes with exactly those prompts of the
+ * library, in that order; `None` with the profile's active prompts
+ * (`prompt_library`).
  */
-async reprocessHistoryEntry(id: number, mode: ReprocessMode) : Promise<void> {
-    await TAURI_INVOKE("reprocess_history_entry", { id, mode });
+async reprocessHistoryEntry(id: number, mode: ReprocessMode, promptIds: string[] | null) : Promise<void> {
+    await TAURI_INVOKE("reprocess_history_entry", { id, mode, promptIds });
 },
 /**
  * Saves the user's `text` on version `base` of the entry: `replace`
@@ -1673,7 +1695,18 @@ recording_storage_limit?: RecordingStorageLimit; paste_method?: PasteMethod; cli
  * DanyWhere: the effort per provider (`post_process_effort`); none
  * stored = the model's default.
  */
-post_process_efforts?: Partial<{ [key in string]: string }>; post_process_prompts?: LLMPrompt[]; post_process_selected_prompt_id?: string | null; 
+post_process_efforts?: Partial<{ [key in string]: string }>; post_process_prompts?: LLMPrompt[]; 
+/**
+ * DanyWhere: unused since the prompt library (`prompt_library`), which
+ * reads it once to migrate and then clears it.
+ */
+post_process_selected_prompt_id?: string | null; 
+/**
+ * DanyWhere: which prompts of the library (`post_process_prompts`, shared
+ * by all profiles) the active profile runs, and the order of the whole
+ * list (`prompt_library`). A profile value.
+ */
+post_process_prompt_order?: PromptOrderEntry[]; 
 /**
  * DanyWhere: time limit for the whole post-processing step, retries
  * included, in seconds (Handy: a fixed 60 s; see `llm_timeouts`).
@@ -2339,7 +2372,12 @@ export type ProfileValues = { selected_model: string; selected_language: string;
 /**
  * The effort per provider (`post_process_effort`).
  */
-post_process_efforts: Partial<{ [key in string]: string }>; post_process_prompts: LLMPrompt[]; post_process_selected_prompt_id: string | null; 
+post_process_efforts: Partial<{ [key in string]: string }>; 
+/**
+ * Which prompts of the library run, and the order of the whole list
+ * (`prompt_library`). The prompts themselves are shared by all profiles.
+ */
+post_process_prompt_order: PromptOrderEntry[]; 
 /**
  * `dictation_context.age_limit_minutes`
  */
@@ -2361,6 +2399,18 @@ send_context: boolean; filler_word_removal_enabled: boolean; custom_filler_words
  * stored profiles got it from theirs (`append_text::migrate`).
  */
 append_text: string }
+/**
+ * One prompt of the library in a profile's list.
+ */
+export type PromptOrderEntry = { 
+/**
+ * The prompt's id in the library.
+ */
+id: string; 
+/**
+ * Whether the prompt runs ("Active").
+ */
+active: boolean }
 /**
  * Recording phase events for windows that follow along (onboarding's Try it).
  */

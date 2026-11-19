@@ -118,14 +118,18 @@ pub fn retry_history_entry_transcription(jobs: State<'_, Arc<TranscriptionJobMan
 
 /// Queues the entry to be transcribed or post-processed again, as `mode`
 /// says. Its progress and outcome arrive as `TranscriptionJob` events.
+/// DanyWhere: `prompt_ids` post-processes with exactly those prompts of the
+/// library, in that order; `None` with the profile's active prompts
+/// (`prompt_library`).
 #[tauri::command]
 #[specta::specta]
 pub fn reprocess_history_entry(
     jobs: State<'_, Arc<TranscriptionJobManager>>,
     id: i64,
     mode: ReprocessMode,
+    prompt_ids: Option<Vec<String>>,
 ) {
-    jobs.reprocess(id, mode);
+    jobs.reprocess_with_prompts(id, mode, prompt_ids);
 }
 
 /// Stops the entry's background transcription: a queued one is dropped, a

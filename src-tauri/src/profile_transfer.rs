@@ -5,6 +5,11 @@
 //! always travels with it, encrypted with a password chosen at export
 //! ([`crate::profile_export`]); a profile that needs no key needs no password.
 //! An import can always leave the key out, e.g. when the password is unknown.
+//!
+//! DanyWhere's prompts are one library for all profiles (`prompt_library`),
+//! so the file also carries the texts of the profile's active prompts
+//! ([`ExportedProfile::prompts`]); an import reuses or adds them, never
+//! overwriting a prompt.
 
 use serde::{Deserialize, Serialize};
 use specta::Type;
@@ -15,7 +20,7 @@ use crate::profile_export::{
     self, EncryptedSecret, ExportError, ExportedApiKey, ProfileExportFile,
 };
 use crate::profiles::{self, Profile, ProfileValues};
-use crate::settings::{self, AppSettings};
+use crate::settings::{self, AppSettings, LLMPrompt};
 
 /// Export files are small; anything bigger is not one.
 const MAX_FILE_BYTES: u64 = 1024 * 1024;
@@ -133,6 +138,41 @@ pub struct ImportResult {
     pub dropped_apps: Vec<String>,
 }
 
+/// A profile as an export file holds it: the profile itself and the texts
+/// of its active prompts, in order (`prompt_library`), next to its fields.
+/// A file from before the library has its prompts in the profile's values
+/// instead (`prompt_library::prepare_import`).
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+pub struct ExportedProfile {
+    #[serde(flatten)]
+    pub profile: Profile,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub prompts: Vec<LLMPrompt>,
+}
+
+impl From<Profile> for ExportedProfile {
+    fn from(profile: Profile) -> Self {
+        Self {
+            profile,
+            prompts: Vec::new(),
+        }
+    }
+}
+
+impl std::ops::Deref for ExportedProfile {
+    type Target = Profile;
+
+    fn deref(&self) -> &Profile {
+        &self.profile
+    }
+}
+
+impl std::ops::DerefMut for ExportedProfile {
+    fn deref_mut(&mut self) -> &mut Profile {
+        &mut self.profile
+    }
+}
+
 /// A decrypted API key and its provider.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ProviderKey {
@@ -178,6 +218,8 @@ pub fn profile_for_export(
         profile.values = ProfileValues::from_settings(settings);
     }
     profile.name = profiles::display_name(&profile, default_name);
+    // DanyWhere: only the active prompts travel (`prompt_library`).
+    crate::prompt_library::keep_active_entries(&mut profile.values);
     Ok(profile)
 }
 
@@ -210,8 +252,14 @@ where
         }
         None => None,
     };
+    // DanyWhere: the texts of its active prompts (`prompt_library`).
+    let prompts = crate::prompt_library::export_prompts(
+        &settings.post_process_prompts,
+        &profile.values.post_process_prompt_order,
+    );
     Ok(profile_export::to_yaml(&ProfileExportFile::new(
-        profile, api_key,
+        ExportedProfile { profile, prompts },
+        api_key,
     ))?)
 }
 
@@ -250,8 +298,8 @@ pub fn preview(text: &str) -> Result<ImportPreview, TransferError> {
 pub fn read_import(
     text: &str,
     password: Option<&str>,
-) -> Result<(Profile, Option<ProviderKey>), TransferError> {
-    let file: ProfileExportFile<Profile> = profile_export::from_yaml(text)?;
+) -> Result<(ExportedProfile, Option<ProviderKey>), TransferError> {
+    let file: ProfileExportFile<ExportedProfile> = profile_export::from_yaml(text)?;
     let key = match (file.api_key, password) {
         (Some(api_key), Some(password)) => Some(ProviderKey {
             key: profile_export::decrypt_secret(password, &api_key.secret)?,
@@ -263,6 +311,16 @@ pub fn read_import(
     // DanyWhere: a file from before the "Append" field, or with another
     // system's key names in it.
     crate::append_text::prepare_import(text, &mut profile.values);
+    // DanyWhere: a file from before the prompt library.
+    let ExportedProfile {
+        profile: inner,
+        prompts,
+    } = &mut profile;
+    crate::prompt_library::prepare_import(
+        text,
+        prompts,
+        &mut inner.values.post_process_prompt_order,
+    );
     Ok((profile, key))
 }
 
@@ -293,16 +351,20 @@ fn new_profile_id(settings: &AppSettings, now_millis: i64) -> String {
 }
 
 /// Adds the imported `profile` to `settings` under a new id and a free name,
-/// without switching to it, and stores its key as `choice` says.
+/// without switching to it, and stores its key as `choice` says. DanyWhere:
+/// its prompts go into the library (`prompt_library::import_prompts`).
 pub fn apply_import(
     settings: &mut AppSettings,
-    profile: Profile,
+    profile: impl Into<ExportedProfile>,
     key: Option<ProviderKey>,
     choice: KeyConflictChoice,
     default_name: &str,
     now_millis: i64,
 ) -> ImportResult {
-    let mut profile = profile;
+    let ExportedProfile {
+        mut profile,
+        prompts,
+    } = profile.into();
     // What happens to the key, decided before anything changes.
     let imported_key = match &key {
         None => ImportedKey::None,
@@ -359,6 +421,13 @@ pub fn apply_import(
             .post_process_api_keys
             .insert(key.provider_id, key.key);
     }
+    // DanyWhere: its prompts, reused or added, never overwritten.
+    profile.values.post_process_prompt_order = crate::prompt_library::import_prompts(
+        settings,
+        &prompts,
+        &profile.values.post_process_prompt_order,
+        &profile.name,
+    );
     settings.profiles.push(profile.clone());
     ImportResult {
         profile: Some(profile),
@@ -481,7 +550,7 @@ pub async fn import_profile(
                 serde_json::json!({ "setting": "profiles" }),
             );
             crate::tray::rebuild_tray_menu(&app);
-            // Its prompts may still contain ${output}.
+            // Its prompts, now in the library, may still contain ${output}.
             crate::prompt_frame::prompts_changed(&app);
         }
         Ok(result)
@@ -527,7 +596,9 @@ mod tests {
                 name: "Diktat (DE/EN)".to_string(),
                 prompt: "Clean it up.".to_string(),
             }],
-            post_process_selected_prompt_id: Some("p1".to_string()),
+            post_process_prompt_order: vec![crate::prompt_library::PromptOrderEntry::new(
+                "p1", true,
+            )],
             ..Default::default()
         };
         s.post_process_api_keys
@@ -1002,6 +1073,110 @@ mod tests {
             result.profile.unwrap().apps,
             vec!["com.apple.TextEdit".to_string()]
         );
+    }
+
+    // DanyWhere: the prompt library (`prompt_library`). An exported profile
+    // carries the texts of its active prompts; an import reuses a prompt
+    // with the same name and text and never overwrites one.
+
+    fn prompt(id: &str, name: &str, text: &str) -> LLMPrompt {
+        LLMPrompt {
+            id: id.to_string(),
+            name: name.to_string(),
+            prompt: text.to_string(),
+        }
+    }
+
+    fn entry(id: &str, active: bool) -> crate::prompt_library::PromptOrderEntry {
+        crate::prompt_library::PromptOrderEntry::new(id, active)
+    }
+
+    fn active_names(s: &AppSettings, profile: &Profile) -> Vec<String> {
+        crate::prompt_library::active_prompts(
+            &s.post_process_prompts,
+            &profile.values.post_process_prompt_order,
+        )
+        .iter()
+        .map(|p| p.name.clone())
+        .collect()
+    }
+
+    #[test]
+    fn the_active_prompts_travel_with_the_exported_profile() {
+        let mut s = settings();
+        s.post_process_prompts
+            .push(prompt("p2", "Mail", "Make an email."));
+        s.post_process_prompts
+            .push(prompt("p3", "Kurz", "Make it short."));
+        s.post_process_prompt_order =
+            vec![entry("p3", true), entry("p1", false), entry("p2", true)];
+        let yaml = export(&s, "default", Some("geheim")).expect("export");
+        assert!(yaml.contains("Make it short."), "{yaml}");
+        assert!(yaml.contains("Make an email."), "{yaml}");
+        assert!(!yaml.contains("Clean it up."), "{yaml}");
+
+        // Another computer has another "Mail" and the same "Kurz".
+        let mut other = settings();
+        other.post_process_prompts = vec![
+            prompt("x1", "Mail", "Write a letter."),
+            prompt("x2", "Kurz", "Make it short."),
+        ];
+        other.post_process_prompt_order = vec![entry("x1", true), entry("x2", false)];
+        ensure_profiles(&mut other);
+        let (profile, _) = read_import(&yaml, None).expect("import");
+        let result = apply_import(
+            &mut other,
+            profile,
+            None,
+            KeyConflictChoice::Ask,
+            DEFAULT_NAME,
+            5,
+        );
+        let imported = result.profile.expect("imported");
+        assert_eq!(imported.name, "Standard (2)");
+        let names: Vec<&str> = other
+            .post_process_prompts
+            .iter()
+            .map(|p| p.name.as_str())
+            .collect();
+        assert_eq!(names, vec!["Mail", "Kurz", "Mail · Standard (2)"]);
+        assert_eq!(other.post_process_prompts[0].prompt, "Write a letter.");
+        assert_eq!(
+            active_names(&other, &imported),
+            vec!["Kurz".to_string(), "Mail · Standard (2)".to_string()]
+        );
+        // The profile in use here keeps its own.
+        assert_eq!(
+            crate::prompt_library::active_prompts(
+                &other.post_process_prompts,
+                &other.post_process_prompt_order
+            )
+            .len(),
+            1
+        );
+    }
+
+    #[test]
+    fn a_file_from_before_the_library_imports_its_prompts() {
+        let yaml = "format: danywhere-profile\nversion: 1\nprofile:\n  id: default\n  name: Alt\n  values:\n    post_process_enabled: true\n    post_process_prompts:\n    - id: p1\n      name: Diktat (DE/EN)\n      prompt: Clean it up.\n    - id: p2\n      name: Mail\n      prompt: Make an email.\n    post_process_selected_prompt_id: p2\n  apps: []\n";
+        let mut s = settings();
+        let (profile, _) = read_import(yaml, None).expect("import");
+        let result = apply_import(
+            &mut s,
+            profile,
+            None,
+            KeyConflictChoice::Ask,
+            DEFAULT_NAME,
+            5,
+        );
+        let imported = result.profile.expect("imported");
+        let names: Vec<&str> = s
+            .post_process_prompts
+            .iter()
+            .map(|p| p.name.as_str())
+            .collect();
+        assert_eq!(names, vec!["Diktat (DE/EN)", "Mail"]);
+        assert_eq!(active_names(&s, &imported), vec!["Mail".to_string()]);
     }
 
     #[test]

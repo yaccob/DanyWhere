@@ -1377,16 +1377,14 @@ pub fn add_post_process_prompt(
 ) -> Result<LLMPrompt, String> {
     let mut settings = settings::get_settings(&app);
 
-    // Generate unique ID using timestamp and random component
-    let id = format!("prompt_{}", chrono::Utc::now().timestamp_millis());
-
-    let new_prompt = LLMPrompt {
-        id: id.clone(),
-        name,
-        prompt,
-    };
-
-    settings.post_process_prompts.push(new_prompt.clone());
+    // DanyWhere: into the library all profiles share (`prompt_library`):
+    // under a name no other prompt has, at the end, active in no profile.
+    let new_prompt = crate::prompt_library::add(
+        &mut settings,
+        &name,
+        &prompt,
+        chrono::Utc::now().timestamp_millis(),
+    )?;
     settings::write_settings(&app, settings);
     // DanyWhere: the warning about prompts with old parts.
     crate::prompt_frame::prompts_changed(&app);
@@ -1404,20 +1402,13 @@ pub fn update_post_process_prompt(
 ) -> Result<(), String> {
     let mut settings = settings::get_settings(&app);
 
-    if let Some(existing_prompt) = settings
-        .post_process_prompts
-        .iter_mut()
-        .find(|p| p.id == id)
-    {
-        existing_prompt.name = name;
-        existing_prompt.prompt = prompt;
-        settings::write_settings(&app, settings);
-        // DanyWhere: the warning about prompts with old parts.
-        crate::prompt_frame::prompts_changed(&app);
-        Ok(())
-    } else {
-        Err(format!("Prompt with id '{}' not found", id))
-    }
+    // DanyWhere: in every profile (`prompt_library`); a name another prompt
+    // has is refused.
+    crate::prompt_library::update(&mut settings, &id, &name, &prompt)?;
+    settings::write_settings(&app, settings);
+    // DanyWhere: the warning about prompts with old parts.
+    crate::prompt_frame::prompts_changed(&app);
+    Ok(())
 }
 
 #[tauri::command]
@@ -1425,25 +1416,10 @@ pub fn update_post_process_prompt(
 pub fn delete_post_process_prompt(app: AppHandle, id: String) -> Result<(), String> {
     let mut settings = settings::get_settings(&app);
 
-    // Don't allow deleting the last prompt
-    if settings.post_process_prompts.len() <= 1 {
-        return Err("Cannot delete the last prompt".to_string());
-    }
-
-    // Find and remove the prompt
-    let original_len = settings.post_process_prompts.len();
-    settings.post_process_prompts.retain(|p| p.id != id);
-
-    if settings.post_process_prompts.len() == original_len {
-        return Err(format!("Prompt with id '{}' not found", id));
-    }
-
-    // If the deleted prompt was selected, select the first one or None
-    if settings.post_process_selected_prompt_id.as_ref() == Some(&id) {
-        settings.post_process_selected_prompt_id =
-            settings.post_process_prompts.first().map(|p| p.id.clone());
-    }
-
+    // DanyWhere: out of the library and every profile's order
+    // (`prompt_library`); never the last prompt. The window names the
+    // profiles that have it active before it asks for this.
+    crate::prompt_library::delete(&mut settings, &id)?;
     settings::write_settings(&app, settings);
     // DanyWhere: the warning about prompts with old parts.
     crate::prompt_frame::prompts_changed(&app);
@@ -1512,13 +1488,11 @@ fn model_list_needs_api_key(provider_id: &str) -> bool {
 pub fn set_post_process_selected_prompt(app: AppHandle, id: String) -> Result<(), String> {
     let mut settings = settings::get_settings(&app);
 
-    // Verify the prompt exists
-    if !settings.post_process_prompts.iter().any(|p| p.id == id) {
-        return Err(format!("Prompt with id '{}' not found", id));
-    }
-
-    settings.post_process_selected_prompt_id = Some(id);
+    // DanyWhere: the prompt becomes the active profile's only active one
+    // (`prompt_library`).
+    crate::prompt_library::select_only(&mut settings, &id)?;
     settings::write_settings(&app, settings);
+    crate::prompt_frame::prompts_changed(&app);
     Ok(())
 }
 

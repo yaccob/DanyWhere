@@ -7,7 +7,7 @@ use log::{error, info, warn};
 use serde::{Deserialize, Serialize};
 use specta::Type;
 use std::cell::Cell;
-use std::collections::VecDeque;
+use std::collections::{HashMap, VecDeque};
 use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -17,7 +17,7 @@ use std::time::Duration;
 use tauri::{AppHandle, Manager};
 use tauri_specta::Event;
 
-use crate::actions::process_transcription_output;
+use crate::actions::process_transcription_output_with;
 use crate::audio_toolkit::{decode_audio_file, recording_file_name, save_recording};
 use crate::history_versions::{PostProcessTarget, PostProcessed, VersionError};
 use crate::managers::history::{HistoryEntry, HistoryManager};
@@ -142,6 +142,9 @@ struct Jobs {
     /// Entry ids of files waiting to be transcribed.
     files: VecDeque<i64>,
     running: Option<Running>,
+    /// DanyWhere: the prompts a queued job was asked to post-process with,
+    /// by entry id (`push_with_prompts`).
+    prompts: HashMap<i64, Vec<String>>,
 }
 
 impl Jobs {
@@ -180,8 +183,30 @@ impl Jobs {
         })
     }
 
+    /// DanyWhere: queues like [`Jobs::push`]; with `prompt_ids` the job
+    /// post-processes with exactly those prompts of the library, in their
+    /// order, instead of the profile's active ones (`prompt_library`).
+    fn push_with_prompts(
+        &mut self,
+        entry_id: i64,
+        mode: ReprocessMode,
+        prompt_ids: Option<Vec<String>>,
+    ) -> bool {
+        let queued = self.push(entry_id, Some(mode));
+        if let (true, Some(ids)) = (queued, prompt_ids) {
+            self.prompts.insert(entry_id, ids);
+        }
+        queued
+    }
+
+    /// DanyWhere: the prompts the entry's job was asked to use, once.
+    fn take_prompts(&mut self, entry_id: i64) -> Option<Vec<String>> {
+        self.prompts.remove(&entry_id)
+    }
+
     /// Drops the entry from the queues; whether it was in one.
     fn unqueue(&mut self, entry_id: i64) -> bool {
+        self.prompts.remove(&entry_id);
         let before = self.retries.len() + self.files.len();
         self.retries.retain(|&(id, _)| id != entry_id);
         self.files.retain(|&id| id != entry_id);
@@ -277,6 +302,30 @@ impl TranscriptionJobManager {
         self.queue(entry_id, Some(mode));
     }
 
+    /// DanyWhere: [`Self::reprocess`]; with `prompt_ids` its post-processing
+    /// runs exactly those prompts of the library, in that order, instead of
+    /// the profile's active ones (History's wand menu, `prompt_library`).
+    pub fn reprocess_with_prompts(
+        &self,
+        entry_id: i64,
+        mode: ReprocessMode,
+        prompt_ids: Option<Vec<String>>,
+    ) {
+        if prompt_ids.is_none() {
+            return self.reprocess(entry_id, mode);
+        }
+        {
+            let mut jobs = self.lock();
+            if !jobs.push_with_prompts(entry_id, mode, prompt_ids) {
+                return;
+            }
+            self.sync_job_active(&jobs);
+        }
+        self.emit(entry_id, TranscriptionJobStatus::Queued);
+        crate::tray::update_tray_menu(&self.app);
+        self.wake.notify_one();
+    }
+
     /// Queues the entry's job, unless it already has one. `None` is a file,
     /// transcribed for the first time.
     fn queue(&self, entry_id: i64, mode: Option<ReprocessMode>) {
@@ -332,7 +381,7 @@ impl TranscriptionJobManager {
 
     fn run_jobs(&self) {
         loop {
-            let (entry_id, mode, cancelled) = {
+            let (entry_id, mode, cancelled, prompts) = {
                 let mut jobs = self.lock();
                 let (entry_id, mode) = loop {
                     if let Some(job) = jobs.next() {
@@ -348,7 +397,9 @@ impl TranscriptionJobManager {
                     entry_id,
                     cancelled: Arc::clone(&cancelled),
                 });
-                (entry_id, mode, cancelled)
+                // DanyWhere: the prompts it was asked for, if any.
+                let prompts = jobs.take_prompts(entry_id);
+                (entry_id, mode, cancelled, prompts)
             };
             self.emit(
                 entry_id,
@@ -362,7 +413,7 @@ impl TranscriptionJobManager {
             // A panic fails only this job; the rest of the loop still has to
             // run, or the model would stay held and the queue stuck.
             let result = catch_unwind(AssertUnwindSafe(|| {
-                self.run_job(entry_id, mode, &cancelled)
+                self.run_job(entry_id, mode, &cancelled, prompts.as_deref())
             }))
             .unwrap_or_else(|payload| Err(crashed(payload.as_ref())));
 
@@ -424,12 +475,13 @@ impl TranscriptionJobManager {
         entry_id: i64,
         mode: ReprocessMode,
         cancelled: &AtomicBool,
+        prompts: Option<&[String]>,
     ) -> Result<JobEnd> {
         let hm = Arc::clone(&self.app.state::<Arc<HistoryManager>>());
         let entry = tauri::async_runtime::block_on(hm.get_entry_by_id(entry_id))?
             .ok_or_else(|| anyhow!("History entry {} not found", entry_id))?;
         if let Some(target) = mode.post_processing() {
-            return self.post_process_again(&hm, &entry, target, cancelled);
+            return self.post_process_again(&hm, &entry, target, cancelled, prompts);
         }
         let post_process = mode.post_processes(entry.post_process_requested);
 
@@ -472,11 +524,12 @@ impl TranscriptionJobManager {
         if !with_context {
             context_query.window = None;
         }
-        let processed = tauri::async_runtime::block_on(process_transcription_output(
+        let processed = tauri::async_runtime::block_on(process_transcription_output_with(
             &self.app,
             &text,
             post_process,
             &context_query,
+            prompts,
         ));
         // Post-processing can take a while; a cancel during it still wins.
         if cancelled.load(Ordering::Acquire) {
@@ -515,6 +568,7 @@ impl TranscriptionJobManager {
         entry: &HistoryEntry,
         target: PostProcessTarget,
         cancelled: &AtomicBool,
+        prompts: Option<&[String]>,
     ) -> Result<JobEnd> {
         let (transcript, replacements) = post_process_input(entry, target)?;
         if transcript.trim().is_empty() {
@@ -528,11 +582,12 @@ impl TranscriptionJobManager {
         if !with_context {
             context_query.window = None;
         }
-        let processed = tauri::async_runtime::block_on(process_transcription_output(
+        let processed = tauri::async_runtime::block_on(process_transcription_output_with(
             &self.app,
             transcript,
             true,
             &context_query,
+            prompts,
         ));
         if cancelled.load(Ordering::Acquire) {
             return Ok(JobEnd::Cancelled);
@@ -671,6 +726,30 @@ mod tests {
         assert!(!jobs.push(1, Some(Transcribe)));
         assert_eq!(jobs.next(), Some((1, PostProcess)));
         assert_eq!(jobs.next(), None);
+    }
+
+    // DanyWhere: History's wand menu asks for exactly some prompts.
+    #[test]
+    fn a_job_keeps_the_prompts_it_was_asked_for_once() {
+        let mut jobs = Jobs::default();
+        assert!(jobs.push_with_prompts(1, PostProcess, Some(vec!["a".to_string()])));
+        assert!(jobs.push_with_prompts(2, PostProcess, None));
+        // A second request for the same entry is dropped, prompts and all.
+        assert!(!jobs.push_with_prompts(1, PostProcess, Some(vec!["b".to_string()])));
+        assert_eq!(jobs.next(), Some((1, PostProcess)));
+        assert_eq!(jobs.take_prompts(1), Some(vec!["a".to_string()]));
+        assert_eq!(jobs.take_prompts(1), None);
+        assert_eq!(jobs.next(), Some((2, PostProcess)));
+        assert_eq!(jobs.take_prompts(2), None);
+    }
+
+    #[test]
+    fn unqueue_drops_the_prompts_too() {
+        let mut jobs = Jobs::default();
+        jobs.push_with_prompts(1, PostProcess, Some(vec!["a".to_string()]));
+        assert!(jobs.unqueue(1));
+        jobs.push_with_prompts(1, PostProcess, None);
+        assert_eq!(jobs.take_prompts(1), None);
     }
 
     #[test]

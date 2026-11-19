@@ -36,7 +36,7 @@ use crate::managers::history::{HistoryEntry, HistoryManager};
 use crate::managers::transcription::TranscriptionManager;
 use crate::notices::{Notice, NoticeCode, NoticeSource};
 use crate::profiles::ProfileValues;
-use crate::settings::AppSettings;
+use crate::settings::{AppSettings, LLMPrompt};
 
 /// The first step of a dictation whose settings differ between the profile
 /// it was made with and the profile of the application it goes into.
@@ -79,20 +79,20 @@ pub fn transcription_differs(base: &AppSettings, a: &ProfileValues, b: &ProfileV
         || words(a) != words(b)
 }
 
-/// The text of the prompt `values` post-process with.
-fn selected_prompt(values: &ProfileValues) -> Option<&str> {
-    let id = values.post_process_selected_prompt_id.as_deref()?;
-    values
-        .post_process_prompts
-        .iter()
-        .find(|prompt| prompt.id == id)
-        .map(|prompt| prompt.prompt.as_str())
+/// What a post-processing with `values` sends as its instructions, from
+/// the shared `library` (`prompt_library`): the texts of the active prompts,
+/// in their order (with their names when several).
+fn requested_instructions(library: &[LLMPrompt], values: &ProfileValues) -> String {
+    let prompts =
+        crate::prompt_library::request_prompts(library, &values.post_process_prompt_order);
+    crate::prompt_library::request_instructions(&prompts)
 }
 
 /// Whether post-processing with `a` can come out other than with `b`, both
-/// post-processing: another provider, the provider's model or effort,
-/// another prompt text, or other context.
-fn post_processing_differs(a: &ProfileValues, b: &ProfileValues) -> bool {
+/// post-processing with the prompts of `library`: another provider, the
+/// provider's model or effort, other instructions (the texts of the active
+/// prompts in their order), or other context.
+fn post_processing_differs(library: &[LLMPrompt], a: &ProfileValues, b: &ProfileValues) -> bool {
     let provider = &a.post_process_provider_id;
     let context_limits = |values: &ProfileValues| {
         (
@@ -104,7 +104,7 @@ fn post_processing_differs(a: &ProfileValues, b: &ProfileValues) -> bool {
     a.post_process_provider_id != b.post_process_provider_id
         || a.post_process_models.get(provider) != b.post_process_models.get(provider)
         || a.post_process_efforts.get(provider) != b.post_process_efforts.get(provider)
-        || selected_prompt(a) != selected_prompt(b)
+        || requested_instructions(library, a) != requested_instructions(library, b)
         || a.send_context != b.send_context
         || (a.send_context && context_limits(a) != context_limits(b))
 }
@@ -124,7 +124,8 @@ pub fn redo_from(
     let made_post_processed = post_process_requested && made_with.post_process_enabled;
     let target_post_processes = post_process_requested && target.post_process_enabled;
     if made_post_processed != target_post_processes
-        || (made_post_processed && post_processing_differs(made_with, target))
+        || (made_post_processed
+            && post_processing_differs(&base.post_process_prompts, made_with, target))
     {
         return RedoFrom::PostProcessing;
     }
@@ -553,6 +554,16 @@ mod tests {
         words.iter().map(|w| w.to_string()).collect()
     }
 
+    fn order_entry(id: &str, active: bool) -> crate::prompt_library::PromptOrderEntry {
+        crate::prompt_library::PromptOrderEntry::new(id, active)
+    }
+
+    /// "formal" instead of "clean".
+    fn formal(t: &mut ProfileValues) {
+        t.post_process_prompt_order =
+            vec![order_entry("formal", true), order_entry("clean", false)];
+    }
+
     /// The default profile (active) and "mail", a copy of it assigned to
     /// Mail; tests change mail's values.
     fn settings_with_mail() -> AppSettings {
@@ -572,7 +583,10 @@ mod tests {
                     prompt: "Make it formal.".to_string(),
                 },
             ],
-            post_process_selected_prompt_id: Some("clean".to_string()),
+            post_process_prompt_order: vec![
+                order_entry("clean", true),
+                order_entry("formal", false),
+            ],
             word_lists: vec![
                 WordList {
                     id: "names".to_string(),
@@ -606,7 +620,17 @@ mod tests {
     }
 
     fn redo(change: impl FnOnce(&mut ProfileValues), requested: bool) -> RedoFrom {
-        let settings = settings_with_mail();
+        redo_with(|_| {}, change, requested)
+    }
+
+    /// [`redo`] on settings changed by `library` first, e.g. their prompts.
+    fn redo_with(
+        library: impl FnOnce(&mut AppSettings),
+        change: impl FnOnce(&mut ProfileValues),
+        requested: bool,
+    ) -> RedoFrom {
+        let mut settings = settings_with_mail();
+        library(&mut settings);
         let made = default_values(&settings);
         let mut target = made.clone();
         change(&mut target);
@@ -646,7 +670,7 @@ mod tests {
             redo(
                 |t| {
                     t.selected_model = "whisper".to_string();
-                    t.post_process_selected_prompt_id = Some("formal".to_string());
+                    formal(t);
                     t.append_text = String::new();
                 },
                 true
@@ -688,17 +712,50 @@ mod tests {
 
     #[test]
     fn another_prompt_post_processes_again_while_post_processing() {
-        let formal =
-            |t: &mut ProfileValues| t.post_process_selected_prompt_id = Some("formal".to_string());
         assert_eq!(redo(formal, true), RedoFrom::PostProcessing);
         // Without post-processing the prompt plays no part.
         assert_eq!(redo(formal, false), RedoFrom::Nothing);
         // The same prompt text under another id is the same.
         assert_eq!(
+            redo_with(
+                |s| s.post_process_prompts[1].prompt = "Clean it up.".to_string(),
+                formal,
+                true
+            ),
+            RedoFrom::Nothing
+        );
+    }
+
+    // DanyWhere: the prompt library (`prompt_library`): the texts of the
+    // active prompts count, in their order.
+    #[test]
+    fn another_active_prompt_or_order_post_processes_again() {
+        let both = |t: &mut ProfileValues| {
+            t.post_process_prompt_order =
+                vec![order_entry("clean", true), order_entry("formal", true)]
+        };
+        assert_eq!(redo(both, true), RedoFrom::PostProcessing);
+        let reversed = |s: &mut AppSettings| {
+            s.post_process_prompt_order =
+                vec![order_entry("clean", true), order_entry("formal", true)]
+        };
+        assert_eq!(
+            redo_with(
+                reversed,
+                |t| {
+                    t.post_process_prompt_order =
+                        vec![order_entry("formal", true), order_entry("clean", true)]
+                },
+                true
+            ),
+            RedoFrom::PostProcessing
+        );
+        // Where an inactive prompt stands changes nothing.
+        assert_eq!(
             redo(
                 |t| {
-                    t.post_process_prompts[1].prompt = "Clean it up.".to_string();
-                    t.post_process_selected_prompt_id = Some("formal".to_string());
+                    t.post_process_prompt_order =
+                        vec![order_entry("formal", false), order_entry("clean", true)]
                 },
                 true
             ),
