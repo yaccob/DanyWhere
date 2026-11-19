@@ -22,6 +22,10 @@ Planned work on DanyWhere, roughly in priority order within each section. Items 
 
 **Idea (user, 2026-11-18; to be discussed next):** today, post-processing a lower version first deletes the versions above it. That isn't necessary: whichever version is post-processed, the result always goes on top of the stack, which is also simpler to use. So that the stack doesn't grow too large when an entry is post-processed often, single versions could be deleted, at the bottom, at the top or in the middle, except the transcription itself (or except the recording; still to be thought through).
 
+**Decided (user, 2026-11-19):** one rule for everything that makes a version: post-processing, the user's own edit of a lower version and re-transcribing all put their result on top, and nothing is deleted on the way (re-transcribing keeps the old transcription below; this part is Claude's idea). Changing a version in place ("Save") is offered only on the top one. No limit per entry.
+
+**Proposed by the user (2026-11-19), Claude agrees, to be confirmed:** all versions are alike: they can be moved up and down freely and deleted, the original transcription included, as long as one version is left; the top one is the entry's result. This needs each version to remember the version it came from independently of its position, the transcription's own database column to be cleared when it is deleted, and a question before deleting text that can't come back.
+
 ### Shortcuts: start per profile, end with what follows
 
 **Idea (user, 2026-11-18; to be discussed next; picks up the finishing keys still open under "Append any text, and actions per finishing key"):** a recording starts with a shortcut of its profile. It ends with one of several shortcuts, each set up with (1) what is appended, (2) whether the text is post-processed, (3) whether the context from earlier dictations goes along. Then the context would need no switch of its own any more; the user isn't sure about the third point yet.
