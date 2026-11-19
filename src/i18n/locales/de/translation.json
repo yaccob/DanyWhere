@@ -20,13 +20,20 @@
   },
   "sidebar": {
     "general": "Allgemein",
-    "profiles": "Profile",
     "models": "Modelle",
     "advanced": "Erweitert",
     "postProcessing": "Nachbearbeitung",
     "history": "Verlauf",
     "debug": "Debug",
     "about": "Info",
+    "areas": {
+      "defaults": "Grundeinstellungen",
+      "profiles": "Profileinstellungen",
+      "application": "Applikationseinstellungen"
+    },
+    "inUse": "In Verwendung",
+    "updates": "Updates",
+    "storage": "Speicher",
     "profile": "Profil"
   },
   "onboarding": {
@@ -472,6 +479,7 @@
         "models": "Das hier gewählte Modell gehört zum Profil „{{name}}“.",
         "postProcessing": "Anbieter, Modell, Prompts und die Grenzen für den Kontext gehören zum Profil „{{name}}“; API-Schlüssel gelten für alle Profile."
       },
+      "pagePlaceholder": "Folgt in Kürze: Diese Seite zeigt dann die Einstellungen von „{{name}}“, jede als den Grundeinstellungen folgend oder als eigener Wert markiert.",
       "apps": {
         "label": "Automatisch verwenden in:",
         "none": "noch keiner Anwendung",

@@ -20,13 +20,20 @@
   },
   "sidebar": {
     "general": "Algemeen",
-    "profiles": "Profielen",
     "models": "Modellen",
     "advanced": "Geavanceerd",
     "postProcessing": "Naverwerking",
     "history": "Geschiedenis",
     "debug": "Probleemoplossing",
     "about": "Over Handy",
+    "areas": {
+      "defaults": "Basisinstellingen",
+      "profiles": "Profielinstellingen",
+      "application": "Applicatie-instellingen"
+    },
+    "inUse": "In gebruik",
+    "updates": "Updates",
+    "storage": "Opslag",
     "profile": "Profiel"
   },
   "onboarding": {
@@ -472,6 +479,7 @@
         "models": "Het model dat je hier kiest, hoort bij het profiel „{{name}}”.",
         "postProcessing": "Provider, model, prompts en de grenzen voor context horen bij het profiel „{{name}}”; API-sleutels gelden voor alle profielen."
       },
+      "pagePlaceholder": "Binnenkort: deze pagina toont de instellingen van „{{name}}”, elk gemarkeerd als volgend op de basisinstellingen of met een eigen waarde.",
       "apps": {
         "label": "Automatisch gebruikt in:",
         "none": "nog geen app",
