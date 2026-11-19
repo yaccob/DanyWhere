@@ -5,6 +5,9 @@
  * pure, so it can be checked without a window (navigation.test.ts).
  */
 import { DEFAULT_PROFILE_ID } from "./utils/profiles";
+// DanyWhere (strand E2): the counts of own values per profile and page (P5).
+import { ownValues, type OwnEntriesLike } from "./profileScope";
+import { pageOfValue } from "./profileFields";
 
 /** The pages of the defaults: today's pages minus the application settings. */
 export const DEFAULTS_PAGES = [
@@ -58,6 +61,8 @@ export interface NavSettings {
     | readonly {
         id: string;
         values?: { post_process_enabled?: boolean | null } | null;
+        own?: readonly string[] | null;
+        own_entries?: Partial<Record<string, OwnEntriesLike>> | null;
       }[]
     | null;
   post_process_enabled?: boolean | null;
@@ -68,6 +73,10 @@ export interface NavSettings {
 export interface NavProfile {
   id: string;
   postProcessEnabled: boolean;
+  /** How many own values it has (P5), entries of lists one by one. */
+  ownCount: number;
+  /** How many of them are on each page; pages without any are missing. */
+  pageCounts: Partial<Record<DefaultsPage, number>>;
 }
 
 export interface NavContext {
@@ -100,6 +109,9 @@ export interface NavItem {
   current: boolean;
   /** A profile row whose pages are listed under it. */
   open?: boolean;
+  /** How many own values a profile, or its page, has (P5); missing for
+   * none and on every other row. */
+  count?: number;
   /** Areas, History and About carry an icon. */
   icon?: NavIcon;
 }
@@ -115,10 +127,26 @@ export const navContext = (
     profilesEnabled: Array.isArray(settings?.profiles),
     profiles: stored
       .filter((profile) => profile.id !== DEFAULT_PROFILE_ID)
-      .map((profile) => ({
-        id: profile.id,
-        postProcessEnabled: profile.values?.post_process_enabled === true,
-      })),
+      .map((profile) => {
+        const own = ownValues({
+          id: profile.id,
+          name: "",
+          values: {},
+          own: profile.own,
+          own_entries: profile.own_entries,
+        });
+        const pageCounts: Partial<Record<DefaultsPage, number>> = {};
+        for (const value of own) {
+          const page = pageOfValue(value.field, value.entry);
+          pageCounts[page] = (pageCounts[page] ?? 0) + 1;
+        }
+        return {
+          id: profile.id,
+          postProcessEnabled: profile.values?.post_process_enabled === true,
+          ownCount: own.length,
+          pageCounts,
+        };
+      }),
     postProcessEnabled: settings?.post_process_enabled === true,
     debugMode: settings?.debug_mode === true,
   };
@@ -302,16 +330,17 @@ export const navTree = (ctx: NavContext, location: NavLocation): NavItem[] => {
         target: selectProfile(profile.id, location, ctx),
         current: false,
         open,
+        ...(profile.ownCount > 0 ? { count: profile.ownCount } : {}),
       });
       if (!open) continue;
       for (const p of profilePages(profile)) {
-        items.push(
-          page(
-            { kind: "profile", profileId: profile.id, page: p },
-            pageLabelKey(p),
-            2,
-          ),
+        const row = page(
+          { kind: "profile", profileId: profile.id, page: p },
+          pageLabelKey(p),
+          2,
         );
+        const count = p === "profile" ? 0 : (profile.pageCounts[p] ?? 0);
+        items.push(count > 0 ? { ...row, count } : row);
       }
     }
   }
@@ -351,7 +380,8 @@ export const navPath = (location: NavLocation): NavLabel[] => {
   }
 };
 
-/** The Models page of the defaults fills the window: its table scrolls, not
- * the page. */
+/** The Models page fills the window, the defaults' and a profile's: its
+ * table scrolls, not the page. */
 export const fillsWindow = (location: NavLocation): boolean =>
-  location.kind === "defaults" && location.page === "models";
+  (location.kind === "defaults" || location.kind === "profile") &&
+  location.page === "models";

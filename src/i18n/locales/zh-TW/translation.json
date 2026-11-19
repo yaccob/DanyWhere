@@ -473,7 +473,7 @@
     },
     "profiles": {
       "title": "設定檔",
-      "description": "設定檔只在需要時覆寫基本設定：它自己的值保持不變，其餘一切都跟隨基本設定。使用某個設定檔時所做的變更會修改它自己的值，否則修改基本設定。",
+      "description": "設定檔只在需要的地方覆寫基本設定：它的自有值保持不變，其餘一切跟隨基本設定。在「基本設定」下變更基本設定，在設定檔名稱下變更它的自有值。",
       "active": "使用中",
       "use": "使用",
       "duplicate": "複製",
@@ -498,11 +498,6 @@
         "switchesTo": "這是目前使用中的設定檔，因此會先切換到「{{name}}」。",
         "confirm": "刪除設定檔"
       },
-      "scope": {
-        "models": "正在使用「{{name}}」：如果它有自己的模型，此處的選擇會變更該模型，否則變更基本設定。",
-        "postProcessing": "正在使用「{{name}}」：它自己的值在設定檔中變更，其他所有值在基本設定中變更；API 金鑰適用於所有設定檔。"
-      },
-      "pagePlaceholder": "即將推出：此頁面將顯示「{{name}}」的設定，每一項都會標明是沿用基本設定還是使用自己的值。",
       "apps": {
         "label": "自動用於：",
         "none": "尚無應用程式",
@@ -549,10 +544,6 @@
       "droppedApps": "已由「{{name}}」使用：{{apps}}。",
       "exportFailed": "無法匯出設定檔",
       "importFailed": "無法匯入設定檔",
-      "replaceKeyTitle": "要取代 API 金鑰嗎？",
-      "replaceKey": "檔案中 {{provider}} 的 API 金鑰與此處設定的不同。要使用檔案中的金鑰嗎？之後它將套用到所有使用 {{provider}} 的設定檔。",
-      "replace": "使用檔案中的金鑰",
-      "keep": "保留目前的金鑰",
       "fileFilter": "DanyWhere 設定檔",
       "errors": {
         "profile_not_found": "此設定檔已不存在。",
@@ -785,14 +776,11 @@
       },
       "wordLists": {
         "groupTitle": "詞彙清單",
-        "groupDescription": "模型會先取得目前附加清單的詞彙，接著是設定檔的詞彙清單，最後是全域詞彙清單。",
-        "globalTitle": "全域詞彙清單（所有設定檔）",
-        "profileTitle": "設定檔「{{name}}」的詞彙清單",
-        "profileDescription": "在此設定檔中一律生效，與全域詞彙清單一起使用。特定情境的詞彙放在這裡，到處都需要的詞彙放在全域清單。",
+        "groupDescription": "模型先取得啟用的附加詞表中的詞，接著是附加詞，最後是詞表。",
+        "profileDescription": "只有此設定檔加入的詞，排在詞表之前。把某一情境的詞放在這裡，把處處需要的詞放進基本設定的詞表。",
         "activeTitle": "目前的附加清單",
-        "activeDescription": "其中的詞彙會最先提供給模型，先於一律生效的設定檔詞彙清單和全域詞彙清單。可用快捷鍵或系統匣選單切換。",
+        "activeDescription": "它的詞最先傳給模型，先於一律適用的附加詞與詞表。可用快捷鍵或系統匣選單切換。",
         "onlyGlobal": "無",
-        "title": "設定檔「{{name}}」的附加清單",
         "description": "此設定檔中可額外啟用的具名清單，例如每個主題一個。一次只能啟用一個。",
         "selectList": "選擇清單",
         "createNew": "新增清單",
@@ -1088,7 +1076,12 @@
       },
       "contextEntryJump": "在記錄中顯示以便更正",
       "dropTitle": "拖放到此處進行轉錄",
-      "dropDescription": "它會出現在歷史記錄中。"
+      "dropDescription": "它會出現在歷史記錄中。",
+      "promptMenu": {
+        "button": "用一個提示詞進行後處理",
+        "title": "後處理使用",
+        "active": "啟用"
+      }
     },
     "debug": {
       "title": "偵錯",
@@ -1286,6 +1279,86 @@
       "whatsNewUpdates": {
         "label": "顯示新功能",
         "description": "Handy 更新後顯示版本資訊"
+      }
+    },
+    "profileView": {
+      "fields": {
+        "shortcuts": "快捷鍵",
+        "defaultEnds": "預設結束方式",
+        "selectedModel": "語音模型",
+        "providers": "供應商位址與格式",
+        "activePrompts": "啟用的提示詞",
+        "externalScript": "外部指令碼",
+        "customFillerWords": "自訂填充詞",
+        "customWords": "詞表",
+        "profileWords": "附加詞",
+        "wordLists": "附加詞表"
+      },
+      "state": {
+        "coupled": "基本值",
+        "own": "自有值",
+        "defaultIs": "基本值：{{value}}",
+        "sameAsDefault": "與基本值相同",
+        "entryOwn": "自有",
+        "entryOff": "關閉",
+        "ownEntries": "自有：{{names}}",
+        "offEntries": "關閉：{{names}}"
+      },
+      "chain": {
+        "hold": "跟隨基本設定。點按可保留此值，即使基本值改變。",
+        "couple": "自有值。點按可重新跟隨基本設定。"
+      },
+      "value": {
+        "on": "開",
+        "off": "關",
+        "empty": "無",
+        "hidden": "已設定（隱藏）",
+        "items": "項目：{{number}}"
+      },
+      "reset": "重設",
+      "resetTooltip": "重新跟隨基本設定",
+      "resetEntry": "重設{{name}}",
+      "legend": {
+        "coupled": "已連結：跟隨基本設定",
+        "own": "自有值：基本值改變時保持不變",
+        "hint": "變更值會解除連結。點按鏈條可在不變更值的情況下解除連結。重設會重新連結。"
+      },
+      "page": {
+        "reset": "本頁還原為基本設定",
+        "resetTitle": "將「{{name}}」的「{{page}}」重設為基本設定？"
+      },
+      "dialog": {
+        "values": "以下自有值將重新跟隨基本設定："
+      },
+      "bar": {
+        "onlyFor": "「{{setting}}」現在只適用於「{{name}}」。",
+        "changeDefault": "改為變更基本值",
+        "undo": "復原"
+      },
+      "deviations": {
+        "followsOne": "{{names}}跟隨",
+        "followMany": "{{names}}跟隨",
+        "allFollow": "所有設定檔都跟隨",
+        "add": "+ 設定檔",
+        "openIn": "在{{name}}中開啟",
+        "resetFor": "將「{{name}}」重新連結到基本值"
+      },
+      "summary": {
+        "active": "啟用：{{names}}",
+        "noneActive": "沒有啟用的提示詞"
+      },
+      "overview": {
+        "ownValues": "自有值（{{number}}）",
+        "none": "此設定檔在所有方面都跟隨基本設定。",
+        "jumpHint": "點按某一列會開啟該設定所在的頁面。",
+        "resetWhole": "整個設定檔還原為基本設定",
+        "resetWholeTitle": "將「{{name}}」完全重設為基本設定？",
+        "keeps": "設定檔的名稱與應用程式保持不變。",
+        "newProfile": "新增設定檔",
+        "newDialogDescription": "新設定檔在所有方面都跟隨基本設定，直到你為它設定自有值。"
+      },
+      "errors": {
+        "save": "無法儲存變更"
       }
     }
   },

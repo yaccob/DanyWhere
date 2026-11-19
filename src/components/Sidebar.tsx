@@ -74,6 +74,17 @@ const NavRow: React.FC<NavRowProps> = ({ item, label, onClick }) => {
       >
         {label}
       </span>
+      {/* DanyWhere (strand E2): how many own values a profile or its page
+          has (P5). */}
+      {item.count !== undefined && (
+        <span
+          className={`ms-auto shrink-0 text-xs font-semibold tabular-nums ${
+            item.current ? "" : "text-logo-primary"
+          }`}
+        >
+          {item.count}
+        </span>
+      )}
     </button>
   );
 };

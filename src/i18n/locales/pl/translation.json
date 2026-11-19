@@ -473,7 +473,7 @@
     },
     "profiles": {
       "title": "Profile",
-      "description": "Profil zastępuje ustawienia podstawowe tam, gdzie to potrzebne: jego własne wartości pozostają, a cała reszta podąża za ustawieniami podstawowymi. Zmiana wprowadzona, gdy profil jest używany, zmienia jego własną wartość, a w przeciwnym razie ustawienia podstawowe.",
+      "description": "Profil zastępuje ustawienia podstawowe tam, gdzie tego potrzebuje: jego własne wartości zostają, wszystko inne podąża za ustawieniami podstawowymi. Ustawienia podstawowe zmieniasz w „Ustawieniach podstawowych”, własne wartości profilu pod jego nazwą.",
       "active": "Aktywny",
       "use": "Użyj",
       "duplicate": "Duplikuj",
@@ -498,11 +498,6 @@
         "switchesTo": "To aktywny profil, więc najpierw aktywny stanie się „{{name}}”.",
         "confirm": "Usuń profil"
       },
-      "scope": {
-        "models": "Używany jest profil „{{name}}”: jeśli ma własny model, wybór tutaj zmienia go, w przeciwnym razie zmienia ustawienia podstawowe.",
-        "postProcessing": "Używany jest profil „{{name}}”: jego własne wartości zmieniają się w profilu, wszystkie inne w ustawieniach podstawowych; klucze API obowiązują we wszystkich profilach."
-      },
-      "pagePlaceholder": "Wkrótce: ta strona pokaże ustawienia profilu „{{name}}”, każde oznaczone jako zgodne z ustawieniami podstawowymi lub z własną wartością.",
       "apps": {
         "label": "Używany automatycznie w:",
         "none": "jeszcze w żadnej aplikacji",
@@ -549,10 +544,6 @@
       "droppedApps": "Już używane przez „{{name}}”: {{apps}}.",
       "exportFailed": "Nie udało się wyeksportować profilu",
       "importFailed": "Nie udało się zaimportować profilu",
-      "replaceKeyTitle": "Zastąpić klucz API?",
-      "replaceKey": "Klucz API dla {{provider}} w pliku różni się od ustawionego tutaj. Użyć klucza z pliku? Będzie on wtedy obowiązywał w każdym profilu, który używa {{provider}}.",
-      "replace": "Klucz z pliku",
-      "keep": "Zachowaj obecny",
       "fileFilter": "Profil DanyWhere",
       "errors": {
         "profile_not_found": "Profil już nie istnieje.",
@@ -785,14 +776,11 @@
       },
       "wordLists": {
         "groupTitle": "Listy słów",
-        "groupDescription": "Model dostaje najpierw słowa z aktywnej listy dodatkowej, potem z listy słów profilu, a na końcu z globalnej listy słów.",
-        "globalTitle": "Globalna lista słów (wszystkie profile)",
-        "profileTitle": "Lista słów profilu „{{name}}”",
-        "profileDescription": "Obowiązuje zawsze w tym profilu, razem z globalną listą słów. Tu wpisuj słowa do jednego kontekstu, a słowa potrzebne wszędzie na listę globalną.",
+        "groupDescription": "Model dostaje najpierw słowa aktywnej dodatkowej listy, potem dodatkowe słowa, a na końcu listę słów.",
+        "profileDescription": "Słowa, które dodaje tylko ten profil, przed listą słów. Umieść tu słowa dla jednego kontekstu, a słowa potrzebne wszędzie na liście słów ustawień podstawowych.",
         "activeTitle": "Aktywna lista dodatkowa",
-        "activeDescription": "Jej słowa trafiają do modelu jako pierwsze, przed słowami z listy profilu i z listy globalnej, które obowiązują zawsze. Przełączaj ją skrótem lub z menu w zasobniku.",
+        "activeDescription": "Jej słowa trafiają do modelu jako pierwsze, przed dodatkowymi słowami i listą słów, które obowiązują zawsze. Przełączaj ją skrótem lub w menu zasobnika.",
         "onlyGlobal": "Brak",
-        "title": "Dodatkowe listy profilu „{{name}}”",
         "description": "Nazwane listy tego profilu, które możesz dodatkowo włączyć, np. jedną na temat. Tylko jedna naraz.",
         "selectList": "Wybierz listę",
         "createNew": "Nowa lista",
@@ -1088,7 +1076,12 @@
       },
       "contextEntryJump": "Pokaż w historii, aby poprawić",
       "dropTitle": "Upuść, aby transkrybować",
-      "dropDescription": "Pojawi się w historii."
+      "dropDescription": "Pojawi się w historii.",
+      "promptMenu": {
+        "button": "Przetwórz jednym poleceniem",
+        "title": "Przetwórz za pomocą",
+        "active": "aktywne"
+      }
     },
     "debug": {
       "title": "Debugowanie",
@@ -1286,6 +1279,86 @@
       "whatsNewUpdates": {
         "label": "Pokaż nowości",
         "description": "Pokazuj informacje o wydaniu po aktualizacjach Handy"
+      }
+    },
+    "profileView": {
+      "fields": {
+        "shortcuts": "Skróty klawiszowe",
+        "defaultEnds": "Domyślne zakończenia",
+        "selectedModel": "Model mowy",
+        "providers": "Adres i format dostawcy",
+        "activePrompts": "Aktywne polecenia",
+        "externalScript": "Zewnętrzny skrypt",
+        "customFillerWords": "Własne wtrącenia",
+        "customWords": "Lista słów",
+        "profileWords": "Dodatkowe słowa",
+        "wordLists": "Dodatkowe listy"
+      },
+      "state": {
+        "coupled": "Wartość podstawowa",
+        "own": "Własna wartość",
+        "defaultIs": "Wartość podstawowa: {{value}}",
+        "sameAsDefault": "taka sama jak podstawowa",
+        "entryOwn": "własny",
+        "entryOff": "wyłączony",
+        "ownEntries": "własne: {{names}}",
+        "offEntries": "wyłączone: {{names}}"
+      },
+      "chain": {
+        "hold": "Podąża za ustawieniami podstawowymi. Kliknij, aby zachować tę wartość, nawet gdy zmieni się wartość podstawowa.",
+        "couple": "Własna wartość. Kliknij, aby znów podążać za ustawieniami podstawowymi."
+      },
+      "value": {
+        "on": "wł.",
+        "off": "wył.",
+        "empty": "nic",
+        "hidden": "ustawiony (ukryty)",
+        "items": "pozycje: {{number}}"
+      },
+      "reset": "Resetuj",
+      "resetTooltip": "Znów podążaj za ustawieniami podstawowymi",
+      "resetEntry": "Resetuj {{name}}",
+      "legend": {
+        "coupled": "powiązana: podąża za ustawieniami podstawowymi",
+        "own": "własna wartość: zostaje, gdy zmienia się wartość podstawowa",
+        "hint": "Zmiana wartości zrywa powiązanie. Kliknięcie łańcucha zrywa je bez zmiany wartości. Reset wiąże ją ponownie."
+      },
+      "page": {
+        "reset": "Strona na ustawienia podstawowe",
+        "resetTitle": "Zresetować „{{page}}” profilu „{{name}}” do ustawień podstawowych?"
+      },
+      "dialog": {
+        "values": "Te własne wartości znów będą podążać za ustawieniami podstawowymi:"
+      },
+      "bar": {
+        "onlyFor": "„{{setting}}” dotyczy teraz tylko „{{name}}”.",
+        "changeDefault": "Zamiast tego zmień wartość podstawową",
+        "undo": "Cofnij"
+      },
+      "deviations": {
+        "followsOne": "{{names}} podąża",
+        "followMany": "{{names}} podążają",
+        "allFollow": "Wszystkie profile podążają",
+        "add": "+ Profil",
+        "openIn": "Otwórz w {{name}}",
+        "resetFor": "Powiąż „{{name}}” ponownie z wartością podstawową"
+      },
+      "summary": {
+        "active": "aktywne: {{names}}",
+        "noneActive": "brak aktywnego polecenia"
+      },
+      "overview": {
+        "ownValues": "Własne wartości ({{number}})",
+        "none": "Ten profil we wszystkim podąża za ustawieniami podstawowymi.",
+        "jumpHint": "Kliknięcie wiersza otwiera stronę z ustawieniem.",
+        "resetWhole": "Cały profil na ustawienia podstawowe",
+        "resetWholeTitle": "Zresetować „{{name}}” całkowicie do ustawień podstawowych?",
+        "keeps": "Nazwa i aplikacje profilu zostają.",
+        "newProfile": "Nowy profil",
+        "newDialogDescription": "Nowy profil we wszystkim podąża za ustawieniami podstawowymi, dopóki nie nadasz mu własnych wartości."
+      },
+      "errors": {
+        "save": "Nie udało się zapisać zmiany"
       }
     }
   },

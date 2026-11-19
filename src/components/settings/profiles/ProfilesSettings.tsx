@@ -18,7 +18,7 @@ import { ProfileExportButton } from "./ProfileExportButton";
 import { ProfileImportButton } from "./ProfileImportButton";
 
 type Pending = {
-  kind: "duplicate" | "rename" | "delete";
+  kind: "duplicate" | "rename" | "delete" | "create";
   profile: ProfileLike;
 } | null;
 
@@ -40,6 +40,7 @@ export const ProfilesSettings: React.FC = () => {
     displayName,
     switchTo,
     duplicate,
+    create,
     rename,
     remove,
     setApps,
@@ -59,7 +60,10 @@ export const ProfilesSettings: React.FC = () => {
   }, [several]);
 
   const naming =
-    pending && (pending.kind === "duplicate" || pending.kind === "rename")
+    pending &&
+    (pending.kind === "duplicate" ||
+      pending.kind === "rename" ||
+      pending.kind === "create")
       ? { kind: pending.kind, profile: pending.profile }
       : null;
   const deleting = pending?.kind === "delete" ? pending.profile : null;
@@ -157,6 +161,18 @@ export const ProfilesSettings: React.FC = () => {
         })}
         <ProfileAutoByApp />
         <div className="flex items-center justify-end gap-3 min-h-12 px-4 p-2">
+          {/* DanyWhere (strand E2): a new profile follows the defaults in
+              everything (P9). */}
+          <Button
+            variant="secondary"
+            size="sm"
+            disabled={busy}
+            onClick={() =>
+              setPending({ kind: "create", profile: DEFAULTS_ROW })
+            }
+          >
+            {t("settings.profileView.overview.newProfile")}
+          </Button>
           <ProfileImportButton />
         </div>
       </SettingsGroup>
@@ -173,7 +189,9 @@ export const ProfilesSettings: React.FC = () => {
           const outcome =
             naming.kind === "duplicate"
               ? await duplicate(naming.profile.id, name)
-              : await rename(naming.profile.id, name);
+              : naming.kind === "create"
+                ? await create(name)
+                : await rename(naming.profile.id, name);
           if (outcome.ok) close();
         }}
         onClose={close}

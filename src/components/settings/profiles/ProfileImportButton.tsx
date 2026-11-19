@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ask, open } from "@tauri-apps/plugin-dialog";
+import { open } from "@tauri-apps/plugin-dialog";
 import { Upload } from "lucide-react";
 import {
   commands,
@@ -106,26 +106,9 @@ export const ProfileImportButton: React.FC = () => {
         }
         return;
       }
-      if (result.data.conflict_provider_id) {
-        const provider = providerName(result.data.conflict_provider_id);
-        const replace = await ask(
-          t("settings.profileTransfer.replaceKey", { provider }),
-          {
-            title: t("settings.profileTransfer.replaceKeyTitle"),
-            kind: "warning",
-            okLabel: t("settings.profileTransfer.replace"),
-            cancelLabel: t("settings.profileTransfer.keep"),
-          },
-        );
-        const again = await commands.importProfile(
-          path,
-          password,
-          replace ? "replace" : "keep",
-        );
-        if (again.status === "ok") finish(again.data);
-        else fail(again.error);
-        return;
-      }
+      // DanyWhere: no question about replacing a stored API key any more:
+      // the keys are profile values, so an import never replaces one
+      // (strand A2); only the new profile gets the file's key.
       finish(result.data);
     } catch (error) {
       setPending(null);

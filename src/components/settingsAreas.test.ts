@@ -141,8 +141,15 @@ check("choosing by application stays under it", () =>
 check("the overview of the profiles is today's page", () =>
   assert.match(content, /<ProfilesPage \/>/),
 );
-check("a profile's pages show the placeholder for now", () =>
-  assert.match(content, /<ProfilePagePlaceholder\b/),
+// Strand E2: a profile's pages are the profile view.
+check("a profile's page Profile is its overview", () =>
+  assert.match(content, /<ProfileOverview\b/),
+);
+check("a profile's other pages are the defaults' pages in its scope", () =>
+  assert.match(content, /<ProfileScopedPage\b/),
+);
+check("the defaults' pages read and write the defaults", () =>
+  assert.match(content, /<SettingsScopeProvider scope=\{DEFAULTS_SCOPE\}>/),
 );
 check("General no longer manages the profiles", () =>
   assert.doesNotMatch(general, /<ProfilesSettings\b|ProfilesSettings"/),

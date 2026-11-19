@@ -528,14 +528,63 @@ check("the overview, History and About have a path of one", () => {
 });
 
 // --- Layout -----------------------------------------------------------------
-check("only the defaults' Models fills the window", () => {
+check("Models fills the window, other pages don't", () => {
   assert.equal(fillsWindow({ kind: "defaults", page: "models" }), true);
   assert.equal(fillsWindow({ kind: "defaults", page: "general" }), false);
+});
+
+// --- Counts of own values (P5) --------------------------------------------
+const counted = navContext({
+  ...settings,
+  profiles: [
+    {
+      id: "work",
+      values: { post_process_enabled: true },
+      own: ["paste_method", "selected_model"],
+      own_entries: {
+        bindings: { own: ["transcribe_with_post_process"], off: [] },
+        word_lists: { own: [], off: ["names"] },
+      },
+    },
+    { id: "private", values: { post_process_enabled: false }, own: [] },
+  ],
+});
+check("a profile counts its own values, entries included", () => {
+  assert.equal(counted.profiles[0].ownCount, 4);
+  assert.equal(counted.profiles[1].ownCount, 0);
+});
+check("a profile counts its own values per page", () =>
+  assert.deepEqual(counted.profiles[0].pageCounts, {
+    models: 1,
+    postprocessing: 1,
+    advanced: 2,
+  }),
+);
+check("settings from before the defaults count nothing", () =>
+  assert.equal(ctx.profiles[0].ownCount, 0),
+);
+check("the tree shows a profile's count and its pages' counts", () => {
+  const tree = navTree(counted, {
+    kind: "profile",
+    profileId: "work",
+    page: "general",
+  });
+  const count = (id: string) => tree.find((item) => item.id === id)?.count;
+  assert.equal(count("profile/work"), 4);
+  assert.equal(count("profile/work/models"), 1);
+  assert.equal(count("profile/work/postprocessing"), 1);
+  assert.equal(count("profile/work/advanced"), 2);
+  assert.equal(count("profile/work/general"), undefined);
+  assert.equal(count("profile/work/profile"), undefined);
+  assert.equal(count("profile/private"), undefined);
+  assert.equal(count("defaults/general"), undefined);
+});
+check("a profile's Models fills the window like the defaults'", () =>
   assert.equal(
     fillsWindow({ kind: "profile", profileId: "work", page: "models" }),
-    false,
-  );
-});
+    true,
+  ),
+);
 
 if (failures.length > 0) {
   console.error(

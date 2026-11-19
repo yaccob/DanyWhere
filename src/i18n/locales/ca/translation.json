@@ -473,7 +473,7 @@
     },
     "profiles": {
       "title": "Perfils",
-      "description": "Un perfil substitueix la configuració bàsica on li cal: els seus valors propis es mantenen i la resta segueix la configuració bàsica. Un canvi fet mentre s'usa un perfil canvia el seu valor propi; si no en té, la configuració bàsica.",
+      "description": "Un perfil substitueix la configuració bàsica on li cal: els seus valors propis es mantenen i la resta segueix la configuració bàsica. Canvieu la configuració bàsica a «Configuració bàsica» i els valors propis d'un perfil sota el seu nom.",
       "active": "Actiu",
       "use": "Utilitza",
       "duplicate": "Duplica",
@@ -498,11 +498,6 @@
         "switchesTo": "És el perfil actiu, així que primer s'activa «{{name}}».",
         "confirm": "Suprimeix el perfil"
       },
-      "scope": {
-        "models": "S'està usant «{{name}}»: si té un model propi, l'elecció d'aquí el canvia; si no, canvia la configuració bàsica.",
-        "postProcessing": "S'està usant «{{name}}»: els seus valors propis canvien al perfil i la resta a la configuració bàsica; les claus de l'API valen per a tots els perfils."
-      },
-      "pagePlaceholder": "Properament: aquesta pàgina mostrarà la configuració de «{{name}}», cada opció marcada com a lligada a la configuració bàsica o amb un valor propi.",
       "apps": {
         "label": "S'usa automàticament a:",
         "none": "encara cap aplicació",
@@ -549,10 +544,6 @@
       "droppedApps": "Ja les fa servir «{{name}}»: {{apps}}.",
       "exportFailed": "No s'ha pogut exportar el perfil",
       "importFailed": "No s'ha pogut importar el perfil",
-      "replaceKeyTitle": "Vols substituir la clau API?",
-      "replaceKey": "La clau API per a {{provider}} del fitxer és diferent de la configurada aquí. Vols fer servir la del fitxer? Llavors s'aplicarà a tots els perfils que fan servir {{provider}}.",
-      "replace": "Clau del fitxer",
-      "keep": "Mantén l'actual",
       "fileFilter": "Perfil de DanyWhere",
       "errors": {
         "profile_not_found": "El perfil ja no existeix.",
@@ -785,14 +776,11 @@
       },
       "wordLists": {
         "groupTitle": "Llistes de paraules",
-        "groupDescription": "El model rep primer les paraules de la llista addicional activa, després les de la llista del perfil i finalment les de la llista de paraules global.",
-        "globalTitle": "Llista de paraules global (tots els perfils)",
-        "profileTitle": "Llista de paraules del perfil «{{name}}»",
-        "profileDescription": "S'aplica sempre en aquest perfil, juntament amb la llista de paraules global. Poseu-hi les paraules d'un context, i a la llista global les que necessiteu arreu.",
+        "groupDescription": "El model rep primer les paraules de la llista addicional activa, després les paraules addicionals i després la llista de paraules.",
+        "profileDescription": "Paraules que només afegeix aquest perfil, abans de la llista de paraules. Poseu aquí les paraules d'un context i les que necessiteu a tot arreu a la llista de paraules de la configuració bàsica.",
         "activeTitle": "Llista addicional activa",
-        "activeDescription": "Les seves paraules arriben primer al model, abans que les de la llista del perfil i de la llista global, que sempre s'apliquen. Canvieu-la amb la drecera o des del menú de la safata.",
+        "activeDescription": "Les seves paraules arriben primer al model, abans de les paraules addicionals i de la llista de paraules, que sempre s'apliquen. Canvieu-la amb la drecera o des del menú de la safata.",
         "onlyGlobal": "Cap",
-        "title": "Llistes addicionals del perfil «{{name}}»",
         "description": "Llistes amb nom d'aquest perfil que podeu activar a més, p. ex. una per tema. Només una alhora.",
         "selectList": "Seleccioneu una llista",
         "createNew": "Llista nova",
@@ -1088,7 +1076,12 @@
       },
       "contextEntryJump": "Mostra-ho a l'historial per corregir-ho",
       "dropTitle": "Deixa anar per transcriure",
-      "dropDescription": "Apareixerà a l'historial."
+      "dropDescription": "Apareixerà a l'historial.",
+      "promptMenu": {
+        "button": "Postprocessa amb una indicació",
+        "title": "Postprocessa amb",
+        "active": "activa"
+      }
     },
     "debug": {
       "title": "Depuració",
@@ -1286,6 +1279,86 @@
           "description": "Biblioteca de tensors d'alt rendiment per a la inferència d'aprenentatge automàtic al dispositiu",
           "details": "La transcripció local de veu a text del Handy es basa en el transcribe.cpp i el ggml. Gràcies a la gran feina de Georgi Gerganov i dels col·laboradors."
         }
+      }
+    },
+    "profileView": {
+      "fields": {
+        "shortcuts": "Dreceres",
+        "defaultEnds": "Finals per defecte",
+        "selectedModel": "Model de veu",
+        "providers": "Adreça i format del proveïdor",
+        "activePrompts": "Indicacions actives",
+        "externalScript": "Script extern",
+        "customFillerWords": "Paraules de farciment pròpies",
+        "customWords": "Llista de paraules",
+        "profileWords": "Paraules addicionals",
+        "wordLists": "Llistes addicionals"
+      },
+      "state": {
+        "coupled": "Valor bàsic",
+        "own": "Valor propi",
+        "defaultIs": "Valor bàsic: {{value}}",
+        "sameAsDefault": "igual que el valor bàsic",
+        "entryOwn": "propi",
+        "entryOff": "desactivat",
+        "ownEntries": "propis: {{names}}",
+        "offEntries": "desactivats: {{names}}"
+      },
+      "chain": {
+        "hold": "Segueix la configuració bàsica. Feu clic per mantenir aquest valor encara que canviï el valor bàsic.",
+        "couple": "Valor propi. Feu clic per tornar a seguir la configuració bàsica."
+      },
+      "value": {
+        "on": "activat",
+        "off": "desactivat",
+        "empty": "res",
+        "hidden": "definida (oculta)",
+        "items": "entrades: {{number}}"
+      },
+      "reset": "Restableix",
+      "resetTooltip": "Torna a seguir la configuració bàsica",
+      "resetEntry": "Restableix {{name}}",
+      "legend": {
+        "coupled": "enllaçat: segueix la configuració bàsica",
+        "own": "valor propi: es manté quan canvia el valor bàsic",
+        "hint": "Canviar un valor el desenllaça. Un clic a la cadena el desenllaça sense canviar-lo. Restableix el torna a enllaçar."
+      },
+      "page": {
+        "reset": "Pàgina a la configuració bàsica",
+        "resetTitle": "Voleu restablir «{{page}}» de «{{name}}» a la configuració bàsica?"
+      },
+      "dialog": {
+        "values": "Aquests valors propis tornaran a seguir la configuració bàsica:"
+      },
+      "bar": {
+        "onlyFor": "«{{setting}}» ara només s'aplica a «{{name}}».",
+        "changeDefault": "Canvia el valor bàsic en lloc d'això",
+        "undo": "Desfés"
+      },
+      "deviations": {
+        "followsOne": "{{names}} segueix",
+        "followMany": "{{names}} segueixen",
+        "allFollow": "Tots els perfils segueixen",
+        "add": "+ Perfil",
+        "openIn": "Obre a {{name}}",
+        "resetFor": "Torna a enllaçar «{{name}}» amb el valor bàsic"
+      },
+      "summary": {
+        "active": "actives: {{names}}",
+        "noneActive": "cap indicació activa"
+      },
+      "overview": {
+        "ownValues": "Valors propis ({{number}})",
+        "none": "Aquest perfil segueix la configuració bàsica en tot.",
+        "jumpHint": "Un clic en una fila obre la pàgina amb el paràmetre.",
+        "resetWhole": "Tot el perfil a la configuració bàsica",
+        "resetWholeTitle": "Voleu restablir «{{name}}» del tot a la configuració bàsica?",
+        "keeps": "El nom i les aplicacions del perfil es mantenen.",
+        "newProfile": "Perfil nou",
+        "newDialogDescription": "El perfil nou segueix la configuració bàsica en tot fins que li doneu valors propis."
+      },
+      "errors": {
+        "save": "No s'ha pogut desar el canvi"
       }
     }
   },

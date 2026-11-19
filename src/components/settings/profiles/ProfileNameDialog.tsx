@@ -7,8 +7,10 @@ import { Dialog } from "../../ui/Dialog";
 
 interface ProfileNameDialogProps {
   /** Duplicate `profile` under a new name (from the defaults: a new
-   * profile that follows them), or rename it. */
-  mode: "duplicate" | "rename";
+   * profile that follows them), or rename it. DanyWhere (strand E2):
+   * "create" makes a new profile that follows the defaults in everything
+   * (P9); `profile` is then the defaults' row. */
+  mode: "duplicate" | "rename" | "create";
   /** The profile the dialog is for; `null` keeps it closed. */
   profile: ProfileLike | null;
   profiles: ProfileLike[];
@@ -57,15 +59,22 @@ export const ProfileNameDialog: React.FC<ProfileNameDialogProps> = ({
     mode === "duplicate"
       ? "settings.profiles.duplicateDialog"
       : "settings.profiles.renameDialog";
+  const creating = mode === "create";
 
   return (
     <Dialog
       open
-      title={t(`${keys}.title`, { name })}
+      title={
+        creating
+          ? t("settings.profileView.overview.newProfile")
+          : t(`${keys}.title`, { name })
+      }
       description={
         mode === "duplicate"
           ? t("settings.profiles.duplicateDialog.description")
-          : undefined
+          : creating
+            ? t("settings.profileView.overview.newDialogDescription")
+            : undefined
       }
       closeLabel={t("common.close")}
       onOpenChange={(open) => {
@@ -84,7 +93,9 @@ export const ProfileNameDialog: React.FC<ProfileNameDialogProps> = ({
             onClick={submit}
             disabled={!canSubmit}
           >
-            {t(`${keys}.confirm`)}
+            {creating
+              ? t("settings.profileView.overview.newProfile")
+              : t(`${keys}.confirm`)}
           </Button>
         </>
       }

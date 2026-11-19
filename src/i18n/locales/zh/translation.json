@@ -473,7 +473,7 @@
     },
     "profiles": {
       "title": "配置文件",
-      "description": "配置文件只在需要时覆盖基本设置：它自己的值保持不变，其余一切都跟随基本设置。在使用某个配置文件时所做的更改会修改它自己的值，否则修改基本设置。",
+      "description": "配置文件只在需要的地方覆盖基本设置：它的自有值保持不变，其余一切跟随基本设置。在“基本设置”下更改基本设置，在配置文件名称下更改它的自有值。",
       "active": "当前",
       "use": "使用",
       "duplicate": "复制",
@@ -498,11 +498,6 @@
         "switchesTo": "这是当前配置文件，因此会先切换到“{{name}}”。",
         "confirm": "删除配置文件"
       },
-      "scope": {
-        "models": "正在使用“{{name}}”：如果它有自己的模型，此处的选择会更改该模型，否则更改基本设置。",
-        "postProcessing": "正在使用“{{name}}”：它自己的值在配置文件中更改，其他所有值在基本设置中更改；API 密钥适用于所有配置文件。"
-      },
-      "pagePlaceholder": "即将推出：此页面将显示“{{name}}”的设置，每项都会标明是沿用基本设置还是使用自己的值。",
       "apps": {
         "label": "自动用于：",
         "none": "尚无应用",
@@ -549,10 +544,6 @@
       "droppedApps": "已被“{{name}}”使用：{{apps}}。",
       "exportFailed": "无法导出配置文件",
       "importFailed": "无法导入配置文件",
-      "replaceKeyTitle": "替换 API 密钥？",
-      "replaceKey": "文件中 {{provider}} 的 API 密钥与此处设置的不同。要使用文件中的密钥吗？之后它将适用于所有使用 {{provider}} 的配置文件。",
-      "replace": "使用文件中的密钥",
-      "keep": "保留当前密钥",
       "fileFilter": "DanyWhere 配置文件",
       "errors": {
         "profile_not_found": "该配置文件已不存在。",
@@ -785,14 +776,11 @@
       },
       "wordLists": {
         "groupTitle": "词汇列表",
-        "groupDescription": "模型先获得当前附加列表的词汇，然后是配置文件的词汇列表，最后是全局词汇列表。",
-        "globalTitle": "全局词汇列表（所有配置文件）",
-        "profileTitle": "配置文件“{{name}}”的词汇列表",
-        "profileDescription": "在此配置文件中始终生效，与全局词汇列表一起使用。某个场景专用的词汇放在这里，到处都要用的词汇放在全局列表中。",
+        "groupDescription": "模型先获得启用的附加词表中的词，然后是附加词，最后是词表。",
+        "profileDescription": "只有此配置文件添加的词，排在词表之前。把某一场景的词放在这里，把处处需要的词放进基本设置的词表。",
         "activeTitle": "当前附加列表",
-        "activeDescription": "其中的词汇最先提供给模型，先于始终生效的配置文件词汇列表和全局词汇列表。可用快捷键或托盘菜单切换。",
+        "activeDescription": "它的词最先发送给模型，先于始终适用的附加词和词表。可用快捷键或托盘菜单切换。",
         "onlyGlobal": "无",
-        "title": "配置文件“{{name}}”的附加列表",
         "description": "此配置文件中可额外启用的命名列表，例如每个主题一个。一次只能启用一个。",
         "selectList": "选择列表",
         "createNew": "新建列表",
@@ -1088,7 +1076,12 @@
       },
       "contextEntryJump": "在历史记录中显示以便更正",
       "dropTitle": "拖放到此处进行转录",
-      "dropDescription": "它会出现在历史记录中。"
+      "dropDescription": "它会出现在历史记录中。",
+      "promptMenu": {
+        "button": "用一个提示词进行后处理",
+        "title": "后处理使用",
+        "active": "启用"
+      }
     },
     "debug": {
       "title": "调试",
@@ -1286,6 +1279,86 @@
       "whatsNewUpdates": {
         "label": "显示新功能",
         "description": "Handy 更新后显示发行说明"
+      }
+    },
+    "profileView": {
+      "fields": {
+        "shortcuts": "快捷键",
+        "defaultEnds": "默认结束方式",
+        "selectedModel": "语音模型",
+        "providers": "提供商地址和格式",
+        "activePrompts": "启用的提示词",
+        "externalScript": "外部脚本",
+        "customFillerWords": "自定义填充词",
+        "customWords": "词表",
+        "profileWords": "附加词",
+        "wordLists": "附加词表"
+      },
+      "state": {
+        "coupled": "基本值",
+        "own": "自有值",
+        "defaultIs": "基本值：{{value}}",
+        "sameAsDefault": "与基本值相同",
+        "entryOwn": "自有",
+        "entryOff": "关闭",
+        "ownEntries": "自有：{{names}}",
+        "offEntries": "关闭：{{names}}"
+      },
+      "chain": {
+        "hold": "跟随基本设置。点击可保留此值，即使基本值改变。",
+        "couple": "自有值。点击可重新跟随基本设置。"
+      },
+      "value": {
+        "on": "开",
+        "off": "关",
+        "empty": "无",
+        "hidden": "已设置（隐藏）",
+        "items": "条目：{{number}}"
+      },
+      "reset": "重置",
+      "resetTooltip": "重新跟随基本设置",
+      "resetEntry": "重置{{name}}",
+      "legend": {
+        "coupled": "已关联：跟随基本设置",
+        "own": "自有值：基本值改变时保持不变",
+        "hint": "更改值会解除关联。点击链条可在不改值的情况下解除关联。重置会重新关联。"
+      },
+      "page": {
+        "reset": "本页恢复基本设置",
+        "resetTitle": "将“{{name}}”的“{{page}}”重置为基本设置？"
+      },
+      "dialog": {
+        "values": "以下自有值将重新跟随基本设置："
+      },
+      "bar": {
+        "onlyFor": "“{{setting}}”现在只适用于“{{name}}”。",
+        "changeDefault": "改为更改基本值",
+        "undo": "撤销"
+      },
+      "deviations": {
+        "followsOne": "{{names}}跟随",
+        "followMany": "{{names}}跟随",
+        "allFollow": "所有配置文件都跟随",
+        "add": "+ 配置文件",
+        "openIn": "在{{name}}中打开",
+        "resetFor": "将“{{name}}”重新关联到基本值"
+      },
+      "summary": {
+        "active": "启用：{{names}}",
+        "noneActive": "没有启用的提示词"
+      },
+      "overview": {
+        "ownValues": "自有值（{{number}}）",
+        "none": "此配置文件在所有方面都跟随基本设置。",
+        "jumpHint": "点击某一行会打开该设置所在的页面。",
+        "resetWhole": "整个配置文件恢复基本设置",
+        "resetWholeTitle": "将“{{name}}”完全重置为基本设置？",
+        "keeps": "配置文件的名称和应用保持不变。",
+        "newProfile": "新建配置文件",
+        "newDialogDescription": "新配置文件在所有方面都跟随基本设置，直到你为它设置自有值。"
+      },
+      "errors": {
+        "save": "无法保存更改"
       }
     }
   },

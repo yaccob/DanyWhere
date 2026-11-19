@@ -39,6 +39,7 @@ import { AudioPlayer, AudioPlayerGroup } from "../../ui/AudioPlayer";
 import { Button } from "../../ui/Button";
 import { copyToClipboard } from "./clipboard";
 import {
+  canRunChosenPrompt,
   postProcessAvailability,
   retranscribeMode,
   type PostProcessAvailability,
@@ -81,6 +82,8 @@ import { HistoryTextBox } from "./HistoryTextBox";
 import { keepRecordingTooltip } from "./keepRecording";
 // DanyWhere: the versions of an entry: what shows, the track, ✨.
 import { PostProcessButton } from "./PostProcessButton";
+// DanyWhere (H6, strand E2): the wand's menu with every prompt by name.
+import { promptMenuItems, type PromptMenuItem } from "./promptMenu";
 import { VersionTrack } from "./VersionTrack";
 import {
   defaultSaveMode,
@@ -185,6 +188,17 @@ export const HistorySettings: React.FC = () => {
   const { t } = useTranslation();
   const { settings } = useSettings();
   const postProcess = postProcessAvailability(settings);
+  // DanyWhere (H6): the prompts in the order of the profile in use, whose
+  // active prompts a click on the wand itself runs.
+  const promptItems = useMemo(
+    () =>
+      promptMenuItems(
+        settings?.post_process_prompts ?? [],
+        settings?.post_process_prompt_order ?? [],
+      ),
+    [settings?.post_process_prompts, settings?.post_process_prompt_order],
+  );
+  const promptMenuUsable = canRunChosenPrompt(settings);
   const jobs = useTranscriptionJobsStore((state) => state.jobs);
   const reads = useFileReadsStore((state) => state.reads);
   const [entries, setEntries] = useState<HistoryEntry[]>([]);
@@ -633,11 +647,13 @@ export const HistorySettings: React.FC = () => {
                 getAudioUrl={getAudioUrl}
                 deleteAudio={deleteAudioEntry}
                 postProcess={postProcess}
-                // DanyWhere: with the profile's active prompts (the wand
-                // menu will pass chosen ones, `prompt_library`).
-                reprocess={(id, mode, version) =>
-                  commands.reprocessHistoryEntry(id, mode, version, null)
+                // DanyWhere: with the profile's active prompts, or the one
+                // chosen in the wand's menu (`prompt_library`).
+                reprocess={(id, mode, version, promptIds) =>
+                  commands.reprocessHistoryEntry(id, mode, version, promptIds)
                 }
+                promptItems={promptItems}
+                promptMenuUsable={promptMenuUsable}
                 cancelTranscription={commands.cancelHistoryEntryTranscription}
                 saveVersion={commands.saveHistoryVersion}
                 moveVersion={commands.moveHistoryVersion}
@@ -717,12 +733,17 @@ interface HistoryEntryProps {
   deleteAudio: (id: number) => Promise<void>;
   postProcess: PostProcessAvailability;
   // DanyWhere: `version` is the version a post-processing starts from
-  // (null: the top).
+  // (null: the top); `promptIds` the prompts to run instead of the active
+  // ones (null), from the wand's menu.
   reprocess: (
     id: number,
     mode: ReprocessMode,
     version: number | null,
+    promptIds: string[] | null,
   ) => Promise<void>;
+  // DanyWhere (H6): the wand's menu.
+  promptItems: PromptMenuItem[];
+  promptMenuUsable: boolean;
   cancelTranscription: (id: number) => Promise<void>;
   // DanyWhere: the entry's versions (`history_versions`).
   saveVersion: (
@@ -757,6 +778,8 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
   deleteAudio,
   postProcess,
   reprocess,
+  promptItems,
+  promptMenuUsable,
   cancelTranscription,
   saveVersion,
   moveVersion,
@@ -917,13 +940,20 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
   // DanyWhere: ✨ post-processes the current version, the one shown; the
   // result goes on top, where the entry then shows it. Every version stays.
   const runPostProcess = () => {
-    void reprocess(entry.id, "post_process", shown);
+    void reprocess(entry.id, "post_process", shown, null);
+    show(null);
+  };
+
+  // DanyWhere (H6): one prompt of the library, chosen by name, on the
+  // version shown; its result goes on top too.
+  const runPrompt = (promptId: string) => {
+    void reprocess(entry.id, "post_process", shown, [promptId]);
     show(null);
   };
 
   // DanyWhere: the new transcription goes on top; every version stays.
   const runRetranscribe = (mode: ReprocessMode) => {
-    void reprocess(entry.id, mode, null);
+    void reprocess(entry.id, mode, null, null);
     show(null);
   };
 
@@ -1011,6 +1041,9 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
                 <PostProcessButton
                   availability={postProcess}
                   onRun={runPostProcess}
+                  prompts={promptItems}
+                  onRunPrompt={runPrompt}
+                  menuUsable={promptMenuUsable}
                   disabled={editing !== null || saving}
                 />
               )}

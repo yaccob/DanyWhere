@@ -473,7 +473,7 @@
     },
     "profiles": {
       "title": "Perfiles",
-      "description": "Un perfil sustituye los ajustes básicos donde lo necesita: sus valores propios se mantienen y todo lo demás sigue los ajustes básicos. Un cambio hecho mientras se usa un perfil cambia su valor propio; si no lo tiene, los ajustes básicos.",
+      "description": "Un perfil sustituye los ajustes básicos donde lo necesita: sus valores propios se mantienen y todo lo demás sigue los ajustes básicos. Cambia los ajustes básicos en «Ajustes básicos» y los valores propios de un perfil bajo su nombre.",
       "active": "Activo",
       "use": "Usar",
       "duplicate": "Duplicar",
@@ -498,11 +498,6 @@
         "switchesTo": "Es el perfil activo, así que antes se activa «{{name}}».",
         "confirm": "Eliminar perfil"
       },
-      "scope": {
-        "models": "Se está usando «{{name}}»: si tiene un modelo propio, la elección de aquí lo cambia; si no, cambia los ajustes básicos.",
-        "postProcessing": "Se está usando «{{name}}»: sus valores propios cambian en el perfil y los demás en los ajustes básicos; las claves API valen para todos los perfiles."
-      },
-      "pagePlaceholder": "Próximamente: esta página mostrará la configuración de «{{name}}», cada ajuste marcado como vinculado a la configuración básica o con un valor propio.",
       "apps": {
         "label": "Se usa automáticamente en:",
         "none": "ninguna aplicación todavía",
@@ -549,10 +544,6 @@
       "droppedApps": "Ya las usa «{{name}}»: {{apps}}.",
       "exportFailed": "No se pudo exportar el perfil",
       "importFailed": "No se pudo importar el perfil",
-      "replaceKeyTitle": "¿Reemplazar la clave API?",
-      "replaceKey": "La clave API para {{provider}} del archivo es distinta de la configurada aquí. ¿Usar la del archivo? Entonces se aplicará a todos los perfiles que usan {{provider}}.",
-      "replace": "Clave del archivo",
-      "keep": "Mantener la actual",
       "fileFilter": "Perfil de DanyWhere",
       "errors": {
         "profile_not_found": "El perfil ya no existe.",
@@ -785,14 +776,11 @@
       },
       "wordLists": {
         "groupTitle": "Listas de palabras",
-        "groupDescription": "El modelo recibe primero las palabras de la lista adicional activa, luego las de la lista del perfil y por último las de la lista de palabras global.",
-        "globalTitle": "Lista de palabras global (todos los perfiles)",
-        "profileTitle": "Lista de palabras del perfil «{{name}}»",
-        "profileDescription": "Siempre se aplica en este perfil, junto con la lista de palabras global. Aquí van las palabras de un contexto; las que necesitas en todas partes, en la lista global.",
+        "groupDescription": "El modelo recibe primero las palabras de la lista adicional activa, luego las palabras adicionales y después la lista de palabras.",
+        "profileDescription": "Palabras que solo añade este perfil, antes de la lista de palabras. Pon aquí las palabras de un contexto y las que necesitas en todas partes en la lista de palabras de los ajustes básicos.",
         "activeTitle": "Lista adicional activa",
-        "activeDescription": "Sus palabras llegan primero al modelo, antes que las de la lista del perfil y de la lista global, que siempre se aplican. Cámbiala con el atajo o desde el menú de la bandeja.",
+        "activeDescription": "Sus palabras llegan primero al modelo, antes de las palabras adicionales y la lista de palabras, que siempre se aplican. Cámbiala con el atajo o desde el menú de la bandeja.",
         "onlyGlobal": "Ninguna",
-        "title": "Listas adicionales del perfil «{{name}}»",
         "description": "Listas con nombre de este perfil que puedes activar además, p. ej. una por tema. Solo una a la vez.",
         "selectList": "Selecciona una lista",
         "createNew": "Nueva lista",
@@ -1088,7 +1076,12 @@
       },
       "contextEntryJump": "Mostrarlo en el historial para corregirlo",
       "dropTitle": "Suelta para transcribir",
-      "dropDescription": "Aparecerá en el historial."
+      "dropDescription": "Aparecerá en el historial.",
+      "promptMenu": {
+        "button": "Posprocesar con una instrucción",
+        "title": "Posprocesar con",
+        "active": "activa"
+      }
     },
     "debug": {
       "title": "Depuración",
@@ -1286,6 +1279,86 @@
       "whatsNewUpdates": {
         "label": "Mostrar novedades",
         "description": "Mostrar notas de la versión después de las actualizaciones de Handy"
+      }
+    },
+    "profileView": {
+      "fields": {
+        "shortcuts": "Atajos",
+        "defaultEnds": "Finales predeterminados",
+        "selectedModel": "Modelo de voz",
+        "providers": "Dirección y formato del proveedor",
+        "activePrompts": "Instrucciones activas",
+        "externalScript": "Script externo",
+        "customFillerWords": "Muletillas propias",
+        "customWords": "Lista de palabras",
+        "profileWords": "Palabras adicionales",
+        "wordLists": "Listas adicionales"
+      },
+      "state": {
+        "coupled": "Valor básico",
+        "own": "Valor propio",
+        "defaultIs": "Valor básico: {{value}}",
+        "sameAsDefault": "igual que el valor básico",
+        "entryOwn": "propio",
+        "entryOff": "desactivado",
+        "ownEntries": "propios: {{names}}",
+        "offEntries": "desactivados: {{names}}"
+      },
+      "chain": {
+        "hold": "Sigue los ajustes básicos. Haz clic para mantener este valor aunque cambie el valor básico.",
+        "couple": "Valor propio. Haz clic para volver a seguir los ajustes básicos."
+      },
+      "value": {
+        "on": "activado",
+        "off": "desactivado",
+        "empty": "nada",
+        "hidden": "definida (oculta)",
+        "items": "entradas: {{number}}"
+      },
+      "reset": "Restablecer",
+      "resetTooltip": "Volver a seguir los ajustes básicos",
+      "resetEntry": "Restablecer {{name}}",
+      "legend": {
+        "coupled": "vinculado: sigue los ajustes básicos",
+        "own": "valor propio: se mantiene cuando cambia el valor básico",
+        "hint": "Cambiar un valor lo desvincula. Un clic en la cadena lo desvincula sin cambiarlo. Restablecer lo vuelve a vincular."
+      },
+      "page": {
+        "reset": "Página a ajustes básicos",
+        "resetTitle": "¿Restablecer «{{page}}» de «{{name}}» a los ajustes básicos?"
+      },
+      "dialog": {
+        "values": "Estos valores propios vuelven a seguir los ajustes básicos:"
+      },
+      "bar": {
+        "onlyFor": "«{{setting}}» ahora solo se aplica a «{{name}}».",
+        "changeDefault": "Cambiar el valor básico en su lugar",
+        "undo": "Deshacer"
+      },
+      "deviations": {
+        "followsOne": "{{names}} sigue",
+        "followMany": "{{names}} siguen",
+        "allFollow": "Todos los perfiles siguen",
+        "add": "+ Perfil",
+        "openIn": "Abrir en {{name}}",
+        "resetFor": "Volver a vincular «{{name}}» al valor básico"
+      },
+      "summary": {
+        "active": "activas: {{names}}",
+        "noneActive": "ninguna instrucción activa"
+      },
+      "overview": {
+        "ownValues": "Valores propios ({{number}})",
+        "none": "Este perfil sigue los ajustes básicos en todo.",
+        "jumpHint": "Un clic en una fila abre la página con el ajuste.",
+        "resetWhole": "Todo el perfil a ajustes básicos",
+        "resetWholeTitle": "¿Restablecer «{{name}}» por completo a los ajustes básicos?",
+        "keeps": "El nombre y las aplicaciones del perfil se mantienen.",
+        "newProfile": "Perfil nuevo",
+        "newDialogDescription": "El perfil nuevo sigue los ajustes básicos en todo hasta que le des valores propios."
+      },
+      "errors": {
+        "save": "No se pudo guardar el cambio"
       }
     }
   },

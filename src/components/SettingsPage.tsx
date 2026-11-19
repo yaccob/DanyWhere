@@ -17,10 +17,25 @@ import {
   UpdatesSettings,
 } from "./settings/application";
 import { ProfilesPage } from "./settings/profiles/ProfilesPage";
-import { ProfilePagePlaceholder } from "./settings/profiles/ProfilePagePlaceholder";
+// DanyWhere (strand E2): the profile view and the settings view.
+import { ProfileOverview } from "./settings/profiles/ProfileOverview";
+import { ProfileScopedPage } from "./settings/profiles/ProfileScopedPage";
+import {
+  OpenProfilePageProvider,
+  SettingsScopeProvider,
+} from "./settings/profiles/scope/SettingsScope";
 import type { OnboardingStep } from "./onboarding/onboardingStore";
 import { useProfiles } from "@/hooks/useProfiles";
-import { navPath, selectArea, type NavLocation } from "@/lib/navigation";
+import {
+  PROFILE_PAGES,
+  fillsWindow,
+  navPath,
+  selectArea,
+  type DefaultsPage,
+  type NavLocation,
+  type ProfilePage,
+} from "@/lib/navigation";
+import { DEFAULTS_SCOPE } from "@/lib/profileScope";
 
 interface SettingsPageProps {
   /** What to show, already resolved (`resolveLocation`). */
@@ -77,38 +92,55 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
   onRunOnboarding,
   onRunModelMigration,
 }) => {
+  // A page of the defaults; a profile shows the same pages (P4).
+  const defaultsPage = (
+    which: DefaultsPage,
+    languages: NavLocation,
+  ): React.ReactNode => {
+    switch (which) {
+      case "general":
+        return <GeneralSettings />;
+      case "models":
+        return (
+          <ModelsSettings onChangeLanguages={() => onNavigate(languages)} />
+        );
+      case "postprocessing":
+        return <PostProcessingSettings />;
+      case "advanced":
+        return <AdvancedSettings />;
+    }
+  };
+
   let page: React.ReactNode;
   switch (location.kind) {
     case "defaults":
-      switch (location.page) {
-        case "general":
-          page = <GeneralSettings />;
-          break;
-        case "models":
-          page = (
-            <ModelsSettings
-              onChangeLanguages={() => onNavigate(selectArea("defaults"))}
-            />
-          );
-          break;
-        case "postprocessing":
-          page = <PostProcessingSettings />;
-          break;
-        case "advanced":
-          page = <AdvancedSettings />;
-          break;
-      }
+      // The defaults' pages read and write the defaults (P1, P7).
+      page = (
+        <SettingsScopeProvider scope={DEFAULTS_SCOPE}>
+          {defaultsPage(location.page, selectArea("defaults"))}
+        </SettingsScopeProvider>
+      );
       break;
     case "profiles":
       page = <ProfilesPage />;
       break;
     case "profile":
-      page = (
-        <ProfilePagePlaceholder
-          profileId={location.profileId}
-          page={location.page}
-        />
-      );
+      page =
+        location.page === "profile" ? (
+          <ProfileOverview profileId={location.profileId} />
+        ) : (
+          <ProfileScopedPage
+            profileId={location.profileId}
+            page={location.page}
+            fills={fillsWindow(location)}
+          >
+            {defaultsPage(location.page, {
+              kind: "profile",
+              profileId: location.profileId,
+              page: "general",
+            })}
+          </ProfileScopedPage>
+        );
       break;
     case "application":
       switch (location.page) {
@@ -142,10 +174,20 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
       page = <AboutSettings />;
       break;
   }
+  // "Open in …" and the page "Profile"'s list open a profile's page.
+  const openProfilePage = (profileId: string, target: string) => {
+    const known = (PROFILE_PAGES as readonly string[]).includes(target);
+    onNavigate({
+      kind: "profile",
+      profileId,
+      page: known ? (target as ProfilePage) : "profile",
+    });
+  };
+
   return (
-    <>
+    <OpenProfilePageProvider value={openProfilePage}>
       <PagePath location={location} />
       {page}
-    </>
+    </OpenProfilePageProvider>
   );
 };

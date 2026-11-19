@@ -473,7 +473,7 @@
     },
     "profiles": {
       "title": "프로필",
-      "description": "프로필은 필요한 부분만 기본 설정을 덮어씁니다. 고유 값은 유지되고 나머지는 기본 설정을 따릅니다. 프로필을 사용하는 동안 변경하면 고유 값이 바뀌고, 그렇지 않으면 기본 설정이 바뀝니다.",
+      "description": "프로필은 필요한 곳에서만 기본 설정을 덮어씁니다. 고유 값은 유지되고 나머지는 모두 기본 설정을 따릅니다. 기본 설정은 ‘기본 설정’에서, 프로필의 고유 값은 그 이름 아래에서 바꿉니다.",
       "active": "활성",
       "use": "사용",
       "duplicate": "복제",
@@ -498,11 +498,6 @@
         "switchesTo": "활성 프로필이므로 먼저 ‘{{name}}’이(가) 활성화됩니다.",
         "confirm": "프로필 삭제"
       },
-      "scope": {
-        "models": "‘{{name}}’ 사용 중: 고유 모델이 있으면 여기서 선택하면 그것이 바뀌고, 없으면 기본 설정이 바뀝니다.",
-        "postProcessing": "‘{{name}}’ 사용 중: 고유 값은 프로필에서, 나머지는 기본 설정에서 바뀝니다. API 키는 모든 프로필에 적용됩니다."
-      },
-      "pagePlaceholder": "곧 제공: 이 페이지에 ‘{{name}}’의 설정이 표시되며, 각 설정이 기본 설정을 따르는지 고유한 값인지 표시됩니다.",
       "apps": {
         "label": "자동으로 사용되는 앱:",
         "none": "아직 없음",
@@ -549,10 +544,6 @@
       "droppedApps": "이미 “{{name}}”에서 사용 중: {{apps}}.",
       "exportFailed": "프로필을 내보낼 수 없음",
       "importFailed": "프로필을 가져올 수 없음",
-      "replaceKeyTitle": "API 키를 바꿀까요?",
-      "replaceKey": "파일의 {{provider}} API 키가 여기에 설정된 키와 다릅니다. 파일의 키를 사용할까요? 그러면 {{provider}}를 사용하는 모든 프로필에 적용됩니다.",
-      "replace": "파일의 키 사용",
-      "keep": "현재 키 유지",
       "fileFilter": "DanyWhere 프로필",
       "errors": {
         "profile_not_found": "프로필이 더 이상 없습니다.",
@@ -785,14 +776,11 @@
       },
       "wordLists": {
         "groupTitle": "단어 목록",
-        "groupDescription": "모델은 먼저 활성 추가 목록의 단어를, 그다음 프로필 단어 목록의 단어를, 마지막으로 전역 단어 목록의 단어를 받습니다.",
-        "globalTitle": "전역 단어 목록(모든 프로필)",
-        "profileTitle": "‘{{name}}’ 프로필의 단어 목록",
-        "profileDescription": "이 프로필에서 전역 단어 목록과 함께 항상 적용됩니다. 한 가지 상황에 쓰는 단어는 여기에, 어디서나 필요한 단어는 전역 목록에 넣으세요.",
+        "groupDescription": "모델은 먼저 활성 추가 목록의 단어를, 그다음 추가 단어를, 마지막으로 단어 목록을 받습니다.",
+        "profileDescription": "이 프로필만 추가하는 단어로, 단어 목록보다 먼저 전달됩니다. 한 맥락의 단어는 여기에, 어디서나 필요한 단어는 기본 설정의 단어 목록에 넣으세요.",
         "activeTitle": "활성 추가 목록",
-        "activeDescription": "이 목록의 단어는 항상 적용되는 프로필 단어 목록과 전역 단어 목록보다 먼저 모델에 전달됩니다. 단축키나 트레이 메뉴에서 전환하세요.",
+        "activeDescription": "이 단어는 항상 적용되는 추가 단어와 단어 목록보다 먼저 모델에 전달됩니다. 단축키나 트레이 메뉴에서 전환하세요.",
         "onlyGlobal": "없음",
-        "title": "‘{{name}}’ 프로필의 추가 목록",
         "description": "이 프로필에서 추가로 켤 수 있는 이름 있는 목록입니다(예: 주제별로 하나). 한 번에 하나만 켤 수 있습니다.",
         "selectList": "목록 선택",
         "createNew": "새 목록",
@@ -1088,7 +1076,12 @@
       },
       "contextEntryJump": "수정하려면 히스토리에서 보기",
       "dropTitle": "놓아서 받아쓰기",
-      "dropDescription": "기록에 표시됩니다."
+      "dropDescription": "기록에 표시됩니다.",
+      "promptMenu": {
+        "button": "프롬프트 하나로 후처리",
+        "title": "후처리에 사용",
+        "active": "활성"
+      }
     },
     "debug": {
       "title": "디버그",
@@ -1286,6 +1279,86 @@
       "whatsNewUpdates": {
         "label": "새 소식 표시",
         "description": "Handy 업데이트 후 릴리스 노트를 표시합니다"
+      }
+    },
+    "profileView": {
+      "fields": {
+        "shortcuts": "단축키",
+        "defaultEnds": "기본 종료",
+        "selectedModel": "음성 모델",
+        "providers": "제공자 주소와 형식",
+        "activePrompts": "활성 프롬프트",
+        "externalScript": "외부 스크립트",
+        "customFillerWords": "직접 정한 군말",
+        "customWords": "단어 목록",
+        "profileWords": "추가 단어",
+        "wordLists": "추가 목록"
+      },
+      "state": {
+        "coupled": "기본값",
+        "own": "고유 값",
+        "defaultIs": "기본값: {{value}}",
+        "sameAsDefault": "기본값과 같음",
+        "entryOwn": "고유",
+        "entryOff": "꺼짐",
+        "ownEntries": "고유: {{names}}",
+        "offEntries": "꺼짐: {{names}}"
+      },
+      "chain": {
+        "hold": "기본 설정을 따릅니다. 기본값이 바뀌어도 이 값을 유지하려면 클릭하세요.",
+        "couple": "고유 값입니다. 다시 기본 설정을 따르려면 클릭하세요."
+      },
+      "value": {
+        "on": "켜짐",
+        "off": "꺼짐",
+        "empty": "없음",
+        "hidden": "설정됨(숨김)",
+        "items": "항목: {{number}}"
+      },
+      "reset": "재설정",
+      "resetTooltip": "다시 기본 설정 따르기",
+      "resetEntry": "{{name}} 재설정",
+      "legend": {
+        "coupled": "연결됨: 기본 설정을 따름",
+        "own": "고유 값: 기본값이 바뀌어도 유지됨",
+        "hint": "값을 바꾸면 연결이 풀립니다. 체인을 클릭하면 값을 바꾸지 않고 연결이 풀립니다. 재설정하면 다시 연결됩니다."
+      },
+      "page": {
+        "reset": "페이지를 기본 설정으로",
+        "resetTitle": "‘{{name}}’의 ‘{{page}}’을(를) 기본 설정으로 재설정할까요?"
+      },
+      "dialog": {
+        "values": "다음 고유 값이 다시 기본 설정을 따릅니다:"
+      },
+      "bar": {
+        "onlyFor": "‘{{setting}}’은(는) 이제 ‘{{name}}’에만 적용됩니다.",
+        "changeDefault": "대신 기본값 변경",
+        "undo": "실행 취소"
+      },
+      "deviations": {
+        "followsOne": "{{names}}은(는) 따름",
+        "followMany": "{{names}}은(는) 따름",
+        "allFollow": "모든 프로필이 따름",
+        "add": "+ 프로필",
+        "openIn": "{{name}}에서 열기",
+        "resetFor": "‘{{name}}’을(를) 다시 기본값에 연결"
+      },
+      "summary": {
+        "active": "활성: {{names}}",
+        "noneActive": "활성 프롬프트 없음"
+      },
+      "overview": {
+        "ownValues": "고유 값 ({{number}})",
+        "none": "이 프로필은 모든 것에서 기본 설정을 따릅니다.",
+        "jumpHint": "행을 클릭하면 해당 설정이 있는 페이지가 열립니다.",
+        "resetWhole": "프로필 전체를 기본 설정으로",
+        "resetWholeTitle": "‘{{name}}’을(를) 기본 설정으로 완전히 재설정할까요?",
+        "keeps": "프로필의 이름과 앱은 그대로 유지됩니다.",
+        "newProfile": "새 프로필",
+        "newDialogDescription": "새 프로필은 고유 값을 지정할 때까지 모든 것에서 기본 설정을 따릅니다."
+      },
+      "errors": {
+        "save": "변경 사항을 저장하지 못했습니다"
       }
     }
   },

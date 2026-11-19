@@ -473,7 +473,7 @@
     },
     "profiles": {
       "title": "Profiles",
-      "description": "A profile overrides the defaults where it needs to: its own values stay, everything else follows the defaults. A change made while a profile is in use changes its own value, or else the defaults.",
+      "description": "A profile overrides the defaults where it needs to: its own values stay, everything else follows the defaults. Change the defaults under Defaults and a profile's own values under its name.",
       "active": "Active",
       "use": "Use",
       "duplicate": "Duplicate",
@@ -498,11 +498,6 @@
         "switchesTo": "It is the active profile, so “{{name}}” becomes active first.",
         "confirm": "Delete Profile"
       },
-      "scope": {
-        "models": "“{{name}}” is in use: if it has a model of its own, the choice here changes it, otherwise it changes the defaults.",
-        "postProcessing": "“{{name}}” is in use: values it holds as its own change in the profile, all others in the defaults; API keys apply to all profiles."
-      },
-      "pagePlaceholder": "Coming soon: this page will show the settings of “{{name}}”, each marked as following the defaults or as its own value.",
       "apps": {
         "label": "Used automatically in:",
         "none": "no application yet",
@@ -549,10 +544,6 @@
       "droppedApps": "Already used by “{{name}}”: {{apps}}.",
       "exportFailed": "Couldn't Export Profile",
       "importFailed": "Couldn't Import Profile",
-      "replaceKeyTitle": "Replace API Key?",
-      "replaceKey": "The file's API key for {{provider}} differs from the one set up here. Use the file's key? It then applies to every profile that uses {{provider}}.",
-      "replace": "Use File's Key",
-      "keep": "Keep Current Key",
       "fileFilter": "DanyWhere Profile",
       "errors": {
         "profile_not_found": "The profile no longer exists.",
@@ -785,14 +776,11 @@
       },
       "wordLists": {
         "groupTitle": "Word Lists",
-        "groupDescription": "The model gets the words of the active additional list first, then those of the profile's word list, then those of the global word list.",
-        "globalTitle": "Global Word List (All Profiles)",
-        "profileTitle": "Word List of Profile “{{name}}”",
-        "profileDescription": "Always applies in this profile, together with the global word list. Put words for one context here and words you need everywhere in the global list.",
+        "groupDescription": "The model gets the words of the active additional list first, then the additional words, then the word list.",
+        "profileDescription": "Words only this profile adds, before the word list. Put words for one context here and words you need everywhere in the word list of the defaults.",
         "activeTitle": "Active Additional List",
-        "activeDescription": "Its words go to the model first, before those of the profile's word list and the global word list, which always apply. Switch it with the shortcut or from the tray menu.",
+        "activeDescription": "Its words go to the model first, before the additional words and the word list, which always apply. Switch it with the shortcut or from the tray menu.",
         "onlyGlobal": "None",
-        "title": "Additional Lists of Profile “{{name}}”",
         "description": "Named lists of this profile to switch on in addition, e.g. one per topic. One at a time.",
         "selectList": "Select a list",
         "createNew": "New List",
@@ -1088,7 +1076,12 @@
       },
       "contextEntryJump": "Show it in the History to correct it",
       "dropTitle": "Drop to transcribe",
-      "dropDescription": "It'll show up in History."
+      "dropDescription": "It'll show up in History.",
+      "promptMenu": {
+        "button": "Post-process with one prompt",
+        "title": "Post-process with",
+        "active": "active"
+      }
     },
     "debug": {
       "title": "Debug",
@@ -1286,6 +1279,86 @@
           "description": "High-performance tensor library for on-device machine learning inference",
           "details": "Handy's local speech-to-text is built on transcribe.cpp and ggml. Thanks to the amazing work by Georgi Gerganov and contributors."
         }
+      }
+    },
+    "profileView": {
+      "fields": {
+        "shortcuts": "Shortcuts",
+        "defaultEnds": "Default Ends",
+        "selectedModel": "Speech Model",
+        "providers": "Provider Address and Format",
+        "activePrompts": "Active Prompts",
+        "externalScript": "External Script",
+        "customFillerWords": "Own Filler Words",
+        "customWords": "Word List",
+        "profileWords": "Additional Words",
+        "wordLists": "Additional Lists"
+      },
+      "state": {
+        "coupled": "Default",
+        "own": "Own value",
+        "defaultIs": "Default: {{value}}",
+        "sameAsDefault": "same as the default",
+        "entryOwn": "own",
+        "entryOff": "off",
+        "ownEntries": "own: {{names}}",
+        "offEntries": "off: {{names}}"
+      },
+      "chain": {
+        "hold": "Follows the defaults. Click to keep this value even when the default changes.",
+        "couple": "Own value. Click to follow the defaults again."
+      },
+      "value": {
+        "on": "on",
+        "off": "off",
+        "empty": "nothing",
+        "hidden": "set (hidden)",
+        "items": "entries: {{number}}"
+      },
+      "reset": "Reset",
+      "resetTooltip": "Follow the defaults again",
+      "resetEntry": "Reset {{name}}",
+      "legend": {
+        "coupled": "coupled: follows the defaults",
+        "own": "own value: stays when the default changes",
+        "hint": "Changing a value uncouples it. A click on the chain uncouples it without changing it. Reset couples it again."
+      },
+      "page": {
+        "reset": "Page to Defaults",
+        "resetTitle": "Reset “{{page}}” of “{{name}}” to the defaults?"
+      },
+      "dialog": {
+        "values": "These own values follow the defaults again:"
+      },
+      "bar": {
+        "onlyFor": "“{{setting}}” now applies only to “{{name}}”.",
+        "changeDefault": "Change the Default Instead",
+        "undo": "Undo"
+      },
+      "deviations": {
+        "followsOne": "{{names}} follows",
+        "followMany": "{{names}} follow",
+        "allFollow": "All profiles follow",
+        "add": "+ Profile",
+        "openIn": "Open in {{name}}",
+        "resetFor": "Couple “{{name}}” to the default again"
+      },
+      "summary": {
+        "active": "active: {{names}}",
+        "noneActive": "no prompt active"
+      },
+      "overview": {
+        "ownValues": "Own Values ({{number}})",
+        "none": "This profile follows the defaults in everything.",
+        "jumpHint": "A click on a row opens the page with the setting.",
+        "resetWhole": "Whole Profile to Defaults",
+        "resetWholeTitle": "Reset “{{name}}” completely to the defaults?",
+        "keeps": "The profile's name and applications stay.",
+        "newProfile": "New Profile",
+        "newDialogDescription": "The new profile follows the defaults in everything until you give it values of its own."
+      },
+      "errors": {
+        "save": "Couldn't save the change"
       }
     }
   },

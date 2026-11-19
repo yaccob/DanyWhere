@@ -473,7 +473,7 @@
     },
     "profiles": {
       "title": "Profile",
-      "description": "Ein Profil weicht von den Grundeinstellungen ab, wo es das braucht: Seine eigenen Werte bleiben, alles andere folgt den Grundeinstellungen. Eine Änderung, während ein Profil in Verwendung ist, ändert seinen eigenen Wert, sonst die Grundeinstellungen.",
+      "description": "Ein Profil weicht von den Grundeinstellungen ab, wo es das braucht: Seine eigenen Werte bleiben, alles andere folgt den Grundeinstellungen. Die Grundeinstellungen änderst du unter „Grundeinstellungen“, die eigenen Werte eines Profils unter seinem Namen.",
       "active": "Aktiv",
       "use": "Verwenden",
       "duplicate": "Duplizieren",
@@ -498,11 +498,6 @@
         "switchesTo": "Es ist das aktive Profil, deshalb wird vorher „{{name}}“ aktiv.",
         "confirm": "Profil löschen"
       },
-      "scope": {
-        "models": "„{{name}}“ ist in Verwendung: Hat es ein eigenes Modell, ändert die Wahl hier dieses, sonst die Grundeinstellungen.",
-        "postProcessing": "„{{name}}“ ist in Verwendung: Seine eigenen Werte ändern sich im Profil, alle anderen in den Grundeinstellungen; API-Schlüssel gelten für alle Profile."
-      },
-      "pagePlaceholder": "Folgt in Kürze: Diese Seite zeigt dann die Einstellungen von „{{name}}“, jede als den Grundeinstellungen folgend oder als eigener Wert markiert.",
       "apps": {
         "label": "Automatisch verwenden in:",
         "none": "noch keiner Anwendung",
@@ -549,10 +544,6 @@
       "droppedApps": "Schon verwendet von „{{name}}“: {{apps}}.",
       "exportFailed": "Profil konnte nicht exportiert werden",
       "importFailed": "Profil konnte nicht importiert werden",
-      "replaceKeyTitle": "API-Schlüssel ersetzen?",
-      "replaceKey": "Der API-Schlüssel für {{provider}} in der Datei unterscheidet sich von dem hier eingerichteten. Den Schlüssel aus der Datei verwenden? Er gilt dann für jedes Profil, das {{provider}} verwendet.",
-      "replace": "Schlüssel aus der Datei",
-      "keep": "Bisherigen behalten",
       "fileFilter": "DanyWhere-Profil",
       "errors": {
         "profile_not_found": "Das Profil gibt es nicht mehr.",
@@ -785,14 +776,11 @@
       },
       "wordLists": {
         "groupTitle": "Wortlisten",
-        "groupDescription": "Das Modell bekommt zuerst die Wörter der aktiven zusätzlichen Liste, dann die der Wortliste des Profils, dann die der globalen Wortliste.",
-        "globalTitle": "Globale Wortliste (alle Profile)",
-        "profileTitle": "Wortliste des Profils „{{name}}“",
-        "profileDescription": "Gilt in diesem Profil immer, zusammen mit der globalen Wortliste. Wörter für einen Zusammenhang gehören hierher, Wörter, die du überall brauchst, in die globale Liste.",
+        "groupDescription": "Das Modell bekommt zuerst die Wörter der aktiven zusätzlichen Liste, dann die zusätzlichen Wörter, dann die Wortliste.",
+        "profileDescription": "Wörter, die nur dieses Profil hinzufügt, vor der Wortliste. Wörter für einen Zusammenhang gehören hierher, Wörter, die du überall brauchst, in die Wortliste der Grundeinstellungen.",
         "activeTitle": "Aktive zusätzliche Liste",
-        "activeDescription": "Ihre Wörter bekommt das Modell zuerst, vor denen der Wortliste des Profils und der globalen Wortliste, die immer gelten. Umschalten mit dem Tastenkürzel oder im Tray-Menü.",
+        "activeDescription": "Ihre Wörter gehen zuerst an das Modell, vor den zusätzlichen Wörtern und der Wortliste, die immer gelten. Umschalten mit der Tastenkombination oder im Tray-Menü.",
         "onlyGlobal": "Keine",
-        "title": "Zusätzliche Listen des Profils „{{name}}“",
         "description": "Benannte Listen dieses Profils, die du zusätzlich einschalten kannst, z. B. eine pro Thema. Immer nur eine.",
         "selectList": "Liste auswählen",
         "createNew": "Neue Liste",
@@ -1088,7 +1076,12 @@
       },
       "contextEntryJump": "Im Verlauf zeigen, um es zu korrigieren",
       "dropTitle": "Zum Transkribieren ablegen",
-      "dropDescription": "Es erscheint im Verlauf."
+      "dropDescription": "Es erscheint im Verlauf.",
+      "promptMenu": {
+        "button": "Mit einem Prompt nachbearbeiten",
+        "title": "Nachbearbeiten mit",
+        "active": "aktiv"
+      }
     },
     "debug": {
       "title": "Debug",
@@ -1286,6 +1279,86 @@
       "whatsNewUpdates": {
         "label": "Neuerungen anzeigen",
         "description": "Versionshinweise nach Handy-Updates anzeigen"
+      }
+    },
+    "profileView": {
+      "fields": {
+        "shortcuts": "Tastenkombinationen",
+        "defaultEnds": "Standard-Enden",
+        "selectedModel": "Sprachmodell",
+        "providers": "Adresse und Format des Anbieters",
+        "activePrompts": "Aktive Prompts",
+        "externalScript": "Externes Skript",
+        "customFillerWords": "Eigene Füllwörter",
+        "customWords": "Wortliste",
+        "profileWords": "Zusätzliche Wörter",
+        "wordLists": "Zusätzliche Listen"
+      },
+      "state": {
+        "coupled": "Grundwert",
+        "own": "eigener Wert",
+        "defaultIs": "Grundwert: {{value}}",
+        "sameAsDefault": "gleich wie Grundwert",
+        "entryOwn": "eigen",
+        "entryOff": "aus",
+        "ownEntries": "eigen: {{names}}",
+        "offEntries": "aus: {{names}}"
+      },
+      "chain": {
+        "hold": "Folgt den Grundeinstellungen. Klicken, um diesen Wert festzuhalten, auch wenn sich der Grundwert ändert.",
+        "couple": "Eigener Wert. Klicken, um wieder den Grundeinstellungen zu folgen."
+      },
+      "value": {
+        "on": "an",
+        "off": "aus",
+        "empty": "nichts",
+        "hidden": "gesetzt (verborgen)",
+        "items": "Einträge: {{number}}"
+      },
+      "reset": "Zurücksetzen",
+      "resetTooltip": "Wieder den Grundeinstellungen folgen",
+      "resetEntry": "{{name}} zurücksetzen",
+      "legend": {
+        "coupled": "gekoppelt: folgt den Grundeinstellungen",
+        "own": "eigener Wert: bleibt, wenn sich der Grundwert ändert",
+        "hint": "Ändern löst die Kopplung. Ein Klick auf die Kette löst sie, ohne den Wert zu ändern. Zurücksetzen koppelt wieder."
+      },
+      "page": {
+        "reset": "Seite auf Grundeinstellungen",
+        "resetTitle": "„{{page}}“ von „{{name}}“ auf die Grundeinstellungen zurücksetzen?"
+      },
+      "dialog": {
+        "values": "Diese eigenen Werte werden wieder an die Grundeinstellungen gekoppelt:"
+      },
+      "bar": {
+        "onlyFor": "„{{setting}}“ gilt jetzt nur für „{{name}}“.",
+        "changeDefault": "Stattdessen Grundwert ändern",
+        "undo": "Rückgängig"
+      },
+      "deviations": {
+        "followsOne": "{{names}} folgt",
+        "followMany": "{{names}} folgen",
+        "allFollow": "Alle Profile folgen",
+        "add": "+ Profil",
+        "openIn": "In {{name}} öffnen",
+        "resetFor": "„{{name}}“ wieder an den Grundwert koppeln"
+      },
+      "summary": {
+        "active": "aktiv: {{names}}",
+        "noneActive": "kein Prompt aktiv"
+      },
+      "overview": {
+        "ownValues": "Eigene Werte ({{number}})",
+        "none": "Dieses Profil folgt in allem den Grundeinstellungen.",
+        "jumpHint": "Ein Klick auf eine Zeile öffnet die Seite mit der Einstellung.",
+        "resetWhole": "Ganzes Profil auf Grundeinstellungen",
+        "resetWholeTitle": "„{{name}}“ ganz auf die Grundeinstellungen zurücksetzen?",
+        "keeps": "Name und Apps des Profils bleiben.",
+        "newProfile": "Neues Profil",
+        "newDialogDescription": "Das neue Profil folgt in allem den Grundeinstellungen, bis du ihm eigene Werte gibst."
+      },
+      "errors": {
+        "save": "Änderung nicht gespeichert"
       }
     }
   },

@@ -45,3 +45,18 @@ export const retranscribeMode = (
   shiftKey && availability === "ready"
     ? "transcribe_and_post_process"
     : "transcribe";
+
+/** DanyWhere (H6, strand E2): whether a prompt chosen by name in the
+ * wand's menu can run: post-processing on and a provider with a model;
+ * whether a prompt is active doesn't matter there. */
+export const canRunChosenPrompt = (
+  settings: Partial<PostProcessSettings> | null | undefined,
+): boolean => {
+  if (!settings?.post_process_enabled) return false;
+  const providerId = settings.post_process_provider_id;
+  const provider = settings.post_process_providers?.find(
+    (p) => p.id === providerId,
+  );
+  const model = providerId ? settings.post_process_models?.[providerId] : "";
+  return Boolean(provider && model?.trim());
+};

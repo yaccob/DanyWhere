@@ -473,7 +473,7 @@
     },
     "profiles": {
       "title": "Profils",
-      "description": "Un profil remplace les réglages de base là où il le faut : ses propres valeurs restent, tout le reste suit les réglages de base. Une modification faite pendant qu'un profil est utilisé change sa propre valeur, sinon les réglages de base.",
+      "description": "Un profil remplace les réglages de base là où il en a besoin : ses valeurs propres restent, tout le reste suit les réglages de base. Modifiez les réglages de base sous « Réglages de base » et les valeurs propres d'un profil sous son nom.",
       "active": "Actif",
       "use": "Utiliser",
       "duplicate": "Dupliquer",
@@ -498,11 +498,6 @@
         "switchesTo": "C'est le profil actif : « {{name}} » devient d'abord actif.",
         "confirm": "Supprimer le profil"
       },
-      "scope": {
-        "models": "« {{name}} » est utilisé : s'il a son propre modèle, le choix fait ici le modifie, sinon il modifie les réglages de base.",
-        "postProcessing": "« {{name}} » est utilisé : ses propres valeurs changent dans le profil, toutes les autres dans les réglages de base ; les clés API valent pour tous les profils."
-      },
-      "pagePlaceholder": "Bientôt : cette page affichera les paramètres de « {{name}} », chacun marqué comme suivant les paramètres de base ou comme valeur propre.",
       "apps": {
         "label": "Utilisé automatiquement dans :",
         "none": "aucune application pour l'instant",
@@ -549,10 +544,6 @@
       "droppedApps": "Déjà utilisées par « {{name}} » : {{apps}}.",
       "exportFailed": "Impossible d'exporter le profil",
       "importFailed": "Impossible d'importer le profil",
-      "replaceKeyTitle": "Remplacer la clé API ?",
-      "replaceKey": "La clé API pour {{provider}} du fichier diffère de celle configurée ici. Utiliser celle du fichier ? Elle s'appliquera alors à tous les profils qui utilisent {{provider}}.",
-      "replace": "Clé du fichier",
-      "keep": "Garder l'actuelle",
       "fileFilter": "Profil DanyWhere",
       "errors": {
         "profile_not_found": "Le profil n'existe plus.",
@@ -785,14 +776,11 @@
       },
       "wordLists": {
         "groupTitle": "Listes de mots",
-        "groupDescription": "Le modèle reçoit d'abord les mots de la liste supplémentaire active, puis ceux de la liste du profil, puis ceux de la liste de mots globale.",
-        "globalTitle": "Liste de mots globale (tous les profils)",
-        "profileTitle": "Liste de mots du profil « {{name}} »",
-        "profileDescription": "S'applique toujours dans ce profil, avec la liste de mots globale. Mettez ici les mots d'un contexte, et dans la liste globale ceux dont vous avez besoin partout.",
+        "groupDescription": "Le modèle reçoit d'abord les mots de la liste supplémentaire active, puis les mots supplémentaires, puis la liste de mots.",
+        "profileDescription": "Mots que seul ce profil ajoute, avant la liste de mots. Mettez ici les mots d'un contexte et ceux dont vous avez besoin partout dans la liste de mots des réglages de base.",
         "activeTitle": "Liste supplémentaire active",
-        "activeDescription": "Ses mots sont transmis en premier au modèle, avant ceux de la liste du profil et de la liste globale, qui s'appliquent toujours. Changez-la avec le raccourci ou depuis le menu de la barre.",
+        "activeDescription": "Ses mots vont d'abord au modèle, avant les mots supplémentaires et la liste de mots, qui s'appliquent toujours. Changez-la avec le raccourci ou depuis le menu de la barre d'état.",
         "onlyGlobal": "Aucune",
-        "title": "Listes supplémentaires du profil « {{name}} »",
         "description": "Listes nommées de ce profil à activer en plus, par exemple une par sujet. Une seule à la fois.",
         "selectList": "Choisir une liste",
         "createNew": "Nouvelle liste",
@@ -1088,7 +1076,12 @@
       },
       "contextEntryJump": "L'afficher dans l'historique pour la corriger",
       "dropTitle": "Déposez pour transcrire",
-      "dropDescription": "Il apparaîtra dans l'historique."
+      "dropDescription": "Il apparaîtra dans l'historique.",
+      "promptMenu": {
+        "button": "Post-traiter avec une instruction",
+        "title": "Post-traiter avec",
+        "active": "active"
+      }
     },
     "debug": {
       "title": "Débogage",
@@ -1286,6 +1279,86 @@
       "whatsNewUpdates": {
         "label": "Afficher les nouveautés",
         "description": "Afficher les notes de version après les mises à jour de Handy"
+      }
+    },
+    "profileView": {
+      "fields": {
+        "shortcuts": "Raccourcis",
+        "defaultEnds": "Fins par défaut",
+        "selectedModel": "Modèle vocal",
+        "providers": "Adresse et format du fournisseur",
+        "activePrompts": "Instructions actives",
+        "externalScript": "Script externe",
+        "customFillerWords": "Mots de remplissage personnels",
+        "customWords": "Liste de mots",
+        "profileWords": "Mots supplémentaires",
+        "wordLists": "Listes supplémentaires"
+      },
+      "state": {
+        "coupled": "Valeur de base",
+        "own": "Valeur propre",
+        "defaultIs": "Valeur de base : {{value}}",
+        "sameAsDefault": "identique à la valeur de base",
+        "entryOwn": "propre",
+        "entryOff": "désactivée",
+        "ownEntries": "propres : {{names}}",
+        "offEntries": "désactivées : {{names}}"
+      },
+      "chain": {
+        "hold": "Suit les réglages de base. Cliquez pour garder cette valeur même si la valeur de base change.",
+        "couple": "Valeur propre. Cliquez pour suivre de nouveau les réglages de base."
+      },
+      "value": {
+        "on": "activé",
+        "off": "désactivé",
+        "empty": "rien",
+        "hidden": "définie (masquée)",
+        "items": "entrées : {{number}}"
+      },
+      "reset": "Réinitialiser",
+      "resetTooltip": "Suivre de nouveau les réglages de base",
+      "resetEntry": "Réinitialiser {{name}}",
+      "legend": {
+        "coupled": "lié : suit les réglages de base",
+        "own": "valeur propre : reste quand la valeur de base change",
+        "hint": "Modifier une valeur la délie. Un clic sur la chaîne la délie sans la modifier. Réinitialiser la relie."
+      },
+      "page": {
+        "reset": "Page aux réglages de base",
+        "resetTitle": "Réinitialiser « {{page}} » de « {{name}} » aux réglages de base ?"
+      },
+      "dialog": {
+        "values": "Ces valeurs propres suivront de nouveau les réglages de base :"
+      },
+      "bar": {
+        "onlyFor": "« {{setting}} » ne s'applique plus qu'à « {{name}} ».",
+        "changeDefault": "Modifier plutôt la valeur de base",
+        "undo": "Annuler"
+      },
+      "deviations": {
+        "followsOne": "{{names}} suit",
+        "followMany": "{{names}} suivent",
+        "allFollow": "Tous les profils suivent",
+        "add": "+ Profil",
+        "openIn": "Ouvrir dans {{name}}",
+        "resetFor": "Relier « {{name}} » à la valeur de base"
+      },
+      "summary": {
+        "active": "actives : {{names}}",
+        "noneActive": "aucune instruction active"
+      },
+      "overview": {
+        "ownValues": "Valeurs propres ({{number}})",
+        "none": "Ce profil suit les réglages de base en tout.",
+        "jumpHint": "Un clic sur une ligne ouvre la page du réglage.",
+        "resetWhole": "Tout le profil aux réglages de base",
+        "resetWholeTitle": "Réinitialiser entièrement « {{name}} » aux réglages de base ?",
+        "keeps": "Le nom et les applications du profil restent.",
+        "newProfile": "Nouveau profil",
+        "newDialogDescription": "Le nouveau profil suit les réglages de base en tout jusqu'à ce que vous lui donniez des valeurs propres."
+      },
+      "errors": {
+        "save": "Impossible d'enregistrer la modification"
       }
     }
   },

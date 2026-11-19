@@ -77,6 +77,14 @@ export const useProfiles = () => {
       t("settings.profiles.errors.duplicate"),
     );
 
+  // DanyWhere (strand E2): a new profile that follows the defaults in
+  // everything (P9).
+  const create = (name: string) =>
+    run(
+      () => commands.createProfile(name),
+      t("settings.profiles.errors.duplicate"),
+    );
+
   const rename = (id: string, name: string) =>
     run(
       () => commands.renameProfile(id, name),
@@ -115,6 +123,7 @@ export const useProfiles = () => {
     displayName,
     switchTo,
     duplicate,
+    create,
     rename,
     remove,
   };

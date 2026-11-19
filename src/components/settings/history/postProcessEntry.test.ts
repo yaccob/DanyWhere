@@ -1,5 +1,9 @@
 import assert from "node:assert/strict";
-import { postProcessAvailability, retranscribeMode } from "./postProcessEntry";
+import {
+  canRunChosenPrompt,
+  postProcessAvailability,
+  retranscribeMode,
+} from "./postProcessEntry";
 
 let failures = 0;
 const check = (name: string, run: () => void) => {
@@ -97,6 +101,27 @@ check("re-transcribe without Shift transcribes as dictated", () => {
 check("Shift does nothing while post-processing can't run", () => {
   assert.equal(retranscribeMode(true, "off"), "transcribe");
   assert.equal(retranscribeMode(true, "not_set_up"), "transcribe");
+});
+
+// H6 (strand E2): a prompt chosen in the wand's menu runs without being
+// active; post-processing must be on and the provider set up.
+check("a chosen prompt runs without any active prompt", () => {
+  assert.equal(
+    canRunChosenPrompt({ ...ready, post_process_prompt_order: [] }),
+    true,
+  );
+});
+check("a chosen prompt needs post-processing on", () => {
+  assert.equal(
+    canRunChosenPrompt({ ...ready, post_process_enabled: false }),
+    false,
+  );
+});
+check("a chosen prompt needs the provider's model", () => {
+  assert.equal(
+    canRunChosenPrompt({ ...ready, post_process_models: {} }),
+    false,
+  );
 });
 
 if (failures > 0) {

@@ -473,7 +473,7 @@
     },
     "profiles": {
       "title": "Profiller",
-      "description": "Bir profil, gereken yerde temel ayarları geçersiz kılar: kendi değerleri kalır, geri kalan her şey temel ayarları izler. Bir profil kullanımdayken yapılan değişiklik onun kendi değerini, aksi halde temel ayarları değiştirir.",
+      "description": "Bir profil gerektiği yerde temel ayarların yerine geçer: kendi değerleri kalır, geri kalan her şey temel ayarları izler. Temel ayarları “Temel ayarlar” altında, bir profilin kendi değerlerini onun adı altında değiştirin.",
       "active": "Etkin",
       "use": "Kullan",
       "duplicate": "Çoğalt",
@@ -498,11 +498,6 @@
         "switchesTo": "Bu etkin profil olduğundan önce “{{name}}” etkin hale gelir.",
         "confirm": "Profili Sil"
       },
-      "scope": {
-        "models": "“{{name}}” kullanımda: kendi modeli varsa buradaki seçim onu, yoksa temel ayarları değiştirir.",
-        "postProcessing": "“{{name}}” kullanımda: kendi değerleri profilde, diğer tüm değerler temel ayarlarda değişir; API anahtarları tüm profiller için geçerlidir."
-      },
-      "pagePlaceholder": "Yakında: bu sayfa “{{name}}” profilinin ayarlarını gösterecek; her ayar, temel ayarları izliyor ya da kendi değerine sahip olarak işaretlenecek.",
       "apps": {
         "label": "Otomatik kullanıldığı yerler:",
         "none": "henüz uygulama yok",
@@ -549,10 +544,6 @@
       "droppedApps": "Zaten “{{name}}” kullanıyor: {{apps}}.",
       "exportFailed": "Profil dışa aktarılamadı",
       "importFailed": "Profil içe aktarılamadı",
-      "replaceKeyTitle": "API anahtarı değiştirilsin mi?",
-      "replaceKey": "Dosyadaki {{provider}} API anahtarı burada ayarlı olandan farklı. Dosyadaki anahtar kullanılsın mı? Bu durumda {{provider}} kullanan her profil için geçerli olur.",
-      "replace": "Dosyadaki anahtar",
-      "keep": "Mevcut olanı koru",
       "fileFilter": "DanyWhere profili",
       "errors": {
         "profile_not_found": "Profil artık yok.",
@@ -785,14 +776,11 @@
       },
       "wordLists": {
         "groupTitle": "Kelime Listeleri",
-        "groupDescription": "Model önce etkin ek listenin kelimelerini, sonra profilin kelime listesini, en son da genel kelime listesini alır.",
-        "globalTitle": "Genel Kelime Listesi (Tüm Profiller)",
-        "profileTitle": "“{{name}}” Profilinin Kelime Listesi",
-        "profileDescription": "Bu profilde genel kelime listesiyle birlikte her zaman geçerlidir. Tek bir bağlama ait kelimeleri buraya, her yerde gereken kelimeleri genel listeye ekleyin.",
+        "groupDescription": "Model önce etkin ek listenin sözcüklerini, sonra ek sözcükleri, en son sözcük listesini alır.",
+        "profileDescription": "Yalnızca bu profilin eklediği sözcükler, sözcük listesinden önce. Tek bir bağlamın sözcüklerini buraya, her yerde gereken sözcükleri temel ayarların sözcük listesine koyun.",
         "activeTitle": "Etkin Ek Liste",
-        "activeDescription": "Kelimeleri modele ilk verilir; her zaman geçerli olan profil listesinden ve genel listeden de önce. Kısayolla veya tepsi menüsünden değiştirin.",
+        "activeDescription": "Sözcükleri modele ilk gider, her zaman geçerli olan ek sözcüklerden ve sözcük listesinden önce. Kısayolla veya tepsi menüsünden değiştirin.",
         "onlyGlobal": "Hiçbiri",
-        "title": "“{{name}}” Profilinin Ek Listeleri",
         "description": "Bu profile ait, ek olarak açabileceğiniz adlandırılmış listeler, örneğin her konu için bir tane. Aynı anda yalnızca bir tane.",
         "selectList": "Bir liste seçin",
         "createNew": "Yeni Liste",
@@ -1088,7 +1076,12 @@
       },
       "contextEntryJump": "Düzeltmek için geçmişte göster",
       "dropTitle": "Yazıya dökmek için bırakın",
-      "dropDescription": "Geçmiş'te görünecek."
+      "dropDescription": "Geçmiş'te görünecek.",
+      "promptMenu": {
+        "button": "Tek bir istemle son işlem yap",
+        "title": "Şununla son işlem",
+        "active": "etkin"
+      }
     },
     "debug": {
       "title": "Hata Ayıklama",
@@ -1286,6 +1279,86 @@
       "whatsNewUpdates": {
         "label": "Yenilikleri Göster",
         "description": "Handy güncellemelerinden sonra sürüm notlarını göster"
+      }
+    },
+    "profileView": {
+      "fields": {
+        "shortcuts": "Kısayollar",
+        "defaultEnds": "Varsayılan bitişler",
+        "selectedModel": "Konuşma modeli",
+        "providers": "Sağlayıcının adresi ve biçimi",
+        "activePrompts": "Etkin istemler",
+        "externalScript": "Harici betik",
+        "customFillerWords": "Kendi dolgu sözcükleri",
+        "customWords": "Sözcük listesi",
+        "profileWords": "Ek sözcükler",
+        "wordLists": "Ek listeler"
+      },
+      "state": {
+        "coupled": "Temel değer",
+        "own": "Kendi değeri",
+        "defaultIs": "Temel değer: {{value}}",
+        "sameAsDefault": "temel değerle aynı",
+        "entryOwn": "kendi",
+        "entryOff": "kapalı",
+        "ownEntries": "kendi: {{names}}",
+        "offEntries": "kapalı: {{names}}"
+      },
+      "chain": {
+        "hold": "Temel ayarları izler. Temel değer değişse bile bu değeri korumak için tıklayın.",
+        "couple": "Kendi değeri. Yeniden temel ayarları izlemek için tıklayın."
+      },
+      "value": {
+        "on": "açık",
+        "off": "kapalı",
+        "empty": "hiçbir şey",
+        "hidden": "ayarlı (gizli)",
+        "items": "öğeler: {{number}}"
+      },
+      "reset": "Sıfırla",
+      "resetTooltip": "Yeniden temel ayarları izle",
+      "resetEntry": "{{name}} sıfırla",
+      "legend": {
+        "coupled": "bağlı: temel ayarları izler",
+        "own": "kendi değeri: temel değer değişince de kalır",
+        "hint": "Bir değeri değiştirmek bağı çözer. Zincire tıklamak değeri değiştirmeden bağı çözer. Sıfırla yeniden bağlar."
+      },
+      "page": {
+        "reset": "Sayfayı temel ayarlara",
+        "resetTitle": "“{{name}}” profilinin “{{page}}” sayfası temel ayarlara sıfırlansın mı?"
+      },
+      "dialog": {
+        "values": "Bu kendi değerleri yeniden temel ayarları izleyecek:"
+      },
+      "bar": {
+        "onlyFor": "“{{setting}}” artık yalnızca “{{name}}” için geçerli.",
+        "changeDefault": "Bunun yerine temel değeri değiştir",
+        "undo": "Geri al"
+      },
+      "deviations": {
+        "followsOne": "{{names}} izliyor",
+        "followMany": "{{names}} izliyor",
+        "allFollow": "Tüm profiller izliyor",
+        "add": "+ Profil",
+        "openIn": "{{name}} içinde aç",
+        "resetFor": "“{{name}}” profilini yeniden temel değere bağla"
+      },
+      "summary": {
+        "active": "etkin: {{names}}",
+        "noneActive": "etkin istem yok"
+      },
+      "overview": {
+        "ownValues": "Kendi değerleri ({{number}})",
+        "none": "Bu profil her şeyde temel ayarları izler.",
+        "jumpHint": "Bir satıra tıklamak ayarın bulunduğu sayfayı açar.",
+        "resetWhole": "Tüm profili temel ayarlara",
+        "resetWholeTitle": "“{{name}}” tamamen temel ayarlara sıfırlansın mı?",
+        "keeps": "Profilin adı ve uygulamaları kalır.",
+        "newProfile": "Yeni profil",
+        "newDialogDescription": "Yeni profil, siz ona kendi değerlerini verene kadar her şeyde temel ayarları izler."
+      },
+      "errors": {
+        "save": "Değişiklik kaydedilemedi"
       }
     }
   },

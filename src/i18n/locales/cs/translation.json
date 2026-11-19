@@ -473,7 +473,7 @@
     },
     "profiles": {
       "title": "Profily",
-      "description": "Profil mění základní nastavení tam, kde je to potřeba: jeho vlastní hodnoty zůstávají, vše ostatní se řídí základním nastavením. Změna během používání profilu mění jeho vlastní hodnotu, jinak základní nastavení.",
+      "description": "Profil mění základní nastavení tam, kde je to potřeba: jeho vlastní hodnoty zůstávají, vše ostatní se řídí základním nastavením. Základní nastavení měníte pod „Základní nastavení“, vlastní hodnoty profilu pod jeho názvem.",
       "active": "Aktivní",
       "use": "Použít",
       "duplicate": "Duplikovat",
@@ -498,11 +498,6 @@
         "switchesTo": "Je to aktivní profil, proto se nejprve aktivuje „{{name}}“.",
         "confirm": "Smazat profil"
       },
-      "scope": {
-        "models": "Používá se „{{name}}“: má-li vlastní model, volba zde změní ten, jinak základní nastavení.",
-        "postProcessing": "Používá se „{{name}}“: jeho vlastní hodnoty se mění v profilu, všechny ostatní v základním nastavení; API klíče platí pro všechny profily."
-      },
-      "pagePlaceholder": "Již brzy: tato stránka zobrazí nastavení profilu „{{name}}“, každé označené jako převzaté ze základního nastavení nebo s vlastní hodnotou.",
       "apps": {
         "label": "Automaticky se používá v:",
         "none": "zatím v žádné aplikaci",
@@ -549,10 +544,6 @@
       "droppedApps": "Již používá „{{name}}“: {{apps}}.",
       "exportFailed": "Profil se nepodařilo exportovat",
       "importFailed": "Profil se nepodařilo importovat",
-      "replaceKeyTitle": "Nahradit API klíč?",
-      "replaceKey": "API klíč pro {{provider}} v souboru se liší od zde nastaveného. Použít klíč ze souboru? Pak bude platit pro každý profil, který používá {{provider}}.",
-      "replace": "Klíč ze souboru",
-      "keep": "Ponechat stávající",
       "fileFilter": "Profil DanyWhere",
       "errors": {
         "profile_not_found": "Profil už neexistuje.",
@@ -785,14 +776,11 @@
       },
       "wordLists": {
         "groupTitle": "Seznamy slov",
-        "groupDescription": "Model dostane nejprve slova z aktivního doplňkového seznamu, pak ze seznamu slov profilu a nakonec z globálního seznamu slov.",
-        "globalTitle": "Globální seznam slov (všechny profily)",
-        "profileTitle": "Seznam slov profilu „{{name}}“",
-        "profileDescription": "V tomto profilu platí vždy, spolu s globálním seznamem slov. Patří sem slova pro jeden kontext; slova, která potřebujete všude, patří do globálního seznamu.",
+        "groupDescription": "Model dostane nejprve slova aktivního dalšího seznamu, potom další slova a nakonec seznam slov.",
+        "profileDescription": "Slova, která přidává jen tento profil, před seznamem slov. Sem patří slova pro jeden kontext, slova potřebná všude do seznamu slov základního nastavení.",
         "activeTitle": "Aktivní doplňkový seznam",
-        "activeDescription": "Jeho slova dostane model jako první, před slovy ze seznamu profilu a z globálního seznamu, které platí vždy. Přepnete ho klávesovou zkratkou nebo z nabídky v liště.",
+        "activeDescription": "Jeho slova jdou do modelu jako první, před dalšími slovy a seznamem slov, které platí vždy. Přepněte ho klávesovou zkratkou nebo v nabídce v oznamovací oblasti.",
         "onlyGlobal": "Žádný",
-        "title": "Doplňkové seznamy profilu „{{name}}“",
         "description": "Pojmenované seznamy tohoto profilu, které můžete navíc zapnout, např. jeden pro každé téma. Vždy jen jeden.",
         "selectList": "Vyberte seznam",
         "createNew": "Nový seznam",
@@ -1088,7 +1076,12 @@
       },
       "contextEntryJump": "Zobrazit v historii a opravit",
       "dropTitle": "Pusťte pro přepis",
-      "dropDescription": "Zobrazí se v historii."
+      "dropDescription": "Zobrazí se v historii.",
+      "promptMenu": {
+        "button": "Následně zpracovat jedním pokynem",
+        "title": "Následně zpracovat pomocí",
+        "active": "aktivní"
+      }
     },
     "debug": {
       "title": "Ladění",
@@ -1286,6 +1279,86 @@
       "whatsNewUpdates": {
         "label": "Zobrazovat novinky",
         "description": "Zobrazovat poznámky k vydání po aktualizacích Handy"
+      }
+    },
+    "profileView": {
+      "fields": {
+        "shortcuts": "Klávesové zkratky",
+        "defaultEnds": "Výchozí ukončení",
+        "selectedModel": "Model řeči",
+        "providers": "Adresa a formát poskytovatele",
+        "activePrompts": "Aktivní pokyny",
+        "externalScript": "Externí skript",
+        "customFillerWords": "Vlastní výplňová slova",
+        "customWords": "Seznam slov",
+        "profileWords": "Další slova",
+        "wordLists": "Další seznamy"
+      },
+      "state": {
+        "coupled": "Základní hodnota",
+        "own": "Vlastní hodnota",
+        "defaultIs": "Základní hodnota: {{value}}",
+        "sameAsDefault": "stejná jako základní",
+        "entryOwn": "vlastní",
+        "entryOff": "vypnuto",
+        "ownEntries": "vlastní: {{names}}",
+        "offEntries": "vypnuto: {{names}}"
+      },
+      "chain": {
+        "hold": "Řídí se základním nastavením. Kliknutím tuto hodnotu podržíte, i když se základní hodnota změní.",
+        "couple": "Vlastní hodnota. Kliknutím se bude znovu řídit základním nastavením."
+      },
+      "value": {
+        "on": "zap.",
+        "off": "vyp.",
+        "empty": "nic",
+        "hidden": "nastaven (skrytý)",
+        "items": "položky: {{number}}"
+      },
+      "reset": "Obnovit",
+      "resetTooltip": "Znovu se řídit základním nastavením",
+      "resetEntry": "Obnovit {{name}}",
+      "legend": {
+        "coupled": "propojená: řídí se základním nastavením",
+        "own": "vlastní hodnota: zůstane, když se základní hodnota změní",
+        "hint": "Změna hodnoty zruší propojení. Kliknutí na řetěz ho zruší bez změny hodnoty. Obnovit hodnotu znovu propojí."
+      },
+      "page": {
+        "reset": "Stránku na základní nastavení",
+        "resetTitle": "Obnovit „{{page}}“ profilu „{{name}}“ na základní nastavení?"
+      },
+      "dialog": {
+        "values": "Tyto vlastní hodnoty se budou znovu řídit základním nastavením:"
+      },
+      "bar": {
+        "onlyFor": "„{{setting}}“ teď platí jen pro „{{name}}“.",
+        "changeDefault": "Místo toho změnit základní hodnotu",
+        "undo": "Zpět"
+      },
+      "deviations": {
+        "followsOne": "{{names}} se řídí",
+        "followMany": "{{names}} se řídí",
+        "allFollow": "Všechny profily se řídí",
+        "add": "+ Profil",
+        "openIn": "Otevřít v {{name}}",
+        "resetFor": "Znovu propojit „{{name}}“ se základní hodnotou"
+      },
+      "summary": {
+        "active": "aktivní: {{names}}",
+        "noneActive": "žádný aktivní pokyn"
+      },
+      "overview": {
+        "ownValues": "Vlastní hodnoty ({{number}})",
+        "none": "Tento profil se ve všem řídí základním nastavením.",
+        "jumpHint": "Kliknutím na řádek otevřete stránku s nastavením.",
+        "resetWhole": "Celý profil na základní nastavení",
+        "resetWholeTitle": "Obnovit „{{name}}“ úplně na základní nastavení?",
+        "keeps": "Název a aplikace profilu zůstanou.",
+        "newProfile": "Nový profil",
+        "newDialogDescription": "Nový profil se ve všem řídí základním nastavením, dokud mu nedáte vlastní hodnoty."
+      },
+      "errors": {
+        "save": "Změnu se nepodařilo uložit"
       }
     }
   },

@@ -2,8 +2,18 @@ import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { commands } from "@/bindings";
 import { useSettings } from "../../hooks/useSettings";
-import { useProfiles } from "../../hooks/useProfiles";
-import { NO_WORD_LIST, activeListOption } from "../../lib/utils/wordLists";
+import {
+  NO_WORD_LIST,
+  activeListOption,
+  cleanListName,
+  cleanListWords,
+  newWordListId,
+} from "../../lib/utils/wordLists";
+// DanyWhere (strand E2): the lists of the page's scope, entry by entry
+// (P10): a list changed or added in a profile is its own entry there, one of
+// the defaults it deletes is switched off.
+import { useProfileWriter } from "./profiles/scope/profileWriter";
+import { useSettingsStore } from "../../stores/settingsStore";
 import { Button } from "../ui/Button";
 import { Dropdown } from "../ui/Dropdown";
 import { Input } from "../ui/Input";
@@ -62,9 +72,7 @@ export const WordLists: React.FC<WordListsProps> = React.memo(
   ({ descriptionMode = "tooltip", grouped = false }) => {
     const { t } = useTranslation();
     const { getSetting, refreshSettings } = useSettings();
-    // DanyWhere: the additional lists belong to the active profile.
-    const { active, defaultName, displayName } = useProfiles();
-    const profileName = active ? displayName(active) : defaultName;
+    const writer = useProfileWriter();
     const lists = getSetting("word_lists") || [];
     const activeId = getSetting("active_word_list_id") ?? null;
 
@@ -96,8 +104,33 @@ export const WordLists: React.FC<WordListsProps> = React.memo(
       }
     };
 
+    /** Every list id of the defaults and the profiles, for a new one. */
+    const takenIds = () => {
+      const stored = useSettingsStore.getState().settings;
+      return [
+        ...(stored?.default_values?.word_lists ?? []),
+        ...(stored?.profiles ?? []).flatMap((p) => p.values.word_lists),
+        ...(stored?.word_lists ?? []),
+      ].map((list) => list.id);
+    };
+
     const handleCreate = () =>
       run(async () => {
+        if (writer.scope) {
+          const name = cleanListName(draftName);
+          if (!name) return;
+          const id = newWordListId(takenIds(), Date.now());
+          const saved = await writer.setEntry("word_lists", id, {
+            id,
+            name,
+            words: [],
+          });
+          if (saved) {
+            setEditingId(id);
+            setIsCreating(false);
+          }
+          return;
+        }
         const result = await commands.addWordList(draftName.trim());
         if (result.status === "ok") {
           setEditingId(result.data.id);
@@ -107,19 +140,46 @@ export const WordLists: React.FC<WordListsProps> = React.memo(
 
     const handleRename = () =>
       editing &&
-      run(() => commands.renameWordList(editing.id, draftName.trim()));
+      run(async () => {
+        if (writer.scope) {
+          const name = cleanListName(draftName);
+          if (name)
+            await writer.setEntry("word_lists", editing.id, {
+              ...editing,
+              name,
+            });
+          return;
+        }
+        await commands.renameWordList(editing.id, draftName.trim());
+      });
 
     const handleDelete = () =>
       editing &&
       run(async () => {
-        await commands.deleteWordList(editing.id);
+        if (writer.scope) {
+          await writer.removeEntry("word_lists", editing.id);
+          // Deleting the active list leaves none switched on, as before.
+          if (activeId === editing.id) {
+            await writer.setValue("active_word_list_id", null);
+          }
+        } else {
+          await commands.deleteWordList(editing.id);
+        }
         setEditingId(null);
       });
 
     const editingWords = editing?.words ?? [];
 
     const handleWords = (words: string[]) =>
-      editing && run(() => commands.setWordListWords(editing.id, words));
+      editing &&
+      run(() =>
+        writer.scope
+          ? writer.setEntry("word_lists", editing.id, {
+              ...editing,
+              words: cleanListWords(words),
+            })
+          : commands.setWordListWords(editing.id, words),
+      );
 
     const startCreate = () => {
       setIsCreating(true);
@@ -133,7 +193,7 @@ export const WordLists: React.FC<WordListsProps> = React.memo(
 
     return (
       <SettingContainer
-        title={t("settings.advanced.wordLists.title", { name: profileName })}
+        title={t("settings.profileView.fields.wordLists")}
         description={t("settings.advanced.wordLists.description")}
         descriptionMode={descriptionMode}
         layout="stacked"

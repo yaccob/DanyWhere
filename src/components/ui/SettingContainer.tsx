@@ -1,5 +1,8 @@
 import React from "react";
 import { InfoTooltip } from "./InfoTooltip";
+// DanyWhere: a deviating profile's row under a default (P7.1) shows the
+// profile's name instead of the setting's title.
+import { useSettingRowOverride } from "@/components/settings/profiles/scope/SettingsScope";
 
 interface SettingContainerProps {
   title: string;
@@ -25,6 +28,15 @@ export const SettingContainer: React.FC<SettingContainerProps> = ({
   tooltipPosition = "top",
   grow = false,
 }) => {
+  const override = useSettingRowOverride();
+  if (override) {
+    return (
+      <div className="flex flex-wrap items-center justify-between gap-2 min-h-10 py-1">
+        <div className="min-w-0 text-sm">{override.title}</div>
+        <div className="relative min-w-0">{children}</div>
+      </div>
+    );
+  }
   const info = (
     <InfoTooltip
       text={description}

@@ -473,7 +473,7 @@
     },
     "profiles": {
       "title": "Profielen",
-      "description": "Een profiel wijkt af van de basisinstellingen waar dat nodig is: zijn eigen waarden blijven, al het andere volgt de basisinstellingen. Een wijziging terwijl een profiel in gebruik is, verandert zijn eigen waarde, anders de basisinstellingen.",
+      "description": "Een profiel wijkt af van de basisinstellingen waar het dat nodig heeft: zijn eigen waarden blijven, al het andere volgt de basisinstellingen. Wijzig de basisinstellingen onder „Basisinstellingen” en de eigen waarden van een profiel onder zijn naam.",
       "active": "Actief",
       "use": "Gebruiken",
       "duplicate": "Dupliceren",
@@ -498,11 +498,6 @@
         "switchesTo": "Dit is het actieve profiel, dus eerst wordt „{{name}}” actief.",
         "confirm": "Profiel verwijderen"
       },
-      "scope": {
-        "models": "„{{name}}” is in gebruik: heeft het een eigen model, dan verandert de keuze hier dat, anders de basisinstellingen.",
-        "postProcessing": "„{{name}}” is in gebruik: zijn eigen waarden veranderen in het profiel, alle andere in de basisinstellingen; API-sleutels gelden voor alle profielen."
-      },
-      "pagePlaceholder": "Binnenkort: deze pagina toont de instellingen van „{{name}}”, elk gemarkeerd als volgend op de basisinstellingen of met een eigen waarde.",
       "apps": {
         "label": "Automatisch gebruikt in:",
         "none": "nog geen app",
@@ -549,10 +544,6 @@
       "droppedApps": "Al in gebruik door ‘{{name}}’: {{apps}}.",
       "exportFailed": "Profiel kon niet worden geëxporteerd",
       "importFailed": "Profiel kon niet worden geïmporteerd",
-      "replaceKeyTitle": "API-sleutel vervangen?",
-      "replaceKey": "De API-sleutel voor {{provider}} in het bestand verschilt van die hier is ingesteld. De sleutel uit het bestand gebruiken? Die geldt dan voor elk profiel dat {{provider}} gebruikt.",
-      "replace": "Sleutel uit bestand",
-      "keep": "Huidige behouden",
       "fileFilter": "DanyWhere-profiel",
       "errors": {
         "profile_not_found": "Het profiel bestaat niet meer.",
@@ -785,14 +776,11 @@
       },
       "wordLists": {
         "groupTitle": "Woordenlijsten",
-        "groupDescription": "Het model krijgt eerst de woorden van de actieve extra lijst, dan die van de woordenlijst van het profiel en ten slotte die van de algemene woordenlijst.",
-        "globalTitle": "Algemene woordenlijst (alle profielen)",
-        "profileTitle": "Woordenlijst van profiel „{{name}}”",
-        "profileDescription": "Geldt in dit profiel altijd, samen met de algemene woordenlijst. Woorden voor één context horen hier, woorden die je overal nodig hebt in de algemene lijst.",
+        "groupDescription": "Het model krijgt eerst de woorden van de actieve extra lijst, dan de extra woorden en daarna de woordenlijst.",
+        "profileDescription": "Woorden die alleen dit profiel toevoegt, vóór de woordenlijst. Zet hier woorden voor één context en woorden die je overal nodig hebt in de woordenlijst van de basisinstellingen.",
         "activeTitle": "Actieve extra lijst",
-        "activeDescription": "De woorden ervan gaan als eerste naar het model, vóór die van de woordenlijst van het profiel en de algemene woordenlijst, die altijd gelden. Wissel met de sneltoets of via het menu in de menubalk.",
+        "activeDescription": "De woorden gaan als eerste naar het model, vóór de extra woorden en de woordenlijst, die altijd gelden. Wissel met de sneltoets of via het menu in het systeemvak.",
         "onlyGlobal": "Geen",
-        "title": "Extra lijsten van profiel „{{name}}”",
         "description": "Lijsten met een naam in dit profiel die je er extra bij kunt aanzetten, bijv. één per onderwerp. Steeds maar één.",
         "selectList": "Kies een lijst",
         "createNew": "Nieuwe lijst",
@@ -1088,7 +1076,12 @@
       },
       "contextEntryJump": "In de geschiedenis tonen om te corrigeren",
       "dropTitle": "Loslaten om te transcriberen",
-      "dropDescription": "Het verschijnt in de geschiedenis."
+      "dropDescription": "Het verschijnt in de geschiedenis.",
+      "promptMenu": {
+        "button": "Nabewerken met één prompt",
+        "title": "Nabewerken met",
+        "active": "actief"
+      }
     },
     "debug": {
       "title": "Probleemoplossing",
@@ -1286,6 +1279,86 @@
           "description": "Krachtige tensorbibliotheek voor lokale AI-verwerking",
           "details": "Handy's lokale spraak-naar-tekst is gebouwd op transcribe.cpp en ggml. Met dank aan het geweldige werk van Georgi Gerganov en alle bijdragers."
         }
+      }
+    },
+    "profileView": {
+      "fields": {
+        "shortcuts": "Sneltoetsen",
+        "defaultEnds": "Standaardeindes",
+        "selectedModel": "Spraakmodel",
+        "providers": "Adres en formaat van de aanbieder",
+        "activePrompts": "Actieve prompts",
+        "externalScript": "Extern script",
+        "customFillerWords": "Eigen stopwoorden",
+        "customWords": "Woordenlijst",
+        "profileWords": "Extra woorden",
+        "wordLists": "Extra lijsten"
+      },
+      "state": {
+        "coupled": "Basiswaarde",
+        "own": "Eigen waarde",
+        "defaultIs": "Basiswaarde: {{value}}",
+        "sameAsDefault": "gelijk aan de basiswaarde",
+        "entryOwn": "eigen",
+        "entryOff": "uit",
+        "ownEntries": "eigen: {{names}}",
+        "offEntries": "uit: {{names}}"
+      },
+      "chain": {
+        "hold": "Volgt de basisinstellingen. Klik om deze waarde te houden, ook als de basiswaarde verandert.",
+        "couple": "Eigen waarde. Klik om de basisinstellingen weer te volgen."
+      },
+      "value": {
+        "on": "aan",
+        "off": "uit",
+        "empty": "niets",
+        "hidden": "ingesteld (verborgen)",
+        "items": "items: {{number}}"
+      },
+      "reset": "Herstellen",
+      "resetTooltip": "Weer de basisinstellingen volgen",
+      "resetEntry": "{{name}} herstellen",
+      "legend": {
+        "coupled": "gekoppeld: volgt de basisinstellingen",
+        "own": "eigen waarde: blijft als de basiswaarde verandert",
+        "hint": "Een waarde wijzigen ontkoppelt haar. Een klik op de ketting ontkoppelt haar zonder haar te wijzigen. Herstellen koppelt weer."
+      },
+      "page": {
+        "reset": "Pagina naar basisinstellingen",
+        "resetTitle": "„{{page}}” van „{{name}}” herstellen naar de basisinstellingen?"
+      },
+      "dialog": {
+        "values": "Deze eigen waarden volgen weer de basisinstellingen:"
+      },
+      "bar": {
+        "onlyFor": "„{{setting}}” geldt nu alleen voor „{{name}}”.",
+        "changeDefault": "In plaats daarvan basiswaarde wijzigen",
+        "undo": "Ongedaan maken"
+      },
+      "deviations": {
+        "followsOne": "{{names}} volgt",
+        "followMany": "{{names}} volgen",
+        "allFollow": "Alle profielen volgen",
+        "add": "+ Profiel",
+        "openIn": "Openen in {{name}}",
+        "resetFor": "„{{name}}” weer aan de basiswaarde koppelen"
+      },
+      "summary": {
+        "active": "actief: {{names}}",
+        "noneActive": "geen prompt actief"
+      },
+      "overview": {
+        "ownValues": "Eigen waarden ({{number}})",
+        "none": "Dit profiel volgt in alles de basisinstellingen.",
+        "jumpHint": "Een klik op een regel opent de pagina met de instelling.",
+        "resetWhole": "Heel profiel naar basisinstellingen",
+        "resetWholeTitle": "„{{name}}” helemaal herstellen naar de basisinstellingen?",
+        "keeps": "De naam en apps van het profiel blijven.",
+        "newProfile": "Nieuw profiel",
+        "newDialogDescription": "Het nieuwe profiel volgt in alles de basisinstellingen tot je het eigen waarden geeft."
+      },
+      "errors": {
+        "save": "Wijziging kon niet worden opgeslagen"
       }
     }
   },

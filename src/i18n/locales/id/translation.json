@@ -473,7 +473,7 @@
     },
     "profiles": {
       "title": "Profil",
-      "description": "Profil menggantikan pengaturan dasar di bagian yang diperlukan: nilai miliknya sendiri tetap, selebihnya mengikuti pengaturan dasar. Perubahan saat sebuah profil digunakan mengubah nilai miliknya sendiri; jika tidak, pengaturan dasar.",
+      "description": "Profil menggantikan pengaturan dasar di tempat yang perlu: nilai sendirinya tetap, sisanya mengikuti pengaturan dasar. Ubah pengaturan dasar di “Pengaturan dasar” dan nilai sendiri sebuah profil di bawah namanya.",
       "active": "Aktif",
       "use": "Gunakan",
       "duplicate": "Duplikat",
@@ -498,11 +498,6 @@
         "switchesTo": "Ini profil yang aktif, jadi “{{name}}” diaktifkan lebih dulu.",
         "confirm": "Hapus Profil"
       },
-      "scope": {
-        "models": "“{{name}}” sedang digunakan: jika punya model sendiri, pilihan di sini mengubahnya; jika tidak, mengubah pengaturan dasar.",
-        "postProcessing": "“{{name}}” sedang digunakan: nilai miliknya sendiri berubah di profil, selebihnya di pengaturan dasar; kunci API berlaku untuk semua profil."
-      },
-      "pagePlaceholder": "Segera hadir: halaman ini akan menampilkan pengaturan “{{name}}”, masing-masing ditandai mengikuti pengaturan dasar atau memiliki nilai sendiri.",
       "apps": {
         "label": "Otomatis digunakan di:",
         "none": "belum ada aplikasi",
@@ -549,10 +544,6 @@
       "droppedApps": "Sudah dipakai oleh “{{name}}”: {{apps}}.",
       "exportFailed": "Profil Tidak Dapat Diekspor",
       "importFailed": "Profil Tidak Dapat Diimpor",
-      "replaceKeyTitle": "Ganti Kunci API?",
-      "replaceKey": "Kunci API untuk {{provider}} di file berbeda dari yang diatur di sini. Gunakan kunci dari file? Kunci itu lalu berlaku untuk setiap profil yang memakai {{provider}}.",
-      "replace": "Kunci dari File",
-      "keep": "Pertahankan yang Sekarang",
       "fileFilter": "Profil DanyWhere",
       "errors": {
         "profile_not_found": "Profil sudah tidak ada.",
@@ -785,14 +776,11 @@
       },
       "wordLists": {
         "groupTitle": "Daftar Kata",
-        "groupDescription": "Model mendapat kata dari daftar tambahan yang aktif lebih dulu, lalu dari daftar kata profil, lalu dari daftar kata global.",
-        "globalTitle": "Daftar Kata Global (Semua Profil)",
-        "profileTitle": "Daftar Kata Profil “{{name}}”",
-        "profileDescription": "Selalu berlaku di profil ini, bersama daftar kata global. Taruh kata untuk satu konteks di sini, dan kata yang Anda perlukan di mana saja di daftar global.",
+        "groupDescription": "Model mendapat kata dari daftar tambahan yang aktif lebih dulu, lalu kata tambahan, lalu daftar kata.",
+        "profileDescription": "Kata yang hanya ditambahkan profil ini, sebelum daftar kata. Taruh kata untuk satu konteks di sini dan kata yang Anda perlukan di mana saja di daftar kata pengaturan dasar.",
         "activeTitle": "Daftar Tambahan Aktif",
-        "activeDescription": "Kata-katanya diberikan ke model paling awal, sebelum kata dari daftar kata profil dan daftar global, yang selalu berlaku. Ganti dengan pintasan atau dari menu baki.",
+        "activeDescription": "Katanya masuk ke model lebih dulu, sebelum kata tambahan dan daftar kata, yang selalu berlaku. Ganti dengan pintasan atau dari menu baki.",
         "onlyGlobal": "Tidak ada",
-        "title": "Daftar Tambahan Profil “{{name}}”",
         "description": "Daftar bernama milik profil ini yang bisa Anda aktifkan sebagai tambahan, misalnya satu per topik. Hanya satu sekaligus.",
         "selectList": "Pilih daftar",
         "createNew": "Daftar Baru",
@@ -1088,7 +1076,12 @@
       },
       "contextEntryJump": "Tampilkan di riwayat untuk mengoreksinya",
       "dropTitle": "Lepaskan untuk mentranskripsi",
-      "dropDescription": "Akan muncul di Riwayat."
+      "dropDescription": "Akan muncul di Riwayat.",
+      "promptMenu": {
+        "button": "Pascaproses dengan satu prompt",
+        "title": "Pascaproses dengan",
+        "active": "aktif"
+      }
     },
     "debug": {
       "title": "Debug",
@@ -1286,6 +1279,86 @@
           "description": "Pustaka tensor berkinerja tinggi untuk inferensi pembelajaran mesin di perangkat",
           "details": "Fitur ucapan-ke-teks lokal Handy dibangun menggunakan transcribe.cpp dan ggml. Terima kasih kepada Georgi Gerganov dan para kontributor atas karya luar biasa mereka."
         }
+      }
+    },
+    "profileView": {
+      "fields": {
+        "shortcuts": "Pintasan",
+        "defaultEnds": "Akhir bawaan",
+        "selectedModel": "Model suara",
+        "providers": "Alamat dan format penyedia",
+        "activePrompts": "Prompt aktif",
+        "externalScript": "Skrip eksternal",
+        "customFillerWords": "Kata pengisi sendiri",
+        "customWords": "Daftar kata",
+        "profileWords": "Kata tambahan",
+        "wordLists": "Daftar tambahan"
+      },
+      "state": {
+        "coupled": "Nilai dasar",
+        "own": "Nilai sendiri",
+        "defaultIs": "Nilai dasar: {{value}}",
+        "sameAsDefault": "sama dengan nilai dasar",
+        "entryOwn": "sendiri",
+        "entryOff": "nonaktif",
+        "ownEntries": "sendiri: {{names}}",
+        "offEntries": "nonaktif: {{names}}"
+      },
+      "chain": {
+        "hold": "Mengikuti pengaturan dasar. Klik untuk menahan nilai ini meski nilai dasarnya berubah.",
+        "couple": "Nilai sendiri. Klik untuk kembali mengikuti pengaturan dasar."
+      },
+      "value": {
+        "on": "aktif",
+        "off": "nonaktif",
+        "empty": "tidak ada",
+        "hidden": "diatur (tersembunyi)",
+        "items": "entri: {{number}}"
+      },
+      "reset": "Atur ulang",
+      "resetTooltip": "Kembali mengikuti pengaturan dasar",
+      "resetEntry": "Atur ulang {{name}}",
+      "legend": {
+        "coupled": "terkait: mengikuti pengaturan dasar",
+        "own": "nilai sendiri: tetap saat nilai dasar berubah",
+        "hint": "Mengubah nilai melepas kaitannya. Klik pada rantai melepasnya tanpa mengubah nilai. Atur ulang mengaitkannya kembali."
+      },
+      "page": {
+        "reset": "Halaman ke pengaturan dasar",
+        "resetTitle": "Atur ulang “{{page}}” dari “{{name}}” ke pengaturan dasar?"
+      },
+      "dialog": {
+        "values": "Nilai sendiri ini akan kembali mengikuti pengaturan dasar:"
+      },
+      "bar": {
+        "onlyFor": "“{{setting}}” sekarang hanya berlaku untuk “{{name}}”.",
+        "changeDefault": "Ubah nilai dasar saja",
+        "undo": "Urungkan"
+      },
+      "deviations": {
+        "followsOne": "{{names}} mengikuti",
+        "followMany": "{{names}} mengikuti",
+        "allFollow": "Semua profil mengikuti",
+        "add": "+ Profil",
+        "openIn": "Buka di {{name}}",
+        "resetFor": "Kaitkan “{{name}}” kembali ke nilai dasar"
+      },
+      "summary": {
+        "active": "aktif: {{names}}",
+        "noneActive": "tidak ada prompt aktif"
+      },
+      "overview": {
+        "ownValues": "Nilai sendiri ({{number}})",
+        "none": "Profil ini mengikuti pengaturan dasar dalam segala hal.",
+        "jumpHint": "Klik sebuah baris untuk membuka halaman dengan pengaturannya.",
+        "resetWhole": "Seluruh profil ke pengaturan dasar",
+        "resetWholeTitle": "Atur ulang “{{name}}” sepenuhnya ke pengaturan dasar?",
+        "keeps": "Nama dan aplikasi profil tetap.",
+        "newProfile": "Profil baru",
+        "newDialogDescription": "Profil baru mengikuti pengaturan dasar dalam segala hal sampai Anda memberinya nilai sendiri."
+      },
+      "errors": {
+        "save": "Perubahan tidak dapat disimpan"
       }
     }
   },

@@ -473,7 +473,7 @@
     },
     "profiles": {
       "title": "プロファイル",
-      "description": "プロファイルは必要なところだけ基本設定を上書きします。独自の値はそのまま残り、それ以外は基本設定に従います。プロファイルの使用中に行った変更は、その独自の値を変更し、それ以外の場合は基本設定を変更します。",
+      "description": "プロファイルは必要なところだけ基本設定を上書きします。独自の値は残り、それ以外は基本設定に従います。基本設定は「基本設定」で、プロファイルの独自の値はその名前の下で変更します。",
       "active": "有効",
       "use": "使用",
       "duplicate": "複製",
@@ -498,11 +498,6 @@
         "switchesTo": "有効なプロファイルのため、先に「{{name}}」が有効になります。",
         "confirm": "プロファイルを削除"
       },
-      "scope": {
-        "models": "「{{name}}」を使用中です。独自のモデルがある場合はここでの選択がそれを変更し、ない場合は基本設定を変更します。",
-        "postProcessing": "「{{name}}」を使用中です。独自の値はプロファイル内で、それ以外は基本設定で変更されます。API キーはすべてのプロファイルに共通です。"
-      },
-      "pagePlaceholder": "近日公開: このページには「{{name}}」の設定が表示され、各設定が基本設定に従うか独自の値かが示されます。",
       "apps": {
         "label": "自動で使うアプリ:",
         "none": "まだありません",
@@ -549,10 +544,6 @@
       "droppedApps": "すでに「{{name}}」で使用中: {{apps}}。",
       "exportFailed": "プロファイルを書き出せませんでした",
       "importFailed": "プロファイルを読み込めませんでした",
-      "replaceKeyTitle": "API キーを置き換えますか？",
-      "replaceKey": "ファイル内の {{provider}} の API キーは、ここで設定されているキーと異なります。ファイルのキーを使いますか？ その場合、{{provider}} を使うすべてのプロファイルに適用されます。",
-      "replace": "ファイルのキーを使う",
-      "keep": "現在のキーを保持",
       "fileFilter": "DanyWhere プロファイル",
       "errors": {
         "profile_not_found": "このプロファイルはもう存在しません。",
@@ -785,14 +776,11 @@
       },
       "wordLists": {
         "groupTitle": "単語リスト",
-        "groupDescription": "モデルには、まず有効な追加リストの単語、次にプロファイルの単語リスト、最後にグローバル単語リストの単語が渡されます。",
-        "globalTitle": "グローバル単語リスト(すべてのプロファイル)",
-        "profileTitle": "プロファイル「{{name}}」の単語リスト",
-        "profileDescription": "このプロファイルでは常に、グローバル単語リストと一緒に適用されます。特定の用途の単語はここに、どこでも使う単語はグローバルリストに入れてください。",
+        "groupDescription": "モデルはまず有効な追加リストの単語を、次に追加の単語を、最後に単語リストを受け取ります。",
+        "profileDescription": "このプロファイルだけが加える単語で、単語リストより先に渡されます。1つの文脈の単語はここに、どこでも必要な単語は基本設定の単語リストに入れてください。",
         "activeTitle": "有効な追加リスト",
-        "activeDescription": "このリストの単語は最初にモデルへ渡され、常に適用されるプロファイルの単語リストとグローバル単語リストより先になります。ショートカットまたはトレイメニューから切り替えます。",
+        "activeDescription": "この単語は、常に適用される追加の単語と単語リストより先にモデルに渡されます。ショートカットかトレイメニューで切り替えます。",
         "onlyGlobal": "なし",
-        "title": "プロファイル「{{name}}」の追加リスト",
         "description": "このプロファイルで追加でオンにできる名前付きリストです(例: トピックごとに1つ)。一度に1つだけです。",
         "selectList": "リストを選択",
         "createNew": "新しいリスト",
@@ -1088,7 +1076,12 @@
       },
       "contextEntryJump": "修正するために履歴で表示",
       "dropTitle": "ドロップして文字起こし",
-      "dropDescription": "履歴に表示されます。"
+      "dropDescription": "履歴に表示されます。",
+      "promptMenu": {
+        "button": "1つのプロンプトで後処理",
+        "title": "後処理に使う",
+        "active": "有効"
+      }
     },
     "debug": {
       "title": "デバッグ",
@@ -1286,6 +1279,86 @@
       "whatsNewUpdates": {
         "label": "新機能を表示",
         "description": "Handy のアップデート後にリリースノートを表示"
+      }
+    },
+    "profileView": {
+      "fields": {
+        "shortcuts": "ショートカット",
+        "defaultEnds": "既定の終了",
+        "selectedModel": "音声モデル",
+        "providers": "プロバイダーのアドレスと形式",
+        "activePrompts": "有効なプロンプト",
+        "externalScript": "外部スクリプト",
+        "customFillerWords": "独自のフィラー語",
+        "customWords": "単語リスト",
+        "profileWords": "追加の単語",
+        "wordLists": "追加のリスト"
+      },
+      "state": {
+        "coupled": "基本値",
+        "own": "独自の値",
+        "defaultIs": "基本値: {{value}}",
+        "sameAsDefault": "基本値と同じ",
+        "entryOwn": "独自",
+        "entryOff": "オフ",
+        "ownEntries": "独自: {{names}}",
+        "offEntries": "オフ: {{names}}"
+      },
+      "chain": {
+        "hold": "基本設定に従います。基本値が変わってもこの値を保つにはクリックします。",
+        "couple": "独自の値です。基本設定に再び従うにはクリックします。"
+      },
+      "value": {
+        "on": "オン",
+        "off": "オフ",
+        "empty": "なし",
+        "hidden": "設定済み (非表示)",
+        "items": "項目: {{number}}"
+      },
+      "reset": "リセット",
+      "resetTooltip": "再び基本設定に従う",
+      "resetEntry": "{{name}}をリセット",
+      "legend": {
+        "coupled": "連動: 基本設定に従う",
+        "own": "独自の値: 基本値が変わっても残る",
+        "hint": "値を変えると連動が外れます。チェーンをクリックすると値を変えずに外れます。リセットで再び連動します。"
+      },
+      "page": {
+        "reset": "ページを基本設定に",
+        "resetTitle": "「{{name}}」の「{{page}}」を基本設定にリセットしますか?"
+      },
+      "dialog": {
+        "values": "次の独自の値が再び基本設定に従います:"
+      },
+      "bar": {
+        "onlyFor": "「{{setting}}」は今後「{{name}}」にだけ適用されます。",
+        "changeDefault": "代わりに基本値を変更",
+        "undo": "元に戻す"
+      },
+      "deviations": {
+        "followsOne": "{{names}}は従います",
+        "followMany": "{{names}}は従います",
+        "allFollow": "すべてのプロファイルが従います",
+        "add": "+ プロファイル",
+        "openIn": "{{name}}で開く",
+        "resetFor": "「{{name}}」を基本値に再び連動"
+      },
+      "summary": {
+        "active": "有効: {{names}}",
+        "noneActive": "有効なプロンプトなし"
+      },
+      "overview": {
+        "ownValues": "独自の値 ({{number}})",
+        "none": "このプロファイルはすべて基本設定に従います。",
+        "jumpHint": "行をクリックすると、その設定のページが開きます。",
+        "resetWhole": "プロファイル全体を基本設定に",
+        "resetWholeTitle": "「{{name}}」を完全に基本設定にリセットしますか?",
+        "keeps": "プロファイルの名前とアプリはそのままです。",
+        "newProfile": "新しいプロファイル",
+        "newDialogDescription": "新しいプロファイルは、独自の値を与えるまですべて基本設定に従います。"
+      },
+      "errors": {
+        "save": "変更を保存できませんでした"
       }
     }
   },

@@ -473,7 +473,7 @@
     },
     "profiles": {
       "title": "Profiler",
-      "description": "En profil avviker från grundinställningarna där det behövs: dess egna värden ligger kvar, allt annat följer grundinställningarna. En ändring medan en profil används ändrar dess eget värde, annars grundinställningarna.",
+      "description": "En profil avviker från grundinställningarna där den behöver: dess egna värden blir kvar, allt annat följer grundinställningarna. Grundinställningarna ändrar du under ”Grundinställningar”, en profils egna värden under dess namn.",
       "active": "Aktiv",
       "use": "Använd",
       "duplicate": "Duplicera",
@@ -498,11 +498,6 @@
         "switchesTo": "Det är den aktiva profilen, så ”{{name}}” blir aktiv först.",
         "confirm": "Ta bort profil"
       },
-      "scope": {
-        "models": "”{{name}}” används: har den en egen modell ändrar valet här den, annars grundinställningarna.",
-        "postProcessing": "”{{name}}” används: dess egna värden ändras i profilen, alla andra i grundinställningarna; API-nycklar gäller för alla profiler."
-      },
-      "pagePlaceholder": "Kommer snart: den här sidan visar inställningarna för ”{{name}}”, var och en markerad som att den följer grundinställningarna eller har ett eget värde.",
       "apps": {
         "label": "Används automatiskt i:",
         "none": "ännu ingen app",
@@ -549,10 +544,6 @@
       "droppedApps": "Används redan av ”{{name}}”: {{apps}}.",
       "exportFailed": "Profilen kunde inte exporteras",
       "importFailed": "Profilen kunde inte importeras",
-      "replaceKeyTitle": "Ersätta API-nyckeln?",
-      "replaceKey": "API-nyckeln för {{provider}} i filen skiljer sig från den som är inställd här. Använda filens nyckel? Den gäller då för alla profiler som använder {{provider}}.",
-      "replace": "Filens nyckel",
-      "keep": "Behåll nuvarande",
       "fileFilter": "DanyWhere-profil",
       "errors": {
         "profile_not_found": "Profilen finns inte längre.",
@@ -785,14 +776,11 @@
       },
       "wordLists": {
         "groupTitle": "Ordlistor",
-        "groupDescription": "Modellen får först orden i den aktiva extra listan, sedan orden i profilens ordlista och sist orden i den globala ordlistan.",
-        "globalTitle": "Global ordlista (alla profiler)",
-        "profileTitle": "Ordlista för profilen ”{{name}}”",
-        "profileDescription": "Gäller alltid i den här profilen, tillsammans med den globala ordlistan. Ord för ett sammanhang hör hemma här, ord du behöver överallt i den globala listan.",
+        "groupDescription": "Modellen får först orden i den aktiva extralistan, sedan de extra orden och sist ordlistan.",
+        "profileDescription": "Ord som bara den här profilen lägger till, före ordlistan. Lägg ord för ett sammanhang här och ord som du behöver överallt i grundinställningarnas ordlista.",
         "activeTitle": "Aktiv extra lista",
-        "activeDescription": "Dess ord ges först till modellen, före orden i profilens ordlista och den globala ordlistan, som alltid gäller. Byt den med kortkommandot eller från menyn i menyraden.",
+        "activeDescription": "Dess ord går först till modellen, före de extra orden och ordlistan, som alltid gäller. Byt med kortkommandot eller från menyn i menyfältet.",
         "onlyGlobal": "Ingen",
-        "title": "Extra listor för profilen ”{{name}}”",
         "description": "Namngivna listor i den här profilen som du kan slå på därutöver, t.ex. en per ämne. En i taget.",
         "selectList": "Välj en lista",
         "createNew": "Ny lista",
@@ -1088,7 +1076,12 @@
       },
       "contextEntryJump": "Visa i historiken för att rätta",
       "dropTitle": "Släpp för att transkribera",
-      "dropDescription": "Den visas i historiken."
+      "dropDescription": "Den visas i historiken.",
+      "promptMenu": {
+        "button": "Efterbearbeta med en prompt",
+        "title": "Efterbearbeta med",
+        "active": "aktiv"
+      }
     },
     "debug": {
       "title": "Felsökning",
@@ -1286,6 +1279,86 @@
       "whatsNewUpdates": {
         "label": "Visa nyheter",
         "description": "Visa versionsinformation efter Handy-uppdateringar"
+      }
+    },
+    "profileView": {
+      "fields": {
+        "shortcuts": "Kortkommandon",
+        "defaultEnds": "Standardavslut",
+        "selectedModel": "Talmodell",
+        "providers": "Leverantörens adress och format",
+        "activePrompts": "Aktiva promptar",
+        "externalScript": "Externt skript",
+        "customFillerWords": "Egna utfyllnadsord",
+        "customWords": "Ordlista",
+        "profileWords": "Extra ord",
+        "wordLists": "Extra listor"
+      },
+      "state": {
+        "coupled": "Grundvärde",
+        "own": "Eget värde",
+        "defaultIs": "Grundvärde: {{value}}",
+        "sameAsDefault": "samma som grundvärdet",
+        "entryOwn": "egen",
+        "entryOff": "av",
+        "ownEntries": "egna: {{names}}",
+        "offEntries": "av: {{names}}"
+      },
+      "chain": {
+        "hold": "Följer grundinställningarna. Klicka för att behålla det här värdet även när grundvärdet ändras.",
+        "couple": "Eget värde. Klicka för att följa grundinställningarna igen."
+      },
+      "value": {
+        "on": "på",
+        "off": "av",
+        "empty": "inget",
+        "hidden": "angiven (dold)",
+        "items": "poster: {{number}}"
+      },
+      "reset": "Återställ",
+      "resetTooltip": "Följ grundinställningarna igen",
+      "resetEntry": "Återställ {{name}}",
+      "legend": {
+        "coupled": "kopplat: följer grundinställningarna",
+        "own": "eget värde: blir kvar när grundvärdet ändras",
+        "hint": "Att ändra ett värde lossar kopplingen. Ett klick på kedjan lossar den utan att ändra värdet. Återställ kopplar igen."
+      },
+      "page": {
+        "reset": "Sidan till grundinställningar",
+        "resetTitle": "Återställa ”{{page}}” i ”{{name}}” till grundinställningarna?"
+      },
+      "dialog": {
+        "values": "De här egna värdena följer grundinställningarna igen:"
+      },
+      "bar": {
+        "onlyFor": "”{{setting}}” gäller nu bara för ”{{name}}”.",
+        "changeDefault": "Ändra grundvärdet i stället",
+        "undo": "Ångra"
+      },
+      "deviations": {
+        "followsOne": "{{names}} följer",
+        "followMany": "{{names}} följer",
+        "allFollow": "Alla profiler följer",
+        "add": "+ Profil",
+        "openIn": "Öppna i {{name}}",
+        "resetFor": "Koppla ”{{name}}” till grundvärdet igen"
+      },
+      "summary": {
+        "active": "aktiva: {{names}}",
+        "noneActive": "ingen aktiv prompt"
+      },
+      "overview": {
+        "ownValues": "Egna värden ({{number}})",
+        "none": "Den här profilen följer grundinställningarna i allt.",
+        "jumpHint": "Ett klick på en rad öppnar sidan med inställningen.",
+        "resetWhole": "Hela profilen till grundinställningar",
+        "resetWholeTitle": "Återställa ”{{name}}” helt till grundinställningarna?",
+        "keeps": "Profilens namn och appar blir kvar.",
+        "newProfile": "Ny profil",
+        "newDialogDescription": "Den nya profilen följer grundinställningarna i allt tills du ger den egna värden."
+      },
+      "errors": {
+        "save": "Ändringen kunde inte sparas"
       }
     }
   },

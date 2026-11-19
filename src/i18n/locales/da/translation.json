@@ -473,7 +473,7 @@
     },
     "profiles": {
       "title": "Profiler",
-      "description": "En profil afviger fra grundindstillingerne, hvor det er nødvendigt: dens egne værdier bliver, alt andet følger grundindstillingerne. En ændring, mens en profil er i brug, ændrer dens egen værdi, ellers grundindstillingerne.",
+      "description": "En profil afviger fra grundindstillingerne, hvor det er nødvendigt: dens egne værdier bliver, alt andet følger grundindstillingerne. Grundindstillingerne ændrer du under »Grundindstillinger«, en profils egne værdier under dens navn.",
       "active": "Aktiv",
       "use": "Brug",
       "duplicate": "Dupliker",
@@ -498,11 +498,6 @@
         "switchesTo": "Det er den aktive profil, så »{{name}}« bliver aktiv først.",
         "confirm": "Slet profil"
       },
-      "scope": {
-        "models": "»{{name}}« er i brug: har den sin egen model, ændrer valget her den, ellers grundindstillingerne.",
-        "postProcessing": "»{{name}}« er i brug: dens egne værdier ændres i profilen, alle andre i grundindstillingerne; API-nøgler gælder for alle profiler."
-      },
-      "pagePlaceholder": "Kommer snart: Denne side viser indstillingerne for »{{name}}«, hver markeret som at følge grundindstillingerne eller som en egen værdi.",
       "apps": {
         "label": "Bruges automatisk i:",
         "none": "endnu intet program",
@@ -549,10 +544,6 @@
       "droppedApps": "Bruges allerede af “{{name}}”: {{apps}}.",
       "exportFailed": "Profilen kunne ikke eksporteres",
       "importFailed": "Profilen kunne ikke importeres",
-      "replaceKeyTitle": "Erstat API-nøgle?",
-      "replaceKey": "API-nøglen til {{provider}} i filen er forskellig fra den, der er sat op her. Brug filens nøgle? Den gælder så for alle profiler, der bruger {{provider}}.",
-      "replace": "Brug filens nøgle",
-      "keep": "Behold nuværende",
       "fileFilter": "DanyWhere-profil",
       "errors": {
         "profile_not_found": "Profilen findes ikke længere.",
@@ -785,14 +776,11 @@
       },
       "wordLists": {
         "groupTitle": "Ordlister",
-        "groupDescription": "Modellen får først ordene fra den aktive ekstra liste, derefter ordene fra profilens ordliste og til sidst ordene fra den globale ordliste.",
-        "globalTitle": "Global ordliste (alle profiler)",
-        "profileTitle": "Ordliste for profilen »{{name}}«",
-        "profileDescription": "Gælder altid i denne profil, sammen med den globale ordliste. Ord til én sammenhæng hører til her, ord du har brug for overalt, i den globale liste.",
+        "groupDescription": "Modellen får først ordene fra den aktive ekstra liste, så de ekstra ord og til sidst ordlisten.",
+        "profileDescription": "Ord, som kun denne profil tilføjer, før ordlisten. Læg ord til én sammenhæng her og ord, du har brug for overalt, i grundindstillingernes ordliste.",
         "activeTitle": "Aktiv ekstra liste",
-        "activeDescription": "Dens ord gives først til modellen, før ordene i profilens ordliste og den globale ordliste, som altid gælder. Skift den med genvejen eller fra menuen i menulinjen.",
+        "activeDescription": "Dens ord går først til modellen, før de ekstra ord og ordlisten, som altid gælder. Skift den med genvejen eller fra menuen i statuslinjen.",
         "onlyGlobal": "Ingen",
-        "title": "Ekstra lister for profilen »{{name}}«",
         "description": "Navngivne lister i denne profil, som du kan slå til derudover, f.eks. én pr. emne. Kun én ad gangen.",
         "selectList": "Vælg en liste",
         "createNew": "Ny liste",
@@ -1088,7 +1076,12 @@
       },
       "contextEntryJump": "Vis i historikken for at rette",
       "dropTitle": "Slip for at transskribere",
-      "dropDescription": "Den vises i historikken."
+      "dropDescription": "Den vises i historikken.",
+      "promptMenu": {
+        "button": "Efterbehandl med én prompt",
+        "title": "Efterbehandl med",
+        "active": "aktiv"
+      }
     },
     "debug": {
       "title": "Fejlfinding",
@@ -1286,6 +1279,86 @@
           "description": "Højtydende tensor-bibliotek til maskinlæringsinferens på enheden",
           "details": "Handys lokale tale-til-tekst funktionalitet er bygget på transcribe.cpp og ggml. Tak for det fantastiske arbejde af Georgi Gerganov og bidragyderne."
         }
+      }
+    },
+    "profileView": {
+      "fields": {
+        "shortcuts": "Genveje",
+        "defaultEnds": "Standardafslutninger",
+        "selectedModel": "Talemodel",
+        "providers": "Udbyderens adresse og format",
+        "activePrompts": "Aktive prompts",
+        "externalScript": "Eksternt script",
+        "customFillerWords": "Egne fyldord",
+        "customWords": "Ordliste",
+        "profileWords": "Ekstra ord",
+        "wordLists": "Ekstra lister"
+      },
+      "state": {
+        "coupled": "Grundværdi",
+        "own": "Egen værdi",
+        "defaultIs": "Grundværdi: {{value}}",
+        "sameAsDefault": "samme som grundværdien",
+        "entryOwn": "egen",
+        "entryOff": "slået fra",
+        "ownEntries": "egne: {{names}}",
+        "offEntries": "slået fra: {{names}}"
+      },
+      "chain": {
+        "hold": "Følger grundindstillingerne. Klik for at beholde denne værdi, også når grundværdien ændres.",
+        "couple": "Egen værdi. Klik for at følge grundindstillingerne igen."
+      },
+      "value": {
+        "on": "til",
+        "off": "fra",
+        "empty": "intet",
+        "hidden": "angivet (skjult)",
+        "items": "poster: {{number}}"
+      },
+      "reset": "Nulstil",
+      "resetTooltip": "Følg grundindstillingerne igen",
+      "resetEntry": "Nulstil {{name}}",
+      "legend": {
+        "coupled": "koblet: følger grundindstillingerne",
+        "own": "egen værdi: bliver, når grundværdien ændres",
+        "hint": "At ændre en værdi løsner koblingen. Et klik på kæden løsner den uden at ændre værdien. Nulstil kobler igen."
+      },
+      "page": {
+        "reset": "Siden til grundindstillinger",
+        "resetTitle": "Nulstil »{{page}}« i »{{name}}« til grundindstillingerne?"
+      },
+      "dialog": {
+        "values": "Disse egne værdier følger grundindstillingerne igen:"
+      },
+      "bar": {
+        "onlyFor": "»{{setting}}« gælder nu kun for »{{name}}«.",
+        "changeDefault": "Skift grundværdien i stedet",
+        "undo": "Fortryd"
+      },
+      "deviations": {
+        "followsOne": "{{names}} følger",
+        "followMany": "{{names}} følger",
+        "allFollow": "Alle profiler følger",
+        "add": "+ Profil",
+        "openIn": "Åbn i {{name}}",
+        "resetFor": "Kobl »{{name}}« til grundværdien igen"
+      },
+      "summary": {
+        "active": "aktive: {{names}}",
+        "noneActive": "ingen aktiv prompt"
+      },
+      "overview": {
+        "ownValues": "Egne værdier ({{number}})",
+        "none": "Denne profil følger grundindstillingerne i alt.",
+        "jumpHint": "Et klik på en række åbner siden med indstillingen.",
+        "resetWhole": "Hele profilen til grundindstillinger",
+        "resetWholeTitle": "Nulstil »{{name}}« helt til grundindstillingerne?",
+        "keeps": "Profilens navn og programmer bliver.",
+        "newProfile": "Ny profil",
+        "newDialogDescription": "Den nye profil følger grundindstillingerne i alt, indtil du giver den sine egne værdier."
+      },
+      "errors": {
+        "save": "Ændringen kunne ikke gemmes"
       }
     }
   },

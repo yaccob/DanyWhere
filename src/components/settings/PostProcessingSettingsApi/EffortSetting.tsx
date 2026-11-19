@@ -17,7 +17,9 @@ export const EffortSetting: React.FC<EffortSettingProps> = ({
   model,
 }) => {
   const { t } = useTranslation();
-  const { settings, refreshSettings, postProcessModelOptions } = useSettings();
+  // DanyWhere: `setPostProcessEffort` writes into the page's scope.
+  const { settings, setPostProcessEffort, postProcessModelOptions } =
+    useSettings();
   const [options, setOptions] = useState<EffortOptions | null>(null);
   const [saving, setSaving] = useState(false);
   const stored = settings?.post_process_efforts?.[providerId] ?? null;
@@ -45,19 +47,15 @@ export const EffortSetting: React.FC<EffortSettingProps> = ({
     async (value: string) => {
       setSaving(true);
       try {
-        const result = await commands.changePostProcessEffortSetting(
+        await setPostProcessEffort(
           providerId,
           value === MODEL_DEFAULT_EFFORT ? null : value,
         );
-        if (result.status === "error") {
-          console.error("Failed to store the effort:", result.error);
-        }
-        await refreshSettings();
       } finally {
         setSaving(false);
       }
     },
-    [providerId, refreshSettings],
+    [providerId, setPostProcessEffort],
   );
 
   const choice = effortChoice(options, stored);

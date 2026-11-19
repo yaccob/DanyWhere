@@ -473,7 +473,7 @@
     },
     "profiles": {
       "title": "Hồ sơ",
-      "description": "Hồ sơ thay thế cài đặt cơ bản ở những chỗ cần thiết: các giá trị riêng của nó được giữ nguyên, mọi thứ khác theo cài đặt cơ bản. Thay đổi khi đang dùng một hồ sơ sẽ đổi giá trị riêng của hồ sơ đó, nếu không thì đổi cài đặt cơ bản.",
+      "description": "Hồ sơ thay thế cài đặt cơ bản ở chỗ cần: giá trị riêng của nó được giữ, mọi thứ khác theo cài đặt cơ bản. Đổi cài đặt cơ bản trong “Cài đặt cơ bản” và giá trị riêng của hồ sơ dưới tên của nó.",
       "active": "Đang dùng",
       "use": "Dùng",
       "duplicate": "Nhân bản",
@@ -498,11 +498,6 @@
         "switchesTo": "Đây là hồ sơ đang dùng, nên “{{name}}” sẽ được dùng trước.",
         "confirm": "Xóa hồ sơ"
       },
-      "scope": {
-        "models": "Đang dùng “{{name}}”: nếu hồ sơ có mô hình riêng, lựa chọn ở đây sẽ đổi mô hình đó, nếu không thì đổi cài đặt cơ bản.",
-        "postProcessing": "Đang dùng “{{name}}”: các giá trị riêng thay đổi trong hồ sơ, mọi giá trị khác thay đổi trong cài đặt cơ bản; khóa API áp dụng cho mọi hồ sơ."
-      },
-      "pagePlaceholder": "Sắp ra mắt: trang này sẽ hiển thị cài đặt của “{{name}}”, mỗi mục được đánh dấu là theo cài đặt cơ bản hoặc có giá trị riêng.",
       "apps": {
         "label": "Tự động dùng trong:",
         "none": "chưa có ứng dụng nào",
@@ -549,10 +544,6 @@
       "droppedApps": "Đã được “{{name}}” sử dụng: {{apps}}.",
       "exportFailed": "Không thể xuất hồ sơ",
       "importFailed": "Không thể nhập hồ sơ",
-      "replaceKeyTitle": "Thay khóa API?",
-      "replaceKey": "Khóa API cho {{provider}} trong tệp khác với khóa đã thiết lập ở đây. Dùng khóa trong tệp? Khi đó khóa sẽ áp dụng cho mọi hồ sơ dùng {{provider}}.",
-      "replace": "Khóa trong tệp",
-      "keep": "Giữ khóa hiện tại",
       "fileFilter": "Hồ sơ DanyWhere",
       "errors": {
         "profile_not_found": "Hồ sơ không còn tồn tại.",
@@ -785,14 +776,11 @@
       },
       "wordLists": {
         "groupTitle": "Danh sách từ",
-        "groupDescription": "Mô hình nhận trước các từ của danh sách bổ sung đang dùng, rồi đến danh sách từ của hồ sơ, cuối cùng là danh sách từ chung.",
-        "globalTitle": "Danh sách từ chung (mọi hồ sơ)",
-        "profileTitle": "Danh sách từ của hồ sơ “{{name}}”",
-        "profileDescription": "Luôn áp dụng trong hồ sơ này, cùng với danh sách từ chung. Đặt ở đây các từ cho một ngữ cảnh, còn các từ cần ở mọi nơi thì đặt vào danh sách chung.",
+        "groupDescription": "Mô hình nhận trước các từ của danh sách bổ sung đang bật, rồi các từ bổ sung, rồi danh sách từ.",
+        "profileDescription": "Các từ chỉ hồ sơ này thêm vào, trước danh sách từ. Đặt từ cho một ngữ cảnh ở đây và từ bạn cần ở mọi nơi vào danh sách từ của cài đặt cơ bản.",
         "activeTitle": "Danh sách bổ sung đang dùng",
-        "activeDescription": "Các từ trong danh sách được đưa cho mô hình đầu tiên, trước danh sách từ của hồ sơ và danh sách chung, vốn luôn được áp dụng. Đổi bằng phím tắt hoặc từ menu khay.",
+        "activeDescription": "Các từ của nó đến mô hình trước, trước các từ bổ sung và danh sách từ luôn áp dụng. Chuyển bằng phím tắt hoặc từ menu khay.",
         "onlyGlobal": "Không có",
-        "title": "Danh sách bổ sung của hồ sơ “{{name}}”",
         "description": "Các danh sách có tên của hồ sơ này mà bạn có thể bật thêm, ví dụ mỗi chủ đề một danh sách. Mỗi lần chỉ một.",
         "selectList": "Chọn danh sách",
         "createNew": "Danh sách mới",
@@ -1088,7 +1076,12 @@
       },
       "contextEntryJump": "Hiện trong lịch sử để sửa",
       "dropTitle": "Thả để chép lời",
-      "dropDescription": "Nó sẽ xuất hiện trong Lịch sử."
+      "dropDescription": "Nó sẽ xuất hiện trong Lịch sử.",
+      "promptMenu": {
+        "button": "Hậu xử lý bằng một prompt",
+        "title": "Hậu xử lý bằng",
+        "active": "đang bật"
+      }
     },
     "debug": {
       "title": "Gỡ lỗi",
@@ -1286,6 +1279,86 @@
       "whatsNewUpdates": {
         "label": "Hiển thị điểm mới",
         "description": "Hiển thị ghi chú phát hành sau khi Handy cập nhật"
+      }
+    },
+    "profileView": {
+      "fields": {
+        "shortcuts": "Phím tắt",
+        "defaultEnds": "Kết thúc mặc định",
+        "selectedModel": "Mô hình giọng nói",
+        "providers": "Địa chỉ và định dạng của nhà cung cấp",
+        "activePrompts": "Prompt đang bật",
+        "externalScript": "Script bên ngoài",
+        "customFillerWords": "Từ đệm riêng",
+        "customWords": "Danh sách từ",
+        "profileWords": "Từ bổ sung",
+        "wordLists": "Danh sách bổ sung"
+      },
+      "state": {
+        "coupled": "Giá trị cơ bản",
+        "own": "Giá trị riêng",
+        "defaultIs": "Giá trị cơ bản: {{value}}",
+        "sameAsDefault": "giống giá trị cơ bản",
+        "entryOwn": "riêng",
+        "entryOff": "tắt",
+        "ownEntries": "riêng: {{names}}",
+        "offEntries": "tắt: {{names}}"
+      },
+      "chain": {
+        "hold": "Theo cài đặt cơ bản. Nhấp để giữ giá trị này ngay cả khi giá trị cơ bản thay đổi.",
+        "couple": "Giá trị riêng. Nhấp để theo lại cài đặt cơ bản."
+      },
+      "value": {
+        "on": "bật",
+        "off": "tắt",
+        "empty": "không có",
+        "hidden": "đã đặt (ẩn)",
+        "items": "mục: {{number}}"
+      },
+      "reset": "Đặt lại",
+      "resetTooltip": "Theo lại cài đặt cơ bản",
+      "resetEntry": "Đặt lại {{name}}",
+      "legend": {
+        "coupled": "liên kết: theo cài đặt cơ bản",
+        "own": "giá trị riêng: giữ nguyên khi giá trị cơ bản thay đổi",
+        "hint": "Thay đổi giá trị sẽ bỏ liên kết. Nhấp vào dây xích để bỏ liên kết mà không đổi giá trị. Đặt lại sẽ liên kết lại."
+      },
+      "page": {
+        "reset": "Trang về cài đặt cơ bản",
+        "resetTitle": "Đặt lại “{{page}}” của “{{name}}” về cài đặt cơ bản?"
+      },
+      "dialog": {
+        "values": "Các giá trị riêng này sẽ theo lại cài đặt cơ bản:"
+      },
+      "bar": {
+        "onlyFor": "“{{setting}}” giờ chỉ áp dụng cho “{{name}}”.",
+        "changeDefault": "Đổi giá trị cơ bản thay vào đó",
+        "undo": "Hoàn tác"
+      },
+      "deviations": {
+        "followsOne": "{{names}} theo",
+        "followMany": "{{names}} theo",
+        "allFollow": "Tất cả hồ sơ đều theo",
+        "add": "+ Hồ sơ",
+        "openIn": "Mở trong {{name}}",
+        "resetFor": "Liên kết lại “{{name}}” với giá trị cơ bản"
+      },
+      "summary": {
+        "active": "đang bật: {{names}}",
+        "noneActive": "không có prompt nào bật"
+      },
+      "overview": {
+        "ownValues": "Giá trị riêng ({{number}})",
+        "none": "Hồ sơ này theo cài đặt cơ bản trong mọi thứ.",
+        "jumpHint": "Nhấp vào một dòng để mở trang có cài đặt đó.",
+        "resetWhole": "Toàn bộ hồ sơ về cài đặt cơ bản",
+        "resetWholeTitle": "Đặt lại hoàn toàn “{{name}}” về cài đặt cơ bản?",
+        "keeps": "Tên và ứng dụng của hồ sơ được giữ lại.",
+        "newProfile": "Hồ sơ mới",
+        "newDialogDescription": "Hồ sơ mới theo cài đặt cơ bản trong mọi thứ cho đến khi bạn đặt giá trị riêng cho nó."
+      },
+      "errors": {
+        "save": "Không thể lưu thay đổi"
       }
     }
   },

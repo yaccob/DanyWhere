@@ -55,15 +55,23 @@ check("nothing deletes versions on the way", () => {
   }
 });
 
-check("✨ post-processes the version shown, without a menu", () => {
+check("✨ post-processes the version shown; its menu with one prompt", () => {
   const settings = source("HistorySettings.tsx");
   has(
     settings,
-    /reprocess\(entry\.id, "post_process", shown\)/u,
+    /reprocess\(entry\.id, "post_process", shown, null\)/u,
+    "HistorySettings.tsx",
+  );
+  // H6 (strand E2): the menu lists every prompt by name; one chosen runs
+  // alone on the version shown, its result on top.
+  has(
+    settings,
+    /reprocess\(entry\.id, "post_process", shown, \[promptId\]\)/u,
     "HistorySettings.tsx",
   );
   const button = source("PostProcessButton.tsx");
-  hasNot(button, /role="menu"/u, "PostProcessButton.tsx");
+  has(button, /role="menu"/u, "PostProcessButton.tsx");
+  has(button, /role="menuitemcheckbox"/u, "PostProcessButton.tsx");
   for (const file of FILES) {
     hasNot(source(file), /post_process_replace|post_process_redo/u, file);
   }
@@ -72,7 +80,7 @@ check("✨ post-processes the version shown, without a menu", () => {
 check("transcribing again names no version", () => {
   has(
     source("HistorySettings.tsx"),
-    /reprocess\(entry\.id, mode, null\)/u,
+    /reprocess\(entry\.id, mode, null, null\)/u,
     "HistorySettings.tsx",
   );
 });

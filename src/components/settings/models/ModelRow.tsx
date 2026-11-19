@@ -15,11 +15,14 @@ import {
   usePlace,
   type Entry,
 } from "./modelEntries";
+import { useSettingsScope } from "../profiles/scope/SettingsScope";
 
 /** A Models page row: the shared table row plus use, stop and delete. */
 export const ModelRow: React.FC<{ entry: Entry }> = ({ entry }) => {
   const { t } = useTranslation();
   const place = usePlace(entry.id);
+  // DanyWhere: choosing writes into the page's scope.
+  const scope = useSettingsScope();
   const target = useIsTarget(entry.id);
   const locked = useModelsLocked();
   const percent = useModelStore(
@@ -97,7 +100,7 @@ export const ModelRow: React.FC<{ entry: Entry }> = ({ entry }) => {
       setTold(true);
       return;
     }
-    pickModel(entry.id);
+    pickModel(entry.id, scope);
   };
 
   const slotClass =
