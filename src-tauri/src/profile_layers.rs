@@ -997,29 +997,65 @@ pub fn set_entry(
         upsert(&mut list, entry_id, &entry);
         fields.insert(field.to_string(), assemble(key, list));
     };
+    // A new model drops an effort it is known not to take (strand E2).
+    let model_changes = field == EFFORT_FOLLOWS;
     commit(settings, |s| match scope {
         Scope::Defaults => {
             let mut fields = defaults_fields(s);
             with_entry(&mut fields);
             let mut values = from_fields(fields)?;
             validate(s, &mut values, field, Some(entry_id))?;
+            if model_changes && effort_unsupported(&values, entry_id) {
+                values.post_process_efforts.remove(entry_id);
+            }
             s.default_values = Some(values);
             Ok(())
         }
         Scope::Profile { id } => {
             let index = index_of(s, id)?;
+            let effort_in_defaults = profiles::default_values(s)
+                .post_process_efforts
+                .contains_key(entry_id);
             let mut fields = to_fields(&s.profiles[index].values);
             with_entry(&mut fields);
             let mut values = from_fields(fields)?;
             validate(s, &mut values, field, Some(entry_id))?;
+            let drop_effort = model_changes && effort_unsupported(&values, entry_id);
+            if drop_effort {
+                values.post_process_efforts.remove(entry_id);
+            }
             let profile = &mut s.profiles[index];
             profile.values = values;
             let held = profile.own_entries.entry(field.to_string()).or_default();
             held.own.insert(entry_id.to_string());
             held.off.remove(entry_id);
+            if drop_effort {
+                // Its own effort goes; one it followed is switched off.
+                let efforts = profile
+                    .own_entries
+                    .entry("post_process_efforts".to_string())
+                    .or_default();
+                efforts.own.remove(entry_id);
+                if effort_in_defaults {
+                    efforts.off.insert(entry_id.to_string());
+                }
+            }
             Ok(())
         }
     })
+}
+
+/// The list field whose change can make an effort unknown to the new model
+/// (the model per provider).
+const EFFORT_FOLLOWS: &str = "post_process_models";
+
+/// Whether `values` (a layer's: the defaults' or a profile's) hold an effort
+/// for provider `provider_id` that its model there is known not to take, as
+/// `post_process_effort::drop_if_unsupported` decides for the values in use.
+fn effort_unsupported(values: &ProfileValues, provider_id: &str) -> bool {
+    let mut layer = AppSettings::default();
+    values.apply_to(&mut layer);
+    crate::post_process_effort::drop_if_unsupported(&mut layer, provider_id)
 }
 
 /// Removes entry `entry_id` of list `field` in `scope`: from the defaults
@@ -1816,6 +1852,106 @@ mod tests {
         assert_eq!(models("arbeit")["openai"], "gpt-5");
         assert_eq!(models("playground")["custom"], "gemma4-12b-qat");
         assert_eq!(s.post_process_models["openai"], "gpt-5");
+    }
+
+    // Strand E2 (A1's open point 7): a model change through `set_entry`
+    // drops an effort the new model is known not to take, as the old
+    // `change_post_process_model_setting` did, in the layer it changes.
+
+    fn efforts_of(s: &AppSettings, id: &str) -> HashMap<String, String> {
+        profile(s, id).values.post_process_efforts.clone()
+    }
+
+    #[test]
+    fn a_model_without_effort_drops_the_profiles_own_effort() {
+        let mut s = migrated();
+        assert_eq!(efforts_of(&s, "arbeit")["anthropic"], "xhigh");
+        set_entry(
+            &mut s,
+            &profile_scope("arbeit"),
+            "post_process_models",
+            "anthropic",
+            json!("claude-haiku-4-5"),
+        )
+        .unwrap();
+        assert!(!efforts_of(&s, "arbeit").contains_key("anthropic"));
+        let held = profile(&s, "arbeit")
+            .own_entries
+            .get("post_process_efforts")
+            .cloned()
+            .unwrap_or_default();
+        assert!(!held.own.contains("anthropic"));
+    }
+
+    #[test]
+    fn a_model_that_takes_the_effort_keeps_it() {
+        let mut s = migrated();
+        set_entry(
+            &mut s,
+            &profile_scope("arbeit"),
+            "post_process_models",
+            "anthropic",
+            json!("claude-opus-4-7"),
+        )
+        .unwrap();
+        assert_eq!(efforts_of(&s, "arbeit")["anthropic"], "xhigh");
+    }
+
+    #[test]
+    fn the_defaults_drop_an_effort_their_new_model_doesnt_take() {
+        let mut s = migrated();
+        set_entry(
+            &mut s,
+            &Scope::Defaults,
+            "post_process_efforts",
+            "anthropic",
+            json!("high"),
+        )
+        .unwrap();
+        assert_eq!(efforts_of(&s, "privat")["anthropic"], "high");
+        set_entry(
+            &mut s,
+            &Scope::Defaults,
+            "post_process_models",
+            "anthropic",
+            json!("claude-haiku-4-5"),
+        )
+        .unwrap();
+        let defaults = s.default_values.clone().unwrap();
+        assert!(!defaults.post_process_efforts.contains_key("anthropic"));
+        assert!(!efforts_of(&s, "privat").contains_key("anthropic"));
+        // Arbeit holds its own model and effort: untouched.
+        assert_eq!(efforts_of(&s, "arbeit")["anthropic"], "xhigh");
+    }
+
+    #[test]
+    fn a_profile_switches_off_a_coupled_effort_its_new_model_doesnt_take() {
+        let mut s = migrated();
+        set_entry(
+            &mut s,
+            &Scope::Defaults,
+            "post_process_efforts",
+            "anthropic",
+            json!("high"),
+        )
+        .unwrap();
+        set_entry(
+            &mut s,
+            &profile_scope("privat"),
+            "post_process_models",
+            "anthropic",
+            json!("claude-haiku-4-5"),
+        )
+        .unwrap();
+        assert!(!efforts_of(&s, "privat").contains_key("anthropic"));
+        let held = profile(&s, "privat")
+            .own_entries
+            .get("post_process_efforts")
+            .cloned()
+            .unwrap_or_default();
+        assert!(held.off.contains("anthropic"));
+        let defaults = s.default_values.clone().unwrap();
+        assert_eq!(defaults.post_process_efforts["anthropic"], "high");
     }
 
     #[test]
