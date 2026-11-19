@@ -315,7 +315,9 @@ pub fn sound_after_dictation(
 /// Plays the sound that ends a dictation (`sound_after_dictation`). Call once
 /// the dictation's text is where it goes, after post-processing.
 pub fn play_sound_after_dictation(app: &AppHandle, end: DictationEnd) {
-    match sound_after_dictation(&get_settings(app), INSERT_SERVICE_AVAILABLE, end) {
+    // The dictation's profile's sounds (the paste thread keeps its values).
+    let settings = crate::app_profiles::dictation_settings(app);
+    match sound_after_dictation(&settings, INSERT_SERVICE_AVAILABLE, end) {
         Some(SoundType::Done) => {
             info!("Dictation done; playing the done sound.");
             play_feedback_sound(app, SoundType::Done);
@@ -331,7 +333,8 @@ pub fn play_sound_after_dictation(app: &AppHandle, end: DictationEnd) {
 /// Ends the overlay after a finished dictation: says where the text waits
 /// when it was not pasted, otherwise just hides the overlay.
 pub fn finish_overlay_after_dictation(app: &AppHandle) {
-    let settings = get_settings(app);
+    // The dictation's profile's delivery (the paste thread keeps its values).
+    let settings = crate::app_profiles::dictation_settings(app);
     let notice = dictation_notice(&settings, INSERT_SERVICE_AVAILABLE);
     match (notice, clipboard_notice_duration(&settings)) {
         (Some(DictationNotice::OnClipboard), Some(duration)) => {

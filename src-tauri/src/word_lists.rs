@@ -1,5 +1,6 @@
-//! Named word lists. The global list (`custom_words`) always applies; at most
-//! one named additional list is switched on in addition to it. The model gets
+//! Named word lists. The list every dictation gets (`custom_words`, a
+//! profile value like the others) always applies; at most one named
+//! additional list is switched on in addition to it. The model gets
 //! the additional list's words first, so they win when Whisper's prompt
 //! budget is tight.
 
@@ -220,7 +221,7 @@ pub fn set_active_word_list(app: AppHandle, id: Option<String>) -> Result<(), St
 }
 
 /// DanyWhere: replaces the active profile's own word list, which always
-/// applies in that profile (`custom_words` applies in every profile).
+/// applies in that profile, before `custom_words`.
 #[tauri::command]
 #[specta::specta]
 pub fn update_profile_words(app: AppHandle, words: Vec<String>) -> Result<(), String> {
