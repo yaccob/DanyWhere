@@ -4,6 +4,7 @@ import { type } from "@tauri-apps/plugin-os";
 import { MicrophoneSelector } from "../MicrophoneSelector";
 import { ChannelSelector } from "../ChannelSelector";
 import { ShortcutInput } from "../ShortcutInput";
+import { EndKeysSettings } from "../end-keys/EndKeysSettings";
 import { DictationKeyInserts } from "../DictationKeyInserts";
 import { DictationServiceWhenIdleSetting } from "../DictationServiceWhenIdle";
 import { SettingsGroup } from "../../ui/SettingsGroup";
@@ -55,6 +56,8 @@ export const GeneralSettings: React.FC = () => {
         {/* Cancel shortcut remains hidden on Linux because of dynamic shortcut instability. */}
         {!isLinux && <ShortcutInput shortcutId="cancel" grouped={true} />}
       </SettingsGroup>
+      {/* DanyWhere: how a recording ends and what follows (end_keys.rs). */}
+      <EndKeysSettings />
       <SettingsGroup title={t("settings.languages.title")}>
         <PreferredLanguages descriptionMode="tooltip" grouped={true} />
         {speaksChinese && (

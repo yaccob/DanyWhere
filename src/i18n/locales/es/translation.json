@@ -15,8 +15,7 @@
     "onlyGlobalWordList": "Ninguna lista adicional",
     "profile": "Perfil",
     "defaultProfile": "Predeterminado",
-    "profileAutoByApp": "Elegir perfil según la aplicación",
-    "sendContext": "Enviar contexto"
+    "profileAutoByApp": "Elegir perfil según la aplicación"
   },
   "sidebar": {
     "general": "General",
@@ -376,10 +375,6 @@
           "toggle_profile_auto": {
             "name": "Elegir perfil según la aplicación",
             "description": "Activa o desactiva la elección del perfil según la aplicación. Funciona mientras haya aplicaciones asignadas a un perfil."
-          },
-          "toggle_send_context": {
-            "name": "Enviar contexto",
-            "description": "Activa o desactiva el envío de contexto con el post proceso para el perfil que usa un dictado en la app en primer plano. Funciona mientras el post proceso está activado."
           }
         },
         "errors": {
@@ -437,6 +432,36 @@
           "startRecording": "Empezar una grabación",
           "doNothing": "No hacer nada"
         }
+      }
+    },
+    "endKeys": {
+      "title": "Atajos de fin",
+      "description": "Cómo termina una grabación y qué sigue: cada atajo de fin indica qué se añade, si el texto se posprocesa y si los dictados anteriores se envían como contexto.",
+      "builtin": {
+        "plain": "Normal",
+        "post_process": "Posprocesar"
+      },
+      "name": "Nombre",
+      "noShortcut": "Sin atajo",
+      "shortcutHint": "Su propio atajo termina una grabación de esta manera. Solo se ocupa mientras se graba.",
+      "clearShortcut": "Quitar atajo",
+      "append": "Añadir al final",
+      "appendDescription": "Se añade a un dictado que termina de esta manera: el texto y luego la pulsación de tecla que elijas. En el texto, \\s es un espacio, \\n un salto de línea, \\t una tabulación y \\\\ una barra invertida; todo lo demás se añade tal como está escrito. La pulsación de tecla solo se envía cuando se pega el texto.",
+      "sendContext": "Enviar contexto",
+      "sendContextHint": "Solo con posprocesamiento: los dictados anteriores de la misma ventana se envían como contexto.",
+      "add": "Añadir atajo de fin",
+      "newName": "Nuevo atajo de fin",
+      "delete": "Eliminar {{name}}",
+      "inUse": "Un atajo de inicio termina con él de forma predeterminada; elige primero otro fin predeterminado.",
+      "defaultEnd": {
+        "title": "Fin predeterminado de {{shortcut}}",
+        "description": "Cómo su segunda pulsación, o soltarlo si se mantiene pulsado, termina la grabación."
+      },
+      "linuxNoShortcuts": "En Linux, los atajos de los atajos de fin no se ocupan; solo terminan una grabación como fin predeterminado.",
+      "errors": {
+        "save": "No se pudieron guardar los atajos de fin: {{error}}",
+        "needsName": "Cada atajo de fin necesita un nombre.",
+        "shortcutTwice": "Dos atajos de fin no pueden compartir un atajo."
       }
     },
     "profiles": {
@@ -713,8 +738,6 @@
         }
       },
       "appendText": {
-        "title": "Añadir al final",
-        "description": "Se añade tras cada dictado de este perfil: el texto y luego la pulsación de tecla que elijas. En el texto, \\s es un espacio, \\n un salto de línea, \\t una tabulación y \\\\ una barra invertida; todo lo demás se añade tal como está escrito. La pulsación de tecla solo se envía cuando se pega el texto.",
         "noAccessibility": "Sin accesibilidad no se envían teclas; el texto se añade igualmente.",
         "keyNone": "Ninguna tecla",
         "keyKept": "Conservado de antes; no disponible en este sistema",
@@ -920,11 +943,6 @@
       },
       "context": {
         "title": "Contexto de dictados anteriores",
-        "sendContext": {
-          "label": "Enviar contexto",
-          "description": "Los dictados con post proceso envían también tus dictados anteriores de la misma ventana como contexto. Pertenece al perfil; el menú de la bandeja y un atajo también lo cambian. Sin post proceso nunca se envía contexto.",
-          "short": "Enviar contexto"
-        },
         "privacy": "Los dictados anteriores de la misma ventana se envían al proveedor del post procesamiento junto con el actual, incluidos los que nunca se post procesaron. El historial marca cada entrada que salió así.",
         "ageLimit": "Antigüedad máxima",
         "ageLimitDescription": "Solo dictados como máximo esta cantidad de minutos más antiguos que el actual ({{min}}–{{max}}).",

@@ -15,8 +15,7 @@
     "onlyGlobalWordList": "Không có danh sách bổ sung",
     "profile": "Hồ sơ",
     "defaultProfile": "Mặc định",
-    "profileAutoByApp": "Chọn hồ sơ theo ứng dụng",
-    "sendContext": "Gửi ngữ cảnh"
+    "profileAutoByApp": "Chọn hồ sơ theo ứng dụng"
   },
   "sidebar": {
     "general": "Chung",
@@ -376,10 +375,6 @@
           "toggle_profile_auto": {
             "name": "Chọn hồ sơ theo ứng dụng",
             "description": "Bật hoặc tắt việc chọn hồ sơ theo ứng dụng. Có tác dụng khi có ứng dụng được gán cho một hồ sơ."
-          },
-          "toggle_send_context": {
-            "name": "Gửi ngữ cảnh",
-            "description": "Bật hoặc tắt việc gửi ngữ cảnh khi hậu xử lý cho hồ sơ mà việc đọc chính tả vào ứng dụng phía trước sử dụng. Có tác dụng khi hậu xử lý đang bật."
           }
         },
         "errors": {
@@ -437,6 +432,36 @@
           "startRecording": "Bắt đầu ghi âm",
           "doNothing": "Không làm gì"
         }
+      }
+    },
+    "endKeys": {
+      "title": "Phím tắt kết thúc",
+      "description": "Cách một bản ghi kết thúc và điều gì tiếp theo: mỗi phím tắt kết thúc quyết định thêm gì, có xử lý hậu kỳ văn bản không, và có gửi các lần đọc chính tả trước làm ngữ cảnh không.",
+      "builtin": {
+        "plain": "Thường",
+        "post_process": "Xử lý hậu kỳ"
+      },
+      "name": "Tên",
+      "noShortcut": "Không có phím tắt",
+      "shortcutHint": "Phím tắt riêng của nó kết thúc bản ghi theo cách này. Phím tắt chỉ được chiếm trong khi ghi.",
+      "clearShortcut": "Xóa phím tắt",
+      "append": "Thêm vào cuối",
+      "appendDescription": "Được thêm vào lần đọc chính tả kết thúc theo cách này: văn bản, rồi đến phím bạn chọn. Trong văn bản, \\s là dấu cách, \\n là xuống dòng, \\t là tab và \\\\ là dấu gạch chéo ngược; mọi thứ khác được thêm đúng như đã viết. Phím chỉ được gửi khi văn bản được dán.",
+      "sendContext": "Gửi ngữ cảnh",
+      "sendContextHint": "Chỉ khi xử lý hậu kỳ: các lần đọc chính tả trước từ cùng cửa sổ được gửi làm ngữ cảnh.",
+      "add": "Thêm phím tắt kết thúc",
+      "newName": "Phím tắt kết thúc mới",
+      "delete": "Xóa {{name}}",
+      "inUse": "Một phím tắt bắt đầu mặc định kết thúc bằng nó; hãy chọn một kết thúc mặc định khác trước.",
+      "defaultEnd": {
+        "title": "Kết thúc mặc định của {{shortcut}}",
+        "description": "Cách lần nhấn thứ hai, hoặc việc thả ra khi giữ, kết thúc bản ghi."
+      },
+      "linuxNoShortcuts": "Trên Linux, phím tắt riêng của các phím tắt kết thúc không được chiếm; chúng chỉ kết thúc bản ghi như một kết thúc mặc định.",
+      "errors": {
+        "save": "Không thể lưu các phím tắt kết thúc: {{error}}",
+        "needsName": "Mỗi phím tắt kết thúc cần có tên.",
+        "shortcutTwice": "Hai phím tắt kết thúc không thể dùng chung một phím tắt."
       }
     },
     "profiles": {
@@ -713,8 +738,6 @@
         }
       },
       "appendText": {
-        "title": "Thêm vào cuối",
-        "description": "Được thêm sau mỗi lần đọc chính tả của hồ sơ này: văn bản, rồi đến phím bạn chọn. Trong văn bản, \\s là dấu cách, \\n là xuống dòng, \\t là tab và \\\\ là dấu gạch chéo ngược; mọi thứ khác được thêm đúng như đã viết. Phím chỉ được gửi khi văn bản được dán.",
         "noAccessibility": "Không có Trợ năng thì không gửi phím; văn bản vẫn được thêm.",
         "keyNone": "Không có phím",
         "keyKept": "Giữ lại từ trước; không có trên hệ thống này",
@@ -920,11 +943,6 @@
       },
       "context": {
         "title": "Ngữ cảnh từ các lần đọc chính tả trước",
-        "sendContext": {
-          "label": "Gửi ngữ cảnh",
-          "description": "Các lần đọc chính tả có hậu xử lý sẽ gửi kèm các lần đọc chính tả trước của bạn trong cùng cửa sổ làm ngữ cảnh. Thuộc về hồ sơ; menu khay hệ thống và một phím tắt cũng chuyển đổi điều này. Không có hậu xử lý thì không bao giờ gửi ngữ cảnh.",
-          "short": "Gửi ngữ cảnh"
-        },
         "privacy": "Các lần đọc chính tả trước trong cùng cửa sổ được gửi đến nhà cung cấp hậu xử lý cùng với lần hiện tại, kể cả những lần chưa từng được hậu xử lý. Lịch sử đánh dấu mọi mục đã được gửi đi như vậy.",
         "ageLimit": "Giới hạn thời gian",
         "ageLimitDescription": "Chỉ các lần đọc chính tả cũ hơn lần hiện tại tối đa bấy nhiêu phút ({{min}}–{{max}}).",

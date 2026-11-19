@@ -193,6 +193,9 @@ objc2 = "0.6"
 objc2-foundation = "0.3"
 objc2-app-kit = "0.3"
 objc2-service-management = "0.3.2"
+# DanyWhere: the block for the observer of the application in front
+# (`shortcut::profile_sync`); already in the tree through objc2.
+block2 = "0.6"
 # DanyWhere: an app's Info.plist and scripting definition (.sdef) tell how to
 # ask it for its window title without Accessibility (`title_query`). Both are
 # already in the tree through Tauri.

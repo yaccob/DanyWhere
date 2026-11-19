@@ -15,8 +15,7 @@
     "onlyGlobalWordList": "Aucune liste supplémentaire",
     "profile": "Profil",
     "defaultProfile": "Par défaut",
-    "profileAutoByApp": "Choisir le profil selon l'application",
-    "sendContext": "Envoyer le contexte"
+    "profileAutoByApp": "Choisir le profil selon l'application"
   },
   "sidebar": {
     "general": "Général",
@@ -376,10 +375,6 @@
           "toggle_profile_auto": {
             "name": "Choisir le profil selon l'application",
             "description": "Active ou désactive le choix du profil selon l'application. Fonctionne tant que des applications sont attribuées à un profil."
-          },
-          "toggle_send_context": {
-            "name": "Envoyer le contexte",
-            "description": "Active ou désactive l'envoi du contexte avec le post-traitement pour le profil qu'utilise une dictée dans l'app au premier plan. Fonctionne tant que le post-traitement est activé."
           }
         },
         "errors": {
@@ -437,6 +432,36 @@
           "startRecording": "Démarrer un enregistrement",
           "doNothing": "Ne rien faire"
         }
+      }
+    },
+    "endKeys": {
+      "title": "Raccourcis de fin",
+      "description": "Comment un enregistrement se termine et ce qui suit : chaque raccourci de fin indique ce qui est ajouté, si le texte est post-traité et si les dictées précédentes sont envoyées comme contexte.",
+      "builtin": {
+        "plain": "Simple",
+        "post_process": "Post-traiter"
+      },
+      "name": "Nom",
+      "noShortcut": "Aucun raccourci",
+      "shortcutHint": "Son propre raccourci termine un enregistrement de cette façon. Il n'est pris que pendant l'enregistrement.",
+      "clearShortcut": "Supprimer le raccourci",
+      "append": "Ajouter à la fin",
+      "appendDescription": "Ajouté à une dictée qui se termine de cette façon: le texte, puis la touche que vous choisissez. Dans le texte, \\s est une espace, \\n un saut de ligne, \\t une tabulation et \\\\ une barre oblique inverse ; tout le reste est ajouté tel qu'écrit. La touche n'est envoyée que lorsque le texte est collé.",
+      "sendContext": "Envoyer le contexte",
+      "sendContextHint": "Uniquement avec le post-traitement : les dictées précédentes de la même fenêtre sont envoyées comme contexte.",
+      "add": "Ajouter un raccourci de fin",
+      "newName": "Nouveau raccourci de fin",
+      "delete": "Supprimer {{name}}",
+      "inUse": "Un raccourci de début se termine ainsi par défaut ; choisissez d'abord une autre fin par défaut.",
+      "defaultEnd": {
+        "title": "Fin par défaut de {{shortcut}}",
+        "description": "Comment son deuxième appui, ou son relâchement s'il est maintenu, termine l'enregistrement."
+      },
+      "linuxNoShortcuts": "Sous Linux, les raccourcis des raccourcis de fin ne sont pas pris ; ils ne terminent un enregistrement que comme fin par défaut.",
+      "errors": {
+        "save": "Impossible d'enregistrer les raccourcis de fin : {{error}}",
+        "needsName": "Chaque raccourci de fin a besoin d'un nom.",
+        "shortcutTwice": "Deux raccourcis de fin ne peuvent pas partager un raccourci."
       }
     },
     "profiles": {
@@ -713,8 +738,6 @@
         }
       },
       "appendText": {
-        "title": "Ajouter à la fin",
-        "description": "Ajouté après chaque dictée de ce profil : le texte, puis la touche que vous choisissez. Dans le texte, \\s est une espace, \\n un saut de ligne, \\t une tabulation et \\\\ une barre oblique inverse ; tout le reste est ajouté tel qu'écrit. La touche n'est envoyée que lorsque le texte est collé.",
         "noAccessibility": "Sans l'accessibilité, aucune touche n'est envoyée ; le texte est quand même ajouté.",
         "keyNone": "Aucune touche",
         "keyKept": "Conservé d'avant ; non proposé sur ce système",
@@ -920,11 +943,6 @@
       },
       "context": {
         "title": "Contexte des dictées précédentes",
-        "sendContext": {
-          "label": "Envoyer le contexte",
-          "description": "Les dictées avec post-traitement envoient aussi vos dictées précédentes de la même fenêtre comme contexte. Appartient au profil ; le menu de la barre système et un raccourci le changent aussi. Sans post-traitement, aucun contexte n'est envoyé.",
-          "short": "Envoyer le contexte"
-        },
         "privacy": "Les dictées précédentes de la même fenêtre sont envoyées au fournisseur du post-traitement avec la dictée actuelle, y compris celles qui n'ont jamais été post-traitées. L'historique marque chaque entrée envoyée ainsi.",
         "ageLimit": "Âge maximal",
         "ageLimitDescription": "Uniquement les dictées d'au plus ce nombre de minutes plus anciennes que la dictée actuelle ({{min}}–{{max}}).",

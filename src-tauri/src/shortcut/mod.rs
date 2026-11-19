@@ -11,6 +11,7 @@
 
 mod handler;
 pub mod handy_keys;
+pub mod profile_sync;
 pub mod tauri_impl;
 
 use log::{debug, error, info, warn};
@@ -58,6 +59,11 @@ pub fn init_shortcuts(app: &AppHandle) {
             info!("Built-in keyboard shortcuts disabled; use CLI flags or signals");
         }
     }
+
+    // DanyWhere: the shortcuts of the profile that applies now, from here on
+    // whenever another application comes to the front (`profile_sync`).
+    profile_sync::sync_now(app);
+    profile_sync::start_observer(app);
 }
 
 /// Whether the recording lifecycle currently wants the cancel shortcut.
@@ -77,6 +83,8 @@ pub fn register_cancel_shortcut(app: &AppHandle) {
 
     CANCEL_REQUESTED.store(true, Ordering::SeqCst);
     schedule_cancel_reconcile(app);
+    // DanyWhere: the end shortcuts too, like Escape only while recording.
+    profile_sync::set_recording(app, true);
 }
 
 /// Unregister the cancel shortcut (called when recording stops)
@@ -85,6 +93,7 @@ pub fn unregister_cancel_shortcut(app: &AppHandle) {
 
     CANCEL_REQUESTED.store(false, Ordering::SeqCst);
     schedule_cancel_reconcile(app);
+    profile_sync::set_recording(app, false);
 }
 
 /// Apply the requested cancel state off the calling thread. Start and stop run
@@ -245,61 +254,51 @@ pub fn change_binding(
         }
     }
 
-    // Unregister the existing binding
-    if let Err(e) = unregister_shortcut(&app, binding_to_modify.clone()) {
-        let error_msg = format!("Failed to unregister shortcut: {}", e);
-        error!("change_binding error: {}", error_msg);
-    }
-
     // Validate the new shortcut for the current keyboard implementation
     if let Err(e) = validate_shortcut_for_implementation(&binding, settings.keyboard_implementation)
     {
         warn!("change_binding validation error: {}", e);
-        restore_registration(&app, &binding_to_modify);
         return Err(e);
     }
 
     // Create an updated binding
     let mut updated_binding = binding_to_modify.clone();
     updated_binding.current_binding = binding;
-
-    // DanyWhere: not while it is the insert service's shortcut.
-    let mut updated_settings = settings.clone();
-    updated_settings
+    let previous = settings
         .bindings
         .insert(id.clone(), updated_binding.clone());
-    let registers = settings::registers_binding(
-        &id,
-        &updated_settings,
-        crate::delivery::INSERT_SERVICE_AVAILABLE,
-    );
+    settings::write_settings(&app, settings.clone());
 
-    // Register the new binding
-    if !registers {
-        info!(
-            "{id}: {} goes to the app in front, not to DanyWhere.",
-            updated_binding.current_binding
-        );
-    } else if let Err(e) = register_shortcut(&app, updated_binding.clone()) {
+    // DanyWhere: the shortcuts follow the profile that applies now
+    // (`profile_sync`), which unregisters the old keys and registers the new
+    // ones where they apply. A change ends a capture in the settings, so the
+    // others come back too.
+    let failures = profile_sync::resume(&app);
+    if let Some((_, e)) = failures.iter().find(|(failed, _)| *failed == id) {
         let error_msg = format!("Failed to register shortcut: {}", e);
         error!("change_binding error: {}", error_msg);
-        restore_registration(&app, &binding_to_modify);
+        match previous {
+            Some(old) => settings.bindings.insert(id.clone(), old),
+            None => settings.bindings.remove(&id),
+        };
+        settings::write_settings(&app, settings);
+        profile_sync::sync_now(&app);
         return Ok(BindingResponse {
             success: false,
             binding: None,
             error: Some(error_msg),
         });
     }
+    if !settings::registers_binding(&id, &settings, crate::delivery::INSERT_SERVICE_AVAILABLE) {
+        info!(
+            "{id}: {} goes to the app in front, not to DanyWhere.",
+            updated_binding.current_binding
+        );
+    }
 
-    // Update the binding in the settings
-    settings
-        .bindings
-        .insert(id.clone(), updated_binding.clone());
-
-    // Save the settings and synchronize any active Secure Input shadows.
+    // Synchronize any active Secure Input shadows.
     let changed_dictation_shortcut =
         crate::transcription_coordinator::is_transcribe_binding(&updated_binding.id);
-    settings::write_settings(&app, settings);
     crate::secure_input::reconcile_fallback(&app);
     // DanyWhere: the dictation shortcuts' services carry them as theirs, and
     // "Insert Last Dictation" carries "Paste Last Transcript".
@@ -315,25 +314,6 @@ pub fn change_binding(
     })
 }
 
-/// Best-effort re-register of the previous binding after a failed change,
-/// so a failure leaves the user's shortcut working exactly as before.
-fn restore_registration(app: &AppHandle, binding: &ShortcutBinding) {
-    // DanyWhere: a shortcut DanyWhere leaves to the app stays unregistered.
-    if !settings::registers_binding(
-        &binding.id,
-        &settings::get_settings(app),
-        crate::delivery::INSERT_SERVICE_AVAILABLE,
-    ) {
-        return;
-    }
-    if let Err(e) = register_shortcut(app, binding.clone()) {
-        error!(
-            "Failed to restore previous binding '{}' ({}): {}",
-            binding.id, binding.current_binding, e
-        );
-    }
-}
-
 #[tauri::command]
 #[specta::specta]
 pub fn reset_binding(app: AppHandle, id: String) -> Result<BindingResponse, String> {
@@ -346,36 +326,17 @@ pub fn reset_binding(app: AppHandle, id: String) -> Result<BindingResponse, Stri
 /// mid-capture. The "cancel" binding is untouched: it is managed dynamically
 /// by the recording lifecycle.
 pub fn suspend_all_shortcuts(app: &AppHandle) {
-    for (id, binding) in settings::get_bindings(app) {
-        if id == "cancel" {
-            continue;
-        }
-        if let Err(e) = unregister_shortcut(app, binding) {
-            debug!(
-                "suspend_all_shortcuts: could not unregister '{}': {}",
-                id, e
-            );
-        }
-    }
+    // DanyWhere: what is registered is the profile's that applies now.
+    profile_sync::suspend(app);
 }
 
 /// Re-register every binding from settings after shortcut recording ends.
 /// Registering an already-registered shortcut fails cleanly in both
 /// implementations, so this is idempotent and safe on every exit path.
 pub fn resume_all_shortcuts(app: &AppHandle) {
-    let settings = get_settings(app);
-    for (id, binding) in &settings.bindings {
-        if id == "cancel" {
-            continue;
-        }
-        // DanyWhere: also the context shortcut, and not "Paste Last
-        // Transcript" while it is the insert service's shortcut.
-        if !settings::registers_binding(id, &settings, crate::delivery::INSERT_SERVICE_AVAILABLE) {
-            continue;
-        }
-        if let Err(e) = register_shortcut(app, binding.clone()) {
-            debug!("resume_all_shortcuts: could not register '{}': {}", id, e);
-        }
+    // DanyWhere: those of the profile that applies now (`profile_sync`).
+    for (id, e) in profile_sync::resume(app) {
+        debug!("resume_all_shortcuts: could not register '{}': {}", id, e);
     }
 }
 
@@ -452,6 +413,7 @@ pub fn change_keyboard_implementation_setting(
     // Initialize new implementation if needed (HandyKeys needs state)
     if new_impl == KeyboardImplementation::HandyKeys && initialize_handy_keys_with_rollback(&app)? {
         // Shortcuts already registered during init.
+        profile_sync::sync_now(&app);
         crate::secure_input::reconcile_fallback(&app);
         return Ok(ImplementationChangeResult {
             success: true,
@@ -461,6 +423,8 @@ pub fn change_keyboard_implementation_setting(
 
     // Register all shortcuts with new implementation, resetting invalid ones
     let reset_bindings = register_all_shortcuts_for_implementation(&app, new_impl);
+    // DanyWhere: then those of the profile that applies now.
+    profile_sync::sync_now(&app);
     crate::secure_input::reconcile_fallback(&app);
 
     // Emit event to notify frontend of the change
@@ -498,7 +462,7 @@ pub fn get_keyboard_implementation(app: AppHandle) -> String {
 // ============================================================================
 
 /// Validate a shortcut for a specific implementation
-fn validate_shortcut_for_implementation(
+pub(crate) fn validate_shortcut_for_implementation(
     raw: &str,
     implementation: KeyboardImplementation,
 ) -> Result<(), String> {
@@ -557,14 +521,10 @@ pub fn apply_no_accessibility_mode(settings: &mut settings::AppSettings) -> Vec<
 
 /// Unregister all shortcuts for the current implementation
 fn unregister_all_shortcuts(app: &AppHandle, implementation: KeyboardImplementation) {
-    let bindings = settings::get_bindings(app);
-
-    for (id, binding) in bindings {
-        // Skip cancel shortcut as it's dynamically registered
-        if id == "cancel" {
-            continue;
-        }
-
+    // DanyWhere: what is registered is known (`profile_sync`); the cancel
+    // shortcut is not among it, as it is registered dynamically.
+    for binding in profile_sync::take_all() {
+        let id = binding.id.clone();
         let result = match implementation {
             KeyboardImplementation::Tauri => tauri_impl::unregister_shortcut(app, binding),
             KeyboardImplementation::HandyKeys => handy_keys::unregister_shortcut(app, binding),
@@ -631,16 +591,22 @@ fn register_all_shortcuts_for_implementation(
 
         // Register with the appropriate implementation
         let result = match implementation {
-            KeyboardImplementation::Tauri => tauri_impl::register_shortcut(app, binding),
-            KeyboardImplementation::HandyKeys => handy_keys::register_shortcut(app, binding),
+            KeyboardImplementation::Tauri => tauri_impl::register_shortcut(app, binding.clone()),
+            KeyboardImplementation::HandyKeys => {
+                handy_keys::register_shortcut(app, binding.clone())
+            }
             KeyboardImplementation::None => Ok(()),
         };
 
-        if let Err(e) = result {
-            error!(
+        match result {
+            Ok(()) if implementation != KeyboardImplementation::None => {
+                profile_sync::note_registered(&binding)
+            }
+            Ok(()) => {}
+            Err(e) => error!(
                 "Failed to register shortcut '{}' for {:?}: {}",
                 id, implementation, e
-            );
+            ),
         }
     }
 
@@ -1210,43 +1176,16 @@ pub fn change_post_process_enabled_setting(app: AppHandle, enabled: bool) -> Res
     Ok(())
 }
 
-/// Registers the post-processing shortcuts (DanyWhere: the toggle of "Send
-/// Context" too) while post-processing is on in `settings`, and unregisters
-/// them while it's off. DanyWhere: also after a profile switch turned it on
-/// or off.
+/// Registers the post-processing shortcut while post-processing is on in
+/// `settings`, and unregisters it while it's off. DanyWhere: also while a
+/// profile with applications post-processes
+/// (`app_profiles::post_processing_reachable`), the shortcut that turns
+/// choosing the profile by application on and off only while applications
+/// are assigned; all through the shortcuts that follow the profile
+/// (`profile_sync`), which read the stored settings.
 pub fn sync_post_process_shortcuts(app: &AppHandle, settings: &settings::AppSettings) {
-    for id in [
-        "transcribe_with_post_process",
-        crate::send_context::TOGGLE_BINDING,
-    ] {
-        if let Some(binding) = settings.bindings.get(id).cloned() {
-            // DanyWhere: also while a profile with applications
-            // post-processes (`app_profiles::post_processing_reachable`).
-            if settings::registers_binding(id, settings, crate::delivery::INSERT_SERVICE_AVAILABLE)
-            {
-                let _ = register_shortcut(app, binding);
-            } else {
-                let _ = unregister_shortcut(app, binding);
-            }
-        }
-    }
-
-    crate::secure_input::reconcile_fallback(app);
-}
-
-/// DanyWhere: registers the shortcut that turns choosing the profile by
-/// application on and off while applications are assigned, so that it takes
-/// no key from other apps before it is of use (`app_profiles`).
-pub fn sync_profile_toggle_shortcut(app: &AppHandle, settings: &settings::AppSettings) {
-    let id = crate::app_profiles::TOGGLE_BINDING;
-    if let Some(binding) = settings.bindings.get(id).cloned() {
-        if settings::registers_binding(id, settings, crate::delivery::INSERT_SERVICE_AVAILABLE) {
-            let _ = register_shortcut(app, binding);
-        } else {
-            let _ = unregister_shortcut(app, binding);
-        }
-    }
-    crate::secure_input::reconcile_fallback(app);
+    let _ = settings;
+    profile_sync::sync_now(app);
 }
 
 #[tauri::command]
@@ -1814,20 +1753,6 @@ mod tests {
             crate::actions::ACTION_MAP.contains_key(crate::app_profiles::TOGGLE_BINDING),
             "the shortcut has an action"
         );
-    }
-
-    /// DanyWhere: turns "Send Context" over for the app in front's profile.
-    #[test]
-    fn has_a_default_shortcut_to_toggle_sending_context() {
-        let settings = crate::settings::get_default_settings();
-        let binding = settings
-            .bindings
-            .get(crate::send_context::TOGGLE_BINDING)
-            .expect("default binding 'toggle_send_context'");
-        // Must work with both backends, incl. the one used without Accessibility.
-        let raw = &binding.current_binding;
-        assert_eq!(super::tauri_impl::validate_shortcut(raw), Ok(()));
-        assert!(super::handy_keys::validate_shortcut(raw).is_ok());
     }
 
     #[test]

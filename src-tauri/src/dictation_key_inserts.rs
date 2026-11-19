@@ -297,6 +297,19 @@ static DECIDING: std::sync::Mutex<()> = std::sync::Mutex::new(());
 /// How often the front-app watch looks which app is in front.
 const FRONT_APP_POLL: std::time::Duration = std::time::Duration::from_millis(300);
 
+/// The dictation shortcuts released right now, which the shortcuts that
+/// follow the profile leave alone meanwhile (`shortcut::profile_sync`).
+pub fn released_bindings() -> Vec<&'static str> {
+    if *RELEASED
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+    {
+        DICTATION_BINDINGS.to_vec()
+    } else {
+        Vec::new()
+    }
+}
+
 /// The transcription coordinator reports that a locked recording began
 /// (`locked`) or ended, for whatever reason. Releases or takes back the
 /// dictation shortcuts accordingly.
@@ -493,7 +506,7 @@ pub fn copies_instead_of_pasting(session: u64) -> bool {
 }
 
 /// Called with a finished dictation's text, its profile's "Append" text
-/// included (`append_text::with_dictation_text`): puts it on the clipboard if
+/// included (its end shortcut's, `end_keys`): puts it on the clipboard if
 /// "Copy Last Transcript" asked for it during this `session`, or the app in
 /// front didn't know the shortcut; returns why when it did.
 pub fn put_on_clipboard_if_requested(
@@ -865,10 +878,6 @@ mod tests {
         assert_eq!(
             settings.bindings["transcribe_with_post_process"].default_binding,
             "ctrl+shift+space"
-        );
-        assert_eq!(
-            settings.bindings[crate::send_context::TOGGLE_BINDING].default_binding,
-            "ctrl+shift+x"
         );
         assert_eq!(
             settings.bindings["paste_last_transcript"].default_binding,

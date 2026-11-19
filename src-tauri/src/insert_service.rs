@@ -681,27 +681,37 @@ fn redo_for_caller(
 fn answer_call(app: &tauri::AppHandle, pump: impl FnMut()) -> Option<String> {
     let settings = crate::settings::get_settings(app);
     let in_progress = crate::tray::dictation_in_progress(app);
-    let (latest, values) = match (!in_progress)
+    let (latest, values, end) = match (!in_progress)
         .then(|| crate::delivery::latest_entry_and_text(app))
         .flatten()
     {
-        Some((entry, text)) => match redo_for_caller(app, entry, pump) {
-            Redone::Done(Some(insert)) => (Some(insert.text.unwrap_or(text)), Some(insert.values)),
-            Redone::Done(None) => (Some(text), None),
-            Redone::GaveUp => {
-                log::info!(
-                    "Insert Last Dictation: redoing the last dictation for this application took too long; inserting nothing."
-                );
-                return None;
+        Some((entry, text)) => {
+            let ended_with = crate::profile_redo::made_with(entry.id).map(|made| made.end);
+            match redo_for_caller(app, entry, pump) {
+                Redone::Done(Some(insert)) => (
+                    Some(insert.text.unwrap_or(text)),
+                    Some(insert.values),
+                    Some(insert.end),
+                ),
+                Redone::Done(None) => (Some(text), None, ended_with),
+                Redone::GaveUp => {
+                    log::info!(
+                        "Insert Last Dictation: redoing the last dictation for this application took too long; inserting nothing."
+                    );
+                    return None;
+                }
             }
-        },
-        None => (None, None),
+        }
+        None => (None, None, None),
     };
+    // DanyWhere: with the "Append" text of the end shortcut it ended with
+    // (`end_keys`).
     let settings = crate::app_profiles::with_values(&settings, values.as_ref());
+    let append = crate::delivery::append_of_last(&settings, end.as_ref());
     match service_reply(
         in_progress,
         latest.as_deref(),
-        &crate::append_text::for_settings(&settings).text,
+        &crate::append_text::for_value(&append).text,
     ) {
         ServiceReply::Insert(text) => {
             log::info!("Insert Last Dictation: handing over the last dictation.");
@@ -766,8 +776,8 @@ fn answer_waiting_call(
                     started.elapsed()
                 );
                 crate::overlay::hide_ready_notice(app);
-                // DanyWhere: the dictation's text arrives with its profile's
-                // "Append" text (`append_text::with_dictation_text`).
+                // DanyWhere: the dictation's text arrives with its end
+                // shortcut's "Append" text (`actions::stop_transcription`).
                 return match service_reply(false, Some(&text), "") {
                     ServiceReply::Insert(text) => Some(text),
                     ServiceReply::NotReady | ServiceReply::Nothing => None,

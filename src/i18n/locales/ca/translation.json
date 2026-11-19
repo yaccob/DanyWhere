@@ -15,8 +15,7 @@
     "onlyGlobalWordList": "Cap llista addicional",
     "profile": "Perfil",
     "defaultProfile": "Predeterminat",
-    "profileAutoByApp": "Tria el perfil segons l'aplicació",
-    "sendContext": "Envia el context"
+    "profileAutoByApp": "Tria el perfil segons l'aplicació"
   },
   "sidebar": {
     "general": "General",
@@ -376,10 +375,6 @@
           "toggle_profile_auto": {
             "name": "Tria el perfil segons l'aplicació",
             "description": "Activa o desactiva la tria del perfil segons l'aplicació. Funciona mentre hi hagi aplicacions assignades a un perfil."
-          },
-          "toggle_send_context": {
-            "name": "Envia el context",
-            "description": "Activa o desactiva l'enviament de context amb el postprocessament per al perfil que fa servir un dictat a l'aplicació de davant. Funciona mentre el postprocessament està activat."
           }
         },
         "errors": {
@@ -437,6 +432,36 @@
           "startRecording": "Comença un enregistrament",
           "doNothing": "No facis res"
         }
+      }
+    },
+    "endKeys": {
+      "title": "Dreceres de final",
+      "description": "Com acaba una gravació i què ve després: cada drecera de final diu què s'afegeix, si el text es posprocessa i si els dictats anteriors s'envien com a context.",
+      "builtin": {
+        "plain": "Normal",
+        "post_process": "Posprocessa"
+      },
+      "name": "Nom",
+      "noShortcut": "Sense drecera",
+      "shortcutHint": "La seva pròpia drecera acaba una gravació d'aquesta manera. Només s'ocupa mentre es grava.",
+      "clearShortcut": "Treu la drecera",
+      "append": "Afegeix al final",
+      "appendDescription": "S'afegeix a un dictat que acaba d'aquesta manera: el text i després la pulsació de tecla que triïs. Al text, \\s és un espai, \\n un salt de línia, \\t una tabulació i \\\\ una barra inversa; la resta s'afegeix tal com està escrit. La pulsació de tecla només s'envia quan s'enganxa el text.",
+      "sendContext": "Envia el context",
+      "sendContextHint": "Només amb posprocessament: els dictats anteriors de la mateixa finestra s'envien com a context.",
+      "add": "Afegeix una drecera de final",
+      "newName": "Nova drecera de final",
+      "delete": "Suprimeix {{name}}",
+      "inUse": "Una drecera d'inici hi acaba per defecte; tria primer un altre final per defecte.",
+      "defaultEnd": {
+        "title": "Final per defecte de {{shortcut}}",
+        "description": "Com la seva segona pulsació, o deixar-la anar quan es manté premuda, acaba la gravació."
+      },
+      "linuxNoShortcuts": "A Linux, les dreceres de les dreceres de final no s'ocupen; només acaben una gravació com a final per defecte.",
+      "errors": {
+        "save": "No s'han pogut desar les dreceres de final: {{error}}",
+        "needsName": "Cada drecera de final necessita un nom.",
+        "shortcutTwice": "Dues dreceres de final no poden compartir una drecera."
       }
     },
     "profiles": {
@@ -713,8 +738,6 @@
         }
       },
       "appendText": {
-        "title": "Afegeix al final",
-        "description": "S'afegeix després de cada dictat d'aquest perfil: el text i després la pulsació de tecla que triïs. Al text, \\s és un espai, \\n un salt de línia, \\t una tabulació i \\\\ una barra inversa; la resta s'afegeix tal com està escrit. La pulsació de tecla només s'envia quan s'enganxa el text.",
         "noAccessibility": "Sense accessibilitat no s'envien tecles; el text s'afegeix igualment.",
         "keyNone": "Cap tecla",
         "keyKept": "Conservat d'abans; no s'ofereix en aquest sistema",
@@ -920,11 +943,6 @@
       },
       "context": {
         "title": "Context de dictats anteriors",
-        "sendContext": {
-          "label": "Envia el context",
-          "description": "Els dictats amb postprocessament envien també els vostres dictats anteriors de la mateixa finestra com a context. Pertany al perfil; el menú de la safata i una drecera també ho canvien. Sense postprocessament no s'envia mai context.",
-          "short": "Envia el context"
-        },
         "privacy": "Els dictats anteriors de la mateixa finestra van al proveïdor del postprocessament juntament amb l'actual, també els que mai no s'han postprocessat. L'historial marca cada entrada que ha sortit així.",
         "ageLimit": "Antiguitat màxima",
         "ageLimitDescription": "Només dictats com a màxim aquests minuts més antics que l'actual ({{min}}–{{max}}).",

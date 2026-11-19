@@ -32,6 +32,18 @@ pub fn handle_shortcut_event(
     hotkey_string: &str,
     is_pressed: bool,
 ) {
+    // DanyWhere: an end shortcut (`end_keys`), registered only while a
+    // recording runs, ends it on its press.
+    if let Some(end_id) = crate::end_keys::end_id_of(binding_id) {
+        if is_pressed {
+            match app.try_state::<TranscriptionCoordinator>() {
+                Some(coordinator) => coordinator.finish_with_end_key(end_id),
+                None => warn!("TranscriptionCoordinator is not initialized"),
+            }
+        }
+        return;
+    }
+
     let settings = get_settings(app);
 
     // Transcribe bindings are handled by the coordinator.

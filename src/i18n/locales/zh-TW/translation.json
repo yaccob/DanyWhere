@@ -15,8 +15,7 @@
     "onlyGlobalWordList": "無附加清單",
     "profile": "設定檔",
     "defaultProfile": "預設",
-    "profileAutoByApp": "依應用程式選擇設定檔",
-    "sendContext": "傳送上下文"
+    "profileAutoByApp": "依應用程式選擇設定檔"
   },
   "sidebar": {
     "general": "一般",
@@ -376,10 +375,6 @@
           "toggle_profile_auto": {
             "name": "依應用程式選擇設定檔",
             "description": "開啟或關閉依應用程式選擇設定檔。只要有應用程式指派給某個設定檔就會生效。"
-          },
-          "toggle_send_context": {
-            "name": "傳送上下文",
-            "description": "為聽寫到前景 App 時所用的設定檔開啟或關閉在後處理時傳送上下文。僅在後處理開啟時生效。"
           }
         },
         "errors": {
@@ -437,6 +432,36 @@
           "startRecording": "開始錄音",
           "doNothing": "不執行任何動作"
         }
+      }
+    },
+    "endKeys": {
+      "title": "結束快捷鍵",
+      "description": "錄音如何結束以及之後發生什麼：每個結束快捷鍵決定附加什麼、是否對文字進行後處理，以及是否將先前的聽寫作為上下文一併傳送。",
+      "builtin": {
+        "plain": "一般",
+        "post_process": "後處理"
+      },
+      "name": "名稱",
+      "noShortcut": "無快捷鍵",
+      "shortcutHint": "它自己的快捷鍵以這種方式結束錄音。只在錄音時佔用。",
+      "clearShortcut": "移除快捷鍵",
+      "append": "結尾附加",
+      "appendDescription": "附加到以這種方式結束的聽寫：先是文字，然後是你選擇的按鍵。文字中 \\s 代表空格，\\n 代表換行，\\t 代表定位字元，\\\\ 代表反斜線；其他內容依原樣附加。只有在貼上文字時才會送出按鍵。",
+      "sendContext": "傳送上下文",
+      "sendContextHint": "僅在後處理時：同一視窗中先前的聽寫會作為上下文一併傳送。",
+      "add": "新增結束快捷鍵",
+      "newName": "新的結束快捷鍵",
+      "delete": "刪除 {{name}}",
+      "inUse": "有開始快捷鍵預設以它結束；請先選擇另一個預設結束。",
+      "defaultEnd": {
+        "title": "{{shortcut}} 的預設結束",
+        "description": "第二次按下或按住後放開時如何結束錄音。"
+      },
+      "linuxNoShortcuts": "在 Linux 上不會佔用結束快捷鍵自己的快捷鍵；它們只能作為預設結束來結束錄音。",
+      "errors": {
+        "save": "無法儲存結束快捷鍵：{{error}}",
+        "needsName": "每個結束快捷鍵都需要名稱。",
+        "shortcutTwice": "兩個結束快捷鍵不能使用同一個快捷鍵。"
       }
     },
     "profiles": {
@@ -713,8 +738,6 @@
         }
       },
       "appendText": {
-        "title": "結尾附加",
-        "description": "在此設定檔的每次聽寫後附加：先是文字，然後是你選擇的按鍵。文字中 \\s 代表空格，\\n 代表換行，\\t 代表定位字元，\\\\ 代表反斜線；其他內容依原樣附加。只有在貼上文字時才會送出按鍵。",
         "noAccessibility": "沒有輔助使用權限時不傳送按鍵；文字仍會附加。",
         "keyNone": "無按鍵",
         "keyKept": "沿用先前的設定；此系統不提供",
@@ -920,11 +943,6 @@
       },
       "context": {
         "title": "來自先前聽寫的上下文",
-        "sendContext": {
-          "label": "傳送上下文",
-          "description": "帶後處理的聽寫會把同一視窗中您先前的聽寫作為上下文一起傳送。此項屬於設定檔；系統匣選單和快速鍵也能切換此項。沒有後處理時從不傳送上下文。",
-          "short": "傳送上下文"
-        },
         "privacy": "同一視窗中的先前聽寫會與目前的聽寫一起傳送給後處理服務商，包括從未經過後處理的聽寫。以這種方式送出的每個項目都會在記錄中標示。",
         "ageLimit": "時間上限",
         "ageLimitDescription": "僅限比目前聽寫最多早這麼多分鐘的聽寫（{{min}}–{{max}}）。",

@@ -15,8 +15,7 @@
     "onlyGlobalWordList": "Žádný doplňkový seznam",
     "profile": "Profil",
     "defaultProfile": "Výchozí",
-    "profileAutoByApp": "Vybírat profil podle aplikace",
-    "sendContext": "Posílat kontext"
+    "profileAutoByApp": "Vybírat profil podle aplikace"
   },
   "sidebar": {
     "general": "Obecné",
@@ -376,10 +375,6 @@
           "toggle_profile_auto": {
             "name": "Vybírat profil podle aplikace",
             "description": "Zapne nebo vypne výběr profilu podle aplikace. Funguje, dokud jsou nějakému profilu přiřazeny aplikace."
-          },
-          "toggle_send_context": {
-            "name": "Posílat kontext",
-            "description": "Zapne nebo vypne posílání kontextu při následném zpracování pro profil, který používá diktát do aplikace v popředí. Funguje, dokud je následné zpracování zapnuté."
           }
         },
         "errors": {
@@ -437,6 +432,36 @@
           "startRecording": "Spustit nahrávání",
           "doNothing": "Nedělat nic"
         }
+      }
+    },
+    "endKeys": {
+      "title": "Ukončovací zkratky",
+      "description": "Jak nahrávání skončí a co následuje: každá ukončovací zkratka určuje, co se připojí, zda se text dodatečně zpracuje a zda se předchozí diktáty pošlou jako kontext.",
+      "builtin": {
+        "plain": "Obyčejně",
+        "post_process": "Dodatečně zpracovat"
+      },
+      "name": "Název",
+      "noShortcut": "Bez klávesové zkratky",
+      "shortcutHint": "Její vlastní klávesová zkratka ukončí nahrávání tímto způsobem. Je obsazena jen během nahrávání.",
+      "clearShortcut": "Odebrat klávesovou zkratku",
+      "append": "Připojit",
+      "appendDescription": "Připojí se k diktátu, který skončí tímto způsobem: text a potom zvolený stisk klávesy. V textu je \\s mezera, \\n nový řádek, \\t tabulátor a \\\\ zpětné lomítko; vše ostatní se připojí tak, jak je napsáno. Stisk klávesy se odešle, jen když se text vkládá.",
+      "sendContext": "Posílat kontext",
+      "sendContextHint": "Jen s dodatečným zpracováním: předchozí diktáty ze stejného okna se pošlou jako kontext.",
+      "add": "Přidat ukončovací zkratku",
+      "newName": "Nová ukončovací zkratka",
+      "delete": "Smazat {{name}}",
+      "inUse": "Spouštěcí zkratka jí ve výchozím stavu končí; nejprve zvolte jiný výchozí konec.",
+      "defaultEnd": {
+        "title": "Výchozí konec pro {{shortcut}}",
+        "description": "Jak její druhé stisknutí, nebo při podržení její uvolnění, ukončí nahrávání."
+      },
+      "linuxNoShortcuts": "V Linuxu se klávesové zkratky ukončovacích zkratek neobsazují; nahrávání ukončí jen jako výchozí konec.",
+      "errors": {
+        "save": "Ukončovací zkratky se nepodařilo uložit: {{error}}",
+        "needsName": "Každá ukončovací zkratka potřebuje název.",
+        "shortcutTwice": "Dvě ukončovací zkratky nemohou mít stejnou klávesovou zkratku."
       }
     },
     "profiles": {
@@ -713,8 +738,6 @@
         }
       },
       "appendText": {
-        "title": "Připojit",
-        "description": "Připojí se za každý diktát tohoto profilu: text a potom zvolený stisk klávesy. V textu je \\s mezera, \\n nový řádek, \\t tabulátor a \\\\ zpětné lomítko; vše ostatní se připojí tak, jak je napsáno. Stisk klávesy se odešle, jen když se text vkládá.",
         "noAccessibility": "Bez usnadnění se žádné klávesy neodešlou; text se přesto připojí.",
         "keyNone": "Žádná klávesa",
         "keyKept": "Zachováno z dřívějška; v tomto systému se nenabízí",
@@ -920,11 +943,6 @@
       },
       "context": {
         "title": "Kontext z dřívějších diktátů",
-        "sendContext": {
-          "label": "Posílat kontext",
-          "description": "Diktáty s následným zpracováním posílají jako kontext i vaše dřívější diktáty ze stejného okna. Patří k profilu; přepnout to lze i v nabídce v oznamovací oblasti a klávesovou zkratkou. Bez následného zpracování se kontext nikdy neposílá.",
-          "short": "Posílat kontext"
-        },
         "privacy": "Dřívější diktáty ze stejného okna jdou poskytovateli následného zpracování spolu s aktuálním, i ty, které nikdy nebyly následně zpracovány. Historie označí každý záznam, který takto odešel.",
         "ageLimit": "Věková hranice",
         "ageLimitDescription": "Jen diktáty nejvýše o tolik minut starší než aktuální ({{min}}–{{max}}).",

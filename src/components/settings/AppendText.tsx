@@ -8,7 +8,6 @@ import {
 } from "@/bindings";
 import { Dropdown } from "../ui/Dropdown";
 import { Input } from "../ui/Input";
-import { SettingContainer } from "../ui/SettingContainer";
 import { useSettings } from "../../hooks/useSettings";
 import { useOsType } from "../../hooks/useOsType";
 import {
@@ -21,32 +20,35 @@ import {
 /** How long typing pauses before the preview follows the text. */
 const PREVIEW_DELAY_MS = 250;
 
-interface AppendTextProps {
-  descriptionMode?: "inline" | "tooltip";
-  grouped?: boolean;
+interface AppendTextInputProps {
+  /** The stored value, in the "Append" syntax (append_text.rs). */
+  value: string;
+  /** A new value, as composeAppendText made it. */
+  onChange: (value: string) => Promise<void> | void;
+  disabled?: boolean;
 }
 
 /**
- * DanyWhere: the profile's "Append" field (append_text.rs), which replaced
- * "Append Trailing Space" and "Auto Submit": a text field and a selection
- * of the key press after the text, neither of which can show an error.
- * Rust splits the stored value into both and composes it again; the
- * preview in words under them says what a dictation gets.
+ * DanyWhere: an "Append" field (append_text.rs), since 2026-11-19 one per
+ * end shortcut (end_keys.rs): a text field and a selection of the key press
+ * after the text, neither of which can show an error. Rust splits the stored
+ * value into both and composes it again; the preview in words under them
+ * says what a dictation gets. Controlled: the value comes in, a changed one
+ * goes out.
  */
-export const AppendText: React.FC<AppendTextProps> = React.memo(
-  ({ descriptionMode = "tooltip", grouped = false }) => {
+export const AppendTextInput: React.FC<AppendTextInputProps> = React.memo(
+  ({ value, onChange, disabled = false }) => {
     const { t, i18n } = useTranslation();
     const os = useOsType();
-    const { getSetting, updateSetting, isUpdating } = useSettings();
-    const stored = getSetting("append_text") ?? "";
+    const { getSetting } = useSettings();
     const withoutAccessibility =
       os === "macos" && getSetting("accessibility_skipped") === true;
     const [offered, setOffered] = useState<AppendKey[]>([]);
     const [choice, setChoice] = useState<AppendChoice | null>(null);
     const [draft, setDraft] = useState("");
     const [parts, setParts] = useState<AppendPart[] | null>(null);
-    // The value this field just stored, so storing it doesn't reset the text
-    // field (a lone backslash may come back written as two).
+    // The value this field just gave out, so getting it back doesn't reset
+    // the text field (a lone backslash may come back written as two).
     const saved = useRef<string | null>(null);
 
     useEffect(() => {
@@ -59,13 +61,13 @@ export const AppendText: React.FC<AppendTextProps> = React.memo(
       };
     }, []);
 
-    // Follow the stored value, also changes from elsewhere (a profile
-    // switch, another window).
+    // Follow the value, also changes from elsewhere (a profile switch,
+    // another window).
     useEffect(() => {
       let current = true;
-      const own = stored === saved.current;
+      const own = value === saved.current;
       saved.current = null;
-      commands.splitAppendText(stored).then((split) => {
+      commands.splitAppendText(value).then((split) => {
         if (!current) return;
         setChoice(split);
         if (!own) setDraft(split.text);
@@ -73,7 +75,7 @@ export const AppendText: React.FC<AppendTextProps> = React.memo(
       return () => {
         current = false;
       };
-    }, [stored]);
+    }, [value]);
 
     // The preview follows the text once typing pauses, a stored value at once.
     useEffect(() => {
@@ -95,58 +97,51 @@ export const AppendText: React.FC<AppendTextProps> = React.memo(
     const save = async (text: string, newKeys: AppendKey[]) => {
       const composed = await commands.composeAppendText(text, newKeys);
       setParts(composed.parts);
-      if (composed.value === stored) return;
+      if (composed.value === value) return;
       saved.current = composed.value;
-      await updateSetting("append_text", composed.value);
+      await onChange(composed.value);
     };
 
     return (
-      <SettingContainer
-        title={t("settings.advanced.appendText.title")}
-        description={t("settings.advanced.appendText.description")}
-        descriptionMode={descriptionMode}
-        grouped={grouped}
-        grow
-      >
-        <div className="flex w-full max-w-sm flex-col gap-1">
-          <div className="flex w-full items-center gap-2">
-            <Input
-              variant="compact"
-              className="min-w-0 flex-1 font-mono"
-              value={draft}
-              spellCheck={false}
-              autoCorrect="off"
-              autoCapitalize="off"
-              onChange={(event) => setDraft(event.target.value)}
-              onBlur={() => choice && save(draft, choice.keys)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") event.currentTarget.blur();
-              }}
-              disabled={isUpdating("append_text") || choice === null}
-            />
-            <Dropdown
-              compact
-              className="w-40 shrink-0"
-              options={choice ? keyOptions(offered, choice, t, os) : []}
-              selectedValue={choice ? selectedKeyOption(choice) : null}
-              onSelect={(value) => {
-                if (choice) save(draft, keysOfOption(value, choice));
-              }}
-              disabled={choice === null || withoutAccessibility}
-            />
-          </div>
-          {parts && (
-            <p className="text-xs text-text/70">
-              {describeAppend(parts, t, os, i18n.language)}
-            </p>
-          )}
-          {withoutAccessibility && (
-            <p className="text-xs text-text/70">
-              {t("settings.advanced.appendText.noAccessibility")}
-            </p>
-          )}
+      <div className="flex w-full flex-col gap-1">
+        <div className="flex w-full items-center gap-2">
+          <Input
+            variant="compact"
+            className="min-w-0 flex-1 font-mono"
+            value={draft}
+            spellCheck={false}
+            autoCorrect="off"
+            autoCapitalize="off"
+            aria-label={t("settings.endKeys.append")}
+            onChange={(event) => setDraft(event.target.value)}
+            onBlur={() => choice && save(draft, choice.keys)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") event.currentTarget.blur();
+            }}
+            disabled={disabled || choice === null}
+          />
+          <Dropdown
+            compact
+            className="w-40 shrink-0"
+            options={choice ? keyOptions(offered, choice, t, os) : []}
+            selectedValue={choice ? selectedKeyOption(choice) : null}
+            onSelect={(option) => {
+              if (choice) save(draft, keysOfOption(option, choice));
+            }}
+            disabled={disabled || choice === null || withoutAccessibility}
+          />
         </div>
-      </SettingContainer>
+        {parts && (
+          <p className="text-xs text-text/70">
+            {describeAppend(parts, t, os, i18n.language)}
+          </p>
+        )}
+        {withoutAccessibility && (
+          <p className="text-xs text-text/70">
+            {t("settings.advanced.appendText.noAccessibility")}
+          </p>
+        )}
+      </div>
     );
   },
 );

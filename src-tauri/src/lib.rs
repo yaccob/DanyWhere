@@ -13,6 +13,7 @@ mod clipboard;
 mod commands;
 mod delivery;
 mod dictation_key_inserts;
+mod end_keys;
 pub mod engine_supervisor;
 mod helpers;
 // DanyWhere: versions of History entries.
@@ -425,9 +426,6 @@ fn initialize_core_logic(app_handle: &AppHandle) {
             tray::PROFILE_AUTO_ID => {
                 app_profiles::toggle_from_tray(app);
             }
-            tray::SEND_CONTEXT_ID => {
-                send_context::toggle_from_tray(app);
-            }
             id if id.starts_with(tray::PROFILE_SELECT_PREFIX) => {
                 let profile_id = id
                     .strip_prefix(tray::PROFILE_SELECT_PREFIX)
@@ -830,7 +828,8 @@ pub fn run(cli_args: CliArgs) {
             app_profiles::set_profile_apps,
             app_profiles::set_profile_auto_by_app,
             app_profiles::list_applications,
-            send_context::set_send_context,
+            end_keys::change_end_keys_setting,
+            end_keys::change_default_end_setting,
             shortcut::suspend_all_bindings,
             shortcut::resume_all_bindings,
             shortcut::change_mute_while_recording_setting,
@@ -838,7 +837,6 @@ pub fn run(cli_args: CliArgs) {
             append_text::append_key_options,
             append_text::split_append_text,
             append_text::compose_append_text,
-            append_text::change_append_text_setting,
             shortcut::change_lazy_stream_close_setting,
             shortcut::change_vad_enabled_setting,
             shortcut::change_long_form_chunking_setting,

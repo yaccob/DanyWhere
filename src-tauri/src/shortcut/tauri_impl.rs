@@ -37,8 +37,10 @@ pub fn init_shortcuts(app: &AppHandle) {
             .cloned()
             .unwrap_or(default_binding);
 
-        if let Err(e) = register_shortcut(app, binding) {
-            error!("Failed to register shortcut {} during init: {}", id, e);
+        match register_shortcut(app, binding.clone()) {
+            // DanyWhere: known to the shortcuts that follow the profile.
+            Ok(()) => super::profile_sync::note_registered(&binding),
+            Err(e) => error!("Failed to register shortcut {} during init: {}", id, e),
         }
     }
 }

@@ -15,8 +15,7 @@
     "onlyGlobalWordList": "No Additional List",
     "profile": "Profile",
     "defaultProfile": "Default",
-    "profileAutoByApp": "Choose Profile by Application",
-    "sendContext": "Send Context"
+    "profileAutoByApp": "Choose Profile by Application"
   },
   "sidebar": {
     "general": "General",
@@ -376,10 +375,6 @@
           "toggle_profile_auto": {
             "name": "Choose Profile by Application",
             "description": "Turns choosing the profile by application on or off. Works while applications are assigned to a profile."
-          },
-          "toggle_send_context": {
-            "name": "Send Context",
-            "description": "Turns sending context with post-processing on or off for the profile a dictation into the app in front uses. Works while post-processing is on."
           }
         },
         "errors": {
@@ -437,6 +432,36 @@
           "startRecording": "Start a recording",
           "doNothing": "Do nothing"
         }
+      }
+    },
+    "endKeys": {
+      "title": "End Shortcuts",
+      "description": "How a recording ends and what follows: each end shortcut says what is appended, whether the text is post-processed, and whether earlier dictations go along as context.",
+      "builtin": {
+        "plain": "Plain",
+        "post_process": "Post-process"
+      },
+      "name": "Name",
+      "noShortcut": "No shortcut",
+      "shortcutHint": "Its own shortcut ends a recording this way. It is taken only while recording.",
+      "clearShortcut": "Remove shortcut",
+      "append": "Append",
+      "appendDescription": "Appended to a dictation that ends this way: the text, then the key press you choose. In the text, \\s is a space, \\n a new line, \\t a tab and \\\\ a backslash; everything else is appended as written. The key press is sent only when the text is pasted.",
+      "sendContext": "Send Context",
+      "sendContextHint": "Only with post-processing: earlier dictations from the same window go along as context.",
+      "add": "Add End Shortcut",
+      "newName": "New End Shortcut",
+      "delete": "Delete {{name}}",
+      "inUse": "A start shortcut ends with it by default; choose another default end first.",
+      "defaultEnd": {
+        "title": "Default End of {{shortcut}}",
+        "description": "How its second press, or its release when held, ends the recording."
+      },
+      "linuxNoShortcuts": "On Linux, the shortcuts of end shortcuts aren't taken; they end a recording only as a default end.",
+      "errors": {
+        "save": "Couldn't save the end shortcuts: {{error}}",
+        "needsName": "Every end shortcut needs a name.",
+        "shortcutTwice": "Two end shortcuts can't share a shortcut."
       }
     },
     "profiles": {
@@ -713,8 +738,6 @@
         }
       },
       "appendText": {
-        "title": "Append",
-        "description": "Added after every dictation of this profile: the text, then the key press you choose. In the text, \\s is a space, \\n a new line, \\t a tab and \\\\ a backslash; everything else is appended as written. The key press is sent only when the text is pasted.",
         "noAccessibility": "Without Accessibility, key presses aren't sent; the text is still appended.",
         "keyNone": "No key press",
         "keyKept": "Kept from before; not offered on this system",
@@ -920,11 +943,6 @@
       },
       "context": {
         "title": "Context from Earlier Dictations",
-        "sendContext": {
-          "label": "Send Context",
-          "description": "Dictations with post-processing send your earlier dictations from the same window along as context. Belongs to the profile; the tray menu and a shortcut switch this too. Without post-processing, no context is sent.",
-          "short": "Send context"
-        },
         "privacy": "Earlier dictations from the same window go to the post-processing provider along with the current one, including dictations that were never post-processed. The History marks every entry that went out this way.",
         "ageLimit": "Age Limit",
         "ageLimitDescription": "Only dictations at most this many minutes older than the current one ({{min}}–{{max}}).",

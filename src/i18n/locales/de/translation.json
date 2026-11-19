@@ -15,8 +15,7 @@
     "onlyGlobalWordList": "Keine zusätzliche Liste",
     "profile": "Profil",
     "defaultProfile": "Standard",
-    "profileAutoByApp": "Profil nach Anwendung wählen",
-    "sendContext": "Kontext senden"
+    "profileAutoByApp": "Profil nach Anwendung wählen"
   },
   "sidebar": {
     "general": "Allgemein",
@@ -376,10 +375,6 @@
           "toggle_profile_auto": {
             "name": "Profil nach Anwendung wählen",
             "description": "Schaltet die Wahl des Profils nach Anwendung ein oder aus. Wirkt, solange einem Profil Anwendungen zugeordnet sind."
-          },
-          "toggle_send_context": {
-            "name": "Kontext senden",
-            "description": "Schaltet das Senden von Kontext bei der Nachbearbeitung für das Profil ein oder aus, das ein Diktat in die App vorn verwendet. Wirkt, solange die Nachbearbeitung an ist."
           }
         },
         "errors": {
@@ -437,6 +432,36 @@
           "startRecording": "Aufnahme starten",
           "doNothing": "Nichts tun"
         }
+      }
+    },
+    "endKeys": {
+      "title": "Endtasten",
+      "description": "Wie eine Aufnahme endet und was folgt: Jede Endtaste legt fest, was angehängt wird, ob der Text nachbearbeitet wird und ob frühere Diktate als Kontext mitgehen.",
+      "builtin": {
+        "plain": "Normal",
+        "post_process": "Nachbearbeiten"
+      },
+      "name": "Name",
+      "noShortcut": "Keine Tastenkombination",
+      "shortcutHint": "Ihre eigene Tastenkombination beendet eine Aufnahme auf diese Weise. Sie ist nur während einer Aufnahme belegt.",
+      "clearShortcut": "Tastenkombination entfernen",
+      "append": "Anhängen",
+      "appendDescription": "Wird an ein Diktat angehängt, das so endet: der Text, dann der gewählte Tastendruck. Im Text ist \\s ein Leerzeichen, \\n ein Zeilenumbruch, \\t ein Tabulator und \\\\ ein Backslash; alles andere wird angehängt, wie es dasteht. Der Tastendruck wird nur gesendet, wenn der Text eingefügt wird.",
+      "sendContext": "Kontext senden",
+      "sendContextHint": "Nur mit Nachbearbeitung: Frühere Diktate aus demselben Fenster gehen als Kontext mit.",
+      "add": "Endtaste hinzufügen",
+      "newName": "Neue Endtaste",
+      "delete": "{{name}} löschen",
+      "inUse": "Eine Starttaste endet standardmäßig damit; wähle zuerst ein anderes Standard-Ende.",
+      "defaultEnd": {
+        "title": "Standard-Ende von {{shortcut}}",
+        "description": "Wie ihr zweiter Druck oder, wenn sie gehalten wird, ihr Loslassen die Aufnahme beendet."
+      },
+      "linuxNoShortcuts": "Unter Linux werden die Tastenkombinationen der Endtasten nicht belegt; sie beenden eine Aufnahme nur als Standard-Ende.",
+      "errors": {
+        "save": "Die Endtasten konnten nicht gespeichert werden: {{error}}",
+        "needsName": "Jede Endtaste braucht einen Namen.",
+        "shortcutTwice": "Zwei Endtasten können nicht dieselbe Tastenkombination haben."
       }
     },
     "profiles": {
@@ -713,8 +738,6 @@
         }
       },
       "appendText": {
-        "title": "Anhängen",
-        "description": "Wird nach jedem Diktat dieses Profils angehängt: der Text, dann der gewählte Tastendruck. Im Text ist \\s ein Leerzeichen, \\n ein Zeilenumbruch, \\t ein Tabulator und \\\\ ein Backslash; alles andere wird angehängt, wie es dasteht. Der Tastendruck wird nur gesendet, wenn der Text eingefügt wird.",
         "noAccessibility": "Ohne Bedienungshilfen werden keine Tastendrücke gesendet; der Text wird trotzdem angehängt.",
         "keyNone": "Keine Taste",
         "keyKept": "Von früher übernommen; auf diesem System nicht angeboten",
@@ -920,11 +943,6 @@
       },
       "context": {
         "title": "Kontext aus früheren Diktaten",
-        "sendContext": {
-          "label": "Kontext senden",
-          "description": "Diktate mit Nachbearbeitung schicken deine früheren Diktate aus demselben Fenster als Kontext mit. Gehört zum Profil; auch das Tray-Menü und eine Tastenkombination schalten das um. Ohne Nachbearbeitung wird nie Kontext gesendet.",
-          "short": "Kontext senden"
-        },
         "privacy": "Frühere Diktate aus demselben Fenster gehen zusammen mit dem aktuellen an den Anbieter der Nachbearbeitung, auch solche, die nie nachbearbeitet wurden. Der Verlauf markiert jeden Eintrag, der so hinausging.",
         "ageLimit": "Altersgrenze",
         "ageLimitDescription": "Nur Diktate, die höchstens so viele Minuten älter sind als das aktuelle ({{min}}–{{max}}).",

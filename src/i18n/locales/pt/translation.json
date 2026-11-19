@@ -15,8 +15,7 @@
     "onlyGlobalWordList": "Sem Lista Adicional",
     "profile": "Perfil",
     "defaultProfile": "Padrão",
-    "profileAutoByApp": "Escolher perfil por aplicativo",
-    "sendContext": "Enviar contexto"
+    "profileAutoByApp": "Escolher perfil por aplicativo"
   },
   "sidebar": {
     "general": "Geral",
@@ -376,10 +375,6 @@
           "toggle_profile_auto": {
             "name": "Escolher perfil por aplicativo",
             "description": "Ativa ou desativa a escolha do perfil por aplicativo. Funciona enquanto houver aplicativos atribuídos a um perfil."
-          },
-          "toggle_send_context": {
-            "name": "Enviar contexto",
-            "description": "Ativa ou desativa o envio de contexto com o pós-processamento para o perfil que um ditado na app em primeiro plano usa. Funciona enquanto o pós-processamento estiver ativado."
           }
         },
         "errors": {
@@ -437,6 +432,36 @@
           "startRecording": "Iniciar uma gravação",
           "doNothing": "Não fazer nada"
         }
+      }
+    },
+    "endKeys": {
+      "title": "Atalhos de fim",
+      "description": "Como uma gravação termina e o que se segue: cada atalho de fim define o que é acrescentado, se o texto é pós-processado e se os ditados anteriores são enviados como contexto.",
+      "builtin": {
+        "plain": "Normal",
+        "post_process": "Pós-processar"
+      },
+      "name": "Nome",
+      "noShortcut": "Sem atalho",
+      "shortcutHint": "O seu próprio atalho termina uma gravação desta forma. Só fica ocupado durante a gravação.",
+      "clearShortcut": "Remover atalho",
+      "append": "Acrescentar",
+      "appendDescription": "Acrescentado a um ditado que termina desta forma: o texto e depois a tecla que escolher. No texto, \\s é um espaço, \\n uma nova linha, \\t uma tabulação e \\\\ uma barra invertida; todo o resto é acrescentado como está escrito. A tecla só é enviada quando o texto é colado.",
+      "sendContext": "Enviar contexto",
+      "sendContextHint": "Só com pós-processamento: os ditados anteriores da mesma janela são enviados como contexto.",
+      "add": "Adicionar atalho de fim",
+      "newName": "Novo atalho de fim",
+      "delete": "Eliminar {{name}}",
+      "inUse": "Um atalho de início termina com ele por predefinição; escolha primeiro outro fim predefinido.",
+      "defaultEnd": {
+        "title": "Fim predefinido de {{shortcut}}",
+        "description": "Como o segundo toque, ou soltá-lo quando mantido premido, termina a gravação."
+      },
+      "linuxNoShortcuts": "No Linux, os atalhos dos atalhos de fim não ficam ocupados; só terminam uma gravação como fim predefinido.",
+      "errors": {
+        "save": "Não foi possível guardar os atalhos de fim: {{error}}",
+        "needsName": "Cada atalho de fim precisa de um nome.",
+        "shortcutTwice": "Dois atalhos de fim não podem partilhar um atalho."
       }
     },
     "profiles": {
@@ -713,8 +738,6 @@
         }
       },
       "appendText": {
-        "title": "Acrescentar",
-        "description": "Acrescentado após cada ditado deste perfil: o texto e depois a tecla que escolher. No texto, \\s é um espaço, \\n uma nova linha, \\t uma tabulação e \\\\ uma barra invertida; todo o resto é acrescentado como está escrito. A tecla só é enviada quando o texto é colado.",
         "noAccessibility": "Sem Acessibilidade, as teclas não são enviadas; o texto continua sendo acrescentado.",
         "keyNone": "Nenhuma tecla",
         "keyKept": "Mantido de antes; não disponível neste sistema",
@@ -920,11 +943,6 @@
       },
       "context": {
         "title": "Contexto de ditados anteriores",
-        "sendContext": {
-          "label": "Enviar contexto",
-          "description": "Os ditados com pós-processamento também enviam seus ditados anteriores da mesma janela como contexto. Pertence ao perfil; o menu da bandeja e um atalho também alternam isso. Sem pós-processamento, nenhum contexto é enviado.",
-          "short": "Enviar contexto"
-        },
         "privacy": "Os ditados anteriores da mesma janela vão para o fornecedor do pós-processamento junto com o atual, incluindo os que nunca foram pós-processados. O histórico marca cada entrada que saiu assim.",
         "ageLimit": "Idade máxima",
         "ageLimitDescription": "Apenas ditados no máximo esta quantidade de minutos mais antigos que o atual ({{min}}–{{max}}).",

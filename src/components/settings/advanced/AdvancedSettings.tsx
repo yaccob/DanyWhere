@@ -12,7 +12,6 @@ import { PasteMethodSetting } from "../PasteMethod";
 import { TypingToolSetting } from "../TypingTool";
 import { ClipboardHandlingSetting } from "../ClipboardHandling";
 import { ClipboardNoticeSetting } from "../ClipboardNotice";
-import { AppendText } from "../AppendText";
 import { PostProcessingToggle } from "../PostProcessingToggle";
 import { PostProcessTimeouts } from "../PostProcessTimeouts";
 import { RecordingStorageLimitSetting } from "../RecordingStorageLimit";
@@ -40,9 +39,9 @@ export const AdvancedSettings: React.FC = () => {
         <TypingToolSetting descriptionMode="tooltip" grouped={true} />
         <ClipboardHandlingSetting descriptionMode="tooltip" grouped={true} />
         <ClipboardNoticeSetting descriptionMode="tooltip" grouped={true} />
-        {/* DanyWhere: the profile's "Append" field instead of "Auto Submit"
-            and "Append Trailing Space" (append_text.rs). */}
-        <AppendText descriptionMode="tooltip" grouped={true} />
+        {/* DanyWhere: "Append" ("Auto Submit" and "Append Trailing Space"
+            before it) belongs to each end shortcut now (end_keys.rs), on the
+            shortcut settings. */}
       </SettingsGroup>
 
       <SettingsGroup title={t("settings.advanced.groups.transcription")}>
