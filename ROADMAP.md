@@ -34,6 +34,10 @@ Planned work on DanyWhere, roughly in priority order within each section. Items 
 
 **Decided (user, 2026-11-19):** the start shortcut is a value of the profile and doesn't choose the profile. The profile is chosen as before (the application in front, or the profile fixed by hand), and there only that profile's start shortcut starts a recording; the start shortcuts of other profiles have no effect there and reach the application. Profiles may share a start shortcut, and usually all will; a profile gets its own only where the user wants one.
 
+### Profiles: defaults for everything, a profile overrides what it needs
+
+**Idea (user, 2026-11-19; came up with the end shortcuts above; to be discussed next):** every setting gets a default that holds independently of the profiles, and a profile overrides any of them where it should differ. This is meant as a basic principle for as many settings as possible, not as a special case for shortcuts. Today a profile is a full copy of the values that decide how a dictation is processed, while shortcuts, microphone, API keys and the interface are global. Still open: how the interface makes obvious what is a default and what a profile overrides; Claude's ideas are in the sidecar note.
+
 ### Transcription in the cloud, post-processing on this Mac
 
 **Idea (user, 2026-11-17; partly decided, see below):** transcription is local only, post-processing in practice cloud only. Both should work either way: transcription by a subscribed cloud service, which might be faster thanks to the providers' hardware, and post-processing by a language model installed on this Mac.
