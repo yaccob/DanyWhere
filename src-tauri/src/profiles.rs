@@ -1,7 +1,9 @@
-//! DanyWhere: profiles. A profile holds everything that decides how a
-//! dictation is processed: speech model, languages, word lists, post-processing
-//! and its prompts, context limits and "Send Context", filler words.
-//! Shortcuts, microphone, API keys and the interface stay global.
+//! DanyWhere: profiles. A profile holds everything that concerns a
+//! dictation (the user's decision P6 of 2026-11-19): speech model, languages,
+//! word lists, post-processing with its providers, keys and prompts, context,
+//! filler words, microphone, sounds, overlay and how the text is inserted.
+//! What concerns the machine, the app or the interface stays global
+//! (`setting_classes`); so do the shortcuts until they become profile values.
 //!
 //! The flat fields of [`AppSettings`] always hold the active profile's values,
 //! so the code that reads settings stays as it is. [`sync_active_profile`]
@@ -15,7 +17,11 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 use tauri::{AppHandle, Emitter};
 
-use crate::settings::{self, AppSettings, ChineseScript, LLMPrompt, LanguageDetectionMode};
+use crate::settings::{
+    self, AppSettings, ChineseScript, ClipboardHandling, LLMPrompt, LanguageDetectionMode,
+    OverlayPosition, OverlayStyle, PasteMethod, PostProcessProvider, SecretMap, ShortcutActivation,
+    SoundTheme, TypingTool,
+};
 use crate::word_lists::WordList;
 
 /// The id of the profile every installation starts with.
@@ -37,7 +43,9 @@ pub struct Profile {
 }
 
 /// Everything that is per profile. Mirrors fields of [`AppSettings`] with the
-/// same names and types; the context limits mirror `dictation_context`.
+/// same names and types; the context settings mirror `dictation_context`.
+/// New fields go at the end; `setting_classes` checks that every setting is
+/// a profile value or classified otherwise.
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Type)]
 #[serde(default)]
 pub struct ProfileValues {
@@ -71,6 +79,48 @@ pub struct ProfileValues {
     /// The "Append" field (`append_text`), which replaced the trailing space;
     /// stored profiles got it from theirs (`append_text::migrate`).
     pub append_text: String,
+    /// How the dictation shortcut's presses drive a recording. Read when a
+    /// key event comes, so from the profile in use.
+    pub shortcut_activation: ShortcutActivation,
+    /// The feedback sounds, their volume and theme, the done sound.
+    pub audio_feedback: bool,
+    pub audio_feedback_volume: f32,
+    pub sound_theme: SoundTheme,
+    pub done_sound: bool,
+    /// Mute the computer's sound while recording.
+    pub mute_while_recording: bool,
+    /// The microphone stays open between dictations; follows the profile in
+    /// use (`profile_effects`).
+    pub always_on_microphone: bool,
+    /// The microphone a dictation records with (`dictation_microphone`).
+    pub selected_microphone: Option<String>,
+    pub selected_channel: Option<u16>,
+    pub clamshell_microphone: Option<String>,
+    /// Where the feedback sounds play.
+    pub selected_output_device: Option<String>,
+    pub airpods_mode: bool,
+    /// Where the recording overlay sits and how it shows (`overlay_look`).
+    pub overlay_position: OverlayPosition,
+    pub overlay_style: OverlayStyle,
+    /// How the text gets into the application.
+    pub paste_method: PasteMethod,
+    pub clipboard_handling: ClipboardHandling,
+    pub clipboard_notice_ms: u64,
+    pub typing_tool: TypingTool,
+    pub external_script_path: Option<String>,
+    /// The word list every dictation with this profile gets, after its own
+    /// (`profile_words`); the same in every profile until one differs.
+    pub custom_words: Vec<String>,
+    /// `dictation_context.excluded_apps`
+    pub context_excluded_apps: Vec<String>,
+    /// The post-processing providers with their endpoints, their API keys
+    /// (never exported, see `profile_transfer`) and the time limit.
+    pub post_process_providers: Vec<PostProcessProvider>,
+    pub post_process_api_keys: SecretMap,
+    pub post_process_timeout_secs: u64,
+    /// Drop silence from recordings; decode long audio in chunks.
+    pub vad_enabled: bool,
+    pub long_form_chunking: bool,
 }
 
 impl Default for ProfileValues {
@@ -107,6 +157,32 @@ impl ProfileValues {
             filler_word_removal_enabled: settings.filler_word_removal_enabled,
             custom_filler_words: settings.custom_filler_words.clone(),
             append_text: settings.append_text.clone(),
+            shortcut_activation: settings.shortcut_activation,
+            audio_feedback: settings.audio_feedback,
+            audio_feedback_volume: settings.audio_feedback_volume,
+            sound_theme: settings.sound_theme,
+            done_sound: settings.done_sound,
+            mute_while_recording: settings.mute_while_recording,
+            always_on_microphone: settings.always_on_microphone,
+            selected_microphone: settings.selected_microphone.clone(),
+            selected_channel: settings.selected_channel,
+            clamshell_microphone: settings.clamshell_microphone.clone(),
+            selected_output_device: settings.selected_output_device.clone(),
+            airpods_mode: settings.airpods_mode,
+            overlay_position: settings.overlay_position,
+            overlay_style: settings.overlay_style,
+            paste_method: settings.paste_method,
+            clipboard_handling: settings.clipboard_handling,
+            clipboard_notice_ms: settings.clipboard_notice_ms,
+            typing_tool: settings.typing_tool,
+            external_script_path: settings.external_script_path.clone(),
+            custom_words: settings.custom_words.clone(),
+            context_excluded_apps: settings.dictation_context.excluded_apps.clone(),
+            post_process_providers: settings.post_process_providers.clone(),
+            post_process_api_keys: settings.post_process_api_keys.clone(),
+            post_process_timeout_secs: settings.post_process_timeout_secs,
+            vad_enabled: settings.vad_enabled,
+            long_form_chunking: settings.long_form_chunking,
         }
     }
 
@@ -136,7 +212,153 @@ impl ProfileValues {
         settings.filler_word_removal_enabled = self.filler_word_removal_enabled;
         settings.custom_filler_words = self.custom_filler_words.clone();
         settings.append_text = self.append_text.clone();
+        settings.shortcut_activation = self.shortcut_activation;
+        settings.audio_feedback = self.audio_feedback;
+        settings.audio_feedback_volume = self.audio_feedback_volume;
+        settings.sound_theme = self.sound_theme;
+        settings.done_sound = self.done_sound;
+        settings.mute_while_recording = self.mute_while_recording;
+        settings.always_on_microphone = self.always_on_microphone;
+        settings.selected_microphone = self.selected_microphone.clone();
+        settings.selected_channel = self.selected_channel;
+        settings.clamshell_microphone = self.clamshell_microphone.clone();
+        settings.selected_output_device = self.selected_output_device.clone();
+        settings.airpods_mode = self.airpods_mode;
+        settings.overlay_position = self.overlay_position;
+        settings.overlay_style = self.overlay_style;
+        settings.paste_method = self.paste_method;
+        settings.clipboard_handling = self.clipboard_handling;
+        settings.clipboard_notice_ms = self.clipboard_notice_ms;
+        settings.typing_tool = self.typing_tool;
+        settings.external_script_path = self.external_script_path.clone();
+        settings.custom_words = self.custom_words.clone();
+        settings.dictation_context.excluded_apps = self.context_excluded_apps.clone();
+        settings.post_process_providers = self.post_process_providers.clone();
+        settings.post_process_api_keys = self.post_process_api_keys.clone();
+        settings.post_process_timeout_secs = self.post_process_timeout_secs;
+        settings.vad_enabled = self.vad_enabled;
+        settings.long_form_chunking = self.long_form_chunking;
     }
+}
+
+/// The serde names of the profile values (contract V1): what the coupling
+/// of defaults and the filling of missing values work over.
+pub fn value_names() -> &'static [String] {
+    static NAMES: std::sync::OnceLock<Vec<String>> = std::sync::OnceLock::new();
+    NAMES.get_or_init(|| match serde_json::to_value(ProfileValues::default()) {
+        Ok(serde_json::Value::Object(map)) => map.keys().cloned().collect(),
+        _ => Vec::new(),
+    })
+}
+
+/// Contract V5: gives `values` the value of `flat` for every profile value
+/// that `stored` (the profile's values as stored, a JSON object) lacks.
+/// Returns whether one was missing.
+///
+/// Generic over the serde names, so a new profile value needs no code here.
+pub fn fill_missing_values(
+    values: &mut ProfileValues,
+    stored: &serde_json::Map<String, serde_json::Value>,
+    flat: &ProfileValues,
+) -> bool {
+    let missing = missing_names(stored);
+    if missing.is_empty() {
+        return false;
+    }
+    let (Ok(serde_json::Value::Object(flat)), Ok(serde_json::Value::Object(mut filled))) =
+        (serde_json::to_value(flat), serde_json::to_value(&*values))
+    else {
+        log::warn!("Profile values could not be written as JSON; nothing filled in");
+        return false;
+    };
+    for name in missing {
+        if let Some(value) = flat.get(name) {
+            filled.insert(name.clone(), value.clone());
+        }
+    }
+    match serde_json::from_value(serde_json::Value::Object(filled)) {
+        Ok(filled) => {
+            *values = filled;
+            true
+        }
+        Err(e) => {
+            log::warn!("Profile values could not be filled in: {e}");
+            false
+        }
+    }
+}
+
+/// The profile values `stored` lacks.
+fn missing_names(stored: &serde_json::Map<String, serde_json::Value>) -> Vec<&'static String> {
+    value_names()
+        .iter()
+        .filter(|name| !stored.contains_key(name.as_str()))
+        .collect()
+}
+
+/// Contract V5: every stored profile that lacks a profile value gets the
+/// flat value it had, not a new installation's. `raw` is the stored
+/// settings as JSON. Returns whether a profile got one.
+pub fn fill_missing_values_from_flat(settings: &mut AppSettings, raw: &serde_json::Value) -> bool {
+    let Some(stored_profiles) = raw.get("profiles").and_then(|profiles| profiles.as_array()) else {
+        return false;
+    };
+    let stored_values = |id: &str| {
+        stored_profiles
+            .iter()
+            .find(|stored| stored.get("id").and_then(|stored_id| stored_id.as_str()) == Some(id))
+            .and_then(|stored| stored.get("values"))
+            .and_then(|values| values.as_object())
+    };
+    // The flat values are built only when a profile lacks one, i.e. once
+    // after an update.
+    let lacking = settings.profiles.iter().any(|profile| {
+        stored_values(&profile.id).is_some_and(|stored| !missing_names(stored).is_empty())
+    });
+    if !lacking {
+        return false;
+    }
+    let flat = ProfileValues::from_settings(settings);
+    let mut changed = false;
+    for profile in settings.profiles.iter_mut() {
+        let Some(stored) = stored_values(&profile.id) else {
+            continue;
+        };
+        let missing = missing_names(stored);
+        if fill_missing_values(&mut profile.values, stored, &flat) {
+            log::info!(
+                "Profile {} takes the settings in use for {missing:?}",
+                profile.id
+            );
+            changed = true;
+        }
+    }
+    changed
+}
+
+/// Runs `ensure`, a repair of flat values (e.g. Handy's providers a new
+/// version brings), on the values of every profile but the active one,
+/// whose values are the flat ones. Returns whether a profile changed.
+pub fn ensure_in_every_profile(
+    settings: &mut AppSettings,
+    ensure: impl Fn(&mut AppSettings) -> bool,
+) -> bool {
+    let mut profiles = std::mem::take(&mut settings.profiles);
+    // Without the profiles, so it's a small copy.
+    let mut scratch = settings.clone();
+    let mut changed = false;
+    for profile in profiles
+        .iter_mut()
+        .filter(|profile| profile.id != settings.active_profile_id)
+    {
+        profile.values.apply_to(&mut scratch);
+        if ensure(&mut scratch) {
+            profile.values = ProfileValues::from_settings(&scratch);
+            changed = true;
+        }
+    }
+    settings.profiles = profiles;
+    changed
 }
 
 /// What a switch changed that needs more than storing the settings.
@@ -344,10 +566,17 @@ pub fn default_profile_name(settings: &AppSettings) -> String {
 }
 
 /// What a switch needs beyond storing: load the speech model, (un)register
-/// the post-processing shortcuts, tell the window and the tray, and show the
-/// name, with the glyph of choosing the profile by application, in the
-/// overlay unless a dictation owns it.
-fn after_switch(app: &AppHandle, settings: &AppSettings, changes: SwitchChanges) {
+/// the post-processing shortcuts, what the other values need (microphone,
+/// overlay: `profile_effects`, from the settings `before` it), tell the
+/// window and the tray, and show the name, with the glyph of choosing the
+/// profile by application, in the overlay unless a dictation owns it.
+fn after_switch(
+    app: &AppHandle,
+    before: &AppSettings,
+    settings: &AppSettings,
+    changes: SwitchChanges,
+) {
+    crate::profile_effects::apply_profile_value_effects(app, before, settings);
     if changes.post_process_enabled_changed {
         crate::shortcut::sync_post_process_shortcuts(app, settings);
     }
@@ -392,10 +621,11 @@ fn save(app: &AppHandle, settings: AppSettings) {
 fn switch_with_effects(app: &AppHandle, id: &str) -> Result<(), String> {
     let busy = crate::tray::dictation_in_progress(app);
     let mut settings = settings::get_settings(app);
+    let before = settings.clone();
     let changes = switch_to(&mut settings, id, busy)?;
     log::info!("Switched to profile {id}");
     settings::write_settings(app, settings.clone());
-    after_switch(app, &settings, changes);
+    after_switch(app, &before, &settings, changes);
     Ok(())
 }
 
@@ -438,10 +668,11 @@ pub fn rename_profile(app: AppHandle, id: String, name: String) -> Result<(), St
 pub fn delete_profile(app: AppHandle, id: String) -> Result<(), String> {
     let busy = crate::tray::dictation_in_progress(&app);
     let mut settings = settings::get_settings(&app);
+    let before = settings.clone();
     let switched = delete(&mut settings, &id, busy)?;
     settings::write_settings(&app, settings.clone());
     match switched {
-        Some(changes) => after_switch(&app, &settings, changes),
+        Some(changes) => after_switch(&app, &before, &settings, changes),
         None => {
             let _ = app.emit(
                 "settings-changed",
@@ -454,8 +685,31 @@ pub fn delete_profile(app: AppHandle, id: String) -> Result<(), String> {
     Ok(())
 }
 
+/// Helpers for tests elsewhere that set profile values by their serde
+/// names.
+#[cfg(test)]
+pub(crate) mod testing {
+    use super::ProfileValues;
+
+    /// `base` with the values of `extra` (a JSON object of serde names)
+    /// over it.
+    pub fn values_with(base: &ProfileValues, extra: serde_json::Value) -> ProfileValues {
+        let mut values = serde_json::to_value(base).expect("serializes");
+        for (name, value) in extra.as_object().expect("an object") {
+            values[name] = value.clone();
+        }
+        serde_json::from_value(values).expect("profile values")
+    }
+
+    /// The value named `name` of `values`, as JSON.
+    pub fn value_of(values: &ProfileValues, name: &str) -> serde_json::Value {
+        serde_json::to_value(values).expect("serializes")[name].clone()
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use super::testing::{value_of, values_with};
     use super::*;
 
     fn prompt(id: &str, name: &str, text: &str) -> LLMPrompt {
@@ -476,6 +730,57 @@ mod tests {
 
     fn strings(words: &[&str]) -> Vec<String> {
         words.iter().map(|w| w.to_string()).collect()
+    }
+
+    /// Whether `actual` holds `expected`: equal, or for objects every entry
+    /// of `expected` (a map with more providers holds one with fewer).
+    fn holds(actual: &serde_json::Value, expected: &serde_json::Value) -> bool {
+        match (actual, expected) {
+            (serde_json::Value::Object(actual), serde_json::Value::Object(expected)) => expected
+                .iter()
+                .all(|(key, value)| actual.get(key).is_some_and(|got| holds(got, value))),
+            _ => actual == expected,
+        }
+    }
+
+    /// Values that concern a dictation, other than a new installation's.
+    fn dictation_extra() -> serde_json::Value {
+        serde_json::json!({
+            "shortcut_activation": "push_to_talk",
+            "audio_feedback": true,
+            "audio_feedback_volume": 0.25,
+            "sound_theme": "pop",
+            "done_sound": false,
+            "mute_while_recording": true,
+            "always_on_microphone": true,
+            "selected_microphone": "USB Mic",
+            "selected_channel": 1,
+            "clamshell_microphone": "Desk Mic",
+            "selected_output_device": "Speakers",
+            "airpods_mode": true,
+            "overlay_position": "top",
+            "overlay_style": "minimal",
+            "paste_method": "direct",
+            "clipboard_handling": "copy_to_clipboard",
+            "clipboard_notice_ms": 900,
+            "typing_tool": "xdotool",
+            "external_script_path": "/usr/local/bin/paste-it",
+            "custom_words": ["Kubernetes"],
+            "context_excluded_apps": ["com.apple.mail"],
+            "post_process_api_keys": { "openai": "sk-work" },
+            "post_process_timeout_secs": 15,
+            "vad_enabled": false,
+            "long_form_chunking": false,
+        })
+    }
+
+    /// The flat value of profile value `name` in `settings`, as JSON.
+    fn flat_value(settings: &AppSettings, name: &str) -> serde_json::Value {
+        let flat = serde_json::to_value(settings).expect("serializes");
+        match name.strip_prefix("context_") {
+            Some("excluded_apps") => flat["dictation_context"]["excluded_apps"].clone(),
+            _ => flat[name].clone(),
+        }
     }
 
     /// Settings as an update from a version without profiles finds them.
@@ -521,6 +826,35 @@ mod tests {
             filler_word_removal_enabled: false,
             custom_filler_words: Some(strings(&["äh"])),
             append_text: r"\s{Enter}".to_string(),
+            shortcut_activation: ShortcutActivation::PushToTalk,
+            audio_feedback: true,
+            audio_feedback_volume: 0.25,
+            sound_theme: SoundTheme::Pop,
+            done_sound: false,
+            mute_while_recording: true,
+            always_on_microphone: true,
+            selected_microphone: Some("USB Mic".to_string()),
+            selected_channel: Some(1),
+            clamshell_microphone: Some("Desk Mic".to_string()),
+            selected_output_device: Some("Speakers".to_string()),
+            airpods_mode: true,
+            overlay_position: OverlayPosition::Top,
+            overlay_style: OverlayStyle::Minimal,
+            paste_method: PasteMethod::Direct,
+            clipboard_handling: ClipboardHandling::CopyToClipboard,
+            clipboard_notice_ms: 900,
+            typing_tool: TypingTool::Xdotool,
+            external_script_path: Some("/usr/local/bin/paste-it".to_string()),
+            custom_words: strings(&["Kubernetes"]),
+            context_excluded_apps: strings(&["com.apple.mail"]),
+            post_process_providers: Vec::new(),
+            post_process_api_keys: serde_json::from_value(serde_json::json!({
+                "openai": "sk-work"
+            }))
+            .expect("keys"),
+            post_process_timeout_secs: 15,
+            vad_enabled: false,
+            long_form_chunking: false,
         }
     }
 
@@ -612,6 +946,138 @@ mod tests {
         );
     }
 
+    // ---- Everything that concerns a dictation is a profile value (P6) -----
+
+    #[test]
+    fn switching_brings_every_value_that_concerns_a_dictation() {
+        let mut s = two_profiles();
+        let extra = dictation_extra();
+        s.profiles[1].values = values_with(&other_values(), extra.clone());
+        let before = s.clone();
+        switch_to(&mut s, "work", false).expect("switched");
+        for (name, value) in extra.as_object().unwrap() {
+            assert!(
+                holds(&flat_value(&s, name), value),
+                "{name}: {} instead of {value}",
+                flat_value(&s, name)
+            );
+        }
+        switch_to(&mut s, DEFAULT_PROFILE_ID, false).expect("switched back");
+        for name in extra.as_object().unwrap().keys() {
+            assert_eq!(flat_value(&s, name), flat_value(&before, name), "{name}");
+        }
+    }
+
+    #[test]
+    fn a_changed_microphone_lands_in_the_active_profile_only() {
+        let mut s = two_profiles();
+        s.selected_microphone = Some("AirPods".to_string());
+        s.custom_words = strings(&["Tauri"]);
+        sync_active_profile(&mut s);
+        let active = &active_profile(&s).expect("an active profile").values;
+        assert_eq!(value_of(active, "selected_microphone"), "AirPods");
+        assert_eq!(
+            value_of(active, "custom_words"),
+            serde_json::json!(["Tauri"])
+        );
+        assert_eq!(s.profiles[1].values, other_values());
+    }
+
+    // ---- Contract V5: a stored profile without a value gets the flat one --
+
+    /// Stored settings with the flat microphone "USB Mic" and two profiles
+    /// as an older version wrote them, without the newer values; "work"
+    /// stores its microphone as none.
+    fn stored_without_new_values() -> serde_json::Value {
+        serde_json::json!({
+            "selected_language": "de",
+            "selected_microphone": "USB Mic",
+            "custom_words": ["Sayuri"],
+            "post_process_api_keys": { "anthropic": "sk-ant", "openai": "" },
+            "dictation_context": { "excluded_apps": ["1Password"] },
+            "active_profile_id": "default",
+            "profiles": [
+                { "id": "default", "name": "", "values": { "selected_language": "de" } },
+                { "id": "old", "name": "Old", "values": { "selected_language": "fr" } },
+                { "id": "work", "name": "Work",
+                  "values": { "selected_language": "en", "selected_microphone": null } }
+            ]
+        })
+    }
+
+    #[test]
+    fn a_stored_profile_without_a_value_gets_the_flat_one() {
+        let raw = stored_without_new_values();
+        let mut s: AppSettings = serde_json::from_value(raw.clone()).expect("settings");
+        assert!(fill_missing_values_from_flat(&mut s, &raw));
+        let old = &s.profiles[1].values;
+        assert_eq!(old.selected_language, "fr", "a stored value stays");
+        assert_eq!(value_of(old, "selected_microphone"), "USB Mic");
+        assert_eq!(value_of(old, "custom_words"), serde_json::json!(["Sayuri"]));
+        assert_eq!(
+            value_of(old, "context_excluded_apps"),
+            serde_json::json!(["1Password"])
+        );
+        assert_eq!(
+            value_of(old, "post_process_api_keys")["anthropic"],
+            "sk-ant"
+        );
+    }
+
+    #[test]
+    fn a_stored_value_stays_even_where_it_is_empty() {
+        let raw = stored_without_new_values();
+        let mut s: AppSettings = serde_json::from_value(raw.clone()).expect("settings");
+        fill_missing_values_from_flat(&mut s, &raw);
+        let work = &s.profiles[2].values;
+        assert_eq!(
+            value_of(work, "selected_microphone"),
+            serde_json::Value::Null
+        );
+        assert_eq!(work.selected_language, "en");
+        // Values it lacks still come from the flat ones.
+        assert_eq!(
+            value_of(work, "custom_words"),
+            serde_json::json!(["Sayuri"])
+        );
+    }
+
+    #[test]
+    fn profiles_with_every_value_are_left_alone() {
+        let mut s = two_profiles();
+        let raw = serde_json::to_value(&s).expect("serializes");
+        let before = s.clone();
+        assert!(!fill_missing_values_from_flat(&mut s, &raw));
+        assert_eq!(s.profiles, before.profiles);
+        // Nothing stored at all (a new installation): nothing to fill.
+        assert!(!fill_missing_values_from_flat(
+            &mut s,
+            &serde_json::json!({})
+        ));
+    }
+
+    #[test]
+    fn filling_works_on_any_profile_value_without_code_per_value() {
+        let flat = other_values();
+        let mut values = ProfileValues::default();
+        let mut stored = serde_json::to_value(&values).expect("serializes");
+        let stored = stored.as_object_mut().expect("an object");
+        stored.remove("selected_model");
+        stored.remove("context_char_budget");
+        assert!(fill_missing_values(&mut values, stored, &flat));
+        assert_eq!(values.selected_model, flat.selected_model);
+        assert_eq!(values.context_char_budget, flat.context_char_budget);
+        assert_eq!(
+            values.selected_language,
+            ProfileValues::default().selected_language
+        );
+        assert!(!fill_missing_values(
+            &mut values,
+            serde_json::to_value(&flat).unwrap().as_object().unwrap(),
+            &ProfileValues::default()
+        ));
+    }
+
     // ---- Changes go into the active profile -------------------------------
 
     #[test]
@@ -643,22 +1109,14 @@ mod tests {
         let left = &s.profiles[0].values;
         assert_eq!(left.selected_language, "it");
         assert_eq!(left.selected_model, "parakeet");
-        // Global settings stay.
-        assert_eq!(s.custom_words, before.custom_words);
+        // Application settings stay.
         assert_eq!(s.bindings.len(), before.bindings.len());
-        assert_eq!(
-            s.dictation_context.excluded_apps,
-            before.dictation_context.excluded_apps
-        );
         assert_eq!(
             s.word_correction_threshold,
             before.word_correction_threshold
         );
         assert_eq!(s.app_language, before.app_language);
-        assert_eq!(
-            s.post_process_providers.len(),
-            before.post_process_providers.len()
-        );
+        assert_eq!(s.debug_mode, before.debug_mode);
         // And back again.
         switch_to(&mut s, DEFAULT_PROFILE_ID, false).expect("switched back");
         assert_eq!(s.selected_language, "it");

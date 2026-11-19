@@ -92,36 +92,56 @@ fn resolve_sound_path(
 }
 
 pub fn play_feedback_sound(app: &AppHandle, sound_type: SoundType) {
-    let settings = settings::get_settings(app);
+    // DanyWhere: as the dictation's profile says, if it has its own.
+    let settings = crate::app_profiles::dictation_settings(app);
     if !settings.audio_feedback {
         return;
     }
     if let Some(path) = resolve_sound_path(app, &settings, sound_type) {
-        play_sound_async(app, path);
+        play_sound_async(path, SoundOutput::of(&settings));
     }
 }
 
 pub fn play_feedback_sound_blocking(app: &AppHandle, sound_type: SoundType) {
-    let settings = settings::get_settings(app);
+    // DanyWhere: as the dictation's profile says, if it has its own.
+    let settings = crate::app_profiles::dictation_settings(app);
     if !settings.audio_feedback {
         return;
     }
     if let Some(path) = resolve_sound_path(app, &settings, sound_type) {
-        play_sound_blocking(app, &path);
+        play_sound_blocking(&path, SoundOutput::of(&settings));
     }
 }
 
 pub fn play_test_sound(app: &AppHandle, sound_type: SoundType) {
     let settings = settings::get_settings(app);
     if let Some(path) = resolve_sound_path(app, &settings, sound_type) {
-        play_sound_blocking(app, &path);
+        play_sound_blocking(&path, SoundOutput::of(&settings));
+    }
+}
+
+/// DanyWhere: the device and volume a sound plays with, taken when it is
+/// asked for, so a dictation's sound follows its profile also when it plays
+/// after the dictation ended.
+#[derive(Debug, Clone, PartialEq)]
+struct SoundOutput {
+    device: Option<String>,
+    volume: f32,
+}
+
+impl SoundOutput {
+    fn of(settings: &AppSettings) -> Self {
+        Self {
+            device: settings.selected_output_device.clone(),
+            volume: settings.audio_feedback_volume,
+        }
     }
 }
 
 /// One feedback sound waiting to be played.
 struct SoundJob {
-    app: AppHandle,
     path: PathBuf,
+    output: SoundOutput,
 }
 
 /// DanyWhere: every feedback sound goes through one queue, so sounds never
@@ -131,18 +151,15 @@ fn sound_queue() -> Option<&'static SoundQueue<SoundJob>> {
     static QUEUE: OnceLock<Option<SoundQueue<SoundJob>>> = OnceLock::new();
     QUEUE
         .get_or_init(|| {
-            SoundQueue::new(|job: SoundJob| play_sound_now(&job.app, &job.path))
+            SoundQueue::new(|job: SoundJob| play_sound_now(&job.path, &job.output))
                 .map_err(|e| error!("Failed to start the feedback sound thread: {}", e))
                 .ok()
         })
         .as_ref()
 }
 
-fn play_sound_async(app: &AppHandle, path: PathBuf) {
-    let job = SoundJob {
-        app: app.clone(),
-        path,
-    };
+fn play_sound_async(path: PathBuf, output: SoundOutput) {
+    let job = SoundJob { path, output };
     let job = match sound_queue() {
         Some(queue) => match queue.enqueue(job) {
             Ok(()) => return,
@@ -150,13 +167,13 @@ fn play_sound_async(app: &AppHandle, path: PathBuf) {
         },
         None => job,
     };
-    thread::spawn(move || play_sound_now(&job.app, &job.path));
+    thread::spawn(move || play_sound_now(&job.path, &job.output));
 }
 
-fn play_sound_blocking(app: &AppHandle, path: &Path) {
+fn play_sound_blocking(path: &Path, output: SoundOutput) {
     let job = SoundJob {
-        app: app.clone(),
         path: path.to_path_buf(),
+        output,
     };
     let job = match sound_queue() {
         Some(queue) => match queue.play_and_wait(job) {
@@ -165,20 +182,13 @@ fn play_sound_blocking(app: &AppHandle, path: &Path) {
         },
         None => job,
     };
-    play_sound_now(&job.app, &job.path);
+    play_sound_now(&job.path, &job.output);
 }
 
-fn play_sound_now(app: &AppHandle, path: &Path) {
-    if let Err(e) = play_sound_at_path(app, path) {
+fn play_sound_now(path: &Path, output: &SoundOutput) {
+    if let Err(e) = play_audio_file(path, output.device.clone(), output.volume) {
         error!("Failed to play sound '{}': {}", path.display(), e);
     }
-}
-
-fn play_sound_at_path(app: &AppHandle, path: &Path) -> Result<(), Box<dyn std::error::Error>> {
-    let settings = settings::get_settings(app);
-    let volume = settings.audio_feedback_volume;
-    let selected_device = settings.selected_output_device.clone();
-    play_audio_file(path, selected_device, volume)
 }
 
 fn play_audio_file(
