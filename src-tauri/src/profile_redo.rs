@@ -134,17 +134,9 @@ pub fn redo_from(
     RedoFrom::Nothing
 }
 
-/// The values of profile `id`: for the active profile the flat fields, which
-/// hold its latest values, else the profile's own.
+/// The values of profile `id`, or of the defaults (`profiles::values_of`).
 pub fn values_of(settings: &AppSettings, id: &str) -> Option<ProfileValues> {
-    if id == settings.active_profile_id {
-        return Some(ProfileValues::from_settings(settings));
-    }
-    settings
-        .profiles
-        .iter()
-        .find(|profile| profile.id == id)
-        .map(|profile| profile.values.clone())
+    crate::profiles::values_of(settings, id)
 }
 
 /// The profile a text inserted into `frontmost` now gets, with its values.
@@ -593,9 +585,7 @@ mod tests {
             .post_process_models
             .insert("anthropic".to_string(), "claude-haiku".to_string());
         ensure_profiles(&mut settings);
-        let mut mail = settings.profiles[0].clone();
-        mail.id = "mail".to_string();
-        mail.name = "Mail".to_string();
+        let mut mail = crate::profiles::profile_for_test(&settings, "mail", "Mail", |_| {});
         mail.apps = strings(&["com.apple.mail"]);
         settings.profiles.push(mail);
         settings
@@ -772,12 +762,12 @@ mod tests {
     #[test]
     fn the_target_is_the_profile_of_the_app_in_front_while_choosing_by_app() {
         let mut settings = settings_with_mail();
-        settings.profiles[1].values.append_text = "\\n".to_string();
+        settings.profiles[0].values.append_text = "\\n".to_string();
         let (id, values) = target_for(&settings, Some("com.apple.mail")).expect("mail");
         assert_eq!(id, "mail");
         assert_eq!(values.append_text, "\\n");
-        // An app without a profile gets the active one, with its latest
-        // values from the flat fields.
+        // An app without a profile gets the defaults in use, with their
+        // latest values from the flat fields.
         settings.append_text = "  ".to_string();
         let (id, values) = target_for(&settings, Some("com.apple.TextEdit")).expect("default");
         assert_eq!(id, DEFAULT_PROFILE_ID);
@@ -791,7 +781,7 @@ mod tests {
         settings.profile_auto_by_app = false;
         assert!(target_for(&settings, Some("com.apple.mail")).is_none());
         settings.profile_auto_by_app = true;
-        settings.profiles[1].apps.clear();
+        settings.profiles[0].apps.clear();
         assert!(target_for(&settings, Some("com.apple.mail")).is_none());
     }
 

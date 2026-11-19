@@ -1526,8 +1526,8 @@ pub fn get_settings(app: &AppHandle) -> AppSettings {
         store.set("settings", serde_json::to_value(&settings).unwrap());
     }
 
-    // DanyWhere: the default profile on a new installation or an update from
-    // a version without profiles, and the active profile's latest values.
+    // DanyWhere: the defaults on a new installation or the switch from the
+    // profile "Standard", and the latest flat values where they belong.
     if crate::profiles::ensure_profiles(&mut settings) {
         store.set("settings", serde_json::to_value(&settings).unwrap());
     }
@@ -1868,9 +1868,10 @@ pub fn write_settings(app: &AppHandle, settings: AppSettings) {
         .store(crate::portable::store_path(SETTINGS_STORE_PATH))
         .expect("Failed to initialize store");
 
-    // DanyWhere: every change lands in the active profile.
+    // DanyWhere: a change of the flat values goes where its value comes
+    // from: the defaults or the profile in use (`profile_layers`).
     let mut settings = settings;
-    let _ = crate::profiles::sync_active_profile(&mut settings);
+    let _ = crate::profile_layers::route_flat(&mut settings);
 
     store.set("settings", serde_json::to_value(&settings).unwrap());
 }
@@ -1946,15 +1947,15 @@ mod tests {
         assert!(registers_binding("paste_last_transcript", &settings, true));
     }
 
-    /// DanyWhere: two profiles, "mail" (post-processing on) assigned to Mail;
-    /// the active one has post-processing off.
+    /// DanyWhere: the defaults (in use, post-processing off) and "mail"
+    /// (post-processing on) assigned to Mail.
     fn with_mail_profile() -> AppSettings {
         let mut settings = get_default_settings();
         settings.post_process_enabled = false;
         crate::profiles::ensure_profiles(&mut settings);
-        let mut mail = settings.profiles[0].clone();
-        mail.id = "mail".to_string();
-        mail.values.post_process_enabled = true;
+        let mut mail = crate::profiles::profile_for_test(&settings, "mail", "Mail", |values| {
+            values.post_process_enabled = true;
+        });
         mail.apps = vec!["com.apple.mail".to_string()];
         settings.profiles.push(mail);
         settings
@@ -2378,9 +2379,12 @@ mod tests {
         let mut settings: AppSettings = serde_json::from_value(raw.clone()).expect("parses");
         assert!(apply_settings_migrations(&mut settings, &raw));
         assert_eq!(settings.append_text, r"\s{Ctrl+Enter}");
-        // The default profile is made from the migrated flat values.
+        // The defaults are made from the migrated flat values.
         crate::profiles::ensure_profiles(&mut settings);
-        assert_eq!(settings.profiles[0].values.append_text, r"\s{Ctrl+Enter}");
+        assert_eq!(
+            crate::profiles::default_values(&settings).append_text,
+            r"\s{Ctrl+Enter}"
+        );
     }
 
     /// DanyWhere: a store written on another system (or by hand) gets this
@@ -2394,12 +2398,16 @@ mod tests {
         let mut settings = get_default_settings();
         settings.append_text = written.to_string();
         crate::profiles::ensure_profiles(&mut settings);
+        let work = crate::profiles::profile_for_test(&settings, "work", "Work", |_| {});
+        settings.profiles.push(work);
         let raw = serde_json::to_value(&settings).expect("serializes");
         let mut settings: AppSettings = serde_json::from_value(raw.clone()).expect("parses");
         assert!(apply_settings_migrations(&mut settings, &raw));
+        let defaults = settings.default_values.clone().expect("defaults");
         for value in [
             &settings.append_text,
             &settings.profiles[0].values.append_text,
+            &defaults.append_text,
         ] {
             // Only this system's names are left.
             assert_eq!(&localize(value, KeyPlatform::current()), value);

@@ -67,10 +67,10 @@ pub fn outdated_prompt_names(prompts: &[LLMPrompt]) -> Vec<String> {
         .collect()
 }
 
-/// DanyWhere: the prompts with old parts in every profile, in profile order.
-/// With several profiles each is named "Profile – Prompt"; with one, by its
-/// name alone, as before profiles. `default_name` is the default profile's
-/// translated name.
+/// DanyWhere: the prompts with old parts in the defaults and in every
+/// profile that holds prompts of its own, in that order. With profiles each
+/// is named "Profile – Prompt" (the defaults by `default_name`, their
+/// translated name); without, by its name alone, as before profiles.
 pub fn outdated_prompt_labels(
     settings: &crate::settings::AppSettings,
     default_name: &str,
@@ -78,26 +78,31 @@ pub fn outdated_prompt_labels(
     if settings.profiles.is_empty() {
         return outdated_prompt_names(&settings.post_process_prompts);
     }
-    let several = settings.profiles.len() > 1;
     let mut labels = Vec::new();
+    let mut add = |owner: String, prompts: &[LLMPrompt]| {
+        for name in outdated_prompt_names(prompts) {
+            labels.push(format!("{owner} – {name}"));
+        }
+    };
+    let defaults = crate::profiles::values_of(settings, crate::profiles::DEFAULT_PROFILE_ID)
+        .map(|values| values.post_process_prompts)
+        .unwrap_or_default();
+    add(default_name.to_string(), &defaults);
     for profile in &settings.profiles {
-        // The active profile's latest prompts are the flat ones.
+        // A profile that follows the defaults' prompts has none to name.
+        if !profile.own.contains("post_process_prompts") {
+            continue;
+        }
+        // What is in use has its latest prompts in the flat fields.
         let prompts = if profile.id == settings.active_profile_id {
             &settings.post_process_prompts
         } else {
             &profile.values.post_process_prompts
         };
-        for name in outdated_prompt_names(prompts) {
-            labels.push(if several {
-                format!(
-                    "{} – {}",
-                    crate::profiles::display_name(profile, default_name),
-                    name
-                )
-            } else {
-                name
-            });
-        }
+        add(
+            crate::profiles::display_name(profile, default_name),
+            prompts,
+        );
     }
     labels
 }
@@ -332,25 +337,28 @@ mod tests {
             ..Default::default()
         };
         crate::profiles::ensure_profiles(&mut settings);
-        let mut work = settings.profiles[0].clone();
-        work.id = "work".to_string();
-        work.name = "Work".to_string();
-        work.values.post_process_prompts = vec![
-            prompt("b", "Email", "Make an email out of it."),
-            prompt("c", "Old", "Fix: ${output}"),
-        ];
+        let work = crate::profiles::profile_for_test(&settings, "work", "Work", |values| {
+            values.post_process_prompts = vec![
+                prompt("b", "Email", "Make an email out of it."),
+                prompt("c", "Old", "Fix: ${output}"),
+            ];
+        });
         settings.profiles.push(work);
+        // A profile that follows the defaults' prompts isn't named again.
+        let home = crate::profiles::profile_for_test(&settings, "home", "Home", |_| {});
+        settings.profiles.push(home);
         assert_eq!(
-            outdated_prompt_labels(&settings, "Standard"),
+            outdated_prompt_labels(&settings, "Grundeinstellungen"),
             vec![
-                "Standard – Diktat (DE/EN)".to_string(),
+                "Grundeinstellungen – Diktat (DE/EN)".to_string(),
                 "Work – Old".to_string()
             ]
         );
-        let notice = outdated_prompts_notice_for(&settings, "Standard").expect("a warning");
+        let notice =
+            outdated_prompts_notice_for(&settings, "Grundeinstellungen").expect("a warning");
         assert_eq!(
             notice.detail.as_deref(),
-            Some("Standard – Diktat (DE/EN), Work – Old")
+            Some("Grundeinstellungen – Diktat (DE/EN), Work – Old")
         );
     }
 

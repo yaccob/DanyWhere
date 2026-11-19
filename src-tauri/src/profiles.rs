@@ -1,13 +1,16 @@
-//! DanyWhere: profiles. A profile holds everything that decides how a
-//! dictation is processed: speech model, languages, word lists, post-processing
-//! and its prompts, context limits and "Send Context", filler words.
-//! Shortcuts, microphone, API keys and the interface stay global.
+//! DanyWhere: profiles. The values that decide how a dictation is processed
+//! ([`ProfileValues`]: speech model, languages, word lists, post-processing
+//! and its prompts, context limits and "Send Context", filler words …) have
+//! defaults (`AppSettings::default_values`, the "Grundeinstellungen"), and a
+//! profile overrides what it needs: each of its values is coupled to the
+//! default or its own (`profile_layers`, decisions P1–P11).
 //!
-//! The flat fields of [`AppSettings`] always hold the active profile's values,
-//! so the code that reads settings stays as it is. [`sync_active_profile`]
-//! copies them into the active profile whenever settings are stored, so every
-//! change lands in the active profile; switching loads another profile's
-//! values into the flat fields.
+//! What is in use is a profile or the defaults (`active_profile_id ==
+//! DEFAULT_PROFILE_ID`). The flat fields of [`AppSettings`] always hold its
+//! effective values, so the code that reads settings stays as it is;
+//! `settings::write_settings` sends a change of them where its value comes
+//! from (`profile_layers::route_flat`), and switching loads the values of
+//! another profile, or the defaults, into the flat fields.
 
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 
@@ -19,7 +22,9 @@ use crate::profile_layers::OwnEntries;
 use crate::settings::{self, AppSettings, ChineseScript, LLMPrompt, LanguageDetectionMode};
 use crate::word_lists::WordList;
 
-/// The id of the profile every installation starts with.
+/// The id that names the defaults where a profile id is expected (in use,
+/// switching, the tray); no profile has it. Until the switch to the
+/// defaults it was the id of the profile "Standard".
 pub const DEFAULT_PROFILE_ID: &str = "default";
 
 /// How long the overlay shows which profile was switched to.
@@ -28,7 +33,8 @@ const SWITCH_NOTICE: std::time::Duration = std::time::Duration::from_millis(2000
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Type)]
 pub struct Profile {
     pub id: String,
-    /// Empty = the default profile's name, shown translated ("Standard").
+    /// Empty only in a store from before the defaults, where it was the
+    /// profile "Standard", shown translated.
     pub name: String,
     pub values: ProfileValues,
     /// Applications this profile is used for automatically: bundle ids on
@@ -174,7 +180,8 @@ pub struct SwitchChanges {
     pub post_process_enabled_changed: bool,
 }
 
-/// The profile whose values the flat fields hold.
+/// The profile in use, whose values the flat fields hold; `None` while the
+/// defaults are in use (P2).
 pub fn active_profile(settings: &AppSettings) -> Option<&Profile> {
     settings
         .profiles
@@ -184,7 +191,8 @@ pub fn active_profile(settings: &AppSettings) -> Option<&Profile> {
 
 /// The defaults ("Grundeinstellungen", contract V3 of the build plan): the
 /// values every profile's coupled fields follow and that apply while no
-/// profile is in use.
+/// profile is in use. Before the switch (`profile_layers::migrate_to_defaults`)
+/// they are the values of the profile "Standard".
 pub fn default_values(settings: &AppSettings) -> ProfileValues {
     if let Some(values) = &settings.default_values {
         return values.clone();
@@ -199,8 +207,8 @@ pub fn default_values(settings: &AppSettings) -> ProfileValues {
     }
 }
 
-/// The name to show for `profile`: its own, or `default_name` (translated
-/// "Standard") while the default profile has none.
+/// The name to show for `profile`: its own, or `default_name` while it has
+/// none (only a store from before the defaults had one, "Standard").
 pub fn display_name(profile: &Profile, default_name: &str) -> String {
     if profile.name.trim().is_empty() {
         default_name.to_string()
@@ -209,67 +217,91 @@ pub fn display_name(profile: &Profile, default_name: &str) -> String {
     }
 }
 
-/// Makes the profiles consistent, e.g. after a read from the store:
-/// creates the default profile from the flat values when there is none (a
-/// new installation, or an update from a version without profiles), makes
-/// the first profile active when the active id names none, copies the flat
-/// values into the active profile, and replaces Handy's untouched default
-/// prompt in every profile. Returns whether anything changed.
-pub fn ensure_profiles(settings: &mut AppSettings) -> bool {
-    let mut changed = false;
-    if settings.profiles.is_empty() {
-        log::info!("No profiles yet; the settings in use become the default profile");
-        settings.profiles.push(Profile::new(
-            DEFAULT_PROFILE_ID,
-            String::new(),
-            ProfileValues::from_settings(settings),
-        ));
-        settings.active_profile_id = DEFAULT_PROFILE_ID.to_string();
-        changed = true;
+/// The shown name of profile `id`, or `default_name` (the translated name
+/// of the defaults) for the defaults; `None` without such a profile.
+pub fn name_of(settings: &AppSettings, id: &str, default_name: &str) -> Option<String> {
+    if id == DEFAULT_PROFILE_ID {
+        return Some(default_name.to_string());
     }
-    if active_profile(settings).is_none() {
-        // The flat values belong to no profile (a hand-edited store); the
-        // first profile's own values win.
-        let first = settings.profiles[0].clone();
-        log::warn!(
-            "Active profile '{}' not found; using '{}'",
-            settings.active_profile_id,
-            first.id
-        );
-        first.values.apply_to(settings);
-        settings.active_profile_id = first.id;
-        changed = true;
-    }
-    if sync_active_profile(settings) {
-        changed = true;
-    }
-    for profile in settings.profiles.iter_mut() {
-        if crate::prompt_frame::replace_untouched_handy_default(
-            &mut profile.values.post_process_prompts,
-        ) {
-            changed = true;
-        }
-    }
-    changed
+    settings
+        .profiles
+        .iter()
+        .find(|profile| profile.id == id)
+        .map(|profile| display_name(profile, default_name))
 }
 
-/// Copies the flat profile fields into the active profile. Called whenever
-/// settings are stored, so a change always lands in the active profile.
-/// Returns whether the active profile changed.
-pub fn sync_active_profile(settings: &mut AppSettings) -> bool {
-    let values = ProfileValues::from_settings(settings);
-    let active_id = settings.active_profile_id.clone();
-    match settings
-        .profiles
-        .iter_mut()
-        .find(|profile| profile.id == active_id)
-    {
-        Some(profile) if profile.values != values => {
-            profile.values = values;
-            true
-        }
-        _ => false,
+/// The values of profile `id`, or of the defaults: for what is in use the
+/// flat fields, which hold its latest values; `None` without such a profile.
+pub fn values_of(settings: &AppSettings, id: &str) -> Option<ProfileValues> {
+    if id == settings.active_profile_id {
+        return Some(ProfileValues::from_settings(settings));
     }
+    if id == DEFAULT_PROFILE_ID {
+        return Some(default_values(settings));
+    }
+    settings
+        .profiles
+        .iter()
+        .find(|profile| profile.id == id)
+        .map(|profile| profile.values.clone())
+}
+
+/// Test fixtures elsewhere: profile `id` named `name` with the defaults'
+/// values changed by `change`, holding what then differs as its own (as the
+/// switch and an import couple it).
+#[cfg(test)]
+pub fn profile_for_test(
+    settings: &AppSettings,
+    id: &str,
+    name: &str,
+    change: impl FnOnce(&mut ProfileValues),
+) -> Profile {
+    let defaults = default_values(settings);
+    let mut values = defaults.clone();
+    change(&mut values);
+    let mut profile = Profile::new(id, name, values);
+    crate::profile_layers::couple_equal(&mut profile, &defaults);
+    profile
+}
+
+/// Makes the profiles consistent, e.g. after a read from the store: the
+/// one-time switch to the defaults (`profile_layers::migrate_to_defaults`),
+/// the defaults in use when the id in use names no profile, the flat values
+/// (the latest of what is in use) sent where they belong
+/// (`profile_layers::route_flat`), and Handy's untouched default prompt
+/// replaced in the defaults and every profile. Returns whether anything
+/// changed.
+pub fn ensure_profiles(settings: &mut AppSettings) -> bool {
+    let mut changed = crate::profile_layers::migrate_to_defaults(settings);
+    if settings.active_profile_id != DEFAULT_PROFILE_ID && active_profile(settings).is_none() {
+        // The flat values belong to no profile (a hand-edited store); the
+        // defaults win.
+        log::warn!(
+            "Profile '{}' in use not found; the defaults are in use",
+            settings.active_profile_id
+        );
+        settings.active_profile_id = DEFAULT_PROFILE_ID.to_string();
+        default_values(settings).apply_to(settings);
+        changed = true;
+    }
+    if crate::profile_layers::route_flat(settings) {
+        changed = true;
+    }
+    let mut replaced = false;
+    if let Some(values) = settings.default_values.as_mut() {
+        replaced |=
+            crate::prompt_frame::replace_untouched_handy_default(&mut values.post_process_prompts);
+    }
+    for profile in settings.profiles.iter_mut() {
+        replaced |= crate::prompt_frame::replace_untouched_handy_default(
+            &mut profile.values.post_process_prompts,
+        );
+    }
+    if replaced {
+        crate::profile_layers::propagate(settings);
+        changed = true;
+    }
+    changed
 }
 
 fn profile_index(settings: &AppSettings, id: &str) -> Result<usize, String> {
@@ -288,9 +320,10 @@ fn clean_name(name: &str) -> Result<String, String> {
     Ok(name.to_string())
 }
 
-/// Makes profile `id` the active one: the flat values go into the profile
-/// that was active, profile `id`'s values into the flat fields. Refused while
-/// a dictation runs (`busy`), so no dictation mixes two profiles' values.
+/// Puts profile `id` in use, or the defaults for `DEFAULT_PROFILE_ID` (P2):
+/// the flat values go where they belong first, then the values of `id` into
+/// the flat fields. Refused while a dictation runs (`busy`), so no dictation
+/// mixes two profiles' values.
 pub fn switch_to(
     settings: &mut AppSettings,
     id: &str,
@@ -299,21 +332,23 @@ pub fn switch_to(
     if busy {
         return Err("A profile can't be switched during a dictation".to_string());
     }
-    let target = settings.profiles[profile_index(settings, id)?]
-        .values
-        .clone();
-    sync_active_profile(settings);
+    if id != DEFAULT_PROFILE_ID {
+        profile_index(settings, id)?;
+    }
+    crate::profile_layers::route_flat(settings);
+    let target = values_of(settings, id).unwrap_or_else(|| default_values(settings));
+    settings.active_profile_id = id.to_string();
     let changes = SwitchChanges {
         model_changed: target.selected_model != settings.selected_model,
         post_process_enabled_changed: target.post_process_enabled != settings.post_process_enabled,
     };
     target.apply_to(settings);
-    settings.active_profile_id = id.to_string();
     Ok(changes)
 }
 
-/// A copy of profile `source_id` named `name`, with a new id and no
-/// applications. It isn't switched to.
+/// A new profile named `name` with a new id and no applications, not put in
+/// use (P9): from the defaults (`DEFAULT_PROFILE_ID`) it follows them in
+/// everything; from a profile it keeps that one's own values and coupling.
 pub fn duplicate(
     settings: &mut AppSettings,
     source_id: &str,
@@ -321,9 +356,13 @@ pub fn duplicate(
     now_millis: i64,
 ) -> Result<Profile, String> {
     let name = clean_name(name)?;
-    let index = profile_index(settings, source_id)?;
-    // The active profile's latest values are the flat ones.
-    sync_active_profile(settings);
+    let source = if source_id == DEFAULT_PROFILE_ID {
+        None
+    } else {
+        Some(profile_index(settings, source_id)?)
+    };
+    // What is in use has its latest values in the flat fields.
+    crate::profile_layers::route_flat(settings);
     let base = format!("profile_{now_millis}");
     let mut id = base.clone();
     let mut suffix = 1;
@@ -331,87 +370,70 @@ pub fn duplicate(
         suffix += 1;
         id = format!("{base}_{suffix}");
     }
-    let profile = Profile::new(id, name, settings.profiles[index].values.clone());
+    let profile = match source {
+        None => Profile::new(id, name, default_values(settings)),
+        Some(index) => {
+            let source = &settings.profiles[index];
+            Profile {
+                own: source.own.clone(),
+                own_entries: source.own_entries.clone(),
+                ..Profile::new(id, name, source.values.clone())
+            }
+        }
+    };
     settings.profiles.push(profile.clone());
     Ok(profile)
 }
 
-/// Renames profile `id`. Only the default profile may have an empty name,
-/// which shows the translated default name again.
+/// Renames profile `id`; the defaults keep their fixed, translated name.
 pub fn rename(settings: &mut AppSettings, id: &str, name: &str) -> Result<(), String> {
+    if id == DEFAULT_PROFILE_ID {
+        return Err("The defaults keep their name".to_string());
+    }
     let index = profile_index(settings, id)?;
-    let name = if id == DEFAULT_PROFILE_ID {
-        name.trim().to_string()
-    } else {
-        clean_name(name)?
-    };
-    settings.profiles[index].name = name;
+    settings.profiles[index].name = clean_name(name)?;
     Ok(())
 }
 
-/// Deletes profile `id`. The last profile can't be deleted; the active one is
-/// switched away from first, to the first other profile, which is refused
-/// while a dictation runs. Returns the changes of that switch, if any.
+/// Deletes profile `id`, the last one too; the defaults can't be deleted.
+/// Deleting the profile in use puts the defaults in use first, which is
+/// refused while a dictation runs. Returns the changes of that switch, if
+/// any.
 pub fn delete(
     settings: &mut AppSettings,
     id: &str,
     busy: bool,
 ) -> Result<Option<SwitchChanges>, String> {
-    profile_index(settings, id)?;
-    if settings.profiles.len() == 1 {
-        return Err("The last profile can't be deleted".to_string());
+    if id == DEFAULT_PROFILE_ID {
+        return Err("The defaults can't be deleted".to_string());
     }
+    profile_index(settings, id)?;
     let mut switched = None;
     if settings.active_profile_id == id {
-        let other = settings
-            .profiles
-            .iter()
-            .find(|profile| profile.id != id)
-            .map(|profile| profile.id.clone())
-            .expect("a second profile");
-        switched = Some(switch_to(settings, &other, busy)?);
+        switched = Some(switch_to(settings, DEFAULT_PROFILE_ID, busy)?);
     }
     settings.profiles.retain(|profile| profile.id != id);
     Ok(switched)
 }
 
-/// The translated name of the default profile, in the interface language.
+/// The translated name of the defaults ("Grundeinstellungen"), in the
+/// interface language.
 pub fn default_profile_name(settings: &AppSettings) -> String {
-    crate::tray_i18n::get_tray_translations(Some(settings.app_language.clone())).default_profile
+    crate::tray_i18n::get_tray_translations(Some(settings.app_language.clone())).default_settings
 }
 
-/// What a switch needs beyond storing: load the speech model, (un)register
-/// the post-processing shortcuts, tell the window and the tray, and show the
-/// name, with the glyph of choosing the profile by application, in the
-/// overlay unless a dictation owns it.
-fn after_switch(app: &AppHandle, settings: &AppSettings, changes: SwitchChanges) {
-    if changes.post_process_enabled_changed {
-        crate::shortcut::sync_post_process_shortcuts(app, settings);
+/// Shows the name of what was put in use, with the glyph of choosing the
+/// profile by application, in the overlay unless a dictation owns it.
+fn show_switch_notice(app: &AppHandle, settings: &AppSettings) {
+    if crate::overlay::is_session_showing() {
+        return;
     }
-    if changes.model_changed && !settings.selected_model.is_empty() {
-        let app = app.clone();
-        let model_id = settings.selected_model.clone();
-        std::thread::spawn(move || {
-            if let Err(e) = crate::commands::models::switch_active_model(&app, &model_id) {
-                log::warn!("Profile switch: could not load model {model_id}: {e}");
-            }
-            crate::tray::update_tray_menu(&app);
-        });
-    }
-    let _ = app.emit(
-        "settings-changed",
-        serde_json::json!({ "setting": "profiles" }),
-    );
-    crate::tray::rebuild_tray_menu(app);
-    crate::prompt_frame::prompts_changed(app);
-    if !crate::overlay::is_session_showing() {
-        if let Some(shown) = crate::app_profiles::overlay_profile(
-            settings,
-            &settings.active_profile_id,
-            &default_profile_name(settings),
-        ) {
-            crate::overlay::show_profile_notice(app, shown, SWITCH_NOTICE);
-        }
+    if let Some(shown) = crate::app_profiles::overlay_profile(
+        settings,
+        &settings.active_profile_id,
+        &default_profile_name(settings),
+    ) {
+        crate::overlay::show_profile_notice(app, shown, SWITCH_NOTICE);
     }
 }
 
@@ -425,28 +447,35 @@ fn save(app: &AppHandle, settings: AppSettings) {
     crate::tray::rebuild_tray_menu(app);
 }
 
-/// Switches to profile `id` with everything that goes with it.
+/// Puts profile `id` (or the defaults) in use with everything that goes
+/// with it.
 fn switch_with_effects(app: &AppHandle, id: &str) -> Result<(), String> {
     let busy = crate::tray::dictation_in_progress(app);
-    let mut settings = settings::get_settings(app);
-    let changes = switch_to(&mut settings, id, busy)?;
+    let before = settings::get_settings(app);
+    let mut settings = before.clone();
+    switch_to(&mut settings, id, busy)?;
     log::info!("Switched to profile {id}");
     settings::write_settings(app, settings.clone());
-    after_switch(app, &settings, changes);
+    crate::profile_effects::apply(app, &before, &settings);
+    show_switch_notice(app, &settings);
     Ok(())
 }
 
-/// Switches to profile `id` from the tray.
+/// Puts profile `id` (or the defaults) in use from the tray.
 pub fn select_from_tray(app: &AppHandle, id: &str) -> Result<(), String> {
     switch_with_effects(app, id)
 }
 
+/// Puts profile `id` in use, or the defaults for `"default"` (P2).
 #[tauri::command]
 #[specta::specta]
 pub fn switch_profile(app: AppHandle, id: String) -> Result<(), String> {
     switch_with_effects(&app, &id)
 }
 
+/// A copy of profile `source_id` that keeps its own values and their
+/// coupling, or, from `"default"`, a new profile that follows the defaults
+/// (P9). It isn't put in use.
 #[tauri::command]
 #[specta::specta]
 pub fn duplicate_profile(
@@ -462,7 +491,7 @@ pub fn duplicate_profile(
 }
 
 /// A new profile named `name` that follows the defaults in everything (P9).
-/// It isn't switched to.
+/// It isn't put in use.
 #[tauri::command]
 #[specta::specta]
 pub fn create_profile(app: AppHandle, name: String) -> Result<Profile, String> {
@@ -478,23 +507,18 @@ pub fn rename_profile(app: AppHandle, id: String, name: String) -> Result<(), St
     Ok(())
 }
 
+/// Deletes profile `id`; deleting the one in use puts the defaults in use.
 #[tauri::command]
 #[specta::specta]
 pub fn delete_profile(app: AppHandle, id: String) -> Result<(), String> {
     let busy = crate::tray::dictation_in_progress(&app);
-    let mut settings = settings::get_settings(&app);
+    let before = settings::get_settings(&app);
+    let mut settings = before.clone();
     let switched = delete(&mut settings, &id, busy)?;
     settings::write_settings(&app, settings.clone());
-    match switched {
-        Some(changes) => after_switch(&app, &settings, changes),
-        None => {
-            let _ = app.emit(
-                "settings-changed",
-                serde_json::json!({ "setting": "profiles" }),
-            );
-            crate::tray::rebuild_tray_menu(&app);
-            crate::prompt_frame::prompts_changed(&app);
-        }
+    crate::profile_effects::apply(&app, &before, &settings);
+    if switched.is_some() {
+        show_switch_notice(&app, &settings);
     }
     Ok(())
 }
@@ -502,6 +526,7 @@ pub fn delete_profile(app: AppHandle, id: String) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::profile_layers::couple_equal;
 
     fn prompt(id: &str, name: &str, text: &str) -> LLMPrompt {
         LLMPrompt {
@@ -569,70 +594,91 @@ mod tests {
         }
     }
 
-    /// `settings_in_use` with its default profile and a second one, "work",
-    /// holding `other_values`.
+    /// `settings_in_use` as the defaults, in use, and a profile "work"
+    /// holding `other_values` as its own.
     fn two_profiles() -> AppSettings {
         let mut s = settings_in_use();
         ensure_profiles(&mut s);
-        s.profiles
-            .push(Profile::new("work", "Work", other_values()));
+        let mut work = Profile::new("work", "Work", other_values());
+        couple_equal(&mut work, &default_values(&s));
+        s.profiles.push(work);
         s
     }
 
-    // ---- Migration ------------------------------------------------------
+    fn work(s: &AppSettings) -> &Profile {
+        s.profiles
+            .iter()
+            .find(|profile| profile.id == "work")
+            .expect("work")
+    }
+
+    // ---- The switch to the defaults ---------------------------------------
 
     #[test]
-    fn a_new_installation_gets_one_default_profile_with_the_default_values() {
+    fn a_new_installation_has_the_defaults_in_use_and_no_profiles() {
         let mut s = AppSettings::default();
         assert!(ensure_profiles(&mut s));
-        assert_eq!(s.profiles.len(), 1);
-        assert_eq!(s.profiles[0].id, DEFAULT_PROFILE_ID);
-        assert_eq!(s.profiles[0].name, "");
-        assert!(s.profiles[0].apps.is_empty());
+        assert!(s.profiles.is_empty());
         assert_eq!(s.active_profile_id, DEFAULT_PROFILE_ID);
         assert_eq!(
-            s.profiles[0].values,
+            default_values(&s),
             ProfileValues::from_settings(&AppSettings::default())
         );
+        assert!(active_profile(&s).is_none());
     }
 
     #[test]
-    fn an_update_keeps_the_settings_in_use_as_the_default_profile() {
+    fn an_update_keeps_the_settings_in_use_as_the_defaults() {
         let mut s = settings_in_use();
         assert!(ensure_profiles(&mut s));
-        let values = &active_profile(&s).expect("an active profile").values;
+        let values = default_values(&s);
         assert_eq!(values.selected_model, "parakeet");
         assert_eq!(values.selected_language, "de");
         assert_eq!(values.post_process_prompts[0].name, "Diktat (DE/EN)");
         assert_eq!(values.word_lists, vec![list("code", &["Rust", "Tauri"])]);
         assert_eq!(values.active_word_list_id.as_deref(), Some("code"));
+        assert!(s.profiles.is_empty());
     }
 
     #[test]
     fn making_the_profiles_consistent_twice_changes_nothing_the_second_time() {
-        let mut s = settings_in_use();
-        assert!(ensure_profiles(&mut s));
-        let once = s.profiles.clone();
+        let mut s = two_profiles();
+        ensure_profiles(&mut s);
+        let once = s.clone();
         assert!(!ensure_profiles(&mut s));
-        assert_eq!(s.profiles, once);
+        assert_eq!(s.profiles, once.profiles);
+        assert_eq!(s.default_values, once.default_values);
     }
 
     #[test]
-    fn an_unknown_active_profile_means_the_first() {
+    fn an_unknown_profile_in_use_means_the_defaults() {
         let mut s = two_profiles();
         s.active_profile_id = "gone".to_string();
+        s.selected_language = "fr".to_string();
         assert!(ensure_profiles(&mut s));
         assert_eq!(s.active_profile_id, DEFAULT_PROFILE_ID);
+        // The flat values belonged to no profile: the defaults win.
+        assert_eq!(s.selected_language, "de");
     }
 
     #[test]
-    fn handys_untouched_default_prompt_is_replaced_in_every_profile() {
+    fn handys_untouched_default_prompt_is_replaced_in_the_defaults_and_every_profile() {
         let mut s = two_profiles();
         let handy = crate::prompt_frame::HANDY_IMPROVE_TRANSCRIPTIONS[0];
-        s.profiles[1].values.post_process_prompts = vec![prompt("h", "Improve", handy)];
+        let index = s.profiles.iter().position(|p| p.id == "work").unwrap();
+        s.profiles[index].values.post_process_prompts = vec![prompt("h", "Improve", handy)];
+        s.post_process_prompts = vec![prompt("h", "Improve", handy)];
         assert!(ensure_profiles(&mut s));
         assert_eq!(
-            s.profiles[1].values.post_process_prompts[0].prompt,
+            work(&s).values.post_process_prompts[0].prompt,
+            crate::prompt_frame::IMPROVE_TRANSCRIPTIONS
+        );
+        assert_eq!(
+            default_values(&s).post_process_prompts[0].prompt,
+            crate::prompt_frame::IMPROVE_TRANSCRIPTIONS
+        );
+        assert_eq!(
+            s.post_process_prompts[0].prompt,
             crate::prompt_frame::IMPROVE_TRANSCRIPTIONS
         );
     }
@@ -647,27 +693,24 @@ mod tests {
         let profile: Profile = serde_json::from_value(json).expect("a profile");
         assert_eq!(profile.values.selected_language, "fr");
         assert!(profile.apps.is_empty());
+        assert!(profile.own.is_empty());
+        assert!(profile.own_entries.is_empty());
         assert_eq!(
             profile.values.context_char_budget,
             AppSettings::default().dictation_context.char_budget
         );
     }
 
-    // ---- Changes go into the active profile -------------------------------
+    // ---- Changes go where the value comes from ----------------------------
 
     #[test]
-    fn a_change_lands_in_the_active_profile_only() {
+    fn a_change_of_an_own_value_lands_in_the_profile_in_use_only() {
         let mut s = two_profiles();
+        switch_to(&mut s, "work", false).expect("switched");
         s.selected_language = "it".to_string();
-        s.post_process_prompts[0].prompt = "Fix the grammar.".to_string();
-        sync_active_profile(&mut s);
-        let active = active_profile(&s).expect("an active profile");
-        assert_eq!(active.values.selected_language, "it");
-        assert_eq!(
-            active.values.post_process_prompts[0].prompt,
-            "Fix the grammar."
-        );
-        assert_eq!(s.profiles[1].values, other_values());
+        crate::profile_layers::route_flat(&mut s);
+        assert_eq!(work(&s).values.selected_language, "it");
+        assert_eq!(default_values(&s).selected_language, "de");
     }
 
     // ---- Switching --------------------------------------------------------
@@ -675,13 +718,19 @@ mod tests {
     #[test]
     fn switching_swaps_every_profile_value_and_nothing_else() {
         let mut s = two_profiles();
-        // A change not yet synced belongs to the profile being left.
+        // A change not yet stored belongs to what is being left: the defaults.
         s.selected_language = "it".to_string();
         let before = s.clone();
         switch_to(&mut s, "work", false).expect("switched");
         assert_eq!(s.active_profile_id, "work");
-        assert_eq!(ProfileValues::from_settings(&s), other_values());
-        let left = &s.profiles[0].values;
+        assert_eq!(active_profile(&s).map(|p| p.id.as_str()), Some("work"));
+        let mut expected = other_values();
+        // Work's own maps follow the defaults in the providers it has no
+        // entry of its own for.
+        expected.post_process_models = work(&s).values.post_process_models.clone();
+        assert_eq!(ProfileValues::from_settings(&s), expected);
+        assert_eq!(s.post_process_models["openai"], "gpt-x");
+        let left = default_values(&s);
         assert_eq!(left.selected_language, "it");
         assert_eq!(left.selected_model, "parakeet");
         // Global settings stay.
@@ -700,11 +749,13 @@ mod tests {
             s.post_process_providers.len(),
             before.post_process_providers.len()
         );
-        // And back again.
+        // And back to the defaults.
         switch_to(&mut s, DEFAULT_PROFILE_ID, false).expect("switched back");
+        assert_eq!(s.active_profile_id, DEFAULT_PROFILE_ID);
+        assert!(active_profile(&s).is_none());
         assert_eq!(s.selected_language, "it");
         assert_eq!(s.selected_model, "parakeet");
-        assert_eq!(s.profiles[1].values, other_values());
+        assert_eq!(work(&s).values.selected_language, "en");
     }
 
     #[test]
@@ -712,15 +763,15 @@ mod tests {
         let mut s = two_profiles();
         s.post_process_efforts
             .insert("anthropic".to_string(), "xhigh".to_string());
-        sync_active_profile(&mut s);
+        crate::profile_layers::route_flat(&mut s);
         assert_eq!(
-            s.profiles[0].values.post_process_efforts.get("anthropic"),
+            default_values(&s).post_process_efforts.get("anthropic"),
             Some(&"xhigh".to_string())
         );
         switch_to(&mut s, "work", false).expect("switched");
         assert_eq!(
-            s.post_process_efforts,
-            HashMap::from([("openai".to_string(), "high".to_string())])
+            s.post_process_efforts.get("openai"),
+            Some(&"high".to_string())
         );
         switch_to(&mut s, DEFAULT_PROFILE_ID, false).expect("switched back");
         assert_eq!(
@@ -753,8 +804,12 @@ mod tests {
             }
         );
         let mut s = two_profiles();
-        s.profiles[1].values.selected_model = s.selected_model.clone();
-        s.profiles[1].values.post_process_enabled = s.post_process_enabled;
+        crate::profile_layers::reset_values(
+            &mut s,
+            "work",
+            &strings(&["selected_model", "post_process_enabled"]),
+        )
+        .expect("reset");
         let changes = switch_to(&mut s, "work", false).expect("switched");
         assert_eq!(changes, SwitchChanges::default());
     }
@@ -764,6 +819,7 @@ mod tests {
         let mut s = two_profiles();
         let before = s.clone();
         assert!(switch_to(&mut s, "work", true).is_err());
+        assert!(switch_to(&mut s, DEFAULT_PROFILE_ID, true).is_err());
         assert_eq!(s.active_profile_id, before.active_profile_id);
         assert_eq!(s.selected_model, before.selected_model);
     }
@@ -775,30 +831,50 @@ mod tests {
         assert_eq!(s.active_profile_id, DEFAULT_PROFILE_ID);
     }
 
-    // ---- Duplicating, renaming, deleting ----------------------------------
+    // ---- New, duplicating, renaming, deleting -----------------------------
 
     #[test]
-    fn a_duplicate_copies_the_values_and_then_drifts_apart() {
+    fn a_new_profile_follows_the_defaults_in_everything() {
         let mut s = two_profiles();
-        let copy = duplicate(&mut s, DEFAULT_PROFILE_ID, "  Arbeit  ", 42).expect("a copy");
+        let copy = duplicate(&mut s, DEFAULT_PROFILE_ID, "  Arbeit  ", 42).expect("a profile");
         assert_eq!(copy.name, "Arbeit");
         assert!(copy.apps.is_empty());
         assert_ne!(copy.id, DEFAULT_PROFILE_ID);
-        assert_eq!(s.profiles.len(), 3);
+        assert!(copy.own.is_empty());
+        assert!(copy.own_entries.is_empty());
+        assert_eq!(copy.values, default_values(&s));
+        assert_eq!(s.profiles.len(), 2);
         assert_eq!(s.active_profile_id, DEFAULT_PROFILE_ID);
-        assert_eq!(copy.values, ProfileValues::from_settings(&s));
-
-        switch_to(&mut s, &copy.id, false).expect("switched");
-        s.post_process_prompts[0].prompt = "Only in the copy.".to_string();
-        sync_active_profile(&mut s);
-        assert_eq!(
-            s.profiles[0].values.post_process_prompts[0].prompt,
-            "Clean it up."
-        );
     }
 
     #[test]
-    fn a_duplicate_of_the_active_profile_has_its_latest_values() {
+    fn a_duplicate_keeps_the_own_values_and_their_coupling() {
+        let mut s = two_profiles();
+        let index = s.profiles.iter().position(|p| p.id == "work").unwrap();
+        s.profiles[index].apps = strings(&["com.apple.mail"]);
+        let copy = duplicate(&mut s, "work", "Copy", 7).expect("a copy");
+        assert_eq!(copy.values, work(&s).values);
+        assert_eq!(copy.own, work(&s).own);
+        assert_eq!(copy.own_entries, work(&s).own_entries);
+        assert!(copy.apps.is_empty());
+        // A coupled value of the copy follows the defaults; an own one stays.
+        crate::profile_layers::reset_values(&mut s, &copy.id, &strings(&["selected_model"]))
+            .expect("reset");
+        crate::profile_layers::set_value(
+            &mut s,
+            &crate::profile_layers::Scope::Defaults,
+            "selected_model",
+            serde_json::json!("moonshine"),
+        )
+        .expect("set");
+        let copy = s.profiles.iter().find(|p| p.id == copy.id).unwrap();
+        assert_eq!(copy.values.selected_model, "moonshine");
+        assert_eq!(copy.values.selected_language, "en");
+        assert_eq!(work(&s).values.selected_model, "whisper-large");
+    }
+
+    #[test]
+    fn a_new_profile_from_the_defaults_in_use_has_their_latest_values() {
         let mut s = two_profiles();
         s.selected_language = "it".to_string();
         let copy = duplicate(&mut s, DEFAULT_PROFILE_ID, "Copy", 1).expect("a copy");
@@ -818,34 +894,33 @@ mod tests {
         let mut s = two_profiles();
         assert!(duplicate(&mut s, "work", "   ", 1).is_err());
         assert!(duplicate(&mut s, "gone", "Name", 1).is_err());
-        assert_eq!(s.profiles.len(), 2);
-    }
-
-    #[test]
-    fn renaming_trims_and_only_the_default_profile_may_lose_its_name() {
-        let mut s = two_profiles();
-        rename(&mut s, "work", "  Büro ").expect("renamed");
-        assert_eq!(s.profiles[1].name, "Büro");
-        assert!(rename(&mut s, "work", "  ").is_err());
-        assert_eq!(s.profiles[1].name, "Büro");
-        rename(&mut s, DEFAULT_PROFILE_ID, "Privat").expect("renamed");
-        rename(&mut s, DEFAULT_PROFILE_ID, "").expect("back to the default name");
-        assert_eq!(s.profiles[0].name, "");
-        assert!(rename(&mut s, "gone", "Name").is_err());
-    }
-
-    #[test]
-    fn the_last_profile_cannot_be_deleted() {
-        let mut s = settings_in_use();
-        ensure_profiles(&mut s);
-        assert!(delete(&mut s, DEFAULT_PROFILE_ID, false).is_err());
         assert_eq!(s.profiles.len(), 1);
     }
 
     #[test]
-    fn deleting_the_active_profile_switches_to_the_first_other_one_first() {
+    fn renaming_trims_needs_a_name_and_leaves_the_defaults_alone() {
         let mut s = two_profiles();
-        let mut third = s.profiles[1].clone();
+        rename(&mut s, "work", "  Büro ").expect("renamed");
+        assert_eq!(work(&s).name, "Büro");
+        assert!(rename(&mut s, "work", "  ").is_err());
+        assert_eq!(work(&s).name, "Büro");
+        assert!(rename(&mut s, DEFAULT_PROFILE_ID, "Privat").is_err());
+        assert!(rename(&mut s, "gone", "Name").is_err());
+    }
+
+    #[test]
+    fn the_last_profile_can_be_deleted_the_defaults_cannot() {
+        let mut s = two_profiles();
+        assert!(delete(&mut s, DEFAULT_PROFILE_ID, false).is_err());
+        assert_eq!(delete(&mut s, "work", false), Ok(None));
+        assert!(s.profiles.is_empty());
+        assert_eq!(s.active_profile_id, DEFAULT_PROFILE_ID);
+    }
+
+    #[test]
+    fn deleting_the_profile_in_use_falls_back_to_the_defaults() {
+        let mut s = two_profiles();
+        let mut third = work(&s).clone();
         third.id = "third".to_string();
         s.profiles.push(third);
         switch_to(&mut s, "work", false).expect("switched");
@@ -855,48 +930,77 @@ mod tests {
         assert_eq!(s.selected_model, "parakeet");
         assert_eq!(
             s.profiles.iter().map(|p| p.id.as_str()).collect::<Vec<_>>(),
-            vec![DEFAULT_PROFILE_ID, "third"]
+            vec!["third"]
         );
     }
 
     #[test]
-    fn deleting_another_profile_keeps_the_active_one() {
+    fn deleting_another_profile_keeps_the_one_in_use() {
         let mut s = two_profiles();
+        let mut third = work(&s).clone();
+        third.id = "third".to_string();
+        s.profiles.push(third);
+        switch_to(&mut s, "third", false).expect("switched");
         let changes = delete(&mut s, "work", false).expect("deleted");
         assert_eq!(changes, None);
-        assert_eq!(s.active_profile_id, DEFAULT_PROFILE_ID);
+        assert_eq!(s.active_profile_id, "third");
         assert_eq!(s.profiles.len(), 1);
         assert!(delete(&mut s, "gone", false).is_err());
     }
 
     #[test]
-    fn deleting_the_active_profile_during_a_dictation_is_refused() {
+    fn deleting_the_profile_in_use_during_a_dictation_is_refused() {
         let mut s = two_profiles();
-        assert!(delete(&mut s, DEFAULT_PROFILE_ID, true).is_err());
-        assert_eq!(s.profiles.len(), 2);
-        // Another profile may go.
+        switch_to(&mut s, "work", false).expect("switched");
+        assert!(delete(&mut s, "work", true).is_err());
+        assert_eq!(s.profiles.len(), 1);
+        // A profile not in use may go.
+        switch_to(&mut s, DEFAULT_PROFILE_ID, false).expect("switched back");
         assert!(delete(&mut s, "work", true).is_ok());
     }
 
     // ---- Names ------------------------------------------------------------
 
     #[test]
-    fn the_default_profile_shows_the_translated_name_until_renamed() {
-        let mut s = two_profiles();
-        assert_eq!(display_name(&s.profiles[0], "Standard"), "Standard");
-        assert_eq!(display_name(&s.profiles[1], "Standard"), "Work");
-        s.profiles[0].name = "Privat".to_string();
-        assert_eq!(display_name(&s.profiles[0], "Standard"), "Privat");
+    fn the_defaults_have_a_fixed_translated_name() {
+        let s = two_profiles();
+        assert_eq!(
+            name_of(&s, DEFAULT_PROFILE_ID, "Grundeinstellungen").as_deref(),
+            Some("Grundeinstellungen")
+        );
+        assert_eq!(
+            name_of(&s, "work", "Grundeinstellungen").as_deref(),
+            Some("Work")
+        );
+        assert_eq!(name_of(&s, "gone", "Grundeinstellungen"), None);
+        assert_eq!(display_name(work(&s), "Grundeinstellungen"), "Work");
     }
 
     #[test]
-    fn the_default_profiles_name_follows_the_interface_language() {
+    fn the_name_of_the_defaults_follows_the_interface_language() {
         let mut s = AppSettings {
             app_language: "de".to_string(),
             ..Default::default()
         };
-        assert_eq!(default_profile_name(&s), "Standard");
+        assert_eq!(default_profile_name(&s), "Grundeinstellungen");
         s.app_language = "en".to_string();
-        assert_eq!(default_profile_name(&s), "Default");
+        assert_eq!(default_profile_name(&s), "Defaults");
+    }
+
+    #[test]
+    fn the_values_of_the_defaults_or_a_profile() {
+        let mut s = two_profiles();
+        assert_eq!(values_of(&s, DEFAULT_PROFILE_ID), Some(default_values(&s)));
+        assert_eq!(
+            values_of(&s, "work").map(|v| v.selected_language),
+            Some("en".to_string())
+        );
+        assert_eq!(values_of(&s, "gone"), None);
+        // What is in use: its latest values are the flat ones.
+        s.selected_language = "it".to_string();
+        assert_eq!(
+            values_of(&s, DEFAULT_PROFILE_ID).map(|v| v.selected_language),
+            Some("it".to_string())
+        );
     }
 }

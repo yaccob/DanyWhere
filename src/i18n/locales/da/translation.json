@@ -14,7 +14,7 @@
     "wordList": "Ordliste",
     "onlyGlobalWordList": "Ingen ekstra liste",
     "profile": "Profil",
-    "defaultProfile": "Standard",
+    "defaultSettings": "Grundindstillinger",
     "profileAutoByApp": "Vælg profil efter program",
     "sendContext": "Send kontekst"
   },
@@ -441,13 +441,12 @@
     },
     "profiles": {
       "title": "Profiler",
-      "description": "En profil omfatter modellen, sprogene, ordlisterne og efterbehandlingen. Ændringer gemmes altid i den aktive profil.",
+      "description": "En profil afviger fra grundindstillingerne, hvor det er nødvendigt: dens egne værdier bliver, alt andet følger grundindstillingerne. En ændring, mens en profil er i brug, ændrer dens egen værdi, ellers grundindstillingerne.",
       "active": "Aktiv",
       "use": "Brug",
       "duplicate": "Dupliker",
       "rename": "Omdøb",
       "delete": "Slet",
-      "lastProfile": "Den sidste profil kan ikke slettes",
       "cancel": "Annuller",
       "nameLabel": "Navn",
       "namePlaceholder": "f.eks. Arbejde",
@@ -459,7 +458,6 @@
       },
       "renameDialog": {
         "title": "Omdøb »{{name}}«",
-        "defaultHint": "Lad feltet være tomt for at vise »{{defaultName}}« på appens sprog.",
         "confirm": "Omdøb"
       },
       "deleteDialog": {
@@ -469,8 +467,8 @@
         "confirm": "Slet profil"
       },
       "scope": {
-        "models": "Den model, du vælger her, hører til profilen »{{name}}«.",
-        "postProcessing": "Udbyder, model, prompts og grænserne for kontekst hører til profilen »{{name}}«; API-nøgler gælder for alle profiler."
+        "models": "»{{name}}« er i brug: har den sin egen model, ændrer valget her den, ellers grundindstillingerne.",
+        "postProcessing": "»{{name}}« er i brug: dens egne værdier ændres i profilen, alle andre i grundindstillingerne; API-nøgler gælder for alle profiler."
       },
       "apps": {
         "label": "Bruges automatisk i:",

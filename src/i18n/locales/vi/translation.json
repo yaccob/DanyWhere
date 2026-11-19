@@ -14,7 +14,7 @@
     "wordList": "Danh sách từ",
     "onlyGlobalWordList": "Không có danh sách bổ sung",
     "profile": "Hồ sơ",
-    "defaultProfile": "Mặc định",
+    "defaultSettings": "Cài đặt cơ bản",
     "profileAutoByApp": "Chọn hồ sơ theo ứng dụng",
     "sendContext": "Gửi ngữ cảnh"
   },
@@ -441,13 +441,12 @@
     },
     "profiles": {
       "title": "Hồ sơ",
-      "description": "Một hồ sơ gồm mô hình, ngôn ngữ, danh sách từ và xử lý sau. Thay đổi luôn được lưu vào hồ sơ đang dùng.",
+      "description": "Hồ sơ thay thế cài đặt cơ bản ở những chỗ cần thiết: các giá trị riêng của nó được giữ nguyên, mọi thứ khác theo cài đặt cơ bản. Thay đổi khi đang dùng một hồ sơ sẽ đổi giá trị riêng của hồ sơ đó, nếu không thì đổi cài đặt cơ bản.",
       "active": "Đang dùng",
       "use": "Dùng",
       "duplicate": "Nhân bản",
       "rename": "Đổi tên",
       "delete": "Xóa",
-      "lastProfile": "Không thể xóa hồ sơ cuối cùng",
       "cancel": "Hủy",
       "nameLabel": "Tên",
       "namePlaceholder": "ví dụ: Công việc",
@@ -459,7 +458,6 @@
       },
       "renameDialog": {
         "title": "Đổi tên “{{name}}”",
-        "defaultHint": "Để trống để hiển thị “{{defaultName}}” theo ngôn ngữ của ứng dụng.",
         "confirm": "Đổi tên"
       },
       "deleteDialog": {
@@ -469,8 +467,8 @@
         "confirm": "Xóa hồ sơ"
       },
       "scope": {
-        "models": "Mô hình chọn ở đây thuộc hồ sơ “{{name}}”.",
-        "postProcessing": "Nhà cung cấp, mô hình, câu lệnh và giới hạn ngữ cảnh thuộc hồ sơ “{{name}}”; khóa API áp dụng cho mọi hồ sơ."
+        "models": "Đang dùng “{{name}}”: nếu hồ sơ có mô hình riêng, lựa chọn ở đây sẽ đổi mô hình đó, nếu không thì đổi cài đặt cơ bản.",
+        "postProcessing": "Đang dùng “{{name}}”: các giá trị riêng thay đổi trong hồ sơ, mọi giá trị khác thay đổi trong cài đặt cơ bản; khóa API áp dụng cho mọi hồ sơ."
       },
       "apps": {
         "label": "Tự động dùng trong:",

@@ -799,9 +799,9 @@ mod tests {
         assert!(!capture_wanted(&settings));
         // A profile with applications that post-processes.
         crate::profiles::ensure_profiles(&mut settings);
-        let mut mail = settings.profiles[0].clone();
-        mail.id = "mail".to_string();
-        mail.values.post_process_enabled = true;
+        let mut mail = crate::profiles::profile_for_test(&settings, "mail", "Mail", |values| {
+            values.post_process_enabled = true;
+        });
         mail.apps = vec!["com.apple.mail".to_string()];
         settings.profiles.push(mail);
         assert!(capture_wanted(&settings));

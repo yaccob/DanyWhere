@@ -14,7 +14,7 @@
     "wordList": "词汇列表",
     "onlyGlobalWordList": "无附加列表",
     "profile": "配置文件",
-    "defaultProfile": "默认",
+    "defaultSettings": "基本设置",
     "profileAutoByApp": "按应用选择配置文件",
     "sendContext": "发送上下文"
   },
@@ -441,13 +441,12 @@
     },
     "profiles": {
       "title": "配置文件",
-      "description": "配置文件包含模型、语言、词汇列表和后处理。更改始终保存到当前配置文件。",
+      "description": "配置文件只在需要时覆盖基本设置：它自己的值保持不变，其余一切都跟随基本设置。在使用某个配置文件时所做的更改会修改它自己的值，否则修改基本设置。",
       "active": "当前",
       "use": "使用",
       "duplicate": "复制",
       "rename": "重命名",
       "delete": "删除",
-      "lastProfile": "无法删除最后一个配置文件",
       "cancel": "取消",
       "nameLabel": "名称",
       "namePlaceholder": "例如：工作",
@@ -459,7 +458,6 @@
       },
       "renameDialog": {
         "title": "重命名“{{name}}”",
-        "defaultHint": "留空则以应用语言显示“{{defaultName}}”。",
         "confirm": "重命名"
       },
       "deleteDialog": {
@@ -469,8 +467,8 @@
         "confirm": "删除配置文件"
       },
       "scope": {
-        "models": "此处选择的模型属于配置文件“{{name}}”。",
-        "postProcessing": "提供商、模型、提示词和上下文限制属于配置文件“{{name}}”；API 密钥适用于所有配置文件。"
+        "models": "正在使用“{{name}}”：如果它有自己的模型，此处的选择会更改该模型，否则更改基本设置。",
+        "postProcessing": "正在使用“{{name}}”：它自己的值在配置文件中更改，其他所有值在基本设置中更改；API 密钥适用于所有配置文件。"
       },
       "apps": {
         "label": "自动用于：",

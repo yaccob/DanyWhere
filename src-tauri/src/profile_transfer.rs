@@ -14,7 +14,7 @@ use zeroize::Zeroizing;
 use crate::profile_export::{
     self, EncryptedSecret, ExportError, ExportedApiKey, ProfileExportFile,
 };
-use crate::profiles::{self, Profile, ProfileValues};
+use crate::profiles::{self, Profile};
 use crate::settings::{self, AppSettings};
 
 /// Export files are small; anything bigger is not one.
@@ -157,27 +157,34 @@ pub fn key_to_export(settings: &AppSettings, profile: &Profile) -> Option<Provid
         })
 }
 
-/// Profile `id` as it is exported: the active one with the latest flat
-/// values, and the default profile with its shown name instead of an empty
-/// one.
+/// Profile `id` as it is exported: its effective values (the latest flat
+/// ones for what is in use) without its coupling, which an import decides
+/// anew against the defaults there (open question 1, recommendation b).
+/// The defaults (`DEFAULT_PROFILE_ID`) export as a profile with their shown
+/// name.
 pub fn profile_for_export(
     settings: &AppSettings,
     id: &str,
     default_name: &str,
 ) -> Result<Profile, TransferError> {
-    let mut profile = settings
-        .profiles
-        .iter()
-        .find(|profile| profile.id == id)
-        .cloned()
-        .ok_or_else(|| {
-            TransferError::with_detail(TransferErrorCode::ProfileNotFound, id.to_string())
-        })?;
-    if profile.id == settings.active_profile_id {
-        // The flat fields hold the active profile's latest values.
-        profile.values = ProfileValues::from_settings(settings);
-    }
+    let not_found =
+        || TransferError::with_detail(TransferErrorCode::ProfileNotFound, id.to_string());
+    let values = profiles::values_of(settings, id).ok_or_else(not_found)?;
+    let mut profile = if id == profiles::DEFAULT_PROFILE_ID {
+        Profile::new(id, default_name, values)
+    } else {
+        let mut profile = settings
+            .profiles
+            .iter()
+            .find(|profile| profile.id == id)
+            .cloned()
+            .ok_or_else(not_found)?;
+        profile.values = values;
+        profile
+    };
     profile.name = profiles::display_name(&profile, default_name);
+    profile.own.clear();
+    profile.own_entries.clear();
     Ok(profile)
 }
 
@@ -292,8 +299,11 @@ fn new_profile_id(settings: &AppSettings, now_millis: i64) -> String {
     id
 }
 
-/// Adds the imported `profile` to `settings` under a new id and a free name,
-/// without switching to it, and stores its key as `choice` says.
+/// Adds the imported `profile` to `settings` under a new id and a free name
+/// (not the defaults' either), without switching to it, and stores its key
+/// as `choice` says. Its values equal to the defaults here are coupled to
+/// them, the others its own (open question 1, recommendation b), whatever
+/// the file says.
 pub fn apply_import(
     settings: &mut AppSettings,
     profile: Profile,
@@ -334,6 +344,7 @@ pub fn apply_import(
         .profiles
         .iter()
         .map(|existing| profiles::display_name(existing, default_name))
+        .chain(std::iter::once(default_name.to_string()))
         .collect();
     let wanted = if profile.name.trim().is_empty() {
         default_name.to_string()
@@ -353,6 +364,7 @@ pub fn apply_import(
                 .any(|existing| existing.apps.contains(app))
         });
     profile.apps = kept;
+    crate::profile_layers::couple_equal(&mut profile, &profiles::default_values(settings));
 
     if let (Some(key), ImportedKey::Added | ImportedKey::Replaced) = (key, imported_key) {
         settings
@@ -513,9 +525,9 @@ mod tests {
         build_export_with(settings, id, DEFAULT_NAME, password, fast_encrypt)
     }
 
-    /// The default profile (active, Anthropic with a key, post-processing
-    /// on) and "Work" (OpenAI, post-processing off), with keys stored for
-    /// both providers.
+    /// The defaults (in use, Anthropic with a key, post-processing on) and
+    /// "Work" (OpenAI, post-processing off, its own values), with keys
+    /// stored for both providers.
     fn settings() -> AppSettings {
         let mut s = AppSettings {
             selected_model: "parakeet".to_string(),
@@ -535,17 +547,18 @@ mod tests {
         s.post_process_api_keys
             .insert("openai".to_string(), OPENAI_KEY.to_string());
         ensure_profiles(&mut s);
-        let mut work = ProfileValues::from_settings(&s);
-        work.post_process_enabled = false;
-        work.post_process_provider_id = "openai".to_string();
-        let mut profile = Profile::new("work", "Work", work);
+        let mut profile = crate::profiles::profile_for_test(&s, "work", "Work", |work| {
+            work.post_process_enabled = false;
+            work.post_process_provider_id = "openai".to_string();
+        });
         profile.apps = vec!["com.apple.mail".to_string()];
         s.profiles.push(profile);
         s
     }
 
+    /// The defaults as they are exported.
     fn default_profile(s: &AppSettings) -> Profile {
-        s.profiles[0].clone()
+        profile_for_export(s, crate::profiles::DEFAULT_PROFILE_ID, DEFAULT_NAME).expect("defaults")
     }
 
     #[test]
@@ -559,7 +572,7 @@ mod tests {
             })
         );
         // Post-processing off: no key, although one is stored for OpenAI.
-        assert_eq!(key_to_export(&s, &s.profiles[1]), None);
+        assert_eq!(key_to_export(&s, &s.profiles[0]), None);
     }
 
     #[test]
@@ -833,13 +846,79 @@ mod tests {
             1000,
         );
         let profile = result.profile.expect("imported");
-        assert_eq!(s.profiles.len(), 3);
-        assert_eq!(s.profiles[2], profile);
+        assert_eq!(s.profiles.len(), 2);
+        assert_eq!(s.profiles[1], profile);
         assert_ne!(profile.id, "work", "the file's id is not reused");
         assert_ne!(profile.id, "default");
         assert_eq!(profile.name, "Work (2)");
         assert_eq!(s.active_profile_id, "default");
         assert_eq!(result.key, ImportedKey::None);
+    }
+
+    #[test]
+    fn an_export_carries_the_effective_values_without_the_coupling() {
+        let s = settings();
+        let work = profile_for_export(&s, "work", DEFAULT_NAME).expect("profile");
+        assert_eq!(work.values, s.profiles[0].values);
+        assert!(work.own.is_empty());
+        assert!(work.own_entries.is_empty());
+        let defaults = default_profile(&s);
+        assert_eq!(defaults.values, ProfileValues::from_settings(&s));
+        assert!(defaults.apps.is_empty());
+    }
+
+    #[test]
+    fn an_import_couples_what_equals_the_defaults_here_and_owns_the_rest() {
+        let mut s = settings();
+        let mut file = imported("Mail");
+        file.values.selected_language = "fr".to_string();
+        // Whatever coupling a file claims, the defaults here decide.
+        file.own = ["selected_model".to_string()].into_iter().collect();
+        let result = apply_import(
+            &mut s,
+            file,
+            None,
+            KeyConflictChoice::Ask,
+            DEFAULT_NAME,
+            1000,
+        );
+        let profile = result.profile.expect("imported");
+        assert_eq!(
+            profile.own,
+            [
+                "post_process_enabled",
+                "post_process_provider_id",
+                "selected_language"
+            ]
+            .iter()
+            .map(|f| f.to_string())
+            .collect()
+        );
+        // A coupled value follows the defaults here from now on.
+        crate::profile_layers::set_value(
+            &mut s,
+            &crate::profile_layers::Scope::Defaults,
+            "selected_model",
+            serde_json::json!("moonshine"),
+        )
+        .expect("set");
+        let stored = s.profiles.iter().find(|p| p.id == profile.id).unwrap();
+        assert_eq!(stored.values.selected_model, "moonshine");
+        assert_eq!(stored.values.selected_language, "fr");
+    }
+
+    #[test]
+    fn an_imported_profile_does_not_take_the_defaults_name() {
+        let mut s = settings();
+        let result = apply_import(
+            &mut s,
+            imported(DEFAULT_NAME),
+            None,
+            KeyConflictChoice::Ask,
+            DEFAULT_NAME,
+            1000,
+        );
+        assert_eq!(result.profile.unwrap().name, "Standard (2)");
     }
 
     #[test]

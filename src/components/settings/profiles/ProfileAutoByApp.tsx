@@ -11,7 +11,7 @@ export const ProfileAutoByApp: React.FC<{ grouped?: boolean }> = ({
 }) => {
   const { t } = useTranslation();
   const { profiles, autoByApp, assigned, setAutoByApp, busy } = useProfiles();
-  if (profiles.length < 2) return null;
+  if (profiles.length === 0) return null;
   return (
     <ToggleSwitch
       checked={autoByApp}
@@ -34,7 +34,7 @@ export const ProfileAutoByApp: React.FC<{ grouped?: boolean }> = ({
 export const ProfileAutoByAppCompact: React.FC = () => {
   const { t } = useTranslation();
   const { profiles, autoByApp, assigned, setAutoByApp, busy } = useProfiles();
-  if (profiles.length < 2 || !assigned) return null;
+  if (profiles.length === 0 || !assigned) return null;
   return (
     <label
       className="flex items-center gap-2 px-1 pt-2 text-xs text-ink-2 cursor-pointer"

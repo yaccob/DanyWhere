@@ -14,7 +14,7 @@
     "wordList": "단어 목록",
     "onlyGlobalWordList": "추가 목록 없음",
     "profile": "프로필",
-    "defaultProfile": "기본",
+    "defaultSettings": "기본 설정",
     "profileAutoByApp": "앱에 따라 프로필 선택",
     "sendContext": "컨텍스트 보내기"
   },
@@ -441,13 +441,12 @@
     },
     "profiles": {
       "title": "프로필",
-      "description": "프로필에는 모델, 언어, 단어 목록, 후처리가 포함됩니다. 변경 사항은 항상 활성 프로필에 저장됩니다.",
+      "description": "프로필은 필요한 부분만 기본 설정을 덮어씁니다. 고유 값은 유지되고 나머지는 기본 설정을 따릅니다. 프로필을 사용하는 동안 변경하면 고유 값이 바뀌고, 그렇지 않으면 기본 설정이 바뀝니다.",
       "active": "활성",
       "use": "사용",
       "duplicate": "복제",
       "rename": "이름 바꾸기",
       "delete": "삭제",
-      "lastProfile": "마지막 프로필은 삭제할 수 없습니다",
       "cancel": "취소",
       "nameLabel": "이름",
       "namePlaceholder": "예: 업무",
@@ -459,7 +458,6 @@
       },
       "renameDialog": {
         "title": "‘{{name}}’ 이름 바꾸기",
-        "defaultHint": "비워 두면 앱 언어로 ‘{{defaultName}}’이(가) 표시됩니다.",
         "confirm": "이름 바꾸기"
       },
       "deleteDialog": {
@@ -469,8 +467,8 @@
         "confirm": "프로필 삭제"
       },
       "scope": {
-        "models": "여기서 선택한 모델은 ‘{{name}}’ 프로필에 속합니다.",
-        "postProcessing": "제공자, 모델, 프롬프트, 컨텍스트 한도는 ‘{{name}}’ 프로필에 속합니다. API 키는 모든 프로필에 적용됩니다."
+        "models": "‘{{name}}’ 사용 중: 고유 모델이 있으면 여기서 선택하면 그것이 바뀌고, 없으면 기본 설정이 바뀝니다.",
+        "postProcessing": "‘{{name}}’ 사용 중: 고유 값은 프로필에서, 나머지는 기본 설정에서 바뀝니다. API 키는 모든 프로필에 적용됩니다."
       },
       "apps": {
         "label": "자동으로 사용되는 앱:",

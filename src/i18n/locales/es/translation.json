@@ -14,7 +14,7 @@
     "wordList": "Lista de palabras",
     "onlyGlobalWordList": "Ninguna lista adicional",
     "profile": "Perfil",
-    "defaultProfile": "Predeterminado",
+    "defaultSettings": "Ajustes básicos",
     "profileAutoByApp": "Elegir perfil según la aplicación",
     "sendContext": "Enviar contexto"
   },
@@ -441,13 +441,12 @@
     },
     "profiles": {
       "title": "Perfiles",
-      "description": "Un perfil incluye el modelo, los idiomas, las listas de palabras y el post proceso. Los cambios siempre van al perfil activo.",
+      "description": "Un perfil sustituye los ajustes básicos donde lo necesita: sus valores propios se mantienen y todo lo demás sigue los ajustes básicos. Un cambio hecho mientras se usa un perfil cambia su valor propio; si no lo tiene, los ajustes básicos.",
       "active": "Activo",
       "use": "Usar",
       "duplicate": "Duplicar",
       "rename": "Renombrar",
       "delete": "Eliminar",
-      "lastProfile": "El último perfil no se puede eliminar",
       "cancel": "Cancelar",
       "nameLabel": "Nombre",
       "namePlaceholder": "p. ej. Trabajo",
@@ -459,7 +458,6 @@
       },
       "renameDialog": {
         "title": "Renombrar «{{name}}»",
-        "defaultHint": "Déjalo vacío para que se muestre «{{defaultName}}» en el idioma de la aplicación.",
         "confirm": "Renombrar"
       },
       "deleteDialog": {
@@ -469,8 +467,8 @@
         "confirm": "Eliminar perfil"
       },
       "scope": {
-        "models": "El modelo elegido aquí pertenece al perfil «{{name}}».",
-        "postProcessing": "El proveedor, el modelo, los prompts y los límites del contexto pertenecen al perfil «{{name}}»; las claves API valen para todos los perfiles."
+        "models": "Se está usando «{{name}}»: si tiene un modelo propio, la elección de aquí lo cambia; si no, cambia los ajustes básicos.",
+        "postProcessing": "Se está usando «{{name}}»: sus valores propios cambian en el perfil y los demás en los ajustes básicos; las claves API valen para todos los perfiles."
       },
       "apps": {
         "label": "Se usa automáticamente en:",

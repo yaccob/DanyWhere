@@ -599,7 +599,7 @@ pub fn migrate(settings: &mut AppSettings, settings_value: &serde_json::Value) -
     migrate_on(settings, settings_value, KeyPlatform::current())
 }
 
-/// Two steps, for the settings and every stored profile:
+/// Two steps, for the settings, the defaults and every stored profile:
 /// - once, a value without the field gets it from its
 ///   `append_trailing_space` and the global auto submit;
 /// - a value with another system's key names gets `platform`'s
@@ -650,12 +650,19 @@ pub fn migrate_on(
             changed = true;
         }
     }
-    let values = std::iter::once(&mut settings.append_text).chain(
-        settings
-            .profiles
-            .iter_mut()
-            .map(|profile| &mut profile.values.append_text),
-    );
+    let values = std::iter::once(&mut settings.append_text)
+        .chain(
+            settings
+                .default_values
+                .iter_mut()
+                .map(|values| &mut values.append_text),
+        )
+        .chain(
+            settings
+                .profiles
+                .iter_mut()
+                .map(|profile| &mut profile.values.append_text),
+        );
     for value in values {
         let local = localize(value, platform);
         if *value != local {
@@ -1365,11 +1372,14 @@ mod tests {
         let mut settings = get_default_settings();
         settings.append_trailing_space = trailing_space;
         settings.auto_submit = auto_submit;
-        crate::profiles::ensure_profiles(&mut settings);
-        let mut work = settings.profiles[0].clone();
-        work.id = "work".to_string();
-        work.name = "Work".to_string();
-        settings.profiles.push(work);
+        // The shape of a store from before the defaults, when "Standard"
+        // was a profile.
+        let values = crate::profiles::ProfileValues::from_settings(&settings);
+        settings.profiles = vec![
+            crate::profiles::Profile::new(crate::profiles::DEFAULT_PROFILE_ID, "", values.clone()),
+            crate::profiles::Profile::new("work", "Work", values),
+        ];
+        settings.active_profile_id = crate::profiles::DEFAULT_PROFILE_ID.to_string();
         let mut stored = serde_json::to_value(&settings).expect("serializes");
         let object = stored.as_object_mut().expect("an object");
         object.remove("append_text");
@@ -1497,6 +1507,20 @@ mod tests {
         assert_eq!(settings.append_text, "{Cmd+Enter}");
         assert_eq!(settings.profiles[0].values.append_text, "{Cmd+Enter}");
         assert_eq!(settings.profiles[1].values.append_text, "{Return}");
+    }
+
+    #[test]
+    fn reading_the_store_gives_the_defaults_the_systems_key_names_too() {
+        let mut stored = stored_with("{Cmd+Enter}", ["{Cmd+Enter}", "{Cmd+Enter}"]);
+        let mut defaults = crate::profiles::ProfileValues::default();
+        defaults.append_text = "{Cmd+Enter}".to_string();
+        stored["default_values"] = serde_json::to_value(defaults).expect("serializes");
+        let mut settings = read(&stored);
+        assert!(migrate_on(&mut settings, &stored, WINDOWS));
+        assert_eq!(
+            settings.default_values.expect("defaults").append_text,
+            "{Win+Enter}"
+        );
     }
 
     #[test]

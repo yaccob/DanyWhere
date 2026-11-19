@@ -492,6 +492,9 @@ async updateProfileWords(words: string[]) : Promise<Result<null, string>> {
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * Puts profile `id` in use, or the defaults for `"default"` (P2).
+ */
 async switchProfile(id: string) : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("switch_profile", { id }) };
@@ -500,6 +503,11 @@ async switchProfile(id: string) : Promise<Result<null, string>> {
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * A copy of profile `source_id` that keeps its own values and their
+ * coupling, or, from `"default"`, a new profile that follows the defaults
+ * (P9). It isn't put in use.
+ */
 async duplicateProfile(sourceId: string, name: string) : Promise<Result<Profile, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("duplicate_profile", { sourceId, name }) };
@@ -510,7 +518,7 @@ async duplicateProfile(sourceId: string, name: string) : Promise<Result<Profile,
 },
 /**
  * A new profile named `name` that follows the defaults in everything (P9).
- * It isn't switched to.
+ * It isn't put in use.
  */
 async createProfile(name: string) : Promise<Result<Profile, string>> {
     try {
@@ -528,6 +536,9 @@ async renameProfile(id: string, name: string) : Promise<Result<null, string>> {
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * Deletes profile `id`; deleting the one in use puts the defaults in use.
+ */
 async deleteProfile(id: string) : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("delete_profile", { id }) };
@@ -2473,7 +2484,8 @@ export type PostProcessApiFormat =
 export type PostProcessProvider = { id: string; label: string; base_url: string; allow_base_url_edit?: boolean; models_endpoint?: string | null; supports_structured_output?: boolean; api_format?: PostProcessApiFormat }
 export type Profile = { id: string; 
 /**
- * Empty = the default profile's name, shown translated ("Standard").
+ * Empty only in a store from before the defaults, where it was the
+ * profile "Standard", shown translated.
  */
 name: string; values: ProfileValues; 
 /**

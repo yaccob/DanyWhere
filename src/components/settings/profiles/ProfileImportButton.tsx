@@ -63,7 +63,7 @@ export const ProfileImportButton: React.FC = () => {
       detail: groups
         .map(({ profile, apps }) =>
           t("settings.profileTransfer.droppedApps", {
-            name: profileDisplayName(profile, t("tray.defaultProfile")),
+            name: profileDisplayName(profile, t("tray.defaultSettings")),
             apps: apps.map((app) => appLabel(app, applications)).join(", "),
           }),
         )

@@ -14,7 +14,7 @@
     "wordList": "Ordlista",
     "onlyGlobalWordList": "Ingen extra lista",
     "profile": "Profil",
-    "defaultProfile": "Standard",
+    "defaultSettings": "Grundinställningar",
     "profileAutoByApp": "Välj profil efter app",
     "sendContext": "Skicka kontext"
   },
@@ -441,13 +441,12 @@
     },
     "profiles": {
       "title": "Profiler",
-      "description": "En profil omfattar modellen, språken, ordlistorna och efterbearbetningen. Ändringar sparas alltid i den aktiva profilen.",
+      "description": "En profil avviker från grundinställningarna där det behövs: dess egna värden ligger kvar, allt annat följer grundinställningarna. En ändring medan en profil används ändrar dess eget värde, annars grundinställningarna.",
       "active": "Aktiv",
       "use": "Använd",
       "duplicate": "Duplicera",
       "rename": "Byt namn",
       "delete": "Ta bort",
-      "lastProfile": "Den sista profilen kan inte tas bort",
       "cancel": "Avbryt",
       "nameLabel": "Namn",
       "namePlaceholder": "t.ex. Arbete",
@@ -459,7 +458,6 @@
       },
       "renameDialog": {
         "title": "Byt namn på ”{{name}}”",
-        "defaultHint": "Lämna fältet tomt för att visa ”{{defaultName}}” på appens språk.",
         "confirm": "Byt namn"
       },
       "deleteDialog": {
@@ -469,8 +467,8 @@
         "confirm": "Ta bort profil"
       },
       "scope": {
-        "models": "Modellen du väljer här hör till profilen ”{{name}}”.",
-        "postProcessing": "Leverantör, modell, prompter och gränserna för kontext hör till profilen ”{{name}}”; API-nycklar gäller för alla profiler."
+        "models": "”{{name}}” används: har den en egen modell ändrar valet här den, annars grundinställningarna.",
+        "postProcessing": "”{{name}}” används: dess egna värden ändras i profilen, alla andra i grundinställningarna; API-nycklar gäller för alla profiler."
       },
       "apps": {
         "label": "Används automatiskt i:",

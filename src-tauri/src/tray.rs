@@ -578,25 +578,28 @@ fn icon_path_for(
     )
 }
 
-/// The profile submenu for `settings`; `None` while there is only one
-/// profile. `default_name` is the default profile's translated name.
+/// The profile submenu for `settings`: the defaults first, then the
+/// profiles (P2, open question 2); `None` while there are no profiles.
+/// `default_name` is the translated name of the defaults.
 fn profile_menu(settings: &settings::AppSettings, default_name: &str) -> Option<ProfileMenu> {
-    if settings.profiles.len() < 2 {
+    if settings.profiles.is_empty() {
         return None;
     }
+    let defaults = (
+        crate::profiles::DEFAULT_PROFILE_ID.to_string(),
+        default_name.to_string(),
+    );
     Some(ProfileMenu {
         auto_by_app: crate::app_profiles::has_assignments(settings)
             .then_some(settings.profile_auto_by_app),
         active: settings.active_profile_id.clone(),
-        profiles: settings
-            .profiles
-            .iter()
-            .map(|profile| {
+        profiles: std::iter::once(defaults)
+            .chain(settings.profiles.iter().map(|profile| {
                 (
                     profile.id.clone(),
                     crate::profiles::display_name(profile, default_name),
                 )
-            })
+            }))
             .collect(),
     })
 }
@@ -1307,27 +1310,25 @@ mod tests {
 
     // DanyWhere: the profile submenu.
     #[test]
-    fn profile_menu_hidden_with_only_one_profile() {
+    fn profile_menu_hidden_with_only_the_defaults() {
         let mut settings = get_default_settings();
         crate::profiles::ensure_profiles(&mut settings);
-        assert_eq!(settings.profiles.len(), 1);
-        assert_eq!(profile_menu(&settings, "Standard"), None);
+        assert!(settings.profiles.is_empty());
+        assert_eq!(profile_menu(&settings, "Grundeinstellungen"), None);
     }
 
     #[test]
-    fn profile_menu_lists_the_profiles_by_name_with_the_active_one() {
+    fn profile_menu_lists_the_defaults_first_then_the_profiles_with_the_one_in_use() {
         let mut settings = get_default_settings();
         crate::profiles::ensure_profiles(&mut settings);
-        let mut work = settings.profiles[0].clone();
-        work.id = "work".to_string();
-        work.name = "Work".to_string();
+        let work = crate::profiles::profile_for_test(&settings, "work", "Work", |_| {});
         settings.profiles.push(work);
         let expected = vec![
-            ("default".to_string(), "Standard".to_string()),
+            ("default".to_string(), "Grundeinstellungen".to_string()),
             ("work".to_string(), "Work".to_string()),
         ];
         assert_eq!(
-            profile_menu(&settings, "Standard"),
+            profile_menu(&settings, "Grundeinstellungen"),
             Some(ProfileMenu {
                 active: "default".to_string(),
                 profiles: expected,
@@ -1336,13 +1337,11 @@ mod tests {
         );
     }
 
-    /// Two profiles, "mail" assigned to Mail.
+    /// The defaults and "mail", assigned to Mail.
     fn with_mail_profile() -> AppSettings {
         let mut settings = get_default_settings();
         crate::profiles::ensure_profiles(&mut settings);
-        let mut mail = settings.profiles[0].clone();
-        mail.id = "mail".to_string();
-        mail.name = "Mail".to_string();
+        let mut mail = crate::profiles::profile_for_test(&settings, "mail", "Mail", |_| {});
         mail.apps = vec!["com.apple.mail".to_string()];
         settings.profiles.push(mail);
         settings

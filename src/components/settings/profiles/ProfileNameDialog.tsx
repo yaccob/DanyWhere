@@ -1,19 +1,19 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { Profile } from "@/bindings";
-import { DEFAULT_PROFILE_ID, checkProfileName } from "@/lib/utils/profiles";
+import { checkProfileName, type ProfileLike } from "@/lib/utils/profiles";
 import { isComposingKeyEvent } from "@/lib/utils/keyboard";
 import { Button } from "../../ui/Button";
 import { Dialog } from "../../ui/Dialog";
 
 interface ProfileNameDialogProps {
-  /** Duplicate `profile` under a new name, or rename it. */
+  /** Duplicate `profile` under a new name (from the defaults: a new
+   * profile that follows them), or rename it. */
   mode: "duplicate" | "rename";
   /** The profile the dialog is for; `null` keeps it closed. */
-  profile: Profile | null;
-  profiles: Profile[];
+  profile: ProfileLike | null;
+  profiles: ProfileLike[];
   defaultName: string;
-  displayName: (profile: Profile) => string;
+  displayName: (profile: ProfileLike) => string;
   busy: boolean;
   onSubmit: (name: string) => Promise<void>;
   onClose: () => void;
@@ -106,22 +106,13 @@ export const ProfileNameDialog: React.FC<ProfileNameDialogProps> = ({
                 submit();
               }
             }}
-            placeholder={
-              mode === "rename" && profile.id === DEFAULT_PROFILE_ID
-                ? defaultName
-                : t("settings.profiles.namePlaceholder")
-            }
+            placeholder={t("settings.profiles.namePlaceholder")}
             className="mt-1 block w-full px-2 py-1 text-sm font-semibold bg-wash border border-line-strong rounded-md text-start transition-all duration-150 hover:bg-logo-primary/10 hover:border-logo-primary focus:outline-none focus:bg-logo-primary/20 focus:border-logo-primary"
           />
         </label>
         {check.kind === "taken" && (
           <p className="text-xs text-error">
             {t("settings.profiles.nameTaken")}
-          </p>
-        )}
-        {mode === "rename" && profile.id === DEFAULT_PROFILE_ID && (
-          <p className="text-xs text-ink-3">
-            {t("settings.profiles.renameDialog.defaultHint", { defaultName })}
           </p>
         )}
       </div>

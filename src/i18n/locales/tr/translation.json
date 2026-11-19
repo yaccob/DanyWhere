@@ -14,7 +14,7 @@
     "wordList": "Kelime Listesi",
     "onlyGlobalWordList": "Ek Liste Yok",
     "profile": "Profil",
-    "defaultProfile": "Varsayılan",
+    "defaultSettings": "Temel ayarlar",
     "profileAutoByApp": "Profili uygulamaya göre seç",
     "sendContext": "Bağlam Gönder"
   },
@@ -441,13 +441,12 @@
     },
     "profiles": {
       "title": "Profiller",
-      "description": "Bir profil modeli, dilleri, kelime listelerini ve son işlemi kapsar. Değişiklikler her zaman etkin profile kaydedilir.",
+      "description": "Bir profil, gereken yerde temel ayarları geçersiz kılar: kendi değerleri kalır, geri kalan her şey temel ayarları izler. Bir profil kullanımdayken yapılan değişiklik onun kendi değerini, aksi halde temel ayarları değiştirir.",
       "active": "Etkin",
       "use": "Kullan",
       "duplicate": "Çoğalt",
       "rename": "Yeniden Adlandır",
       "delete": "Sil",
-      "lastProfile": "Son profil silinemez",
       "cancel": "İptal",
       "nameLabel": "Ad",
       "namePlaceholder": "ör. İş",
@@ -459,7 +458,6 @@
       },
       "renameDialog": {
         "title": "“{{name}}” profilini yeniden adlandır",
-        "defaultHint": "Uygulamanın dilinde “{{defaultName}}” gösterilmesi için boş bırakın.",
         "confirm": "Yeniden Adlandır"
       },
       "deleteDialog": {
@@ -469,8 +467,8 @@
         "confirm": "Profili Sil"
       },
       "scope": {
-        "models": "Burada seçilen model “{{name}}” profiline aittir.",
-        "postProcessing": "Sağlayıcı, model, prompt'lar ve bağlam sınırları “{{name}}” profiline aittir; API anahtarları tüm profiller için geçerlidir."
+        "models": "“{{name}}” kullanımda: kendi modeli varsa buradaki seçim onu, yoksa temel ayarları değiştirir.",
+        "postProcessing": "“{{name}}” kullanımda: kendi değerleri profilde, diğer tüm değerler temel ayarlarda değişir; API anahtarları tüm profiller için geçerlidir."
       },
       "apps": {
         "label": "Otomatik kullanıldığı yerler:",

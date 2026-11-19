@@ -1,8 +1,8 @@
 //! DanyWhere: profiles per application. A profile can be assigned
 //! applications; while "choose the profile by application" is on, a dictation
-//! into one of them uses that profile's values, without switching the active
-//! profile. The profile chosen in the sidebar and the tray applies to every
-//! other application.
+//! into one of them uses that profile's values, without switching what is in
+//! use. What is chosen in the sidebar and the tray (a profile, or the
+//! defaults, which take no applications) applies to every other application.
 //!
 //! The values of such a dictation are held here from the start of its
 //! recording until its pipeline finishes or is cancelled; the code on the
@@ -117,29 +117,37 @@ pub fn profile_mode(settings: &AppSettings) -> ProfileMode {
     }
 }
 
-/// Profile `id` as the overlay shows it; `default_name` is the translated
-/// name of the default profile.
+/// Whether a dictation's pills name the defaults while they apply. Open
+/// question 2 of the build plan, recommendation a: they don't, the pill
+/// stays short and names a profile only when one applies; the tray lists
+/// the defaults first and a switch to them names them. One line to change.
+pub const PILLS_NAME_THE_DEFAULTS: bool = false;
+
+/// Profile `id` (or the defaults) as the overlay shows it; `default_name`
+/// is the translated name of the defaults.
 pub fn overlay_profile(
     settings: &AppSettings,
     id: &str,
     default_name: &str,
 ) -> Option<OverlayProfile> {
-    let profile = settings.profiles.iter().find(|profile| profile.id == id)?;
     Some(OverlayProfile {
-        name: crate::profiles::display_name(profile, default_name),
+        name: crate::profiles::name_of(settings, id, default_name)?,
         mode: profile_mode(settings),
     })
 }
 
 /// The profile a dictation's pills name: `id`, the one the dictation runs
-/// with, whether an assignment chose it or not. `None` with only one
-/// profile, where the pills stay as they were.
+/// with, whether an assignment chose it or not. `None` without profiles,
+/// where the pills stay as they were, and while the defaults apply
+/// ([`PILLS_NAME_THE_DEFAULTS`]).
 pub fn dictation_overlay_profile(
     settings: &AppSettings,
     id: &str,
     default_name: &str,
 ) -> Option<OverlayProfile> {
-    if settings.profiles.len() < 2 {
+    if settings.profiles.is_empty()
+        || (id == crate::profiles::DEFAULT_PROFILE_ID && !PILLS_NAME_THE_DEFAULTS)
+    {
         return None;
     }
     overlay_profile(settings, id, default_name)
@@ -563,7 +571,7 @@ mod tests {
         words.iter().map(|w| w.to_string()).collect()
     }
 
-    /// The default profile (active, Parakeet, no post-processing) and "mail"
+    /// The defaults (in use, Parakeet, no post-processing) and "mail"
     /// (Whisper, post-processing on) assigned to Mail.
     fn with_mail_profile() -> AppSettings {
         let mut settings = AppSettings {
@@ -573,12 +581,11 @@ mod tests {
             ..Default::default()
         };
         ensure_profiles(&mut settings);
-        let mut mail = settings.profiles[0].clone();
-        mail.id = "mail".to_string();
-        mail.name = "Mail".to_string();
-        mail.values.selected_model = "whisper".to_string();
-        mail.values.post_process_enabled = true;
-        mail.values.profile_words = strings(&["Grüezi"]);
+        let mut mail = crate::profiles::profile_for_test(&settings, "mail", "Mail", |values| {
+            values.selected_model = "whisper".to_string();
+            values.post_process_enabled = true;
+            values.profile_words = strings(&["Grüezi"]);
+        });
         mail.apps = strings(&["com.apple.mail"]);
         settings.profiles.push(mail);
         settings
@@ -624,18 +631,22 @@ mod tests {
     #[test]
     fn assigning_moves_an_app_away_from_its_other_profile() {
         let mut settings = with_mail_profile();
+        let notes = crate::profiles::profile_for_test(&settings, "notes", "Notes", |_| {});
+        settings.profiles.push(notes);
         set_apps(
             &mut settings,
-            DEFAULT_PROFILE_ID,
+            "notes",
             strings(&[" com.apple.mail ", "com.apple.Notes", "com.apple.Notes", ""]),
         )
         .unwrap();
         assert_eq!(
-            settings.profiles[0].apps,
+            settings.profiles[1].apps,
             strings(&["com.apple.mail", "com.apple.Notes"])
         );
-        assert!(settings.profiles[1].apps.is_empty());
+        assert!(settings.profiles[0].apps.is_empty());
         assert!(set_apps(&mut settings, "nope", Vec::new()).is_err());
+        // The defaults are no profile: no application can be assigned to them.
+        assert!(set_apps(&mut settings, DEFAULT_PROFILE_ID, strings(&["x"])).is_err());
     }
 
     #[test]
@@ -682,10 +693,10 @@ mod tests {
     #[test]
     fn an_app_profile_without_post_processing_does_not_post_process() {
         let mut settings = with_mail_profile();
-        settings.profiles[1].values.post_process_enabled = false;
+        settings.profiles[0].values.post_process_enabled = false;
         assert!(!effective_post_process(
             true,
-            Some(&settings.profiles[1].values)
+            Some(&settings.profiles[0].values)
         ));
         assert!(effective_post_process(true, None));
         assert!(!effective_post_process(false, None));
@@ -696,7 +707,7 @@ mod tests {
         let settings = with_mail_profile();
         let mut dictation = Some(DictationProfile {
             id: "mail".to_string(),
-            values: settings.profiles[1].values.clone(),
+            values: settings.profiles[0].values.clone(),
         });
         let values = |dictation: &Option<DictationProfile>| {
             dictation.as_ref().expect("a profile").values.clone()
@@ -762,27 +773,37 @@ mod tests {
     }
 
     #[test]
-    fn a_dictation_names_its_profile_from_two_profiles_on_even_the_active_one() {
+    fn a_dictation_names_its_profile_even_the_one_in_use_but_not_the_defaults() {
         let mut settings = with_mail_profile();
         assert_eq!(
-            dictation_overlay_profile(&settings, "mail", "Standard"),
+            dictation_overlay_profile(&settings, "mail", "Grundeinstellungen"),
             shown("Mail", ProfileMode::Auto)
         );
-        // The app in front has no profile of its own: the glyph still shows
-        // the switch, not whether an assignment applied.
+        // The defaults apply: the pills name no profile (open question 2,
+        // recommendation a).
         assert_eq!(
-            dictation_overlay_profile(&settings, DEFAULT_PROFILE_ID, "Standard"),
-            shown("Standard", ProfileMode::Auto)
+            dictation_overlay_profile(&settings, DEFAULT_PROFILE_ID, "Grundeinstellungen"),
+            None
+        );
+        // A profile in use, the app in front without one of its own: the
+        // glyph still shows the switch, not whether an assignment applied.
+        let mut work = crate::profiles::profile_for_test(&settings, "work", "Work", |_| {});
+        work.apps.clear();
+        settings.profiles.push(work);
+        settings.active_profile_id = "work".to_string();
+        assert_eq!(
+            dictation_overlay_profile(&settings, "work", "Grundeinstellungen"),
+            shown("Work", ProfileMode::Auto)
         );
         toggle_auto(&mut settings);
         assert_eq!(
-            dictation_overlay_profile(&settings, DEFAULT_PROFILE_ID, "Standard"),
-            shown("Standard", ProfileMode::Lock)
+            dictation_overlay_profile(&settings, "work", "Grundeinstellungen"),
+            shown("Work", ProfileMode::Lock)
         );
-        // With only one profile the pills stay as they were.
-        settings.profiles.truncate(1);
+        // Without profiles the pills stay as they were.
+        settings.profiles.clear();
         assert_eq!(
-            dictation_overlay_profile(&settings, DEFAULT_PROFILE_ID, "Standard"),
+            dictation_overlay_profile(&settings, DEFAULT_PROFILE_ID, "Grundeinstellungen"),
             None
         );
     }
@@ -873,7 +894,7 @@ mod tests {
     #[test]
     fn values_set_for_a_thread_apply_on_that_thread_only() {
         let settings = with_mail_profile();
-        let mail = settings.profiles[1].values.clone();
+        let mail = settings.profiles[0].values.clone();
         assert_eq!(dictation_values(), None);
         let (inside, elsewhere) = with_values_here(mail.clone(), || {
             (

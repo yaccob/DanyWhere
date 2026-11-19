@@ -14,7 +14,7 @@
     "wordList": "Liste de mots",
     "onlyGlobalWordList": "Aucune liste supplémentaire",
     "profile": "Profil",
-    "defaultProfile": "Par défaut",
+    "defaultSettings": "Réglages de base",
     "profileAutoByApp": "Choisir le profil selon l'application",
     "sendContext": "Envoyer le contexte"
   },
@@ -441,13 +441,12 @@
     },
     "profiles": {
       "title": "Profils",
-      "description": "Un profil comprend le modèle, les langues, les listes de mots et le post-traitement. Les modifications vont toujours dans le profil actif.",
+      "description": "Un profil remplace les réglages de base là où il le faut : ses propres valeurs restent, tout le reste suit les réglages de base. Une modification faite pendant qu'un profil est utilisé change sa propre valeur, sinon les réglages de base.",
       "active": "Actif",
       "use": "Utiliser",
       "duplicate": "Dupliquer",
       "rename": "Renommer",
       "delete": "Supprimer",
-      "lastProfile": "Le dernier profil ne peut pas être supprimé",
       "cancel": "Annuler",
       "nameLabel": "Nom",
       "namePlaceholder": "p. ex. Travail",
@@ -459,7 +458,6 @@
       },
       "renameDialog": {
         "title": "Renommer « {{name}} »",
-        "defaultHint": "Laissez le champ vide pour afficher « {{defaultName}} » dans la langue de l'application.",
         "confirm": "Renommer"
       },
       "deleteDialog": {
@@ -469,8 +467,8 @@
         "confirm": "Supprimer le profil"
       },
       "scope": {
-        "models": "Le modèle choisi ici appartient au profil « {{name}} ».",
-        "postProcessing": "Le fournisseur, le modèle, les prompts et les limites du contexte appartiennent au profil « {{name}} » ; les clés API valent pour tous les profils."
+        "models": "« {{name}} » est utilisé : s'il a son propre modèle, le choix fait ici le modifie, sinon il modifie les réglages de base.",
+        "postProcessing": "« {{name}} » est utilisé : ses propres valeurs changent dans le profil, toutes les autres dans les réglages de base ; les clés API valent pour tous les profils."
       },
       "apps": {
         "label": "Utilisé automatiquement dans :",

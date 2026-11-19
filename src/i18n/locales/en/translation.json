@@ -14,7 +14,7 @@
     "wordList": "Word List",
     "onlyGlobalWordList": "No Additional List",
     "profile": "Profile",
-    "defaultProfile": "Default",
+    "defaultSettings": "Defaults",
     "profileAutoByApp": "Choose Profile by Application",
     "sendContext": "Send Context"
   },
@@ -441,13 +441,12 @@
     },
     "profiles": {
       "title": "Profiles",
-      "description": "A profile holds the model, the languages, the word lists and post-processing. Changes always go into the active profile.",
+      "description": "A profile overrides the defaults where it needs to: its own values stay, everything else follows the defaults. A change made while a profile is in use changes its own value, or else the defaults.",
       "active": "Active",
       "use": "Use",
       "duplicate": "Duplicate",
       "rename": "Rename",
       "delete": "Delete",
-      "lastProfile": "The last profile can't be deleted",
       "cancel": "Cancel",
       "nameLabel": "Name",
       "namePlaceholder": "e.g. Work",
@@ -459,7 +458,6 @@
       },
       "renameDialog": {
         "title": "Rename “{{name}}”",
-        "defaultHint": "Leave it empty to show “{{defaultName}}” in the app's language.",
         "confirm": "Rename"
       },
       "deleteDialog": {
@@ -469,8 +467,8 @@
         "confirm": "Delete Profile"
       },
       "scope": {
-        "models": "The model chosen here belongs to the profile “{{name}}”.",
-        "postProcessing": "Provider, model, prompts and context limits belong to the profile “{{name}}”; API keys apply to all profiles."
+        "models": "“{{name}}” is in use: if it has a model of its own, the choice here changes it, otherwise it changes the defaults.",
+        "postProcessing": "“{{name}}” is in use: values it holds as its own change in the profile, all others in the defaults; API keys apply to all profiles."
       },
       "apps": {
         "label": "Used automatically in:",

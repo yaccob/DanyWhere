@@ -14,7 +14,7 @@
     "wordList": "詞彙清單",
     "onlyGlobalWordList": "無附加清單",
     "profile": "設定檔",
-    "defaultProfile": "預設",
+    "defaultSettings": "基本設定",
     "profileAutoByApp": "依應用程式選擇設定檔",
     "sendContext": "傳送上下文"
   },
@@ -441,13 +441,12 @@
     },
     "profiles": {
       "title": "設定檔",
-      "description": "設定檔包含模型、語言、詞彙清單和後處理。變更一律儲存到目前的設定檔。",
+      "description": "設定檔只在需要時覆寫基本設定：它自己的值保持不變，其餘一切都跟隨基本設定。使用某個設定檔時所做的變更會修改它自己的值，否則修改基本設定。",
       "active": "使用中",
       "use": "使用",
       "duplicate": "複製",
       "rename": "重新命名",
       "delete": "刪除",
-      "lastProfile": "無法刪除最後一個設定檔",
       "cancel": "取消",
       "nameLabel": "名稱",
       "namePlaceholder": "例如：工作",
@@ -459,7 +458,6 @@
       },
       "renameDialog": {
         "title": "重新命名「{{name}}」",
-        "defaultHint": "留空即以 App 的語言顯示「{{defaultName}}」。",
         "confirm": "重新命名"
       },
       "deleteDialog": {
@@ -469,8 +467,8 @@
         "confirm": "刪除設定檔"
       },
       "scope": {
-        "models": "在此選擇的模型屬於設定檔「{{name}}」。",
-        "postProcessing": "供應商、模型、提示詞和上下文限制屬於設定檔「{{name}}」；API 金鑰適用於所有設定檔。"
+        "models": "正在使用「{{name}}」：如果它有自己的模型，此處的選擇會變更該模型，否則變更基本設定。",
+        "postProcessing": "正在使用「{{name}}」：它自己的值在設定檔中變更，其他所有值在基本設定中變更；API 金鑰適用於所有設定檔。"
       },
       "apps": {
         "label": "自動用於：",

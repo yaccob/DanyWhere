@@ -8,15 +8,16 @@ interface ProfileScopeHintProps {
   className?: string;
 }
 
-/** DanyWhere: a quiet line saying that a page's settings belong to the
- * active profile. Only once there is more than one profile to tell apart. */
+/** DanyWhere: a quiet line saying where a change on this page goes while a
+ * profile is in use: its own value, or else the defaults. Nothing while the
+ * defaults are in use, where every change goes into them. */
 export const ProfileScopeHint: React.FC<ProfileScopeHintProps> = ({
   page,
   className = "",
 }) => {
   const { t } = useTranslation();
   const { profiles, active, displayName } = useProfiles();
-  if (profiles.length < 2 || !active) return null;
+  if (profiles.length === 0 || !active) return null;
 
   return (
     <p className={`text-xs text-ink-3 ${className}`}>

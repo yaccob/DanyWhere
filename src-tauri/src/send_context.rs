@@ -45,23 +45,18 @@ pub fn sends_context(post_process: bool, settings: &AppSettings) -> bool {
     post_process && settings.send_context
 }
 
-/// The state of profile `id`'s switch: for the active profile the flat
-/// field, which holds its latest values, else the profile's own; `None`
-/// without such a profile.
+/// The state of profile `id`'s switch (or the defaults'): for what is in
+/// use the flat field, which holds its latest values; `None` without such a
+/// profile.
 pub fn switch_of(settings: &AppSettings, id: &str) -> Option<bool> {
-    if id == settings.active_profile_id {
-        return Some(settings.send_context);
-    }
-    settings
-        .profiles
-        .iter()
-        .find(|profile| profile.id == id)
-        .map(|profile| profile.values.send_context)
+    crate::profiles::values_of(settings, id).map(|values| values.send_context)
 }
 
-/// Sets profile `id`'s switch to what `change` makes of its state: the flat
-/// field for the active profile (storing copies it into the profile), else
-/// the profile's own. Returns the new state; `None` without such a profile.
+/// Sets profile `id`'s switch (or the defaults') to what `change` makes of
+/// its state: the flat field for what is in use (storing sends it where it
+/// belongs), else it goes where that profile's value comes from
+/// (`profile_layers::route`). Returns the new state; `None` without such a
+/// profile.
 fn change_switch(
     settings: &mut AppSettings,
     id: &str,
@@ -71,12 +66,10 @@ fn change_switch(
         settings.send_context = change(settings.send_context);
         return Some(settings.send_context);
     }
-    let profile = settings
-        .profiles
-        .iter_mut()
-        .find(|profile| profile.id == id)?;
-    profile.values.send_context = change(profile.values.send_context);
-    Some(profile.values.send_context)
+    let mut values = crate::profiles::values_of(settings, id)?;
+    values.send_context = change(values.send_context);
+    crate::profile_layers::route(settings, id, &values);
+    Some(values.send_context)
 }
 
 /// Turns profile `id`'s switch over; returns the new state, `None` without
@@ -128,9 +121,8 @@ pub fn toggle_notice(
     id: &str,
     default_name: &str,
 ) -> Option<ContextNotice> {
-    let profile = settings.profiles.iter().find(|profile| profile.id == id)?;
     Some(ContextNotice {
-        name: crate::profiles::display_name(profile, default_name),
+        name: crate::profiles::name_of(settings, id, default_name)?,
         sends: switch_of(settings, id)?,
     })
 }
@@ -274,21 +266,20 @@ pub fn set_send_context(app: AppHandle, enabled: bool) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::profiles::{ensure_profiles, switch_to, sync_active_profile, DEFAULT_PROFILE_ID};
+    use crate::profiles::{ensure_profiles, switch_to, DEFAULT_PROFILE_ID};
     use crate::settings::{get_default_settings, registers_binding, ShortcutBinding};
 
-    /// The default profile (active, post-processing on, switch off) and
-    /// "work" (switch on) assigned to Mail.
+    /// The defaults (in use, post-processing on, switch off) and "work"
+    /// (switch on, its own value) assigned to Mail.
     fn two_profiles() -> AppSettings {
         let mut s = AppSettings {
             post_process_enabled: true,
             ..Default::default()
         };
         ensure_profiles(&mut s);
-        let mut work = s.profiles[0].clone();
-        work.id = "work".to_string();
-        work.name = "Work".to_string();
-        work.values.send_context = true;
+        let mut work = crate::profiles::profile_for_test(&s, "work", "Work", |values| {
+            values.send_context = true;
+        });
         work.apps = vec!["com.apple.mail".to_string()];
         s.profiles.push(work);
         s
@@ -318,13 +309,13 @@ mod tests {
         let mut s = two_profiles();
         assert_eq!(toggle_profile(&mut s, DEFAULT_PROFILE_ID), Some(true));
         assert!(s.send_context);
-        sync_active_profile(&mut s);
-        assert!(s.profiles[0].values.send_context);
+        crate::profile_layers::route_flat(&mut s);
+        assert!(crate::profiles::default_values(&s).send_context);
         assert_eq!(toggle_profile(&mut s, DEFAULT_PROFILE_ID), Some(false));
-        sync_active_profile(&mut s);
-        assert!(!s.profiles[0].values.send_context);
+        crate::profile_layers::route_flat(&mut s);
+        assert!(!crate::profiles::default_values(&s).send_context);
         // The other profile keeps its own.
-        assert!(s.profiles[1].values.send_context);
+        assert!(s.profiles[0].values.send_context);
     }
 
     #[test]
@@ -450,12 +441,12 @@ mod tests {
         let id = shortcut_profile(&s, Some("com.apple.mail"));
         assert_eq!(id, "work");
         assert_eq!(toggle_profile(&mut s, &id), Some(false));
-        assert!(!s.profiles[1].values.send_context);
+        assert!(!s.profiles[0].values.send_context);
         // The active profile keeps its own, also once the settings are stored.
         assert!(!s.send_context);
-        sync_active_profile(&mut s);
+        crate::profile_layers::route_flat(&mut s);
+        assert!(!crate::profiles::default_values(&s).send_context);
         assert!(!s.profiles[0].values.send_context);
-        assert!(!s.profiles[1].values.send_context);
         // And the next dictation into Mail follows it.
         let profile =
             crate::app_profiles::dictation_profile(&s, Some("com.apple.mail")).expect("work");
@@ -469,18 +460,18 @@ mod tests {
         assert_eq!(toggle_profile(&mut s, "work"), Some(false));
         assert!(!s.send_context);
         assert_eq!(toggle_profile(&mut s, "work"), Some(true));
-        assert!(s.profiles[1].values.send_context);
+        assert!(s.profiles[0].values.send_context);
         assert!(!s.send_context);
         // The active profile's own is the flat field, which storing copies
         // into the profile.
         assert_eq!(toggle_profile(&mut s, DEFAULT_PROFILE_ID), Some(true));
         assert!(s.send_context);
-        sync_active_profile(&mut s);
-        assert!(s.profiles[0].values.send_context);
+        crate::profile_layers::route_flat(&mut s);
+        assert!(crate::profiles::default_values(&s).send_context);
         // No such profile: nothing changes.
         assert_eq!(toggle_profile(&mut s, "nope"), None);
         assert!(s.send_context);
-        assert!(s.profiles[1].values.send_context);
+        assert!(s.profiles[0].values.send_context);
     }
 
     #[test]

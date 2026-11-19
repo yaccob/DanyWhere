@@ -14,7 +14,7 @@
     "wordList": "Llista de paraules",
     "onlyGlobalWordList": "Cap llista addicional",
     "profile": "Perfil",
-    "defaultProfile": "Predeterminat",
+    "defaultSettings": "Configuració bàsica",
     "profileAutoByApp": "Tria el perfil segons l'aplicació",
     "sendContext": "Envia el context"
   },
@@ -441,13 +441,12 @@
     },
     "profiles": {
       "title": "Perfils",
-      "description": "Un perfil inclou el model, els idiomes, les llistes de paraules i el postprocessament. Els canvis sempre van al perfil actiu.",
+      "description": "Un perfil substitueix la configuració bàsica on li cal: els seus valors propis es mantenen i la resta segueix la configuració bàsica. Un canvi fet mentre s'usa un perfil canvia el seu valor propi; si no en té, la configuració bàsica.",
       "active": "Actiu",
       "use": "Utilitza",
       "duplicate": "Duplica",
       "rename": "Canvia el nom",
       "delete": "Suprimeix",
-      "lastProfile": "No es pot suprimir l'últim perfil",
       "cancel": "Cancel·la",
       "nameLabel": "Nom",
       "namePlaceholder": "p. ex. Feina",
@@ -459,7 +458,6 @@
       },
       "renameDialog": {
         "title": "Canvia el nom de «{{name}}»",
-        "defaultHint": "Deixeu-lo buit perquè es mostri «{{defaultName}}» en l'idioma de l'aplicació.",
         "confirm": "Canvia el nom"
       },
       "deleteDialog": {
@@ -469,8 +467,8 @@
         "confirm": "Suprimeix el perfil"
       },
       "scope": {
-        "models": "El model triat aquí pertany al perfil «{{name}}».",
-        "postProcessing": "El proveïdor, el model, les indicacions i els límits del context pertanyen al perfil «{{name}}»; les claus de l'API valen per a tots els perfils."
+        "models": "S'està usant «{{name}}»: si té un model propi, l'elecció d'aquí el canvia; si no, canvia la configuració bàsica.",
+        "postProcessing": "S'està usant «{{name}}»: els seus valors propis canvien al perfil i la resta a la configuració bàsica; les claus de l'API valen per a tots els perfils."
       },
       "apps": {
         "label": "S'usa automàticament a:",

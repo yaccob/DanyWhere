@@ -14,7 +14,7 @@
     "wordList": "Woordenlijst",
     "onlyGlobalWordList": "Geen extra lijst",
     "profile": "Profiel",
-    "defaultProfile": "Standaard",
+    "defaultSettings": "Basisinstellingen",
     "profileAutoByApp": "Profiel kiezen per app",
     "sendContext": "Context meesturen"
   },
@@ -441,13 +441,12 @@
     },
     "profiles": {
       "title": "Profielen",
-      "description": "Een profiel omvat het model, de talen, de woordenlijsten en de naverwerking. Wijzigingen gaan altijd naar het actieve profiel.",
+      "description": "Een profiel wijkt af van de basisinstellingen waar dat nodig is: zijn eigen waarden blijven, al het andere volgt de basisinstellingen. Een wijziging terwijl een profiel in gebruik is, verandert zijn eigen waarde, anders de basisinstellingen.",
       "active": "Actief",
       "use": "Gebruiken",
       "duplicate": "Dupliceren",
       "rename": "Hernoemen",
       "delete": "Verwijderen",
-      "lastProfile": "Het laatste profiel kan niet worden verwijderd",
       "cancel": "Annuleren",
       "nameLabel": "Naam",
       "namePlaceholder": "bijv. Werk",
@@ -459,7 +458,6 @@
       },
       "renameDialog": {
         "title": "„{{name}}” hernoemen",
-        "defaultHint": "Laat het leeg om „{{defaultName}}” in de taal van de app te tonen.",
         "confirm": "Hernoemen"
       },
       "deleteDialog": {
@@ -469,8 +467,8 @@
         "confirm": "Profiel verwijderen"
       },
       "scope": {
-        "models": "Het model dat je hier kiest, hoort bij het profiel „{{name}}”.",
-        "postProcessing": "Provider, model, prompts en de grenzen voor context horen bij het profiel „{{name}}”; API-sleutels gelden voor alle profielen."
+        "models": "„{{name}}” is in gebruik: heeft het een eigen model, dan verandert de keuze hier dat, anders de basisinstellingen.",
+        "postProcessing": "„{{name}}” is in gebruik: zijn eigen waarden veranderen in het profiel, alle andere in de basisinstellingen; API-sleutels gelden voor alle profielen."
       },
       "apps": {
         "label": "Automatisch gebruikt in:",

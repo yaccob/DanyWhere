@@ -14,7 +14,7 @@
     "wordList": "Seznam slov",
     "onlyGlobalWordList": "Žádný doplňkový seznam",
     "profile": "Profil",
-    "defaultProfile": "Výchozí",
+    "defaultSettings": "Základní nastavení",
     "profileAutoByApp": "Vybírat profil podle aplikace",
     "sendContext": "Posílat kontext"
   },
@@ -441,13 +441,12 @@
     },
     "profiles": {
       "title": "Profily",
-      "description": "Profil zahrnuje model, jazyky, seznamy slov a následné zpracování. Změny se vždy ukládají do aktivního profilu.",
+      "description": "Profil mění základní nastavení tam, kde je to potřeba: jeho vlastní hodnoty zůstávají, vše ostatní se řídí základním nastavením. Změna během používání profilu mění jeho vlastní hodnotu, jinak základní nastavení.",
       "active": "Aktivní",
       "use": "Použít",
       "duplicate": "Duplikovat",
       "rename": "Přejmenovat",
       "delete": "Smazat",
-      "lastProfile": "Poslední profil nelze smazat",
       "cancel": "Zrušit",
       "nameLabel": "Název",
       "namePlaceholder": "např. Práce",
@@ -459,7 +458,6 @@
       },
       "renameDialog": {
         "title": "Přejmenovat „{{name}}“",
-        "defaultHint": "Nechte pole prázdné, aby se zobrazoval název „{{defaultName}}“ v jazyce aplikace.",
         "confirm": "Přejmenovat"
       },
       "deleteDialog": {
@@ -469,8 +467,8 @@
         "confirm": "Smazat profil"
       },
       "scope": {
-        "models": "Zde zvolený model patří k profilu „{{name}}“.",
-        "postProcessing": "Poskytovatel, model, prompty a limity kontextu patří k profilu „{{name}}“; API klíče platí pro všechny profily."
+        "models": "Používá se „{{name}}“: má-li vlastní model, volba zde změní ten, jinak základní nastavení.",
+        "postProcessing": "Používá se „{{name}}“: jeho vlastní hodnoty se mění v profilu, všechny ostatní v základním nastavení; API klíče platí pro všechny profily."
       },
       "apps": {
         "label": "Automaticky se používá v:",

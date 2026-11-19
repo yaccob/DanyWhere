@@ -134,15 +134,13 @@ export const WordChips: React.FC<WordChipsProps> = ({
   );
 };
 
-/** DanyWhere: the active profile's own word list, always given to the model
- * in that profile, before the global list. Hidden until the settings carry
- * profiles. */
+/** DanyWhere: the word list of what is in use (a profile or the defaults),
+ * always given to the model there, before the global list. */
 export const ProfileWords: React.FC<CustomWordsProps> = React.memo(
   ({ descriptionMode = "tooltip", grouped = false }) => {
     const { t } = useTranslation();
     const { getSetting, updateSetting, isUpdating } = useSettings();
-    const { profiles, active, displayName } = useProfiles();
-    if (profiles.length === 0 || !active) return null;
+    const { active, defaultName, displayName } = useProfiles();
 
     const words = getSetting("profile_words") || [];
     const updating = isUpdating("profile_words");
@@ -152,7 +150,7 @@ export const ProfileWords: React.FC<CustomWordsProps> = React.memo(
       <>
         <SettingContainer
           title={t("settings.advanced.wordLists.profileTitle", {
-            name: displayName(active),
+            name: active ? displayName(active) : defaultName,
           })}
           description={t("settings.advanced.wordLists.profileDescription")}
           descriptionMode={descriptionMode}

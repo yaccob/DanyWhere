@@ -14,7 +14,7 @@
     "wordList": "Daftar Kata",
     "onlyGlobalWordList": "Tanpa Daftar Tambahan",
     "profile": "Profil",
-    "defaultProfile": "Bawaan",
+    "defaultSettings": "Pengaturan dasar",
     "profileAutoByApp": "Pilih profil menurut aplikasi",
     "sendContext": "Kirim Konteks"
   },
@@ -441,13 +441,12 @@
     },
     "profiles": {
       "title": "Profil",
-      "description": "Profil mencakup model, bahasa, daftar kata, dan pascaproses. Perubahan selalu masuk ke profil yang aktif.",
+      "description": "Profil menggantikan pengaturan dasar di bagian yang diperlukan: nilai miliknya sendiri tetap, selebihnya mengikuti pengaturan dasar. Perubahan saat sebuah profil digunakan mengubah nilai miliknya sendiri; jika tidak, pengaturan dasar.",
       "active": "Aktif",
       "use": "Gunakan",
       "duplicate": "Duplikat",
       "rename": "Ganti Nama",
       "delete": "Hapus",
-      "lastProfile": "Profil terakhir tidak dapat dihapus",
       "cancel": "Batal",
       "nameLabel": "Nama",
       "namePlaceholder": "mis. Kerja",
@@ -459,7 +458,6 @@
       },
       "renameDialog": {
         "title": "Ganti nama “{{name}}”",
-        "defaultHint": "Biarkan kosong agar “{{defaultName}}” tampil dalam bahasa aplikasi.",
         "confirm": "Ganti Nama"
       },
       "deleteDialog": {
@@ -469,8 +467,8 @@
         "confirm": "Hapus Profil"
       },
       "scope": {
-        "models": "Model yang dipilih di sini milik profil “{{name}}”.",
-        "postProcessing": "Penyedia, model, prompt, dan batas konteks milik profil “{{name}}”; kunci API berlaku untuk semua profil."
+        "models": "“{{name}}” sedang digunakan: jika punya model sendiri, pilihan di sini mengubahnya; jika tidak, mengubah pengaturan dasar.",
+        "postProcessing": "“{{name}}” sedang digunakan: nilai miliknya sendiri berubah di profil, selebihnya di pengaturan dasar; kunci API berlaku untuk semua profil."
       },
       "apps": {
         "label": "Otomatis digunakan di:",
