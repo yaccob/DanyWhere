@@ -134,10 +134,9 @@ pub trait ShortcutAction: Send + Sync {
     fn stop(&self, app: &AppHandle, binding_id: &str, shortcut_str: &str);
 }
 
-// Transcribe Action
-struct TranscribeAction {
-    post_process: bool,
-}
+// Transcribe Action. DanyWhere: the same for both start shortcuts; what
+// follows the recording is decided by how it ends (`end_keys`).
+struct TranscribeAction;
 
 /// Field name for structured output JSON schema
 const TRANSCRIPTION_FIELD: &str = "transcription";
@@ -834,8 +833,20 @@ impl ShortcutAction for TranscribeAction {
         // DanyWhere: from two profiles on, the overlay names the dictation's
         // profile with the glyph of choosing it by application.
         crate::overlay::set_dictation_profile(app, dictation_profile);
-        // DanyWhere: and a speech bubble while it would send context.
-        crate::send_context::begin_dictation(app, self.post_process);
+        // DanyWhere: and a speech bubble while the end it would take now, its
+        // start shortcut's default end (`end_keys`), sends context.
+        let expected_end = crate::end_keys::default_end(
+            &crate::app_profiles::dictation_profile_and_values(app).1,
+            &binding_id,
+        );
+        let expected_post_process = crate::app_profiles::effective_post_process(
+            expected_end.post_process,
+            crate::app_profiles::dictation_values().as_ref(),
+        );
+        crate::send_context::begin_dictation(
+            app,
+            expected_post_process && expected_end.send_context,
+        );
         match settings.overlay_style {
             OverlayStyle::Live if model_supports_streaming => utils::show_streaming_overlay(app),
             OverlayStyle::Live | OverlayStyle::Minimal => show_recording_overlay(app),
@@ -919,13 +930,7 @@ impl ShortcutAction for TranscribeAction {
             shortcut::register_cancel_shortcut(app);
             // DanyWhere: a post-processing model on this computer starts
             // loading now, so its cold start falls into the speaking time.
-            crate::model_warmup::start(
-                &settings,
-                crate::app_profiles::effective_post_process(
-                    self.post_process,
-                    crate::app_profiles::dictation_values().as_ref(),
-                ),
-            );
+            crate::model_warmup::start(&settings, expected_post_process);
         } else {
             // Starting failed (for example due to blocked microphone permissions).
             // Revert UI state so we don't stay stuck in the recording overlay.
@@ -947,7 +952,29 @@ impl ShortcutAction for TranscribeAction {
         );
     }
 
-    fn stop(&self, app: &AppHandle, binding_id: &str, _shortcut_str: &str) {
+    fn stop(&self, app: &AppHandle, binding_id: &str, shortcut_str: &str) {
+        stop_transcription(
+            app,
+            binding_id,
+            shortcut_str,
+            &crate::end_keys::EndChoice::DefaultOf(binding_id.to_string()),
+        );
+    }
+}
+
+/// Stops the recording of `binding_id` and finishes the dictation as `end`
+/// says (DanyWhere, `end_keys`): its end shortcut's append text,
+/// post-processing (as far as the dictation's profile allows it) and
+/// context. The transcription coordinator calls this for every end.
+pub fn stop_transcription(
+    app: &AppHandle,
+    binding_id: &str,
+    _shortcut_str: &str,
+    end: &crate::end_keys::EndChoice,
+) {
+    // Handy's `TranscribeAction::stop`, left indented as it was so merges
+    // from Handy stay small.
+    {
         // Prevent a slow microphone from emitting a ready event or start chime
         // after the user has already requested stop.
         app.state::<Arc<AudioRecordingManager>>()
@@ -1005,23 +1032,27 @@ impl ShortcutAction for TranscribeAction {
         play_feedback_sound(app, SoundType::Stop);
 
         let binding_id = binding_id.to_string(); // Clone binding_id for the async task
-                                                 // DanyWhere: a dictation profile other than the active one decides
-                                                 // with its own switch whether to post-process (`app_profiles`).
+
+        // DanyWhere: what it is made with, for redoing it when its text goes
+        // into an application with another profile (`profile_redo`).
+        let (profile_id, profile_values) = crate::app_profiles::dictation_profile_and_values(app);
+        // DanyWhere: the end shortcut it ended with, in the profile it ends
+        // with (`end_keys`): its append text, whether it post-processes and
+        // whether earlier dictations go along. A dictation profile other than
+        // the active one decides with its own switch whether to post-process
+        // (`app_profiles`).
+        let end = crate::end_keys::resolve(&profile_values, end);
+        log::info!("The recording ends with end shortcut {}", end.id);
         let post_process = crate::app_profiles::effective_post_process(
-            self.post_process,
+            end.post_process,
             crate::app_profiles::dictation_values().as_ref(),
         );
-        // DanyWhere: and with the profile's "Send Context" whether earlier
-        // dictations go along (`send_context`).
-        let with_context = crate::send_context::decide_at_stop(app, post_process);
+        let with_context =
+            crate::send_context::decide_at_stop(app, post_process && end.send_context);
         // DanyWhere: the window this dictation ends in, for context from
         // earlier dictations there (`dictation_context`). In the background.
         let context_session = RECORDING_SESSION.load(Ordering::SeqCst);
         crate::window_capture::begin_capture(app, context_session);
-        // DanyWhere: what it is made with, for redoing it when its text goes
-        // into an application with another profile (`profile_redo`).
-        let (profile_id, profile_values) = crate::app_profiles::dictation_profile_and_values(app);
-        let post_process_requested = self.post_process;
         let cancel_generation = rm.cancel_generation();
 
         tauri::async_runtime::spawn(async move {
@@ -1184,7 +1215,7 @@ impl ShortcutAction for TranscribeAction {
                                                 entry_id: entry.id,
                                                 profile_id,
                                                 values: profile_values,
-                                                post_process_requested,
+                                                end: end.clone(),
                                             },
                                         );
                                         if let Err(err) = hm.record_entry_context(
@@ -1267,7 +1298,7 @@ impl ShortcutAction for TranscribeAction {
                                         // for it from the first step that differs,
                                         // and its "Append" text applies
                                         // (`profile_redo`).
-                                        let (final_text, dictation_values, post_process_failed, effort_refused_by) =
+                                        let (final_text, dictation_values, append_text, post_process_failed, effort_refused_by) =
                                             match redo_for_app_in_front(
                                                 &ah_clone,
                                                 &hm_for_paste,
@@ -1294,12 +1325,14 @@ impl ShortcutAction for TranscribeAction {
                                                             crate::transcription_hook::apply(&ah_clone, text),
                                                         ),
                                                         Some(insert.values),
+                                                        insert.end.append_text,
                                                         insert.post_process_failed,
                                                         None,
                                                     ),
                                                     None => (
                                                         final_text,
                                                         Some(insert.values),
+                                                        insert.end.append_text,
                                                         post_process_failed,
                                                         effort_refused_by,
                                                     ),
@@ -1307,6 +1340,7 @@ impl ShortcutAction for TranscribeAction {
                                                 None => (
                                                     final_text,
                                                     dictation_values,
+                                                    end.append_text.clone(),
                                                     post_process_failed,
                                                     effort_refused_by,
                                                 ),
@@ -1314,11 +1348,10 @@ impl ShortcutAction for TranscribeAction {
                                         // DanyWhere: the "Insert Last Dictation"
                                         // service may be waiting for this text.
                                         let text_for_service = final_text.clone();
-                                        // DanyWhere: with the profile's "Append" text.
-                                        let service_text = crate::append_text::with_dictation_text(
-                                            &ah_clone,
-                                            &text_for_service,
-                                            dictation_values.as_ref(),
+                                        // DanyWhere: with its end shortcut's "Append" text.
+                                        let service_text = crate::append_text::text_to_paste(
+                                            text_for_service,
+                                            &append_text,
                                         );
                                         // DanyWhere: "Copy Last Transcript"
                                         // during this dictation puts it on the
@@ -1327,7 +1360,7 @@ impl ShortcutAction for TranscribeAction {
                                             log::info!("Copy Last Transcript asked for this dictation; not pasting it.");
                                             Ok(utils::PasteOutcome::Pasted)
                                         } else {
-                                            utils::paste_with_values(final_text, ah_clone.clone(), dictation_values)
+                                            utils::paste_with_values(final_text, ah_clone.clone(), dictation_values, &append_text)
                                         };
                                         let (outcome, notice) =
                                             match pasted {
@@ -1602,24 +1635,6 @@ impl ShortcutAction for ToggleProfileAutoAction {
     }
 }
 
-// Send Context on/off (DanyWhere, `send_context`)
-struct ToggleSendContextAction;
-
-impl ShortcutAction for ToggleSendContextAction {
-    fn start(&self, _app: &AppHandle, _binding_id: &str, _shortcut_str: &str) {
-        // Switched on release, so a held key or key repeat switches once.
-    }
-
-    fn stop(&self, app: &AppHandle, _binding_id: &str, _shortcut_str: &str) {
-        // Like the profile toggle: off the handler thread, which the overlay
-        // and the tray must not wait for.
-        let app = app.clone();
-        crate::shortcut::off_handler_thread(move || {
-            crate::send_context::toggle_from_shortcut(&app);
-        });
-    }
-}
-
 // Test Action
 struct TestAction;
 
@@ -1648,13 +1663,11 @@ pub static ACTION_MAP: Lazy<HashMap<String, Arc<dyn ShortcutAction>>> = Lazy::ne
     let mut map = HashMap::new();
     map.insert(
         "transcribe".to_string(),
-        Arc::new(TranscribeAction {
-            post_process: false,
-        }) as Arc<dyn ShortcutAction>,
+        Arc::new(TranscribeAction) as Arc<dyn ShortcutAction>,
     );
     map.insert(
         "transcribe_with_post_process".to_string(),
-        Arc::new(TranscribeAction { post_process: true }) as Arc<dyn ShortcutAction>,
+        Arc::new(TranscribeAction) as Arc<dyn ShortcutAction>,
     );
     map.insert(
         "cancel".to_string(),
@@ -1675,10 +1688,6 @@ pub static ACTION_MAP: Lazy<HashMap<String, Arc<dyn ShortcutAction>>> = Lazy::ne
     map.insert(
         crate::app_profiles::TOGGLE_BINDING.to_string(),
         Arc::new(ToggleProfileAutoAction) as Arc<dyn ShortcutAction>,
-    );
-    map.insert(
-        crate::send_context::TOGGLE_BINDING.to_string(),
-        Arc::new(ToggleSendContextAction) as Arc<dyn ShortcutAction>,
     );
     map.insert(
         "test".to_string(),

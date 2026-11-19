@@ -15,8 +15,7 @@
     "onlyGlobalWordList": "Geen extra lijst",
     "profile": "Profiel",
     "defaultSettings": "Basisinstellingen",
-    "profileAutoByApp": "Profiel kiezen per app",
-    "sendContext": "Context meesturen"
+    "profileAutoByApp": "Profiel kiezen per app"
   },
   "sidebar": {
     "general": "Algemeen",
@@ -383,10 +382,6 @@
           "toggle_profile_auto": {
             "name": "Profiel kiezen per app",
             "description": "Zet het kiezen van het profiel per app aan of uit. Werkt zolang er apps aan een profiel zijn toegewezen."
-          },
-          "toggle_send_context": {
-            "name": "Context meesturen",
-            "description": "Zet het meesturen van context bij de naverwerking aan of uit voor het profiel dat een dictaat in de app vooraan gebruikt. Werkt zolang de naverwerking aan staat."
           }
         },
         "errors": {
@@ -444,6 +439,36 @@
           "startRecording": "Opname starten",
           "doNothing": "Niets doen"
         }
+      }
+    },
+    "endKeys": {
+      "title": "Eindsneltoetsen",
+      "description": "Hoe een opname eindigt en wat er volgt: elke eindsneltoets bepaalt wat er wordt toegevoegd, of de tekst wordt nabewerkt en of eerdere dictaten als context worden meegestuurd.",
+      "builtin": {
+        "plain": "Normaal",
+        "post_process": "Nabewerken"
+      },
+      "name": "Naam",
+      "noShortcut": "Geen sneltoets",
+      "shortcutHint": "Zijn eigen sneltoets beëindigt een opname op deze manier. Die is alleen bezet tijdens een opname.",
+      "clearShortcut": "Sneltoets verwijderen",
+      "append": "Toevoegen",
+      "appendDescription": "Wordt toegevoegd aan een dictaat dat zo eindigt: de tekst en daarna de toetsaanslag die je kiest. In de tekst is \\s een spatie, \\n een nieuwe regel, \\t een tab en \\\\ een backslash; al het andere wordt toegevoegd zoals het er staat. De toetsaanslag wordt alleen verstuurd als de tekst wordt geplakt.",
+      "sendContext": "Context meesturen",
+      "sendContextHint": "Alleen met nabewerking: eerdere dictaten uit hetzelfde venster worden als context meegestuurd.",
+      "add": "Eindsneltoets toevoegen",
+      "newName": "Nieuwe eindsneltoets",
+      "delete": "{{name}} verwijderen",
+      "inUse": "Een startsneltoets eindigt hier standaard mee; kies eerst een ander standaardeinde.",
+      "defaultEnd": {
+        "title": "Standaardeinde van {{shortcut}}",
+        "description": "Hoe de tweede druk, of het loslaten als je hem vasthoudt, de opname beëindigt."
+      },
+      "linuxNoShortcuts": "Op Linux worden de sneltoetsen van eindsneltoetsen niet bezet; ze beëindigen een opname alleen als standaardeinde.",
+      "errors": {
+        "save": "De eindsneltoetsen konden niet worden opgeslagen: {{error}}",
+        "needsName": "Elke eindsneltoets heeft een naam nodig.",
+        "shortcutTwice": "Twee eindsneltoetsen kunnen geen sneltoets delen."
       }
     },
     "profiles": {
@@ -719,8 +744,6 @@
         }
       },
       "appendText": {
-        "title": "Toevoegen",
-        "description": "Wordt na elk dictaat van dit profiel toegevoegd: de tekst en daarna de toetsaanslag die je kiest. In de tekst is \\s een spatie, \\n een nieuwe regel, \\t een tab en \\\\ een backslash; al het andere wordt toegevoegd zoals het er staat. De toetsaanslag wordt alleen verstuurd als de tekst wordt geplakt.",
         "noAccessibility": "Zonder Toegankelijkheid worden geen toetsaanslagen verstuurd; de tekst wordt wel toegevoegd.",
         "keyNone": "Geen toets",
         "keyKept": "Overgenomen van eerder; niet aangeboden op dit systeem",
@@ -942,11 +965,6 @@
       },
       "context": {
         "title": "Context uit eerdere dicteringen",
-        "sendContext": {
-          "label": "Context meesturen",
-          "description": "Dicteringen met naverwerking sturen je eerdere dicteringen uit hetzelfde venster mee als context. Hoort bij het profiel; ook het systeemvakmenu en een sneltoets schakelen dit. Zonder naverwerking wordt nooit context verstuurd.",
-          "short": "Context meesturen"
-        },
         "privacy": "Eerdere dicteringen uit hetzelfde venster gaan samen met de huidige naar de aanbieder van de naverwerking, ook dicteringen die nooit zijn naverwerkt. De geschiedenis markeert elk item dat zo is verstuurd.",
         "ageLimit": "Maximale leeftijd",
         "ageLimitDescription": "Alleen dicteringen die hoogstens zoveel minuten ouder zijn dan de huidige ({{min}}–{{max}}).",

@@ -76,9 +76,6 @@ struct MenuInputs {
     word_lists: Option<WordListMenu>,
     /// DanyWhere: the profile submenu, when there are profiles to switch to.
     profiles: Option<ProfileMenu>,
-    /// DanyWhere: the check item "Send Context" and its state, while the
-    /// active profile post-processes (`send_context::tray_check`).
-    send_context: Option<bool>,
 }
 
 /// What the profile submenu shows: each profile by its shown name, the
@@ -455,12 +452,6 @@ fn compute_desired(app: &AppHandle, icon_state: TrayIconState) -> TrayDesired {
     } else {
         profile_menu(&settings, &crate::profiles::default_profile_name(&settings))
     };
-    // Below the word lists, also only in the idle menu.
-    let send_context = if icon_state.is_busy() {
-        None
-    } else {
-        crate::send_context::tray_check(&settings)
-    };
     TrayDesired {
         icon_path: icon_path_for(theme, icon_state, badge, &settings),
         menu: MenuInputs {
@@ -476,7 +467,6 @@ fn compute_desired(app: &AppHandle, icon_state: TrayIconState) -> TrayDesired {
             language,
             word_lists,
             profiles,
-            send_context,
         },
     }
 }
@@ -610,9 +600,6 @@ pub const PROFILE_SELECT_PREFIX: &str = "profile_select:";
 /// DanyWhere: the profile submenu's check item "Choose Profile by
 /// Application" (`app_profiles`).
 pub const PROFILE_AUTO_ID: &str = "profile_auto_by_app";
-
-/// DanyWhere: the check item "Send Context" (`send_context`).
-pub const SEND_CONTEXT_ID: &str = "send_context";
 
 fn profile_submenu(
     app: &AppHandle,
@@ -1000,21 +987,6 @@ fn build_menu(app: &AppHandle, inputs: &MenuInputs) -> tauri::Result<(Menu<tauri
         // Below the model and language: the words the model is given.
         if let Some(word_lists) = &inputs.word_lists {
             menu.insert(&word_list_submenu(app, &strings, word_lists)?, position)?;
-            position += 1;
-        }
-        // DanyWhere: then whether earlier dictations go along as context.
-        if let Some(send_context) = inputs.send_context {
-            menu.insert(
-                &CheckMenuItem::with_id(
-                    app,
-                    SEND_CONTEXT_ID,
-                    &strings.send_context,
-                    true,
-                    send_context,
-                    None::<&str>,
-                )?,
-                position,
-            )?;
         }
         menu
     };
@@ -1259,7 +1231,6 @@ mod tests {
             language: None,
             word_lists: None,
             profiles: None,
-            send_context: None,
         }
     }
 

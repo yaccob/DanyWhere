@@ -15,8 +15,7 @@
     "onlyGlobalWordList": "无附加列表",
     "profile": "配置文件",
     "defaultSettings": "基本设置",
-    "profileAutoByApp": "按应用选择配置文件",
-    "sendContext": "发送上下文"
+    "profileAutoByApp": "按应用选择配置文件"
   },
   "sidebar": {
     "general": "通用",
@@ -383,10 +382,6 @@
           "toggle_profile_auto": {
             "name": "按应用选择配置文件",
             "description": "开启或关闭按应用选择配置文件。只要有应用分配给某个配置文件就会生效。"
-          },
-          "toggle_send_context": {
-            "name": "发送上下文",
-            "description": "为听写到前台应用时所用的配置文件开启或关闭在后处理时发送上下文。仅在后处理开启时生效。"
           }
         },
         "errors": {
@@ -444,6 +439,36 @@
           "startRecording": "开始录音",
           "doNothing": "不执行任何操作"
         }
+      }
+    },
+    "endKeys": {
+      "title": "结束快捷键",
+      "description": "录音如何结束以及之后发生什么：每个结束快捷键决定追加什么、是否对文本进行后处理，以及是否将之前的听写作为上下文一并发送。",
+      "builtin": {
+        "plain": "普通",
+        "post_process": "后处理"
+      },
+      "name": "名称",
+      "noShortcut": "无快捷键",
+      "shortcutHint": "它自己的快捷键以这种方式结束录音。仅在录音时占用。",
+      "clearShortcut": "移除快捷键",
+      "append": "末尾追加",
+      "appendDescription": "追加到以这种方式结束的听写：先是文本，然后是你选择的按键。文本中 \\s 表示空格，\\n 表示换行，\\t 表示制表符，\\\\ 表示反斜杠；其他内容按原样追加。仅在粘贴文本时才发送按键。",
+      "sendContext": "发送上下文",
+      "sendContextHint": "仅在后处理时：同一窗口中之前的听写会作为上下文一并发送。",
+      "add": "添加结束快捷键",
+      "newName": "新的结束快捷键",
+      "delete": "删除 {{name}}",
+      "inUse": "有开始快捷键默认以它结束；请先选择另一个默认结束。",
+      "defaultEnd": {
+        "title": "{{shortcut}} 的默认结束",
+        "description": "第二次按下或按住后松开时如何结束录音。"
+      },
+      "linuxNoShortcuts": "在 Linux 上不会占用结束快捷键自己的快捷键；它们只能作为默认结束来结束录音。",
+      "errors": {
+        "save": "无法保存结束快捷键：{{error}}",
+        "needsName": "每个结束快捷键都需要名称。",
+        "shortcutTwice": "两个结束快捷键不能使用同一个快捷键。"
       }
     },
     "profiles": {
@@ -719,8 +744,6 @@
         }
       },
       "appendText": {
-        "title": "末尾追加",
-        "description": "在此配置文件的每次听写后追加：先是文本，然后是你选择的按键。文本中 \\s 表示空格，\\n 表示换行，\\t 表示制表符，\\\\ 表示反斜杠；其他内容按原样追加。仅在粘贴文本时才发送按键。",
         "noAccessibility": "没有辅助功能权限时不发送按键；文本仍会追加。",
         "keyNone": "无按键",
         "keyKept": "沿用之前的设置；此系统不提供",
@@ -942,11 +965,6 @@
       },
       "context": {
         "title": "来自早前听写的上下文",
-        "sendContext": {
-          "label": "发送上下文",
-          "description": "带后处理的听写会把同一窗口中您早前的听写作为上下文一起发送。此项属于配置文件；托盘菜单和快捷键也可以切换此项。没有后处理时从不发送上下文。",
-          "short": "发送上下文"
-        },
         "privacy": "同一窗口中的早前听写会与当前听写一起发送给后处理服务商，包括从未经过后处理的听写。以这种方式发出的每个条目都会在历史记录中标出。",
         "ageLimit": "时间上限",
         "ageLimitDescription": "仅限比当前听写最多早这么多分钟的听写（{{min}}–{{max}}）。",

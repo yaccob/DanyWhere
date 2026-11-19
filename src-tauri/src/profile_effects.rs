@@ -31,13 +31,12 @@ use crate::settings::{AppSettings, OverlayStyle};
 
 /// What a change from `before` to `after` (both as stored, the flat fields
 /// holding the values in use) needs beyond storing: load the speech model,
-/// (un)register the post-processing shortcuts, the effects of the profile
-/// values ([`apply_profile_value_effects`]), tell the window, the tray and
-/// the prompts' warning. Call it after the settings are written.
+/// the effects of the profile values ([`apply_profile_value_effects`]),
+/// register the shortcuts of the profile that applies now
+/// (`shortcut::profile_sync::sync_profile_shortcuts`, which also covers the
+/// post-processing shortcuts), tell the window, the tray and the prompts'
+/// warning. Call it after the settings are written.
 pub fn apply(app: &AppHandle, before: &AppSettings, after: &AppSettings) {
-    if post_processing_changed(before, after) {
-        crate::shortcut::sync_post_process_shortcuts(app, after);
-    }
     if model_to_load(before, after).is_some() {
         let app = app.clone();
         let model_id = after.selected_model.clone();
@@ -49,21 +48,13 @@ pub fn apply(app: &AppHandle, before: &AppSettings, after: &AppSettings) {
         });
     }
     apply_profile_value_effects(app, before, after);
+    crate::shortcut::profile_sync::sync_profile_shortcuts(app, before, after);
     let _ = app.emit(
         "settings-changed",
         serde_json::json!({ "setting": "profiles" }),
     );
     crate::tray::rebuild_tray_menu(app);
     crate::prompt_frame::prompts_changed(app);
-}
-
-/// Whether the post-processing shortcuts may have to be (un)registered:
-/// post-processing in use went on or off, or a profile with applications
-/// made it reachable or unreachable (`app_profiles::post_processing_reachable`).
-pub fn post_processing_changed(before: &AppSettings, after: &AppSettings) -> bool {
-    before.post_process_enabled != after.post_process_enabled
-        || crate::app_profiles::post_processing_reachable(before)
-            != crate::app_profiles::post_processing_reachable(after)
 }
 
 /// The speech model to load: the one in use, when it changed.
@@ -278,17 +269,5 @@ mod tests {
         let mut emptied = after.clone();
         emptied.selected_model = String::new();
         assert_eq!(model_to_load(&after, &emptied), None);
-    }
-
-    #[test]
-    fn post_processing_going_on_or_off_resyncs_the_shortcuts() {
-        let before = AppSettings {
-            post_process_enabled: false,
-            ..Default::default()
-        };
-        let mut after = before.clone();
-        assert!(!post_processing_changed(&before, &after));
-        after.post_process_enabled = true;
-        assert!(post_processing_changed(&before, &after));
     }
 }

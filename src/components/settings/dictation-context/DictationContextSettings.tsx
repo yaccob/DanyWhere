@@ -12,8 +12,6 @@ import { SettingContainer, Textarea } from "@/components/ui";
 import { Button } from "../../ui/Button";
 import { Input } from "../../ui/Input";
 import { useSettings } from "../../../hooks/useSettings";
-import { ShortcutInput } from "../ShortcutInput";
-import { SendContextSwitch } from "./SendContextSwitch";
 import {
   LIMITS,
   filled,
@@ -209,12 +207,6 @@ export const DictationContextSettings: React.FC = () => {
 
   return (
     <>
-      <SendContextSwitch />
-      <ShortcutInput
-        shortcutId="toggle_send_context"
-        descriptionMode="tooltip"
-        grouped={true}
-      />
       <div className="px-4 p-2">
         <p className="text-sm text-ink-3">
           {t("settings.postProcessing.context.privacy")}

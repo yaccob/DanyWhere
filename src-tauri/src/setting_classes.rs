@@ -30,7 +30,7 @@ pub enum SettingClass {
     /// An application setting, on its page.
     App(AppPage),
     /// Concerns a dictation, but is still the same for every profile: it
-    /// becomes a profile value with other work (the shortcuts with strand D).
+    /// becomes a profile value with other work.
     Global,
     /// Shared by all profiles, which choose from it (e.g. a collection of
     /// prompts), not a profile value of its own.
@@ -85,11 +85,10 @@ pub const APP_SETTINGS: &[(&str, AppPage)] = &[
 ];
 
 /// Fields that concern a dictation but stay the same for every profile
-/// until other work makes them profile values.
-pub const GLOBAL: &[&str] = &[
-    // Strand D makes the shortcuts profile values (a map by id).
-    "bindings",
-];
+/// until other work makes them profile values. Since strand D the shortcuts
+/// (`bindings`, a map by id) and the end shortcuts (`end_keys`,
+/// `default_ends`) are profile values.
+pub const GLOBAL: &[&str] = &[];
 
 /// Fields shared by all profiles, which choose from them.
 pub const SHARED: &[&str] = &[
@@ -118,8 +117,8 @@ pub const INTERNAL: &[&str] = &[
 ];
 
 /// Fields only a migration reads: the storage limit replaced the first two,
-/// the "Append" field (`append_text`) the next three, the prompt order
-/// (`prompt_library`) Handy's selected prompt.
+/// the "Append" field (now the end shortcuts', `end_keys`) the next three,
+/// the prompt order (`prompt_library`) Handy's selected prompt.
 pub const LEGACY: &[&str] = &[
     "history_limit",
     "recording_retention_period",

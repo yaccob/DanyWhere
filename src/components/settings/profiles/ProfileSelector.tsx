@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import { useProfiles } from "@/hooks/useProfiles";
 import { DEFAULT_PROFILE_ID } from "@/lib/utils/profiles";
 import { Dropdown } from "../../ui/Dropdown";
-import { SendContextCompact } from "../dictation-context/SendContextSwitch";
 import { ProfileAutoByAppCompact } from "./ProfileAutoByApp";
 
 /** DanyWhere: the box "In Use" at the top of the sidebar on every page: what
@@ -35,7 +34,6 @@ export const ProfileSelector: React.FC = () => {
         className="w-full"
       />
       <ProfileAutoByAppCompact />
-      <SendContextCompact />
     </div>
   );
 };

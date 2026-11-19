@@ -106,12 +106,8 @@ pub struct ListField {
 
 /// The fields of [`ProfileValues`] that deviate entry by entry (P10); every
 /// other field is coupled or own as a whole. A new list plugs in with one
-/// line; strand D's two fields, for example:
-///
-/// ```text
-/// ListField { field: "bindings", key: EntryKey::MapKey },     // HashMap<String, ShortcutBinding>
-/// ListField { field: "end_keys", key: EntryKey::Property("id") }, // Vec<EndKey>
-/// ```
+/// line, as strand D's `bindings` (a map by binding id) and `end_keys` (a
+/// list by `id`) did.
 ///
 /// Post-processing is kept per provider (its settings, model, effort and
 /// API key), so a profile that picks its own model or key for one provider
@@ -137,6 +133,15 @@ pub const LIST_FIELDS: &[ListField] = &[
     ListField {
         field: "post_process_api_keys",
         key: EntryKey::MapKey,
+    },
+    // Strand D: the shortcuts by their binding id, the end shortcuts by id.
+    ListField {
+        field: "bindings",
+        key: EntryKey::MapKey,
+    },
+    ListField {
+        field: "end_keys",
+        key: EntryKey::Property("id"),
     },
 ];
 
@@ -724,7 +729,12 @@ fn commit<T>(
 /// Checks and normalizes `field` of `values` after a change (`entry`: the
 /// one entry that changed), as the field's own change command does. Other
 /// strands add their fields' checks here.
-fn validate(values: &mut ProfileValues, field: &str, entry: Option<&str>) -> Result<(), String> {
+fn validate(
+    settings: &AppSettings,
+    values: &mut ProfileValues,
+    field: &str,
+    entry: Option<&str>,
+) -> Result<(), String> {
     // The providers are profile values too: the ones of the changed layer.
     let providers: Vec<String> = values
         .post_process_providers
@@ -763,11 +773,49 @@ fn validate(values: &mut ProfileValues, field: &str, entry: Option<&str>) -> Res
             }
             _ => Ok(()),
         },
-        "append_text" => {
-            values.append_text = crate::append_text::localize(
-                &values.append_text,
-                crate::append_text::KeyPlatform::current(),
-            );
+        // Strand D, as its change commands check them: the end shortcuts
+        // with the default ends that point into them, each key combination
+        // valid here and taken by no shortcut, "Append" in this system's key
+        // names.
+        "end_keys" | "default_ends" => {
+            crate::end_keys::validate(&values.end_keys, &values.default_ends)?;
+            for end in values.end_keys.iter_mut() {
+                end.append_text = crate::append_text::localize(
+                    &end.append_text,
+                    crate::append_text::KeyPlatform::current(),
+                );
+                if field == "end_keys" && !end.shortcut.trim().is_empty() {
+                    crate::shortcut::validate_shortcut_for_implementation(
+                        &end.shortcut,
+                        settings.keyboard_implementation,
+                    )?;
+                    crate::end_keys::check_against_bindings(&end.shortcut, &values.bindings)?;
+                }
+            }
+            Ok(())
+        }
+        // A shortcut: valid here and taken by no other one of the layer.
+        "bindings" => {
+            let ids: Vec<String> = match entry {
+                Some(id) => vec![id.to_string()],
+                None => values.bindings.keys().cloned().collect(),
+            };
+            for id in ids {
+                let Some(binding) = values.bindings.get(&id) else {
+                    continue;
+                };
+                let shortcut = binding.current_binding.trim();
+                if shortcut.is_empty() {
+                    continue;
+                }
+                crate::shortcut::validate_shortcut_for_implementation(
+                    shortcut,
+                    settings.keyboard_implementation,
+                )?;
+                let mut others = values.bindings.clone();
+                others.remove(&id);
+                crate::end_keys::check_against_bindings(shortcut, &others)?;
+            }
             Ok(())
         }
         _ => Ok(()),
@@ -789,7 +837,7 @@ pub fn set_value(
             let mut fields = defaults_fields(s);
             fields.insert(field.to_string(), value);
             let mut values = from_fields(fields)?;
-            validate(&mut values, field, None)?;
+            validate(s, &mut values, field, None)?;
             s.default_values = Some(values);
             Ok(())
         }
@@ -800,7 +848,7 @@ pub fn set_value(
             let old = fields.get(field).cloned();
             fields.insert(field.to_string(), value);
             let mut values = from_fields(fields)?;
-            validate(&mut values, field, None)?;
+            validate(s, &mut values, field, None)?;
             let new = to_fields(&values).get(field).cloned();
             let profile = &mut s.profiles[index];
             match key {
@@ -954,7 +1002,7 @@ pub fn set_entry(
             let mut fields = defaults_fields(s);
             with_entry(&mut fields);
             let mut values = from_fields(fields)?;
-            validate(&mut values, field, Some(entry_id))?;
+            validate(s, &mut values, field, Some(entry_id))?;
             s.default_values = Some(values);
             Ok(())
         }
@@ -963,7 +1011,7 @@ pub fn set_entry(
             let mut fields = to_fields(&s.profiles[index].values);
             with_entry(&mut fields);
             let mut values = from_fields(fields)?;
-            validate(&mut values, field, Some(entry_id))?;
+            validate(s, &mut values, field, Some(entry_id))?;
             let profile = &mut s.profiles[index];
             profile.values = values;
             let held = profile.own_entries.entry(field.to_string()).or_default();
@@ -1238,8 +1286,7 @@ mod tests {
             post_process_prompt_order: order("diktat_de"),
             word_lists: vec![list("names", &["Sayuri"])],
             active_word_list_id: Some("names".to_string()),
-            append_text: String::new(),
-            send_context: true,
+            end_keys: crate::end_keys::builtin("", true),
             ..ProfileValues::default()
         }
     }
@@ -1257,7 +1304,7 @@ mod tests {
         let mut values = ProfileValues {
             selected_model: CANARY.to_string(),
             post_process_efforts: map(&[("anthropic", "xhigh")]),
-            append_text: r"\n\n".to_string(),
+            end_keys: crate::end_keys::builtin(r"\n\n", true),
             post_process_prompt_order: order("diktat_arbeit"),
             ..standard_values()
         };
@@ -1348,7 +1395,7 @@ mod tests {
         expected_sorted.sort();
         assert_eq!(sorted, expected_sorted);
         assert!(names.contains(&"selected_model".to_string()));
-        assert!(names.contains(&"append_text".to_string()));
+        assert!(names.contains(&"end_keys".to_string()));
     }
 
     #[test]
@@ -1520,7 +1567,13 @@ mod tests {
         let arbeit = profile(&s, "arbeit");
         assert_eq!(
             arbeit.own,
-            set(&["append_text", "post_process_prompt_order", "selected_model"])
+            set(&["post_process_prompt_order", "selected_model"])
+        );
+        // Its "Append" text lives in both built-in end shortcuts since
+        // strand D: two own entries.
+        assert_eq!(
+            entries_of(arbeit, "end_keys").map(|e| e.own.clone()),
+            Some(set(&["plain", "post_process"]))
         );
         assert_eq!(
             entries_of(arbeit, "post_process_models").map(|e| e.own.clone()),
@@ -1531,7 +1584,7 @@ mod tests {
             Some(set(&["anthropic"]))
         );
         assert!(entries_of(arbeit, "word_lists").is_none_or(OwnEntries::is_empty));
-        assert_eq!(own_count(arbeit), 5);
+        assert_eq!(own_count(arbeit), 6);
 
         // The note's table counted the model map as one value (5); entry by
         // entry Playground's model for its custom provider is its own too.
@@ -1724,12 +1777,18 @@ mod tests {
     #[test]
     fn an_own_value_that_happens_to_be_equal_stays_when_the_default_changes() {
         let mut s = migrated();
-        hold_value(&mut s, "privat", "append_text").unwrap();
-        assert!(profile(&s, "privat").own.contains("append_text"));
-        assert_eq!(profile(&s, "privat").values.append_text, "");
-        set_value(&mut s, &Scope::Defaults, "append_text", json!(r"\s")).unwrap();
-        assert_eq!(profile(&s, "privat").values.append_text, "");
-        assert_eq!(profile(&s, "playground").values.append_text, r"\s");
+        hold_value(&mut s, "privat", "translate_to_english").unwrap();
+        assert!(profile(&s, "privat").own.contains("translate_to_english"));
+        assert!(!profile(&s, "privat").values.translate_to_english);
+        set_value(
+            &mut s,
+            &Scope::Defaults,
+            "translate_to_english",
+            json!(true),
+        )
+        .unwrap();
+        assert!(!profile(&s, "privat").values.translate_to_english);
+        assert!(profile(&s, "playground").values.translate_to_english);
     }
 
     #[test]
@@ -1877,17 +1936,22 @@ mod tests {
         .unwrap();
         let (_, max) = crate::settings::LANGUAGE_DETECTION_WINDOW_SECS.into_inner();
         assert_eq!(defaults(&s).language_detection_window_secs, max);
+        // Strand D's end shortcuts: checked as its command checks them, and
+        // "Append" in this system's key names.
         set_value(
             &mut s,
             &Scope::Defaults,
-            "append_text",
-            json!("{Win+Enter}"),
+            "end_keys",
+            json!(crate::end_keys::builtin("{Win+Enter}", true)),
         )
         .unwrap();
         assert_eq!(
-            defaults(&s).append_text,
+            defaults(&s).end_keys[0].append_text,
             crate::append_text::localize("{Win+Enter}", crate::append_text::KeyPlatform::current())
         );
+        let mut twice = crate::end_keys::builtin("", true);
+        twice[1].id = twice[0].id.clone();
+        assert!(set_value(&mut s, &Scope::Defaults, "end_keys", json!(twice)).is_err());
     }
 
     // ---- Resetting (P8) and "change the default instead" (P7.3) ----------
@@ -1909,7 +1973,7 @@ mod tests {
         );
         assert!(!arbeit.own.contains("selected_model"));
         assert!(entries_of(arbeit, "post_process_models").is_none_or(OwnEntries::is_empty));
-        assert_eq!(own_count(arbeit), 3);
+        assert_eq!(own_count(arbeit), 4);
         assert!(reset_values(&mut s, DEFAULT_PROFILE_ID, &strings(&["selected_model"])).is_err());
     }
 
@@ -1931,11 +1995,10 @@ mod tests {
     #[test]
     fn the_default_can_take_a_profiles_value_instead() {
         let mut s = migrated();
-        adopt_as_default(&mut s, "arbeit", "append_text").unwrap();
-        assert_eq!(defaults(&s).append_text, r"\n\n");
-        assert!(!profile(&s, "arbeit").own.contains("append_text"));
-        assert_eq!(profile(&s, "privat").values.append_text, r"\n\n");
-        assert_eq!(s.append_text, r"\n\n");
+        adopt_as_default(&mut s, "arbeit", "selected_model").unwrap();
+        assert_eq!(defaults(&s).selected_model, CANARY);
+        assert!(!profile(&s, "arbeit").own.contains("selected_model"));
+        assert_eq!(profile(&s, "privat").values.selected_model, CANARY);
         // A list: the profile's whole list becomes the defaults'.
         adopt_as_default(&mut s, "arbeit", "post_process_models").unwrap();
         assert_eq!(
@@ -2068,7 +2131,92 @@ mod tests {
             .post_process_models
             .contains_key("openai"));
         assert!(defaults(&s).post_process_models.contains_key("openai"));
-        assert_eq!(own_count(profile(&s, "arbeit")), 6);
+        assert_eq!(own_count(profile(&s, "arbeit")), 7);
+    }
+
+    // ---- Strand D: shortcuts and end shortcuts entry by entry ------------
+
+    #[test]
+    fn a_profile_holds_its_own_shortcut_and_follows_the_others() {
+        let mut s = migrated();
+        let mut own = defaults(&s).bindings["transcribe"].clone();
+        own.current_binding = "option+f12".to_string();
+        set_entry(
+            &mut s,
+            &profile_scope("privat"),
+            "bindings",
+            "transcribe",
+            json!(own),
+        )
+        .unwrap();
+        assert_eq!(
+            entries_of(profile(&s, "privat"), "bindings").map(|e| e.own.clone()),
+            Some(set(&["transcribe"]))
+        );
+        // Another shortcut of the defaults changes: Privat follows it there.
+        let mut cancel = defaults(&s).bindings["cancel"].clone();
+        cancel.current_binding = "option+f11".to_string();
+        set_entry(
+            &mut s,
+            &Scope::Defaults,
+            "bindings",
+            "cancel",
+            json!(cancel),
+        )
+        .unwrap();
+        let privat = &profile(&s, "privat").values.bindings;
+        assert_eq!(privat["cancel"].current_binding, "option+f11");
+        assert_eq!(privat["transcribe"].current_binding, "option+f12");
+        // A key combination another shortcut of the layer has is refused.
+        let mut taken = defaults(&s).bindings["transcribe"].clone();
+        taken.current_binding = "option+f11".to_string();
+        assert!(set_entry(
+            &mut s,
+            &Scope::Defaults,
+            "bindings",
+            "transcribe",
+            json!(taken)
+        )
+        .is_err());
+    }
+
+    #[test]
+    fn a_profile_adds_an_end_shortcut_of_its_own() {
+        let mut s = migrated();
+        let send = crate::end_keys::EndKey {
+            id: "send".to_string(),
+            name: "Send".to_string(),
+            shortcut: "option+f10".to_string(),
+            append_text: "{Enter}".to_string(),
+            post_process: false,
+            send_context: false,
+        };
+        set_entry(
+            &mut s,
+            &profile_scope("arbeit"),
+            "end_keys",
+            "send",
+            json!(send),
+        )
+        .unwrap();
+        assert_eq!(profile(&s, "arbeit").values.end_keys.len(), 3);
+        assert_eq!(defaults(&s).end_keys.len(), 2);
+        assert!(
+            entries_of(profile(&s, "arbeit"), "end_keys").is_some_and(|e| e.own.contains("send"))
+        );
+        // An end shortcut needs a name.
+        let mut nameless = send.clone();
+        nameless.id = "other".to_string();
+        nameless.name = String::new();
+        nameless.shortcut = String::new();
+        assert!(set_entry(
+            &mut s,
+            &Scope::Defaults,
+            "end_keys",
+            "other",
+            json!(nameless)
+        )
+        .is_err());
     }
 
     // ---- The old write paths ---------------------------------------------
@@ -2176,12 +2324,15 @@ mod tests {
     fn a_change_routed_to_another_profile_follows_the_same_rule() {
         let mut s = migrated();
         let mut values = profile(&s, "arbeit").values.clone();
-        values.send_context = false;
-        values.append_text = "{Tab}".to_string();
+        values.translate_to_english = true;
+        values.end_keys[0].append_text = "{Tab}".to_string();
         route(&mut s, "arbeit", &values);
-        assert!(!defaults(&s).send_context);
-        assert!(!profile(&s, "privat").values.send_context);
-        assert_eq!(profile(&s, "arbeit").values.append_text, "{Tab}");
-        assert_eq!(defaults(&s).append_text, "");
+        assert!(defaults(&s).translate_to_english);
+        assert!(profile(&s, "privat").values.translate_to_english);
+        assert_eq!(
+            profile(&s, "arbeit").values.end_keys[0].append_text,
+            "{Tab}"
+        );
+        assert_eq!(defaults(&s).end_keys[0].append_text, "");
     }
 }

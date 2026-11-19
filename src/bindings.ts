@@ -740,11 +740,28 @@ async listApplications() : Promise<ApplicationInfo[]> {
     return await TAURI_INVOKE("list_applications");
 },
 /**
- * The switch in the sidebar and on the Context settings: the active
- * profile's.
+ * Stores the active profile's end shortcuts (the whole list, as the editor
+ * holds it). A running recording takes the new ones at once.
  */
-async setSendContext(enabled: boolean) : Promise<void> {
-    await TAURI_INVOKE("set_send_context", { enabled });
+async changeEndKeysSetting(endKeys: EndKey[]) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_end_keys_setting", { endKeys }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Sets the default end of start shortcut `binding_id` in the active
+ * profile.
+ */
+async changeDefaultEndSetting(bindingId: string, endId: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_default_end_setting", { bindingId, endId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 },
 /**
  * Temporarily unregister all bindings while the user is recording a
@@ -803,18 +820,6 @@ async splitAppendText(value: string) : Promise<AppendChoice> {
  */
 async composeAppendText(text: string, keys: AppendKey[]) : Promise<AppendComposed> {
     return await TAURI_INVOKE("compose_append_text", { text, keys });
-},
-/**
- * Stores the field (a value from `compose_append_text`) in the active
- * profile.
- */
-async changeAppendTextSetting(value: string) : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("change_append_text_setting", { value }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
 },
 async changeLazyStreamCloseSetting(enabled: boolean) : Promise<Result<null, string>> {
     try {
@@ -1857,13 +1862,7 @@ post_process_timeout_secs?: number;
  * DanyWhere: time limit for a provider's model list, in seconds (Handy:
  * a fixed 15 s).
  */
-model_list_timeout_secs?: number; mute_while_recording?: boolean; append_trailing_space?: boolean; 
-/**
- * DanyWhere: what every dictation gets appended, text and key presses at
- * the end (`append_text`). Replaces `append_trailing_space` and
- * `auto_submit`, which stay only for Handy merges and the migration.
- */
-append_text?: string; app_language?: string; theme?: Theme; experimental_enabled?: boolean; lazy_stream_close?: boolean; 
+model_list_timeout_secs?: number; mute_while_recording?: boolean; append_trailing_space?: boolean; app_language?: string; theme?: Theme; experimental_enabled?: boolean; lazy_stream_close?: boolean; 
 /**
  * Experimental, macOS only: move a Bluetooth headset (AirPods) to this
  * Mac while recording, so its microphone does not return silence while
@@ -1937,11 +1936,14 @@ profile_words?: string[];
  */
 profile_auto_by_app?: boolean; 
 /**
- * DanyWhere: the active profile's switch "Send Context": a dictation
- * with post-processing sends earlier dictations of the same window as
- * context (`send_context`).
+ * DanyWhere: the active profile's end shortcuts (`end_keys`).
  */
-send_context?: boolean; 
+end_keys?: EndKey[]; 
+/**
+ * DanyWhere: the active profile's default end per start shortcut
+ * (`end_keys`), by binding id.
+ */
+default_ends?: Partial<{ [key in string]: string }>; 
 /**
  * DanyWhere: the height in pixels a History text box may grow to before
  * it scrolls, as dragged at its grip, for the newest entry and for the
@@ -2129,6 +2131,36 @@ export type EffortSource =
  * Nothing is known; the common levels, which the endpoint may refuse.
  */
 "common"
+/**
+ * One end shortcut.
+ */
+export type EndKey = { 
+/**
+ * Stable, so profiles can share the entry; `plain` and `post_process`
+ * for the two every profile starts with.
+ */
+id: string; 
+/**
+ * Empty for the two built-in ones, which show their translated name.
+ */
+name: string; 
+/**
+ * The key combination that ends a recording this way; empty: none (it
+ * ends a recording only as a start shortcut's default end).
+ */
+shortcut: string; 
+/**
+ * What is appended, in the "Append" syntax (`append_text`).
+ */
+append_text: string; 
+/**
+ * Whether the text is post-processed (if the profile allows it).
+ */
+post_process: boolean; 
+/**
+ * Whether post-processing gets earlier dictations as context.
+ */
+send_context: boolean }
 /**
  * What a History entry knows about its window and its context.
  */
@@ -2589,16 +2621,7 @@ context_max_entries: number;
 /**
  * `dictation_context.char_budget`
  */
-context_char_budget: number; 
-/**
- * The switch "Send Context" (`send_context`).
- */
-send_context: boolean; filler_word_removal_enabled: boolean; custom_filler_words: string[] | null; 
-/**
- * The "Append" field (`append_text`), which replaced the trailing space;
- * stored profiles got it from theirs (`append_text::migrate`).
- */
-append_text: string; 
+context_char_budget: number; filler_word_removal_enabled: boolean; custom_filler_words: string[] | null; 
 /**
  * How the dictation shortcut's presses drive a recording. Read when a
  * key event comes, so from the profile in use.
@@ -2650,7 +2673,21 @@ post_process_providers: PostProcessProvider[]; post_process_api_keys: SecretMap;
 /**
  * Drop silence from recordings; decode long audio in chunks.
  */
-vad_enabled: boolean; long_form_chunking: boolean }
+vad_enabled: boolean; long_form_chunking: boolean; 
+/**
+ * The shortcuts (`bindings`), entry by binding id: the start shortcuts
+ * apply only while this profile does (`shortcut::profile_sync`).
+ */
+bindings: Partial<{ [key in string]: ShortcutBinding }>; 
+/**
+ * The end shortcuts (`end_keys`), each with a stable id.
+ */
+end_keys: EndKey[]; 
+/**
+ * The default end per start shortcut (`default_ends`), entry by binding
+ * id.
+ */
+default_ends: Partial<{ [key in string]: string }> }
 /**
  * One prompt of the library in a profile's list.
  */

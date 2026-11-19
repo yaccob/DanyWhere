@@ -15,8 +15,7 @@
     "onlyGlobalWordList": "Tanpa Daftar Tambahan",
     "profile": "Profil",
     "defaultSettings": "Pengaturan dasar",
-    "profileAutoByApp": "Pilih profil menurut aplikasi",
-    "sendContext": "Kirim Konteks"
+    "profileAutoByApp": "Pilih profil menurut aplikasi"
   },
   "sidebar": {
     "general": "Umum",
@@ -383,10 +382,6 @@
           "toggle_profile_auto": {
             "name": "Pilih profil menurut aplikasi",
             "description": "Mengaktifkan atau menonaktifkan pemilihan profil menurut aplikasi. Berlaku selama ada aplikasi yang ditetapkan ke suatu profil."
-          },
-          "toggle_send_context": {
-            "name": "Kirim Konteks",
-            "description": "Mengaktifkan atau menonaktifkan pengiriman konteks dengan pascaproses untuk profil yang dipakai dikte ke aplikasi di depan. Berlaku selama pascaproses aktif."
           }
         },
         "errors": {
@@ -444,6 +439,36 @@
           "startRecording": "Mulai merekam",
           "doNothing": "Tidak melakukan apa pun"
         }
+      }
+    },
+    "endKeys": {
+      "title": "Pintasan Akhir",
+      "description": "Cara rekaman berakhir dan apa yang menyusul: setiap pintasan akhir menentukan apa yang ditambahkan, apakah teks diproses lanjut, dan apakah dikte sebelumnya ikut dikirim sebagai konteks.",
+      "builtin": {
+        "plain": "Biasa",
+        "post_process": "Proses lanjut"
+      },
+      "name": "Nama",
+      "noShortcut": "Tanpa pintasan",
+      "shortcutHint": "Pintasannya sendiri mengakhiri rekaman dengan cara ini. Pintasan itu hanya dipakai selama merekam.",
+      "clearShortcut": "Hapus pintasan",
+      "append": "Tambahkan di akhir",
+      "appendDescription": "Ditambahkan ke dikte yang berakhir dengan cara ini: teksnya, lalu tombol yang Anda pilih. Dalam teks, \\s adalah spasi, \\n baris baru, \\t tab, dan \\\\ garis miring terbalik; selebihnya ditambahkan seperti yang tertulis. Tombol hanya dikirim saat teks ditempelkan.",
+      "sendContext": "Kirim Konteks",
+      "sendContextHint": "Hanya dengan pemrosesan lanjut: dikte sebelumnya dari jendela yang sama ikut dikirim sebagai konteks.",
+      "add": "Tambah Pintasan Akhir",
+      "newName": "Pintasan Akhir Baru",
+      "delete": "Hapus {{name}}",
+      "inUse": "Sebuah pintasan mulai berakhir dengannya secara bawaan; pilih dulu akhir bawaan yang lain.",
+      "defaultEnd": {
+        "title": "Akhir Bawaan {{shortcut}}",
+        "description": "Cara tekanan keduanya, atau saat dilepas ketika ditahan, mengakhiri rekaman."
+      },
+      "linuxNoShortcuts": "Di Linux, pintasan milik pintasan akhir tidak dipakai; pintasan akhir hanya mengakhiri rekaman sebagai akhir bawaan.",
+      "errors": {
+        "save": "Pintasan akhir tidak dapat disimpan: {{error}}",
+        "needsName": "Setiap pintasan akhir memerlukan nama.",
+        "shortcutTwice": "Dua pintasan akhir tidak boleh memakai pintasan yang sama."
       }
     },
     "profiles": {
@@ -719,8 +744,6 @@
         }
       },
       "appendText": {
-        "title": "Tambahkan di akhir",
-        "description": "Ditambahkan setelah setiap dikte di profil ini: teksnya, lalu tombol yang Anda pilih. Dalam teks, \\s adalah spasi, \\n baris baru, \\t tab, dan \\\\ garis miring terbalik; selebihnya ditambahkan seperti yang tertulis. Tombol hanya dikirim saat teks ditempelkan.",
         "noAccessibility": "Tanpa Aksesibilitas, tombol tidak dikirim; teks tetap ditambahkan.",
         "keyNone": "Tanpa tombol",
         "keyKept": "Dipertahankan dari sebelumnya; tidak ditawarkan di sistem ini",
@@ -942,11 +965,6 @@
       },
       "context": {
         "title": "Konteks dari dikte sebelumnya",
-        "sendContext": {
-          "label": "Kirim Konteks",
-          "description": "Dikte dengan pascaproses ikut mengirim dikte Anda sebelumnya dari jendela yang sama sebagai konteks. Milik profil; menu baki dan pintasan juga mengubahnya. Tanpa pascaproses, konteks tidak pernah dikirim.",
-          "short": "Kirim konteks"
-        },
         "privacy": "Dikte sebelumnya dari jendela yang sama dikirim ke penyedia pascaproses bersama dikte saat ini, termasuk yang belum pernah dipascaproses. Riwayat menandai setiap entri yang terkirim dengan cara ini.",
         "ageLimit": "Batas usia",
         "ageLimitDescription": "Hanya dikte yang paling lama sekian menit lebih tua dari dikte saat ini ({{min}}–{{max}}).",

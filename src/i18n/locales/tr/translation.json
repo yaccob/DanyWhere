@@ -15,8 +15,7 @@
     "onlyGlobalWordList": "Ek Liste Yok",
     "profile": "Profil",
     "defaultSettings": "Temel ayarlar",
-    "profileAutoByApp": "Profili uygulamaya göre seç",
-    "sendContext": "Bağlam Gönder"
+    "profileAutoByApp": "Profili uygulamaya göre seç"
   },
   "sidebar": {
     "general": "Genel",
@@ -383,10 +382,6 @@
           "toggle_profile_auto": {
             "name": "Profili uygulamaya göre seç",
             "description": "Profilin uygulamaya göre seçilmesini açar veya kapatır. Bir profile uygulama atanmış olduğu sürece çalışır."
-          },
-          "toggle_send_context": {
-            "name": "Bağlam Gönder",
-            "description": "Öndeki uygulamaya yapılan bir diktenin kullandığı profil için son işlemle birlikte bağlam gönderilmesini açar veya kapatır. Son işlem açık olduğu sürece çalışır."
           }
         },
         "errors": {
@@ -444,6 +439,36 @@
           "startRecording": "Kaydı başlat",
           "doNothing": "Hiçbir şey yapma"
         }
+      }
+    },
+    "endKeys": {
+      "title": "Bitirme Kısayolları",
+      "description": "Kaydın nasıl bittiği ve ardından ne olduğu: her bitirme kısayolu neyin ekleneceğini, metnin işlenip işlenmeyeceğini ve önceki diktelerin bağlam olarak gönderilip gönderilmeyeceğini belirler.",
+      "builtin": {
+        "plain": "Normal",
+        "post_process": "Son işle"
+      },
+      "name": "Ad",
+      "noShortcut": "Kısayol yok",
+      "shortcutHint": "Kendi kısayolu kaydı bu şekilde bitirir. Yalnızca kayıt sırasında kullanılır.",
+      "clearShortcut": "Kısayolu kaldır",
+      "append": "Sona ekle",
+      "appendDescription": "Bu şekilde biten bir diktenin sonuna eklenir: metin, ardından seçtiğiniz tuş. Metinde \\s boşluk, \\n yeni satır, \\t sekme ve \\\\ ters eğik çizgidir; geri kalan her şey yazıldığı gibi eklenir. Tuş yalnızca metin yapıştırıldığında gönderilir.",
+      "sendContext": "Bağlam Gönder",
+      "sendContextHint": "Yalnızca son işlemeyle: aynı penceredeki önceki dikteler bağlam olarak gönderilir.",
+      "add": "Bitirme Kısayolu Ekle",
+      "newName": "Yeni Bitirme Kısayolu",
+      "delete": "{{name}} öğesini sil",
+      "inUse": "Bir başlatma kısayolu varsayılan olarak bununla biter; önce başka bir varsayılan bitiş seçin.",
+      "defaultEnd": {
+        "title": "{{shortcut}} için Varsayılan Bitiş",
+        "description": "İkinci basışının ya da basılı tutulduğunda bırakılmasının kaydı nasıl bitirdiği."
+      },
+      "linuxNoShortcuts": "Linux'ta bitirme kısayollarının kendi kısayolları kullanılmaz; kaydı yalnızca varsayılan bitiş olarak bitirirler.",
+      "errors": {
+        "save": "Bitirme kısayolları kaydedilemedi: {{error}}",
+        "needsName": "Her bitirme kısayolunun bir adı olmalı.",
+        "shortcutTwice": "İki bitirme kısayolu aynı kısayolu paylaşamaz."
       }
     },
     "profiles": {
@@ -719,8 +744,6 @@
         }
       },
       "appendText": {
-        "title": "Sona ekle",
-        "description": "Bu profilin her diktesinin sonuna eklenir: metin, ardından seçtiğiniz tuş. Metinde \\s boşluk, \\n yeni satır, \\t sekme ve \\\\ ters eğik çizgidir; geri kalan her şey yazıldığı gibi eklenir. Tuş yalnızca metin yapıştırıldığında gönderilir.",
         "noAccessibility": "Erişilebilirlik olmadan tuş gönderilmez; metin yine de eklenir.",
         "keyNone": "Tuş yok",
         "keyKept": "Önceki ayardan korundu; bu sistemde sunulmuyor",
@@ -942,11 +965,6 @@
       },
       "context": {
         "title": "Önceki dikteler bağlam olarak",
-        "sendContext": {
-          "label": "Bağlam Gönder",
-          "description": "Son işlemli dikteler, aynı penceredeki önceki diktelerinizi de bağlam olarak gönderir. Profile aittir; tepsi menüsü ve bir kısayol da bunu değiştirir. Son işlem olmadan hiçbir zaman bağlam gönderilmez.",
-          "short": "Bağlam gönder"
-        },
         "privacy": "Aynı penceredeki önceki dikteler, şimdiki dikteyle birlikte son işlem sağlayıcısına gider; hiç son işlemden geçmemiş olanlar da dahil. Geçmiş, bu şekilde giden her kaydı işaretler.",
         "ageLimit": "Yaş sınırı",
         "ageLimitDescription": "Yalnızca şimdikinden en fazla bu kadar dakika eski dikteler ({{min}}–{{max}}).",

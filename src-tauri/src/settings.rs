@@ -78,7 +78,8 @@ impl From<LogLevel> for tauri_plugin_log::LogLevel {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Type)]
+// DanyWhere: comparable, as a profile value (`ProfileValues::bindings`).
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Type)]
 pub struct ShortcutBinding {
     pub id: String,
     pub name: String,
@@ -631,11 +632,6 @@ pub struct AppSettings {
     pub mute_while_recording: bool,
     #[serde(default)]
     pub append_trailing_space: bool,
-    /// DanyWhere: what every dictation gets appended, text and key presses at
-    /// the end (`append_text`). Replaces `append_trailing_space` and
-    /// `auto_submit`, which stay only for Handy merges and the migration.
-    #[serde(default)]
-    pub append_text: String,
     #[serde(default = "default_app_language")]
     pub app_language: String,
     #[serde(default = "default_theme")]
@@ -732,11 +728,13 @@ pub struct AppSettings {
     /// into it. Not used yet.
     #[serde(default = "default_profile_auto_by_app")]
     pub profile_auto_by_app: bool,
-    /// DanyWhere: the active profile's switch "Send Context": a dictation
-    /// with post-processing sends earlier dictations of the same window as
-    /// context (`send_context`).
-    #[serde(default)]
-    pub send_context: bool,
+    /// DanyWhere: the active profile's end shortcuts (`end_keys`).
+    #[serde(default = "crate::end_keys::default_end_keys")]
+    pub end_keys: Vec<crate::end_keys::EndKey>,
+    /// DanyWhere: the active profile's default end per start shortcut
+    /// (`end_keys`), by binding id.
+    #[serde(default = "crate::end_keys::default_ends")]
+    pub default_ends: HashMap<String, String>,
     /// DanyWhere: the height in pixels a History text box may grow to before
     /// it scrolls, as dragged at its grip, for the newest entry and for the
     /// others; `None` = the default lines (`history_box`).
@@ -1277,27 +1275,6 @@ pub fn get_default_settings() -> AppSettings {
             current_binding: default_toggle_profile_auto_shortcut.to_string(),
         },
     );
-    // DanyWhere: turns "Send Context" on and off for the profile a dictation
-    // into the app in front uses (`send_context`). K for "Kontext"/context
-    // (C is Copy Last Transcript); Control/Alt+Shift like the profile
-    // toggle. Registered only while some dictation can post-process.
-    #[cfg(target_os = "macos")]
-    let default_toggle_send_context_shortcut = "ctrl+shift+x";
-    #[cfg(not(target_os = "macos"))]
-    let default_toggle_send_context_shortcut = "alt+shift+x";
-
-    bindings.insert(
-        crate::send_context::TOGGLE_BINDING.to_string(),
-        ShortcutBinding {
-            id: crate::send_context::TOGGLE_BINDING.to_string(),
-            name: "Send Context".to_string(),
-            description:
-                "Turns sending context with post-processing on or off for the profile a dictation into the app in front uses."
-                    .to_string(),
-            default_binding: default_toggle_send_context_shortcut.to_string(),
-            current_binding: default_toggle_send_context_shortcut.to_string(),
-        },
-    );
     bindings.insert(
         "cancel".to_string(),
         ShortcutBinding {
@@ -1369,7 +1346,6 @@ pub fn get_default_settings() -> AppSettings {
         model_list_timeout_secs: crate::llm_timeouts::default_model_list_timeout_secs(),
         mute_while_recording: false,
         append_trailing_space: false,
-        append_text: String::new(),
         app_language: default_app_language(),
         theme: default_theme(),
         experimental_enabled: false,
@@ -1400,7 +1376,8 @@ pub fn get_default_settings() -> AppSettings {
         default_values: None,
         profile_words: Vec::new(),
         profile_auto_by_app: default_profile_auto_by_app(),
-        send_context: false,
+        end_keys: crate::end_keys::default_end_keys(),
+        default_ends: crate::end_keys::default_ends(),
         history_box_height_newest: None,
         history_box_height_other: None,
     }
@@ -1454,11 +1431,10 @@ pub fn load_or_create_app_settings(app: &AppHandle) -> AppSettings {
     settings
 }
 
-/// DanyWhere: the shortcuts that post-process, which are registered only
-/// while post-processing is switched on, and the switch "Send Context",
-/// which does nothing without it.
+/// DanyWhere: the shortcut that post-processes, which is registered only
+/// while post-processing is switched on.
 pub fn binding_needs_post_processing(id: &str) -> bool {
-    id == "transcribe_with_post_process" || id == crate::send_context::TOGGLE_BINDING
+    id == "transcribe_with_post_process"
 }
 
 /// DanyWhere: whether DanyWhere registers the shortcut `id` as its own.
@@ -1770,14 +1746,11 @@ fn apply_settings_migrations(
         updated = true;
     }
 
-    // DanyWhere: one-time "Append" migration from the trailing space and
-    // auto submit, for the settings and every stored profile.
-    if crate::append_text::migrate(settings, settings_value) {
-        updated = true;
-    }
-
-    // DanyWhere: the context shortcut gave way to "Send Context".
-    if crate::send_context::drop_retired_binding(settings) {
+    // DanyWhere: the end shortcuts take over "Append" (and before it the
+    // trailing space and auto submit) and "Send Context", for the settings
+    // and every stored profile; the retired shortcuts go. After the filling
+    // above, as it reads what a profile had stored.
+    if crate::end_keys::migrate(settings, settings_value) {
         updated = true;
     }
 
@@ -1913,6 +1886,8 @@ pub fn write_settings(app: &AppHandle, settings: AppSettings) {
     store.set("settings", serde_json::to_value(&settings).unwrap());
 }
 
+// DanyWhere: unused since the shortcuts follow the profile (`profile_sync`).
+#[allow(dead_code)]
 pub fn get_bindings(app: &AppHandle) -> HashMap<String, ShortcutBinding> {
     let settings = get_settings(app);
 
@@ -1936,13 +1911,13 @@ mod tests {
     use super::*;
 
     #[test]
-    fn both_post_processing_shortcuts_need_post_processing() {
+    fn the_post_processing_shortcut_needs_post_processing() {
         assert!(binding_needs_post_processing(
             "transcribe_with_post_process"
         ));
-        // DanyWhere: the switch "Send Context" does nothing without it.
-        assert!(binding_needs_post_processing(
-            crate::send_context::TOGGLE_BINDING
+        // DanyWhere: the switch "Send Context" went into the end shortcuts.
+        assert!(!binding_needs_post_processing(
+            crate::send_context::RETIRED_TOGGLE_BINDING
         ));
         assert!(!binding_needs_post_processing("transcribe_with_context"));
         assert!(!binding_needs_post_processing("transcribe"));
@@ -2032,19 +2007,9 @@ mod tests {
             &settings,
             true
         ));
-        assert!(!registers_binding(
-            crate::send_context::TOGGLE_BINDING,
-            &settings,
-            true
-        ));
         settings.post_process_enabled = true;
         assert!(registers_binding(
             "transcribe_with_post_process",
-            &settings,
-            true
-        ));
-        assert!(registers_binding(
-            crate::send_context::TOGGLE_BINDING,
             &settings,
             true
         ));
@@ -2404,8 +2369,8 @@ mod tests {
         assert_eq!(settings.overlay_style, OverlayStyle::None);
     }
 
-    /// DanyWhere: the trailing space and auto submit become the "Append"
-    /// field when the store is read (`append_text::migrate`).
+    /// DanyWhere: the trailing space and auto submit become the end
+    /// shortcuts' "Append" text when the store is read (`end_keys::migrate`).
     #[test]
     fn append_migration_runs_when_the_store_is_read() {
         let raw = serde_json::json!({
@@ -2415,11 +2380,11 @@ mod tests {
         });
         let mut settings: AppSettings = serde_json::from_value(raw.clone()).expect("parses");
         assert!(apply_settings_migrations(&mut settings, &raw));
-        assert_eq!(settings.append_text, r"\s{Ctrl+Enter}");
+        assert_eq!(settings.end_keys[0].append_text, r"\s{Ctrl+Enter}");
         // The defaults are made from the migrated flat values.
         crate::profiles::ensure_profiles(&mut settings);
         assert_eq!(
-            crate::profiles::default_values(&settings).append_text,
+            crate::profiles::default_values(&settings).end_keys[1].append_text,
             r"\s{Ctrl+Enter}"
         );
     }
@@ -2433,7 +2398,7 @@ mod tests {
         // Every system's name of the key, so at least two are foreign here.
         let written = "{Cmd+Enter}{Win+Enter}{Super+Enter}{Return}";
         let mut settings = get_default_settings();
-        settings.append_text = written.to_string();
+        settings.end_keys[0].append_text = written.to_string();
         crate::profiles::ensure_profiles(&mut settings);
         let work = crate::profiles::profile_for_test(&settings, "work", "Work", |_| {});
         settings.profiles.push(work);
@@ -2442,9 +2407,9 @@ mod tests {
         assert!(apply_settings_migrations(&mut settings, &raw));
         let defaults = settings.default_values.clone().expect("defaults");
         for value in [
-            &settings.append_text,
-            &settings.profiles[0].values.append_text,
-            &defaults.append_text,
+            &settings.end_keys[0].append_text,
+            &settings.profiles[0].values.end_keys[0].append_text,
+            &defaults.end_keys[0].append_text,
         ] {
             // Only this system's names are left.
             assert_eq!(&localize(value, KeyPlatform::current()), value);
@@ -2930,8 +2895,10 @@ mod tests {
         assert_eq!(old["custom_words"], serde_json::json!(["Sayuri"]));
         assert_eq!(old["selected_language"], "fr");
         // A migration of its own still wins over the flat value: the
-        // profile's trailing space, not the flat "Append" text.
-        assert_eq!(old["append_text"], r"\s");
+        // profile's trailing space, not the flat "Append" text, in its end
+        // shortcuts (`end_keys::migrate`).
+        assert_eq!(old["end_keys"][0]["append_text"], r"\s");
+        assert_eq!(settings.end_keys[0].append_text, "{Enter}");
     }
 
     #[test]

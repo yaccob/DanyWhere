@@ -45,7 +45,9 @@ const bindingErrorTitle = (
 /**
  * Records a new binding via handy-keys events, or this window's key events
  * with all bindings suspended. `inert` records without saving;
- * `escapeCancels` makes Escape exit instead of recording.
+ * `escapeCancels` makes Escape exit instead of recording. DanyWhere:
+ * `onCapture` takes the recorded combination instead of storing it as the
+ * binding (an end shortcut's, end_keys.rs); a thrown error is shown.
  */
 export const useShortcutCapture = (
   bindingId: string,
@@ -54,7 +56,13 @@ export const useShortcutCapture = (
     onDone,
     inert = false,
     escapeCancels = false,
-  }: { onDone?: () => void; inert?: boolean; escapeCancels?: boolean } = {},
+    onCapture,
+  }: {
+    onDone?: () => void;
+    inert?: boolean;
+    escapeCancels?: boolean;
+    onCapture?: (binding: string) => Promise<void> | void;
+  } = {},
 ) => {
   const { t } = useTranslation();
   const { getSetting, updateBinding } = useSettings();
@@ -92,14 +100,15 @@ export const useShortcutCapture = (
   const commit = useCallback(
     async (binding: string) => {
       try {
-        if (!inert) await updateBinding(bindingId, binding);
+        if (onCapture) await onCapture(binding);
+        else if (!inert) await updateBinding(bindingId, binding);
       } catch (error) {
         console.error("Failed to change binding:", error);
         notify({ title: bindingErrorTitle(String(error), t) });
       }
       await finish();
     },
-    [bindingId, finish, inert, t, updateBinding],
+    [bindingId, finish, inert, onCapture, t, updateBinding],
   );
 
   /** Resolves to whether capture began. */

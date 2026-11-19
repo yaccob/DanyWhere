@@ -15,8 +15,7 @@
     "onlyGlobalWordList": "Ingen extra lista",
     "profile": "Profil",
     "defaultSettings": "Grundinställningar",
-    "profileAutoByApp": "Välj profil efter app",
-    "sendContext": "Skicka kontext"
+    "profileAutoByApp": "Välj profil efter app"
   },
   "sidebar": {
     "general": "Allmänt",
@@ -383,10 +382,6 @@
           "toggle_profile_auto": {
             "name": "Välj profil efter app",
             "description": "Slår på eller av valet av profil efter app. Fungerar så länge appar är tilldelade en profil."
-          },
-          "toggle_send_context": {
-            "name": "Skicka kontext",
-            "description": "Slår på eller av att skicka kontext med efterbearbetningen för den profil som en diktering i appen längst fram använder. Fungerar så länge efterbearbetningen är på."
           }
         },
         "errors": {
@@ -444,6 +439,36 @@
           "startRecording": "Starta en inspelning",
           "doNothing": "Gör ingenting"
         }
+      }
+    },
+    "endKeys": {
+      "title": "Avslutningskortkommandon",
+      "description": "Hur en inspelning slutar och vad som följer: varje avslutningskortkommando bestämmer vad som läggs till, om texten efterbearbetas och om tidigare dikteringar skickas med som kontext.",
+      "builtin": {
+        "plain": "Vanlig",
+        "post_process": "Efterbearbeta"
+      },
+      "name": "Namn",
+      "noShortcut": "Inget kortkommando",
+      "shortcutHint": "Dess eget kortkommando avslutar en inspelning på det här sättet. Det är bara upptaget under en inspelning.",
+      "clearShortcut": "Ta bort kortkommando",
+      "append": "Lägg till",
+      "appendDescription": "Läggs till i en diktering som slutar på det här sättet: texten och sedan den tangenttryckning du väljer. I texten är \\s ett mellanslag, \\n en ny rad, \\t en tabb och \\\\ ett omvänt snedstreck; allt annat läggs till som det står. Tangenttryckningen skickas bara när texten klistras in.",
+      "sendContext": "Skicka kontext",
+      "sendContextHint": "Bara med efterbearbetning: tidigare dikteringar från samma fönster skickas med som kontext.",
+      "add": "Lägg till avslutningskortkommando",
+      "newName": "Nytt avslutningskortkommando",
+      "delete": "Ta bort {{name}}",
+      "inUse": "Ett startkortkommando slutar med det som standard; välj först ett annat standardslut.",
+      "defaultEnd": {
+        "title": "Standardslut för {{shortcut}}",
+        "description": "Hur dess andra tryck, eller när det hålls nere dess släpp, avslutar inspelningen."
+      },
+      "linuxNoShortcuts": "På Linux tas avslutningskortkommandonas egna kortkommandon inte upp; de avslutar en inspelning bara som standardslut.",
+      "errors": {
+        "save": "Avslutningskortkommandona kunde inte sparas: {{error}}",
+        "needsName": "Varje avslutningskortkommando behöver ett namn.",
+        "shortcutTwice": "Två avslutningskortkommandon kan inte dela ett kortkommando."
       }
     },
     "profiles": {
@@ -719,8 +744,6 @@
         }
       },
       "appendText": {
-        "title": "Lägg till",
-        "description": "Läggs till efter varje diktering i den här profilen: texten och sedan den tangenttryckning du väljer. I texten är \\s ett mellanslag, \\n en ny rad, \\t en tabb och \\\\ ett omvänt snedstreck; allt annat läggs till som det står. Tangenttryckningen skickas bara när texten klistras in.",
         "noAccessibility": "Utan hjälpmedel skickas inga tangenttryck; texten läggs ändå till.",
         "keyNone": "Ingen tangent",
         "keyKept": "Behållet från tidigare; erbjuds inte på det här systemet",
@@ -942,11 +965,6 @@
       },
       "context": {
         "title": "Kontext från tidigare dikteringar",
-        "sendContext": {
-          "label": "Skicka kontext",
-          "description": "Dikteringar med efterbearbetning skickar med dina tidigare dikteringar från samma fönster som kontext. Hör till profilen; även menyn i systemfältet och ett kortkommando växlar detta. Utan efterbearbetning skickas aldrig någon kontext.",
-          "short": "Skicka kontext"
-        },
         "privacy": "Tidigare dikteringar från samma fönster skickas till leverantören av efterbearbetningen tillsammans med den aktuella, även sådana som aldrig efterbearbetats. Historiken markerar varje post som skickats på det sättet.",
         "ageLimit": "Åldersgräns",
         "ageLimitDescription": "Bara dikteringar som är högst så många minuter äldre än den aktuella ({{min}}–{{max}}).",

@@ -15,6 +15,10 @@
 //! - only post-processing: the transcription is post-processed again;
 //! - only the "Append" field: the text stays, the target's "Append" applies.
 //!
+//! Post-processing, context and "Append" come from the end shortcut the
+//! dictation ended with (`end_keys`); in the target profile the end shortcut
+//! with the same id applies ([`end_in`]).
+//!
 //! Only while choosing the profile by application is on; otherwise
 //! everything stays as before. "Copy Last Transcript" has no target, so it
 //! keeps the dictation's profile. A dictation the user changed in History
@@ -34,6 +38,7 @@ use std::sync::{Arc, Mutex};
 use log::{info, warn};
 use tauri::{AppHandle, Manager};
 
+use crate::end_keys::EndKey;
 use crate::history_versions::{HistoryVersion, PostProcessTarget, PostProcessed, VersionAuthor};
 use crate::managers::history::{HistoryEntry, HistoryManager};
 use crate::managers::transcription::TranscriptionManager;
@@ -92,12 +97,19 @@ fn requested_instructions(library: &[LLMPrompt], values: &ProfileValues) -> Stri
     crate::prompt_library::request_instructions(&prompts)
 }
 
-/// Whether post-processing with `a` can come out other than with `b`, both
-/// post-processing with the prompts of `library`: another provider or
-/// endpoint, the provider's model or effort, other instructions (the texts
-/// of the active prompts in their order), or other context. The key and the
-/// time limit don't change the text.
-fn post_processing_differs(library: &[LLMPrompt], a: &ProfileValues, b: &ProfileValues) -> bool {
+/// Whether post-processing with `a` (ending with `a_end`) can come out other
+/// than with `b` (ending with `b_end`), both post-processing with the
+/// prompts of `library`: another provider or endpoint, the provider's model
+/// or effort, other instructions (the texts of the active prompts in their
+/// order), or other context. The key and the time limit don't change the
+/// text.
+fn post_processing_differs(
+    library: &[LLMPrompt],
+    a: &ProfileValues,
+    b: &ProfileValues,
+    a_end: &EndKey,
+    b_end: &EndKey,
+) -> bool {
     let provider = &a.post_process_provider_id;
     let context_limits = |values: &ProfileValues| {
         (
@@ -118,31 +130,50 @@ fn post_processing_differs(library: &[LLMPrompt], a: &ProfileValues, b: &Profile
         || a.post_process_models.get(provider) != b.post_process_models.get(provider)
         || a.post_process_efforts.get(provider) != b.post_process_efforts.get(provider)
         || requested_instructions(library, a) != requested_instructions(library, b)
-        || a.send_context != b.send_context
-        || (a.send_context && context_limits(a) != context_limits(b))
+        || a_end.send_context != b_end.send_context
+        || (a_end.send_context && context_limits(a) != context_limits(b))
 }
 
-/// The first step to redo when a dictation made with `made_with` goes into
-/// an application whose profile has `target`; `post_process_requested` is
-/// whether the dictation's shortcut asked for post-processing.
+/// The end shortcut a dictation that ended with `made_end` takes in the
+/// profile with `target`: the one with the same id, or, where that profile
+/// has none, the one it ended with.
+pub fn end_in(target: &ProfileValues, made_end: &EndKey) -> EndKey {
+    target
+        .end_keys
+        .iter()
+        .find(|end| end.id == made_end.id)
+        .cloned()
+        .unwrap_or_else(|| made_end.clone())
+}
+
+/// The first step to redo when a dictation made with `made_with`, ended
+/// with `made_end`, goes into an application whose profile has `target`,
+/// where it ends with `target_end` ([`end_in`]).
 pub fn redo_from(
     base: &AppSettings,
     made_with: &ProfileValues,
     target: &ProfileValues,
-    post_process_requested: bool,
+    made_end: &EndKey,
+    target_end: &EndKey,
 ) -> RedoFrom {
     if transcription_differs(base, made_with, target) {
         return RedoFrom::Transcription;
     }
-    let made_post_processed = post_process_requested && made_with.post_process_enabled;
-    let target_post_processes = post_process_requested && target.post_process_enabled;
+    let made_post_processed = made_end.post_process && made_with.post_process_enabled;
+    let target_post_processes = target_end.post_process && target.post_process_enabled;
     if made_post_processed != target_post_processes
         || (made_post_processed
-            && post_processing_differs(&base.post_process_prompts, made_with, target))
+            && post_processing_differs(
+                &base.post_process_prompts,
+                made_with,
+                target,
+                made_end,
+                target_end,
+            ))
     {
         return RedoFrom::PostProcessing;
     }
-    if made_with.append_text != target.append_text {
+    if made_end.append_text != target_end.append_text {
         return RedoFrom::Append;
     }
     RedoFrom::Nothing
@@ -242,8 +273,8 @@ pub struct MadeWith {
     pub entry_id: i64,
     pub profile_id: String,
     pub values: ProfileValues,
-    /// Whether its shortcut asked for post-processing.
-    pub post_process_requested: bool,
+    /// The end shortcut it ended with (`end_keys`).
+    pub end: EndKey,
 }
 
 /// The last dictation. Only that one is inserted again ("Paste Last
@@ -282,8 +313,10 @@ pub enum Working {
 pub struct ForInsert {
     /// The redone text; `None`: insert the text as it was.
     pub text: Option<String>,
-    /// The target profile's values, for its "Append" field.
+    /// The target profile's values.
     pub values: ProfileValues,
+    /// The end shortcut it takes there, for its "Append" text.
+    pub end: EndKey,
     /// A redone post-processing failed; the text is the transcription.
     pub post_process_failed: bool,
 }
@@ -308,17 +341,20 @@ pub fn for_insert(
     let Some(made) = made_with(entry.id) else {
         return Some(ForInsert {
             text: None,
+            end: crate::end_keys::plain_end(&target_values),
             values: target_values,
             post_process_failed: false,
         });
     };
+    let target_end = end_in(&target_values, &made.end);
     let from = redo_from(
         &settings,
         &made.values,
         &target_values,
-        made.post_process_requested,
+        &made.end,
+        &target_end,
     );
-    let target_post_processes = made.post_process_requested && target_values.post_process_enabled;
+    let target_post_processes = target_end.post_process && target_values.post_process_enabled;
     let plan = plan(from, entry, target_post_processes);
     if plan != RedoPlan::Keep {
         info!(
@@ -335,11 +371,19 @@ pub fn for_insert(
             ),
         );
     }
-    let (text, post_process_failed) =
-        run(app, entry, &made, &target_id, &target_values, plan, show);
+    let (text, post_process_failed) = run(
+        app,
+        entry,
+        &target_id,
+        &target_values,
+        &target_end,
+        plan,
+        show,
+    );
     Some(ForInsert {
         text,
         values: target_values,
+        end: target_end,
         post_process_failed,
     })
 }
@@ -377,17 +421,17 @@ pub fn for_insert_outside_dictation(app: &AppHandle, entry: &HistoryEntry) -> Op
 fn run(
     app: &AppHandle,
     entry: &HistoryEntry,
-    made: &MadeWith,
     target_id: &str,
     target: &ProfileValues,
+    target_end: &EndKey,
     plan: RedoPlan,
     show: &dyn Fn(Working),
 ) -> (Option<String>, bool) {
-    let redone = |requested: bool| MadeWith {
+    let redone = || MadeWith {
         entry_id: entry.id,
         profile_id: target_id.to_string(),
         values: target.clone(),
-        post_process_requested: requested,
+        end: target_end.clone(),
     };
     match plan {
         RedoPlan::Keep => (None, false),
@@ -396,10 +440,10 @@ fn run(
             show(Working::PostProcessing);
             let transcription = transcript_text(entry);
             match crate::app_profiles::with_values_here(target.clone(), || {
-                post_process_again(app, entry, transcription, where_to)
+                post_process_again(app, entry, transcription, where_to, target_end.send_context)
             }) {
                 Ok(text) => {
-                    remember(redone(made.post_process_requested));
+                    remember(redone());
                     (Some(text), false)
                 }
                 Err(e) => {
@@ -413,12 +457,13 @@ fn run(
         }
         RedoPlan::Transcribe => {
             show(Working::Transcribing);
-            let post_process = made.post_process_requested && target.post_process_enabled;
+            let post_process = target_end.post_process && target.post_process_enabled;
+            let with_context = post_process && target_end.send_context;
             match crate::app_profiles::with_values_here(target.clone(), || {
-                transcribe_again(app, entry, post_process, show)
+                transcribe_again(app, entry, post_process, with_context, show)
             }) {
                 Ok((text, failed)) => {
-                    remember(redone(made.post_process_requested));
+                    remember(redone());
                     (Some(text), failed)
                 }
                 Err(e) => {
@@ -433,16 +478,16 @@ fn run(
     }
 }
 
-/// Post-processes `transcription` with this thread's profile values and
+/// Post-processes `transcription` with this thread's profile values, with
+/// earlier dictations as context if `with_context` (the end shortcut's), and
 /// stores the result as `where_to` says. Errors when no text came out.
 fn post_process_again(
     app: &AppHandle,
     entry: &HistoryEntry,
     transcription: &str,
     where_to: PostProcessTarget,
+    with_context: bool,
 ) -> anyhow::Result<String> {
-    let settings = crate::app_profiles::dictation_settings(app);
-    let with_context = crate::send_context::sends_context(true, &settings);
     // The word list's hint goes along with the transcription it was made in.
     let mut query = crate::dictation_context::ContextQuery::for_entry(
         entry,
@@ -485,12 +530,14 @@ fn post_process_again(
 
 /// Transcribes the entry's recording again with this thread's profile
 /// values (loading its model), post-processes the result if
-/// `post_process`, and stores both as "Transcribe Again" does. Returns the
-/// text and whether the post-processing failed.
+/// `post_process` (with context if `with_context`), and stores both as
+/// "Transcribe Again" does. Returns the text and whether the
+/// post-processing failed.
 fn transcribe_again(
     app: &AppHandle,
     entry: &HistoryEntry,
     post_process: bool,
+    with_context: bool,
     show: &dyn Fn(Working),
 ) -> anyhow::Result<(String, bool)> {
     let hm = app.state::<Arc<HistoryManager>>();
@@ -507,8 +554,6 @@ fn transcribe_again(
     if post_process {
         show(Working::PostProcessing);
     }
-    let settings = crate::app_profiles::dictation_settings(app);
-    let with_context = crate::send_context::sends_context(post_process, &settings);
     let mut query = crate::dictation_context::ContextQuery::for_entry(
         entry,
         transcription.word_replacements.clone(),
@@ -599,7 +644,7 @@ mod tests {
                 },
             ],
             active_word_list_id: Some("names".to_string()),
-            append_text: " ".to_string(),
+            end_keys: crate::end_keys::builtin(" ", false),
             ..Default::default()
         };
         settings
@@ -616,8 +661,24 @@ mod tests {
         ProfileValues::from_settings(settings)
     }
 
+    /// The end a dictation ended with: with post-processing (`requested`)
+    /// or without, appending a space.
+    fn end_with(requested: bool) -> EndKey {
+        crate::end_keys::builtin(" ", false)[usize::from(requested)].clone()
+    }
+
     fn redo(change: impl FnOnce(&mut ProfileValues), requested: bool) -> RedoFrom {
-        redo_on(|_| {}, change, requested)
+        redo_all(|_| {}, change, |_| {}, requested)
+    }
+
+    /// [`redo`] where the end shortcut of the same id differs in the target
+    /// as `change_end` says.
+    fn redo_ending(
+        change: impl FnOnce(&mut ProfileValues),
+        change_end: impl FnOnce(&mut EndKey),
+        requested: bool,
+    ) -> RedoFrom {
+        redo_all(|_| {}, change, change_end, requested)
     }
 
     /// [`redo`] on settings changed by `library` first, e.g. their prompts.
@@ -626,12 +687,25 @@ mod tests {
         change: impl FnOnce(&mut ProfileValues),
         requested: bool,
     ) -> RedoFrom {
+        redo_all(library, change, |_| {}, requested)
+    }
+
+    /// [`redo`] with all three changes.
+    fn redo_all(
+        library: impl FnOnce(&mut AppSettings),
+        change: impl FnOnce(&mut ProfileValues),
+        change_end: impl FnOnce(&mut EndKey),
+        requested: bool,
+    ) -> RedoFrom {
         let mut settings = settings_with_mail();
         library(&mut settings);
         let made = default_values(&settings);
         let mut target = made.clone();
         change(&mut target);
-        redo_from(&settings, &made, &target, requested)
+        let made_end = end_with(requested);
+        let mut target_end = made_end.clone();
+        change_end(&mut target_end);
+        redo_from(&settings, &made, &target, &made_end, &target_end)
     }
 
     #[test]
@@ -643,7 +717,7 @@ mod tests {
     #[test]
     fn another_append_text_only_swaps_it() {
         assert_eq!(
-            redo(|t| t.append_text = "\\n{Enter}".to_string(), true),
+            redo_ending(|_| {}, |e| e.append_text = "\\n{Enter}".to_string(), true),
             RedoFrom::Append
         );
     }
@@ -668,7 +742,6 @@ mod tests {
                 |t| {
                     t.selected_model = "whisper".to_string();
                     formal(t);
-                    t.append_text = String::new();
                 },
                 true
             ),
@@ -883,28 +956,52 @@ mod tests {
     #[test]
     fn context_counts_while_post_processing() {
         assert_eq!(
-            redo(|t| t.send_context = !t.send_context, true),
+            redo_ending(|_| {}, |e| e.send_context = !e.send_context, true),
             RedoFrom::PostProcessing
         );
         assert_eq!(
-            redo(|t| t.send_context = !t.send_context, false),
+            redo_ending(|_| {}, |e| e.send_context = !e.send_context, false),
             RedoFrom::Nothing
         );
     }
 
     #[test]
+    fn an_end_shortcut_that_post_processes_only_in_the_target_post_processes_again() {
+        assert_eq!(
+            redo_ending(|_| {}, |e| e.post_process = true, false),
+            RedoFrom::PostProcessing
+        );
+    }
+
+    #[test]
+    fn the_target_takes_its_end_shortcut_of_the_same_id_or_keeps_the_one_ended_with() {
+        let settings = settings_with_mail();
+        let mut target = default_values(&settings);
+        target.end_keys[1].append_text = "\\n\\n".to_string();
+        let made_end = end_with(true);
+        assert_eq!(end_in(&target, &made_end).append_text, "\\n\\n");
+        let own = EndKey {
+            id: "send".to_string(),
+            name: "Send".to_string(),
+            append_text: "{Enter}".to_string(),
+            ..EndKey::default()
+        };
+        assert_eq!(end_in(&target, &own), own);
+    }
+
+    #[test]
     fn the_target_is_the_profile_of_the_app_in_front_while_choosing_by_app() {
         let mut settings = settings_with_mail();
-        settings.profiles[0].values.append_text = "\\n".to_string();
+        settings.profiles[0].values.end_keys[0].append_text = "\\n".to_string();
         let (id, values) = target_for(&settings, Some("com.apple.mail")).expect("mail");
         assert_eq!(id, "mail");
-        assert_eq!(values.append_text, "\\n");
+        assert_eq!(values.end_keys[0].append_text, "\\n");
         // An app without a profile gets the defaults in use, with their
         // latest values from the flat fields.
-        settings.append_text = "  ".to_string();
+        settings.end_keys[0].append_text = "  ".to_string();
         let (id, values) = target_for(&settings, Some("com.apple.TextEdit")).expect("default");
         assert_eq!(id, DEFAULT_PROFILE_ID);
-        assert_eq!(values.append_text, "  ");
+        assert_eq!(values.end_keys[0].append_text, "  ");
     }
 
     #[test]
@@ -1070,7 +1167,7 @@ mod tests {
             entry_id,
             profile_id: "mail".to_string(),
             values: default_values(&settings),
-            post_process_requested: true,
+            end: end_with(true),
         };
         remember(made(41));
         remember(made(42));

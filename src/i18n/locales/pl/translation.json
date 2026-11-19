@@ -15,8 +15,7 @@
     "onlyGlobalWordList": "Bez dodatkowej listy",
     "profile": "Profil",
     "defaultSettings": "Ustawienia podstawowe",
-    "profileAutoByApp": "Wybieraj profil według aplikacji",
-    "sendContext": "Wysyłaj kontekst"
+    "profileAutoByApp": "Wybieraj profil według aplikacji"
   },
   "sidebar": {
     "general": "Ogólne",
@@ -383,10 +382,6 @@
           "toggle_profile_auto": {
             "name": "Wybieraj profil według aplikacji",
             "description": "Włącza lub wyłącza wybór profilu według aplikacji. Działa, dopóki do jakiegoś profilu są przypisane aplikacje."
-          },
-          "toggle_send_context": {
-            "name": "Wysyłaj kontekst",
-            "description": "Włącza lub wyłącza wysyłanie kontekstu z postprocesem dla profilu, którego używa dyktowanie do aplikacji na pierwszym planie. Działa, dopóki postproces jest włączony."
           }
         },
         "errors": {
@@ -444,6 +439,36 @@
           "startRecording": "Rozpocznij nagrywanie",
           "doNothing": "Nic nie rób"
         }
+      }
+    },
+    "endKeys": {
+      "title": "Skróty kończące",
+      "description": "Jak kończy się nagranie i co dalej: każdy skrót kończący określa, co zostanie dołączone, czy tekst zostanie przetworzony i czy wcześniejsze dyktowania zostaną wysłane jako kontekst.",
+      "builtin": {
+        "plain": "Zwykle",
+        "post_process": "Przetwórz"
+      },
+      "name": "Nazwa",
+      "noShortcut": "Brak skrótu",
+      "shortcutHint": "Jego własny skrót kończy nagranie w ten sposób. Jest zajęty tylko podczas nagrywania.",
+      "clearShortcut": "Usuń skrót",
+      "append": "Dołącz",
+      "appendDescription": "Dołączane do dyktowania, które kończy się w ten sposób: tekst, a potem wybrane naciśnięcie klawisza. W tekście \\s to spacja, \\n nowy wiersz, \\t tabulator, a \\\\ ukośnik wsteczny; wszystko inne jest dołączane tak, jak zostało wpisane. Naciśnięcie klawisza jest wysyłane tylko wtedy, gdy tekst jest wklejany.",
+      "sendContext": "Wysyłaj kontekst",
+      "sendContextHint": "Tylko z przetwarzaniem: wcześniejsze dyktowania z tego samego okna są wysyłane jako kontekst.",
+      "add": "Dodaj skrót kończący",
+      "newName": "Nowy skrót kończący",
+      "delete": "Usuń {{name}}",
+      "inUse": "Skrót rozpoczynający domyślnie nim się kończy; najpierw wybierz inne domyślne zakończenie.",
+      "defaultEnd": {
+        "title": "Domyślne zakończenie dla {{shortcut}}",
+        "description": "Jak drugie naciśnięcie albo puszczenie przytrzymanego skrótu kończy nagranie."
+      },
+      "linuxNoShortcuts": "W Linuksie skróty klawiszowe skrótów kończących nie są zajmowane; kończą one nagranie tylko jako domyślne zakończenie.",
+      "errors": {
+        "save": "Nie udało się zapisać skrótów kończących: {{error}}",
+        "needsName": "Każdy skrót kończący potrzebuje nazwy.",
+        "shortcutTwice": "Dwa skróty kończące nie mogą mieć tego samego skrótu."
       }
     },
     "profiles": {
@@ -719,8 +744,6 @@
         }
       },
       "appendText": {
-        "title": "Dołącz",
-        "description": "Dołączane po każdym dyktowaniu w tym profilu: tekst, a potem wybrane naciśnięcie klawisza. W tekście \\s to spacja, \\n nowy wiersz, \\t tabulator, a \\\\ ukośnik wsteczny; wszystko inne jest dołączane tak, jak zostało wpisane. Naciśnięcie klawisza jest wysyłane tylko wtedy, gdy tekst jest wklejany.",
         "noAccessibility": "Bez dostępności klawisze nie są wysyłane; tekst i tak zostanie dołączony.",
         "keyNone": "Bez klawisza",
         "keyKept": "Zachowane z wcześniej; niedostępne w tym systemie",
@@ -942,11 +965,6 @@
       },
       "context": {
         "title": "Kontekst z wcześniejszych dyktowań",
-        "sendContext": {
-          "label": "Wysyłaj kontekst",
-          "description": "Dyktowania z postprocesem wysyłają jako kontekst także twoje wcześniejsze dyktowania z tego samego okna. Należy do profilu; przełącza to też menu w zasobniku i skrót klawiszowy. Bez postprocesu kontekst nigdy nie jest wysyłany.",
-          "short": "Wysyłaj kontekst"
-        },
         "privacy": "Wcześniejsze dyktowania z tego samego okna trafiają do dostawcy postprocesu razem z bieżącym, także te, które nigdy nie przeszły postprocesu. Historia oznacza każdy wpis wysłany w ten sposób.",
         "ageLimit": "Limit wieku",
         "ageLimitDescription": "Tylko dyktowania najwyżej o tyle minut starsze od bieżącego ({{min}}–{{max}}).",

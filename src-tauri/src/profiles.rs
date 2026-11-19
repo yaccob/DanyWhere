@@ -1,14 +1,14 @@
 //! DanyWhere: profiles. The values that concern a dictation (the user's
 //! decision P6 of 2026-11-19; [`ProfileValues`]: speech model, languages,
 //! word lists, post-processing with its providers, keys and which prompts
-//! run in what order, context, filler words, microphone, sounds, overlay and
-//! how the text is inserted) have defaults (`AppSettings::default_values`,
-//! the "Grundeinstellungen"), and a profile overrides what it needs: each of
-//! its values is coupled to the default or its own (`profile_layers`,
-//! decisions P1–P11). What concerns the machine, the app or the interface
-//! stays global (`setting_classes`); so do the shortcuts until they become
-//! profile values, and the prompts themselves, one library for all
-//! (`prompt_library`).
+//! run in what order, context, filler words, microphone, sounds, overlay,
+//! how the text is inserted, and the shortcuts with the end shortcuts,
+//! `end_keys`; user, T1) have defaults (`AppSettings::default_values`, the
+//! "Grundeinstellungen"), and a profile overrides what it needs: each of its
+//! values is coupled to the default or its own (`profile_layers`, decisions
+//! P1–P11). What concerns the machine, the app or the interface stays
+//! global (`setting_classes`), and so do the prompts themselves, one library
+//! for all (`prompt_library`).
 //!
 //! What is in use is a profile or the defaults (`active_profile_id ==
 //! DEFAULT_PROFILE_ID`). The flat fields of [`AppSettings`] always hold its
@@ -109,13 +109,8 @@ pub struct ProfileValues {
     pub context_max_entries: u32,
     /// `dictation_context.char_budget`
     pub context_char_budget: u32,
-    /// The switch "Send Context" (`send_context`).
-    pub send_context: bool,
     pub filler_word_removal_enabled: bool,
     pub custom_filler_words: Option<Vec<String>>,
-    /// The "Append" field (`append_text`), which replaced the trailing space;
-    /// stored profiles got it from theirs (`append_text::migrate`).
-    pub append_text: String,
     /// How the dictation shortcut's presses drive a recording. Read when a
     /// key event comes, so from the profile in use.
     pub shortcut_activation: ShortcutActivation,
@@ -158,6 +153,14 @@ pub struct ProfileValues {
     /// Drop silence from recordings; decode long audio in chunks.
     pub vad_enabled: bool,
     pub long_form_chunking: bool,
+    /// The shortcuts (`bindings`), entry by binding id: the start shortcuts
+    /// apply only while this profile does (`shortcut::profile_sync`).
+    pub bindings: HashMap<String, crate::settings::ShortcutBinding>,
+    /// The end shortcuts (`end_keys`), each with a stable id.
+    pub end_keys: Vec<crate::end_keys::EndKey>,
+    /// The default end per start shortcut (`default_ends`), entry by binding
+    /// id.
+    pub default_ends: HashMap<String, String>,
 }
 
 impl Default for ProfileValues {
@@ -189,10 +192,8 @@ impl ProfileValues {
             context_age_limit_minutes: settings.dictation_context.age_limit_minutes,
             context_max_entries: settings.dictation_context.max_entries,
             context_char_budget: settings.dictation_context.char_budget,
-            send_context: settings.send_context,
             filler_word_removal_enabled: settings.filler_word_removal_enabled,
             custom_filler_words: settings.custom_filler_words.clone(),
-            append_text: settings.append_text.clone(),
             shortcut_activation: settings.shortcut_activation,
             audio_feedback: settings.audio_feedback,
             audio_feedback_volume: settings.audio_feedback_volume,
@@ -219,6 +220,9 @@ impl ProfileValues {
             post_process_timeout_secs: settings.post_process_timeout_secs,
             vad_enabled: settings.vad_enabled,
             long_form_chunking: settings.long_form_chunking,
+            bindings: settings.bindings.clone(),
+            end_keys: settings.end_keys.clone(),
+            default_ends: settings.default_ends.clone(),
         }
     }
 
@@ -243,10 +247,11 @@ impl ProfileValues {
         settings.dictation_context.age_limit_minutes = self.context_age_limit_minutes;
         settings.dictation_context.max_entries = self.context_max_entries;
         settings.dictation_context.char_budget = self.context_char_budget;
-        settings.send_context = self.send_context;
         settings.filler_word_removal_enabled = self.filler_word_removal_enabled;
         settings.custom_filler_words = self.custom_filler_words.clone();
-        settings.append_text = self.append_text.clone();
+        settings.bindings = self.bindings.clone();
+        settings.end_keys = self.end_keys.clone();
+        settings.default_ends = self.default_ends.clone();
         settings.shortcut_activation = self.shortcut_activation;
         settings.audio_feedback = self.audio_feedback;
         settings.audio_feedback_volume = self.audio_feedback_volume;
@@ -402,13 +407,12 @@ pub fn ensure_in_every_profile(
     changed
 }
 
-/// What a switch changed that needs more than storing the settings.
+/// What a switch changed that needs more than storing the settings. The
+/// shortcuts follow every switch (`shortcut::profile_sync`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct SwitchChanges {
     /// The speech model differs, so it has to be loaded.
     pub model_changed: bool,
-    /// Post-processing went on or off, so its shortcuts are (un)registered.
-    pub post_process_enabled_changed: bool,
 }
 
 /// The profile in use, whose values the flat fields hold; `None` while the
@@ -522,6 +526,12 @@ pub fn ensure_profiles(settings: &mut AppSettings) -> bool {
         crate::profile_layers::propagate(settings);
         changed = true;
     }
+    // Every profile has every shortcut: a binding added to the flat values
+    // since (a new default binding) is a new entry, which `route_flat` puts
+    // into the defaults and so into every profile that doesn't hold it
+    // switched off (`profile_layers`, bindings entry by entry); an imported
+    // profile gets the defaults' shortcuts it lacks
+    // (`profile_transfer::prepare_import_values`).
     changed
 }
 
@@ -561,7 +571,6 @@ pub fn switch_to(
     settings.active_profile_id = id.to_string();
     let changes = SwitchChanges {
         model_changed: target.selected_model != settings.selected_model,
-        post_process_enabled_changed: target.post_process_enabled != settings.post_process_enabled,
     };
     target.apply_to(settings);
     Ok(changes)
@@ -894,10 +903,8 @@ mod tests {
             context_age_limit_minutes: 11,
             context_max_entries: 2,
             context_char_budget: 999,
-            send_context: true,
             filler_word_removal_enabled: false,
             custom_filler_words: Some(strings(&["äh"])),
-            append_text: r"\s{Enter}".to_string(),
             shortcut_activation: ShortcutActivation::PushToTalk,
             audio_feedback: true,
             audio_feedback_volume: 0.25,
@@ -927,6 +934,19 @@ mod tests {
             post_process_timeout_secs: 15,
             vad_enabled: false,
             long_form_chunking: false,
+            bindings: {
+                let mut bindings = crate::settings::get_default_settings().bindings;
+                bindings
+                    .get_mut("transcribe")
+                    .expect("a dictation shortcut")
+                    .current_binding = "option+space".to_string();
+                bindings
+            },
+            end_keys: crate::end_keys::builtin(r"\n\n", true),
+            default_ends: HashMap::from([(
+                "transcribe".to_string(),
+                crate::end_keys::POST_PROCESS_ID.to_string(),
+            )]),
         }
     }
 
@@ -1224,7 +1244,6 @@ mod tests {
         assert_eq!(left.selected_language, "it");
         assert_eq!(left.selected_model, "parakeet");
         // Application settings stay.
-        assert_eq!(s.bindings.len(), before.bindings.len());
         assert_eq!(
             s.word_correction_threshold,
             before.word_correction_threshold
@@ -1277,23 +1296,18 @@ mod tests {
     }
 
     #[test]
-    fn switching_reports_a_new_model_and_post_processing_going_off() {
+    fn switching_reports_a_new_model() {
         let mut s = two_profiles();
         let changes = switch_to(&mut s, "work", false).expect("switched");
         assert_eq!(
             changes,
             SwitchChanges {
                 model_changed: true,
-                post_process_enabled_changed: true,
             }
         );
         let mut s = two_profiles();
-        crate::profile_layers::reset_values(
-            &mut s,
-            "work",
-            &strings(&["selected_model", "post_process_enabled"]),
-        )
-        .expect("reset");
+        crate::profile_layers::reset_values(&mut s, "work", &strings(&["selected_model"]))
+            .expect("reset");
         let changes = switch_to(&mut s, "work", false).expect("switched");
         assert_eq!(changes, SwitchChanges::default());
     }
@@ -1464,6 +1478,57 @@ mod tests {
         // A profile not in use may go.
         switch_to(&mut s, DEFAULT_PROFILE_ID, false).expect("switched back");
         assert!(delete(&mut s, "work", true).is_ok());
+    }
+
+    // ---- Shortcuts and end shortcuts (idea 3) ------------------------------
+
+    #[test]
+    fn shortcuts_and_end_shortcuts_are_profile_values() {
+        let mut s = two_profiles();
+        let own = s.bindings["transcribe"].current_binding.clone();
+        switch_to(&mut s, "work", false).expect("switched");
+        assert_eq!(s.bindings["transcribe"].current_binding, "option+space");
+        assert_eq!(s.end_keys, crate::end_keys::builtin(r"\n\n", true));
+        assert_eq!(
+            s.default_ends.get("transcribe").map(String::as_str),
+            Some(crate::end_keys::POST_PROCESS_ID)
+        );
+        switch_to(&mut s, DEFAULT_PROFILE_ID, false).expect("switched back");
+        assert_eq!(s.bindings["transcribe"].current_binding, own);
+        assert_eq!(s.end_keys, crate::end_keys::default_end_keys());
+    }
+
+    #[test]
+    fn append_text_and_send_context_are_no_profile_values_any_more() {
+        let stored = serde_json::to_value(ProfileValues::default()).unwrap();
+        for gone in ["append_text", "send_context"] {
+            assert!(
+                stored.get(gone).is_none(),
+                "{gone} is still a profile value"
+            );
+        }
+        for kept in ["bindings", "end_keys", "default_ends"] {
+            assert!(stored.get(kept).is_some(), "{kept} is no profile value");
+        }
+    }
+
+    #[test]
+    fn every_profile_gets_every_shortcut_the_settings_have() {
+        let mut s = two_profiles();
+        let index = s.profiles.iter().position(|p| p.id == "work").unwrap();
+        s.profiles[index].values.bindings.remove("cycle_word_list");
+        assert!(ensure_profiles(&mut s));
+        // A shortcut it follows the defaults in comes back from them.
+        assert_eq!(
+            work(&s).values.bindings.get("cycle_word_list"),
+            s.bindings.get("cycle_word_list")
+        );
+        // Its own ones stay.
+        assert_eq!(
+            work(&s).values.bindings["transcribe"].current_binding,
+            "option+space"
+        );
+        assert!(!ensure_profiles(&mut s));
     }
 
     // ---- Names ------------------------------------------------------------

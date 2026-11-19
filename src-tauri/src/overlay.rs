@@ -929,26 +929,10 @@ pub fn set_dictation_profile(app_handle: &AppHandle, profile: Option<OverlayProf
     }
 }
 
-/// DanyWhere: shows the new state of "Send Context" for `duration`, as the
-/// speech bubble (crossed out while off) and the profile's name, like the
-/// profile notice (`send_context`). The caller skips it while a recording or
-/// transcription owns the overlay.
-pub fn show_context_notice(
-    app_handle: &AppHandle,
-    notice: crate::send_context::ContextNotice,
-    duration: std::time::Duration,
-) {
-    // Sent before the state, so the overlay has the notice when it renders.
-    if let Some(overlay_window) = app_handle.get_webview_window("recording_overlay") {
-        let _ = overlay_window.emit("overlay-context", notice);
-    }
-    show_timed_state(app_handle, "context", duration);
-}
-
 /// DanyWhere: whether the dictation in progress sends context, shown as a
 /// speech bubble next to its profile (`send_context`). Sent at the start of
-/// every dictation, when "Send Context" is turned over while it records, and
-/// once more when it stops, with the decision.
+/// every dictation, as its start shortcut's default end would decide, and
+/// once more when it stops, with the end it took (`end_keys`).
 pub fn set_dictation_context(app_handle: &AppHandle, sends: bool) {
     if !crate::overlay_look::enabled(OVERLAY_ENABLED.load(Ordering::Relaxed)) {
         return;

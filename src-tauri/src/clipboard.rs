@@ -899,19 +899,29 @@ fn sends_keys(paste_method: PasteMethod) -> bool {
 
 /// Pastes `text` into the focused app. Call from a worker thread, never the main
 /// thread: it sleeps between steps (input injection hops via `with_enigo`).
+// DanyWhere: unused since every paste knows its end shortcut's "Append"
+// text (`paste_with_values`); kept for Handy merges.
+#[allow(dead_code)]
 pub fn paste(text: String, app_handle: AppHandle) -> Result<PasteOutcome, String> {
-    // DanyWhere: the values of the dictation in progress, if any.
-    paste_with_values(text, app_handle, crate::app_profiles::dictation_values())
+    // DanyWhere: the values of the dictation in progress, if any, and the
+    // "Append" text of their dictation shortcut's default end.
+    let values = crate::app_profiles::dictation_values();
+    let append_text = crate::end_keys::plain_end(&values.clone().unwrap_or_else(|| {
+        crate::profiles::ProfileValues::from_settings(&crate::settings::get_settings(&app_handle))
+    }))
+    .append_text;
+    paste_with_values(text, app_handle, values, &append_text)
 }
 
 /// DanyWhere: [`paste`] with the profile values of the dictation whose text
-/// it is (the "Append" field is the profile's), taken while it ran: its
-/// profile ends when the transcription task returns, which can be before
-/// this paste reads the settings.
+/// it is, taken while it ran (its profile ends when the transcription task
+/// returns, which can be before this paste reads the settings), and the
+/// "Append" text of the end shortcut it ended with (`end_keys`).
 pub fn paste_with_values(
     text: String,
     app_handle: AppHandle,
     values: Option<crate::profiles::ProfileValues>,
+    append_text: &str,
 ) -> Result<PasteOutcome, String> {
     let _paste = PASTE_LOCK.lock().unwrap_or_else(PoisonError::into_inner);
     let settings = crate::app_profiles::with_values(
@@ -924,7 +934,7 @@ pub fn paste_with_values(
     // paste still runs as usual; only what Handy reports changes.
     let blocked =
         sends_keys(settings.paste_method) && crate::utils::foreground_window_is_elevated();
-    let result = paste_as_configured(text, app_handle, settings);
+    let result = paste_as_configured(text, app_handle, settings, append_text);
     if !blocked {
         return result.map(|()| PasteOutcome::Pasted);
     }
@@ -938,6 +948,7 @@ fn paste_as_configured(
     text: String,
     app_handle: AppHandle,
     settings: AppSettings,
+    append_text: &str,
 ) -> Result<(), String> {
     let paste_method = settings.paste_method;
     let paste_delay_ms = settings.paste_delay_ms;
@@ -945,7 +956,7 @@ fn paste_as_configured(
 
     // DanyWhere: the "Append" field instead of the trailing space; its key
     // presses replace auto submit (below).
-    let append = crate::append_text::for_settings(&settings);
+    let append = crate::append_text::for_value(append_text);
     let append_keys =
         crate::append_text::keys_after_paste(&append, paste_method, settings.accessibility_skipped);
     let text = text + &append.text;

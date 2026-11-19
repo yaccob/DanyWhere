@@ -15,8 +15,7 @@
     "onlyGlobalWordList": "Nessun elenco aggiuntivo",
     "profile": "Profilo",
     "defaultSettings": "Impostazioni di base",
-    "profileAutoByApp": "Scegli il profilo in base all'applicazione",
-    "sendContext": "Invia contesto"
+    "profileAutoByApp": "Scegli il profilo in base all'applicazione"
   },
   "sidebar": {
     "general": "Generale",
@@ -383,10 +382,6 @@
           "toggle_profile_auto": {
             "name": "Scegli il profilo in base all'applicazione",
             "description": "Attiva o disattiva la scelta del profilo in base all'applicazione. Funziona finché ci sono applicazioni assegnate a un profilo."
-          },
-          "toggle_send_context": {
-            "name": "Invia contesto",
-            "description": "Attiva o disattiva l'invio del contesto con la post-elaborazione per il profilo che usa una dettatura nell'app in primo piano. Funziona finché la post-elaborazione è attiva."
           }
         },
         "errors": {
@@ -444,6 +439,36 @@
           "startRecording": "Avvia una registrazione",
           "doNothing": "Non fare nulla"
         }
+      }
+    },
+    "endKeys": {
+      "title": "Scorciatoie di fine",
+      "description": "Come termina una registrazione e cosa segue: ogni scorciatoia di fine stabilisce cosa viene aggiunto, se il testo viene post-elaborato e se le dettature precedenti vengono inviate come contesto.",
+      "builtin": {
+        "plain": "Normale",
+        "post_process": "Post-elabora"
+      },
+      "name": "Nome",
+      "noShortcut": "Nessuna scorciatoia",
+      "shortcutHint": "La sua scorciatoia termina una registrazione in questo modo. È occupata solo durante la registrazione.",
+      "clearShortcut": "Rimuovi scorciatoia",
+      "append": "Aggiungi alla fine",
+      "appendDescription": "Aggiunto a una dettatura che termina in questo modo: il testo, poi il tasto che scegli. Nel testo \\s è uno spazio, \\n un a capo, \\t una tabulazione e \\\\ una barra rovesciata; tutto il resto viene aggiunto così com'è scritto. Il tasto viene inviato solo quando il testo viene incollato.",
+      "sendContext": "Invia contesto",
+      "sendContextHint": "Solo con la post-elaborazione: le dettature precedenti della stessa finestra vengono inviate come contesto.",
+      "add": "Aggiungi scorciatoia di fine",
+      "newName": "Nuova scorciatoia di fine",
+      "delete": "Elimina {{name}}",
+      "inUse": "Una scorciatoia di avvio termina così per impostazione predefinita; scegli prima un'altra fine predefinita.",
+      "defaultEnd": {
+        "title": "Fine predefinita di {{shortcut}}",
+        "description": "Come la sua seconda pressione, o il rilascio quando è tenuta premuta, termina la registrazione."
+      },
+      "linuxNoShortcuts": "Su Linux le scorciatoie delle scorciatoie di fine non vengono occupate; terminano una registrazione solo come fine predefinita.",
+      "errors": {
+        "save": "Impossibile salvare le scorciatoie di fine: {{error}}",
+        "needsName": "Ogni scorciatoia di fine ha bisogno di un nome.",
+        "shortcutTwice": "Due scorciatoie di fine non possono condividere una scorciatoia."
       }
     },
     "profiles": {
@@ -719,8 +744,6 @@
         }
       },
       "appendText": {
-        "title": "Aggiungi alla fine",
-        "description": "Aggiunto dopo ogni dettatura di questo profilo: il testo, poi il tasto che scegli. Nel testo \\s è uno spazio, \\n un a capo, \\t una tabulazione e \\\\ una barra rovesciata; tutto il resto viene aggiunto così com'è scritto. Il tasto viene inviato solo quando il testo viene incollato.",
         "noAccessibility": "Senza Accessibilità i tasti non vengono inviati; il testo viene comunque aggiunto.",
         "keyNone": "Nessun tasto",
         "keyKept": "Mantenuto da prima; non disponibile su questo sistema",
@@ -942,11 +965,6 @@
       },
       "context": {
         "title": "Contesto dalle dettature precedenti",
-        "sendContext": {
-          "label": "Invia contesto",
-          "description": "Le dettature con post-elaborazione inviano anche le tue dettature precedenti della stessa finestra come contesto. Appartiene al profilo; anche il menu dell'area di notifica e una scorciatoia lo cambiano. Senza post-elaborazione non viene mai inviato contesto.",
-          "short": "Invia contesto"
-        },
         "privacy": "Le dettature precedenti della stessa finestra vanno al fornitore della post-elaborazione insieme a quella attuale, anche quelle mai post-elaborate. La cronologia segna ogni voce uscita in questo modo.",
         "ageLimit": "Età massima",
         "ageLimitDescription": "Solo dettature al massimo di questi minuti più vecchie di quella attuale ({{min}}–{{max}}).",

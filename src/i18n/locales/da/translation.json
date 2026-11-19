@@ -15,8 +15,7 @@
     "onlyGlobalWordList": "Ingen ekstra liste",
     "profile": "Profil",
     "defaultSettings": "Grundindstillinger",
-    "profileAutoByApp": "Vælg profil efter program",
-    "sendContext": "Send kontekst"
+    "profileAutoByApp": "Vælg profil efter program"
   },
   "sidebar": {
     "general": "Generelt",
@@ -383,10 +382,6 @@
           "toggle_profile_auto": {
             "name": "Vælg profil efter program",
             "description": "Slår valg af profil efter program til eller fra. Virker, så længe programmer er tildelt en profil."
-          },
-          "toggle_send_context": {
-            "name": "Send kontekst",
-            "description": "Slår afsendelse af kontekst med efterbehandlingen til eller fra for den profil, en diktering i appen forrest bruger. Virker, så længe efterbehandlingen er slået til."
           }
         },
         "errors": {
@@ -444,6 +439,36 @@
           "startRecording": "Start en optagelse",
           "doNothing": "Gør ingenting"
         }
+      }
+    },
+    "endKeys": {
+      "title": "Afslutningsgenveje",
+      "description": "Hvordan en optagelse slutter, og hvad der følger: hver afslutningsgenvej bestemmer, hvad der tilføjes, om teksten efterbehandles, og om tidligere dikteringer sendes med som kontekst.",
+      "builtin": {
+        "plain": "Normal",
+        "post_process": "Efterbehandl"
+      },
+      "name": "Navn",
+      "noShortcut": "Ingen genvej",
+      "shortcutHint": "Dens egen genvej afslutter en optagelse på denne måde. Den er kun optaget under en optagelse.",
+      "clearShortcut": "Fjern genvej",
+      "append": "Tilføj",
+      "appendDescription": "Tilføjes til en diktering, der slutter på denne måde: teksten og derefter det tastetryk, du vælger. I teksten er \\s et mellemrum, \\n en ny linje, \\t en tabulator og \\\\ en omvendt skråstreg; alt andet tilføjes, som det står. Tastetrykket sendes kun, når teksten indsættes.",
+      "sendContext": "Send kontekst",
+      "sendContextHint": "Kun med efterbehandling: tidligere dikteringer fra samme vindue sendes med som kontekst.",
+      "add": "Tilføj afslutningsgenvej",
+      "newName": "Ny afslutningsgenvej",
+      "delete": "Slet {{name}}",
+      "inUse": "En startgenvej slutter med den som standard; vælg først en anden standardafslutning.",
+      "defaultEnd": {
+        "title": "Standardafslutning for {{shortcut}}",
+        "description": "Hvordan dens andet tryk, eller når den holdes, dens slip afslutter optagelsen."
+      },
+      "linuxNoShortcuts": "På Linux optages afslutningsgenvejenes egne genveje ikke; de afslutter kun en optagelse som standardafslutning.",
+      "errors": {
+        "save": "Afslutningsgenvejene kunne ikke gemmes: {{error}}",
+        "needsName": "Hver afslutningsgenvej skal have et navn.",
+        "shortcutTwice": "To afslutningsgenveje kan ikke dele en genvej."
       }
     },
     "profiles": {
@@ -719,8 +744,6 @@
         }
       },
       "appendText": {
-        "title": "Tilføj",
-        "description": "Tilføjes efter hver diktering i denne profil: teksten og derefter det tastetryk, du vælger. I teksten er \\s et mellemrum, \\n en ny linje, \\t en tabulator og \\\\ en omvendt skråstreg; alt andet tilføjes, som det står. Tastetrykket sendes kun, når teksten indsættes.",
         "noAccessibility": "Uden tilgængelighed sendes ingen tastetryk; teksten tilføjes stadig.",
         "keyNone": "Ingen tast",
         "keyKept": "Bevaret fra tidligere; tilbydes ikke på dette system",
@@ -942,11 +965,6 @@
       },
       "context": {
         "title": "Kontekst fra tidligere dikteringer",
-        "sendContext": {
-          "label": "Send kontekst",
-          "description": "Dikteringer med efterbehandling sender dine tidligere dikteringer fra samme vindue med som kontekst. Hører til profilen; bakkemenuen og en genvej skifter det også. Uden efterbehandling sendes der aldrig kontekst.",
-          "short": "Send kontekst"
-        },
         "privacy": "Tidligere dikteringer fra samme vindue sendes til udbyderen af efterbehandlingen sammen med den aktuelle, også dem, der aldrig er blevet efterbehandlet. Historikken markerer hver post, der er sendt på den måde.",
         "ageLimit": "Aldersgrænse",
         "ageLimitDescription": "Kun dikteringer, der højst er så mange minutter ældre end den aktuelle ({{min}}–{{max}}).",

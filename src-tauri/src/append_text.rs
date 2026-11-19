@@ -1,6 +1,8 @@
-//! DanyWhere: the "Append" field, what every dictation of a profile gets
-//! appended (user, 2026-11-15: "dass man jede beliebige Zeichenkette anhängen
-//! kann, und auch Steuerzeichen").
+//! DanyWhere: the "Append" field, what a dictation gets appended (user,
+//! 2026-11-15: "dass man jede beliebige Zeichenkette anhängen kann, und auch
+//! Steuerzeichen"). Since 2026-11-19 every end shortcut has one (`end_keys`):
+//! the dictation gets the field of the end shortcut it ended with; the
+//! profile's own field went into its end shortcuts.
 //!
 //! It replaces Handy's "Append Trailing Space" and "Auto Submit". Their
 //! fields (`append_trailing_space`, `auto_submit`, `auto_submit_key`) stay in
@@ -38,10 +40,8 @@
 use enigo::{Direction, Enigo, Key, Keyboard};
 use serde::{Deserialize, Serialize};
 use specta::Type;
-use tauri::AppHandle;
 
-use crate::profiles::ProfileValues;
-use crate::settings::{get_settings, write_settings, AppSettings, AutoSubmitKey, PasteMethod};
+use crate::settings::{AutoSubmitKey, PasteMethod};
 
 /// The system whose key names and key presses the field uses.
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Type)]
@@ -476,23 +476,15 @@ impl Append {
     }
 }
 
-/// The "Append" field of `settings`, with the key presses as stored, also
-/// those the selection doesn't offer here.
-pub fn for_settings(settings: &AppSettings) -> Append {
-    Append::from_parts(&parse(&settings.append_text))
+/// What an "Append" value (an end shortcut's, `end_keys`) appends, with the
+/// key presses as stored, also those the selection doesn't offer here.
+pub fn for_value(value: &str) -> Append {
+    Append::from_parts(&parse(value))
 }
 
-/// `text` as it is pasted: with the field's text appended.
-pub fn text_to_paste(text: String, settings: &AppSettings) -> String {
-    text + &for_settings(settings).text
-}
-
-/// A finished dictation's `text` with the "Append" text of its profile,
-/// whose `values` were taken while it ran (`None`: the active profile's),
-/// for the service call waiting for it.
-pub fn with_dictation_text(app: &AppHandle, text: &str, values: Option<&ProfileValues>) -> String {
-    let settings = crate::app_profiles::with_values(&get_settings(app), values);
-    text_to_paste(text.to_string(), &settings)
+/// `text` as it is pasted: with the text of the "Append" value `value`.
+pub fn text_to_paste(text: String, value: &str) -> String {
+    text + &for_value(value).text
 }
 
 /// The key presses to send after a paste: none with paste method "None", as
@@ -581,124 +573,32 @@ pub fn legacy_value(
 }
 
 /// The stored `append_trailing_space` of a stored object, false if missing.
-fn stored_trailing_space(stored: Option<&serde_json::Value>) -> bool {
+pub fn stored_trailing_space(stored: Option<&serde_json::Value>) -> bool {
     stored
         .and_then(|values| values.get("append_trailing_space"))
         .and_then(|value| value.as_bool())
         .unwrap_or(false)
 }
 
-/// Whether a stored object (settings or a profile's values) has the field.
-fn has_field(stored: Option<&serde_json::Value>) -> bool {
-    stored.is_some_and(|values| values.get("append_text").is_some())
-}
-
-/// Run on every read of the store (`settings_value` is the stored JSON),
-/// with this system's key names; see `migrate_on`.
-pub fn migrate(settings: &mut AppSettings, settings_value: &serde_json::Value) -> bool {
-    migrate_on(settings, settings_value, KeyPlatform::current())
-}
-
-/// Two steps, for the settings, the defaults and every stored profile:
-/// - once, a value without the field gets it from its
-///   `append_trailing_space` and the global auto submit;
-/// - a value with another system's key names gets `platform`'s
-///   (`localize`), e.g. from a settings file copied from another system or
-///   edited by hand. This one runs on every read too: there is no marker
-///   that it ran, and a value can come in at any time.
-///
-/// Returns whether a value changed, so a store with nothing to carry over
-/// and only this system's names is never written. A derived value that
-/// equals the default (both old settings off) is no change.
-pub fn migrate_on(
-    settings: &mut AppSettings,
-    settings_value: &serde_json::Value,
+/// The "Append" text of a stored object (the settings or a profile's
+/// values, `stored`): its field, or for one from before the field the
+/// trailing space (`trailing_space`) and auto submit; with `platform`'s key
+/// names. The end shortcuts take it over (`end_keys::migrate`).
+pub fn stored_value(
+    stored: Option<&serde_json::Value>,
+    trailing_space: bool,
+    auto_submit: bool,
+    key: AutoSubmitKey,
     platform: KeyPlatform,
-) -> bool {
-    let (auto_submit, key) = (settings.auto_submit, settings.auto_submit_key);
-    let mut changed = false;
-    if !has_field(Some(settings_value)) {
-        let value = legacy_value(settings.append_trailing_space, auto_submit, key, platform);
-        if settings.append_text != value {
-            log::info!("\"Append\" takes over the trailing space and auto submit: {value:?}");
-            settings.append_text = value;
-            changed = true;
-        }
-    }
-    let stored_profiles = settings_value
-        .get("profiles")
-        .and_then(|profiles| profiles.as_array());
-    for profile in settings.profiles.iter_mut() {
-        let stored_values = stored_profiles
-            .and_then(|profiles| {
-                profiles.iter().find(|stored| {
-                    stored.get("id").and_then(|id| id.as_str()) == Some(profile.id.as_str())
-                })
-            })
-            .and_then(|stored| stored.get("values"));
-        if has_field(stored_values) {
-            continue;
-        }
-        let value = legacy_value(
-            stored_trailing_space(stored_values),
-            auto_submit,
-            key,
-            platform,
-        );
-        if profile.values.append_text != value {
-            profile.values.append_text = value;
-            changed = true;
-        }
-    }
-    let values = std::iter::once(&mut settings.append_text)
-        .chain(
-            settings
-                .default_values
-                .iter_mut()
-                .map(|values| &mut values.append_text),
-        )
-        .chain(
-            settings
-                .profiles
-                .iter_mut()
-                .map(|profile| &mut profile.values.append_text),
-        );
-    for value in values {
-        let local = localize(value, platform);
-        if *value != local {
-            log::info!("\"Append\" takes this system's key names: {value:?} → {local:?}");
-            *value = local;
-            changed = true;
-        }
-    }
-    changed
-}
-
-/// For an import (`file_text` is the file as read), with this system's key
-/// names; see `prepare_import_on`.
-pub fn prepare_import(file_text: &str, values: &mut ProfileValues) {
-    prepare_import_on(file_text, values, KeyPlatform::current());
-}
-
-/// For an import: a profile file from before the field gets it from its
-/// `append_trailing_space`, and a value written on another system gets
-/// `platform`'s key names (`localize`).
-pub fn prepare_import_on(file_text: &str, values: &mut ProfileValues, platform: KeyPlatform) {
-    if let Ok(file) = serde_saphyr::from_str::<serde_json::Value>(file_text) {
-        let stored = file
-            .get("profile")
-            .and_then(|profile| profile.get("values"));
-        if !has_field(stored) {
-            // auto_submit was global, so the file holds no key press.
-            values.append_text = legacy_value(
-                stored_trailing_space(stored),
-                false,
-                AutoSubmitKey::Enter,
-                platform,
-            );
-        }
-    }
-    values.append_text = localize(&values.append_text, platform);
+) -> String {
+    let value = match stored
+        .and_then(|values| values.get("append_text"))
+        .and_then(|value| value.as_str())
+    {
+        Some(value) => value.to_string(),
+        None => legacy_value(trailing_space, auto_submit, key, platform),
+    };
+    localize(&value, platform)
 }
 
 // ---------------------------------------------------------------------------
@@ -729,21 +629,11 @@ pub fn compose_append_text(text: String, keys: Vec<AppendKey>) -> AppendComposed
     AppendComposed { value, parts }
 }
 
-/// Stores the field (a value from `compose_append_text`) in the active
-/// profile.
-#[tauri::command]
-#[specta::specta]
-pub fn change_append_text_setting(app: AppHandle, value: String) -> Result<(), String> {
-    let mut settings = get_settings(&app);
-    settings.append_text = value;
-    write_settings(&app, settings);
-    Ok(())
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::settings::get_default_settings;
+    use crate::profiles::ProfileValues;
+    use crate::settings::{get_default_settings, AppSettings};
     use AppendKey::*;
 
     fn text(text: &str) -> AppendPart {
@@ -897,7 +787,7 @@ mod tests {
             (r"\s{Win+Enter}", vec![CmdEnter]),
             ("{Super+Enter}", vec![CmdEnter]),
         ] {
-            let append = for_settings(&settings_with(value));
+            let append = for_value(value);
             assert_eq!(
                 keys_after_paste(&append, PasteMethod::CtrlV, false),
                 keys,
@@ -1213,44 +1103,28 @@ mod tests {
         );
     }
 
-    fn settings_with(append_text: &str) -> AppSettings {
-        AppSettings {
-            append_text: append_text.to_string(),
-            paste_method: PasteMethod::CtrlV,
-            ..get_default_settings()
-        }
-    }
-
     #[test]
     fn the_pasted_text_gets_the_fields_text() {
-        let settings = settings_with(r"\s{Enter}");
-        assert_eq!(text_to_paste("Hallo".into(), &settings), "Hallo ");
-        let settings = settings_with(r"\nMfG");
-        assert_eq!(text_to_paste("Hallo".into(), &settings), "Hallo\nMfG");
+        assert_eq!(text_to_paste("Hallo".into(), r"\s{Enter}"), "Hallo ");
+        assert_eq!(text_to_paste("Hallo".into(), r"\nMfG"), "Hallo\nMfG");
     }
 
     #[test]
-    fn only_the_new_field_decides() {
-        // The old switches no longer do anything.
-        let mut settings = settings_with("");
-        settings.append_trailing_space = true;
-        settings.auto_submit = true;
-        assert_eq!(text_to_paste("Hallo".into(), &settings), "Hallo");
-        assert_eq!(for_settings(&settings), Append::default());
+    fn an_empty_value_appends_nothing() {
+        assert_eq!(text_to_paste("Hallo".into(), ""), "Hallo");
+        assert_eq!(for_value(""), Append::default());
     }
 
     #[test]
     fn a_hand_edited_value_appends_its_braces_as_text() {
-        let settings = settings_with("{Foo}");
-        assert_eq!(text_to_paste("Hallo".into(), &settings), "Hallo{Foo}");
-        let settings = settings_with("{Enter}x");
-        assert_eq!(for_settings(&settings).keys, vec![]);
-        assert_eq!(text_to_paste("Hallo".into(), &settings), "Hallo{Enter}x");
+        assert_eq!(text_to_paste("Hallo".into(), "{Foo}"), "Hallo{Foo}");
+        assert_eq!(for_value("{Enter}x").keys, vec![]);
+        assert_eq!(text_to_paste("Hallo".into(), "{Enter}x"), "Hallo{Enter}x");
     }
 
     #[test]
     fn key_presses_follow_every_paste_method_but_none() {
-        let append = for_settings(&settings_with(r"\s{Shift+Enter}{Enter}"));
+        let append = for_value(r"\s{Shift+Enter}{Enter}");
         for method in [
             PasteMethod::CtrlV,
             PasteMethod::Direct,
@@ -1269,13 +1143,9 @@ mod tests {
 
     #[test]
     fn key_presses_are_dropped_without_accessibility_but_the_text_stays() {
-        let settings = AppSettings {
-            accessibility_skipped: true,
-            ..settings_with(r"\s{Enter}")
-        };
-        let append = for_settings(&settings);
+        let append = for_value(r"\s{Enter}");
         assert!(keys_after_paste(&append, PasteMethod::CtrlV, true).is_empty());
-        assert_eq!(text_to_paste("Hallo".into(), &settings), "Hallo ");
+        assert_eq!(text_to_paste("Hallo".into(), r"\s{Enter}"), "Hallo ");
     }
 
     // ---- Migration ----------------------------------------------------------
@@ -1362,7 +1232,8 @@ mod tests {
         }
     }
 
-    /// A stored store as written before the field: the old settings and two
+    /// A stored store as written before the field (the end shortcuts took it
+    /// over, `end_keys::migrate`): the old settings and two
     /// profiles, "default" with the trailing space and "work" without.
     fn stored_before_the_field(
         trailing_space: bool,
@@ -1382,7 +1253,7 @@ mod tests {
         settings.active_profile_id = crate::profiles::DEFAULT_PROFILE_ID.to_string();
         let mut stored = serde_json::to_value(&settings).expect("serializes");
         let object = stored.as_object_mut().expect("an object");
-        object.remove("append_text");
+        object.remove("end_keys");
         object.insert("auto_submit_key".into(), serde_json::json!(key));
         for (index, profile) in object["profiles"]
             .as_array_mut()
@@ -1391,7 +1262,7 @@ mod tests {
             .enumerate()
         {
             let values = profile["values"].as_object_mut().expect("values");
-            values.remove("append_text");
+            values.remove("end_keys");
             values.insert(
                 "append_trailing_space".into(),
                 serde_json::json!(index == 0 && trailing_space),
@@ -1413,18 +1284,28 @@ mod tests {
         ] {
             let stored = stored_before_the_field(true, true, "cmd_enter");
             let mut settings = read(&stored);
-            assert!(migrate_on(&mut settings, &stored, platform));
+            assert!(crate::end_keys::migrate_on(
+                &mut settings,
+                &stored,
+                platform
+            ));
             let with_space = format!(r"\s{cmd_enter}");
-            assert_eq!(settings.append_text, with_space);
-            assert_eq!(settings.profiles[0].values.append_text, with_space);
+            assert_eq!(settings.end_keys[0].append_text, with_space);
+            assert_eq!(
+                settings.profiles[0].values.end_keys[0].append_text,
+                with_space
+            );
             // auto_submit was global, so every profile gets its key.
-            assert_eq!(settings.profiles[1].values.append_text, cmd_enter);
+            assert_eq!(
+                settings.profiles[1].values.end_keys[0].append_text,
+                cmd_enter
+            );
 
             // Once stored, nothing changes any more.
             let stored = serde_json::to_value(&settings).expect("serializes");
             let mut again = read(&stored);
-            assert!(!migrate_on(&mut again, &stored, platform));
-            assert_eq!(again.append_text, with_space);
+            assert!(!crate::end_keys::migrate_on(&mut again, &stored, platform));
+            assert_eq!(again.end_keys[0].append_text, with_space);
         }
     }
 
@@ -1432,10 +1313,10 @@ mod tests {
     fn the_trailing_space_alone_becomes_a_space() {
         let stored = stored_before_the_field(true, false, "enter");
         let mut settings = read(&stored);
-        assert!(migrate(&mut settings, &stored));
-        assert_eq!(settings.append_text, r"\s");
-        assert_eq!(settings.profiles[0].values.append_text, r"\s");
-        assert_eq!(settings.profiles[1].values.append_text, "");
+        assert!(crate::end_keys::migrate(&mut settings, &stored));
+        assert_eq!(settings.end_keys[0].append_text, r"\s");
+        assert_eq!(settings.profiles[0].values.end_keys[0].append_text, r"\s");
+        assert_eq!(settings.profiles[1].values.end_keys[0].append_text, "");
     }
 
     #[test]
@@ -1448,10 +1329,14 @@ mod tests {
             ] {
                 let stored = stored_before_the_field(false, true, key);
                 let mut settings = read(&stored);
-                assert!(migrate_on(&mut settings, &stored, platform));
-                assert_eq!(settings.append_text, value);
-                assert_eq!(settings.profiles[0].values.append_text, value);
-                assert_eq!(settings.profiles[1].values.append_text, value);
+                assert!(crate::end_keys::migrate_on(
+                    &mut settings,
+                    &stored,
+                    platform
+                ));
+                assert_eq!(settings.end_keys[0].append_text, value);
+                assert_eq!(settings.profiles[0].values.end_keys[0].append_text, value);
+                assert_eq!(settings.profiles[1].values.end_keys[0].append_text, value);
             }
         }
     }
@@ -1460,8 +1345,8 @@ mod tests {
     fn nothing_to_carry_over_needs_no_write() {
         let stored = stored_before_the_field(false, false, "enter");
         let mut settings = read(&stored);
-        assert!(!migrate(&mut settings, &stored));
-        assert_eq!(settings.append_text, "");
+        assert!(!crate::end_keys::migrate(&mut settings, &stored));
+        assert_eq!(settings.end_keys[0].append_text, "");
     }
 
     #[test]
@@ -1470,19 +1355,26 @@ mod tests {
         stored["append_text"] = serde_json::json!("MfG");
         stored["profiles"][1]["values"]["append_text"] = serde_json::json!("{Tab}");
         let mut settings = read(&stored);
-        assert!(migrate(&mut settings, &stored));
-        assert_eq!(settings.append_text, "MfG");
-        assert_eq!(settings.profiles[1].values.append_text, "{Tab}");
+        assert!(crate::end_keys::migrate(&mut settings, &stored));
+        assert_eq!(settings.end_keys[0].append_text, "MfG");
+        assert_eq!(settings.profiles[1].values.end_keys[0].append_text, "{Tab}");
         // Only "default" lacked the field.
-        assert_eq!(settings.profiles[0].values.append_text, r"\s{Enter}");
+        assert_eq!(
+            settings.profiles[0].values.end_keys[0].append_text,
+            r"\s{Enter}"
+        );
     }
 
-    /// A current store whose values were written on another system.
+    /// A current store whose values (in the end shortcuts) were written on
+    /// another system.
     fn stored_with(settings_value: &str, profile_values: [&str; 2]) -> serde_json::Value {
+        let end_keys = |value: &str| {
+            serde_json::to_value(crate::end_keys::builtin(value, false)).expect("serializes")
+        };
         let mut stored = stored_before_the_field(false, false, "enter");
-        stored["append_text"] = serde_json::json!(settings_value);
+        stored["end_keys"] = end_keys(settings_value);
         for (index, value) in profile_values.iter().enumerate() {
-            stored["profiles"][index]["values"]["append_text"] = serde_json::json!(value);
+            stored["profiles"][index]["values"]["end_keys"] = end_keys(value);
         }
         stored
     }
@@ -1491,37 +1383,33 @@ mod tests {
     fn reading_the_store_gives_every_value_the_systems_key_names() {
         let stored = stored_with("{Cmd+Enter}", [r"\s{Return}", "{Super+Enter}"]);
         let mut settings = read(&stored);
-        assert!(migrate_on(&mut settings, &stored, WINDOWS));
-        assert_eq!(settings.append_text, "{Win+Enter}");
-        assert_eq!(settings.profiles[0].values.append_text, r"\s{Enter}");
-        assert_eq!(settings.profiles[1].values.append_text, "{Win+Enter}");
+        assert!(crate::end_keys::migrate_on(&mut settings, &stored, WINDOWS));
+        assert_eq!(settings.end_keys[0].append_text, "{Win+Enter}");
+        assert_eq!(
+            settings.profiles[0].values.end_keys[0].append_text,
+            r"\s{Enter}"
+        );
+        assert_eq!(
+            settings.profiles[1].values.end_keys[0].append_text,
+            "{Win+Enter}"
+        );
 
         // Once stored, nothing changes any more.
         let stored = serde_json::to_value(&settings).expect("serializes");
         let mut again = read(&stored);
-        assert!(!migrate_on(&mut again, &stored, WINDOWS));
+        assert!(!crate::end_keys::migrate_on(&mut again, &stored, WINDOWS));
 
         let stored = stored_with("{Win+Enter}", ["{Meta+Enter}", "{Return}"]);
         let mut settings = read(&stored);
-        assert!(migrate_on(&mut settings, &stored, MAC));
-        assert_eq!(settings.append_text, "{Cmd+Enter}");
-        assert_eq!(settings.profiles[0].values.append_text, "{Cmd+Enter}");
-        assert_eq!(settings.profiles[1].values.append_text, "{Return}");
-    }
-
-    #[test]
-    fn reading_the_store_gives_the_defaults_the_systems_key_names_too() {
-        let mut stored = stored_with("{Cmd+Enter}", ["{Cmd+Enter}", "{Cmd+Enter}"]);
-        let defaults = crate::profiles::ProfileValues {
-            append_text: "{Cmd+Enter}".to_string(),
-            ..Default::default()
-        };
-        stored["default_values"] = serde_json::to_value(defaults).expect("serializes");
-        let mut settings = read(&stored);
-        assert!(migrate_on(&mut settings, &stored, WINDOWS));
+        assert!(crate::end_keys::migrate_on(&mut settings, &stored, MAC));
+        assert_eq!(settings.end_keys[0].append_text, "{Cmd+Enter}");
         assert_eq!(
-            settings.default_values.expect("defaults").append_text,
-            "{Win+Enter}"
+            settings.profiles[0].values.end_keys[0].append_text,
+            "{Cmd+Enter}"
+        );
+        assert_eq!(
+            settings.profiles[1].values.end_keys[0].append_text,
+            "{Return}"
         );
     }
 
@@ -1535,58 +1423,40 @@ mod tests {
             let stored = stored_with(values[0], [values[1], values[2]]);
             let mut settings = read(&stored);
             assert!(
-                !migrate_on(&mut settings, &stored, platform),
+                !crate::end_keys::migrate_on(&mut settings, &stored, platform),
                 "{platform:?}"
             );
-            assert_eq!(settings.append_text, values[0]);
+            assert_eq!(settings.end_keys[0].append_text, values[0]);
         }
     }
 
-    // ---- Profiles -------------------------------------------------------------
-
-    #[test]
-    fn the_field_is_a_profile_value() {
-        let mut settings = settings_with(r"\s{Enter}");
-        let values = ProfileValues::from_settings(&settings);
-        assert_eq!(values.append_text, r"\s{Enter}");
-        let other = ProfileValues {
-            append_text: "{Tab}".to_string(),
-            ..values
-        };
-        other.apply_to(&mut settings);
-        assert_eq!(settings.append_text, "{Tab}");
-    }
+    // ---- Imports (`end_keys::prepare_import`) --------------------------------
 
     #[test]
     fn a_profile_file_from_before_the_field_gets_it_from_its_trailing_space() {
         let older = "format: danywhere-profile\nversion: 1\nprofile:\n  id: x\n  name: Old\n  values:\n    append_trailing_space: true\n";
-        let mut values = ProfileValues {
-            append_text: String::new(),
-            ..ProfileValues::default()
-        };
-        prepare_import(older, &mut values);
-        assert_eq!(values.append_text, r"\s");
+        let mut values = ProfileValues::default();
+        crate::end_keys::prepare_import(older, &mut values);
+        assert_eq!(values.end_keys[0].append_text, r"\s");
 
         let without_space = older.replace("true", "false");
         let mut values = ProfileValues::default();
-        prepare_import(&without_space, &mut values);
-        assert_eq!(values.append_text, "");
+        crate::end_keys::prepare_import(&without_space, &mut values);
+        assert_eq!(values.end_keys[0].append_text, "");
     }
 
     #[test]
     fn a_profile_file_with_the_field_keeps_it() {
         let newer = "format: danywhere-profile\nversion: 1\nprofile:\n  id: x\n  name: New\n  values:\n    append_trailing_space: true\n    append_text: '{Enter}'\n";
-        let mut values = ProfileValues {
-            append_text: "{Enter}".to_string(),
-            ..ProfileValues::default()
-        };
-        prepare_import(newer, &mut values);
-        assert_eq!(values.append_text, "{Enter}");
+        let mut values = ProfileValues::default();
+        crate::end_keys::prepare_import(newer, &mut values);
+        assert_eq!(values.end_keys[0].append_text, "{Enter}");
+        assert_eq!(values.end_keys[1].append_text, "{Enter}");
     }
 
     #[test]
     fn an_imported_profile_gets_the_systems_key_names() {
-        let file = "format: danywhere-profile\nversion: 1\nprofile:\n  id: x\n  name: New\n  values:\n    append_text: 'x'\n";
+        let file = "format: danywhere-profile\nversion: 1\nprofile:\n  id: x\n  name: New\n  values:\n    end_keys: []\n";
         for (platform, written, expected) in [
             (MAC, r"\s{Win+Enter}", r"\s{Cmd+Enter}"),
             (WINDOWS, r"\s{Cmd+Enter}", r"\s{Win+Enter}"),
@@ -1595,11 +1465,14 @@ mod tests {
             (LINUX, "{Meta+Enter}", "{Meta+Enter}"),
         ] {
             let mut values = ProfileValues {
-                append_text: written.to_string(),
+                end_keys: crate::end_keys::builtin(written, false),
                 ..ProfileValues::default()
             };
-            prepare_import_on(file, &mut values, platform);
-            assert_eq!(values.append_text, expected, "{written} on {platform:?}");
+            crate::end_keys::prepare_import_on(file, &mut values, platform);
+            assert_eq!(
+                values.end_keys[0].append_text, expected,
+                "{written} on {platform:?}"
+            );
         }
     }
 }

@@ -341,9 +341,10 @@ pub fn read_import(
         _ => None,
     };
     let mut profile = file.profile;
-    // DanyWhere: a file from before the "Append" field, or with another
-    // system's key names in it.
-    crate::append_text::prepare_import(text, &mut profile.values);
+    // DanyWhere: a file from before the end shortcuts (or before the
+    // "Append" field), without shortcuts, or with another system's key
+    // names in it.
+    crate::end_keys::prepare_import(text, &mut profile.values);
     // DanyWhere: a file from before the prompt library.
     let ExportedProfile {
         profile: inner,
@@ -823,12 +824,23 @@ mod tests {
     }
 
     #[test]
-    fn the_append_field_travels_with_the_exported_profile() {
+    fn the_end_shortcuts_and_shortcuts_travel_with_the_exported_profile() {
         let mut s = settings();
-        s.append_text = r"\s{Enter}".to_string();
+        s.end_keys[0].append_text = r"\s{Enter}".to_string();
+        s.end_keys.push(crate::end_keys::EndKey {
+            id: "send".to_string(),
+            name: "Senden".to_string(),
+            shortcut: "ctrl+enter".to_string(),
+            append_text: "{Enter}".to_string(),
+            post_process: true,
+            send_context: true,
+        });
+        s.bindings.get_mut("transcribe").unwrap().current_binding = "f13".to_string();
         let yaml = export(&s, "default", Some("geheim")).expect("export");
         let (profile, _) = read_import(&yaml, None).expect("import");
-        assert_eq!(profile.values.append_text, r"\s{Enter}");
+        assert_eq!(profile.values.end_keys, s.end_keys);
+        assert_eq!(profile.values.bindings["transcribe"].current_binding, "f13");
+        assert_eq!(profile.values.default_ends, s.default_ends);
     }
 
     /// A profile written on any system, with any system's name of the
@@ -845,10 +857,10 @@ mod tests {
             r"\s{Meta+Return}",
         ] {
             let mut s = settings();
-            s.append_text = written.to_string();
+            s.end_keys[1].append_text = written.to_string();
             let yaml = export(&s, "default", Some("geheim")).expect("export");
             let (profile, _) = read_import(&yaml, None).expect("import");
-            let imported = &profile.values.append_text;
+            let imported = &profile.values.end_keys[1].append_text;
             assert_eq!(&localize(imported, KeyPlatform::current()), imported);
             assert_eq!(
                 Append::from_parts(&parse(imported)),
@@ -861,24 +873,53 @@ mod tests {
         }
     }
 
+    /// `yaml` as a file from before the end shortcuts: the profile's values
+    /// without them, its default ends and its shortcuts, with `fields`
+    /// instead.
+    fn older_file(yaml: &str, fields: serde_json::Value) -> String {
+        let mut file: serde_json::Value = serde_saphyr::from_str(yaml).expect("reads");
+        let values = file["profile"]["values"]
+            .as_object_mut()
+            .expect("the values");
+        for gone in ["end_keys", "default_ends", "bindings"] {
+            values.remove(gone);
+        }
+        for (key, value) in fields.as_object().expect("fields") {
+            values.insert(key.clone(), value.clone());
+        }
+        serde_saphyr::to_string(&file).expect("writes")
+    }
+
+    #[test]
+    fn a_file_from_before_the_end_shortcuts_gets_them_from_its_append_field_and_context() {
+        let s = settings();
+        let yaml = export(&s, "work", None).expect("export");
+        let older = older_file(
+            &yaml,
+            serde_json::json!({ "append_text": r"\n\n", "send_context": true }),
+        );
+        let (profile, _) = read_import(&older, None).expect("import");
+        assert_eq!(
+            profile.values.end_keys,
+            crate::end_keys::builtin(r"\n\n", true)
+        );
+        assert_eq!(profile.values.default_ends, crate::end_keys::default_ends());
+        // The shortcuts come from the installation it is imported into.
+        assert!(profile.values.bindings.is_empty());
+    }
+
     #[test]
     fn a_file_from_before_the_append_field_gets_it_from_its_trailing_space() {
         let s = settings();
         let yaml = export(&s, "work", None).expect("export");
-        let line = yaml
-            .lines()
-            .find(|line| line.trim_start().starts_with("append_text:"))
-            .expect("the export names the field")
-            .to_string();
-        let indent = &line[..line.len() - line.trim_start().len()];
         for (trailing_space, expected) in [(true, r"\s"), (false, "")] {
-            let older = yaml.replace(
-                &line,
-                &format!("{indent}append_trailing_space: {trailing_space}"),
+            let older = older_file(
+                &yaml,
+                serde_json::json!({ "append_trailing_space": trailing_space }),
             );
-            assert!(!older.contains("append_text"), "{older}");
             let (profile, _) = read_import(&older, None).expect("import");
-            assert_eq!(profile.values.append_text, expected, "{older}");
+            assert_eq!(profile.values.end_keys[0].append_text, expected, "{older}");
+            assert!(!profile.values.end_keys[0].send_context);
         }
     }
 
