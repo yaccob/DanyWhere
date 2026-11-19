@@ -2021,8 +2021,8 @@ language_source: LanguageSource | null;
  */
 recording_removed: boolean; 
 /**
- * DanyWhere: the entry's versions, a stack of edits: at least one, the
- * transcription first, the entry's result last (`history_versions`).
+ * DanyWhere: the entry's versions, a stack of texts: at least one, the
+ * entry's result last (`history_versions`).
  */
 versions: HistoryVersion[]; 
 /**
