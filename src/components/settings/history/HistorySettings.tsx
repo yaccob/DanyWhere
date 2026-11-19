@@ -79,21 +79,20 @@ import { Highlighted, HistorySearchBar } from "./HistorySearchBar";
 import { HistoryTextBox } from "./HistoryTextBox";
 // DanyWhere: the star's tooltip says it keeps the recording.
 import { keepRecordingTooltip } from "./keepRecording";
-// DanyWhere: the versions of an entry: what shows, the track, ✨'s menu.
-import { confirmLoss } from "./confirmLoss";
+// DanyWhere: the versions of an entry: what shows, the track, ✨.
 import { PostProcessButton } from "./PostProcessButton";
 import { VersionTrack } from "./VersionTrack";
 import {
   defaultSaveMode,
+  hasText,
+  indexAfterDelete,
+  indexAfterMove,
   isSaveShortcut,
   matchingVersions,
-  retranscribeNeedsConfirm,
   saveModes,
   shownVersion,
+  topIndex,
   versionText,
-  versionsLostByEditing,
-  versionsLostByPostProcessing,
-  type PostProcessAction,
 } from "./versions";
 
 const IconButton: React.FC<{
@@ -636,12 +635,13 @@ export const HistorySettings: React.FC = () => {
                 postProcess={postProcess}
                 // DanyWhere: with the profile's active prompts (the wand
                 // menu will pass chosen ones, `prompt_library`).
-                reprocess={(id, mode) =>
-                  commands.reprocessHistoryEntry(id, mode, null)
+                reprocess={(id, mode, version) =>
+                  commands.reprocessHistoryEntry(id, mode, version, null)
                 }
                 cancelTranscription={commands.cancelHistoryEntryTranscription}
                 saveVersion={commands.saveHistoryVersion}
-                revertToVersion={commands.revertHistoryEntryToVersion}
+                moveVersion={commands.moveHistoryVersion}
+                deleteVersion={commands.deleteHistoryVersion}
               />
             ))}
           </div>
@@ -716,7 +716,13 @@ interface HistoryEntryProps {
   getAudioUrl: (fileName: string) => Promise<string | null>;
   deleteAudio: (id: number) => Promise<void>;
   postProcess: PostProcessAvailability;
-  reprocess: (id: number, mode: ReprocessMode) => Promise<void>;
+  // DanyWhere: `version` is the version a post-processing starts from
+  // (null: the top).
+  reprocess: (
+    id: number,
+    mode: ReprocessMode,
+    version: number | null,
+  ) => Promise<void>;
   cancelTranscription: (id: number) => Promise<void>;
   // DanyWhere: the entry's versions (`history_versions`).
   saveVersion: (
@@ -725,9 +731,14 @@ interface HistoryEntryProps {
     text: string,
     mode: SaveVersionMode,
   ) => Promise<Result<HistoryEntry, string>>;
-  revertToVersion: (
+  moveVersion: (
     id: number,
-    keep: number,
+    from: number,
+    to: number,
+  ) => Promise<Result<HistoryEntry, string>>;
+  deleteVersion: (
+    id: number,
+    index: number,
   ) => Promise<Result<HistoryEntry, string>>;
 }
 
@@ -748,7 +759,8 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
   reprocess,
   cancelTranscription,
   saveVersion,
-  revertToVersion,
+  moveVersion,
+  deleteVersion,
 }) => {
   const { t, i18n } = useTranslation();
   const osType = useOsType();
@@ -770,7 +782,9 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
   useEffect(() => {
     if (!retrying) setCancelling(false);
   }, [retrying]);
-  const hasTranscription = entry.transcription_text.trim().length > 0;
+  // DanyWhere: the entry's result, the top version, whichever made it: the
+  // transcription may be deleted (`history_versions`).
+  const hasTranscription = hasText(entry);
   // DanyWhere: the version shown; during a search the one that matches.
   const shown = shownVersion(
     entry,
@@ -820,20 +834,10 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
     setTimeout(() => setShowCopied(false), 2000);
   };
 
-  // DanyWhere: editing a version below the top asks first, since saving a
-  // change there deletes the versions above it.
-  const startEditing = async (base: number) => {
+  // DanyWhere: an edit of a version below the top is saved on top as a new
+  // version; nothing goes, so nothing asks.
+  const startEditing = (base: number) => {
     if (retrying || editing !== null || saving) return;
-    const lost = versionsLostByEditing(entry, base);
-    if (lost > 0) {
-      const agreed = await confirmLoss({
-        title: t(`${VERSIONS}.confirmEditTitle`),
-        message: t(`${VERSIONS}.confirmEditMessage`, { count: lost }),
-        okLabel: t(`${VERSIONS}.confirmEdit`),
-        cancelLabel: t(`${VERSIONS}.cancel`),
-      });
-      if (!agreed) return;
-    }
     setDraft(versionText(entry, base));
     setEditing(base);
   };
@@ -875,55 +879,52 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
     }
   };
 
-  const goBack = async (keep: number) => {
+  // DanyWhere: moving or deleting a version, without asking. The version
+  // shown stays in view: it follows a move, and when it is the one deleted
+  // the entry shows its top (`follow` null).
+  const changeVersions = async (
+    change: () => Promise<Result<HistoryEntry, string>>,
+    follow: number | null,
+    topAfter: number,
+  ) => {
+    setSaving(true);
     try {
-      const result = await revertToVersion(entry.id, keep);
+      const result = await change();
       if (result.status !== "ok") throw new Error(String(result.error));
-      // The version gone back to is the top now.
-      show(null);
+      show(follow === null || follow === topAfter ? null : follow);
     } catch (error) {
-      console.error("Failed to go back to a version:", error);
-      notify({ title: t(`${VERSIONS}.goBackError`) });
+      console.error("Failed to move or delete a version:", error);
+      notify({ title: t(`${VERSIONS}.changeError`) });
+    } finally {
+      setSaving(false);
     }
   };
 
-  // DanyWhere: ✨ works on the current version (the one shown; the user
-  // agreed to what it deletes). Below the top it first goes back to it, so
-  // it's the top, which is what post-processing takes; the entry then shows
-  // the top, where the result lands.
-  const runPostProcess = async (action: PostProcessAction) => {
-    const base = shown;
-    if (versionsLostByPostProcessing(entry, base) > 0) {
-      setSaving(true);
-      try {
-        const result = await revertToVersion(entry.id, base);
-        if (result.status !== "ok") throw new Error(String(result.error));
-      } catch (error) {
-        console.error("Failed to go back before post-processing:", error);
-        notify({ title: t(`${VERSIONS}.goBackError`) });
-        return;
-      } finally {
-        setSaving(false);
-      }
-    }
+  const moveVersionTo = (from: number, to: number) =>
+    void changeVersions(
+      () => moveVersion(entry.id, from, to),
+      indexAfterMove(shown, from, to),
+      topIndex(entry),
+    );
+
+  const deleteVersionAt = (index: number) =>
+    void changeVersions(
+      () => deleteVersion(entry.id, index),
+      indexAfterDelete(shown, index),
+      topIndex(entry) - 1,
+    );
+
+  // DanyWhere: ✨ post-processes the current version, the one shown; the
+  // result goes on top, where the entry then shows it. Every version stays.
+  const runPostProcess = () => {
+    void reprocess(entry.id, "post_process", shown);
     show(null);
-    void reprocess(entry.id, action);
   };
 
-  // DanyWhere: re-transcribing replaces the transcription and drops every
-  // version above it; asks first unless the same comes back.
-  const runRetranscribe = async (mode: ReprocessMode) => {
-    if (retranscribeNeedsConfirm(entry, mode)) {
-      const agreed = await confirmLoss({
-        title: t(`${VERSIONS}.confirmRetranscribeTitle`),
-        message: t(`${VERSIONS}.confirmRetranscribeMessage`),
-        okLabel: t(`${VERSIONS}.confirmRetranscribe`),
-        cancelLabel: t(`${VERSIONS}.cancel`),
-      });
-      if (!agreed) return;
-    }
+  // DanyWhere: the new transcription goes on top; every version stays.
+  const runRetranscribe = (mode: ReprocessMode) => {
+    void reprocess(entry.id, mode, null);
     show(null);
-    void reprocess(entry.id, mode);
   };
 
   const handleDeleteEntry = async () => {
@@ -1005,20 +1006,18 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
             </IconButton>
           ) : (
             <>
-              {/* DanyWhere: ✨ with its menu of what the stack allows. */}
+              {/* DanyWhere: ✨ on the version shown. */}
               {hasTranscription && (
                 <PostProcessButton
-                  entry={entry}
-                  shown={shown}
                   availability={postProcess}
-                  onRun={(action) => void runPostProcess(action)}
+                  onRun={runPostProcess}
                   disabled={editing !== null || saving}
                 />
               )}
               {!entry.recording_removed && (
                 <IconButton
                   onClick={(event) =>
-                    void runRetranscribe(
+                    runRetranscribe(
                       retranscribeMode(event.shiftKey, postProcess),
                     )
                   }
@@ -1066,7 +1065,7 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
             onKeyDown={handleEditKeyDown}
             onActivate={
               editing === null && !saving
-                ? () => void startEditing(shown)
+                ? () => startEditing(shown)
                 : undefined
             }
             editLabel={t("settings.history.edit")}
@@ -1136,7 +1135,8 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
             shown={shown}
             matching={matching}
             onShow={show}
-            onGoBack={(keep) => void goBack(keep)}
+            onMove={moveVersionTo}
+            onDelete={deleteVersionAt}
             disabled={saving}
           />
         )}

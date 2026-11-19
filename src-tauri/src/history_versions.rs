@@ -1,22 +1,40 @@
-//! Versions of a History entry (DanyWhere): a stack of edits. Version 0 is
-//! the transcription as the speech model wrote it; every version above it
-//! was made from the one directly below, by post-processing (✨) or by the
-//! user (✎). The top version is what the entry "is": what History shows by
-//! default, what is copied, pasted again and sent along as context.
+//! Versions of a History entry (DanyWhere): a stack of texts. The speech
+//! model's transcription is one version; every post-processing (✨) and every
+//! edit the user saves as new (✎) puts another one on top. The top version is
+//! what the entry "is": what History shows by default, what is copied, pasted
+//! again and sent along as context.
 //!
-//! Each version remembers its steps (who, when, with which prompt), also
-//! when a later step replaced its text. The transcription itself is never
-//! replaced by an edit; transcribing again replaces it and drops every
-//! version above it.
+//! One rule makes every version (user, 2026-11-19, H1): post-processing any
+//! version, saving an edit of any version as new, and transcribing again put
+//! their result on top; nothing is deleted on the way. Only the top version
+//! can be changed in place. All versions are alike (H3): any can be moved
+//! anywhere and deleted, the transcription included, as long as one is left,
+//! and nothing asks first (H4). A version doesn't remember which one it was
+//! made from (H7), but it keeps its steps (who, when, with which prompt).
 //!
-//! The column `versions` holds versions 1.. as JSON; version 0 always comes
-//! from `transcription_text`. While the column is NULL, the stack is derived
-//! from the columns of before (see [`StackColumns`]), so a dictation needs
-//! no change to Handy's code: one with post-processing is [transcription,
-//! ✨]. Once the user or a post-processing from History changes the stack,
-//! the whole stack above the transcription is stored and the old correction
-//! columns are no longer read. Handy's `post_processed_text` and
-//! `post_process_prompt` keep the latest post-processing's result.
+//! Storage. While the column `versions` is NULL, the stack is derived from
+//! the columns of before (see [`StackColumns`]), so a dictation needs no
+//! change to Handy's code: one with post-processing is [transcription, ✨].
+//! DanyWhere 0.2 stored the versions above the transcription as a JSON array,
+//! the transcription itself in `transcription_text`; that is still read. Once
+//! anything changes a stack, the whole stack is stored as `{"stack": [...]}`
+//! and Handy's columns follow it, so that a deleted text stays nowhere:
+//!
+//! - `transcription_text` holds the entry's transcript, the version the
+//!   speech model made last ([`transcript_index`]). When the user deleted
+//!   every transcription it holds the top version's text instead, so Handy's
+//!   checks for an entry with text still hold. Code that needs the transcript
+//!   finds it by its step, never by its position ([`transcript`]).
+//! - `post_processed_text` and `post_process_prompt` keep the latest
+//!   post-processing only while the stack still has its text.
+//! - the corrections from before versions are cleared: the stack holds what
+//!   is left of them.
+//!
+//! Two things still replace versions, both outside History's buttons and
+//! only while the stack is still the one a dictation made (`profile_redo`,
+//! the redo of a dictation for the application it goes into): Handy's
+//! `update_transcription` starts the stack anew, and the redo's
+//! post-processing replaces the dictation's own ([`PostProcessTarget`]).
 
 use std::borrow::Cow;
 use std::fmt;
@@ -29,13 +47,14 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 use tauri::State;
 
+use crate::language_detection::{LanguageDecision, LanguageSource};
 use crate::managers::history::{HistoryEntry, HistoryManager};
 
 /// Who made a version, or one step of it.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, Type)]
 #[serde(rename_all = "snake_case")]
 pub enum VersionAuthor {
-    /// The speech model; only version 0.
+    /// The speech model.
     Transcription,
     /// Post-processing.
     Ai,
@@ -47,7 +66,8 @@ pub enum VersionAuthor {
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Type)]
 pub struct VersionStep {
     pub by: VersionAuthor,
-    /// Unix milliseconds; None for steps migrated from before versions existed.
+    /// Unix milliseconds; None where it isn't known (steps from before
+    /// versions existed that happened after the entry was made).
     pub at: Option<i64>,
     /// For an AI step: the prompt's name, when known.
     pub prompt_name: Option<String>,
@@ -65,34 +85,34 @@ pub struct HistoryVersion {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, Type)]
 #[serde(rename_all = "snake_case")]
 pub enum SaveVersionMode {
-    /// The version gets the new text and one more step.
+    /// The top version gets the new text and one more step.
     Replace,
-    /// The new text is a new version on top of it.
+    /// The new text is a new version on top.
     New,
 }
 
-/// Why a version can't be saved or post-processed. The commands return its
+/// Why a stack can't change as asked. The commands return its
 /// [`code`](VersionError::code).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum VersionError {
     /// A version can't be empty.
     Blank,
-    /// The transcription is never replaced, only built upon.
-    TranscriptionIsFixed,
     /// The entry has no version with that number.
     NoSuchVersion,
-    /// Only a version a post-processing made can be post-processed again
-    /// from the one below it.
-    NotMadeByAi,
+    /// Only the top version is changed in place; an edit of a version below
+    /// it is saved as a new version on top.
+    NotTop,
+    /// The entry's only version can't be deleted; deleting the entry can.
+    LastVersion,
 }
 
 impl VersionError {
     pub fn code(self) -> &'static str {
         match self {
             VersionError::Blank => "blank",
-            VersionError::TranscriptionIsFixed => "transcription_is_fixed",
             VersionError::NoSuchVersion => "no_such_version",
-            VersionError::NotMadeByAi => "not_made_by_ai",
+            VersionError::NotTop => "not_top",
+            VersionError::LastVersion => "last_version",
         }
     }
 }
@@ -116,12 +136,16 @@ impl VersionStep {
 }
 
 impl HistoryVersion {
-    /// Version 0: the transcription as the model wrote it.
-    pub fn transcription(text: &str) -> Self {
-        Self {
-            text: text.to_string(),
-            steps: vec![VersionStep::new(VersionAuthor::Transcription, None)],
-        }
+    /// A transcription as the speech model wrote it at `at` (Unix
+    /// milliseconds, when known).
+    pub fn transcribed(text: &str, at: Option<i64>) -> Self {
+        Self::made_of(text, VersionStep::new(VersionAuthor::Transcription, at))
+    }
+
+    /// A transcription without a time, for tests.
+    #[cfg(test)]
+    pub(crate) fn transcription(text: &str) -> Self {
+        Self::transcribed(text, None)
     }
 
     fn made_of(text: &str, step: VersionStep) -> Self {
@@ -131,11 +155,14 @@ impl HistoryVersion {
         }
     }
 
-    /// Whether a post-processing made it (its first step).
-    fn made_by_ai(&self) -> bool {
-        self.steps
-            .first()
-            .is_some_and(|step| step.by == VersionAuthor::Ai)
+    /// Whether `by` made it (its first step).
+    pub fn made_by(&self, by: VersionAuthor) -> bool {
+        self.steps.first().is_some_and(|step| step.by == by)
+    }
+
+    /// Whether the user changed it, in any step.
+    pub fn edited_by_user(&self) -> bool {
+        self.steps.iter().any(|step| step.by == VersionAuthor::User)
     }
 }
 
@@ -144,11 +171,27 @@ fn non_blank(text: Option<&str>) -> Option<&str> {
     text.filter(|text| !text.trim().is_empty())
 }
 
+/// The column `versions` as stored.
+#[derive(Deserialize)]
+#[serde(untagged)]
+enum Stored {
+    /// The whole stack, bottom to top.
+    Whole { stack: Vec<HistoryVersion> },
+    /// DanyWhere 0.2's: the versions above `transcription_text`.
+    Above(Vec<HistoryVersion>),
+}
+
+/// The whole stack as the column stores it.
+#[derive(Serialize)]
+struct WholeStack<'a> {
+    stack: &'a [HistoryVersion],
+}
+
 /// The columns an entry's stack is read from.
 #[derive(Clone, Copy, Debug, Default)]
 pub(crate) struct StackColumns<'a> {
     pub transcription: &'a str,
-    /// Versions 1.. as stored; `None` (NULL): derived from the rest.
+    /// The stack as stored; `None` (NULL): derived from the rest.
     pub versions: Option<&'a str>,
     /// The user's correction of the transcription, from before versions.
     pub transcription_correction: Option<&'a str>,
@@ -157,6 +200,12 @@ pub(crate) struct StackColumns<'a> {
     pub post_processed_correction: Option<&'a str>,
     /// The transcription's correction the post-processing was made from.
     pub from_correction: Option<&'a str>,
+    /// When the entry was made (Unix milliseconds): the time of the steps
+    /// derived without one that happened then, the transcription and a
+    /// dictation's own post-processing.
+    pub made_at: Option<i64>,
+    /// A transcribed file's entry, whose post-processing may have come later.
+    pub is_file: bool,
 }
 
 impl<'a> StackColumns<'a> {
@@ -171,42 +220,60 @@ impl<'a> StackColumns<'a> {
             post_processed: text_ref(row, "post_processed_text")?,
             post_processed_correction: text_ref(row, "post_processed_correction")?,
             from_correction: text_ref(row, "post_processed_from_correction")?,
+            made_at: row
+                .get::<_, Option<i64>>("timestamp")?
+                .map(|seconds| seconds.saturating_mul(1000)),
+            is_file: text_ref(row, "source_name")?.is_some(),
         })
     }
 
-    /// Versions 1.. of an entry from before versions existed, oldest first:
-    /// with a post-processing, the correction it was made from (if any),
-    /// the post-processing (✨) and its correction (if any); without one,
-    /// the transcription's correction (if any). A correction of the
+    /// The transcription of `transcription_text`.
+    fn transcription_version(&self) -> HistoryVersion {
+        HistoryVersion::transcribed(self.transcription, self.made_at)
+    }
+
+    /// The versions above the transcription of an entry from before
+    /// versions existed, oldest first, with when they were made where that
+    /// is known: with a post-processing, the correction it was made from (if
+    /// any), the post-processing (✨) and its correction (if any); without
+    /// one, the transcription's correction (if any). A correction of the
     /// transcription the post-processing was not made from fits no stack,
-    /// so it is left out. Blank texts count as none.
-    fn derived(&self) -> Vec<(VersionAuthor, &'a str)> {
+    /// so it is left out. Blank texts count as none. A dictation's own
+    /// post-processing ran when it was made; one made from a correction came
+    /// later, as may a file's.
+    fn derived(&self) -> Vec<(VersionAuthor, &'a str, Option<i64>)> {
         let mut versions = Vec::new();
         match non_blank(self.post_processed) {
             Some(post_processed) => {
-                if let Some(from) = non_blank(self.from_correction) {
-                    versions.push((VersionAuthor::User, from));
+                let from = non_blank(self.from_correction);
+                if let Some(from) = from {
+                    versions.push((VersionAuthor::User, from, None));
                 }
-                versions.push((VersionAuthor::Ai, post_processed));
+                let at = if from.is_none() && !self.is_file {
+                    self.made_at
+                } else {
+                    None
+                };
+                versions.push((VersionAuthor::Ai, post_processed, at));
                 if let Some(correction) = non_blank(self.post_processed_correction) {
-                    versions.push((VersionAuthor::User, correction));
+                    versions.push((VersionAuthor::User, correction, None));
                 }
             }
             None => {
                 if let Some(correction) = non_blank(self.transcription_correction) {
-                    versions.push((VersionAuthor::User, correction));
+                    versions.push((VersionAuthor::User, correction, None));
                 }
             }
         }
         versions
     }
 
-    /// Versions 1.. as stored; `None` when none are stored or they can't
-    /// be read.
-    fn stored(&self) -> Option<Vec<HistoryVersion>> {
+    /// The column `versions` as stored; `None` when it is NULL or can't be
+    /// read.
+    fn stored(&self) -> Option<Stored> {
         let json = self.versions?;
         match serde_json::from_str(json) {
-            Ok(versions) => Some(versions),
+            Ok(stored) => Some(stored),
             Err(e) => {
                 warn!("Ignoring the stored versions of a History entry: {e}");
                 None
@@ -214,39 +281,52 @@ impl<'a> StackColumns<'a> {
         }
     }
 
-    /// The whole stack, version 0 included.
+    /// The whole stack, bottom to top.
     pub fn versions(&self) -> Vec<HistoryVersion> {
-        let mut versions = vec![HistoryVersion::transcription(self.transcription)];
         match self.stored() {
-            Some(stored) => versions.extend(stored),
-            None => versions.extend(
-                self.derived()
-                    .into_iter()
-                    .map(|(by, text)| HistoryVersion::made_of(text, VersionStep::new(by, None))),
-            ),
+            Some(Stored::Whole { stack }) if !stack.is_empty() => stack,
+            Some(Stored::Whole { .. }) => vec![self.transcription_version()],
+            Some(Stored::Above(above)) => std::iter::once(self.transcription_version())
+                .chain(above)
+                .collect(),
+            None => {
+                std::iter::once(self.transcription_version())
+                    .chain(self.derived().into_iter().map(|(by, text, at)| {
+                        HistoryVersion::made_of(text, VersionStep::new(by, at))
+                    }))
+                    .collect()
+            }
         }
-        versions
     }
 
     /// The texts of [`Self::versions`], copied only when they are stored.
     pub fn texts(&self) -> Vec<Cow<'a, str>> {
-        let mut texts = vec![Cow::Borrowed(self.transcription)];
         match self.stored() {
-            Some(stored) => texts.extend(stored.into_iter().map(|v| Cow::Owned(v.text))),
-            None => texts.extend(self.derived().into_iter().map(|(_, t)| Cow::Borrowed(t))),
+            Some(Stored::Whole { stack }) if !stack.is_empty() => {
+                stack.into_iter().map(|v| Cow::Owned(v.text)).collect()
+            }
+            Some(Stored::Whole { .. }) => vec![Cow::Borrowed(self.transcription)],
+            Some(Stored::Above(above)) => std::iter::once(Cow::Borrowed(self.transcription))
+                .chain(above.into_iter().map(|v| Cow::Owned(v.text)))
+                .collect(),
+            None => std::iter::once(Cow::Borrowed(self.transcription))
+                .chain(self.derived().into_iter().map(|(_, t, _)| Cow::Borrowed(t)))
+                .collect(),
         }
-        texts
     }
 }
 
-/// The stack of an entry just made, as reading it back gives it.
+/// The stack of an entry just made at `made_at` (Unix milliseconds), as
+/// reading it back gives it.
 pub fn versions_of_new_entry(
     transcription: &str,
     post_processed: Option<&str>,
+    made_at: Option<i64>,
 ) -> Vec<HistoryVersion> {
     StackColumns {
         transcription,
         post_processed,
+        made_at,
         ..Default::default()
     }
     .versions()
@@ -268,12 +348,37 @@ pub fn has_ai_step(versions: &[HistoryVersion]) -> bool {
         .any(|step| step.by == VersionAuthor::Ai)
 }
 
-/// The stack after the user saved `text` (trimmed) on version `base` at
-/// `at` (Unix milliseconds); `None`: nothing changes. The versions above
-/// `base` drop, then `Replace` gives `base` the text and a ✎ step, `New`
-/// puts a new version on top of it. A text equal to the one of `base`
-/// changes nothing, so nothing drops either; a `Replace` that makes `base`
-/// equal to the version below drops `base` too.
+/// The index of the entry's transcript: of the versions the speech model
+/// made, the one it made last (a step without a time counts as the oldest;
+/// of equal times, the higher one wins). `None` once the user deleted every
+/// transcription.
+pub fn transcript_index(versions: &[HistoryVersion]) -> Option<usize> {
+    versions
+        .iter()
+        .enumerate()
+        .filter(|(_, version)| version.made_by(VersionAuthor::Transcription))
+        .max_by_key(|(index, version)| (version.steps.first().and_then(|step| step.at), *index))
+        .map(|(index, _)| index)
+}
+
+/// The entry's transcript (see [`transcript_index`]).
+pub fn transcript(versions: &[HistoryVersion]) -> Option<&HistoryVersion> {
+    transcript_index(versions).map(|index| &versions[index])
+}
+
+/// What `transcription_text` holds for a stack: its transcript, or the top
+/// version's text once no transcription is left.
+fn transcript_column(versions: &[HistoryVersion]) -> &str {
+    transcript(versions)
+        .or_else(|| versions.last())
+        .map_or("", |version| version.text.as_str())
+}
+
+/// The stack after the user saved `text` (trimmed), an edit of version
+/// `base`, at `at` (Unix milliseconds); `None`: nothing changes. `New` puts
+/// it on top as a new version, whichever version it was made from;
+/// `Replace` gives the top version the text and a ✎ step, and only the top.
+/// A text equal to the one of `base` or of the top changes nothing.
 pub fn save_version(
     versions: &[HistoryVersion],
     base: u32,
@@ -282,90 +387,104 @@ pub fn save_version(
     at: i64,
 ) -> std::result::Result<Option<Vec<HistoryVersion>>, VersionError> {
     let base = base as usize;
-    let Some(base_version) = versions.get(base) else {
+    let (Some(base_version), Some(top)) = (versions.get(base), versions.last()) else {
         return Err(VersionError::NoSuchVersion);
     };
     let text = text.trim();
     if text.is_empty() {
         return Err(VersionError::Blank);
     }
-    if mode == SaveVersionMode::Replace && base == 0 {
-        return Err(VersionError::TranscriptionIsFixed);
+    if mode == SaveVersionMode::Replace && base + 1 != versions.len() {
+        return Err(VersionError::NotTop);
     }
-    if text == base_version.text.trim() {
+    if text == base_version.text.trim() || text == top.text.trim() {
         return Ok(None);
     }
     let step = VersionStep::new(VersionAuthor::User, Some(at));
-    let mut saved = versions[..=base].to_vec();
-    match mode {
-        SaveVersionMode::Replace => replace_top(&mut saved, text, step),
-        SaveVersionMode::New => saved.push(HistoryVersion::made_of(text, step)),
+    let mut saved = versions.to_vec();
+    match (mode, saved.last_mut()) {
+        (SaveVersionMode::Replace, Some(top)) => {
+            top.text = text.to_string();
+            top.steps.push(step);
+        }
+        _ => saved.push(HistoryVersion::made_of(text, step)),
     }
     Ok(Some(saved))
 }
 
-/// Gives the top version `text` and one more `step`, or drops it when
-/// `text` equals the version below. The transcription alone is never
-/// replaced.
-fn replace_top(versions: &mut Vec<HistoryVersion>, text: &str, step: VersionStep) {
-    let [.., below, top] = versions.as_mut_slice() else {
-        return;
-    };
-    if below.text.trim() == text {
-        versions.pop();
-    } else {
-        top.text = text.to_string();
-        top.steps.push(step);
+/// The stack without version `index`. Any version can go, the
+/// transcription too, as long as one is left.
+pub fn delete_version(
+    versions: &[HistoryVersion],
+    index: u32,
+) -> std::result::Result<Vec<HistoryVersion>, VersionError> {
+    let index = index as usize;
+    if index >= versions.len() {
+        return Err(VersionError::NoSuchVersion);
     }
+    if versions.len() == 1 {
+        return Err(VersionError::LastVersion);
+    }
+    let mut left = versions.to_vec();
+    left.remove(index);
+    Ok(left)
 }
 
-/// The stack after going back to version `keep`: the versions above it
-/// drop. `None`: `keep` is the top or above it, nothing changes.
-pub fn revert_to_version(versions: &[HistoryVersion], keep: u32) -> Option<Vec<HistoryVersion>> {
-    let keep = keep as usize;
-    (keep + 1 < versions.len()).then(|| versions[..=keep].to_vec())
+/// The stack with version `from` moved to place `to` (both counted from
+/// the bottom, `to` as it is afterwards); `None`: it is there already.
+pub fn move_version(
+    versions: &[HistoryVersion],
+    from: u32,
+    to: u32,
+) -> std::result::Result<Option<Vec<HistoryVersion>>, VersionError> {
+    let (from, to) = (from as usize, to as usize);
+    if from >= versions.len() || to >= versions.len() {
+        return Err(VersionError::NoSuchVersion);
+    }
+    if from == to {
+        return Ok(None);
+    }
+    let mut moved = versions.to_vec();
+    let version = moved.remove(from);
+    moved.insert(to, version);
+    Ok(Some(moved))
 }
 
-/// What a post-processing from History does with its result.
+/// Where a post-processing's result goes.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum PostProcessTarget {
-    /// Post-process the top version; the result is a new version on top.
-    New,
-    /// Post-process the top version; the result replaces it, which keeps
-    /// its steps and gets one more, a ✨ one. Never the transcription.
-    Replace,
-    /// Post-process the version below the top again; the result replaces
-    /// the top with a single ✨ step. Only when a post-processing made the
-    /// top.
-    Redo,
+    /// On top, as a new version: every post-processing from History.
+    OnTop,
+    /// In place of the top version while a post-processing made it and the
+    /// user didn't change it, else on top: the redo of a dictation for the
+    /// application it goes into, which replaces the dictation's own
+    /// post-processing (`profile_redo`).
+    InPlaceOfAiTop,
 }
 
-/// The number of the version a post-processing starts from.
+/// The number of the version a post-processing starts from: `version`, or
+/// the top when it is `None`.
 pub fn post_processing_input(
     versions: &[HistoryVersion],
-    target: PostProcessTarget,
+    version: Option<u32>,
 ) -> std::result::Result<usize, VersionError> {
-    let top = versions
-        .len()
-        .checked_sub(1)
-        .ok_or(VersionError::NoSuchVersion)?;
-    match target {
-        PostProcessTarget::New => Ok(top),
-        PostProcessTarget::Replace | PostProcessTarget::Redo if top == 0 => {
-            Err(VersionError::TranscriptionIsFixed)
-        }
-        PostProcessTarget::Replace => Ok(top),
-        PostProcessTarget::Redo if !versions[top].made_by_ai() => Err(VersionError::NotMadeByAi),
-        PostProcessTarget::Redo => Ok(top - 1),
+    let input = match version {
+        Some(version) => version as usize,
+        None => versions
+            .len()
+            .checked_sub(1)
+            .ok_or(VersionError::NoSuchVersion)?,
+    };
+    if input < versions.len() {
+        Ok(input)
+    } else {
+        Err(VersionError::NoSuchVersion)
     }
 }
 
-/// The stack with a post-processing's `text` applied as `target` says,
-/// to the stack as it is when the post-processing ends. Where `target` no
-/// longer fits that stack, the result goes on top as a new version, so it
-/// is never lost. As when the user saves, a result equal to the text it
-/// replaces or builds upon changes nothing, and one that would make a
-/// version equal to the one below drops that version instead.
+/// The stack with a post-processing's `text` (trimmed) applied as `target`
+/// says, to the stack as it is when the post-processing ends. A result
+/// equal to the top's text adds nothing.
 pub fn apply_post_processing(
     versions: &[HistoryVersion],
     target: PostProcessTarget,
@@ -373,60 +492,77 @@ pub fn apply_post_processing(
     step: VersionStep,
 ) -> Vec<HistoryVersion> {
     let text = text.trim();
-    let target = match post_processing_input(versions, target) {
-        Ok(_) => target,
-        Err(_) => PostProcessTarget::New,
-    };
     let mut applied = versions.to_vec();
-    let top_is = |versions: &[HistoryVersion], text: &str| {
-        versions.last().is_some_and(|top| top.text.trim() == text)
-    };
-    match target {
-        PostProcessTarget::New => {
-            if !top_is(&applied, text) {
-                applied.push(HistoryVersion::made_of(text, step));
-            }
-        }
-        PostProcessTarget::Replace => {
-            if !top_is(&applied, text) {
-                replace_top(&mut applied, text, step);
-            }
-        }
-        PostProcessTarget::Redo => {
-            applied.pop();
-            if !top_is(&applied, text) {
-                applied.push(HistoryVersion::made_of(text, step));
-            }
-        }
+    let replaces_top = target == PostProcessTarget::InPlaceOfAiTop
+        && applied
+            .last()
+            .is_some_and(|top| top.made_by(VersionAuthor::Ai) && !top.edited_by_user());
+    if replaces_top {
+        applied.pop();
+    }
+    if applied.last().is_none_or(|top| top.text.trim() != text) {
+        applied.push(HistoryVersion::made_of(text, step));
     }
     applied
 }
 
-/// Versions 1.. as the column stores them; version 0 comes from
-/// `transcription_text`.
+/// The whole stack as the column `versions` stores it.
 fn stored_json(versions: &[HistoryVersion]) -> Result<String> {
-    Ok(serde_json::to_string(
-        versions.get(1..).unwrap_or_default(),
-    )?)
+    Ok(serde_json::to_string(&WholeStack { stack: versions })?)
 }
 
 fn now_millis() -> i64 {
     chrono::Utc::now().timestamp_millis()
 }
 
-/// Whether saving on version `base` dropped any of the `before` versions:
-/// those above it, or `base` itself when it became equal to the one below
-/// (`after` versions are left).
-fn save_drops_versions(before: usize, base: u32, after: usize) -> bool {
-    let base = base as usize;
-    base + 1 < before || after <= base
+/// Stores `versions` as the stack of `entry`, with Handy's columns following
+/// it (see the module's doc): `transcription_text` its transcript;
+/// `post_processed` (text and prompt) a new post-processing, else the latest
+/// one stays only while the stack has its text; the corrections from before
+/// versions cleared. `requested`: whether the entry counts as post-processed
+/// from now on, `None` leaves it.
+fn store_stack(
+    conn: &Connection,
+    entry: &HistoryEntry,
+    versions: &[HistoryVersion],
+    post_processed: Option<(&str, Option<&str>)>,
+    requested: Option<bool>,
+) -> Result<()> {
+    let (post_processed_text, post_process_prompt) = match post_processed {
+        Some((text, prompt)) => (Some(text), prompt),
+        None => {
+            let kept = entry
+                .post_processed_text
+                .as_deref()
+                .filter(|text| versions.iter().any(|v| v.text.trim() == text.trim()));
+            (kept, kept.and(entry.post_process_prompt.as_deref()))
+        }
+    };
+    conn.execute(
+        "UPDATE transcription_history
+         SET versions = ?1,
+             transcription_text = ?2,
+             post_processed_text = ?3,
+             post_process_prompt = ?4,
+             post_process_requested = COALESCE(?5, post_process_requested),
+             transcription_correction = NULL,
+             post_processed_correction = NULL,
+             post_processed_from_correction = NULL
+         WHERE id = ?6",
+        params![
+            stored_json(versions)?,
+            transcript_column(versions),
+            post_processed_text,
+            post_process_prompt,
+            requested,
+            entry.id
+        ],
+    )?;
+    Ok(())
 }
 
 /// See [`save_version`]; stores the stack and returns the entry as it is
-/// now. When saving drops versions, the entry counts as post-processed only
-/// while a version with a ✨ step stays, as after going back to a version;
-/// otherwise that stays as it was. Errors: [`VersionError`], or the
-/// database's.
+/// now. Errors: [`VersionError`], or the database's.
 pub(crate) fn save_version_with_conn(
     conn: &Connection,
     id: i64,
@@ -439,40 +575,44 @@ pub(crate) fn save_version_with_conn(
     let Some(versions) = save_version(&entry.versions, base, text, mode, at)? else {
         return Ok(entry);
     };
-    let requested = save_drops_versions(entry.versions.len(), base, versions.len())
-        .then(|| has_ai_step(&versions));
-    conn.execute(
-        "UPDATE transcription_history
-         SET versions = ?1,
-             post_process_requested = COALESCE(?2, post_process_requested)
-         WHERE id = ?3",
-        params![stored_json(&versions)?, requested, id],
-    )?;
+    store_stack(conn, &entry, &versions, None, None)?;
     HistoryManager::entry_with_conn(conn, id)
 }
 
-/// See [`revert_to_version`]. The entry counts as post-processed only while
-/// a version with a ✨ step stays, so transcribing it again post-processes
-/// only then.
-pub(crate) fn revert_to_version_with_conn(
+/// See [`delete_version`]. When the version deleted had a ✨ step, the
+/// entry counts as post-processed only while another version with one
+/// stays, so transcribing it again post-processes only then.
+pub(crate) fn delete_version_with_conn(
     conn: &Connection,
     id: i64,
-    keep: u32,
+    index: u32,
 ) -> Result<HistoryEntry> {
     let entry = HistoryManager::entry_with_conn(conn, id)?;
-    let Some(versions) = revert_to_version(&entry.versions, keep) else {
-        return Ok(entry);
-    };
-    conn.execute(
-        "UPDATE transcription_history
-         SET versions = ?1, post_process_requested = ?2
-         WHERE id = ?3",
-        params![stored_json(&versions)?, has_ai_step(&versions), id],
-    )?;
+    let versions = delete_version(&entry.versions, index)?;
+    let deleted = entry.versions.get(index as usize);
+    let requested = deleted
+        .is_some_and(|version| has_ai_step(std::slice::from_ref(version)))
+        .then(|| has_ai_step(&versions));
+    store_stack(conn, &entry, &versions, None, requested)?;
     HistoryManager::entry_with_conn(conn, id)
 }
 
-/// What a post-processing from History came back with.
+/// See [`move_version`].
+pub(crate) fn move_version_with_conn(
+    conn: &Connection,
+    id: i64,
+    from: u32,
+    to: u32,
+) -> Result<HistoryEntry> {
+    let entry = HistoryManager::entry_with_conn(conn, id)?;
+    let Some(versions) = move_version(&entry.versions, from, to)? else {
+        return Ok(entry);
+    };
+    store_stack(conn, &entry, &versions, None, None)?;
+    HistoryManager::entry_with_conn(conn, id)
+}
+
+/// What a post-processing came back with.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub(crate) struct PostProcessed {
     pub text: String,
@@ -482,8 +622,8 @@ pub(crate) struct PostProcessed {
     pub prompt_name: Option<String>,
 }
 
-/// Applies a post-processing from History to the entry's stack as it is
-/// now (see [`apply_post_processing`]) at `at` (Unix milliseconds). Handy's
+/// Applies a post-processing to the entry's stack as it is now (see
+/// [`apply_post_processing`]) at `at` (Unix milliseconds). Handy's
 /// `post_processed_text` and `post_process_prompt` get the result, and the
 /// entry counts as post-processed from now on.
 pub(crate) fn store_post_processing_with_conn(
@@ -500,15 +640,86 @@ pub(crate) fn store_post_processing_with_conn(
         prompt_name: result.prompt_name,
     };
     let versions = apply_post_processing(&entry.versions, target, &result.text, step);
-    conn.execute(
-        "UPDATE transcription_history
-         SET post_processed_text = ?1,
-             post_process_prompt = ?2,
-             post_process_requested = 1,
-             versions = ?3
-         WHERE id = ?4",
-        params![result.text, result.prompt, stored_json(&versions)?, id],
+    store_stack(
+        conn,
+        &entry,
+        &versions,
+        Some((&result.text, result.prompt.as_deref())),
+        Some(true),
     )?;
+    HistoryManager::entry_with_conn(conn, id)
+}
+
+/// A transcription made again from History ("Transcribe Again"), or a
+/// file's first one.
+#[derive(Clone, Debug, Default)]
+pub(crate) struct NewTranscription {
+    pub text: String,
+    pub language: Option<LanguageDecision>,
+    /// Its post-processing, when one ran and came back with text.
+    pub post_processed: Option<PostProcessed>,
+    /// Whether the entry counts as post-processed from now on.
+    pub post_process_requested: bool,
+}
+
+/// Puts a new transcription on top of the entry's stack at `at` (Unix
+/// milliseconds), and its post-processing on top of it; the versions there
+/// stay, except the empty transcription of an entry not transcribed yet (a
+/// file, a dictation whose transcription failed). A text equal to the top's
+/// adds nothing. The entry's language becomes the new transcription's.
+/// Errors: `blank` for an empty transcription, or the database's.
+pub(crate) fn add_transcription_with_conn(
+    conn: &Connection,
+    id: i64,
+    new: NewTranscription,
+    at: i64,
+) -> Result<HistoryEntry> {
+    let text = new.text.trim();
+    if text.is_empty() {
+        return Err(VersionError::Blank.into());
+    }
+    let entry = HistoryManager::entry_with_conn(conn, id)?;
+    let mut versions: Vec<HistoryVersion> = entry
+        .versions
+        .iter()
+        .filter(|version| !version.text.trim().is_empty())
+        .cloned()
+        .collect();
+    if versions.last().is_none_or(|top| top.text.trim() != text) {
+        versions.push(HistoryVersion::transcribed(text, Some(at)));
+    }
+    if let Some(post_processed) = &new.post_processed {
+        let step = VersionStep {
+            by: VersionAuthor::Ai,
+            at: Some(at),
+            prompt_name: post_processed.prompt_name.clone(),
+        };
+        versions = apply_post_processing(
+            &versions,
+            PostProcessTarget::OnTop,
+            &post_processed.text,
+            step,
+        );
+    }
+    let (language, language_source) = match new.language {
+        Some(decision) => (decision.language, Some(decision.source)),
+        None => (None, None),
+    };
+    let transaction = conn.unchecked_transaction()?;
+    store_stack(
+        &transaction,
+        &entry,
+        &versions,
+        new.post_processed
+            .as_ref()
+            .map(|p| (p.text.as_str(), p.prompt.as_deref())),
+        Some(new.post_process_requested),
+    )?;
+    transaction.execute(
+        "UPDATE transcription_history SET language = ?1, language_source = ?2 WHERE id = ?3",
+        params![language, language_source.map(LanguageSource::as_str), id],
+    )?;
+    transaction.commit()?;
     HistoryManager::entry_with_conn(conn, id)
 }
 
@@ -527,10 +738,18 @@ impl HistoryManager {
         Ok(entry)
     }
 
-    /// See [`revert_to_version_with_conn`]; tells the frontend.
-    pub fn revert_to_version(&self, id: i64, keep: u32) -> Result<HistoryEntry> {
+    /// See [`delete_version_with_conn`]; tells the frontend.
+    pub fn delete_version(&self, id: i64, index: u32) -> Result<HistoryEntry> {
         let conn = self.get_connection()?;
-        let entry = revert_to_version_with_conn(&conn, id, keep)?;
+        let entry = delete_version_with_conn(&conn, id, index)?;
+        self.emit_entry(&entry);
+        Ok(entry)
+    }
+
+    /// See [`move_version_with_conn`]; tells the frontend.
+    pub fn move_version(&self, id: i64, from: u32, to: u32) -> Result<HistoryEntry> {
+        let conn = self.get_connection()?;
+        let entry = move_version_with_conn(&conn, id, from, to)?;
         self.emit_entry(&entry);
         Ok(entry)
     }
@@ -547,12 +766,20 @@ impl HistoryManager {
         self.emit_entry(&entry);
         Ok(entry)
     }
+
+    /// See [`add_transcription_with_conn`]; tells the frontend.
+    pub(crate) fn add_transcription(&self, id: i64, new: NewTranscription) -> Result<HistoryEntry> {
+        let conn = self.get_connection()?;
+        let entry = add_transcription_with_conn(&conn, id, new, now_millis())?;
+        self.emit_entry(&entry);
+        Ok(entry)
+    }
 }
 
-/// Saves the user's `text` on version `base` of the entry: `replace`
-/// changes that version, `new` puts a new one on top of it; the versions
-/// above `base` drop. Errors: `blank`, `transcription_is_fixed` (replacing
-/// version 0), `no_such_version`, or the database's message.
+/// Saves the user's `text`, an edit of version `base` of the entry:
+/// `replace` changes the top version (only the top), `new` puts a new
+/// version on top. Errors: `blank`, `not_top` (replacing a version below
+/// the top), `no_such_version`, or the database's message.
 #[tauri::command]
 #[specta::specta]
 pub fn save_history_version(
@@ -567,16 +794,32 @@ pub fn save_history_version(
         .map_err(|e| e.to_string())
 }
 
-/// Goes back to version `keep` of the entry: every version above it drops.
+/// Deletes version `index` of the entry, without asking: any version, the
+/// transcription too. Errors: `last_version` (the only one),
+/// `no_such_version`, or the database's message.
 #[tauri::command]
 #[specta::specta]
-pub fn revert_history_entry_to_version(
+pub fn delete_history_version(
     history: State<'_, Arc<HistoryManager>>,
     id: i64,
-    keep: u32,
+    index: u32,
+) -> std::result::Result<HistoryEntry, String> {
+    history.delete_version(id, index).map_err(|e| e.to_string())
+}
+
+/// Moves version `from` of the entry to place `to` (counted from the
+/// bottom, as it is afterwards); the top one is the entry's result. Errors:
+/// `no_such_version`, or the database's message.
+#[tauri::command]
+#[specta::specta]
+pub fn move_history_version(
+    history: State<'_, Arc<HistoryManager>>,
+    id: i64,
+    from: u32,
+    to: u32,
 ) -> std::result::Result<HistoryEntry, String> {
     history
-        .revert_to_version(id, keep)
+        .move_version(id, from, to)
         .map_err(|e| e.to_string())
 }
 
@@ -589,7 +832,7 @@ pub(crate) fn test_entry(versions: Vec<HistoryVersion>) -> HistoryEntry {
         timestamp: 0,
         saved: false,
         title: String::new(),
-        transcription_text: versions.first().map(|v| v.text.clone()).unwrap_or_default(),
+        transcription_text: transcript_column(&versions).to_string(),
         post_processed_text: None,
         post_process_prompt: None,
         post_process_requested: false,
@@ -636,6 +879,13 @@ mod tests {
             .collect()
     }
 
+    fn times(versions: &[HistoryVersion]) -> Vec<Vec<Option<i64>>> {
+        versions
+            .iter()
+            .map(|v| v.steps.iter().map(|s| s.at).collect())
+            .collect()
+    }
+
     fn old<'a>(
         transcription: &'a str,
         transcription_correction: Option<&'a str>,
@@ -650,6 +900,7 @@ mod tests {
             post_processed,
             post_processed_correction,
             from_correction,
+            ..Default::default()
         }
         .versions()
     }
@@ -741,7 +992,7 @@ mod tests {
     }
 
     #[test]
-    fn derived_steps_have_no_time_and_no_prompt() {
+    fn derived_steps_without_the_entrys_time_have_none_and_no_prompt() {
         let versions = old(
             "raw",
             Some("raw fixed"),
@@ -757,11 +1008,50 @@ mod tests {
     }
 
     #[test]
+    fn derived_steps_that_happened_when_the_entry_was_made_get_its_time() {
+        let columns = |is_file| StackColumns {
+            transcription: "raw",
+            post_processed: Some("Clean."),
+            post_processed_correction: Some("Cleaner."),
+            made_at: Some(5_000),
+            is_file,
+            ..Default::default()
+        };
+        // A dictation post-processed right away.
+        assert_eq!(
+            times(&columns(false).versions()),
+            vec![vec![Some(5_000)], vec![Some(5_000)], vec![None]]
+        );
+        // A file's post-processing may have come later.
+        assert_eq!(
+            times(&columns(true).versions()),
+            vec![vec![Some(5_000)], vec![None], vec![None]]
+        );
+        // So did one made from a correction.
+        let from_correction = StackColumns {
+            transcription_correction: Some("raw fixed"),
+            from_correction: Some("raw fixed"),
+            ..columns(false)
+        };
+        assert_eq!(
+            times(&from_correction.versions()),
+            vec![vec![Some(5_000)], vec![None], vec![None], vec![None]]
+        );
+    }
+
+    #[test]
     fn a_new_entry_has_the_stack_reading_it_back_gives() {
-        assert_eq!(texts(&versions_of_new_entry("raw", None)), vec!["raw"]);
-        let processed = versions_of_new_entry("raw", Some("Clean."));
+        assert_eq!(
+            texts(&versions_of_new_entry("raw", None, None)),
+            vec!["raw"]
+        );
+        let processed = versions_of_new_entry("raw", Some("Clean."), Some(7_000));
         assert_eq!(texts(&processed), vec!["raw", "Clean."]);
         assert_eq!(authors(&processed), vec![vec![Transcription], vec![Ai]]);
+        assert_eq!(
+            times(&processed),
+            vec![vec![Some(7_000)], vec![Some(7_000)]]
+        );
     }
 
     // ---- Stored ------------------------------------------------------------
@@ -773,18 +1063,18 @@ mod tests {
             transcription_correction: Some("old correction"),
             post_processed: Some("Old post-processing."),
             post_processed_correction: Some("Old correction of it."),
-            from_correction: None,
+            ..Default::default()
         }
     }
 
+    /// The versions above the transcription as DanyWhere 0.2 stored them.
+    fn above_json(versions: &[HistoryVersion]) -> String {
+        serde_json::to_string(versions).unwrap()
+    }
+
     #[test]
-    fn stored_versions_win_over_the_columns_of_before() {
-        let json = stored_json(&[
-            HistoryVersion::transcription("ignored"),
-            v("Clean.", Ai),
-            v("Clean, mine.", User),
-        ])
-        .unwrap();
+    fn the_versions_above_the_transcription_from_before_are_still_read() {
+        let json = above_json(&[v("Clean.", Ai), v("Clean, mine.", User)]);
         let columns = stored("raw", &json);
         let versions = columns.versions();
         assert_eq!(texts(&versions), vec!["raw", "Clean.", "Clean, mine."]);
@@ -792,11 +1082,20 @@ mod tests {
             authors(&versions),
             vec![vec![Transcription], vec![Ai], vec![User]]
         );
+        assert_eq!(texts(&stored("raw", "[]").versions()), vec!["raw"]);
     }
 
     #[test]
-    fn an_empty_stored_stack_is_the_transcription_alone() {
-        let versions = stored("raw", "[]").versions();
+    fn a_whole_stack_is_read_as_stored_without_the_transcription_column() {
+        let json = stored_json(&[v("Clean.", Ai), HistoryVersion::transcription("raw")]).unwrap();
+        let versions = stored("stale", &json).versions();
+        assert_eq!(texts(&versions), vec!["Clean.", "raw"]);
+        assert_eq!(authors(&versions), vec![vec![Ai], vec![Transcription]]);
+    }
+
+    #[test]
+    fn an_empty_whole_stack_is_the_transcription_alone() {
+        let versions = stored("raw", r#"{"stack":[]}"#).versions();
         assert_eq!(versions, vec![HistoryVersion::transcription("raw")]);
     }
 
@@ -818,13 +1117,9 @@ mod tests {
             from_correction: Some("raw fixed"),
             ..Default::default()
         };
-        let json = stored_json(&[
-            HistoryVersion::transcription("raw"),
-            v("one", User),
-            v("two", Ai),
-        ])
-        .unwrap();
-        for columns in [derived, stored("raw", &json)] {
+        let above = above_json(&[v("one", User), v("two", Ai)]);
+        let whole = stored_json(&[v("two", Ai), HistoryVersion::transcription("raw")]).unwrap();
+        for columns in [derived, stored("raw", &above), stored("stale", &whole)] {
             let versions = columns.versions();
             let texts_only: Vec<String> =
                 columns.texts().into_iter().map(Cow::into_owned).collect();
@@ -834,7 +1129,7 @@ mod tests {
     }
 
     #[test]
-    fn the_column_stores_the_versions_above_the_transcription() {
+    fn the_column_stores_the_whole_stack() {
         let json = stored_json(&[
             HistoryVersion::transcription("raw"),
             HistoryVersion::made_of(
@@ -849,11 +1144,7 @@ mod tests {
         .unwrap();
         assert_eq!(
             json,
-            r#"[{"text":"Clean.","steps":[{"by":"ai","at":1700000000123,"prompt_name":"E-Mail"}]}]"#
-        );
-        assert_eq!(
-            stored_json(&[HistoryVersion::transcription("raw")]).unwrap(),
-            "[]"
+            r#"{"stack":[{"text":"raw","steps":[{"by":"transcription","at":null,"prompt_name":null}]},{"text":"Clean.","steps":[{"by":"ai","at":1700000000123,"prompt_name":"E-Mail"}]}]}"#
         );
     }
 
@@ -882,6 +1173,55 @@ mod tests {
         ]));
     }
 
+    #[test]
+    fn the_transcript_is_found_by_its_step_wherever_it_is() {
+        let moved = [v("Clean.", Ai), HistoryVersion::transcription("raw")];
+        assert_eq!(transcript_index(&moved), Some(1));
+        assert_eq!(transcript(&moved).map(|v| v.text.as_str()), Some("raw"));
+        assert_eq!(transcript_index(&[v("Clean.", Ai), v("mine", User)]), None);
+        assert_eq!(transcript_index(&[]), None);
+    }
+
+    #[test]
+    fn the_transcript_is_the_one_the_speech_model_made_last() {
+        let again = [
+            HistoryVersion::transcribed("old", Some(1)),
+            v("Old.", Ai),
+            HistoryVersion::transcribed("new", Some(5)),
+        ];
+        assert_eq!(transcript_index(&again), Some(2));
+        // Moved below the old one, it is still the last one made.
+        let moved = [
+            HistoryVersion::transcribed("new", Some(5)),
+            HistoryVersion::transcribed("old", Some(1)),
+        ];
+        assert_eq!(transcript_index(&moved), Some(0));
+        // One without a time is the oldest; of equal times the higher one.
+        let untimed = [
+            HistoryVersion::transcribed("timed", Some(1)),
+            HistoryVersion::transcription("untimed"),
+        ];
+        assert_eq!(transcript_index(&untimed), Some(0));
+        let equal = [
+            HistoryVersion::transcription("a"),
+            HistoryVersion::transcription("b"),
+        ];
+        assert_eq!(transcript_index(&equal), Some(1));
+    }
+
+    #[test]
+    fn handys_transcription_column_holds_the_transcript_else_the_top() {
+        assert_eq!(
+            transcript_column(&[v("Clean.", Ai), HistoryVersion::transcription("raw")]),
+            "raw"
+        );
+        assert_eq!(
+            transcript_column(&[v("mine", User), v("Clean.", Ai)]),
+            "Clean."
+        );
+        assert_eq!(transcript_column(&[]), "");
+    }
+
     // ---- Saving the user's edit ------------------------------------------
 
     fn stack() -> Vec<HistoryVersion> {
@@ -908,21 +1248,21 @@ mod tests {
     }
 
     #[test]
-    fn the_transcription_is_never_replaced() {
-        assert_eq!(
-            save_version(
-                &[HistoryVersion::transcription("raw")],
-                0,
-                "raw fixed",
-                SaveVersionMode::Replace,
-                42
-            ),
-            Err(VersionError::TranscriptionIsFixed)
-        );
+    fn an_edit_of_any_version_saved_as_new_goes_on_top() {
+        for base in 0..3 {
+            let versions = save_version(&stack(), base, "Other.", SaveVersionMode::New, 42)
+                .unwrap()
+                .expect("changed");
+            assert_eq!(
+                texts(&versions),
+                vec!["raw", "Clean.", "Clean, mine.", "Other."],
+                "base {base}"
+            );
+        }
     }
 
     #[test]
-    fn replacing_a_version_keeps_its_steps_and_adds_one() {
+    fn replacing_the_top_keeps_its_steps_and_adds_one() {
         let versions = save_version(
             &stack()[..2],
             1,
@@ -940,37 +1280,49 @@ mod tests {
     }
 
     #[test]
-    fn a_new_version_on_top() {
-        let versions = save_version(&stack(), 2, "Mine again.", SaveVersionMode::New, 42)
-            .unwrap()
-            .expect("changed");
-        assert_eq!(
-            texts(&versions),
-            vec!["raw", "Clean.", "Clean, mine.", "Mine again."]
-        );
-    }
-
-    #[test]
-    fn saving_below_the_top_drops_the_versions_above() {
-        let replaced = save_version(&stack(), 1, "Other.", SaveVersionMode::Replace, 42)
-            .unwrap()
-            .expect("changed");
-        assert_eq!(texts(&replaced), vec!["raw", "Other."]);
-        let added = save_version(&stack(), 1, "Other.", SaveVersionMode::New, 42)
-            .unwrap()
-            .expect("changed");
-        assert_eq!(texts(&added), vec!["raw", "Clean.", "Other."]);
-        let on_transcription = save_version(&stack(), 0, "raw fixed", SaveVersionMode::New, 42)
-            .unwrap()
-            .expect("changed");
-        assert_eq!(texts(&on_transcription), vec!["raw", "raw fixed"]);
-    }
-
-    #[test]
-    fn an_unchanged_text_changes_nothing_and_drops_nothing() {
-        for mode in [SaveVersionMode::Replace, SaveVersionMode::New] {
-            assert_eq!(save_version(&stack(), 1, " Clean.\n", mode, 42), Ok(None));
+    fn only_the_top_is_replaced() {
+        for base in [0, 1] {
+            assert_eq!(
+                save_version(&stack(), base, "Other.", SaveVersionMode::Replace, 42),
+                Err(VersionError::NotTop),
+                "base {base}"
+            );
         }
+    }
+
+    #[test]
+    fn a_transcription_on_top_is_replaced_like_any_version() {
+        let versions = save_version(
+            &[HistoryVersion::transcription("raw")],
+            0,
+            "raw fixed",
+            SaveVersionMode::Replace,
+            42,
+        )
+        .unwrap()
+        .expect("changed");
+        assert_eq!(texts(&versions), vec!["raw fixed"]);
+        assert_eq!(authors(&versions), vec![vec![Transcription, User]]);
+    }
+
+    #[test]
+    fn replacing_the_top_with_the_text_below_keeps_both() {
+        let versions = save_version(&stack(), 2, "Clean.", SaveVersionMode::Replace, 42)
+            .unwrap()
+            .expect("changed");
+        assert_eq!(texts(&versions), vec!["raw", "Clean.", "Clean."]);
+    }
+
+    #[test]
+    fn an_unchanged_text_changes_nothing() {
+        assert_eq!(
+            save_version(&stack(), 1, " Clean.\n", SaveVersionMode::New, 42),
+            Ok(None)
+        );
+        assert_eq!(
+            save_version(&stack(), 2, "Clean, mine.", SaveVersionMode::Replace, 42),
+            Ok(None)
+        );
         assert_eq!(
             save_version(&stack(), 0, "raw", SaveVersionMode::New, 42),
             Ok(None)
@@ -978,22 +1330,18 @@ mod tests {
     }
 
     #[test]
-    fn replacing_a_version_with_the_text_below_it_removes_it() {
-        let versions = save_version(&stack(), 2, "Clean.", SaveVersionMode::Replace, 42)
-            .unwrap()
-            .expect("changed");
-        assert_eq!(texts(&versions), vec!["raw", "Clean."]);
-        let below_drops_too = save_version(&stack(), 1, "raw", SaveVersionMode::Replace, 42)
-            .unwrap()
-            .expect("changed");
-        assert_eq!(texts(&below_drops_too), vec!["raw"]);
+    fn a_new_version_equal_to_the_top_changes_nothing() {
+        assert_eq!(
+            save_version(&stack(), 0, "Clean, mine.", SaveVersionMode::New, 42),
+            Ok(None)
+        );
     }
 
     #[test]
     fn a_blank_text_is_refused() {
         for mode in [SaveVersionMode::Replace, SaveVersionMode::New] {
             assert_eq!(
-                save_version(&stack(), 1, " \n ", mode, 42),
+                save_version(&stack(), 2, " \n ", mode, 42),
                 Err(VersionError::Blank)
             );
         }
@@ -1018,12 +1366,9 @@ mod tests {
     #[test]
     fn the_errors_reach_the_frontend_as_codes() {
         assert_eq!(VersionError::Blank.to_string(), "blank");
-        assert_eq!(
-            VersionError::TranscriptionIsFixed.to_string(),
-            "transcription_is_fixed"
-        );
         assert_eq!(VersionError::NoSuchVersion.to_string(), "no_such_version");
-        assert_eq!(VersionError::NotMadeByAi.to_string(), "not_made_by_ai");
+        assert_eq!(VersionError::NotTop.to_string(), "not_top");
+        assert_eq!(VersionError::LastVersion.to_string(), "last_version");
         assert_eq!(
             anyhow::Error::from(VersionError::Blank).to_string(),
             "blank"
@@ -1046,64 +1391,87 @@ mod tests {
         );
     }
 
-    // ---- Going back --------------------------------------------------------
+    // ---- Deleting and moving ---------------------------------------------
 
     #[test]
-    fn going_back_keeps_the_versions_up_to_the_one_chosen() {
+    fn any_version_can_be_deleted_the_transcription_too() {
+        let cases = [
+            (0, vec!["Clean.", "Clean, mine."]),
+            (1, vec!["raw", "Clean, mine."]),
+            (2, vec!["raw", "Clean."]),
+        ];
+        for (index, left) in cases {
+            let versions = delete_version(&stack(), index).expect("deleted");
+            assert_eq!(texts(&versions), left, "version {index}");
+        }
+    }
+
+    #[test]
+    fn the_last_version_is_never_deleted() {
         assert_eq!(
-            texts(&revert_to_version(&stack(), 1).unwrap()),
-            vec!["raw", "Clean."]
-        );
-        assert_eq!(texts(&revert_to_version(&stack(), 0).unwrap()), vec!["raw"]);
-    }
-
-    #[test]
-    fn going_back_to_the_top_or_above_changes_nothing() {
-        assert_eq!(revert_to_version(&stack(), 2), None);
-        assert_eq!(revert_to_version(&stack(), 7), None);
-    }
-
-    // ---- Post-processing from History ------------------------------------
-
-    use PostProcessTarget::{New, Redo, Replace};
-
-    #[test]
-    fn post_processing_starts_from_the_top_or_for_redo_below_it() {
-        assert_eq!(post_processing_input(&stack(), New), Ok(2));
-        assert_eq!(post_processing_input(&stack(), Replace), Ok(2));
-        assert_eq!(post_processing_input(&stack()[..2], Redo), Ok(0));
-        let transcription = [HistoryVersion::transcription("raw")];
-        assert_eq!(post_processing_input(&transcription, New), Ok(0));
-    }
-
-    #[test]
-    fn the_transcription_is_never_replaced_by_a_post_processing() {
-        let transcription = [HistoryVersion::transcription("raw")];
-        assert_eq!(
-            post_processing_input(&transcription, Replace),
-            Err(VersionError::TranscriptionIsFixed)
+            delete_version(&[HistoryVersion::transcription("raw")], 0),
+            Err(VersionError::LastVersion)
         );
         assert_eq!(
-            post_processing_input(&transcription, Redo),
-            Err(VersionError::TranscriptionIsFixed)
+            delete_version(&stack(), 3),
+            Err(VersionError::NoSuchVersion)
         );
     }
 
     #[test]
-    fn only_a_version_a_post_processing_made_is_redone() {
-        assert_eq!(
-            post_processing_input(&stack(), Redo),
-            Err(VersionError::NotMadeByAi)
-        );
-        // A post-processing the user edited afterwards still counts.
-        let mut edited = stack()[..2].to_vec();
-        edited[1].steps.push(step(User, 5));
-        assert_eq!(post_processing_input(&edited, Redo), Ok(0));
+    fn a_version_moves_to_any_place() {
+        let moved =
+            |from, to| texts(&move_version(&stack(), from, to).unwrap().unwrap()).join(" | ");
+        assert_eq!(moved(0, 2), "Clean. | Clean, mine. | raw");
+        assert_eq!(moved(2, 0), "Clean, mine. | raw | Clean.");
+        assert_eq!(moved(1, 2), "raw | Clean, mine. | Clean.");
+        assert_eq!(moved(1, 0), "Clean. | raw | Clean, mine.");
     }
 
     #[test]
-    fn post_processing_on_top_adds_a_version() {
-        let versions = apply_post_processing(&stack(), New, "Polished.", step(Ai, 9));
+    fn a_moved_version_keeps_its_steps() {
+        let mut versions = stack();
+        versions[1].steps.push(step(User, 3));
+        let moved = move_version(&versions, 1, 2).unwrap().unwrap();
+        assert_eq!(moved[2], versions[1]);
+        assert_eq!(moved[1], versions[2]);
+    }
+
+    #[test]
+    fn moving_a_version_to_its_place_changes_nothing() {
+        assert_eq!(move_version(&stack(), 1, 1), Ok(None));
+        assert_eq!(
+            move_version(&stack(), 3, 0),
+            Err(VersionError::NoSuchVersion)
+        );
+        assert_eq!(
+            move_version(&stack(), 0, 3),
+            Err(VersionError::NoSuchVersion)
+        );
+    }
+
+    // ---- Post-processing -----------------------------------------------------
+
+    use PostProcessTarget::{InPlaceOfAiTop, OnTop};
+
+    #[test]
+    fn post_processing_starts_from_the_version_chosen_or_the_top() {
+        assert_eq!(post_processing_input(&stack(), None), Ok(2));
+        assert_eq!(post_processing_input(&stack(), Some(0)), Ok(0));
+        assert_eq!(post_processing_input(&stack(), Some(1)), Ok(1));
+        assert_eq!(
+            post_processing_input(&stack(), Some(3)),
+            Err(VersionError::NoSuchVersion)
+        );
+        assert_eq!(
+            post_processing_input(&[], None),
+            Err(VersionError::NoSuchVersion)
+        );
+    }
+
+    #[test]
+    fn post_processing_puts_its_result_on_top() {
+        let versions = apply_post_processing(&stack(), OnTop, "Polished.", step(Ai, 9));
         assert_eq!(
             texts(&versions),
             vec!["raw", "Clean.", "Clean, mine.", "Polished."]
@@ -1112,70 +1480,27 @@ mod tests {
     }
 
     #[test]
-    fn replacing_the_top_keeps_its_steps_and_adds_the_ai_step() {
-        let versions = apply_post_processing(&stack(), Replace, "Polished.", step(Ai, 9));
-        assert_eq!(texts(&versions), vec!["raw", "Clean.", "Polished."]);
+    fn a_result_equal_to_the_top_changes_nothing() {
         assert_eq!(
-            versions[2].steps,
-            vec![VersionStep::new(User, None), step(Ai, 9)]
+            apply_post_processing(&stack(), OnTop, " Clean, mine. ", step(Ai, 9)),
+            stack()
         );
     }
 
     #[test]
-    fn redoing_replaces_the_top_with_one_ai_step() {
-        let mut edited = stack()[..2].to_vec();
-        edited[1].steps.push(step(User, 5));
-        let versions = apply_post_processing(&edited, Redo, "Again.", step(Ai, 9));
+    fn the_redo_for_another_application_replaces_the_dictations_post_processing() {
+        let processed = [HistoryVersion::transcription("raw"), v("Clean.", Ai)];
+        let versions = apply_post_processing(&processed, InPlaceOfAiTop, "Again.", step(Ai, 9));
         assert_eq!(texts(&versions), vec!["raw", "Again."]);
         assert_eq!(versions[1].steps, vec![step(Ai, 9)]);
-    }
-
-    #[test]
-    fn a_result_equal_to_its_start_changes_nothing() {
-        assert_eq!(
-            apply_post_processing(&stack(), New, "Clean, mine.", step(Ai, 9)),
-            stack()
-        );
-        assert_eq!(
-            apply_post_processing(&stack(), Replace, " Clean, mine. ", step(Ai, 9)),
-            stack()
-        );
-    }
-
-    #[test]
-    fn a_result_equal_to_the_version_below_drops_the_top() {
-        assert_eq!(
-            texts(&apply_post_processing(
-                &stack(),
-                Replace,
-                "Clean.",
-                step(Ai, 9)
-            )),
-            vec!["raw", "Clean."]
-        );
-        assert_eq!(
-            texts(&apply_post_processing(
-                &stack()[..2],
-                Redo,
-                "raw",
-                step(Ai, 9)
-            )),
-            vec!["raw"]
-        );
-    }
-
-    #[test]
-    fn a_target_that_no_longer_fits_puts_the_result_on_top() {
-        let transcription = [HistoryVersion::transcription("raw")];
-        for target in [Replace, Redo] {
-            let versions = apply_post_processing(&transcription, target, "Clean.", step(Ai, 9));
-            assert_eq!(texts(&versions), vec!["raw", "Clean."], "{target:?}");
+        // Without one, or over the user's text, it goes on top.
+        let bare = [HistoryVersion::transcription("raw")];
+        let edited = [HistoryVersion::transcription("raw"), v("mine", User)];
+        for versions in [&bare[..], &edited[..]] {
+            let applied = apply_post_processing(versions, InPlaceOfAiTop, "Again.", step(Ai, 9));
+            assert_eq!(applied.len(), versions.len() + 1);
+            assert_eq!(applied.last().map(|v| v.text.as_str()), Some("Again."));
         }
-        let versions = apply_post_processing(&stack(), Redo, "Again.", step(Ai, 9));
-        assert_eq!(
-            texts(&versions),
-            vec!["raw", "Clean.", "Clean, mine.", "Again."]
-        );
     }
 
     // ---- In the database ---------------------------------------------------
@@ -1207,13 +1532,28 @@ mod tests {
         HistoryManager::entry_with_conn(conn, id).expect("entry exists")
     }
 
-    fn stored_column(conn: &Connection, id: i64) -> Option<String> {
+    fn column(conn: &Connection, id: i64, name: &str) -> Option<String> {
         conn.query_row(
-            "SELECT versions FROM transcription_history WHERE id = ?1",
+            &format!("SELECT {name} FROM transcription_history WHERE id = ?1"),
             params![id],
             |row| row.get(0),
         )
-        .expect("read versions")
+        .expect("read column")
+    }
+
+    fn stored_column(conn: &Connection, id: i64) -> Option<String> {
+        column(conn, id, "versions")
+    }
+
+    /// The stack as the column stores it, read without the other columns.
+    fn stored_stack(conn: &Connection, id: i64) -> Vec<HistoryVersion> {
+        let json = stored_column(conn, id).expect("stored");
+        StackColumns {
+            transcription: "not read",
+            versions: Some(&json),
+            ..Default::default()
+        }
+        .versions()
     }
 
     fn set(conn: &Connection, id: i64, column: &str, value: &str) {
@@ -1256,11 +1596,34 @@ mod tests {
             vec!["old words", "Old words.", "Old words, mine."]
         );
         assert_eq!(entry_text(&e), "Old words, mine.");
+        assert_eq!(times(&e.versions)[0], vec![Some(1_000)]);
         assert_eq!(stored_column(&conn, 1), None);
     }
 
     #[test]
-    fn a_saved_version_is_stored_and_read_back() {
+    fn a_stack_from_danywhere_0_2_is_read_and_stored_whole_on_its_next_change() {
+        let conn = database();
+        let id = insert(&conn, "raw", Some("Clean."));
+        set(
+            &conn,
+            id,
+            "versions",
+            &above_json(&[v("Clean.", Ai), v("Clean, mine.", User)]),
+        );
+        assert_eq!(
+            texts(&get(&conn, id).versions),
+            vec!["raw", "Clean.", "Clean, mine."]
+        );
+
+        let e = move_version_with_conn(&conn, id, 0, 2).expect("move");
+
+        assert_eq!(texts(&e.versions), vec!["Clean.", "Clean, mine.", "raw"]);
+        assert_eq!(stored_stack(&conn, id), e.versions);
+        assert_eq!(e.transcription_text, "raw");
+    }
+
+    #[test]
+    fn a_saved_version_is_stored_with_the_whole_stack() {
         let conn = database();
         let id = insert(&conn, "raw", Some("Clean."));
         let e = save_version_with_conn(&conn, id, 1, "Clean, mine.", SaveVersionMode::New, 42)
@@ -1268,12 +1631,21 @@ mod tests {
         assert_eq!(texts(&e.versions), vec!["raw", "Clean.", "Clean, mine."]);
         assert_eq!(e.versions[2].steps, vec![step(User, 42)]);
         assert_eq!(get(&conn, id).versions, e.versions);
-        let column: Vec<HistoryVersion> =
-            serde_json::from_str(&stored_column(&conn, id).expect("stored")).unwrap();
-        assert_eq!(column, e.versions[1..]);
-        // Handy's columns stay as they were.
+        assert_eq!(stored_stack(&conn, id), e.versions);
+        // Handy's columns still hold texts the stack has.
         assert_eq!(e.post_processed_text.as_deref(), Some("Clean."));
+        assert_eq!(e.post_process_prompt.as_deref(), Some("Fix it"));
         assert_eq!(e.transcription_text, "raw");
+    }
+
+    #[test]
+    fn saving_an_edit_of_a_lower_version_keeps_every_version() {
+        let conn = database();
+        let id = insert(&conn, "raw", Some("Clean."));
+        let e = save_version_with_conn(&conn, id, 0, "raw fixed", SaveVersionMode::New, 42)
+            .expect("save");
+        assert_eq!(texts(&e.versions), vec!["raw", "Clean.", "raw fixed"]);
+        assert!(e.post_process_requested);
     }
 
     #[test]
@@ -1304,6 +1676,30 @@ mod tests {
     }
 
     #[test]
+    fn storing_a_stack_clears_the_corrections_of_before() {
+        let conn = database();
+        let id = insert(&conn, "raw", Some("Clean."));
+        set(&conn, id, "transcription_correction", "raw fixed");
+        set(&conn, id, "post_processed_from_correction", "raw fixed");
+        set(&conn, id, "post_processed_correction", "Clean, mine.");
+        assert_eq!(
+            texts(&get(&conn, id).versions),
+            vec!["raw", "raw fixed", "Clean.", "Clean, mine."]
+        );
+
+        let e = delete_version_with_conn(&conn, id, 1).expect("delete");
+
+        assert_eq!(texts(&e.versions), vec!["raw", "Clean.", "Clean, mine."]);
+        for name in [
+            "transcription_correction",
+            "post_processed_from_correction",
+            "post_processed_correction",
+        ] {
+            assert_eq!(column(&conn, id, name), None, "{name}");
+        }
+    }
+
+    #[test]
     fn an_unchanged_save_writes_nothing() {
         let conn = database();
         let id = insert(&conn, "raw", Some("Clean."));
@@ -1314,122 +1710,131 @@ mod tests {
     }
 
     #[test]
-    fn a_refused_save_changes_nothing() {
+    fn a_refused_change_changes_nothing() {
         let conn = database();
-        let id = insert(&conn, "raw", None);
+        let id = insert(&conn, "raw", Some("Clean."));
         for (base, text, mode, code) in [
-            (0, "x", SaveVersionMode::Replace, "transcription_is_fixed"),
-            (0, " ", SaveVersionMode::New, "blank"),
+            (0, "x", SaveVersionMode::Replace, "not_top"),
+            (1, " ", SaveVersionMode::New, "blank"),
             (4, "x", SaveVersionMode::New, "no_such_version"),
         ] {
             let error =
                 save_version_with_conn(&conn, id, base, text, mode, 42).expect_err("refused");
             assert_eq!(error.to_string(), code);
         }
+        let alone = insert(&conn, "raw", None);
+        let error = delete_version_with_conn(&conn, alone, 0).expect_err("refused");
+        assert_eq!(error.to_string(), "last_version");
+        let error = move_version_with_conn(&conn, id, 0, 5).expect_err("refused");
+        assert_eq!(error.to_string(), "no_such_version");
         assert_eq!(stored_column(&conn, id), None);
-    }
-
-    fn requested(conn: &Connection, id: i64) -> bool {
-        get(conn, id).post_process_requested
+        assert_eq!(stored_column(&conn, alone), None);
     }
 
     #[test]
-    fn saving_that_drops_the_post_processing_marks_the_entry_not_post_processed() {
-        let conn = database();
-        let id = insert(&conn, "raw", Some("Clean."));
-        assert!(requested(&conn, id));
-
-        let e = save_version_with_conn(&conn, id, 0, "raw fixed", SaveVersionMode::New, 42)
-            .expect("save");
-
-        assert_eq!(texts(&e.versions), vec!["raw", "raw fixed"]);
-        assert!(!e.post_process_requested);
-        assert!(!requested(&conn, id));
-    }
-
-    #[test]
-    fn saving_that_makes_a_post_processing_equal_to_below_drops_it_and_the_mark() {
-        let conn = database();
-        let id = insert(&conn, "raw", Some("Clean."));
-
-        let e = save_version_with_conn(&conn, id, 1, "raw", SaveVersionMode::Replace, 42)
-            .expect("save");
-
-        assert_eq!(texts(&e.versions), vec!["raw"]);
-        assert!(!e.post_process_requested);
-    }
-
-    #[test]
-    fn saving_that_drops_only_the_users_versions_keeps_the_entry_post_processed() {
-        let conn = database();
-        let id = insert(&conn, "raw", Some("Clean."));
-        save_version_with_conn(&conn, id, 1, "Clean, mine.", SaveVersionMode::New, 42)
-            .expect("save");
-
-        let e = save_version_with_conn(&conn, id, 1, "Clean, other.", SaveVersionMode::New, 43)
-            .expect("save below the top");
-
-        assert_eq!(texts(&e.versions), vec!["raw", "Clean.", "Clean, other."]);
-        assert!(e.post_process_requested);
-    }
-
-    #[test]
-    fn saving_that_drops_nothing_leaves_the_mark_as_it_was() {
+    fn saving_leaves_the_post_processing_mark_as_it_was() {
         let conn = database();
         // Dictated with post-processing that failed: marked, but no ✨.
         let id = insert(&conn, "raw", None);
-        conn.execute(
-            "UPDATE transcription_history SET post_process_requested = 1 WHERE id = ?1",
-            params![id],
-        )
-        .expect("mark");
-
+        set(&conn, id, "post_process_requested", "1");
         let e = save_version_with_conn(&conn, id, 0, "raw fixed", SaveVersionMode::New, 42)
             .expect("save");
         assert!(e.post_process_requested);
-        let e = save_version_with_conn(&conn, id, 1, "raw, mine", SaveVersionMode::Replace, 43)
-            .expect("save again");
-        assert_eq!(texts(&e.versions), vec!["raw", "raw, mine"]);
-        assert!(e.post_process_requested);
+        let plain = insert(&conn, "raw", None);
+        let e = save_version_with_conn(&conn, plain, 0, "raw fixed", SaveVersionMode::New, 42)
+            .expect("save");
+        assert!(!e.post_process_requested);
+    }
+
+    // ---- Deleting really deletes ---------------------------------------------
+
+    #[test]
+    fn deleting_the_transcription_deletes_it_from_handys_column() {
+        let conn = database();
+        let id = insert(&conn, "raw words", Some("Clean."));
+
+        let e = delete_version_with_conn(&conn, id, 0).expect("delete");
+
+        assert_eq!(texts(&e.versions), vec!["Clean."]);
+        assert_eq!(stored_stack(&conn, id), e.versions);
+        // No transcription is left: the column holds the entry's result.
+        assert_eq!(e.transcription_text, "Clean.");
+        assert_eq!(
+            column(&conn, id, "transcription_text").as_deref(),
+            Some("Clean.")
+        );
+        assert_eq!(entry_text(&e), "Clean.");
     }
 
     #[test]
-    fn going_back_to_the_transcription_stays_there() {
+    fn deleting_a_post_processing_deletes_it_from_handys_columns() {
         let conn = database();
         let id = insert(&conn, "raw", Some("Clean."));
-        assert!(get(&conn, id).post_process_requested);
 
-        let e = revert_to_version_with_conn(&conn, id, 0).expect("revert");
+        let e = delete_version_with_conn(&conn, id, 1).expect("delete");
 
         assert_eq!(texts(&e.versions), vec!["raw"]);
-        assert_eq!(stored_column(&conn, id).as_deref(), Some("[]"));
+        assert_eq!(e.post_processed_text, None);
+        assert_eq!(e.post_process_prompt, None);
+        // Nothing post-processed is left: transcribing again doesn't
+        // post-process.
         assert!(!e.post_process_requested);
-        // Handy's column keeps the latest post-processing.
-        assert_eq!(e.post_processed_text.as_deref(), Some("Clean."));
-        assert_eq!(entry_text(&get(&conn, id)), "raw");
     }
 
     #[test]
-    fn going_back_keeps_the_entry_post_processed_while_a_post_processing_stays() {
+    fn deleting_keeps_the_mark_while_a_post_processing_stays() {
         let conn = database();
         let id = insert(&conn, "raw", Some("Clean."));
-        save_version_with_conn(&conn, id, 1, "Clean, mine.", SaveVersionMode::New, 42)
-            .expect("save");
+        store_post_processing_with_conn(
+            &conn,
+            id,
+            OnTop,
+            PostProcessed {
+                text: "Cleaner.".into(),
+                ..Default::default()
+            },
+            5,
+        )
+        .expect("post-process");
 
-        let e = revert_to_version_with_conn(&conn, id, 1).expect("revert");
+        let e = delete_version_with_conn(&conn, id, 2).expect("delete");
 
         assert_eq!(texts(&e.versions), vec!["raw", "Clean."]);
         assert!(e.post_process_requested);
+        // Handy's column held the deleted one.
+        assert_eq!(e.post_processed_text, None);
+        // Deleting a user's version leaves the mark alone.
+        let marked = insert(&conn, "raw", None);
+        set(&conn, marked, "post_process_requested", "1");
+        save_version_with_conn(&conn, marked, 0, "mine", SaveVersionMode::New, 6).expect("save");
+        let e = delete_version_with_conn(&conn, marked, 1).expect("delete");
+        assert!(e.post_process_requested);
     }
 
     #[test]
-    fn going_back_to_the_top_changes_nothing() {
+    fn moving_the_transcription_keeps_it_the_transcript() {
         let conn = database();
         let id = insert(&conn, "raw", Some("Clean."));
-        let e = revert_to_version_with_conn(&conn, id, 1).expect("revert");
+
+        let e = move_version_with_conn(&conn, id, 0, 1).expect("move");
+
+        assert_eq!(texts(&e.versions), vec!["Clean.", "raw"]);
+        assert_eq!(entry_text(&e), "raw");
+        assert_eq!(e.transcription_text, "raw");
+        assert_eq!(e.post_processed_text.as_deref(), Some("Clean."));
+        assert!(e.post_process_requested);
+    }
+
+    #[test]
+    fn a_move_to_its_place_writes_nothing() {
+        let conn = database();
+        let id = insert(&conn, "raw", Some("Clean."));
+        let e = move_version_with_conn(&conn, id, 1, 1).expect("move");
         assert_eq!(texts(&e.versions), vec!["raw", "Clean."]);
         assert_eq!(stored_column(&conn, id), None);
     }
+
+    // ---- Post-processing and transcribing again --------------------------
 
     #[test]
     fn a_post_processing_from_history_becomes_a_version() {
@@ -1440,7 +1845,7 @@ mod tests {
         let e = store_post_processing_with_conn(
             &conn,
             id,
-            New,
+            OnTop,
             PostProcessed {
                 text: "Clean words.".into(),
                 prompt: Some("Fix the grammar".into()),
@@ -1467,36 +1872,118 @@ mod tests {
     }
 
     #[test]
-    fn a_post_processing_replacing_or_redoing_the_top_is_stored() {
+    fn the_redo_for_another_application_is_stored_in_place_of_the_dictations() {
         let conn = database();
         let id = insert(&conn, "raw", Some("Clean."));
-        let result = |text: &str| PostProcessed {
-            text: text.into(),
-            ..Default::default()
-        };
-
-        let replaced = store_post_processing_with_conn(&conn, id, Replace, result("Cleaner."), 5)
-            .expect("replace");
-        assert_eq!(texts(&replaced.versions), vec!["raw", "Cleaner."]);
-        assert_eq!(
-            authors(&replaced.versions),
-            vec![vec![Transcription], vec![Ai, Ai]]
-        );
-
-        let redone =
-            store_post_processing_with_conn(&conn, id, Redo, result("Again."), 6).expect("redo");
+        let redone = store_post_processing_with_conn(
+            &conn,
+            id,
+            InPlaceOfAiTop,
+            PostProcessed {
+                text: "Again.".into(),
+                ..Default::default()
+            },
+            6,
+        )
+        .expect("redo");
         assert_eq!(texts(&redone.versions), vec!["raw", "Again."]);
         assert_eq!(redone.versions[1].steps, vec![step(Ai, 6)]);
         assert_eq!(redone.post_processed_text.as_deref(), Some("Again."));
         assert_eq!(get(&conn, id).versions, redone.versions);
     }
 
+    fn new_transcription(text: &str, post_processed: Option<&str>) -> NewTranscription {
+        NewTranscription {
+            text: text.into(),
+            language: Some(LanguageDecision {
+                language: Some("de".into()),
+                source: LanguageSource::Detected,
+            }),
+            post_processed: post_processed.map(|text| PostProcessed {
+                text: text.into(),
+                prompt: Some("Fix it again".into()),
+                prompt_name: Some("Again".into()),
+            }),
+            post_process_requested: post_processed.is_some(),
+        }
+    }
+
+    /// A time after the entries' (made at second 1).
+    const LATER: i64 = 1_800_000_000_000;
+
     #[test]
-    fn transcribing_again_starts_the_stack_anew() {
+    fn transcribing_again_puts_the_new_transcription_on_top() {
         let conn = database();
         let id = insert(&conn, "raw", Some("Clean."));
         save_version_with_conn(&conn, id, 1, "Clean, mine.", SaveVersionMode::New, 42)
             .expect("save");
+
+        let e = add_transcription_with_conn(
+            &conn,
+            id,
+            new_transcription("new words", Some("New words.")),
+            LATER,
+        )
+        .expect("transcribe again");
+
+        assert_eq!(
+            texts(&e.versions),
+            vec!["raw", "Clean.", "Clean, mine.", "new words", "New words."]
+        );
+        assert_eq!(
+            e.versions[3].steps,
+            vec![VersionStep::new(Transcription, Some(LATER))]
+        );
+        assert_eq!(e.versions[4].steps[0].prompt_name.as_deref(), Some("Again"));
+        assert_eq!(e.transcription_text, "new words");
+        assert_eq!(e.post_processed_text.as_deref(), Some("New words."));
+        assert_eq!(e.post_process_prompt.as_deref(), Some("Fix it again"));
+        assert_eq!(e.language.as_deref(), Some("de"));
+        assert_eq!(e.language_source, Some(LanguageSource::Detected));
+        assert!(e.post_process_requested);
+        assert_eq!(get(&conn, id).versions, e.versions);
+    }
+
+    #[test]
+    fn transcribing_again_without_post_processing_adds_only_the_transcription() {
+        let conn = database();
+        let id = insert(&conn, "raw", Some("Clean."));
+
+        let e = add_transcription_with_conn(&conn, id, new_transcription("new", None), LATER)
+            .expect("transcribe again");
+
+        assert_eq!(texts(&e.versions), vec!["raw", "Clean.", "new"]);
+        assert_eq!(e.transcription_text, "new");
+        // The old post-processing is still there.
+        assert_eq!(e.post_processed_text.as_deref(), Some("Clean."));
+        assert!(!e.post_process_requested);
+    }
+
+    #[test]
+    fn a_first_transcription_takes_the_place_of_the_empty_one() {
+        let conn = database();
+        let id = insert(&conn, "", None);
+        let e = add_transcription_with_conn(&conn, id, new_transcription("words", None), 77)
+            .expect("transcribe");
+        assert_eq!(texts(&e.versions), vec!["words"]);
+        assert_eq!(e.transcription_text, "words");
+    }
+
+    #[test]
+    fn the_same_transcription_again_adds_nothing() {
+        let conn = database();
+        let id = insert(&conn, "raw", None);
+        let e = add_transcription_with_conn(&conn, id, new_transcription("raw", None), 77)
+            .expect("transcribe again");
+        assert_eq!(texts(&e.versions), vec!["raw"]);
+        assert_eq!(e.language.as_deref(), Some("de"));
+    }
+
+    #[test]
+    fn the_redo_for_another_application_starts_the_stack_anew() {
+        let conn = database();
+        let id = insert(&conn, "raw", Some("Clean."));
+        move_version_with_conn(&conn, id, 0, 1).expect("move");
 
         HistoryManager::update_transcription_with_conn(
             &conn,
@@ -1512,27 +1999,17 @@ mod tests {
         let e = get(&conn, id);
         assert_eq!(texts(&e.versions), vec!["new words", "New words."]);
         assert_eq!(stored_column(&conn, id), None);
-
-        HistoryManager::update_transcription_with_conn(
-            &conn,
-            id,
-            "plain".into(),
-            None,
-            None,
-            None,
-            false,
-        )
-        .expect("transcribe again without post-processing");
-        assert_eq!(texts(&get(&conn, id).versions), vec!["plain"]);
     }
 
     #[test]
     fn a_missing_entry_fails() {
         let conn = database();
         assert!(save_version_with_conn(&conn, 42, 0, "x", SaveVersionMode::New, 1).is_err());
-        assert!(revert_to_version_with_conn(&conn, 42, 0).is_err());
+        assert!(delete_version_with_conn(&conn, 42, 0).is_err());
+        assert!(move_version_with_conn(&conn, 42, 0, 1).is_err());
         assert!(
-            store_post_processing_with_conn(&conn, 42, New, PostProcessed::default(), 1).is_err()
+            store_post_processing_with_conn(&conn, 42, OnTop, PostProcessed::default(), 1).is_err()
         );
+        assert!(add_transcription_with_conn(&conn, 42, new_transcription("x", None), 1).is_err());
     }
 }
