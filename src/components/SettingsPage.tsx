@@ -24,6 +24,8 @@ import {
   OpenProfilePageProvider,
   SettingsScopeProvider,
 } from "./settings/profiles/scope/SettingsScope";
+import { useSettingJump } from "./settings/profiles/scope/settingJumpStore";
+import type { JumpTarget } from "@/lib/settingJump";
 import type { OnboardingStep } from "./onboarding/onboardingStore";
 import { useProfiles } from "@/hooks/useProfiles";
 import {
@@ -176,9 +178,16 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
       page = <AboutSettings />;
       break;
   }
-  // "Open in …" and the page "Profile"'s list open a profile's page.
-  const openProfilePage = (profileId: string, target: string) => {
+  // "Open in …" and the page "Profile"'s list open a profile's page; the
+  // list also jumps to the setting there (B5).
+  const requestJump = useSettingJump((s) => s.request);
+  const openProfilePage = (
+    profileId: string,
+    target: string,
+    jump?: JumpTarget,
+  ) => {
     const known = (PROFILE_PAGES as readonly string[]).includes(target);
+    if (jump && known) requestJump(jump);
     onNavigate({
       kind: "profile",
       profileId,

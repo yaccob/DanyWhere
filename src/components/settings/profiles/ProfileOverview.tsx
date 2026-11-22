@@ -11,6 +11,7 @@ import { useProfiles } from "@/hooks/useProfiles";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { pageLabelKey } from "@/lib/navigation";
 import { pageOfValue } from "@/lib/profileFields";
+import { jumpTarget } from "@/lib/settingJump";
 import {
   ownValues,
   type LayeredProfile,
@@ -139,7 +140,10 @@ export const ProfileOverview: React.FC<{ profileId: string }> = ({
             >
               <button
                 type="button"
-                onClick={() => openPage?.(profileId, page)}
+                // Opens the page and jumps to the setting there (B5).
+                onClick={() =>
+                  openPage?.(profileId, page, jumpTarget(profileId, value))
+                }
                 className="flex min-w-0 flex-1 items-center gap-2 text-start text-sm cursor-pointer hover:text-logo-primary"
               >
                 <span className="w-28 shrink-0 truncate text-xs text-ink-3">

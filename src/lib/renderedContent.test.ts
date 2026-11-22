@@ -6,7 +6,12 @@
 // channel with one channel, the typing tool on macOS, the active list
 // without lists; qa 2026-11-22_0107, error 3).
 import assert from "node:assert/strict";
-import { showsAnything, wrapperShows, type NodeLike } from "./renderedContent";
+import {
+  deviatingRow,
+  showsAnything,
+  wrapperShows,
+  type NodeLike,
+} from "./renderedContent";
 
 let total = 0;
 const failures: string[] = [];
@@ -59,6 +64,20 @@ check("a wrapper around a setting that draws nothing hides", () =>
 );
 check("a wrapper around a setting that draws something shows", () =>
   assert.equal(wrapperShows(true, true), true),
+);
+
+// Under a default, a deviating profile shows its own control; a large
+// setting, or a control that draws nothing in that profile (the overlay's
+// position while its overlay is off), its value as text instead, so the
+// profile and its reset stay (qa 2026-11-22_1603, the overlay's two rows).
+check("a deviating profile of a small setting shows its control", () =>
+  assert.equal(deviatingRow(false, true), "control"),
+);
+check("a deviating profile of a large setting shows its value", () =>
+  assert.equal(deviatingRow(true, true), "summary"),
+);
+check("a deviating profile whose control draws nothing shows its value", () =>
+  assert.equal(deviatingRow(false, false), "summary"),
 );
 
 if (failures.length > 0) {

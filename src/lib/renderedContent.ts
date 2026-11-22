@@ -23,6 +23,15 @@ export const wrapperShows = (
   settingShows: boolean,
 ): boolean => !hasSetting || settingShows;
 
+/** How a deviating profile shows under a default (P7.1, P7.2): with its own
+ * control; a large setting, or a control that draws nothing in that profile
+ * (the overlay's position while its overlay is off), as its value in text,
+ * so the profile and its reset stay visible. */
+export const deviatingRow = (
+  large: boolean,
+  controlShows: boolean,
+): "control" | "summary" => (large || !controlShows ? "summary" : "control");
+
 /** Whether rendered `nodes` show anything: an element, or text that isn't
  * only white space. A component that returns `null` renders no node. */
 export const showsAnything = (nodes: ArrayLike<NodeLike>): boolean =>

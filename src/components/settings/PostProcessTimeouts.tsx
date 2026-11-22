@@ -88,18 +88,23 @@ const TimeoutSetting: React.FC<TimeoutSettingProps> = ({
   );
 };
 
-interface PostProcessTimeoutsProps {
+interface TimeoutProps {
   descriptionMode?: "inline" | "tooltip";
   grouped?: boolean;
 }
 
-/**
+/*
  * DanyWhere: the two time limits Handy fixes at 60 s and 15 s, how long
- * post-processing and a provider's model list may take. Shown only while
- * post-processing is on, since nothing else waits for them.
+ * post-processing and a provider's model list may take. The first is a
+ * profile value (the defaults' and a profile's Advanced page), the second
+ * an application setting (Application Settings › Debug; plan
+ * 2026-11-19_1910, qa 2026-11-22_1603).
  */
-export const PostProcessTimeouts: React.FC<PostProcessTimeoutsProps> =
-  React.memo(({ descriptionMode = "tooltip", grouped = false }) => {
+
+/** How long post-processing may take; shown only while post-processing is
+ * on in the page's scope, since nothing else waits for it. */
+export const PostProcessTimeout: React.FC<TimeoutProps> = React.memo(
+  ({ descriptionMode = "tooltip", grouped = false }) => {
     const { t } = useTranslation();
     const { getSetting } = useSettings();
     const range = { min: MIN_SECONDS, max: MAX_SECONDS };
@@ -107,29 +112,41 @@ export const PostProcessTimeouts: React.FC<PostProcessTimeoutsProps> =
     if (!getSetting("post_process_enabled")) return null;
 
     return (
-      <>
-        <TimeoutSetting
-          settingKey="post_process_timeout_secs"
-          fallback={60}
-          title={t("settings.advanced.llmTimeouts.postProcessTitle")}
-          description={t(
-            "settings.advanced.llmTimeouts.postProcessDescription",
-            range,
-          )}
-          descriptionMode={descriptionMode}
-          grouped={grouped}
-        />
-        <TimeoutSetting
-          settingKey="model_list_timeout_secs"
-          fallback={15}
-          title={t("settings.advanced.llmTimeouts.modelListTitle")}
-          description={t(
-            "settings.advanced.llmTimeouts.modelListDescription",
-            range,
-          )}
-          descriptionMode={descriptionMode}
-          grouped={grouped}
-        />
-      </>
+      <TimeoutSetting
+        settingKey="post_process_timeout_secs"
+        fallback={60}
+        title={t("settings.advanced.llmTimeouts.postProcessTitle")}
+        description={t(
+          "settings.advanced.llmTimeouts.postProcessDescription",
+          range,
+        )}
+        descriptionMode={descriptionMode}
+        grouped={grouped}
+      />
     );
-  });
+  },
+);
+
+/** How long to wait for a provider's list of models. Always shown on the
+ * Debug page: post-processing may be on in a profile while the one in use
+ * has it off. */
+export const ModelListTimeout: React.FC<TimeoutProps> = React.memo(
+  ({ descriptionMode = "tooltip", grouped = false }) => {
+    const { t } = useTranslation();
+    const range = { min: MIN_SECONDS, max: MAX_SECONDS };
+
+    return (
+      <TimeoutSetting
+        settingKey="model_list_timeout_secs"
+        fallback={15}
+        title={t("settings.advanced.llmTimeouts.modelListTitle")}
+        description={t(
+          "settings.advanced.llmTimeouts.modelListDescription",
+          range,
+        )}
+        descriptionMode={descriptionMode}
+        grouped={grouped}
+      />
+    );
+  },
+);
