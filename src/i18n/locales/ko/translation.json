@@ -632,7 +632,8 @@
       "volume": {
         "title": "볼륨",
         "description": "오디오 피드백 사운드의 볼륨 조절"
-      }
+      },
+      "systemDefault": "시스템 기본값"
     },
     "advanced": {
       "groups": {
@@ -856,7 +857,8 @@
             "cloud": "클라우드",
             "localHint": "후처리가 이 컴퓨터에서 실행됩니다. 받아쓰기 텍스트는 컴퓨터 밖으로 나가지 않습니다.",
             "cloudHint": "후처리 시 각 받아쓰기의 텍스트를 이 컴퓨터 밖의 이 제공자에게 보냅니다."
-          }
+          },
+          "custom": "사용자 정의 제공자"
         },
         "apiFormat": {
           "title": "API 형식",
@@ -1147,7 +1149,8 @@
       },
       "soundTheme": {
         "label": "사운드 테마",
-        "description": "녹음 시작 및 정지 피드백을 위한 사운드 테마를 선택하세요"
+        "description": "녹음 시작 및 정지 피드백을 위한 사운드 테마를 선택하세요",
+        "preview": "사운드 테마 미리 듣기(시작, 중지, 그다음 받아쓰기를 끝내는 소리 재생)"
       },
       "wordCorrectionThreshold": {
         "title": "단어 수정 임계값",
@@ -1387,14 +1390,15 @@
   },
   "common": {
     "playbackPosition": "재생 위치",
-    "resetSetting": "{{setting}} 기본값으로 초기화",
+    "resetSetting": "{{setting}} 공장 설정으로 초기화",
     "loading": "로딩 중...",
     "delete": "삭제",
     "close": "닫기",
     "open": "열기",
     "copy": "복사",
     "clear": "지우기",
-    "noOptionsFound": "옵션을 찾을 수 없습니다"
+    "noOptionsFound": "옵션을 찾을 수 없습니다",
+    "moreInformation": "자세한 정보"
   },
   "errors": {
     "loadDirectory": "디렉토리 로딩 오류: {{error}}",
@@ -1464,7 +1468,8 @@
     "readyNoShortcut": "준비됨 – 서비스 메뉴에서 삽입",
     "notReady": "아직 준비되지 않음",
     "wordList": "단어 목록: {{name}}",
-    "wordListGlobalOnly": "추가 목록 없음"
+    "wordListGlobalOnly": "추가 목록 없음",
+    "cancel": "취소"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}}이(가) 단축키 1개를 차단하고 있을 수 있습니다",

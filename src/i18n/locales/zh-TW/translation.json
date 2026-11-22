@@ -632,7 +632,8 @@
       "volume": {
         "title": "音量",
         "description": "調整聲音回饋的音量"
-      }
+      },
+      "systemDefault": "系統預設"
     },
     "advanced": {
       "groups": {
@@ -856,7 +857,8 @@
             "cloud": "雲端",
             "localHint": "後處理在這台電腦上執行，聽寫文字不會離開這台電腦。",
             "cloudHint": "後處理會將每次聽寫的文字傳送到這台電腦以外的此供應商。"
-          }
+          },
+          "custom": "自訂供應商"
         },
         "apiFormat": {
           "title": "API 格式",
@@ -1147,7 +1149,8 @@
       },
       "soundTheme": {
         "label": "聲音主題",
-        "description": "選擇錄製開始和停止回饋的聲音主題"
+        "description": "選擇錄製開始和停止回饋的聲音主題",
+        "preview": "試聽聲音主題（依序播放開始、停止和結束聽寫的聲音）"
       },
       "wordCorrectionThreshold": {
         "title": "詞彙修正閾值",
@@ -1387,14 +1390,15 @@
   },
   "common": {
     "playbackPosition": "播放位置",
-    "resetSetting": "將{{setting}}重設為預設值",
+    "resetSetting": "將{{setting}}恢復為原廠設定",
     "loading": "載入中...",
     "delete": "刪除",
     "close": "關閉",
     "open": "開啟",
     "copy": "複製",
     "clear": "清除",
-    "noOptionsFound": "未找到選項"
+    "noOptionsFound": "未找到選項",
+    "moreInformation": "更多資訊"
   },
   "errors": {
     "loadDirectory": "載入目錄時發生錯誤: {{error}}",
@@ -1464,7 +1468,8 @@
     "readyNoShortcut": "就緒 – 從「服務」選單插入",
     "notReady": "尚未就緒",
     "wordList": "詞彙清單：{{name}}",
-    "wordListGlobalOnly": "無附加清單"
+    "wordListGlobalOnly": "無附加清單",
+    "cancel": "取消"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} 可能正在阻擋 1 個快捷鍵",

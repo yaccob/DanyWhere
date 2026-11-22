@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "../ui/Button";
 import { Dropdown, DropdownOption } from "../ui/Dropdown";
 import { PlayIcon } from "lucide-react";
@@ -15,6 +16,7 @@ export const SoundPicker: React.FC<SoundPickerProps> = ({
   label,
   description,
 }) => {
+  const { t } = useTranslation();
   const { getSetting, updateSetting } = useSettings();
   const playTestSound = useSettingsStore((state) => state.playTestSound);
   const customSounds = useSettingsStore((state) => state.customSounds);
@@ -68,7 +70,7 @@ export const SoundPicker: React.FC<SoundPickerProps> = ({
           variant="ghost"
           size="sm"
           onClick={handlePlayAllSounds}
-          title="Preview sound theme (plays start, stop, then the sound that ends a dictation)"
+          title={t("settings.debug.soundTheme.preview")}
         >
           <PlayIcon className="h-4 w-4" />
         </Button>

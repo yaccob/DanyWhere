@@ -632,7 +632,8 @@
       "volume": {
         "title": "עוצמת קול",
         "description": "כוונן את עוצמת צלילי המשוב"
-      }
+      },
+      "systemDefault": "ברירת המחדל של המערכת"
     },
     "advanced": {
       "groups": {
@@ -856,7 +857,8 @@
             "cloud": "ענן",
             "localHint": "העיבוד שלאחר ההכתבה פועל במחשב הזה. טקסט ההכתבות לא יוצא ממנו.",
             "cloudHint": "העיבוד שלאחר ההכתבה שולח את טקסט כל הכתבה לספק הזה, אל מחוץ למחשב."
-          }
+          },
+          "custom": "ספק מותאם אישית"
         },
         "apiFormat": {
           "title": "פורמט API",
@@ -1147,7 +1149,8 @@
       },
       "soundTheme": {
         "label": "ערכת צלילים",
-        "description": "בחר ערכת צלילים להתחלה ולסיום ההקלטה"
+        "description": "בחר ערכת צלילים להתחלה ולסיום ההקלטה",
+        "preview": "השמעת ערכת הצלילים (התחלה, עצירה ואז הצליל שמסיים הכתבה)"
       },
       "wordCorrectionThreshold": {
         "title": "סף תיקון מילים",
@@ -1387,14 +1390,15 @@
   },
   "common": {
     "playbackPosition": "מיקום ההשמעה",
-    "resetSetting": "איפוס {{setting}} לערך ברירת המחדל",
+    "resetSetting": "איפוס {{setting}} להגדרת היצרן",
     "loading": "טוען...",
     "delete": "מחק",
     "close": "סגור",
     "open": "פתח",
     "copy": "העתק",
     "clear": "נקה",
-    "noOptionsFound": "לא נמצאו אפשרויות"
+    "noOptionsFound": "לא נמצאו אפשרויות",
+    "moreInformation": "מידע נוסף"
   },
   "errors": {
     "loadDirectory": "שגיאה בטעינת תיקייה: {{error}}",
@@ -1464,7 +1468,8 @@
     "readyNoShortcut": "מוכן – הוסף מתפריט השירותים",
     "notReady": "עדיין לא מוכן",
     "wordList": "רשימת מילים: {{name}}",
-    "wordListGlobalOnly": "ללא רשימה נוספת"
+    "wordListGlobalOnly": "ללא רשימה נוספת",
+    "cancel": "ביטול"
   },
   "secureInput": {
     "blockedWithCulprit_one": "ייתכן ש-{{name}} חוסם קיצור דרך אחד",

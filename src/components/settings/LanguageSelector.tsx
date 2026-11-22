@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { listen } from "@tauri-apps/api/event";
 import { SettingContainer } from "../ui/SettingContainer";
-import { ResetButton } from "../ui/ResetButton";
+import { FactoryResetButton } from "../ui/FactoryResetButton";
 import { InfoTooltip } from "../ui/InfoTooltip";
 import { Tooltip } from "../ui/Tooltip";
 import { LanguageDetectorDownload } from "./LanguageDetectorDownload";
@@ -341,10 +341,8 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
             </div>
           )}
         </div>
-        <ResetButton
-          ariaLabel={t("common.resetSetting", {
-            setting: t("settings.general.language.title"),
-          })}
+        <FactoryResetButton
+          setting={t("settings.general.language.title")}
           onClick={handleReset}
           disabled={isUpdating("selected_language")}
         />

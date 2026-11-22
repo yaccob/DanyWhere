@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useSettings } from "../../../hooks/useSettings";
+import { providerName } from "@/lib/displayNames";
 import {
   commands,
   type PostProcessApiFormat,
@@ -49,6 +51,7 @@ type PostProcessProviderState = {
 const APPLE_PROVIDER_ID = "apple_intelligence";
 
 export const usePostProcessProviderState = (): PostProcessProviderState => {
+  const { t } = useTranslation();
   const {
     settings,
     isUpdating,
@@ -88,9 +91,9 @@ export const usePostProcessProviderState = (): PostProcessProviderState => {
   const providerOptions = useMemo<DropdownOption[]>(() => {
     return providers.map((provider) => ({
       value: provider.id,
-      label: provider.label,
+      label: providerName(provider, t),
     }));
-  }, [providers]);
+  }, [providers, t]);
 
   const handleProviderSelect = useCallback(
     async (providerId: string) => {

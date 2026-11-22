@@ -632,7 +632,8 @@
       "volume": {
         "title": "Volume",
         "description": "Ajuster le volume du signal sonore"
-      }
+      },
+      "systemDefault": "Par défaut du système"
     },
     "advanced": {
       "groups": {
@@ -856,7 +857,8 @@
             "cloud": "Cloud",
             "localHint": "Le post-traitement s’exécute sur cet ordinateur. Le texte de vos dictées ne le quitte pas.",
             "cloudHint": "Le post-traitement envoie le texte de chaque dictée à ce fournisseur, hors de cet ordinateur."
-          }
+          },
+          "custom": "Fournisseur personnalisé"
         },
         "apiFormat": {
           "title": "Format d'API",
@@ -1147,7 +1149,8 @@
       },
       "soundTheme": {
         "label": "Thème sonore",
-        "description": "Choisir un thème sonore pour les retours de début et de fin d'enregistrement"
+        "description": "Choisir un thème sonore pour les retours de début et de fin d'enregistrement",
+        "preview": "Écouter le thème sonore (joue le début, l'arrêt, puis le son qui termine une dictée)"
       },
       "wordCorrectionThreshold": {
         "title": "Seuil de correction des mots",
@@ -1387,14 +1390,15 @@
   },
   "common": {
     "playbackPosition": "Position de lecture",
-    "resetSetting": "Rétablir la valeur par défaut de {{setting}}",
+    "resetSetting": "Rétablir le réglage d'usine de {{setting}}",
     "loading": "Chargement...",
     "delete": "Supprimer",
     "close": "Fermer",
     "open": "Ouvrir",
     "copy": "Copier",
     "clear": "Effacer",
-    "noOptionsFound": "Aucune option trouvée"
+    "noOptionsFound": "Aucune option trouvée",
+    "moreInformation": "Plus d'informations"
   },
   "errors": {
     "loadDirectory": "Erreur lors du chargement du répertoire : {{error}}",
@@ -1464,7 +1468,8 @@
     "readyNoShortcut": "Prêt – insérez-le depuis le menu Services",
     "notReady": "Pas encore prêt",
     "wordList": "Liste de mots : {{name}}",
-    "wordListGlobalOnly": "Aucune liste supplémentaire"
+    "wordListGlobalOnly": "Aucune liste supplémentaire",
+    "cancel": "Annuler"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} bloque peut-être 1 raccourci",

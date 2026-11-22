@@ -632,7 +632,8 @@
       "volume": {
         "title": "Volume",
         "description": "Pas het volume van de geluidsfeedback aan"
-      }
+      },
+      "systemDefault": "Systeemstandaard"
     },
     "advanced": {
       "groups": {
@@ -856,7 +857,8 @@
             "cloud": "Cloud",
             "localHint": "Nabewerking draait op deze computer. De tekst van je dictaten verlaat hem niet.",
             "cloudHint": "Nabewerking stuurt de tekst van elk dictaat naar deze provider, buiten deze computer."
-          }
+          },
+          "custom": "Eigen provider"
         },
         "apiFormat": {
           "title": "API-indeling",
@@ -1147,7 +1149,8 @@
       },
       "soundTheme": {
         "label": "Geluidsthema",
-        "description": "Kies een geluidsthema voor feedback bij het starten en stoppen van opnames"
+        "description": "Kies een geluidsthema voor feedback bij het starten en stoppen van opnames",
+        "preview": "Geluidsthema beluisteren (speelt start, stop en dan het geluid dat een dictaat beëindigt)"
       },
       "wordCorrectionThreshold": {
         "title": "Drempelwaarde woordcorrectie",
@@ -1387,14 +1390,15 @@
   },
   "common": {
     "playbackPosition": "Afspeelpositie",
-    "resetSetting": "{{setting}} terugzetten naar de standaardwaarde",
+    "resetSetting": "{{setting}} terugzetten naar de fabrieksinstelling",
     "loading": "Laden...",
     "delete": "Verwijderen",
     "close": "Sluiten",
     "open": "Openen",
     "copy": "Kopiëren",
     "clear": "Wissen",
-    "noOptionsFound": "Geen opties gevonden"
+    "noOptionsFound": "Geen opties gevonden",
+    "moreInformation": "Meer informatie"
   },
   "errors": {
     "loadDirectory": "Fout bij laden van map: {{error}}",
@@ -1464,7 +1468,8 @@
     "readyNoShortcut": "Klaar – voeg in via het menu Voorzieningen",
     "notReady": "Nog niet klaar",
     "wordList": "Woordenlijst: {{name}}",
-    "wordListGlobalOnly": "Geen extra lijst"
+    "wordListGlobalOnly": "Geen extra lijst",
+    "cancel": "Annuleren"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} blokkeert mogelijk 1 sneltoets",

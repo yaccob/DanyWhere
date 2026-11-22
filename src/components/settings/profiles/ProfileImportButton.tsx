@@ -10,6 +10,7 @@ import {
   type TransferError,
 } from "@/bindings";
 import { useSettings } from "@/hooks/useSettings";
+import { providerName as shownProviderName } from "@/lib/displayNames";
 import { Button } from "../../ui/Button";
 import { ProfilePasswordDialog } from "./ProfilePasswordDialog";
 import { transferErrorKey } from "@/lib/profileTransfer";
@@ -36,10 +37,10 @@ export const ProfileImportButton: React.FC = () => {
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useTransientStatus();
 
-  const providerName = (id: string | null | undefined) =>
-    settings?.post_process_providers?.find((p) => p.id === id)?.label ??
-    id ??
-    "";
+  const providerName = (id: string | null | undefined) => {
+    const known = settings?.post_process_providers?.find((p) => p.id === id);
+    return known ? shownProviderName(known, t) : (id ?? "");
+  };
 
   const fail = (error: TransferError | unknown) => {
     const code =

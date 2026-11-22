@@ -632,7 +632,8 @@
       "volume": {
         "title": "Hlasitost",
         "description": "Upravte hlasitost zvukové odezvy"
-      }
+      },
+      "systemDefault": "Výchozí systémové"
     },
     "advanced": {
       "groups": {
@@ -856,7 +857,8 @@
             "cloud": "Cloud",
             "localHint": "Následné zpracování běží na tomto počítači. Text diktátů ho neopouští.",
             "cloudHint": "Následné zpracování posílá text každého diktátu tomuto poskytovateli, mimo tento počítač."
-          }
+          },
+          "custom": "Vlastní poskytovatel"
         },
         "apiFormat": {
           "title": "Formát API",
@@ -1147,7 +1149,8 @@
       },
       "soundTheme": {
         "label": "Zvukový motiv",
-        "description": "Vyberte zvukový motiv pro odezvu při startu a ukončení nahrávání"
+        "description": "Vyberte zvukový motiv pro odezvu při startu a ukončení nahrávání",
+        "preview": "Přehrát ukázku zvukového motivu (start, stop a pak zvuk, který ukončuje diktát)"
       },
       "wordCorrectionThreshold": {
         "title": "Práh korekce slov",
@@ -1387,14 +1390,15 @@
   },
   "common": {
     "playbackPosition": "Pozice přehrávání",
-    "resetSetting": "Obnovit výchozí hodnotu: {{setting}}",
+    "resetSetting": "Obnovit tovární nastavení: {{setting}}",
     "loading": "Načítání...",
     "delete": "Smazat",
     "close": "Zavřít",
     "open": "Otevřít",
     "copy": "Kopírovat",
     "clear": "Vymazat",
-    "noOptionsFound": "Nenalezeny žádné možnosti"
+    "noOptionsFound": "Nenalezeny žádné možnosti",
+    "moreInformation": "Další informace"
   },
   "errors": {
     "loadDirectory": "Chyba při načítání adresáře: {{error}}",
@@ -1464,7 +1468,8 @@
     "readyNoShortcut": "Připraveno – vložte z nabídky Služby",
     "notReady": "Ještě není hotovo",
     "wordList": "Seznam slov: {{name}}",
-    "wordListGlobalOnly": "Žádný doplňkový seznam"
+    "wordListGlobalOnly": "Žádný doplňkový seznam",
+    "cancel": "Zrušit"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} může blokovat 1 zkratku",
