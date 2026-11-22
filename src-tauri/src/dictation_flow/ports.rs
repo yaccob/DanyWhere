@@ -8,10 +8,10 @@
 //! flow keeps every decision and the order of what the user sees and hears.
 
 use std::future::Future;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use crate::actions::{ProcessedTranscription, TranscriptionOutcome};
-use crate::delivery::DictationEnd;
+use crate::delivery::{DictationEnd, DictationNotice};
 use crate::dictation_context::{CapturedWindow, ContextQuery};
 use crate::dictation_key_inserts::ClipboardReason;
 use crate::managers::history::{HistoryEntry, HistoryManager};
@@ -72,12 +72,15 @@ pub trait History {
 
 /// Getting the text where it goes.
 ///
-/// DanyWhere: whether the text is pasted is decided as before, by the paste
-/// method of the dictation's profile inside [`Deliver::paste`]
-/// (`clipboard::paste_with_values`). Deciding it by `delivery::delivery_for`
-/// instead goes into `deliver_dictation`, at its one call of
-/// [`Deliver::paste`].
+/// DanyWhere: whether the text is pasted is decided in the flow, by
+/// `delivery::delivery_for` (`deliver_text`): [`Deliver::paste`] only where
+/// DanyWhere may paste, [`Deliver::leave_on_clipboard`] where it may not and
+/// the text is to be copied.
 pub trait Deliver {
+    /// Whether this build offers the "Insert Last Dictation" service
+    /// (`delivery::INSERT_SERVICE_AVAILABLE`), so a dictation without
+    /// Accessibility can wait for it.
+    fn insert_service_available(&self) -> bool;
     /// "Copy Last Transcript" was pressed during dictation `session`: its
     /// text goes on the clipboard instead of being pasted.
     fn copies_instead_of_pasting(&self, session: u64) -> bool;
@@ -95,13 +98,18 @@ pub trait Deliver {
     /// The user's transcription hook (`transcription_hook::apply`).
     fn apply_hook(&self, text: String) -> impl Future<Output = String> + Send;
     /// Pastes `text` and `append_text` into the application in front, with
-    /// the profile `values` of the dictation it belongs to.
+    /// the profile `values` of the dictation it belongs to and their paste
+    /// method; then sends the "Append" value's key presses, and copies the
+    /// text if those values say so.
     fn paste(
         &self,
         text: String,
         values: Option<ProfileValues>,
         append_text: &str,
     ) -> Result<PasteOutcome, String>;
+    /// Puts a dictation's text, its "Append" text included, on the
+    /// clipboard without pasting it (`clipboard::leave_on_clipboard`).
+    fn leave_on_clipboard(&self, text: &str) -> Result<(), String>;
     /// Hands `text` to a waiting service call; whether one took it.
     fn deliver_to_waiting_call(&self, text: &str) -> bool;
     /// Puts `text` on the clipboard if "Copy Last Transcript" asked for it
@@ -120,9 +128,9 @@ pub enum Overlay {
         streaming: bool,
     },
     Hide,
-    /// After a dictation: where the text waits when it was not pasted,
-    /// otherwise nothing (`delivery::finish_overlay_after_dictation`).
-    AfterDictation,
+    /// After a dictation: where the text waits when it was not pasted, and
+    /// for how long; `None`: nothing (`delivery::overlay_after_dictation`).
+    AfterDictation(Option<(DictationNotice, Duration)>),
     /// The text went on the clipboard (`dictation_key_inserts::show_on_clipboard_notice`).
     OnClipboard(ClipboardReason),
 }

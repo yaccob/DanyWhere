@@ -357,21 +357,34 @@ pub fn play_sound_after_dictation(app: &AppHandle, end: DictationEnd) {
     }
 }
 
-/// Ends the overlay after a finished dictation: says where the text waits
-/// when it was not pasted, otherwise just hides the overlay.
-pub fn finish_overlay_after_dictation(app: &AppHandle) {
-    // The dictation's profile's delivery (the paste thread keeps its values).
-    let settings = crate::app_profiles::dictation_settings(app);
-    let notice = dictation_notice(&settings, INSERT_SERVICE_AVAILABLE);
-    match (notice, clipboard_notice_duration(&settings)) {
-        (Some(DictationNotice::OnClipboard), Some(duration)) => {
+/// What the overlay shows after a finished dictation: where its text waits
+/// when it was not pasted, and for how long. `None`: the overlay just hides
+/// (pasted, kept only in the History, or the notice switched off).
+pub fn overlay_after_dictation(
+    settings: &AppSettings,
+    service_available: bool,
+) -> Option<(DictationNotice, std::time::Duration)> {
+    Some((
+        dictation_notice(settings, service_available)?,
+        clipboard_notice_duration(settings)?,
+    ))
+}
+
+/// Ends the overlay after a finished dictation as `after` says
+/// ([`overlay_after_dictation`]).
+pub fn finish_overlay_after_dictation(
+    app: &AppHandle,
+    after: Option<(DictationNotice, std::time::Duration)>,
+) {
+    match after {
+        Some((DictationNotice::OnClipboard, duration)) => {
             crate::overlay::show_clipboard_notice(app, duration)
         }
-        (Some(DictationNotice::ReadyToInsert), Some(duration)) => {
+        Some((DictationNotice::ReadyToInsert, duration)) => {
             let keys = crate::insert_service::current_shortcut(app);
             crate::overlay::show_ready_notice(app, keys, duration)
         }
-        _ => crate::overlay::hide_recording_overlay(app),
+        None => crate::overlay::hide_recording_overlay(app),
     }
 }
 
@@ -399,9 +412,9 @@ pub fn change_clipboard_notice_ms_setting(app: AppHandle, ms: u64) -> Result<(),
 mod tests {
     use super::{
         clipboard_notice_duration, copies_dictation_to_clipboard, delivery_for, dictation_notice,
-        dictation_target, dictation_waits_for_user, goes_into_app_in_front, plays_waiting_sound,
-        sound_after_dictation, text_to_copy, Delivery, DictationEnd, DictationNotice,
-        DictationTarget,
+        dictation_target, dictation_waits_for_user, goes_into_app_in_front,
+        overlay_after_dictation, plays_waiting_sound, sound_after_dictation, text_to_copy,
+        Delivery, DictationEnd, DictationNotice, DictationTarget,
     };
     use crate::accessibility::testing::{
         settings_without_accessibility, with_choice, with_system_trusted, STATES,
@@ -772,6 +785,26 @@ mod tests {
     #[test]
     fn no_notice_after_a_pasted_dictation() {
         assert_eq!(dictation_notice(&get_default_settings(), false), None);
+    }
+
+    #[test]
+    fn the_overlay_after_a_dictation_says_where_it_waits_for_the_notice_time() {
+        let time = Duration::from_millis(2500);
+        let waiting = settings_without_accessibility();
+        assert_eq!(
+            overlay_after_dictation(&waiting, true),
+            Some((DictationNotice::ReadyToInsert, time))
+        );
+        assert_eq!(
+            overlay_after_dictation(&waiting, false),
+            Some((DictationNotice::OnClipboard, time))
+        );
+        assert_eq!(overlay_after_dictation(&get_default_settings(), true), None);
+        // The notice switched off: the overlay just hides.
+        let mut silent = waiting;
+        silent.clipboard_notice_ms = 0;
+        assert_eq!(overlay_after_dictation(&silent, true), None);
+        assert_eq!(overlay_after_dictation(&silent, false), None);
     }
 
     #[test]
