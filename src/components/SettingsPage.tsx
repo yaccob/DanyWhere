@@ -31,6 +31,7 @@ import {
   fillsWindow,
   navPath,
   selectArea,
+  showsPath,
   type DefaultsPage,
   type NavLocation,
   type ProfilePage,
@@ -47,12 +48,13 @@ interface SettingsPageProps {
 }
 
 /** DanyWhere: the path above a page ("Defaults › General"), since pages of
- * the same name are in several areas. Only for pages inside an area. */
+ * the same name are in several areas. For every page of an area, the
+ * overview of the profiles too (`showsPath`). */
 const PagePath: React.FC<{ location: NavLocation }> = ({ location }) => {
   const { t } = useTranslation();
   const { profiles, displayName } = useProfiles();
+  if (!showsPath(location)) return null;
   const path = navPath(location);
-  if (path.length < 2) return null;
   return (
     <div className="max-w-3xl w-full mx-auto px-4 flex flex-none flex-wrap items-center gap-1 text-xs text-ink-3">
       {path.map((part, index) => {

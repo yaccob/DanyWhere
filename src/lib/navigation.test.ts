@@ -18,6 +18,7 @@ import {
   navContext,
   navPath,
   navTree,
+  showsPath,
   pageLabelKey,
   profilePages,
   resolveLocation,
@@ -585,6 +586,21 @@ check("a profile's Models fills the window like the defaults'", () =>
     true,
   ),
 );
+
+// --- Which pages show the path (qa 2026-11-22_0107, A3) ---------------------
+check("every page of the three areas shows its path, the overview too", () => {
+  assert.equal(showsPath({ kind: "defaults", page: "general" }), true);
+  assert.equal(showsPath({ kind: "profiles" }), true);
+  assert.equal(
+    showsPath({ kind: "profile", profileId: "work", page: "profile" }),
+    true,
+  );
+  assert.equal(showsPath({ kind: "application", page: "storage" }), true);
+});
+check("History and About, outside the areas, show none", () => {
+  assert.equal(showsPath({ kind: "history" }), false);
+  assert.equal(showsPath({ kind: "about" }), false);
+});
 
 if (failures.length > 0) {
   console.error(

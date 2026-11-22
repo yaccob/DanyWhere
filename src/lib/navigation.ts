@@ -380,6 +380,12 @@ export const navPath = (location: NavLocation): NavLabel[] => {
   }
 };
 
+/** Whether the page shows its path above it: every page of the three
+ * areas, the overview of the profiles too (qa 2026-11-22_0107, A3); not
+ * History and About, which are no area's. */
+export const showsPath = (location: NavLocation): boolean =>
+  location.kind !== "history" && location.kind !== "about";
+
 /** The Models page fills the window, the defaults' and a profile's: its
  * table scrolls, not the page. */
 export const fillsWindow = (location: NavLocation): boolean =>

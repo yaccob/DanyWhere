@@ -86,8 +86,11 @@ export const ProfilesSettings: React.FC = () => {
           const deletable = canDeleteProfile(profiles, profile.id);
           return (
             <div key={profile.id}>
-              <div className="flex items-center justify-between gap-3 min-h-12 px-4 p-2">
-                <div className="flex items-center gap-2 min-w-0">
+              {/* The buttons go under the name when both don't fit, so a
+                  narrow window doesn't cut the name off (qa 2026-11-22_0107,
+                  A4). */}
+              <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 min-h-12 px-4 p-2">
+                <div className="flex min-w-0 flex-[1_1_10rem] items-center gap-2">
                   <span
                     className="text-sm font-medium truncate"
                     title={displayName(profile)}
@@ -100,7 +103,7 @@ export const ProfilesSettings: React.FC = () => {
                     </span>
                   )}
                 </div>
-                <div className="flex items-center gap-1 shrink-0">
+                <div className="ms-auto flex flex-wrap items-center justify-end gap-1">
                   {!isActive && (
                     <Button
                       variant="secondary"
