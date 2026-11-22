@@ -38,8 +38,9 @@ use std::sync::{Arc, Mutex};
 use std::thread::{self, JoinHandle};
 use tauri::{AppHandle, Emitter, Manager};
 
-use crate::settings::{self, get_settings, ShortcutBinding};
+use crate::settings::{self, get_settings, KeyboardImplementation, ShortcutBinding};
 
+use super::backend::ShortcutBackend;
 use super::handler::handle_shortcut_event;
 
 /// Commands that can be sent to the hotkey manager thread
@@ -222,39 +223,6 @@ impl HandyKeysState {
         Ok(())
     }
 
-    /// Register a shortcut binding
-    pub fn register(&self, binding: &ShortcutBinding) -> Result<(), String> {
-        let (tx, rx) = mpsc::channel();
-        self.command_sender
-            .lock()
-            .map_err(|_| "Failed to lock command_sender")?
-            .send(ManagerCommand::Register {
-                binding_id: binding.id.clone(),
-                hotkey_string: binding.current_binding.clone(),
-                response: tx,
-            })
-            .map_err(|_| "Failed to send register command")?;
-
-        rx.recv()
-            .map_err(|_| "Failed to receive register response")?
-    }
-
-    /// Unregister a shortcut binding
-    pub fn unregister(&self, binding: &ShortcutBinding) -> Result<(), String> {
-        let (tx, rx) = mpsc::channel();
-        self.command_sender
-            .lock()
-            .map_err(|_| "Failed to lock command_sender")?
-            .send(ManagerCommand::Unregister {
-                binding_id: binding.id.clone(),
-                response: tx,
-            })
-            .map_err(|_| "Failed to send unregister command")?;
-
-        rx.recv()
-            .map_err(|_| "Failed to receive unregister response")?
-    }
-
     /// Start recording mode for a specific binding
     pub fn start_recording(&self, app: &AppHandle, binding_id: String) -> Result<(), String> {
         if self.is_recording.load(Ordering::SeqCst) {
@@ -377,6 +345,80 @@ impl Drop for HandyKeysState {
     }
 }
 
+/// DanyWhere: a started manager registers through its thread; at the
+/// backend's start before the app keeps the state (`init_shortcuts`).
+impl ShortcutBackend for HandyKeysState {
+    fn implementation(&self) -> KeyboardImplementation {
+        KeyboardImplementation::HandyKeys
+    }
+
+    fn register(&self, binding: &ShortcutBinding) -> Result<(), String> {
+        let (tx, rx) = mpsc::channel();
+        self.command_sender
+            .lock()
+            .map_err(|_| "Failed to lock command_sender")?
+            .send(ManagerCommand::Register {
+                binding_id: binding.id.clone(),
+                hotkey_string: binding.current_binding.clone(),
+                response: tx,
+            })
+            .map_err(|_| "Failed to send register command")?;
+
+        rx.recv()
+            .map_err(|_| "Failed to receive register response")?
+    }
+
+    fn unregister(&self, binding: &ShortcutBinding) -> Result<(), String> {
+        let (tx, rx) = mpsc::channel();
+        self.command_sender
+            .lock()
+            .map_err(|_| "Failed to lock command_sender")?
+            .send(ManagerCommand::Unregister {
+                binding_id: binding.id.clone(),
+                response: tx,
+            })
+            .map_err(|_| "Failed to send unregister command")?;
+
+        rx.recv()
+            .map_err(|_| "Failed to receive unregister response")?
+    }
+}
+
+/// DanyWhere: handy-keys as a [`ShortcutBackend`], through the manager the
+/// app keeps; fails with "HandyKeysState not initialized" while there is
+/// none.
+pub(crate) struct HandyKeysBackend {
+    app: AppHandle,
+}
+
+impl HandyKeysBackend {
+    pub(crate) fn new(app: &AppHandle) -> Self {
+        Self { app: app.clone() }
+    }
+}
+
+impl ShortcutBackend for HandyKeysBackend {
+    fn implementation(&self) -> KeyboardImplementation {
+        KeyboardImplementation::HandyKeys
+    }
+
+    fn register(&self, binding: &ShortcutBinding) -> Result<(), String> {
+        let state = self
+            .app
+            .try_state::<HandyKeysState>()
+            .ok_or("HandyKeysState not initialized")?;
+        state.register(binding)
+    }
+
+    fn unregister(&self, binding: &ShortcutBinding) -> Result<(), String> {
+        let state = self
+            .app
+            .try_state::<HandyKeysState>()
+            .ok_or("HandyKeysState not initialized")?;
+        state.unregister(binding)
+    }
+}
+
 /// Convert handy-keys Modifiers to a list of strings
 fn modifiers_to_strings(modifiers: handy_keys::Modifiers) -> Vec<String> {
     let mut result = Vec::new();
@@ -408,7 +450,7 @@ fn modifiers_to_strings(modifiers: handy_keys::Modifiers) -> Vec<String> {
 
 /// Validate a shortcut string for the HandyKeys implementation.
 /// HandyKeys is more permissive: allows modifier-only combos and the fn key.
-pub fn validate_shortcut(raw: &str) -> Result<(), String> {
+pub(super) fn validate_shortcut(raw: &str) -> Result<(), String> {
     if raw.trim().is_empty() {
         return Err("Shortcut cannot be empty".into());
     }
@@ -419,64 +461,18 @@ pub fn validate_shortcut(raw: &str) -> Result<(), String> {
         .map_err(|e| format!("Invalid shortcut for HandyKeys: {}", e))
 }
 
-/// Initialize handy-keys shortcuts
-pub fn init_shortcuts(app: &AppHandle) -> Result<(), String> {
+/// DanyWhere: starts the manager; `register` registers the start shortcuts
+/// with it before the app keeps it (`lifecycle::start`). Fails when the
+/// manager can't start (e.g. without Accessibility).
+pub(super) fn start(
+    app: &AppHandle,
+    register: &mut dyn FnMut(&dyn ShortcutBackend),
+) -> Result<(), String> {
     let state = HandyKeysState::new(app.clone())?;
-
-    let default_bindings = settings::get_default_settings().bindings;
-    let user_settings = settings::load_or_create_app_settings(app);
-
-    // Register all bindings except cancel (which is dynamic)
-    for (id, default_binding) in default_bindings {
-        if id == "cancel" {
-            continue;
-        }
-        // Skip post-processing shortcut when the feature is disabled
-        // DanyWhere: also the context shortcut, and "Paste Last Transcript"
-        // while it is the insert service's shortcut.
-        if !crate::settings::registers_binding(
-            &id,
-            &user_settings,
-            crate::delivery::INSERT_SERVICE_AVAILABLE,
-        ) {
-            continue;
-        }
-
-        let binding = user_settings
-            .bindings
-            .get(&id)
-            .cloned()
-            .unwrap_or(default_binding);
-
-        match state.register(&binding) {
-            // DanyWhere: known to the shortcuts that follow the profile.
-            Ok(()) => super::profile_sync::note_registered(&binding),
-            Err(e) => error!(
-                "Failed to register handy-keys shortcut {} during init: {}",
-                id, e
-            ),
-        }
-    }
-
+    register(&state);
     app.manage(state);
     info!("handy-keys shortcuts initialized");
     Ok(())
-}
-
-/// Register a shortcut
-pub fn register_shortcut(app: &AppHandle, binding: ShortcutBinding) -> Result<(), String> {
-    let state = app
-        .try_state::<HandyKeysState>()
-        .ok_or("HandyKeysState not initialized")?;
-    state.register(&binding)
-}
-
-/// Unregister a shortcut
-pub fn unregister_shortcut(app: &AppHandle, binding: ShortcutBinding) -> Result<(), String> {
-    let state = app
-        .try_state::<HandyKeysState>()
-        .ok_or("HandyKeysState not initialized")?;
-    state.unregister(&binding)
 }
 
 /// Start key recording mode

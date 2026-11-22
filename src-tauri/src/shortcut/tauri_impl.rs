@@ -7,47 +7,40 @@ use log::{debug, error, warn};
 use tauri::AppHandle;
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
 
-use crate::settings::{self, ShortcutBinding};
+use crate::settings::{KeyboardImplementation, ShortcutBinding};
 
+use super::backend::ShortcutBackend;
 use super::handler::handle_shortcut_event;
 
-/// Initialize shortcuts using Tauri's global-shortcut plugin
-pub fn init_shortcuts(app: &AppHandle) {
-    let default_bindings = settings::get_default_settings().bindings;
-    let user_settings = settings::load_or_create_app_settings(app);
+/// DanyWhere: Tauri's global-shortcut plugin as a [`ShortcutBackend`]. It
+/// registers through Carbon on macOS, which needs no Accessibility.
+pub(crate) struct TauriBackend {
+    app: AppHandle,
+}
 
-    // Register all default shortcuts, applying user customizations
-    for (id, default_binding) in default_bindings {
-        if id == "cancel" {
-            continue; // Skip cancel shortcut, it will be registered dynamically
-        }
-        // Skip post-processing shortcut when the feature is disabled
-        // DanyWhere: also the context shortcut, and "Paste Last Transcript"
-        // while it is the insert service's shortcut.
-        if !crate::settings::registers_binding(
-            &id,
-            &user_settings,
-            crate::delivery::INSERT_SERVICE_AVAILABLE,
-        ) {
-            continue;
-        }
-        let binding = user_settings
-            .bindings
-            .get(&id)
-            .cloned()
-            .unwrap_or(default_binding);
+impl TauriBackend {
+    pub(crate) fn new(app: &AppHandle) -> Self {
+        Self { app: app.clone() }
+    }
+}
 
-        match register_shortcut(app, binding.clone()) {
-            // DanyWhere: known to the shortcuts that follow the profile.
-            Ok(()) => super::profile_sync::note_registered(&binding),
-            Err(e) => error!("Failed to register shortcut {} during init: {}", id, e),
-        }
+impl ShortcutBackend for TauriBackend {
+    fn implementation(&self) -> KeyboardImplementation {
+        KeyboardImplementation::Tauri
+    }
+
+    fn register(&self, binding: &ShortcutBinding) -> Result<(), String> {
+        register_shortcut(&self.app, binding)
+    }
+
+    fn unregister(&self, binding: &ShortcutBinding) -> Result<(), String> {
+        unregister_shortcut(&self.app, binding)
     }
 }
 
 /// Validate a shortcut string for the Tauri global-shortcut implementation.
 /// Tauri requires at least one non-modifier key and doesn't support the fn key.
-pub fn validate_shortcut(raw: &str) -> Result<(), String> {
+pub(super) fn validate_shortcut(raw: &str) -> Result<(), String> {
     if raw.trim().is_empty() {
         return Err("Shortcut cannot be empty".into());
     }
@@ -82,7 +75,7 @@ pub fn validate_shortcut(raw: &str) -> Result<(), String> {
 }
 
 /// Register a shortcut using Tauri's global-shortcut plugin
-pub fn register_shortcut(app: &AppHandle, binding: ShortcutBinding) -> Result<(), String> {
+fn register_shortcut(app: &AppHandle, binding: &ShortcutBinding) -> Result<(), String> {
     // Validate for Tauri requirements
     if let Err(e) = validate_shortcut(&binding.current_binding) {
         warn!(
@@ -148,7 +141,7 @@ pub fn register_shortcut(app: &AppHandle, binding: ShortcutBinding) -> Result<()
 }
 
 /// Unregister a shortcut from Tauri's global-shortcut plugin
-pub fn unregister_shortcut(app: &AppHandle, binding: ShortcutBinding) -> Result<(), String> {
+fn unregister_shortcut(app: &AppHandle, binding: &ShortcutBinding) -> Result<(), String> {
     let shortcut = match binding.current_binding.parse::<Shortcut>() {
         Ok(s) => s,
         Err(e) => {

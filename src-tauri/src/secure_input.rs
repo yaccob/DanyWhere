@@ -512,8 +512,11 @@ mod imp {
                 kept.len()
             );
         }
+        // The shadows are Tauri registrations (Carbon), whatever the backend.
+        let carbon =
+            crate::shortcut::backend::for_implementation(app, KeyboardImplementation::Tauri);
         for binding in stale {
-            if let Err(e) = crate::shortcut::tauri_impl::unregister_shortcut(app, binding.clone()) {
+            if let Err(e) = carbon.unregister(&binding) {
                 warn!(
                     "SecureInput fallback: failed to unregister '{}': {}",
                     binding.current_binding, e
@@ -536,7 +539,7 @@ mod imp {
                 continue;
             }
 
-            match crate::shortcut::tauri_impl::register_shortcut(app, shadow.clone()) {
+            match carbon.register(&shadow) {
                 Ok(()) => {
                     info!(
                         "SecureInput fallback: '{}' registered via Carbon as '{}'{}",
