@@ -81,6 +81,28 @@ Planned work on DanyWhere, roughly in priority order within each section. Items 
 - Places that touch a device without a seam today: opening and playing a feedback sound, and finding the selected output device by name with its fallback to the default (`audio_feedback.rs`); the list of output devices (`audio_toolkit/audio/device.rs`); opening the microphone with its fallback when the chosen channel is missing, and the lists of microphones (`managers/audio.rs`, `commands/audio.rs`).
 - On #2525: rodio 0.23 asks for a fixed buffer of about 50 ms (2048 frames at 44.1 and 48 kHz), and a Bose QC Ultra on macOS accepts only 14..=1024, so every feedback sound fails there. Handy's fix asks for the system's default buffer on every platform and device, but rodio 0.22.2 moved away from that default on purpose ("Incorrectly set system default audio buffer size breaks playback"). Claude's proposal for then, to be decided when it is built: fit rodio's size into the range the device itself offers (the Bose would get 1024, every other device stays as today), and try the system default once only if opening still fails.
 
+### Tests: a dictation as a whole below the GUI, and the mode without Accessibility only where it differs
+
+**Idea (user, 2026-11-22):** thorough checks of a change go almost only through the scripted GUI. That takes long, and every GUI run re-checks logic decided below the GUI. The user asks whether the layers are separated well enough, or whether a clear separation goes unused in testing. The user also asks whether the mode without Accessibility should become an application of its own: its real runs re-test much that is tested already, while only what differs should need testing.
+
+**Found (Claude, 2026-11-22):**
+
+- About 1,333 Rust unit tests cover single decisions: delivery, end shortcuts, profile layers, Append, history versions and the coordinator's state machine. Nothing runs a dictation as a whole without the app.
+- The part after the recording (`actions.rs`, one block of about 490 lines) reads the settings through the `AppHandle` at almost every step. It calls managers that hold an `AppHandle` and emit their events themselves.
+- The crate has no trait for transcribing, post-processing, storing in History, delivering or notifying. The frontend has no setup for component tests.
+- About two thirds of the roughly 420 checks in the dictation runs of 2026-11-13 to 16 concerned logic below the GUI. So did almost all of the roughly 170 points checked in the UI runs of 2026-11-22.
+- The mode without Accessibility is the same code with a stored switch; 3 to 4 % of the backend is its own. Its branches, though, are spread over shared modules:
+  - The permission has three sources: the switch, four direct `AXIsProcessTrusted` calls and the frontend plugin.
+  - The two shortcut backends share no trait.
+  - A dictation pastes by `paste_method`, not by the tested `delivery_for`. Read from the code, not tried: a profile set to ⌘V without Accessibility would try to paste and fail.
+
+**Proposal (Claude, not decided):** no application of its own. It would either copy almost all of DanyWhere, or first need a core with exchangeable adapters, which brings the gain in testing without a second application. Instead, four steps:
+
+- **(A) Component tests for the frontend:** happy-dom and testing-library under `bun test`, with `bindings.ts` replaced. Independent of the rest.
+- **(B) The dictation after the recording as a function:** it takes a snapshot of the settings and small interfaces (transcribe, post-process, store in History, deliver, notify). Tests use a fixed transcript or the fake microphone, a local LLM server and a temporary database. B starts after the shortcut rework is merged.
+- **(C) The permission and the shortcut backend as adapters:** one source for the permission, the shortcut backends behind a trait, and delivery by `delivery_for`, so that B's tests run in both states. C comes when the mode without Accessibility is taken up again.
+- **(D) The GUI runs cut to a short smoke test, run before releases:** it covers only what the real app shows (pasting into another application, the services, registering shortcuts, tap and hold, the permissions, the overlay's screen).
+
 ### History: per profile and in total
 
 **Idea (user, 2026-11-19; a larger topic, to be discussed on its own later):** History could be kept per profile, or at least be filterable by profile, with a view per profile and a view of everything. Open: what happens to a profile's entries when the profile is deleted, since History is a record of the past.
