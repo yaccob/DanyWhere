@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { cancelOnEscape } from "@/lib/escapeLayers";
 
 export interface DropdownOption {
   value: string;
@@ -56,6 +57,18 @@ export const Dropdown: React.FC<DropdownProps> = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // DanyWhere: Escape closes the open list, heard on the window: WebKit
+  // gives the clicked button no keyboard focus, so a key handler here never
+  // heard it (qa 2026-11-22_0233). A dialog or menu behind stays open until
+  // the next Escape. The focus goes back to the button.
+  useEffect(() => {
+    if (!isOpen || disabled) return;
+    return cancelOnEscape(window, () => {
+      setIsOpen(false);
+      triggerRef.current?.focus();
+    });
+  }, [isOpen, disabled]);
+
   // The trigger's hover; in the menu, hover is grey so it never looks chosen.
   const hover =
     tone === "neutral" ? "hover:bg-wash" : "hover:bg-logo-primary/10";
@@ -76,20 +89,8 @@ export const Dropdown: React.FC<DropdownProps> = ({
     setIsOpen(!isOpen);
   };
 
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (event.key !== "Escape" || !isOpen || disabled) return;
-    event.preventDefault();
-    event.stopPropagation();
-    setIsOpen(false);
-    triggerRef.current?.focus();
-  };
-
   return (
-    <div
-      className={`relative ${className}`}
-      ref={dropdownRef}
-      onKeyDown={handleKeyDown}
-    >
+    <div className={`relative ${className}`} ref={dropdownRef}>
       <button
         type="button"
         ref={triggerRef}

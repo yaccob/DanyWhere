@@ -2,6 +2,7 @@ import React, { useEffect, useId, useRef, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { Check, ChevronDown, Globe } from "lucide-react";
 import { SUPPORTED_LANGUAGES } from "@/i18n";
+import { cancelOnEscape } from "@/lib/escapeLayers";
 import { cjkSubsetFont } from "@/lib/utils/cjkFont";
 
 interface AppLanguageMenuProps {
@@ -60,14 +61,22 @@ export const AppLanguageMenu: React.FC<AppLanguageMenuProps> = ({
       ?.scrollIntoView({ block: "nearest" });
   }, [open, active, id]);
 
-  // Close on outside press.
+  // Close on outside press, and on Escape heard on the window (DanyWhere:
+  // also when a click left the focus outside the list).
   useEffect(() => {
     if (!open) return;
     const onDown = (e: PointerEvent) => {
       if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
     };
     document.addEventListener("pointerdown", onDown);
-    return () => document.removeEventListener("pointerdown", onDown);
+    const stopEscape = cancelOnEscape(window, () => {
+      setOpen(false);
+      triggerRef.current?.focus({ preventScroll: true });
+    });
+    return () => {
+      document.removeEventListener("pointerdown", onDown);
+      stopEscape();
+    };
   }, [open]);
 
   const onListKeyDown = (e: React.KeyboardEvent) => {
@@ -79,7 +88,6 @@ export const AppLanguageMenu: React.FC<AppLanguageMenuProps> = ({
       End: () => setActive(last),
       Enter: () => pick(SUPPORTED_LANGUAGES[active].code),
       " ": () => pick(SUPPORTED_LANGUAGES[active].code),
-      Escape: () => close(),
       Tab: () => close(),
     };
     const handle = keys[e.key];
