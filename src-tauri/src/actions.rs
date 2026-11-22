@@ -244,10 +244,6 @@ where
     }
 }
 
-fn should_use_streaming_overlay(style: OverlayStyle, is_streaming: bool) -> bool {
-    style == OverlayStyle::Live && is_streaming
-}
-
 /// What became of a transcription's post-processing.
 #[derive(Debug, PartialEq, Eq)]
 enum PostProcessOutcome {
@@ -1009,17 +1005,24 @@ pub fn stop_transcription(
             }
             None => false,
         };
+        // DanyWhere: everything the rest of this dictation runs with, read
+        // once now that its profile is settled (`dictation_snapshot`): its
+        // profile's settings and values, the end it ends with, whether it
+        // post-processes and sends context, its session and cancel
+        // generation.
+        let snapshot =
+            crate::dictation_snapshot::take(app, end, binding_id, transcribed_with_end_values);
 
         set_tray_state(app, TrayIconState::Transcribing);
         // Stop should give immediate visual feedback. Live streaming can keep
         // the larger panel, but it still switches from listening to a working
         // spinner while the stream finalizes. Non-streaming paths use the
         // compact transcribing pill (None no-ops in show_*).
-        // DanyWhere: the dictation's profile's style.
-        let style = crate::app_profiles::dictation_settings(app).overlay_style;
-        // Capture this before finalizing the stream so every later working state
-        // targets the same overlay that was shown for this transcription.
-        let use_streaming_overlay = should_use_streaming_overlay(style, tm.is_streaming());
+        // DanyWhere: the dictation's profile's style; the snapshot read
+        // whether a stream runs before it is finalized, so every later
+        // working state targets the same overlay that was shown for this
+        // transcription.
+        let use_streaming_overlay = snapshot.use_streaming_overlay;
         if use_streaming_overlay {
             tm.emit_stream_working(StreamWorkKind::Transcribing);
         } else {
@@ -1034,27 +1037,14 @@ pub fn stop_transcription(
 
         let binding_id = binding_id.to_string(); // Clone binding_id for the async task
 
-        // DanyWhere: what it is made with, for redoing it when its text goes
-        // into an application with another profile (`profile_redo`).
-        let (profile_id, profile_values) = crate::app_profiles::dictation_profile_and_values(app);
         // DanyWhere: the end shortcut it ended with, in the profile it ends
-        // with (`end_keys`): its append text, whether it post-processes and
-        // whether earlier dictations go along. A dictation profile other than
-        // the active one decides with its own switch whether to post-process
-        // (`app_profiles`).
-        let end = crate::end_keys::resolve(&profile_values, end, &binding_id);
-        log::info!("The recording ends with end shortcut {}", end.id);
-        let post_process = crate::app_profiles::effective_post_process(
-            end.post_process,
-            crate::app_profiles::dictation_values().as_ref(),
-        );
-        let with_context =
-            crate::send_context::decide_at_stop(app, post_process && end.send_context);
+        // with (`end_keys`, resolved in the snapshot).
+        log::info!("The recording ends with end shortcut {}", snapshot.end.id);
+        crate::send_context::decide_at_stop(app, snapshot.with_context);
         // DanyWhere: the window this dictation ends in, for context from
         // earlier dictations there (`dictation_context`). In the background.
-        let context_session = RECORDING_SESSION.load(Ordering::SeqCst);
-        crate::window_capture::begin_capture(app, context_session);
-        let cancel_generation = rm.cancel_generation();
+        crate::window_capture::begin_capture(&snapshot.settings, snapshot.session);
+        let cancel_generation = snapshot.cancel_generation;
 
         tauri::async_runtime::spawn(async move {
             let _guard = FinishGuard(ah.clone(), Arc::clone(&tm));
@@ -1114,7 +1104,7 @@ pub fn stop_transcription(
                     let transcription_time = Instant::now();
                     // DanyWhere: the end's model, also when the start's was
                     // still loading at the end of the recording.
-                    if transcribed_with_end_values {
+                    if snapshot.transcribed_with_end_values {
                         tm.load_wanted_model_after_current(true);
                     }
                     let transcription_result = tm.transcribe_recording(samples);
@@ -1156,7 +1146,7 @@ pub fn stop_transcription(
                                 utils::redact_text(&transcription)
                             );
 
-                            if post_process {
+                            if snapshot.post_process {
                                 if use_streaming_overlay {
                                     tm.emit_stream_working(StreamWorkKind::Polishing);
                                 } else {
@@ -1165,19 +1155,23 @@ pub fn stop_transcription(
                             }
                             // DanyWhere: the window this dictation started
                             // in, and what the word list replaced in it.
-                            let window = crate::window_capture::take_capture(context_session);
+                            let window = crate::window_capture::take_capture(snapshot.session);
                             let context_query =
                                 crate::dictation_context::ContextQuery::for_new_dictation(
                                     // Only "Send Context" sends context; every
                                     // dictation keeps its window.
-                                    if with_context { window.clone() } else { None },
+                                    if snapshot.with_context {
+                                        window.clone()
+                                    } else {
+                                        None
+                                    },
                                     word_replacements.clone(),
                                 );
                             let Some(processed) = complete_unless_cancelled(
                                 process_transcription_output(
                                     &ah,
                                     &transcription,
-                                    post_process,
+                                    snapshot.post_process,
                                     &context_query,
                                 ),
                                 || rm.was_cancelled_since(cancel_generation),
@@ -1203,7 +1197,7 @@ pub fn stop_transcription(
                                 match hm.save_entry(
                                     file_name,
                                     transcription,
-                                    post_process,
+                                    snapshot.post_process,
                                     processed.post_processed_text.clone(),
                                     processed.post_process_prompt.clone(),
                                     crate::managers::history::TranscribedWith {
@@ -1215,19 +1209,13 @@ pub fn stop_transcription(
                                     // what it was made with.
                                     Ok(entry) => {
                                         saved_entry_id = Some(entry.id);
-                                        crate::profile_redo::remember(
-                                            crate::profile_redo::MadeWith {
-                                                entry_id: entry.id,
-                                                profile_id,
-                                                values: profile_values,
-                                                end: end.clone(),
-                                            },
-                                        );
+                                        crate::profile_redo::remember(snapshot.made_with(entry.id));
                                         if let Err(err) = hm.record_entry_context(
                                             entry.id,
                                             window.as_ref(),
                                             &word_replacements,
-                                            with_context
+                                            snapshot
+                                                .with_context
                                                 .then_some(processed.context_entry_ids.as_slice()),
                                         ) {
                                             warn!(
@@ -1265,9 +1253,10 @@ pub fn stop_transcription(
                                 let rm_for_paste = Arc::clone(&rm);
                                 let hm_for_paste = Arc::clone(&hm);
                                 let tm_for_paste = Arc::clone(&tm);
-                                // Taken before the paste thread exists, and so
-                                // before the next session can start.
-                                let session = RECORDING_SESSION.load(Ordering::SeqCst);
+                                // DanyWhere: this dictation's session, taken
+                                // when its recording ended (the snapshot): the
+                                // next session starts only after this task.
+                                let session = snapshot.session;
                                 // DanyWhere: the dictation profile's values for the
                                 // paste and its "Append" field, taken now: the
                                 // profile ends when this task returns.
@@ -1345,7 +1334,7 @@ pub fn stop_transcription(
                                                 None => (
                                                     final_text,
                                                     dictation_values,
-                                                    end.append_text.clone(),
+                                                    snapshot.end.append_text.clone(),
                                                     post_process_failed,
                                                     effort_refused_by,
                                                 ),
@@ -1521,7 +1510,7 @@ pub fn stop_transcription(
                                 if let Err(save_err) = hm.save_entry(
                                     file_name,
                                     String::new(),
-                                    post_process,
+                                    snapshot.post_process,
                                     None,
                                     None,
                                     Default::default(),
@@ -1706,11 +1695,10 @@ mod tests {
     use super::{
         complete_unless_cancelled, is_blank_transcription, non_blank_post_processed_text,
         pasted_dictation_notice, post_process_transcription, post_process_within_time_limit,
-        should_use_streaming_overlay, strip_invisible_chars, strip_think_block, PostProcessOutcome,
-        PostProcessReport,
+        strip_invisible_chars, strip_think_block, PostProcessOutcome, PostProcessReport,
     };
     use crate::notices::{Notice, NoticeCode, NoticeSource};
-    use crate::settings::{get_default_settings, AppSettings, OverlayStyle};
+    use crate::settings::{get_default_settings, AppSettings};
     use std::future;
     use std::io::{Read, Write};
     use std::net::TcpListener;
@@ -2465,13 +2453,5 @@ mod tests {
             strip_think_block("<think>never closed"),
             "<think>never closed"
         );
-    }
-
-    #[test]
-    fn live_overlay_uses_streaming_states_only_for_streaming_models() {
-        assert!(should_use_streaming_overlay(OverlayStyle::Live, true));
-        assert!(!should_use_streaming_overlay(OverlayStyle::Live, false));
-        assert!(!should_use_streaming_overlay(OverlayStyle::Minimal, true));
-        assert!(!should_use_streaming_overlay(OverlayStyle::None, true));
     }
 }

@@ -130,11 +130,11 @@ impl CaptureSlot {
 static SLOT: CaptureSlot = CaptureSlot::new();
 
 /// Starts capturing the frontmost window for the recording `session`, when
-/// context from earlier dictations is in use.
-pub fn begin_capture(app: &AppHandle, session: u64) {
-    // The dictation's profile's excluded applications.
-    let settings = crate::app_profiles::dictation_settings(app);
-    if !dictation_context::capture_wanted(&settings) {
+/// context from earlier dictations is in use. `settings` are the
+/// dictation's (`dictation_snapshot`), with its profile's excluded
+/// applications.
+pub fn begin_capture(settings: &crate::settings::AppSettings, session: u64) {
+    if !dictation_context::capture_wanted(settings) {
         return;
     }
     SLOT.begin(session);

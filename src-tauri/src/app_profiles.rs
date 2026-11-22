@@ -466,6 +466,16 @@ pub fn dictation_profile_and_values(app: &AppHandle) -> (String, ProfileValues) 
     )
 }
 
+/// The profile the dictation in progress uses and its values, when it isn't
+/// the active one; what a dictation's end takes its snapshot of
+/// (`dictation_snapshot`). Unlike [`dictation_values`], a redo's values on
+/// this thread don't count.
+pub fn own_dictation_profile() -> Option<(String, ProfileValues)> {
+    dictation_lock()
+        .as_ref()
+        .map(|profile| (profile.id.clone(), profile.values.clone()))
+}
+
 /// The id of the profile the dictation in progress uses, when it isn't the
 /// active one.
 pub fn dictation_profile_id() -> Option<String> {
