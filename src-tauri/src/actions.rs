@@ -1,11 +1,9 @@
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 use crate::apple_intelligence;
 use crate::audio_feedback::{play_feedback_sound, play_feedback_sound_blocking, SoundType};
-use crate::audio_toolkit::VadPolicy;
 use crate::managers::audio::{recording_notice_code, AudioRecordingManager};
 use crate::managers::history::HistoryManager;
 use crate::managers::model::ModelManager;
-use crate::managers::transcription::policy::{live_decode, LiveDecode, ModelTraits};
 use crate::managers::transcription::StreamWorkKind;
 use crate::managers::transcription::{Transcription, TranscriptionManager};
 use crate::notices::{self, Notice, NoticeCode, NoticeSource};
@@ -762,25 +760,34 @@ impl ShortcutAction for TranscribeAction {
 
         // Don't open the mic if nothing can transcribe the recording. A load
         // started above reports its own failure; one already running doesn't.
-        // DanyWhere: also when another model than this dictation's is loaded.
-        if !tm.is_model_loaded() || tm.get_current_model().as_deref() != Some(&selected_model) {
-            if selected_model.is_empty() {
-                warn!("Not starting recording: no model is selected");
-                crate::app_profiles::end_dictation();
-                tm.raise_no_model_selected();
-                return;
-            }
-            if let Err(e) = app
-                .state::<Arc<ModelManager>>()
-                .get_model_path(&selected_model)
-            {
-                warn!("Not starting recording: no model can transcribe it ({})", e);
-                crate::app_profiles::end_dictation();
-                if !load_started {
-                    tm.raise_model_load_failed(&selected_model, &e);
+        // DanyWhere: decided in `dictation_start::check_model`.
+        let loaded_model = tm
+            .is_model_loaded()
+            .then(|| tm.get_current_model())
+            .flatten();
+        let check = crate::dictation_start::check_model(
+            &selected_model,
+            loaded_model.as_deref(),
+            load_started,
+            || {
+                app.state::<Arc<ModelManager>>()
+                    .get_model_path(&selected_model)
+                    .map(|_| ())
+                    .map_err(|e| e.to_string())
+            },
+        );
+        if let crate::dictation_start::ModelCheck::Refuse(notice) = check {
+            crate::app_profiles::end_dictation();
+            match notice {
+                Some(crate::dictation_start::StartNotice::NoModelSelected) => {
+                    tm.raise_no_model_selected()
                 }
-                return;
+                Some(crate::dictation_start::StartNotice::ModelLoadFailed { model, error }) => {
+                    tm.raise_model_load_failed(&model, &anyhow::anyhow!(error))
+                }
+                None => {}
             }
+            return;
         }
 
         let binding_id = binding_id.to_string();
@@ -808,51 +815,32 @@ impl ShortcutAction for TranscribeAction {
             .as_ref()
             .map(|m| m.supports_streaming)
             .unwrap_or(false);
-        let vad_policy = if !settings.vad_enabled {
-            VadPolicy::Disabled
-        } else if model_supports_streaming {
-            VadPolicy::Streaming
-        } else {
-            VadPolicy::Offline
-        };
-        // Before the model loads, whether it keeps its accuracy on long audio
-        // is unknown, so assume not: the worker decides again with the loaded
-        // model, and a wrong guess costs only an idle worker.
-        let expected_model = ModelTraits {
-            streaming: model_supports_streaming,
-            long_form: false,
-        };
-        if live_decode(expected_model, settings.long_form_chunking) != LiveDecode::None {
+        // DanyWhere: decided in `dictation_start::plan_start`.
+        let plan = crate::dictation_start::plan_start(
+            &settings,
+            &crate::app_profiles::dictation_profile_and_values(app).1,
+            crate::app_profiles::dictation_values().as_ref(),
+            &binding_id,
+            model_supports_streaming,
+        );
+        let vad_policy = plan.vad_policy;
+        let expected_post_process = plan.post_process;
+        if plan.live_decode {
             tm.start_stream();
         }
         let plan_elapsed = plan_started.elapsed();
 
-        // Sizing the overlay follows the same advertised capability. A model that
-        // doesn't stream (or whose capability is not known yet) gets the compact
-        // pill instead of an oversized transparent live window.
         let overlay_started = Instant::now();
         // DanyWhere: from two profiles on, the overlay names the dictation's
         // profile with the glyph of choosing it by application.
         crate::overlay::set_dictation_profile(app, dictation_profile);
         // DanyWhere: and a speech bubble while the end it is expected to
         // take (`end_keys::expected_end`) sends context.
-        let expected_end = crate::end_keys::expected_end(
-            &crate::app_profiles::dictation_profile_and_values(app).1,
-            &binding_id,
-            settings.shortcut_activation,
-        );
-        let expected_post_process = crate::app_profiles::effective_post_process(
-            expected_end.post_process,
-            crate::app_profiles::dictation_values().as_ref(),
-        );
-        crate::send_context::begin_dictation(
-            app,
-            expected_post_process && expected_end.send_context,
-        );
-        match settings.overlay_style {
-            OverlayStyle::Live if model_supports_streaming => utils::show_streaming_overlay(app),
-            OverlayStyle::Live | OverlayStyle::Minimal => show_recording_overlay(app),
-            OverlayStyle::None => {} // show_overlay_state no-ops on None anyway
+        crate::send_context::begin_dictation(app, plan.sends_context);
+        match plan.overlay {
+            crate::dictation_start::StartOverlay::Streaming => utils::show_streaming_overlay(app),
+            crate::dictation_start::StartOverlay::Recording => show_recording_overlay(app),
+            crate::dictation_start::StartOverlay::Hidden => {} // show_overlay_state no-ops on None anyway
         }
         // Everything above runs before capture can begin, so each span here is
         // added keypress->capture latency.

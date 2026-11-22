@@ -14,6 +14,7 @@ mod commands;
 mod delivery;
 mod dictation_key_inserts;
 mod dictation_microphone;
+mod dictation_start;
 mod end_keys;
 pub mod engine_supervisor;
 mod helpers;
