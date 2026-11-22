@@ -23,7 +23,8 @@ use std::sync::Mutex;
 
 use tauri::AppHandle;
 
-use crate::settings::{AppSettings, ShortcutBinding};
+use super::backend::{register_all, unregister_all, ShortcutBackend};
+use crate::settings::{AppSettings, KeyboardImplementation, ShortcutBinding};
 
 /// What is registered, by binding id.
 pub type Registered = BTreeMap<String, ShortcutBinding>;
@@ -114,85 +115,159 @@ pub fn plan(registered: &Registered, desired: &Registered, frozen: &[&str]) -> P
     }
 }
 
-/// What DanyWhere registered of the shortcuts it manages here.
-static REGISTERED: Mutex<Registered> = Mutex::new(BTreeMap::new());
+/// What DanyWhere registered of the shortcuts it manages here, and whether
+/// a shortcut is being recorded in the settings (nothing registered then).
+/// The app keeps one ([`FOLLOWING`]); the tests their own.
+#[derive(Debug, Default)]
+pub(crate) struct Following {
+    registered: Registered,
+    suspended: bool,
+}
+
+/// Where a pass of [`Following::sync`] is to arrive.
+pub(crate) struct Target {
+    /// The shortcuts to have registered ([`desired`]).
+    pub wanted: Registered,
+    /// Those to leave as they are ([`plan`]).
+    pub frozen: Vec<&'static str>,
+    /// For whom, in the log: the application in front or the active profile.
+    pub label: String,
+}
+
+impl Following {
+    pub const fn new() -> Self {
+        Self {
+            registered: BTreeMap::new(),
+            suspended: false,
+        }
+    }
+
+    /// Records a registration made outside (the backends' start).
+    pub fn note_registered(&mut self, binding: &ShortcutBinding) {
+        self.registered.insert(binding.id.clone(), binding.clone());
+    }
+
+    /// Forgets every registration (the backend is being switched); returns
+    /// them.
+    pub fn take_all(&mut self) -> Vec<ShortcutBinding> {
+        std::mem::take(&mut self.registered).into_values().collect()
+    }
+
+    /// One pass: nothing while suspended or with the "None" backend; else
+    /// registers and unregisters what differs from `target()`, which is
+    /// asked only then (it may ask the system which application is in
+    /// front). `None` when nothing changed; else the bindings that could
+    /// not be registered, with the error.
+    pub fn sync(
+        &mut self,
+        backend: &dyn ShortcutBackend,
+        target: impl FnOnce() -> Target,
+    ) -> Option<Vec<(String, String)>> {
+        if self.suspended || backend.implementation() == KeyboardImplementation::None {
+            return None;
+        }
+        let target = target();
+        let plan = plan(&self.registered, &target.wanted, &target.frozen);
+        if plan == Plan::default() {
+            return None;
+        }
+        log::debug!(
+            "Shortcuts for {}: unregistering {:?}, registering {:?}",
+            target.label,
+            plan.unregister.iter().map(|b| &b.id).collect::<Vec<_>>(),
+            plan.register.iter().map(|b| &b.id).collect::<Vec<_>>()
+        );
+        // One that is gone already (a backend switch) fails harmlessly.
+        unregister_all(backend, &plan.unregister, |binding, err| {
+            log::debug!("Unregistering {}: {err}", binding.id)
+        });
+        for binding in &plan.unregister {
+            self.registered.remove(&binding.id);
+        }
+        let report = register_all(backend, &plan.register, |binding, err| {
+            log::warn!(
+                "Couldn't register {} ({}): {err}",
+                binding.id,
+                binding.current_binding
+            )
+        });
+        for binding in report.registered {
+            self.registered.insert(binding.id.clone(), binding);
+        }
+        Some(
+            report
+                .failed
+                .into_iter()
+                .map(|(binding, err)| (binding.id, err))
+                .collect(),
+        )
+    }
+
+    /// A shortcut is being recorded in the settings: unregisters everything
+    /// and registers nothing until [`Following::resume`].
+    pub fn suspend(&mut self, backend: &dyn ShortcutBackend) {
+        self.suspended = true;
+        let suspended = self.take_all();
+        unregister_all(backend, &suspended, |binding, err| {
+            log::debug!("Suspending {}: {err}", binding.id)
+        });
+    }
+
+    /// The recording of a shortcut ended; the next pass registers again.
+    pub fn resume(&mut self) {
+        self.suspended = false;
+    }
+}
+
+/// The shortcuts DanyWhere follows the profile with.
+static FOLLOWING: Mutex<Following> = Mutex::new(Following::new());
 /// Whether a recording runs (its end shortcuts are wanted).
 static RECORDING: AtomicBool = AtomicBool::new(false);
-/// Whether a shortcut is being recorded in the settings: nothing registered.
-static SUSPENDED: AtomicBool = AtomicBool::new(false);
 
-fn registered_lock() -> std::sync::MutexGuard<'static, Registered> {
-    REGISTERED
+fn following_lock() -> std::sync::MutexGuard<'static, Following> {
+    FOLLOWING
         .lock()
         .unwrap_or_else(std::sync::PoisonError::into_inner)
 }
 
 /// Records a registration made outside this module (the backends' start).
 pub fn note_registered(binding: &ShortcutBinding) {
-    registered_lock().insert(binding.id.clone(), binding.clone());
+    following_lock().note_registered(binding);
 }
 
 /// Forgets every registration (the backend is being switched); returns them.
 pub fn take_all() -> Vec<ShortcutBinding> {
-    std::mem::take(&mut *registered_lock())
-        .into_values()
-        .collect()
+    following_lock().take_all()
 }
 
 /// Registers and unregisters what differs from what should be registered
 /// now. Returns the bindings that could not be registered, with the error.
 /// Never call it on the shortcut handler thread (`off_handler_thread`).
 pub fn sync_now(app: &AppHandle) -> Vec<(String, String)> {
-    let mut registered = registered_lock();
-    if SUSPENDED.load(Ordering::SeqCst) {
+    let mut following = following_lock();
+    // Before reading the settings, as ever (`sync` checks it too).
+    if following.suspended {
         return Vec::new();
     }
     let settings = crate::settings::get_settings(app);
-    if settings.keyboard_implementation == crate::settings::KeyboardImplementation::None {
-        return Vec::new();
-    }
-    let frontmost = crate::app_profiles::frontmost_if_choosing(&settings);
-    let now = crate::app_profiles::settings_now(&settings, frontmost.as_deref());
-    let wanted = desired(
-        &now,
-        RECORDING.load(Ordering::SeqCst),
-        crate::delivery::INSERT_SERVICE_AVAILABLE,
-    );
-    let frozen = crate::dictation_key_inserts::released_bindings();
-    let plan = plan(&registered, &wanted, &frozen);
-    if plan == Plan::default() {
-        return Vec::new();
-    }
-    log::debug!(
-        "Shortcuts for {}: unregistering {:?}, registering {:?}",
-        frontmost.as_deref().unwrap_or("the active profile"),
-        plan.unregister.iter().map(|b| &b.id).collect::<Vec<_>>(),
-        plan.register.iter().map(|b| &b.id).collect::<Vec<_>>()
-    );
     let backend = super::backend::for_implementation(app, settings.keyboard_implementation);
-    // One that is gone already (a backend switch) fails harmlessly.
-    super::backend::unregister_all(backend.as_ref(), &plan.unregister, |binding, err| {
-        log::debug!("Unregistering {}: {err}", binding.id)
+    let failures = following.sync(backend.as_ref(), || {
+        let frontmost = crate::app_profiles::frontmost_if_choosing(&settings);
+        let now = crate::app_profiles::settings_now(&settings, frontmost.as_deref());
+        Target {
+            wanted: desired(
+                &now,
+                RECORDING.load(Ordering::SeqCst),
+                crate::delivery::INSERT_SERVICE_AVAILABLE,
+            ),
+            frozen: crate::dictation_key_inserts::released_bindings(),
+            label: frontmost.unwrap_or_else(|| "the active profile".to_string()),
+        }
     });
-    for binding in &plan.unregister {
-        registered.remove(&binding.id);
-    }
-    let report = super::backend::register_all(backend.as_ref(), &plan.register, |binding, err| {
-        log::warn!(
-            "Couldn't register {} ({}): {err}",
-            binding.id,
-            binding.current_binding
-        )
-    });
-    for binding in report.registered {
-        registered.insert(binding.id.clone(), binding);
-    }
-    let failures = report
-        .failed
-        .into_iter()
-        .map(|(binding, err)| (binding.id, err))
-        .collect();
-    drop(registered);
+    drop(following);
+    let Some(failures) = failures else {
+        return Vec::new();
+    };
     crate::secure_input::reconcile_fallback(app);
     failures
 }
@@ -225,18 +300,14 @@ pub fn set_recording(app: &AppHandle, recording: bool) {
 
 /// While a shortcut is recorded in the settings, nothing is registered.
 pub fn suspend(app: &AppHandle) {
-    let mut registered = registered_lock();
-    SUSPENDED.store(true, Ordering::SeqCst);
-    let suspended: Vec<ShortcutBinding> = std::mem::take(&mut *registered).into_values().collect();
+    let mut following = following_lock();
     let backend = super::backend::active(app);
-    super::backend::unregister_all(backend.as_ref(), &suspended, |binding, err| {
-        log::debug!("Suspending {}: {err}", binding.id)
-    });
+    following.suspend(backend.as_ref());
 }
 
 /// After recording a shortcut: everything that should be registered is.
 pub fn resume(app: &AppHandle) -> Vec<(String, String)> {
-    SUSPENDED.store(false, Ordering::SeqCst);
+    following_lock().resume();
     sync_now(app)
 }
 
@@ -502,5 +573,175 @@ mod tests {
             plan(&Registered::new(), &wanted, &["transcribe"]),
             Plan::default()
         );
+    }
+
+    // ---- passes, and suspending while a shortcut is recorded ----
+
+    use crate::shortcut::backend::fake::{CallLog, RecordingBackend};
+    use crate::shortcut::backend::NoShortcuts;
+
+    fn target(bindings: &[(&str, &str)]) -> Target {
+        Target {
+            wanted: set(bindings),
+            frozen: Vec::new(),
+            label: "the active profile".to_string(),
+        }
+    }
+
+    fn following(bindings: &[(&str, &str)]) -> Following {
+        let mut following = Following::new();
+        for (id, keys) in bindings {
+            following.note_registered(&binding(id, keys));
+        }
+        following
+    }
+
+    fn registered_keys(following: &mut Following) -> Vec<(String, String)> {
+        let all = following.take_all();
+        for binding in &all {
+            following.note_registered(binding);
+        }
+        all.into_iter().map(|b| (b.id, b.current_binding)).collect()
+    }
+
+    #[test]
+    fn a_pass_registers_and_unregisters_what_differs_and_remembers_it() {
+        let log = CallLog::default();
+        let backend = RecordingBackend::new(KeyboardImplementation::HandyKeys, &log);
+        let mut following =
+            following(&[("transcribe", "ctrl+space"), ("end_key:send", "ctrl+enter")]);
+        let failures = following.sync(&backend, || {
+            target(&[
+                ("transcribe", "option+space"),
+                ("cycle_word_list", "ctrl+shift+l"),
+            ])
+        });
+        assert_eq!(failures, Some(Vec::new()));
+        assert_eq!(
+            log.lines(),
+            [
+                "handy_keys: unregister end_key:send ctrl+enter",
+                "handy_keys: unregister transcribe ctrl+space",
+                "handy_keys: register cycle_word_list ctrl+shift+l",
+                "handy_keys: register transcribe option+space",
+            ]
+        );
+        assert_eq!(
+            registered_keys(&mut following),
+            [
+                ("cycle_word_list".to_string(), "ctrl+shift+l".to_string()),
+                ("transcribe".to_string(), "option+space".to_string()),
+            ]
+        );
+    }
+
+    #[test]
+    fn a_refused_registration_is_reported_and_a_refused_unregistration_forgotten() {
+        let log = CallLog::default();
+        let backend = RecordingBackend::new(KeyboardImplementation::Tauri, &log)
+            .refusing_register("cycle_word_list")
+            .refusing_unregister("end_key:send");
+        let mut following = following(&[("end_key:send", "ctrl+enter")]);
+        let failures = following.sync(&backend, || {
+            target(&[
+                ("transcribe", "ctrl+space"),
+                ("cycle_word_list", "ctrl+shift+l"),
+            ])
+        });
+        assert_eq!(
+            failures,
+            Some(vec![(
+                "cycle_word_list".to_string(),
+                "cycle_word_list refused".to_string()
+            )])
+        );
+        // Gone already after a backend switch, say: forgotten all the same.
+        assert_eq!(
+            registered_keys(&mut following),
+            [("transcribe".to_string(), "ctrl+space".to_string())]
+        );
+        // The refused one is tried again on the next pass.
+        let again = following.sync(&backend, || {
+            target(&[
+                ("transcribe", "ctrl+space"),
+                ("cycle_word_list", "ctrl+shift+l"),
+            ])
+        });
+        assert!(again.is_some());
+        assert_eq!(
+            log.lines().last().map(String::as_str),
+            Some("tauri: register cycle_word_list ctrl+shift+l")
+        );
+    }
+
+    #[test]
+    fn while_a_shortcut_is_recorded_nothing_is_registered_until_resumed() {
+        let log = CallLog::default();
+        let backend = RecordingBackend::new(KeyboardImplementation::HandyKeys, &log);
+        let mut following = following(&[
+            ("transcribe", "ctrl+space"),
+            ("cycle_word_list", "ctrl+shift+l"),
+        ]);
+        following.suspend(&backend);
+        assert_eq!(
+            log.lines(),
+            [
+                "handy_keys: unregister cycle_word_list ctrl+shift+l",
+                "handy_keys: unregister transcribe ctrl+space",
+            ]
+        );
+        assert!(registered_keys(&mut following).is_empty());
+
+        let mut asked = false;
+        let suspended = following.sync(&backend, || {
+            asked = true;
+            target(&[("transcribe", "ctrl+space")])
+        });
+        assert_eq!(suspended, None);
+        assert!(!asked, "while suspended, the target isn't even asked");
+        assert_eq!(log.lines().len(), 2, "{:?}", log.lines());
+
+        following.resume();
+        let resumed = following.sync(&backend, || target(&[("transcribe", "ctrl+space")]));
+        assert_eq!(resumed, Some(Vec::new()));
+        assert_eq!(
+            log.lines().last().map(String::as_str),
+            Some("handy_keys: register transcribe ctrl+space")
+        );
+        assert_eq!(
+            registered_keys(&mut following),
+            [("transcribe".to_string(), "ctrl+space".to_string())]
+        );
+    }
+
+    #[test]
+    fn with_no_backend_a_pass_changes_nothing() {
+        let mut following = Following::new();
+        let mut asked = false;
+        let result = following.sync(&NoShortcuts, || {
+            asked = true;
+            target(&[("transcribe", "ctrl+space")])
+        });
+        assert_eq!(result, None);
+        assert!(!asked);
+        assert!(registered_keys(&mut following).is_empty());
+    }
+
+    #[test]
+    fn a_pass_without_differences_changes_nothing() {
+        let log = CallLog::default();
+        let backend = RecordingBackend::new(KeyboardImplementation::Tauri, &log);
+        let mut following = following(&[("transcribe", "ctrl+space")]);
+        let result = following.sync(&backend, || target(&[("transcribe", "ctrl+space")]));
+        assert_eq!(result, None);
+        assert!(log.lines().is_empty());
+    }
+
+    #[test]
+    fn the_table_holds_what_was_noted_until_it_is_taken() {
+        let mut following = following(&[("transcribe", "ctrl+space")]);
+        let taken = following.take_all();
+        assert_eq!(taken, vec![binding("transcribe", "ctrl+space")]);
+        assert!(following.take_all().is_empty());
     }
 }
