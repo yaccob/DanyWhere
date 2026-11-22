@@ -1315,7 +1315,10 @@
         "off": "désactivé",
         "empty": "rien",
         "hidden": "définie (masquée)",
-        "items": "entrées : {{number}}"
+        "items": "entrées : {{number}}",
+        "noModel": "aucun modèle sélectionné",
+        "notSet": "non définie",
+        "builtInFillerWords": "aucun, les mots intégrés s'appliquent"
       },
       "reset": "Réinitialiser",
       "resetTooltip": "Suivre de nouveau les réglages de base",

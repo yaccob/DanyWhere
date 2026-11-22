@@ -1315,7 +1315,10 @@
         "off": "tắt",
         "empty": "không có",
         "hidden": "đã đặt (ẩn)",
-        "items": "mục: {{number}}"
+        "items": "mục: {{number}}",
+        "noModel": "chưa chọn mô hình",
+        "notSet": "chưa đặt",
+        "builtInFillerWords": "không có, dùng danh sách có sẵn"
       },
       "reset": "Đặt lại",
       "resetTooltip": "Theo lại cài đặt cơ bản",

@@ -349,7 +349,7 @@ const UnderDefaults: React.FC<UnderDefaultsProps> = ({
   const { t } = useTranslation();
   const { displayName } = useProfiles();
   const openProfilePage = useOpenProfilePage();
-  const { valueLabel, entryName, fieldLabel } = useValueLabels();
+  const { valueLabel, entryName, fieldLabel, offEntryText } = useValueLabels();
   // A setting this device doesn't show gets no profiles under it either; a
   // wrapper without a setting stands for a control elsewhere and shows.
   const [content, settingShows] = useShowsAnything();
@@ -390,7 +390,7 @@ const UnderDefaults: React.FC<UnderDefaultsProps> = ({
       const value = entriesOf(kind, profile.values[single]).find(
         ([id]) => id === entry,
       )?.[1];
-      if (value === undefined) return t("settings.profileView.state.entryOff");
+      if (value === undefined) return offEntryText(single);
       if (typeof value === "object" && value !== null) {
         // A provider's settings: its address; another entry: its name.
         const address = (value as Record<string, unknown>).base_url;

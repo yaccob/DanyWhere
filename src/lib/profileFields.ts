@@ -21,7 +21,8 @@ export interface ProfileFieldOptions {
   prefix: string;
   /** Stored values whose label isn't named after the value. */
   keys?: Readonly<Record<string, string>>;
-  /** The label an empty value shows (the model's own effort). */
+  /** The label an empty value shows (the model's own effort, all
+   * channels averaged). */
   empty?: string;
 }
 
@@ -75,7 +76,11 @@ export const PROFILE_FIELDS = {
     page: "general",
     label: "settings.sound.microphone.title",
   },
-  selected_channel: { page: "general", label: "settings.sound.channel.title" },
+  selected_channel: {
+    page: "general",
+    label: "settings.sound.channel.title",
+    options: { prefix: "settings.sound.channel", empty: "average" },
+  },
   mute_while_recording: {
     page: "general",
     label: "settings.debug.muteWhileRecording.label",

@@ -1315,7 +1315,10 @@
         "off": "關",
         "empty": "無",
         "hidden": "已設定（隱藏）",
-        "items": "項目：{{number}}"
+        "items": "項目：{{number}}",
+        "noModel": "未選擇模型",
+        "notSet": "未設定",
+        "builtInFillerWords": "無，使用內建的"
       },
       "reset": "重設",
       "resetTooltip": "重新跟隨基本設定",

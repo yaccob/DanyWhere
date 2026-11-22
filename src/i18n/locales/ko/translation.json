@@ -1315,7 +1315,10 @@
         "off": "꺼짐",
         "empty": "없음",
         "hidden": "설정됨(숨김)",
-        "items": "항목: {{number}}"
+        "items": "항목: {{number}}",
+        "noModel": "선택된 모델 없음",
+        "notSet": "설정 안 됨",
+        "builtInFillerWords": "없음, 기본 제공 목록 적용"
       },
       "reset": "재설정",
       "resetTooltip": "다시 기본 설정 따르기",

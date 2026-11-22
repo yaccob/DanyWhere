@@ -1315,7 +1315,10 @@
         "off": "uit",
         "empty": "niets",
         "hidden": "ingesteld (verborgen)",
-        "items": "items: {{number}}"
+        "items": "items: {{number}}",
+        "noModel": "geen model geselecteerd",
+        "notSet": "niet ingesteld",
+        "builtInFillerWords": "geen, de ingebouwde gelden"
       },
       "reset": "Herstellen",
       "resetTooltip": "Weer de basisinstellingen volgen",

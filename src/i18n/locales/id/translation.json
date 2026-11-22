@@ -1315,7 +1315,10 @@
         "off": "nonaktif",
         "empty": "tidak ada",
         "hidden": "diatur (tersembunyi)",
-        "items": "entri: {{number}}"
+        "items": "entri: {{number}}",
+        "noModel": "tidak ada model dipilih",
+        "notSet": "belum diatur",
+        "builtInFillerWords": "tidak ada, yang bawaan berlaku"
       },
       "reset": "Atur ulang",
       "resetTooltip": "Kembali mengikuti pengaturan dasar",

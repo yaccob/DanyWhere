@@ -1315,7 +1315,10 @@
         "off": "fra",
         "empty": "intet",
         "hidden": "angivet (skjult)",
-        "items": "poster: {{number}}"
+        "items": "poster: {{number}}",
+        "noModel": "ingen model valgt",
+        "notSet": "ikke angivet",
+        "builtInFillerWords": "ingen, de indbyggede gælder"
       },
       "reset": "Nulstil",
       "resetTooltip": "Følg grundindstillingerne igen",

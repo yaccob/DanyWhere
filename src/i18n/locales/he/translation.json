@@ -1315,7 +1315,10 @@
         "off": "כבוי",
         "empty": "כלום",
         "hidden": "מוגדר (מוסתר)",
-        "items": "פריטים: {{number}}"
+        "items": "פריטים: {{number}}",
+        "noModel": "לא נבחר מודל",
+        "notSet": "לא מוגדר",
+        "builtInFillerWords": "אין, חלות המילים המובנות"
       },
       "reset": "איפוס",
       "resetTooltip": "לעקוב שוב אחרי הגדרות הבסיס",

@@ -1315,7 +1315,10 @@
         "off": "desactivat",
         "empty": "res",
         "hidden": "definida (oculta)",
-        "items": "entrades: {{number}}"
+        "items": "entrades: {{number}}",
+        "noModel": "cap model seleccionat",
+        "notSet": "no definida",
+        "builtInFillerWords": "cap, s'apliquen les integrades"
       },
       "reset": "Restableix",
       "resetTooltip": "Torna a seguir la configuració bàsica",

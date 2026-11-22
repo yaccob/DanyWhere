@@ -1315,7 +1315,10 @@
         "off": "aus",
         "empty": "nichts",
         "hidden": "gesetzt (verborgen)",
-        "items": "Einträge: {{number}}"
+        "items": "Einträge: {{number}}",
+        "noModel": "kein Modell ausgewählt",
+        "notSet": "nicht gesetzt",
+        "builtInFillerWords": "keine, es gelten die eingebauten"
       },
       "reset": "Zurücksetzen",
       "resetTooltip": "Wieder den Grundeinstellungen folgen",

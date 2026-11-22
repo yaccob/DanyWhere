@@ -1315,7 +1315,10 @@
         "off": "off",
         "empty": "nothing",
         "hidden": "set (hidden)",
-        "items": "entries: {{number}}"
+        "items": "entries: {{number}}",
+        "noModel": "no model selected",
+        "notSet": "not set",
+        "builtInFillerWords": "none, the built-in ones apply"
       },
       "reset": "Reset",
       "resetTooltip": "Follow the defaults again",

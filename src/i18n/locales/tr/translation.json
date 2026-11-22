@@ -1315,7 +1315,10 @@
         "off": "kapalı",
         "empty": "hiçbir şey",
         "hidden": "ayarlı (gizli)",
-        "items": "öğeler: {{number}}"
+        "items": "öğeler: {{number}}",
+        "noModel": "model seçilmedi",
+        "notSet": "ayarlı değil",
+        "builtInFillerWords": "yok, yerleşik olanlar geçerli"
       },
       "reset": "Sıfırla",
       "resetTooltip": "Yeniden temel ayarları izle",

@@ -1315,7 +1315,10 @@
         "off": "av",
         "empty": "inget",
         "hidden": "angiven (dold)",
-        "items": "poster: {{number}}"
+        "items": "poster: {{number}}",
+        "noModel": "ingen modell vald",
+        "notSet": "inte angiven",
+        "builtInFillerWords": "inga, de inbyggda gäller"
       },
       "reset": "Återställ",
       "resetTooltip": "Följ grundinställningarna igen",

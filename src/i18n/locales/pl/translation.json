@@ -1315,7 +1315,10 @@
         "off": "wył.",
         "empty": "nic",
         "hidden": "ustawiony (ukryty)",
-        "items": "pozycje: {{number}}"
+        "items": "pozycje: {{number}}",
+        "noModel": "nie wybrano modelu",
+        "notSet": "nieustawiony",
+        "builtInFillerWords": "brak, obowiązują wbudowane"
       },
       "reset": "Resetuj",
       "resetTooltip": "Znów podążaj za ustawieniami podstawowymi",

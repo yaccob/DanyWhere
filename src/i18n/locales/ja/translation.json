@@ -1315,7 +1315,10 @@
         "off": "オフ",
         "empty": "なし",
         "hidden": "設定済み (非表示)",
-        "items": "項目: {{number}}"
+        "items": "項目: {{number}}",
+        "noModel": "モデル未選択",
+        "notSet": "未設定",
+        "builtInFillerWords": "なし（組み込みの語を使用）"
       },
       "reset": "リセット",
       "resetTooltip": "再び基本設定に従う",

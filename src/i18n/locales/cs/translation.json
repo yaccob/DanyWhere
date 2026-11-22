@@ -1315,7 +1315,10 @@
         "off": "vyp.",
         "empty": "nic",
         "hidden": "nastaven (skrytý)",
-        "items": "položky: {{number}}"
+        "items": "položky: {{number}}",
+        "noModel": "není vybrán žádný model",
+        "notSet": "nenastaven",
+        "builtInFillerWords": "žádná, platí vestavěná"
       },
       "reset": "Obnovit",
       "resetTooltip": "Znovu se řídit základním nastavením",

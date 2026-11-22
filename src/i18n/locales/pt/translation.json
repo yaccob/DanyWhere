@@ -1315,7 +1315,10 @@
         "off": "desligado",
         "empty": "nada",
         "hidden": "definida (oculta)",
-        "items": "itens: {{number}}"
+        "items": "itens: {{number}}",
+        "noModel": "nenhum modelo selecionado",
+        "notSet": "não definida",
+        "builtInFillerWords": "nenhuma, valem as integradas"
       },
       "reset": "Redefinir",
       "resetTooltip": "Voltar a seguir as configurações básicas",

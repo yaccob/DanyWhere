@@ -1315,7 +1315,10 @@
         "off": "disattivo",
         "empty": "niente",
         "hidden": "impostata (nascosta)",
-        "items": "voci: {{number}}"
+        "items": "voci: {{number}}",
+        "noModel": "nessun modello selezionato",
+        "notSet": "non impostata",
+        "builtInFillerWords": "nessuno, valgono quelli integrati"
       },
       "reset": "Ripristina",
       "resetTooltip": "Segui di nuovo le impostazioni di base",

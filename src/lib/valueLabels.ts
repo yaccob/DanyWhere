@@ -64,6 +64,17 @@ const PROVIDER_MAPS = new Set([
   "post_process_providers",
 ]);
 
+/** Maps by provider whose missing entry is a value, not "off": no effort
+ * level is sent (the model's default), no model, no key. */
+const ABSENT_IS_EMPTY = new Set([
+  "post_process_models",
+  "post_process_efforts",
+  "post_process_api_keys",
+]);
+
+/** Fields that name a model, by its id. */
+const MODEL_FIELDS = new Set(["selected_model", "post_process_models"]);
+
 /** Fields that name an audio device. */
 const DEVICE_FIELDS = new Set([
   "selected_microphone",
@@ -211,7 +222,7 @@ export const valueLabel = (
   if (SECRET_FIELDS.has(field)) {
     return value
       ? t("settings.profileView.value.hidden")
-      : t("settings.profileView.value.empty");
+      : t("settings.profileView.value.notSet");
   }
   if (
     DEVICE_FIELDS.has(field) &&
@@ -221,8 +232,23 @@ export const valueLabel = (
   }
   const option = optionLabel(ctx, field, value);
   if (option !== null) return option;
+  if (MODEL_FIELDS.has(field) && isEmpty(value)) {
+    return t("settings.profileView.value.noModel");
+  }
   if (field === "selected_model" && typeof value === "string" && value) {
     return ctx.models?.find((m) => m.id === value)?.name ?? value;
+  }
+  // The channel list counts from 1; no channel averages them all (the
+  // registry's empty option).
+  if (field === "selected_channel" && typeof value === "number") {
+    return t("settings.sound.channel.channel", { n: value + 1 });
+  }
+  // No own list removes the built-in filler words; an empty one, none.
+  if (
+    field === "custom_filler_words" &&
+    (value === null || value === undefined)
+  ) {
+    return t("settings.profileView.value.builtInFillerWords");
   }
   if (field === "selected_language" && value === "auto") {
     return t("settings.general.language.auto");
@@ -237,8 +263,10 @@ export const valueLabel = (
       return value.map((code) => name(String(code))).join(", ");
     }
   }
-  if (field === "active_word_list_id" && typeof value === "string" && value) {
-    return entryName(ctx, "word_lists", value, undefined, within);
+  if (field === "active_word_list_id") {
+    return typeof value === "string" && value
+      ? entryName(ctx, "word_lists", value, undefined, within)
+      : t("settings.advanced.wordLists.onlyGlobal");
   }
   if (field === "post_process_prompt_order" && Array.isArray(value)) {
     return promptOrderLabel(ctx, value);
@@ -280,10 +308,18 @@ export const ownValueLabel = (
         value.off ? ctx.defaults : within,
       )}`;
 
+/** The text of an entry of `field` that a profile switched off: in a map
+ * by provider what a missing entry means there (the model's default
+ * effort, no model, no key), else "off". */
+export const offEntryText = (ctx: LabelContext, field: string): string =>
+  ABSENT_IS_EMPTY.has(field)
+    ? valueLabel(ctx, field, undefined)
+    : ctx.t("settings.profileView.state.entryOff");
+
 /** A row of the page "Profile": "Setting: value". An entry of a list (a
  * word list, an end shortcut) is named, not shown; an entry of a map (a
  * shortcut, a provider's model) shows its value; a switched-off one says
- * so. */
+ * so, or what a missing one means for a provider. */
 export const ownValueRow = (
   ctx: LabelContext,
   value: OwnValue,
@@ -291,7 +327,9 @@ export const ownValueRow = (
 ): string => {
   const label = ownValueLabel(ctx, value, within);
   if (value.off) {
-    return `${label} (${ctx.t("settings.profileView.state.entryOff")})`;
+    return ABSENT_IS_EMPTY.has(value.field)
+      ? `${label}: ${offEntryText(ctx, value.field)}`
+      : `${label} (${offEntryText(ctx, value.field)})`;
   }
   if (value.entry === undefined) {
     return `${label}: ${valueLabel(ctx, value.field, within[value.field], within)}`;
