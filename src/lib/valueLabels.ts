@@ -256,8 +256,8 @@ export const valueLabel = (
       `settings.profileView.value.${value === info.switchOn ? "on" : "off"}`,
     );
   }
-  if (typeof value === "string" && info?.names?.[value]) {
-    return info.names[value];
+  if (typeof value === "string" && info?.names) {
+    return info.names(value, t);
   }
   const option = optionLabel(ctx, field, value);
   if (option !== null) return option;

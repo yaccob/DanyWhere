@@ -1182,7 +1182,8 @@
       "soundTheme": {
         "label": "Ses Teması",
         "description": "Kayıt başlangıç ve bitişi için sesli geri bildirim temasını seçin",
-        "preview": "Ses temasını dinle (başlat, durdur ve ardından dikteyi bitiren sesi çalar)"
+        "preview": "Ses temasını dinle (başlat, durdur ve ardından dikteyi bitiren sesi çalar)",
+        "custom": "Özel"
       },
       "wordCorrectionThreshold": {
         "title": "Kelime Düzeltme Eşiği",

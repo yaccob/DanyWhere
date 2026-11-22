@@ -14,6 +14,8 @@ import {
   clipboardPasteKeys,
   ENGLISH_KEY_NAMES,
   formatKeyCombination,
+  keycapLabel,
+  keycapLabels,
   type KeyNameT,
   type OSType,
 } from "./keyboard";
@@ -158,6 +160,57 @@ check("every locale's clipboard paste takes the keys whole", () => {
     assert.ok(
       text.includes("{{keys}}") && !text.includes("{{modifier}}"),
       `${locale}: ${text}`,
+    );
+  }
+});
+
+// ---- the keycaps of onboarding and the Append field ---------------------
+// They name the keys as the shortcut fields do (qa 2026-11-22_1852, small
+// follow-ups): the same words and symbols, in the same order.
+
+check("the keycaps name the space bar in the language of the interface", () => {
+  assert.deepEqual(keycapLabels("option+space", "macos", deT), [
+    "⌥",
+    "Leertaste",
+  ]);
+  assert.deepEqual(keycapLabels("ctrl+space", "windows", deT), [
+    "Strg",
+    "Leertaste",
+  ]);
+});
+
+check("the keycaps show Return as the Mac's symbol", () => {
+  assert.deepEqual(keycapLabels("ctrl+return", "macos", deT), ["⌃", "↩"]);
+  assert.deepEqual(keycapLabels("super+enter", "macos", enT), ["⌘", "↩"]);
+});
+
+check("the keycaps translate the modifiers off macOS", () => {
+  assert.deepEqual(keycapLabels("ctrl+shift+v", "windows", deT), [
+    "Strg",
+    "Umschalt",
+    "V",
+  ]);
+  assert.deepEqual(keycapLabels("super+enter", "windows", enT), [
+    "Win",
+    "Enter",
+  ]);
+});
+
+check("the keycaps order the modifiers as the menus do", () => {
+  assert.deepEqual(keycapLabels("shift+ctrl+x", "macos", deT), ["⌃", "⇧", "X"]);
+});
+
+check("a keycap label reads as the shortcut fields write it", () => {
+  for (const [keys, os] of [
+    ["ctrl+option+d", "macos"],
+    ["option+space", "macos"],
+    ["ctrl+shift+v", "windows"],
+    ["ctrl+enter", "linux"],
+  ] as const) {
+    assert.equal(
+      keycapLabel(keys, os, deT),
+      formatKeyCombination(keys, os, deT),
+      `${keys} on ${os}`,
     );
   }
 });

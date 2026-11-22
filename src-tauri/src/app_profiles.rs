@@ -258,7 +258,9 @@ pub fn effective_post_process(requested: bool, dictation_values: Option<&Profile
 }
 
 /// The applications to offer: the running ones first, then the installed
-/// ones, each once, by name, without DanyWhere itself (`own_id`).
+/// ones, each once, by name, without DanyWhere itself (`own_id`) and
+/// without hidden helpers, whose name starts with "." (such as the copy an
+/// app runs to replace itself).
 pub fn merge_applications(
     running: Vec<(String, String)>,
     installed: Vec<(String, String)>,
@@ -266,7 +268,11 @@ pub fn merge_applications(
 ) -> Vec<ApplicationInfo> {
     let mut apps: Vec<ApplicationInfo> = Vec::new();
     let mut add = |(id, name): (String, String), running: bool| {
-        if id.is_empty() || id == own_id || apps.iter().any(|app| app.id == id) {
+        if id.is_empty()
+            || id == own_id
+            || name.starts_with('.')
+            || apps.iter().any(|app| app.id == id)
+        {
             return;
         }
         apps.push(ApplicationInfo { id, name, running });
@@ -991,5 +997,26 @@ mod tests {
                 ("com.apple.TextEdit", false),
             ]
         );
+    }
+
+    /// A name that starts with "." is a hidden helper, such as one an app
+    /// installs to replace itself; nobody assigns a profile to it.
+    #[test]
+    fn hidden_helpers_are_not_offered() {
+        let helper = (
+            "com.openai.chat.helper".to_string(),
+            ".ChatGPT Classic-codex-replacement-BB39E166-58FC-4AB6-BAEB-3B07B58098F1".to_string(),
+        );
+        let running = vec![
+            ("com.apple.mail".to_string(), "Mail".to_string()),
+            helper.clone(),
+        ];
+        let installed = vec![
+            ("com.example.hidden".to_string(), ".Hidden".to_string()),
+            ("com.apple.Notes".to_string(), "Notes".to_string()),
+        ];
+        let apps = merge_applications(running, installed, "com.yaccob.danywhere");
+        let ids: Vec<&str> = apps.iter().map(|a| a.id.as_str()).collect();
+        assert_eq!(ids, vec!["com.apple.mail", "com.apple.Notes"]);
     }
 }

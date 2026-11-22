@@ -1182,7 +1182,8 @@
       "soundTheme": {
         "label": "Sound-Thema",
         "description": "Sound-Thema für Aufnahme-Start und -Stop-Feedback auswählen",
-        "preview": "Sound-Thema anhören (spielt Start, Stopp und dann den Ton, der ein Diktat beendet)"
+        "preview": "Sound-Thema anhören (spielt Start, Stopp und dann den Ton, der ein Diktat beendet)",
+        "custom": "Benutzerdefiniert"
       },
       "wordCorrectionThreshold": {
         "title": "Wortkorrektur-Schwelle",

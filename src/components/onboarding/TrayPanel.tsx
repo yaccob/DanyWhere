@@ -77,7 +77,7 @@ export const TrayPanel: React.FC<TrayPanelProps> = ({
 }) => {
   const { t, i18n } = useTranslation();
   const languagesText = languageList(languages, i18n.language);
-  const keysLabel = keycapLabel(shortcut, os);
+  const keysLabel = keycapLabel(shortcut, os, t);
 
   // While capturing, a click outside the keys box cancels; that same click
   // must not then restart capture.

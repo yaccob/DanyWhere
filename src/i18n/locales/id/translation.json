@@ -1182,7 +1182,8 @@
       "soundTheme": {
         "label": "Tema Suara",
         "description": "Pilih tema suara untuk umpan balik saat perekaman dimulai dan dihentikan",
-        "preview": "Dengarkan tema suara (memutar mulai, berhenti, lalu suara yang mengakhiri dikte)"
+        "preview": "Dengarkan tema suara (memutar mulai, berhenti, lalu suara yang mengakhiri dikte)",
+        "custom": "Kustom"
       },
       "wordCorrectionThreshold": {
         "title": "Ambang Koreksi Kata",

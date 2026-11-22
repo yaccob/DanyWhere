@@ -415,7 +415,25 @@ export const formatKeyCombination = (
   osType: OSType,
   t: KeyNameT = englishT,
 ): string => {
-  if (!combination) return "";
+  const labels = keyCombinationLabels(combination, osType, t);
+  if (osType !== "macos") return labels.join("+");
+  return labels
+    .map((label, i) =>
+      i > 0 && (isWord(label) || isWord(labels[i - 1])) ? ` ${label}` : label,
+    )
+    .join("");
+};
+
+/**
+ * The keys of a stored combination as `formatKeyCombination` names them,
+ * one label per key in the system's order: the modifiers, then the keys.
+ */
+export const keyCombinationLabels = (
+  combination: string,
+  osType: OSType,
+  t: KeyNameT = englishT,
+): string[] => {
+  if (!combination) return [];
   const modifiers: { kind: ModifierKind; side: string | null }[] = [];
   const keys: string[] = [];
   for (const raw of combination.split("+")) {
@@ -429,19 +447,13 @@ export const formatKeyCombination = (
   }
   const order = osType === "macos" ? MAC_ORDER : PC_ORDER;
   modifiers.sort((a, b) => order.indexOf(a.kind) - order.indexOf(b.kind));
-  const labels = [
+  return [
     ...modifiers.map(({ kind, side }) => {
       const label = modifierLabel(kind, osType, t);
       return side ? t(`keyNames.${side}`, { key: label }) : label;
     }),
     ...keys,
   ];
-  if (osType !== "macos") return labels.join("+");
-  return labels
-    .map((label, i) =>
-      i > 0 && (isWord(label) || isWord(labels[i - 1])) ? ` ${label}` : label,
-    )
-    .join("");
 };
 
 /** The keys "Clipboard (…)" pastes with. */
@@ -487,41 +499,21 @@ export const bindingKeys = (binding: string | null | undefined): string[] =>
 export const isOnlyModifiers = (keys: string[]): boolean =>
   keys.length > 0 && keys.every((k) => MODIFIERS.includes(k.toLowerCase()));
 
-// Labels as printed on the keys; a key's side (option_left) isn't printed.
-const MAC_KEYCAPS: Record<string, string> = {
-  option: "⌥",
-  alt: "⌥",
-  command: "⌘",
-  cmd: "⌘",
-  meta: "⌘",
-  super: "⌘",
-  ctrl: "⌃",
-  control: "⌃",
-  shift: "⇧",
-};
-const PC_KEYCAPS: Record<string, string> = {
-  alt: "Alt",
-  option: "Alt",
-  ctrl: "Ctrl",
-  control: "Ctrl",
-  shift: "Shift",
-  meta: "⊞",
-  super: "⊞",
-  command: "⊞",
-};
+/**
+ * DanyWhere: the keycaps of onboarding and the Append field name the keys
+ * as the shortcut fields do (qa 2026-11-22_1852): "option+space" →
+ * ["⌥", "Leertaste"] on macOS in German, ["Alt", "Space"] elsewhere in
+ * English.
+ */
+export const keycapLabels = (
+  binding: string,
+  osType: OSType,
+  t: KeyNameT,
+): string[] => keyCombinationLabels(binding, osType, t);
 
-/** "option+space" → ["⌥", "Space"] on macOS. */
-export const keycapLabels = (binding: string, osType: OSType): string[] =>
-  binding
-    .split("+")
-    .map((part) => part.trim())
-    .filter(Boolean)
-    .map((part) => {
-      const key = part.replace(/_(left|right)$/, "");
-      const glyphs = osType === "macos" ? MAC_KEYCAPS : PC_KEYCAPS;
-      return glyphs[key] ?? capitalizeKey(key);
-    });
-
-/** "⌥ Space" on macOS, "Alt + Space" elsewhere. */
-export const keycapLabel = (binding: string, osType: OSType): string =>
-  keycapLabels(binding, osType).join(osType === "macos" ? " " : " + ");
+/** The keycaps in words, as the shortcut fields write them: "⌥ Leertaste". */
+export const keycapLabel = (
+  binding: string,
+  osType: OSType,
+  t: KeyNameT,
+): string => formatKeyCombination(binding, osType, t);

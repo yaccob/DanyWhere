@@ -6,7 +6,7 @@ import { PlayIcon } from "lucide-react";
 import { SettingContainer } from "../ui/SettingContainer";
 import { useSettingsStore } from "../../stores/settingsStore";
 import { useSettings } from "../../hooks/useSettings";
-import { SOUND_THEME_NAMES } from "@/lib/soundThemeNames";
+import { SOUND_THEME_NAMES, soundThemeName } from "@/lib/soundThemeNames";
 
 interface SoundPickerProps {
   label: string;
@@ -31,8 +31,8 @@ export const SoundPicker: React.FC<SoundPickerProps> = ({
     checkCustomSounds();
   }, [checkCustomSounds]);
 
-  // DanyWhere: the names come from SOUND_THEME_NAMES, which the page
-  // "Profile" shows too.
+  // DanyWhere: the names are the ones the page "Profile" shows too, the
+  // user's own sounds translated.
   const options: DropdownOption[] = [
     { value: "marimba", label: SOUND_THEME_NAMES.marimba },
     { value: "pop", label: SOUND_THEME_NAMES.pop },
@@ -40,7 +40,7 @@ export const SoundPicker: React.FC<SoundPickerProps> = ({
 
   // Only add Custom option if both custom sound files exist
   if (customSounds.start && customSounds.stop) {
-    options.push({ value: "custom", label: SOUND_THEME_NAMES.custom });
+    options.push({ value: "custom", label: soundThemeName("custom", t) });
   }
 
   // DanyWhere: the sound that ends a dictation, the done sound unless it is
