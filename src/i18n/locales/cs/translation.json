@@ -500,7 +500,7 @@
       },
       "apps": {
         "label": "Automaticky se používá v:",
-        "none": "zatím v žádné aplikaci",
+        "none": "Zatím není přiřazen žádné aplikaci",
         "remove": "Odebrat {{name}}",
         "add": "Přidat aplikaci…",
         "running": "běží",

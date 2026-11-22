@@ -500,7 +500,7 @@
       },
       "apps": {
         "label": "Otomatis digunakan di:",
-        "none": "belum ada aplikasi",
+        "none": "Belum ditetapkan ke aplikasi mana pun",
         "remove": "Hapus {{name}}",
         "add": "Tambah aplikasi…",
         "running": "berjalan",

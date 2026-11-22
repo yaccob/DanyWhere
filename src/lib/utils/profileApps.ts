@@ -71,3 +71,10 @@ export const droppedByOwner = <P extends ProfileWithApps>(
       apps: dropped.filter((app) => appsOf(profile).includes(app)),
     }))
     .filter(({ apps }) => apps.length > 0);
+
+/** What stands before the applications of a profile: "Used automatically
+ * in:" before them, and a sentence of its own while there are none. */
+export const appsCaption = (assigned: readonly string[]): string =>
+  assigned.length === 0
+    ? "settings.profiles.apps.none"
+    : "settings.profiles.apps.label";

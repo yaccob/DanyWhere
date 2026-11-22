@@ -500,7 +500,7 @@
       },
       "apps": {
         "label": "Används automatiskt i:",
-        "none": "ännu ingen app",
+        "none": "Ännu inte tilldelad någon app",
         "remove": "Ta bort {{name}}",
         "add": "Lägg till app…",
         "running": "körs",

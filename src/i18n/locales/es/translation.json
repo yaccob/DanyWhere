@@ -500,7 +500,7 @@
       },
       "apps": {
         "label": "Se usa automáticamente en:",
-        "none": "ninguna aplicación todavía",
+        "none": "Aún no está asignado a ninguna aplicación",
         "remove": "Quitar {{name}}",
         "add": "Añadir aplicación…",
         "running": "en ejecución",

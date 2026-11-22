@@ -500,7 +500,7 @@
       },
       "apps": {
         "label": "S'usa automàticament a:",
-        "none": "encara cap aplicació",
+        "none": "Encara no s'ha assignat a cap aplicació",
         "remove": "Elimina {{name}}",
         "add": "Afegeix una aplicació…",
         "running": "en execució",

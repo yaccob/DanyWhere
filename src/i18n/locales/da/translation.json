@@ -500,7 +500,7 @@
       },
       "apps": {
         "label": "Bruges automatisk i:",
-        "none": "endnu intet program",
+        "none": "Endnu ikke tildelt et program",
         "remove": "Fjern {{name}}",
         "add": "Tilføj program…",
         "running": "kører",

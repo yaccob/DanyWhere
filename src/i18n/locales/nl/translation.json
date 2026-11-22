@@ -500,7 +500,7 @@
       },
       "apps": {
         "label": "Automatisch gebruikt in:",
-        "none": "nog geen app",
+        "none": "Nog niet aan een app toegewezen",
         "remove": "{{name}} verwijderen",
         "add": "App toevoegen…",
         "running": "actief",

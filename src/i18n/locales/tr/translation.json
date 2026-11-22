@@ -500,7 +500,7 @@
       },
       "apps": {
         "label": "Otomatik kullanıldığı yerler:",
-        "none": "henüz uygulama yok",
+        "none": "Henüz hiçbir uygulamaya atanmadı",
         "remove": "{{name}} öğesini kaldır",
         "add": "Uygulama ekle…",
         "running": "çalışıyor",

@@ -5,6 +5,7 @@ import type { ApplicationInfo, Profile } from "@/bindings";
 import {
   appChoices,
   appLabel,
+  appsCaption,
   appsOf,
   ownerOfApp,
   withApp,
@@ -48,10 +49,9 @@ export const ProfileApps: React.FC<ProfileAppsProps> = ({
 
   return (
     <div className="flex flex-wrap items-center gap-2 px-4 pb-3 -mt-1 text-xs text-ink-2">
-      <span>{t("settings.profiles.apps.label")}</span>
-      {assigned.length === 0 && (
-        <span className="text-ink-3">{t("settings.profiles.apps.none")}</span>
-      )}
+      <span className={assigned.length === 0 ? "text-ink-3" : undefined}>
+        {t(appsCaption(assigned))}
+      </span>
       {assigned.map((appId) => (
         <span
           key={appId}

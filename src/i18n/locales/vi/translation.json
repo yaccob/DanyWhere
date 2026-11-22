@@ -500,7 +500,7 @@
       },
       "apps": {
         "label": "Tự động dùng trong:",
-        "none": "chưa có ứng dụng nào",
+        "none": "Chưa được gán cho ứng dụng nào",
         "remove": "Xóa {{name}}",
         "add": "Thêm ứng dụng…",
         "running": "đang chạy",
