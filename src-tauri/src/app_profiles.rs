@@ -6,7 +6,8 @@
 //!
 //! The values of such a dictation are held here from the start of its
 //! recording until its pipeline finishes or is cancelled; the code on the
-//! dictation path reads them through [`dictation_settings`]. The profile is
+//! dictation path reads them through [`dictation_settings`], the end of a
+//! dictation once, into its snapshot (`dictation_snapshot`). The profile is
 //! chosen when the recording starts, so its model loads and the pills name
 //! it, and again when it ends ([`settle_dictation`]), by the application in
 //! front then, which is where its text goes (user, 2026-11-16). Where the
@@ -464,6 +465,16 @@ pub fn dictation_profile_and_values(app: &AppHandle) -> (String, ProfileValues) 
         settings.active_profile_id.clone(),
         ProfileValues::from_settings(&settings),
     )
+}
+
+/// The profile the dictation in progress uses and its values, when it isn't
+/// the active one; what a dictation's end takes its snapshot of
+/// (`dictation_snapshot`). Unlike [`dictation_values`], a redo's values on
+/// this thread don't count.
+pub fn own_dictation_profile() -> Option<(String, ProfileValues)> {
+    dictation_lock()
+        .as_ref()
+        .map(|profile| (profile.id.clone(), profile.values.clone()))
 }
 
 /// The id of the profile the dictation in progress uses, when it isn't the
