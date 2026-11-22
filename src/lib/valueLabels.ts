@@ -163,7 +163,8 @@ const optionLabel = (
   return typeof text === "string" && !text.includes("{{") ? text : null;
 };
 
-/** The prompts an order runs, by name: "active: A, B". */
+/** The prompts an order runs, by name: "A, B" (the setting is called
+ * "Active Prompts"), or "no prompt active". */
 const promptOrderLabel = (ctx: LabelContext, value: unknown[]): string => {
   const names = value
     .filter((item) => isObject(item) && item.active === true)
@@ -173,7 +174,7 @@ const promptOrderLabel = (ctx: LabelContext, value: unknown[]): string => {
     })
     .filter((name): name is string => Boolean(name));
   return names.length > 0
-    ? ctx.t("settings.profileView.summary.active", { names: names.join(", ") })
+    ? names.join(", ")
     : ctx.t("settings.profileView.summary.noneActive");
 };
 

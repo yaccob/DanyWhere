@@ -186,13 +186,14 @@ check("no locale leaves a placeholder in a count", () => {
   assert.deepEqual(left, []);
 });
 check("the prompt order names the active prompts", () => {
+  // The setting is called "Active Prompts": its value is just the names.
   assert.equal(
     valueLabel(
       de,
       "post_process_prompt_order",
-      defaults.post_process_prompt_order,
+      neutest.values.post_process_prompt_order,
     ),
-    "aktiv: Diktat (DE/EN)",
+    "Diktat (DE/EN), Improve Transcriptions",
   );
   assert.equal(
     valueLabel(en, "post_process_prompt_order", [{ id: "p2", active: false }]),
