@@ -24,6 +24,7 @@ export const NO_FILTERS: Filters = {
   query: "",
   preview: false,
   translate: false,
+  wordLists: false,
 };
 
 /** The search and its filters, and whether a model is kept by them. */

@@ -242,7 +242,9 @@
       "preview": "Live-forhåndsvisning",
       "previewTitle": "Viser dine ord i Live-overlayet, mens du taler, og skriver dem, når du stopper",
       "translate": "Oversætter",
-      "translateTitle": "Kan omdanne det, du siger, til engelsk tekst. Slå det til i indstillingerne"
+      "translateTitle": "Kan omdanne det, du siger, til engelsk tekst. Slå det til i indstillingerne",
+      "wordLists": "Ordlister",
+      "wordListsTitle": "Bruger dine ordlister, mens den genkender talen"
     },
     "rubric": {
       "gradeTitle": "Nøjagtighed for {{language}}: {{grade}}",
@@ -809,6 +811,8 @@
       "wordLists": {
         "groupTitle": "Ordlister",
         "groupDescription": "Modellen får først ordene fra den aktive ekstra liste, så de ekstra ord og til sidst ordlisten.",
+        "modelUses": "{{model}} bruger ordlisterne, mens den genkender talen.",
+        "modelIgnores": "{{model}} bruger ikke selv ordlister; efterbehandlingen får dem som kendte udtryk.",
         "profileDescription": "Ord, som kun denne profil tilføjer, før ordlisten. Læg ord til én sammenhæng her og ord, du har brug for overalt, i grundindstillingernes ordliste.",
         "activeTitle": "Aktiv ekstra liste",
         "activeDescription": "Dens ord går først til modellen, før de ekstra ord og ordlisten, som altid gælder. Skift den med genvejen eller fra menuen i statuslinjen.",

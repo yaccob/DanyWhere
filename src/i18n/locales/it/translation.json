@@ -242,7 +242,9 @@
       "preview": "Anteprima in tempo reale",
       "previewTitle": "Mostra le tue parole nell'overlay In tempo reale mentre parli, poi le scrive quando smetti",
       "translate": "Traduce",
-      "translateTitle": "Può trasformare ciò che dici in testo inglese. Attivalo nelle impostazioni"
+      "translateTitle": "Può trasformare ciò che dici in testo inglese. Attivalo nelle impostazioni",
+      "wordLists": "Elenchi di parole",
+      "wordListsTitle": "Usa i tuoi elenchi di parole mentre riconosce il parlato"
     },
     "rubric": {
       "gradeTitle": "Accuratezza in {{language}}: {{grade}}",
@@ -809,6 +811,8 @@
       "wordLists": {
         "groupTitle": "Elenchi di parole",
         "groupDescription": "Il modello riceve prima le parole dell'elenco aggiuntivo attivo, poi le parole aggiuntive, poi l'elenco di parole.",
+        "modelUses": "{{model}} usa gli elenchi di parole mentre riconosce il parlato.",
+        "modelIgnores": "{{model}} non usa da sé gli elenchi di parole; la post-elaborazione li riceve come termini noti.",
         "profileDescription": "Parole che aggiunge solo questo profilo, prima dell'elenco di parole. Metti qui le parole di un contesto e quelle che ti servono ovunque nell'elenco di parole delle impostazioni di base.",
         "activeTitle": "Elenco aggiuntivo attivo",
         "activeDescription": "Le sue parole arrivano per prime al modello, prima delle parole aggiuntive e dell'elenco di parole, che valgono sempre. Cambialo con la scorciatoia o dal menu della barra.",

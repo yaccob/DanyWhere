@@ -242,7 +242,9 @@
       "preview": "Živý náhled",
       "previewTitle": "Zobrazuje vaše slova v překryvu Živě, zatímco mluvíte, a po skončení je napíše",
       "translate": "Překládá",
-      "translateTitle": "Umí změnit to, co řeknete, na anglický text. Zapnete to v nastavení"
+      "translateTitle": "Umí změnit to, co řeknete, na anglický text. Zapnete to v nastavení",
+      "wordLists": "Seznamy slov",
+      "wordListsTitle": "Používá vaše seznamy slov už při rozpoznávání řeči"
     },
     "rubric": {
       "gradeTitle": "Přesnost pro {{language}}: {{grade}}",
@@ -809,6 +811,8 @@
       "wordLists": {
         "groupTitle": "Seznamy slov",
         "groupDescription": "Model dostane nejprve slova aktivního dalšího seznamu, potom další slova a nakonec seznam slov.",
+        "modelUses": "{{model}} používá seznamy slov už při rozpoznávání řeči.",
+        "modelIgnores": "{{model}} seznamy slov sám nepoužívá; následné zpracování je dostane jako známé pojmy.",
         "profileDescription": "Slova, která přidává jen tento profil, před seznamem slov. Sem patří slova pro jeden kontext, slova potřebná všude do seznamu slov základního nastavení.",
         "activeTitle": "Aktivní doplňkový seznam",
         "activeDescription": "Jeho slova jdou do modelu jako první, před dalšími slovy a seznamem slov, které platí vždy. Přepněte ho klávesovou zkratkou nebo v nabídce v oznamovací oblasti.",

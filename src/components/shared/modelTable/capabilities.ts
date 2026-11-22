@@ -1,4 +1,4 @@
-import { Languages, Radio as LiveIcon } from "lucide-react";
+import { BookA, Languages, Radio as LiveIcon } from "lucide-react";
 
 /**
  * What a model can do besides transcribe: its icon, and its flag on a table
@@ -7,6 +7,8 @@ import { Languages, Radio as LiveIcon } from "lucide-react";
 export const CAPABILITIES = {
   preview: { Icon: LiveIcon, flag: "streaming" },
   translate: { Icon: Languages, flag: "translate" },
+  // DanyWhere: takes the word lists as vocabulary while it transcribes.
+  wordLists: { Icon: BookA, flag: "vocabulary" },
 } as const;
 
 export type Capability = keyof typeof CAPABILITIES;

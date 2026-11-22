@@ -270,6 +270,8 @@ impl From<&CatalogModel> for ModelDescriptor {
                 supports_streaming: Some(m.capabilities.streaming),
                 supports_translation: Some(m.capabilities.translate),
                 supports_language_detect: Some(m.capabilities.language_detection),
+                supports_vocabulary:
+                    crate::managers::model_capabilities::vocabulary_by_architecture(&m.family),
             },
             files,
             default_quant: Some(m.quant.clone()),

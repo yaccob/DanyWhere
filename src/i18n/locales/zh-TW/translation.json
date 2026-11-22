@@ -242,7 +242,9 @@
       "preview": "即時預覽",
       "previewTitle": "說話時在「即時」懸浮窗中顯示您的文字，停止後再輸入",
       "translate": "可翻譯",
-      "translateTitle": "可以把您說的話轉成英文文字。請在設定中開啟"
+      "translateTitle": "可以把您說的話轉成英文文字。請在設定中開啟",
+      "wordLists": "詞彙清單",
+      "wordListsTitle": "辨識語音時會使用您的詞彙清單"
     },
     "rubric": {
       "gradeTitle": "{{language}}準確度：{{grade}}",
@@ -809,6 +811,8 @@
       "wordLists": {
         "groupTitle": "詞彙清單",
         "groupDescription": "模型先取得啟用的附加詞表中的詞，接著是附加詞，最後是詞表。",
+        "modelUses": "{{model}} 在辨識語音時會使用詞彙清單。",
+        "modelIgnores": "{{model}} 本身不使用詞彙清單；後處理會把它們當作已知術語。",
         "profileDescription": "只有此設定檔加入的詞，排在詞表之前。把某一情境的詞放在這裡，把處處需要的詞放進基本設定的詞表。",
         "activeTitle": "目前的附加清單",
         "activeDescription": "它的詞最先傳給模型，先於一律適用的附加詞與詞表。可用快捷鍵或系統匣選單切換。",

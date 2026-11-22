@@ -61,6 +61,11 @@ pub struct ModelInfo {
     pub is_custom: bool,            // Whether this is a user-provided custom model
     pub supports_streaming: bool, // Whether this model supports live streaming preview (transcribe-cpp)
     pub supports_language_detection: bool, // Whether the model can auto-detect language (gates the "Auto" option)
+    /// DanyWhere: whether the model takes the word lists as vocabulary while
+    /// it transcribes (transcribe-cpp's `Feature::Vocabulary`). Known from
+    /// the architecture before a load (`model_capabilities`) and reconciled
+    /// with the loaded model (`set_runtime_capabilities`).
+    pub supports_vocabulary: bool,
 }
 
 const CHINESE_LANGUAGE_CODE: &str = "zh";
@@ -230,6 +235,7 @@ impl ModelDescriptor {
             is_custom: false,
             supports_streaming: self.caps.supports_streaming.unwrap_or(false),
             supports_language_detection: self.caps.supports_language_detect.unwrap_or(false),
+            supports_vocabulary: self.caps.supports_vocabulary.unwrap_or(false),
         }
     }
 }
@@ -510,6 +516,7 @@ struct LocalCaps {
     supports_language_selection: bool,
     supports_language_detection: bool,
     supported_languages: Vec<String>,
+    supports_vocabulary: bool,
 }
 
 fn local_caps(probe: &CapabilityProbe) -> LocalCaps {
@@ -521,6 +528,7 @@ fn local_caps(probe: &CapabilityProbe) -> LocalCaps {
         supports_language_selection: languages.len() > 1,
         supports_language_detection: probe.supports_language_detect.unwrap_or(false),
         supported_languages: languages,
+        supports_vocabulary: probe.supports_vocabulary.unwrap_or(false),
     }
 }
 
@@ -932,6 +940,7 @@ impl ModelManager {
                 is_custom: false,
                 supports_streaming: false,
                 supports_language_detection: true,
+                supports_vocabulary: true,
             },
         );
 
@@ -963,6 +972,7 @@ impl ModelManager {
                 is_custom: false,
                 supports_streaming: false,
                 supports_language_detection: true,
+                supports_vocabulary: true,
             },
         );
 
@@ -993,6 +1003,7 @@ impl ModelManager {
                 is_custom: false,
                 supports_streaming: false,
                 supports_language_detection: true,
+                supports_vocabulary: true,
             },
         );
 
@@ -1023,6 +1034,7 @@ impl ModelManager {
                 is_custom: false,
                 supports_streaming: false,
                 supports_language_detection: true,
+                supports_vocabulary: true,
             },
         );
 
@@ -1054,6 +1066,7 @@ impl ModelManager {
                 is_custom: false,
                 supports_streaming: false,
                 supports_language_detection: true,
+                supports_vocabulary: true,
             },
         );
 
@@ -1222,6 +1235,7 @@ impl ModelManager {
         supports_translation: bool,
         supports_language_detection: bool,
         supported_languages: Vec<String>,
+        supports_vocabulary: bool,
     ) {
         let supported_languages = canonicalize_supported_languages(supported_languages);
         let mut models = self.available_models.lock().unwrap();
@@ -1229,6 +1243,8 @@ impl ModelManager {
             model.supports_streaming = supports_streaming;
             model.supports_translation = supports_translation;
             model.supports_language_detection = supports_language_detection;
+            // DanyWhere: whether it takes the word lists, as loaded.
+            model.supports_vocabulary = supports_vocabulary;
             // An empty set means the model is language-agnostic — but it is also
             // what a failed capability read leaves behind, so keep the probed /
             // catalog list rather than blanking a known one to nothing.
@@ -1661,6 +1677,7 @@ impl ModelManager {
                     is_custom: true,
                     supports_streaming: caps.supports_streaming,
                     supports_language_detection: caps.supports_language_detection,
+                    supports_vocabulary: caps.supports_vocabulary,
                 },
             );
         }
@@ -1802,6 +1819,7 @@ impl ModelManager {
                             is_custom: false,
                             supports_streaming: caps.supports_streaming,
                             supports_language_detection: caps.supports_language_detection,
+                            supports_vocabulary: caps.supports_vocabulary,
                         },
                     );
                 }
@@ -3081,6 +3099,7 @@ mod tests {
                 // Legacy entry: preserve the historical "Auto offered" behavior.
                 // (Catalog GGUFs and on-disk probes derive this from metadata.)
                 supports_language_detection: true,
+                supports_vocabulary: true,
             },
         );
 
@@ -3383,5 +3402,46 @@ mod tests {
             !models.contains_key("someone/llama-7b/llama-q8.gguf"),
             "non-ASR gguf must be ignored"
         );
+    }
+
+    #[test]
+    fn catalog_models_say_whether_they_take_word_lists() {
+        let takes = |prefix: &str| {
+            catalog_model(prefix)
+                .to_model_info(&DiskStatus::default())
+                .supports_vocabulary
+        };
+        assert!(takes("handy-computer/whisper-large-v3-turbo-gguf/"));
+        assert!(takes("handy-computer/whisper-small-gguf/"));
+        assert!(!takes("handy-computer/canary-1b-v2-gguf/"));
+        assert!(!takes("handy-computer/canary-180m-flash-gguf/"));
+        assert!(!takes("handy-computer/parakeet-ultra-gguf/"));
+    }
+
+    #[test]
+    fn models_found_on_disk_say_whether_they_take_word_lists() {
+        let dir = TempDir::new().unwrap();
+        write_synthetic_gguf(&dir.path().join("my-whisper.gguf"), "whisper", &["de"]);
+        write_synthetic_gguf(&dir.path().join("my-parakeet.gguf"), "parakeet", &["de"]);
+        let mut models = HashMap::new();
+        ModelManager::discover_custom_transcribe_models(dir.path(), &mut models).unwrap();
+        assert!(models["my-whisper"].supports_vocabulary);
+        assert!(!models["my-parakeet"].supports_vocabulary);
+
+        let cache = TempDir::new().unwrap();
+        let path = add_cached_model(
+            cache.path(),
+            "someone/whisper-x-gguf",
+            "main",
+            "whisper-x.gguf",
+        );
+        write_synthetic_gguf(&path, "whisper", &["en"]);
+        let mut cached = HashMap::new();
+        ModelManager::discover_hf_cache_models_in(cache.path(), &mut cached);
+        let info = cached
+            .values()
+            .find(|m| m.filename == "whisper-x.gguf")
+            .expect("cached file is listed");
+        assert!(info.supports_vocabulary);
     }
 }

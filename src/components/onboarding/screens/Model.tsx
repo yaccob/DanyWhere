@@ -94,8 +94,13 @@ export const Model: React.FC<ModelProps> = ({
   const langs = grading.langs;
   const dense = langs.length > 5;
   // Shown regardless of settings: they're capabilities, as on the Models page.
-  const has = (m: CatalogModel, c: Capability) =>
-    m.capabilities[CAPABILITIES[c].flag];
+  const has = (m: CatalogModel, c: Capability) => {
+    const flag = CAPABILITIES[c].flag;
+    // DanyWhere: the catalog doesn't list it; the app knows it per family.
+    return flag === "vocabulary"
+      ? (models.infoFor(m)?.supports_vocabulary ?? false)
+      : m.capabilities[flag];
+  };
   const previews = (m: CatalogModel) => has(m, "preview");
   const pick = picks.find((p) => p.role === "pick") ?? picks[0];
   const selectedId = modelId ?? downloadId ?? pick?.model.id ?? null;
