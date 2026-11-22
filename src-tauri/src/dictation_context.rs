@@ -536,6 +536,18 @@ pub fn context_for(
 ) -> Option<ContextBlock> {
     query.window.as_ref()?;
     let history = app.try_state::<Arc<HistoryManager>>()?;
+    context_from(&history, settings, prompt, query)
+}
+
+/// [`context_for`] from `history` itself, without the app (the end of a
+/// dictation, `dictation_flow`).
+pub fn context_from(
+    history: &HistoryManager,
+    settings: &AppSettings,
+    prompt: &str,
+    query: &ContextQuery,
+) -> Option<ContextBlock> {
+    query.window.as_ref()?;
     let conn = history.get_connection().ok()?;
     let ctx = &settings.dictation_context;
     let since = since_timestamp(query.before_timestamp, ctx.age_limit_minutes);
