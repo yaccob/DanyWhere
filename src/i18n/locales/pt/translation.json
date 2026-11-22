@@ -664,7 +664,8 @@
       "volume": {
         "title": "Volume",
         "description": "Ajustar o volume dos sons de feedback de áudio"
-      }
+      },
+      "systemDefault": "Padrão do sistema"
     },
     "advanced": {
       "groups": {
@@ -888,7 +889,8 @@
             "cloud": "Nuvem",
             "localHint": "O pós-processamento é executado neste computador. O texto dos seus ditados não sai dele.",
             "cloudHint": "O pós-processamento envia o texto de cada ditado para este provedor, fora deste computador."
-          }
+          },
+          "custom": "Provedor personalizado"
         },
         "apiFormat": {
           "title": "Formato da API",
@@ -1179,7 +1181,8 @@
       },
       "soundTheme": {
         "label": "Tema de Som",
-        "description": "Escolha um tema de som para feedback de início e parada de gravação"
+        "description": "Escolha um tema de som para feedback de início e parada de gravação",
+        "preview": "Ouvir o tema de som (toca o início, a parada e depois o som que encerra um ditado)"
       },
       "wordCorrectionThreshold": {
         "title": "Limite de Correção de Palavras",
@@ -1419,14 +1422,15 @@
   },
   "common": {
     "playbackPosition": "Posição de reprodução",
-    "resetSetting": "Redefinir {{setting}} para o padrão",
+    "resetSetting": "Redefinir {{setting}} para a configuração de fábrica",
     "loading": "Carregando...",
     "delete": "Excluir",
     "close": "Fechar",
     "open": "Abrir",
     "copy": "Copiar",
     "clear": "Limpar",
-    "noOptionsFound": "Nenhuma opção encontrada"
+    "noOptionsFound": "Nenhuma opção encontrada",
+    "moreInformation": "Mais informações"
   },
   "errors": {
     "loadDirectory": "Erro ao carregar diretório: {{error}}",
@@ -1496,7 +1500,8 @@
     "readyNoShortcut": "Pronto – insira pelo menu Serviços",
     "notReady": "Ainda não está pronto",
     "wordList": "Lista de palavras: {{name}}",
-    "wordListGlobalOnly": "Sem lista adicional"
+    "wordListGlobalOnly": "Sem lista adicional",
+    "cancel": "Cancelar"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} pode estar bloqueando 1 atalho",

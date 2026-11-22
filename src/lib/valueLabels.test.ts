@@ -304,11 +304,21 @@ check("the effort shows its level's label", () => {
     "Standard des Modells",
   );
 });
+// The device lists show the system's default device by a translated name;
+// the stored value stays "Default" (qa 2026-11-22_1632, point 6 no. 2).
 check("the default microphone is called as the list calls it", () => {
-  assert.equal(valueLabel(de, "selected_microphone", null), DEFAULT_DEVICE);
+  assert.equal(valueLabel(de, "selected_microphone", null), "Systemstandard");
   assert.equal(
     valueLabel(de, "selected_microphone", "default"),
-    DEFAULT_DEVICE,
+    "Systemstandard",
+  );
+  assert.equal(
+    valueLabel(de, "selected_microphone", DEFAULT_DEVICE),
+    "Systemstandard",
+  );
+  assert.equal(
+    valueLabel(en, "selected_output_device", null),
+    "System default",
   );
   assert.equal(
     valueLabel(de, "selected_microphone", "MacBook Pro-Mikrofon"),
@@ -318,6 +328,19 @@ check("the default microphone is called as the list calls it", () => {
 check("the paste method shows its option's label", () =>
   assert.equal(valueLabel(en, "paste_method", "ctrl_v"), "Clipboard (⌘V)"),
 );
+// The chosen provider by the name its list shows, the custom one translated
+// (qa 2026-11-22_1632, point 6 no. 8), not by its id.
+check("the chosen provider shows by its name", () => {
+  assert.equal(
+    valueLabel(de, "post_process_provider_id", "custom"),
+    "Eigener Anbieter",
+  );
+  assert.equal(
+    valueLabel(de, "post_process_provider_id", "anthropic"),
+    "Anthropic",
+  );
+  assert.equal(valueLabel(en, "post_process_provider_id", "custom"), "Custom");
+});
 check("an API key is never shown", () =>
   assert.equal(
     valueLabel(de, "post_process_api_keys", "sk-secret").includes("sk-"),
@@ -329,7 +352,7 @@ check("an API key is never shown", () =>
 check("one field: the default's value", () =>
   assert.equal(
     defaultText(de, ["selected_microphone"], undefined, neutest),
-    DEFAULT_DEVICE,
+    "Systemstandard",
   ),
 );
 check("several fields: each own one that differs, by name", () =>
@@ -399,7 +422,7 @@ check("a provider's model without one says none is selected", () => {
       { field: "post_process_models", entry: "custom" },
       providerValues,
     ),
-    "Modell: Custom: kein Modell ausgewählt",
+    "Modell: Eigener Anbieter: kein Modell ausgewählt",
   );
   assert.equal(
     ownValueRow(

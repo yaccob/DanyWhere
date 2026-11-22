@@ -1,6 +1,8 @@
 /**
  * DanyWhere: the jump from a profile's page "Profile" to one of its own
- * values (qa 2026-11-22_1603, B5): the value's page opens, its setting (the
+ * values (qa 2026-11-22_1603, B5), and from "Open in …" under a default to
+ * the same setting in a deviating profile (qa 2026-11-22_1638): the
+ * value's page opens, its setting (the
  * profile wrapper around it, `ScopedSetting`) scrolls into view and lights
  * up briefly. The rules are here, pure, so they can be checked without a
  * window (settingJump.test.ts); `scope/settingJumpStore.ts` holds the
@@ -37,6 +39,22 @@ export const jumpTarget = (profileId: string, value: OwnValue): JumpTarget =>
   value.entry === undefined
     ? { profileId, field: value.field }
     : { profileId, field: value.field, entry: value.entry };
+
+/** Where "Open in …" under a default jumps to (qa 2026-11-22_1638): the
+ * same setting in the deviating profile, that is the wrapper of the same
+ * fields (and entry) there. Of several fields it names the first the
+ * profile has its own value of (`ownFields`), else the first. */
+export const openInTarget = (
+  profileId: string,
+  fields: readonly string[],
+  entry: string | undefined,
+  ownFields: readonly string[],
+): JumpTarget => {
+  const field = fields.find((name) => ownFields.includes(name)) ?? fields[0];
+  return entry === undefined
+    ? { profileId, field }
+    : { profileId, field, entry };
+};
 
 /**
  * Whether the wrapper of `fields` (or of their entry `entry`) in profile

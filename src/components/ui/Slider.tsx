@@ -1,7 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { SettingContainer } from "./SettingContainer";
-import { ResetButton } from "./ResetButton";
+import { FactoryResetButton } from "./FactoryResetButton";
 
 interface SliderProps {
   value: number;
@@ -74,10 +74,10 @@ export const Slider: React.FC<SliderProps> = ({
             </span>
           )}
           {onReset && (
-            <ResetButton
+            <FactoryResetButton
+              setting={label}
               onClick={onReset}
               disabled={disabled || isResetting}
-              ariaLabel={t("common.resetSetting", { setting: label })}
             />
           )}
         </div>

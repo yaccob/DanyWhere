@@ -664,7 +664,8 @@
       "volume": {
         "title": "Âm lượng",
         "description": "Điều chỉnh âm lượng của âm thanh phản hồi"
-      }
+      },
+      "systemDefault": "Mặc định của hệ thống"
     },
     "advanced": {
       "groups": {
@@ -888,7 +889,8 @@
             "cloud": "Đám mây",
             "localHint": "Hậu xử lý chạy trên máy tính này. Văn bản đọc chính tả không rời khỏi máy.",
             "cloudHint": "Hậu xử lý gửi văn bản của mỗi lần đọc chính tả đến nhà cung cấp này, ra ngoài máy tính này."
-          }
+          },
+          "custom": "Nhà cung cấp tùy chỉnh"
         },
         "apiFormat": {
           "title": "Định dạng API",
@@ -1179,7 +1181,8 @@
       },
       "soundTheme": {
         "label": "Chủ đề âm thanh",
-        "description": "Chọn chủ đề âm thanh cho phản hồi bắt đầu và kết thúc ghi âm"
+        "description": "Chọn chủ đề âm thanh cho phản hồi bắt đầu và kết thúc ghi âm",
+        "preview": "Nghe thử chủ đề âm thanh (phát âm bắt đầu, dừng, rồi âm kết thúc một lần đọc chính tả)"
       },
       "wordCorrectionThreshold": {
         "title": "Ngưỡng sửa từ",
@@ -1419,14 +1422,15 @@
   },
   "common": {
     "playbackPosition": "Vị trí phát",
-    "resetSetting": "Đặt lại {{setting}} về mặc định",
+    "resetSetting": "Đặt lại {{setting}} về cài đặt gốc",
     "loading": "Đang tải...",
     "delete": "Xóa",
     "close": "Đóng",
     "open": "Mở",
     "copy": "Sao chép",
     "clear": "Xóa",
-    "noOptionsFound": "Không tìm thấy tùy chọn"
+    "noOptionsFound": "Không tìm thấy tùy chọn",
+    "moreInformation": "Thêm thông tin"
   },
   "errors": {
     "loadDirectory": "Lỗi khi tải thư mục: {{error}}",
@@ -1496,7 +1500,8 @@
     "readyNoShortcut": "Sẵn sàng – chèn từ menu Dịch vụ",
     "notReady": "Chưa sẵn sàng",
     "wordList": "Danh sách từ: {{name}}",
-    "wordListGlobalOnly": "Không có danh sách bổ sung"
+    "wordListGlobalOnly": "Không có danh sách bổ sung",
+    "cancel": "Hủy"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} có thể đang chặn 1 phím tắt",

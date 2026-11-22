@@ -1,7 +1,7 @@
 import React, { useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { formatKeyCombination } from "../../lib/utils/keyboard";
-import { ResetButton } from "../ui/ResetButton";
+import { FactoryResetButton } from "../ui/FactoryResetButton";
 import { SettingContainer } from "../ui/SettingContainer";
 import { useSettings } from "../../hooks/useSettings";
 import { useOsType } from "../../hooks/useOsType";
@@ -123,8 +123,8 @@ export const ShortcutInput: React.FC<ShortcutInputProps> = ({
             {formatKeyCombination(binding.current_binding, osType, t)}
           </div>
         )}
-        <ResetButton
-          ariaLabel={t("common.resetSetting", { setting: translatedName })}
+        <FactoryResetButton
+          setting={translatedName}
           onClick={() => resetBinding(shortcutId)}
           disabled={isUpdating(`binding_${shortcutId}`)}
         />

@@ -664,7 +664,8 @@
       "volume": {
         "title": "Volume",
         "description": "Sesuaikan volume suara umpan balik audio"
-      }
+      },
+      "systemDefault": "Bawaan sistem"
     },
     "advanced": {
       "groups": {
@@ -888,7 +889,8 @@
             "cloud": "Cloud",
             "localHint": "Pascaproses berjalan di komputer ini. Teks dikte Anda tidak meninggalkannya.",
             "cloudHint": "Pascaproses mengirim teks setiap dikte ke penyedia ini, di luar komputer ini."
-          }
+          },
+          "custom": "Penyedia kustom"
         },
         "apiFormat": {
           "title": "Format API",
@@ -1179,7 +1181,8 @@
       },
       "soundTheme": {
         "label": "Tema Suara",
-        "description": "Pilih tema suara untuk umpan balik saat perekaman dimulai dan dihentikan"
+        "description": "Pilih tema suara untuk umpan balik saat perekaman dimulai dan dihentikan",
+        "preview": "Dengarkan tema suara (memutar mulai, berhenti, lalu suara yang mengakhiri dikte)"
       },
       "wordCorrectionThreshold": {
         "title": "Ambang Koreksi Kata",
@@ -1419,14 +1422,15 @@
   },
   "common": {
     "playbackPosition": "Posisi pemutaran",
-    "resetSetting": "Atur ulang {{setting}} ke nilai bawaan",
+    "resetSetting": "Atur ulang {{setting}} ke setelan pabrik",
     "loading": "Memuat...",
     "delete": "Hapus",
     "close": "Tutup",
     "open": "Buka",
     "copy": "Salin",
     "clear": "Bersihkan",
-    "noOptionsFound": "Tidak ada opsi yang ditemukan"
+    "noOptionsFound": "Tidak ada opsi yang ditemukan",
+    "moreInformation": "Informasi lebih lanjut"
   },
   "errors": {
     "loadDirectory": "Kesalahan saat memuat direktori: {{error}}",
@@ -1496,7 +1500,8 @@
     "readyNoShortcut": "Siap – sisipkan dari menu Layanan",
     "notReady": "Belum siap",
     "wordList": "Daftar kata: {{name}}",
-    "wordListGlobalOnly": "Tanpa daftar tambahan"
+    "wordListGlobalOnly": "Tanpa daftar tambahan",
+    "cancel": "Batal"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} mungkin memblokir 1 pintasan",

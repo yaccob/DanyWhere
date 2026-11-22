@@ -664,7 +664,8 @@
       "volume": {
         "title": "مستوى الصوت",
         "description": "ضبط مستوى صوت تنبيهات الصوت"
-      }
+      },
+      "systemDefault": "الافتراضي للنظام"
     },
     "advanced": {
       "groups": {
@@ -888,7 +889,8 @@
             "cloud": "سحابة",
             "localHint": "تتم المعالجة اللاحقة على هذا الكمبيوتر. لا يغادره نص الإملاء.",
             "cloudHint": "ترسل المعالجة اللاحقة نص كل إملاء إلى هذا المزوّد خارج هذا الكمبيوتر."
-          }
+          },
+          "custom": "مزود مخصص"
         },
         "apiFormat": {
           "title": "تنسيق API",
@@ -1179,7 +1181,8 @@
       },
       "soundTheme": {
         "label": "سمة الصوت",
-        "description": "اختر سمة صوت لتنبيهات بدء وتوقف التسجيل"
+        "description": "اختر سمة صوت لتنبيهات بدء وتوقف التسجيل",
+        "preview": "معاينة سمة الصوت (تشغيل صوت البدء ثم الإيقاف ثم الصوت الذي ينهي الإملاء)"
       },
       "wordCorrectionThreshold": {
         "title": "عتبة تصحيح الكلمات",
@@ -1419,14 +1422,15 @@
   },
   "common": {
     "playbackPosition": "موضع التشغيل",
-    "resetSetting": "إعادة تعيين {{setting}} إلى القيمة الافتراضية",
+    "resetSetting": "إعادة {{setting}} إلى إعداد المصنع",
     "loading": "جاري التحميل...",
     "delete": "حذف",
     "close": "إغلاق",
     "open": "فتح",
     "copy": "نسخ",
     "clear": "مسح",
-    "noOptionsFound": "لم يتم العثور على خيارات"
+    "noOptionsFound": "لم يتم العثور على خيارات",
+    "moreInformation": "مزيد من المعلومات"
   },
   "errors": {
     "loadDirectory": "خطأ في تحميل المجلد: {{error}}",
@@ -1496,7 +1500,8 @@
     "readyNoShortcut": "جاهز – أدرجه من قائمة الخدمات",
     "notReady": "لم يجهز بعد",
     "wordList": "قائمة الكلمات: {{name}}",
-    "wordListGlobalOnly": "بدون قائمة إضافية"
+    "wordListGlobalOnly": "بدون قائمة إضافية",
+    "cancel": "إلغاء"
   },
   "secureInput": {
     "blockedWithCulprit_one": "قد يحظر {{name}} اختصارًا واحدًا",

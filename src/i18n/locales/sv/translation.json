@@ -664,7 +664,8 @@
       "volume": {
         "title": "Volym",
         "description": "Justera volymen för ljudåterkopplingsljud"
-      }
+      },
+      "systemDefault": "Systemstandard"
     },
     "advanced": {
       "groups": {
@@ -888,7 +889,8 @@
             "cloud": "Moln",
             "localHint": "Efterbearbetningen körs på den här datorn. Texten i dina dikteringar lämnar den inte.",
             "cloudHint": "Efterbearbetningen skickar texten i varje diktering till den här leverantören, utanför den här datorn."
-          }
+          },
+          "custom": "Egen leverantör"
         },
         "apiFormat": {
           "title": "API-format",
@@ -1179,7 +1181,8 @@
       },
       "soundTheme": {
         "label": "Ljudtema",
-        "description": "Välj ett ljudtema för återkoppling vid start och stopp av inspelning"
+        "description": "Välj ett ljudtema för återkoppling vid start och stopp av inspelning",
+        "preview": "Lyssna på ljudtemat (spelar start, stopp och sedan ljudet som avslutar en diktering)"
       },
       "wordCorrectionThreshold": {
         "title": "Tröskelvärde för ordkorrigering",
@@ -1419,14 +1422,15 @@
   },
   "common": {
     "playbackPosition": "Uppspelningsposition",
-    "resetSetting": "Återställ {{setting}} till standardvärdet",
+    "resetSetting": "Återställ {{setting}} till fabriksinställningen",
     "loading": "Laddar...",
     "delete": "Ta bort",
     "close": "Stäng",
     "open": "Öppna",
     "copy": "Kopiera",
     "clear": "Rensa",
-    "noOptionsFound": "Inga alternativ hittades"
+    "noOptionsFound": "Inga alternativ hittades",
+    "moreInformation": "Mer information"
   },
   "errors": {
     "loadDirectory": "Fel vid laddning av mapp: {{error}}",
@@ -1496,7 +1500,8 @@
     "readyNoShortcut": "Klar – infoga från menyn Tjänster",
     "notReady": "Inte klar än",
     "wordList": "Ordlista: {{name}}",
-    "wordListGlobalOnly": "Ingen extra lista"
+    "wordListGlobalOnly": "Ingen extra lista",
+    "cancel": "Avbryt"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} kanske blockerar 1 kortkommando",

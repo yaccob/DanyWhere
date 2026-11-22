@@ -664,7 +664,8 @@
       "volume": {
         "title": "音量",
         "description": "オーディオフィードバックの音量を調整"
-      }
+      },
+      "systemDefault": "システムの既定"
     },
     "advanced": {
       "groups": {
@@ -888,7 +889,8 @@
             "cloud": "クラウド",
             "localHint": "後処理はこのコンピュータ上で行われます。音声入力のテキストは外部に送信されません。",
             "cloudHint": "後処理では、各音声入力のテキストをこのコンピュータの外にあるこのプロバイダーへ送信します。"
-          }
+          },
+          "custom": "カスタムプロバイダー"
         },
         "apiFormat": {
           "title": "API 形式",
@@ -1179,7 +1181,8 @@
       },
       "soundTheme": {
         "label": "サウンドテーマ",
-        "description": "録音開始・停止フィードバックのサウンドテーマを選択"
+        "description": "録音開始・停止フィードバックのサウンドテーマを選択",
+        "preview": "サウンドテーマを試聴（開始、停止、続いて音声入力を終える音を再生）"
       },
       "wordCorrectionThreshold": {
         "title": "単語修正しきい値",
@@ -1419,14 +1422,15 @@
   },
   "common": {
     "playbackPosition": "再生位置",
-    "resetSetting": "{{setting}}を既定値に戻す",
+    "resetSetting": "{{setting}}を工場出荷時の設定に戻す",
     "loading": "読み込み中…",
     "delete": "削除",
     "close": "閉じる",
     "open": "開く",
     "copy": "コピー",
     "clear": "クリア",
-    "noOptionsFound": "オプションが見つかりません"
+    "noOptionsFound": "オプションが見つかりません",
+    "moreInformation": "詳細情報"
   },
   "errors": {
     "loadDirectory": "ディレクトリの読み込みエラー: {{error}}",
@@ -1496,7 +1500,8 @@
     "readyNoShortcut": "準備完了 – サービスメニューから挿入",
     "notReady": "まだ準備中です",
     "wordList": "単語リスト: {{name}}",
-    "wordListGlobalOnly": "追加のリストなし"
+    "wordListGlobalOnly": "追加のリストなし",
+    "cancel": "キャンセル"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} が1個のショートカットをブロックしている可能性があります",

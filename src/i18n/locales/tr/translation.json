@@ -664,7 +664,8 @@
       "volume": {
         "title": "Ses Seviyesi",
         "description": "Sesli geri bildirimlerin ses seviyesini ayarlayın"
-      }
+      },
+      "systemDefault": "Sistem varsayılanı"
     },
     "advanced": {
       "groups": {
@@ -888,7 +889,8 @@
             "cloud": "Bulut",
             "localHint": "Son işleme bu bilgisayarda çalışır. Dikte metinleriniz bilgisayardan çıkmaz.",
             "cloudHint": "Son işleme her diktenin metnini bu bilgisayarın dışındaki bu sağlayıcıya gönderir."
-          }
+          },
+          "custom": "Özel sağlayıcı"
         },
         "apiFormat": {
           "title": "API Biçimi",
@@ -1179,7 +1181,8 @@
       },
       "soundTheme": {
         "label": "Ses Teması",
-        "description": "Kayıt başlangıç ve bitişi için sesli geri bildirim temasını seçin"
+        "description": "Kayıt başlangıç ve bitişi için sesli geri bildirim temasını seçin",
+        "preview": "Ses temasını dinle (başlat, durdur ve ardından dikteyi bitiren sesi çalar)"
       },
       "wordCorrectionThreshold": {
         "title": "Kelime Düzeltme Eşiği",
@@ -1419,14 +1422,15 @@
   },
   "common": {
     "playbackPosition": "Oynatma konumu",
-    "resetSetting": "{{setting}} ayarını varsayılan değere sıfırla",
+    "resetSetting": "{{setting}} ayarını fabrika ayarına sıfırla",
     "loading": "Yükleniyor...",
     "delete": "Sil",
     "close": "Kapat",
     "open": "Aç",
     "copy": "Kopyala",
     "clear": "Temizle",
-    "noOptionsFound": "Seçenek bulunamadı"
+    "noOptionsFound": "Seçenek bulunamadı",
+    "moreInformation": "Daha fazla bilgi"
   },
   "errors": {
     "loadDirectory": "Dizin yüklenirken hata oluştu: {{error}}",
@@ -1496,7 +1500,8 @@
     "readyNoShortcut": "Hazır – Servisler menüsünden ekleyin",
     "notReady": "Henüz hazır değil",
     "wordList": "Kelime listesi: {{name}}",
-    "wordListGlobalOnly": "Ek liste yok"
+    "wordListGlobalOnly": "Ek liste yok",
+    "cancel": "İptal"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} 1 kısayolu engelliyor olabilir",

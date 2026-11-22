@@ -664,7 +664,8 @@
       "volume": {
         "title": "Volum",
         "description": "Ajusta el volum dels avisos sonors"
-      }
+      },
+      "systemDefault": "Predeterminat del sistema"
     },
     "advanced": {
       "groups": {
@@ -888,7 +889,8 @@
             "cloud": "Núvol",
             "localHint": "El postprocessament s’executa en aquest ordinador. El text dels dictats no en surt.",
             "cloudHint": "El postprocessament envia el text de cada dictat a aquest proveïdor, fora d’aquest ordinador."
-          }
+          },
+          "custom": "Proveïdor personalitzat"
         },
         "apiFormat": {
           "title": "Format de l'API",
@@ -1179,7 +1181,8 @@
       },
       "soundTheme": {
         "label": "Tema de so",
-        "description": "Trieu un tema de so per als avisos d'inici i d'aturada de l'enregistrament"
+        "description": "Trieu un tema de so per als avisos d'inici i d'aturada de l'enregistrament",
+        "preview": "Escolta el tema de so (reprodueix l'inici, l'aturada i després el so que acaba un dictat)"
       },
       "wordCorrectionThreshold": {
         "title": "Llindar de correcció de paraules",
@@ -1419,14 +1422,15 @@
   },
   "common": {
     "playbackPosition": "Posició de reproducció",
-    "resetSetting": "Restableix {{setting}} al valor predeterminat",
+    "resetSetting": "Restableix {{setting}} a la configuració de fàbrica",
     "loading": "S'està carregant...",
     "delete": "Suprimeix",
     "close": "Tanca",
     "open": "Obre",
     "copy": "Copia",
     "clear": "Neteja",
-    "noOptionsFound": "No s'ha trobat cap opció"
+    "noOptionsFound": "No s'ha trobat cap opció",
+    "moreInformation": "Més informació"
   },
   "errors": {
     "loadDirectory": "Error en carregar el directori: {{error}}",
@@ -1496,7 +1500,8 @@
     "readyNoShortcut": "A punt – inseriu-lo des del menú Serveis",
     "notReady": "Encara no està a punt",
     "wordList": "Llista de paraules: {{name}}",
-    "wordListGlobalOnly": "Cap llista addicional"
+    "wordListGlobalOnly": "Cap llista addicional",
+    "cancel": "Cancel·la"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} pot estar blocant 1 drecera",

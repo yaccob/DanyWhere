@@ -122,6 +122,16 @@ const wrapper = read("./settings/profiles/scope/ScopedSetting.tsx");
 check("a row of the page Profile asks to jump to its setting", () =>
   assert.match(overview, /openPage\?\.\(profileId, page, jumpTarget\(/),
 );
+// "Open in …" under a default jumps there too (qa 2026-11-22_1638).
+check("Open in … under a default asks to jump to its setting", () =>
+  assert.match(
+    wrapper,
+    /openProfilePage\(\s*profile\.id,\s*page,\s*openInTarget\(/,
+  ),
+);
+check("Open in … targets the profile's own fields of the setting", () =>
+  assert.match(wrapper, /openInTarget\(\s*profile\.id,\s*fields,\s*entry,/),
+);
 check("a wrapper in a profile lights up when the jump is its", () =>
   assert.match(wrapper, /useJumpHighlight\(/),
 );

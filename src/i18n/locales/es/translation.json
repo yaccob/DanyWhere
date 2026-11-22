@@ -664,7 +664,8 @@
       "volume": {
         "title": "Volumen",
         "description": "Ajusta el volumen de los sonidos de retroalimentación de audio"
-      }
+      },
+      "systemDefault": "Predeterminado del sistema"
     },
     "advanced": {
       "groups": {
@@ -888,7 +889,8 @@
             "cloud": "Nube",
             "localHint": "El posprocesamiento se ejecuta en este ordenador. El texto de tus dictados no sale de él.",
             "cloudHint": "El posprocesamiento envía el texto de cada dictado a este proveedor, fuera de este ordenador."
-          }
+          },
+          "custom": "Proveedor personalizado"
         },
         "apiFormat": {
           "title": "Formato de API",
@@ -1179,7 +1181,8 @@
       },
       "soundTheme": {
         "label": "Tema de sonido",
-        "description": "Elige un tema de sonido para la retroalimentación de inicio y parada de grabación"
+        "description": "Elige un tema de sonido para la retroalimentación de inicio y parada de grabación",
+        "preview": "Escuchar el tema de sonido (reproduce el inicio, la parada y luego el sonido que termina un dictado)"
       },
       "wordCorrectionThreshold": {
         "title": "Umbral de corrección de palabras",
@@ -1419,14 +1422,15 @@
   },
   "common": {
     "playbackPosition": "Posición de reproducción",
-    "resetSetting": "Restablecer {{setting}} al valor predeterminado",
+    "resetSetting": "Restablecer {{setting}} a la configuración de fábrica",
     "loading": "Cargando...",
     "delete": "Eliminar",
     "close": "Cerrar",
     "open": "Abrir",
     "copy": "Copiar",
     "clear": "Limpiar",
-    "noOptionsFound": "No se encontraron opciones"
+    "noOptionsFound": "No se encontraron opciones",
+    "moreInformation": "Más información"
   },
   "errors": {
     "loadDirectory": "Error al cargar el directorio: {{error}}",
@@ -1496,7 +1500,8 @@
     "readyNoShortcut": "Listo – insértalo desde el menú Servicios",
     "notReady": "Aún no está listo",
     "wordList": "Lista de palabras: {{name}}",
-    "wordListGlobalOnly": "Ninguna lista adicional"
+    "wordListGlobalOnly": "Ninguna lista adicional",
+    "cancel": "Cancelar"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} puede estar bloqueando 1 atajo",

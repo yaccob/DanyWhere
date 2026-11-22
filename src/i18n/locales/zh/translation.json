@@ -664,7 +664,8 @@
       "volume": {
         "title": "音量",
         "description": "调整音频反馈的音量"
-      }
+      },
+      "systemDefault": "系统默认"
     },
     "advanced": {
       "groups": {
@@ -888,7 +889,8 @@
             "cloud": "云端",
             "localHint": "后处理在此电脑上运行，听写文本不会离开此电脑。",
             "cloudHint": "后处理会将每次听写的文本发送到此电脑之外的该提供商。"
-          }
+          },
+          "custom": "自定义提供商"
         },
         "apiFormat": {
           "title": "API 格式",
@@ -1179,7 +1181,8 @@
       },
       "soundTheme": {
         "label": "声音主题",
-        "description": "选择录制开始和停止反馈的声音主题"
+        "description": "选择录制开始和停止反馈的声音主题",
+        "preview": "试听声音主题（依次播放开始、停止和结束听写的声音）"
       },
       "wordCorrectionThreshold": {
         "title": "词汇修正阈值",
@@ -1419,14 +1422,15 @@
   },
   "common": {
     "playbackPosition": "播放位置",
-    "resetSetting": "将{{setting}}重置为默认值",
+    "resetSetting": "将{{setting}}恢复为出厂设置",
     "loading": "加载中...",
     "delete": "删除",
     "close": "关闭",
     "open": "打开",
     "copy": "复制",
     "clear": "清除",
-    "noOptionsFound": "未找到选项"
+    "noOptionsFound": "未找到选项",
+    "moreInformation": "更多信息"
   },
   "errors": {
     "loadDirectory": "加载目录时出错: {{error}}",
@@ -1496,7 +1500,8 @@
     "readyNoShortcut": "就绪 – 从“服务”菜单插入",
     "notReady": "尚未就绪",
     "wordList": "词汇列表：{{name}}",
-    "wordListGlobalOnly": "无附加列表"
+    "wordListGlobalOnly": "无附加列表",
+    "cancel": "取消"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} 可能正在阻止 1 个快捷键",

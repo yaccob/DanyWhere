@@ -10,6 +10,7 @@
  * prompts, the defaults).
  */
 import type { EndKey } from "../bindings";
+import { deviceLabel, providerName } from "./displayNames";
 import { START_BINDINGS, defaultEndOf, endKeyName } from "./endKeys";
 import { fieldInfo } from "./profileFields";
 import {
@@ -50,7 +51,8 @@ export interface LabelContext {
 }
 
 /** The name the device lists give the system's default device (backend
- * `commands/audio.rs`); a profile stores it as nothing or "default". */
+ * `commands/audio.rs`); a profile stores it as nothing or "default". It is
+ * shown translated, as the lists show it (`deviceLabel`). */
 export const DEFAULT_DEVICE = "Default";
 
 /** Values that are never shown, only whether they are set. */
@@ -133,9 +135,16 @@ export const entryName = (
     });
   }
   if (PROVIDER_MAPS.has(field)) {
-    return (
-      ctx.providers?.find((p) => p.id === id)?.label ??
-      entryLabel(findEntry(ctx, "post_process_providers", id, within), id)
+    const known = ctx.providers?.find((p) => p.id === id);
+    return providerName(
+      known ?? {
+        id,
+        label: entryLabel(
+          findEntry(ctx, "post_process_providers", id, within),
+          id,
+        ),
+      },
+      ctx.t,
     );
   }
   if (field === "end_keys") {
@@ -228,7 +237,16 @@ export const valueLabel = (
     DEVICE_FIELDS.has(field) &&
     (isEmpty(value) || value === "default" || value === DEFAULT_DEVICE)
   ) {
-    return DEFAULT_DEVICE;
+    return deviceLabel(DEFAULT_DEVICE, t);
+  }
+  // The chosen provider by the name its list shows, not by its id.
+  if (
+    field === "post_process_provider_id" &&
+    typeof value === "string" &&
+    value
+  ) {
+    const known = ctx.providers?.find((p) => p.id === value);
+    return providerName(known ?? { id: value, label: value }, t);
   }
   const option = optionLabel(ctx, field, value);
   if (option !== null) return option;

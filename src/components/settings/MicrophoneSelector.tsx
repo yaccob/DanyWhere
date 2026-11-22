@@ -2,7 +2,8 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { Dropdown } from "../ui/Dropdown";
 import { SettingContainer } from "../ui/SettingContainer";
-import { ResetButton } from "../ui/ResetButton";
+import { FactoryResetButton } from "../ui/FactoryResetButton";
+import { deviceLabel } from "@/lib/displayNames";
 import { useSettings } from "../../hooks/useSettings";
 
 interface MicrophoneSelectorProps {
@@ -39,7 +40,7 @@ export const MicrophoneDropdown: React.FC<{
 
   const microphoneOptions = audioDevices.map((device) => ({
     value: device.name,
-    label: device.name,
+    label: deviceLabel(device.name, t),
   }));
 
   return (
@@ -82,10 +83,8 @@ export const MicrophoneSelector: React.FC<MicrophoneSelectorProps> = React.memo(
       >
         <div className="flex items-center space-x-1">
           <MicrophoneDropdown />
-          <ResetButton
-            ariaLabel={t("common.resetSetting", {
-              setting: t("settings.sound.microphone.title"),
-            })}
+          <FactoryResetButton
+            setting={t("settings.sound.microphone.title")}
             onClick={handleReset}
             disabled={isUpdating("selected_microphone") || isLoading}
           />

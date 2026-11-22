@@ -664,7 +664,8 @@
       "volume": {
         "title": "Volume",
         "description": "Regola il volume del feedback audio"
-      }
+      },
+      "systemDefault": "Predefinito di sistema"
     },
     "advanced": {
       "groups": {
@@ -888,7 +889,8 @@
             "cloud": "Cloud",
             "localHint": "La post-elaborazione avviene su questo computer. Il testo delle tue dettature non lo lascia.",
             "cloudHint": "La post-elaborazione invia il testo di ogni dettatura a questo provider, fuori da questo computer."
-          }
+          },
+          "custom": "Provider personalizzato"
         },
         "apiFormat": {
           "title": "Formato API",
@@ -1179,7 +1181,8 @@
       },
       "soundTheme": {
         "label": "Tema Sonoro",
-        "description": "Scegli un tema sonoro per il feedback di inizio e fine registrazione"
+        "description": "Scegli un tema sonoro per il feedback di inizio e fine registrazione",
+        "preview": "Ascolta il tema sonoro (riproduce avvio, arresto e poi il suono che conclude una dettatura)"
       },
       "wordCorrectionThreshold": {
         "title": "Soglia di Correzione Parole",
@@ -1419,14 +1422,15 @@
   },
   "common": {
     "playbackPosition": "Posizione di riproduzione",
-    "resetSetting": "Ripristina il valore predefinito di {{setting}}",
+    "resetSetting": "Ripristina l'impostazione di fabbrica di {{setting}}",
     "loading": "Caricamento...",
     "delete": "Elimina",
     "close": "Chiudi",
     "open": "Apri",
     "copy": "Copia",
     "clear": "Svuota",
-    "noOptionsFound": "Nessuna opzione trovata"
+    "noOptionsFound": "Nessuna opzione trovata",
+    "moreInformation": "Ulteriori informazioni"
   },
   "errors": {
     "loadDirectory": "Errore di caricamento cartella: {{error}}",
@@ -1496,7 +1500,8 @@
     "readyNoShortcut": "Pronto – inseriscilo dal menu Servizi",
     "notReady": "Non ancora pronto",
     "wordList": "Elenco di parole: {{name}}",
-    "wordListGlobalOnly": "Nessun elenco aggiuntivo"
+    "wordListGlobalOnly": "Nessun elenco aggiuntivo",
+    "cancel": "Annulla"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} potrebbe bloccare 1 scorciatoia",

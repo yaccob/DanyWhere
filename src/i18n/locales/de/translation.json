@@ -664,7 +664,8 @@
       "volume": {
         "title": "Lautstärke",
         "description": "Lautstärke der Audio-Feedback-Töne anpassen"
-      }
+      },
+      "systemDefault": "Systemstandard"
     },
     "advanced": {
       "groups": {
@@ -888,7 +889,8 @@
             "cloud": "Cloud",
             "localHint": "Die Nachbearbeitung läuft auf diesem Computer. Der Text deiner Diktate verlässt ihn nicht.",
             "cloudHint": "Die Nachbearbeitung schickt den Text jedes Diktats an diesen Anbieter, außerhalb dieses Computers."
-          }
+          },
+          "custom": "Eigener Anbieter"
         },
         "apiFormat": {
           "title": "API-Format",
@@ -1179,7 +1181,8 @@
       },
       "soundTheme": {
         "label": "Sound-Thema",
-        "description": "Sound-Thema für Aufnahme-Start und -Stop-Feedback auswählen"
+        "description": "Sound-Thema für Aufnahme-Start und -Stop-Feedback auswählen",
+        "preview": "Sound-Thema anhören (spielt Start, Stopp und dann den Ton, der ein Diktat beendet)"
       },
       "wordCorrectionThreshold": {
         "title": "Wortkorrektur-Schwelle",
@@ -1419,14 +1422,15 @@
   },
   "common": {
     "playbackPosition": "Wiedergabeposition",
-    "resetSetting": "{{setting}} auf den Standardwert zurücksetzen",
+    "resetSetting": "{{setting}} auf die Werkseinstellung zurücksetzen",
     "loading": "Wird geladen...",
     "delete": "Löschen",
     "close": "Schließen",
     "open": "Öffnen",
     "copy": "Kopieren",
     "clear": "Leeren",
-    "noOptionsFound": "Keine Optionen gefunden"
+    "noOptionsFound": "Keine Optionen gefunden",
+    "moreInformation": "Weitere Informationen"
   },
   "errors": {
     "loadDirectory": "Fehler beim Laden des Verzeichnisses: {{error}}",
@@ -1496,7 +1500,8 @@
     "readyNoShortcut": "Bereit – über das Dienste-Menü einfügen",
     "notReady": "Noch nicht fertig",
     "wordList": "Wortliste: {{name}}",
-    "wordListGlobalOnly": "Keine zusätzliche Liste"
+    "wordListGlobalOnly": "Keine zusätzliche Liste",
+    "cancel": "Abbrechen"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} blockiert möglicherweise 1 Tastenkürzel",

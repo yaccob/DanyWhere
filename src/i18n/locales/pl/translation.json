@@ -664,7 +664,8 @@
       "volume": {
         "title": "Głośność",
         "description": "Dostosuj głośność dźwięków informacyjnych"
-      }
+      },
+      "systemDefault": "Domyślne systemowe"
     },
     "advanced": {
       "groups": {
@@ -888,7 +889,8 @@
             "cloud": "Chmura",
             "localHint": "Przetwarzanie końcowe odbywa się na tym komputerze. Tekst dyktowania go nie opuszcza.",
             "cloudHint": "Przetwarzanie końcowe wysyła tekst każdego dyktowania do tego dostawcy, poza ten komputer."
-          }
+          },
+          "custom": "Własny dostawca"
         },
         "apiFormat": {
           "title": "Format API",
@@ -1179,7 +1181,8 @@
       },
       "soundTheme": {
         "label": "Motyw dźwiękowy",
-        "description": "Wybierz motyw dźwiękowy dla informacji o rozpoczęciu i zakończeniu nagrywania"
+        "description": "Wybierz motyw dźwiękowy dla informacji o rozpoczęciu i zakończeniu nagrywania",
+        "preview": "Odsłuchaj motyw dźwiękowy (start, stop, a potem dźwięk kończący dyktowanie)"
       },
       "wordCorrectionThreshold": {
         "title": "Próg korekty słów",
@@ -1419,14 +1422,15 @@
   },
   "common": {
     "playbackPosition": "Pozycja odtwarzania",
-    "resetSetting": "Przywróć wartość domyślną: {{setting}}",
+    "resetSetting": "Przywróć ustawienie fabryczne: {{setting}}",
     "loading": "Wczytywanie...",
     "delete": "Usuń",
     "close": "Zamknij",
     "open": "Otwórz",
     "copy": "Kopiuj",
     "clear": "Wyczyść",
-    "noOptionsFound": "Nie znaleziono opcji"
+    "noOptionsFound": "Nie znaleziono opcji",
+    "moreInformation": "Więcej informacji"
   },
   "errors": {
     "loadDirectory": "Błąd wczytywania katalogu: {{error}}",
@@ -1496,7 +1500,8 @@
     "readyNoShortcut": "Gotowe – wstaw z menu Usługi",
     "notReady": "Jeszcze niegotowe",
     "wordList": "Lista słów: {{name}}",
-    "wordListGlobalOnly": "Bez dodatkowej listy"
+    "wordListGlobalOnly": "Bez dodatkowej listy",
+    "cancel": "Anuluj"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} może blokować 1 skrót",

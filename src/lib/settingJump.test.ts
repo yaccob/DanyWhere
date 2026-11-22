@@ -11,6 +11,7 @@ import {
   isJumpTarget,
   jumpTarget,
   jumpWaits,
+  openInTarget,
   scrollBehavior,
   scrollBlock,
   takesJump,
@@ -122,6 +123,103 @@ check("another provider's entry is not the shown provider's", () =>
     false,
   ),
 );
+
+// --- "Open in …" under a default (qa 2026-11-22_1638) -----------------------
+// The row of a deviating profile under a default jumps to the same setting
+// in that profile: the wrapper of the same fields (and entry) there.
+check("Open in … of one field targets that field", () =>
+  assert.deepEqual(openInTarget("work", ["selected_model"], undefined, []), {
+    profileId: "work",
+    field: "selected_model",
+  }),
+);
+check("Open in … of an entry targets that entry", () =>
+  assert.deepEqual(
+    openInTarget("work", ["post_process_models"], "anthropic", [
+      "post_process_models",
+    ]),
+    { profileId: "work", field: "post_process_models", entry: "anthropic" },
+  ),
+);
+check("Open in … of several fields targets the profile's own one", () =>
+  assert.deepEqual(
+    openInTarget("work", ["paste_method", "external_script_path"], undefined, [
+      "external_script_path",
+    ]),
+    { profileId: "work", field: "external_script_path" },
+  ),
+);
+check("Open in … of several fields without an own one takes the first", () =>
+  assert.deepEqual(
+    openInTarget(
+      "work",
+      ["paste_method", "external_script_path"],
+      undefined,
+      [],
+    ),
+    { profileId: "work", field: "paste_method" },
+  ),
+);
+const takenBySameWrapper = (
+  fields: readonly string[],
+  entry: string | undefined,
+  own: readonly string[],
+) => {
+  const target = openInTarget("work", fields, entry, own);
+  return target !== null && isJumpTarget(target, "work", fields, entry);
+};
+check("the profile's wrapper of the same field takes it", () =>
+  assert.equal(takenBySameWrapper(["selected_model"], undefined, []), true),
+);
+check("the profile's wrapper of the active prompts takes it", () =>
+  assert.equal(
+    takenBySameWrapper(["post_process_prompt_order"], undefined, [
+      "post_process_prompt_order",
+    ]),
+    true,
+  ),
+);
+check("the profile's wrapper of the whole list takes it", () =>
+  assert.equal(takenBySameWrapper(["end_keys"], undefined, ["end_keys"]), true),
+);
+check("the profile's wrapper of the same entry takes it", () =>
+  assert.equal(
+    takenBySameWrapper(["post_process_api_keys"], "openai", [
+      "post_process_api_keys",
+    ]),
+    true,
+  ),
+);
+check("the profile's wrapper of several fields takes it", () =>
+  assert.equal(
+    takenBySameWrapper(
+      ["filler_word_removal_enabled", "custom_filler_words"],
+      undefined,
+      ["custom_filler_words"],
+    ),
+    true,
+  ),
+);
+// The provider's settings show the profile's selected provider only: one
+// that selects another provider has no wrapper of this entry, so the page
+// just opens, as before.
+check("Open in … of an entry isn't taken by another entry's wrapper", () => {
+  const target = openInTarget("work", ["post_process_models"], "anthropic", [
+    "post_process_models",
+  ]);
+  assert.equal(
+    target !== null &&
+      isJumpTarget(target, "work", ["post_process_models"], "openai"),
+    false,
+  );
+});
+check("Open in … isn't taken by another profile's wrapper", () => {
+  const target = openInTarget("work", ["selected_model"], undefined, []);
+  assert.equal(
+    target !== null && isJumpTarget(target, "home", ["selected_model"]),
+    false,
+  );
+});
 
 // --- when a wrapper takes the jump ----------------------------------------
 const pending = (requestedAt: number): PendingJump => ({

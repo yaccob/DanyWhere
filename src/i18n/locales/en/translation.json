@@ -664,7 +664,8 @@
       "volume": {
         "title": "Volume",
         "description": "Adjust the volume of audio feedback sounds"
-      }
+      },
+      "systemDefault": "System default"
     },
     "advanced": {
       "groups": {
@@ -888,7 +889,8 @@
             "cloud": "Cloud",
             "localHint": "Post-processing runs on this computer. The text of your dictations doesn't leave it.",
             "cloudHint": "Post-processing sends the text of each dictation to this provider, outside this computer."
-          }
+          },
+          "custom": "Custom"
         },
         "apiFormat": {
           "title": "API Format",
@@ -1179,7 +1181,8 @@
       },
       "soundTheme": {
         "label": "Sound Theme",
-        "description": "Choose a sound theme for recording start and stop feedback"
+        "description": "Choose a sound theme for recording start and stop feedback",
+        "preview": "Preview sound theme (plays start, stop, then the sound that ends a dictation)"
       },
       "wordCorrectionThreshold": {
         "title": "Word Correction Threshold",
@@ -1419,14 +1422,15 @@
   },
   "common": {
     "playbackPosition": "Playback position",
-    "resetSetting": "Reset {{setting}} to default",
+    "resetSetting": "Reset {{setting}} to the factory setting",
     "loading": "Loading...",
     "delete": "Delete",
     "close": "Close",
     "open": "Open",
     "copy": "Copy",
     "clear": "Clear",
-    "noOptionsFound": "No options found"
+    "noOptionsFound": "No options found",
+    "moreInformation": "More information"
   },
   "errors": {
     "loadDirectory": "Error loading directory: {{error}}",
@@ -1496,7 +1500,8 @@
     "readyNoShortcut": "Ready – insert it from the Services menu",
     "notReady": "Not ready yet",
     "wordList": "Word list: {{name}}",
-    "wordListGlobalOnly": "No additional list"
+    "wordListGlobalOnly": "No additional list",
+    "cancel": "Cancel"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} may be blocking 1 shortcut",
