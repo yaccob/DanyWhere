@@ -8,6 +8,7 @@ import i18n from "i18next";
 import { commands, type JsonValue } from "@/bindings";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { notify } from "@/stores/noticeStore";
+import { shortcutRefusalText } from "@/lib/shortcutRefusal";
 import {
   becomesOwn,
   patchScope,
@@ -118,10 +119,24 @@ export const writeEntry = (
   field: string,
   entryId: string,
   entry: unknown,
+  describe?: Describe,
 ) =>
-  write(scope, field, entryId, () =>
-    commands.setProfileEntry(scope, field, entryId, json(entry)),
+  write(
+    scope,
+    field,
+    entryId,
+    () => commands.setProfileEntry(scope, field, entryId, json(entry)),
+    describe,
   );
+
+/** DanyWhere: a refusal for a shortcut's combination as its sentence
+ * (`shortcutRefusalText`); any other keeps the generic title. */
+export const describeShortcutRefusal: Describe = (error) =>
+  shortcutRefusalText(error, (key, options) => i18n.t(key, options));
+
+/** Thrown by a scoped write whose refusal the notice already told, so the
+ * caller rolls back without telling it again. */
+export class RefusalShown extends Error {}
 
 /** Removes entry `entryId` from the defaults, or switches it off in a
  * profile (P10). */

@@ -9,6 +9,8 @@ import {
 // DanyWhere: the page's scope, the defaults or one profile (strand E2).
 import { useSettingsScope } from "@/components/settings/profiles/scope/SettingsScope";
 import {
+  RefusalShown,
+  describeShortcutRefusal,
   removeEntry,
   writeEntry,
   writeValue,
@@ -189,19 +191,26 @@ export const useSettings = (): UseSettingsReturn => {
       if (value !== undefined) await updateSetting(key, value);
     },
     updateBinding: async (id, binding) => {
-      const saved = await writeEntry(scope, "bindings", id, {
-        ...bindingOf(id),
-        current_binding: binding,
-      });
-      // The shortcut field rolls back on a throw, as with Handy's command.
-      if (!saved) throw new Error(`Shortcut ${id} not saved`);
+      const saved = await writeEntry(
+        scope,
+        "bindings",
+        id,
+        { ...bindingOf(id), current_binding: binding },
+        describeShortcutRefusal,
+      );
+      // The shortcut field rolls back on a throw, as with Handy's command;
+      // the notice already said why.
+      if (!saved) throw new RefusalShown(`Shortcut ${id} not saved`);
     },
     resetBinding: async (id) => {
       const current = bindingOf(id);
-      await writeEntry(scope, "bindings", id, {
-        ...current,
-        current_binding: current.default_binding,
-      });
+      await writeEntry(
+        scope,
+        "bindings",
+        id,
+        { ...current, current_binding: current.default_binding },
+        describeShortcutRefusal,
+      );
     },
     setPostProcessProvider: async (providerId) => {
       forgetModelOptions(providerId);
