@@ -482,6 +482,83 @@ check("no locale shows a key instead of these texts", () => {
   assert.deepEqual(raw, []);
 });
 
+// ---- qa 2026-11-22_1637, error B: stored names never show -----------------
+// "Limit to my languages" stores "always" or "when_needed" behind a switch;
+// the page Profile showed "when_needed".
+check("language detection shows as its switch does", () => {
+  assert.equal(
+    valueLabel(de, "language_detection", "always"),
+    de.t("settings.profileView.value.on"),
+  );
+  assert.equal(
+    valueLabel(de, "language_detection", "when_needed"),
+    de.t("settings.profileView.value.off"),
+  );
+  assert.equal(
+    valueLabel(en, "language_detection", "when_needed"),
+    en.t("settings.profileView.value.off"),
+  );
+});
+
+/** The profile fields stored as one of a few names, with those names, as
+ * the generated bindings declare them (so a new choice is checked too). */
+const choiceFields = (): [string, string[]][] => {
+  const bindings = readFileSync(
+    new URL("../bindings.ts", import.meta.url),
+    "utf8",
+  );
+  const uncommented = bindings.replace(/\/\*[\s\S]*?\*\//g, "");
+  const start = uncommented.indexOf("export type ProfileValues = {");
+  const end = uncommented.indexOf("\nexport ", start + 1);
+  const fields = [
+    ...uncommented.slice(start, end).matchAll(/(\w+): ([A-Z]\w*)(?=;|\s*\})/g),
+  ];
+  return fields.flatMap(([, field, type]): [string, string[]][] => {
+    const at = uncommented.indexOf(`export type ${type} =`);
+    if (at < 0) return [];
+    const until = uncommented.indexOf("\nexport ", at + 1);
+    const union = uncommented.slice(at, until < 0 ? undefined : until);
+    const names = [...union.matchAll(/"(\w+)"/g)].map((m) => m[1]);
+    return names.length > 0 && !union.includes("{") ? [[field, names]] : [];
+  });
+};
+
+check("the bindings give the choice fields this test walks", () => {
+  const fields = new Map(choiceFields());
+  assert.deepEqual(fields.get("language_detection"), ["when_needed", "always"]);
+  assert.ok(fields.has("paste_method"), "paste_method is one");
+  assert.ok(fields.size >= 9, `only ${fields.size} found`);
+});
+
+// The typing tool's control lists the tools by their command names, as
+// stored ("wtype"); every other choice has a label of its own.
+const SHOWN_AS_STORED = new Set(["typing_tool"]);
+
+check("the sound themes are called as their list calls them", () => {
+  assert.equal(valueLabel(de, "sound_theme", "marimba"), "Marimba");
+  assert.equal(valueLabel(en, "sound_theme", "pop"), "Pop");
+});
+
+check("no choice of a profile setting shows its stored name", () => {
+  const raw: string[] = [];
+  for (const lng of ["de", "en"]) {
+    const ctx = contextFor(lng);
+    for (const [field, values] of choiceFields()) {
+      for (const value of values) {
+        const label = valueLabel(ctx, field, value);
+        if (
+          label.includes("_") ||
+          label.startsWith("settings.") ||
+          (label === value && !SHOWN_AS_STORED.has(field))
+        ) {
+          raw.push(`${lng} ${field}=${value}: ${label}`);
+        }
+      }
+    }
+  }
+  assert.deepEqual(raw, []);
+});
+
 if (failures.length > 0) {
   console.error(`${failures.length} of ${total} checks failed:`);
   for (const failure of failures) console.error(`  - ${failure}`);

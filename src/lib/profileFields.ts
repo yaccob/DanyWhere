@@ -11,6 +11,7 @@
 import type { ProfileValues } from "@/bindings";
 import type { DefaultsPage } from "./navigation";
 import type { OwnValue } from "./profileScope";
+import { SOUND_THEME_NAMES } from "./soundThemeNames";
 
 export type ProfileFieldName = keyof ProfileValues;
 
@@ -38,6 +39,12 @@ export interface ProfileFieldInfo {
   large?: boolean;
   /** Entries on another page than the field's, by entry id. */
   entryPages?: Readonly<Record<string, DefaultsPage>>;
+  /** A string kept behind a switch: the stored value that turns it on;
+   * any other shows as off, as the switch does (qa 2026-11-22_1731). */
+  switchOn?: string;
+  /** Choices whose control shows a fixed name rather than a translation,
+   * by stored value. */
+  names?: Readonly<Record<string, string>>;
 }
 
 const FIELDS = "settings.profileView.fields";
@@ -224,12 +231,18 @@ export const PROFILE_FIELDS = {
   language_detection: {
     page: "advanced",
     label: "settings.advanced.languageDetection.title",
+    // LanguageDetection.tsx: on is "always", off "when_needed".
+    switchOn: "always",
   },
   language_detection_window_secs: {
     page: "advanced",
     label: "settings.debug.languageDetectionWindow.title",
   },
-  sound_theme: { page: "advanced", label: "settings.debug.soundTheme.label" },
+  sound_theme: {
+    page: "advanced",
+    label: "settings.debug.soundTheme.label",
+    names: SOUND_THEME_NAMES,
+  },
   always_on_microphone: {
     page: "advanced",
     label: "settings.debug.alwaysOnMicrophone.label",
