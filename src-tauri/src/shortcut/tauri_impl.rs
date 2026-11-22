@@ -30,17 +30,17 @@ impl ShortcutBackend for TauriBackend {
     }
 
     fn register(&self, binding: &ShortcutBinding) -> Result<(), String> {
-        register_shortcut(&self.app, binding.clone())
+        register_shortcut(&self.app, binding)
     }
 
     fn unregister(&self, binding: &ShortcutBinding) -> Result<(), String> {
-        unregister_shortcut(&self.app, binding.clone())
+        unregister_shortcut(&self.app, binding)
     }
 }
 
 /// Validate a shortcut string for the Tauri global-shortcut implementation.
 /// Tauri requires at least one non-modifier key and doesn't support the fn key.
-pub fn validate_shortcut(raw: &str) -> Result<(), String> {
+pub(super) fn validate_shortcut(raw: &str) -> Result<(), String> {
     if raw.trim().is_empty() {
         return Err("Shortcut cannot be empty".into());
     }
@@ -75,7 +75,7 @@ pub fn validate_shortcut(raw: &str) -> Result<(), String> {
 }
 
 /// Register a shortcut using Tauri's global-shortcut plugin
-pub fn register_shortcut(app: &AppHandle, binding: ShortcutBinding) -> Result<(), String> {
+fn register_shortcut(app: &AppHandle, binding: &ShortcutBinding) -> Result<(), String> {
     // Validate for Tauri requirements
     if let Err(e) = validate_shortcut(&binding.current_binding) {
         warn!(
@@ -141,7 +141,7 @@ pub fn register_shortcut(app: &AppHandle, binding: ShortcutBinding) -> Result<()
 }
 
 /// Unregister a shortcut from Tauri's global-shortcut plugin
-pub fn unregister_shortcut(app: &AppHandle, binding: ShortcutBinding) -> Result<(), String> {
+fn unregister_shortcut(app: &AppHandle, binding: &ShortcutBinding) -> Result<(), String> {
     let shortcut = match binding.current_binding.parse::<Shortcut>() {
         Ok(s) => s,
         Err(e) => {

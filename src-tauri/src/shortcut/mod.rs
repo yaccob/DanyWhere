@@ -8,6 +8,14 @@
 //!
 //! The active implementation is determined by the `keyboard_implementation`
 //! setting and can be changed at runtime.
+//!
+//! DanyWhere: each backend, and "None", implements
+//! `backend::ShortcutBackend`, and `backend::for_implementation` is the one
+//! place that picks one. Several shortcuts are registered through the one
+//! loop `backend::register_all`. Starting and switching the backend and the
+//! cancel shortcut run against `lifecycle::ShortcutHost`, the shortcuts that
+//! follow the profile through `profile_sync::Following`, so all of it is
+//! tested without the app.
 
 pub(crate) mod backend;
 mod handler;

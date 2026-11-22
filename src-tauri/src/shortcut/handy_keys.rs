@@ -403,11 +403,19 @@ impl ShortcutBackend for HandyKeysBackend {
     }
 
     fn register(&self, binding: &ShortcutBinding) -> Result<(), String> {
-        register_shortcut(&self.app, binding.clone())
+        let state = self
+            .app
+            .try_state::<HandyKeysState>()
+            .ok_or("HandyKeysState not initialized")?;
+        state.register(binding)
     }
 
     fn unregister(&self, binding: &ShortcutBinding) -> Result<(), String> {
-        unregister_shortcut(&self.app, binding.clone())
+        let state = self
+            .app
+            .try_state::<HandyKeysState>()
+            .ok_or("HandyKeysState not initialized")?;
+        state.unregister(binding)
     }
 }
 
@@ -442,7 +450,7 @@ fn modifiers_to_strings(modifiers: handy_keys::Modifiers) -> Vec<String> {
 
 /// Validate a shortcut string for the HandyKeys implementation.
 /// HandyKeys is more permissive: allows modifier-only combos and the fn key.
-pub fn validate_shortcut(raw: &str) -> Result<(), String> {
+pub(super) fn validate_shortcut(raw: &str) -> Result<(), String> {
     if raw.trim().is_empty() {
         return Err("Shortcut cannot be empty".into());
     }
@@ -465,22 +473,6 @@ pub(super) fn start(
     app.manage(state);
     info!("handy-keys shortcuts initialized");
     Ok(())
-}
-
-/// Register a shortcut
-pub fn register_shortcut(app: &AppHandle, binding: ShortcutBinding) -> Result<(), String> {
-    let state = app
-        .try_state::<HandyKeysState>()
-        .ok_or("HandyKeysState not initialized")?;
-    state.register(&binding)
-}
-
-/// Unregister a shortcut
-pub fn unregister_shortcut(app: &AppHandle, binding: ShortcutBinding) -> Result<(), String> {
-    let state = app
-        .try_state::<HandyKeysState>()
-        .ok_or("HandyKeysState not initialized")?;
-    state.unregister(&binding)
 }
 
 /// Start key recording mode
