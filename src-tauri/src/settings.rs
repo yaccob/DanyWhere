@@ -1760,6 +1760,13 @@ fn apply_settings_migrations(
         updated = true;
     }
 
+    // DanyWhere: key combinations recorded with one side of a modifier
+    // (`ctrl_left+space`) fire with either side; on every read, as it also
+    // covers profiles imported since.
+    if crate::key_sides::migrate(settings) {
+        updated = true;
+    }
+
     updated
 }
 
@@ -2387,6 +2394,49 @@ mod tests {
             crate::profiles::default_values(&settings).end_keys[1].append_text,
             r"\s{Ctrl+Enter}"
         );
+    }
+
+    /// DanyWhere: a combination recorded with one side (`ctrl_left+space`)
+    /// loses it when the store is read, in the flat values, the defaults and
+    /// every profile (`key_sides::migrate`); modifiers alone keep theirs, and
+    /// the defaults and the profiles stay coupled.
+    #[test]
+    fn reading_the_store_takes_the_sides_off_key_combinations() {
+        let mut settings = get_default_settings();
+        settings
+            .bindings
+            .get_mut("transcribe")
+            .unwrap()
+            .current_binding = "ctrl_left+space".to_string();
+        settings
+            .bindings
+            .get_mut("copy_last_transcript")
+            .unwrap()
+            .current_binding = "option_right".to_string();
+        crate::profiles::ensure_profiles(&mut settings);
+        let work = crate::profiles::profile_for_test(&settings, "work", "Work", |_| {});
+        settings.profiles.push(work);
+        let raw = serde_json::to_value(&settings).expect("serializes");
+        let mut settings: AppSettings = serde_json::from_value(raw.clone()).expect("parses");
+        assert!(apply_settings_migrations(&mut settings, &raw));
+        let defaults = settings.default_values.clone().expect("defaults");
+        for bindings in [
+            &settings.bindings,
+            &defaults.bindings,
+            &settings.profiles[0].values.bindings,
+        ] {
+            assert_eq!(bindings["transcribe"].current_binding, "ctrl+space");
+            assert_eq!(
+                bindings["copy_last_transcript"].current_binding,
+                "option_right"
+            );
+        }
+        assert!(
+            !crate::profiles::ensure_profiles(&mut settings),
+            "nothing to route"
+        );
+        let raw = serde_json::to_value(&settings).expect("serializes");
+        assert!(!apply_settings_migrations(&mut settings, &raw), "once");
     }
 
     /// DanyWhere: a store written on another system (or by hand) gets this

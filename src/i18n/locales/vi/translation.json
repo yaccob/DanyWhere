@@ -341,6 +341,38 @@
     "downloadSpeed": "{{speed}} MB/s",
     "lockedWhileTranscribing": "Bạn có thể đổi mô hình sau khi việc chép lời trong Lịch sử hoàn tất."
   },
+  "keyNames": {
+    "ctrl": "Ctrl",
+    "shift": "Shift",
+    "space": "Phím cách",
+    "enter": "Enter",
+    "backspace": "Backspace",
+    "delete": "Delete",
+    "insert": "Insert",
+    "home": "Home",
+    "end": "End",
+    "pageUp": "Page Up",
+    "pageDown": "Page Down",
+    "capsLock": "Caps Lock",
+    "numLock": "Num Lock",
+    "scrollLock": "Scroll Lock",
+    "printScreen": "Print Screen",
+    "pause": "Pause",
+    "menu": "Menu",
+    "keypad": "Bàn phím số {{key}}",
+    "playPause": "Phát/Tạm dừng",
+    "stop": "Dừng",
+    "previousTrack": "Bài trước",
+    "nextTrack": "Bài tiếp theo",
+    "mouseLeft": "Chuột trái",
+    "mouseRight": "Chuột phải",
+    "mouseMiddle": "Chuột giữa",
+    "mouseBack": "Nút chuột 4",
+    "mouseForward": "Nút chuột 5",
+    "dictation": "Đọc chính tả",
+    "left": "{{key}} trái",
+    "right": "{{key}} phải"
+  },
   "settings": {
     "modelSettings": {
       "title": "Cài đặt {{model}}"
@@ -700,7 +732,7 @@
         "description": "Cách một bản đọc chính tả đã xong đến được ứng dụng phía trước. Bảng nhớ tạm (Ctrl+V): Handy đặt văn bản vào bảng nhớ tạm và nhấn Ctrl+V giúp bạn; Ctrl+Shift+V và Shift+Insert làm điều tương tự bằng các phím đó, ví dụ cho terminal. Trực tiếp: gõ văn bản qua đầu vào hệ thống. Script bên ngoài (chỉ Linux): chuyển văn bản cho script của bạn. Không có: Handy không chèn gì; văn bản nằm trong lịch sử và, tùy theo Xử lý Clipboard, trong bảng nhớ tạm. Dán bản chép gần nhất cũng chèn theo cách đó; với Không có, nó đặt văn bản vào bảng nhớ tạm.",
         "descriptionMacos": "Cách một bản đọc chính tả đã xong đến được ứng dụng phía trước. Bảng nhớ tạm (Cmd+V): Handy đặt văn bản vào bảng nhớ tạm và nhấn ⌘V giúp bạn; việc này cần Trợ năng. Không có: Handy không chèn gì; văn bản nằm trong lịch sử và, tùy theo Xử lý Clipboard, trong bảng nhớ tạm. Dán bản chép gần nhất cũng chèn theo cách đó; với Không có, nó đặt văn bản vào bảng nhớ tạm. Khi không có Trợ năng, thay vào đó một dịch vụ của macOS sẽ chèn bản đọc.",
         "options": {
-          "clipboard": "Bảng nhớ tạm ({{modifier}}+V)",
+          "clipboard": "Bảng nhớ tạm ({{keys}})",
           "clipboardCtrlShiftV": "Bảng nhớ tạm (Ctrl+Shift+V)",
           "clipboardShiftInsert": "Bảng nhớ tạm (Shift+Insert)",
           "direct": "Trực tiếp",

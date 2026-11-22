@@ -26,6 +26,7 @@ mod history_search;
 mod history_box;
 mod input;
 mod insert_service;
+mod key_sides;
 mod language_detection;
 mod languages;
 mod llm_client;

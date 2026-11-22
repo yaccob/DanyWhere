@@ -341,6 +341,38 @@
     "downloadSpeed": "{{speed}} MB/s",
     "lockedWhileTranscribing": "Potrai cambiare modello al termine della trascrizione nella Cronologia."
   },
+  "keyNames": {
+    "ctrl": "Ctrl",
+    "shift": "Maiusc",
+    "space": "Spazio",
+    "enter": "Invio",
+    "backspace": "Backspace",
+    "delete": "Canc",
+    "insert": "Ins",
+    "home": "Home",
+    "end": "Fine",
+    "pageUp": "Pag su",
+    "pageDown": "Pag giù",
+    "capsLock": "Bloc Maiusc",
+    "numLock": "Bloc Num",
+    "scrollLock": "Bloc Scorr",
+    "printScreen": "Stamp",
+    "pause": "Pausa",
+    "menu": "Menu",
+    "keypad": "Tastierino {{key}}",
+    "playPause": "Riproduci/Pausa",
+    "stop": "Stop",
+    "previousTrack": "Traccia precedente",
+    "nextTrack": "Traccia successiva",
+    "mouseLeft": "Tasto sinistro del mouse",
+    "mouseRight": "Tasto destro del mouse",
+    "mouseMiddle": "Tasto centrale del mouse",
+    "mouseBack": "Tasto 4 del mouse",
+    "mouseForward": "Tasto 5 del mouse",
+    "dictation": "Dettatura",
+    "left": "{{key}} sinistro",
+    "right": "{{key}} destro"
+  },
   "settings": {
     "modelSettings": {
       "title": "Impostazioni di {{model}}"
@@ -700,7 +732,7 @@
         "description": "Come una dettatura finita arriva nell'app in primo piano. Appunti (Ctrl+V): Handy mette il testo negli appunti e preme Ctrl+V per te; Ctrl+Shift+V e Shift+Insert fanno lo stesso con questi tasti, ad esempio per i terminali. Diretto: digita il testo tramite l'input di sistema. Script esterno (solo Linux): passa il testo al tuo script. Nessuno: Handy non inserisce nulla; il testo è nella cronologia e, secondo «Gestione Appunti», negli appunti. «Incolla l'ultima trascrizione» inserisce allo stesso modo; con «Nessuno» mette il testo negli appunti.",
         "descriptionMacos": "Come una dettatura finita arriva nell'app in primo piano. Appunti (Cmd+V): Handy mette il testo negli appunti e preme ⌘V per te; serve l'Accessibilità. Nessuno: Handy non inserisce nulla; il testo è nella cronologia e, secondo «Gestione Appunti», negli appunti. «Incolla l'ultima trascrizione» inserisce allo stesso modo; con «Nessuno» mette il testo negli appunti. Senza Accessibilità, al suo posto un servizio di macOS inserisce la dettatura.",
         "options": {
-          "clipboard": "Appunti ({{modifier}}+V)",
+          "clipboard": "Appunti ({{keys}})",
           "clipboardCtrlShiftV": "Appunti (Ctrl+Shift+V)",
           "clipboardShiftInsert": "Appunti (Shift+Insert)",
           "direct": "Diretto",

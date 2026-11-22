@@ -341,6 +341,38 @@
     "downloadSpeed": "{{speed}} MB/s",
     "lockedWhileTranscribing": "Model będzie można zmienić po zakończeniu transkrypcji w Historii."
   },
+  "keyNames": {
+    "ctrl": "Ctrl",
+    "shift": "Shift",
+    "space": "Spacja",
+    "enter": "Enter",
+    "backspace": "Backspace",
+    "delete": "Delete",
+    "insert": "Insert",
+    "home": "Home",
+    "end": "End",
+    "pageUp": "Page Up",
+    "pageDown": "Page Down",
+    "capsLock": "Caps Lock",
+    "numLock": "Num Lock",
+    "scrollLock": "Scroll Lock",
+    "printScreen": "Print Screen",
+    "pause": "Pause",
+    "menu": "Menu",
+    "keypad": "Klawiatura numeryczna {{key}}",
+    "playPause": "Odtwórz/wstrzymaj",
+    "stop": "Zatrzymaj",
+    "previousTrack": "Poprzedni utwór",
+    "nextTrack": "Następny utwór",
+    "mouseLeft": "Lewy przycisk myszy",
+    "mouseRight": "Prawy przycisk myszy",
+    "mouseMiddle": "Środkowy przycisk myszy",
+    "mouseBack": "Przycisk myszy 4",
+    "mouseForward": "Przycisk myszy 5",
+    "dictation": "Dyktowanie",
+    "left": "lewy {{key}}",
+    "right": "prawy {{key}}"
+  },
   "settings": {
     "modelSettings": {
       "title": "Ustawienia {{model}}"
@@ -700,7 +732,7 @@
         "description": "Jak gotowe dyktowanie trafia do aplikacji na pierwszym planie. Schowek (Ctrl+V): Handy umieszcza tekst w schowku i naciska za Ciebie Ctrl+V; Ctrl+Shift+V i Shift+Insert robią to samo tymi klawiszami, np. dla terminali. Bezpośrednio: wpisuje tekst przez wejście systemowe. Skrypt zewnętrzny (tylko Linux): przekazuje tekst do Twojego skryptu. Brak: Handy niczego nie wstawia; tekst jest w historii i, zależnie od ustawienia „Obsługa schowka”, w schowku. „Wklej ostatnią transkrypcję” wstawia w ten sam sposób; przy „Brak” umieszcza tekst w schowku.",
         "descriptionMacos": "Jak gotowe dyktowanie trafia do aplikacji na pierwszym planie. Schowek (Cmd+V): Handy umieszcza tekst w schowku i naciska za Ciebie ⌘V; wymaga to dostępności. Brak: Handy niczego nie wstawia; tekst jest w historii i, zależnie od ustawienia „Obsługa schowka”, w schowku. „Wklej ostatnią transkrypcję” wstawia w ten sam sposób; przy „Brak” umieszcza tekst w schowku. Bez dostępności zamiast tego dyktowanie wstawia usługa macOS.",
         "options": {
-          "clipboard": "Schowek ({{modifier}}+V)",
+          "clipboard": "Schowek ({{keys}})",
           "clipboardCtrlShiftV": "Schowek (Ctrl+Shift+V)",
           "clipboardShiftInsert": "Schowek (Shift+Insert)",
           "direct": "Bezpośrednio",

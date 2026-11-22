@@ -7,6 +7,11 @@ import { useSettings } from "../../hooks/useSettings";
 import { useOsType } from "../../hooks/useOsType";
 import type { PasteMethod } from "@/bindings";
 import { pasteMethodDescriptionKey } from "@/lib/pasteMethodDescription";
+import {
+  clipboardPasteKeys,
+  formatKeyCombination,
+  type OSType,
+} from "@/lib/utils/keyboard";
 
 interface PasteMethodProps {
   descriptionMode?: "inline" | "tooltip";
@@ -23,13 +28,18 @@ export const PasteMethodSetting: React.FC<PasteMethodProps> = React.memo(
       "ctrl_v") as PasteMethod;
 
     const getPasteMethodOptions = (osType: string) => {
-      const mod = osType === "macos" ? "Cmd" : "Ctrl";
+      // DanyWhere: the keys as the shortcuts show them ("⌘V", "Strg+V").
+      const keys = formatKeyCombination(
+        clipboardPasteKeys(osType as OSType),
+        osType as OSType,
+        t,
+      );
 
       const options: DropdownOption[] = [
         {
           value: "ctrl_v",
           label: t("settings.advanced.pasteMethod.options.clipboard", {
-            modifier: mod,
+            keys,
           }),
         },
       ];

@@ -341,6 +341,38 @@
     "downloadSpeed": "{{speed}} MB/s",
     "lockedWhileTranscribing": "Je kunt van model wisselen zodra het transcriberen in Geschiedenis klaar is."
   },
+  "keyNames": {
+    "ctrl": "Ctrl",
+    "shift": "Shift",
+    "space": "Spatie",
+    "enter": "Enter",
+    "backspace": "Backspace",
+    "delete": "Delete",
+    "insert": "Insert",
+    "home": "Home",
+    "end": "End",
+    "pageUp": "Page Up",
+    "pageDown": "Page Down",
+    "capsLock": "Caps Lock",
+    "numLock": "Num Lock",
+    "scrollLock": "Scroll Lock",
+    "printScreen": "Print Screen",
+    "pause": "Pause",
+    "menu": "Menu",
+    "keypad": "Numeriek {{key}}",
+    "playPause": "Afspelen/pauzeren",
+    "stop": "Stoppen",
+    "previousTrack": "Vorig nummer",
+    "nextTrack": "Volgend nummer",
+    "mouseLeft": "Linkermuisknop",
+    "mouseRight": "Rechtermuisknop",
+    "mouseMiddle": "Middelste muisknop",
+    "mouseBack": "Muisknop 4",
+    "mouseForward": "Muisknop 5",
+    "dictation": "Dicteren",
+    "left": "linker {{key}}",
+    "right": "rechter {{key}}"
+  },
   "settings": {
     "modelSettings": {
       "title": "Instellingen voor {{model}}"
@@ -700,7 +732,7 @@
         "description": "Hoe een klaar dictaat in de app vooraan komt. 'Klembord (Ctrl+V)': Handy zet de tekst op het klembord en drukt Ctrl+V voor je; Ctrl+Shift+V en Shift+Insert doen hetzelfde met die toetsen, bijvoorbeeld voor terminals. 'Direct': typt de tekst via de systeeminvoer. 'Extern script' (alleen Linux): geeft de tekst door aan je script. 'Geen': Handy voegt niets in; de tekst staat in de geschiedenis en, afhankelijk van 'Klembordbeheer', op het klembord. 'Laatste transcriptie plakken' voegt op dezelfde manier in; bij 'Geen' zet het de tekst op het klembord.",
         "descriptionMacos": "Hoe een klaar dictaat in de app vooraan komt. 'Klembord (Cmd+V)': Handy zet de tekst op het klembord en drukt ⌘V voor je; daarvoor is Toegankelijkheid nodig. 'Geen': Handy voegt niets in; de tekst staat in de geschiedenis en, afhankelijk van 'Klembordbeheer', op het klembord. 'Laatste transcriptie plakken' voegt op dezelfde manier in; bij 'Geen' zet het de tekst op het klembord. Zonder Toegankelijkheid voegt in plaats daarvan een macOS-dienst het dictaat in.",
         "options": {
-          "clipboard": "Klembord ({{modifier}}+V)",
+          "clipboard": "Klembord ({{keys}})",
           "clipboardCtrlShiftV": "Klembord (Ctrl+Shift+V)",
           "clipboardShiftInsert": "Klembord (Shift+Insert)",
           "direct": "Direct",

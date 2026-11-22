@@ -204,10 +204,11 @@ pub fn bindings_to_register(end_keys: &[EndKey]) -> Vec<ShortcutBinding> {
 
 /// Checks a list of end shortcuts with the default ends that point into it:
 /// ids present and unique, a name for every entry but the built-in ones, no
-/// key combination twice, and every default end still in the list.
+/// key combination twice (two that one press fires both count as the same,
+/// `key_sides::same_press`), and every default end still in the list.
 pub fn validate(end_keys: &[EndKey], default_ends: &HashMap<String, String>) -> Result<(), String> {
     let mut ids = std::collections::HashSet::new();
-    let mut shortcuts = std::collections::HashSet::new();
+    let mut shortcuts: Vec<&str> = Vec::new();
     for end in end_keys {
         if end.id.trim().is_empty() {
             return Err("An end shortcut needs an id".to_string());
@@ -219,9 +220,16 @@ pub fn validate(end_keys: &[EndKey], default_ends: &HashMap<String, String>) -> 
             return Err(format!("end-key-needs-name:{}", end.id));
         }
         let shortcut = end.shortcut.trim();
-        if !shortcut.is_empty() && !shortcuts.insert(shortcut) {
+        if shortcut.is_empty() {
+            continue;
+        }
+        if shortcuts
+            .iter()
+            .any(|taken| crate::key_sides::same_press(taken, shortcut))
+        {
             return Err(format!("end-key-shortcut-twice:{shortcut}"));
         }
+        shortcuts.push(shortcut);
     }
     // In the order of the start shortcuts, so the error is always the same.
     for binding in START_BINDINGS {
@@ -423,8 +431,9 @@ pub fn prepare_import_on(file_text: &str, values: &mut ProfileValues, platform: 
 }
 
 /// Checks a key combination of an end shortcut against every other shortcut
-/// in `bindings`; the error names the one it collides with, as
-/// `change_binding` does (`conflict:<id>`).
+/// in `bindings` (one press firing both counts, `key_sides::same_press`);
+/// the error names the one it collides with, as `change_binding` does
+/// (`conflict:<id>`).
 pub fn check_against_bindings(
     shortcut: &str,
     bindings: &HashMap<String, ShortcutBinding>,
@@ -433,10 +442,8 @@ pub fn check_against_bindings(
     let mut ids: Vec<&String> = bindings.keys().collect();
     ids.sort();
     match ids.into_iter().find(|id| {
-        bindings[*id]
-            .current_binding
-            .trim()
-            .eq_ignore_ascii_case(shortcut)
+        let keys = bindings[*id].current_binding.trim();
+        !keys.is_empty() && crate::key_sides::same_press(keys, shortcut)
     }) {
         Some(id) => Err(format!("conflict:{id}")),
         None => Ok(()),
@@ -695,6 +702,37 @@ mod tests {
         let mut same_keys = keys.clone();
         same_keys.push(end("y", "Y", "ctrl+enter", "", false, false));
         assert!(validate(&same_keys, &ends).is_err(), "combination twice");
+    }
+
+    #[test]
+    fn a_combination_counts_twice_when_one_press_fires_both() {
+        let ends = default_ends();
+        let mut keys = builtin("", false);
+        keys.push(end("send", "Send", "ctrl+return", "", false, false));
+        keys.push(end("left", "Left", "ctrl_left+return", "", false, false));
+        assert_eq!(
+            validate(&keys, &ends).unwrap_err(),
+            "end-key-shortcut-twice:ctrl_left+return"
+        );
+        let mut apart = builtin("", false);
+        apart.push(end("left", "Left", "ctrl_left+return", "", false, false));
+        apart.push(end("right", "Right", "ctrl_right+return", "", false, false));
+        assert!(
+            validate(&apart, &ends).is_ok(),
+            "the left and the right Ctrl"
+        );
+    }
+
+    #[test]
+    fn a_shortcuts_keys_with_another_side_are_refused_too() {
+        let mut bindings = get_default_settings().bindings;
+        bindings.get_mut("transcribe").unwrap().current_binding = "ctrl+space".to_string();
+        assert_eq!(
+            check_against_bindings("ctrl_left+space", &bindings).unwrap_err(),
+            "conflict:transcribe"
+        );
+        bindings.get_mut("transcribe").unwrap().current_binding = "ctrl_right+x".to_string();
+        assert!(check_against_bindings("ctrl_left+x", &bindings).is_ok());
     }
 
     #[test]

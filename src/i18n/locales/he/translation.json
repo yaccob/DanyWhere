@@ -341,6 +341,38 @@
     "downloadSpeed": "{{speed}} MB/s",
     "lockedWhileTranscribing": "אפשר יהיה להחליף מודל אחרי שהתמלול בהיסטוריה יסתיים."
   },
+  "keyNames": {
+    "ctrl": "Ctrl",
+    "shift": "Shift",
+    "space": "רווח",
+    "enter": "Enter",
+    "backspace": "Backspace",
+    "delete": "Delete",
+    "insert": "Insert",
+    "home": "Home",
+    "end": "End",
+    "pageUp": "Page Up",
+    "pageDown": "Page Down",
+    "capsLock": "Caps Lock",
+    "numLock": "Num Lock",
+    "scrollLock": "Scroll Lock",
+    "printScreen": "Print Screen",
+    "pause": "Pause",
+    "menu": "תפריט",
+    "keypad": "מקלדת נומרית {{key}}",
+    "playPause": "הפעלה/השהיה",
+    "stop": "עצירה",
+    "previousTrack": "הרצועה הקודמת",
+    "nextTrack": "הרצועה הבאה",
+    "mouseLeft": "לחצן עכבר שמאלי",
+    "mouseRight": "לחצן עכבר ימני",
+    "mouseMiddle": "לחצן עכבר אמצעי",
+    "mouseBack": "לחצן עכבר 4",
+    "mouseForward": "לחצן עכבר 5",
+    "dictation": "הכתבה",
+    "left": "{{key}} שמאלי",
+    "right": "{{key}} ימני"
+  },
   "settings": {
     "modelSettings": {
       "title": "הגדרות עבור {{model}}"
@@ -700,7 +732,7 @@
         "description": "איך הכתבה גמורה מגיעה ליישום שבחזית. לוח (Ctrl+V): Handy מכניס את הטקסט ללוח ולוחץ Ctrl+V בשבילך; Ctrl+Shift+V ו-Shift+Insert עושים אותו דבר עם המקשים האלה, למשל למסופים. ישיר: מקליד את הטקסט דרך קלט המערכת. סקריפט חיצוני (Linux בלבד): מעביר את הטקסט לסקריפט שלך. ללא: Handy לא מוסיף דבר; הטקסט נמצא בהיסטוריה, ולפי „התנהגות הלוח” גם בלוח. „הדבק את התמלול האחרון” מוסיף באותה דרך; עם „ללא” הוא מכניס את הטקסט ללוח.",
         "descriptionMacos": "איך הכתבה גמורה מגיעה ליישום שבחזית. לוח (Cmd+V): Handy מכניס את הטקסט ללוח ולוחץ ⌘V בשבילך; לשם כך נדרשת נגישות. ללא: Handy לא מוסיף דבר; הטקסט נמצא בהיסטוריה, ולפי „התנהגות הלוח” גם בלוח. „הדבק את התמלול האחרון” מוסיף באותה דרך; עם „ללא” הוא מכניס את הטקסט ללוח. ללא נגישות, שירות של macOS מוסיף את ההכתבה במקום זאת.",
         "options": {
-          "clipboard": "לוח ({{modifier}}+V)",
+          "clipboard": "לוח ({{keys}})",
           "clipboardCtrlShiftV": "לוח (Ctrl+Shift+V)",
           "clipboardShiftInsert": "לוח (Shift+Insert)",
           "direct": "ישיר",

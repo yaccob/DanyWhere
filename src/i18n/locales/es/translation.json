@@ -341,6 +341,38 @@
     "downloadSpeed": "{{speed}} MB/s",
     "lockedWhileTranscribing": "Podrás cambiar de modelo cuando termine la transcripción en el Historial."
   },
+  "keyNames": {
+    "ctrl": "Ctrl",
+    "shift": "Mayús",
+    "space": "Espacio",
+    "enter": "Intro",
+    "backspace": "Retroceso",
+    "delete": "Supr",
+    "insert": "Insert",
+    "home": "Inicio",
+    "end": "Fin",
+    "pageUp": "Re Pág",
+    "pageDown": "Av Pág",
+    "capsLock": "Bloq Mayús",
+    "numLock": "Bloq Num",
+    "scrollLock": "Bloq Despl",
+    "printScreen": "Impr Pant",
+    "pause": "Pausa",
+    "menu": "Menú",
+    "keypad": "Teclado numérico {{key}}",
+    "playPause": "Reproducir/Pausa",
+    "stop": "Detener",
+    "previousTrack": "Pista anterior",
+    "nextTrack": "Pista siguiente",
+    "mouseLeft": "Botón izquierdo del ratón",
+    "mouseRight": "Botón derecho del ratón",
+    "mouseMiddle": "Botón central del ratón",
+    "mouseBack": "Botón 4 del ratón",
+    "mouseForward": "Botón 5 del ratón",
+    "dictation": "Dictado",
+    "left": "{{key}} izquierda",
+    "right": "{{key}} derecha"
+  },
   "settings": {
     "modelSettings": {
       "title": "Configuración de {{model}}"
@@ -700,7 +732,7 @@
         "description": "Cómo llega un dictado terminado a la app en primer plano. Portapapeles (Ctrl+V): Handy pone el texto en el portapapeles y pulsa Ctrl+V por ti; Ctrl+Shift+V y Shift+Insert hacen lo mismo con esas teclas, por ejemplo para terminales. Directo: escribe el texto mediante la entrada del sistema. Script externo (solo Linux): pasa el texto a tu script. Ninguno: Handy no inserta nada; el texto queda en el historial y, según «Manejo del portapapeles», en el portapapeles. «Pegar la última transcripción» inserta de la misma forma; con «Ninguno» pone el texto en el portapapeles.",
         "descriptionMacos": "Cómo llega un dictado terminado a la app en primer plano. Portapapeles (Cmd+V): Handy pone el texto en el portapapeles y pulsa ⌘V por ti; esto requiere Accesibilidad. Ninguno: Handy no inserta nada; el texto queda en el historial y, según «Manejo del portapapeles», en el portapapeles. «Pegar la última transcripción» inserta de la misma forma; con «Ninguno» pone el texto en el portapapeles. Sin Accesibilidad, en su lugar un servicio de macOS inserta el dictado.",
         "options": {
-          "clipboard": "Portapapeles ({{modifier}}+V)",
+          "clipboard": "Portapapeles ({{keys}})",
           "clipboardCtrlShiftV": "Portapapeles (Ctrl+Shift+V)",
           "clipboardShiftInsert": "Portapapeles (Shift+Insert)",
           "direct": "Directo",

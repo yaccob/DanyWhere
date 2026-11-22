@@ -112,7 +112,7 @@ export const ShortcutInput: React.FC<ShortcutInputProps> = ({
             className="px-2 py-1 text-sm font-semibold border border-logo-primary bg-logo-primary/20 rounded-md"
           >
             {partial
-              ? formatKeyCombination(partial, osType)
+              ? formatKeyCombination(partial, osType, t)
               : t("settings.general.shortcut.pressKeys")}
           </div>
         ) : (
@@ -120,7 +120,7 @@ export const ShortcutInput: React.FC<ShortcutInputProps> = ({
             className="px-2 py-1 text-sm font-semibold bg-wash border border-line-strong hover:bg-logo-primary/10 rounded-md cursor-pointer hover:border-logo-primary"
             onClick={start}
           >
-            {formatKeyCombination(binding.current_binding, osType)}
+            {formatKeyCombination(binding.current_binding, osType, t)}
           </div>
         )}
         <FactoryResetButton

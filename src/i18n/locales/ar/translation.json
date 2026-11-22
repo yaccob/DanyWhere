@@ -341,6 +341,38 @@
     "downloadSpeed": "{{speed}} ميجابايت/ث",
     "lockedWhileTranscribing": "يمكنك تغيير النموذج بعد انتهاء النسخ في السجل."
   },
+  "keyNames": {
+    "ctrl": "Ctrl",
+    "shift": "Shift",
+    "space": "مسافة",
+    "enter": "Enter",
+    "backspace": "Backspace",
+    "delete": "Delete",
+    "insert": "Insert",
+    "home": "Home",
+    "end": "End",
+    "pageUp": "Page Up",
+    "pageDown": "Page Down",
+    "capsLock": "Caps Lock",
+    "numLock": "Num Lock",
+    "scrollLock": "Scroll Lock",
+    "printScreen": "Print Screen",
+    "pause": "Pause",
+    "menu": "القائمة",
+    "keypad": "لوحة الأرقام {{key}}",
+    "playPause": "تشغيل/إيقاف مؤقت",
+    "stop": "إيقاف",
+    "previousTrack": "المقطع السابق",
+    "nextTrack": "المقطع التالي",
+    "mouseLeft": "زر الماوس الأيسر",
+    "mouseRight": "زر الماوس الأيمن",
+    "mouseMiddle": "زر الماوس الأوسط",
+    "mouseBack": "زر الماوس 4",
+    "mouseForward": "زر الماوس 5",
+    "dictation": "الإملاء",
+    "left": "{{key}} الأيسر",
+    "right": "{{key}} الأيمن"
+  },
   "settings": {
     "modelSettings": {
       "title": "إعدادات {{model}}"
@@ -700,7 +732,7 @@
         "description": "كيف يصل الإملاء المكتمل إلى التطبيق في المقدمة. الحافظة (Ctrl+V): يضع Handy النص في الحافظة ويضغط Ctrl+V نيابةً عنك؛ ويفعل Ctrl+Shift+V وShift+Insert الشيء نفسه بهذه المفاتيح، مثلًا للطرفيات. مباشر: يكتب النص عبر إدخال النظام. نص برمجي خارجي (Linux فقط): يمرّر النص إلى نصك البرمجي. بلا: لا يُدرج Handy شيئًا؛ يبقى النص في السجل، وفي الحافظة بحسب «التعامل مع الحافظة». يُدرج «لصق آخر نص مفرَّغ» بالطريقة نفسها، ومع «بلا» يضع النص في الحافظة.",
         "descriptionMacos": "كيف يصل الإملاء المكتمل إلى التطبيق في المقدمة. الحافظة (Cmd+V): يضع Handy النص في الحافظة ويضغط ⌘V نيابةً عنك؛ ويتطلب ذلك إمكانية الوصول. بلا: لا يُدرج Handy شيئًا؛ يبقى النص في السجل، وفي الحافظة بحسب «التعامل مع الحافظة». يُدرج «لصق آخر نص مفرَّغ» بالطريقة نفسها، ومع «بلا» يضع النص في الحافظة. بدون إمكانية الوصول تُدرج إحدى خدمات macOS الإملاء بدلًا من ذلك.",
         "options": {
-          "clipboard": "الحافظة ({{modifier}}+V)",
+          "clipboard": "الحافظة ({{keys}})",
           "clipboardCtrlShiftV": "الحافظة (Ctrl+Shift+V)",
           "clipboardShiftInsert": "الحافظة (Shift+Insert)",
           "direct": "مباشر",

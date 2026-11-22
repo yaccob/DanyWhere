@@ -341,6 +341,38 @@
     "downloadSpeed": "{{speed}} MB/s",
     "lockedWhileTranscribing": "Geçmiş'teki yazıya dökme bitince modeli değiştirebilirsiniz."
   },
+  "keyNames": {
+    "ctrl": "Ctrl",
+    "shift": "Shift",
+    "space": "Boşluk",
+    "enter": "Enter",
+    "backspace": "Backspace",
+    "delete": "Delete",
+    "insert": "Insert",
+    "home": "Home",
+    "end": "End",
+    "pageUp": "Page Up",
+    "pageDown": "Page Down",
+    "capsLock": "Caps Lock",
+    "numLock": "Num Lock",
+    "scrollLock": "Scroll Lock",
+    "printScreen": "Print Screen",
+    "pause": "Pause",
+    "menu": "Menü",
+    "keypad": "Sayısal tuş takımı {{key}}",
+    "playPause": "Oynat/Duraklat",
+    "stop": "Durdur",
+    "previousTrack": "Önceki parça",
+    "nextTrack": "Sonraki parça",
+    "mouseLeft": "Sol fare düğmesi",
+    "mouseRight": "Sağ fare düğmesi",
+    "mouseMiddle": "Orta fare düğmesi",
+    "mouseBack": "Fare düğmesi 4",
+    "mouseForward": "Fare düğmesi 5",
+    "dictation": "Dikte",
+    "left": "sol {{key}}",
+    "right": "sağ {{key}}"
+  },
   "settings": {
     "modelSettings": {
       "title": "{{model}} Ayarları"
@@ -700,7 +732,7 @@
         "description": "Biten bir dikte öndeki uygulamaya nasıl ulaşır. Pano (Ctrl+V): Handy metni panoya koyar ve sizin yerinize Ctrl+V'ye basar; Ctrl+Shift+V ve Shift+Insert aynı işi bu tuşlarla yapar, örneğin terminaller için. Doğrudan: metni sistem girişiyle yazar. Harici Betik (yalnızca Linux): metni betiğinize iletir. Yok: Handy hiçbir şey eklemez; metin geçmişte ve Pano Yönetimi ayarına göre panoda kalır. Son transkripti yapıştır da aynı şekilde ekler; Yok seçiliyken metni panoya koyar.",
         "descriptionMacos": "Biten bir dikte öndeki uygulamaya nasıl ulaşır. Pano (Cmd+V): Handy metni panoya koyar ve sizin yerinize ⌘V'ye basar; bunun için Erişilebilirlik gerekir. Yok: Handy hiçbir şey eklemez; metin geçmişte ve Pano Yönetimi ayarına göre panoda kalır. Son transkripti yapıştır da aynı şekilde ekler; Yok seçiliyken metni panoya koyar. Erişilebilirlik olmadan bunun yerine dikteyi bir macOS hizmeti ekler.",
         "options": {
-          "clipboard": "Pano ({{modifier}}+V)",
+          "clipboard": "Pano ({{keys}})",
           "clipboardCtrlShiftV": "Pano (Ctrl+Shift+V)",
           "clipboardShiftInsert": "Pano (Shift+Insert)",
           "direct": "Doğrudan",
