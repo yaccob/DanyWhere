@@ -7,41 +7,52 @@ use log::{debug, error, warn};
 use tauri::AppHandle;
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
 
-use crate::settings::{self, ShortcutBinding};
+use crate::settings::{self, KeyboardImplementation, ShortcutBinding};
 
+use super::backend::ShortcutBackend;
 use super::handler::handle_shortcut_event;
+
+/// DanyWhere: Tauri's global-shortcut plugin as a [`ShortcutBackend`]. It
+/// registers through Carbon on macOS, which needs no Accessibility.
+pub(crate) struct TauriBackend {
+    app: AppHandle,
+}
+
+impl TauriBackend {
+    pub(crate) fn new(app: &AppHandle) -> Self {
+        Self { app: app.clone() }
+    }
+}
+
+impl ShortcutBackend for TauriBackend {
+    fn implementation(&self) -> KeyboardImplementation {
+        KeyboardImplementation::Tauri
+    }
+
+    fn register(&self, binding: &ShortcutBinding) -> Result<(), String> {
+        register_shortcut(&self.app, binding.clone())
+    }
+
+    fn unregister(&self, binding: &ShortcutBinding) -> Result<(), String> {
+        unregister_shortcut(&self.app, binding.clone())
+    }
+}
 
 /// Initialize shortcuts using Tauri's global-shortcut plugin
 pub fn init_shortcuts(app: &AppHandle) {
-    let default_bindings = settings::get_default_settings().bindings;
     let user_settings = settings::load_or_create_app_settings(app);
-
     // Register all default shortcuts, applying user customizations
-    for (id, default_binding) in default_bindings {
-        if id == "cancel" {
-            continue; // Skip cancel shortcut, it will be registered dynamically
-        }
-        // Skip post-processing shortcut when the feature is disabled
-        // DanyWhere: also the context shortcut, and "Paste Last Transcript"
-        // while it is the insert service's shortcut.
-        if !crate::settings::registers_binding(
-            &id,
-            &user_settings,
-            crate::delivery::INSERT_SERVICE_AVAILABLE,
-        ) {
-            continue;
-        }
-        let binding = user_settings
-            .bindings
-            .get(&id)
-            .cloned()
-            .unwrap_or(default_binding);
-
-        match register_shortcut(app, binding.clone()) {
-            // DanyWhere: known to the shortcuts that follow the profile.
-            Ok(()) => super::profile_sync::note_registered(&binding),
-            Err(e) => error!("Failed to register shortcut {} during init: {}", id, e),
-        }
+    let bindings =
+        super::backend::start_bindings(&user_settings, crate::delivery::INSERT_SERVICE_AVAILABLE);
+    let report = super::backend::register_all(&TauriBackend::new(app), &bindings, |binding, e| {
+        error!(
+            "Failed to register shortcut {} during init: {}",
+            binding.id, e
+        )
+    });
+    // DanyWhere: known to the shortcuts that follow the profile.
+    for binding in &report.registered {
+        super::profile_sync::note_registered(binding);
     }
 }
 

@@ -9,6 +9,7 @@
 //! The active implementation is determined by the `keyboard_implementation`
 //! setting and can be changed at runtime.
 
+pub(crate) mod backend;
 mod handler;
 pub mod handy_keys;
 pub mod profile_sync;
@@ -153,22 +154,12 @@ fn reconcile_cancel_shortcut(app: &AppHandle) {
 
 /// Register a shortcut using the appropriate implementation
 pub fn register_shortcut(app: &AppHandle, binding: ShortcutBinding) -> Result<(), String> {
-    let settings = get_settings(app);
-    match settings.keyboard_implementation {
-        KeyboardImplementation::Tauri => tauri_impl::register_shortcut(app, binding),
-        KeyboardImplementation::HandyKeys => handy_keys::register_shortcut(app, binding),
-        KeyboardImplementation::None => Ok(()),
-    }
+    backend::active(app).register(&binding)
 }
 
 /// Unregister a shortcut using the appropriate implementation
 pub fn unregister_shortcut(app: &AppHandle, binding: ShortcutBinding) -> Result<(), String> {
-    let settings = get_settings(app);
-    match settings.keyboard_implementation {
-        KeyboardImplementation::Tauri => tauri_impl::unregister_shortcut(app, binding),
-        KeyboardImplementation::HandyKeys => handy_keys::unregister_shortcut(app, binding),
-        KeyboardImplementation::None => Ok(()),
-    }
+    backend::active(app).unregister(&binding)
 }
 
 // ============================================================================
@@ -523,21 +514,13 @@ pub fn apply_no_accessibility_mode(settings: &mut settings::AppSettings) -> Vec<
 fn unregister_all_shortcuts(app: &AppHandle, implementation: KeyboardImplementation) {
     // DanyWhere: what is registered is known (`profile_sync`); the cancel
     // shortcut is not among it, as it is registered dynamically.
-    for binding in profile_sync::take_all() {
-        let id = binding.id.clone();
-        let result = match implementation {
-            KeyboardImplementation::Tauri => tauri_impl::unregister_shortcut(app, binding),
-            KeyboardImplementation::HandyKeys => handy_keys::unregister_shortcut(app, binding),
-            KeyboardImplementation::None => Ok(()),
-        };
-
-        if let Err(e) = result {
-            warn!(
-                "Failed to unregister shortcut '{}' during switch: {}",
-                id, e
-            );
-        }
-    }
+    let backend = backend::for_implementation(app, implementation);
+    backend::unregister_all(backend.as_ref(), &profile_sync::take_all(), |binding, e| {
+        warn!(
+            "Failed to unregister shortcut '{}' during switch: {}",
+            binding.id, e
+        )
+    });
 }
 
 /// Register all shortcuts for a specific implementation, validating and resetting invalid ones
@@ -545,69 +528,24 @@ fn register_all_shortcuts_for_implementation(
     app: &AppHandle,
     implementation: KeyboardImplementation,
 ) -> Vec<String> {
-    let mut reset_bindings = Vec::new();
-    let default_bindings = settings::get_default_settings().bindings;
     let mut current_settings = settings::get_settings(app);
-
-    for (id, default_binding) in &default_bindings {
-        // Skip cancel shortcut as it's dynamically registered
-        if id == "cancel" {
-            continue;
-        }
-
-        // Skip post-processing shortcut when the feature is disabled
-        // DanyWhere: also the context shortcut, and "Paste Last Transcript"
-        // while it is the insert service's shortcut.
-        if !settings::registers_binding(
-            id,
-            &current_settings,
-            crate::delivery::INSERT_SERVICE_AVAILABLE,
-        ) {
-            continue;
-        }
-
-        let mut binding = current_settings
-            .bindings
-            .get(id)
-            .cloned()
-            .unwrap_or_else(|| default_binding.clone());
-
-        // Validate the shortcut for the target implementation
-        if let Err(e) =
-            validate_shortcut_for_implementation(&binding.current_binding, implementation)
-        {
-            info!(
-                "Shortcut '{}' ({}) is invalid for {:?}: {}. Resetting to default.",
-                id, binding.current_binding, implementation, e
-            );
-
-            // Reset to default
-            binding.current_binding = default_binding.current_binding.clone();
-            current_settings
-                .bindings
-                .insert(id.clone(), binding.clone());
-            reset_bindings.push(id.clone());
-        }
-
-        // Register with the appropriate implementation
-        let result = match implementation {
-            KeyboardImplementation::Tauri => tauri_impl::register_shortcut(app, binding.clone()),
-            KeyboardImplementation::HandyKeys => {
-                handy_keys::register_shortcut(app, binding.clone())
-            }
-            KeyboardImplementation::None => Ok(()),
-        };
-
-        match result {
-            Ok(()) if implementation != KeyboardImplementation::None => {
-                profile_sync::note_registered(&binding)
-            }
-            Ok(()) => {}
-            Err(e) => error!(
-                "Failed to register shortcut '{}' for {:?}: {}",
-                id, implementation, e
-            ),
-        }
+    let backend = backend::for_implementation(app, implementation);
+    // Skip cancel shortcut as it's dynamically registered, and those
+    // `registers_binding` leaves out.
+    let mut bindings =
+        backend::start_bindings(&current_settings, crate::delivery::INSERT_SERVICE_AVAILABLE);
+    // Validate the shortcuts for the target implementation
+    let reset_bindings =
+        backend::reset_invalid(backend.as_ref(), &mut bindings, &mut current_settings);
+    // Nothing counts as registered with "None".
+    let report = backend::register_all(backend.as_ref(), &bindings, |binding, e| {
+        error!(
+            "Failed to register shortcut '{}' for {:?}: {}",
+            binding.id, implementation, e
+        )
+    });
+    for binding in &report.registered {
+        profile_sync::note_registered(binding);
     }
 
     // Save settings if any bindings were reset

@@ -34,16 +34,11 @@ pub type Registered = BTreeMap<String, ShortcutBinding>;
 /// (`register_cancel_shortcut`); `service_available` is
 /// `delivery::INSERT_SERVICE_AVAILABLE` (see `settings::registers_binding`).
 pub fn desired(settings_now: &AppSettings, recording: bool, service_available: bool) -> Registered {
-    let mut wanted = Registered::new();
     // The bindings the backends register at their start, as they do.
-    for (id, default) in crate::settings::get_default_settings().bindings {
-        if id == CANCEL || !crate::settings::registers_binding(&id, settings_now, service_available)
-        {
-            continue;
-        }
-        let binding = settings_now.bindings.get(&id).cloned().unwrap_or(default);
-        wanted.insert(id, binding);
-    }
+    let mut wanted: Registered = super::backend::start_bindings(settings_now, service_available)
+        .into_iter()
+        .map(|binding| (binding.id.clone(), binding))
+        .collect();
     if recording && END_KEYS_WHILE_RECORDING {
         let mut taken: Vec<(String, String)> = wanted
             .values()
@@ -174,29 +169,29 @@ pub fn sync_now(app: &AppHandle) -> Vec<(String, String)> {
         plan.unregister.iter().map(|b| &b.id).collect::<Vec<_>>(),
         plan.register.iter().map(|b| &b.id).collect::<Vec<_>>()
     );
-    for binding in plan.unregister {
-        // One that is gone already (a backend switch) fails harmlessly.
-        if let Err(err) = super::unregister_shortcut(app, binding.clone()) {
-            log::debug!("Unregistering {}: {err}", binding.id);
-        }
+    let backend = super::backend::for_implementation(app, settings.keyboard_implementation);
+    // One that is gone already (a backend switch) fails harmlessly.
+    super::backend::unregister_all(backend.as_ref(), &plan.unregister, |binding, err| {
+        log::debug!("Unregistering {}: {err}", binding.id)
+    });
+    for binding in &plan.unregister {
         registered.remove(&binding.id);
     }
-    let mut failures = Vec::new();
-    for binding in plan.register {
-        match super::register_shortcut(app, binding.clone()) {
-            Ok(()) => {
-                registered.insert(binding.id.clone(), binding);
-            }
-            Err(err) => {
-                log::warn!(
-                    "Couldn't register {} ({}): {err}",
-                    binding.id,
-                    binding.current_binding
-                );
-                failures.push((binding.id, err));
-            }
-        }
+    let report = super::backend::register_all(backend.as_ref(), &plan.register, |binding, err| {
+        log::warn!(
+            "Couldn't register {} ({}): {err}",
+            binding.id,
+            binding.current_binding
+        )
+    });
+    for binding in report.registered {
+        registered.insert(binding.id.clone(), binding);
     }
+    let failures = report
+        .failed
+        .into_iter()
+        .map(|(binding, err)| (binding.id, err))
+        .collect();
     drop(registered);
     crate::secure_input::reconcile_fallback(app);
     failures
@@ -232,11 +227,11 @@ pub fn set_recording(app: &AppHandle, recording: bool) {
 pub fn suspend(app: &AppHandle) {
     let mut registered = registered_lock();
     SUSPENDED.store(true, Ordering::SeqCst);
-    for (id, binding) in std::mem::take(&mut *registered) {
-        if let Err(err) = super::unregister_shortcut(app, binding) {
-            log::debug!("Suspending {id}: {err}");
-        }
-    }
+    let suspended: Vec<ShortcutBinding> = std::mem::take(&mut *registered).into_values().collect();
+    let backend = super::backend::active(app);
+    super::backend::unregister_all(backend.as_ref(), &suspended, |binding, err| {
+        log::debug!("Suspending {}: {err}", binding.id)
+    });
 }
 
 /// After recording a shortcut: everything that should be registered is.
