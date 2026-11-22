@@ -1072,7 +1072,8 @@
           "withTime": "{{step}}, {{time}}"
         },
         "saveError": "Failed to save your text. Please try again.",
-        "changeError": "Moving or deleting didn't work. Please try again."
+        "changeError": "Moving or deleting didn't work. Please try again.",
+        "unchanged": "The AI returned the same text as the entry's result, so no new version was added."
       },
       "contextEntryJump": "Show it in the History to correct it",
       "dropTitle": "Drop to transcribe",

@@ -42,6 +42,10 @@ pub enum TranscriptionJobStatus {
     PostProcessing,
     /// The entry has its new text, or the job was cancelled.
     Finished,
+    /// DanyWhere: a post-processing from History came back with the text
+    /// the top version already has, so the entry has no new version
+    /// (`history_versions::apply_post_processing`); History says so.
+    Unchanged,
     Failed {
         error: String,
     },
@@ -426,6 +430,7 @@ impl TranscriptionJobManager {
                 Ok(JobEnd::Finished {
                     post_process_failed,
                     transcribed,
+                    unchanged,
                 }) => {
                     // Clear first, so the warning about this job survives it.
                     notices::clear(&self.app, NoticeSource::File);
@@ -438,7 +443,7 @@ impl TranscriptionJobManager {
                             ),
                         );
                     }
-                    TranscriptionJobStatus::Finished
+                    finished_status(unchanged)
                 }
                 _ => TranscriptionJobStatus::Finished,
             };
@@ -534,6 +539,7 @@ impl TranscriptionJobManager {
         Ok(JobEnd::Finished {
             post_process_failed,
             transcribed: true,
+            unchanged: false,
         })
     }
 
@@ -582,9 +588,9 @@ impl TranscriptionJobManager {
             }
         }
         // The result goes onto the stack as it is now.
-        let post_process_failed = match processed.post_processed_text {
+        let (post_process_failed, unchanged) = match processed.post_processed_text {
             Some(text) => {
-                hm.store_post_processing(
+                let stored = hm.store_post_processing(
                     entry.id,
                     PostProcessTarget::OnTop,
                     PostProcessed {
@@ -593,25 +599,38 @@ impl TranscriptionJobManager {
                         prompt_name: processed.post_process_prompt_name,
                     },
                 )?;
-                false
+                (false, stored.unchanged)
             }
-            None => true,
+            None => (true, false),
         };
         Ok(JobEnd::Finished {
             post_process_failed,
             transcribed: false,
+            unchanged,
         })
     }
 }
 
 /// A cancelled job changes no notices.
 enum JobEnd {
-    /// `transcribed` is false when the job only post-processed.
+    /// `transcribed` is false when the job only post-processed;
+    /// `unchanged`: its result equals the entry's top version.
     Finished {
         post_process_failed: bool,
         transcribed: bool,
+        unchanged: bool,
     },
     Cancelled,
+}
+
+/// The status a job that ran to its end reports: `Unchanged` when its
+/// post-processing added nothing, so History can say why no version came.
+fn finished_status(unchanged: bool) -> TranscriptionJobStatus {
+    if unchanged {
+        TranscriptionJobStatus::Unchanged
+    } else {
+        TranscriptionJobStatus::Finished
+    }
 }
 
 /// Best-effort cleanup; the caller is already reporting the failure.
@@ -843,6 +862,17 @@ mod tests {
         assert_eq!(
             serde_json::to_string(&Transcribe).unwrap(),
             "\"transcribe\""
+        );
+    }
+
+    #[test]
+    fn a_post_processing_that_added_nothing_ends_unchanged() {
+        assert_eq!(finished_status(true), TranscriptionJobStatus::Unchanged);
+        assert_eq!(finished_status(false), TranscriptionJobStatus::Finished);
+        // The frontend's notice listens for this state.
+        assert_eq!(
+            serde_json::to_string(&TranscriptionJobStatus::Unchanged).unwrap(),
+            r#"{"state":"unchanged"}"#
         );
     }
 }

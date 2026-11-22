@@ -1072,7 +1072,8 @@
           "withTime": "{{step}}, {{time}}"
         },
         "saveError": "No s'ha pogut desar el vostre text. Torneu-ho a provar.",
-        "changeError": "No s'ha pogut moure ni suprimir. Torneu-ho a provar."
+        "changeError": "No s'ha pogut moure ni suprimir. Torneu-ho a provar.",
+        "unchanged": "La IA ha retornat el mateix text que el resultat de l'entrada, així que no s'ha afegit cap versió nova."
       },
       "contextEntryJump": "Mostra-ho a l'historial per corregir-ho",
       "dropTitle": "Deixa anar per transcriure",

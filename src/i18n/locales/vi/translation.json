@@ -1072,7 +1072,8 @@
           "withTime": "{{step}}, {{time}}"
         },
         "saveError": "Không thể lưu văn bản của bạn. Vui lòng thử lại.",
-        "changeError": "Không thể chuyển hoặc xóa. Vui lòng thử lại."
+        "changeError": "Không thể chuyển hoặc xóa. Vui lòng thử lại.",
+        "unchanged": "AI trả về văn bản giống kết quả của mục, nên không có phiên bản mới nào được thêm."
       },
       "contextEntryJump": "Hiện trong lịch sử để sửa",
       "dropTitle": "Thả để chép lời",

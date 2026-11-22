@@ -1072,7 +1072,8 @@
           "withTime": "{{step}}, {{time}}"
         },
         "saveError": "Kan je tekst niet opslaan. Probeer het opnieuw.",
-        "changeError": "Verplaatsen of verwijderen is mislukt. Probeer het opnieuw."
+        "changeError": "Verplaatsen of verwijderen is mislukt. Probeer het opnieuw.",
+        "unchanged": "De AI gaf dezelfde tekst terug als het resultaat van het item, dus er is geen nieuwe versie bijgekomen."
       },
       "contextEntryJump": "In de geschiedenis tonen om te corrigeren",
       "dropTitle": "Loslaten om te transcriberen",

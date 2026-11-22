@@ -483,14 +483,15 @@ pub fn post_processing_input(
 }
 
 /// The stack with a post-processing's `text` (trimmed) applied as `target`
-/// says, to the stack as it is when the post-processing ends. A result
-/// equal to the top's text adds nothing.
+/// says, to the stack as it is when the post-processing ends; `None` when
+/// it stays as it is. A result equal to the top's text adds nothing, which
+/// History tells the user, since nothing visible happens then.
 pub fn apply_post_processing(
     versions: &[HistoryVersion],
     target: PostProcessTarget,
     text: &str,
     step: VersionStep,
-) -> Vec<HistoryVersion> {
+) -> Option<Vec<HistoryVersion>> {
     let text = text.trim();
     let mut applied = versions.to_vec();
     let replaces_top = target == PostProcessTarget::InPlaceOfAiTop
@@ -503,7 +504,7 @@ pub fn apply_post_processing(
     if applied.last().is_none_or(|top| top.text.trim() != text) {
         applied.push(HistoryVersion::made_of(text, step));
     }
-    applied
+    (applied != versions).then_some(applied)
 }
 
 /// The whole stack as the column `versions` stores it.
@@ -622,24 +623,36 @@ pub(crate) struct PostProcessed {
     pub prompt_name: Option<String>,
 }
 
+/// What storing a post-processing did.
+#[derive(Clone, Debug)]
+pub(crate) struct StoredPostProcessing {
+    /// The entry as it is now.
+    pub entry: HistoryEntry,
+    /// Whether the stack stayed as it was: the result equals the top's text
+    /// ([`apply_post_processing`]). History says so, since no version came.
+    pub unchanged: bool,
+}
+
 /// Applies a post-processing to the entry's stack as it is now (see
 /// [`apply_post_processing`]) at `at` (Unix milliseconds). Handy's
 /// `post_processed_text` and `post_process_prompt` get the result, and the
-/// entry counts as post-processed from now on.
+/// entry counts as post-processed from now on, even when the stack stays.
 pub(crate) fn store_post_processing_with_conn(
     conn: &Connection,
     id: i64,
     target: PostProcessTarget,
     result: PostProcessed,
     at: i64,
-) -> Result<HistoryEntry> {
+) -> Result<StoredPostProcessing> {
     let entry = HistoryManager::entry_with_conn(conn, id)?;
     let step = VersionStep {
         by: VersionAuthor::Ai,
         at: Some(at),
         prompt_name: result.prompt_name,
     };
-    let versions = apply_post_processing(&entry.versions, target, &result.text, step);
+    let applied = apply_post_processing(&entry.versions, target, &result.text, step);
+    let unchanged = applied.is_none();
+    let versions = applied.unwrap_or_else(|| entry.versions.clone());
     store_stack(
         conn,
         &entry,
@@ -647,7 +660,10 @@ pub(crate) fn store_post_processing_with_conn(
         Some((&result.text, result.prompt.as_deref())),
         Some(true),
     )?;
-    HistoryManager::entry_with_conn(conn, id)
+    Ok(StoredPostProcessing {
+        entry: HistoryManager::entry_with_conn(conn, id)?,
+        unchanged,
+    })
 }
 
 /// A transcription made again from History ("Transcribe Again"), or a
@@ -694,12 +710,14 @@ pub(crate) fn add_transcription_with_conn(
             at: Some(at),
             prompt_name: post_processed.prompt_name.clone(),
         };
-        versions = apply_post_processing(
+        if let Some(applied) = apply_post_processing(
             &versions,
             PostProcessTarget::OnTop,
             &post_processed.text,
             step,
-        );
+        ) {
+            versions = applied;
+        }
     }
     let (language, language_source) = match new.language {
         Some(decision) => (decision.language, Some(decision.source)),
@@ -760,11 +778,11 @@ impl HistoryManager {
         id: i64,
         target: PostProcessTarget,
         result: PostProcessed,
-    ) -> Result<HistoryEntry> {
+    ) -> Result<StoredPostProcessing> {
         let conn = self.get_connection()?;
-        let entry = store_post_processing_with_conn(&conn, id, target, result, now_millis())?;
-        self.emit_entry(&entry);
-        Ok(entry)
+        let stored = store_post_processing_with_conn(&conn, id, target, result, now_millis())?;
+        self.emit_entry(&stored.entry);
+        Ok(stored)
     }
 
     /// See [`add_transcription_with_conn`]; tells the frontend.
@@ -1471,7 +1489,8 @@ mod tests {
 
     #[test]
     fn post_processing_puts_its_result_on_top() {
-        let versions = apply_post_processing(&stack(), OnTop, "Polished.", step(Ai, 9));
+        let versions = apply_post_processing(&stack(), OnTop, "Polished.", step(Ai, 9))
+            .expect("a new version");
         assert_eq!(
             texts(&versions),
             vec!["raw", "Clean.", "Clean, mine.", "Polished."]
@@ -1483,21 +1502,29 @@ mod tests {
     fn a_result_equal_to_the_top_changes_nothing() {
         assert_eq!(
             apply_post_processing(&stack(), OnTop, " Clean, mine. ", step(Ai, 9)),
-            stack()
+            None
+        );
+        // Equal to a version below the top, it still goes on top.
+        let applied = apply_post_processing(&stack(), OnTop, "Clean.", step(Ai, 9));
+        assert_eq!(
+            applied.as_deref().map(texts),
+            Some(vec!["raw", "Clean.", "Clean, mine.", "Clean."])
         );
     }
 
     #[test]
     fn the_redo_for_another_application_replaces_the_dictations_post_processing() {
         let processed = [HistoryVersion::transcription("raw"), v("Clean.", Ai)];
-        let versions = apply_post_processing(&processed, InPlaceOfAiTop, "Again.", step(Ai, 9));
+        let versions = apply_post_processing(&processed, InPlaceOfAiTop, "Again.", step(Ai, 9))
+            .expect("in place");
         assert_eq!(texts(&versions), vec!["raw", "Again."]);
         assert_eq!(versions[1].steps, vec![step(Ai, 9)]);
         // Without one, or over the user's text, it goes on top.
         let bare = [HistoryVersion::transcription("raw")];
         let edited = [HistoryVersion::transcription("raw"), v("mine", User)];
         for versions in [&bare[..], &edited[..]] {
-            let applied = apply_post_processing(versions, InPlaceOfAiTop, "Again.", step(Ai, 9));
+            let applied = apply_post_processing(versions, InPlaceOfAiTop, "Again.", step(Ai, 9))
+                .expect("on top");
             assert_eq!(applied.len(), versions.len() + 1);
             assert_eq!(applied.last().map(|v| v.text.as_str()), Some("Again."));
         }
@@ -1842,7 +1869,7 @@ mod tests {
         let id = insert(&conn, "raw words", None);
         assert!(!get(&conn, id).post_process_requested);
 
-        let e = store_post_processing_with_conn(
+        let stored = store_post_processing_with_conn(
             &conn,
             id,
             OnTop,
@@ -1855,6 +1882,8 @@ mod tests {
         )
         .expect("store");
 
+        assert!(!stored.unchanged);
+        let e = stored.entry;
         assert_eq!(e.transcription_text, "raw words");
         assert_eq!(texts(&e.versions), vec!["raw words", "Clean words."]);
         assert_eq!(
@@ -1872,6 +1901,46 @@ mod tests {
     }
 
     #[test]
+    fn a_post_processing_equal_to_the_top_says_it_added_nothing() {
+        let conn = database();
+        let id = insert(&conn, "raw words", Some("Clean words."));
+        let before = get(&conn, id).versions;
+
+        let stored = store_post_processing_with_conn(
+            &conn,
+            id,
+            OnTop,
+            PostProcessed {
+                text: " Clean words. ".into(),
+                ..Default::default()
+            },
+            78,
+        )
+        .expect("store");
+
+        assert!(stored.unchanged);
+        assert_eq!(stored.entry.versions, before);
+        assert_eq!(get(&conn, id).versions, before);
+        // A result below the top still goes on top.
+        let stored = store_post_processing_with_conn(
+            &conn,
+            id,
+            OnTop,
+            PostProcessed {
+                text: "raw words".into(),
+                ..Default::default()
+            },
+            79,
+        )
+        .expect("store");
+        assert!(!stored.unchanged);
+        assert_eq!(
+            texts(&stored.entry.versions),
+            vec!["raw words", "Clean words.", "raw words"]
+        );
+    }
+
+    #[test]
     fn the_redo_for_another_application_is_stored_in_place_of_the_dictations() {
         let conn = database();
         let id = insert(&conn, "raw", Some("Clean."));
@@ -1885,7 +1954,8 @@ mod tests {
             },
             6,
         )
-        .expect("redo");
+        .expect("redo")
+        .entry;
         assert_eq!(texts(&redone.versions), vec!["raw", "Again."]);
         assert_eq!(redone.versions[1].steps, vec![step(Ai, 6)]);
         assert_eq!(redone.post_processed_text.as_deref(), Some("Again."));

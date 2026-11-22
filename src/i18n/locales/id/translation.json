@@ -1072,7 +1072,8 @@
           "withTime": "{{step}}, {{time}}"
         },
         "saveError": "Gagal menyimpan teks Anda. Silakan coba lagi.",
-        "changeError": "Gagal memindahkan atau menghapus. Silakan coba lagi."
+        "changeError": "Gagal memindahkan atau menghapus. Silakan coba lagi.",
+        "unchanged": "AI mengembalikan teks yang sama dengan hasil entri, jadi tidak ada versi baru yang ditambahkan."
       },
       "contextEntryJump": "Tampilkan di riwayat untuk mengoreksinya",
       "dropTitle": "Lepaskan untuk mentranskripsi",

@@ -1072,7 +1072,8 @@
           "withTime": "{{step}}，{{time}}"
         },
         "saveError": "无法保存你的文本。请重试。",
-        "changeError": "无法移动或删除。请重试。"
+        "changeError": "无法移动或删除。请重试。",
+        "unchanged": "AI 返回的文本与条目的结果相同，因此没有添加新版本。"
       },
       "contextEntryJump": "在历史记录中显示以便更正",
       "dropTitle": "拖放到此处进行转录",

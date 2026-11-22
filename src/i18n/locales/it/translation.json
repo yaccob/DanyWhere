@@ -1072,7 +1072,8 @@
           "withTime": "{{step}}, {{time}}"
         },
         "saveError": "Impossibile salvare il tuo testo. Riprova.",
-        "changeError": "Impossibile spostare o eliminare. Riprova."
+        "changeError": "Impossibile spostare o eliminare. Riprova.",
+        "unchanged": "L'IA ha restituito lo stesso testo del risultato dell'elemento, quindi non è stata aggiunta alcuna nuova versione."
       },
       "contextEntryJump": "Mostrala nella cronologia per correggerla",
       "dropTitle": "Rilascia per trascrivere",

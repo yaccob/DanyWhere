@@ -1072,7 +1072,8 @@
           "withTime": "{{step}}, {{time}}"
         },
         "saveError": "Din tekst kunne ikke gemmes. Prøv igen.",
-        "changeError": "Flytning eller sletning mislykkedes. Prøv igen."
+        "changeError": "Flytning eller sletning mislykkedes. Prøv igen.",
+        "unchanged": "AI'en returnerede den samme tekst som postens resultat, så der blev ikke tilføjet en ny version."
       },
       "contextEntryJump": "Vis i historikken for at rette",
       "dropTitle": "Slip for at transskribere",

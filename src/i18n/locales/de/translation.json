@@ -1072,7 +1072,8 @@
           "withTime": "{{step}}, {{time}}"
         },
         "saveError": "Dein Text konnte nicht gespeichert werden. Bitte versuche es noch einmal.",
-        "changeError": "Verschieben oder Löschen hat nicht geklappt. Bitte versuche es noch einmal."
+        "changeError": "Verschieben oder Löschen hat nicht geklappt. Bitte versuche es noch einmal.",
+        "unchanged": "Die KI lieferte denselben Text wie das Ergebnis des Eintrags, darum kam keine neue Fassung dazu."
       },
       "contextEntryJump": "Im Verlauf zeigen, um es zu korrigieren",
       "dropTitle": "Zum Transkribieren ablegen",

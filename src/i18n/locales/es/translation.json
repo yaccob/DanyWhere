@@ -1072,7 +1072,8 @@
           "withTime": "{{step}}, {{time}}"
         },
         "saveError": "No se pudo guardar tu texto. Inténtalo de nuevo.",
-        "changeError": "No se pudo mover ni eliminar. Inténtalo de nuevo."
+        "changeError": "No se pudo mover ni eliminar. Inténtalo de nuevo.",
+        "unchanged": "La IA devolvió el mismo texto que el resultado de la entrada, así que no se añadió ninguna versión nueva."
       },
       "contextEntryJump": "Mostrarlo en el historial para corregirlo",
       "dropTitle": "Suelta para transcribir",

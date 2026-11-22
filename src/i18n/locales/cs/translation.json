@@ -1072,7 +1072,8 @@
           "withTime": "{{step}}, {{time}}"
         },
         "saveError": "Váš text se nepodařilo uložit. Zkuste to znovu.",
-        "changeError": "Přesunutí nebo smazání se nezdařilo. Zkuste to znovu."
+        "changeError": "Přesunutí nebo smazání se nezdařilo. Zkuste to znovu.",
+        "unchanged": "AI vrátila stejný text jako výsledek záznamu, proto se nepřidala žádná nová verze."
       },
       "contextEntryJump": "Zobrazit v historii a opravit",
       "dropTitle": "Pusťte pro přepis",

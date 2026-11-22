@@ -1,5 +1,7 @@
 import { create } from "zustand";
 import { events, type TranscriptionJobStatus } from "@/bindings";
+import i18n from "@/i18n";
+import { notify } from "@/stores/noticeStore";
 
 export type ActiveJobStatus = Extract<
   TranscriptionJobStatus,
@@ -41,6 +43,14 @@ export const useTranscriptionJobsStore = create<TranscriptionJobsStore>()(
         });
         if (status.state === "failed") {
           console.error(`Transcription of entry ${entryId} failed:`, status);
+        }
+        // DanyWhere: ✨ came back with the top version's text, so the entry
+        // has no new version; without this nothing visible would happen.
+        if (status.state === "unchanged") {
+          notify({
+            title: i18n.t("settings.history.versions.unchanged"),
+            level: "warning",
+          });
         }
       });
     },

@@ -1072,7 +1072,8 @@
           "withTime": "{{step}}, {{time}}"
         },
         "saveError": "Nie udało się zapisać twojego tekstu. Spróbuj ponownie.",
-        "changeError": "Nie udało się przenieść ani usunąć. Spróbuj ponownie."
+        "changeError": "Nie udało się przenieść ani usunąć. Spróbuj ponownie.",
+        "unchanged": "AI zwróciło ten sam tekst co wynik wpisu, więc nie dodano nowej wersji."
       },
       "contextEntryJump": "Pokaż w historii, aby poprawić",
       "dropTitle": "Upuść, aby transkrybować",

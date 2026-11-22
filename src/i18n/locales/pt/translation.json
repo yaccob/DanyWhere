@@ -1072,7 +1072,8 @@
           "withTime": "{{step}}, {{time}}"
         },
         "saveError": "Falha ao salvar seu texto. Tente novamente.",
-        "changeError": "Falha ao mover ou excluir. Tente novamente."
+        "changeError": "Falha ao mover ou excluir. Tente novamente.",
+        "unchanged": "A IA devolveu o mesmo texto do resultado da entrada, por isso nenhuma versão nova foi adicionada."
       },
       "contextEntryJump": "Mostrar no histórico para corrigir",
       "dropTitle": "Solte para transcrever",

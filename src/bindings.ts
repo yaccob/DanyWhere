@@ -2913,7 +2913,13 @@ export type TranscriptionJobStatus =
 /**
  * The entry has its new text, or the job was cancelled.
  */
-{ state: "finished" } | { state: "failed"; error: string }
+{ state: "finished" } | 
+/**
+ * DanyWhere: a post-processing from History came back with the text
+ * the top version already has, so the entry has no new version
+ * (`history_versions::apply_post_processing`); History says so.
+ */
+{ state: "unchanged" } | { state: "failed"; error: string }
 /**
  * How a dictation ended.
  */

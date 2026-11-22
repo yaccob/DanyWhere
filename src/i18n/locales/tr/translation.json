@@ -1072,7 +1072,8 @@
           "withTime": "{{step}}, {{time}}"
         },
         "saveError": "Metniniz kaydedilemedi. Lütfen tekrar deneyin.",
-        "changeError": "Taşıma veya silme başarısız oldu. Lütfen tekrar deneyin."
+        "changeError": "Taşıma veya silme başarısız oldu. Lütfen tekrar deneyin.",
+        "unchanged": "Yapay zekâ, kaydın sonucuyla aynı metni döndürdü; bu yüzden yeni sürüm eklenmedi."
       },
       "contextEntryJump": "Düzeltmek için geçmişte göster",
       "dropTitle": "Yazıya dökmek için bırakın",
