@@ -1,8 +1,8 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { type } from "@tauri-apps/plugin-os";
 import { SettingsGroup } from "../../ui/SettingsGroup";
 import { useSettings } from "../../../hooks/useSettings";
+import { useAccessibility } from "../../../hooks/useAccessibility";
 import { KeyboardImplementationSelector } from "../debug/KeyboardImplementationSelector";
 import { DictationKeyInserts } from "../DictationKeyInserts";
 import { DictationServiceWhenIdleSetting } from "../DictationServiceWhenIdle";
@@ -14,8 +14,7 @@ import { DictationServiceWhenIdleSetting } from "../DictationServiceWhenIdle";
 export const AccessibilitySettings: React.FC = () => {
   const { t } = useTranslation();
   const { getSetting } = useSettings();
-  const isMacOS = type() === "macos";
-  const accessibilitySkipped = getSetting("accessibility_skipped") === true;
+  const { runsWithoutAccessibility } = useAccessibility();
   const dictationKeyInserts = getSetting("dictation_key_inserts") ?? true;
   return (
     <div className="max-w-3xl w-full mx-auto space-y-6">
@@ -25,10 +24,10 @@ export const AccessibilitySettings: React.FC = () => {
           grouped={true}
         />
         {/* DanyWhere: the dictation shortcut's second press inserts too. */}
-        {isMacOS && accessibilitySkipped && (
+        {runsWithoutAccessibility && (
           <DictationKeyInserts descriptionMode="tooltip" grouped={true} />
         )}
-        {isMacOS && accessibilitySkipped && dictationKeyInserts && (
+        {runsWithoutAccessibility && dictationKeyInserts && (
           <DictationServiceWhenIdleSetting
             descriptionMode="tooltip"
             grouped={true}

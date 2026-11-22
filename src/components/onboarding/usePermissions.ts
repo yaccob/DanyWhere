@@ -3,14 +3,17 @@ import { useTranslation } from "react-i18next";
 import { platform } from "@tauri-apps/plugin-os";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import {
-  checkAccessibilityPermission,
   checkMicrophonePermission,
-  requestAccessibilityPermission,
   requestMicrophonePermission,
 } from "tauri-plugin-macos-permissions-api";
 import { notify } from "@/stores/noticeStore";
 import { commands } from "@/bindings";
 import { useSettingsStore } from "@/stores/settingsStore";
+import {
+  askMacosForAccessibility,
+  macosGrantsAccessibility,
+  readChoseToGoWithout,
+} from "@/lib/accessibility";
 import {
   permissionsSatisfied,
   type PermissionPlatform,
@@ -42,13 +45,7 @@ const WAITING_TIMEOUT_MS = 15_000;
 
 /** macOS's answers: `[accessibility, microphone]`. */
 const readMac = () =>
-  Promise.all([checkAccessibilityPermission(), checkMicrophonePermission()]);
-
-/** DanyWhere: whether the user chose to continue without Accessibility. */
-const readSkipped = async () => {
-  const result = await commands.getAppSettings();
-  return result.status === "ok" && result.data.accessibility_skipped === true;
-};
+  Promise.all([macosGrantsAccessibility(), checkMicrophonePermission()]);
 
 const currentPlatform = (): PermissionPlatform => {
   const p = platform();
@@ -128,7 +125,7 @@ export const usePermissions = (preview: boolean): Permissions => {
       if (isMacOS) {
         try {
           const [acc, mic] = await readMac();
-          const skipped = await readSkipped();
+          const skipped = await readChoseToGoWithout();
           skippedRef.current = skipped;
           setAccessibilitySkipped(skipped);
           if (acc) await initializeAfterAccessibility();
@@ -242,7 +239,7 @@ export const usePermissions = (preview: boolean): Permissions => {
     if (preview) return;
     try {
       await commands.resetMacosPermission("accessibility");
-      await requestAccessibilityPermission();
+      await askMacosForAccessibility();
       setAccessibility("waiting");
       startPolling();
     } catch (error) {
