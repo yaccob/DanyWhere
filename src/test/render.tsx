@@ -25,9 +25,14 @@ export const setBackendSettings = (settings: AppSettings): void => {
   mockCommand("getDefaultSettings", () => ok(settings));
 };
 
-type Layered = AppSettings & {
+type Layered = Omit<AppSettings, "default_values" | "profiles"> & {
   default_values: Record<string, unknown>;
-  profiles: { id: string; values: Record<string, unknown>; own?: string[] }[];
+  profiles: {
+    id: string;
+    values: Record<string, unknown>;
+    own?: string[];
+    own_entries?: Record<string, unknown>;
+  }[];
 };
 
 /** `settings` after `set_profile_value(scope, field, value)`, as far as a
@@ -40,33 +45,31 @@ export const withValue = (
   field: string,
   value: unknown,
 ): AppSettings => {
-  const next = structuredClone(settings) as Layered;
+  const next = structuredClone(settings) as unknown as Layered;
+  const done = () => next as unknown as AppSettings;
   const list = PROFILE_LIST_FIELDS[field] !== undefined;
   const inUse = (id: string) => next.active_profile_id === id;
   if (scope.kind === "defaults") {
     next.default_values[field] = value;
     for (const profile of next.profiles) {
       const holds = list
-        ? Object.keys(
-            (profile as { own_entries?: Record<string, unknown> })
-              .own_entries ?? {},
-          ).includes(field)
+        ? Object.keys(profile.own_entries ?? {}).includes(field)
         : (profile.own ?? []).includes(field);
       if (!holds) profile.values[field] = value;
     }
     if (!next.profiles.some((p) => inUse(p.id))) {
       (next as Record<string, unknown>)[field] = value;
     }
-    return next;
+    return done();
   }
   const profile = next.profiles.find((p) => p.id === scope.id);
-  if (!profile) return next;
+  if (!profile) return done();
   profile.values[field] = value;
   if (!list && !(profile.own ?? []).includes(field)) {
     profile.own = [...(profile.own ?? []), field];
   }
   if (inUse(profile.id)) (next as Record<string, unknown>)[field] = value;
-  return next;
+  return done();
 };
 
 /** From now on the backend takes every `set_profile_value` (`withValue`)
