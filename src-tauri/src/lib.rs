@@ -1,3 +1,4 @@
+mod accessibility;
 mod actions;
 mod app_profiles;
 mod append_text;
@@ -282,7 +283,7 @@ fn initialize_core_logic(app_handle: &AppHandle) {
 
     // DanyWhere: without Accessibility, read in the background which apps can
     // tell their window title, so a dictation's capture finds it in a cache.
-    window_capture::warm_up();
+    window_capture::warm_up(&settings::get_settings(app_handle));
 
     // Note: Shortcuts are NOT initialized here.
     // The frontend is responsible for calling the `initialize_shortcuts` command

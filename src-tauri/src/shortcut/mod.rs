@@ -217,10 +217,9 @@ pub fn change_binding(
     // Last Dictation" service's shortcut, so it must be one a service can
     // have.
     if id == crate::insert_service::PASTE_LAST_BINDING {
-        if let Err(e) = crate::insert_service::check_paste_last_binding(
-            settings.accessibility_skipped,
+        if let Err(e) = crate::insert_service::check_paste_last_change(
+            &settings,
             &binding,
-            &settings.bindings,
             crate::delivery::INSERT_SERVICE_AVAILABLE,
         ) {
             warn!("change_binding: refused {binding} for {id}: {e}");
@@ -423,7 +422,12 @@ pub fn apply_no_accessibility_mode(settings: &mut settings::AppSettings) -> Vec<
         let Some(default) = defaults.get(id) else {
             continue;
         };
-        if tauri_impl::validate_shortcut(&binding.current_binding).is_err() {
+        if validate_shortcut_for_implementation(
+            &binding.current_binding,
+            KeyboardImplementation::Tauri,
+        )
+        .is_err()
+        {
             binding.current_binding = default.current_binding.clone();
             reset.push(id.clone());
         }

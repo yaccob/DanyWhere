@@ -957,8 +957,7 @@ fn paste_as_configured(
     // DanyWhere: the "Append" field instead of the trailing space; its key
     // presses replace auto submit (below).
     let append = crate::append_text::for_value(append_text);
-    let append_keys =
-        crate::append_text::keys_after_paste(&append, paste_method, settings.accessibility_skipped);
+    let append_keys = crate::append_text::keys_after_paste_for(&append, &settings);
     let text = text + &append.text;
 
     info!(

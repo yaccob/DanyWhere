@@ -37,7 +37,9 @@ pub enum Delivery {
 pub fn delivery_for(settings: &AppSettings) -> Delivery {
     // Without Accessibility the paste keystroke cannot be simulated, even if
     // a paste method was configured again later.
-    if settings.accessibility_skipped || settings.paste_method == PasteMethod::None {
+    if !crate::accessibility::state(settings).can_simulate_input()
+        || settings.paste_method == PasteMethod::None
+    {
         Delivery::Clipboard
     } else {
         Delivery::Paste
@@ -68,7 +70,7 @@ pub fn dictation_target(settings: &AppSettings, service_available: bool) -> Dict
     // The user's decision (2026-11-11): without Accessibility the dictation
     // no longer replaces what the user copied. Older installations stored
     // CopyToClipboard with this mode, so that setting doesn't count here.
-    if settings.accessibility_skipped && service_available {
+    if crate::accessibility::state(settings).runs_without_accessibility() && service_available {
         DictationTarget::InsertService
     } else if delivery_for(settings) == Delivery::Paste {
         DictationTarget::Pasted
@@ -401,17 +403,13 @@ mod tests {
         sound_after_dictation, text_to_copy, Delivery, DictationEnd, DictationNotice,
         DictationTarget,
     };
+    use crate::accessibility::testing::{
+        settings_without_accessibility, with_choice, with_system_trusted, STATES,
+    };
     use crate::actions::TranscriptionOutcome;
     use crate::audio_feedback::SoundType;
     use crate::settings::{get_default_settings, AppSettings, ClipboardHandling, PasteMethod};
-    use crate::shortcut::apply_no_accessibility_mode;
     use std::time::Duration;
-
-    fn without_accessibility() -> AppSettings {
-        let mut settings = get_default_settings();
-        apply_no_accessibility_mode(&mut settings);
-        settings
-    }
 
     /// `settings` with the feedback sounds switched on (they're off by
     /// default) and the done sound as given.
@@ -453,7 +451,7 @@ mod tests {
     fn a_dictation_left_on_the_clipboard_ends_with_the_done_sound_only() {
         // Without the service a dictation without Accessibility waits on the
         // clipboard; the done sound replaces the waiting sound.
-        let settings = with_sounds(without_accessibility(), true);
+        let settings = with_sounds(settings_without_accessibility(), true);
         assert_eq!(
             sound_after_dictation(&settings, false, delivered()),
             Some(SoundType::Done)
@@ -462,7 +460,7 @@ mod tests {
 
     #[test]
     fn a_dictation_waiting_for_the_service_ends_with_the_done_sound_only() {
-        let settings = with_sounds(without_accessibility(), true);
+        let settings = with_sounds(settings_without_accessibility(), true);
         assert_eq!(
             sound_after_dictation(&settings, true, delivered()),
             Some(SoundType::Done)
@@ -471,7 +469,7 @@ mod tests {
 
     #[test]
     fn a_dictation_the_service_inserted_ends_with_the_done_sound() {
-        let settings = with_sounds(without_accessibility(), true);
+        let settings = with_sounds(settings_without_accessibility(), true);
         let end = DictationEnd {
             inserted_by_service: true,
             ..delivered()
@@ -488,7 +486,7 @@ mod tests {
             put_on_clipboard: true,
             ..delivered()
         };
-        for settings in [get_default_settings(), without_accessibility()] {
+        for settings in [get_default_settings(), settings_without_accessibility()] {
             assert_eq!(
                 sound_after_dictation(&with_sounds(settings, true), true, end),
                 Some(SoundType::Done)
@@ -514,7 +512,7 @@ mod tests {
             ..delivered()
         };
         for done_sound in [true, false] {
-            for settings in [get_default_settings(), without_accessibility()] {
+            for settings in [get_default_settings(), settings_without_accessibility()] {
                 assert_eq!(
                     sound_after_dictation(&with_sounds(settings, done_sound), true, end),
                     None
@@ -530,7 +528,7 @@ mod tests {
                 outcome,
                 ..delivered()
             };
-            for settings in [get_default_settings(), without_accessibility()] {
+            for settings in [get_default_settings(), settings_without_accessibility()] {
                 assert_eq!(
                     sound_after_dictation(&with_sounds(settings, true), true, end),
                     None
@@ -546,7 +544,7 @@ mod tests {
             ..delivered()
         };
         for done_sound in [true, false] {
-            for settings in [get_default_settings(), without_accessibility()] {
+            for settings in [get_default_settings(), settings_without_accessibility()] {
                 assert_eq!(
                     sound_after_dictation(&with_sounds(settings, done_sound), true, end),
                     None
@@ -563,7 +561,11 @@ mod tests {
         };
         for done_sound in [true, false] {
             assert_eq!(
-                sound_after_dictation(&with_sounds(without_accessibility(), done_sound), true, end),
+                sound_after_dictation(
+                    &with_sounds(settings_without_accessibility(), done_sound),
+                    true,
+                    end
+                ),
                 None
             );
         }
@@ -581,7 +583,7 @@ mod tests {
             sound_after_dictation(&pasted, true, copied),
             Some(SoundType::Clipboard)
         );
-        let waiting = with_sounds(without_accessibility(), false);
+        let waiting = with_sounds(settings_without_accessibility(), false);
         assert_eq!(
             sound_after_dictation(&waiting, true, delivered()),
             Some(SoundType::Clipboard)
@@ -600,7 +602,7 @@ mod tests {
     #[test]
     fn no_sound_at_all_while_audio_feedback_is_off() {
         for done_sound in [true, false] {
-            for settings in [get_default_settings(), without_accessibility()] {
+            for settings in [get_default_settings(), settings_without_accessibility()] {
                 let mut settings = with_sounds(settings, done_sound);
                 settings.audio_feedback = false;
                 assert_eq!(sound_after_dictation(&settings, true, delivered()), None);
@@ -626,14 +628,22 @@ mod tests {
 
     #[test]
     fn a_dictation_without_accessibility_plays_the_waiting_sound_once_in_any_case() {
-        assert!(plays_waiting_sound(&without_accessibility(), true, false));
-        assert!(plays_waiting_sound(&without_accessibility(), true, true));
+        assert!(plays_waiting_sound(
+            &settings_without_accessibility(),
+            true,
+            false
+        ));
+        assert!(plays_waiting_sound(
+            &settings_without_accessibility(),
+            true,
+            true
+        ));
     }
 
     #[test]
     fn a_dictation_without_accessibility_waits_for_the_insert_service() {
         assert_eq!(
-            dictation_target(&without_accessibility(), true),
+            dictation_target(&settings_without_accessibility(), true),
             DictationTarget::InsertService
         );
     }
@@ -641,7 +651,7 @@ mod tests {
     #[test]
     fn without_the_insert_service_a_dictation_without_accessibility_goes_to_the_clipboard() {
         assert_eq!(
-            dictation_target(&without_accessibility(), false),
+            dictation_target(&settings_without_accessibility(), false),
             DictationTarget::Clipboard
         );
     }
@@ -669,7 +679,7 @@ mod tests {
     fn a_dictation_waiting_for_the_service_stays_off_the_clipboard() {
         // Installations from before the service stored CopyToClipboard with
         // the no-Accessibility mode; the dictation must not go there anyway.
-        let settings = without_accessibility();
+        let settings = settings_without_accessibility();
         assert_eq!(
             settings.clipboard_handling,
             ClipboardHandling::CopyToClipboard
@@ -680,7 +690,7 @@ mod tests {
     #[test]
     fn without_the_service_a_dictation_without_accessibility_is_still_copied() {
         assert!(copies_dictation_to_clipboard(
-            &without_accessibility(),
+            &settings_without_accessibility(),
             false
         ));
     }
@@ -697,7 +707,7 @@ mod tests {
     #[test]
     fn the_ready_notice_follows_a_dictation_for_the_service() {
         assert_eq!(
-            dictation_notice(&without_accessibility(), true),
+            dictation_notice(&settings_without_accessibility(), true),
             Some(DictationNotice::ReadyToInsert)
         );
     }
@@ -705,7 +715,7 @@ mod tests {
     #[test]
     fn the_clipboard_notice_follows_a_dictation_left_on_the_clipboard() {
         assert_eq!(
-            dictation_notice(&without_accessibility(), false),
+            dictation_notice(&settings_without_accessibility(), false),
             Some(DictationNotice::OnClipboard)
         );
     }
@@ -717,8 +727,14 @@ mod tests {
 
     #[test]
     fn the_waiting_sound_plays_for_the_service_and_the_clipboard() {
-        assert!(dictation_waits_for_user(&without_accessibility(), true));
-        assert!(dictation_waits_for_user(&without_accessibility(), false));
+        assert!(dictation_waits_for_user(
+            &settings_without_accessibility(),
+            true
+        ));
+        assert!(dictation_waits_for_user(
+            &settings_without_accessibility(),
+            false
+        ));
         assert!(!dictation_waits_for_user(&get_default_settings(), true));
     }
 
@@ -726,7 +742,10 @@ mod tests {
     fn paste_last_transcript_still_uses_the_clipboard_with_the_service() {
         // The user's decision (2026-11-11): without Accessibility, "Paste Last
         // Transcript" is the way to get the dictation onto the clipboard.
-        assert_eq!(delivery_for(&without_accessibility()), Delivery::Clipboard);
+        assert_eq!(
+            delivery_for(&settings_without_accessibility()),
+            Delivery::Clipboard
+        );
     }
 
     #[test]
@@ -777,9 +796,10 @@ mod tests {
 
     #[test]
     fn uses_the_clipboard_without_accessibility() {
-        let mut settings = get_default_settings();
-        apply_no_accessibility_mode(&mut settings);
-        assert_eq!(delivery_for(&settings), Delivery::Clipboard);
+        assert_eq!(
+            delivery_for(&settings_without_accessibility()),
+            Delivery::Clipboard
+        );
     }
 
     #[test]
@@ -793,10 +813,50 @@ mod tests {
     fn uses_the_clipboard_when_accessibility_was_skipped() {
         // Even if pasting is configured again later, there is no permission to
         // simulate the paste keystroke.
-        let mut settings = get_default_settings();
-        settings.accessibility_skipped = true;
+        let mut settings = with_choice(get_default_settings(), true);
         settings.paste_method = PasteMethod::CtrlV;
         assert_eq!(delivery_for(&settings), Delivery::Clipboard);
+    }
+
+    #[test]
+    fn pastes_unless_the_user_chose_to_go_without_whatever_macos_answers() {
+        for (skipped, trusted) in STATES {
+            let mut settings = with_choice(get_default_settings(), skipped);
+            settings.paste_method = PasteMethod::CtrlV;
+            let expected = if skipped {
+                Delivery::Clipboard
+            } else {
+                Delivery::Paste
+            };
+            assert_eq!(
+                with_system_trusted(trusted, || delivery_for(&settings)),
+                expected,
+                "skipped {skipped}, trusted {trusted}"
+            );
+        }
+    }
+
+    #[test]
+    fn a_dictation_waits_for_the_service_when_the_user_chose_to_go_without() {
+        for (skipped, trusted) in STATES {
+            let mut settings = with_choice(get_default_settings(), skipped);
+            settings.paste_method = PasteMethod::CtrlV;
+            settings.clipboard_handling = ClipboardHandling::CopyToClipboard;
+            let (with_service, without_service) = if skipped {
+                (DictationTarget::InsertService, DictationTarget::Clipboard)
+            } else {
+                (DictationTarget::Pasted, DictationTarget::Pasted)
+            };
+            let state = format!("skipped {skipped}, trusted {trusted}");
+            with_system_trusted(trusted, || {
+                assert_eq!(dictation_target(&settings, true), with_service, "{state}");
+                assert_eq!(
+                    dictation_target(&settings, false),
+                    without_service,
+                    "{state}"
+                );
+            });
+        }
     }
 
     fn with_append(append_text: &str) -> AppSettings {
@@ -843,10 +903,10 @@ mod tests {
     fn a_pasted_dictation_or_one_a_call_waits_for_goes_into_the_app_in_front() {
         let pasting = get_default_settings();
         assert!(goes_into_app_in_front(&pasting, true, false));
-        let mut waiting = without_accessibility();
+        let waiting = settings_without_accessibility();
         assert!(!goes_into_app_in_front(&waiting, true, false));
         assert!(goes_into_app_in_front(&waiting, true, true));
-        waiting.accessibility_skipped = false;
+        let mut waiting = with_choice(waiting, false);
         waiting.paste_method = PasteMethod::None;
         assert!(!goes_into_app_in_front(&waiting, true, false));
     }
