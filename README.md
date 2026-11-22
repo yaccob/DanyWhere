@@ -13,21 +13,23 @@ The hard problems — local speech recognition, voice activity detection, global
 
 ## What DanyWhere adds to Handy
 
-### Profiles
+### Defaults and profiles
 
-- **Profiles for different kinds of dictation.** A profile holds everything that decides how a dictation is processed: speech model, languages, post-processing with its own prompts, filler words, word lists, context and what is appended. Shortcuts, microphone, API keys and the interface are the same in every profile. Switch profiles at the top of the sidebar or in the tray, and export a profile to a file to import it elsewhere; its API key is encrypted with a password you choose.
+- **Defaults, and profiles that change only what they need.** Every setting that concerns a dictation, from the speech model, languages and post-processing to the shortcuts, microphone, sounds and word list, has a default. A profile follows the defaults and keeps its own value only where you set one; each setting shows which applies and resets an own value with one click, and the defaults show which profiles differ. Settings of the app itself, such as the interface language, autostart and updates, are the same for every profile. Choose what dictations use at the top of the sidebar or in the tray, and export a profile to a file to import it elsewhere; its API key is encrypted with a password you choose.
 - **A profile per application.** Give a profile the applications it is for, for example one for your terminal and another for your messenger. The application in front when the recording ends decides, and when the text later goes into another application, DanyWhere redoes only what that application's profile does differently. Control+Shift+A (Alt+Shift+A on Windows) switches this off and on. On Windows you type the program names; Linux can't tell the application in front yet.
 
 ### Post-processing
 
 - **Post-processing that works on your text instead of answering it.** DanyWhere tells the model itself that it gets a speech-recognition transcript to work on, not a question to answer, that its language stays, and that misheard words are to be corrected where the context makes clear what was said. A prompt only says what to do with the text. **Effort**, next to the model, chooses how much the model thinks.
-- **Earlier dictations as context.** While **Send Context** is on, a dictation with post-processing sends your earlier dictations from the same window along, so the model knows what the conversation is about. It starts off; turn it on in the tray or with Control+Shift+X (Alt+Shift+X on Windows and Linux).
+- **Several prompts in one go.** The prompts are one library for all profiles; each profile switches on the ones it uses and puts them in order, and they go to the model in one request, applied in turn.
+- **Your word lists as known terms.** Post-processing gets the word lists in effect, so it can write a misheard name as listed and tell it from a word that fits the sentence, with every speech model.
+- **Earlier dictations as context.** An end shortcut can send your earlier dictations from the same window along with its post-processing, so the model knows what the conversation is about.
 - **Post-processing on this computer, and you see where it runs.** Next to the provider, the settings say whether post-processing stays on this computer or goes to the cloud. With a model served on this computer, such as Ollama or LM Studio through the Custom provider, DanyWhere has it loaded as soon as you start speaking, so its cold start doesn't add to the wait.
-- **Decide on post-processing at the end.** In toggle mode, the post-processing shortcut also stops a recording that was started with the plain shortcut, and the transcript is post-processed.
+- **Decide at the end how a dictation ends.** A recording starts with a start shortcut and ends with an end shortcut of your choice, each with a key combination of its own: whether the text is post-processed, whether earlier dictations go along as context, and what is appended. Out of the box the combinations of the two start shortcuts are ends too, the first without and the second with post-processing, whichever started the recording; releasing a held start shortcut ends as set under **When Held**.
 
 ### History
 
-- **Every edit kept as a version.** Each entry is a stack of versions: the transcription at the bottom, and every edit, yours or the post-processing's, on top of the version it was made from. Click into the text to edit it; the wand post-processes an entry again, long after the dictation too.
+- **Every edit kept as a version.** Each entry is a stack of versions with its result on top: post-processing, your own edit and transcribing again always add a version on top and delete nothing, and versions can be moved and deleted. Click into the text to edit it; the wand post-processes the version you see, with the profile's prompts or any single prompt, long after the dictation too. Each entry names the speech model that transcribed it.
 - **Search the whole History,** every version included, with match case, whole words and regular expressions, and filter by app, window title or file name.
 - **A long history that stays small.** Recordings are stored as Opus, about 12 times smaller than WAV, and a storage limit (500 MB by default, about 54 hours of dictation, or unlimited) replaces the count of five recent entries. When old recordings are removed, their transcripts stay in the History; a star keeps a recording permanently.
 
@@ -39,18 +41,19 @@ The hard problems — local speech recognition, voice activity detection, global
 ### Inserting and copying
 
 - **Paste or copy the last transcript again.** Control+Shift+V (Alt+Shift+V on Windows and Linux) puts the most recent transcript where the cursor is now, for example after a dictation went nowhere because no text field had focus. Control+Shift+C (Alt+Shift+C) puts it on the clipboard.
-- **Append text and a key press.** Each profile can add text after every dictation, such as a space or a new line, and then a key press such as Enter to send a message right away.
+- **Append text and a key press.** Each end shortcut can add text after the dictation, such as a space or a new line, and then a key press such as Enter to send a message right away.
 
 ### Speech models and word lists
 
 - **A small model selection for laptops.** Six models that are fast enough for dictation on a MacBook: Parakeet Ultra (25 European languages), Whisper large-v3-turbo (100 languages), Canary 1B v2 (translates to English), Parakeet unified EN 0.6B (English with live preview), Whisper small and Canary 180M flash. Setup recommends one for the languages you speak and starts downloading it while you grant permissions. Models and the language detector some of them use download from DanyWhere's own mirror, [yaccob/DanyWhere-models](https://github.com/yaccob/DanyWhere-models), with Hugging Face as a fallback, and every file is checked against its SHA-256 hash.
-- **Word lists per topic.** A global word list always applies, each profile has a list of its own, and named additional lists, for example one per project, can be switched on one at a time in the settings, from the tray or with Control+Shift+L (Alt+Shift+L on Windows and Linux); their words go to the model first.
+- **Word lists per topic.** The word list of the defaults always applies, each profile can add words of its own, and named additional lists, for example one per project, can be switched on one at a time in the settings, from the tray or with Control+Shift+L (Alt+Shift+L on Windows and Linux). Speech models that take a vocabulary, the Whisper models, use them while they recognize speech; with every model, post-processing gets them as known terms. The settings and the model list say which models use them.
 
 ### Also new
 
 - **A sound when everything is done,** post-processing included, so you know when to look back.
 - **The overlay on the screen you work on**, the one with the window in front, with or without Accessibility (macOS and Windows).
 - **Your own colours** in a `theme.css` next to the settings, applied without a restart (Debug → Open Theme File).
+- **Key combinations as the system writes them** (⌃⌥D on macOS, Ctrl+Shift+V elsewhere), and in a combination with a main key the left and the right modifier keys count alike.
 - **What's new after an update,** in English or German.
 
 Everything else works as in Handy.
@@ -59,13 +62,13 @@ Everything else works as in Handy.
 
 DanyWhere has its own app name, settings, process name (`danywhere`) and update channel, so it can be installed next to Handy; give the two apps different shortcuts.
 
-The download links below are for DanyWhere 0.2.5; all releases are on this repository's [releases](https://github.com/yaccob/DanyWhere/releases) page. DanyWhere checks the releases for updates on every platform; updates are signed with DanyWhere's own key.
+The download links below are for DanyWhere 0.3.0; all releases are on this repository's [releases](https://github.com/yaccob/DanyWhere/releases) page. DanyWhere checks the releases for updates on every platform; updates are signed with DanyWhere's own key.
 
 ### macOS
 
 You need a Mac with macOS 11 (Big Sur) or later, with Apple silicon or an Intel processor. On Intel Macs, transcription runs on the processor, so older or dual-core Macs work best with the smaller models.
 
-1. Download [DanyWhere_0.2.5_aarch64.dmg](https://github.com/yaccob/DanyWhere/releases/download/danywhere-v0.2.5/DanyWhere_0.2.5_aarch64.dmg) (Apple silicon) or [DanyWhere_0.2.5_x64.dmg](https://github.com/yaccob/DanyWhere/releases/download/danywhere-v0.2.5/DanyWhere_0.2.5_x64.dmg) (Intel). Both are signed with an Apple Developer ID and notarized by Apple.
+1. Download [DanyWhere_0.3.0_aarch64.dmg](https://github.com/yaccob/DanyWhere/releases/download/danywhere-v0.3.0/DanyWhere_0.3.0_aarch64.dmg) (Apple silicon) or [DanyWhere_0.3.0_x64.dmg](https://github.com/yaccob/DanyWhere/releases/download/danywhere-v0.3.0/DanyWhere_0.3.0_x64.dmg) (Intel). Both are signed with an Apple Developer ID and notarized by Apple.
 2. Open the DMG and drag DanyWhere into Applications.
 
    Or install it with [Homebrew](https://brew.sh) instead of steps 1 and 2: `brew install --cask yaccob/tap/danywhere`
@@ -77,7 +80,7 @@ You need a Mac with macOS 11 (Big Sur) or later, with Apple silicon or an Intel 
 
 You need Windows 10 or 11 on an x64 or ARM64 PC. On x64, transcription can use the graphics card (Vulkan); on ARM64, it runs on the processor.
 
-1. Download the installer: [DanyWhere_0.2.5_x64-setup.exe](https://github.com/yaccob/DanyWhere/releases/download/danywhere-v0.2.5/DanyWhere_0.2.5_x64-setup.exe) for x64, [DanyWhere_0.2.5_arm64-setup.exe](https://github.com/yaccob/DanyWhere/releases/download/danywhere-v0.2.5/DanyWhere_0.2.5_arm64-setup.exe) for ARM64. For deployment with tools that need an MSI, use [DanyWhere_0.2.5_x64_en-US.msi](https://github.com/yaccob/DanyWhere/releases/download/danywhere-v0.2.5/DanyWhere_0.2.5_x64_en-US.msi) or [DanyWhere_0.2.5_arm64_en-US.msi](https://github.com/yaccob/DanyWhere/releases/download/danywhere-v0.2.5/DanyWhere_0.2.5_arm64_en-US.msi) instead.
+1. Download the installer: [DanyWhere_0.3.0_x64-setup.exe](https://github.com/yaccob/DanyWhere/releases/download/danywhere-v0.3.0/DanyWhere_0.3.0_x64-setup.exe) for x64, [DanyWhere_0.3.0_arm64-setup.exe](https://github.com/yaccob/DanyWhere/releases/download/danywhere-v0.3.0/DanyWhere_0.3.0_arm64-setup.exe) for ARM64. For deployment with tools that need an MSI, use [DanyWhere_0.3.0_x64_en-US.msi](https://github.com/yaccob/DanyWhere/releases/download/danywhere-v0.3.0/DanyWhere_0.3.0_x64_en-US.msi) or [DanyWhere_0.3.0_arm64_en-US.msi](https://github.com/yaccob/DanyWhere/releases/download/danywhere-v0.3.0/DanyWhere_0.3.0_arm64_en-US.msi) instead.
 2. Run the installer. DanyWhere is not signed with a Windows code-signing certificate yet, so Windows SmartScreen warns "Windows protected your PC": click **More info**, then **Run anyway**. On Windows 11 with Smart App Control switched on (Windows Security → App & browser control), Windows blocks unsigned apps without offering this choice.
 
    The installer asks for a normal or a portable installation. A portable installation keeps settings, models and history in a `Data` folder next to `danywhere.exe`.
@@ -91,26 +94,26 @@ DanyWhere comes for x64 and ARM64 as a `.deb`, an `.rpm` and an AppImage:
 
 | Package                             | x64                                                                                                                                     | ARM64                                                                                                                                       |
 | ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| deb (Debian, Ubuntu 22.04 or later) | [DanyWhere_0.2.5_amd64.deb](https://github.com/yaccob/DanyWhere/releases/download/danywhere-v0.2.5/DanyWhere_0.2.5_amd64.deb)           | [DanyWhere_0.2.5_arm64.deb](https://github.com/yaccob/DanyWhere/releases/download/danywhere-v0.2.5/DanyWhere_0.2.5_arm64.deb)               |
-| rpm (Fedora, openSUSE)              | [DanyWhere-0.2.5-1.x86_64.rpm](https://github.com/yaccob/DanyWhere/releases/download/danywhere-v0.2.5/DanyWhere-0.2.5-1.x86_64.rpm)     | [DanyWhere-0.2.5-1.aarch64.rpm](https://github.com/yaccob/DanyWhere/releases/download/danywhere-v0.2.5/DanyWhere-0.2.5-1.aarch64.rpm)       |
-| AppImage (any distribution)         | [DanyWhere_0.2.5_amd64.AppImage](https://github.com/yaccob/DanyWhere/releases/download/danywhere-v0.2.5/DanyWhere_0.2.5_amd64.AppImage) | [DanyWhere_0.2.5_aarch64.AppImage](https://github.com/yaccob/DanyWhere/releases/download/danywhere-v0.2.5/DanyWhere_0.2.5_aarch64.AppImage) |
+| deb (Debian, Ubuntu 22.04 or later) | [DanyWhere_0.3.0_amd64.deb](https://github.com/yaccob/DanyWhere/releases/download/danywhere-v0.3.0/DanyWhere_0.3.0_amd64.deb)           | [DanyWhere_0.3.0_arm64.deb](https://github.com/yaccob/DanyWhere/releases/download/danywhere-v0.3.0/DanyWhere_0.3.0_arm64.deb)               |
+| rpm (Fedora, openSUSE)              | [DanyWhere-0.3.0-1.x86_64.rpm](https://github.com/yaccob/DanyWhere/releases/download/danywhere-v0.3.0/DanyWhere-0.3.0-1.x86_64.rpm)     | [DanyWhere-0.3.0-1.aarch64.rpm](https://github.com/yaccob/DanyWhere/releases/download/danywhere-v0.3.0/DanyWhere-0.3.0-1.aarch64.rpm)       |
+| AppImage (any distribution)         | [DanyWhere_0.3.0_amd64.AppImage](https://github.com/yaccob/DanyWhere/releases/download/danywhere-v0.3.0/DanyWhere_0.3.0_amd64.AppImage) | [DanyWhere_0.3.0_aarch64.AppImage](https://github.com/yaccob/DanyWhere/releases/download/danywhere-v0.3.0/DanyWhere_0.3.0_aarch64.AppImage) |
 
 1. Download the package for your distribution and processor, and install it (commands for x64):
 
    ```bash
    # deb: apt installs the dependencies too (dpkg -i does not)
-   sudo apt install ./DanyWhere_0.2.5_amd64.deb
+   sudo apt install ./DanyWhere_0.3.0_amd64.deb
    # rpm (openSUSE: sudo zypper install …)
-   sudo dnf install ./DanyWhere-0.2.5-1.x86_64.rpm
+   sudo dnf install ./DanyWhere-0.3.0-1.x86_64.rpm
    # AppImage
-   chmod +x DanyWhere_0.2.5_amd64.AppImage && ./DanyWhere_0.2.5_amd64.AppImage
+   chmod +x DanyWhere_0.3.0_amd64.AppImage && ./DanyWhere_0.3.0_amd64.AppImage
    ```
 
 2. Install the tool DanyWhere pastes with: `xdotool` on X11, `wtype` or `dotool` on Wayland. Without one, pasting may not work, especially on Wayland. Handy's [Linux notes](https://github.com/cjpais/Handy#linux-notes) have the details, for example for Ubuntu 26.04.
 3. Start DanyWhere and follow the setup: allow microphone access and pick a model.
 4. Press Ctrl+Alt+Space and speak; Ctrl+Alt+Shift+Space does the same with post-processing. On Wayland, global shortcuts usually have to be set up in the desktop environment: bind them to `danywhere --toggle-transcription` and `danywhere --toggle-post-process` (see [Command line](#command-line)).
 
-On a Wayland desktop the AppImage runs as a Wayland app, like the deb and rpm, so its window follows your display scaling. If it misbehaves there, start it with `HANDY_GDK_BACKEND=x11 ./DanyWhere_0.2.5_amd64.AppImage` to run it through Xwayland instead.
+On a Wayland desktop the AppImage runs as a Wayland app, like the deb and rpm, so its window follows your display scaling. If it misbehaves there, start it with `HANDY_GDK_BACKEND=x11 ./DanyWhere_0.3.0_amd64.AppImage` to run it through Xwayland instead.
 
 ## Command line
 
