@@ -388,16 +388,16 @@
         "pressKeys": "Tryck på tangenter...",
         "bindings": {
           "transcribe": {
-            "name": "Kortkommando för transkribering",
-            "description": "Kortkommandot för att spela in och transkribera din röst."
+            "name": "Startkortkommando",
+            "description": "Startar en inspelning. Hur den slutar bestämmer avslutningskortkommandona och, när det hålls nere, ”Genvägens beteende”."
           },
           "cancel": {
             "name": "Kortkommando för att avbryta",
             "description": "Kortkommandot för att avbryta den aktuella inspelningen."
           },
           "transcribe_with_post_process": {
-            "name": "Snabbkommando för efterbearbetning",
-            "description": "Valfritt: En dedikerad snabbknapp som alltid tillämpar AI-efterbearbetning på din transkription."
+            "name": "Andra startkortkommandot",
+            "description": "Valfritt: en andra tangentkombination som startar en inspelning. I fabriksinställningen efterbearbetar ett avslutningskortkommando med samma tangentkombination texten. Bara upptagen så länge efterbearbetning är påslagen."
           },
           "paste_last_transcript": {
             "name": "Klistra in senaste transkriptionen",
@@ -444,16 +444,16 @@
       },
       "shortcutActivation": {
         "title": "Genvägens beteende",
-        "description": "Välj hur kortkommandot för transkribering startar och stoppar inspelningen.",
+        "description": "Välj hur ett startkortkommando startar och avslutar en inspelning.",
         "options": {
           "holdOrToggle": "Automatiskt",
           "pushToTalk": "Håll",
           "toggle": "Växla"
         },
         "descriptions": {
-          "hold_or_toggle": "Håll nere för att spela in eller tryck kort för att växla",
+          "hold_or_toggle": "Håll nere för att spela in, eller tryck kort för att starta; sedan stoppar ett avslutningskortkommando den",
           "push_to_talk": "Spelar in så länge du håller genvägen nedtryckt",
-          "toggle": "Tryck på genvägen för att starta inspelningen, tryck igen för att stoppa"
+          "toggle": "Tryck kort för att starta inspelningen; ett nytt tryck stoppar den bara om ett avslutningskortkommando har samma tangentkombination"
         }
       },
       "insertService": {
@@ -475,32 +475,31 @@
     },
     "endKeys": {
       "title": "Avslutningskortkommandon",
-      "description": "Hur en inspelning slutar och vad som följer: varje avslutningskortkommando bestämmer vad som läggs till, om texten efterbearbetas och om tidigare dikteringar skickas med som kontext.",
-      "builtin": {
-        "plain": "Vanlig",
-        "post_process": "Efterbearbeta"
-      },
+      "description": "Hur en inspelning slutar och vad som följer. Varje avslutningskortkommando har en egen tangentkombination, som bara är upptagen under en inspelning, och bestämmer vad som läggs till, om texten efterbearbetas och om tidigare dikteringar skickas med som kontext. Ett avslutningskortkommando får ha ett startkortkommandos tangentkombination: ett nytt tryck på det startkortkommandot avslutar då på det här sättet.",
       "name": "Namn",
-      "noShortcut": "Inget kortkommando",
-      "shortcutHint": "Dess eget kortkommando avslutar en inspelning på det här sättet. Det är bara upptaget under en inspelning.",
-      "clearShortcut": "Ta bort kortkommando",
+      "shortcutHint": "Ett tryck på den här tangentkombinationen under en inspelning avslutar den på det här sättet. Den är bara upptagen under en inspelning.",
+      "sameAsStart": "Samma tangentkombination som ”{{start}}”: ett nytt tryck under en inspelning avslutar på det här sättet.",
       "append": "Lägg till",
       "appendDescription": "Läggs till i en diktering som slutar på det här sättet: texten och sedan den tangenttryckning du väljer. I texten är \\s ett mellanslag, \\n en ny rad, \\t en tabb och \\\\ ett omvänt snedstreck; allt annat läggs till som det står. Tangenttryckningen skickas bara när texten klistras in.",
+      "postProcess": "Efterbearbeta",
       "sendContext": "Skicka kontext",
       "sendContextHint": "Bara med efterbearbetning: tidigare dikteringar från samma fönster skickas med som kontext.",
       "add": "Lägg till avslutningskortkommando",
-      "newName": "Nytt avslutningskortkommando",
+      "addPressKeys": "Tryck på tangentkombinationen för det nya avslutningskortkommandot",
       "delete": "Ta bort {{name}}",
-      "inUse": "Ett startkortkommando slutar med det som standard; välj först ett annat standardslut.",
-      "defaultEnd": {
-        "title": "Standardslut för {{shortcut}}",
-        "description": "Hur dess andra tryck, eller när det hålls nere dess släpp, avslutar inspelningen."
+      "lastOne": "Ett avslutningskortkommando måste finnas kvar, så att en inspelning alltid kan avslutas.",
+      "held": "{{shortcut}} nedhållet",
+      "holdEnds": {
+        "title": "När det hålls nere",
+        "description": "Hur ett släpp av ett startkortkommando som hålls nere avslutar inspelningen."
       },
-      "linuxNoShortcuts": "På Linux tas avslutningskortkommandonas egna kortkommandon inte upp; de avslutar en inspelning bara som standardslut.",
+      "linuxNoShortcuts": "På Linux tas avslutningskortkommandonas tangentkombinationer inte upp under en inspelning. Där slutar en inspelning när ett startkortkommando som hålls nere släpps, eller när man åter trycker på ett startkortkommando vars tangentkombination ett avslutningskortkommando har.",
       "errors": {
         "save": "Avslutningskortkommandona kunde inte sparas: {{error}}",
-        "needsName": "Varje avslutningskortkommando behöver ett namn.",
-        "shortcutTwice": "Två avslutningskortkommandon kan inte dela ett kortkommando."
+        "needsShortcut": "Varje avslutningskortkommando behöver en tangentkombination.",
+        "shortcutTwice": "Två avslutningskortkommandon kan inte dela ett kortkommando.",
+        "last": "Det sista avslutningskortkommandot kan inte tas bort: en inspelning måste alltid gå att avsluta.",
+        "cannotEnd": "På Linux skulle en inspelning inte längre gå att avsluta: behåll ett avslutningskortkommando med ett startkortkommandos tangentkombination, eller välj ”Håll”."
       }
     },
     "profiles": {
@@ -1322,7 +1321,7 @@
     "profileView": {
       "fields": {
         "shortcuts": "Kortkommandon",
-        "defaultEnds": "Standardavslut",
+        "holdEnds": "När det hålls nere",
         "selectedModel": "Talmodell",
         "providers": "Leverantörens adress och format",
         "activePrompts": "Aktiva promptar",

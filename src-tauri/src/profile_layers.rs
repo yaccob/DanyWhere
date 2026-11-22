@@ -621,6 +621,34 @@ pub fn couple_equal(profile: &mut Profile, defaults: &ProfileValues) {
     profile.own_entries = own_entries;
 }
 
+/// Makes `field` of `profile` its own where it now differs from `defaults`
+/// (a list entry by entry, adding to what it held), so that [`propagate`]
+/// keeps it; for a migration that changed the profile's values and the
+/// defaults by different rules (`end_keys::migrate`). Returns whether
+/// anything changed.
+pub fn own_where_different(profile: &mut Profile, defaults: &ProfileValues, field: &str) -> bool {
+    let defaults = to_fields(defaults);
+    let mine = to_fields(&profile.values);
+    let (Some(default), Some(value)) = (defaults.get(field), mine.get(field)) else {
+        return false;
+    };
+    match list_key(LIST_FIELDS, field) {
+        Some(key) => {
+            let found = compare_list(key, default, value);
+            let held = profile.own_entries.entry(field.to_string()).or_default();
+            let before = held.clone();
+            held.own.extend(found.own);
+            held.off.extend(found.off);
+            let changed = *held != before;
+            if held.is_empty() {
+                profile.own_entries.remove(field);
+            }
+            changed
+        }
+        None => default != value && profile.own.insert(field.to_string()),
+    }
+}
+
 /// Copies the defaults into every profile's coupled fields and entries and
 /// the values in use into the flat fields. Returns whether anything changed.
 pub fn propagate(settings: &mut AppSettings) -> bool {
@@ -714,7 +742,9 @@ fn index_of(settings: &AppSettings, id: &str) -> Result<usize, String> {
 }
 
 /// Runs `change` on a copy of `settings` and keeps it, propagated, only
-/// when it succeeds.
+/// when it succeeds and every layer can still end a recording
+/// (`end_keys::check_layers`): removing an end shortcut of the defaults
+/// that a profile follows alone counts too.
 fn commit<T>(
     settings: &mut AppSettings,
     change: impl FnOnce(&mut AppSettings) -> Result<T, String>,
@@ -722,6 +752,7 @@ fn commit<T>(
     let mut next = settings.clone();
     let out = change(&mut next)?;
     propagate(&mut next);
+    crate::end_keys::check_layers(settings, &next)?;
     *settings = next;
     Ok(out)
 }
@@ -773,24 +804,37 @@ fn validate(
             }
             _ => Ok(()),
         },
-        // Strand D, as its change commands check them: the end shortcuts
-        // with the default ends that point into them, each key combination
-        // valid here and taken by no shortcut, "Append" in this system's key
-        // names.
-        "end_keys" | "default_ends" => {
-            crate::end_keys::validate(&values.end_keys, &values.default_ends)?;
+        // Strand D, as its change commands check them: the end shortcuts,
+        // each key combination valid here and taken by no shortcut but
+        // exactly a start shortcut's, "Append" in this system's key names.
+        "end_keys" => {
+            crate::end_keys::validate(&values.end_keys)?;
             for end in values.end_keys.iter_mut() {
                 end.append_text = crate::append_text::localize(
                     &end.append_text,
                     crate::append_text::KeyPlatform::current(),
                 );
-                if field == "end_keys" && !end.shortcut.trim().is_empty() {
-                    crate::shortcut::validate_shortcut_for_implementation(
-                        &end.shortcut,
-                        settings.keyboard_implementation,
-                    )?;
-                    crate::end_keys::check_against_bindings(&end.shortcut, &values.bindings)?;
-                }
+                crate::shortcut::validate_shortcut_for_implementation(
+                    &end.shortcut,
+                    settings.keyboard_implementation,
+                )?;
+                crate::end_keys::check_end_against_bindings(&end.shortcut, &values.bindings)?;
+            }
+            Ok(())
+        }
+        "hold_ends" => {
+            if let Some(binding) = values
+                .hold_ends
+                .keys()
+                .find(|binding| !crate::end_keys::START_BINDINGS.contains(&binding.as_str()))
+            {
+                return Err(format!("'{binding}' is no start shortcut"));
+            }
+            for hold in values.hold_ends.values_mut() {
+                hold.append_text = crate::append_text::localize(
+                    &hold.append_text,
+                    crate::append_text::KeyPlatform::current(),
+                );
             }
             Ok(())
         }
@@ -2340,7 +2384,7 @@ mod tests {
         assert!(
             entries_of(profile(&s, "arbeit"), "end_keys").is_some_and(|e| e.own.contains("send"))
         );
-        // An end shortcut needs a name.
+        // An end shortcut needs a key combination.
         let mut nameless = send.clone();
         nameless.id = "other".to_string();
         nameless.name = String::new();
@@ -2353,6 +2397,60 @@ mod tests {
             json!(nameless)
         )
         .is_err());
+    }
+
+    #[test]
+    fn the_last_end_shortcut_of_a_layer_cannot_go() {
+        let mut s = migrated();
+        let arbeit = profile_scope("arbeit");
+        let ids: Vec<String> = profile(&s, "arbeit")
+            .values
+            .end_keys
+            .iter()
+            .map(|end| end.id.clone())
+            .collect();
+        assert!(ids.len() >= 2, "{ids:?}");
+        // The profile switches the defaults' entries off but the last.
+        for id in &ids[..ids.len() - 1] {
+            remove_entry(&mut s, &arbeit, "end_keys", id).unwrap();
+        }
+        let last = ids.last().unwrap();
+        assert_eq!(
+            remove_entry(&mut s, &arbeit, "end_keys", last).unwrap_err(),
+            "end-key-last"
+        );
+        // Nor in the defaults, while the profile follows only that one.
+        reset_entry(&mut s, "arbeit", "end_keys", last).unwrap();
+        assert_eq!(
+            remove_entry(&mut s, &Scope::Defaults, "end_keys", last).unwrap_err(),
+            "end-key-last"
+        );
+        assert_eq!(
+            set_value(&mut s, &Scope::Defaults, "end_keys", json!([])).unwrap_err(),
+            "end-key-last"
+        );
+        assert_eq!(profile(&s, "arbeit").values.end_keys.len(), 1);
+    }
+
+    #[test]
+    fn a_hold_end_is_a_profile_value_as_a_whole() {
+        let mut s = migrated();
+        let mut holds = defaults(&s).hold_ends;
+        holds.insert(
+            "transcribe".to_string(),
+            crate::end_keys::HoldEnd {
+                append_text: "{Tab}".to_string(),
+                post_process: true,
+                send_context: true,
+            },
+        );
+        set_value(&mut s, &profile_scope("arbeit"), "hold_ends", json!(holds)).unwrap();
+        assert!(profile(&s, "arbeit").own.contains("hold_ends"));
+        assert_eq!(
+            profile(&s, "arbeit").values.hold_ends["transcribe"].append_text,
+            "{Tab}"
+        );
+        assert_ne!(defaults(&s).hold_ends, holds);
     }
 
     // ---- The old write paths ---------------------------------------------

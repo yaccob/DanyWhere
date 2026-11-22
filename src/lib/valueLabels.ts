@@ -9,9 +9,9 @@
  * gives it the translations and what the app knows (models, providers,
  * prompts, the defaults).
  */
-import type { EndKey } from "../bindings";
+import type { EndKey, HoldEnd } from "../bindings";
 import { deviceLabel, providerName } from "./displayNames";
-import { START_BINDINGS, defaultEndOf, endKeyName } from "./endKeys";
+import { START_BINDINGS, endKeyName, holdEndOf } from "./endKeys";
 import { fieldInfo } from "./profileFields";
 import {
   entryLabel,
@@ -128,7 +128,7 @@ export const entryName = (
   within?: Values,
 ): string => {
   const stored = entry ?? findEntry(ctx, field, id, within);
-  if (field === "bindings" || field === "default_ends") {
+  if (field === "bindings") {
     const own = isObject(stored) ? entryLabel(stored, id) : id;
     return ctx.t(`settings.general.shortcut.bindings.${id}.name`, {
       defaultValue: own,
@@ -147,11 +147,13 @@ export const entryName = (
       ctx.t,
     );
   }
+  // An end without an own name is called by its combination.
   if (field === "end_keys") {
     if (isObject(stored) && typeof stored.name === "string") {
-      return endKeyName(stored as unknown as EndKey, ctx.t) || id;
+      const end = { shortcut: "", ...stored } as unknown as EndKey;
+      return endKeyName(end, ctx.formatShortcut ?? ((keys) => keys)) || id;
     }
-    return ctx.t(`settings.endKeys.builtin.${id}`, { defaultValue: id });
+    return id;
   }
   return entryLabel(stored, id);
 };
@@ -198,23 +200,45 @@ const promptOrderLabel = (ctx: LabelContext, value: unknown[]): string => {
     : ctx.t("settings.profileView.summary.noneActive");
 };
 
-/** Each start shortcut with the end it ends with by default. */
-const defaultEndsLabel = (
+/** What an end for holding does, in the words of the end shortcuts:
+ * "Post-process, Send Context, Append \s", or "nothing". */
+const holdEndText = (ctx: LabelContext, end: HoldEnd): string => {
+  const { t } = ctx;
+  const parts: string[] = [];
+  if (end.post_process) {
+    parts.push(t("settings.endKeys.postProcess"));
+    if (end.send_context) parts.push(t("settings.endKeys.sendContext"));
+  }
+  const append = valueText(end.append_text);
+  if ("text" in append) {
+    parts.push(`${t("settings.endKeys.append")} ${append.text}`);
+  }
+  return parts.length > 0
+    ? parts.join(", ")
+    : t("settings.profileView.value.empty");
+};
+
+/** Each start shortcut with its end for holding, the shortcut by its keys:
+ * "⌃ Space held: nothing · ⌃⇧ Space held: Post-process". */
+const holdEndsLabel = (
   ctx: LabelContext,
   value: Record<string, unknown>,
   within: Values,
 ): string =>
   START_BINDINGS.map((binding) => {
-    const endId = defaultEndOf(
-      binding,
-      value as Partial<Record<string, string>>,
-    );
-    return `${entryName(ctx, "bindings", binding, undefined, within)}: ${entryName(
+    const stored = findEntry(ctx, "bindings", binding, within);
+    const keys =
+      isObject(stored) && typeof stored.current_binding === "string"
+        ? stored.current_binding
+        : "";
+    const shortcut =
+      keys && ctx.formatShortcut
+        ? ctx.formatShortcut(keys)
+        : keys || entryName(ctx, "bindings", binding, undefined, within);
+    const end = holdEndOf(binding, value as Partial<Record<string, HoldEnd>>);
+    return `${ctx.t("settings.endKeys.held", { shortcut })}: ${holdEndText(
       ctx,
-      "end_keys",
-      endId,
-      undefined,
-      within,
+      end,
     )}`;
   }).join(" · ");
 
@@ -300,8 +324,8 @@ export const valueLabel = (
   if (field === "post_process_prompt_order" && Array.isArray(value)) {
     return promptOrderLabel(ctx, value);
   }
-  if (field === "default_ends" && isObject(value)) {
-    return defaultEndsLabel(ctx, value, within);
+  if (field === "hold_ends" && isObject(value)) {
+    return holdEndsLabel(ctx, value, within);
   }
   if (
     field === "bindings" &&

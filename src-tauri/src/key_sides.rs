@@ -141,6 +141,17 @@ pub fn same_press(a: &str, b: &str) -> bool {
     }
 }
 
+/// Whether `a` and `b` fire on exactly the same presses: the same
+/// combination, however it is written (`ctrl+return` and `CTRL+Return`, but
+/// not `ctrl_left+return`). What doesn't parse counts as the same only when
+/// written the same.
+pub fn identical_press(a: &str, b: &str) -> bool {
+    match (a.trim().parse::<Hotkey>(), b.trim().parse::<Hotkey>()) {
+        (Ok(a), Ok(b)) => covers(&a, &b) && covers(&b, &a),
+        _ => a.trim().eq_ignore_ascii_case(b.trim()),
+    }
+}
+
 /// Run on every read of the store, with this system's rule for Alt; see
 /// [`migrate_on`].
 pub fn migrate(settings: &mut AppSettings) -> bool {
@@ -194,15 +205,18 @@ struct Item {
 /// One set of values (the flat settings, the defaults or a profile): its
 /// shortcuts and end shortcuts lose their sides. Combinations that would
 /// then be the same (`group`) are settled first:
-/// - an end shortcut that never fired alone, as every press of it fired a
-///   shortcut or an earlier end shortcut too, loses its key combination (the
-///   entry stays, e.g. as a default end); a shortcut can't be empty, and end
-///   shortcuts are registered only while recording, so they give way;
+/// - an end shortcut with exactly a start shortcut's combination is that
+///   start shortcut's press during a recording (`end_keys`): the two lose
+///   their side together and never count against each other;
+/// - any other end shortcut that never fired alone, as every press of it
+///   fired a shortcut or an earlier end shortcut too, goes: a shortcut can't
+///   be empty, end shortcuts are registered only while recording, so they
+///   give way, and an end shortcut without a combination ends nothing;
 /// - the others lose their sides if that leaves no two that one press fires
 ///   both; otherwise each keeps its side, as each fired on its own side.
 fn resolve(
     bindings: &mut HashMap<String, ShortcutBinding>,
-    end_keys: &mut [EndKey],
+    end_keys: &mut Vec<EndKey>,
     platform: KeyPlatform,
 ) -> bool {
     let mut ids: Vec<&String> = bindings.keys().collect();
@@ -237,7 +251,18 @@ fn resolve(
         })
         .collect();
 
+    // An end shortcut and the start shortcut whose exact combination it has.
+    let twins = |a: usize, b: usize| {
+        let start_and_end = |start: &Item, end: &Item| {
+            matches!(&start.slot, Slot::Binding(id) if crate::end_keys::START_BINDINGS.contains(&id.as_str()))
+                && matches!(end.slot, Slot::End(_))
+                && covers(&start.hotkey, &end.hotkey)
+                && covers(&end.hotkey, &start.hotkey)
+        };
+        start_and_end(&items[a], &items[b]) || start_and_end(&items[b], &items[a])
+    };
     let mut changed = false;
+    let mut gone: Vec<usize> = Vec::new();
     let mut settled = vec![false; items.len()];
     for first in 0..items.len() {
         if settled[first] {
@@ -256,6 +281,7 @@ fn resolve(
             matches!(items[end].slot, Slot::End(_))
                 && group.iter().any(|&other| {
                     other != end
+                        && !twins(other, end)
                         && covers(&items[other].hotkey, &items[end].hotkey)
                         && (matches!(items[other].slot, Slot::Binding(_))
                             || !covers(&items[end].hotkey, &items[other].hotkey)
@@ -266,18 +292,18 @@ fn resolve(
         for &i in &lost {
             if let Slot::End(index) = items[i].slot {
                 log::warn!(
-                    "End shortcut '{}': {} always fired with another shortcut; its key combination goes",
+                    "End shortcut '{}': {} always fired with another shortcut; it goes",
                     end_keys[index].id,
                     items[i].original
                 );
-                end_keys[index].shortcut.clear();
+                gone.push(index);
                 changed = true;
             }
         }
         let rest: Vec<usize> = group.into_iter().filter(|i| !lost.contains(i)).collect();
         let apart = rest.iter().all(|&a| {
             rest.iter()
-                .all(|&b| a == b || !same_press(&items[a].target, &items[b].target))
+                .all(|&b| a == b || twins(a, b) || !same_press(&items[a].target, &items[b].target))
         });
         if !apart {
             log::info!(
@@ -305,6 +331,14 @@ fn resolve(
             }
             changed = true;
         }
+    }
+    if !gone.is_empty() {
+        let mut index = 0;
+        end_keys.retain(|_| {
+            let keep = !gone.contains(&index);
+            index += 1;
+            keep
+        });
     }
     changed
 }
@@ -599,9 +633,51 @@ mod tests {
         );
         assert!(migrate_on(&mut settings, MAC));
         for (_, ends) in everywhere(&settings) {
-            assert_eq!(ends, vec!["", "ctrl+return"]);
+            assert_eq!(ends, vec!["ctrl+return"]);
         }
-        assert_eq!(settings.end_keys.len(), 2, "the entry itself stays");
+        assert_eq!(
+            settings.end_keys.len(),
+            1,
+            "an end shortcut needs a combination: the entry goes"
+        );
+    }
+
+    #[test]
+    fn an_end_shortcut_with_exactly_a_start_shortcuts_keys_loses_the_side_with_it() {
+        // Since 2026-11-22 an end may have a start shortcut's combination:
+        // the built-in ends of a 0.2.5 store take ⌃ Space and ⌃⇧ Space.
+        let mut settings = settings_with(
+            &[
+                ("transcribe", "ctrl_left+space"),
+                ("transcribe_with_post_process", "ctrl_left+shift_left+space"),
+            ],
+            &[
+                ("plain", "ctrl_left+space"),
+                ("post_process", "ctrl_left+shift_left+space"),
+            ],
+        );
+        assert!(migrate_on(&mut settings, MAC));
+        for (shortcuts, ends) in everywhere(&settings) {
+            let keys: HashMap<String, String> = shortcuts.into_iter().collect();
+            assert_eq!(keys["transcribe"], "ctrl+space");
+            assert_eq!(ends, vec!["ctrl+space", "ctrl+shift+space"]);
+        }
+        assert!(!migrate_on(&mut settings, MAC));
+    }
+
+    #[test]
+    fn an_end_shortcut_with_another_shortcuts_exact_keys_still_gives_way() {
+        let mut settings = settings_with(
+            &[("copy_last_transcript", "ctrl_left+x")],
+            &[("send", "ctrl_left+x"), ("line", "shift+return")],
+        );
+        assert!(migrate_on(&mut settings, MAC));
+        assert_eq!(
+            keys_of(&settings.bindings, "copy_last_transcript"),
+            "ctrl+x"
+        );
+        let ends: Vec<&str> = settings.end_keys.iter().map(|e| e.id.as_str()).collect();
+        assert_eq!(ends, vec!["line"]);
     }
 
     #[test]
@@ -611,7 +687,10 @@ mod tests {
             &[("send", "ctrl_left+space")],
         );
         assert!(migrate_on(&mut settings, MAC));
-        assert_eq!(settings.end_keys[0].shortcut, "");
+        assert!(
+            settings.end_keys.is_empty(),
+            "it needs a combination of its own"
+        );
         assert_eq!(keys_of(&settings.bindings, "transcribe"), "ctrl+space");
     }
 

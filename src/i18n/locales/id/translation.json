@@ -388,16 +388,16 @@
         "pressKeys": "Tekan tombol...",
         "bindings": {
           "transcribe": {
-            "name": "Pintasan Transkripsi",
-            "description": "Pintasan keyboard untuk merekam dan mentranskripsikan suara Anda."
+            "name": "Pintasan Mulai",
+            "description": "Memulai rekaman. Cara berakhirnya ditentukan oleh pintasan akhir dan, saat ditahan, oleh “Perilaku Pintasan”."
           },
           "cancel": {
             "name": "Pintasan Batal",
             "description": "Pintasan keyboard untuk membatalkan perekaman saat ini."
           },
           "transcribe_with_post_process": {
-            "name": "Pintasan Pascaproses",
-            "description": "Opsional: pintasan khusus yang selalu menerapkan pascaproses AI pada transkripsi Anda."
+            "name": "Pintasan Mulai Kedua",
+            "description": "Opsional: kombinasi kedua yang memulai rekaman. Pada setelan pabrik, pintasan akhir dengan kombinasi yang sama memproses lanjut teks. Hanya dipakai selama pemrosesan lanjut aktif."
           },
           "paste_last_transcript": {
             "name": "Tempel transkripsi terakhir",
@@ -444,16 +444,16 @@
       },
       "shortcutActivation": {
         "title": "Perilaku Pintasan",
-        "description": "Pilih cara pintasan transkripsi memulai dan menghentikan perekaman.",
+        "description": "Pilih cara pintasan mulai memulai dan mengakhiri rekaman.",
         "options": {
           "holdOrToggle": "Otomatis",
           "pushToTalk": "Tahan",
           "toggle": "Tekan"
         },
         "descriptions": {
-          "hold_or_toggle": "Tahan untuk merekam atau tekan untuk mulai/berhenti",
+          "hold_or_toggle": "Tahan untuk merekam, atau ketuk untuk mulai; lalu pintasan akhir menghentikannya",
           "push_to_talk": "Merekam selama Anda menahan pintasan",
-          "toggle": "Ketuk pintasan untuk mulai merekam, lalu ketuk lagi untuk berhenti"
+          "toggle": "Ketuk untuk mulai merekam; ketukan berikutnya hanya menghentikannya jika sebuah pintasan akhir memiliki kombinasi yang sama"
         }
       },
       "insertService": {
@@ -475,32 +475,31 @@
     },
     "endKeys": {
       "title": "Pintasan Akhir",
-      "description": "Cara rekaman berakhir dan apa yang menyusul: setiap pintasan akhir menentukan apa yang ditambahkan, apakah teks diproses lanjut, dan apakah dikte sebelumnya ikut dikirim sebagai konteks.",
-      "builtin": {
-        "plain": "Biasa",
-        "post_process": "Proses lanjut"
-      },
+      "description": "Cara rekaman berakhir dan apa yang menyusul. Setiap pintasan akhir punya kombinasi tombolnya sendiri, yang hanya dipakai selama merekam, dan menentukan apa yang ditambahkan, apakah teks diproses lanjut, dan apakah dikte sebelumnya ikut dikirim sebagai konteks. Pintasan akhir boleh memakai kombinasi tombol sebuah pintasan mulai: menekan pintasan mulai itu lagi lalu mengakhiri rekaman dengan cara ini.",
       "name": "Nama",
-      "noShortcut": "Tanpa pintasan",
-      "shortcutHint": "Pintasannya sendiri mengakhiri rekaman dengan cara ini. Pintasan itu hanya dipakai selama merekam.",
-      "clearShortcut": "Hapus pintasan",
+      "shortcutHint": "Menekan kombinasi ini selama rekaman mengakhirinya dengan cara ini. Kombinasi ini hanya dipakai selama merekam.",
+      "sameAsStart": "Kombinasi yang sama dengan “{{start}}”: menekannya lagi selama rekaman mengakhirinya dengan cara ini.",
       "append": "Tambahkan di akhir",
       "appendDescription": "Ditambahkan ke dikte yang berakhir dengan cara ini: teksnya, lalu tombol yang Anda pilih. Dalam teks, \\s adalah spasi, \\n baris baru, \\t tab, dan \\\\ garis miring terbalik; selebihnya ditambahkan seperti yang tertulis. Tombol hanya dikirim saat teks ditempelkan.",
+      "postProcess": "Proses lanjut",
       "sendContext": "Kirim Konteks",
       "sendContextHint": "Hanya dengan pemrosesan lanjut: dikte sebelumnya dari jendela yang sama ikut dikirim sebagai konteks.",
       "add": "Tambah Pintasan Akhir",
-      "newName": "Pintasan Akhir Baru",
+      "addPressKeys": "Tekan kombinasi untuk pintasan akhir yang baru",
       "delete": "Hapus {{name}}",
-      "inUse": "Sebuah pintasan mulai berakhir dengannya secara bawaan; pilih dulu akhir bawaan yang lain.",
-      "defaultEnd": {
-        "title": "Akhir Bawaan {{shortcut}}",
-        "description": "Cara tekanan keduanya, atau saat dilepas ketika ditahan, mengakhiri rekaman."
+      "lastOne": "Satu pintasan akhir harus tetap ada, agar rekaman selalu bisa diakhiri.",
+      "held": "{{shortcut}} ditahan",
+      "holdEnds": {
+        "title": "Saat Ditahan",
+        "description": "Cara melepas pintasan mulai yang ditahan mengakhiri rekaman."
       },
-      "linuxNoShortcuts": "Di Linux, pintasan milik pintasan akhir tidak dipakai; pintasan akhir hanya mengakhiri rekaman sebagai akhir bawaan.",
+      "linuxNoShortcuts": "Di Linux, kombinasi tombol pintasan akhir tidak dipakai selama merekam. Di sana rekaman berakhir saat pintasan mulai yang ditahan dilepas, atau saat pintasan mulai yang kombinasinya juga dimiliki sebuah pintasan akhir ditekan lagi.",
       "errors": {
         "save": "Pintasan akhir tidak dapat disimpan: {{error}}",
-        "needsName": "Setiap pintasan akhir memerlukan nama.",
-        "shortcutTwice": "Dua pintasan akhir tidak boleh memakai pintasan yang sama."
+        "needsShortcut": "Setiap pintasan akhir memerlukan kombinasi tombol.",
+        "shortcutTwice": "Dua pintasan akhir tidak boleh memakai pintasan yang sama.",
+        "last": "Pintasan akhir terakhir tidak bisa dihapus: rekaman harus selalu bisa diakhiri.",
+        "cannotEnd": "Di Linux rekaman tidak akan bisa diakhiri lagi: pertahankan satu pintasan akhir dengan kombinasi sebuah pintasan mulai, atau pilih “Tahan”."
       }
     },
     "profiles": {
@@ -1322,7 +1321,7 @@
     "profileView": {
       "fields": {
         "shortcuts": "Pintasan",
-        "defaultEnds": "Akhir bawaan",
+        "holdEnds": "Saat ditahan",
         "selectedModel": "Model suara",
         "providers": "Alamat dan format penyedia",
         "activePrompts": "Prompt aktif",

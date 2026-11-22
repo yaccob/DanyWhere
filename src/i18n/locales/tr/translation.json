@@ -388,16 +388,16 @@
         "pressKeys": "Tuşlara basın...",
         "bindings": {
           "transcribe": {
-            "name": "Transkripsiyon Kısayolu",
-            "description": "Sesinizi kaydetmek ve metne dönüştürmek için klavye kısayolu."
+            "name": "Başlatma Kısayolu",
+            "description": "Bir kayıt başlatır. Nasıl biteceğini bitirme kısayolları ve, basılı tutulduğunda, “Kısayol davranışı” belirler."
           },
           "cancel": {
             "name": "İptal Kısayolu",
             "description": "Mevcut kaydı iptal etmek için klavye kısayolu."
           },
           "transcribe_with_post_process": {
-            "name": "Son İşlem Kısayolu",
-            "description": "İsteğe bağlı: Transkripsiyonunuza her zaman yapay zekâ ile son işlem uygulayan özel bir kısayol tuşu."
+            "name": "İkinci Başlatma Kısayolu",
+            "description": "İsteğe bağlı: kayıt başlatan ikinci bir tuş kombinasyonu. Fabrika ayarında, aynı kombinasyona sahip bir bitirme kısayolu metni son işler. Yalnızca son işleme açıkken kullanılır."
           },
           "paste_last_transcript": {
             "name": "Son transkripti yapıştır",
@@ -444,16 +444,16 @@
       },
       "shortcutActivation": {
         "title": "Kısayol davranışı",
-        "description": "Transkripsiyon kısayolunun kaydı nasıl başlatıp durduracağını seçin.",
+        "description": "Bir başlatma kısayolunun kaydı nasıl başlatıp bitireceğini seçin.",
         "options": {
           "holdOrToggle": "Otomatik",
           "pushToTalk": "Basılı tut",
           "toggle": "Aç/Kapat"
         },
         "descriptions": {
-          "hold_or_toggle": "Kaydetmek için basılı tutun veya açıp kapatmak için dokunun",
+          "hold_or_toggle": "Kaydetmek için basılı tutun veya başlatmak için dokunun; ardından bir bitirme kısayolu kaydı durdurur",
           "push_to_talk": "Kısayolu basılı tuttuğunuz sürece kaydeder",
-          "toggle": "Kaydı başlatmak için kısayola dokunun, durdurmak için tekrar dokunun"
+          "toggle": "Kaydı başlatmak için dokunun; yeniden dokunmak kaydı yalnızca bir bitirme kısayolu aynı kombinasyona sahipse durdurur"
         }
       },
       "insertService": {
@@ -475,32 +475,31 @@
     },
     "endKeys": {
       "title": "Bitirme Kısayolları",
-      "description": "Kaydın nasıl bittiği ve ardından ne olduğu: her bitirme kısayolu neyin ekleneceğini, metnin işlenip işlenmeyeceğini ve önceki diktelerin bağlam olarak gönderilip gönderilmeyeceğini belirler.",
-      "builtin": {
-        "plain": "Normal",
-        "post_process": "Son işle"
-      },
+      "description": "Kaydın nasıl bittiği ve ardından ne olduğu. Her bitirme kısayolunun yalnızca kayıt sırasında kullanılan kendi tuş kombinasyonu vardır ve neyin ekleneceğini, metnin son işlenip işlenmeyeceğini ve önceki diktelerin bağlam olarak gönderilip gönderilmeyeceğini belirler. Bir bitirme kısayolu, bir başlatma kısayolunun tuş kombinasyonuna sahip olabilir: o başlatma kısayoluna yeniden basmak kaydı bu durumda bu şekilde bitirir.",
       "name": "Ad",
-      "noShortcut": "Kısayol yok",
-      "shortcutHint": "Kendi kısayolu kaydı bu şekilde bitirir. Yalnızca kayıt sırasında kullanılır.",
-      "clearShortcut": "Kısayolu kaldır",
+      "shortcutHint": "Kayıt sırasında bu kombinasyona basmak kaydı bu şekilde bitirir. Yalnızca kayıt sırasında kullanılır.",
+      "sameAsStart": "“{{start}}” ile aynı kombinasyon: kayıt sırasında yeniden basmak kaydı bu şekilde bitirir.",
       "append": "Sona ekle",
       "appendDescription": "Bu şekilde biten bir diktenin sonuna eklenir: metin, ardından seçtiğiniz tuş. Metinde \\s boşluk, \\n yeni satır, \\t sekme ve \\\\ ters eğik çizgidir; geri kalan her şey yazıldığı gibi eklenir. Tuş yalnızca metin yapıştırıldığında gönderilir.",
+      "postProcess": "Son işle",
       "sendContext": "Bağlam Gönder",
       "sendContextHint": "Yalnızca son işlemeyle: aynı penceredeki önceki dikteler bağlam olarak gönderilir.",
       "add": "Bitirme Kısayolu Ekle",
-      "newName": "Yeni Bitirme Kısayolu",
+      "addPressKeys": "Yeni bitirme kısayolu için tuş kombinasyonuna basın",
       "delete": "{{name}} öğesini sil",
-      "inUse": "Bir başlatma kısayolu varsayılan olarak bununla biter; önce başka bir varsayılan bitiş seçin.",
-      "defaultEnd": {
-        "title": "{{shortcut}} için Varsayılan Bitiş",
-        "description": "İkinci basışının ya da basılı tutulduğunda bırakılmasının kaydı nasıl bitirdiği."
+      "lastOne": "Kaydın her zaman bitirilebilmesi için bir bitirme kısayolu kalmalıdır.",
+      "held": "{{shortcut}} basılı tutulunca",
+      "holdEnds": {
+        "title": "Basılı Tutulunca",
+        "description": "Basılı tutulan bir başlatma kısayolunu bırakmanın kaydı nasıl bitirdiği."
       },
-      "linuxNoShortcuts": "Linux'ta bitirme kısayollarının kendi kısayolları kullanılmaz; kaydı yalnızca varsayılan bitiş olarak bitirirler.",
+      "linuxNoShortcuts": "Linux'ta bitirme kısayollarının tuş kombinasyonları kayıt sırasında kullanılmaz. Orada kayıt, basılı tutulan bir başlatma kısayolu bırakıldığında ya da tuş kombinasyonu bir bitirme kısayolunda da bulunan bir başlatma kısayoluna yeniden basıldığında biter.",
       "errors": {
         "save": "Bitirme kısayolları kaydedilemedi: {{error}}",
-        "needsName": "Her bitirme kısayolunun bir adı olmalı.",
-        "shortcutTwice": "İki bitirme kısayolu aynı kısayolu paylaşamaz."
+        "needsShortcut": "Her bitirme kısayolunun bir tuş kombinasyonu olmalı.",
+        "shortcutTwice": "İki bitirme kısayolu aynı kısayolu paylaşamaz.",
+        "last": "Son bitirme kısayolu kaldırılamaz: kayıt her zaman bitirilebilmelidir.",
+        "cannotEnd": "Linux'ta kayıt artık bitirilemezdi: bir başlatma kısayolunun tuş kombinasyonuna sahip bir bitirme kısayolu bırakın ya da “Basılı tut” seçeneğini seçin."
       }
     },
     "profiles": {
@@ -1322,7 +1321,7 @@
     "profileView": {
       "fields": {
         "shortcuts": "Kısayollar",
-        "defaultEnds": "Varsayılan bitişler",
+        "holdEnds": "Basılı tutulunca",
         "selectedModel": "Konuşma modeli",
         "providers": "Sağlayıcının adresi ve biçimi",
         "activePrompts": "Etkin istemler",

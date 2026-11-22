@@ -388,16 +388,16 @@
         "pressKeys": "Presiona teclas...",
         "bindings": {
           "transcribe": {
-            "name": "Atajo de transcripción",
-            "description": "El atajo de teclado para grabar y transcribir tu voz."
+            "name": "Atajo de inicio",
+            "description": "Inicia una grabación. Cómo termina lo deciden los atajos de fin y, al mantenerlo pulsado, «Comportamiento del atajo»."
           },
           "cancel": {
             "name": "Atajo de cancelar",
             "description": "El atajo de teclado para cancelar la grabación actual."
           },
           "transcribe_with_post_process": {
-            "name": "Tecla de post procesamiento",
-            "description": "Opcional: Una tecla de acceso rápido dedicada que siempre aplica post procesamiento con IA a tu transcripción."
+            "name": "Segundo atajo de inicio",
+            "description": "Opcional: una segunda combinación que inicia una grabación. De fábrica, un atajo de fin con la misma combinación posprocesa el texto. Solo se ocupa mientras el posprocesamiento está activado."
           },
           "paste_last_transcript": {
             "name": "Pegar la última transcripción",
@@ -444,16 +444,16 @@
       },
       "shortcutActivation": {
         "title": "Comportamiento del atajo",
-        "description": "Elige cómo inicia y detiene la grabación el atajo de transcripción.",
+        "description": "Elige cómo un atajo de inicio inicia y termina una grabación.",
         "options": {
           "holdOrToggle": "Automático",
           "pushToTalk": "Mantener",
           "toggle": "Alternar"
         },
         "descriptions": {
-          "hold_or_toggle": "Mantén pulsado para grabar o toca para alternar",
+          "hold_or_toggle": "Mantén pulsado para grabar, o toca para empezar; después un atajo de fin detiene la grabación",
           "push_to_talk": "Graba mientras mantienes pulsado el atajo",
-          "toggle": "Toca el atajo para empezar a grabar, tócalo de nuevo para detener"
+          "toggle": "Toca para empezar a grabar; volver a tocar solo detiene la grabación si un atajo de fin tiene la misma combinación"
         }
       },
       "insertService": {
@@ -475,32 +475,31 @@
     },
     "endKeys": {
       "title": "Atajos de fin",
-      "description": "Cómo termina una grabación y qué sigue: cada atajo de fin indica qué se añade, si el texto se posprocesa y si los dictados anteriores se envían como contexto.",
-      "builtin": {
-        "plain": "Normal",
-        "post_process": "Posprocesar"
-      },
+      "description": "Cómo termina una grabación y qué sigue. Cada atajo de fin tiene su propia combinación de teclas, que solo se ocupa mientras se graba, e indica qué se añade, si el texto se posprocesa y si los dictados anteriores se envían como contexto. Un atajo de fin puede tener la combinación de un atajo de inicio: volver a pulsar ese atajo de inicio termina entonces de esta manera.",
       "name": "Nombre",
-      "noShortcut": "Sin atajo",
-      "shortcutHint": "Su propio atajo termina una grabación de esta manera. Solo se ocupa mientras se graba.",
-      "clearShortcut": "Quitar atajo",
+      "shortcutHint": "Pulsar esta combinación durante una grabación la termina de esta manera. Solo se ocupa mientras se graba.",
+      "sameAsStart": "La misma combinación que «{{start}}»: volver a pulsarla durante una grabación la termina de esta manera.",
       "append": "Añadir al final",
       "appendDescription": "Se añade a un dictado que termina de esta manera: el texto y luego la pulsación de tecla que elijas. En el texto, \\s es un espacio, \\n un salto de línea, \\t una tabulación y \\\\ una barra invertida; todo lo demás se añade tal como está escrito. La pulsación de tecla solo se envía cuando se pega el texto.",
+      "postProcess": "Posprocesar",
       "sendContext": "Enviar contexto",
       "sendContextHint": "Solo con posprocesamiento: los dictados anteriores de la misma ventana se envían como contexto.",
       "add": "Añadir atajo de fin",
-      "newName": "Nuevo atajo de fin",
+      "addPressKeys": "Pulsa la combinación para el nuevo atajo de fin",
       "delete": "Eliminar {{name}}",
-      "inUse": "Un atajo de inicio termina con él de forma predeterminada; elige primero otro fin predeterminado.",
-      "defaultEnd": {
-        "title": "Fin predeterminado de {{shortcut}}",
-        "description": "Cómo su segunda pulsación, o soltarlo si se mantiene pulsado, termina la grabación."
+      "lastOne": "Debe quedar un atajo de fin, para que una grabación siempre se pueda terminar.",
+      "held": "{{shortcut}} mantenido",
+      "holdEnds": {
+        "title": "Al mantener pulsado",
+        "description": "Cómo termina la grabación al soltar un atajo de inicio mantenido."
       },
-      "linuxNoShortcuts": "En Linux, los atajos de los atajos de fin no se ocupan; solo terminan una grabación como fin predeterminado.",
+      "linuxNoShortcuts": "En Linux, las combinaciones de los atajos de fin no se ocupan mientras se graba. Allí una grabación termina al soltar un atajo de inicio mantenido, o al volver a pulsar un atajo de inicio cuya combinación tiene un atajo de fin.",
       "errors": {
         "save": "No se pudieron guardar los atajos de fin: {{error}}",
-        "needsName": "Cada atajo de fin necesita un nombre.",
-        "shortcutTwice": "Dos atajos de fin no pueden compartir un atajo."
+        "needsShortcut": "Cada atajo de fin necesita una combinación de teclas.",
+        "shortcutTwice": "Dos atajos de fin no pueden compartir un atajo.",
+        "last": "El último atajo de fin no se puede quitar: siempre debe ser posible terminar una grabación.",
+        "cannotEnd": "En Linux ya no se podría terminar una grabación: conserva un atajo de fin con la combinación de un atajo de inicio o elige «Mantener»."
       }
     },
     "profiles": {
@@ -1322,7 +1321,7 @@
     "profileView": {
       "fields": {
         "shortcuts": "Atajos",
-        "defaultEnds": "Finales predeterminados",
+        "holdEnds": "Al mantener pulsado",
         "selectedModel": "Modelo de voz",
         "providers": "Dirección y formato del proveedor",
         "activePrompts": "Instrucciones activas",

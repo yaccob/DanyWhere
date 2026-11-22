@@ -84,15 +84,22 @@ const binding = (id: string, keys: string) => ({
   current_binding: keys,
 });
 
+// Out of the box: both ends without an own name, on the start shortcuts'
+// combinations (qa 2026-11-22_2134).
 const plain = {
   id: "plain",
   name: "",
-  shortcut: "",
+  shortcut: "ctrl+option+d",
   append_text: "\\s",
   post_process: false,
   send_context: false,
 };
-const postProcess = { ...plain, id: "post_process", post_process: true };
+const postProcess = {
+  ...plain,
+  id: "post_process",
+  shortcut: "ctrl+option+shift+d",
+  post_process: true,
+};
 const ownEnd = {
   ...plain,
   id: "end_1795307930035",
@@ -109,7 +116,14 @@ const defaults: Record<string, unknown> = {
     ),
   },
   end_keys: [plain, postProcess],
-  default_ends: { transcribe: "plain", transcribe_with_post_process: "plain" },
+  hold_ends: {
+    transcribe: { append_text: "", post_process: false, send_context: false },
+    transcribe_with_post_process: {
+      append_text: "",
+      post_process: true,
+      send_context: true,
+    },
+  },
   word_lists: [{ id: "word_list_1795306966443", name: "GListe", words: [] }],
   active_word_list_id: "word_list_1795306966443",
   post_process_prompt_order: [
@@ -218,12 +232,44 @@ check("a shortcut shows its keys", () =>
     formatKeyCombination("ctrl+option+d", "macos"),
   ),
 );
-check("the default ends name the start shortcuts and their ends", () =>
+check("the ends for holding name the start shortcuts by their keys", () => {
+  const start = formatKeyCombination("ctrl+option+d", "macos");
+  const second = formatKeyCombination("ctrl+option+shift+d", "macos");
   assert.equal(
-    valueLabel(de, "default_ends", defaults.default_ends, defaults),
-    "Transkriptions-Tastenkürzel: Normal · Nachbearbeitungs-Tastenkürzel: Normal",
-  ),
-);
+    valueLabel(de, "hold_ends", defaults.hold_ends, defaults),
+    `${start} gehalten: nichts · ${second} gehalten: Nachbearbeiten, Kontext senden`,
+  );
+  assert.equal(
+    valueLabel(en, "hold_ends", defaults.hold_ends, defaults),
+    `${start} held: nothing · ${second} held: Post-process, Send Context`,
+  );
+  // A missing entry is the one out of the box; an own start shortcut of
+  // the profile is named by its own keys; what is appended shows.
+  assert.equal(
+    valueLabel(
+      de,
+      "hold_ends",
+      {
+        transcribe: {
+          append_text: "\\s",
+          post_process: false,
+          send_context: true,
+        },
+      },
+      neutest.values,
+    ),
+    `${formatKeyCombination("ctrl+option+e", "macos")} gehalten: Anhängen \\s · ${second} gehalten: Nachbearbeiten`,
+  );
+});
+check("an end without an own name is called by its combination", () => {
+  assert.equal(
+    entryName(de, "end_keys", "plain", undefined, defaults),
+    formatKeyCombination("ctrl+option+d", "macos"),
+  );
+  const nameless = { ...plain, id: "end_1", shortcut: "ctrl+space" };
+  assert.equal(entryName(de, "end_keys", "end_1", nameless), "⌃ Leertaste");
+  assert.equal(entryName(en, "end_keys", "end_1", nameless), "⌃ Space");
+});
 
 // ---- error 2: entries by their names ---------------------------------------
 check("an own end shortcut is called by its name", () =>
@@ -282,7 +328,7 @@ check("the active list is called by its name", () =>
 check("an own shortcut's row on the page Profile shows its keys", () =>
   assert.equal(
     ownValueRow(de, { field: "bindings", entry: "transcribe" }, neutest.values),
-    `Tastenkombinationen: Transkriptions-Tastenkürzel: ${formatKeyCombination("ctrl+option+e", "macos")}`,
+    `Tastenkombinationen: Starttaste: ${formatKeyCombination("ctrl+option+e", "macos")}`,
   ),
 );
 check("an own end shortcut's row names it without a count", () =>

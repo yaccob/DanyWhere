@@ -388,16 +388,16 @@
         "pressKeys": "Appuyez sur les touches...",
         "bindings": {
           "transcribe": {
-            "name": "Raccourci de Transcription",
-            "description": "Le raccourci clavier pour enregistrer et transcrire votre voix."
+            "name": "Raccourci de début",
+            "description": "Démarre un enregistrement. Sa fin dépend des raccourcis de fin et, s'il est maintenu, de « Comportement du raccourci »."
           },
           "cancel": {
             "name": "Raccourci d'Annulation",
             "description": "Le raccourci clavier pour annuler l'enregistrement en cours."
           },
           "transcribe_with_post_process": {
-            "name": "Raccourci de post-traitement",
-            "description": "Facultatif : Un raccourci dédié qui applique toujours le post-traitement IA à votre transcription."
+            "name": "Deuxième raccourci de début",
+            "description": "Facultatif : une deuxième combinaison qui démarre un enregistrement. Dans le réglage d'usine, un raccourci de fin avec la même combinaison post-traite le texte. Pris uniquement tant que le post-traitement est activé."
           },
           "paste_last_transcript": {
             "name": "Coller la dernière transcription",
@@ -444,16 +444,16 @@
       },
       "shortcutActivation": {
         "title": "Comportement du raccourci",
-        "description": "Choisissez comment le raccourci de transcription démarre et arrête l’enregistrement.",
+        "description": "Choisissez comment un raccourci de début démarre et termine un enregistrement.",
         "options": {
           "holdOrToggle": "Auto",
           "pushToTalk": "Maintenir",
           "toggle": "Basculer"
         },
         "descriptions": {
-          "hold_or_toggle": "Maintenez pour enregistrer ou appuyez brièvement pour basculer",
+          "hold_or_toggle": "Maintenez pour enregistrer, ou appuyez brièvement pour démarrer ; un raccourci de fin l'arrête ensuite",
           "push_to_talk": "Enregistre tant que le raccourci est maintenu",
-          "toggle": "Appuyez sur le raccourci pour démarrer l'enregistrement, appuyez à nouveau pour arrêter"
+          "toggle": "Appuyez brièvement pour démarrer l'enregistrement ; un nouvel appui ne l'arrête que si un raccourci de fin a la même combinaison"
         }
       },
       "insertService": {
@@ -475,32 +475,31 @@
     },
     "endKeys": {
       "title": "Raccourcis de fin",
-      "description": "Comment un enregistrement se termine et ce qui suit : chaque raccourci de fin indique ce qui est ajouté, si le texte est post-traité et si les dictées précédentes sont envoyées comme contexte.",
-      "builtin": {
-        "plain": "Simple",
-        "post_process": "Post-traiter"
-      },
+      "description": "Comment un enregistrement se termine et ce qui suit. Chaque raccourci de fin a sa propre combinaison de touches, prise uniquement pendant l'enregistrement, et indique ce qui est ajouté, si le texte est post-traité et si les dictées précédentes sont envoyées comme contexte. Un raccourci de fin peut avoir la combinaison d'un raccourci de début : appuyer à nouveau sur ce raccourci de début termine alors de cette façon.",
       "name": "Nom",
-      "noShortcut": "Aucun raccourci",
-      "shortcutHint": "Son propre raccourci termine un enregistrement de cette façon. Il n'est pris que pendant l'enregistrement.",
-      "clearShortcut": "Supprimer le raccourci",
+      "shortcutHint": "Appuyer sur cette combinaison pendant un enregistrement le termine de cette façon. Elle n'est prise que pendant l'enregistrement.",
+      "sameAsStart": "Même combinaison que « {{start}} » : appuyer à nouveau dessus pendant un enregistrement le termine de cette façon.",
       "append": "Ajouter à la fin",
       "appendDescription": "Ajouté à une dictée qui se termine de cette façon: le texte, puis la touche que vous choisissez. Dans le texte, \\s est une espace, \\n un saut de ligne, \\t une tabulation et \\\\ une barre oblique inverse ; tout le reste est ajouté tel qu'écrit. La touche n'est envoyée que lorsque le texte est collé.",
+      "postProcess": "Post-traiter",
       "sendContext": "Envoyer le contexte",
       "sendContextHint": "Uniquement avec le post-traitement : les dictées précédentes de la même fenêtre sont envoyées comme contexte.",
       "add": "Ajouter un raccourci de fin",
-      "newName": "Nouveau raccourci de fin",
+      "addPressKeys": "Appuyez sur la combinaison du nouveau raccourci de fin",
       "delete": "Supprimer {{name}}",
-      "inUse": "Un raccourci de début se termine ainsi par défaut ; choisissez d'abord une autre fin par défaut.",
-      "defaultEnd": {
-        "title": "Fin par défaut de {{shortcut}}",
-        "description": "Comment son deuxième appui, ou son relâchement s'il est maintenu, termine l'enregistrement."
+      "lastOne": "Un raccourci de fin doit rester, pour qu'un enregistrement puisse toujours être terminé.",
+      "held": "{{shortcut}} maintenu",
+      "holdEnds": {
+        "title": "Lorsqu'il est maintenu",
+        "description": "Comment le relâchement d'un raccourci de début maintenu termine l'enregistrement."
       },
-      "linuxNoShortcuts": "Sous Linux, les raccourcis des raccourcis de fin ne sont pas pris ; ils ne terminent un enregistrement que comme fin par défaut.",
+      "linuxNoShortcuts": "Sous Linux, les combinaisons des raccourcis de fin ne sont pas prises pendant l'enregistrement. Un enregistrement s'y termine quand on relâche un raccourci de début maintenu, ou quand on appuie à nouveau sur un raccourci de début dont un raccourci de fin a la combinaison.",
       "errors": {
         "save": "Impossible d'enregistrer les raccourcis de fin : {{error}}",
-        "needsName": "Chaque raccourci de fin a besoin d'un nom.",
-        "shortcutTwice": "Deux raccourcis de fin ne peuvent pas partager un raccourci."
+        "needsShortcut": "Chaque raccourci de fin a besoin d'une combinaison de touches.",
+        "shortcutTwice": "Deux raccourcis de fin ne peuvent pas partager un raccourci.",
+        "last": "Le dernier raccourci de fin ne peut pas être supprimé : un enregistrement doit toujours pouvoir être terminé.",
+        "cannotEnd": "Sous Linux, un enregistrement ne pourrait plus être terminé : gardez un raccourci de fin avec la combinaison d'un raccourci de début, ou choisissez « Maintenir »."
       }
     },
     "profiles": {
@@ -1322,7 +1321,7 @@
     "profileView": {
       "fields": {
         "shortcuts": "Raccourcis",
-        "defaultEnds": "Fins par défaut",
+        "holdEnds": "Lorsqu'il est maintenu",
         "selectedModel": "Modèle vocal",
         "providers": "Adresse et format du fournisseur",
         "activePrompts": "Instructions actives",

@@ -62,7 +62,9 @@ export const PROFILE_FIELDS = {
     label: "settings.general.shortcutActivation.title",
   },
   end_keys: { page: "general", label: "settings.endKeys.title", large: true },
-  default_ends: { page: "general", label: `${FIELDS}.defaultEnds` },
+  // Under the defaults a deviating profile shows its ends for holding as
+  // text ("⌃ Space held: …"), as the old default ends did.
+  hold_ends: { page: "general", label: `${FIELDS}.holdEnds`, large: true },
   spoken_languages: {
     page: "general",
     label: "settings.general.preferredLanguages.title",

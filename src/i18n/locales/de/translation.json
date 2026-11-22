@@ -388,16 +388,16 @@
         "pressKeys": "Tasten drücken...",
         "bindings": {
           "transcribe": {
-            "name": "Transkriptions-Tastenkürzel",
-            "description": "Das Tastenkürzel zum Aufnehmen und Transkribieren deiner Stimme."
+            "name": "Starttaste",
+            "description": "Startet eine Aufnahme. Wie sie endet, legen die Endtasten fest und, wenn man sie hält, „Verhalten der Tastenkombination“."
           },
           "cancel": {
             "name": "Abbrechen-Tastenkürzel",
             "description": "Das Tastenkürzel zum Abbrechen der aktuellen Aufnahme."
           },
           "transcribe_with_post_process": {
-            "name": "Nachbearbeitungs-Tastenkürzel",
-            "description": "Optional: Ein dediziertes Tastenkürzel, das immer die KI-Nachbearbeitung auf deine Transkription anwendet."
+            "name": "Zweite Starttaste",
+            "description": "Optional: eine zweite Tastenkombination, die eine Aufnahme startet. Ab Werk bearbeitet eine Endtaste mit derselben Tastenkombination den Text nach. Nur belegt, solange die Nachbearbeitung eingeschaltet ist."
           },
           "paste_last_transcript": {
             "name": "Letzte Transkription einfügen",
@@ -444,16 +444,16 @@
       },
       "shortcutActivation": {
         "title": "Verhalten der Tastenkombination",
-        "description": "Wähle aus, wie das Transkriptions-Tastenkürzel die Aufnahme startet und beendet.",
+        "description": "Wähle aus, wie eine Starttaste eine Aufnahme startet und beendet.",
         "options": {
           "holdOrToggle": "Automatisch",
           "pushToTalk": "Halten",
           "toggle": "Umschalten"
         },
         "descriptions": {
-          "hold_or_toggle": "Gedrückt halten zum Aufnehmen oder antippen zum Umschalten",
+          "hold_or_toggle": "Gedrückt halten zum Aufnehmen oder antippen zum Starten; dann beendet eine Endtaste",
           "push_to_talk": "Nimmt auf, solange die Tastenkombination gedrückt bleibt",
-          "toggle": "Tastenkombination antippen, um die Aufnahme zu starten, erneut antippen zum Stoppen"
+          "toggle": "Antippen startet die Aufnahme; erneutes Antippen stoppt nur, wenn eine Endtaste dieselbe Tastenkombination hat"
         }
       },
       "insertService": {
@@ -475,32 +475,31 @@
     },
     "endKeys": {
       "title": "Endtasten",
-      "description": "Wie eine Aufnahme endet und was folgt: Jede Endtaste legt fest, was angehängt wird, ob der Text nachbearbeitet wird und ob frühere Diktate als Kontext mitgehen.",
-      "builtin": {
-        "plain": "Normal",
-        "post_process": "Nachbearbeiten"
-      },
+      "description": "Wie eine Aufnahme endet und was folgt. Jede Endtaste hat eine eigene Tastenkombination, die nur während einer Aufnahme belegt ist, und legt fest, was angehängt wird, ob der Text nachbearbeitet wird und ob frühere Diktate als Kontext mitgehen. Eine Endtaste darf die Tastenkombination einer Starttaste haben: Ein erneuter Druck dieser Starttaste beendet dann so.",
       "name": "Name",
-      "noShortcut": "Keine Tastenkombination",
-      "shortcutHint": "Ihre eigene Tastenkombination beendet eine Aufnahme auf diese Weise. Sie ist nur während einer Aufnahme belegt.",
-      "clearShortcut": "Tastenkombination entfernen",
+      "shortcutHint": "Diese Tastenkombination beendet eine laufende Aufnahme auf diese Weise. Sie ist nur während einer Aufnahme belegt.",
+      "sameAsStart": "Dieselbe Tastenkombination wie „{{start}}“: Ein erneuter Druck während einer Aufnahme beendet so.",
       "append": "Anhängen",
       "appendDescription": "Wird an ein Diktat angehängt, das so endet: der Text, dann der gewählte Tastendruck. Im Text ist \\s ein Leerzeichen, \\n ein Zeilenumbruch, \\t ein Tabulator und \\\\ ein Backslash; alles andere wird angehängt, wie es dasteht. Der Tastendruck wird nur gesendet, wenn der Text eingefügt wird.",
+      "postProcess": "Nachbearbeiten",
       "sendContext": "Kontext senden",
       "sendContextHint": "Nur mit Nachbearbeitung: Frühere Diktate aus demselben Fenster gehen als Kontext mit.",
       "add": "Endtaste hinzufügen",
-      "newName": "Neue Endtaste",
+      "addPressKeys": "Drück die Tastenkombination für die neue Endtaste",
       "delete": "{{name}} löschen",
-      "inUse": "Eine Starttaste endet standardmäßig damit; wähle zuerst ein anderes Standard-Ende.",
-      "defaultEnd": {
-        "title": "Standard-Ende für „{{shortcut}}“",
-        "description": "Wie ihr zweiter Druck oder, wenn sie gehalten wird, ihr Loslassen die Aufnahme beendet."
+      "lastOne": "Eine Endtaste muss bleiben, damit sich eine Aufnahme immer beenden lässt.",
+      "held": "{{shortcut}} gehalten",
+      "holdEnds": {
+        "title": "Beim Halten",
+        "description": "Wie das Loslassen einer gehaltenen Starttaste die Aufnahme beendet."
       },
-      "linuxNoShortcuts": "Unter Linux werden die Tastenkombinationen der Endtasten nicht belegt; sie beenden eine Aufnahme nur als Standard-Ende.",
+      "linuxNoShortcuts": "Unter Linux werden die Tastenkombinationen der Endtasten während einer Aufnahme nicht belegt. Eine Aufnahme endet dort, wenn man eine gehaltene Starttaste loslässt oder eine Starttaste erneut drückt, deren Tastenkombination eine Endtaste hat.",
       "errors": {
         "save": "Die Endtasten konnten nicht gespeichert werden: {{error}}",
-        "needsName": "Jede Endtaste braucht einen Namen.",
-        "shortcutTwice": "Zwei Endtasten können nicht dieselbe Tastenkombination haben."
+        "needsShortcut": "Jede Endtaste braucht eine Tastenkombination.",
+        "shortcutTwice": "Zwei Endtasten können nicht dieselbe Tastenkombination haben.",
+        "last": "Die letzte Endtaste kann nicht weg: Eine Aufnahme muss sich immer beenden lassen.",
+        "cannotEnd": "Unter Linux ließe sich eine Aufnahme nicht mehr beenden: Behalte eine Endtaste mit der Tastenkombination einer Starttaste oder wähle „Halten“."
       }
     },
     "profiles": {
@@ -1322,7 +1321,7 @@
     "profileView": {
       "fields": {
         "shortcuts": "Tastenkombinationen",
-        "defaultEnds": "Standard-Enden",
+        "holdEnds": "Beim Halten",
         "selectedModel": "Sprachmodell",
         "providers": "Adresse und Format des Anbieters",
         "activePrompts": "Aktive Prompts",

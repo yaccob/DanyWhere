@@ -45,22 +45,31 @@ pub fn desired(settings_now: &AppSettings, recording: bool, service_available: b
         wanted.insert(id, binding);
     }
     if recording && END_KEYS_WHILE_RECORDING {
-        let mut taken: Vec<String> = wanted
+        let mut taken: Vec<(String, String)> = wanted
             .values()
             .chain(settings_now.bindings.get(CANCEL))
-            .map(keys_of)
+            .map(|binding| (binding.id.clone(), keys_of(binding)))
             .collect();
         for binding in crate::end_keys::bindings_to_register(&settings_now.end_keys) {
             let keys = keys_of(&binding);
-            if taken.contains(&keys) {
-                log::warn!(
-                    "End shortcut {}: {} is another shortcut's; not registered",
-                    binding.id,
-                    binding.current_binding
-                );
+            if let Some((id, _)) = taken
+                .iter()
+                .find(|(_, other)| crate::key_sides::same_press(other, &keys))
+            {
+                // One with exactly a start shortcut's keys is that start
+                // shortcut's press (`end_keys`); the coordinator ends with it.
+                if crate::end_keys::START_BINDINGS.contains(&id.as_str()) {
+                    log::debug!("End shortcut {}: ends as {id}'s press", binding.id);
+                } else {
+                    log::warn!(
+                        "End shortcut {}: {} is {id}'s; not registered",
+                        binding.id,
+                        binding.current_binding
+                    );
+                }
                 continue;
             }
-            taken.push(keys);
+            taken.push((binding.id.clone(), keys));
             wanted.insert(binding.id.clone(), binding);
         }
     }
