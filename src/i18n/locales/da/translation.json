@@ -632,7 +632,8 @@
       "volume": {
         "title": "Lydstyrke",
         "description": "Juster lydstyrken for lydfeedback"
-      }
+      },
+      "systemDefault": "Systemstandard"
     },
     "advanced": {
       "groups": {
@@ -856,7 +857,8 @@
             "cloud": "Sky",
             "localHint": "Efterbehandlingen kører på denne computer. Teksten i dine dikteringer forlader den ikke.",
             "cloudHint": "Efterbehandlingen sender teksten i hver diktering til denne udbyder uden for denne computer."
-          }
+          },
+          "custom": "Egen udbyder"
         },
         "apiFormat": {
           "title": "API-format",
@@ -1147,7 +1149,8 @@
       },
       "soundTheme": {
         "label": "Lydtema",
-        "description": "Vælg et lydtema til feedback ved start og stop af optagelse"
+        "description": "Vælg et lydtema til feedback ved start og stop af optagelse",
+        "preview": "Afspil lydtemaet (start, stop og derefter lyden, der afslutter en diktering)"
       },
       "wordCorrectionThreshold": {
         "title": "Tærskel for ordkorrektion",
@@ -1387,14 +1390,15 @@
   },
   "common": {
     "playbackPosition": "Afspilningsposition",
-    "resetSetting": "Nulstil {{setting}} til standardværdien",
+    "resetSetting": "Nulstil {{setting}} til fabriksindstillingen",
     "loading": "Indlæser...",
     "delete": "Slet",
     "close": "Luk",
     "open": "Åbn",
     "copy": "Kopiér",
     "clear": "Ryd",
-    "noOptionsFound": "Ingen muligheder fundet"
+    "noOptionsFound": "Ingen muligheder fundet",
+    "moreInformation": "Flere oplysninger"
   },
   "errors": {
     "loadDirectory": "Fejl ved indlæsning af mappe: {{error}}",
@@ -1464,7 +1468,8 @@
     "readyNoShortcut": "Klar – indsæt fra menuen Tjenester",
     "notReady": "Ikke klar endnu",
     "wordList": "Ordliste: {{name}}",
-    "wordListGlobalOnly": "Ingen ekstra liste"
+    "wordListGlobalOnly": "Ingen ekstra liste",
+    "cancel": "Annuller"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} blokerer muligvis 1 genvej",
