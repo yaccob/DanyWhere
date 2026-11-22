@@ -9,7 +9,7 @@
 // A controlled component: it shows `prompts` in `order` and reports a new
 // order through `onOrderChange`, so it can edit any profile's order (or the
 // defaults'); the library itself changes through the callbacks.
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { GripVertical } from "lucide-react";
 import type { LLMPrompt, PromptOrderEntry } from "@/bindings";
@@ -18,7 +18,7 @@ import { Alert } from "../../ui/Alert";
 import { Button } from "../../ui/Button";
 import { Input } from "../../ui/Input";
 import { PromptFrameText, PromptFrameTip } from "./PromptFrame";
-import { cancelOnEscape } from "@/lib/dragCancel";
+import { cancelOnEscape, followPointer } from "@/lib/dragCancel";
 import {
   dropIndex,
   isNameTaken,
@@ -52,6 +52,8 @@ interface Drag {
   to: number;
   /** The rows' vertical middles when the drag began. */
   midpoints: number[];
+  /** The whole order when the drag began, which the drop rearranges. */
+  order: PromptOrderEntry[];
 }
 
 export const PromptLibraryList: React.FC<PromptLibraryListProps> = ({
@@ -67,15 +69,47 @@ export const PromptLibraryList: React.FC<PromptLibraryListProps> = ({
   const [draftName, setDraftName] = useState("");
   const [draftText, setDraftText] = useState("");
   const [busy, setBusy] = useState(false);
-  const [drag, setDrag] = useState<Drag | null>(null);
+  const [drag, setDragState] = useState<Drag | null>(null);
+  // The window's listeners read the drag here, so a move and a release in
+  // the same frame never see a stale one.
+  const dragRef = useRef<Drag | null>(null);
+  const setDrag = useCallback((next: Drag | null) => {
+    dragRef.current = next;
+    setDragState(next);
+  }, []);
   const rowRefs = useRef<(HTMLLIElement | null)[]>([]);
+  const dragging = drag !== null;
 
-  // Escape ends a drag and leaves the order as it was, heard on the window:
-  // the pressed handle has no keyboard focus in WebKit.
+  // While a prompt is dragged, the window hears the pointer and Escape. The
+  // rows show the new order meanwhile, and dragged down, the dragged row's
+  // own node moves, which drops the handle's pointer capture, so a handler
+  // on the handle never got the release (qa 2026-11-22_0233, point 10).
+  // Escape ends the drag and leaves the order as it was: the pressed handle
+  // has no keyboard focus in WebKit.
   useEffect(() => {
-    if (!drag) return;
-    return cancelOnEscape(window, () => setDrag(null));
-  }, [drag]);
+    if (!dragging) return;
+    const stopEscape = cancelOnEscape(window, () => setDrag(null));
+    const stopPointer = followPointer(window, {
+      onMove: (clientY) => {
+        const current = dragRef.current;
+        if (!current) return;
+        const to = dropIndex(clientY, current.midpoints, current.from);
+        if (to !== current.to) setDrag({ ...current, to });
+      },
+      onEnd: () => {
+        const current = dragRef.current;
+        setDrag(null);
+        if (current && current.from !== current.to) {
+          onOrderChange(moved(current.order, current.from, current.to));
+        }
+      },
+      onCancel: () => setDrag(null),
+    });
+    return () => {
+      stopEscape();
+      stopPointer();
+    };
+  }, [dragging, setDrag, onOrderChange]);
 
   const fullOrder = normalizedOrder(prompts, order);
   const shownOrder = drag ? moved(fullOrder, drag.from, drag.to) : fullOrder;
@@ -127,33 +161,21 @@ export const PromptLibraryList: React.FC<PromptLibraryListProps> = ({
     }
   };
 
-  // Dragging by the handle, with pointer events.
+  // Dragging starts on the handle; the window follows it from there.
   const beginDrag = (
     event: React.PointerEvent<HTMLButtonElement>,
     index: number,
   ) => {
     if (event.button !== 0 || editing) return;
     event.preventDefault();
+    // While the capture holds, a release outside the window still comes; it
+    // bubbles up to the window's listener like every other.
     event.currentTarget.setPointerCapture(event.pointerId);
     const midpoints = fullOrder.map((_, i) => {
       const rect = rowRefs.current[i]?.getBoundingClientRect();
       return rect ? rect.top + rect.height / 2 : 0;
     });
-    setDrag({ from: index, to: index, midpoints });
-  };
-  const moveDrag = (event: React.PointerEvent<HTMLButtonElement>) => {
-    if (!drag) return;
-    const to = dropIndex(event.clientY, drag.midpoints, drag.from);
-    if (to !== drag.to) setDrag({ ...drag, to });
-  };
-  const endDrag = (event: React.PointerEvent<HTMLButtonElement>) => {
-    if (!drag) return;
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-      event.currentTarget.releasePointerCapture(event.pointerId);
-    }
-    const { from, to } = drag;
-    setDrag(null);
-    if (from !== to) onOrderChange(moved(fullOrder, from, to));
+    setDrag({ from: index, to: index, midpoints, order: fullOrder });
   };
 
   const moveWithKeys = (
@@ -269,9 +291,6 @@ export const PromptLibraryList: React.FC<PromptLibraryListProps> = ({
                   // Not while dragging, so `index` is the row's place in
                   // `fullOrder`.
                   onPointerDown={(event) => beginDrag(event, index)}
-                  onPointerMove={moveDrag}
-                  onPointerUp={endDrag}
-                  onPointerCancel={() => setDrag(null)}
                   onKeyDown={(event) => moveWithKeys(event, prompt.id)}
                 >
                   <GripVertical className="h-4 w-4" />
