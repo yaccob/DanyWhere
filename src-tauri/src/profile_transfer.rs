@@ -5,6 +5,16 @@
 //! always travels with it, encrypted with a password chosen at export
 //! ([`crate::profile_export`]); a profile that needs no key needs no password.
 //! An import can always leave the key out, e.g. when the password is unknown.
+//!
+//! DanyWhere: the API keys are profile values (P6), so the file never holds
+//! the profile's keys themselves ([`NOT_EXPORTED`]), only that one encrypted
+//! key. An imported profile gets the keys in use here, and the file's key for
+//! its provider; it never replaces another profile's key.
+//!
+//! DanyWhere's prompts are one library for all profiles (`prompt_library`),
+//! so the file also carries the texts of the profile's active prompts
+//! ([`ExportedProfile::prompts`]); an import reuses or adds them, never
+//! overwriting a prompt.
 
 use serde::{Deserialize, Serialize};
 use specta::Type;
@@ -15,10 +25,14 @@ use crate::profile_export::{
     self, EncryptedSecret, ExportError, ExportedApiKey, ProfileExportFile,
 };
 use crate::profiles::{self, Profile, ProfileValues};
-use crate::settings::{self, AppSettings};
+use crate::settings::{self, AppSettings, LLMPrompt};
 
 /// Export files are small; anything bigger is not one.
 const MAX_FILE_BYTES: u64 = 1024 * 1024;
+
+/// Profile values a file never holds: the API keys, in plain text in the
+/// settings. The provider's key travels encrypted ([`key_to_export`]).
+pub const NOT_EXPORTED: &[&str] = &["post_process_api_keys"];
 
 /// What went wrong, as a code the frontend translates.
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Type)]
@@ -126,11 +140,48 @@ pub struct ImportResult {
     pub profile: Option<Profile>,
     pub key: ImportedKey,
     /// Set when the file's key differs from the stored one and the choice was
-    /// [`KeyConflictChoice::Ask`]; nothing was imported then.
+    /// [`KeyConflictChoice::Ask`]; nothing was imported then. DanyWhere:
+    /// never set since the keys are profile values: the imported profile
+    /// gets its own key and no other profile's key changes.
     pub conflict_provider_id: Option<String>,
     /// Applications of the file's profile that another profile here is
     /// already used for, so the new profile doesn't get them.
     pub dropped_apps: Vec<String>,
+}
+
+/// A profile as an export file holds it: the profile itself and the texts
+/// of its active prompts, in order (`prompt_library`), next to its fields.
+/// A file from before the library has its prompts in the profile's values
+/// instead (`prompt_library::prepare_import`).
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+pub struct ExportedProfile {
+    #[serde(flatten)]
+    pub profile: Profile,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub prompts: Vec<LLMPrompt>,
+}
+
+impl From<Profile> for ExportedProfile {
+    fn from(profile: Profile) -> Self {
+        Self {
+            profile,
+            prompts: Vec::new(),
+        }
+    }
+}
+
+impl std::ops::Deref for ExportedProfile {
+    type Target = Profile;
+
+    fn deref(&self) -> &Profile {
+        &self.profile
+    }
+}
+
+impl std::ops::DerefMut for ExportedProfile {
+    fn deref_mut(&mut self) -> &mut Profile {
+        &mut self.profile
+    }
 }
 
 /// A decrypted API key and its provider.
@@ -141,13 +192,16 @@ pub struct ProviderKey {
 }
 
 /// The API key that travels with `profile`: its provider's, while
-/// post-processing is on and a key is stored for that provider.
-pub fn key_to_export(settings: &AppSettings, profile: &Profile) -> Option<ProviderKey> {
+/// post-processing is on and the profile has a key for that provider.
+/// `profile` is as [`profile_for_export`] gives it (the active one with the
+/// flat values).
+pub fn key_to_export(profile: &Profile) -> Option<ProviderKey> {
     if !profile.values.post_process_enabled {
         return None;
     }
     let provider_id = &profile.values.post_process_provider_id;
-    settings
+    profile
+        .values
         .post_process_api_keys
         .get(provider_id)
         .filter(|key| !key.trim().is_empty())
@@ -157,34 +211,43 @@ pub fn key_to_export(settings: &AppSettings, profile: &Profile) -> Option<Provid
         })
 }
 
-/// Profile `id` as it is exported: the active one with the latest flat
-/// values, and the default profile with its shown name instead of an empty
-/// one.
+/// Profile `id` as it is exported: its effective values (the latest flat
+/// ones for what is in use) without its coupling, which an import decides
+/// anew against the defaults there (open question 1, recommendation b).
+/// The defaults (`DEFAULT_PROFILE_ID`) export as a profile with their shown
+/// name.
 pub fn profile_for_export(
     settings: &AppSettings,
     id: &str,
     default_name: &str,
 ) -> Result<Profile, TransferError> {
-    let mut profile = settings
-        .profiles
-        .iter()
-        .find(|profile| profile.id == id)
-        .cloned()
-        .ok_or_else(|| {
-            TransferError::with_detail(TransferErrorCode::ProfileNotFound, id.to_string())
-        })?;
-    if profile.id == settings.active_profile_id {
-        // The flat fields hold the active profile's latest values.
-        profile.values = ProfileValues::from_settings(settings);
-    }
+    let not_found =
+        || TransferError::with_detail(TransferErrorCode::ProfileNotFound, id.to_string());
+    let values = profiles::values_of(settings, id).ok_or_else(not_found)?;
+    let mut profile = if id == profiles::DEFAULT_PROFILE_ID {
+        Profile::new(id, default_name, values)
+    } else {
+        let mut profile = settings
+            .profiles
+            .iter()
+            .find(|profile| profile.id == id)
+            .cloned()
+            .ok_or_else(not_found)?;
+        profile.values = values;
+        profile
+    };
     profile.name = profiles::display_name(&profile, default_name);
+    profile.own.clear();
+    profile.own_entries.clear();
+    // DanyWhere: only the active prompts travel (`prompt_library`).
+    crate::prompt_library::keep_active_entries(&mut profile.values);
     Ok(profile)
 }
 
 /// Whether exporting profile `id` asks for a password.
 pub fn needs_password(settings: &AppSettings, id: &str) -> Result<bool, TransferError> {
     let profile = profile_for_export(settings, id, "")?;
-    Ok(key_to_export(settings, &profile).is_some())
+    Ok(key_to_export(&profile).is_some())
 }
 
 /// The YAML of profile `id`, its key encrypted by `encrypt` with `password`.
@@ -199,7 +262,7 @@ where
     F: Fn(&str, &str) -> Result<EncryptedSecret, ExportError>,
 {
     let profile = profile_for_export(settings, id, default_name)?;
-    let api_key = match key_to_export(settings, &profile) {
+    let api_key = match key_to_export(&profile) {
         Some(key) => {
             let password =
                 password.ok_or_else(|| TransferError::new(TransferErrorCode::PasswordRequired))?;
@@ -210,9 +273,27 @@ where
         }
         None => None,
     };
+    // DanyWhere: the texts of its active prompts (`prompt_library`).
+    let prompts = crate::prompt_library::export_prompts(
+        &settings.post_process_prompts,
+        &profile.values.post_process_prompt_order,
+    );
     Ok(profile_export::to_yaml(&ProfileExportFile::new(
-        profile, api_key,
+        without_secrets(&ExportedProfile { profile, prompts })?,
+        api_key,
     ))?)
+}
+
+/// `profile` as JSON without the values in [`NOT_EXPORTED`].
+fn without_secrets(profile: &ExportedProfile) -> Result<serde_json::Value, TransferError> {
+    let mut value = serde_json::to_value(profile)
+        .map_err(|e| TransferError::with_detail(TransferErrorCode::Internal, e.to_string()))?;
+    if let Some(values) = value.get_mut("values").and_then(|v| v.as_object_mut()) {
+        for name in NOT_EXPORTED {
+            values.remove(*name);
+        }
+    }
+    Ok(value)
 }
 
 /// The YAML of profile `id`, its key encrypted with `password`.
@@ -250,8 +331,8 @@ pub fn preview(text: &str) -> Result<ImportPreview, TransferError> {
 pub fn read_import(
     text: &str,
     password: Option<&str>,
-) -> Result<(Profile, Option<ProviderKey>), TransferError> {
-    let file: ProfileExportFile<Profile> = profile_export::from_yaml(text)?;
+) -> Result<(ExportedProfile, Option<ProviderKey>), TransferError> {
+    let file: ProfileExportFile<ExportedProfile> = profile_export::from_yaml(text)?;
     let key = match (file.api_key, password) {
         (Some(api_key), Some(password)) => Some(ProviderKey {
             key: profile_export::decrypt_secret(password, &api_key.secret)?,
@@ -260,10 +341,44 @@ pub fn read_import(
         _ => None,
     };
     let mut profile = file.profile;
-    // DanyWhere: a file from before the "Append" field, or with another
-    // system's key names in it.
-    crate::append_text::prepare_import(text, &mut profile.values);
+    // DanyWhere: a file from before the end shortcuts (or before the
+    // "Append" field), without shortcuts, or with another system's key
+    // names in it.
+    crate::end_keys::prepare_import(text, &mut profile.values);
+    // DanyWhere: a file from before the prompt library.
+    let ExportedProfile {
+        profile: inner,
+        prompts,
+    } = &mut profile;
+    crate::prompt_library::prepare_import(
+        text,
+        prompts,
+        &mut inner.values.post_process_prompt_order,
+    );
     Ok((profile, key))
+}
+
+/// DanyWhere: the values an imported profile's file lacks get the defaults
+/// here, so the import couples them (contract V5, as for a stored profile,
+/// with the coupling of open question 1): the API keys, which never travel
+/// in the file, and whatever a file from an older version lacks.
+pub fn prepare_import_values(file_text: &str, values: &mut ProfileValues, settings: &AppSettings) {
+    let Ok(file) = serde_saphyr::from_str::<serde_json::Value>(file_text) else {
+        return;
+    };
+    let empty = serde_json::Map::new();
+    let stored = file
+        .get("profile")
+        .and_then(|profile| profile.get("values"))
+        .and_then(|values| values.as_object())
+        .unwrap_or(&empty);
+    // The prompt order is the file's own (`prompt_library::prepare_import`
+    // made it for a file from before the library): its ids are the file's
+    // prompts', never the ones here. Everything else the file lacks comes
+    // from the defaults here, so the import couples it.
+    let order = std::mem::take(&mut values.post_process_prompt_order);
+    profiles::fill_missing_values(values, stored, &profiles::default_values(settings));
+    values.post_process_prompt_order = order;
 }
 
 /// `wanted`, or `wanted (2)`, `wanted (3)`, … whichever is not in `taken`.
@@ -292,40 +407,39 @@ fn new_profile_id(settings: &AppSettings, now_millis: i64) -> String {
     id
 }
 
-/// Adds the imported `profile` to `settings` under a new id and a free name,
-/// without switching to it, and stores its key as `choice` says.
+/// Adds the imported `profile` to `settings` under a new id and a free name
+/// (not the defaults' either), without switching to it, with the file's
+/// `key` for its provider. DanyWhere: the keys are profile values, so the
+/// key goes into the new profile and replaces no other profile's; the
+/// choice for a conflict no longer matters. Its prompts go into the library
+/// (`prompt_library::import_prompts`). Then its values equal to the
+/// defaults here are coupled to them, the others its own (open question 1,
+/// recommendation b), whatever the file says.
 pub fn apply_import(
     settings: &mut AppSettings,
-    profile: Profile,
+    profile: impl Into<ExportedProfile>,
     key: Option<ProviderKey>,
-    choice: KeyConflictChoice,
+    _choice: KeyConflictChoice,
     default_name: &str,
     now_millis: i64,
 ) -> ImportResult {
-    let mut profile = profile;
-    // What happens to the key, decided before anything changes.
+    let ExportedProfile {
+        mut profile,
+        prompts,
+    } = profile.into();
+    // The same as the key the profile has from here, or added.
     let imported_key = match &key {
         None => ImportedKey::None,
         Some(key) => {
-            let stored = settings
+            let here = profile
+                .values
                 .post_process_api_keys
                 .get(&key.provider_id)
-                .filter(|stored| !stored.trim().is_empty());
-            match stored {
-                None => ImportedKey::Added,
-                Some(stored) if *stored == key.key => ImportedKey::Same,
-                Some(_) => match choice {
-                    KeyConflictChoice::Ask => {
-                        return ImportResult {
-                            profile: None,
-                            key: ImportedKey::None,
-                            conflict_provider_id: Some(key.provider_id.clone()),
-                            dropped_apps: Vec::new(),
-                        };
-                    }
-                    KeyConflictChoice::Replace => ImportedKey::Replaced,
-                    KeyConflictChoice::Keep => ImportedKey::Kept,
-                },
+                .filter(|here| !here.trim().is_empty());
+            if here == Some(&key.key) {
+                ImportedKey::Same
+            } else {
+                ImportedKey::Added
             }
         }
     };
@@ -334,6 +448,7 @@ pub fn apply_import(
         .profiles
         .iter()
         .map(|existing| profiles::display_name(existing, default_name))
+        .chain(std::iter::once(default_name.to_string()))
         .collect();
     let wanted = if profile.name.trim().is_empty() {
         default_name.to_string()
@@ -354,11 +469,24 @@ pub fn apply_import(
         });
     profile.apps = kept;
 
-    if let (Some(key), ImportedKey::Added | ImportedKey::Replaced) = (key, imported_key) {
-        settings
+    if let Some(key) = key {
+        profile
+            .values
             .post_process_api_keys
             .insert(key.provider_id, key.key);
     }
+    // DanyWhere: its prompts, reused or added, never overwritten.
+    let order = crate::prompt_library::import_prompts(
+        settings,
+        &prompts,
+        &profile.values.post_process_prompt_order,
+        &profile.name,
+    );
+    // Covering the library as every stored order does, so that an order
+    // like the defaults' couples.
+    profile.values.post_process_prompt_order =
+        crate::prompt_library::normalized(&order, &settings.post_process_prompts);
+    crate::profile_layers::couple_equal(&mut profile, &profiles::default_values(settings));
     settings.profiles.push(profile.clone());
     ImportResult {
         profile: Some(profile),
@@ -457,8 +585,9 @@ pub async fn import_profile(
     tauri::async_runtime::spawn_blocking(move || {
         let text = read_file(&path)?;
         // The slow part first, so the settings are read and written in one go.
-        let (profile, key) = read_import(&text, password.as_deref().map(String::as_str))?;
+        let (mut profile, key) = read_import(&text, password.as_deref().map(String::as_str))?;
         let mut settings = settings::get_settings(&app);
+        prepare_import_values(&text, &mut profile.values, &settings);
         let default_name = profiles::default_profile_name(&settings);
         let now = chrono::Utc::now().timestamp_millis();
         let result = apply_import(
@@ -481,7 +610,7 @@ pub async fn import_profile(
                 serde_json::json!({ "setting": "profiles" }),
             );
             crate::tray::rebuild_tray_menu(&app);
-            // Its prompts may still contain ${output}.
+            // Its prompts, now in the library, may still contain ${output}.
             crate::prompt_frame::prompts_changed(&app);
         }
         Ok(result)
@@ -513,9 +642,9 @@ mod tests {
         build_export_with(settings, id, DEFAULT_NAME, password, fast_encrypt)
     }
 
-    /// The default profile (active, Anthropic with a key, post-processing
-    /// on) and "Work" (OpenAI, post-processing off), with keys stored for
-    /// both providers.
+    /// The defaults (in use, Anthropic with a key, post-processing on) and
+    /// "Work" (OpenAI, post-processing off, its own values), with keys
+    /// stored for both providers.
     fn settings() -> AppSettings {
         let mut s = AppSettings {
             selected_model: "parakeet".to_string(),
@@ -527,7 +656,9 @@ mod tests {
                 name: "Diktat (DE/EN)".to_string(),
                 prompt: "Clean it up.".to_string(),
             }],
-            post_process_selected_prompt_id: Some("p1".to_string()),
+            post_process_prompt_order: vec![crate::prompt_library::PromptOrderEntry::new(
+                "p1", true,
+            )],
             ..Default::default()
         };
         s.post_process_api_keys
@@ -535,34 +666,32 @@ mod tests {
         s.post_process_api_keys
             .insert("openai".to_string(), OPENAI_KEY.to_string());
         ensure_profiles(&mut s);
-        let mut work = ProfileValues::from_settings(&s);
-        work.post_process_enabled = false;
-        work.post_process_provider_id = "openai".to_string();
-        s.profiles.push(Profile {
-            id: "work".to_string(),
-            name: "Work".to_string(),
-            values: work,
-            apps: vec!["com.apple.mail".to_string()],
+        let mut profile = crate::profiles::profile_for_test(&s, "work", "Work", |work| {
+            work.post_process_enabled = false;
+            work.post_process_provider_id = "openai".to_string();
         });
+        profile.apps = vec!["com.apple.mail".to_string()];
+        s.profiles.push(profile);
         s
     }
 
+    /// The defaults as they are exported.
     fn default_profile(s: &AppSettings) -> Profile {
-        s.profiles[0].clone()
+        profile_for_export(s, crate::profiles::DEFAULT_PROFILE_ID, DEFAULT_NAME).expect("defaults")
     }
 
     #[test]
     fn the_key_of_the_profiles_provider_travels_while_post_processing_is_on() {
         let s = settings();
         assert_eq!(
-            key_to_export(&s, &default_profile(&s)),
+            key_to_export(&default_profile(&s)),
             Some(ProviderKey {
                 provider_id: "anthropic".to_string(),
                 key: ANTHROPIC_KEY.to_string(),
             })
         );
         // Post-processing off: no key, although one is stored for OpenAI.
-        assert_eq!(key_to_export(&s, &s.profiles[1]), None);
+        assert_eq!(key_to_export(&s.profiles[0]), None);
     }
 
     #[test]
@@ -570,9 +699,9 @@ mod tests {
         let mut s = settings();
         s.post_process_api_keys
             .insert("anthropic".to_string(), "  ".to_string());
-        assert_eq!(key_to_export(&s, &default_profile(&s)), None);
+        assert_eq!(key_to_export(&default_profile(&s)), None);
         s.post_process_api_keys.remove("anthropic");
-        assert_eq!(key_to_export(&s, &default_profile(&s)), None);
+        assert_eq!(key_to_export(&default_profile(&s)), None);
     }
 
     #[test]
@@ -651,7 +780,10 @@ mod tests {
         let (profile, key) = read_import(&yaml, Some("geheim")).expect("import");
         let original = profile_for_export(&s, "default", DEFAULT_NAME).unwrap();
         assert_eq!(profile.name, DEFAULT_NAME);
-        assert_eq!(profile.values, original.values);
+        // Everything but the keys, which an import takes from this computer.
+        let mut values = profile.values.clone();
+        prepare_import_values(&yaml, &mut values, &s);
+        assert_eq!(values, original.values);
         assert_eq!(
             key,
             Some(ProviderKey {
@@ -692,12 +824,23 @@ mod tests {
     }
 
     #[test]
-    fn the_append_field_travels_with_the_exported_profile() {
+    fn the_end_shortcuts_and_shortcuts_travel_with_the_exported_profile() {
         let mut s = settings();
-        s.append_text = r"\s{Enter}".to_string();
+        s.end_keys[0].append_text = r"\s{Enter}".to_string();
+        s.end_keys.push(crate::end_keys::EndKey {
+            id: "send".to_string(),
+            name: "Senden".to_string(),
+            shortcut: "ctrl+enter".to_string(),
+            append_text: "{Enter}".to_string(),
+            post_process: true,
+            send_context: true,
+        });
+        s.bindings.get_mut("transcribe").unwrap().current_binding = "f13".to_string();
         let yaml = export(&s, "default", Some("geheim")).expect("export");
         let (profile, _) = read_import(&yaml, None).expect("import");
-        assert_eq!(profile.values.append_text, r"\s{Enter}");
+        assert_eq!(profile.values.end_keys, s.end_keys);
+        assert_eq!(profile.values.bindings["transcribe"].current_binding, "f13");
+        assert_eq!(profile.values.default_ends, s.default_ends);
     }
 
     /// A profile written on any system, with any system's name of the
@@ -714,10 +857,10 @@ mod tests {
             r"\s{Meta+Return}",
         ] {
             let mut s = settings();
-            s.append_text = written.to_string();
+            s.end_keys[1].append_text = written.to_string();
             let yaml = export(&s, "default", Some("geheim")).expect("export");
             let (profile, _) = read_import(&yaml, None).expect("import");
-            let imported = &profile.values.append_text;
+            let imported = &profile.values.end_keys[1].append_text;
             assert_eq!(&localize(imported, KeyPlatform::current()), imported);
             assert_eq!(
                 Append::from_parts(&parse(imported)),
@@ -730,24 +873,53 @@ mod tests {
         }
     }
 
+    /// `yaml` as a file from before the end shortcuts: the profile's values
+    /// without them, its default ends and its shortcuts, with `fields`
+    /// instead.
+    fn older_file(yaml: &str, fields: serde_json::Value) -> String {
+        let mut file: serde_json::Value = serde_saphyr::from_str(yaml).expect("reads");
+        let values = file["profile"]["values"]
+            .as_object_mut()
+            .expect("the values");
+        for gone in ["end_keys", "default_ends", "bindings"] {
+            values.remove(gone);
+        }
+        for (key, value) in fields.as_object().expect("fields") {
+            values.insert(key.clone(), value.clone());
+        }
+        serde_saphyr::to_string(&file).expect("writes")
+    }
+
+    #[test]
+    fn a_file_from_before_the_end_shortcuts_gets_them_from_its_append_field_and_context() {
+        let s = settings();
+        let yaml = export(&s, "work", None).expect("export");
+        let older = older_file(
+            &yaml,
+            serde_json::json!({ "append_text": r"\n\n", "send_context": true }),
+        );
+        let (profile, _) = read_import(&older, None).expect("import");
+        assert_eq!(
+            profile.values.end_keys,
+            crate::end_keys::builtin(r"\n\n", true)
+        );
+        assert_eq!(profile.values.default_ends, crate::end_keys::default_ends());
+        // The shortcuts come from the installation it is imported into.
+        assert!(profile.values.bindings.is_empty());
+    }
+
     #[test]
     fn a_file_from_before_the_append_field_gets_it_from_its_trailing_space() {
         let s = settings();
         let yaml = export(&s, "work", None).expect("export");
-        let line = yaml
-            .lines()
-            .find(|line| line.trim_start().starts_with("append_text:"))
-            .expect("the export names the field")
-            .to_string();
-        let indent = &line[..line.len() - line.trim_start().len()];
         for (trailing_space, expected) in [(true, r"\s"), (false, "")] {
-            let older = yaml.replace(
-                &line,
-                &format!("{indent}append_trailing_space: {trailing_space}"),
+            let older = older_file(
+                &yaml,
+                serde_json::json!({ "append_trailing_space": trailing_space }),
             );
-            assert!(!older.contains("append_text"), "{older}");
             let (profile, _) = read_import(&older, None).expect("import");
-            assert_eq!(profile.values.append_text, expected, "{older}");
+            assert_eq!(profile.values.end_keys[0].append_text, expected, "{older}");
+            assert!(!profile.values.end_keys[0].send_context);
         }
     }
 
@@ -836,13 +1008,84 @@ mod tests {
             1000,
         );
         let profile = result.profile.expect("imported");
-        assert_eq!(s.profiles.len(), 3);
-        assert_eq!(s.profiles[2], profile);
+        assert_eq!(s.profiles.len(), 2);
+        assert_eq!(s.profiles[1], profile);
         assert_ne!(profile.id, "work", "the file's id is not reused");
         assert_ne!(profile.id, "default");
         assert_eq!(profile.name, "Work (2)");
         assert_eq!(s.active_profile_id, "default");
         assert_eq!(result.key, ImportedKey::None);
+    }
+
+    #[test]
+    fn an_export_carries_the_effective_values_without_the_coupling() {
+        let s = settings();
+        let work = profile_for_export(&s, "work", DEFAULT_NAME).expect("profile");
+        assert_eq!(work.values, s.profiles[0].values);
+        assert!(work.own.is_empty());
+        assert!(work.own_entries.is_empty());
+        let defaults = default_profile(&s);
+        assert_eq!(defaults.values, ProfileValues::from_settings(&s));
+        assert!(defaults.apps.is_empty());
+    }
+
+    #[test]
+    fn an_import_couples_what_equals_the_defaults_here_and_owns_the_rest() {
+        let mut s = settings();
+        let mut file = imported("Mail");
+        file.values.selected_language = "fr".to_string();
+        // Whatever coupling a file claims, the defaults here decide.
+        file.own = ["selected_model".to_string()].into_iter().collect();
+        // Its prompts travel with it, as in a real file.
+        let file = ExportedProfile {
+            profile: file,
+            prompts: s.post_process_prompts.clone(),
+        };
+        let result = apply_import(
+            &mut s,
+            file,
+            None,
+            KeyConflictChoice::Ask,
+            DEFAULT_NAME,
+            1000,
+        );
+        let profile = result.profile.expect("imported");
+        assert_eq!(
+            profile.own,
+            [
+                "post_process_enabled",
+                "post_process_provider_id",
+                "selected_language"
+            ]
+            .iter()
+            .map(|f| f.to_string())
+            .collect()
+        );
+        // A coupled value follows the defaults here from now on.
+        crate::profile_layers::set_value(
+            &mut s,
+            &crate::profile_layers::Scope::Defaults,
+            "selected_model",
+            serde_json::json!("moonshine"),
+        )
+        .expect("set");
+        let stored = s.profiles.iter().find(|p| p.id == profile.id).unwrap();
+        assert_eq!(stored.values.selected_model, "moonshine");
+        assert_eq!(stored.values.selected_language, "fr");
+    }
+
+    #[test]
+    fn an_imported_profile_does_not_take_the_defaults_name() {
+        let mut s = settings();
+        let result = apply_import(
+            &mut s,
+            imported(DEFAULT_NAME),
+            None,
+            KeyConflictChoice::Ask,
+            DEFAULT_NAME,
+            1000,
+        );
+        assert_eq!(result.profile.unwrap().name, "Standard (2)");
     }
 
     #[test]
@@ -891,27 +1134,37 @@ mod tests {
         })
     }
 
+    /// The API key `provider` has in `values`.
+    fn key_in(values: &ProfileValues, provider: &str) -> serde_json::Value {
+        crate::profiles::testing::value_of(values, "post_process_api_keys")[provider].clone()
+    }
+
     #[test]
-    fn a_key_for_a_provider_without_one_is_added() {
+    fn an_imported_key_goes_into_the_imported_profile_only() {
         let mut s = settings();
-        s.post_process_api_keys.remove("anthropic");
+        let before = s.clone();
         let result = apply_import(
             &mut s,
             imported("Mail"),
-            key("sk-new"),
+            key("sk-mail"),
             KeyConflictChoice::Ask,
             DEFAULT_NAME,
             1000,
         );
         assert_eq!(result.key, ImportedKey::Added);
+        assert_eq!(result.conflict_provider_id, None);
+        let profile = result.profile.expect("imported");
+        assert_eq!(key_in(&profile.values, "anthropic"), "sk-mail");
+        // Every other profile keeps its key; nothing to ask.
         assert_eq!(
             s.post_process_api_keys.get("anthropic").map(String::as_str),
-            Some("sk-new")
+            Some(ANTHROPIC_KEY)
         );
+        assert_eq!(s.profiles[..1], before.profiles[..]);
     }
 
     #[test]
-    fn the_same_key_is_left_as_it_is() {
+    fn the_key_in_use_here_is_the_same() {
         let mut s = settings();
         let result = apply_import(
             &mut s,
@@ -922,63 +1175,55 @@ mod tests {
             1000,
         );
         assert_eq!(result.key, ImportedKey::Same);
-        assert!(result.profile.is_some());
-    }
-
-    #[test]
-    fn a_different_key_asks_first_and_imports_nothing() {
-        let mut s = settings();
-        let before = s.clone();
-        let result = apply_import(
-            &mut s,
-            imported("Mail"),
-            key("sk-other"),
-            KeyConflictChoice::Ask,
-            DEFAULT_NAME,
-            1000,
-        );
-        assert_eq!(result.profile, None);
-        assert_eq!(result.conflict_provider_id.as_deref(), Some("anthropic"));
-        assert_eq!(s.profiles, before.profiles);
         assert_eq!(
-            s.post_process_api_keys.get("anthropic").map(String::as_str),
-            Some(ANTHROPIC_KEY)
+            key_in(&result.profile.expect("imported").values, "anthropic"),
+            ANTHROPIC_KEY
         );
     }
 
     #[test]
-    fn a_different_key_is_replaced_or_kept_as_chosen() {
+    fn the_key_that_travels_is_the_profiles_own() {
         let mut s = settings();
-        let replaced = apply_import(
-            &mut s,
-            imported("Mail"),
-            key("sk-other"),
-            KeyConflictChoice::Replace,
-            DEFAULT_NAME,
-            1000,
+        s.profiles[0].values = crate::profiles::testing::values_with(
+            &s.profiles[0].values,
+            serde_json::json!({
+                "post_process_enabled": true,
+                "post_process_api_keys": { "openai": "sk-work-own" },
+            }),
         );
-        assert_eq!(replaced.key, ImportedKey::Replaced);
-        assert!(replaced.profile.is_some());
         assert_eq!(
-            s.post_process_api_keys.get("anthropic").map(String::as_str),
-            Some("sk-other")
+            key_to_export(&s.profiles[0]),
+            Some(ProviderKey {
+                provider_id: "openai".to_string(),
+                key: "sk-work-own".to_string(),
+            })
         );
+        let yaml = export(&s, "work", Some("geheim")).expect("export");
+        assert!(!yaml.contains("sk-"), "{yaml}");
+        assert!(!yaml.contains("post_process_api_keys"), "{yaml}");
+    }
 
+    #[test]
+    fn an_import_gets_the_values_its_file_lacks_from_the_defaults() {
         let mut s = settings();
-        let kept = apply_import(
-            &mut s,
-            imported("Mail"),
-            key("sk-other"),
-            KeyConflictChoice::Keep,
-            DEFAULT_NAME,
-            1000,
-        );
-        assert_eq!(kept.key, ImportedKey::Kept);
-        assert!(kept.profile.is_some());
-        assert_eq!(
-            s.post_process_api_keys.get("anthropic").map(String::as_str),
-            Some(ANTHROPIC_KEY)
-        );
+        let yaml = export(&s, "work", None).expect("export");
+        let line = yaml
+            .lines()
+            .find(|line| line.trim_start().starts_with("selected_language:"))
+            .expect("the export names the language")
+            .to_string();
+        let older = yaml.replace(&format!("{line}\n"), "");
+        s.selected_language = "fr".to_string();
+        crate::profile_layers::route_flat(&mut s);
+        let (mut profile, _) = read_import(&older, None).expect("import");
+        prepare_import_values(&older, &mut profile.values, &s);
+        assert_eq!(profile.values.selected_language, "fr");
+        // The keys never travel; the profile gets the defaults' keys here,
+        // and the import couples them.
+        assert_eq!(key_in(&profile.values, "anthropic"), ANTHROPIC_KEY);
+        assert_eq!(key_in(&profile.values, "openai"), OPENAI_KEY);
+        // A value the file has stays.
+        assert_eq!(profile.values.post_process_provider_id, "openai");
     }
 
     #[test]
@@ -1002,6 +1247,114 @@ mod tests {
             result.profile.unwrap().apps,
             vec!["com.apple.TextEdit".to_string()]
         );
+    }
+
+    // DanyWhere: the prompt library (`prompt_library`). An exported profile
+    // carries the texts of its active prompts; an import reuses a prompt
+    // with the same name and text and never overwrites one.
+
+    fn prompt(id: &str, name: &str, text: &str) -> LLMPrompt {
+        LLMPrompt {
+            id: id.to_string(),
+            name: name.to_string(),
+            prompt: text.to_string(),
+        }
+    }
+
+    fn entry(id: &str, active: bool) -> crate::prompt_library::PromptOrderEntry {
+        crate::prompt_library::PromptOrderEntry::new(id, active)
+    }
+
+    fn active_names(s: &AppSettings, profile: &Profile) -> Vec<String> {
+        crate::prompt_library::active_prompts(
+            &s.post_process_prompts,
+            &profile.values.post_process_prompt_order,
+        )
+        .iter()
+        .map(|p| p.name.clone())
+        .collect()
+    }
+
+    #[test]
+    fn the_active_prompts_travel_with_the_exported_profile() {
+        let mut s = settings();
+        s.post_process_prompts
+            .push(prompt("p2", "Mail", "Make an email."));
+        s.post_process_prompts
+            .push(prompt("p3", "Kurz", "Make it short."));
+        s.post_process_prompt_order =
+            vec![entry("p3", true), entry("p1", false), entry("p2", true)];
+        let yaml = export(&s, "default", Some("geheim")).expect("export");
+        assert!(yaml.contains("Make it short."), "{yaml}");
+        assert!(yaml.contains("Make an email."), "{yaml}");
+        assert!(!yaml.contains("Clean it up."), "{yaml}");
+
+        // Another computer has another "Mail" and the same "Kurz".
+        let mut other = settings();
+        other.post_process_prompts = vec![
+            prompt("x1", "Mail", "Write a letter."),
+            prompt("x2", "Kurz", "Make it short."),
+        ];
+        other.post_process_prompt_order = vec![entry("x1", true), entry("x2", false)];
+        ensure_profiles(&mut other);
+        let (mut profile, _) = read_import(&yaml, None).expect("import");
+        prepare_import_values(&yaml, &mut profile.values, &other);
+        let result = apply_import(
+            &mut other,
+            profile,
+            None,
+            KeyConflictChoice::Ask,
+            DEFAULT_NAME,
+            5,
+        );
+        let imported = result.profile.expect("imported");
+        assert_eq!(imported.name, "Standard (2)");
+        let names: Vec<&str> = other
+            .post_process_prompts
+            .iter()
+            .map(|p| p.name.as_str())
+            .collect();
+        assert_eq!(names, vec!["Mail", "Kurz", "Mail · Standard (2)"]);
+        assert_eq!(other.post_process_prompts[0].prompt, "Write a letter.");
+        assert_eq!(
+            active_names(&other, &imported),
+            vec!["Kurz".to_string(), "Mail · Standard (2)".to_string()]
+        );
+        // The profile in use here keeps its own.
+        assert_eq!(
+            crate::prompt_library::active_prompts(
+                &other.post_process_prompts,
+                &other.post_process_prompt_order
+            )
+            .len(),
+            1
+        );
+    }
+
+    #[test]
+    fn a_file_from_before_the_library_imports_its_prompts() {
+        let yaml = "format: danywhere-profile\nversion: 1\nprofile:\n  id: default\n  name: Alt\n  values:\n    post_process_enabled: true\n    post_process_prompts:\n    - id: p1\n      name: Diktat (DE/EN)\n      prompt: Clean it up.\n    - id: p2\n      name: Mail\n      prompt: Make an email.\n    post_process_selected_prompt_id: p2\n  apps: []\n";
+        let mut s = settings();
+        // As `import_profile` does: the values the file lacks come from here,
+        // but never the prompt order.
+        let (mut profile, _) = read_import(yaml, None).expect("import");
+        prepare_import_values(yaml, &mut profile.values, &s);
+        let result = apply_import(
+            &mut s,
+            profile,
+            None,
+            KeyConflictChoice::Ask,
+            DEFAULT_NAME,
+            5,
+        );
+        let imported = result.profile.expect("imported");
+        let names: Vec<&str> = s
+            .post_process_prompts
+            .iter()
+            .map(|p| p.name.as_str())
+            .collect();
+        assert_eq!(names, vec!["Diktat (DE/EN)", "Mail"]);
+        assert_eq!(active_names(&s, &imported), vec!["Mail".to_string()]);
     }
 
     #[test]

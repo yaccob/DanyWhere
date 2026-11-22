@@ -1,12 +1,14 @@
 // DanyWhere: the versions of a History entry (`history_versions.rs`). An
-// entry is a stack: version 0 is the transcription, each version above was
-// made from the one right below it (by post-processing or by the user), and
-// the top is the entry's result. These helpers decide what History shows and
-// offers for a stack; the backend changes it.
+// entry is a stack of texts, bottom to top: the transcription, and every
+// post-processing (✨) and saved edit (✎) put on top of the version it was
+// made from (user, 2026-11-19, H1). The top is the entry's result. All
+// versions are alike (H3): any can be moved anywhere and deleted, the
+// transcription too, as long as one is left, and nothing asks first (H4).
+// These helpers decide what History shows and offers for a stack; the
+// backend changes it.
 import type {
   HistoryEntry,
   HistoryVersion,
-  ReprocessMode,
   SaveVersionMode,
   VersionStep,
 } from "@/bindings";
@@ -27,6 +29,11 @@ export const versionText = (entry: Stack, index: number): string =>
  * pastes again. */
 export const entryText = (entry: Stack): string =>
   versionText(entry, topIndex(entry));
+
+/** Whether the entry has a text to show, copy and edit: not while its
+ * transcription is still to come or failed. */
+export const hasText = (entry: Stack): boolean =>
+  entryText(entry).trim().length > 0;
 
 /** The versions the search's text matches, bottom to top (the track marks
  * them). None without a text to search or with a pattern JavaScript can't
@@ -68,15 +75,17 @@ export const shownVersion = (
   return matching[matching.length - 1];
 };
 
-/** How saving the user's edit of version `base` can go: the transcription
- * is never replaced, so on it only as a new version; above it, changing
- * that version or keeping it and adding a new one. */
+/** How saving the user's edit of version `base` can go: only the top
+ * changes in place, whatever made it; an edit of any version can be added
+ * on top as a new version. */
 export const saveModes = (entry: Stack, base: number): SaveVersionMode[] =>
-  base === 0 || !hasVersion(entry, base) ? ["new"] : ["replace", "new"];
+  hasVersion(entry, base) && base === topIndex(entry)
+    ? ["replace", "new"]
+    : ["new"];
 
-/** The save History offers first (highlighted, on ⌘↩): changing the version
+/** The save History offers first (highlighted, on ⌘↩): changing the top
  * when its last step was the user's, so small fixes don't grow the stack;
- * else a new version, which keeps the AI's text (and the transcription). */
+ * else a new version, which keeps the AI's or the speech model's text. */
 export const defaultSaveMode = (
   entry: Stack,
   base: number,
@@ -86,104 +95,168 @@ export const defaultSaveMode = (
   return steps[steps.length - 1]?.by === "user" ? "replace" : "new";
 };
 
-/** What ✨ can run on an entry. */
-export type PostProcessAction = Extract<
-  ReprocessMode,
-  "post_process" | "post_process_replace" | "post_process_redo"
->;
+/** What the current version's menu offers: to the top and up (below the
+ * top), down (above the bottom), delete; nothing for an entry's only
+ * version. */
+export type VersionAction = "to_top" | "up" | "down" | "delete";
 
-/** The current version: the one the entry shows (`shown`), which every
- * action works on; one the stack doesn't have counts as the top. */
-const current = (entry: Stack, shown: number): number =>
-  hasVersion(entry, shown) ? shown : topIndex(entry);
-
-/** The current version's steps; none when it's the transcription. */
-const currentSteps = (entry: Stack, shown: number) => {
-  const index = current(entry, shown);
-  return index > 0 ? (entry.versions[index]?.steps ?? []) : [];
-};
-
-/** ✨'s actions on the current version, the click's first: post-processing
- * it further (always); post-processing it and replacing it (not the
- * transcription); and redoing the post-processing from the previous version
- * (only when the AI made the current one). Below the top, each first deletes
- * the versions above the current one, which makes it the top. */
-export const postProcessActions = (
+export const versionActions = (
   entry: Stack,
-  shown: number,
-): PostProcessAction[] => {
-  const actions: PostProcessAction[] = ["post_process"];
-  if (current(entry, shown) === 0) return actions;
-  actions.push("post_process_replace");
-  if (currentSteps(entry, shown)[0]?.by === "ai") {
-    actions.push("post_process_redo");
-  }
+  index: number,
+): VersionAction[] => {
+  if (!hasVersion(entry, index) || entry.versions.length < 2) return [];
+  const actions: VersionAction[] = [];
+  if (index < topIndex(entry)) actions.push("to_top", "up");
+  if (index > 0) actions.push("down");
+  actions.push("delete");
   return actions;
 };
 
-/** Redoing replaces the current version with the AI's result for the
- * previous one: History asks first when that loses the user's own steps in
- * the current version. */
-export const redoNeedsConfirm = (entry: Stack, shown: number): boolean =>
-  currentSteps(entry, shown).some((step) => step.by === "user");
-
-/** How many versions ✨ deletes before it runs: the ones above the current
- * version. */
-export const versionsLostByPostProcessing = (
+/** Where version `index` moves to with `action`. */
+export const moveTarget = (
   entry: Stack,
-  shown: number,
-): number => Math.max(0, topIndex(entry) - current(entry, shown));
-
-/** What ✨ asks before an action: the versions above the current one go
- * (`above`, their count), a redo replaces the user's own steps in the
- * current version (`redo`), or both at once, asked in one question
- * (`redo_above`). */
-export type PostProcessQuestion =
-  | { kind: "above"; count: number }
-  | { kind: "redo" }
-  | { kind: "redo_above"; count: number };
-
-export const postProcessQuestion = (
-  entry: Stack,
-  shown: number,
-  action: PostProcessAction,
-): PostProcessQuestion | null => {
-  const count = versionsLostByPostProcessing(entry, shown);
-  const overEdits =
-    action === "post_process_redo" && redoNeedsConfirm(entry, shown);
-  if (overEdits) {
-    return count > 0 ? { kind: "redo_above", count } : { kind: "redo" };
-  }
-  return count > 0 ? { kind: "above", count } : null;
+  index: number,
+  action: Exclude<VersionAction, "delete">,
+): number => {
+  const top = topIndex(entry);
+  if (action === "to_top") return top;
+  if (action === "up") return Math.min(index + 1, top);
+  return Math.max(index - 1, 0);
 };
 
-/** How many versions go when the user edits version `base`: the ones above
- * it (History asks first when there are any). */
-export const versionsLostByEditing = (entry: Stack, base: number): number =>
-  Math.max(0, topIndex(entry) - base);
-
-/** How many versions "Reset to the Current Version" deletes for `keep`. */
-export const versionsLostByGoingBack = (entry: Stack, keep: number): number =>
-  Math.max(0, topIndex(entry) - keep);
-
-/** Re-transcribing replaces the transcription and drops every version above
- * it; History asks first unless what comes back is what goes: no step of the
- * user's above the transcription, at most one version above it, and that one
- * comes back by post-processing (`mode` post-processes, or `transcribe` does
- * because the entry was post-processed). */
-export const retranscribeNeedsConfirm = (
-  entry: Pick<HistoryEntry, "versions" | "post_process_requested">,
-  mode: ReprocessMode,
-): boolean => {
-  const above = entry.versions.slice(1);
-  if (above.some((v) => v.steps.some((step) => step.by === "user"))) {
-    return true;
-  }
-  if (above.length > 1) return true;
-  return (
-    above.length === 1 && mode === "transcribe" && !entry.post_process_requested
-  );
+/** The place version `index` has after the one at `from` moved to `to`. */
+export const indexAfterMove = (
+  index: number,
+  from: number,
+  to: number,
+): number => {
+  if (index === from) return to;
+  if (from < index && index <= to) return index - 1;
+  if (to <= index && index < from) return index + 1;
+  return index;
 };
+
+/** The place version `index` has after the one at `deleted` went; null
+ * for that one itself. */
+export const indexAfterDelete = (
+  index: number,
+  deleted: number,
+): number | null => {
+  if (index === deleted) return null;
+  return index > deleted ? index - 1 : index;
+};
+
+/** A chip's box on screen, in client pixels. */
+export type ChipBox = {
+  left: number;
+  right: number;
+  top: number;
+  bottom: number;
+};
+
+/** The gap a chip dropped at (`x`, `y`) goes into, 0 (before the first
+ * chip) to `boxes.length` (after the last): before the chip nearest to the
+ * point, or after it when the point is past its middle in the reading
+ * direction (`rtl`: right to left). The nearest row of chips counts first,
+ * then the nearest chip in it. */
+export const dropSlot = (
+  boxes: ChipBox[],
+  x: number,
+  y: number,
+  rtl = false,
+): number => {
+  if (boxes.length === 0) return 0;
+  const away = (low: number, high: number, at: number) =>
+    at < low ? low - at : at > high ? at - high : 0;
+  let nearest = 0;
+  let best = [Infinity, Infinity];
+  boxes.forEach((box, index) => {
+    const distance = [
+      away(box.top, box.bottom, y),
+      away(box.left, box.right, x),
+    ];
+    if (
+      distance[0] < best[0] ||
+      (distance[0] === best[0] && distance[1] < best[1])
+    ) {
+      nearest = index;
+      best = distance;
+    }
+  });
+  const box = boxes[nearest];
+  const middle = (box.left + box.right) / 2;
+  const after = rtl ? x < middle : x > middle;
+  return after ? nearest + 1 : nearest;
+};
+
+/** The place a version dragged from `from` gets when dropped into gap
+ * `slot` (see `dropSlot`). */
+export const dropIndex = (from: number, slot: number): number =>
+  slot > from ? slot - 1 : slot;
+
+/** How far a pressed chip moves before it is dragged, in pixels. */
+export const DRAG_THRESHOLD = 4;
+
+/** A pressed chip: where it came from, and the gap it goes into once it
+ * moved far enough to be dragged (`active`). */
+export type ChipDrag = {
+  from: number;
+  pointerId: number;
+  startX: number;
+  startY: number;
+  active: boolean;
+  slot: number;
+};
+
+export const pressChip = (
+  from: number,
+  pointerId: number,
+  x: number,
+  y: number,
+): ChipDrag => ({
+  from,
+  pointerId,
+  startX: x,
+  startY: y,
+  active: false,
+  slot: from,
+});
+
+/** The drag once the pointer is at (`x`, `y`); the same object while
+ * nothing changes. `slotAt` finds the gap under the point (`dropSlot`). */
+export const moveChip = (
+  drag: ChipDrag,
+  x: number,
+  y: number,
+  slotAt: (x: number, y: number) => number,
+): ChipDrag => {
+  const distance = Math.hypot(x - drag.startX, y - drag.startY);
+  if (!drag.active && distance < DRAG_THRESHOLD) return drag;
+  const slot = slotAt(x, y);
+  return drag.active && slot === drag.slot
+    ? drag
+    : { ...drag, active: true, slot };
+};
+
+/** What the release does: the move (none when the chip didn't move far
+ * enough or went back to its place), and whether the click that follows
+ * must not show the chip. */
+export const releaseChip = (
+  drag: ChipDrag | null,
+): { move: { from: number; to: number } | null; swallowClick: boolean } => {
+  if (!drag || !drag.active) return { move: null, swallowClick: false };
+  const to = dropIndex(drag.from, drag.slot);
+  return {
+    move: to === drag.from ? null : { from: drag.from, to },
+    swallowClick: true,
+  };
+};
+
+/** Escape during a drag: the drag ends without a move, and a chip that
+ * was being dragged isn't shown by the click its release makes. */
+export const cancelChipDrag = (
+  drag: ChipDrag | null,
+): { swallowClick: boolean } => ({ swallowClick: drag?.active === true });
 
 /** What the track shows for a version: the transcription, ✨ (post-processed),
  * ✎ (the user's), or ✨✎ when both made it. */
@@ -209,12 +282,11 @@ export const describeStep = (step: VersionStep): StepDescription => {
 };
 
 /** When step `stepIndex` of version `index` was made, in seconds, for the
- * chip's tooltip. A step without a time (from before versions existed, or
- * derived from the old fields) gets the entry's own time only where that is
- * when it happened: the transcription, and the post-processing a dictation
- * did right away (the first step of version 1). Any other has none. */
+ * chip's tooltip. The backend gives the steps of an entry's own making the
+ * entry's time; a transcription without one still gets it, wherever the
+ * user moved it. Any other step without a time has none. */
 export const stepSeconds = (
-  entry: Pick<HistoryEntry, "versions" | "timestamp" | "source_name">,
+  entry: Pick<HistoryEntry, "versions" | "timestamp">,
   index: number,
   stepIndex: number,
 ): number | null => {
@@ -222,14 +294,13 @@ export const stepSeconds = (
   if (!step) return null;
   const { atSeconds } = describeStep(step);
   if (atSeconds !== null) return atSeconds;
-  const transcribed = index === 0 && step.by === "transcription";
-  const dictationPostProcessed =
-    index === 1 &&
-    stepIndex === 0 &&
-    step.by === "ai" &&
-    entry.source_name === null;
-  return transcribed || dictationPostProcessed ? entry.timestamp : null;
+  return step.by === "transcription" ? entry.timestamp : null;
 };
+
+/** The lines of a chip's tooltip, a line repeated right after itself once:
+ * two saves in place within a minute read the same. */
+export const distinctLines = (lines: string[]): string[] =>
+  lines.filter((line, index) => index === 0 || line !== lines[index - 1]);
 
 /** ⌘Enter (Ctrl+Enter off macOS) saves an edit. */
 export const isSaveShortcut = (event: {

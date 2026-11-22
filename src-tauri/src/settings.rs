@@ -78,7 +78,8 @@ impl From<LogLevel> for tauri_plugin_log::LogLevel {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Type)]
+// DanyWhere: comparable, as a profile value (`ProfileValues::bindings`).
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Type)]
 pub struct ShortcutBinding {
     pub id: String,
     pub name: String,
@@ -106,7 +107,7 @@ pub enum PostProcessApiFormat {
     Anthropic,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Type)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Type)]
 pub struct PostProcessProvider {
     pub id: String,
     pub label: String,
@@ -427,7 +428,7 @@ pub enum LanguageDetectionMode {
     Always,
 }
 
-#[derive(Clone, Serialize, Deserialize, Type)]
+#[derive(Clone, PartialEq, Serialize, Deserialize, Type)]
 #[serde(transparent)]
 pub(crate) struct SecretMap(HashMap<String, String>);
 
@@ -561,7 +562,8 @@ pub struct AppSettings {
     pub debug_mode: bool,
     #[serde(default = "default_log_level")]
     pub log_level: LogLevel,
-    /// The global word list: always given to the model (see `word_lists`).
+    /// The word list every dictation gets (see `word_lists`); a profile
+    /// value (`profiles`), the same in every profile until one differs.
     #[serde(default)]
     pub custom_words: Vec<String>,
     /// Named lists that can be switched on in addition to the global one.
@@ -609,8 +611,15 @@ pub struct AppSettings {
     pub post_process_efforts: HashMap<String, String>,
     #[serde(default = "default_post_process_prompts")]
     pub post_process_prompts: Vec<LLMPrompt>,
+    /// DanyWhere: unused since the prompt library (`prompt_library`), which
+    /// reads it once to migrate and then clears it.
     #[serde(default)]
     pub post_process_selected_prompt_id: Option<String>,
+    /// DanyWhere: which prompts of the library (`post_process_prompts`, shared
+    /// by all profiles) the active profile runs, and the order of the whole
+    /// list (`prompt_library`). A profile value.
+    #[serde(default)]
+    pub post_process_prompt_order: Vec<crate::prompt_library::PromptOrderEntry>,
     /// DanyWhere: time limit for the whole post-processing step, retries
     /// included, in seconds (Handy: a fixed 60 s; see `llm_timeouts`).
     #[serde(default = "crate::llm_timeouts::default_post_process_timeout_secs")]
@@ -623,11 +632,6 @@ pub struct AppSettings {
     pub mute_while_recording: bool,
     #[serde(default)]
     pub append_trailing_space: bool,
-    /// DanyWhere: what every dictation gets appended, text and key presses at
-    /// the end (`append_text`). Replaces `append_trailing_space` and
-    /// `auto_submit`, which stay only for Handy merges and the migration.
-    #[serde(default)]
-    pub append_text: String,
     #[serde(default = "default_app_language")]
     pub app_language: String,
     #[serde(default = "default_theme")]
@@ -709,19 +713,28 @@ pub struct AppSettings {
     pub profiles: Vec<crate::profiles::Profile>,
     #[serde(default)]
     pub active_profile_id: String,
+    /// DanyWhere: the defaults ("Grundeinstellungen"): the values every
+    /// profile's coupled fields follow and that apply while no profile is in
+    /// use (`profile_layers`). `None` only in a store from before them, which
+    /// `profiles::ensure_profiles` migrates; read them through
+    /// `profiles::default_values`.
+    #[serde(default)]
+    pub default_values: Option<crate::profiles::ProfileValues>,
     /// DanyWhere: the active profile's own word list, which always applies
-    /// in it; `custom_words` applies in every profile.
+    /// in it, before `custom_words`.
     #[serde(default)]
     pub profile_words: Vec<String>,
     /// DanyWhere: whether an application's profile is used for dictations
     /// into it. Not used yet.
     #[serde(default = "default_profile_auto_by_app")]
     pub profile_auto_by_app: bool,
-    /// DanyWhere: the active profile's switch "Send Context": a dictation
-    /// with post-processing sends earlier dictations of the same window as
-    /// context (`send_context`).
-    #[serde(default)]
-    pub send_context: bool,
+    /// DanyWhere: the active profile's end shortcuts (`end_keys`).
+    #[serde(default = "crate::end_keys::default_end_keys")]
+    pub end_keys: Vec<crate::end_keys::EndKey>,
+    /// DanyWhere: the active profile's default end per start shortcut
+    /// (`end_keys`), by binding id.
+    #[serde(default = "crate::end_keys::default_ends")]
+    pub default_ends: HashMap<String, String>,
     /// DanyWhere: the height in pixels a History text box may grow to before
     /// it scrolls, as dragged at its grip, for the newest entry and for the
     /// others; `None` = the default lines (`history_box`).
@@ -1135,6 +1148,15 @@ fn ensure_post_process_defaults(settings: &mut AppSettings) -> bool {
     changed
 }
 
+/// DanyWhere: [`ensure_post_process_defaults`] for the flat values and
+/// every profile, since the providers, their keys and models are profile
+/// values: a provider a new version brings reaches every profile.
+fn ensure_post_process_defaults_everywhere(settings: &mut AppSettings) -> bool {
+    let flat = ensure_post_process_defaults(settings);
+    let profiles = crate::profiles::ensure_in_every_profile(settings, ensure_post_process_defaults);
+    flat || profiles
+}
+
 pub const SETTINGS_STORE_PATH: &str = "settings_store.json";
 
 pub fn get_default_settings() -> AppSettings {
@@ -1253,27 +1275,6 @@ pub fn get_default_settings() -> AppSettings {
             current_binding: default_toggle_profile_auto_shortcut.to_string(),
         },
     );
-    // DanyWhere: turns "Send Context" on and off for the profile a dictation
-    // into the app in front uses (`send_context`). K for "Kontext"/context
-    // (C is Copy Last Transcript); Control/Alt+Shift like the profile
-    // toggle. Registered only while some dictation can post-process.
-    #[cfg(target_os = "macos")]
-    let default_toggle_send_context_shortcut = "ctrl+shift+x";
-    #[cfg(not(target_os = "macos"))]
-    let default_toggle_send_context_shortcut = "alt+shift+x";
-
-    bindings.insert(
-        crate::send_context::TOGGLE_BINDING.to_string(),
-        ShortcutBinding {
-            id: crate::send_context::TOGGLE_BINDING.to_string(),
-            name: "Send Context".to_string(),
-            description:
-                "Turns sending context with post-processing on or off for the profile a dictation into the app in front uses."
-                    .to_string(),
-            default_binding: default_toggle_send_context_shortcut.to_string(),
-            current_binding: default_toggle_send_context_shortcut.to_string(),
-        },
-    );
     bindings.insert(
         "cancel".to_string(),
         ShortcutBinding {
@@ -1338,11 +1339,13 @@ pub fn get_default_settings() -> AppSettings {
         post_process_efforts: HashMap::new(),
         post_process_prompts: default_post_process_prompts(),
         post_process_selected_prompt_id: None,
+        post_process_prompt_order: crate::prompt_library::default_order(
+            &default_post_process_prompts(),
+        ),
         post_process_timeout_secs: crate::llm_timeouts::default_post_process_timeout_secs(),
         model_list_timeout_secs: crate::llm_timeouts::default_model_list_timeout_secs(),
         mute_while_recording: false,
         append_trailing_space: false,
-        append_text: String::new(),
         app_language: default_app_language(),
         theme: default_theme(),
         experimental_enabled: false,
@@ -1370,9 +1373,11 @@ pub fn get_default_settings() -> AppSettings {
         overlay_style: default_overlay_style(),
         profiles: Vec::new(),
         active_profile_id: String::new(),
+        default_values: None,
         profile_words: Vec::new(),
         profile_auto_by_app: default_profile_auto_by_app(),
-        send_context: false,
+        end_keys: crate::end_keys::default_end_keys(),
+        default_ends: crate::end_keys::default_ends(),
         history_box_height_newest: None,
         history_box_height_other: None,
     }
@@ -1426,11 +1431,10 @@ pub fn load_or_create_app_settings(app: &AppHandle) -> AppSettings {
     settings
 }
 
-/// DanyWhere: the shortcuts that post-process, which are registered only
-/// while post-processing is switched on, and the switch "Send Context",
-/// which does nothing without it.
+/// DanyWhere: the shortcut that post-processes, which is registered only
+/// while post-processing is switched on.
 pub fn binding_needs_post_processing(id: &str) -> bool {
-    id == "transcribe_with_post_process" || id == crate::send_context::TOGGLE_BINDING
+    id == "transcribe_with_post_process"
 }
 
 /// DanyWhere: whether DanyWhere registers the shortcut `id` as its own.
@@ -1514,12 +1518,12 @@ pub fn get_settings(app: &AppHandle) -> AppSettings {
         default_settings
     };
 
-    if ensure_post_process_defaults(&mut settings) {
+    if ensure_post_process_defaults_everywhere(&mut settings) {
         store.set("settings", serde_json::to_value(&settings).unwrap());
     }
 
-    // DanyWhere: the default profile on a new installation or an update from
-    // a version without profiles, and the active profile's latest values.
+    // DanyWhere: the defaults on a new installation or the switch from the
+    // profile "Standard", and the latest flat values where they belong.
     if crate::profiles::ensure_profiles(&mut settings) {
         store.set("settings", serde_json::to_value(&settings).unwrap());
     }
@@ -1713,12 +1717,6 @@ fn apply_settings_migrations(
         updated = true;
     }
 
-    // DanyWhere: one-time "Append" migration from the trailing space and
-    // auto submit, for the settings and every stored profile.
-    if crate::append_text::migrate(settings, settings_value) {
-        updated = true;
-    }
-
     // One-time overlay migration (only while the new key is absent): the retired
     // overlay_position `none` meant "hide the overlay" → OverlayStyle::None; any
     // other position had it visible → Live. The position enum no longer has a
@@ -1737,8 +1735,28 @@ fn apply_settings_migrations(
         updated = true;
     }
 
-    // DanyWhere: the context shortcut gave way to "Send Context".
-    if crate::send_context::drop_retired_binding(settings) {
+    // DanyWhere: a stored profile without a profile value gets the flat
+    // value it had (contract V5), after the migrations of the flat values
+    // above and before those of a profile's own below, which win.
+    if crate::profiles::fill_missing_values_from_flat(settings, settings_value) {
+        updated = true;
+    }
+    // DanyWhere: the same for the defaults (`profile_layers`).
+    if crate::profile_layers::fill_missing_defaults_from_flat(settings, settings_value) {
+        updated = true;
+    }
+
+    // DanyWhere: the end shortcuts take over "Append" (and before it the
+    // trailing space and auto submit) and "Send Context", for the settings
+    // and every stored profile; the retired shortcuts go. After the filling
+    // above, as it reads what a profile had stored.
+    if crate::end_keys::migrate(settings, settings_value) {
+        updated = true;
+    }
+
+    // DanyWhere: one-time prompt library migration: the profiles' own copies
+    // of their prompts become one library for all.
+    if crate::prompt_library::migrate(settings, settings_value) {
         updated = true;
     }
 
@@ -1860,13 +1878,16 @@ pub fn write_settings(app: &AppHandle, settings: AppSettings) {
         .store(crate::portable::store_path(SETTINGS_STORE_PATH))
         .expect("Failed to initialize store");
 
-    // DanyWhere: every change lands in the active profile.
+    // DanyWhere: a change of the flat values goes where its value comes
+    // from: the defaults or the profile in use (`profile_layers`).
     let mut settings = settings;
-    let _ = crate::profiles::sync_active_profile(&mut settings);
+    let _ = crate::profile_layers::route_flat(&mut settings);
 
     store.set("settings", serde_json::to_value(&settings).unwrap());
 }
 
+// DanyWhere: unused since the shortcuts follow the profile (`profile_sync`).
+#[allow(dead_code)]
 pub fn get_bindings(app: &AppHandle) -> HashMap<String, ShortcutBinding> {
     let settings = get_settings(app);
 
@@ -1890,13 +1911,13 @@ mod tests {
     use super::*;
 
     #[test]
-    fn both_post_processing_shortcuts_need_post_processing() {
+    fn the_post_processing_shortcut_needs_post_processing() {
         assert!(binding_needs_post_processing(
             "transcribe_with_post_process"
         ));
-        // DanyWhere: the switch "Send Context" does nothing without it.
-        assert!(binding_needs_post_processing(
-            crate::send_context::TOGGLE_BINDING
+        // DanyWhere: the switch "Send Context" went into the end shortcuts.
+        assert!(!binding_needs_post_processing(
+            crate::send_context::RETIRED_TOGGLE_BINDING
         ));
         assert!(!binding_needs_post_processing("transcribe_with_context"));
         assert!(!binding_needs_post_processing("transcribe"));
@@ -1938,15 +1959,15 @@ mod tests {
         assert!(registers_binding("paste_last_transcript", &settings, true));
     }
 
-    /// DanyWhere: two profiles, "mail" (post-processing on) assigned to Mail;
-    /// the active one has post-processing off.
+    /// DanyWhere: the defaults (in use, post-processing off) and "mail"
+    /// (post-processing on) assigned to Mail.
     fn with_mail_profile() -> AppSettings {
         let mut settings = get_default_settings();
         settings.post_process_enabled = false;
         crate::profiles::ensure_profiles(&mut settings);
-        let mut mail = settings.profiles[0].clone();
-        mail.id = "mail".to_string();
-        mail.values.post_process_enabled = true;
+        let mut mail = crate::profiles::profile_for_test(&settings, "mail", "Mail", |values| {
+            values.post_process_enabled = true;
+        });
         mail.apps = vec!["com.apple.mail".to_string()];
         settings.profiles.push(mail);
         settings
@@ -1986,19 +2007,9 @@ mod tests {
             &settings,
             true
         ));
-        assert!(!registers_binding(
-            crate::send_context::TOGGLE_BINDING,
-            &settings,
-            true
-        ));
         settings.post_process_enabled = true;
         assert!(registers_binding(
             "transcribe_with_post_process",
-            &settings,
-            true
-        ));
-        assert!(registers_binding(
-            crate::send_context::TOGGLE_BINDING,
             &settings,
             true
         ));
@@ -2358,8 +2369,8 @@ mod tests {
         assert_eq!(settings.overlay_style, OverlayStyle::None);
     }
 
-    /// DanyWhere: the trailing space and auto submit become the "Append"
-    /// field when the store is read (`append_text::migrate`).
+    /// DanyWhere: the trailing space and auto submit become the end
+    /// shortcuts' "Append" text when the store is read (`end_keys::migrate`).
     #[test]
     fn append_migration_runs_when_the_store_is_read() {
         let raw = serde_json::json!({
@@ -2369,10 +2380,13 @@ mod tests {
         });
         let mut settings: AppSettings = serde_json::from_value(raw.clone()).expect("parses");
         assert!(apply_settings_migrations(&mut settings, &raw));
-        assert_eq!(settings.append_text, r"\s{Ctrl+Enter}");
-        // The default profile is made from the migrated flat values.
+        assert_eq!(settings.end_keys[0].append_text, r"\s{Ctrl+Enter}");
+        // The defaults are made from the migrated flat values.
         crate::profiles::ensure_profiles(&mut settings);
-        assert_eq!(settings.profiles[0].values.append_text, r"\s{Ctrl+Enter}");
+        assert_eq!(
+            crate::profiles::default_values(&settings).end_keys[1].append_text,
+            r"\s{Ctrl+Enter}"
+        );
     }
 
     /// DanyWhere: a store written on another system (or by hand) gets this
@@ -2384,14 +2398,18 @@ mod tests {
         // Every system's name of the key, so at least two are foreign here.
         let written = "{Cmd+Enter}{Win+Enter}{Super+Enter}{Return}";
         let mut settings = get_default_settings();
-        settings.append_text = written.to_string();
+        settings.end_keys[0].append_text = written.to_string();
         crate::profiles::ensure_profiles(&mut settings);
+        let work = crate::profiles::profile_for_test(&settings, "work", "Work", |_| {});
+        settings.profiles.push(work);
         let raw = serde_json::to_value(&settings).expect("serializes");
         let mut settings: AppSettings = serde_json::from_value(raw.clone()).expect("parses");
         assert!(apply_settings_migrations(&mut settings, &raw));
+        let defaults = settings.default_values.clone().expect("defaults");
         for value in [
-            &settings.append_text,
-            &settings.profiles[0].values.append_text,
+            &settings.end_keys[0].append_text,
+            &settings.profiles[0].values.end_keys[0].append_text,
+            &defaults.end_keys[0].append_text,
         ] {
             // Only this system's names are left.
             assert_eq!(&localize(value, KeyPlatform::current()), value);
@@ -2756,7 +2774,9 @@ mod tests {
             "chinese_script": "as_transcribed",
             "recording_storage_limit": "mb_500",
             "transcribe_accelerator": "gpu",
-            "transcribe_gpu_device": settings.transcribe_gpu_device
+            "transcribe_gpu_device": settings.transcribe_gpu_device,
+            // DanyWhere: the prompt library is there already.
+            "post_process_prompt_order": []
         });
 
         assert!(!apply_settings_migrations(&mut settings, &raw));
@@ -2800,6 +2820,28 @@ mod tests {
         assert!(!ensure_post_process_defaults(&mut settings));
     }
 
+    /// DanyWhere: the prompt library (`prompt_library`) is made on the first
+    /// read of settings from before it.
+    #[test]
+    fn the_prompt_library_is_made_when_older_settings_load() {
+        let raw = serde_json::json!({
+            "post_process_prompts": [
+                {"id": "p1", "name": "Diktat", "prompt": "Clean it up."},
+                {"id": "p2", "name": "Mail", "prompt": "Make an email."}
+            ],
+            "post_process_selected_prompt_id": "p2"
+        });
+        let mut settings: AppSettings = serde_json::from_value(raw.clone()).unwrap();
+        apply_settings_migrations(&mut settings, &raw);
+        assert_eq!(
+            settings.post_process_prompt_order,
+            vec![
+                crate::prompt_library::PromptOrderEntry::new("p1", false),
+                crate::prompt_library::PromptOrderEntry::new("p2", true),
+            ]
+        );
+    }
+
     #[test]
     fn debug_output_redacts_api_keys() {
         let mut settings = get_default_settings();
@@ -2819,6 +2861,77 @@ mod tests {
         assert!(!debug_output.contains("sk-proj-secret-key-12345"));
         assert!(!debug_output.contains("sk-ant-secret-key-67890"));
         assert!(debug_output.contains("[REDACTED]"));
+    }
+
+    // ---- DanyWhere: profile values (P6) -----------------------------------
+
+    /// A store from before the newer profile values: flat ones for them, a
+    /// second profile without them, which still has Handy's trailing space.
+    fn stored_before_new_profile_values() -> serde_json::Value {
+        serde_json::json!({
+            "selected_microphone": "USB Mic",
+            "overlay_position": "top",
+            "overlay_style": "minimal",
+            "custom_words": ["Sayuri"],
+            "append_text": "{Enter}",
+            "active_profile_id": "default",
+            "profiles": [
+                { "id": "default", "name": "", "values": { "append_text": "{Enter}" } },
+                { "id": "old", "name": "Old",
+                  "values": { "selected_language": "fr", "append_trailing_space": true } }
+            ]
+        })
+    }
+
+    #[test]
+    fn a_stored_profile_gets_the_flat_values_it_lacks_when_loaded() {
+        let raw = stored_before_new_profile_values();
+        let mut settings: AppSettings = serde_json::from_value(raw.clone()).expect("parses");
+        assert!(apply_settings_migrations(&mut settings, &raw));
+        let old = serde_json::to_value(&settings.profiles[1].values).expect("serializes");
+        assert_eq!(old["selected_microphone"], "USB Mic");
+        assert_eq!(old["overlay_position"], "top");
+        assert_eq!(old["overlay_style"], "minimal");
+        assert_eq!(old["custom_words"], serde_json::json!(["Sayuri"]));
+        assert_eq!(old["selected_language"], "fr");
+        // A migration of its own still wins over the flat value: the
+        // profile's trailing space, not the flat "Append" text, in its end
+        // shortcuts (`end_keys::migrate`).
+        assert_eq!(old["end_keys"][0]["append_text"], r"\s");
+        assert_eq!(settings.end_keys[0].append_text, "{Enter}");
+    }
+
+    #[test]
+    fn a_new_built_in_provider_reaches_every_profile() {
+        let mut settings = get_default_settings();
+        crate::profiles::ensure_profiles(&mut settings);
+        let mut other = crate::profiles::profile_for_test(&settings, "other", "Other", |_| {});
+        other.values = crate::profiles::testing::values_with(
+            &other.values,
+            serde_json::json!({
+                "post_process_providers": [{
+                    "id": "openai",
+                    "label": "OpenAI",
+                    "base_url": "https://api.openai.com/v1",
+                }],
+                "post_process_api_keys": { "openai": "sk-other" },
+            }),
+        );
+        settings.profiles.push(other);
+        assert!(ensure_post_process_defaults_everywhere(&mut settings));
+        let values = serde_json::to_value(&settings.profiles[0].values).expect("serializes");
+        let ids: Vec<&str> = values["post_process_providers"]
+            .as_array()
+            .expect("providers")
+            .iter()
+            .filter_map(|provider| provider["id"].as_str())
+            .collect();
+        for provider in default_post_process_providers() {
+            assert!(ids.contains(&provider.id.as_str()), "{}", provider.id);
+        }
+        assert_eq!(values["post_process_api_keys"]["openai"], "sk-other");
+        assert_eq!(values["post_process_api_keys"]["anthropic"], "");
+        assert!(!ensure_post_process_defaults_everywhere(&mut settings));
     }
 
     #[test]

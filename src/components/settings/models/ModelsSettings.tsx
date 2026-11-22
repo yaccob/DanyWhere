@@ -13,7 +13,9 @@ import RetiredModelsNotice from "./RetiredModelsNotice";
 import { ModelRow } from "./ModelRow";
 import { Legend } from "./Legend";
 import { useModelEntries } from "./modelEntries";
-import { ProfileScopeHint } from "../profiles/ProfileScopeHint";
+// DanyWhere (strand E2): the chosen model's chain, or the profiles that
+// deviate from it.
+import { ScopedSetting } from "../profiles/scope/ScopedSetting";
 
 /** Past this many models on disk, the rest fold under "Show N more". */
 const YOURS_LIMIT = 5;
@@ -145,8 +147,10 @@ export const ModelsSettings: React.FC<ModelsSettingsProps> = ({
           <h1 className="text-xl font-semibold">
             {t("settings.models.title")}
           </h1>
-          {/* DanyWhere: the chosen model belongs to the active profile. */}
-          <ProfileScopeHint page="models" className="mt-[2px]" />
+          {/* DanyWhere: the speech model is a profile value (P11). */}
+          <div className="-mx-4 mt-[2px]">
+            <ScopedSetting field="selected_model">{null}</ScopedSetting>
+          </div>
         </div>
         {onChangeLanguages && (
           <button

@@ -1,7 +1,12 @@
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { commands, type Profile, type Result } from "@/bindings";
-import { activeProfile, profileDisplayName } from "@/lib/utils/profiles";
+import { commands, type Result } from "@/bindings";
+import {
+  DEFAULT_PROFILE_ID,
+  activeProfile,
+  profileDisplayName,
+  type ProfileLike,
+} from "@/lib/utils/profiles";
 import { hasAssignments } from "@/lib/utils/profileApps";
 import { useModelStore } from "@/stores/modelStore";
 import { notify } from "@/stores/noticeStore";
@@ -19,14 +24,17 @@ export const useProfiles = () => {
   const [busy, setBusy] = useState(false);
 
   const profiles = getSetting("profiles") ?? [];
+  // DanyWhere: the profile in use, `null` while the defaults are in use;
+  // `activeId` names either (`DEFAULT_PROFILE_ID` for the defaults).
   const active = activeProfile(profiles, getSetting("active_profile_id"));
+  const activeId = active?.id ?? DEFAULT_PROFILE_ID;
   // DanyWhere: choosing the profile by application (`app_profiles.rs`).
   const autoByApp = getSetting("profile_auto_by_app") ?? true;
   const assigned = hasAssignments(profiles);
-  // The same translated name the tray and the overlay use (strand T1).
-  const defaultName = t("tray.defaultProfile");
+  // The defaults' fixed name, the same the tray and the overlay use.
+  const defaultName = t("tray.defaultSettings");
   const displayName = useCallback(
-    (profile: Profile) => profileDisplayName(profile, defaultName),
+    (profile: ProfileLike) => profileDisplayName(profile, defaultName),
     [defaultName],
   );
 
@@ -55,7 +63,7 @@ export const useProfiles = () => {
   };
 
   const switchTo = async (id: string) => {
-    if (id === active?.id) return;
+    if (id === activeId) return;
     await run(
       () => commands.switchProfile(id),
       t("settings.profiles.errors.switch"),
@@ -66,6 +74,14 @@ export const useProfiles = () => {
   const duplicate = (sourceId: string, name: string) =>
     run(
       () => commands.duplicateProfile(sourceId, name),
+      t("settings.profiles.errors.duplicate"),
+    );
+
+  // DanyWhere (strand E2): a new profile that follows the defaults in
+  // everything (P9).
+  const create = (name: string) =>
+    run(
+      () => commands.createProfile(name),
       t("settings.profiles.errors.duplicate"),
     );
 
@@ -97,6 +113,7 @@ export const useProfiles = () => {
   return {
     profiles,
     active,
+    activeId,
     autoByApp,
     assigned,
     setApps,
@@ -106,6 +123,7 @@ export const useProfiles = () => {
     displayName,
     switchTo,
     duplicate,
+    create,
     rename,
     remove,
   };

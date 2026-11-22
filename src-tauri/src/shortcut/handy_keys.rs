@@ -446,11 +446,13 @@ pub fn init_shortcuts(app: &AppHandle) -> Result<(), String> {
             .cloned()
             .unwrap_or(default_binding);
 
-        if let Err(e) = state.register(&binding) {
-            error!(
+        match state.register(&binding) {
+            // DanyWhere: known to the shortcuts that follow the profile.
+            Ok(()) => super::profile_sync::note_registered(&binding),
+            Err(e) => error!(
                 "Failed to register handy-keys shortcut {} during init: {}",
                 id, e
-            );
+            ),
         }
     }
 

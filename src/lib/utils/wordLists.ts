@@ -46,3 +46,33 @@ export const activeListOption = (
   activeId && lists.some((list) => list.id === activeId)
     ? activeId
     : NO_WORD_LIST;
+
+/** DanyWhere (strand E2): the id of a list made in the defaults or in a
+ * profile, as the backend's `add_list` makes them, unique among `taken`
+ * (the lists of every layer, so an added entry never meets another). */
+export const newWordListId = (taken: readonly string[], now: number) => {
+  const base = `word_list_${now}`;
+  let id = base;
+  let suffix = 1;
+  while (taken.includes(id)) {
+    suffix += 1;
+    id = `${base}_${suffix}`;
+  }
+  return id;
+};
+
+/** A list's name as the backend keeps it; `null` for an empty one. */
+export const cleanListName = (name: string): string | null => {
+  const trimmed = name.trim();
+  return trimmed ? trimmed : null;
+};
+
+/** A list's words as the backend keeps them: trimmed, no blanks, each once. */
+export const cleanListWords = (words: readonly string[]): string[] => {
+  const cleaned: string[] = [];
+  for (const word of words) {
+    const trimmed = word.trim();
+    if (trimmed && !cleaned.includes(trimmed)) cleaned.push(trimmed);
+  }
+  return cleaned;
+};

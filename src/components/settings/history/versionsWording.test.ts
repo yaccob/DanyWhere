@@ -2,9 +2,10 @@
 //   bun src/components/settings/history/versionsWording.test.ts
 // DanyWhere: the words History names its versions with
 // (`settings.history.versions`). The version the user sees is the current
-// one, the one right below it the previous one, and one an action makes a
-// new one; "top" only where nothing else says it. No word for "newest": it
-// meant the top, while "new" meant a version still to come.
+// one, and one an action makes a new one; "top" only where nothing else says
+// it ("Move to the Top": everything goes on top, and the top is the entry's
+// result). No word for "newest": it meant the top, while "new" meant a
+// version still to come.
 import assert from "node:assert/strict";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -66,9 +67,9 @@ const NAMED = {
   },
 };
 
-// The one string that has to say "top": going back makes the current
-// version the top again.
-const TOP_ALLOWED = new Set(["goBackHint"]);
+// The one string that has to say "top": moving the current version there
+// makes it the entry's result.
+const TOP_ALLOWED = new Set(["moveToTop"]);
 
 type Strings = [key: string, text: string][];
 

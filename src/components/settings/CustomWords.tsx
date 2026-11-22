@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { notify } from "@/stores/noticeStore";
 import { useSettings } from "../../hooks/useSettings";
-import { useProfiles } from "../../hooks/useProfiles";
 import { isComposingKeyEvent } from "../../lib/utils/keyboard";
 import {
   MAX_WORD_LENGTH,
@@ -134,16 +133,12 @@ export const WordChips: React.FC<WordChipsProps> = ({
   );
 };
 
-/** DanyWhere: the active profile's own word list, always given to the model
- * in that profile, before the global list. Hidden until the settings carry
- * profiles. */
+/** DanyWhere: the words a profile adds before the word list, always given
+ * to the model there (shown in a profile only, strand E2). */
 export const ProfileWords: React.FC<CustomWordsProps> = React.memo(
   ({ descriptionMode = "tooltip", grouped = false }) => {
     const { t } = useTranslation();
     const { getSetting, updateSetting, isUpdating } = useSettings();
-    const { profiles, active, displayName } = useProfiles();
-    if (profiles.length === 0 || !active) return null;
-
     const words = getSetting("profile_words") || [];
     const updating = isUpdating("profile_words");
     const save = (next: string[]) => updateSetting("profile_words", next);
@@ -151,9 +146,7 @@ export const ProfileWords: React.FC<CustomWordsProps> = React.memo(
     return (
       <>
         <SettingContainer
-          title={t("settings.advanced.wordLists.profileTitle", {
-            name: displayName(active),
-          })}
+          title={t("settings.profileView.fields.profileWords")}
           description={t("settings.advanced.wordLists.profileDescription")}
           descriptionMode={descriptionMode}
           grouped={grouped}
@@ -172,7 +165,8 @@ export const ProfileWords: React.FC<CustomWordsProps> = React.memo(
 );
 ProfileWords.displayName = "ProfileWords";
 
-/** The global word list: always given to the model, in every profile. */
+/** The word list: always given to the model; a profile value like any
+ * other (DanyWhere, strand E2: the defaults' and a profile's own). */
 export const CustomWords: React.FC<CustomWordsProps> = React.memo(
   ({ descriptionMode = "tooltip", grouped = false }) => {
     const { t } = useTranslation();
@@ -184,7 +178,7 @@ export const CustomWords: React.FC<CustomWordsProps> = React.memo(
     return (
       <>
         <SettingContainer
-          title={t("settings.advanced.wordLists.globalTitle")}
+          title={t("settings.profileView.fields.customWords")}
           description={t("settings.advanced.customWords.description")}
           descriptionMode={descriptionMode}
           grouped={grouped}

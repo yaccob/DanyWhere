@@ -21,181 +21,139 @@ const check = (name: string, body: () => void) => {
   }
 };
 
-const standard = { id: DEFAULT_PROFILE_ID, name: "" };
+// The defaults ("Grundeinstellungen") are no profile; their id stands for
+// them where a profile id is expected (in use, switching).
 const work = { id: "p1", name: "Work" };
 const code = { id: "p2", name: "  Code  " };
-const profiles = [standard, work, code];
+const profiles = [work, code];
+const defaults = "Grundeinstellungen";
 
-// The default profile's stored name is empty and shows translated until it
-// is renamed; any other name shows as stored, without surrounding blanks.
-check("default id", () => assert.equal(DEFAULT_PROFILE_ID, "default"));
-check("empty name shows translated", () =>
-  assert.equal(profileDisplayName(standard, "Standard"), "Standard"),
-);
-check("blank name shows translated", () =>
-  assert.equal(
-    profileDisplayName({ ...standard, name: "  " }, "Default"),
-    "Default",
-  ),
-);
-check("renamed default shows its name", () =>
-  assert.equal(
-    profileDisplayName({ ...standard, name: "Home" }, "Standard"),
-    "Home",
-  ),
+// A profile shows its name without surrounding blanks; a nameless one (only
+// "Standard" in a store from before the defaults) shows the given name.
+check("defaults id", () => assert.equal(DEFAULT_PROFILE_ID, "default"));
+check("empty name shows the given name", () =>
+  assert.equal(profileDisplayName({ id: "x", name: "" }, defaults), defaults),
 );
 check("other name shows as stored", () =>
-  assert.equal(profileDisplayName(work, "Standard"), "Work"),
+  assert.equal(profileDisplayName(work, defaults), "Work"),
 );
 check("name shows trimmed", () =>
-  assert.equal(profileDisplayName(code, "Standard"), "Code"),
+  assert.equal(profileDisplayName(code, defaults), "Code"),
 );
 
-// The profile in use: the one the id names, else the first, as the backend
-// falls back; none without profiles.
-check("active by id", () => assert.equal(activeProfile(profiles, "p1"), work));
-check("unknown id falls back to the first", () =>
-  assert.equal(activeProfile(profiles, "gone"), standard),
+// The profile in use: the one the id names; none while the defaults are in
+// use, or for an unknown id, where the backend puts the defaults in use.
+check("in use by id", () => assert.equal(activeProfile(profiles, "p1"), work));
+check("the defaults in use: no profile", () =>
+  assert.equal(activeProfile(profiles, DEFAULT_PROFILE_ID), null),
 );
-check("null id falls back to the first", () =>
-  assert.equal(activeProfile(profiles, null), standard),
+check("unknown id: no profile", () =>
+  assert.equal(activeProfile(profiles, "gone"), null),
 );
-check("missing id falls back to the first", () =>
-  assert.equal(activeProfile(profiles, undefined), standard),
+check("null id: no profile", () =>
+  assert.equal(activeProfile(profiles, null), null),
 );
-check("no profiles, no active one", () =>
+check("no profiles, none in use", () =>
   assert.equal(activeProfile([], "p1"), null),
 );
 
-// The page "Profiles" shows once the settings carry profiles (from one on,
-// so that one can be duplicated or renamed); not before they are loaded.
+// The page "Profiles" shows once the settings are loaded, also without any
+// profile: a new one is made there.
 check("profiles page: settings not loaded", () =>
   assert.equal(profilesPageEnabled(null), false),
 );
 check("profiles page: settings without profiles", () =>
   assert.equal(profilesPageEnabled({}), false),
 );
-check("profiles page: empty profile list", () =>
-  assert.equal(profilesPageEnabled({ profiles: [] }), false),
-);
-check("profiles page: one profile", () =>
-  assert.equal(profilesPageEnabled({ profiles: [standard] }), true),
+check("profiles page: no profile yet", () =>
+  assert.equal(profilesPageEnabled({ profiles: [] }), true),
 );
 check("profiles page: several profiles", () =>
   assert.equal(profilesPageEnabled({ profiles }), true),
 );
 
-// The last profile can't be deleted; an unknown id can't either.
+// Every profile can be deleted, the last one too; the defaults can't.
 check("delete one of several", () =>
   assert.equal(canDeleteProfile(profiles, "p1"), true),
 );
-check("delete the default one of several", () =>
-  assert.equal(canDeleteProfile(profiles, DEFAULT_PROFILE_ID), true),
+check("the last profile can go", () =>
+  assert.equal(canDeleteProfile([work], "p1"), true),
 );
-check("the last profile stays", () =>
-  assert.equal(canDeleteProfile([work], "p1"), false),
+check("the defaults stay", () =>
+  assert.equal(canDeleteProfile(profiles, DEFAULT_PROFILE_ID), false),
 );
 check("unknown id can't be deleted", () =>
   assert.equal(canDeleteProfile(profiles, "gone"), false),
 );
-check("nothing to delete", () =>
-  assert.equal(canDeleteProfile([], "p1"), false),
-);
 
-// Deleting the active profile switches to the first other one first;
-// deleting another keeps the active one.
-check("deleting the active one picks the first other", () =>
-  assert.equal(profileAfterDelete(profiles, "p1", "p1"), standard),
+// Deleting the profile in use puts the defaults in use (null); deleting
+// another keeps the one in use.
+check("deleting the one in use falls back to the defaults", () =>
+  assert.equal(profileAfterDelete(profiles, "p1", "p1"), null),
 );
-check("deleting the active first one picks the second", () =>
-  assert.equal(
-    profileAfterDelete(profiles, DEFAULT_PROFILE_ID, DEFAULT_PROFILE_ID),
-    work,
-  ),
-);
-check("deleting another keeps the active one", () =>
+check("deleting another keeps the one in use", () =>
   assert.equal(profileAfterDelete(profiles, "p1", "p2"), work),
 );
-check("unknown active id means the first is active", () =>
-  assert.equal(profileAfterDelete(profiles, "gone", DEFAULT_PROFILE_ID), work),
-);
-check("nothing is left after the last", () =>
-  assert.equal(profileAfterDelete([work], "p1", "p1"), null),
+check("with the defaults in use they stay", () =>
+  assert.equal(profileAfterDelete(profiles, DEFAULT_PROFILE_ID, "p1"), null),
 );
 
-// A name for a duplicate: trimmed, not empty, not one already shown
-// (ignoring case, the translated default name included).
+// A name for a new profile: trimmed, not empty, not one already shown
+// (ignoring case, the defaults' translated name included).
 check("new name is trimmed", () =>
-  assert.deepEqual(checkProfileName(profiles, "  Travel ", "Standard"), {
+  assert.deepEqual(checkProfileName(profiles, "  Travel ", defaults), {
     kind: "ok",
     name: "Travel",
   }),
 );
 check("new name can't be blank", () =>
-  assert.deepEqual(checkProfileName(profiles, "   ", "Standard"), {
+  assert.deepEqual(checkProfileName(profiles, "   ", defaults), {
     kind: "empty",
   }),
 );
 check("new name taken, ignoring case", () =>
-  assert.deepEqual(checkProfileName(profiles, "work", "Standard"), {
+  assert.deepEqual(checkProfileName(profiles, "work", defaults), {
     kind: "taken",
   }),
 );
 check("new name taken by a name with blanks", () =>
-  assert.deepEqual(checkProfileName(profiles, "CODE", "Standard"), {
+  assert.deepEqual(checkProfileName(profiles, "CODE", defaults), {
     kind: "taken",
   }),
 );
-check("new name taken by the translated default name", () =>
-  assert.deepEqual(checkProfileName(profiles, "standard", "Standard"), {
+check("new name taken by the defaults' name", () =>
+  assert.deepEqual(checkProfileName(profiles, "grundeinstellungen", defaults), {
     kind: "taken",
   }),
 );
 
 // A new name for a profile: the same name is no change, and the profile's
-// own name doesn't count as taken.
+// own name doesn't count as taken; every profile needs a name.
 check("same name is no change", () =>
-  assert.deepEqual(checkProfileName(profiles, " Work ", "Standard", work), {
+  assert.deepEqual(checkProfileName(profiles, " Work ", defaults, work), {
     kind: "unchanged",
   }),
 );
 check("own name in other case is a change", () =>
-  assert.deepEqual(checkProfileName(profiles, "WORK", "Standard", work), {
+  assert.deepEqual(checkProfileName(profiles, "WORK", defaults, work), {
     kind: "ok",
     name: "WORK",
   }),
 );
 check("another profile's name is taken", () =>
-  assert.deepEqual(checkProfileName(profiles, "Code", "Standard", work), {
+  assert.deepEqual(checkProfileName(profiles, "Code", defaults, work), {
     kind: "taken",
   }),
 );
-check("only the default profile may have no name", () =>
-  assert.deepEqual(checkProfileName(profiles, "", "Standard", work), {
+check("a profile can't lose its name", () =>
+  assert.deepEqual(checkProfileName(profiles, "", defaults, work), {
     kind: "empty",
   }),
 );
-
-// Only the default profile may get its empty name back, which shows the
-// translated name again; it already has it when its name is empty.
-const home = { id: DEFAULT_PROFILE_ID, name: "Home" };
-check("default profile gets its empty name back", () =>
-  assert.deepEqual(checkProfileName([home, work], "  ", "Standard", home), {
-    kind: "ok",
-    name: "",
+check("a profile can't take the defaults' name", () =>
+  assert.deepEqual(checkProfileName(profiles, defaults, defaults, work), {
+    kind: "taken",
   }),
-);
-check("default profile already has no name", () =>
-  assert.deepEqual(checkProfileName(profiles, "", "Standard", standard), {
-    kind: "unchanged",
-  }),
-);
-// Typing the translated name fixes it, so it no longer follows the language.
-check("typing the translated name stores it", () =>
-  assert.deepEqual(
-    checkProfileName(profiles, "Standard", "Standard", standard),
-    { kind: "ok", name: "Standard" },
-  ),
 );
 
 if (failures.length > 0) {

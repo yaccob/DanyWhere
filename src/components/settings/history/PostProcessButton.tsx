@@ -1,117 +1,71 @@
-// DanyWhere: History's ✨ button for an entry with versions. It works on the
-// current version, the one the entry shows. A click post-processes it
-// further (its result a new version); a small chevron next to it opens the
-// other actions the current version allows: post-processing it and replacing
-// it, and redoing the post-processing from the previous version. Below the
-// top, each first deletes the versions above the current one, after asking.
+// DanyWhere: History's ✨ button. A click post-processes the current version,
+// the one the entry shows, with the active prompts of the profile in use;
+// the result goes on top as a new version and every version stays, so
+// nothing asks first (user, 2026-11-19, H1 and H5). Its menu (H6, strand
+// E2) lists every prompt of the shared library by name, in the order of the
+// profile in use, the active ones checked; choosing one post-processes the
+// version shown with that prompt alone, the result on top as well.
 import React, { useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ChevronDown, WandSparkles } from "lucide-react";
-import type { HistoryEntry } from "@/bindings";
-import { confirmLoss } from "./confirmLoss";
+import { Check, ChevronDown, WandSparkles } from "lucide-react";
 import type { PostProcessAvailability } from "./postProcessEntry";
-import {
-  postProcessActions,
-  postProcessQuestion,
-  type PostProcessAction,
-} from "./versions";
+import type { PromptMenuItem } from "./promptMenu";
 
 const KEYS = "settings.history.versions";
 
-/** The label and the hint of each action, under `settings.history.versions`. */
-const ACTION_TEXT: Record<PostProcessAction, { label: string; hint: string }> =
-  {
-    post_process: {
-      label: "postProcessFurther",
-      hint: "postProcessFurtherHint",
-    },
-    post_process_replace: {
-      label: "postProcessReplace",
-      hint: "postProcessReplaceHint",
-    },
-    post_process_redo: { label: "redo", hint: "redoHint" },
-  };
-
 interface PostProcessButtonProps {
-  entry: Pick<HistoryEntry, "versions">;
-  /** The current version, the one the entry shows (`shownVersion`). */
-  shown: number;
   /** Whether post-processing can run with the current settings; when it
-   * can't, the button says why and the menu is gone. */
+   * can't, the button says why. */
   availability: PostProcessAvailability;
-  /** Runs an action the user chose on the current version, once they agreed
-   * to what it deletes (the versions above it, their edits under a redo). */
-  onRun: (action: PostProcessAction) => void;
+  /** Post-processes the current version. */
+  onRun: () => void;
+  /** The library's prompts for the menu (`promptMenuItems`). */
+  prompts: PromptMenuItem[];
+  /** Post-processes the current version with prompt `promptId` alone. */
+  onRunPrompt: (promptId: string) => void;
+  /** Whether a prompt chosen by name can run: on and set up, active
+   * prompts or not. */
+  menuUsable: boolean;
   /** While the user edits the text: nothing may change the stack. */
   disabled?: boolean;
 }
 
 export const PostProcessButton: React.FC<PostProcessButtonProps> = ({
-  entry,
-  shown,
   availability,
   onRun,
+  prompts,
+  onRunPrompt,
+  menuUsable,
   disabled = false,
 }) => {
   const { t } = useTranslation();
+  const ready = availability === "ready";
+  const usable = ready && !disabled;
+  const menuEnabled = menuUsable && !disabled && prompts.length > 0;
   const [open, setOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
-  const chevronRef = useRef<HTMLButtonElement>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const toggleRef = useRef<HTMLButtonElement>(null);
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const menuId = useId();
 
-  const ready = availability === "ready";
-  const more = postProcessActions(entry, shown).filter(
-    (a) => a !== "post_process",
-  );
-  const showMenu = ready && more.length > 0;
-  const usable = ready && !disabled;
-
-  // Close on a press outside; the first item takes the focus on opening.
+  // Close on a press outside; the first item takes the focus.
   useEffect(() => {
     if (!open) return;
     itemRefs.current[0]?.focus({ preventScroll: true });
     const onDown = (event: MouseEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+      if (!wrapRef.current?.contains(event.target as Node)) setOpen(false);
     };
     document.addEventListener("mousedown", onDown);
     return () => document.removeEventListener("mousedown", onDown);
   }, [open]);
 
-  // The stack changed so that no other action is left, or editing began:
-  // nothing to show.
   useEffect(() => {
-    if (!showMenu || disabled) setOpen(false);
-  }, [showMenu, disabled]);
+    if (!menuEnabled) setOpen(false);
+  }, [menuEnabled]);
 
   const close = () => {
     setOpen(false);
-    chevronRef.current?.focus({ preventScroll: true });
-  };
-
-  // One question for everything the action deletes: the versions above the
-  // current one, the user's edits in it under a redo, or both.
-  const run = async (action: PostProcessAction) => {
-    setOpen(false);
-    const question = postProcessQuestion(entry, shown, action);
-    if (question) {
-      const redo = action === "post_process_redo";
-      const agreed = await confirmLoss({
-        title: t(
-          `${KEYS}.${redo ? "confirmRedoTitle" : "confirmPostProcessTitle"}`,
-        ),
-        message:
-          question.kind === "above"
-            ? t(`${KEYS}.confirmPostProcessMessage`, { count: question.count })
-            : question.kind === "redo_above"
-              ? t(`${KEYS}.confirmRedoAboveMessage`, { count: question.count })
-              : t(`${KEYS}.confirmRedoMessage`),
-        okLabel: t(`${KEYS}.${redo ? "confirmRedo" : "confirmPostProcess"}`),
-        cancelLabel: t(`${KEYS}.cancel`),
-      });
-      if (!agreed) return;
-    }
-    onRun(action);
+    toggleRef.current?.focus({ preventScroll: true });
   };
 
   const onMenuKeyDown = (event: React.KeyboardEvent) => {
@@ -134,83 +88,92 @@ export const PostProcessButton: React.FC<PostProcessButtonProps> = ({
     } else if (event.key === "Tab") setOpen(false);
   };
 
-  const mainTitle = ready
+  const title = ready
     ? `${t(`${KEYS}.postProcessFurther`)}\n${t(`${KEYS}.postProcessFurtherHint`)}`
     : availability === "off"
       ? t("settings.history.postProcessOff")
       : t("settings.history.postProcessNotSetUp");
-
-  const iconClass = usable
-    ? "cursor-pointer text-ink-3 hover:text-logo-primary"
-    : "cursor-not-allowed text-text/20";
+  const menuLabel = t("settings.history.promptMenu.button");
 
   return (
-    <div ref={rootRef} className="relative flex items-center">
+    <div ref={wrapRef} className="relative flex items-center">
       <button
         type="button"
-        onClick={usable ? () => void run("post_process") : undefined}
+        onClick={usable ? onRun : undefined}
         aria-disabled={!usable || undefined}
-        title={mainTitle}
-        className={`p-1.5 rounded-md flex items-center justify-center transition-colors ${iconClass} ${
-          showMenu ? "pe-0.5" : ""
+        title={title}
+        className={`p-1.5 rounded-md flex items-center justify-center transition-colors ${
+          usable
+            ? "cursor-pointer text-ink-3 hover:text-logo-primary"
+            : "cursor-not-allowed text-text/20"
         }`}
       >
         <WandSparkles width={16} height={16} />
       </button>
-      {showMenu && (
-        <button
-          ref={chevronRef}
-          type="button"
-          disabled={disabled}
-          onClick={() => (open ? close() : setOpen(true))}
-          onKeyDown={(event) => {
-            if (!open && event.key === "ArrowDown") {
-              event.preventDefault();
-              setOpen(true);
-            }
-          }}
-          aria-haspopup="menu"
-          aria-expanded={open}
-          aria-controls={open ? menuId : undefined}
-          title={t(`${KEYS}.moreActions`)}
-          aria-label={t(`${KEYS}.moreActions`)}
-          className={`py-1.5 pe-1 rounded-md flex items-center justify-center transition-colors ${iconClass} ${
-            open ? "text-logo-primary" : ""
-          }`}
-        >
-          <ChevronDown
-            width={12}
-            height={12}
-            aria-hidden="true"
-            className={`transition-transform duration-200 ${open ? "rotate-180" : ""}`}
-          />
-        </button>
-      )}
-      {open && showMenu && (
+      <button
+        ref={toggleRef}
+        type="button"
+        onClick={() =>
+          menuEnabled ? (open ? close() : setOpen(true)) : undefined
+        }
+        onKeyDown={(event) => {
+          if (menuEnabled && !open && event.key === "ArrowDown") {
+            event.preventDefault();
+            setOpen(true);
+          }
+        }}
+        aria-disabled={!menuEnabled || undefined}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-controls={open ? menuId : undefined}
+        title={menuLabel}
+        aria-label={menuLabel}
+        className={`-ms-1 py-1.5 pe-1 rounded-md flex items-center justify-center transition-colors ${
+          menuEnabled
+            ? `cursor-pointer hover:text-logo-primary ${open ? "text-logo-primary" : "text-ink-3"}`
+            : "cursor-not-allowed text-text/20"
+        }`}
+      >
+        <ChevronDown width={12} height={12} aria-hidden="true" />
+      </button>
+      {open && (
         <div
           id={menuId}
           role="menu"
-          aria-label={t(`${KEYS}.moreActions`)}
+          aria-label={menuLabel}
           onKeyDown={onMenuKeyDown}
-          className="absolute end-0 top-full mt-1 z-50 w-72 max-w-[80vw] bg-background border border-line rounded-lg shadow-lg p-1"
+          className="absolute end-0 top-full mt-1 z-50 w-64 max-w-[80vw] bg-background border border-line rounded-lg shadow-lg p-1"
         >
-          {more.map((action, index) => (
+          <div className="px-2 py-1 text-xs text-ink-3">
+            {t("settings.history.promptMenu.title")}
+          </div>
+          {prompts.map((prompt, index) => (
             <button
-              key={action}
+              key={prompt.id}
               ref={(item) => {
                 itemRefs.current[index] = item;
               }}
               type="button"
-              role="menuitem"
-              onClick={() => void run(action)}
-              className="flex w-full flex-col items-start rounded-md px-2 py-2 text-start hover:bg-wash focus:bg-wash focus:outline-none cursor-pointer"
+              role="menuitemcheckbox"
+              aria-checked={prompt.active}
+              title={prompt.tooltip}
+              onClick={() => {
+                close();
+                onRunPrompt(prompt.id);
+              }}
+              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-start text-sm text-text hover:bg-wash focus:bg-wash focus:outline-none cursor-pointer"
             >
-              <span className="text-sm text-text">
-                {t(`${KEYS}.${ACTION_TEXT[action].label}`)}
+              <span className="flex size-4 shrink-0 items-center justify-center text-logo-primary">
+                {prompt.active && (
+                  <Check width={14} height={14} aria-hidden="true" />
+                )}
               </span>
-              <span className="mt-0.5 text-xs leading-snug text-ink-3">
-                {t(`${KEYS}.${ACTION_TEXT[action].hint}`)}
-              </span>
+              <span className="min-w-0 flex-1 truncate">{prompt.label}</span>
+              {prompt.active && (
+                <span className="sr-only">
+                  {t("settings.history.promptMenu.active")}
+                </span>
+              )}
             </button>
           ))}
         </div>

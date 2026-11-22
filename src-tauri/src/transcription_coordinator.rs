@@ -1,4 +1,5 @@
 use crate::actions::ACTION_MAP;
+use crate::end_keys::EndChoice;
 use crate::managers::audio::AudioRecordingManager;
 use crate::settings::ShortcutActivation;
 use log::{debug, error, warn};
@@ -78,6 +79,8 @@ struct PendingPress {
     /// within the threshold (a tap). An unlocked pending press is a key we
     /// believe is still held.
     locked: bool,
+    /// DanyWhere: the rank of its default end (`InputEvent::end_rank`).
+    end_rank: u8,
 }
 
 impl PendingPress {
@@ -176,6 +179,11 @@ struct InputEvent {
     /// a hold and the just-started recording stops with zero samples
     /// (#2089). The loop passes this as the `now` of `on_input`.
     received_at: Instant,
+    /// DanyWhere: how much this binding's default end does
+    /// (`end_keys::rank`), filled in by the coordinator thread from the
+    /// profile that applies now. A press of another start shortcut ends a
+    /// locked recording only when its default end does more.
+    end_rank: u8,
 }
 
 impl InputEvent {
@@ -202,10 +210,11 @@ enum Effect {
         /// The binding whose recording is stopped.
         binding_id: String,
         hotkey_string: String,
-        /// The binding whose action finishes the recording — usually
-        /// `binding_id`, but the post-process binding when it stopped a
-        /// recording started with the plain one.
-        action_id: String,
+        /// DanyWhere: how the recording ends (`end_keys`): usually the
+        /// default end of `binding_id`, but that of the post-process binding
+        /// when it stopped a recording started with the plain one, or an end
+        /// shortcut's.
+        end: EndChoice,
     },
 }
 
@@ -225,6 +234,10 @@ enum Command {
     /// dictation" service called while idle).
     StartLocked {
         binding_id: String,
+    },
+    /// DanyWhere: an end shortcut (`end_keys`) was pressed.
+    EndKey {
+        end_id: String,
     },
 }
 
@@ -273,6 +286,8 @@ fn classify_ptt_event(
 struct CoordinatorState {
     stage: Stage,
     hold: Option<Hold>,
+    /// DanyWhere: the rank of the recording's default end (`end_keys`).
+    recording_rank: u8,
     last_press: Option<Instant>,
     pending_release: Option<PendingRelease>,
     pending_press: Option<PendingPress>,
@@ -283,6 +298,7 @@ impl CoordinatorState {
         Self {
             stage: Stage::Idle,
             hold: None,
+            recording_rank: 0,
             last_press: None,
             pending_release: None,
             pending_press: None,
@@ -387,6 +403,7 @@ impl CoordinatorState {
                         binding_id: input.binding_id,
                         hotkey_string: input.hotkey_string,
                         pressed_at: now,
+                        end_rank: input.end_rank,
                     });
                 }
                 BusyAction::Forget => {
@@ -410,6 +427,7 @@ impl CoordinatorState {
                         input.hotkey_string,
                         now,
                         locked,
+                        input.end_rank,
                     ));
                 }
                 Stage::Recording(id) if id == &input.binding_id => {
@@ -425,11 +443,11 @@ impl CoordinatorState {
                     debug!("Ignoring press for '{}': key is held", input.binding_id);
                 }
                 // DanyWhere: generalized from Handy's "post-process shortcut
-                // stops a plain recording" to every binding that does more
-                // ([`finish_rank`]).
+                // stops a plain recording" to every start shortcut whose
+                // default end does more (`end_keys::rank`).
                 Stage::Recording(id)
                     if is_transcribe_binding(&input.binding_id)
-                        && finish_rank(&input.binding_id) > finish_rank(id)
+                        && input.end_rank > self.recording_rank
                         && self.is_locked() =>
                 {
                     // Post-processing only runs after recording, so the shortcut
@@ -439,7 +457,7 @@ impl CoordinatorState {
                     return Some(self.begin_processing_with(
                         id,
                         input.hotkey_string,
-                        input.binding_id,
+                        EndChoice::DefaultOf(input.binding_id),
                     ));
                 }
                 _ => debug!(
@@ -564,31 +582,63 @@ impl CoordinatorState {
     /// with whichever of its own binding and `finish_as` does more
     /// ([`finish_rank`]): the post-process service adds post-processing, and
     /// post-processing chosen up front is never lost (2026-11-13).
-    fn on_finish_as(&mut self, finish_as: Option<&str>) -> Option<Effect> {
+    fn on_finish_as(&mut self, finish_as: Option<(&str, u8)>) -> Option<Effect> {
         let Stage::Recording(binding_id) = &self.stage else {
             return None;
         };
         let binding_id = binding_id.clone();
         // A key-up still in its grace window belongs to this recording.
         self.pending_release = None;
-        let action_id = match finish_as {
-            Some(id) if is_transcribe_binding(id) && finish_rank(id) > finish_rank(&binding_id) => {
+        let end_of = match finish_as {
+            Some((id, rank)) if is_transcribe_binding(id) && rank > self.recording_rank => {
                 id.to_string()
             }
             _ => binding_id.clone(),
         };
-        Some(self.begin_processing_with(binding_id, "insert-service".to_string(), action_id))
+        Some(self.begin_processing_with(
+            binding_id,
+            "insert-service".to_string(),
+            EndChoice::DefaultOf(end_of),
+        ))
     }
 
     /// DanyWhere: an "end dictation" service was called while nothing was
     /// recording (e.g. macOS started DanyWhere to answer it): start a locked
     /// recording for `binding_id`, so the shortcut's next press ends it. Only
     /// from idle; never stops or replaces anything.
-    fn on_start_locked(&mut self, binding_id: String, now: Instant) -> Option<Effect> {
+    fn on_start_locked(
+        &mut self,
+        binding_id: String,
+        end_rank: u8,
+        now: Instant,
+    ) -> Option<Effect> {
         if self.stage != Stage::Idle {
             return None;
         }
-        Some(self.begin_recording(binding_id, "insert-service".to_string(), now, true))
+        Some(self.begin_recording(
+            binding_id,
+            "insert-service".to_string(),
+            now,
+            true,
+            end_rank,
+        ))
+    }
+
+    /// DanyWhere: an end shortcut (`end_keys`) was pressed: it ends the
+    /// recording however it was started, held or locked, with that end.
+    /// Nothing while idle or transcribing.
+    fn on_end_key(&mut self, end_id: &str) -> Option<Effect> {
+        let Stage::Recording(binding_id) = &self.stage else {
+            return None;
+        };
+        let binding_id = binding_id.clone();
+        // A key-up still in its grace window belongs to this recording.
+        self.pending_release = None;
+        Some(self.begin_processing_with(
+            binding_id,
+            "end-key".to_string(),
+            EndChoice::Key(end_id.to_string()),
+        ))
     }
 
     fn on_processing_finished(&mut self) -> Option<Effect> {
@@ -604,6 +654,7 @@ impl CoordinatorState {
             pending.hotkey_string,
             pending.pressed_at,
             pending.locked,
+            pending.end_rank,
         ))
     }
 
@@ -625,9 +676,11 @@ impl CoordinatorState {
         hotkey_string: String,
         pressed_at: Instant,
         locked: bool,
+        end_rank: u8,
     ) -> Effect {
         self.stage = Stage::Recording(binding_id.clone());
         self.hold = Some(Hold { pressed_at, locked });
+        self.recording_rank = end_rank;
         Effect::Start {
             binding_id,
             hotkey_string,
@@ -635,22 +688,22 @@ impl CoordinatorState {
     }
 
     fn begin_processing(&mut self, binding_id: String, hotkey_string: String) -> Effect {
-        let action_id = binding_id.clone();
-        self.begin_processing_with(binding_id, hotkey_string, action_id)
+        let end = EndChoice::DefaultOf(binding_id.clone());
+        self.begin_processing_with(binding_id, hotkey_string, end)
     }
 
     fn begin_processing_with(
         &mut self,
         binding_id: String,
         hotkey_string: String,
-        action_id: String,
+        end: EndChoice,
     ) -> Effect {
         self.stage = Stage::Processing;
         self.hold = None;
         Effect::Stop {
             binding_id,
             hotkey_string,
-            action_id,
+            end,
         }
     }
 }
@@ -666,17 +719,6 @@ pub struct TranscriptionCoordinator {
 
 pub fn is_transcribe_binding(id: &str) -> bool {
     id == "transcribe" || id == "transcribe_with_post_process"
-}
-
-/// DanyWhere: how much a transcribe binding does after recording: plain or
-/// post-processing (context follows the profile's "Send Context" since
-/// 2026-11-15). A locked recording can be finished by a binding that does
-/// more, never by one that does less.
-fn finish_rank(binding_id: &str) -> u8 {
-    match binding_id {
-        "transcribe_with_post_process" => 1,
-        _ => 0,
-    }
 }
 
 impl TranscriptionCoordinator {
@@ -717,12 +759,16 @@ impl TranscriptionCoordinator {
 
                     let was_locked = state.is_recording_locked();
                     match cmd {
-                        Command::Input(input) => {
+                        Command::Input(mut input) => {
                             // Hold durations are measured edge-to-edge via the
                             // sender's stamp, so time spent blocked in a prior
                             // effect (first-activation mic init) cannot turn a
                             // tap into a hold (#2089).
                             let now = input.received_at;
+                            // DanyWhere: what its default end does, in the
+                            // profile that applies now.
+                            input.end_rank =
+                                crate::end_keys::default_end_rank_now(&app, &input.binding_id);
                             if let Some(effect) = state.on_input(input, now) {
                                 run_effect(&app, &mut state, effect);
                             }
@@ -744,16 +790,24 @@ impl TranscriptionCoordinator {
                             }
                         }
                         Command::Finish { finish_as } => {
-                            if let Some(effect) = state.on_finish_as(finish_as.as_deref()) {
+                            let finish_as = finish_as
+                                .as_deref()
+                                .map(|id| (id, crate::end_keys::default_end_rank_now(&app, id)));
+                            if let Some(effect) = state.on_finish_as(finish_as) {
                                 run_effect(&app, &mut state, effect);
                             }
                         }
                         Command::StartLocked { binding_id } => {
-                            match state.on_start_locked(binding_id, Instant::now()) {
+                            let rank = crate::end_keys::default_end_rank_now(&app, &binding_id);
+                            match state.on_start_locked(binding_id, rank, Instant::now()) {
                                 Some(effect) => run_effect(&app, &mut state, effect),
                                 None => debug!("Not starting a recording: one runs already"),
                             }
                         }
+                        Command::EndKey { end_id } => match state.on_end_key(&end_id) {
+                            Some(effect) => run_effect(&app, &mut state, effect),
+                            None => debug!("End shortcut '{end_id}' without a recording"),
+                        },
                     }
                     if !was_locked && state.is_recording_locked() {
                         emit_recording_phase(&app, RecordingPhase::Locked);
@@ -822,6 +876,7 @@ impl TranscriptionCoordinator {
                 hold_threshold,
                 external,
                 received_at: Instant::now(),
+                end_rank: 0,
             }))
             .is_err()
         {
@@ -860,6 +915,20 @@ impl TranscriptionCoordinator {
             .tx
             .send(Command::StartLocked {
                 binding_id: binding_id.to_string(),
+            })
+            .is_err()
+        {
+            warn!("Transcription coordinator channel closed");
+        }
+    }
+
+    /// DanyWhere: an end shortcut (`end_keys`) was pressed: ends the running
+    /// recording with it; nothing without one.
+    pub fn finish_with_end_key(&self, end_id: &str) {
+        if self
+            .tx
+            .send(Command::EndKey {
+                end_id: end_id.to_string(),
             })
             .is_err()
         {
@@ -910,9 +979,9 @@ fn run_effect(app: &AppHandle, state: &mut CoordinatorState, effect: Effect) {
         Effect::Stop {
             binding_id,
             hotkey_string,
-            action_id,
+            end,
         } => {
-            stop(app, &binding_id, &hotkey_string, &action_id);
+            crate::actions::stop_transcription(app, &binding_id, &hotkey_string, &end);
             emit_recording_phase(app, RecordingPhase::Stopped);
         }
     }
@@ -933,17 +1002,6 @@ fn start(app: &AppHandle, binding_id: &str, hotkey_string: &str) -> bool {
         debug!("Start for '{binding_id}' did not begin recording; staying idle");
     }
     recording
-}
-
-/// Execute a stop effect. The action of `action_id` finishes the recording
-/// owned by `binding_id` (the audio manager only stops the binding that
-/// started it).
-fn stop(app: &AppHandle, binding_id: &str, hotkey_string: &str, action_id: &str) {
-    let Some(action) = ACTION_MAP.get(action_id) else {
-        warn!("No action in ACTION_MAP for '{action_id}'");
-        return;
-    };
-    action.stop(app, binding_id, hotkey_string);
 }
 
 #[cfg(test)]
@@ -1109,6 +1167,12 @@ mod tests {
 
     const BINDING: &str = "transcribe";
 
+    /// The rank of a start shortcut's default end out of the box: the
+    /// post-processing one post-processes (`end_keys`).
+    fn default_rank(binding_id: &str) -> u8 {
+        u8::from(binding_id == "transcribe_with_post_process")
+    }
+
     #[derive(Clone, Copy)]
     enum Ev {
         /// A key-down event (real initial press or a synthesized auto-repeat press).
@@ -1134,6 +1198,7 @@ mod tests {
             hold_threshold: Duration::ZERO,
             external: false,
             received_at: Instant::now(),
+            end_rank: default_rank(BINDING),
         }
     }
 
@@ -1273,6 +1338,7 @@ mod tests {
                     hold_threshold: Duration::ZERO,
                     external: true,
                     received_at: at,
+                    end_rank: default_rank(BINDING),
                 },
                 at,
             )
@@ -1336,6 +1402,7 @@ mod tests {
             hold_threshold: Duration::ZERO,
             external,
             received_at: Instant::now(),
+            end_rank: default_rank(binding_id),
         }
     }
 
@@ -1455,7 +1522,7 @@ mod tests {
             Some(Effect::Start { .. })
         ));
         assert_stop(
-            state.on_finish_as(Some(OTHER_BINDING)),
+            state.on_finish_as(Some((OTHER_BINDING, 1))),
             BINDING,
             OTHER_BINDING,
         );
@@ -1471,7 +1538,7 @@ mod tests {
             Some(Effect::Start { .. })
         ));
         assert_stop(
-            state.on_finish_as(Some(OTHER_BINDING)),
+            state.on_finish_as(Some((OTHER_BINDING, 1))),
             OTHER_BINDING,
             OTHER_BINDING,
         );
@@ -1480,7 +1547,7 @@ mod tests {
     #[test]
     fn finish_with_post_processing_while_idle_does_nothing() {
         let mut state = CoordinatorState::new();
-        assert!(state.on_finish_as(Some(OTHER_BINDING)).is_none());
+        assert!(state.on_finish_as(Some((OTHER_BINDING, 1))).is_none());
         assert_eq!(state.stage, Stage::Idle);
     }
 
@@ -1498,7 +1565,11 @@ mod tests {
         let mut state = CoordinatorState::new();
         let now = Instant::now();
         state.on_input(toggle_input(false), now);
-        assert_stop(state.on_finish_as(Some(RETIRED_CONTEXT)), BINDING, BINDING);
+        assert_stop(
+            state.on_finish_as(Some((RETIRED_CONTEXT, 0))),
+            BINDING,
+            BINDING,
+        );
     }
 
     #[test]
@@ -1506,7 +1577,7 @@ mod tests {
         let mut state = CoordinatorState::new();
         let now = Instant::now();
         assert!(matches!(
-            state.on_start_locked(OTHER_BINDING.to_string(), now),
+            state.on_start_locked(OTHER_BINDING.to_string(), 1, now),
             Some(Effect::Start { binding_id, .. }) if binding_id == OTHER_BINDING
         ));
         assert!(
@@ -1526,7 +1597,11 @@ mod tests {
             Some(Effect::Start { .. })
         ));
         assert!(state
-            .on_start_locked(OTHER_BINDING.to_string(), now + Duration::from_millis(200))
+            .on_start_locked(
+                OTHER_BINDING.to_string(),
+                1,
+                now + Duration::from_millis(200)
+            )
             .is_none());
         assert_eq!(state.stage, Stage::Recording(BINDING.to_string()));
     }
@@ -1537,7 +1612,7 @@ mod tests {
         let now = Instant::now();
         drive_into_processing(&mut state, now);
         assert!(state
-            .on_start_locked(BINDING.to_string(), now + Duration::from_millis(200))
+            .on_start_locked(BINDING.to_string(), 0, now + Duration::from_millis(200))
             .is_none());
         assert_eq!(state.stage, Stage::Processing);
         assert!(
@@ -1586,23 +1661,23 @@ mod tests {
             hold_threshold: Duration::from_millis(300),
             external: false,
             received_at: Instant::now(),
+            end_rank: default_rank(binding_id),
         }
     }
 
     fn assert_stop(effect: Option<Effect>, expected_binding: &str, expected_action: &str) {
         match effect {
             Some(Effect::Stop {
-                binding_id,
-                action_id,
-                ..
+                binding_id, end, ..
             }) => {
                 assert_eq!(
                     binding_id, expected_binding,
                     "stop must target the recording binding"
                 );
                 assert_eq!(
-                    action_id, expected_action,
-                    "wrong action finishes the recording"
+                    end,
+                    EndChoice::DefaultOf(expected_action.to_string()),
+                    "wrong default end finishes the recording"
                 );
             }
             other => panic!("expected Stop, got {other:?}"),
@@ -1794,6 +1869,7 @@ mod tests {
             hold_threshold: HOLD_THRESHOLD,
             external: false,
             received_at: Instant::now(),
+            end_rank: default_rank(BINDING),
         }
     }
 
@@ -2232,5 +2308,136 @@ mod tests {
             "held 400ms since the real key-down: must stop, not lock"
         );
         assert_eq!(state.stage, Stage::Processing);
+    }
+
+    // ---------------------------------------------------------------------
+    // DanyWhere: end shortcuts (`end_keys`, idea 3). An end shortcut ends
+    // the recording with its own end; a start shortcut ends a locked
+    // recording begun with another one only when its default end does more.
+    // ---------------------------------------------------------------------
+
+    fn assert_end(effect: Option<Effect>, expected_binding: &str, expected_end: EndChoice) {
+        match effect {
+            Some(Effect::Stop {
+                binding_id, end, ..
+            }) => {
+                assert_eq!(
+                    binding_id, expected_binding,
+                    "stop must target the recording binding"
+                );
+                assert_eq!(end, expected_end, "wrong end");
+            }
+            other => panic!("expected Stop, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn an_end_shortcut_ends_a_locked_recording_with_its_end() {
+        let mut state = CoordinatorState::new();
+        let t0 = Instant::now();
+        let mode = ShortcutActivation::HoldOrToggle;
+        state.on_input(input_for(BINDING, mode, true), t0);
+        state.on_input(
+            input_for(BINDING, mode, false),
+            t0 + Duration::from_millis(100),
+        );
+        assert!(
+            state.on_grace_expired().is_none(),
+            "a tap locks the recording"
+        );
+        assert_end(
+            state.on_end_key("send"),
+            BINDING,
+            EndChoice::Key("send".to_string()),
+        );
+        assert_eq!(state.stage, Stage::Processing);
+    }
+
+    #[test]
+    fn an_end_shortcut_ends_a_held_recording_and_its_release_is_dropped() {
+        let mut state = CoordinatorState::new();
+        let t0 = Instant::now();
+        state.on_input(ptt_input(true), t0);
+        assert!(state
+            .on_input(ptt_input(false), t0 + Duration::from_millis(400))
+            .is_none());
+        assert_end(
+            state.on_end_key("line"),
+            BINDING,
+            EndChoice::Key("line".to_string()),
+        );
+        assert!(state.grace_deadline().is_none());
+        assert!(state.on_grace_expired().is_none());
+    }
+
+    #[test]
+    fn an_end_shortcut_does_nothing_without_a_recording() {
+        let mut state = CoordinatorState::new();
+        assert!(state.on_end_key("send").is_none());
+        assert_eq!(state.stage, Stage::Idle);
+        drive_into_processing(&mut state, Instant::now());
+        assert!(state.on_end_key("send").is_none());
+        assert_eq!(state.stage, Stage::Processing);
+    }
+
+    #[test]
+    fn the_second_press_ends_with_the_shortcuts_default_end() {
+        let mut state = CoordinatorState::new();
+        let t0 = Instant::now();
+        state.on_input(toggle_input_for(OTHER_BINDING, false), t0);
+        assert_end(
+            state.on_input(
+                toggle_input_for(OTHER_BINDING, false),
+                t0 + Duration::from_millis(500),
+            ),
+            OTHER_BINDING,
+            EndChoice::DefaultOf(OTHER_BINDING.to_string()),
+        );
+    }
+
+    #[test]
+    fn another_start_shortcut_ends_a_locked_recording_only_when_its_default_end_does_more() {
+        let mode = ShortcutActivation::Toggle;
+        let t0 = Instant::now();
+        // The profile gave the dictation shortcut a post-processing default
+        // end: the post-processing shortcut adds nothing, so it is ignored.
+        let mut state = CoordinatorState::new();
+        let mut start = input_for(BINDING, mode, true);
+        start.end_rank = 1;
+        state.on_input(start, t0);
+        assert!(state
+            .on_input(
+                input_for(OTHER_BINDING, mode, true),
+                t0 + Duration::from_millis(500)
+            )
+            .is_none());
+        assert_eq!(state.stage, Stage::Recording(BINDING.to_string()));
+
+        // And one whose default end does more ends it with that end.
+        let mut state = CoordinatorState::new();
+        state.on_input(input_for(BINDING, mode, true), t0);
+        let mut more = input_for("transcribe_with_post_process", mode, true);
+        more.end_rank = 1;
+        assert_end(
+            state.on_input(more, t0 + Duration::from_millis(500)),
+            BINDING,
+            EndChoice::DefaultOf(OTHER_BINDING.to_string()),
+        );
+    }
+
+    #[test]
+    fn a_service_ends_with_the_default_end_that_does_more() {
+        let mut state = CoordinatorState::new();
+        let t0 = Instant::now();
+        let mut start = toggle_input(false);
+        start.end_rank = 1;
+        state.on_input(start, t0);
+        // The post-processing service adds nothing to a recording whose
+        // own default end post-processes already.
+        assert_end(
+            state.on_finish_as(Some((OTHER_BINDING, 1))),
+            BINDING,
+            EndChoice::DefaultOf(BINDING.to_string()),
+        );
     }
 }

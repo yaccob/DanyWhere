@@ -17,9 +17,9 @@ use std::time::Duration;
 use tauri::{AppHandle, Manager};
 use tauri_specta::Event;
 
-use crate::actions::process_transcription_output;
+use crate::actions::process_transcription_output_with;
 use crate::audio_toolkit::{decode_audio_file, recording_file_name, save_recording};
-use crate::history_versions::{PostProcessTarget, PostProcessed, VersionError};
+use crate::history_versions::{NewTranscription, PostProcessTarget, PostProcessed, VersionError};
 use crate::managers::history::{HistoryEntry, HistoryManager};
 use crate::managers::transcription::{
     panic_payload_message, ChunkControl, Transcription, TranscriptionManager,
@@ -63,33 +63,16 @@ pub enum ReprocessMode {
     Transcribe,
     /// Transcribe the recording again and post-process the result.
     TranscribeAndPostProcess,
-    /// Keep the transcript and post-process the entry's top version; the
-    /// result is a new version on top (`history_versions`). Needs no
-    /// recording.
+    /// Keep the versions and post-process one of them, the top unless the
+    /// job names another; the result is a new version on top
+    /// (`history_versions`). Needs no recording.
     PostProcess,
-    /// Post-process the top version; the result replaces it. Never the
-    /// transcription.
-    PostProcessReplace,
-    /// Post-process the version below the top again; the result replaces
-    /// the top, which a post-processing made.
-    PostProcessRedo,
 }
 
 impl ReprocessMode {
-    /// What a job that only post-processes does with its result; `None`
-    /// for a job that transcribes.
-    fn post_processing(self) -> Option<PostProcessTarget> {
-        match self {
-            Self::Transcribe | Self::TranscribeAndPostProcess => None,
-            Self::PostProcess => Some(PostProcessTarget::New),
-            Self::PostProcessReplace => Some(PostProcessTarget::Replace),
-            Self::PostProcessRedo => Some(PostProcessTarget::Redo),
-        }
-    }
-
     /// Whether the job transcribes the recording.
     fn transcribes(self) -> bool {
-        self.post_processing().is_none()
+        self != Self::PostProcess
     }
 
     /// Whether the job post-processes, given whether the entry was
@@ -103,15 +86,19 @@ impl ReprocessMode {
     }
 }
 
-/// The text a post-processing from History starts from, and the word-list
-/// hint that goes with it: only with the transcription as the model wrote
-/// it (version 0), which is what the word list replaced in.
+/// The text a post-processing from History starts from, version `version`
+/// or the top, and the word-list hint that goes with it: only with the
+/// entry's transcript as the speech model wrote it, which is what the word
+/// list replaced in. The transcript is found by its step, wherever the user
+/// moved it (`history_versions::transcript_index`).
 fn post_process_input(
     entry: &HistoryEntry,
-    target: PostProcessTarget,
+    version: Option<u32>,
 ) -> std::result::Result<(&str, Vec<crate::dictation_context::WordReplacement>), VersionError> {
-    let input = crate::history_versions::post_processing_input(&entry.versions, target)?;
-    let hint = if input == 0 {
+    let input = crate::history_versions::post_processing_input(&entry.versions, version)?;
+    let as_transcribed = crate::history_versions::transcript_index(&entry.versions) == Some(input)
+        && !entry.versions[input].edited_by_user();
+    let hint = if as_transcribed {
         entry.window_context.word_replacements.clone()
     } else {
         Vec::new()
@@ -134,11 +121,31 @@ struct Running {
     cancelled: Arc<AtomicBool>,
 }
 
+/// What a job does to its entry.
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct Work {
+    mode: ReprocessMode,
+    /// The version a post-processing starts from; `None`: the top.
+    version: Option<u32>,
+    /// DanyWhere: the prompts of the library its post-processing runs, in
+    /// this order; `None`: the profile's active ones (`prompt_library`).
+    prompt_ids: Option<Vec<String>>,
+}
+
+impl Work {
+    /// A file's first transcription, or an entry's again.
+    const TRANSCRIBE: Work = Work {
+        mode: ReprocessMode::Transcribe,
+        version: None,
+        prompt_ids: None,
+    };
+}
+
 #[derive(Default)]
 struct Jobs {
     /// Entry ids waiting to be transcribed or post-processed again, with
     /// what to do. They go before files: someone is waiting on them.
-    retries: VecDeque<(i64, ReprocessMode)>,
+    retries: VecDeque<(i64, Work)>,
     /// Entry ids of files waiting to be transcribed.
     files: VecDeque<i64>,
     running: Option<Running>,
@@ -159,12 +166,12 @@ impl Jobs {
 
     /// Queues the entry unless it already has a job; whether it was queued.
     /// `None` is a file, transcribed for the first time.
-    fn push(&mut self, entry_id: i64, mode: Option<ReprocessMode>) -> bool {
+    fn push(&mut self, entry_id: i64, work: Option<Work>) -> bool {
         if self.has(entry_id) {
             return false;
         }
-        match mode {
-            Some(mode) => self.retries.push_back((entry_id, mode)),
+        match work {
+            Some(work) => self.retries.push_back((entry_id, work)),
             None => self.files.push_back(entry_id),
         }
         true
@@ -172,12 +179,10 @@ impl Jobs {
 
     /// The next job to run: entries someone waits on, then files. A file
     /// is transcribed like an entry transcribed again.
-    fn next(&mut self) -> Option<(i64, ReprocessMode)> {
-        self.retries.pop_front().or_else(|| {
-            self.files
-                .pop_front()
-                .map(|id| (id, ReprocessMode::Transcribe))
-        })
+    fn next(&mut self) -> Option<(i64, Work)> {
+        self.retries
+            .pop_front()
+            .or_else(|| self.files.pop_front().map(|id| (id, Work::TRANSCRIBE)))
     }
 
     /// Drops the entry from the queues; whether it was in one.
@@ -268,21 +273,42 @@ impl TranscriptionJobManager {
     /// Queues the entry to be transcribed again from its recording, ahead
     /// of any file.
     pub fn retry(&self, entry_id: i64) {
-        self.reprocess(entry_id, ReprocessMode::Transcribe);
+        self.reprocess(entry_id, ReprocessMode::Transcribe, None);
     }
 
     /// Queues the entry to be transcribed or post-processed again, ahead of
-    /// any file.
-    pub fn reprocess(&self, entry_id: i64, mode: ReprocessMode) {
-        self.queue(entry_id, Some(mode));
+    /// any file. `version`: the version a post-processing starts from
+    /// (`None`: the top); its result goes on top.
+    pub fn reprocess(&self, entry_id: i64, mode: ReprocessMode, version: Option<u32>) {
+        self.reprocess_with_prompts(entry_id, mode, version, None);
+    }
+
+    /// DanyWhere: [`Self::reprocess`]; with `prompt_ids` its post-processing
+    /// runs exactly those prompts of the library, in that order, instead of
+    /// the profile's active ones (History's wand menu, `prompt_library`).
+    pub fn reprocess_with_prompts(
+        &self,
+        entry_id: i64,
+        mode: ReprocessMode,
+        version: Option<u32>,
+        prompt_ids: Option<Vec<String>>,
+    ) {
+        self.queue(
+            entry_id,
+            Some(Work {
+                mode,
+                version,
+                prompt_ids,
+            }),
+        );
     }
 
     /// Queues the entry's job, unless it already has one. `None` is a file,
     /// transcribed for the first time.
-    fn queue(&self, entry_id: i64, mode: Option<ReprocessMode>) {
+    fn queue(&self, entry_id: i64, work: Option<Work>) {
         {
             let mut jobs = self.lock();
-            if !jobs.push(entry_id, mode) {
+            if !jobs.push(entry_id, work) {
                 return;
             }
             self.sync_job_active(&jobs);
@@ -332,9 +358,9 @@ impl TranscriptionJobManager {
 
     fn run_jobs(&self) {
         loop {
-            let (entry_id, mode, cancelled) = {
+            let (entry_id, work, cancelled) = {
                 let mut jobs = self.lock();
-                let (entry_id, mode) = loop {
+                let (entry_id, work) = loop {
                     if let Some(job) = jobs.next() {
                         break job;
                     }
@@ -348,8 +374,9 @@ impl TranscriptionJobManager {
                     entry_id,
                     cancelled: Arc::clone(&cancelled),
                 });
-                (entry_id, mode, cancelled)
+                (entry_id, work, cancelled)
             };
+            let mode = work.mode;
             self.emit(
                 entry_id,
                 if mode.transcribes() {
@@ -362,7 +389,7 @@ impl TranscriptionJobManager {
             // A panic fails only this job; the rest of the loop still has to
             // run, or the model would stay held and the queue stuck.
             let result = catch_unwind(AssertUnwindSafe(|| {
-                self.run_job(entry_id, mode, &cancelled)
+                self.run_job(entry_id, work, &cancelled)
             }))
             .unwrap_or_else(|payload| Err(crashed(payload.as_ref())));
 
@@ -419,19 +446,15 @@ impl TranscriptionJobManager {
         }
     }
 
-    fn run_job(
-        &self,
-        entry_id: i64,
-        mode: ReprocessMode,
-        cancelled: &AtomicBool,
-    ) -> Result<JobEnd> {
+    fn run_job(&self, entry_id: i64, work: Work, cancelled: &AtomicBool) -> Result<JobEnd> {
         let hm = Arc::clone(&self.app.state::<Arc<HistoryManager>>());
         let entry = tauri::async_runtime::block_on(hm.get_entry_by_id(entry_id))?
             .ok_or_else(|| anyhow!("History entry {} not found", entry_id))?;
-        if let Some(target) = mode.post_processing() {
-            return self.post_process_again(&hm, &entry, target, cancelled);
+        let prompts = work.prompt_ids.as_deref();
+        if !work.mode.transcribes() {
+            return self.post_process_again(&hm, &entry, work.version, cancelled, prompts);
         }
-        let post_process = mode.post_processes(entry.post_process_requested);
+        let post_process = work.mode.post_processes(entry.post_process_requested);
 
         let tm = Arc::clone(&self.app.state::<Arc<TranscriptionManager>>());
         let samples = HistoryManager::recording_samples_in(&entry, hm.recordings_dir())
@@ -472,11 +495,12 @@ impl TranscriptionJobManager {
         if !with_context {
             context_query.window = None;
         }
-        let processed = tauri::async_runtime::block_on(process_transcription_output(
+        let processed = tauri::async_runtime::block_on(process_transcription_output_with(
             &self.app,
             &text,
             post_process,
             &context_query,
+            prompts,
         ));
         // Post-processing can take a while; a cancel during it still wins.
         if cancelled.load(Ordering::Acquire) {
@@ -484,13 +508,20 @@ impl TranscriptionJobManager {
         }
         let post_process_failed = processed.post_process_failed;
         let context_entry_ids = processed.context_entry_ids.clone();
-        hm.update_transcription(
+        // DanyWhere: the new transcription goes on top; the versions there
+        // stay (`history_versions`).
+        hm.add_transcription(
             entry.id,
-            text,
-            processed.post_processed_text,
-            processed.post_process_prompt,
-            language,
-            post_process,
+            NewTranscription {
+                text,
+                language,
+                post_processed: processed.post_processed_text.map(|text| PostProcessed {
+                    text,
+                    prompt: processed.post_process_prompt,
+                    prompt_name: processed.post_process_prompt_name,
+                }),
+                post_process_requested: post_process,
+            },
         )?;
         if let Err(e) = hm.record_entry_context(
             entry.id,
@@ -506,17 +537,19 @@ impl TranscriptionJobManager {
         })
     }
 
-    /// Post-processes one of the entry's versions again, as `target` says;
-    /// the transcript stays (`history_versions`). Needs no recording and no
-    /// model. When nothing new comes out, the entry keeps what it had.
+    /// Post-processes version `version` of the entry (`None`: the top); the
+    /// result goes on top, every version stays (`history_versions`). Needs
+    /// no recording and no model. When nothing new comes out, the entry
+    /// keeps what it had.
     fn post_process_again(
         &self,
         hm: &HistoryManager,
         entry: &HistoryEntry,
-        target: PostProcessTarget,
+        version: Option<u32>,
         cancelled: &AtomicBool,
+        prompts: Option<&[String]>,
     ) -> Result<JobEnd> {
-        let (transcript, replacements) = post_process_input(entry, target)?;
+        let (transcript, replacements) = post_process_input(entry, version)?;
         if transcript.trim().is_empty() {
             return Err(anyhow!("The entry has no transcript to post-process"));
         }
@@ -528,11 +561,12 @@ impl TranscriptionJobManager {
         if !with_context {
             context_query.window = None;
         }
-        let processed = tauri::async_runtime::block_on(process_transcription_output(
+        let processed = tauri::async_runtime::block_on(process_transcription_output_with(
             &self.app,
             transcript,
             true,
             &context_query,
+            prompts,
         ));
         if cancelled.load(Ordering::Acquire) {
             return Ok(JobEnd::Cancelled);
@@ -552,7 +586,7 @@ impl TranscriptionJobManager {
             Some(text) => {
                 hm.store_post_processing(
                     entry.id,
-                    target,
+                    PostProcessTarget::OnTop,
                     PostProcessed {
                         text,
                         prompt: processed.post_process_prompt,
@@ -634,49 +668,74 @@ impl ChunkControl for Control<'_> {
 mod tests {
     use super::*;
     use crate::history_versions::{test_entry, test_version, HistoryVersion, VersionAuthor};
-    use ReprocessMode::{
-        PostProcess, PostProcessRedo, PostProcessReplace, Transcribe, TranscribeAndPostProcess,
-    };
+    use ReprocessMode::{PostProcess, Transcribe, TranscribeAndPostProcess};
+
+    fn work(mode: ReprocessMode, version: Option<u32>) -> Option<Work> {
+        Some(Work {
+            mode,
+            version,
+            prompt_ids: None,
+        })
+    }
+
+    // DanyWhere: History's wand menu asks for exactly some prompts
+    // (`prompt_library`).
+    #[test]
+    fn a_job_keeps_the_prompts_it_was_asked_for() {
+        let mut jobs = Jobs::default();
+        let chosen = Work {
+            mode: PostProcess,
+            version: Some(1),
+            prompt_ids: Some(vec!["b".to_string(), "a".to_string()]),
+        };
+        assert!(jobs.push(1, Some(chosen.clone())));
+        assert!(jobs.push(2, work(PostProcess, None)));
+        assert_eq!(jobs.next(), Some((1, chosen)));
+        assert_eq!(jobs.next(), Some((2, work(PostProcess, None).unwrap())));
+    }
 
     #[test]
-    fn a_post_process_job_keeps_its_mode() {
+    fn a_post_process_job_keeps_its_mode_and_version() {
         let mut jobs = Jobs::default();
-        assert!(jobs.push(1, Some(PostProcess)));
-        assert_eq!(jobs.next(), Some((1, PostProcess)));
+        assert!(jobs.push(1, work(PostProcess, Some(0))));
+        assert_eq!(jobs.next(), Some((1, work(PostProcess, Some(0)).unwrap())));
     }
 
     #[test]
     fn a_job_that_transcribes_and_post_processes_keeps_its_mode() {
         let mut jobs = Jobs::default();
-        assert!(jobs.push(1, Some(TranscribeAndPostProcess)));
-        assert_eq!(jobs.next(), Some((1, TranscribeAndPostProcess)));
+        assert!(jobs.push(1, work(TranscribeAndPostProcess, None)));
+        assert_eq!(
+            jobs.next(),
+            Some((1, work(TranscribeAndPostProcess, None).unwrap()))
+        );
     }
 
     #[test]
     fn entries_go_before_files() {
         let mut jobs = Jobs::default();
         jobs.push(1, None);
-        jobs.push(2, Some(Transcribe));
-        jobs.push(3, Some(PostProcess));
-        assert_eq!(jobs.next(), Some((2, Transcribe)));
-        assert_eq!(jobs.next(), Some((3, PostProcess)));
-        assert_eq!(jobs.next(), Some((1, Transcribe)));
+        jobs.push(2, work(Transcribe, None));
+        jobs.push(3, work(PostProcess, None));
+        assert_eq!(jobs.next(), Some((2, Work::TRANSCRIBE)));
+        assert_eq!(jobs.next(), Some((3, work(PostProcess, None).unwrap())));
+        assert_eq!(jobs.next(), Some((1, Work::TRANSCRIBE)));
         assert_eq!(jobs.next(), None);
     }
 
     #[test]
     fn an_entry_has_one_job_at_a_time() {
         let mut jobs = Jobs::default();
-        assert!(jobs.push(1, Some(PostProcess)));
-        assert!(!jobs.push(1, Some(Transcribe)));
-        assert_eq!(jobs.next(), Some((1, PostProcess)));
+        assert!(jobs.push(1, work(PostProcess, None)));
+        assert!(!jobs.push(1, work(Transcribe, None)));
+        assert_eq!(jobs.next(), Some((1, work(PostProcess, None).unwrap())));
         assert_eq!(jobs.next(), None);
     }
 
     #[test]
     fn unqueue_drops_a_post_process_job() {
         let mut jobs = Jobs::default();
-        jobs.push(1, Some(PostProcess));
+        jobs.push(1, work(PostProcess, None));
         assert!(jobs.unqueue(1));
         assert!(jobs.is_idle());
         assert_eq!(jobs.next(), None);
@@ -686,24 +745,7 @@ mod tests {
     fn only_post_processing_skips_the_transcription() {
         assert!(Transcribe.transcribes());
         assert!(TranscribeAndPostProcess.transcribes());
-        for mode in [PostProcess, PostProcessReplace, PostProcessRedo] {
-            assert!(!mode.transcribes(), "{mode:?}");
-        }
-    }
-
-    #[test]
-    fn each_post_processing_mode_has_its_target() {
-        assert_eq!(Transcribe.post_processing(), None);
-        assert_eq!(TranscribeAndPostProcess.post_processing(), None);
-        assert_eq!(PostProcess.post_processing(), Some(PostProcessTarget::New));
-        assert_eq!(
-            PostProcessReplace.post_processing(),
-            Some(PostProcessTarget::Replace)
-        );
-        assert_eq!(
-            PostProcessRedo.post_processing(),
-            Some(PostProcessTarget::Redo)
-        );
+        assert!(!PostProcess.transcribes());
     }
 
     fn entry_with_hint(versions: Vec<HistoryVersion>) -> HistoryEntry {
@@ -716,43 +758,50 @@ mod tests {
     }
 
     #[test]
-    fn the_word_list_hint_goes_along_only_with_the_transcription() {
-        let transcription = entry_with_hint(vec![HistoryVersion::transcription("raw")]);
-        let (text, hint) = post_process_input(&transcription, PostProcessTarget::New).unwrap();
-        assert_eq!(text, "raw");
-        assert_eq!(hint.len(), 1);
-
+    fn post_processing_starts_from_the_version_chosen_or_the_top() {
         let processed = entry_with_hint(vec![
             HistoryVersion::transcription("raw"),
             test_version("Clean.", VersionAuthor::Ai),
         ]);
-        let (text, hint) = post_process_input(&processed, PostProcessTarget::New).unwrap();
+        let (text, hint) = post_process_input(&processed, None).unwrap();
         assert_eq!(text, "Clean.");
         assert!(hint.is_empty());
-        let (text, hint) = post_process_input(&processed, PostProcessTarget::Replace).unwrap();
-        assert_eq!(text, "Clean.");
-        assert!(hint.is_empty());
-        // Redoing it starts from the transcription again.
-        let (text, hint) = post_process_input(&processed, PostProcessTarget::Redo).unwrap();
+        let (text, hint) = post_process_input(&processed, Some(0)).unwrap();
         assert_eq!(text, "raw");
         assert_eq!(hint.len(), 1);
+        assert_eq!(
+            post_process_input(&processed, Some(2)).err(),
+            Some(VersionError::NoSuchVersion)
+        );
     }
 
     #[test]
-    fn a_post_processing_that_does_not_fit_the_entry_is_refused() {
-        let transcription = entry_with_hint(vec![HistoryVersion::transcription("raw")]);
-        assert_eq!(
-            post_process_input(&transcription, PostProcessTarget::Replace).err(),
-            Some(VersionError::TranscriptionIsFixed)
-        );
-        let edited = entry_with_hint(vec![
+    fn the_word_list_hint_goes_along_only_with_the_transcript_wherever_it_is() {
+        let moved = entry_with_hint(vec![
+            test_version("Clean.", VersionAuthor::Ai),
             HistoryVersion::transcription("raw"),
-            test_version("raw, mine", VersionAuthor::User),
         ]);
-        assert_eq!(
-            post_process_input(&edited, PostProcessTarget::Redo).err(),
-            Some(VersionError::NotMadeByAi)
-        );
+        let (text, hint) = post_process_input(&moved, None).unwrap();
+        assert_eq!(text, "raw");
+        assert_eq!(hint.len(), 1);
+        let (_, hint) = post_process_input(&moved, Some(0)).unwrap();
+        assert!(hint.is_empty());
+        // Transcribed again: the hint is the newer transcription's.
+        let again = entry_with_hint(vec![
+            HistoryVersion::transcribed("old", Some(1)),
+            HistoryVersion::transcribed("new", Some(5)),
+        ]);
+        assert!(post_process_input(&again, Some(0)).unwrap().1.is_empty());
+        assert_eq!(post_process_input(&again, Some(1)).unwrap().1.len(), 1);
+        // The user changed it: not what the word list replaced in.
+        let mut edited = HistoryVersion::transcription("raw, mine");
+        edited.steps.push(crate::history_versions::VersionStep {
+            by: VersionAuthor::User,
+            at: Some(2),
+            prompt_name: None,
+        });
+        let edited = entry_with_hint(vec![edited]);
+        assert!(post_process_input(&edited, None).unwrap().1.is_empty());
     }
 
     #[test]
@@ -766,8 +815,6 @@ mod tests {
         for requested in [false, true] {
             assert!(TranscribeAndPostProcess.post_processes(requested));
             assert!(PostProcess.post_processes(requested));
-            assert!(PostProcessReplace.post_processes(requested));
-            assert!(PostProcessRedo.post_processes(requested));
         }
     }
 
@@ -794,12 +841,8 @@ mod tests {
             "\"post_process\""
         );
         assert_eq!(
-            serde_json::to_string(&PostProcessReplace).unwrap(),
-            "\"post_process_replace\""
-        );
-        assert_eq!(
-            serde_json::to_string(&PostProcessRedo).unwrap(),
-            "\"post_process_redo\""
+            serde_json::to_string(&Transcribe).unwrap(),
+            "\"transcribe\""
         );
     }
 }

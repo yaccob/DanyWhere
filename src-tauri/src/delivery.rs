@@ -173,30 +173,44 @@ fn put_on_clipboard_with_notice(app: &AppHandle, text: String) {
     }
 }
 
+/// The "Append" text the last dictation gets outside a dictation: that of
+/// the end shortcut it ended with (`ended_with`), when DanyWhere knows it
+/// (`profile_redo::made_with`); else that of the dictation shortcut's
+/// default end in the profile `settings` hold (`end_keys::plain_end`).
+pub fn append_of_last(
+    settings: &AppSettings,
+    ended_with: Option<&crate::end_keys::EndKey>,
+) -> String {
+    match ended_with {
+        Some(end) => end.append_text.clone(),
+        None => {
+            crate::end_keys::plain_end(&crate::profiles::ProfileValues::from_settings(settings))
+                .append_text
+        }
+    }
+}
+
 /// What "Copy Last Transcript" puts on the clipboard outside a dictation:
-/// the last dictation, `latest`, with the "Append" text of the profile in
-/// use, as the "Insert Last Dictation" service inserts it (user,
-/// 2026-11-16). Key presses have no place on the clipboard. The profile is
-/// the dictation's (`dictation`, its values), when DanyWhere knows it
-/// (`profile_redo::made_with`): copying has no target application that
-/// could choose another; else the active one.
+/// the last dictation, `latest`, with its "Append" text ([`append_of_last`]),
+/// as the "Insert Last Dictation" service inserts it (user, 2026-11-16).
+/// Key presses have no place on the clipboard. Copying has no target
+/// application that could choose another profile.
 pub fn text_to_copy(
     latest: String,
     settings: &AppSettings,
-    dictation: Option<&crate::profiles::ProfileValues>,
+    ended_with: Option<&crate::end_keys::EndKey>,
 ) -> String {
-    let settings = crate::app_profiles::with_values(settings, dictation);
-    crate::append_text::text_to_paste(latest, &settings)
+    crate::append_text::text_to_paste(latest, &append_of_last(settings, ended_with))
 }
 
 /// DanyWhere: puts the most recent completed transcript on the clipboard,
 /// for "Copy Last Transcript".
 pub fn copy_last_transcript_now(app: &AppHandle) {
     if let Some((entry, text)) = latest_entry_and_text(app) {
-        let dictation = crate::profile_redo::made_with(entry.id).map(|made| made.values);
+        let ended_with = crate::profile_redo::made_with(entry.id).map(|made| made.end);
         put_on_clipboard_with_notice(
             app,
-            text_to_copy(text, &get_settings(app), dictation.as_ref()),
+            text_to_copy(text, &get_settings(app), ended_with.as_ref()),
         );
     }
 }
@@ -214,6 +228,7 @@ pub fn deliver_last_transcript(app: &AppHandle) {
             // Paste sleeps between steps and must not run on the main thread
             // (see `clipboard::paste`).
             let app = app.clone();
+            let ended_with = crate::profile_redo::made_with(entry.id).map(|made| made.end);
             let spawned = std::thread::Builder::new()
                 .name("paste-last".into())
                 .spawn(move || {
@@ -226,8 +241,18 @@ pub fn deliver_last_transcript(app: &AppHandle) {
                                 insert.text.unwrap_or(text),
                                 app,
                                 Some(insert.values),
+                                &insert.end.append_text,
                             ),
-                            None => crate::utils::paste(text, app),
+                            None => {
+                                let append =
+                                    append_of_last(&get_settings(&app), ended_with.as_ref());
+                                crate::utils::paste_with_values(
+                                    text,
+                                    app,
+                                    crate::app_profiles::dictation_values(),
+                                    &append,
+                                )
+                            }
                         };
                     match pasted {
                         Ok(crate::utils::PasteOutcome::Pasted) => {
@@ -315,7 +340,9 @@ pub fn sound_after_dictation(
 /// Plays the sound that ends a dictation (`sound_after_dictation`). Call once
 /// the dictation's text is where it goes, after post-processing.
 pub fn play_sound_after_dictation(app: &AppHandle, end: DictationEnd) {
-    match sound_after_dictation(&get_settings(app), INSERT_SERVICE_AVAILABLE, end) {
+    // The dictation's profile's sounds (the paste thread keeps its values).
+    let settings = crate::app_profiles::dictation_settings(app);
+    match sound_after_dictation(&settings, INSERT_SERVICE_AVAILABLE, end) {
         Some(SoundType::Done) => {
             info!("Dictation done; playing the done sound.");
             play_feedback_sound(app, SoundType::Done);
@@ -331,7 +358,8 @@ pub fn play_sound_after_dictation(app: &AppHandle, end: DictationEnd) {
 /// Ends the overlay after a finished dictation: says where the text waits
 /// when it was not pasted, otherwise just hides the overlay.
 pub fn finish_overlay_after_dictation(app: &AppHandle) {
-    let settings = get_settings(app);
+    // The dictation's profile's delivery (the paste thread keeps its values).
+    let settings = crate::app_profiles::dictation_settings(app);
     let notice = dictation_notice(&settings, INSERT_SERVICE_AVAILABLE);
     match (notice, clipboard_notice_duration(&settings)) {
         (Some(DictationNotice::OnClipboard), Some(duration)) => {
@@ -773,7 +801,7 @@ mod tests {
 
     fn with_append(append_text: &str) -> AppSettings {
         AppSettings {
-            append_text: append_text.to_string(),
+            end_keys: crate::end_keys::builtin(append_text, false),
             ..get_default_settings()
         }
     }
@@ -796,12 +824,16 @@ mod tests {
     }
 
     #[test]
-    fn copy_last_transcript_takes_the_append_text_of_the_dictations_profile() {
+    fn copy_last_transcript_takes_the_append_text_of_the_end_it_ended_with() {
         let settings = with_append(r"\s");
-        let mut dictation = crate::profiles::ProfileValues::from_settings(&settings);
-        dictation.append_text = r"\nMfG".to_string();
+        let ended_with = crate::end_keys::EndKey {
+            id: "mfg".to_string(),
+            name: "MfG".to_string(),
+            append_text: r"\nMfG".to_string(),
+            ..Default::default()
+        };
         assert_eq!(
-            text_to_copy("Hallo".into(), &settings, Some(&dictation)),
+            text_to_copy("Hallo".into(), &settings, Some(&ended_with)),
             "Hallo\nMfG"
         );
         assert_eq!(text_to_copy("Hallo".into(), &settings, None), "Hallo ");

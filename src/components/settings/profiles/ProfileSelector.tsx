@@ -1,35 +1,42 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useProfiles } from "@/hooks/useProfiles";
+import { DEFAULT_PROFILE_ID } from "@/lib/utils/profiles";
 import { Dropdown } from "../../ui/Dropdown";
-import { SendContextCompact } from "../dictation-context/SendContextSwitch";
 import { ProfileAutoByAppCompact } from "./ProfileAutoByApp";
 
-/** DanyWhere: the profile in use, at the top of the sidebar on every page.
- * Hidden until the settings carry profiles. */
+/** DanyWhere: the box "In Use" at the top of the sidebar on every page: what
+ * dictations use, the defaults as the first entry, then the profiles, and
+ * choosing the profile by application (qa 2026-11-19_1711 P2). Only for
+ * using; editing goes through the navigation below. */
 export const ProfileSelector: React.FC = () => {
   const { t } = useTranslation();
-  const { profiles, active, busy, displayName, switchTo } = useProfiles();
-  if (profiles.length === 0) return null;
+  const { profiles, activeId, busy, defaultName, displayName, switchTo } =
+    useProfiles();
 
   return (
-    <div className="w-full pb-3">
+    <div className="w-full mb-3 rounded-lg border border-line p-2">
       <p className="px-1 pb-1 text-xs font-medium text-ink-3 uppercase tracking-wide">
-        {t("sidebar.profile")}
+        {t("sidebar.inUse")}
       </p>
       <Dropdown
         compact
-        selectedValue={active?.id ?? null}
-        options={profiles.map((profile) => ({
-          value: profile.id,
-          label: displayName(profile),
-        }))}
+        selectedValue={activeId}
+        options={[
+          { value: DEFAULT_PROFILE_ID, label: defaultName },
+          ...profiles.map((profile) => ({
+            value: profile.id,
+            label: displayName(profile),
+          })),
+        ]}
         onSelect={switchTo}
-        disabled={busy}
+        disabled={busy || profiles.length === 0}
         className="w-full"
+        // Wider than the sidebar's box where a name needs it, so the chosen
+        // entry's check and bold type don't break "Grundeinstellungen".
+        menuClassName="start-0 w-max min-w-full max-w-64"
       />
       <ProfileAutoByAppCompact />
-      <SendContextCompact />
     </div>
   );
 };

@@ -25,10 +25,20 @@ import {
   clearOnboardingProgress,
   type OnboardingStep as OnboardingPreviewStep,
 } from "./components/onboarding/onboardingStore";
-import { DebugSettings, ModelsSettings } from "./components/settings";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { FileDropOverlay } from "./components/FileDropOverlay";
-import { Sidebar, SidebarSection, SECTIONS_CONFIG } from "./components/Sidebar";
+import { Sidebar } from "./components/Sidebar";
+// DanyWhere: the settings in three areas, the page the navigation shows.
+import { SettingsPage } from "./components/SettingsPage";
+import {
+  START_LOCATION,
+  fillsWindow,
+  locationKey,
+  navContext,
+  resolveLocation,
+  sameLocation,
+  type NavLocation,
+} from "@/lib/navigation";
 import { WhatsNewGate } from "./components/whats-new";
 import { useSettings } from "./hooks/useSettings";
 import { useSettingsStore } from "./stores/settingsStore";
@@ -46,33 +56,6 @@ type OnboardingStep =
   | "replaceModel"
   | "done";
 
-const renderSettingsContent = (
-  section: SidebarSection,
-  onPreviewOnboarding: (step: OnboardingPreviewStep) => void,
-  onRunOnboarding: () => void,
-  onRunModelMigration: () => void,
-  onSectionChange: (section: SidebarSection) => void,
-) => {
-  if (section === "models") {
-    return (
-      <ModelsSettings onChangeLanguages={() => onSectionChange("general")} />
-    );
-  }
-  if (section === "debug") {
-    return (
-      <DebugSettings
-        onPreviewOnboarding={onPreviewOnboarding}
-        onRunOnboarding={onRunOnboarding}
-        onRunModelMigration={onRunModelMigration}
-      />
-    );
-  }
-
-  const ActiveComponent =
-    SECTIONS_CONFIG[section]?.component || SECTIONS_CONFIG.general.component;
-  return <ActiveComponent />;
-};
-
 function App() {
   const { t, i18n } = useTranslation();
   const [onboardingStep, setOnboardingStep] = useState<OnboardingStep | null>(
@@ -83,10 +66,21 @@ function App() {
   // Set when a returning user's selected model is a retired (ONNX) model that
   // is still on disk: they must update it before the app can transcribe.
   const [migrationModelId, setMigrationModelId] = useState<string | null>(null);
-  const [currentSection, setCurrentSection] =
-    useState<SidebarSection>("general");
-  const showHistory = useCallback(() => setCurrentSection("history"), []);
+  // DanyWhere: where the navigation is (lib/navigation.ts).
+  const [location, setLocation] = useState<NavLocation>(START_LOCATION);
+  const showHistory = useCallback(() => setLocation({ kind: "history" }), []);
   const { settings, updateSetting } = useSettings();
+  // A page or profile that went away (a profile switch hid Post Process,
+  // debug mode ended, the profile was deleted) gives way to its area's first
+  // page or the overview; the state follows, so it doesn't come back later.
+  const shown = settings
+    ? resolveLocation(location, navContext(settings))
+    : location;
+  const moved = !sameLocation(shown, location);
+  useEffect(() => {
+    if (moved) setLocation(shown);
+  }, [moved, shown]);
+  const shownKey = locationKey(shown);
   const direction = getLanguageDirection(i18n.language);
   const refreshAudioDevices = useSettingsStore(
     (state) => state.refreshAudioDevices,
@@ -99,7 +93,7 @@ function App() {
   // Reset the scroll position whenever the active section changes.
   useLayoutEffect(() => {
     settingsScrollRef.current?.scrollTo({ top: 0 });
-  }, [currentSection]);
+  }, [shownKey]);
 
   useEffect(() => {
     checkOnboardingStatus();
@@ -335,25 +329,22 @@ function App() {
         </ErrorBoundary>
         {/* Main content area that takes remaining space */}
         <div className="flex-1 flex overflow-hidden">
-          <Sidebar
-            activeSection={currentSection}
-            onSectionChange={setCurrentSection}
-          />
+          <Sidebar location={shown} onNavigate={setLocation} />
           {/* Scrollable content area */}
           <div className="flex-1 flex flex-col overflow-hidden">
             <div ref={settingsScrollRef} className="flex-1 overflow-y-auto">
               {/* Models fills the window: its table scrolls, not the page. */}
               <div
-                className={`flex flex-col items-center p-4 gap-4 ${currentSection === "models" ? "h-full" : ""}`}
+                className={`flex flex-col items-center p-4 gap-4 ${fillsWindow(shown) ? "h-full" : ""}`}
               >
                 <SecureInputWarning />
-                {renderSettingsContent(
-                  currentSection,
-                  setOnboardingPreview,
-                  runOnboarding,
-                  runModelMigration,
-                  setCurrentSection,
-                )}
+                <SettingsPage
+                  location={shown}
+                  onNavigate={setLocation}
+                  onPreviewOnboarding={setOnboardingPreview}
+                  onRunOnboarding={runOnboarding}
+                  onRunModelMigration={runModelMigration}
+                />
               </div>
             </div>
           </div>

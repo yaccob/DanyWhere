@@ -1,7 +1,6 @@
 use crate::app_profiles::OverlayProfile;
 use crate::input;
 use crate::notices::Notice;
-use crate::settings;
 use crate::settings::{OverlayPosition, OverlayStyle};
 use crate::window_capture::{self, ScreenRect};
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
@@ -169,7 +168,7 @@ fn init_gtk_layer_shell(overlay_window: &tauri::webview::WebviewWindow) -> bool 
         gtk_window.set_keyboard_mode(KeyboardMode::None);
         gtk_window.set_exclusive_zone(0);
 
-        let overlay_position = settings::get_settings(overlay_window.app_handle()).overlay_position;
+        let overlay_position = crate::overlay_look::current(overlay_window.app_handle()).position;
         configure_layer_shell_surface(&gtk_window, overlay_position, OVERLAY_WIDTH, OVERLAY_HEIGHT);
 
         let initialized = gtk_window.is_layer_window();
@@ -341,10 +340,9 @@ fn calculate_overlay_position(
     let monitor_y = monitor.position().y as f64 / scale;
     let monitor_width = monitor.size().width as f64 / scale;
 
-    let settings = settings::get_settings(app_handle);
-
+    // DanyWhere: the dictation's profile's position (`overlay_look`).
     let x = monitor_x + (monitor_width - width) / 2.0;
-    let y = match settings.overlay_position {
+    let y = match crate::overlay_look::current(app_handle).position {
         OverlayPosition::Top => monitor_y + OVERLAY_TOP_OFFSET,
         OverlayPosition::Bottom => {
             // work_area.position shares monitor.position's global coordinate
@@ -441,7 +439,7 @@ fn place_windows_overlay(
         text_scale,
         logical_width,
         logical_height,
-        settings::get_settings(app_handle).overlay_position,
+        crate::overlay_look::current(app_handle).position,
     );
     let hwnd = overlay_window
         .hwnd()
@@ -592,8 +590,8 @@ fn show_overlay_state(app_handle: &AppHandle, state: &str) {
     // Whether the overlay shows at all is governed by overlay_style; position
     // only chooses Top vs Bottom placement. Checked here (off the main thread)
     // so the common overlay-disabled case never pays for a main-thread hop.
-    let settings = settings::get_settings(app_handle);
-    if settings.overlay_style == OverlayStyle::None {
+    // DanyWhere: the dictation's profile's style (`overlay_look`).
+    if crate::overlay_look::current(app_handle).style == OverlayStyle::None {
         return;
     }
     OVERLAY_SESSION_SHOWING.store(true, Ordering::SeqCst);
@@ -622,7 +620,7 @@ fn show_overlay_state_on_main(app_handle: &AppHandle, state: &str) {
 
         #[cfg(target_os = "linux")]
         let shown_with_layer_shell = if LAYER_SHELL_ACTIVE.load(Ordering::SeqCst) {
-            let position = settings::get_settings(app_handle).overlay_position;
+            let position = crate::overlay_look::current(app_handle).position;
             match overlay_window.gtk_window() {
                 Ok(gtk_window) => {
                     configure_layer_shell_surface(&gtk_window, position, width, height)
@@ -702,7 +700,7 @@ fn show_overlay_state_on_main(app_handle: &AppHandle, state: &str) {
 /// first sample chunk. Audio feedback uses the same backend readiness signal,
 /// but this targeted event is skipped when overlays are disabled.
 pub fn emit_recording_ready(app_handle: &AppHandle) {
-    if !OVERLAY_ENABLED.load(Ordering::Relaxed) {
+    if !crate::overlay_look::enabled(OVERLAY_ENABLED.load(Ordering::Relaxed)) {
         return;
     }
 
@@ -739,7 +737,7 @@ pub fn show_processing_overlay(app_handle: &AppHandle) {
 /// [`NOTICE_HOLD`] unless something newer has shown. With the overlay off, it
 /// still hides the session's overlay in case the setting changed mid-session.
 pub fn show_overlay_notice(app_handle: &AppHandle, notice: &Notice) {
-    if !OVERLAY_ENABLED.load(Ordering::Relaxed) {
+    if !crate::overlay_look::enabled(OVERLAY_ENABLED.load(Ordering::Relaxed)) {
         hide_recording_overlay(app_handle);
         return;
     }
@@ -788,7 +786,7 @@ fn update_overlay_position_on_main(app_handle: &AppHandle) {
     if let Some(overlay_window) = app_handle.get_webview_window("recording_overlay") {
         #[cfg(target_os = "linux")]
         if LAYER_SHELL_ACTIVE.load(Ordering::SeqCst) {
-            let position = settings::get_settings(app_handle).overlay_position;
+            let position = crate::overlay_look::current(app_handle).position;
             match overlay_window.gtk_window() {
                 Ok(gtk_window) => configure_layer_shell_position(&gtk_window, position),
                 Err(error) => log::error!("Failed to access GTK overlay window: {error}"),
@@ -921,7 +919,9 @@ pub fn show_profile_notice(
 /// label (`app_profiles`); `None` (a single profile) shows neither. Sent at
 /// the start of every dictation.
 pub fn set_dictation_profile(app_handle: &AppHandle, profile: Option<OverlayProfile>) {
-    if !OVERLAY_ENABLED.load(Ordering::Relaxed) {
+    // Its pills take its profile's position and style from here on.
+    crate::overlay_look::begin_session(&crate::app_profiles::dictation_settings(app_handle));
+    if !crate::overlay_look::enabled(OVERLAY_ENABLED.load(Ordering::Relaxed)) {
         return;
     }
     if let Some(overlay_window) = app_handle.get_webview_window("recording_overlay") {
@@ -929,28 +929,12 @@ pub fn set_dictation_profile(app_handle: &AppHandle, profile: Option<OverlayProf
     }
 }
 
-/// DanyWhere: shows the new state of "Send Context" for `duration`, as the
-/// speech bubble (crossed out while off) and the profile's name, like the
-/// profile notice (`send_context`). The caller skips it while a recording or
-/// transcription owns the overlay.
-pub fn show_context_notice(
-    app_handle: &AppHandle,
-    notice: crate::send_context::ContextNotice,
-    duration: std::time::Duration,
-) {
-    // Sent before the state, so the overlay has the notice when it renders.
-    if let Some(overlay_window) = app_handle.get_webview_window("recording_overlay") {
-        let _ = overlay_window.emit("overlay-context", notice);
-    }
-    show_timed_state(app_handle, "context", duration);
-}
-
 /// DanyWhere: whether the dictation in progress sends context, shown as a
 /// speech bubble next to its profile (`send_context`). Sent at the start of
-/// every dictation, when "Send Context" is turned over while it records, and
-/// once more when it stops, with the decision.
+/// every dictation, as its start shortcut's default end would decide, and
+/// once more when it stops, with the end it took (`end_keys`).
 pub fn set_dictation_context(app_handle: &AppHandle, sends: bool) {
-    if !OVERLAY_ENABLED.load(Ordering::Relaxed) {
+    if !crate::overlay_look::enabled(OVERLAY_ENABLED.load(Ordering::Relaxed)) {
         return;
     }
     if let Some(overlay_window) = app_handle.get_webview_window("recording_overlay") {
@@ -988,6 +972,8 @@ static OVERLAY_SESSION_LIVE: AtomicBool = AtomicBool::new(false);
 /// Hides the recording overlay window with fade-out animation
 pub fn hide_recording_overlay(app_handle: &AppHandle) {
     OVERLAY_SESSION_SHOWING.store(false, Ordering::SeqCst);
+    // DanyWhere: what shows next follows the settings in use.
+    crate::overlay_look::end_session();
     OVERLAY_SESSION_LIVE.store(false, Ordering::SeqCst);
     // Always hide the overlay regardless of settings - if setting was changed while recording,
     // we still want to hide it properly
@@ -1038,7 +1024,7 @@ pub fn emit_levels(app_handle: &AppHandle, levels: &[f32]) {
     // directly characterized; see issue #1279 for the investigation).
     // For users with `overlay_style: none` (the Linux default) this skip
     // eliminates the upstream driver of that accumulation.
-    if !OVERLAY_ENABLED.load(Ordering::Relaxed) {
+    if !crate::overlay_look::enabled(OVERLAY_ENABLED.load(Ordering::Relaxed)) {
         return;
     }
 

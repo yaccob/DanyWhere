@@ -9,22 +9,23 @@ import { EMPTY_SEARCH, textMatcher, type SearchFields } from "./historySearch";
 import {
   defaultSaveMode,
   describeStep,
+  distinctLines,
+  dropIndex,
+  dropSlot,
   entryText,
+  hasText,
+  indexAfterDelete,
+  indexAfterMove,
   isSaveShortcut,
   matchingVersions,
-  postProcessActions,
-  postProcessQuestion,
-  redoNeedsConfirm,
-  retranscribeNeedsConfirm,
+  moveTarget,
   saveModes,
   shownVersion,
   stepSeconds,
   topIndex,
+  versionActions,
   versionMark,
   versionText,
-  versionsLostByEditing,
-  versionsLostByGoingBack,
-  versionsLostByPostProcessing,
 } from "./versions";
 
 let checks = 0;
@@ -85,7 +86,7 @@ check("the top is the last version", () => {
   assert.equal(topIndex(threeLayers), 2);
 });
 
-check("an empty stack has the transcription's index as its top", () => {
+check("an empty stack has the first index as its top", () => {
   assert.equal(topIndex(entry([])), 0);
 });
 
@@ -218,20 +219,37 @@ check("an entry of one version always shows it", () => {
   assert.equal(shownVersion(plain, search({ text: "nowhere" }), null), 0);
 });
 
+// ---- Whether an entry has text ------------------------------------------
+
+check("an entry has text when its top version has some", () => {
+  assert.equal(hasText(threeLayers), true);
+  assert.equal(hasText(entry([transcription("")])), false);
+  assert.equal(hasText(entry([transcription(" \n")])), false);
+  assert.equal(hasText(entry([])), false);
+  // Without its transcription, too.
+  assert.equal(hasText(entry([version("Polished.", "ai")])), true);
+});
+
 // ---- Saving an edit ------------------------------------------------------
 
-check("the transcription is never replaced: only a new version", () => {
-  assert.deepEqual(saveModes(threeLayers, 0), ["new"]);
-  assert.equal(defaultSaveMode(threeLayers, 0), "new");
-  assert.deepEqual(saveModes(entry([transcription()]), 0), ["new"]);
-});
-
-check("a version above it can be changed or kept", () => {
-  assert.deepEqual(saveModes(threeLayers, 1), ["replace", "new"]);
+check("only the top version is changed in place", () => {
   assert.deepEqual(saveModes(threeLayers, 2), ["replace", "new"]);
+  assert.deepEqual(saveModes(threeLayers, 1), ["new"]);
+  assert.deepEqual(saveModes(threeLayers, 0), ["new"]);
 });
 
-check("the default changes a version whose last step is the user's", () => {
+check("a transcription on top is changed like any version", () => {
+  assert.deepEqual(saveModes(entry([transcription()]), 0), ["replace", "new"]);
+  // The default keeps it and adds a new version.
+  assert.equal(defaultSaveMode(entry([transcription()]), 0), "new");
+});
+
+check("a version the stack doesn't have is saved as new", () => {
+  assert.deepEqual(saveModes(threeLayers, 3), ["new"]);
+  assert.equal(defaultSaveMode(threeLayers, 3), "new");
+});
+
+check("the default changes the top when its last step is the user's", () => {
   assert.equal(defaultSaveMode(threeLayers, 2), "replace");
   const aiThenUser = entry([
     transcription(),
@@ -241,271 +259,123 @@ check("the default changes a version whose last step is the user's", () => {
 });
 
 check("the default keeps the AI's text and adds a new version", () => {
-  assert.equal(defaultSaveMode(threeLayers, 1), "new");
   const userThenAi = entry([
     transcription(),
     version("Polished again.", "user", "ai"),
   ]);
   assert.equal(defaultSaveMode(userThenAi, 1), "new");
-});
-
-// ---- Post-processing the current version -----------------------------------
-// ✨ works on the current version, the one the entry shows (`shown`); on the
-// top as before, below it after deleting the versions above it.
-
-check("on the transcription only post-processing further", () => {
-  assert.deepEqual(postProcessActions(entry([transcription()]), 0), [
-    "post_process",
-  ]);
-});
-
-check("on a version of the user's: further and replacing it", () => {
-  const edited = entry([transcription(), version("fixed", "user")]);
-  assert.deepEqual(postProcessActions(edited, 1), [
-    "post_process",
-    "post_process_replace",
-  ]);
-  assert.deepEqual(postProcessActions(threeLayers, 2), [
-    "post_process",
-    "post_process_replace",
-  ]);
-});
-
-check("on a version the AI made: redoing it too", () => {
-  const processed = entry([transcription(), version("Polished.", "ai")]);
-  assert.deepEqual(postProcessActions(processed, 1), [
-    "post_process",
-    "post_process_replace",
-    "post_process_redo",
-  ]);
-  const aiThenUser = entry([
+  // Below the top, the user's own version too: only as new.
+  const userBelow = entry([
     transcription(),
-    version("Polished, fixed.", "ai", "user"),
+    version("fixed", "user"),
+    version("Polished.", "ai"),
   ]);
-  assert.deepEqual(postProcessActions(aiThenUser, 1), [
-    "post_process",
-    "post_process_replace",
-    "post_process_redo",
-  ]);
+  assert.equal(defaultSaveMode(userBelow, 1), "new");
 });
 
-check("a version the user started isn't redone, even with an AI step", () => {
-  const userThenAi = entry([
-    transcription(),
-    version("Polished again.", "user", "ai"),
-  ]);
-  assert.deepEqual(postProcessActions(userThenAi, 1), [
-    "post_process",
-    "post_process_replace",
-  ]);
-});
-
-check("the transcription below the top: only post-processing further", () => {
-  assert.deepEqual(postProcessActions(threeLayers, 0), ["post_process"]);
-});
-
-check("the AI's version below the top: redoing it too", () => {
-  assert.deepEqual(postProcessActions(threeLayers, 1), [
-    "post_process",
-    "post_process_replace",
-    "post_process_redo",
-  ]);
-});
-
-check("the user's version below an AI one isn't redone", () => {
-  const userBelowAi = entry([
-    transcription(),
-    version("Polished again.", "user", "ai"),
-    version("Polished twice.", "ai"),
-  ]);
-  assert.deepEqual(postProcessActions(userBelowAi, 1), [
-    "post_process",
-    "post_process_replace",
-  ]);
-});
-
-check("a current version the stack doesn't have counts as the top", () => {
-  assert.deepEqual(postProcessActions(threeLayers, 9), [
-    "post_process",
-    "post_process_replace",
-  ]);
-  assert.equal(versionsLostByPostProcessing(threeLayers, 9), 0);
-});
-
-check("redoing asks first only over the user's own steps", () => {
-  const processed = entry([transcription(), version("Polished.", "ai")]);
-  assert.equal(redoNeedsConfirm(processed, 1), false);
-  const aiThenUser = entry([
-    transcription(),
-    version("Polished, fixed.", "ai", "user"),
-  ]);
-  assert.equal(redoNeedsConfirm(aiThenUser, 1), true);
-});
+// ---- A version's menu: moving and deleting -------------------------------
 
 check(
-  "redoing asks over the current version's own steps, not the top's",
+  "a version below the top goes to the top or up, above the bottom down",
   () => {
-    const editedBelow = entry([
-      transcription(),
-      version("Polished, fixed.", "ai", "user"),
-      version("Polished twice.", "ai"),
+    assert.deepEqual(versionActions(threeLayers, 0), [
+      "to_top",
+      "up",
+      "delete",
     ]);
-    assert.equal(redoNeedsConfirm(editedBelow, 1), true);
-    assert.equal(redoNeedsConfirm(editedBelow, 2), false);
-    // threeLayers' top is the user's, the AI's version below it is not.
-    assert.equal(redoNeedsConfirm(threeLayers, 1), false);
+    assert.deepEqual(versionActions(threeLayers, 1), [
+      "to_top",
+      "up",
+      "down",
+      "delete",
+    ]);
+    assert.deepEqual(versionActions(threeLayers, 2), ["down", "delete"]);
   },
 );
 
-check("✨ on the top deletes nothing", () => {
-  assert.equal(versionsLostByPostProcessing(threeLayers, 2), 0);
-  assert.equal(versionsLostByPostProcessing(entry([transcription()]), 0), 0);
+check("the only version can be neither moved nor deleted", () => {
+  assert.deepEqual(versionActions(entry([transcription()]), 0), []);
+  assert.deepEqual(versionActions(threeLayers, 5), []);
 });
 
-check("✨ below the top deletes the versions above the current one", () => {
-  assert.equal(versionsLostByPostProcessing(threeLayers, 1), 1);
-  assert.equal(versionsLostByPostProcessing(threeLayers, 0), 2);
+check("where a version moves to", () => {
+  assert.equal(moveTarget(threeLayers, 0, "to_top"), 2);
+  assert.equal(moveTarget(threeLayers, 0, "up"), 1);
+  assert.equal(moveTarget(threeLayers, 1, "up"), 2);
+  assert.equal(moveTarget(threeLayers, 2, "down"), 1);
+  assert.equal(moveTarget(threeLayers, 1, "down"), 0);
 });
 
-// ---- What ✨ asks first ----------------------------------------------------
-
-check(
-  "✨ on the top asks nothing, unless a redo loses the user's steps",
-  () => {
-    assert.equal(postProcessQuestion(threeLayers, 2, "post_process"), null);
-    assert.equal(
-      postProcessQuestion(threeLayers, 2, "post_process_replace"),
-      null,
-    );
-    const processed = entry([transcription(), version("Polished.", "ai")]);
-    assert.equal(postProcessQuestion(processed, 1, "post_process_redo"), null);
-    const aiThenUser = entry([
-      transcription(),
-      version("Polished, fixed.", "ai", "user"),
-    ]);
-    assert.deepEqual(postProcessQuestion(aiThenUser, 1, "post_process_redo"), {
-      kind: "redo",
-    });
-  },
-);
-
-check("✨ further below the top asks about the versions above it", () => {
-  assert.deepEqual(postProcessQuestion(threeLayers, 1, "post_process"), {
-    kind: "above",
-    count: 1,
-  });
-  assert.deepEqual(postProcessQuestion(threeLayers, 0, "post_process"), {
-    kind: "above",
-    count: 2,
-  });
+check("a version keeps being shown when another one moves", () => {
+  // The one moved.
+  assert.equal(indexAfterMove(0, 0, 2), 2);
+  assert.equal(indexAfterMove(2, 2, 0), 0);
+  // One it passed.
+  assert.equal(indexAfterMove(1, 0, 2), 0);
+  assert.equal(indexAfterMove(2, 0, 2), 1);
+  assert.equal(indexAfterMove(0, 2, 0), 1);
+  assert.equal(indexAfterMove(1, 2, 0), 2);
+  // One it didn't pass.
+  assert.equal(indexAfterMove(0, 1, 2), 0);
+  assert.equal(indexAfterMove(3, 0, 2), 3);
 });
 
-check("replacing below the top asks about the versions above it", () => {
-  // Replacing post-processes the current version itself, so the user's
-  // steps in it live on in the result: only the versions above go.
-  const editedBelow = entry([
-    transcription(),
-    version("Polished, fixed.", "ai", "user"),
-    version("Polished twice.", "ai"),
-  ]);
-  assert.deepEqual(
-    postProcessQuestion(editedBelow, 1, "post_process_replace"),
-    { kind: "above", count: 1 },
-  );
+check("a version keeps being shown when another one goes", () => {
+  assert.equal(indexAfterDelete(1, 1), null);
+  assert.equal(indexAfterDelete(2, 0), 1);
+  assert.equal(indexAfterDelete(0, 2), 0);
 });
 
-check("redoing below the top asks about the versions above it", () => {
-  assert.deepEqual(postProcessQuestion(threeLayers, 1, "post_process_redo"), {
-    kind: "above",
-    count: 1,
-  });
+// ---- Dragging a chip -----------------------------------------------------
+
+// Three chips in a row, 40 px wide with 10 px between them, and one on a
+// second row.
+const row = (left: number, top = 0) => ({
+  left,
+  right: left + 40,
+  top,
+  bottom: top + 20,
+});
+const chips = [row(0), row(50), row(100), row(0, 30)];
+
+check("a chip dropped on another goes before or after it by its middle", () => {
+  assert.equal(dropSlot(chips, 55, 10), 1);
+  assert.equal(dropSlot(chips, 85, 10), 2);
+  assert.equal(dropSlot(chips, 5, 10), 0);
+  assert.equal(dropSlot(chips, 139, 10), 3);
 });
 
-check("redoing over the user's steps below the top asks once for both", () => {
-  const editedBelow = entry([
-    transcription(),
-    version("Polished, fixed.", "ai", "user"),
-    version("Polished twice.", "ai"),
-    version("Polished thrice.", "ai"),
-  ]);
-  assert.deepEqual(postProcessQuestion(editedBelow, 1, "post_process_redo"), {
-    kind: "redo_above",
-    count: 2,
-  });
+check("a chip dropped between or past the chips takes the nearest one", () => {
+  assert.equal(dropSlot(chips, 46, 10), 1);
+  assert.equal(dropSlot(chips, 300, 10), 3);
+  assert.equal(dropSlot(chips, -30, 10), 0);
 });
 
-// ---- What goes, and when History asks first ------------------------------
-
-check("editing a version below the top removes the ones above it", () => {
-  assert.equal(versionsLostByEditing(threeLayers, 2), 0);
-  assert.equal(versionsLostByEditing(threeLayers, 1), 1);
-  assert.equal(versionsLostByEditing(threeLayers, 0), 2);
+check("the row it is dropped in comes first", () => {
+  assert.equal(dropSlot(chips, 35, 40), 4);
+  assert.equal(dropSlot(chips, 5, 45), 3);
+  // Between the rows, nearer the second.
+  assert.equal(dropSlot(chips, 5, 27), 3);
 });
 
-check("going back to a version removes the ones above it", () => {
-  assert.equal(versionsLostByGoingBack(threeLayers, 0), 2);
-  assert.equal(versionsLostByGoingBack(threeLayers, 1), 1);
-  assert.equal(versionsLostByGoingBack(threeLayers, 2), 0);
-  assert.equal(versionsLostByGoingBack(threeLayers, 7), 0);
+check("right to left, after means left of the middle", () => {
+  const rtl = [row(100), row(50), row(0)];
+  assert.equal(dropSlot(rtl, 105, 10, true), 1);
+  assert.equal(dropSlot(rtl, 135, 10, true), 0);
+  assert.equal(dropSlot(rtl, 5, 10, true), 3);
 });
 
-check("re-transcribing a plain entry asks nothing", () => {
-  const plain = entry([transcription()]);
-  assert.equal(retranscribeNeedsConfirm(plain, "transcribe"), false);
-  assert.equal(
-    retranscribeNeedsConfirm(plain, "transcribe_and_post_process"),
-    false,
-  );
+check("no chips, no place but the first", () => {
+  assert.equal(dropSlot([], 5, 5), 0);
 });
 
-check("re-transcribing a dictation with post-processing asks nothing", () => {
-  // It's post-processed again, so [transcription, ✨] comes back.
-  const processed = entry([transcription(), version("Polished.", "ai")], true);
-  assert.equal(retranscribeNeedsConfirm(processed, "transcribe"), false);
-  assert.equal(
-    retranscribeNeedsConfirm(processed, "transcribe_and_post_process"),
-    false,
-  );
-});
-
-check("re-transcribing asks when the second version won't come back", () => {
-  const processed = entry([transcription(), version("Polished.", "ai")], false);
-  assert.equal(retranscribeNeedsConfirm(processed, "transcribe"), true);
-  assert.equal(
-    retranscribeNeedsConfirm(processed, "transcribe_and_post_process"),
-    false,
-  );
-});
-
-check("re-transcribing asks over any step of the user's", () => {
-  const edited = entry([transcription(), version("fixed", "user")], false);
-  assert.equal(retranscribeNeedsConfirm(edited, "transcribe"), true);
-  assert.equal(
-    retranscribeNeedsConfirm(edited, "transcribe_and_post_process"),
-    true,
-  );
-  const aiThenUser = entry(
-    [transcription(), version("Polished, fixed.", "ai", "user")],
-    true,
-  );
-  assert.equal(retranscribeNeedsConfirm(aiThenUser, "transcribe"), true);
-});
-
-check("re-transcribing asks over more than two versions", () => {
-  const twice = entry(
-    [
-      transcription(),
-      version("Polished.", "ai"),
-      version("Polished twice.", "ai"),
-    ],
-    true,
-  );
-  assert.equal(retranscribeNeedsConfirm(twice, "transcribe"), true);
-  assert.equal(
-    retranscribeNeedsConfirm(twice, "transcribe_and_post_process"),
-    true,
-  );
-  assert.equal(retranscribeNeedsConfirm(threeLayers, "transcribe"), true);
+check("the place a dragged version ends up in", () => {
+  assert.equal(dropIndex(0, 0), 0);
+  assert.equal(dropIndex(0, 1), 0);
+  assert.equal(dropIndex(0, 3), 2);
+  assert.equal(dropIndex(2, 0), 0);
+  assert.equal(dropIndex(2, 3), 2);
+  assert.equal(dropIndex(1, 3), 2);
 });
 
 // ---- The marks on the track ----------------------------------------------
@@ -573,12 +443,12 @@ check("a step's time is in seconds, as History formats dates", () => {
 
 // ---- The time a chip's tooltip names for a step ---------------------------
 
-type Timed = Pick<HistoryEntry, "versions" | "timestamp" | "source_name">;
+type Timed = Pick<HistoryEntry, "versions" | "timestamp">;
 const DICTATED_AT = 1_763_200_000;
-const timed = (
-  versions: HistoryVersion[],
-  source_name: string | null = null,
-): Timed => ({ versions, timestamp: DICTATED_AT, source_name });
+const timed = (versions: HistoryVersion[]): Timed => ({
+  versions,
+  timestamp: DICTATED_AT,
+});
 
 check("a step with a time keeps it, in seconds", () => {
   const entry = timed([
@@ -588,33 +458,19 @@ check("a step with a time keeps it, in seconds", () => {
   assert.equal(stepSeconds(entry, 1, 0), 1_763_240_000);
 });
 
-check("the transcription without a time is the entry's", () => {
+check("a transcription without a time is the entry's, wherever it is", () => {
   assert.equal(stepSeconds(timed([transcription()]), 0, 0), DICTATED_AT);
-  assert.equal(
-    stepSeconds(timed([transcription()], "talk.m4a"), 0, 0),
-    DICTATED_AT,
-  );
+  const moved = timed([version("Polished.", "ai"), transcription()]);
+  assert.equal(stepSeconds(moved, 1, 0), DICTATED_AT);
 });
 
-check("a dictation's own post-processing without a time is the entry's", () => {
-  const dictated = timed([transcription(), version("Polished.", "ai")]);
-  assert.equal(stepSeconds(dictated, 1, 0), DICTATED_AT);
-});
-
-check("other steps without a time have none", () => {
-  // A file's post-processing may have come later.
-  const file = timed([transcription(), version("Polished.", "ai")], "a.m4a");
-  assert.equal(stepSeconds(file, 1, 0), null);
-  // Migrated edits.
+check("other steps without a time have none, wherever they are", () => {
+  // The backend gives a dictation's own post-processing the entry's time;
+  // one without a time came later.
+  const later = timed([transcription(), version("Polished.", "ai")]);
+  assert.equal(stepSeconds(later, 1, 0), null);
   const edited = timed([transcription(), version("fixed", "user")]);
   assert.equal(stepSeconds(edited, 1, 0), null);
-  // Post-processing of an edit, and a later step of the first version.
-  const later = timed([
-    transcription(),
-    version("fixed", "user"),
-    version("Polished.", "ai"),
-  ]);
-  assert.equal(stepSeconds(later, 2, 0), null);
   const second = timed([transcription(), version("x", "user", "ai")]);
   assert.equal(stepSeconds(second, 1, 1), null);
 });
@@ -643,6 +499,18 @@ check("Cmd+Enter and Ctrl+Enter save, Enter alone doesn't", () => {
     isSaveShortcut({ key: "s", metaKey: true, ctrlKey: false }),
     false,
   );
+});
+
+// A chip's tooltip names a repeated step once (qa 2026-11-22_0107: two
+// saves in place in the same minute read the same).
+check("a step line repeated right after itself shows once", () => {
+  assert.deepEqual(
+    distinctLines(["Edited by you, 01:45", "Edited by you, 01:45", "Shown"]),
+    ["Edited by you, 01:45", "Shown"],
+  );
+});
+check("the same line apart from itself stays", () => {
+  assert.deepEqual(distinctLines(["A", "B", "A"]), ["A", "B", "A"]);
 });
 
 if (failures > 0) {

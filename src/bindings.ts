@@ -432,6 +432,25 @@ async setPostProcessSelectedPrompt(id: string) : Promise<Result<null, string>> {
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * Sets which prompts the active profile runs, and their order (the whole
+ * list). The list editor sends it after every tick, drag or arrow key.
+ */
+async changePostProcessPromptOrderSetting(order: PromptOrderEntry[]) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_post_process_prompt_order_setting", { order }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * The shown names of the profiles that have prompt `id` active, so deleting
+ * it can name them first.
+ */
+async profilesUsingPrompt(id: string) : Promise<string[]> {
+    return await TAURI_INVOKE("profiles_using_prompt", { id });
+},
 async updateCustomWords(words: string[]) : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("update_custom_words", { words }) };
@@ -482,7 +501,7 @@ async setActiveWordList(id: string | null) : Promise<Result<null, string>> {
 },
 /**
  * DanyWhere: replaces the active profile's own word list, which always
- * applies in that profile (`custom_words` applies in every profile).
+ * applies in that profile, before `custom_words`.
  */
 async updateProfileWords(words: string[]) : Promise<Result<null, string>> {
     try {
@@ -492,6 +511,9 @@ async updateProfileWords(words: string[]) : Promise<Result<null, string>> {
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * Puts profile `id` in use, or the defaults for `"default"` (P2).
+ */
 async switchProfile(id: string) : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("switch_profile", { id }) };
@@ -500,9 +522,26 @@ async switchProfile(id: string) : Promise<Result<null, string>> {
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * A copy of profile `source_id` that keeps its own values and their
+ * coupling, or, from `"default"`, a new profile that follows the defaults
+ * (P9). It isn't put in use.
+ */
 async duplicateProfile(sourceId: string, name: string) : Promise<Result<Profile, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("duplicate_profile", { sourceId, name }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * A new profile named `name` that follows the defaults in everything (P9).
+ * It isn't put in use.
+ */
+async createProfile(name: string) : Promise<Result<Profile, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("create_profile", { name }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -516,9 +555,112 @@ async renameProfile(id: string, name: string) : Promise<Result<null, string>> {
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * Deletes profile `id`; deleting the one in use puts the defaults in use.
+ */
 async deleteProfile(id: string) : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("delete_profile", { id }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Every field of a profile's values with how it couples: the interface
+ * shows chains and counts by it.
+ */
+async getProfileFields() : Promise<ProfileField[]> {
+    return await TAURI_INVOKE("get_profile_fields");
+},
+/**
+ * Sets a value in the defaults or in a profile (P7.3: in a profile it
+ * becomes the profile's own). `value` is checked against the field's type
+ * and validated like the field's own change command validates it.
+ */
+async setProfileValue(scope: Scope, field: string, value: JsonValue) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("set_profile_value", { scope, field, value }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Holds a value of profile `id` as its own without changing it (P4).
+ */
+async holdProfileValue(id: string, field: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("hold_profile_value", { id, field }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Couples values of profile `id` to the defaults again: one, or the values
+ * of a page (P8).
+ */
+async resetProfileValues(id: string, fields: string[]) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("reset_profile_values", { id, fields }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Couples every value of profile `id` to the defaults again (P8); name and
+ * applications stay.
+ */
+async resetWholeProfile(id: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("reset_whole_profile", { id }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * "Change the default instead" (P7.3).
+ */
+async useProfileValueAsDefault(id: string, field: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("use_profile_value_as_default", { id, field }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Sets or adds an entry of a list in the defaults or in a profile (P10).
+ */
+async setProfileEntry(scope: Scope, field: string, entryId: string, entry: JsonValue) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("set_profile_entry", { scope, field, entryId, entry }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Removes an entry of a list from the defaults, or switches it off in a
+ * profile (P10).
+ */
+async removeProfileEntry(scope: Scope, field: string, entryId: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("remove_profile_entry", { scope, field, entryId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Couples an entry of a list in profile `id` to the defaults again (P10).
+ */
+async resetProfileEntry(id: string, field: string, entryId: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("reset_profile_entry", { id, field, entryId }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -598,11 +740,28 @@ async listApplications() : Promise<ApplicationInfo[]> {
     return await TAURI_INVOKE("list_applications");
 },
 /**
- * The switch in the sidebar and on the Context settings: the active
- * profile's.
+ * Stores the active profile's end shortcuts (the whole list, as the editor
+ * holds it). A running recording takes the new ones at once.
  */
-async setSendContext(enabled: boolean) : Promise<void> {
-    await TAURI_INVOKE("set_send_context", { enabled });
+async changeEndKeysSetting(endKeys: EndKey[]) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_end_keys_setting", { endKeys }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Sets the default end of start shortcut `binding_id` in the active
+ * profile.
+ */
+async changeDefaultEndSetting(bindingId: string, endId: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_default_end_setting", { bindingId, endId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 },
 /**
  * Temporarily unregister all bindings while the user is recording a
@@ -661,18 +820,6 @@ async splitAppendText(value: string) : Promise<AppendChoice> {
  */
 async composeAppendText(text: string, keys: AppendKey[]) : Promise<AppendComposed> {
     return await TAURI_INVOKE("compose_append_text", { text, keys });
-},
-/**
- * Stores the field (a value from `compose_append_text`) in the active
- * profile.
- */
-async changeAppendTextSetting(value: string) : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("change_append_text_setting", { value }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
 },
 async changeLazyStreamCloseSetting(enabled: boolean) : Promise<Result<null, string>> {
     try {
@@ -1304,16 +1451,21 @@ async retryHistoryEntryTranscription(id: number) : Promise<void> {
 },
 /**
  * Queues the entry to be transcribed or post-processed again, as `mode`
- * says. Its progress and outcome arrive as `TranscriptionJob` events.
+ * says. DanyWhere: `version` is the version a post-processing starts from
+ * (`None`: the top); its result, like a new transcription's, goes on top
+ * (`history_versions`). `prompt_ids`: post-process with exactly those
+ * prompts of the library, in that order; `None`: the profile's active ones
+ * (`prompt_library`). Its progress and outcome arrive as
+ * `TranscriptionJob` events.
  */
-async reprocessHistoryEntry(id: number, mode: ReprocessMode) : Promise<void> {
-    await TAURI_INVOKE("reprocess_history_entry", { id, mode });
+async reprocessHistoryEntry(id: number, mode: ReprocessMode, version: number | null, promptIds: string[] | null) : Promise<void> {
+    await TAURI_INVOKE("reprocess_history_entry", { id, mode, version, promptIds });
 },
 /**
- * Saves the user's `text` on version `base` of the entry: `replace`
- * changes that version, `new` puts a new one on top of it; the versions
- * above `base` drop. Errors: `blank`, `transcription_is_fixed` (replacing
- * version 0), `no_such_version`, or the database's message.
+ * Saves the user's `text`, an edit of version `base` of the entry:
+ * `replace` changes the top version (only the top), `new` puts a new
+ * version on top. Errors: `blank`, `not_top` (replacing a version below
+ * the top), `no_such_version`, or the database's message.
  */
 async saveHistoryVersion(id: number, base: number, text: string, mode: SaveVersionMode) : Promise<Result<HistoryEntry, string>> {
     try {
@@ -1324,11 +1476,26 @@ async saveHistoryVersion(id: number, base: number, text: string, mode: SaveVersi
 }
 },
 /**
- * Goes back to version `keep` of the entry: every version above it drops.
+ * Deletes version `index` of the entry, without asking: any version, the
+ * transcription too. Errors: `last_version` (the only one),
+ * `no_such_version`, or the database's message.
  */
-async revertHistoryEntryToVersion(id: number, keep: number) : Promise<Result<HistoryEntry, string>> {
+async deleteHistoryVersion(id: number, index: number) : Promise<Result<HistoryEntry, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("revert_history_entry_to_version", { id, keep }) };
+    return { status: "ok", data: await TAURI_INVOKE("delete_history_version", { id, index }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Moves version `from` of the entry to place `to` (counted from the
+ * bottom, as it is afterwards); the top one is the entry's result. Errors:
+ * `no_such_version`, or the database's message.
+ */
+async moveHistoryVersion(id: number, from: number, to: number) : Promise<Result<HistoryEntry, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("move_history_version", { id, from, to }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -1649,7 +1816,8 @@ selected_channel?: number | null; clamshell_microphone?: string | null; selected
  */
 spoken_languages?: string[]; overlay_position?: OverlayPosition; debug_mode?: boolean; log_level?: LogLevel; 
 /**
- * The global word list: always given to the model (see `word_lists`).
+ * The word list every dictation gets (see `word_lists`); a profile
+ * value (`profiles`), the same in every profile until one differs.
  */
 custom_words?: string[]; 
 /**
@@ -1673,7 +1841,18 @@ recording_storage_limit?: RecordingStorageLimit; paste_method?: PasteMethod; cli
  * DanyWhere: the effort per provider (`post_process_effort`); none
  * stored = the model's default.
  */
-post_process_efforts?: Partial<{ [key in string]: string }>; post_process_prompts?: LLMPrompt[]; post_process_selected_prompt_id?: string | null; 
+post_process_efforts?: Partial<{ [key in string]: string }>; post_process_prompts?: LLMPrompt[]; 
+/**
+ * DanyWhere: unused since the prompt library (`prompt_library`), which
+ * reads it once to migrate and then clears it.
+ */
+post_process_selected_prompt_id?: string | null; 
+/**
+ * DanyWhere: which prompts of the library (`post_process_prompts`, shared
+ * by all profiles) the active profile runs, and the order of the whole
+ * list (`prompt_library`). A profile value.
+ */
+post_process_prompt_order?: PromptOrderEntry[]; 
 /**
  * DanyWhere: time limit for the whole post-processing step, retries
  * included, in seconds (Handy: a fixed 60 s; see `llm_timeouts`).
@@ -1683,13 +1862,7 @@ post_process_timeout_secs?: number;
  * DanyWhere: time limit for a provider's model list, in seconds (Handy:
  * a fixed 15 s).
  */
-model_list_timeout_secs?: number; mute_while_recording?: boolean; append_trailing_space?: boolean; 
-/**
- * DanyWhere: what every dictation gets appended, text and key presses at
- * the end (`append_text`). Replaces `append_trailing_space` and
- * `auto_submit`, which stay only for Handy merges and the migration.
- */
-append_text?: string; app_language?: string; theme?: Theme; experimental_enabled?: boolean; lazy_stream_close?: boolean; 
+model_list_timeout_secs?: number; mute_while_recording?: boolean; append_trailing_space?: boolean; app_language?: string; theme?: Theme; experimental_enabled?: boolean; lazy_stream_close?: boolean; 
 /**
  * Experimental, macOS only: move a Bluetooth headset (AirPods) to this
  * Mac while recording, so its microphone does not return silence while
@@ -1745,8 +1918,16 @@ overlay_style?: OverlayStyle;
  */
 profiles?: Profile[]; active_profile_id?: string; 
 /**
+ * DanyWhere: the defaults ("Grundeinstellungen"): the values every
+ * profile's coupled fields follow and that apply while no profile is in
+ * use (`profile_layers`). `None` only in a store from before them, which
+ * `profiles::ensure_profiles` migrates; read them through
+ * `profiles::default_values`.
+ */
+default_values?: ProfileValues | null; 
+/**
  * DanyWhere: the active profile's own word list, which always applies
- * in it; `custom_words` applies in every profile.
+ * in it, before `custom_words`.
  */
 profile_words?: string[]; 
 /**
@@ -1755,11 +1936,14 @@ profile_words?: string[];
  */
 profile_auto_by_app?: boolean; 
 /**
- * DanyWhere: the active profile's switch "Send Context": a dictation
- * with post-processing sends earlier dictations of the same window as
- * context (`send_context`).
+ * DanyWhere: the active profile's end shortcuts (`end_keys`).
  */
-send_context?: boolean; 
+end_keys?: EndKey[]; 
+/**
+ * DanyWhere: the active profile's default end per start shortcut
+ * (`end_keys`), by binding id.
+ */
+default_ends?: Partial<{ [key in string]: string }>; 
 /**
  * DanyWhere: the height in pixels a History text box may grow to before
  * it scrolls, as dragged at its grip, for the newest entry and for the
@@ -1948,6 +2132,36 @@ export type EffortSource =
  */
 "common"
 /**
+ * One end shortcut.
+ */
+export type EndKey = { 
+/**
+ * Stable, so profiles can share the entry; `plain` and `post_process`
+ * for the two every profile starts with.
+ */
+id: string; 
+/**
+ * Empty for the two built-in ones, which show their translated name.
+ */
+name: string; 
+/**
+ * The key combination that ends a recording this way; empty: none (it
+ * ends a recording only as a start shortcut's default end).
+ */
+shortcut: string; 
+/**
+ * What is appended, in the "Append" syntax (`append_text`).
+ */
+append_text: string; 
+/**
+ * Whether the text is post-processed (if the profile allows it).
+ */
+post_process: boolean; 
+/**
+ * Whether post-processing gets earlier dictations as context.
+ */
+send_context: boolean }
+/**
  * What a History entry knows about its window and its context.
  */
 export type EntryWindowContext = { window_app_id: string | null; window_app_name: string | null; window_title: string | null; 
@@ -1969,6 +2183,22 @@ sent_as_context_at: number | null;
  * What the word list replaced in its transcription.
  */
 word_replacements: WordReplacement[] }
+/**
+ * How a field of [`ProfileValues`] couples, for the interface.
+ */
+export type FieldKind = 
+/**
+ * One value, coupled or own as a whole.
+ */
+{ kind: "value" } | 
+/**
+ * A list of objects told apart by the property `key`, entry by entry.
+ */
+{ kind: "list"; key: string } | 
+/**
+ * A map whose entries are told apart by their keys, entry by entry.
+ */
+{ kind: "map" }
 export type GpuDeviceOption = { id: string; name: string; total_vram_mb: number }
 /**
  * The two kinds of entry that have a height of their own.
@@ -2002,8 +2232,8 @@ language_source: LanguageSource | null;
  */
 recording_removed: boolean; 
 /**
- * DanyWhere: the entry's versions, a stack of edits: at least one, the
- * transcription first, the entry's result last (`history_versions`).
+ * DanyWhere: the entry's versions, a stack of texts: at least one, the
+ * entry's result last (`history_versions`).
  */
 versions: HistoryVersion[]; 
 /**
@@ -2085,7 +2315,9 @@ export type ImportResult = {
 profile: Profile | null; key: ImportedKey; 
 /**
  * Set when the file's key differs from the stored one and the choice was
- * [`KeyConflictChoice::Ask`]; nothing was imported then.
+ * [`KeyConflictChoice::Ask`]; nothing was imported then. DanyWhere:
+ * never set since the keys are profile values: the imported profile
+ * gets its own key and no other profile's key changes.
  */
 conflict_provider_id: string | null; 
 /**
@@ -2117,6 +2349,7 @@ export type ImportedKey =
  * The stored key is the same as the file's.
  */
 "same"
+export type JsonValue = null | boolean | number | string | JsonValue[] | Partial<{ [key in string]: JsonValue }>
 /**
  * What to do when the file's key differs from the key stored here for the
  * same provider.
@@ -2304,6 +2537,19 @@ export type OverlayPosition = "top" | "bottom"
  * streaming mode (that is driven purely by model capability).
  */
 export type OverlayStyle = "none" | "minimal" | "live"
+/**
+ * A profile's own entries of one list field (P10).
+ */
+export type OwnEntries = { 
+/**
+ * Entries the profile changed or added, by id: they stay as they are in
+ * the profile when the defaults change.
+ */
+own?: string[]; 
+/**
+ * Entries of the defaults the profile switched off, by id.
+ */
+off?: string[] }
 export type PaginatedHistory = { entries: HistoryEntry[]; has_more: boolean }
 export type PasteMethod = "ctrl_v" | "direct" | "none" | "shift_insert" | "ctrl_shift_v" | "external_script"
 export type PermissionAccess = "allowed" | "denied" | "unknown"
@@ -2323,23 +2569,47 @@ export type PostProcessApiFormat =
 export type PostProcessProvider = { id: string; label: string; base_url: string; allow_base_url_edit?: boolean; models_endpoint?: string | null; supports_structured_output?: boolean; api_format?: PostProcessApiFormat }
 export type Profile = { id: string; 
 /**
- * Empty = the default profile's name, shown translated ("Standard").
+ * Empty only in a store from before the defaults, where it was the
+ * profile "Standard", shown translated.
  */
 name: string; values: ProfileValues; 
 /**
  * Applications this profile is used for automatically: bundle ids on
  * macOS, executable names on Windows. Not used yet.
  */
-apps?: string[] }
+apps?: string[]; 
+/**
+ * The serde names of the fields of [`ProfileValues`] this profile holds
+ * as its own values; every other field is coupled to the defaults
+ * (`profile_layers`). Lists that deviate entry by entry are never named
+ * here: their entries are in `own_entries`.
+ */
+own?: string[]; 
+/**
+ * Per list field (`profile_layers::LIST_FIELDS`), the entries this
+ * profile changed or added and the defaults' entries it switched off.
+ */
+own_entries?: Partial<{ [key in string]: OwnEntries }> }
+/**
+ * A field of [`ProfileValues`]: its serde name and how it couples.
+ */
+export type ProfileField = { name: string; kind: FieldKind }
 /**
  * Everything that is per profile. Mirrors fields of [`AppSettings`] with the
- * same names and types; the context limits mirror `dictation_context`.
+ * same names and types; the context settings mirror `dictation_context`.
+ * New fields go at the end; `setting_classes` checks that every setting is
+ * a profile value or classified otherwise.
  */
 export type ProfileValues = { selected_model: string; selected_language: string; spoken_languages: string[]; language_detection: LanguageDetectionMode; language_detection_window_secs: number; translate_to_english: boolean; chinese_script: ChineseScript; profile_words: string[]; word_lists: WordList[]; active_word_list_id: string | null; post_process_enabled: boolean; post_process_provider_id: string; post_process_models: Partial<{ [key in string]: string }>; 
 /**
  * The effort per provider (`post_process_effort`).
  */
-post_process_efforts: Partial<{ [key in string]: string }>; post_process_prompts: LLMPrompt[]; post_process_selected_prompt_id: string | null; 
+post_process_efforts: Partial<{ [key in string]: string }>; 
+/**
+ * Which prompts of the library run, and the order of the whole list
+ * (`prompt_library`). The prompts themselves are shared by all profiles.
+ */
+post_process_prompt_order: PromptOrderEntry[]; 
 /**
  * `dictation_context.age_limit_minutes`
  */
@@ -2351,16 +2621,85 @@ context_max_entries: number;
 /**
  * `dictation_context.char_budget`
  */
-context_char_budget: number; 
+context_char_budget: number; filler_word_removal_enabled: boolean; custom_filler_words: string[] | null; 
 /**
- * The switch "Send Context" (`send_context`).
+ * How the dictation shortcut's presses drive a recording. Read when a
+ * key event comes, so from the profile in use.
  */
-send_context: boolean; filler_word_removal_enabled: boolean; custom_filler_words: string[] | null; 
+shortcut_activation: ShortcutActivation; 
 /**
- * The "Append" field (`append_text`), which replaced the trailing space;
- * stored profiles got it from theirs (`append_text::migrate`).
+ * The feedback sounds, their volume and theme, the done sound.
  */
-append_text: string }
+audio_feedback: boolean; audio_feedback_volume: number; sound_theme: SoundTheme; done_sound: boolean; 
+/**
+ * Mute the computer's sound while recording.
+ */
+mute_while_recording: boolean; 
+/**
+ * The microphone stays open between dictations; follows the profile in
+ * use (`profile_effects`).
+ */
+always_on_microphone: boolean; 
+/**
+ * The microphone a dictation records with (`dictation_microphone`).
+ */
+selected_microphone: string | null; selected_channel: number | null; clamshell_microphone: string | null; 
+/**
+ * Where the feedback sounds play.
+ */
+selected_output_device: string | null; airpods_mode: boolean; 
+/**
+ * Where the recording overlay sits and how it shows (`overlay_look`).
+ */
+overlay_position: OverlayPosition; overlay_style: OverlayStyle; 
+/**
+ * How the text gets into the application.
+ */
+paste_method: PasteMethod; clipboard_handling: ClipboardHandling; clipboard_notice_ms: number; typing_tool: TypingTool; external_script_path: string | null; 
+/**
+ * The word list every dictation with this profile gets, after its own
+ * (`profile_words`); the same in every profile until one differs.
+ */
+custom_words: string[]; 
+/**
+ * `dictation_context.excluded_apps`
+ */
+context_excluded_apps: string[]; 
+/**
+ * The post-processing providers with their endpoints, their API keys
+ * (never exported, see `profile_transfer`) and the time limit.
+ */
+post_process_providers: PostProcessProvider[]; post_process_api_keys: SecretMap; post_process_timeout_secs: number; 
+/**
+ * Drop silence from recordings; decode long audio in chunks.
+ */
+vad_enabled: boolean; long_form_chunking: boolean; 
+/**
+ * The shortcuts (`bindings`), entry by binding id: the start shortcuts
+ * apply only while this profile does (`shortcut::profile_sync`).
+ */
+bindings: Partial<{ [key in string]: ShortcutBinding }>; 
+/**
+ * The end shortcuts (`end_keys`), each with a stable id.
+ */
+end_keys: EndKey[]; 
+/**
+ * The default end per start shortcut (`default_ends`), entry by binding
+ * id.
+ */
+default_ends: Partial<{ [key in string]: string }> }
+/**
+ * One prompt of the library in a profile's list.
+ */
+export type PromptOrderEntry = { 
+/**
+ * The prompt's id in the library.
+ */
+id: string; 
+/**
+ * Whether the prompt runs ("Active").
+ */
+active: boolean }
 /**
  * Recording phase events for windows that follow along (onboarding's Try it).
  */
@@ -2422,21 +2761,11 @@ export type ReprocessMode =
  */
 "transcribe_and_post_process" | 
 /**
- * Keep the transcript and post-process the entry's top version; the
- * result is a new version on top (`history_versions`). Needs no
- * recording.
+ * Keep the versions and post-process one of them, the top unless the
+ * job names another; the result is a new version on top
+ * (`history_versions`). Needs no recording.
  */
-"post_process" | 
-/**
- * Post-process the top version; the result replaces it. Never the
- * transcription.
- */
-"post_process_replace" | 
-/**
- * Post-process the version below the top again; the result replaces
- * the top, which a post-processing made.
- */
-"post_process_redo"
+"post_process"
 /**
  * A retired ONNX model found on disk.
  */
@@ -2450,13 +2779,25 @@ export type SameWindow = { app_id: string; title: string }
  */
 export type SaveVersionMode = 
 /**
- * The version gets the new text and one more step.
+ * The top version gets the new text and one more step.
  */
 "replace" | 
 /**
- * The new text is a new version on top of it.
+ * The new text is a new version on top.
  */
 "new"
+/**
+ * Where a command sets or removes a value: in the defaults or in a profile.
+ */
+export type Scope = 
+/**
+ * The defaults ("Grundeinstellungen").
+ */
+{ kind: "defaults" } | 
+/**
+ * The profile with this id.
+ */
+{ kind: "profile"; id: string }
 export type SecretMap = Partial<{ [key in string]: string }>
 export type SecureInputStatus = { 
 /**
@@ -2629,7 +2970,7 @@ export type VadBackend = "silero" | "earshot"
  */
 export type VersionAuthor = 
 /**
- * The speech model; only version 0.
+ * The speech model.
  */
 "transcription" | 
 /**
@@ -2645,7 +2986,8 @@ export type VersionAuthor =
  */
 export type VersionStep = { by: VersionAuthor; 
 /**
- * Unix milliseconds; None for steps migrated from before versions existed.
+ * Unix milliseconds; None where it isn't known (steps from before
+ * versions existed that happened after the entry was made).
  */
 at: number | null; 
 /**

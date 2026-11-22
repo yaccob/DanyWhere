@@ -107,7 +107,7 @@ transcribe-cpp = { version = "0.4.2", default-features = false, features = [
 handy-keys = "0.3.5"
 ferrous-opencc = "0.2.3"
 clap = { version = "4", features = ["derive"] }
-specta = "=2.0.0-rc.22"
+specta = { version = "=2.0.0-rc.22", features = ["serde_json"] }
 specta-typescript = "0.0.9"
 tauri-specta = { version = "=2.0.0-rc.21", features = ["derive", "typescript"] }
 tauri-plugin-dialog = "2.6"
@@ -193,6 +193,9 @@ objc2 = "0.6"
 objc2-foundation = "0.3"
 objc2-app-kit = "0.3"
 objc2-service-management = "0.3.2"
+# DanyWhere: the block for the observer of the application in front
+# (`shortcut::profile_sync`); already in the tree through objc2.
+block2 = "0.6"
 # DanyWhere: an app's Info.plist and scripting definition (.sdef) tell how to
 # ask it for its window title without Accessibility (`title_query`). Both are
 # already in the tree through Tauri.

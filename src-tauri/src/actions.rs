@@ -9,7 +9,7 @@ use crate::managers::transcription::policy::{live_decode, LiveDecode, ModelTrait
 use crate::managers::transcription::StreamWorkKind;
 use crate::managers::transcription::{Transcription, TranscriptionManager};
 use crate::notices::{self, Notice, NoticeCode, NoticeSource};
-use crate::settings::{get_settings, AppSettings, OverlayStyle, APPLE_INTELLIGENCE_PROVIDER_ID};
+use crate::settings::{AppSettings, OverlayStyle, APPLE_INTELLIGENCE_PROVIDER_ID};
 use crate::shortcut;
 use crate::tray::{set_tray_state, TrayIconState};
 use crate::utils::{
@@ -134,10 +134,9 @@ pub trait ShortcutAction: Send + Sync {
     fn stop(&self, app: &AppHandle, binding_id: &str, shortcut_str: &str);
 }
 
-// Transcribe Action
-struct TranscribeAction {
-    post_process: bool,
-}
+// Transcribe Action. DanyWhere: the same for both start shortcuts; what
+// follows the recording is decided by how it ends (`end_keys`).
+struct TranscribeAction;
 
 /// Field name for structured output JSON schema
 const TRANSCRIPTION_FIELD: &str = "transcription";
@@ -304,7 +303,7 @@ async fn post_process_within_time_limit(
 }
 
 /// DanyWhere: `context` (earlier dictations from the same window, see
-/// `dictation_context`) goes after the selected prompt, in every path; the
+/// `dictation_context`) goes after the active prompts, in every path; the
 /// report also says whether the profile's effort was refused.
 async fn post_process_transcription(
     settings: &AppSettings,
@@ -360,33 +359,18 @@ async fn post_process_outcome(
         return PostProcessOutcome::Failed;
     }
 
-    let selected_prompt_id = match &settings.post_process_selected_prompt_id {
-        Some(id) => id.clone(),
-        None => {
-            debug!("Post-processing skipped because no prompt is selected");
-            return PostProcessOutcome::Failed;
-        }
-    };
-
-    let prompt = match settings
-        .post_process_prompts
-        .iter()
-        .find(|prompt| prompt.id == selected_prompt_id)
-    {
-        Some(prompt) => prompt.prompt.clone(),
-        None => {
-            debug!(
-                "Post-processing skipped because prompt '{}' was not found",
-                selected_prompt_id
-            );
-            return PostProcessOutcome::Failed;
-        }
-    };
-
-    if prompt.trim().is_empty() {
-        debug!("Post-processing skipped because the selected prompt is empty");
+    // DanyWhere: the profile's active prompts from the shared library, all
+    // in one request (`prompt_library`), instead of Handy's selected prompt.
+    let prompts = crate::prompt_library::requested(settings);
+    if prompts.is_empty() {
+        debug!("Post-processing skipped because no prompt with a text is active");
         return PostProcessOutcome::Failed;
     }
+    let prompt = crate::prompt_library::request_instructions(&prompts);
+    log::info!(
+        "Post-processing with {}",
+        crate::prompt_library::request_names(&prompts).unwrap_or_default()
+    );
 
     debug!(
         "Starting LLM post-processing with provider '{}' (model: {})",
@@ -608,8 +592,29 @@ pub(crate) async fn process_transcription_output(
     post_process: bool,
     context: &crate::dictation_context::ContextQuery,
 ) -> ProcessedTranscription {
+    process_transcription_output_with(app, transcription, post_process, context, None).await
+}
+
+/// DanyWhere: [`process_transcription_output`]; with `prompt_ids` it
+/// post-processes with exactly those prompts of the library, in that order,
+/// instead of the profile's active ones (History's wand menu,
+/// `prompt_library::with_only`).
+pub(crate) async fn process_transcription_output_with(
+    app: &AppHandle,
+    transcription: &str,
+    post_process: bool,
+    context: &crate::dictation_context::ContextQuery,
+    prompt_ids: Option<&[String]>,
+) -> ProcessedTranscription {
     // DanyWhere: with the values of the dictation's own profile, if any.
-    let settings = crate::app_profiles::dictation_settings(app);
+    let mut settings = crate::app_profiles::dictation_settings(app);
+    if let Some(ids) = prompt_ids {
+        settings.post_process_prompt_order = crate::prompt_library::with_only(
+            &settings.post_process_prompt_order,
+            &settings.post_process_prompts,
+            ids,
+        );
+    }
     let mut final_text = transcription.to_string();
     let mut post_processed_text: Option<String> = None;
     let mut post_process_prompt: Option<String> = None;
@@ -619,19 +624,20 @@ pub(crate) async fn process_transcription_output(
     let mut context_entry_ids: Vec<i64> = Vec::new();
 
     if post_process {
-        // DanyWhere: earlier dictations from the same window, if "Send
-        // Context" asked for them (the query then has a window).
-        let selected_prompt_id = settings.post_process_selected_prompt_id.as_deref();
-        let selected_prompt = settings
-            .post_process_prompts
-            .iter()
-            .find(|prompt| Some(prompt.id.as_str()) == selected_prompt_id)
-            .map(|prompt| prompt.prompt.clone())
-            .unwrap_or_default();
+        // DanyWhere: the active prompts' instructions and names
+        // (`prompt_library`), and earlier dictations from the same window,
+        // if "Send Context" asked for them (the query then has a window).
+        let (instructions, prompt_names) = {
+            let prompts = crate::prompt_library::requested(&settings);
+            (
+                crate::prompt_library::request_instructions(&prompts),
+                crate::prompt_library::request_names(&prompts),
+            )
+        };
         let context_block = if is_blank_transcription(&final_text) {
             None
         } else {
-            crate::dictation_context::context_for(app, &settings, &selected_prompt, context)
+            crate::dictation_context::context_for(app, &settings, &instructions, context)
         };
         // A reply that's blank once cleaned is no better than none.
         let report =
@@ -656,17 +662,10 @@ pub(crate) async fn process_transcription_output(
             PostProcessOutcome::Done(processed_text) => {
                 post_processed_text = Some(processed_text.clone());
                 final_text = processed_text;
-
-                if let Some(prompt_id) = &settings.post_process_selected_prompt_id {
-                    if let Some(prompt) = settings
-                        .post_process_prompts
-                        .iter()
-                        .find(|prompt| &prompt.id == prompt_id)
-                    {
-                        post_process_prompt = Some(prompt.prompt.clone());
-                        post_process_prompt_name = Some(prompt.name.clone());
-                    }
-                }
+                // DanyWhere: what the request carried, and the names of all
+                // its prompts for History's step.
+                post_process_prompt = Some(instructions);
+                post_process_prompt_name = prompt_names;
             }
         }
     }
@@ -698,7 +697,8 @@ fn redo_for_app_in_front(
     let entry_id = entry_id?;
     if crate::dictation_key_inserts::copies_instead_of_pasting(session)
         || !crate::delivery::goes_into_app_in_front(
-            &get_settings(app),
+            // DanyWhere: the dictation's paste method (this thread's values).
+            &crate::app_profiles::dictation_settings(app),
             crate::delivery::INSERT_SERVICE_AVAILABLE,
             crate::insert_service::call_waiting(),
         )
@@ -833,8 +833,20 @@ impl ShortcutAction for TranscribeAction {
         // DanyWhere: from two profiles on, the overlay names the dictation's
         // profile with the glyph of choosing it by application.
         crate::overlay::set_dictation_profile(app, dictation_profile);
-        // DanyWhere: and a speech bubble while it would send context.
-        crate::send_context::begin_dictation(app, self.post_process);
+        // DanyWhere: and a speech bubble while the end it would take now, its
+        // start shortcut's default end (`end_keys`), sends context.
+        let expected_end = crate::end_keys::default_end(
+            &crate::app_profiles::dictation_profile_and_values(app).1,
+            &binding_id,
+        );
+        let expected_post_process = crate::app_profiles::effective_post_process(
+            expected_end.post_process,
+            crate::app_profiles::dictation_values().as_ref(),
+        );
+        crate::send_context::begin_dictation(
+            app,
+            expected_post_process && expected_end.send_context,
+        );
         match settings.overlay_style {
             OverlayStyle::Live if model_supports_streaming => utils::show_streaming_overlay(app),
             OverlayStyle::Live | OverlayStyle::Minimal => show_recording_overlay(app),
@@ -918,13 +930,7 @@ impl ShortcutAction for TranscribeAction {
             shortcut::register_cancel_shortcut(app);
             // DanyWhere: a post-processing model on this computer starts
             // loading now, so its cold start falls into the speaking time.
-            crate::model_warmup::start(
-                &settings,
-                crate::app_profiles::effective_post_process(
-                    self.post_process,
-                    crate::app_profiles::dictation_values().as_ref(),
-                ),
-            );
+            crate::model_warmup::start(&settings, expected_post_process);
         } else {
             // Starting failed (for example due to blocked microphone permissions).
             // Revert UI state so we don't stay stuck in the recording overlay.
@@ -946,7 +952,29 @@ impl ShortcutAction for TranscribeAction {
         );
     }
 
-    fn stop(&self, app: &AppHandle, binding_id: &str, _shortcut_str: &str) {
+    fn stop(&self, app: &AppHandle, binding_id: &str, shortcut_str: &str) {
+        stop_transcription(
+            app,
+            binding_id,
+            shortcut_str,
+            &crate::end_keys::EndChoice::DefaultOf(binding_id.to_string()),
+        );
+    }
+}
+
+/// Stops the recording of `binding_id` and finishes the dictation as `end`
+/// says (DanyWhere, `end_keys`): its end shortcut's append text,
+/// post-processing (as far as the dictation's profile allows it) and
+/// context. The transcription coordinator calls this for every end.
+pub fn stop_transcription(
+    app: &AppHandle,
+    binding_id: &str,
+    _shortcut_str: &str,
+    end: &crate::end_keys::EndChoice,
+) {
+    // Handy's `TranscribeAction::stop`, left indented as it was so merges
+    // from Handy stay small.
+    {
         // Prevent a slow microphone from emitting a ready event or start chime
         // after the user has already requested stop.
         app.state::<Arc<AudioRecordingManager>>()
@@ -986,7 +1014,8 @@ impl ShortcutAction for TranscribeAction {
         // the larger panel, but it still switches from listening to a working
         // spinner while the stream finalizes. Non-streaming paths use the
         // compact transcribing pill (None no-ops in show_*).
-        let style = get_settings(app).overlay_style;
+        // DanyWhere: the dictation's profile's style.
+        let style = crate::app_profiles::dictation_settings(app).overlay_style;
         // Capture this before finalizing the stream so every later working state
         // targets the same overlay that was shown for this transcription.
         let use_streaming_overlay = should_use_streaming_overlay(style, tm.is_streaming());
@@ -1003,23 +1032,27 @@ impl ShortcutAction for TranscribeAction {
         play_feedback_sound(app, SoundType::Stop);
 
         let binding_id = binding_id.to_string(); // Clone binding_id for the async task
-                                                 // DanyWhere: a dictation profile other than the active one decides
-                                                 // with its own switch whether to post-process (`app_profiles`).
+
+        // DanyWhere: what it is made with, for redoing it when its text goes
+        // into an application with another profile (`profile_redo`).
+        let (profile_id, profile_values) = crate::app_profiles::dictation_profile_and_values(app);
+        // DanyWhere: the end shortcut it ended with, in the profile it ends
+        // with (`end_keys`): its append text, whether it post-processes and
+        // whether earlier dictations go along. A dictation profile other than
+        // the active one decides with its own switch whether to post-process
+        // (`app_profiles`).
+        let end = crate::end_keys::resolve(&profile_values, end);
+        log::info!("The recording ends with end shortcut {}", end.id);
         let post_process = crate::app_profiles::effective_post_process(
-            self.post_process,
+            end.post_process,
             crate::app_profiles::dictation_values().as_ref(),
         );
-        // DanyWhere: and with the profile's "Send Context" whether earlier
-        // dictations go along (`send_context`).
-        let with_context = crate::send_context::decide_at_stop(app, post_process);
+        let with_context =
+            crate::send_context::decide_at_stop(app, post_process && end.send_context);
         // DanyWhere: the window this dictation ends in, for context from
         // earlier dictations there (`dictation_context`). In the background.
         let context_session = RECORDING_SESSION.load(Ordering::SeqCst);
         crate::window_capture::begin_capture(app, context_session);
-        // DanyWhere: what it is made with, for redoing it when its text goes
-        // into an application with another profile (`profile_redo`).
-        let (profile_id, profile_values) = crate::app_profiles::dictation_profile_and_values(app);
-        let post_process_requested = self.post_process;
         let cancel_generation = rm.cancel_generation();
 
         tauri::async_runtime::spawn(async move {
@@ -1182,7 +1215,7 @@ impl ShortcutAction for TranscribeAction {
                                                 entry_id: entry.id,
                                                 profile_id,
                                                 values: profile_values,
-                                                post_process_requested,
+                                                end: end.clone(),
                                             },
                                         );
                                         if let Err(err) = hm.record_entry_context(
@@ -1234,11 +1267,16 @@ impl ShortcutAction for TranscribeAction {
                                 // paste and its "Append" field, taken now: the
                                 // profile ends when this task returns.
                                 let dictation_values = crate::app_profiles::dictation_values();
+                                // DanyWhere: and all of them for the paste
+                                // thread's sounds and notices.
+                                let (_, values_here) =
+                                    crate::app_profiles::dictation_profile_and_values(&ah);
                                 // Off the main thread: paste sleeps between steps, and a
                                 // paste into Handy's own windows needs the main thread free.
                                 std::thread::Builder::new()
                                     .name("paste".into())
                                     .spawn(move || {
+                                        crate::app_profiles::keep_values_here(values_here);
                                         if rm_for_paste.was_cancelled_since(cancel_generation) {
                                             debug!(
                                                 "Transcription operation cancelled before paste"
@@ -1260,7 +1298,7 @@ impl ShortcutAction for TranscribeAction {
                                         // for it from the first step that differs,
                                         // and its "Append" text applies
                                         // (`profile_redo`).
-                                        let (final_text, dictation_values, post_process_failed, effort_refused_by) =
+                                        let (final_text, dictation_values, append_text, post_process_failed, effort_refused_by) =
                                             match redo_for_app_in_front(
                                                 &ah_clone,
                                                 &hm_for_paste,
@@ -1287,12 +1325,14 @@ impl ShortcutAction for TranscribeAction {
                                                             crate::transcription_hook::apply(&ah_clone, text),
                                                         ),
                                                         Some(insert.values),
+                                                        insert.end.append_text,
                                                         insert.post_process_failed,
                                                         None,
                                                     ),
                                                     None => (
                                                         final_text,
                                                         Some(insert.values),
+                                                        insert.end.append_text,
                                                         post_process_failed,
                                                         effort_refused_by,
                                                     ),
@@ -1300,6 +1340,7 @@ impl ShortcutAction for TranscribeAction {
                                                 None => (
                                                     final_text,
                                                     dictation_values,
+                                                    end.append_text.clone(),
                                                     post_process_failed,
                                                     effort_refused_by,
                                                 ),
@@ -1307,11 +1348,10 @@ impl ShortcutAction for TranscribeAction {
                                         // DanyWhere: the "Insert Last Dictation"
                                         // service may be waiting for this text.
                                         let text_for_service = final_text.clone();
-                                        // DanyWhere: with the profile's "Append" text.
-                                        let service_text = crate::append_text::with_dictation_text(
-                                            &ah_clone,
-                                            &text_for_service,
-                                            dictation_values.as_ref(),
+                                        // DanyWhere: with its end shortcut's "Append" text.
+                                        let service_text = crate::append_text::text_to_paste(
+                                            text_for_service,
+                                            &append_text,
                                         );
                                         // DanyWhere: "Copy Last Transcript"
                                         // during this dictation puts it on the
@@ -1320,7 +1360,7 @@ impl ShortcutAction for TranscribeAction {
                                             log::info!("Copy Last Transcript asked for this dictation; not pasting it.");
                                             Ok(utils::PasteOutcome::Pasted)
                                         } else {
-                                            utils::paste_with_values(final_text, ah_clone.clone(), dictation_values)
+                                            utils::paste_with_values(final_text, ah_clone.clone(), dictation_values, &append_text)
                                         };
                                         let (outcome, notice) =
                                             match pasted {
@@ -1595,24 +1635,6 @@ impl ShortcutAction for ToggleProfileAutoAction {
     }
 }
 
-// Send Context on/off (DanyWhere, `send_context`)
-struct ToggleSendContextAction;
-
-impl ShortcutAction for ToggleSendContextAction {
-    fn start(&self, _app: &AppHandle, _binding_id: &str, _shortcut_str: &str) {
-        // Switched on release, so a held key or key repeat switches once.
-    }
-
-    fn stop(&self, app: &AppHandle, _binding_id: &str, _shortcut_str: &str) {
-        // Like the profile toggle: off the handler thread, which the overlay
-        // and the tray must not wait for.
-        let app = app.clone();
-        crate::shortcut::off_handler_thread(move || {
-            crate::send_context::toggle_from_shortcut(&app);
-        });
-    }
-}
-
 // Test Action
 struct TestAction;
 
@@ -1641,13 +1663,11 @@ pub static ACTION_MAP: Lazy<HashMap<String, Arc<dyn ShortcutAction>>> = Lazy::ne
     let mut map = HashMap::new();
     map.insert(
         "transcribe".to_string(),
-        Arc::new(TranscribeAction {
-            post_process: false,
-        }) as Arc<dyn ShortcutAction>,
+        Arc::new(TranscribeAction) as Arc<dyn ShortcutAction>,
     );
     map.insert(
         "transcribe_with_post_process".to_string(),
-        Arc::new(TranscribeAction { post_process: true }) as Arc<dyn ShortcutAction>,
+        Arc::new(TranscribeAction) as Arc<dyn ShortcutAction>,
     );
     map.insert(
         "cancel".to_string(),
@@ -1668,10 +1688,6 @@ pub static ACTION_MAP: Lazy<HashMap<String, Arc<dyn ShortcutAction>>> = Lazy::ne
     map.insert(
         crate::app_profiles::TOGGLE_BINDING.to_string(),
         Arc::new(ToggleProfileAutoAction) as Arc<dyn ShortcutAction>,
-    );
-    map.insert(
-        crate::send_context::TOGGLE_BINDING.to_string(),
-        Arc::new(ToggleSendContextAction) as Arc<dyn ShortcutAction>,
     );
     map.insert(
         "test".to_string(),
@@ -1712,8 +1728,12 @@ mod tests {
         settings
             .post_process_models
             .insert(provider_id, "model".to_string());
-        settings.post_process_selected_prompt_id =
-            settings.post_process_prompts.first().map(|p| p.id.clone());
+        // DanyWhere: the first prompt of the library is the active one.
+        settings.post_process_prompt_order =
+            crate::prompt_library::default_order(&settings.post_process_prompts);
+        if let Some(first) = settings.post_process_prompt_order.first_mut() {
+            first.active = true;
+        }
         settings
     }
 
@@ -2042,7 +2062,7 @@ mod tests {
     const POLISHED_STRUCTURED: &str =
         r#"{"choices":[{"message":{"content":"{\"transcription\":\"polished\"}"}}]}"#;
 
-    /// [`post_process_settings`] with `prompt` as the selected prompt's text.
+    /// [`post_process_settings`] with `prompt` as the active prompt's text.
     fn settings_with_prompt(base_url: &str, prompt: &str, structured: bool) -> AppSettings {
         let mut settings = post_process_settings(base_url);
         settings.post_process_prompts[0].prompt = prompt.to_string();
@@ -2173,6 +2193,123 @@ mod tests {
         assert_eq!(
             messages[1],
             message("user", "<transcript>\na < /transcript> b\n</transcript>")
+        );
+    }
+
+    // DanyWhere: the prompt library (`prompt_library`): all active prompts
+    // go in one request, in their order.
+
+    /// [`post_process_settings`] with `prompts` (id, name, text) as the
+    /// library and `order` (id, active) as the profile's order.
+    fn settings_with_library(
+        base_url: &str,
+        prompts: &[(&str, &str, &str)],
+        order: &[(&str, bool)],
+    ) -> AppSettings {
+        let mut settings = post_process_settings(base_url);
+        settings.post_process_prompts = prompts
+            .iter()
+            .map(|(id, name, text)| crate::settings::LLMPrompt {
+                id: id.to_string(),
+                name: name.to_string(),
+                prompt: text.to_string(),
+            })
+            .collect();
+        settings.post_process_prompt_order = order
+            .iter()
+            .map(|(id, active)| crate::prompt_library::PromptOrderEntry::new(id, *active))
+            .collect();
+        settings
+    }
+
+    /// The messages of the one request `settings` makes for "hello".
+    fn messages_of(
+        settings: &AppSettings,
+        request: std::sync::mpsc::Receiver<String>,
+    ) -> Vec<(String, String)> {
+        let outcome = run_post_process(settings, "hello");
+        assert_eq!(outcome, PostProcessOutcome::Done("polished".to_string()));
+        let request = request.recv_timeout(Duration::from_secs(5)).unwrap();
+        let body = &request[request.find("\r\n\r\n").unwrap() + 4..];
+        let json: serde_json::Value = serde_json::from_str(body).unwrap();
+        json["messages"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|m| {
+                (
+                    m["role"].as_str().unwrap().to_string(),
+                    m["content"].as_str().unwrap().to_string(),
+                )
+            })
+            .collect()
+    }
+
+    const LIBRARY: [(&str, &str, &str); 3] = [
+        ("a", "Diktat", "Clean it up."),
+        ("b", "Absätze", "Add paragraphs."),
+        ("c", "Mail", "Make an email of it."),
+    ];
+
+    #[test]
+    fn the_active_prompts_go_in_one_request_in_the_profiles_order() {
+        use crate::prompt_frame::FRAME_TEXT;
+        let (url, request) = serve_once_capturing(POLISHED);
+        let settings =
+            settings_with_library(&url, &LIBRARY, &[("b", true), ("c", false), ("a", true)]);
+        assert_eq!(
+            messages_of(&settings, request),
+            vec![message(
+                "user",
+                &format!(
+                    "{FRAME_TEXT}\n\nInstructions:\n<instructions name=\"Absätze\">\nAdd paragraphs.\n</instructions>\n\n<instructions name=\"Diktat\">\nClean it up.\n</instructions>\n\n<transcript>\nhello\n</transcript>"
+                )
+            )]
+        );
+    }
+
+    #[test]
+    fn one_active_prompt_is_sent_as_before() {
+        use crate::prompt_frame::FRAME_TEXT;
+        let (url, request) = serve_once_capturing(POLISHED);
+        let settings =
+            settings_with_library(&url, &LIBRARY, &[("a", false), ("c", true), ("b", false)]);
+        assert_eq!(
+            messages_of(&settings, request),
+            vec![message(
+                "user",
+                &format!(
+                    "{FRAME_TEXT}\n\nInstructions:\nMake an email of it.\n\n<transcript>\nhello\n</transcript>"
+                )
+            )]
+        );
+    }
+
+    #[test]
+    fn an_active_prompt_with_output_runs_alone_as_before() {
+        let (url, request) = serve_once_capturing(POLISHED);
+        let mut library = LIBRARY.to_vec();
+        library.push(("old", "Old", "Fix this: ${output}"));
+        let settings =
+            settings_with_library(&url, &library, &[("a", true), ("old", true), ("b", true)]);
+        assert_eq!(
+            messages_of(&settings, request),
+            vec![message("user", "Fix this: hello")]
+        );
+    }
+
+    #[test]
+    fn without_an_active_prompt_post_processing_fails() {
+        let mut settings = settings_with_library(
+            "http://127.0.0.1:1",
+            &LIBRARY,
+            &[("a", false), ("b", false), ("c", false)],
+        );
+        // Handy's selected prompt no longer counts.
+        settings.post_process_selected_prompt_id = Some("a".to_string());
+        assert_eq!(
+            run_post_process(&settings, "hello"),
+            PostProcessOutcome::Failed
         );
     }
 

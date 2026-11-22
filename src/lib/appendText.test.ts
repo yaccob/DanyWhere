@@ -197,9 +197,8 @@ const cases: Array<[string, () => void]> = [
           readFileSync(new URL(`${locale}/translation.json`, dir), "utf8"),
         ) as Tree;
         const translate = translator(tree);
-        const description = translate(
-          `settings.advanced.appendText.description`,
-        );
+        // Since 2026-11-19 the "Append" field belongs to each end shortcut.
+        const description = translate(`settings.endKeys.appendDescription`);
         for (const escape of ["\\s", "\\n", "\\t", "\\\\"]) {
           assert.ok(description.includes(escape), `${locale} ${escape}`);
         }

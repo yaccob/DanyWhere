@@ -5,10 +5,14 @@ import { LanguageSelector } from "../LanguageSelector";
 import { TranslateToEnglish } from "../TranslateToEnglish";
 import { useModelStore } from "../../../stores/modelStore";
 import type { ModelInfo } from "@/bindings";
+import { useChosenModel } from "../models/modelEntries";
+import { ScopedSetting } from "../profiles/scope/ScopedSetting";
 
 export const ModelSettingsCard: React.FC = () => {
   const { t } = useTranslation();
-  const { currentModel, models } = useModelStore();
+  const { models } = useModelStore();
+  // DanyWhere: the model of the page's scope (the defaults or a profile).
+  const currentModel = useChosenModel();
 
   const currentModelInfo = models.find((m: ModelInfo) => m.id === currentModel);
 
@@ -29,15 +33,19 @@ export const ModelSettingsCard: React.FC = () => {
       })}
     >
       {showLanguageSelector && (
-        <LanguageSelector
-          descriptionMode="tooltip"
-          grouped={true}
-          modelId={currentModelInfo.id}
-          supportedLanguages={currentModelInfo.supported_languages}
-        />
+        <ScopedSetting field="selected_language">
+          <LanguageSelector
+            descriptionMode="tooltip"
+            grouped={true}
+            modelId={currentModelInfo.id}
+            supportedLanguages={currentModelInfo.supported_languages}
+          />
+        </ScopedSetting>
       )}
       {supportsTranslation && (
-        <TranslateToEnglish descriptionMode="tooltip" grouped={true} />
+        <ScopedSetting field="translate_to_english">
+          <TranslateToEnglish descriptionMode="tooltip" grouped={true} />
+        </ScopedSetting>
       )}
     </SettingsGroup>
   );

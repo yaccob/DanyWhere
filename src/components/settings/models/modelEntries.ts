@@ -14,6 +14,19 @@ import {
   toTableModel,
 } from "@/components/shared/modelTable/tableModel";
 import { suggestedLanguages } from "@/lib/utils/languageSuggestions";
+// DanyWhere (strand E2): on a page of the defaults or of a profile, the
+// model chosen there, not the one in use.
+import type { Scope } from "@/lib/profileScope";
+import { useSettingsScope } from "@/components/settings/profiles/scope/SettingsScope";
+import { writeValue } from "@/components/settings/profiles/scope/profileWriter";
+
+/** The model the page shows as chosen: its scope's, or the one in use. */
+export const useChosenModel = (): string => {
+  const scope = useSettingsScope();
+  const { getSetting } = useSettings();
+  const inUse = useModelStore((s) => s.currentModel);
+  return scope ? (getSetting("selected_model") ?? "") : inUse;
+};
 
 /** A model on the page: the table's own shape. */
 export type Entry = TableModel;
@@ -45,7 +58,7 @@ export const useModelEntries = () => {
   const langs = spoken?.length ? spoken : suggestedLanguages();
   const { groups, grading } = useModelCatalog(langs);
   const infos = useModelStore((s) => s.models);
-  const current = useModelStore((s) => s.currentModel);
+  const current = useChosenModel();
 
   const entries = useMemo(
     () =>
@@ -130,7 +143,7 @@ export type Place =
 export const usePlace = (id: string): Place => {
   const switching = usePageState((s) => s.switching === id);
   const state = useModelStore((s) => downloadStateOf(s, id).state);
-  const current = useModelStore((s) => s.currentModel === id);
+  const current = useChosenModel() === id;
   if (switching) return "loading";
   if (state === "checking" || state === "downloading") return state;
   // A stale selection must never make a missing model look in use.
@@ -140,7 +153,7 @@ export const usePlace = (id: string): Place => {
 
 export const useIsTarget = (id: string) => usePageState((s) => s.target === id);
 
-const select = async (id: string) => {
+const select = async (id: string, scope: Scope | null) => {
   // A file is transcribing, so the model in use can't change.
   if (areModelsLocked()) {
     usePageState.setState({ target: null });
@@ -148,7 +161,14 @@ const select = async (id: string) => {
   }
   usePageState.setState({ switching: id, target: null });
   try {
-    await useModelStore.getState().selectModel(id);
+    // DanyWhere: the model of the page's scope; the backend loads it when
+    // that scope is in use.
+    if (scope) {
+      await writeValue(scope, "selected_model", id);
+      await useModelStore.getState().loadCurrentModel();
+    } else {
+      await useModelStore.getState().selectModel(id);
+    }
   } finally {
     if (usePageState.getState().switching === id)
       usePageState.setState({ switching: null });
@@ -173,11 +193,12 @@ const whenDownloadEnds = (id: string) =>
     );
   });
 
-/** Use a model, downloading it first if needed. The last one pressed wins. */
-export const pickModel = (id: string) => {
+/** Use a model, downloading it first if needed. The last one pressed wins.
+ * DanyWhere: `scope` is the page's (the defaults or a profile). */
+export const pickModel = (id: string, scope: Scope | null = null) => {
   const store = useModelStore.getState();
   if (isOnDisk(id)) {
-    void select(id);
+    void select(id, scope);
     return;
   }
   // Locked: download it, but don't promise to switch to it.
@@ -187,7 +208,7 @@ export const pickModel = (id: string) => {
       ? whenDownloadEnds(id)
       : store.downloadModel(id);
   void done.then((ok) => {
-    if (ok && usePageState.getState().target === id) void select(id);
+    if (ok && usePageState.getState().target === id) void select(id, scope);
   });
 };
 

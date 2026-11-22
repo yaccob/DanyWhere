@@ -3,6 +3,9 @@ import {
   NO_WORD_LIST,
   activeListOption,
   addWord,
+  cleanListName,
+  cleanListWords,
+  newWordListId,
   normalizeWord,
   removeWord,
 } from "./wordLists";
@@ -39,3 +42,14 @@ assert.equal(activeListOption(lists, null), NO_WORD_LIST);
 assert.equal(activeListOption(lists, "w2"), "w2");
 assert.equal(activeListOption(lists, "gone"), NO_WORD_LIST);
 assert.notEqual(NO_WORD_LIST, "");
+
+// DanyWhere (strand E2): a list made in the defaults or in a profile gets an
+// id as the backend makes them, unique among all lists of every layer.
+assert.equal(newWordListId([], 1700), "word_list_1700");
+assert.equal(
+  newWordListId(["word_list_1700", "word_list_1700_2"], 1700),
+  "word_list_1700_3",
+);
+assert.equal(cleanListName("  Work  "), "Work");
+assert.equal(cleanListName("   "), null);
+assert.deepEqual(cleanListWords([" a ", "", "b", "a"]), ["a", "b"]);

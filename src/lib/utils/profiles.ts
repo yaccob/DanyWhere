@@ -1,51 +1,53 @@
-/** Helpers for the profiles: names, the active profile, what may be deleted. */
+/** Helpers for the profiles: names, the profile in use, what may be
+ * deleted. The defaults ("Grundeinstellungen") are no profile: a profile
+ * overrides them where it needs to (`profile_layers.rs`). */
 
 export interface ProfileLike {
   id: string;
   name: string;
 }
 
-/** The id of the profile every store starts with (backend: `profiles.rs`). */
+/** The id that stands for the defaults where a profile id is expected (in
+ * use, switching); no profile has it (backend: `profiles.rs`). */
 export const DEFAULT_PROFILE_ID = "default";
 
-/** The name to show. The default profile is stored without a name, so it
- * shows `defaultName` (the translated "Default") until it is renamed. */
+/** The name to show: the profile's own, trimmed; `defaultName` for a
+ * nameless one (only "Standard" in a store from before the defaults). */
 export const profileDisplayName = (
   profile: ProfileLike,
   defaultName: string,
 ): string => profile.name.trim() || defaultName;
 
-/** The profile in use: the one `activeId` names, else the first, as the
- * backend falls back. */
+/** The profile in use: the one `activeId` names; `null` while the defaults
+ * are in use, also for an unknown id, where the backend puts them in use. */
 export const activeProfile = <P extends ProfileLike>(
   profiles: P[],
   activeId: string | null | undefined,
-): P | null =>
-  profiles.find((profile) => profile.id === activeId) ?? profiles[0] ?? null;
+): P | null => profiles.find((profile) => profile.id === activeId) ?? null;
 
-/** Whether the sidebar shows the page "Profiles": once the settings carry
- * profiles, from one on (it can be duplicated or renamed there). */
+/** Whether the sidebar shows the page "Profiles": once the settings are
+ * loaded, also without any profile, since a new one is made there. */
 export const profilesPageEnabled = (
   settings: { profiles?: readonly unknown[] | null } | null | undefined,
-): boolean => (settings?.profiles?.length ?? 0) > 0;
+): boolean => Array.isArray(settings?.profiles);
 
-/** Whether profile `id` may be deleted: it exists and isn't the last one. */
+/** Whether profile `id` may be deleted: every profile, the last one too;
+ * the defaults can't. */
 export const canDeleteProfile = (
   profiles: ProfileLike[],
   id: string,
 ): boolean =>
-  profiles.length > 1 && profiles.some((profile) => profile.id === id);
+  id !== DEFAULT_PROFILE_ID && profiles.some((profile) => profile.id === id);
 
-/** The profile in use once `deletedId` is gone: the backend switches from a
- * deleted active profile to the first other one first. */
+/** The profile in use once `deletedId` is gone; `null`: the defaults, which
+ * the backend puts in use when the profile in use is deleted. */
 export const profileAfterDelete = <P extends ProfileLike>(
   profiles: P[],
   activeId: string | null | undefined,
   deletedId: string,
 ): P | null => {
   const active = activeProfile(profiles, activeId);
-  if (active && active.id !== deletedId) return active;
-  return profiles.find((profile) => profile.id !== deletedId) ?? null;
+  return active && active.id !== deletedId ? active : null;
 };
 
 export type ProfileNameCheck =
@@ -54,10 +56,10 @@ export type ProfileNameCheck =
   | { kind: "unchanged" }
   | { kind: "taken" };
 
-/** Checks a name typed for a duplicate (`renaming` unset) or for profile
- * `renaming`. Names are trimmed and must differ, ignoring case, from the
- * names the other profiles show. Only the default profile may be left
- * without a name, which shows the translated name again. */
+/** Checks a name typed for a new profile (`renaming` unset) or for profile
+ * `renaming`. Names are trimmed, can't be empty and must differ, ignoring
+ * case, from the names the other profiles show and from the defaults'
+ * translated name (`defaultName`). */
 export const checkProfileName = (
   profiles: ProfileLike[],
   draft: string,
@@ -66,16 +68,14 @@ export const checkProfileName = (
 ): ProfileNameCheck => {
   const name = draft.trim();
   if (renaming && name === renaming.name.trim()) return { kind: "unchanged" };
-  if (!name) {
-    return renaming?.id === DEFAULT_PROFILE_ID
-      ? { kind: "ok", name }
-      : { kind: "empty" };
-  }
+  if (!name) return { kind: "empty" };
   const lower = name.toLocaleLowerCase();
-  const taken = profiles.some(
-    (profile) =>
-      profile.id !== renaming?.id &&
-      profileDisplayName(profile, defaultName).toLocaleLowerCase() === lower,
-  );
+  const taken =
+    defaultName.trim().toLocaleLowerCase() === lower ||
+    profiles.some(
+      (profile) =>
+        profile.id !== renaming?.id &&
+        profileDisplayName(profile, defaultName).toLocaleLowerCase() === lower,
+    );
   return taken ? { kind: "taken" } : { kind: "ok", name };
 };

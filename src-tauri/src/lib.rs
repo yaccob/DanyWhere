@@ -13,6 +13,8 @@ mod clipboard;
 mod commands;
 mod delivery;
 mod dictation_key_inserts;
+mod dictation_microphone;
+mod end_keys;
 pub mod engine_supervisor;
 mod helpers;
 // DanyWhere: versions of History entries.
@@ -35,18 +37,23 @@ mod model_selection;
 mod model_warmup;
 mod notices;
 mod overlay;
+mod overlay_look;
 mod paste_tx;
 pub mod portable;
 mod post_process_effort;
 #[cfg(target_os = "linux")]
 mod primary_selection;
+mod profile_effects;
 mod profile_export;
+mod profile_layers;
 mod profile_redo;
 mod profile_transfer;
 mod profiles;
 mod prompt_frame;
+mod prompt_library;
 mod secure_input;
 mod send_context;
+mod setting_classes;
 mod settings;
 mod shortcut;
 mod signal_handle;
@@ -424,9 +431,6 @@ fn initialize_core_logic(app_handle: &AppHandle) {
             }
             tray::PROFILE_AUTO_ID => {
                 app_profiles::toggle_from_tray(app);
-            }
-            tray::SEND_CONTEXT_ID => {
-                send_context::toggle_from_tray(app);
             }
             id if id.starts_with(tray::PROFILE_SELECT_PREFIX) => {
                 let profile_id = id
@@ -812,6 +816,8 @@ pub fn run(cli_args: CliArgs) {
             shortcut::update_post_process_prompt,
             shortcut::delete_post_process_prompt,
             shortcut::set_post_process_selected_prompt,
+            prompt_library::change_post_process_prompt_order_setting,
+            prompt_library::profiles_using_prompt,
             shortcut::update_custom_words,
             word_lists::add_word_list,
             word_lists::rename_word_list,
@@ -821,8 +827,18 @@ pub fn run(cli_args: CliArgs) {
             word_lists::update_profile_words,
             profiles::switch_profile,
             profiles::duplicate_profile,
+            profiles::create_profile,
             profiles::rename_profile,
             profiles::delete_profile,
+            profile_layers::get_profile_fields,
+            profile_layers::set_profile_value,
+            profile_layers::hold_profile_value,
+            profile_layers::reset_profile_values,
+            profile_layers::reset_whole_profile,
+            profile_layers::use_profile_value_as_default,
+            profile_layers::set_profile_entry,
+            profile_layers::remove_profile_entry,
+            profile_layers::reset_profile_entry,
             profile_transfer::profile_export_needs_password,
             profile_transfer::export_profile,
             profile_transfer::inspect_profile_import,
@@ -830,7 +846,8 @@ pub fn run(cli_args: CliArgs) {
             app_profiles::set_profile_apps,
             app_profiles::set_profile_auto_by_app,
             app_profiles::list_applications,
-            send_context::set_send_context,
+            end_keys::change_end_keys_setting,
+            end_keys::change_default_end_setting,
             shortcut::suspend_all_bindings,
             shortcut::resume_all_bindings,
             shortcut::change_mute_while_recording_setting,
@@ -838,7 +855,6 @@ pub fn run(cli_args: CliArgs) {
             append_text::append_key_options,
             append_text::split_append_text,
             append_text::compose_append_text,
-            append_text::change_append_text_setting,
             shortcut::change_lazy_stream_close_setting,
             shortcut::change_vad_enabled_setting,
             shortcut::change_long_form_chunking_setting,
@@ -922,7 +938,8 @@ pub fn run(cli_args: CliArgs) {
             commands::history::reprocess_history_entry,
             // DanyWhere: versions of History entries.
             history_versions::save_history_version,
-            history_versions::revert_history_entry_to_version,
+            history_versions::delete_history_version,
+            history_versions::move_history_version,
             dictation_context::set_dictation_context_settings,
             dictation_context::get_history_entries_in_window,
             dictation_context::get_history_entries_by_ids,
