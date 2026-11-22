@@ -500,7 +500,7 @@
       },
       "apps": {
         "label": "自动用于：",
-        "none": "尚无应用",
+        "none": "尚未分配给任何应用",
         "remove": "移除 {{name}}",
         "add": "添加应用…",
         "running": "正在运行",
@@ -1072,7 +1072,8 @@
           "withTime": "{{step}}，{{time}}"
         },
         "saveError": "无法保存你的文本。请重试。",
-        "changeError": "无法移动或删除。请重试。"
+        "changeError": "无法移动或删除。请重试。",
+        "unchanged": "AI 返回的文本与条目的结果相同，因此没有添加新版本。"
       },
       "contextEntryJump": "在历史记录中显示以便更正",
       "dropTitle": "拖放到此处进行转录",
@@ -1314,7 +1315,10 @@
         "off": "关",
         "empty": "无",
         "hidden": "已设置（隐藏）",
-        "items": "条目：{{number}}"
+        "items": "条目：{{number}}",
+        "noModel": "未选择模型",
+        "notSet": "未设置",
+        "builtInFillerWords": "无，使用内置的"
       },
       "reset": "重置",
       "resetTooltip": "重新跟随基本设置",

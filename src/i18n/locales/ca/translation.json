@@ -500,7 +500,7 @@
       },
       "apps": {
         "label": "S'usa automàticament a:",
-        "none": "encara cap aplicació",
+        "none": "Encara no s'ha assignat a cap aplicació",
         "remove": "Elimina {{name}}",
         "add": "Afegeix una aplicació…",
         "running": "en execució",
@@ -1072,7 +1072,8 @@
           "withTime": "{{step}}, {{time}}"
         },
         "saveError": "No s'ha pogut desar el vostre text. Torneu-ho a provar.",
-        "changeError": "No s'ha pogut moure ni suprimir. Torneu-ho a provar."
+        "changeError": "No s'ha pogut moure ni suprimir. Torneu-ho a provar.",
+        "unchanged": "La IA ha retornat el mateix text que el resultat de l'entrada, així que no s'ha afegit cap versió nova."
       },
       "contextEntryJump": "Mostra-ho a l'historial per corregir-ho",
       "dropTitle": "Deixa anar per transcriure",
@@ -1314,7 +1315,10 @@
         "off": "desactivat",
         "empty": "res",
         "hidden": "definida (oculta)",
-        "items": "entrades: {{number}}"
+        "items": "entrades: {{number}}",
+        "noModel": "cap model seleccionat",
+        "notSet": "no definida",
+        "builtInFillerWords": "cap, s'apliquen les integrades"
       },
       "reset": "Restableix",
       "resetTooltip": "Torna a seguir la configuració bàsica",

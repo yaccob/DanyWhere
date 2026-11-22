@@ -500,7 +500,7 @@
       },
       "apps": {
         "label": "자동으로 사용되는 앱:",
-        "none": "아직 없음",
+        "none": "아직 어떤 앱에도 지정되지 않음",
         "remove": "{{name}} 제거",
         "add": "앱 추가…",
         "running": "실행 중",
@@ -1072,7 +1072,8 @@
           "withTime": "{{step}}, {{time}}"
         },
         "saveError": "텍스트를 저장하지 못했습니다. 다시 시도해 주세요.",
-        "changeError": "이동하거나 삭제하지 못했습니다. 다시 시도해 주세요."
+        "changeError": "이동하거나 삭제하지 못했습니다. 다시 시도해 주세요.",
+        "unchanged": "AI가 항목의 결과와 같은 텍스트를 돌려주어 새 버전이 추가되지 않았습니다."
       },
       "contextEntryJump": "수정하려면 히스토리에서 보기",
       "dropTitle": "놓아서 받아쓰기",
@@ -1314,7 +1315,10 @@
         "off": "꺼짐",
         "empty": "없음",
         "hidden": "설정됨(숨김)",
-        "items": "항목: {{number}}"
+        "items": "항목: {{number}}",
+        "noModel": "선택된 모델 없음",
+        "notSet": "설정 안 됨",
+        "builtInFillerWords": "없음, 기본 제공 목록 적용"
       },
       "reset": "재설정",
       "resetTooltip": "다시 기본 설정 따르기",

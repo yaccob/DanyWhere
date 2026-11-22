@@ -500,7 +500,7 @@
       },
       "apps": {
         "label": "Usado automaticamente em:",
-        "none": "nenhum aplicativo ainda",
+        "none": "Ainda não atribuído a nenhum aplicativo",
         "remove": "Remover {{name}}",
         "add": "Adicionar aplicativo…",
         "running": "em execução",
@@ -1072,7 +1072,8 @@
           "withTime": "{{step}}, {{time}}"
         },
         "saveError": "Falha ao salvar seu texto. Tente novamente.",
-        "changeError": "Falha ao mover ou excluir. Tente novamente."
+        "changeError": "Falha ao mover ou excluir. Tente novamente.",
+        "unchanged": "A IA devolveu o mesmo texto do resultado da entrada, por isso nenhuma versão nova foi adicionada."
       },
       "contextEntryJump": "Mostrar no histórico para corrigir",
       "dropTitle": "Solte para transcrever",
@@ -1314,7 +1315,10 @@
         "off": "desligado",
         "empty": "nada",
         "hidden": "definida (oculta)",
-        "items": "itens: {{number}}"
+        "items": "itens: {{number}}",
+        "noModel": "nenhum modelo selecionado",
+        "notSet": "não definida",
+        "builtInFillerWords": "nenhuma, valem as integradas"
       },
       "reset": "Redefinir",
       "resetTooltip": "Voltar a seguir as configurações básicas",

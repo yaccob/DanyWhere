@@ -500,7 +500,7 @@
       },
       "apps": {
         "label": "Otomatis digunakan di:",
-        "none": "belum ada aplikasi",
+        "none": "Belum ditetapkan ke aplikasi mana pun",
         "remove": "Hapus {{name}}",
         "add": "Tambah aplikasi…",
         "running": "berjalan",
@@ -1072,7 +1072,8 @@
           "withTime": "{{step}}, {{time}}"
         },
         "saveError": "Gagal menyimpan teks Anda. Silakan coba lagi.",
-        "changeError": "Gagal memindahkan atau menghapus. Silakan coba lagi."
+        "changeError": "Gagal memindahkan atau menghapus. Silakan coba lagi.",
+        "unchanged": "AI mengembalikan teks yang sama dengan hasil entri, jadi tidak ada versi baru yang ditambahkan."
       },
       "contextEntryJump": "Tampilkan di riwayat untuk mengoreksinya",
       "dropTitle": "Lepaskan untuk mentranskripsi",
@@ -1314,7 +1315,10 @@
         "off": "nonaktif",
         "empty": "tidak ada",
         "hidden": "diatur (tersembunyi)",
-        "items": "entri: {{number}}"
+        "items": "entri: {{number}}",
+        "noModel": "tidak ada model dipilih",
+        "notSet": "belum diatur",
+        "builtInFillerWords": "tidak ada, yang bawaan berlaku"
       },
       "reset": "Atur ulang",
       "resetTooltip": "Kembali mengikuti pengaturan dasar",

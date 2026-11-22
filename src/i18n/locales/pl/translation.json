@@ -500,7 +500,7 @@
       },
       "apps": {
         "label": "Używany automatycznie w:",
-        "none": "jeszcze w żadnej aplikacji",
+        "none": "Jeszcze nieprzypisany do żadnej aplikacji",
         "remove": "Usuń {{name}}",
         "add": "Dodaj aplikację…",
         "running": "uruchomiona",
@@ -1072,7 +1072,8 @@
           "withTime": "{{step}}, {{time}}"
         },
         "saveError": "Nie udało się zapisać twojego tekstu. Spróbuj ponownie.",
-        "changeError": "Nie udało się przenieść ani usunąć. Spróbuj ponownie."
+        "changeError": "Nie udało się przenieść ani usunąć. Spróbuj ponownie.",
+        "unchanged": "AI zwróciło ten sam tekst co wynik wpisu, więc nie dodano nowej wersji."
       },
       "contextEntryJump": "Pokaż w historii, aby poprawić",
       "dropTitle": "Upuść, aby transkrybować",
@@ -1314,7 +1315,10 @@
         "off": "wył.",
         "empty": "nic",
         "hidden": "ustawiony (ukryty)",
-        "items": "pozycje: {{number}}"
+        "items": "pozycje: {{number}}",
+        "noModel": "nie wybrano modelu",
+        "notSet": "nieustawiony",
+        "builtInFillerWords": "brak, obowiązują wbudowane"
       },
       "reset": "Resetuj",
       "resetTooltip": "Znów podążaj za ustawieniami podstawowymi",

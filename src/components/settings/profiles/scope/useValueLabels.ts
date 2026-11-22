@@ -17,6 +17,7 @@ import {
   defaultText,
   entryName,
   fieldLabel,
+  offEntryText,
   ownValueLabel,
   ownValueRow,
   valueLabel,
@@ -71,6 +72,9 @@ export const useValueLabels = () => {
       ) => entryName(ctx, field, id, entry, within),
       valueLabel: (field: string, value: unknown, within?: Values) =>
         valueLabel(ctx, field, value, within),
+      /** An entry a profile switched off: "off", or what a provider's
+       * missing entry means. */
+      offEntryText: (field: string) => offEntryText(ctx, field),
       ownValueLabel: (value: OwnValue, within: Values) =>
         ownValueLabel(ctx, value, within),
       ownValueRow: (value: OwnValue, within: Values) =>

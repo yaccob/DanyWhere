@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
+import { readFileSync, readdirSync } from "node:fs";
 import {
   appChoices,
   appLabel,
+  appsCaption,
   droppedByOwner,
   hasAssignments,
   ownerOfApp,
@@ -110,6 +112,41 @@ check("a dropped app no profile has any more is left out", () =>
     [],
   ),
 );
+
+// ---- a profile without applications (qa 2026-11-22_0320, question 5) -----
+// "Used automatically in: no application yet" read as a broken sentence;
+// without applications the line is one sentence of its own.
+const localesDir = new URL("../../i18n/locales/", import.meta.url);
+const appsTexts = (locale: string): Record<string, string> =>
+  (
+    JSON.parse(
+      readFileSync(new URL(`${locale}/translation.json`, localesDir), "utf8"),
+    ) as { settings: { profiles: { apps: Record<string, string> } } }
+  ).settings.profiles.apps;
+const localeNames = readdirSync(localesDir, { withFileTypes: true })
+  .filter((entry) => entry.isDirectory())
+  .map((entry) => entry.name)
+  .sort();
+
+check("without applications only the sentence of its own shows", () =>
+  assert.equal(appsCaption([]), "settings.profiles.apps.none"),
+);
+check("with applications the label stands before them", () =>
+  assert.equal(appsCaption(["com.apple.mail"]), "settings.profiles.apps.label"),
+);
+check("the sentence, in English and German", () => {
+  assert.equal(appsTexts("en").none, "Not assigned to any application yet");
+  assert.equal(appsTexts("de").none, "Noch keiner Anwendung zugeordnet");
+});
+check("in every locale the sentence starts as a sentence", () => {
+  // A script with capitals starts it with one; it no longer continues the
+  // label in lower case.
+  const lower = localeNames.filter((locale) => {
+    const first = [...appsTexts(locale).none][0] ?? "";
+    return first !== first.toUpperCase();
+  });
+  assert.deepEqual(lower, []);
+});
 
 if (failures.length > 0) {
   console.error(

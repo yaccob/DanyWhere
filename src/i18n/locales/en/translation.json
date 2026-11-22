@@ -500,7 +500,7 @@
       },
       "apps": {
         "label": "Used automatically in:",
-        "none": "no application yet",
+        "none": "Not assigned to any application yet",
         "remove": "Remove {{name}}",
         "add": "Add application…",
         "running": "running",
@@ -1072,7 +1072,8 @@
           "withTime": "{{step}}, {{time}}"
         },
         "saveError": "Failed to save your text. Please try again.",
-        "changeError": "Moving or deleting didn't work. Please try again."
+        "changeError": "Moving or deleting didn't work. Please try again.",
+        "unchanged": "The AI returned the same text as the entry's result, so no new version was added."
       },
       "contextEntryJump": "Show it in the History to correct it",
       "dropTitle": "Drop to transcribe",
@@ -1314,7 +1315,10 @@
         "off": "off",
         "empty": "nothing",
         "hidden": "set (hidden)",
-        "items": "entries: {{number}}"
+        "items": "entries: {{number}}",
+        "noModel": "no model selected",
+        "notSet": "not set",
+        "builtInFillerWords": "none, the built-in ones apply"
       },
       "reset": "Reset",
       "resetTooltip": "Follow the defaults again",

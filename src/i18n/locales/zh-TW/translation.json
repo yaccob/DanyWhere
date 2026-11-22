@@ -500,7 +500,7 @@
       },
       "apps": {
         "label": "自動用於：",
-        "none": "尚無應用程式",
+        "none": "尚未指派給任何應用程式",
         "remove": "移除 {{name}}",
         "add": "新增應用程式…",
         "running": "執行中",
@@ -1072,7 +1072,8 @@
           "withTime": "{{step}}，{{time}}"
         },
         "saveError": "無法儲存你的文字。請再試一次。",
-        "changeError": "無法移動或刪除。請再試一次。"
+        "changeError": "無法移動或刪除。請再試一次。",
+        "unchanged": "AI 傳回的文字與條目的結果相同，因此沒有加入新版本。"
       },
       "contextEntryJump": "在記錄中顯示以便更正",
       "dropTitle": "拖放到此處進行轉錄",
@@ -1314,7 +1315,10 @@
         "off": "關",
         "empty": "無",
         "hidden": "已設定（隱藏）",
-        "items": "項目：{{number}}"
+        "items": "項目：{{number}}",
+        "noModel": "未選擇模型",
+        "notSet": "未設定",
+        "builtInFillerWords": "無，使用內建的"
       },
       "reset": "重設",
       "resetTooltip": "重新跟隨基本設定",

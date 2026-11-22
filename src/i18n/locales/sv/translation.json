@@ -500,7 +500,7 @@
       },
       "apps": {
         "label": "Används automatiskt i:",
-        "none": "ännu ingen app",
+        "none": "Ännu inte tilldelad någon app",
         "remove": "Ta bort {{name}}",
         "add": "Lägg till app…",
         "running": "körs",
@@ -1072,7 +1072,8 @@
           "withTime": "{{step}}, {{time}}"
         },
         "saveError": "Det gick inte att spara din text. Försök igen.",
-        "changeError": "Det gick inte att flytta eller ta bort. Försök igen."
+        "changeError": "Det gick inte att flytta eller ta bort. Försök igen.",
+        "unchanged": "AI:n returnerade samma text som postens resultat, så ingen ny version lades till."
       },
       "contextEntryJump": "Visa i historiken för att rätta",
       "dropTitle": "Släpp för att transkribera",
@@ -1314,7 +1315,10 @@
         "off": "av",
         "empty": "inget",
         "hidden": "angiven (dold)",
-        "items": "poster: {{number}}"
+        "items": "poster: {{number}}",
+        "noModel": "ingen modell vald",
+        "notSet": "inte angiven",
+        "builtInFillerWords": "inga, de inbyggda gäller"
       },
       "reset": "Återställ",
       "resetTooltip": "Följ grundinställningarna igen",

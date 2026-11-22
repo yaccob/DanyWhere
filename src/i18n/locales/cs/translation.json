@@ -500,7 +500,7 @@
       },
       "apps": {
         "label": "Automaticky se používá v:",
-        "none": "zatím v žádné aplikaci",
+        "none": "Zatím není přiřazen žádné aplikaci",
         "remove": "Odebrat {{name}}",
         "add": "Přidat aplikaci…",
         "running": "běží",
@@ -1072,7 +1072,8 @@
           "withTime": "{{step}}, {{time}}"
         },
         "saveError": "Váš text se nepodařilo uložit. Zkuste to znovu.",
-        "changeError": "Přesunutí nebo smazání se nezdařilo. Zkuste to znovu."
+        "changeError": "Přesunutí nebo smazání se nezdařilo. Zkuste to znovu.",
+        "unchanged": "AI vrátila stejný text jako výsledek záznamu, proto se nepřidala žádná nová verze."
       },
       "contextEntryJump": "Zobrazit v historii a opravit",
       "dropTitle": "Pusťte pro přepis",
@@ -1314,7 +1315,10 @@
         "off": "vyp.",
         "empty": "nic",
         "hidden": "nastaven (skrytý)",
-        "items": "položky: {{number}}"
+        "items": "položky: {{number}}",
+        "noModel": "není vybrán žádný model",
+        "notSet": "nenastaven",
+        "builtInFillerWords": "žádná, platí vestavěná"
       },
       "reset": "Obnovit",
       "resetTooltip": "Znovu se řídit základním nastavením",

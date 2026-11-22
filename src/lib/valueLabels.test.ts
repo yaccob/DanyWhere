@@ -16,6 +16,7 @@ import {
   DEFAULT_DEVICE,
   defaultText,
   entryName,
+  offEntryText,
   ownValueLabel,
   ownValueRow,
   valueLabel,
@@ -161,6 +162,10 @@ const contextFor = (lng: string): LabelContext => ({
   prompts: [
     { id: "p1", name: "Diktat (DE/EN)" },
     { id: "p2", name: "Improve Transcriptions" },
+  ],
+  providers: [
+    { id: "anthropic", label: "Anthropic" },
+    { id: "custom", label: "Custom" },
   ],
   formatShortcut: (keys) => formatKeyCombination(keys, "macos"),
   optionParams: { modifier: "Cmd" },
@@ -360,6 +365,92 @@ check("a whole list has no default text", () =>
 check("a coupled field has no default text", () =>
   assert.equal(defaultText(de, ["overlay_style"], undefined, neutest), null),
 );
+
+// ---- "nothing" and "off" say what they mean (qa 2026-11-22_0320) ----------
+// A provider's entry a profile switched off is no "off" but a value: no
+// effort level is sent (the model's default), no model, no key.
+const providerValues = {
+  ...noEffort.values,
+  post_process_models: { custom: "" },
+  post_process_api_keys: {},
+};
+check("an effort switched off is the model's default", () => {
+  const off = { field: "post_process_efforts", entry: "anthropic", off: true };
+  assert.equal(
+    ownValueRow(de, off, providerValues),
+    "Denkaufwand: Anthropic: Standard des Modells",
+  );
+  assert.equal(
+    ownValueRow(en, off, providerValues),
+    "Effort: Anthropic: Model Default",
+  );
+});
+check("a provider's model without one says none is selected", () => {
+  assert.equal(
+    ownValueRow(
+      de,
+      { field: "post_process_models", entry: "custom" },
+      providerValues,
+    ),
+    "Modell: Custom: kein Modell ausgewählt",
+  );
+  assert.equal(
+    ownValueRow(
+      de,
+      { field: "post_process_models", entry: "anthropic", off: true },
+      providerValues,
+    ),
+    "Modell: Anthropic: kein Modell ausgewählt",
+  );
+});
+check("a key that is missing is not set", () => {
+  assert.equal(valueLabel(de, "post_process_api_keys", ""), "nicht gesetzt");
+  assert.equal(
+    ownValueRow(
+      de,
+      { field: "post_process_api_keys", entry: "anthropic", off: true },
+      providerValues,
+    ),
+    "API-Schlüssel: Anthropic: nicht gesetzt",
+  );
+});
+check("an entry of another list switched off stays off", () => {
+  assert.equal(offEntryText(de, "word_lists"), "aus");
+  assert.equal(offEntryText(de, "bindings"), "aus");
+  assert.equal(
+    offEntryText(de, "post_process_efforts"),
+    "Standard des Modells",
+  );
+});
+check("the speech model without one says none is selected", () =>
+  assert.equal(valueLabel(de, "selected_model", ""), "kein Modell ausgewählt"),
+);
+check("the input channel shows its choice's label", () => {
+  assert.equal(valueLabel(de, "selected_channel", null), "Alle Kanäle mitteln");
+  assert.equal(valueLabel(de, "selected_channel", 0), "Kanal 1");
+});
+check("no active additional list is called as its list calls it", () =>
+  assert.equal(valueLabel(de, "active_word_list_id", null), "Keine"),
+);
+check("no own filler words means the built-in ones", () => {
+  assert.equal(
+    valueLabel(de, "custom_filler_words", null),
+    "keine, es gelten die eingebauten",
+  );
+  // An empty own list removes nothing.
+  assert.equal(valueLabel(de, "custom_filler_words", []), "nichts");
+});
+check("no locale shows a key instead of these texts", () => {
+  const raw = locales.filter((lng) => {
+    const ctx = contextFor(lng);
+    return [
+      valueLabel(ctx, "selected_model", ""),
+      valueLabel(ctx, "post_process_api_keys", ""),
+      valueLabel(ctx, "custom_filler_words", null),
+    ].some((text) => text.startsWith("settings."));
+  });
+  assert.deepEqual(raw, []);
+});
 
 if (failures.length > 0) {
   console.error(`${failures.length} of ${total} checks failed:`);

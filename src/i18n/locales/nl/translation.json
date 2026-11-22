@@ -500,7 +500,7 @@
       },
       "apps": {
         "label": "Automatisch gebruikt in:",
-        "none": "nog geen app",
+        "none": "Nog niet aan een app toegewezen",
         "remove": "{{name}} verwijderen",
         "add": "App toevoegen…",
         "running": "actief",
@@ -1072,7 +1072,8 @@
           "withTime": "{{step}}, {{time}}"
         },
         "saveError": "Kan je tekst niet opslaan. Probeer het opnieuw.",
-        "changeError": "Verplaatsen of verwijderen is mislukt. Probeer het opnieuw."
+        "changeError": "Verplaatsen of verwijderen is mislukt. Probeer het opnieuw.",
+        "unchanged": "De AI gaf dezelfde tekst terug als het resultaat van het item, dus er is geen nieuwe versie bijgekomen."
       },
       "contextEntryJump": "In de geschiedenis tonen om te corrigeren",
       "dropTitle": "Loslaten om te transcriberen",
@@ -1314,7 +1315,10 @@
         "off": "uit",
         "empty": "niets",
         "hidden": "ingesteld (verborgen)",
-        "items": "items: {{number}}"
+        "items": "items: {{number}}",
+        "noModel": "geen model geselecteerd",
+        "notSet": "niet ingesteld",
+        "builtInFillerWords": "geen, de ingebouwde gelden"
       },
       "reset": "Herstellen",
       "resetTooltip": "Weer de basisinstellingen volgen",
