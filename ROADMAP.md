@@ -66,6 +66,17 @@ Planned work on DanyWhere, roughly in priority order within each section. Items 
 
 **Found (Claude, 2026-11-22; a task of its own, accepted by the user):** the speech models' descriptions in the model selection and on onboarding's cards are English. 30 of the 76 catalogue models have an English text of their own in `catalog.json`, the other 46 get a sentence built in Rust (`generated_description`); the frontend translates only five old model ids, and onboarding's cards show the description as it comes. Claude's proposal: build the generated sentences in the frontend from the model's capabilities and languages, with translated templates and `Intl.DisplayNames`; translate the texts of their own by a key per model id, a new catalogue model falling back to English.
 
+### Tests: generic fake audio devices instead of real ones
+
+**Decided (user, 2026-11-22):** the code that touches audio devices gets seams, so that tests run against generic fake devices instead of real hardware and every unexpected behaviour a device can show is tested: a device that refuses a configuration, offers something other than it accepts, fails to open, disappears, or reports an error while running. The user sees this as an improvement of the architecture, not only as a way to test one fix. Handy's fix [#2525](https://github.com/cjpais/Handy/pull/2525) for feedback sounds on some Bluetooth outputs ([#2524](https://github.com/cjpais/Handy/issues/2524)) is not taken over now; it is built on top of this, with a test that fails before it.
+
+**Found (Claude, 2026-11-22):**
+
+- Output: cpal 0.18.2, which DanyWhere already uses through rodio 0.23, has a `custom` feature. A test type implementing cpal's `DeviceTrait` (and `HostTrait` for a whole fake host) becomes an ordinary `cpal::Device`, which rodio's `DeviceSinkBuilder::from_device` accepts, so a test runs through rodio's real code and only the operating system is replaced. Enabled under `[dev-dependencies]` only, it stays out of release builds.
+- Microphone: handy-recorder already has a fake microphone, `FakeMic`, behind its `test-backend` feature (marked "not covered by semver"); DanyWhere doesn't use it yet.
+- Places that touch a device without a seam today: opening and playing a feedback sound, and finding the selected output device by name with its fallback to the default (`audio_feedback.rs`); the list of output devices (`audio_toolkit/audio/device.rs`); opening the microphone with its fallback when the chosen channel is missing, and the lists of microphones (`managers/audio.rs`, `commands/audio.rs`).
+- On #2525: rodio 0.23 asks for a fixed buffer of about 50 ms (2048 frames at 44.1 and 48 kHz), and a Bose QC Ultra on macOS accepts only 14..=1024, so every feedback sound fails there. Handy's fix asks for the system's default buffer on every platform and device, but rodio 0.22.2 moved away from that default on purpose ("Incorrectly set system default audio buffer size breaks playback"). Claude's proposal for then, to be decided when it is built: fit rodio's size into the range the device itself offers (the Bose would get 1024, every other device stays as today), and try the system default once only if opening still fails.
+
 ### History: per profile and in total
 
 **Idea (user, 2026-11-19; a larger topic, to be discussed on its own later):** History could be kept per profile, or at least be filterable by profile, with a view per profile and a view of everything. Open: what happens to a profile's entries when the profile is deleted, since History is a record of the past.
