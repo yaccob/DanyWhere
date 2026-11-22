@@ -800,7 +800,7 @@
       },
       "customWords": {
         "title": "Vlastní slova",
-        "description": "Pomozte podporovaným modelům rozpoznávat jména a odborné termíny. Přibližné opravy jsou v současnosti omezeny na slova obsahující písmena A–Z a číslice.",
+        "description": "Pomozte podporovaným modelům rozpoznávat jména a odborné termíny.",
         "placeholder": "Přidat slovo",
         "add": "Přidat",
         "remove": "Odebrat {{word}}",
@@ -1183,10 +1183,6 @@
         "description": "Vyberte zvukový motiv pro odezvu při startu a ukončení nahrávání",
         "preview": "Přehrát ukázku zvukového motivu (start, stop a pak zvuk, který ukončuje diktát)",
         "custom": "Vlastní"
-      },
-      "wordCorrectionThreshold": {
-        "title": "Práh korekce slov",
-        "description": "Citlivost pro opravy vlastních slov"
       },
       "historyLimit": {
         "title": "Limit historie",

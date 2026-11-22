@@ -800,7 +800,7 @@
       },
       "customWords": {
         "title": "Paraules personalitzades",
-        "description": "Ajudeu els models compatibles a reconèixer noms i termes especialitzats. Actualment, la correcció per similitu es limita a paraules amb lletres de la A a la Z i números.",
+        "description": "Ajudeu els models compatibles a reconèixer noms i termes especialitzats.",
         "placeholder": "Afegiu una paraula",
         "add": "Afegiu",
         "remove": "Suprimiu {{word}}",
@@ -1183,10 +1183,6 @@
         "description": "Trieu un tema de so per als avisos d'inici i d'aturada de l'enregistrament",
         "preview": "Escolta el tema de so (reprodueix l'inici, l'aturada i després el so que acaba un dictat)",
         "custom": "Personalitzat"
-      },
-      "wordCorrectionThreshold": {
-        "title": "Llindar de correcció de paraules",
-        "description": "Sensibilitat de les correccions de paraules personalitzades"
       },
       "historyLimit": {
         "title": "Límit de l'historial",

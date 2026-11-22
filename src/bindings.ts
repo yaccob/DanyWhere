@@ -133,14 +133,6 @@ async changeDebugModeSetting(enabled: boolean) : Promise<Result<null, string>> {
     else return { status: "error", error: e  as any };
 }
 },
-async changeWordCorrectionThresholdSetting(threshold: number) : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("change_word_correction_threshold_setting", { threshold }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
 async changeExtraRecordingBufferSetting(ms: number) : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("change_extra_recording_buffer_setting", { ms }) };
@@ -1831,7 +1823,7 @@ active_word_list_id?: string | null;
  * DanyWhere: earlier dictations from the same window as context for
  * post-processing (`dictation_context`).
  */
-dictation_context?: DictationContextSettings; model_unload_timeout?: ModelUnloadTimeout; word_correction_threshold?: number; history_limit?: number; recording_retention_period?: RecordingRetentionPeriod; 
+dictation_context?: DictationContextSettings; model_unload_timeout?: ModelUnloadTimeout; history_limit?: number; recording_retention_period?: RecordingRetentionPeriod; 
 /**
  * Migrated from `recording_retention_period` in `apply_settings_migrations`.
  */

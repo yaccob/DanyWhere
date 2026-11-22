@@ -800,7 +800,7 @@
       },
       "customWords": {
         "title": "Palabras personalizadas",
-        "description": "Ayuda a los modelos compatibles a reconocer nombres y términos especializados. Actualmente, la corrección aproximada se limita a palabras que usan letras de la A a la Z y números.",
+        "description": "Ayuda a los modelos compatibles a reconocer nombres y términos especializados.",
         "placeholder": "Agregar una palabra",
         "add": "Agregar",
         "remove": "Eliminar {{word}}",
@@ -1183,10 +1183,6 @@
         "description": "Elige un tema de sonido para la retroalimentación de inicio y parada de grabación",
         "preview": "Escuchar el tema de sonido (reproduce el inicio, la parada y luego el sonido que termina un dictado)",
         "custom": "Personalizado"
-      },
-      "wordCorrectionThreshold": {
-        "title": "Umbral de corrección de palabras",
-        "description": "Sensibilidad para correcciones de palabras personalizadas"
       },
       "historyLimit": {
         "title": "Límite de historial",

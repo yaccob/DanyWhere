@@ -116,7 +116,6 @@ impl TranscriptionManager {
                 let (text, replaced) = post_process_transcription_text_reporting(
                     t.text,
                     &settings,
-                    setup.custom_words_prompted(),
                     &output_language,
                     &setup.languages,
                 );

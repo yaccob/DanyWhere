@@ -75,7 +75,6 @@ pub const APP_SETTINGS: &[(&str, AppPage)] = &[
     ("paste_delay_ms", AppPage::Debug),
     ("paste_delay_after_ms", AppPage::Debug),
     ("reliable_paste", AppPage::Debug),
-    ("word_correction_threshold", AppPage::Debug),
     ("extra_recording_buffer_ms", AppPage::Debug),
     ("lazy_stream_close", AppPage::Debug),
     ("transcribe_accelerator", AppPage::Debug),

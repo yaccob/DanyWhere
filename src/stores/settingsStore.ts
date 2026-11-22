@@ -164,8 +164,6 @@ const settingUpdaters: {
     );
     if (result.status === "error") throw new Error(result.error);
   },
-  word_correction_threshold: (value) =>
-    commands.changeWordCorrectionThresholdSetting(value as number),
   paste_delay_ms: (value) =>
     commands.changePasteDelayMsSetting(value as number),
   clipboard_notice_ms: (value) =>

@@ -800,7 +800,7 @@
       },
       "customWords": {
         "title": "Brugerdefinerede ord",
-        "description": "Hjælp understøttede modeller med at genkende navne og specialiserede udtryk. Fuzzy-korrektion er i øjeblikket begrænset til ord, der bruger A-Z og tal.",
+        "description": "Hjælp understøttede modeller med at genkende navne og specialiserede udtryk.",
         "placeholder": "Tilføj et ord",
         "add": "Tilføj",
         "remove": "Fjern {{word}}",
@@ -1183,10 +1183,6 @@
         "description": "Vælg et lydtema til feedback ved start og stop af optagelse",
         "preview": "Afspil lydtemaet (start, stop og derefter lyden, der afslutter en diktering)",
         "custom": "Brugerdefineret"
-      },
-      "wordCorrectionThreshold": {
-        "title": "Tærskel for ordkorrektion",
-        "description": "Følsomhed for brugerdefinerede ordkorrektioner"
       },
       "historyLimit": {
         "title": "Historikgrænse",

@@ -800,7 +800,7 @@
       },
       "customWords": {
         "title": "Mots personnalisés",
-        "description": "Aidez les modèles compatibles à reconnaître les noms et les termes spécialisés. La correction approximative est actuellement limitée aux mots utilisant les lettres A à Z et des chiffres.",
+        "description": "Aidez les modèles compatibles à reconnaître les noms et les termes spécialisés.",
         "placeholder": "Ajouter un mot",
         "add": "Ajouter",
         "remove": "Supprimer {{word}}",
@@ -1183,10 +1183,6 @@
         "description": "Choisir un thème sonore pour les retours de début et de fin d'enregistrement",
         "preview": "Écouter le thème sonore (joue le début, l'arrêt, puis le son qui termine une dictée)",
         "custom": "Personnalisé"
-      },
-      "wordCorrectionThreshold": {
-        "title": "Seuil de correction des mots",
-        "description": "Sensibilité pour les corrections de mots personnalisés"
       },
       "historyLimit": {
         "title": "Limite d'historique",

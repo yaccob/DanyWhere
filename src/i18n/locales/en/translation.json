@@ -800,7 +800,7 @@
       },
       "customWords": {
         "title": "Custom Words",
-        "description": "Help supported models recognize names and specialized terms. Fuzzy correction is currently limited to words using A–Z and numbers.",
+        "description": "Help supported models recognize names and specialized terms.",
         "placeholder": "Add a word",
         "add": "Add",
         "remove": "Remove {{word}}",
@@ -1183,10 +1183,6 @@
         "description": "Choose a sound theme for recording start and stop feedback",
         "preview": "Preview sound theme (plays start, stop, then the sound that ends a dictation)",
         "custom": "Custom"
-      },
-      "wordCorrectionThreshold": {
-        "title": "Word Correction Threshold",
-        "description": "Sensitivity for custom word corrections"
       },
       "historyLimit": {
         "title": "History Limit",

@@ -800,7 +800,7 @@
       },
       "customWords": {
         "title": "Anpassade ord",
-        "description": "Hjälp modeller som stöds att känna igen namn och specialtermer. Ungefärlig korrigering är för närvarande begränsad till ord med bokstäverna A–Z och siffror.",
+        "description": "Hjälp modeller som stöds att känna igen namn och specialtermer.",
         "placeholder": "Lägg till ett ord",
         "add": "Lägg till",
         "remove": "Ta bort {{word}}",
@@ -1183,10 +1183,6 @@
         "description": "Välj ett ljudtema för återkoppling vid start och stopp av inspelning",
         "preview": "Lyssna på ljudtemat (spelar start, stopp och sedan ljudet som avslutar en diktering)",
         "custom": "Anpassat"
-      },
-      "wordCorrectionThreshold": {
-        "title": "Tröskelvärde för ordkorrigering",
-        "description": "Känslighet för anpassade ordkorrigeringar"
       },
       "historyLimit": {
         "title": "Historikgräns",

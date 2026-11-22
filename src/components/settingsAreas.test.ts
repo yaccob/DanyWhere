@@ -70,7 +70,6 @@ const PLACES: [component: string, page: Page][] = [
   ["DictationServiceWhenIdleSetting", "appAccessibility"],
   // Application settings › Debug keeps its own
   ["LogLevelSelector", "appDebug"],
-  ["WordCorrectionThreshold", "appDebug"],
   ["PasteDelay", "appDebug"],
   ["ReliablePasteToggle", "appDebug"],
   ["HoldThreshold", "appDebug"],

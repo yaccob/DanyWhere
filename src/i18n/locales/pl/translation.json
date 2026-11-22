@@ -800,7 +800,7 @@
       },
       "customWords": {
         "title": "Własne słowa",
-        "description": "Pomóż obsługiwanym modelom rozpoznawać nazwy i specjalistyczne terminy. Korekta przybliżona jest obecnie ograniczona do słów używających liter A–Z i cyfr.",
+        "description": "Pomóż obsługiwanym modelom rozpoznawać nazwy i specjalistyczne terminy.",
         "placeholder": "Dodaj słowo",
         "add": "Dodaj",
         "remove": "Usuń {{word}}",
@@ -1183,10 +1183,6 @@
         "description": "Wybierz motyw dźwiękowy dla informacji o rozpoczęciu i zakończeniu nagrywania",
         "preview": "Odsłuchaj motyw dźwiękowy (start, stop, a potem dźwięk kończący dyktowanie)",
         "custom": "Własny"
-      },
-      "wordCorrectionThreshold": {
-        "title": "Próg korekty słów",
-        "description": "Czułość dla własnych korekt słów"
       },
       "historyLimit": {
         "title": "Limit historii",
