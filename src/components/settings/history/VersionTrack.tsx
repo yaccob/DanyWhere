@@ -6,7 +6,13 @@
 // top, up or down (for the keyboard) or deletes it, the transcription too,
 // as long as one is left. Nothing asks first (H4). Dragging uses pointer
 // events: Tauri's `dragDropEnabled` turns HTML5 drag and drop off on Windows.
-import React, { useEffect, useId, useRef, useState } from "react";
+import React, {
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { useTranslation } from "react-i18next";
 import {
   ArrowUpToLine,
@@ -19,6 +25,7 @@ import {
 import type { HistoryEntry, HistoryVersion, VersionStep } from "@/bindings";
 import { formatDateTime } from "@/utils/dateFormat";
 import { cancelOnEscape } from "@/lib/dragCancel";
+import { menuOffset } from "@/lib/menuPlacement";
 import {
   cancelChipDrag,
   describeStep,
@@ -106,8 +113,28 @@ export const VersionTrack: React.FC<VersionTrackProps> = ({
   const dragged = useRef(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const popupRef = useRef<HTMLDivElement>(null);
+  // Where the open menu's left edge goes, so it stays inside the window.
+  const [menuLeft, setMenuLeft] = useState<number | null>(null);
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const menuId = useId();
+
+  // The open menu stays inside the window, measured before it is painted.
+  useLayoutEffect(() => {
+    if (!menuOpen) return;
+    const anchor = menuRef.current?.getBoundingClientRect();
+    const popup = popupRef.current?.getBoundingClientRect();
+    if (!anchor || !popup) return;
+    setMenuLeft(
+      menuOffset({
+        anchorLeft: anchor.left,
+        anchorRight: anchor.right,
+        menuWidth: popup.width,
+        viewportWidth: document.documentElement.clientWidth,
+        rtl: i18n.dir() === "rtl",
+      }),
+    );
+  }, [menuOpen, i18n]);
 
   // Close the menu on a press outside; its first item takes the focus.
   useEffect(() => {
@@ -370,10 +397,16 @@ export const VersionTrack: React.FC<VersionTrackProps> = ({
             </button>
             {menuOpen && (
               <div
+                ref={popupRef}
                 id={menuId}
                 role="menu"
                 aria-label={t(`${KEYS}.versionActions`)}
                 onKeyDown={onMenuKeyDown}
+                style={
+                  menuLeft === null
+                    ? undefined
+                    : { left: menuLeft, right: "auto" }
+                }
                 className="absolute start-0 top-full mt-1 z-50 w-56 max-w-[80vw] bg-background border border-line rounded-lg shadow-lg p-1"
               >
                 {actions.map((action, index) => (
