@@ -116,6 +116,28 @@ check("only wrappers of one row hold several fields", () =>
   ]),
 );
 
+// --- The jump from the page "Profile" (B5) -------------------------------
+const overview = read("./settings/profiles/ProfileOverview.tsx");
+const wrapper = read("./settings/profiles/scope/ScopedSetting.tsx");
+check("a row of the page Profile asks to jump to its setting", () =>
+  assert.match(overview, /openPage\?\.\(profileId, page, jumpTarget\(/),
+);
+check("a wrapper in a profile lights up when the jump is its", () =>
+  assert.match(wrapper, /useJumpHighlight\(/),
+);
+check("it lights up in the accent colour, by its variables", () =>
+  assert.match(
+    wrapper,
+    /bg-logo-primary\/\d+ inset-ring-2 inset-ring-logo-primary/,
+  ),
+);
+check("it fades only where motion is welcome", () =>
+  assert.match(
+    wrapper,
+    /motion-safe:transition-\[background-color,box-shadow\]/,
+  ),
+);
+
 if (failures.length > 0) {
   console.error(
     `scopedRows.test.ts: ${failures.length} of ${total} checks failed`,

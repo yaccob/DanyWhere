@@ -6,6 +6,7 @@
 // everything works as before, on the values in use.
 import React, { createContext, useContext } from "react";
 import type { Scope } from "@/lib/profileScope";
+import type { JumpTarget } from "@/lib/settingJump";
 
 const SettingsScopeContext = createContext<Scope | null>(null);
 
@@ -44,8 +45,13 @@ export const useSettingRowOverride = (): SettingRowOverride | null =>
   useContext(SettingRowContext);
 
 /** Opens a page of a profile (P7.2 "Open in …", P5 the page "Profile"'s
- * list); the settings page provides it. */
-export type OpenProfilePage = (profileId: string, page: string) => void;
+ * list); the settings page provides it. With `jump`, the page then scrolls
+ * to that setting and lights it up (qa 2026-11-22_1603, B5). */
+export type OpenProfilePage = (
+  profileId: string,
+  page: string,
+  jump?: JumpTarget,
+) => void;
 
 const OpenProfilePageContext = createContext<OpenProfilePage | null>(null);
 

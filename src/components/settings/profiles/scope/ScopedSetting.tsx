@@ -16,7 +16,7 @@
 //
 // The same wrapper serves every setting: it knows the setting only by the
 // serde names of its fields (and an entry), as the backend does.
-import React from "react";
+import React, { useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { ArrowRight, Link2, Link2Off, RotateCcw } from "lucide-react";
 import { commands, type JsonValue } from "@/bindings";
@@ -46,6 +46,7 @@ import {
   useSettingsScope,
 } from "./SettingsScope";
 import { useValueLabels } from "./useValueLabels";
+import { useJumpHighlight } from "./useJumpHighlight";
 import { useShowsAnything } from "@/hooks/useShowsAnything";
 import { deviatingRow, wrapperShows } from "@/lib/renderedContent";
 
@@ -145,6 +146,13 @@ export const ScopedSetting: React.FC<ScopedSettingProps> = (props) => {
 
 // ---- the profile view ------------------------------------------------------
 
+/** How a setting lights up after a jump from the page "Profile" (B5): the
+ * accent's background and an inner ring, fading in and out unless the
+ * system asks for less motion. */
+const JUMP_LIT = "bg-logo-primary/15 inset-ring-2 inset-ring-logo-primary/60";
+const JUMP_FADE =
+  "motion-safe:transition-[background-color,box-shadow] motion-safe:duration-300";
+
 interface InProfileProps extends ScopedSettingProps {
   profile: LayeredProfile;
   defaults: Record<string, unknown>;
@@ -169,11 +177,14 @@ const InProfile: React.FC<InProfileProps> = ({
   // wrapper without a setting stands for a control elsewhere and shows.
   const [content, settingShows] = useShowsAnything();
   const shows = wrapperShows(children != null, settingShows);
+  const wrapper = useRef<HTMLDivElement>(null);
+  const lit = useJumpHighlight(wrapper, profile.id, fields, entry, shows);
   return (
     <div
+      ref={wrapper}
       className={`border-s-2 ${own ? "border-logo-primary" : "border-transparent"} ${
         shows ? "" : "hidden"
-      }`}
+      } ${JUMP_FADE} ${lit ? JUMP_LIT : ""}`}
     >
       <div ref={content}>{children}</div>
       {shows && (
