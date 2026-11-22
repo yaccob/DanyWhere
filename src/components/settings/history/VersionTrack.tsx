@@ -18,23 +18,25 @@ import {
 } from "lucide-react";
 import type { HistoryEntry, HistoryVersion, VersionStep } from "@/bindings";
 import { formatDateTime } from "@/utils/dateFormat";
+import { cancelOnEscape } from "@/lib/dragCancel";
 import {
+  cancelChipDrag,
   describeStep,
-  dropIndex,
   dropSlot,
+  moveChip,
   moveTarget,
+  pressChip,
+  releaseChip,
   stepSeconds,
   topIndex,
   versionActions,
   versionMark,
   type ChipBox,
+  type ChipDrag,
   type VersionAction,
 } from "./versions";
 
 const KEYS = "settings.history.versions";
-
-/** How far a pressed chip moves before it is dragged, in pixels. */
-const DRAG_THRESHOLD = 4;
 
 /** Each menu item's label, under `settings.history.versions`. */
 const ACTION_LABEL: Record<VersionAction, string> = {
@@ -60,17 +62,6 @@ interface VersionTrackProps {
   /** While a change is saved: the stack can't change. */
   disabled?: boolean;
 }
-
-/** A pressed chip: where it came from, and the gap it goes into once it
- * moved far enough to be dragged (`active`). */
-type Drag = {
-  from: number;
-  pointerId: number;
-  startX: number;
-  startY: number;
-  active: boolean;
-  slot: number;
-};
 
 /** What a chip shows: the word "Transcription", or ✨ and ✎ as icons. */
 const ChipMark: React.FC<{ version: HistoryVersion }> = ({ version }) => {
@@ -108,7 +99,7 @@ export const VersionTrack: React.FC<VersionTrackProps> = ({
 }) => {
   const { t, i18n } = useTranslation();
   const [expanded, setExpanded] = useState(false);
-  const [drag, setDrag] = useState<Drag | null>(null);
+  const [drag, setDrag] = useState<ChipDrag | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const chipRefs = useRef<(HTMLButtonElement | null)[]>([]);
   // A drag just ended on the chip: the click that follows doesn't show it.
@@ -136,6 +127,16 @@ export const VersionTrack: React.FC<VersionTrackProps> = ({
       setDrag(null);
     }
   }, [disabled]);
+
+  // Escape ends a drag without moving anything, heard on the window: the
+  // pressed chip has no keyboard focus in WebKit.
+  useEffect(() => {
+    if (!drag) return;
+    return cancelOnEscape(window, () => {
+      if (cancelChipDrag(drag).swallowClick) dragged.current = true;
+      setDrag(null);
+    });
+  }, [drag]);
 
   const count = entry.versions.length;
   if (count <= 1) return null;
@@ -184,36 +185,22 @@ export const VersionTrack: React.FC<VersionTrackProps> = ({
       dragged.current = false;
       if (disabled || event.button !== 0) return;
       event.currentTarget.setPointerCapture(event.pointerId);
-      setDrag({
-        from: index,
-        pointerId: event.pointerId,
-        startX: event.clientX,
-        startY: event.clientY,
-        active: false,
-        slot: index,
-      });
+      setDrag(pressChip(index, event.pointerId, event.clientX, event.clientY));
     };
 
   const moveDrag = (event: React.PointerEvent<HTMLButtonElement>) => {
     if (!drag || event.pointerId !== drag.pointerId) return;
-    const distance = Math.hypot(
-      event.clientX - drag.startX,
-      event.clientY - drag.startY,
+    const next = moveChip(drag, event.clientX, event.clientY, (x, y) =>
+      dropSlot(boxes(), x, y, rtl),
     );
-    if (!drag.active && distance < DRAG_THRESHOLD) return;
-    const slot = dropSlot(boxes(), event.clientX, event.clientY, rtl);
-    if (!drag.active || slot !== drag.slot) {
-      setDrag({ ...drag, active: true, slot });
-    }
+    if (next !== drag) setDrag(next);
   };
 
   const endDrag = (event: React.PointerEvent<HTMLButtonElement>) => {
     if (!drag || event.pointerId !== drag.pointerId) return;
-    if (drag.active) {
-      dragged.current = true;
-      const to = dropIndex(drag.from, drag.slot);
-      if (to !== drag.from) onMove(drag.from, to);
-    }
+    const { move, swallowClick } = releaseChip(drag);
+    if (swallowClick) dragged.current = true;
+    if (move) onMove(move.from, move.to);
     setDrag(null);
   };
 
@@ -316,12 +303,6 @@ export const VersionTrack: React.FC<VersionTrackProps> = ({
                     onPointerMove={moveDrag}
                     onPointerUp={endDrag}
                     onPointerCancel={() => setDrag(null)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Escape" && drag) {
-                        event.preventDefault();
-                        setDrag(null);
-                      }
-                    }}
                     aria-pressed={isShown}
                     title={chipTitle(version, index)}
                     className={`flex items-center rounded-md border px-1.5 py-0.5 touch-none select-none transition-colors ${

@@ -194,6 +194,70 @@ export const dropSlot = (
 export const dropIndex = (from: number, slot: number): number =>
   slot > from ? slot - 1 : slot;
 
+/** How far a pressed chip moves before it is dragged, in pixels. */
+export const DRAG_THRESHOLD = 4;
+
+/** A pressed chip: where it came from, and the gap it goes into once it
+ * moved far enough to be dragged (`active`). */
+export type ChipDrag = {
+  from: number;
+  pointerId: number;
+  startX: number;
+  startY: number;
+  active: boolean;
+  slot: number;
+};
+
+export const pressChip = (
+  from: number,
+  pointerId: number,
+  x: number,
+  y: number,
+): ChipDrag => ({
+  from,
+  pointerId,
+  startX: x,
+  startY: y,
+  active: false,
+  slot: from,
+});
+
+/** The drag once the pointer is at (`x`, `y`); the same object while
+ * nothing changes. `slotAt` finds the gap under the point (`dropSlot`). */
+export const moveChip = (
+  drag: ChipDrag,
+  x: number,
+  y: number,
+  slotAt: (x: number, y: number) => number,
+): ChipDrag => {
+  const distance = Math.hypot(x - drag.startX, y - drag.startY);
+  if (!drag.active && distance < DRAG_THRESHOLD) return drag;
+  const slot = slotAt(x, y);
+  return drag.active && slot === drag.slot
+    ? drag
+    : { ...drag, active: true, slot };
+};
+
+/** What the release does: the move (none when the chip didn't move far
+ * enough or went back to its place), and whether the click that follows
+ * must not show the chip. */
+export const releaseChip = (
+  drag: ChipDrag | null,
+): { move: { from: number; to: number } | null; swallowClick: boolean } => {
+  if (!drag || !drag.active) return { move: null, swallowClick: false };
+  const to = dropIndex(drag.from, drag.slot);
+  return {
+    move: to === drag.from ? null : { from: drag.from, to },
+    swallowClick: true,
+  };
+};
+
+/** Escape during a drag: the drag ends without a move, and a chip that
+ * was being dragged isn't shown by the click its release makes. */
+export const cancelChipDrag = (
+  drag: ChipDrag | null,
+): { swallowClick: boolean } => ({ swallowClick: drag?.active === true });
+
 /** What the track shows for a version: the transcription, ✨ (post-processed),
  * ✎ (the user's), or ✨✎ when both made it. */
 export type VersionMark = "transcription" | "ai" | "user" | "ai_user";

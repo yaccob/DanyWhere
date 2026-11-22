@@ -9,7 +9,7 @@
 // A controlled component: it shows `prompts` in `order` and reports a new
 // order through `onOrderChange`, so it can edit any profile's order (or the
 // defaults'); the library itself changes through the callbacks.
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { GripVertical } from "lucide-react";
 import type { LLMPrompt, PromptOrderEntry } from "@/bindings";
@@ -18,6 +18,7 @@ import { Alert } from "../../ui/Alert";
 import { Button } from "../../ui/Button";
 import { Input } from "../../ui/Input";
 import { PromptFrameText, PromptFrameTip } from "./PromptFrame";
+import { cancelOnEscape } from "@/lib/dragCancel";
 import {
   dropIndex,
   isNameTaken,
@@ -68,6 +69,13 @@ export const PromptLibraryList: React.FC<PromptLibraryListProps> = ({
   const [busy, setBusy] = useState(false);
   const [drag, setDrag] = useState<Drag | null>(null);
   const rowRefs = useRef<(HTMLLIElement | null)[]>([]);
+
+  // Escape ends a drag and leaves the order as it was, heard on the window:
+  // the pressed handle has no keyboard focus in WebKit.
+  useEffect(() => {
+    if (!drag) return;
+    return cancelOnEscape(window, () => setDrag(null));
+  }, [drag]);
 
   const fullOrder = normalizedOrder(prompts, order);
   const shownOrder = drag ? moved(fullOrder, drag.from, drag.to) : fullOrder;
