@@ -242,7 +242,9 @@
       "preview": "Live preview",
       "previewTitle": "Shows your words in the Live overlay while you talk, then types them when you stop",
       "translate": "Translates",
-      "translateTitle": "Can turn what you say into English text. Turn it on in settings"
+      "translateTitle": "Can turn what you say into English text. Turn it on in settings",
+      "wordLists": "Word lists",
+      "wordListsTitle": "Uses your word lists while it recognizes speech"
     },
     "rubric": {
       "gradeTitle": "{{language}} accuracy: {{grade}}",
@@ -809,6 +811,8 @@
       "wordLists": {
         "groupTitle": "Word Lists",
         "groupDescription": "The model gets the words of the active additional list first, then the additional words, then the word list.",
+        "modelUses": "{{model}} uses the word lists while it recognizes speech.",
+        "modelIgnores": "{{model}} doesn't use word lists itself; post-processing gets them as known terms.",
         "profileDescription": "Words only this profile adds, before the word list. Put words for one context here and words you need everywhere in the word list of the defaults.",
         "activeTitle": "Active Additional List",
         "activeDescription": "Its words go to the model first, before the additional words and the word list, which always apply. Switch it with the shortcut or from the tray menu.",

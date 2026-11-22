@@ -13,6 +13,8 @@ export interface TableModel {
   languages: string[];
   streaming: boolean;
   translate: boolean;
+  /** DanyWhere: takes the word lists as vocabulary. */
+  vocabulary: boolean;
   sizeMb: number;
   quant: string | null;
   kind: ModelKind;

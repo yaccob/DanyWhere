@@ -242,7 +242,9 @@
       "preview": "Live-Vorschau",
       "previewTitle": "Zeigt deine Worte im Live-Overlay, während du sprichst, und tippt sie, sobald du aufhörst",
       "translate": "Übersetzt",
-      "translateTitle": "Kann das Gesagte in englischen Text umwandeln. In den Einstellungen aktivieren"
+      "translateTitle": "Kann das Gesagte in englischen Text umwandeln. In den Einstellungen aktivieren",
+      "wordLists": "Wortlisten",
+      "wordListsTitle": "Nutzt deine Wortlisten schon beim Erkennen der Sprache"
     },
     "rubric": {
       "gradeTitle": "Genauigkeit für {{language}}: {{grade}}",
@@ -809,6 +811,8 @@
       "wordLists": {
         "groupTitle": "Wortlisten",
         "groupDescription": "Das Modell bekommt zuerst die Wörter der aktiven zusätzlichen Liste, dann die zusätzlichen Wörter, dann die Wortliste.",
+        "modelUses": "{{model}} nutzt die Wortlisten schon beim Erkennen der Sprache.",
+        "modelIgnores": "{{model}} nutzt Wortlisten nicht selbst; die Nachbearbeitung bekommt sie als bekannte Begriffe.",
         "profileDescription": "Wörter, die nur dieses Profil hinzufügt, vor der Wortliste. Wörter für einen Zusammenhang gehören hierher, Wörter, die du überall brauchst, in die Wortliste der Grundeinstellungen.",
         "activeTitle": "Aktive zusätzliche Liste",
         "activeDescription": "Ihre Wörter gehen zuerst an das Modell, vor den zusätzlichen Wörtern und der Wortliste, die immer gelten. Umschalten mit der Tastenkombination oder im Tray-Menü.",

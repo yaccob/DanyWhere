@@ -242,7 +242,9 @@
       "preview": "Canlı önizleme",
       "previewTitle": "Siz konuşurken sözcüklerinizi Canlı ekran katmanında gösterir, durduğunuzda yazar",
       "translate": "Çeviri yapar",
-      "translateTitle": "Söylediklerinizi İngilizce metne çevirebilir. Ayarlardan açın"
+      "translateTitle": "Söylediklerinizi İngilizce metne çevirebilir. Ayarlardan açın",
+      "wordLists": "Kelime listeleri",
+      "wordListsTitle": "Konuşmayı tanırken kelime listelerinizi kullanır"
     },
     "rubric": {
       "gradeTitle": "{{language}} doğruluğu: {{grade}}",
@@ -809,6 +811,8 @@
       "wordLists": {
         "groupTitle": "Kelime Listeleri",
         "groupDescription": "Model önce etkin ek listenin sözcüklerini, sonra ek sözcükleri, en son sözcük listesini alır.",
+        "modelUses": "{{model}}, konuşmayı tanırken kelime listelerini kullanır.",
+        "modelIgnores": "{{model}} kelime listelerini kendisi kullanmaz; son işlem onları bilinen terimler olarak alır.",
         "profileDescription": "Yalnızca bu profilin eklediği sözcükler, sözcük listesinden önce. Tek bir bağlamın sözcüklerini buraya, her yerde gereken sözcükleri temel ayarların sözcük listesine koyun.",
         "activeTitle": "Etkin Ek Liste",
         "activeDescription": "Sözcükleri modele ilk gider, her zaman geçerli olan ek sözcüklerden ve sözcük listesinden önce. Kısayolla veya tepsi menüsünden değiştirin.",

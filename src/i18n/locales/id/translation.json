@@ -242,7 +242,9 @@
       "preview": "Pratinjau langsung",
       "previewTitle": "Menampilkan kata-kata Anda di overlay Langsung saat Anda berbicara, lalu mengetiknya setelah Anda berhenti",
       "translate": "Menerjemahkan",
-      "translateTitle": "Bisa mengubah ucapan Anda menjadi teks bahasa Inggris. Aktifkan di pengaturan"
+      "translateTitle": "Bisa mengubah ucapan Anda menjadi teks bahasa Inggris. Aktifkan di pengaturan",
+      "wordLists": "Daftar kata",
+      "wordListsTitle": "Memakai daftar kata Anda saat mengenali ucapan"
     },
     "rubric": {
       "gradeTitle": "Akurasi {{language}}: {{grade}}",
@@ -809,6 +811,8 @@
       "wordLists": {
         "groupTitle": "Daftar Kata",
         "groupDescription": "Model mendapat kata dari daftar tambahan yang aktif lebih dulu, lalu kata tambahan, lalu daftar kata.",
+        "modelUses": "{{model}} memakai daftar kata saat mengenali ucapan.",
+        "modelIgnores": "{{model}} tidak memakai daftar kata sendiri; pascaproses menerimanya sebagai istilah yang dikenal.",
         "profileDescription": "Kata yang hanya ditambahkan profil ini, sebelum daftar kata. Taruh kata untuk satu konteks di sini dan kata yang Anda perlukan di mana saja di daftar kata pengaturan dasar.",
         "activeTitle": "Daftar Tambahan Aktif",
         "activeDescription": "Katanya masuk ke model lebih dulu, sebelum kata tambahan dan daftar kata, yang selalu berlaku. Ganti dengan pintasan atau dari menu baki.",

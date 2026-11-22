@@ -242,7 +242,9 @@
       "preview": "Liveförhandsvisning",
       "previewTitle": "Visar dina ord i Live-överlägget medan du talar och skriver dem när du slutar",
       "translate": "Översätter",
-      "translateTitle": "Kan göra om det du säger till engelsk text. Slå på det i inställningarna"
+      "translateTitle": "Kan göra om det du säger till engelsk text. Slå på det i inställningarna",
+      "wordLists": "Ordlistor",
+      "wordListsTitle": "Använder dina ordlistor när den känner igen talet"
     },
     "rubric": {
       "gradeTitle": "Noggrannhet för {{language}}: {{grade}}",
@@ -809,6 +811,8 @@
       "wordLists": {
         "groupTitle": "Ordlistor",
         "groupDescription": "Modellen får först orden i den aktiva extralistan, sedan de extra orden och sist ordlistan.",
+        "modelUses": "{{model}} använder ordlistorna redan när den känner igen talet.",
+        "modelIgnores": "{{model}} använder inte själv ordlistor; efterbearbetningen får dem som kända termer.",
         "profileDescription": "Ord som bara den här profilen lägger till, före ordlistan. Lägg ord för ett sammanhang här och ord som du behöver överallt i grundinställningarnas ordlista.",
         "activeTitle": "Aktiv extra lista",
         "activeDescription": "Dess ord går först till modellen, före de extra orden och ordlistan, som alltid gäller. Byt med kortkommandot eller från menyn i menyfältet.",

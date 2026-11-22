@@ -242,7 +242,9 @@
       "preview": "Live voorvertoning",
       "previewTitle": "Toont je woorden in de Live-overlay terwijl je praat en typt ze zodra je stopt",
       "translate": "Vertaalt",
-      "translateTitle": "Kan wat je zegt omzetten in Engelse tekst. Zet dit aan in de instellingen"
+      "translateTitle": "Kan wat je zegt omzetten in Engelse tekst. Zet dit aan in de instellingen",
+      "wordLists": "Woordenlijsten",
+      "wordListsTitle": "Gebruikt je woordenlijsten al bij het herkennen van spraak"
     },
     "rubric": {
       "gradeTitle": "Nauwkeurigheid {{language}}: {{grade}}",
@@ -809,6 +811,8 @@
       "wordLists": {
         "groupTitle": "Woordenlijsten",
         "groupDescription": "Het model krijgt eerst de woorden van de actieve extra lijst, dan de extra woorden en daarna de woordenlijst.",
+        "modelUses": "{{model}} gebruikt de woordenlijsten al bij het herkennen van spraak.",
+        "modelIgnores": "{{model}} gebruikt woordenlijsten niet zelf; de naverwerking krijgt ze als bekende termen.",
         "profileDescription": "Woorden die alleen dit profiel toevoegt, vóór de woordenlijst. Zet hier woorden voor één context en woorden die je overal nodig hebt in de woordenlijst van de basisinstellingen.",
         "activeTitle": "Actieve extra lijst",
         "activeDescription": "De woorden gaan als eerste naar het model, vóór de extra woorden en de woordenlijst, die altijd gelden. Wissel met de sneltoets of via het menu in het systeemvak.",

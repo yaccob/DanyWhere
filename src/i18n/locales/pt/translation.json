@@ -242,7 +242,9 @@
       "preview": "Prévia ao vivo",
       "previewTitle": "Mostra suas palavras na sobreposição Ao vivo enquanto você fala e as digita quando você para",
       "translate": "Traduz",
-      "translateTitle": "Pode transformar o que você diz em texto em inglês. Ative nos ajustes"
+      "translateTitle": "Pode transformar o que você diz em texto em inglês. Ative nos ajustes",
+      "wordLists": "Listas de palavras",
+      "wordListsTitle": "Usa suas listas de palavras enquanto reconhece a fala"
     },
     "rubric": {
       "gradeTitle": "Precisão em {{language}}: {{grade}}",
@@ -809,6 +811,8 @@
       "wordLists": {
         "groupTitle": "Listas de Palavras",
         "groupDescription": "O modelo recebe primeiro as palavras da lista adicional ativa, depois as palavras adicionais e por fim a lista de palavras.",
+        "modelUses": "{{model}} usa as listas de palavras enquanto reconhece a fala.",
+        "modelIgnores": "{{model}} não usa as listas de palavras por conta própria; o pós-processamento as recebe como termos conhecidos.",
         "profileDescription": "Palavras que só este perfil acrescenta, antes da lista de palavras. Coloque aqui palavras de um contexto e as que você precisa em toda parte na lista de palavras das configurações básicas.",
         "activeTitle": "Lista Adicional Ativa",
         "activeDescription": "As palavras dela vão primeiro ao modelo, antes das palavras adicionais e da lista de palavras, que sempre se aplicam. Troque com o atalho ou pelo menu da bandeja.",

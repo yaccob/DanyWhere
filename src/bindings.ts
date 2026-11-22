@@ -2453,7 +2453,14 @@ export type LogLevel = "trace" | "debug" | "info" | "warn" | "error"
  * A macOS privacy permission Handy asks for during onboarding.
  */
 export type MacPermission = "accessibility" | "microphone"
-export type ModelInfo = { id: string; name: string; description: string; filename: string; source: ModelSource; size_mb: number; is_downloaded: boolean; is_downloading: boolean; partial_size: number; accuracy_score: number; speed_score: number; supports_translation: boolean; is_recommended: boolean; supported_languages: string[]; supports_language_selection: boolean; is_custom: boolean; supports_streaming: boolean; supports_language_detection: boolean }
+export type ModelInfo = { id: string; name: string; description: string; filename: string; source: ModelSource; size_mb: number; is_downloaded: boolean; is_downloading: boolean; partial_size: number; accuracy_score: number; speed_score: number; supports_translation: boolean; is_recommended: boolean; supported_languages: string[]; supports_language_selection: boolean; is_custom: boolean; supports_streaming: boolean; supports_language_detection: boolean; 
+/**
+ * DanyWhere: whether the model takes the word lists as vocabulary while
+ * it transcribes (transcribe-cpp's `Feature::Vocabulary`). Known from
+ * the architecture before a load (`model_capabilities`) and reconciled
+ * with the loaded model (`set_runtime_capabilities`).
+ */
+supports_vocabulary: boolean }
 export type ModelLoadStatus = { is_loaded: boolean; current_model: string | null }
 /**
  * Where a model comes from and how Handy obtains it — the routing discriminant

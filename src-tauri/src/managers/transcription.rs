@@ -640,6 +640,7 @@ impl TranscriptionManager {
             caps.supports_translate,
             caps.supports_language_detect,
             caps.languages.clone(),
+            info.supports_vocabulary,
         );
         // The bound backend may differ from the request (e.g. CPU
         // fallback under Auto or after a GPU crash); log what loaded.
