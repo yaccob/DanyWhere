@@ -63,6 +63,37 @@ check("a menu wider than the window starts at its margin", () => {
   assert.equal(placed(300, 320, 900, 720, false).left, MENU_MARGIN);
 });
 
+// Dropdowns: the menu is at least as wide as its button and grows with its
+// longest entry, so it often is wider than the button (qa 2026-11-22_0233:
+// the chosen "Zwischenablage (Cmd+V)" broke into two lines in a menu as
+// narrow as its button). Where it doesn't fit after the button's start, it
+// opens towards the start instead, flush with the button's other edge, as
+// the "+ Profile" menu did by hand.
+check("a menu as wide as its button stays flush with it", () => {
+  assert.deepEqual(placed(300, 500, 200, 720, false), {
+    left: 300,
+    right: 500,
+  });
+});
+check("a wider menu at the right edge ends flush with its button", () => {
+  // A 200 px button at a row's end, 24 px from the window's right edge.
+  assert.deepEqual(placed(496, 696, 260, 720, false), {
+    left: 436,
+    right: 696,
+  });
+});
+check(
+  "right to left near the left edge it starts flush with the button",
+  () => {
+    assert.deepEqual(placed(24, 224, 260, 720, true), { left: 24, right: 284 });
+  },
+);
+check("where neither edge fits, it moves just as far as it must", () => {
+  // A narrow button in the middle, a menu wider than both sides allow.
+  const menu = placed(300, 320, 600, 720, false);
+  assert.deepEqual(menu, { left: 720 - MENU_MARGIN - 600, right: 712 });
+});
+
 if (failures.length > 0) {
   console.error(`${failures.length} of ${total} checks failed:`);
   for (const failure of failures) console.error(`  - ${failure}`);

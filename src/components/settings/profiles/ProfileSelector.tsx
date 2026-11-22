@@ -32,9 +32,6 @@ export const ProfileSelector: React.FC = () => {
         onSelect={switchTo}
         disabled={busy || profiles.length === 0}
         className="w-full"
-        // Wider than the sidebar's box where a name needs it, so the chosen
-        // entry's check and bold type don't break "Grundeinstellungen".
-        menuClassName="start-0 w-max min-w-full max-w-64"
       />
       <ProfileAutoByAppCompact />
     </div>

@@ -1,6 +1,7 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { cancelOnEscape } from "@/lib/escapeLayers";
+import { menuOffset } from "@/lib/menuPlacement";
 
 export interface DropdownOption {
   value: string;
@@ -9,9 +10,18 @@ export interface DropdownOption {
   disabled?: boolean;
 }
 
+/** DanyWhere: the menu is at least as wide as its button and grows with
+ * its longest entry up to 20rem, never past the window less its margins
+ * (`MENU_MARGIN`, 8 px each side). A chosen entry's check and bold type
+ * thus never break it into two lines (qa 2026-11-22_0233); longer entries
+ * still wrap. Descriptions don't widen it: they wrap at the entries' width. */
+const MENU_WIDTH = "min-w-full w-max max-w-[min(20rem,calc(100vw-16px))]";
+
 interface DropdownProps {
   options: DropdownOption[];
   className?: string;
+  /** The menu's width, instead of `MENU_WIDTH`; where it opens is
+   * measured either way. */
   menuClassName?: string;
   selectedValue: string | null;
   onSelect: (value: string) => void;
@@ -43,6 +53,9 @@ export const Dropdown: React.FC<DropdownProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  // Where the open menu's left edge goes, so it stays inside the window.
+  const [menuLeft, setMenuLeft] = useState<number | null>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -68,6 +81,27 @@ export const Dropdown: React.FC<DropdownProps> = ({
       triggerRef.current?.focus();
     });
   }, [isOpen, disabled]);
+
+  // DanyWhere: the open menu stays inside the window, measured before it is
+  // painted: flush with the button's start edge, else with its end edge
+  // (`menuOffset`). Its width follows the entries, so it is measured again
+  // when they or the choice change.
+  useLayoutEffect(() => {
+    if (!isOpen || disabled) return;
+    const box = dropdownRef.current;
+    const menu = menuRef.current;
+    if (!box || !menu) return;
+    const anchor = box.getBoundingClientRect();
+    setMenuLeft(
+      menuOffset({
+        anchorLeft: anchor.left,
+        anchorRight: anchor.right,
+        menuWidth: menu.getBoundingClientRect().width,
+        viewportWidth: document.documentElement.clientWidth,
+        rtl: getComputedStyle(box).direction === "rtl",
+      }),
+    );
+  }, [isOpen, disabled, options, selectedValue]);
 
   // The trigger's hover; in the menu, hover is grey so it never looks chosen.
   const hover =
@@ -120,8 +154,12 @@ export const Dropdown: React.FC<DropdownProps> = ({
       </button>
       {isOpen && !disabled && (
         <div
-          className={`absolute ${placement === "above" ? "bottom-full mb-1" : "top-full mt-1"} bg-background border border-line rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto p-1 ${
-            menuClassName ?? "left-0 right-0"
+          ref={menuRef}
+          style={
+            menuLeft === null ? undefined : { left: menuLeft, right: "auto" }
+          }
+          className={`absolute start-0 ${placement === "above" ? "bottom-full mb-1" : "top-full mt-1"} bg-background border border-line rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto p-1 ${
+            menuClassName ?? MENU_WIDTH
           }`}
         >
           {options.length === 0 ? (
@@ -152,7 +190,9 @@ export const Dropdown: React.FC<DropdownProps> = ({
                       {option.label}
                     </span>
                     {option.description && (
-                      <span className="mt-0.5 block whitespace-normal text-xs font-normal leading-snug text-ink-3">
+                      // w-0 min-w-full: wraps at the entries' width
+                      // instead of widening the menu to its own.
+                      <span className="mt-0.5 block w-0 min-w-full whitespace-normal text-xs font-normal leading-snug text-ink-3">
                         {option.description}
                       </span>
                     )}
