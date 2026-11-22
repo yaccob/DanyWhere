@@ -37,7 +37,9 @@ pub enum Delivery {
 pub fn delivery_for(settings: &AppSettings) -> Delivery {
     // Without Accessibility the paste keystroke cannot be simulated, even if
     // a paste method was configured again later.
-    if settings.accessibility_skipped || settings.paste_method == PasteMethod::None {
+    if !crate::accessibility::state(settings).can_simulate_input()
+        || settings.paste_method == PasteMethod::None
+    {
         Delivery::Clipboard
     } else {
         Delivery::Paste
@@ -68,7 +70,7 @@ pub fn dictation_target(settings: &AppSettings, service_available: bool) -> Dict
     // The user's decision (2026-11-11): without Accessibility the dictation
     // no longer replaces what the user copied. Older installations stored
     // CopyToClipboard with this mode, so that setting doesn't count here.
-    if settings.accessibility_skipped && service_available {
+    if crate::accessibility::state(settings).runs_without_accessibility() && service_available {
         DictationTarget::InsertService
     } else if delivery_for(settings) == Delivery::Paste {
         DictationTarget::Pasted
@@ -797,6 +799,49 @@ mod tests {
         settings.accessibility_skipped = true;
         settings.paste_method = PasteMethod::CtrlV;
         assert_eq!(delivery_for(&settings), Delivery::Clipboard);
+    }
+
+    #[test]
+    fn pastes_unless_the_user_chose_to_go_without_whatever_macos_answers() {
+        use crate::accessibility::testing::{with_choice, with_system_trusted, STATES};
+        for (skipped, trusted) in STATES {
+            let mut settings = with_choice(get_default_settings(), skipped);
+            settings.paste_method = PasteMethod::CtrlV;
+            let expected = if skipped {
+                Delivery::Clipboard
+            } else {
+                Delivery::Paste
+            };
+            assert_eq!(
+                with_system_trusted(trusted, || delivery_for(&settings)),
+                expected,
+                "skipped {skipped}, trusted {trusted}"
+            );
+        }
+    }
+
+    #[test]
+    fn a_dictation_waits_for_the_service_when_the_user_chose_to_go_without() {
+        use crate::accessibility::testing::{with_choice, with_system_trusted, STATES};
+        for (skipped, trusted) in STATES {
+            let mut settings = with_choice(get_default_settings(), skipped);
+            settings.paste_method = PasteMethod::CtrlV;
+            settings.clipboard_handling = ClipboardHandling::CopyToClipboard;
+            let (with_service, without_service) = if skipped {
+                (DictationTarget::InsertService, DictationTarget::Clipboard)
+            } else {
+                (DictationTarget::Pasted, DictationTarget::Pasted)
+            };
+            let state = format!("skipped {skipped}, trusted {trusted}");
+            with_system_trusted(trusted, || {
+                assert_eq!(dictation_target(&settings, true), with_service, "{state}");
+                assert_eq!(
+                    dictation_target(&settings, false),
+                    without_service,
+                    "{state}"
+                );
+            });
+        }
     }
 
     fn with_append(append_text: &str) -> AppSettings {

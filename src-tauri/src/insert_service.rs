@@ -493,11 +493,11 @@ pub const SERVICE_SHORTCUT_INVALID: &str = "service-shortcut-invalid";
 /// (e.g. ⌥⇧V, the macOS default up to 0.1.5) stays DanyWhere's and copies,
 /// as before.
 pub fn paste_last_is_service_shortcut(
-    accessibility_skipped: bool,
+    without_accessibility: bool,
     binding: &str,
     service_available: bool,
 ) -> bool {
-    service_available && accessibility_skipped && key_equivalent_from_binding(binding).is_ok()
+    service_available && without_accessibility && key_equivalent_from_binding(binding).is_ok()
 }
 
 /// What DanyWhere does with the shortcut of "Insert Last Dictation".
@@ -515,10 +515,10 @@ pub enum InsertServiceShortcutPlan {
 /// Decides [`InsertServiceShortcutPlan`] from the mode and the combination
 /// of "Paste Last Transcript", if there is one.
 pub fn insert_service_shortcut_plan(
-    accessibility_skipped: bool,
+    without_accessibility: bool,
     paste_last_binding: Option<&str>,
 ) -> InsertServiceShortcutPlan {
-    if !accessibility_skipped {
+    if !without_accessibility {
         return InsertServiceShortcutPlan::Leave;
     }
     match paste_last_binding.map(key_equivalent_from_binding) {
@@ -533,12 +533,12 @@ pub fn insert_service_shortcut_plan(
 /// the press before the app could see it. Errors are
 /// [`SERVICE_SHORTCUT_INVALID`] or `conflict:<binding id>`.
 pub fn check_paste_last_binding(
-    accessibility_skipped: bool,
+    without_accessibility: bool,
     binding: &str,
     bindings: &std::collections::HashMap<String, crate::settings::ShortcutBinding>,
     service_available: bool,
 ) -> Result<(), String> {
-    if !(service_available && accessibility_skipped) {
+    if !(service_available && without_accessibility) {
         return Ok(());
     }
     if key_equivalent_from_binding(binding).is_err() {
@@ -553,6 +553,56 @@ pub fn check_paste_last_binding(
         Some(id) => Err(format!("conflict:{id}")),
         None => Ok(()),
     }
+}
+
+/// [`check_paste_last_binding`] for a new combination `binding` of "Paste
+/// Last Transcript" in `settings`, by DanyWhere's mode (`accessibility`).
+pub fn check_paste_last_change(
+    settings: &crate::settings::AppSettings,
+    binding: &str,
+    service_available: bool,
+) -> Result<(), String> {
+    check_paste_last_binding(
+        crate::accessibility::state(settings).runs_without_accessibility(),
+        binding,
+        &settings.bindings,
+        service_available,
+    )
+}
+
+/// [`insert_service_shortcut_plan`] for `settings`: DanyWhere's mode
+/// (`accessibility`) and the combination of "Paste Last Transcript".
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+pub fn insert_service_shortcut_plan_for(
+    settings: &crate::settings::AppSettings,
+) -> InsertServiceShortcutPlan {
+    let paste_last = settings
+        .bindings
+        .get(PASTE_LAST_BINDING)
+        .map(|binding| binding.current_binding.as_str());
+    insert_service_shortcut_plan(
+        crate::accessibility::state(settings).runs_without_accessibility(),
+        paste_last,
+    )
+}
+
+/// Whether the two "end dictation" services get the dictation shortcuts:
+/// in the mode without Accessibility, while "Dictation shortcut also
+/// inserts" is on.
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+pub fn dictation_services_take_shortcuts(settings: &crate::settings::AppSettings) -> bool {
+    crate::accessibility::state(settings).runs_without_accessibility()
+        && settings.dictation_key_inserts
+}
+
+/// Whether "Insert Last Dictation" may still get [`DEFAULT_KEY_EQUIVALENT`]
+/// once: only in the mode without Accessibility, and only until DanyWhere
+/// gave it a shortcut once ([`should_set_default_shortcut`] decides the
+/// rest).
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+pub fn default_shortcut_due(settings: &crate::settings::AppSettings) -> bool {
+    crate::accessibility::state(settings).runs_without_accessibility()
+        && !settings.insert_service_shortcut_set
 }
 
 /// A recorded combination's modifiers as `NSServicesStatus` codes, and its
@@ -931,9 +981,10 @@ mod macos {
     use tauri::AppHandle;
 
     use super::{
-        answer_service, dictation_service_shortcuts, insert_service_shortcut_plan,
-        shortcuts_written_at, should_set_default_shortcut, status_entry_value, status_key,
-        InsertServiceShortcutPlan, ServiceKind, DEFAULT_KEY_EQUIVALENT, PASTE_LAST_BINDING,
+        answer_service, default_shortcut_due, dictation_service_shortcuts,
+        dictation_services_take_shortcuts, insert_service_shortcut_plan_for, shortcuts_written_at,
+        should_set_default_shortcut, status_entry_value, status_key, InsertServiceShortcutPlan,
+        ServiceKind, DEFAULT_KEY_EQUIVALENT,
     };
 
     pub struct ProviderIvars {
@@ -1092,7 +1143,7 @@ mod macos {
         sync_insert_service_shortcut(app);
         clear_retired_context_service(app);
         let mut settings = crate::settings::get_settings(app);
-        let enabled = settings.accessibility_skipped && settings.dictation_key_inserts;
+        let enabled = dictation_services_take_shortcuts(&settings);
         let mut wrote_shortcut = false;
         let mut has_shortcuts = false;
         for (kind, wanted) in dictation_service_shortcuts(&settings.bindings, enabled) {
@@ -1201,11 +1252,7 @@ mod macos {
     /// inserting with the second press.
     fn sync_insert_service_shortcut(app: &AppHandle) {
         let settings = crate::settings::get_settings(app);
-        let paste_last = settings
-            .bindings
-            .get(PASTE_LAST_BINDING)
-            .map(|binding| binding.current_binding.as_str());
-        match insert_service_shortcut_plan(settings.accessibility_skipped, paste_last) {
+        match insert_service_shortcut_plan_for(&settings) {
             InsertServiceShortcutPlan::Follow(wanted) => {
                 let Some(key) = this_status_key(app) else {
                     return;
@@ -1225,7 +1272,7 @@ mod macos {
 
     fn ensure_default_shortcut(app: &AppHandle) {
         let mut settings = crate::settings::get_settings(app);
-        if !settings.accessibility_skipped || settings.insert_service_shortcut_set {
+        if !default_shortcut_due(&settings) {
             return;
         }
         let Some(key) = this_status_key(app) else {
@@ -2131,6 +2178,93 @@ mod tests {
             check_paste_last_binding(true, "option+shift+v", &bindings, false),
             Ok(())
         );
+    }
+
+    /// Default settings with "Paste Last Transcript" on `keys` and the
+    /// user's choice set to `skipped`, nothing else changed.
+    fn paste_last_on(keys: &str, skipped: bool) -> crate::settings::AppSettings {
+        let mut settings = crate::accessibility::testing::with_choice(
+            crate::settings::get_default_settings(),
+            skipped,
+        );
+        settings
+            .bindings
+            .get_mut(PASTE_LAST_BINDING)
+            .unwrap()
+            .current_binding = keys.to_string();
+        settings
+    }
+
+    #[test]
+    fn a_new_paste_last_combination_is_checked_when_the_user_chose_to_go_without() {
+        use crate::accessibility::testing::{with_system_trusted, STATES};
+        for (skipped, trusted) in STATES {
+            let settings = paste_last_on("ctrl+shift+v", skipped);
+            let expected = if skipped {
+                Err(SERVICE_SHORTCUT_INVALID.to_string())
+            } else {
+                Ok(())
+            };
+            assert_eq!(
+                with_system_trusted(trusted, || check_paste_last_change(
+                    &settings,
+                    "option+shift+v",
+                    true
+                )),
+                expected,
+                "skipped {skipped}, trusted {trusted}"
+            );
+        }
+    }
+
+    #[test]
+    fn the_service_follows_paste_last_when_the_user_chose_to_go_without() {
+        use crate::accessibility::testing::{with_system_trusted, STATES};
+        for (skipped, trusted) in STATES {
+            let settings = paste_last_on("ctrl+shift+v", skipped);
+            let expected = if skipped {
+                InsertServiceShortcutPlan::Follow("^$v".to_string())
+            } else {
+                InsertServiceShortcutPlan::Leave
+            };
+            assert_eq!(
+                with_system_trusted(trusted, || insert_service_shortcut_plan_for(&settings)),
+                expected,
+                "skipped {skipped}, trusted {trusted}"
+            );
+        }
+    }
+
+    #[test]
+    fn the_end_services_take_the_dictation_shortcuts_when_the_user_chose_to_go_without() {
+        use crate::accessibility::testing::{with_choice, with_system_trusted, STATES};
+        for (skipped, trusted) in STATES {
+            for inserts in [true, false] {
+                let mut settings = with_choice(crate::settings::get_default_settings(), skipped);
+                settings.dictation_key_inserts = inserts;
+                assert_eq!(
+                    with_system_trusted(trusted, || dictation_services_take_shortcuts(&settings)),
+                    skipped && inserts,
+                    "skipped {skipped}, trusted {trusted}, inserts {inserts}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn the_default_shortcut_is_due_once_when_the_user_chose_to_go_without() {
+        use crate::accessibility::testing::{with_choice, with_system_trusted, STATES};
+        for (skipped, trusted) in STATES {
+            for set_once in [false, true] {
+                let mut settings = with_choice(crate::settings::get_default_settings(), skipped);
+                settings.insert_service_shortcut_set = set_once;
+                assert_eq!(
+                    with_system_trusted(trusted, || default_shortcut_due(&settings)),
+                    skipped && !set_once,
+                    "skipped {skipped}, trusted {trusted}, set once {set_once}"
+                );
+            }
+        }
     }
 
     #[test]

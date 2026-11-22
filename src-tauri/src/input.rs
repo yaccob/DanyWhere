@@ -154,7 +154,7 @@ pub struct EnigoState(pub Mutex<Enigo>);
 /// to run without Accessibility: creating Enigo would make macOS prompt for
 /// that permission again on every launch.
 pub fn enigo_wanted(settings: &crate::settings::AppSettings) -> bool {
-    !settings.accessibility_skipped
+    crate::accessibility::state(settings).can_simulate_input()
 }
 
 impl EnigoState {
@@ -302,5 +302,18 @@ mod tests {
         let mut settings = get_default_settings();
         apply_no_accessibility_mode(&mut settings);
         assert!(!enigo_wanted(&settings));
+    }
+
+    #[test]
+    fn enigo_follows_the_users_choice_whatever_macos_answers() {
+        use crate::accessibility::testing::{with_choice, with_system_trusted, STATES};
+        for (skipped, trusted) in STATES {
+            let settings = with_choice(get_default_settings(), skipped);
+            assert_eq!(
+                with_system_trusted(trusted, || enigo_wanted(&settings)),
+                !skipped,
+                "skipped {skipped}, trusted {trusted}"
+            );
+        }
     }
 }

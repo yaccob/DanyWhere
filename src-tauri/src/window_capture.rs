@@ -35,10 +35,31 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 use tauri::AppHandle;
 
+use crate::accessibility::AccessibilityState;
 use crate::dictation_context::{self, CapturedWindow};
 
 /// How long a capture may take before the dictation goes on without it.
 const CAPTURE_LIMIT: Duration = Duration::from_millis(800);
+
+/// How DanyWhere learns window titles on macOS.
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TitleSource {
+    /// Every window's title, through the Accessibility API.
+    Accessibility,
+    /// A scriptable app's title by Apple event, once the user allowed it.
+    AppleEvents,
+}
+
+/// Decides [`TitleSource`] for `access`.
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+pub fn title_source(access: &AccessibilityState) -> TitleSource {
+    if access.trusted() {
+        TitleSource::Accessibility
+    } else {
+        TitleSource::AppleEvents
+    }
+}
 
 /// Whether DanyWhere may ask an app for its window title by Apple event.
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Type)]
@@ -139,11 +160,12 @@ pub fn begin_capture(settings: &crate::settings::AppSettings, session: u64) {
     }
     SLOT.begin(session);
     let excluded = settings.dictation_context.excluded_apps.clone();
+    let access = crate::accessibility::state(settings);
     std::thread::Builder::new()
         .name("window-capture".into())
         .spawn(move || {
             let started = Instant::now();
-            let window = frontmost_window(&excluded);
+            let window = frontmost_window(&excluded, access);
             log::debug!(
                 "Captured the dictation's window in {:?}: {}",
                 started.elapsed(),
@@ -277,9 +299,13 @@ fn frontmost_window_of(windows: &[ListedWindow], pid: i32) -> Option<ScreenRect>
 }
 
 /// The frontmost window as a [`CapturedWindow`], unless its app is excluded,
-/// is DanyWhere itself or has no usable title.
-fn frontmost_window(excluded: &[String]) -> Option<CapturedWindow> {
-    capture_front(platform::frontmost, excluded)
+/// is DanyWhere itself or has no usable title. `access` says how its title
+/// may be read ([`title_source`]).
+fn frontmost_window(excluded: &[String], access: AccessibilityState) -> Option<CapturedWindow> {
+    capture_front(
+        |wants_title| platform::frontmost(wants_title, access),
+        excluded,
+    )
 }
 
 /// Whether DanyWhere may ask the app with this id and name for its title.
@@ -335,7 +361,8 @@ pub struct AutomationApp {
 #[specta::specta]
 pub async fn get_window_title_access(app: AppHandle) -> WindowTitleAccess {
     let own_id = app.config().identifier.clone();
-    tauri::async_runtime::spawn_blocking(move || platform::access(&own_id))
+    let access = crate::accessibility::state(&crate::settings::get_settings(&app));
+    tauri::async_runtime::spawn_blocking(move || platform::access(&own_id, access))
         .await
         .unwrap_or(WindowTitleAccess {
             supported: false,
@@ -347,8 +374,8 @@ pub async fn get_window_title_access(app: AppHandle) -> WindowTitleAccess {
 /// DanyWhere: finds out in the background which apps can tell their window
 /// title (macOS without Accessibility), so a dictation finds the answer in a
 /// cache instead of reading the app's scripting definition.
-pub fn warm_up() {
-    platform::warm_up();
+pub fn warm_up(settings: &crate::settings::AppSettings) {
+    platform::warm_up(crate::accessibility::state(settings));
 }
 
 /// DanyWhere: the apps that have answered a title query by Apple event, by
@@ -422,9 +449,10 @@ pub fn prime_title_query(app: &AppHandle) {
         return;
     }
     let excluded = settings.dictation_context.excluded_apps.clone();
+    let access = crate::accessibility::state(&settings);
     std::thread::Builder::new()
         .name("title-query-prime".into())
-        .spawn(move || platform::prime(&excluded))
+        .spawn(move || platform::prime(&excluded, access))
         .map_err(|e| log::warn!("Could not start asking the app in front ahead: {e}"))
         .ok();
 }
@@ -450,8 +478,9 @@ mod platform {
     use objc2_foundation::{NSBundle, NSString};
 
     use super::{
-        frontmost_window_of, prime_front, status_from_os, AutomationApp, AutomationStatus,
-        ListedWindow, ScreenRect, WantsTitle, WindowTitleAccess, ANSWERED,
+        frontmost_window_of, prime_front, status_from_os, title_source, AccessibilityState,
+        AutomationApp, AutomationStatus, ListedWindow, ScreenRect, TitleSource, WantsTitle,
+        WindowTitleAccess, ANSWERED,
     };
     use crate::dictation_context;
     use crate::title_query::{self, Bundle};
@@ -512,7 +541,6 @@ mod platform {
 
     #[link(name = "ApplicationServices", kind = "framework")]
     extern "C" {
-        fn AXIsProcessTrusted() -> bool;
         fn AXUIElementCreateApplication(pid: i32) -> AXUIElementRef;
         fn AXUIElementCopyAttributeValue(
             element: AXUIElementRef,
@@ -816,16 +844,20 @@ mod platform {
     }
 
     /// The frontmost app's id and name, and the title of its window if
-    /// DanyWhere may learn it and `wants_title` allows asking.
-    pub fn frontmost(wants_title: WantsTitle) -> Option<(String, String, Option<String>)> {
+    /// DanyWhere may learn it and `wants_title` allows asking; `access`
+    /// says how ([`title_source`]).
+    pub fn frontmost(
+        wants_title: WantsTitle,
+        access: AccessibilityState,
+    ) -> Option<(String, String, Option<String>)> {
         let (bundle_id, name, pid) = frontmost_app_with_pid()?;
-        // SAFETY: a plain query without side effects.
         let title = if !wants_title(&bundle_id, &name) {
             None
-        } else if unsafe { AXIsProcessTrusted() } {
-            accessibility_title(pid)
         } else {
-            automation_title(&bundle_id, pid)
+            match title_source(&access) {
+                TitleSource::Accessibility => accessibility_title(pid),
+                TitleSource::AppleEvents => automation_title(&bundle_id, pid),
+            }
         };
         Some((bundle_id, name, title))
     }
@@ -931,9 +963,8 @@ mod platform {
     /// With Accessibility every title comes from it; otherwise the apps that
     /// can tell theirs by Apple event, running ones with their permission
     /// (asked without a dialog).
-    pub fn access(own_id: &str) -> WindowTitleAccess {
-        // SAFETY: a plain query without side effects.
-        let accessibility = unsafe { AXIsProcessTrusted() };
+    pub fn access(own_id: &str, access: AccessibilityState) -> WindowTitleAccess {
+        let accessibility = title_source(&access) == TitleSource::Accessibility;
         let apps = if accessibility {
             Vec::new()
         } else {
@@ -987,9 +1018,8 @@ mod platform {
     /// Asks the app in front ahead for its window title (see
     /// [`super::prime_title_query`]): only without Accessibility, only an
     /// app that isn't excluded and hasn't answered yet.
-    pub fn prime(excluded: &[String]) {
-        // SAFETY: a plain query without side effects.
-        if unsafe { AXIsProcessTrusted() } {
+    pub fn prime(excluded: &[String], access: AccessibilityState) {
+        if title_source(&access) == TitleSource::Accessibility {
             return;
         }
         let not_excluded =
@@ -1013,9 +1043,8 @@ mod platform {
         }
     }
 
-    pub fn warm_up() {
-        // SAFETY: a plain query without side effects.
-        if unsafe { AXIsProcessTrusted() } {
+    pub fn warm_up(access: AccessibilityState) {
+        if title_source(&access) == TitleSource::Accessibility {
             return;
         }
         std::thread::Builder::new()
@@ -1043,7 +1072,7 @@ mod platform {
 
 #[cfg(target_os = "windows")]
 mod platform {
-    use super::{AutomationStatus, ScreenRect, WantsTitle, WindowTitleAccess};
+    use super::{AccessibilityState, AutomationStatus, ScreenRect, WantsTitle, WindowTitleAccess};
     use windows::core::PWSTR;
     use windows::Win32::Foundation::{CloseHandle, MAX_PATH, POINT};
     use windows::Win32::Graphics::Gdi::{
@@ -1111,7 +1140,10 @@ mod platform {
 
     /// The foreground window's program (exe file name), its name, and the
     /// window's title when `wants_title` allows it.
-    pub fn frontmost(wants_title: WantsTitle) -> Option<(String, String, Option<String>)> {
+    pub fn frontmost(
+        wants_title: WantsTitle,
+        _access: AccessibilityState,
+    ) -> Option<(String, String, Option<String>)> {
         // SAFETY: Win32 calls on the foreground window handle and a process
         // handle opened and closed here.
         unsafe {
@@ -1157,7 +1189,7 @@ mod platform {
         }
     }
 
-    pub fn access(_own_id: &str) -> WindowTitleAccess {
+    pub fn access(_own_id: &str, _access: AccessibilityState) -> WindowTitleAccess {
         WindowTitleAccess {
             supported: true,
             accessibility: true,
@@ -1166,9 +1198,9 @@ mod platform {
     }
 
     /// Windows needs no permission for titles, so nothing to read ahead.
-    pub fn warm_up() {}
+    pub fn warm_up(_access: AccessibilityState) {}
 
-    pub fn prime(_excluded: &[String]) {}
+    pub fn prime(_excluded: &[String], _access: AccessibilityState) {}
 
     pub fn request(_bundle_id: &str) -> AutomationStatus {
         AutomationStatus::Unknown
@@ -1177,10 +1209,13 @@ mod platform {
 
 #[cfg(not(any(target_os = "macos", target_os = "windows")))]
 mod platform {
-    use super::{AutomationStatus, ScreenRect, WantsTitle, WindowTitleAccess};
+    use super::{AccessibilityState, AutomationStatus, ScreenRect, WantsTitle, WindowTitleAccess};
 
     /// Linux: not yet, so dictations there have no context.
-    pub fn frontmost(_wants_title: WantsTitle) -> Option<(String, String, Option<String>)> {
+    pub fn frontmost(
+        _wants_title: WantsTitle,
+        _access: AccessibilityState,
+    ) -> Option<(String, String, Option<String>)> {
         None
     }
 
@@ -1205,7 +1240,7 @@ mod platform {
         Vec::new()
     }
 
-    pub fn access(_own_id: &str) -> WindowTitleAccess {
+    pub fn access(_own_id: &str, _access: AccessibilityState) -> WindowTitleAccess {
         WindowTitleAccess {
             supported: false,
             accessibility: false,
@@ -1213,9 +1248,9 @@ mod platform {
         }
     }
 
-    pub fn warm_up() {}
+    pub fn warm_up(_access: AccessibilityState) {}
 
-    pub fn prime(_excluded: &[String]) {}
+    pub fn prime(_excluded: &[String], _access: AccessibilityState) {}
 
     pub fn request(_bundle_id: &str) -> AutomationStatus {
         AutomationStatus::Unknown
@@ -1241,6 +1276,34 @@ mod tests {
             });
             Some((id.to_string(), name.to_string(), title))
         }
+    }
+
+    /// [`title_source`] for the user's choice `skipped` and macOS answering
+    /// `trusted`.
+    fn source_for(skipped: bool, trusted: bool) -> TitleSource {
+        use crate::accessibility::testing::{with_choice, with_system_trusted};
+        let settings = with_choice(crate::settings::get_default_settings(), skipped);
+        with_system_trusted(trusted, || {
+            title_source(&crate::accessibility::state(&settings))
+        })
+    }
+
+    #[test]
+    fn titles_come_through_accessibility_where_macos_grants_it() {
+        assert_eq!(source_for(false, true), TitleSource::Accessibility);
+    }
+
+    #[test]
+    fn titles_come_by_apple_event_where_macos_refuses() {
+        assert_eq!(source_for(false, false), TitleSource::AppleEvents);
+        assert_eq!(source_for(true, false), TitleSource::AppleEvents);
+    }
+
+    #[test]
+    fn titles_follow_macos_alone_even_when_the_user_chose_to_go_without() {
+        // As before the one source: the mode without Accessibility reads
+        // titles through it once macOS grants it.
+        assert_eq!(source_for(true, true), TitleSource::Accessibility);
     }
 
     #[test]

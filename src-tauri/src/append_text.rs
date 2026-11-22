@@ -41,7 +41,7 @@ use enigo::{Direction, Enigo, Key, Keyboard};
 use serde::{Deserialize, Serialize};
 use specta::Type;
 
-use crate::settings::{AutoSubmitKey, PasteMethod};
+use crate::settings::{AppSettings, AutoSubmitKey, PasteMethod};
 
 /// The system whose key names and key presses the field uses.
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Type)]
@@ -493,12 +493,22 @@ pub fn text_to_paste(text: String, value: &str) -> String {
 pub fn keys_after_paste(
     append: &Append,
     paste_method: PasteMethod,
-    accessibility_skipped: bool,
+    no_simulated_input: bool,
 ) -> Vec<AppendKey> {
-    if paste_method == PasteMethod::None || accessibility_skipped {
+    if paste_method == PasteMethod::None || no_simulated_input {
         return Vec::new();
     }
     append.keys.clone()
+}
+
+/// [`keys_after_paste`] for a dictation's `settings`: their paste method,
+/// and whether DanyWhere may simulate key presses (`accessibility`).
+pub fn keys_after_paste_for(append: &Append, settings: &AppSettings) -> Vec<AppendKey> {
+    keys_after_paste(
+        append,
+        settings.paste_method,
+        !crate::accessibility::state(settings).can_simulate_input(),
+    )
 }
 
 /// Pause between two key presses, so the app in front handles each one.
@@ -1146,6 +1156,25 @@ mod tests {
         let append = for_value(r"\s{Enter}");
         assert!(keys_after_paste(&append, PasteMethod::CtrlV, true).is_empty());
         assert_eq!(text_to_paste("Hallo".into(), r"\s{Enter}"), "Hallo ");
+    }
+
+    #[test]
+    fn a_dictation_sends_its_key_presses_unless_the_user_chose_to_go_without() {
+        use crate::accessibility::testing::{with_choice, with_system_trusted, STATES};
+        let append = for_value(r"\s{Enter}");
+        for (skipped, trusted) in STATES {
+            let mut settings = with_choice(get_default_settings(), skipped);
+            settings.paste_method = PasteMethod::CtrlV;
+            let expected = if skipped { vec![] } else { vec![Enter] };
+            assert_eq!(
+                with_system_trusted(trusted, || keys_after_paste_for(&append, &settings)),
+                expected,
+                "skipped {skipped}, trusted {trusted}"
+            );
+        }
+        let mut settings = get_default_settings();
+        settings.paste_method = PasteMethod::None;
+        assert!(keys_after_paste_for(&append, &settings).is_empty());
     }
 
     // ---- Migration ----------------------------------------------------------
