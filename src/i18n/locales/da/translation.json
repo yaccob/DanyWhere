@@ -1182,7 +1182,8 @@
       "soundTheme": {
         "label": "Lydtema",
         "description": "Vælg et lydtema til feedback ved start og stop af optagelse",
-        "preview": "Afspil lydtemaet (start, stop og derefter lyden, der afslutter en diktering)"
+        "preview": "Afspil lydtemaet (start, stop og derefter lyden, der afslutter en diktering)",
+        "custom": "Brugerdefineret"
       },
       "wordCorrectionThreshold": {
         "title": "Tærskel for ordkorrektion",

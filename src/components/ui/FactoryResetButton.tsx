@@ -25,12 +25,16 @@ export const FactoryResetButton: React.FC<FactoryResetButtonProps> = ({
   const { t } = useTranslation();
   const scope = useSettingsScope();
   if (!showsFactoryReset(scope)) return null;
+  // The same words as a tooltip, so they show to everyone (qa
+  // 2026-11-22_1852).
+  const label = t("common.resetSetting", { setting });
   return (
     <ResetButton
       onClick={onClick}
       disabled={disabled}
       className={className}
-      ariaLabel={t("common.resetSetting", { setting })}
+      ariaLabel={label}
+      title={label}
     />
   );
 };

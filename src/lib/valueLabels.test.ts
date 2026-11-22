@@ -539,6 +539,11 @@ check("the sound themes are called as their list calls them", () => {
   assert.equal(valueLabel(en, "sound_theme", "pop"), "Pop");
 });
 
+check("the custom sound theme is called in the interface's language", () => {
+  assert.equal(valueLabel(de, "sound_theme", "custom"), "Benutzerdefiniert");
+  assert.equal(valueLabel(en, "sound_theme", "custom"), "Custom");
+});
+
 check("no choice of a profile setting shows its stored name", () => {
   const raw: string[] = [];
   for (const lng of ["de", "en"]) {

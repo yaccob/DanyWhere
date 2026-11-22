@@ -11,7 +11,7 @@
 import type { ProfileValues } from "@/bindings";
 import type { DefaultsPage } from "./navigation";
 import type { OwnValue } from "./profileScope";
-import { SOUND_THEME_NAMES } from "./soundThemeNames";
+import { soundThemeName } from "./soundThemeNames";
 
 export type ProfileFieldName = keyof ProfileValues;
 
@@ -42,9 +42,9 @@ export interface ProfileFieldInfo {
   /** A string kept behind a switch: the stored value that turns it on;
    * any other shows as off, as the switch does (qa 2026-11-22_1731). */
   switchOn?: string;
-  /** Choices whose control shows a fixed name rather than a translation,
-   * by stored value. */
-  names?: Readonly<Record<string, string>>;
+  /** The name a choice's control shows, by stored value, where it isn't
+   * found under `options` (the sound themes). */
+  names?: (value: string, t: (key: string) => string) => string;
 }
 
 const FIELDS = "settings.profileView.fields";
@@ -241,7 +241,7 @@ export const PROFILE_FIELDS = {
   sound_theme: {
     page: "advanced",
     label: "settings.debug.soundTheme.label",
-    names: SOUND_THEME_NAMES,
+    names: soundThemeName,
   },
   always_on_microphone: {
     page: "advanced",

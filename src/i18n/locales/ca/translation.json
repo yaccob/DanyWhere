@@ -1182,7 +1182,8 @@
       "soundTheme": {
         "label": "Tema de so",
         "description": "Trieu un tema de so per als avisos d'inici i d'aturada de l'enregistrament",
-        "preview": "Escolta el tema de so (reprodueix l'inici, l'aturada i després el so que acaba un dictat)"
+        "preview": "Escolta el tema de so (reprodueix l'inici, l'aturada i després el so que acaba un dictat)",
+        "custom": "Personalitzat"
       },
       "wordCorrectionThreshold": {
         "title": "Llindar de correcció de paraules",

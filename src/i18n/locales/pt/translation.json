@@ -1182,7 +1182,8 @@
       "soundTheme": {
         "label": "Tema de Som",
         "description": "Escolha um tema de som para feedback de início e parada de gravação",
-        "preview": "Ouvir o tema de som (toca o início, a parada e depois o som que encerra um ditado)"
+        "preview": "Ouvir o tema de som (toca o início, a parada e depois o som que encerra um ditado)",
+        "custom": "Personalizado"
       },
       "wordCorrectionThreshold": {
         "title": "Limite de Correção de Palavras",

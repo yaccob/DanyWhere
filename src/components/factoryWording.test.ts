@@ -39,6 +39,22 @@ check("it hides itself by the page's scope", () => {
 check("it names the factory setting", () =>
   assert.match(factoryButton, /t\("common\.resetSetting"/),
 );
+// The same words as a tooltip (qa 2026-11-22_1852, small follow-ups): the
+// label is only read out, the tooltip shows it to everyone.
+check("it shows its label as a tooltip too", () => {
+  assert.match(factoryButton, /\btitle=\{label\}/);
+  assert.match(factoryButton, /\bariaLabel=\{label\}/);
+  assert.match(read("./ui/ResetButton.tsx"), /\btitle=\{title\}/);
+});
+
+// The sound picker names the custom theme in the interface's language, as
+// the page "Profile" does (soundThemeName).
+const soundPicker = read("./settings/SoundPicker.tsx");
+check("the sound picker translates the custom theme's name", () => {
+  assert.ok(soundPicker, "SoundPicker.tsx not found");
+  assert.match(soundPicker, /soundThemeName\("custom", t\)/);
+  assert.doesNotMatch(soundPicker, /SOUND_THEME_NAMES\.custom/);
+});
 
 const RESETTING = {
   slider: "./ui/Slider.tsx",

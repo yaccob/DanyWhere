@@ -1182,7 +1182,8 @@
       "soundTheme": {
         "label": "Thème sonore",
         "description": "Choisir un thème sonore pour les retours de début et de fin d'enregistrement",
-        "preview": "Écouter le thème sonore (joue le début, l'arrêt, puis le son qui termine une dictée)"
+        "preview": "Écouter le thème sonore (joue le début, l'arrêt, puis le son qui termine une dictée)",
+        "custom": "Personnalisé"
       },
       "wordCorrectionThreshold": {
         "title": "Seuil de correction des mots",
