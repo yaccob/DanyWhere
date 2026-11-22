@@ -14,6 +14,8 @@ mod commands;
 mod delivery;
 mod dictation_key_inserts;
 mod dictation_microphone;
+// DanyWhere: the end of a dictation, from the stopped recording to its text.
+mod dictation_flow;
 // DanyWhere: what the end of a dictation runs with, read once.
 mod dictation_snapshot;
 mod end_keys;
