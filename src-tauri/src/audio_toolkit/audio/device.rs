@@ -54,14 +54,19 @@ pub fn output_device_name(device: &cpal::Device) -> Option<String> {
 }
 
 pub fn list_output_devices() -> Result<Vec<OutputDeviceInfo>, Box<dyn std::error::Error>> {
-    let host = crate::audio_toolkit::get_cpal_host();
-    let default_name = host
-        .default_output_device()
-        .and_then(|d| output_device_name(&d));
+    list_output_devices_on(&crate::audio_toolkit::get_cpal_host())
+}
+
+/// DanyWhere: the output devices of `host`, numbered in its order. The
+/// default is told by its name.
+pub fn list_output_devices_on(
+    host: &impl OutputHost,
+) -> Result<Vec<OutputDeviceInfo>, Box<dyn std::error::Error>> {
+    let default_name = host.default_device().and_then(|d| output_device_name(&d));
 
     let mut out = Vec::<OutputDeviceInfo>::new();
 
-    for (index, device) in host.output_devices()?.enumerate() {
+    for (index, device) in host.all_devices()?.enumerate() {
         let name = output_device_name(&device).unwrap_or_else(|| "Unknown".into());
 
         let is_default = Some(name.clone()) == default_name;
@@ -74,4 +79,107 @@ pub fn list_output_devices() -> Result<Vec<OutputDeviceInfo>, Box<dyn std::error
     }
 
     Ok(out)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::audio_toolkit::audio::fake_output::{FakeOutput, FakeOutputs};
+    use rodio::cpal::ErrorKind;
+
+    // DanyWhere: the list of output devices on a fake host (`fake_output`).
+
+    /// The list as (index, name, is the default).
+    fn listed(outputs: &FakeOutputs) -> Vec<(String, String, bool)> {
+        list_output_devices_on(&outputs.host())
+            .expect("the devices are listed")
+            .into_iter()
+            .map(|device| (device.index, device.name, device.is_default))
+            .collect()
+    }
+
+    fn row(index: &str, name: &str, is_default: bool) -> (String, String, bool) {
+        (index.to_string(), name.to_string(), is_default)
+    }
+
+    #[test]
+    fn the_list_numbers_the_devices_in_order_and_marks_the_default() {
+        let speakers = FakeOutput::new("MacBook Pro Speakers");
+        let headset = FakeOutput::new("USB Headset");
+        let display = FakeOutput::new("Studio Display Speakers");
+        let outputs = FakeOutputs::new(&[&speakers, &headset, &display]).with_default(&headset);
+        assert_eq!(
+            listed(&outputs),
+            [
+                row("0", "MacBook Pro Speakers", false),
+                row("1", "USB Headset", true),
+                row("2", "Studio Display Speakers", false),
+            ]
+        );
+    }
+
+    #[test]
+    fn without_a_default_device_none_is_marked() {
+        let speakers = FakeOutput::new("MacBook Pro Speakers");
+        let outputs = FakeOutputs::new(&[&speakers]);
+        assert_eq!(listed(&outputs), [row("0", "MacBook Pro Speakers", false)]);
+    }
+
+    #[test]
+    fn a_device_whose_name_cannot_be_read_is_listed_as_unknown() {
+        let speakers = FakeOutput::new("MacBook Pro Speakers");
+        let gone = FakeOutput::new("AirPods Pro").nameless();
+        let outputs = FakeOutputs::new(&[&speakers, &gone]).with_default(&speakers);
+        assert_eq!(
+            listed(&outputs),
+            [
+                row("0", "MacBook Pro Speakers", true),
+                row("1", "Unknown", false),
+            ]
+        );
+    }
+
+    #[test]
+    fn a_default_whose_name_cannot_be_read_marks_no_device() {
+        let speakers = FakeOutput::new("MacBook Pro Speakers").nameless();
+        let headset = FakeOutput::new("USB Headset");
+        let outputs = FakeOutputs::new(&[&speakers, &headset]).with_default(&speakers);
+        assert_eq!(
+            listed(&outputs),
+            [row("0", "Unknown", false), row("1", "USB Headset", false)]
+        );
+    }
+
+    #[test]
+    fn devices_named_as_the_default_are_all_marked_default() {
+        // Today's behaviour: the default is told by its name, so a second
+        // device of that name looks like the default too.
+        let first = FakeOutput::new("USB Audio");
+        let second = FakeOutput::new("USB Audio");
+        let outputs = FakeOutputs::new(&[&first, &second]).with_default(&first);
+        assert_eq!(
+            listed(&outputs),
+            [row("0", "USB Audio", true), row("1", "USB Audio", true)]
+        );
+    }
+
+    #[test]
+    fn a_microphone_is_not_listed() {
+        let speakers = FakeOutput::new("MacBook Pro Speakers");
+        let microphone = FakeOutput::new("MacBook Pro Microphone").input_only();
+        let outputs = FakeOutputs::new(&[&microphone, &speakers]).with_default(&speakers);
+        assert_eq!(listed(&outputs), [row("0", "MacBook Pro Speakers", true)]);
+    }
+
+    #[test]
+    fn a_list_that_cannot_be_read_is_an_error() {
+        let speakers = FakeOutput::new("MacBook Pro Speakers");
+        let outputs = FakeOutputs::new(&[&speakers])
+            .with_default(&speakers)
+            .failing_to_list(ErrorKind::HostUnavailable);
+        let error = list_output_devices_on(&outputs.host())
+            .err()
+            .expect("the list fails");
+        assert_eq!(error.to_string(), ErrorKind::HostUnavailable.to_string());
+    }
 }

@@ -141,6 +141,11 @@ impl FakeOutput {
         self.change(|b| b.offers = None)
     }
 
+    /// A microphone, not an output.
+    pub(crate) fn input_only(self) -> Self {
+        self.change(|b| b.input_only = true)
+    }
+
     /// Building a stream fails with `kind`.
     pub(crate) fn failing_to_open(self, kind: ErrorKind) -> Self {
         self.change(|b| b.open_fails = Some(kind))
