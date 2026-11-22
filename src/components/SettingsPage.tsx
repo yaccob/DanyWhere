@@ -178,8 +178,8 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
       page = <AboutSettings />;
       break;
   }
-  // "Open in …" and the page "Profile"'s list open a profile's page; the
-  // list also jumps to the setting there (B5).
+  // "Open in …" under a default and the page "Profile"'s list open a
+  // profile's page and jump to the setting there (B5, qa 2026-11-22_1638).
   const requestJump = useSettingJump((s) => s.request);
   const openProfilePage = (
     profileId: string,
