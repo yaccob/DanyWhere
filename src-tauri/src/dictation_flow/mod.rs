@@ -879,19 +879,119 @@ mod tests {
         ));
     }
 
-    #[test]
-    fn a_dictation_without_post_processing_is_pasted_and_saved() {
-        let ports = FakePorts::new(Script::default());
-        let snapshot = snapshot_with(get_default_settings());
-        assert!(!snapshot.post_process);
-        let values = snapshot.values.clone();
-        let append_text = snapshot.end.append_text.clone();
-        let end_id = snapshot.end.id.clone();
-        finish(&ports, snapshot);
+    // ---- The Accessibility states ------------------------------------------
+    //
+    // The tests where the state matters run in each of them, all with the
+    // default profile's paste method (⌘V): without Accessibility it doesn't
+    // count (`deliver_text`).
 
-        assert_eq!(
-            ports.take_events(),
-            vec![
+    /// The states a dictation is delivered in (`delivery::dictation_target`).
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    enum Access {
+        /// With Accessibility: pasted into the application in front.
+        With,
+        /// Without, on macOS: it waits for the "Insert Last Dictation"
+        /// service.
+        WithoutForService,
+        /// Without, where there is no such service: on the clipboard.
+        WithoutOnClipboard,
+    }
+
+    const ACCESS: [Access; 3] = [
+        Access::With,
+        Access::WithoutForService,
+        Access::WithoutOnClipboard,
+    ];
+
+    impl Access {
+        /// `settings` in this state: without Accessibility as onboarding's
+        /// "Continue without Accessibility" leaves them, but with the paste
+        /// method of `settings`.
+        fn settings(self, mut settings: AppSettings) -> AppSettings {
+            if self != Access::With {
+                let paste_method = settings.paste_method;
+                crate::shortcut::apply_no_accessibility_mode(&mut settings);
+                settings.paste_method = paste_method;
+            }
+            settings
+        }
+
+        /// `script` as the app plays it in this state: Enigo only with
+        /// Accessibility, the service only on macOS, and no service call
+        /// where there is no service.
+        fn script(self, script: Script) -> Script {
+            let service_available = self != Access::WithoutOnClipboard;
+            Script {
+                input_simulation: self == Access::With,
+                service_available,
+                call_waiting: script.call_waiting && service_available,
+                service_takes: script.service_takes && service_available,
+                ..script
+            }
+        }
+
+        /// How `text` with the "Append" value `append_text` and the profile
+        /// `values` is delivered when no service call waits: pasted, after
+        /// a look at the application in front; nothing yet, it waits for
+        /// the service; or on the clipboard with its "Append" text.
+        fn delivered(self, text: &str, values: &ProfileValues, append_text: &str) -> Vec<Event> {
+            match self {
+                Access::With => vec![Event::RedoLookedAt(1), paste(text, values, append_text)],
+                Access::WithoutForService => Vec::new(),
+                Access::WithoutOnClipboard => vec![Event::LeftOnClipboard(
+                    crate::append_text::text_to_paste(text.to_string(), append_text),
+                )],
+            }
+        }
+
+        /// What the overlay says after a delivered dictation.
+        fn after_dictation(self) -> Overlay {
+            Overlay::AfterDictation(match self {
+                Access::With => None,
+                Access::WithoutForService => Some((DictationNotice::ReadyToInsert, NOTICE_TIME)),
+                Access::WithoutOnClipboard => Some((DictationNotice::OnClipboard, NOTICE_TIME)),
+            })
+        }
+    }
+
+    /// How the paste thread ends a dictation delivered in `access`.
+    fn typed_end(access: Access) -> Vec<Event> {
+        vec![
+            Event::ClearNotice,
+            Event::SoundAfterDictation(pasted_end()),
+            Event::Overlay(access.after_dictation()),
+            Event::Tray(TrayIconState::Idle),
+            Event::Complete(TranscriptionOutcome::Typed, SAMPLES),
+            Event::Finished,
+        ]
+    }
+
+    /// How the paste thread ends a dictation whose delivery failed.
+    fn failed_end(code: NoticeCode) -> Vec<Event> {
+        vec![
+            Event::SoundAfterDictation(DictationEnd {
+                outcome: TranscriptionOutcome::Failed,
+                ..pasted_end()
+            }),
+            Event::Raise(notice(code)),
+            Event::Tray(TrayIconState::Idle),
+            Event::Complete(TranscriptionOutcome::Failed, SAMPLES),
+            Event::Finished,
+        ]
+    }
+
+    #[test]
+    fn a_dictation_without_post_processing_is_saved_and_delivered() {
+        for access in ACCESS {
+            let ports = FakePorts::new(access.script(Script::default()));
+            let snapshot = snapshot_with(access.settings(get_default_settings()));
+            assert!(!snapshot.post_process);
+            let values = snapshot.values.clone();
+            let append_text = snapshot.end.append_text.clone();
+            let end_id = snapshot.end.id.clone();
+            finish(&ports, snapshot);
+
+            let mut expected = vec![
                 // The recording stops.
                 Event::Tray(TrayIconState::Transcribing),
                 Event::Overlay(Overlay::Working {
@@ -919,43 +1019,29 @@ mod tests {
                 },
                 Event::HistoryUpdated(1),
                 Event::Hook("hello".to_string()),
-                // It is pasted.
                 Event::SpawnPaste,
-                Event::RedoLookedAt(1),
-                Event::Paste {
-                    text: "hello".to_string(),
-                    values: Some(values),
-                    append_text,
-                },
-                Event::ClearNotice,
-                Event::SoundAfterDictation(DictationEnd {
-                    outcome: TranscriptionOutcome::Typed,
-                    cancelled: false,
-                    inserted_by_service: false,
-                    put_on_clipboard: false,
-                    owns_ui: true,
-                }),
-                Event::Overlay(Overlay::AfterDictation(None)),
-                Event::Tray(TrayIconState::Idle),
-                Event::Complete(TranscriptionOutcome::Typed, SAMPLES),
-                Event::Finished,
-            ]
-        );
-        let entries = ports.entries();
-        assert_eq!(entries.len(), 1);
-        let entry = &entries[0];
-        assert_eq!(entry.transcription_text, "hello");
-        assert!(!entry.post_process_requested);
-        assert_eq!(entry.post_processed_text, None);
-        assert_eq!(entry.transcription_model.as_deref(), Some(MODEL));
-        assert!(
-            ports
-                .history()
-                .recordings_dir()
-                .join(&entry.file_name)
-                .is_file(),
-            "the recording is kept next to History"
-        );
+            ];
+            // It is pasted with Accessibility; without, it waits for the
+            // service, or on the clipboard where there is none.
+            expected.extend(access.delivered("hello", &values, &append_text));
+            expected.extend(typed_end(access));
+            assert_eq!(ports.take_events(), expected, "{access:?}");
+            let entries = ports.entries();
+            assert_eq!(entries.len(), 1);
+            let entry = &entries[0];
+            assert_eq!(entry.transcription_text, "hello");
+            assert!(!entry.post_process_requested);
+            assert_eq!(entry.post_processed_text, None);
+            assert_eq!(entry.transcription_model.as_deref(), Some(MODEL));
+            assert!(
+                ports
+                    .history()
+                    .recordings_dir()
+                    .join(&entry.file_name)
+                    .is_file(),
+                "the recording is kept next to History"
+            );
+        }
     }
 
     // ---- Post-processing ---------------------------------------------------
@@ -1029,36 +1115,43 @@ mod tests {
     }
 
     #[test]
-    fn a_failed_post_processing_pastes_the_transcript_and_says_so() {
-        let settings = with_end(
-            post_process_settings(&no_server()),
-            POST_PROCESS_ID,
-            " (sent)",
-            false,
-        );
-        let snapshot = snapshot_of(settings, None, post_processing());
-        let values = snapshot.values.clone();
-        let ports = FakePorts::new(Script::default());
-        finish(&ports, snapshot);
+    fn a_failed_post_processing_delivers_the_transcript_and_says_so() {
+        for access in ACCESS {
+            let settings = with_end(
+                access.settings(post_process_settings(&no_server())),
+                POST_PROCESS_ID,
+                " (sent)",
+                false,
+            );
+            let snapshot = snapshot_of(settings, None, post_processing());
+            let values = snapshot.values.clone();
+            let ports = FakePorts::new(access.script(Script::default()));
+            finish(&ports, snapshot);
 
-        let events = ports.take_events();
-        assert_eq!(
-            after(&events, &Event::SpawnPaste),
-            vec![
-                Event::RedoLookedAt(1),
-                paste("hello", &values, " (sent)"),
-                Event::ClearNotice,
-                Event::SoundAfterDictation(pasted_end()),
-                Event::Raise(notice(NoticeCode::PostProcessFailed)),
-                Event::Tray(TrayIconState::Idle),
-                Event::Complete(TranscriptionOutcome::Typed, SAMPLES),
-                Event::Finished,
-            ]
-        );
-        let entry = &ports.entries()[0];
-        assert!(entry.post_process_requested);
-        assert_eq!(entry.post_processed_text, None);
-        assert_eq!(entry.transcription_text, "hello");
+            // Delivered as each state does; the notice takes the overlay's
+            // place, also where the overlay would say where the text waits.
+            let events = ports.take_events();
+            assert_eq!(
+                after(&events, &Event::SpawnPaste),
+                [
+                    access.delivered("hello", &values, " (sent)"),
+                    vec![
+                        Event::ClearNotice,
+                        Event::SoundAfterDictation(pasted_end()),
+                        Event::Raise(notice(NoticeCode::PostProcessFailed)),
+                        Event::Tray(TrayIconState::Idle),
+                        Event::Complete(TranscriptionOutcome::Typed, SAMPLES),
+                        Event::Finished,
+                    ],
+                ]
+                .concat(),
+                "{access:?}"
+            );
+            let entry = &ports.entries()[0];
+            assert!(entry.post_process_requested);
+            assert_eq!(entry.post_processed_text, None);
+            assert_eq!(entry.transcription_text, "hello");
+        }
     }
 
     #[test]
@@ -1348,93 +1441,180 @@ mod tests {
 
     #[test]
     fn a_waiting_service_call_inserts_the_text_and_closes_the_overlay() {
-        let snapshot = snapshot_with(with_end(get_default_settings(), PLAIN, " (sent)", false));
-        let values = snapshot.values.clone();
-        let ports = FakePorts::new(Script {
-            call_waiting: true,
-            service_takes: true,
-            ..Script::default()
-        });
-        finish(&ports, snapshot);
-        assert_eq!(
-            after(&ports.take_events(), &Event::SpawnPaste),
-            vec![
-                Event::RedoLookedAt(1),
-                paste("hello", &values, " (sent)"),
-                Event::ClearNotice,
-                Event::ServiceInserted("hello (sent)".to_string()),
-                Event::SoundAfterDictation(DictationEnd {
-                    inserted_by_service: true,
-                    ..pasted_end()
-                }),
-                Event::Overlay(Overlay::Hide),
-                Event::Tray(TrayIconState::Idle),
-                Event::Complete(TranscriptionOutcome::Typed, SAMPLES),
-                Event::Finished,
-            ]
-        );
+        // Only where the service exists.
+        for access in [Access::With, Access::WithoutForService] {
+            let snapshot = snapshot_with(access.settings(with_end(
+                get_default_settings(),
+                PLAIN,
+                " (sent)",
+                false,
+            )));
+            let values = snapshot.values.clone();
+            let ports = FakePorts::new(access.script(Script {
+                call_waiting: true,
+                service_takes: true,
+                ..Script::default()
+            }));
+            finish(&ports, snapshot);
+            let pasted = match access {
+                // Pasted, and inserted by the call too.
+                Access::With => vec![paste("hello", &values, " (sent)")],
+                // Not pasted: only the call inserts it.
+                _ => Vec::new(),
+            };
+            assert_eq!(
+                after(&ports.take_events(), &Event::SpawnPaste),
+                [
+                    // It goes into the application in front: redone for it
+                    // if needed.
+                    vec![Event::RedoLookedAt(1)],
+                    pasted,
+                    vec![
+                        Event::ClearNotice,
+                        Event::ServiceInserted("hello (sent)".to_string()),
+                        Event::SoundAfterDictation(DictationEnd {
+                            inserted_by_service: true,
+                            ..pasted_end()
+                        }),
+                        Event::Overlay(Overlay::Hide),
+                        Event::Tray(TrayIconState::Idle),
+                        Event::Complete(TranscriptionOutcome::Typed, SAMPLES),
+                        Event::Finished,
+                    ],
+                ]
+                .concat(),
+                "{access:?}"
+            );
+        }
     }
 
     #[test]
     fn copy_last_transcript_during_the_dictation_puts_it_on_the_clipboard_instead() {
-        let snapshot = snapshot_with(with_end(get_default_settings(), PLAIN, " (sent)", false));
-        let ports = FakePorts::new(Script {
-            copy_requested: true,
-            clipboard_reason: Some(ClipboardReason::CopyLast),
-            ..Script::default()
-        });
-        finish(&ports, snapshot);
-        // Neither redone for the app in front nor pasted.
-        assert_eq!(
-            after(&ports.take_events(), &Event::SpawnPaste),
-            vec![
-                Event::ClearNotice,
-                Event::PutOnClipboard("hello (sent)".to_string()),
-                Event::SoundAfterDictation(DictationEnd {
-                    put_on_clipboard: true,
-                    ..pasted_end()
-                }),
-                Event::Overlay(Overlay::OnClipboard(ClipboardReason::CopyLast)),
-                Event::Tray(TrayIconState::Idle),
-                Event::Complete(TranscriptionOutcome::Typed, SAMPLES),
-                Event::Finished,
-            ]
-        );
-    }
-
-    #[test]
-    fn a_paste_that_is_blocked_or_fails_says_so() {
-        for (pasted, code) in [
-            (Ok(PasteOutcome::Blocked), NoticeCode::PasteBlockedElevated),
-            (Err("no keyboard".to_string()), NoticeCode::PasteFailed),
-        ] {
-            let snapshot = snapshot_with(get_default_settings());
-            let values = snapshot.values.clone();
-            let append_text = snapshot.end.append_text.clone();
-            let ports = FakePorts::new(Script {
-                paste: pasted,
-                // Not even a waiting service call gets a failed text.
-                call_waiting: true,
-                service_takes: true,
+        // The same in every state: the request decides before the state does.
+        for access in ACCESS {
+            let snapshot = snapshot_with(access.settings(with_end(
+                get_default_settings(),
+                PLAIN,
+                " (sent)",
+                false,
+            )));
+            let ports = FakePorts::new(access.script(Script {
+                copy_requested: true,
+                clipboard_reason: Some(ClipboardReason::CopyLast),
                 ..Script::default()
-            });
+            }));
             finish(&ports, snapshot);
+            // Neither redone for the app in front nor pasted.
             assert_eq!(
                 after(&ports.take_events(), &Event::SpawnPaste),
                 vec![
-                    Event::RedoLookedAt(1),
-                    paste("hello", &values, &append_text),
+                    Event::ClearNotice,
+                    Event::PutOnClipboard("hello (sent)".to_string()),
                     Event::SoundAfterDictation(DictationEnd {
-                        outcome: TranscriptionOutcome::Failed,
+                        put_on_clipboard: true,
                         ..pasted_end()
                     }),
-                    Event::Raise(notice(code)),
+                    Event::Overlay(Overlay::OnClipboard(ClipboardReason::CopyLast)),
                     Event::Tray(TrayIconState::Idle),
-                    Event::Complete(TranscriptionOutcome::Failed, SAMPLES),
+                    Event::Complete(TranscriptionOutcome::Typed, SAMPLES),
                     Event::Finished,
                 ],
-                "{code:?}"
+                "{access:?}"
             );
+        }
+    }
+
+    #[test]
+    fn an_append_texts_key_press_goes_with_the_paste_and_nowhere_else() {
+        // A space, then Enter once the text is in.
+        let append_text = r"\s{Enter}";
+        for access in ACCESS {
+            let snapshot = snapshot_with(access.settings(with_end(
+                get_default_settings(),
+                PLAIN,
+                append_text,
+                false,
+            )));
+            let values = snapshot.values.clone();
+            let ports = FakePorts::new(access.script(Script::default()));
+            finish(&ports, snapshot);
+            let delivered = match access {
+                // The paste gets the whole value and presses Enter after
+                // the text (`clipboard::paste_as_configured`).
+                Access::With => vec![Event::RedoLookedAt(1), paste("hello", &values, append_text)],
+                // Nothing to press it in: the text waits with its space.
+                Access::WithoutForService => Vec::new(),
+                Access::WithoutOnClipboard => vec![Event::LeftOnClipboard("hello ".to_string())],
+            };
+            assert_eq!(
+                after(&ports.take_events(), &Event::SpawnPaste),
+                [delivered, typed_end(access)].concat(),
+                "{access:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn a_delivery_that_is_blocked_or_fails_says_so() {
+        for access in ACCESS {
+            for (pasted, code) in [
+                (Ok(PasteOutcome::Blocked), NoticeCode::PasteBlockedElevated),
+                (Err("no keyboard".to_string()), NoticeCode::PasteFailed),
+            ] {
+                let snapshot = snapshot_with(access.settings(get_default_settings()));
+                let values = snapshot.values.clone();
+                let append_text = snapshot.end.append_text.clone();
+                let ports = FakePorts::new(access.script(Script {
+                    paste: pasted,
+                    clipboard: Err("the clipboard is locked".to_string()),
+                    // Not even a waiting service call gets a failed text.
+                    call_waiting: true,
+                    service_takes: true,
+                    ..Script::default()
+                }));
+                finish(&ports, snapshot);
+                let expected = match access {
+                    // The paste fails as scripted.
+                    Access::With => [
+                        vec![
+                            Event::RedoLookedAt(1),
+                            paste("hello", &values, &append_text),
+                        ],
+                        failed_end(code),
+                    ]
+                    .concat(),
+                    // Nothing is pasted or copied, so nothing fails: the
+                    // call inserts it.
+                    Access::WithoutForService => vec![
+                        Event::RedoLookedAt(1),
+                        Event::ClearNotice,
+                        Event::ServiceInserted(crate::append_text::text_to_paste(
+                            "hello".to_string(),
+                            &append_text,
+                        )),
+                        Event::SoundAfterDictation(DictationEnd {
+                            inserted_by_service: true,
+                            ..pasted_end()
+                        }),
+                        Event::Overlay(Overlay::Hide),
+                        Event::Tray(TrayIconState::Idle),
+                        Event::Complete(TranscriptionOutcome::Typed, SAMPLES),
+                        Event::Finished,
+                    ],
+                    // Only the clipboard can fail, and says so as a paste
+                    // that failed.
+                    Access::WithoutOnClipboard => [
+                        access.delivered("hello", &values, &append_text),
+                        failed_end(NoticeCode::PasteFailed),
+                    ]
+                    .concat(),
+                };
+                assert_eq!(
+                    after(&ports.take_events(), &Event::SpawnPaste),
+                    expected,
+                    "{access:?}, a paste would give {code:?}"
+                );
+            }
         }
     }
 
@@ -1641,48 +1821,102 @@ mod tests {
         assert_eq!(ports.entries()[0].transcription_text, "hello");
     }
 
+    /// The redo for the application in front, whose profile has the
+    /// dictation profile's `values` but pastes with ⌃⇧V, and whose end
+    /// appends " (other)".
+    fn redo_into_other(
+        values: &ProfileValues,
+        text: Option<&str>,
+        post_process_failed: bool,
+    ) -> ForInsert {
+        let mut other = values.clone();
+        other.paste_method = PasteMethod::CtrlShiftV;
+        ForInsert {
+            text: text.map(str::to_string),
+            values: other,
+            end: EndKey {
+                id: "send".to_string(),
+                append_text: " (other)".to_string(),
+                ..EndKey::default()
+            },
+            post_process_failed,
+        }
+    }
+
     #[test]
     fn the_application_in_front_with_another_profile_gets_its_redo_and_append_text() {
-        let snapshot = snapshot_with(get_default_settings());
-        let mut other = snapshot.values.clone();
-        other.paste_method = PasteMethod::CtrlShiftV;
-        let other_end = EndKey {
-            id: "send".to_string(),
-            append_text: " (other)".to_string(),
-            ..EndKey::default()
-        };
-        let redo = |text: Option<&str>, post_process_failed: bool| ForInsert {
-            text: text.map(str::to_string),
-            values: other.clone(),
-            end: other_end.clone(),
-            post_process_failed,
-        };
-
-        // Redone there: its text, through the hook, with its values.
-        let ports = FakePorts::new(Script {
-            redo: Some(redo(Some("redone"), false)),
-            redo_shows: vec![Working::PostProcessing],
-            ..Script::default()
-        });
-        finish(&ports, snapshot.clone());
-        assert_eq!(
-            after(&ports.take_events(), &Event::SpawnPaste),
-            vec![
+        // Redone there: its text, through the hook, with its values and
+        // append text. Without Accessibility the text goes into the
+        // application in front only for a service call waiting there, and
+        // never where there is no service.
+        for access in ACCESS {
+            let snapshot = snapshot_with(access.settings(get_default_settings()));
+            let values = snapshot.values.clone();
+            let append_text = snapshot.end.append_text.clone();
+            let insert = redo_into_other(&values, Some("redone"), false);
+            let other = insert.values.clone();
+            let for_service = access == Access::WithoutForService;
+            let ports = FakePorts::new(access.script(Script {
+                redo: Some(insert),
+                redo_shows: vec![Working::PostProcessing],
+                call_waiting: for_service,
+                service_takes: for_service,
+                ..Script::default()
+            }));
+            finish(&ports, snapshot);
+            let redone = vec![
                 Event::RedoLookedAt(1),
                 Event::Overlay(Overlay::Working {
                     working: Working::PostProcessing,
                     streaming: false,
                 }),
                 Event::Hook("redone".to_string()),
-                paste("redone", &other, " (other)"),
-                Event::ClearNotice,
-                Event::SoundAfterDictation(pasted_end()),
-                Event::Overlay(Overlay::AfterDictation(None)),
-                Event::Tray(TrayIconState::Idle),
-                Event::Complete(TranscriptionOutcome::Typed, SAMPLES),
-                Event::Finished,
-            ]
-        );
+            ];
+            let expected = match access {
+                Access::With => [
+                    redone,
+                    vec![paste("redone", &other, " (other)")],
+                    typed_end(access),
+                ]
+                .concat(),
+                // Not pasted: the call inserts the redone text.
+                Access::WithoutForService => [
+                    redone,
+                    vec![
+                        Event::ClearNotice,
+                        Event::ServiceInserted("redone (other)".to_string()),
+                        Event::SoundAfterDictation(DictationEnd {
+                            inserted_by_service: true,
+                            ..pasted_end()
+                        }),
+                        Event::Overlay(Overlay::Hide),
+                        Event::Tray(TrayIconState::Idle),
+                        Event::Complete(TranscriptionOutcome::Typed, SAMPLES),
+                        Event::Finished,
+                    ],
+                ]
+                .concat(),
+                // Never into the application in front: the text as it was,
+                // with its own profile's append text.
+                Access::WithoutOnClipboard => [
+                    access.delivered("hello", &values, &append_text),
+                    typed_end(access),
+                ]
+                .concat(),
+            };
+            assert_eq!(
+                after(&ports.take_events(), &Event::SpawnPaste),
+                expected,
+                "{access:?}"
+            );
+        }
+
+        // With Accessibility, where the text goes there anyway:
+        let snapshot = snapshot_with(get_default_settings());
+        let redo = |text: Option<&str>, post_process_failed: bool| {
+            redo_into_other(&snapshot.values, text, post_process_failed)
+        };
+        let other = redo(None, false).values;
 
         // Nothing to redo: the text as it is, with that profile's values
         // and append text.
@@ -1717,7 +1951,7 @@ mod tests {
             }),
             ..Script::default()
         });
-        finish(&ports, snapshot);
+        finish(&ports, snapshot.clone());
         let events = ports.take_events();
         assert!(events.contains(&Event::LeftOnClipboard("hello (other)".to_string())));
         assert!(!events
@@ -1920,34 +2154,51 @@ mod tests {
     }
 
     #[test]
-    fn two_presses_of_the_shortcut_dictate_and_paste() {
-        let ports = FakePorts::new(Script::default());
-        let settings = with_end(get_default_settings(), PLAIN, " (sent)", false);
-        let coordinator = coordinator_with(&ports, settings);
-        toggle_press(&coordinator);
-        // Longer than the coordinator's debounce, so the second press counts.
-        std::thread::sleep(Duration::from_millis(60));
-        toggle_press(&coordinator);
-        assert!(ports.wait_finished(Duration::from_secs(10)));
+    fn two_presses_of_the_shortcut_dictate_and_deliver() {
+        for access in ACCESS {
+            let ports = FakePorts::new(access.script(Script::default()));
+            let settings =
+                access.settings(with_end(get_default_settings(), PLAIN, " (sent)", false));
+            let coordinator = coordinator_with(&ports, settings);
+            toggle_press(&coordinator);
+            // Longer than the coordinator's debounce, so the second press counts.
+            std::thread::sleep(Duration::from_millis(60));
+            toggle_press(&coordinator);
+            assert!(ports.wait_finished(Duration::from_secs(10)), "{access:?}");
 
-        let events = ports.take_events();
-        assert_eq!(events[..5], stop_events(false)[..]);
-        assert!(events.contains(&Event::Remember {
-            entry_id: 1,
-            profile_id: DEFAULT_PROFILE_ID.to_string(),
-            end_id: PLAIN.to_string(),
-        }));
-        assert!(events.iter().any(|event| matches!(
-            event,
-            Event::Paste { text, append_text, .. } if text == "hello" && append_text == " (sent)"
-        )));
-        assert_eq!(
-            events[events.len() - 2..],
-            [
-                Event::Complete(TranscriptionOutcome::Typed, SAMPLES),
-                Event::Finished,
-            ]
-        );
+            let events = ports.take_events();
+            assert_eq!(events[..5], stop_events(false)[..], "{access:?}");
+            assert!(events.contains(&Event::Remember {
+                entry_id: 1,
+                profile_id: DEFAULT_PROFILE_ID.to_string(),
+                end_id: PLAIN.to_string(),
+            }));
+            // Pasted only with Accessibility; on the clipboard only where
+            // there is no service to wait for.
+            assert_eq!(
+                events.iter().any(|event| matches!(
+                    event,
+                    Event::Paste { text, append_text, .. } if text == "hello" && append_text == " (sent)"
+                )),
+                access == Access::With,
+                "{access:?}"
+            );
+            assert_eq!(
+                events.contains(&Event::LeftOnClipboard("hello (sent)".to_string())),
+                access == Access::WithoutOnClipboard,
+                "{access:?}"
+            );
+            assert_eq!(
+                events[events.len() - 4..],
+                [
+                    Event::Overlay(access.after_dictation()),
+                    Event::Tray(TrayIconState::Idle),
+                    Event::Complete(TranscriptionOutcome::Typed, SAMPLES),
+                    Event::Finished,
+                ],
+                "{access:?}"
+            );
+        }
     }
 
     #[test]
