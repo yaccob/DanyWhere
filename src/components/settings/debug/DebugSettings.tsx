@@ -19,6 +19,9 @@ import type { OnboardingStep } from "../../onboarding/onboardingStore";
 import { AccelerationSelector } from "../AccelerationSelector";
 import { LazyStreamClose } from "../LazyStreamClose";
 import { VadBackendSelector } from "../VadBackendSelector";
+// DanyWhere: an application setting, formerly next to the post-processing's
+// time limit on Advanced.
+import { ModelListTimeout } from "../PostProcessTimeouts";
 
 interface DebugSettingsProps {
   onPreviewOnboarding: (step: OnboardingStep) => void;
@@ -68,6 +71,7 @@ export const DebugSettings: React.FC<DebugSettingsProps> = ({
         <ReliablePasteToggle descriptionMode="tooltip" grouped={true} />
         <HoldThreshold descriptionMode="tooltip" grouped={true} />
         <RecordingBuffer descriptionMode="tooltip" grouped={true} />
+        <ModelListTimeout descriptionMode="tooltip" grouped={true} />
         <KeyboardDiagnostic />
         <LiveLogViewer descriptionMode="tooltip" grouped={true} />
       </SettingsGroup>

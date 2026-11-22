@@ -8,6 +8,7 @@
 // checks read their source instead.
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
+import { fieldInfo } from "../lib/profileFields";
 
 /** A source file next to this one; empty when it doesn't exist. */
 const read = (path: string) => {
@@ -78,6 +79,11 @@ const PLACES: [component: string, page: Page][] = [
   ["LazyStreamClose", "appDebug"],
   ["VadBackendSelector", "appDebug"],
   ["LiveLogViewer", "appDebug"],
+  // The model list's time limit is an application setting (plan
+  // 2026-11-19_1910; qa 2026-11-22_1603), the post-processing's a profile
+  // value.
+  ["ModelListTimeout", "appDebug"],
+  ["PostProcessTimeout", "defaultsAdvanced"],
   // Defaults: what concerns a dictation, also when it was on Debug
   // The overlay's two rows, each with its own wrapper (qa 2026-11-22_1603).
   ["OverlayStyleSetting", "defaultsAdvanced"],
@@ -119,6 +125,25 @@ check("the detection window follows the language detection", () => {
   const detection = advanced.search(/<LanguageDetection(?=[\s/>])/);
   const window = advanced.search(/<LanguageDetectionWindow(?=[\s/>])/);
   assert.ok(detection >= 0 && window > detection, `${detection} ${window}`);
+});
+
+// The two time limits are two settings now: no page draws them together, and
+// the post-processing's profile wrapper holds its own row only.
+check("no page draws both time limits as one", () => {
+  const where = (Object.keys(PAGES) as Page[]).filter(
+    (p) => draws(source[p], "PostProcessTimeouts") > 0,
+  );
+  assert.deepEqual(where, []);
+});
+check("the post-processing's time limit is alone in its wrapper", () =>
+  assert.match(
+    source.defaultsAdvanced,
+    /<ScopedSetting field="post_process_timeout_secs">\s*<PostProcessTimeout(?=[\s/>])[^<]*<\/ScopedSetting>/,
+  ),
+);
+check("the model list's time limit is no profile value", () => {
+  assert.equal(fieldInfo("model_list_timeout_secs"), null);
+  assert.notEqual(fieldInfo("post_process_timeout_secs"), null);
 });
 
 // --- The sidebar --------------------------------------------------------
