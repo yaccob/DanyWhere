@@ -11,7 +11,7 @@ import { useOsType } from "@/hooks/useOsType";
 import { useModelStore } from "@/stores/modelStore";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { languageName } from "@/lib/constants/languages";
-import { formatKeyCombination } from "@/lib/utils/keyboard";
+import { clipboardPasteKeys, formatKeyCombination } from "@/lib/utils/keyboard";
 import type { LayeredProfile, OwnValue } from "@/lib/profileScope";
 import {
   defaultText,
@@ -52,9 +52,11 @@ export const useValueLabels = () => {
       models,
       providers,
       prompts,
-      formatShortcut: (binding) => formatKeyCombination(binding, osType),
+      formatShortcut: (binding) => formatKeyCombination(binding, osType, t),
       languageName: (code) => languageName(code, language),
-      optionParams: { modifier: osType === "macos" ? "Cmd" : "Ctrl" },
+      optionParams: {
+        keys: formatKeyCombination(clipboardPasteKeys(osType), osType, t),
+      },
     }),
     [t, i18n, defaults, models, providers, prompts, osType, language],
   );

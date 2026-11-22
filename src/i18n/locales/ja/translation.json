@@ -341,6 +341,38 @@
     "downloadSpeed": "{{speed}} MB/s",
     "lockedWhileTranscribing": "履歴の文字起こしが終わるとモデルを変更できます。"
   },
+  "keyNames": {
+    "ctrl": "Ctrl",
+    "shift": "Shift",
+    "space": "スペース",
+    "enter": "Enter",
+    "backspace": "Backspace",
+    "delete": "Delete",
+    "insert": "Insert",
+    "home": "Home",
+    "end": "End",
+    "pageUp": "Page Up",
+    "pageDown": "Page Down",
+    "capsLock": "Caps Lock",
+    "numLock": "Num Lock",
+    "scrollLock": "Scroll Lock",
+    "printScreen": "Print Screen",
+    "pause": "Pause",
+    "menu": "メニュー",
+    "keypad": "テンキー {{key}}",
+    "playPause": "再生/一時停止",
+    "stop": "停止",
+    "previousTrack": "前のトラック",
+    "nextTrack": "次のトラック",
+    "mouseLeft": "マウスの左ボタン",
+    "mouseRight": "マウスの右ボタン",
+    "mouseMiddle": "マウスの中ボタン",
+    "mouseBack": "マウスボタン 4",
+    "mouseForward": "マウスボタン 5",
+    "dictation": "音声入力",
+    "left": "左{{key}}",
+    "right": "右{{key}}"
+  },
   "settings": {
     "modelSettings": {
       "title": "{{model}} の設定"
@@ -699,7 +731,7 @@
         "description": "完了した音声入力を前面のアプリに届ける方法。「クリップボード (Ctrl+V)」：Handy がテキストをクリップボードに入れ、代わりに Ctrl+V を押します。Ctrl+Shift+V と Shift+Insert はそのキーで同じことをします（ターミナル向けなど）。「直接」：システム入力でテキストを入力します。「外部スクリプト」（Linux のみ）：テキストをスクリプトに渡します。「なし」：Handy は何も挿入しません。テキストは履歴に残り、「クリップボードの処理」の設定によってはクリップボードにも残ります。「最後の文字起こしを貼り付け」も同じ方法で挿入し、「なし」ではテキストをクリップボードに入れます。",
         "descriptionMacos": "完了した音声入力を前面のアプリに届ける方法。「クリップボード (Cmd+V)」：Handy がテキストをクリップボードに入れ、代わりに ⌘V を押します（アクセシビリティが必要）。「なし」：Handy は何も挿入しません。テキストは履歴に残り、「クリップボードの処理」の設定によってはクリップボードにも残ります。「最後の文字起こしを貼り付け」も同じ方法で挿入し、「なし」ではテキストをクリップボードに入れます。アクセシビリティがない場合は、代わりに macOS のサービスが音声入力を挿入します。",
         "options": {
-          "clipboard": "クリップボード ({{modifier}}+V)",
+          "clipboard": "クリップボード ({{keys}})",
           "clipboardCtrlShiftV": "クリップボード (Ctrl+Shift+V)",
           "clipboardShiftInsert": "クリップボード (Shift+Insert)",
           "direct": "直接",

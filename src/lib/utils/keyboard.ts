@@ -193,39 +193,260 @@ const capitalizeKey = (key: string): string => {
   return key.replace(/\b\w/g, (c) => c.toUpperCase());
 };
 
+/** Translates a `keyNames.*` text, as i18next's `t` does. */
+export type KeyNameT = (
+  key: string,
+  options?: Record<string, unknown>,
+) => string;
+
 /**
- * Format a single key part for display.
- * Handles _left/_right suffixes and capitalizes names.
- * e.g. "shift_left" -> "Left Shift", "option" -> "Option", "space" -> "Space"
+ * DanyWhere: the English texts of `keyNames.*` (the locale's), for callers
+ * without `t`; keyNames.test.ts checks they match.
  */
-const formatKeyPart = (part: string): string => {
-  const trimmed = part.trim();
-  if (!trimmed) return "";
-
-  if (trimmed.endsWith("_left")) {
-    const name = trimmed.slice(0, -5);
-    return `Left ${capitalizeKey(name)}`;
-  }
-  if (trimmed.endsWith("_right")) {
-    const name = trimmed.slice(0, -6);
-    return `Right ${capitalizeKey(name)}`;
-  }
-
-  return capitalizeKey(trimmed);
+export const ENGLISH_KEY_NAMES: Record<string, string> = {
+  ctrl: "Ctrl",
+  shift: "Shift",
+  space: "Space",
+  enter: "Enter",
+  backspace: "Backspace",
+  delete: "Delete",
+  insert: "Insert",
+  home: "Home",
+  end: "End",
+  pageUp: "Page Up",
+  pageDown: "Page Down",
+  capsLock: "Caps Lock",
+  numLock: "Num Lock",
+  scrollLock: "Scroll Lock",
+  printScreen: "Print Screen",
+  pause: "Pause",
+  menu: "Menu",
+  keypad: "Keypad {{key}}",
+  playPause: "Play/Pause",
+  stop: "Stop",
+  previousTrack: "Previous Track",
+  nextTrack: "Next Track",
+  mouseLeft: "Left Mouse Button",
+  mouseRight: "Right Mouse Button",
+  mouseMiddle: "Middle Mouse Button",
+  mouseBack: "Mouse Button 4",
+  mouseForward: "Mouse Button 5",
+  dictation: "Dictation",
+  left: "Left {{key}}",
+  right: "Right {{key}}",
 };
 
+const englishT: KeyNameT = (key, options = {}) =>
+  (ENGLISH_KEY_NAMES[key.replace(/^keyNames\./, "")] ?? key).replace(
+    /\{\{(\w+)\}\}/g,
+    (_, name: string) => String(options[name] ?? ""),
+  );
+
+type ModifierKind = "fn" | "ctrl" | "alt" | "shift" | "super";
+
+const MODIFIER_KINDS: Record<string, ModifierKind> = {
+  fn: "fn",
+  function: "fn",
+  ctrl: "ctrl",
+  control: "ctrl",
+  option: "alt",
+  opt: "alt",
+  alt: "alt",
+  shift: "shift",
+  command: "super",
+  cmd: "super",
+  meta: "super",
+  super: "super",
+  win: "super",
+  windows: "super",
+};
+
+// The order of the system's menus: ⌃⌥⇧⌘ on macOS, Ctrl+Alt+Shift+Win elsewhere.
+const MAC_ORDER: ModifierKind[] = ["fn", "ctrl", "alt", "shift", "super"];
+const PC_ORDER: ModifierKind[] = ["ctrl", "alt", "shift", "super", "fn"];
+
+const MAC_MODIFIERS: Record<ModifierKind, string> = {
+  fn: "fn",
+  ctrl: "⌃",
+  alt: "⌥",
+  shift: "⇧",
+  super: "⌘",
+};
+
+const ARROWS: Record<string, string> = {
+  up: "↑",
+  down: "↓",
+  left: "←",
+  right: "→",
+};
+
+// Symbols on Mac keyboards and in macOS menus.
+const MAC_KEYS: Record<string, string> = {
+  ...ARROWS,
+  return: "↩",
+  enter: "↩",
+  tab: "⇥",
+  // handy-keys, macOS's backend, calls Backspace "delete".
+  delete: "⌫",
+  backspace: "⌫",
+  forwarddelete: "⌦",
+  escape: "esc",
+  esc: "esc",
+  home: "↖",
+  end: "↘",
+  pageup: "⇞",
+  pagedown: "⇟",
+  capslock: "⇪",
+  keypadenter: "⌤",
+};
+
+// Texts (`keyNames.*`) for keys whose name is a word.
+const NAMED_KEYS: Record<string, string> = {
+  space: "space",
+  return: "enter",
+  enter: "enter",
+  backspace: "backspace",
+  forwarddelete: "delete",
+  insert: "insert",
+  home: "home",
+  end: "end",
+  pageup: "pageUp",
+  pagedown: "pageDown",
+  capslock: "capsLock",
+  numlock: "numLock",
+  scrolllock: "scrollLock",
+  printscreen: "printScreen",
+  pause: "pause",
+  contextmenu: "menu",
+  menu: "menu",
+  playpause: "playPause",
+  stop: "stop",
+  prevtrack: "previousTrack",
+  nexttrack: "nextTrack",
+  mouseleft: "mouseLeft",
+  mouseright: "mouseRight",
+  mousemiddle: "mouseMiddle",
+  mousex1: "mouseBack",
+  mousex2: "mouseForward",
+  dictation: "dictation",
+};
+
+const KEYPAD_SIGNS: Record<string, string> = {
+  plus: "+",
+  minus: "-",
+  multiply: "*",
+  divide: "/",
+  decimal: ".",
+  equals: "=",
+  comma: ",",
+  clear: "⌧",
+};
+
+const CONSTANT_KEYS: Record<string, string> = {
+  tab: "Tab",
+  escape: "Esc",
+  esc: "Esc",
+  jiseisu: "英数",
+  eisu: "英数",
+  jiskana: "かな",
+  kana: "かな",
+  jisunderscore: "_",
+};
+
+/** A keypad key's own part ("1", "+"), or null for another key. */
+const keypadPart = (name: string): string | null => {
+  const match = /^(?:keypad|numpad )(.+)$/.exec(name);
+  if (!match) return null;
+  return KEYPAD_SIGNS[match[1]] ?? match[1].toUpperCase();
+};
+
+/** A main key's label on `osType`. */
+const keyLabel = (name: string, osType: OSType, t: KeyNameT): string => {
+  if (osType === "macos" && MAC_KEYS[name]) return MAC_KEYS[name];
+  if (ARROWS[name]) return ARROWS[name];
+  // On Windows handy-keys calls Backspace "delete"; on Linux the Tauri
+  // shortcuts call the Delete key so.
+  if (name === "delete")
+    return t(osType === "windows" ? "keyNames.backspace" : "keyNames.delete");
+  if (name === "keypadenter")
+    return t("keyNames.keypad", { key: t("keyNames.enter") });
+  const keypad = keypadPart(name);
+  if (keypad !== null) return t("keyNames.keypad", { key: keypad });
+  if (NAMED_KEYS[name]) return t(`keyNames.${NAMED_KEYS[name]}`);
+  if (CONSTANT_KEYS[name]) return CONSTANT_KEYS[name];
+  return capitalizeKey(name);
+};
+
+/** A modifier's label on `osType`. */
+const modifierLabel = (
+  kind: ModifierKind,
+  osType: OSType,
+  t: KeyNameT,
+): string => {
+  if (osType === "macos") return MAC_MODIFIERS[kind];
+  switch (kind) {
+    case "ctrl":
+      return t("keyNames.ctrl");
+    case "shift":
+      return t("keyNames.shift");
+    case "alt":
+      return "Alt";
+    case "super":
+      return osType === "windows" ? "Win" : "Super";
+    case "fn":
+      return "Fn";
+  }
+};
+
+/** A label written in letters, which macOS sets apart by a space. */
+const isWord = (label: string): boolean =>
+  /\p{L}{2,}/u.test(label) || label.includes(" ");
+
 /**
- * Get display-friendly key combination string for the current OS
- * Formats raw hotkey strings like "option_left+shift+space" into
- * human-readable form like "Left Option + Shift + Space"
+ * DanyWhere: a stored combination as the system names it (user,
+ * 2026-11-22). macOS writes the symbols on the keys together, in the
+ * order of its menus ("⌃⌥D", "⌃↩", "⌥ Leertaste"); Windows and Linux write
+ * the names on the keys, translated, joined with "+" ("Strg+Umschalt+V").
+ * A side shows only where the combination keeps one (`key_sides.rs`):
+ * "⌥ rechts", "Alt links+Q". Without `t` the names are English.
  */
 export const formatKeyCombination = (
   combination: string,
-  _osType: OSType,
+  osType: OSType,
+  t: KeyNameT = englishT,
 ): string => {
   if (!combination) return "";
-  return combination.split("+").map(formatKeyPart).join(" + ");
+  const modifiers: { kind: ModifierKind; side: string | null }[] = [];
+  const keys: string[] = [];
+  for (const raw of combination.split("+")) {
+    const part = raw.trim().toLowerCase();
+    if (!part) continue;
+    const sided = /^(.+)_(left|right)$/.exec(part);
+    const name = sided && MODIFIER_KINDS[sided[1]] ? sided[1] : part;
+    const kind = MODIFIER_KINDS[name];
+    if (kind) modifiers.push({ kind, side: sided ? sided[2] : null });
+    else keys.push(keyLabel(part, osType, t));
+  }
+  const order = osType === "macos" ? MAC_ORDER : PC_ORDER;
+  modifiers.sort((a, b) => order.indexOf(a.kind) - order.indexOf(b.kind));
+  const labels = [
+    ...modifiers.map(({ kind, side }) => {
+      const label = modifierLabel(kind, osType, t);
+      return side ? t(`keyNames.${side}`, { key: label }) : label;
+    }),
+    ...keys,
+  ];
+  if (osType !== "macos") return labels.join("+");
+  return labels
+    .map((label, i) =>
+      i > 0 && (isWord(label) || isWord(labels[i - 1])) ? ` ${label}` : label,
+    )
+    .join("");
 };
+
+/** The keys "Clipboard (…)" pastes with. */
+export const clipboardPasteKeys = (osType: OSType): string =>
+  osType === "macos" ? "command+v" : "ctrl+v";
 
 /**
  * Normalize modifier keys to handle left/right variants

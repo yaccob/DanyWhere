@@ -341,6 +341,38 @@
     "downloadSpeed": "{{speed}} MB/s",
     "lockedWhileTranscribing": "히스토리의 받아쓰기가 끝나면 모델을 변경할 수 있습니다."
   },
+  "keyNames": {
+    "ctrl": "Ctrl",
+    "shift": "Shift",
+    "space": "스페이스",
+    "enter": "Enter",
+    "backspace": "Backspace",
+    "delete": "Delete",
+    "insert": "Insert",
+    "home": "Home",
+    "end": "End",
+    "pageUp": "Page Up",
+    "pageDown": "Page Down",
+    "capsLock": "Caps Lock",
+    "numLock": "Num Lock",
+    "scrollLock": "Scroll Lock",
+    "printScreen": "Print Screen",
+    "pause": "Pause",
+    "menu": "메뉴",
+    "keypad": "숫자 키패드 {{key}}",
+    "playPause": "재생/일시정지",
+    "stop": "정지",
+    "previousTrack": "이전 트랙",
+    "nextTrack": "다음 트랙",
+    "mouseLeft": "마우스 왼쪽 버튼",
+    "mouseRight": "마우스 오른쪽 버튼",
+    "mouseMiddle": "마우스 가운데 버튼",
+    "mouseBack": "마우스 버튼 4",
+    "mouseForward": "마우스 버튼 5",
+    "dictation": "받아쓰기",
+    "left": "왼쪽 {{key}}",
+    "right": "오른쪽 {{key}}"
+  },
   "settings": {
     "modelSettings": {
       "title": "{{model}} 설정"
@@ -699,7 +731,7 @@
         "description": "완료된 받아쓰기가 앞에 있는 앱에 들어가는 방식입니다. '클립보드 (Ctrl+V)': Handy가 텍스트를 클립보드에 넣고 대신 Ctrl+V를 누릅니다. Ctrl+Shift+V와 Shift+Insert는 해당 키로 같은 일을 합니다(예: 터미널용). '직접': 시스템 입력으로 텍스트를 입력합니다. '외부 스크립트'(Linux 전용): 텍스트를 스크립트에 넘깁니다. '없음': Handy는 아무것도 삽입하지 않으며, 텍스트는 히스토리에 남고 '클립보드 처리' 설정에 따라 클립보드에도 남습니다. '마지막 받아쓰기 붙여넣기'도 같은 방식으로 삽입하며, '없음'일 때는 텍스트를 클립보드에 넣습니다.",
         "descriptionMacos": "완료된 받아쓰기가 앞에 있는 앱에 들어가는 방식입니다. '클립보드 (Cmd+V)': Handy가 텍스트를 클립보드에 넣고 대신 ⌘V를 누릅니다. 손쉬운 사용 권한이 필요합니다. '없음': Handy는 아무것도 삽입하지 않으며, 텍스트는 히스토리에 남고 '클립보드 처리' 설정에 따라 클립보드에도 남습니다. '마지막 받아쓰기 붙여넣기'도 같은 방식으로 삽입하며, '없음'일 때는 텍스트를 클립보드에 넣습니다. 손쉬운 사용 권한이 없으면 대신 macOS 서비스가 받아쓰기를 삽입합니다.",
         "options": {
-          "clipboard": "클립보드 ({{modifier}}+V)",
+          "clipboard": "클립보드 ({{keys}})",
           "clipboardCtrlShiftV": "클립보드 (Ctrl+Shift+V)",
           "clipboardShiftInsert": "클립보드 (Shift+Insert)",
           "direct": "직접",

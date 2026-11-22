@@ -341,6 +341,38 @@
     "downloadSpeed": "{{speed}} MB/s",
     "lockedWhileTranscribing": "Anda bisa mengganti model setelah transkripsi di Riwayat selesai."
   },
+  "keyNames": {
+    "ctrl": "Ctrl",
+    "shift": "Shift",
+    "space": "Spasi",
+    "enter": "Enter",
+    "backspace": "Backspace",
+    "delete": "Delete",
+    "insert": "Insert",
+    "home": "Home",
+    "end": "End",
+    "pageUp": "Page Up",
+    "pageDown": "Page Down",
+    "capsLock": "Caps Lock",
+    "numLock": "Num Lock",
+    "scrollLock": "Scroll Lock",
+    "printScreen": "Print Screen",
+    "pause": "Pause",
+    "menu": "Menu",
+    "keypad": "Keypad {{key}}",
+    "playPause": "Putar/Jeda",
+    "stop": "Hentikan",
+    "previousTrack": "Trek sebelumnya",
+    "nextTrack": "Trek berikutnya",
+    "mouseLeft": "Tombol kiri mouse",
+    "mouseRight": "Tombol kanan mouse",
+    "mouseMiddle": "Tombol tengah mouse",
+    "mouseBack": "Tombol mouse 4",
+    "mouseForward": "Tombol mouse 5",
+    "dictation": "Dikte",
+    "left": "{{key}} kiri",
+    "right": "{{key}} kanan"
+  },
   "settings": {
     "modelSettings": {
       "title": "Pengaturan {{model}}"
@@ -699,7 +731,7 @@
         "description": "Cara dikte yang sudah selesai sampai ke aplikasi di depan. Papan klip (Ctrl+V): Handy menaruh teks di papan klip dan menekan Ctrl+V untuk Anda; Ctrl+Shift+V dan Shift+Insert melakukan hal yang sama dengan tombol tersebut, misalnya untuk terminal. Langsung: mengetik teks melalui masukan sistem. Skrip Eksternal (hanya Linux): meneruskan teks ke skrip Anda. Tidak Ada: Handy tidak menyisipkan apa pun; teks ada di riwayat dan, tergantung Penanganan Papan Klip, di papan klip. Tempel transkripsi terakhir menyisipkan dengan cara yang sama; dengan Tidak Ada, teks ditaruh di papan klip.",
         "descriptionMacos": "Cara dikte yang sudah selesai sampai ke aplikasi di depan. Papan klip (Cmd+V): Handy menaruh teks di papan klip dan menekan ⌘V untuk Anda; ini memerlukan Aksesibilitas. Tidak Ada: Handy tidak menyisipkan apa pun; teks ada di riwayat dan, tergantung Penanganan Papan Klip, di papan klip. Tempel transkripsi terakhir menyisipkan dengan cara yang sama; dengan Tidak Ada, teks ditaruh di papan klip. Tanpa Aksesibilitas, layanan macOS yang menyisipkan dikte sebagai gantinya.",
         "options": {
-          "clipboard": "Papan klip ({{modifier}}+V)",
+          "clipboard": "Papan klip ({{keys}})",
           "clipboardCtrlShiftV": "Papan klip (Ctrl+Shift+V)",
           "clipboardShiftInsert": "Papan klip (Shift+Insert)",
           "direct": "Langsung",

@@ -43,7 +43,7 @@ export const EndKeyShortcut: React.FC<EndKeyShortcutProps> = ({
         className="px-2 py-1 text-sm font-semibold border border-logo-primary bg-logo-primary/20 rounded-md"
       >
         {partial
-          ? formatKeyCombination(partial, osType)
+          ? formatKeyCombination(partial, osType, t)
           : t("settings.general.shortcut.pressKeys")}
       </div>
     );
@@ -58,7 +58,7 @@ export const EndKeyShortcut: React.FC<EndKeyShortcutProps> = ({
         className="px-2 py-1 text-sm font-semibold bg-wash border border-line-strong hover:bg-logo-primary/10 rounded-md cursor-pointer hover:border-logo-primary disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {value
-          ? formatKeyCombination(value, osType)
+          ? formatKeyCombination(value, osType, t)
           : t("settings.endKeys.noShortcut")}
       </button>
       {value && (

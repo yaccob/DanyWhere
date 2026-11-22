@@ -341,6 +341,38 @@
     "downloadSpeed": "{{speed}} MB/s",
     "lockedWhileTranscribing": "Можете да смените модела, след като транскрибирането в История приключи."
   },
+  "keyNames": {
+    "ctrl": "Ctrl",
+    "shift": "Shift",
+    "space": "Интервал",
+    "enter": "Enter",
+    "backspace": "Backspace",
+    "delete": "Delete",
+    "insert": "Insert",
+    "home": "Home",
+    "end": "End",
+    "pageUp": "Page Up",
+    "pageDown": "Page Down",
+    "capsLock": "Caps Lock",
+    "numLock": "Num Lock",
+    "scrollLock": "Scroll Lock",
+    "printScreen": "Print Screen",
+    "pause": "Pause",
+    "menu": "Меню",
+    "keypad": "Цифров блок {{key}}",
+    "playPause": "Възпроизвеждане/пауза",
+    "stop": "Стоп",
+    "previousTrack": "Предишна песен",
+    "nextTrack": "Следваща песен",
+    "mouseLeft": "Ляв бутон на мишката",
+    "mouseRight": "Десен бутон на мишката",
+    "mouseMiddle": "Среден бутон на мишката",
+    "mouseBack": "Бутон 4 на мишката",
+    "mouseForward": "Бутон 5 на мишката",
+    "dictation": "Диктовка",
+    "left": "ляв {{key}}",
+    "right": "десен {{key}}"
+  },
   "settings": {
     "modelSettings": {
       "title": "Настройки на {{model}}"
@@ -699,7 +731,7 @@
         "description": "Как готовата диктовка стига до приложението отпред. Клипборд (Ctrl+V): Handy поставя текста в клипборда и натиска Ctrl+V вместо вас; Ctrl+Shift+V и Shift+Insert правят същото с тези клавиши, напр. за терминали. Директно: въвежда текста чрез системния вход. Външен скрипт (само Linux): подава текста на вашия скрипт. Няма: Handy не вмъква нищо; текстът е в историята и, според „Работа с клипборда“, в клипборда. „Постави последната транскрипция“ вмъква по същия начин, а при „Няма“ поставя текста в клипборда.",
         "descriptionMacos": "Как готовата диктовка стига до приложението отпред. Клипборд (Cmd+V): Handy поставя текста в клипборда и натиска ⌘V вместо вас; за това е нужна достъпност. Няма: Handy не вмъква нищо; текстът е в историята и, според „Работа с клипборда“, в клипборда. „Постави последната транскрипция“ вмъква по същия начин, а при „Няма“ поставя текста в клипборда. Без достъпност вместо това диктовката се вмъква от услуга на macOS.",
         "options": {
-          "clipboard": "Клипборд ({{modifier}}+V)",
+          "clipboard": "Клипборд ({{keys}})",
           "clipboardCtrlShiftV": "Клипборд (Ctrl+Shift+V)",
           "clipboardShiftInsert": "Клипборд (Shift+Insert)",
           "direct": "Директно",

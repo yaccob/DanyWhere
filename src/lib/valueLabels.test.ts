@@ -10,7 +10,7 @@
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
 import i18next from "i18next";
-import { formatKeyCombination } from "./utils/keyboard";
+import { clipboardPasteKeys, formatKeyCombination } from "./utils/keyboard";
 import type { FieldKind, LayeredProfile } from "./profileScope";
 import {
   DEFAULT_DEVICE,
@@ -167,8 +167,15 @@ const contextFor = (lng: string): LabelContext => ({
     { id: "anthropic", label: "Anthropic" },
     { id: "custom", label: "Custom" },
   ],
-  formatShortcut: (keys) => formatKeyCombination(keys, "macos"),
-  optionParams: { modifier: "Cmd" },
+  formatShortcut: (keys) =>
+    formatKeyCombination(keys, "macos", translatorFor(lng)),
+  optionParams: {
+    keys: formatKeyCombination(
+      clipboardPasteKeys("macos"),
+      "macos",
+      translatorFor(lng),
+    ),
+  },
 });
 
 const de = contextFor("de");
@@ -309,7 +316,7 @@ check("the default microphone is called as the list calls it", () => {
   );
 });
 check("the paste method shows its option's label", () =>
-  assert.equal(valueLabel(en, "paste_method", "ctrl_v"), "Clipboard (Cmd+V)"),
+  assert.equal(valueLabel(en, "paste_method", "ctrl_v"), "Clipboard (⌘V)"),
 );
 check("an API key is never shown", () =>
   assert.equal(

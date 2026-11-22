@@ -341,6 +341,38 @@
     "downloadSpeed": "{{speed}} MB/s",
     "lockedWhileTranscribing": "Du kannst das Modell wechseln, sobald die Transkription im Verlauf fertig ist."
   },
+  "keyNames": {
+    "ctrl": "Strg",
+    "shift": "Umschalt",
+    "space": "Leertaste",
+    "enter": "Eingabe",
+    "backspace": "Rücktaste",
+    "delete": "Entf",
+    "insert": "Einfg",
+    "home": "Pos1",
+    "end": "Ende",
+    "pageUp": "Bild auf",
+    "pageDown": "Bild ab",
+    "capsLock": "Feststelltaste",
+    "numLock": "Num",
+    "scrollLock": "Rollen",
+    "printScreen": "Druck",
+    "pause": "Pause",
+    "menu": "Menü",
+    "keypad": "Ziffernblock {{key}}",
+    "playPause": "Wiedergabe/Pause",
+    "stop": "Stopp",
+    "previousTrack": "Vorheriger Titel",
+    "nextTrack": "Nächster Titel",
+    "mouseLeft": "Linke Maustaste",
+    "mouseRight": "Rechte Maustaste",
+    "mouseMiddle": "Mittlere Maustaste",
+    "mouseBack": "Maustaste 4",
+    "mouseForward": "Maustaste 5",
+    "dictation": "Diktieren",
+    "left": "{{key}} links",
+    "right": "{{key}} rechts"
+  },
   "settings": {
     "modelSettings": {
       "title": "{{model}}-Einstellungen"
@@ -699,7 +731,7 @@
         "description": "Wie ein fertiges Diktat in die App vorn kommt. Zwischenablage (Ctrl+V): Handy legt den Text in die Zwischenablage und drückt Strg+V für dich; Strg+Umschalt+V und Umschalt+Einfg tun dasselbe mit diesen Tasten, z. B. für Terminals. Direkt: tippt den Text über die Systemeingabe. Externes Skript (nur Linux): übergibt den Text deinem Skript. Keine: Handy fügt nichts ein, der Text steht im Verlauf und, je nach Zwischenablage-Verhalten, in der Zwischenablage. „Letzte Transkription einfügen“ fügt genauso ein, bei „Keine“ legt es den Text in die Zwischenablage.",
         "descriptionMacos": "Wie ein fertiges Diktat in die App vorn kommt. Zwischenablage (Cmd+V): Handy legt den Text in die Zwischenablage und drückt ⌘V für dich; das braucht die Bedienungshilfen. Keine: Handy fügt nichts ein, der Text steht im Verlauf und, je nach Zwischenablage-Verhalten, in der Zwischenablage. „Letzte Transkription einfügen“ fügt genauso ein, bei „Keine“ legt es den Text in die Zwischenablage. Ohne Bedienungshilfen fügt stattdessen ein macOS-Dienst das Diktat ein.",
         "options": {
-          "clipboard": "Zwischenablage ({{modifier}}+V)",
+          "clipboard": "Zwischenablage ({{keys}})",
           "clipboardCtrlShiftV": "Zwischenablage (Strg+Umschalt+V)",
           "clipboardShiftInsert": "Zwischenablage (Umschalt+Einfg)",
           "direct": "Direkt",

@@ -341,6 +341,38 @@
     "downloadSpeed": "{{speed}} MB/s",
     "lockedWhileTranscribing": "Du kan byta modell när transkriberingen i Historik är klar."
   },
+  "keyNames": {
+    "ctrl": "Ctrl",
+    "shift": "Skift",
+    "space": "Blanksteg",
+    "enter": "Enter",
+    "backspace": "Backspace",
+    "delete": "Delete",
+    "insert": "Insert",
+    "home": "Home",
+    "end": "End",
+    "pageUp": "Page Up",
+    "pageDown": "Page Down",
+    "capsLock": "Caps Lock",
+    "numLock": "Num Lock",
+    "scrollLock": "Scroll Lock",
+    "printScreen": "Print Screen",
+    "pause": "Pause",
+    "menu": "Meny",
+    "keypad": "Numeriskt {{key}}",
+    "playPause": "Spela/pausa",
+    "stop": "Stoppa",
+    "previousTrack": "Föregående spår",
+    "nextTrack": "Nästa spår",
+    "mouseLeft": "Vänster musknapp",
+    "mouseRight": "Höger musknapp",
+    "mouseMiddle": "Mittenmusknapp",
+    "mouseBack": "Musknapp 4",
+    "mouseForward": "Musknapp 5",
+    "dictation": "Diktering",
+    "left": "vänster {{key}}",
+    "right": "höger {{key}}"
+  },
   "settings": {
     "modelSettings": {
       "title": "{{model}}-inställningar"
@@ -699,7 +731,7 @@
         "description": "Hur en färdig diktering når appen längst fram. Urklipp (Ctrl+V): Handy lägger texten i urklipp och trycker Ctrl+V åt dig; Ctrl+Shift+V och Shift+Insert gör samma sak med de tangenterna, t.ex. för terminaler. Direkt: skriver texten via systeminmatning. Externt skript (endast Linux): skickar texten till ditt skript. Ingen: Handy infogar ingenting; texten finns i historiken och, beroende på Hantering av urklipp, i urklipp. Klistra in senaste transkriptionen infogar på samma sätt; med Ingen lägger den texten i urklipp.",
         "descriptionMacos": "Hur en färdig diktering når appen längst fram. Urklipp (Cmd+V): Handy lägger texten i urklipp och trycker ⌘V åt dig; det kräver hjälpmedel. Ingen: Handy infogar ingenting; texten finns i historiken och, beroende på Hantering av urklipp, i urklipp. Klistra in senaste transkriptionen infogar på samma sätt; med Ingen lägger den texten i urklipp. Utan hjälpmedel infogar i stället en macOS-tjänst dikteringen.",
         "options": {
-          "clipboard": "Urklipp ({{modifier}}+V)",
+          "clipboard": "Urklipp ({{keys}})",
           "clipboardCtrlShiftV": "Urklipp (Ctrl+Shift+V)",
           "clipboardShiftInsert": "Urklipp (Shift+Insert)",
           "direct": "Direkt",

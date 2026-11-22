@@ -341,6 +341,38 @@
     "downloadSpeed": "{{speed}} MB/s",
     "lockedWhileTranscribing": "历史记录中的转录完成后才能更换模型。"
   },
+  "keyNames": {
+    "ctrl": "Ctrl",
+    "shift": "Shift",
+    "space": "空格键",
+    "enter": "Enter",
+    "backspace": "Backspace",
+    "delete": "Delete",
+    "insert": "Insert",
+    "home": "Home",
+    "end": "End",
+    "pageUp": "Page Up",
+    "pageDown": "Page Down",
+    "capsLock": "Caps Lock",
+    "numLock": "Num Lock",
+    "scrollLock": "Scroll Lock",
+    "printScreen": "Print Screen",
+    "pause": "Pause",
+    "menu": "菜单键",
+    "keypad": "数字键盘 {{key}}",
+    "playPause": "播放/暂停",
+    "stop": "停止",
+    "previousTrack": "上一曲",
+    "nextTrack": "下一曲",
+    "mouseLeft": "鼠标左键",
+    "mouseRight": "鼠标右键",
+    "mouseMiddle": "鼠标中键",
+    "mouseBack": "鼠标按钮 4",
+    "mouseForward": "鼠标按钮 5",
+    "dictation": "听写",
+    "left": "左 {{key}}",
+    "right": "右 {{key}}"
+  },
   "settings": {
     "modelSettings": {
       "title": "{{model}} 设置"
@@ -699,7 +731,7 @@
         "description": "完成的听写如何进入前台应用。“剪贴板 (Ctrl+V)”：Handy 将文字放入剪贴板并替你按下 Ctrl+V；Ctrl+Shift+V 和 Shift+Insert 用这些按键做同样的事，例如用于终端。“直接”：通过系统输入键入文字。“外部脚本”（仅 Linux）：把文字传给你的脚本。“无”：Handy 不插入任何内容，文字保存在历史记录中，并视“剪贴板处理”设置留在剪贴板中。“粘贴最近的转录”也以同样方式插入；选择“无”时会把文字放入剪贴板。",
         "descriptionMacos": "完成的听写如何进入前台应用。“剪贴板 (Cmd+V)”：Handy 将文字放入剪贴板并替你按下 ⌘V；这需要辅助功能权限。“无”：Handy 不插入任何内容，文字保存在历史记录中，并视“剪贴板处理”设置留在剪贴板中。“粘贴最近的转录”也以同样方式插入；选择“无”时会把文字放入剪贴板。没有辅助功能权限时，改由 macOS 服务插入听写内容。",
         "options": {
-          "clipboard": "剪贴板 ({{modifier}}+V)",
+          "clipboard": "剪贴板 ({{keys}})",
           "clipboardCtrlShiftV": "剪贴板 (Ctrl+Shift+V)",
           "clipboardShiftInsert": "剪贴板 (Shift+Insert)",
           "direct": "直接",

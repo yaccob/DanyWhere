@@ -341,6 +341,38 @@
     "downloadSpeed": "{{speed}} MB/s",
     "lockedWhileTranscribing": "Model můžete změnit, až se dokončí přepis v Historii."
   },
+  "keyNames": {
+    "ctrl": "Ctrl",
+    "shift": "Shift",
+    "space": "Mezerník",
+    "enter": "Enter",
+    "backspace": "Backspace",
+    "delete": "Delete",
+    "insert": "Insert",
+    "home": "Home",
+    "end": "End",
+    "pageUp": "Page Up",
+    "pageDown": "Page Down",
+    "capsLock": "Caps Lock",
+    "numLock": "Num Lock",
+    "scrollLock": "Scroll Lock",
+    "printScreen": "Print Screen",
+    "pause": "Pause",
+    "menu": "Nabídka",
+    "keypad": "Numerická {{key}}",
+    "playPause": "Přehrát/pozastavit",
+    "stop": "Zastavit",
+    "previousTrack": "Předchozí skladba",
+    "nextTrack": "Další skladba",
+    "mouseLeft": "Levé tlačítko myši",
+    "mouseRight": "Pravé tlačítko myši",
+    "mouseMiddle": "Prostřední tlačítko myši",
+    "mouseBack": "Tlačítko myši 4",
+    "mouseForward": "Tlačítko myši 5",
+    "dictation": "Diktování",
+    "left": "levý {{key}}",
+    "right": "pravý {{key}}"
+  },
   "settings": {
     "modelSettings": {
       "title": "Nastavení {{model}}"
@@ -699,7 +731,7 @@
         "description": "Jak se hotový diktát dostane do aplikace v popředí. Schránka (Ctrl+V): Handy vloží text do schránky a stiskne za vás Ctrl+V; Ctrl+Shift+V a Shift+Insert dělají totéž s těmito klávesami, např. pro terminály. Přímé: napíše text přes systémový vstup. Externí skript (jen Linux): předá text vašemu skriptu. Žádné: Handy nic nevloží; text je v historii a podle nastavení „Práce se schránkou“ ve schránce. „Vložit poslední přepis“ vkládá stejně, při „Žádné“ dá text do schránky.",
         "descriptionMacos": "Jak se hotový diktát dostane do aplikace v popředí. Schránka (Cmd+V): Handy vloží text do schránky a stiskne za vás ⌘V; k tomu je potřeba zpřístupnění. Žádné: Handy nic nevloží; text je v historii a podle nastavení „Práce se schránkou“ ve schránce. „Vložit poslední přepis“ vkládá stejně, při „Žádné“ dá text do schránky. Bez zpřístupnění diktát místo toho vloží služba macOS.",
         "options": {
-          "clipboard": "Schránka ({{modifier}}+V)",
+          "clipboard": "Schránka ({{keys}})",
           "clipboardCtrlShiftV": "Schránka (Ctrl+Shift+V)",
           "clipboardShiftInsert": "Schránka (Shift+Insert)",
           "direct": "Přímé",

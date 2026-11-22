@@ -341,6 +341,38 @@
     "downloadSpeed": "{{speed}} MB/s",
     "lockedWhileTranscribing": "歷史紀錄中的轉錄完成後才能更換模型。"
   },
+  "keyNames": {
+    "ctrl": "Ctrl",
+    "shift": "Shift",
+    "space": "空白鍵",
+    "enter": "Enter",
+    "backspace": "Backspace",
+    "delete": "Delete",
+    "insert": "Insert",
+    "home": "Home",
+    "end": "End",
+    "pageUp": "Page Up",
+    "pageDown": "Page Down",
+    "capsLock": "Caps Lock",
+    "numLock": "Num Lock",
+    "scrollLock": "Scroll Lock",
+    "printScreen": "Print Screen",
+    "pause": "Pause",
+    "menu": "選單鍵",
+    "keypad": "數字鍵台 {{key}}",
+    "playPause": "播放/暫停",
+    "stop": "停止",
+    "previousTrack": "上一首",
+    "nextTrack": "下一首",
+    "mouseLeft": "滑鼠左鍵",
+    "mouseRight": "滑鼠右鍵",
+    "mouseMiddle": "滑鼠中鍵",
+    "mouseBack": "滑鼠按鈕 4",
+    "mouseForward": "滑鼠按鈕 5",
+    "dictation": "聽寫",
+    "left": "左 {{key}}",
+    "right": "右 {{key}}"
+  },
   "settings": {
     "modelSettings": {
       "title": "{{model}} 設定"
@@ -699,7 +731,7 @@
         "description": "完成的聽寫如何進入前景 App。「剪貼簿 (Ctrl+V)」：Handy 將文字放入剪貼簿並替你按下 Ctrl+V；Ctrl+Shift+V 和 Shift+Insert 用這些按鍵做同樣的事，例如用於終端機。「直接」：透過系統輸入鍵入文字。「外部腳本」（僅 Linux）：把文字傳給你的腳本。「無」：Handy 不插入任何內容，文字保存在歷史紀錄中，並視「剪貼簿處理」設定留在剪貼簿中。「貼上最近的轉錄」也以同樣方式插入；選擇「無」時會把文字放入剪貼簿。",
         "descriptionMacos": "完成的聽寫如何進入前景 App。「剪貼簿 (Cmd+V)」：Handy 將文字放入剪貼簿並替你按下 ⌘V；這需要輔助使用權限。「無」：Handy 不插入任何內容，文字保存在歷史紀錄中，並視「剪貼簿處理」設定留在剪貼簿中。「貼上最近的轉錄」也以同樣方式插入；選擇「無」時會把文字放入剪貼簿。沒有輔助使用權限時，改由 macOS 服務插入聽寫內容。",
         "options": {
-          "clipboard": "剪貼簿 ({{modifier}}+V)",
+          "clipboard": "剪貼簿 ({{keys}})",
           "clipboardCtrlShiftV": "剪貼簿 (Ctrl+Shift+V)",
           "clipboardShiftInsert": "剪貼簿 (Shift+Insert)",
           "direct": "直接",
