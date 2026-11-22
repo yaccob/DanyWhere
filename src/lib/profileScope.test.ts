@@ -16,6 +16,7 @@ import {
   entryLabel,
   entryState,
   fieldState,
+  followLine,
   ownCount,
   ownCountOnPage,
   ownValues,
@@ -470,6 +471,29 @@ check("entry label: its name, else its label, else the id", () => {
   assert.equal(entryLabel({ id: "x", name: "" }, "x"), "x");
   assert.equal(entryLabel("haiku", "anthropic"), "anthropic");
 });
+
+// The line under a default that names who follows it (P7.1).
+check("follow line: nobody deviates, all profiles follow", () =>
+  assert.deepEqual(followLine(0, ["Work", "Private"]), { key: "allFollow" }),
+);
+check("follow line: one follows, by name", () =>
+  assert.deepEqual(followLine(1, ["Private"]), {
+    key: "followsOne",
+    names: "Private",
+  }),
+);
+check("follow line: several follow, by name", () =>
+  assert.deepEqual(followLine(1, ["Work", "Private"]), {
+    key: "followMany",
+    names: "Work, Private",
+  }),
+);
+check("follow line: none when every profile deviates", () =>
+  assert.equal(followLine(2, []), null),
+);
+check("follow line: none without any profile", () =>
+  assert.equal(followLine(0, []), null),
+);
 
 console.log(`${total - failures.length}/${total} checks passed`);
 if (failures.length > 0) {

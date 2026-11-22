@@ -256,6 +256,26 @@ export const deviation = <P extends LayeredProfile>(
   return { own, following };
 };
 
+/** The line under a default that names the profiles following it, as a
+ * translation key under `settings.profileView.deviations` with its names. */
+export type FollowLine =
+  | { key: "allFollow" }
+  | { key: "followsOne" | "followMany"; names: string };
+
+export const followLine = (
+  ownCount: number,
+  followingNames: readonly string[],
+): FollowLine | null =>
+  // Nobody follows (every profile deviates, or there is none): no line, and
+  // no "+ profile" either, since there is no one left to give a value.
+  followingNames.length === 0
+    ? null
+    : ownCount === 0
+      ? { key: "allFollow" }
+      : followingNames.length === 1
+        ? { key: "followsOne", names: followingNames[0] }
+        : { key: "followMany", names: followingNames.join(", ") };
+
 // ---- scopes and the settings a page reads -----------------------------------
 
 export const sameScope = (a: Scope, b: Scope): boolean =>

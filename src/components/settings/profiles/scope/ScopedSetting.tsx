@@ -28,6 +28,7 @@ import {
   entriesOf,
   entryState,
   fieldState,
+  followLine,
   ownValues,
   type EntryState,
   type LayeredProfile,
@@ -430,17 +431,17 @@ const UnderDefaults: React.FC<UnderDefaultsProps> = ({
     return parts.join(" · ");
   };
 
-  const followNames = following.map((p) => displayName(p)).join(", ");
-  const followText =
-    own.length === 0
+  const follow = followLine(
+    own.length,
+    following.map((p) => displayName(p)),
+  );
+  const followText = !follow
+    ? null
+    : follow.key === "allFollow"
       ? t("settings.profileView.deviations.allFollow")
-      : following.length === 1
-        ? t("settings.profileView.deviations.followsOne", {
-            names: followNames,
-          })
-        : t("settings.profileView.deviations.followMany", {
-            names: followNames,
-          });
+      : t(`settings.profileView.deviations.${follow.key}`, {
+          names: follow.names,
+        });
 
   return (
     <div className={shows ? undefined : "hidden"}>
@@ -512,10 +513,10 @@ const UnderDefaults: React.FC<UnderDefaultsProps> = ({
             </div>
           );
         })}
-        <div className="flex flex-wrap items-center gap-2 text-xs text-ink-3">
-          <Link2 className="size-3.5 shrink-0" aria-hidden="true" />
-          <span className="min-w-0 flex-1">{followText}</span>
-          {following.length > 0 && (
+        {followText && (
+          <div className="flex flex-wrap items-center gap-2 text-xs text-ink-3">
+            <Link2 className="size-3.5 shrink-0" aria-hidden="true" />
+            <span className="min-w-0 flex-1">{followText}</span>
             <Dropdown
               compact
               tone="neutral"
@@ -534,8 +535,8 @@ const UnderDefaults: React.FC<UnderDefaultsProps> = ({
                 if (profile) void holdIn(profile, fields, entry);
               }}
             />
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
