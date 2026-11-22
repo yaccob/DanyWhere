@@ -284,19 +284,9 @@ export const PostProcessingSettings: React.FC = () => {
         </ScopedSetting>
       </SettingsGroup>
 
-      {/* DanyWhere */}
+      {/* DanyWhere: each of its rows has its own wrapper. */}
       <SettingsGroup title={t("settings.postProcessing.context.title")}>
-        <ScopedSetting
-          field={[
-            "context_age_limit_minutes",
-            "context_max_entries",
-            "context_char_budget",
-            "context_excluded_apps",
-          ]}
-          textOnly
-        >
-          <DictationContextSettings />
-        </ScopedSetting>
+        <DictationContextSettings />
       </SettingsGroup>
     </div>
   );

@@ -79,7 +79,9 @@ const PLACES: [component: string, page: Page][] = [
   ["VadBackendSelector", "appDebug"],
   ["LiveLogViewer", "appDebug"],
   // Defaults: what concerns a dictation, also when it was on Debug
-  ["ShowOverlay", "defaultsAdvanced"],
+  // The overlay's two rows, each with its own wrapper (qa 2026-11-22_1603).
+  ["OverlayStyleSetting", "defaultsAdvanced"],
+  ["OverlayPositionSetting", "defaultsAdvanced"],
   ["LanguageDetection", "defaultsAdvanced"],
   ["LanguageDetectionWindow", "defaultsAdvanced"],
   ["SoundPicker", "defaultsAdvanced"],

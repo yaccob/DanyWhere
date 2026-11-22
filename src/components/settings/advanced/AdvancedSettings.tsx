@@ -1,6 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { ShowOverlay } from "../ShowOverlay";
+import { OverlayPositionSetting, OverlayStyleSetting } from "../ShowOverlay";
 import { CustomWords, ProfileWords } from "../CustomWords";
 import { ActiveWordList, WordLists } from "../WordLists";
 import { SettingsGroup } from "../../ui/SettingsGroup";
@@ -36,8 +36,12 @@ export const AdvancedSettings: React.FC = () => {
           (start, tray, model unloading); the overlay concerns a dictation
           and stays, with the output. */}
       <SettingsGroup title={t("settings.advanced.groups.output")}>
-        <ScopedSetting field={["overlay_style", "overlay_position"]}>
-          <ShowOverlay descriptionMode="tooltip" grouped={true} />
+        {/* DanyWhere: the overlay's two rows, each with its own wrapper. */}
+        <ScopedSetting field="overlay_style">
+          <OverlayStyleSetting descriptionMode="tooltip" grouped={true} />
+        </ScopedSetting>
+        <ScopedSetting field="overlay_position">
+          <OverlayPositionSetting descriptionMode="tooltip" grouped={true} />
         </ScopedSetting>
         <ScopedSetting field={["paste_method", "external_script_path"]}>
           <PasteMethodSetting descriptionMode="tooltip" grouped={true} />

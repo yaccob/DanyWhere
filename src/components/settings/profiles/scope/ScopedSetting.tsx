@@ -9,8 +9,9 @@
 //   couples it again. A list shows its own entries one by one (P10).
 // - under the defaults (the settings view, P7.1, P7.2): the profiles that
 //   deviate, each with its own control (the same component, in that
-//   profile's scope) and a reset, or for a large setting a summary with
-//   "Open in …"; the profiles that follow in one grey line; "+ Profile"
+//   profile's scope) and a reset, or for a large setting (or a control
+//   that draws nothing in that profile) a summary with "Open in …"; the
+//   profiles that follow in one grey line; "+ Profile"
 //   gives another profile its own value here, starting from the default.
 //
 // The same wrapper serves every setting: it knows the setting only by the
@@ -46,7 +47,7 @@ import {
 } from "./SettingsScope";
 import { useValueLabels } from "./useValueLabels";
 import { useShowsAnything } from "@/hooks/useShowsAnything";
-import { wrapperShows } from "@/lib/renderedContent";
+import { deviatingRow, wrapperShows } from "@/lib/renderedContent";
 
 export interface ScopedSettingProps {
   /** The profile value or values the setting shows (serde names). */
@@ -332,6 +333,31 @@ export const ChainButton: React.FC<{ own: boolean; onClick: () => void }> = ({
 
 // ---- the settings view under the defaults ----------------------------------
 
+/** A deviating profile's own control under a default, or its value as text
+ * when the control draws nothing in that profile (`deviatingRow`), so the
+ * profile and its reset don't vanish. */
+const DeviatingControl: React.FC<{
+  control: React.ReactNode;
+  summary: React.ReactNode;
+  reset: React.ReactNode;
+}> = ({ control, summary, reset }) => {
+  const [content, controlShows] = useShowsAnything();
+  const showsControl = deviatingRow(false, controlShows) === "control";
+  return (
+    <>
+      <div
+        className={`flex items-center gap-2 ${showsControl ? "" : "hidden"}`}
+      >
+        <div ref={content} className="min-w-0 flex-1">
+          {control}
+        </div>
+        {reset}
+      </div>
+      {!showsControl && summary}
+    </>
+  );
+};
+
 interface UnderDefaultsProps extends ScopedSettingProps {
   profiles: readonly LayeredProfile[];
   defaults: Record<string, unknown>;
@@ -474,38 +500,40 @@ const UnderDefaults: React.FC<UnderDefaultsProps> = ({
               <RotateCcw className="size-3.5" aria-hidden="true" />
             </button>
           );
-          if (large) {
-            return (
-              <div
-                key={profile.id}
-                className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm"
-              >
-                {tag}
-                <span className="min-w-0 flex-1 truncate text-xs text-ink-3">
-                  {summaryOf(profile)}
-                </span>
-                {openProfilePage && (
-                  <button
-                    type="button"
-                    onClick={() => openProfilePage(profile.id, page)}
-                    className="inline-flex shrink-0 items-center gap-1 rounded-md border border-line px-2 py-0.5 text-xs hover:border-logo-primary hover:bg-logo-primary/10 cursor-pointer"
-                  >
-                    <ArrowRight
-                      className="size-3 rtl:rotate-180"
-                      aria-hidden="true"
-                    />
-                    {t("settings.profileView.deviations.openIn", {
-                      name: displayName(profile),
-                    })}
-                  </button>
-                )}
-                {reset}
-              </div>
-            );
-          }
+          const summaryRow = (
+            <div
+              key={profile.id}
+              className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm"
+            >
+              {tag}
+              <span className="min-w-0 flex-1 truncate text-xs text-ink-3">
+                {summaryOf(profile)}
+              </span>
+              {openProfilePage && (
+                <button
+                  type="button"
+                  onClick={() => openProfilePage(profile.id, page)}
+                  className="inline-flex shrink-0 items-center gap-1 rounded-md border border-line px-2 py-0.5 text-xs hover:border-logo-primary hover:bg-logo-primary/10 cursor-pointer"
+                >
+                  <ArrowRight
+                    className="size-3 rtl:rotate-180"
+                    aria-hidden="true"
+                  />
+                  {t("settings.profileView.deviations.openIn", {
+                    name: displayName(profile),
+                  })}
+                </button>
+              )}
+              {reset}
+            </div>
+          );
+          if (large) return summaryRow;
           return (
-            <div key={profile.id} className="flex items-center gap-2">
-              <div className="min-w-0 flex-1">
+            <DeviatingControl
+              key={profile.id}
+              summary={summaryRow}
+              reset={reset}
+              control={
                 <SettingsScopeProvider
                   scope={{ kind: "profile", id: profile.id }}
                 >
@@ -513,9 +541,8 @@ const UnderDefaults: React.FC<UnderDefaultsProps> = ({
                     {children}
                   </SettingRowOverrideProvider>
                 </SettingsScopeProvider>
-              </div>
-              {reset}
-            </div>
+              }
+            />
           );
         })}
         {followText && (
