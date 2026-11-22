@@ -485,7 +485,7 @@
       "nameTaken": "Já existe um perfil com este nome",
       "duplicateDialog": {
         "title": "Duplicar “{{name}}”",
-        "description": "O novo perfil começa como cópia deste. Ele não fica ativo; mude para ele com “Usar” ou pela barra lateral.",
+        "description": "O novo perfil começa como cópia deste. Ele não fica ativo; escolha-o em “Em uso” na barra lateral.",
         "confirm": "Duplicar"
       },
       "renameDialog": {
@@ -494,7 +494,7 @@
       },
       "deleteDialog": {
         "title": "Excluir “{{name}}”?",
-        "description": "A escolha de modelo, os idiomas, as listas de palavras e os prompts dele são excluídos junto. Isso não pode ser desfeito.",
+        "description": "As configurações e as listas de palavras próprias dele são excluídas junto. Os prompts ficam: pertencem a todos os perfis. Isso não pode ser desfeito.",
         "switchesTo": "É o perfil ativo, então “{{name}}” passa a ser o ativo antes.",
         "confirm": "Excluir Perfil"
       },
@@ -1081,7 +1081,8 @@
         "button": "Pós-processar com um prompt",
         "title": "Pós-processar com",
         "active": "ativo"
-      }
+      },
+      "retranscribeAgain": "Re-transcrever e pós-processar de novo, como antes"
     },
     "debug": {
       "title": "Depuração",

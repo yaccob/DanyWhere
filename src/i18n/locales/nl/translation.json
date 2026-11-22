@@ -485,7 +485,7 @@
       "nameTaken": "Er bestaat al een profiel met deze naam",
       "duplicateDialog": {
         "title": "„{{name}}” dupliceren",
-        "description": "Het nieuwe profiel begint als kopie van dit profiel. Het wordt niet actief; schakel ernaar over met „Gebruiken” of in de zijbalk.",
+        "description": "Het nieuwe profiel begint als kopie van dit profiel. Het wordt niet actief; kies het in de zijbalk onder „In gebruik”.",
         "confirm": "Dupliceren"
       },
       "renameDialog": {
@@ -494,7 +494,7 @@
       },
       "deleteDialog": {
         "title": "„{{name}}” verwijderen?",
-        "description": "De modelkeuze, talen, woordenlijsten en prompts worden mee verwijderd. Dit kan niet ongedaan worden gemaakt.",
+        "description": "De instellingen en eigen woordenlijsten worden mee verwijderd. De prompts blijven: die horen bij alle profielen. Dit kan niet ongedaan worden gemaakt.",
         "switchesTo": "Dit is het actieve profiel, dus eerst wordt „{{name}}” actief.",
         "confirm": "Profiel verwijderen"
       },
@@ -1081,7 +1081,8 @@
         "button": "Nabewerken met één prompt",
         "title": "Nabewerken met",
         "active": "actief"
-      }
+      },
+      "retranscribeAgain": "Opnieuw transcriberen en opnieuw naverwerken, zoals eerder"
     },
     "debug": {
       "title": "Probleemoplossing",

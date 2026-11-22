@@ -9,6 +9,7 @@ import { EMPTY_SEARCH, textMatcher, type SearchFields } from "./historySearch";
 import {
   defaultSaveMode,
   describeStep,
+  distinctLines,
   dropIndex,
   dropSlot,
   entryText,
@@ -498,6 +499,18 @@ check("Cmd+Enter and Ctrl+Enter save, Enter alone doesn't", () => {
     isSaveShortcut({ key: "s", metaKey: true, ctrlKey: false }),
     false,
   );
+});
+
+// A chip's tooltip names a repeated step once (qa 2026-11-22_0107: two
+// saves in place in the same minute read the same).
+check("a step line repeated right after itself shows once", () => {
+  assert.deepEqual(
+    distinctLines(["Edited by you, 01:45", "Edited by you, 01:45", "Shown"]),
+    ["Edited by you, 01:45", "Shown"],
+  );
+});
+check("the same line apart from itself stays", () => {
+  assert.deepEqual(distinctLines(["A", "B", "A"]), ["A", "B", "A"]);
 });
 
 if (failures > 0) {

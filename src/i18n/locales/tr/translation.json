@@ -485,7 +485,7 @@
       "nameTaken": "Bu adda bir profil zaten var",
       "duplicateDialog": {
         "title": "“{{name}}” profilini çoğalt",
-        "description": "Yeni profil bunun bir kopyası olarak başlar. Etkin hale gelmez; ona “Kullan” ile veya kenar çubuğundan geçin.",
+        "description": "Yeni profil bunun bir kopyası olarak başlar. Etkin hale gelmez; kenar çubuğundaki “Kullanımda” bölümünden seçin.",
         "confirm": "Çoğalt"
       },
       "renameDialog": {
@@ -494,7 +494,7 @@
       },
       "deleteDialog": {
         "title": "“{{name}}” silinsin mi?",
-        "description": "Model seçimi, dilleri, kelime listeleri ve prompt'ları da onunla birlikte silinir. Bu işlem geri alınamaz.",
+        "description": "Ayarları ve kendi kelime listeleri de onunla birlikte silinir. Prompt'lar kalır: tüm profillere aittir. Bu işlem geri alınamaz.",
         "switchesTo": "Bu etkin profil olduğundan önce “{{name}}” etkin hale gelir.",
         "confirm": "Profili Sil"
       },
@@ -1081,7 +1081,8 @@
         "button": "Tek bir istemle son işlem yap",
         "title": "Şununla son işlem",
         "active": "etkin"
-      }
+      },
+      "retranscribeAgain": "Yeniden transkribe et ve önceki gibi yine son işlem uygula"
     },
     "debug": {
       "title": "Hata Ayıklama",

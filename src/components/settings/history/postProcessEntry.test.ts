@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import {
   canRunChosenPrompt,
   postProcessAvailability,
   retranscribeMode,
+  retranscribeTitleKey,
 } from "./postProcessEntry";
 
 let failures = 0;
@@ -121,6 +123,50 @@ check("a chosen prompt needs the provider's model", () => {
   assert.equal(
     canRunChosenPrompt({ ...ready, post_process_models: {} }),
     false,
+  );
+});
+
+// The tooltip says what a click does (qa 2026-11-22_0107, E6): an entry
+// that was post-processed before is post-processed again without Shift.
+check(
+  "re-transcribing a post-processed entry says it post-processes again",
+  () => {
+    assert.equal(
+      retranscribeTitleKey(true, "ready"),
+      "settings.history.retranscribeAgain",
+    );
+  },
+);
+check("re-transcribing an entry never post-processed offers Shift", () => {
+  assert.equal(
+    retranscribeTitleKey(false, "ready"),
+    "settings.history.retranscribeShift",
+  );
+});
+check("every tooltip of Re-transcribe has an English text", () => {
+  const english = JSON.parse(
+    readFileSync(
+      new URL("../../../i18n/locales/en/translation.json", import.meta.url),
+      "utf8",
+    ),
+  ) as { settings: { history: Record<string, unknown> } };
+  for (const key of [
+    retranscribeTitleKey(true, "ready"),
+    retranscribeTitleKey(false, "ready"),
+    retranscribeTitleKey(false, "off"),
+  ]) {
+    const name = key.replace("settings.history.", "");
+    assert.equal(typeof english.settings.history[name], "string", key);
+  }
+});
+check("without post-processing, re-transcribing only transcribes", () => {
+  assert.equal(
+    retranscribeTitleKey(true, "off"),
+    "settings.history.retranscribe",
+  );
+  assert.equal(
+    retranscribeTitleKey(false, "not_set_up"),
+    "settings.history.retranscribe",
   );
 });
 

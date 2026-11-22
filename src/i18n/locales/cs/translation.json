@@ -485,7 +485,7 @@
       "nameTaken": "Profil s tímto názvem už existuje",
       "duplicateDialog": {
         "title": "Duplikovat „{{name}}“",
-        "description": "Nový profil začíná jako kopie tohoto. Nestane se aktivním; přepnete na něj tlačítkem „Použít“ nebo v postranním panelu.",
+        "description": "Nový profil začíná jako kopie tohoto. Nestane se aktivním; vyberte ho v části „Používá se“ v postranním panelu.",
         "confirm": "Duplikovat"
       },
       "renameDialog": {
@@ -494,7 +494,7 @@
       },
       "deleteDialog": {
         "title": "Smazat „{{name}}“?",
-        "description": "Spolu s ním se smaže volba modelu, jazyky, seznamy slov a prompty. Tuto akci nelze vrátit.",
+        "description": "Spolu s ním se smaže jeho nastavení a vlastní seznamy slov. Prompty zůstanou, patří všem profilům. Tuto akci nelze vrátit.",
         "switchesTo": "Je to aktivní profil, proto se nejprve aktivuje „{{name}}“.",
         "confirm": "Smazat profil"
       },
@@ -1081,7 +1081,8 @@
         "button": "Následně zpracovat jedním pokynem",
         "title": "Následně zpracovat pomocí",
         "active": "aktivní"
-      }
+      },
+      "retranscribeAgain": "Přepsat znovu a znovu zpracovat, jako předtím"
     },
     "debug": {
       "title": "Ladění",

@@ -485,7 +485,7 @@
       "nameTaken": "已存在同名配置文件",
       "duplicateDialog": {
         "title": "复制“{{name}}”",
-        "description": "新配置文件以此配置文件的副本开始。它不会自动启用；可通过“使用”或在侧边栏中切换到它。",
+        "description": "新配置文件以此配置文件的副本开始。它不会自动启用；请在侧边栏的“正在使用”中选择它。",
         "confirm": "复制"
       },
       "renameDialog": {
@@ -494,7 +494,7 @@
       },
       "deleteDialog": {
         "title": "删除“{{name}}”？",
-        "description": "其模型选择、语言、词汇列表和提示词将一并删除。此操作无法撤销。",
+        "description": "其设置和自有词汇列表将一并删除。提示词会保留：它们属于所有配置文件。此操作无法撤销。",
         "switchesTo": "这是当前配置文件，因此会先切换到“{{name}}”。",
         "confirm": "删除配置文件"
       },
@@ -1081,7 +1081,8 @@
         "button": "用一个提示词进行后处理",
         "title": "后处理使用",
         "active": "启用"
-      }
+      },
+      "retranscribeAgain": "重新转录，并像之前一样再次进行后处理"
     },
     "debug": {
       "title": "调试",

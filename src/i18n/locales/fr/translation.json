@@ -485,7 +485,7 @@
       "nameTaken": "Un profil porte déjà ce nom",
       "duplicateDialog": {
         "title": "Dupliquer « {{name}} »",
-        "description": "Le nouveau profil commence comme une copie de celui-ci. Il ne devient pas actif ; passez-y avec « Utiliser » ou dans la barre latérale.",
+        "description": "Le nouveau profil commence comme une copie de celui-ci. Il ne devient pas actif ; choisissez-le sous « En cours d'utilisation » dans la barre latérale.",
         "confirm": "Dupliquer"
       },
       "renameDialog": {
@@ -494,7 +494,7 @@
       },
       "deleteDialog": {
         "title": "Supprimer « {{name}} » ?",
-        "description": "Son choix de modèle, ses langues, ses listes de mots et ses prompts sont supprimés avec lui. Cette action est irréversible.",
+        "description": "Ses réglages et ses propres listes de mots sont supprimés avec lui. Les prompts restent : ils appartiennent à tous les profils. Cette action est irréversible.",
         "switchesTo": "C'est le profil actif : « {{name}} » devient d'abord actif.",
         "confirm": "Supprimer le profil"
       },
@@ -1081,7 +1081,8 @@
         "button": "Post-traiter avec une instruction",
         "title": "Post-traiter avec",
         "active": "active"
-      }
+      },
+      "retranscribeAgain": "Re-transcrire et post-traiter à nouveau, comme avant"
     },
     "debug": {
       "title": "Débogage",

@@ -485,7 +485,7 @@
       "nameTaken": "A profile with this name already exists",
       "duplicateDialog": {
         "title": "Duplicate “{{name}}”",
-        "description": "The new profile starts as a copy of this one. It doesn't become active; switch to it with Use or in the sidebar.",
+        "description": "The new profile starts as a copy of this one. It doesn't become active; choose it under “In Use” in the sidebar.",
         "confirm": "Duplicate"
       },
       "renameDialog": {
@@ -494,7 +494,7 @@
       },
       "deleteDialog": {
         "title": "Delete “{{name}}”?",
-        "description": "Its model choice, languages, word lists and prompts are deleted with it. This can't be undone.",
+        "description": "Its settings and its own word lists are deleted with it. The prompts stay: they belong to all profiles. This can't be undone.",
         "switchesTo": "It is the active profile, so “{{name}}” becomes active first.",
         "confirm": "Delete Profile"
       },
@@ -1081,7 +1081,8 @@
         "button": "Post-process with one prompt",
         "title": "Post-process with",
         "active": "active"
-      }
+      },
+      "retranscribeAgain": "Re-transcribe and post-process again, as before"
     },
     "debug": {
       "title": "Debug",

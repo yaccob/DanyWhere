@@ -485,7 +485,7 @@
       "nameTaken": "Ja hi ha un perfil amb aquest nom",
       "duplicateDialog": {
         "title": "Duplica «{{name}}»",
-        "description": "El perfil nou comença com a còpia d'aquest. No s'activa; canvieu-hi amb «Utilitza» o des de la barra lateral.",
+        "description": "El perfil nou comença com a còpia d'aquest. No s'activa; trieu-lo a «En ús» de la barra lateral.",
         "confirm": "Duplica"
       },
       "renameDialog": {
@@ -494,7 +494,7 @@
       },
       "deleteDialog": {
         "title": "Voleu suprimir «{{name}}»?",
-        "description": "També se'n suprimeixen l'elecció de model, els idiomes, les llistes de paraules i les indicacions. No es pot desfer.",
+        "description": "També se'n suprimeixen la configuració i les llistes de paraules pròpies. Les indicacions es mantenen: són de tots els perfils. No es pot desfer.",
         "switchesTo": "És el perfil actiu, així que primer s'activa «{{name}}».",
         "confirm": "Suprimeix el perfil"
       },
@@ -1081,7 +1081,8 @@
         "button": "Postprocessa amb una indicació",
         "title": "Postprocessa amb",
         "active": "activa"
-      }
+      },
+      "retranscribeAgain": "Torneu a transcriure i a postprocessar, com abans"
     },
     "debug": {
       "title": "Depuració",

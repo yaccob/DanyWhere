@@ -485,7 +485,7 @@
       "nameTaken": "Profil o tej nazwie już istnieje",
       "duplicateDialog": {
         "title": "Duplikuj „{{name}}”",
-        "description": "Nowy profil zaczyna jako kopia tego profilu. Nie staje się aktywny; przełącz się na niego przyciskiem „Użyj” lub na pasku bocznym.",
+        "description": "Nowy profil zaczyna jako kopia tego profilu. Nie staje się aktywny; wybierz go w sekcji „W użyciu” na pasku bocznym.",
         "confirm": "Duplikuj"
       },
       "renameDialog": {
@@ -494,7 +494,7 @@
       },
       "deleteDialog": {
         "title": "Usunąć „{{name}}”?",
-        "description": "Razem z nim zostaną usunięte wybór modelu, języki, listy słów i prompty. Tego nie można cofnąć.",
+        "description": "Razem z nim zostaną usunięte jego ustawienia i własne listy słów. Prompty zostają: należą do wszystkich profili. Tego nie można cofnąć.",
         "switchesTo": "To aktywny profil, więc najpierw aktywny stanie się „{{name}}”.",
         "confirm": "Usuń profil"
       },
@@ -1081,7 +1081,8 @@
         "button": "Przetwórz jednym poleceniem",
         "title": "Przetwórz za pomocą",
         "active": "aktywne"
-      }
+      },
+      "retranscribeAgain": "Transkrybuj ponownie i ponownie uruchom postproces, jak wcześniej"
     },
     "debug": {
       "title": "Debugowanie",

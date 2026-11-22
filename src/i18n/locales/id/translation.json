@@ -485,7 +485,7 @@
       "nameTaken": "Profil dengan nama ini sudah ada",
       "duplicateDialog": {
         "title": "Duplikat “{{name}}”",
-        "description": "Profil baru dimulai sebagai salinan profil ini. Profil itu tidak menjadi aktif; beralihlah ke sana dengan “Gunakan” atau di bilah samping.",
+        "description": "Profil baru dimulai sebagai salinan profil ini. Profil itu tidak menjadi aktif; pilih di “Sedang Digunakan” pada bilah samping.",
         "confirm": "Duplikat"
       },
       "renameDialog": {
@@ -494,7 +494,7 @@
       },
       "deleteDialog": {
         "title": "Hapus “{{name}}”?",
-        "description": "Pilihan model, bahasa, daftar kata, dan prompt-nya ikut terhapus. Tindakan ini tidak dapat dibatalkan.",
+        "description": "Pengaturan dan daftar kata miliknya ikut terhapus. Prompt tetap ada: prompt milik semua profil. Tindakan ini tidak dapat dibatalkan.",
         "switchesTo": "Ini profil yang aktif, jadi “{{name}}” diaktifkan lebih dulu.",
         "confirm": "Hapus Profil"
       },
@@ -1081,7 +1081,8 @@
         "button": "Pascaproses dengan satu prompt",
         "title": "Pascaproses dengan",
         "active": "aktif"
-      }
+      },
+      "retranscribeAgain": "Transkripsikan ulang dan pascaproses lagi, seperti sebelumnya"
     },
     "debug": {
       "title": "Debug",

@@ -485,7 +485,7 @@
       "nameTaken": "Det finns redan en profil med det här namnet",
       "duplicateDialog": {
         "title": "Duplicera ”{{name}}”",
-        "description": "Den nya profilen börjar som en kopia av den här. Den blir inte aktiv; byt till den med ”Använd” eller i sidofältet.",
+        "description": "Den nya profilen börjar som en kopia av den här. Den blir inte aktiv; välj den under ”Används” i sidofältet.",
         "confirm": "Duplicera"
       },
       "renameDialog": {
@@ -494,7 +494,7 @@
       },
       "deleteDialog": {
         "title": "Ta bort ”{{name}}”?",
-        "description": "Dess modellval, språk, ordlistor och prompter tas bort tillsammans med den. Det går inte att ångra.",
+        "description": "Dess inställningar och egna ordlistor tas bort tillsammans med den. Prompterna finns kvar: de hör till alla profiler. Det går inte att ångra.",
         "switchesTo": "Det är den aktiva profilen, så ”{{name}}” blir aktiv först.",
         "confirm": "Ta bort profil"
       },
@@ -1081,7 +1081,8 @@
         "button": "Efterbearbeta med en prompt",
         "title": "Efterbearbeta med",
         "active": "aktiv"
-      }
+      },
+      "retranscribeAgain": "Transkribera igen och efterbearbeta igen, som tidigare"
     },
     "debug": {
       "title": "Felsökning",

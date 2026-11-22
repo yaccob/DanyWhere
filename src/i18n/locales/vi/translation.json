@@ -485,7 +485,7 @@
       "nameTaken": "Đã có hồ sơ với tên này",
       "duplicateDialog": {
         "title": "Nhân bản “{{name}}”",
-        "description": "Hồ sơ mới bắt đầu là bản sao của hồ sơ này. Nó không được dùng ngay; chuyển sang nó bằng “Dùng” hoặc ở thanh bên.",
+        "description": "Hồ sơ mới bắt đầu là bản sao của hồ sơ này. Nó không được dùng ngay; chọn nó ở mục “Đang dùng” trên thanh bên.",
         "confirm": "Nhân bản"
       },
       "renameDialog": {
@@ -494,7 +494,7 @@
       },
       "deleteDialog": {
         "title": "Xóa “{{name}}”?",
-        "description": "Lựa chọn mô hình, ngôn ngữ, danh sách từ và câu lệnh của hồ sơ cũng bị xóa theo. Không thể hoàn tác.",
+        "description": "Cài đặt và danh sách từ riêng của hồ sơ cũng bị xóa theo. Các câu lệnh vẫn còn: chúng thuộc về mọi hồ sơ. Không thể hoàn tác.",
         "switchesTo": "Đây là hồ sơ đang dùng, nên “{{name}}” sẽ được dùng trước.",
         "confirm": "Xóa hồ sơ"
       },
@@ -1081,7 +1081,8 @@
         "button": "Hậu xử lý bằng một prompt",
         "title": "Hậu xử lý bằng",
         "active": "đang bật"
-      }
+      },
+      "retranscribeAgain": "Phiên âm lại và xử lý sau lần nữa như trước"
     },
     "debug": {
       "title": "Gỡ lỗi",

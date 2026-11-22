@@ -461,7 +461,7 @@
       "delete": "{{name}} löschen",
       "inUse": "Eine Starttaste endet standardmäßig damit; wähle zuerst ein anderes Standard-Ende.",
       "defaultEnd": {
-        "title": "Standard-Ende von {{shortcut}}",
+        "title": "Standard-Ende für „{{shortcut}}“",
         "description": "Wie ihr zweiter Druck oder, wenn sie gehalten wird, ihr Loslassen die Aufnahme beendet."
       },
       "linuxNoShortcuts": "Unter Linux werden die Tastenkombinationen der Endtasten nicht belegt; sie beenden eine Aufnahme nur als Standard-Ende.",
@@ -485,7 +485,7 @@
       "nameTaken": "Ein Profil mit diesem Namen gibt es schon",
       "duplicateDialog": {
         "title": "„{{name}}“ duplizieren",
-        "description": "Das neue Profil beginnt als Kopie dieses Profils. Es wird nicht aktiv; wähle es mit „Verwenden“ oder in der Seitenleiste.",
+        "description": "Das neue Profil beginnt als Kopie dieses Profils. Es wird nicht aktiv; wähle es in der Seitenleiste unter „In Verwendung“.",
         "confirm": "Duplizieren"
       },
       "renameDialog": {
@@ -494,7 +494,7 @@
       },
       "deleteDialog": {
         "title": "„{{name}}“ löschen?",
-        "description": "Seine Modellwahl, Sprachen, Wortlisten und Prompts werden mit gelöscht. Das lässt sich nicht rückgängig machen.",
+        "description": "Seine Einstellungen und eigenen Wortlisten werden mit gelöscht. Die Prompts bleiben, sie gehören allen Profilen. Das lässt sich nicht rückgängig machen.",
         "switchesTo": "Es ist das aktive Profil, deshalb wird vorher „{{name}}“ aktiv.",
         "confirm": "Profil löschen"
       },
@@ -1081,7 +1081,8 @@
         "button": "Mit einem Prompt nachbearbeiten",
         "title": "Nachbearbeiten mit",
         "active": "aktiv"
-      }
+      },
+      "retranscribeAgain": "Erneut transkribieren und wie zuvor nachbearbeiten"
     },
     "debug": {
       "title": "Debug",

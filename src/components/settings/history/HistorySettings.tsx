@@ -42,6 +42,7 @@ import {
   canRunChosenPrompt,
   postProcessAvailability,
   retranscribeMode,
+  retranscribeTitleKey,
   type PostProcessAvailability,
   type ReprocessMode,
 } from "./postProcessEntry";
@@ -1055,11 +1056,12 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
                     )
                   }
                   disabled={editing !== null || saving}
-                  title={
-                    postProcess === "ready"
-                      ? t("settings.history.retranscribeShift")
-                      : t("settings.history.retranscribe")
-                  }
+                  title={t(
+                    retranscribeTitleKey(
+                      entry.post_process_requested,
+                      postProcess,
+                    ),
+                  )}
                 >
                   <RotateCcw width={16} height={16} />
                 </IconButton>

@@ -485,7 +485,7 @@
       "nameTaken": "已有同名的設定檔",
       "duplicateDialog": {
         "title": "複製「{{name}}」",
-        "description": "新設定檔會以此設定檔的副本開始，不會自動啟用；可透過「使用」或在側邊欄切換過去。",
+        "description": "新設定檔會以此設定檔的副本開始，不會自動啟用；請在側邊欄的「使用中」選擇它。",
         "confirm": "複製"
       },
       "renameDialog": {
@@ -494,7 +494,7 @@
       },
       "deleteDialog": {
         "title": "要刪除「{{name}}」嗎？",
-        "description": "其模型選擇、語言、詞彙清單和提示詞會一併刪除。此動作無法復原。",
+        "description": "其設定和自有詞彙清單會一併刪除。提示詞會保留：它們屬於所有設定檔。此動作無法復原。",
         "switchesTo": "這是目前使用中的設定檔，因此會先切換到「{{name}}」。",
         "confirm": "刪除設定檔"
       },
@@ -1081,7 +1081,8 @@
         "button": "用一個提示詞進行後處理",
         "title": "後處理使用",
         "active": "啟用"
-      }
+      },
+      "retranscribeAgain": "重新轉錄，並像之前一樣再次進行後處理"
     },
     "debug": {
       "title": "偵錯",

@@ -485,7 +485,7 @@
       "nameTaken": "Esiste già un profilo con questo nome",
       "duplicateDialog": {
         "title": "Duplica «{{name}}»",
-        "description": "Il nuovo profilo parte come copia di questo. Non diventa attivo; passaci con «Usa» o dalla barra laterale.",
+        "description": "Il nuovo profilo parte come copia di questo. Non diventa attivo; sceglilo in «In uso» nella barra laterale.",
         "confirm": "Duplica"
       },
       "renameDialog": {
@@ -494,7 +494,7 @@
       },
       "deleteDialog": {
         "title": "Eliminare «{{name}}»?",
-        "description": "Con lui vengono eliminati la scelta del modello, le lingue, gli elenchi di parole e i prompt. L'operazione non si può annullare.",
+        "description": "Con lui vengono eliminati le sue impostazioni e i suoi elenchi di parole. I prompt restano: appartengono a tutti i profili. L'operazione non si può annullare.",
         "switchesTo": "È il profilo attivo, quindi prima diventa attivo «{{name}}».",
         "confirm": "Elimina profilo"
       },
@@ -1081,7 +1081,8 @@
         "button": "Post-elabora con un'istruzione",
         "title": "Post-elabora con",
         "active": "attiva"
-      }
+      },
+      "retranscribeAgain": "Ri-trascrivere e post-elaborare di nuovo, come prima"
     },
     "debug": {
       "title": "Debug",

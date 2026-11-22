@@ -485,7 +485,7 @@
       "nameTaken": "Der findes allerede en profil med dette navn",
       "duplicateDialog": {
         "title": "Dupliker »{{name}}«",
-        "description": "Den nye profil starter som en kopi af denne. Den bliver ikke aktiv; skift til den med »Brug« eller i sidepanelet.",
+        "description": "Den nye profil starter som en kopi af denne. Den bliver ikke aktiv; vælg den under »I brug« i sidepanelet.",
         "confirm": "Dupliker"
       },
       "renameDialog": {
@@ -494,7 +494,7 @@
       },
       "deleteDialog": {
         "title": "Slet »{{name}}«?",
-        "description": "Dens valg af model, sprog, ordlister og prompts slettes sammen med den. Det kan ikke fortrydes.",
+        "description": "Dens indstillinger og egne ordlister slettes sammen med den. Prompts bliver: de hører til alle profiler. Det kan ikke fortrydes.",
         "switchesTo": "Det er den aktive profil, så »{{name}}« bliver aktiv først.",
         "confirm": "Slet profil"
       },
@@ -1081,7 +1081,8 @@
         "button": "Efterbehandl med én prompt",
         "title": "Efterbehandl med",
         "active": "aktiv"
-      }
+      },
+      "retranscribeAgain": "Transskribér igen og efterbehandl igen som før"
     },
     "debug": {
       "title": "Fejlfinding",

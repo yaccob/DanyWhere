@@ -297,6 +297,11 @@ export const stepSeconds = (
   return step.by === "transcription" ? entry.timestamp : null;
 };
 
+/** The lines of a chip's tooltip, a line repeated right after itself once:
+ * two saves in place within a minute read the same. */
+export const distinctLines = (lines: string[]): string[] =>
+  lines.filter((line, index) => index === 0 || line !== lines[index - 1]);
+
 /** ⌘Enter (Ctrl+Enter off macOS) saves an edit. */
 export const isSaveShortcut = (event: {
   key: string;

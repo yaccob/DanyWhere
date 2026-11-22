@@ -485,7 +485,7 @@
       "nameTaken": "Ya existe un perfil con este nombre",
       "duplicateDialog": {
         "title": "Duplicar «{{name}}»",
-        "description": "El perfil nuevo empieza como copia de este. No se activa; cámbiate a él con «Usar» o desde la barra lateral.",
+        "description": "El perfil nuevo empieza como copia de este. No se activa; elígelo en «En uso» de la barra lateral.",
         "confirm": "Duplicar"
       },
       "renameDialog": {
@@ -494,7 +494,7 @@
       },
       "deleteDialog": {
         "title": "¿Eliminar «{{name}}»?",
-        "description": "Con él se eliminan la elección de modelo, los idiomas, las listas de palabras y los prompts. No se puede deshacer.",
+        "description": "Con él se eliminan su configuración y sus listas de palabras propias. Los prompts se quedan: son de todos los perfiles. No se puede deshacer.",
         "switchesTo": "Es el perfil activo, así que antes se activa «{{name}}».",
         "confirm": "Eliminar perfil"
       },
@@ -1081,7 +1081,8 @@
         "button": "Posprocesar con una instrucción",
         "title": "Posprocesar con",
         "active": "activa"
-      }
+      },
+      "retranscribeAgain": "Re-transcribir y post procesar de nuevo, como antes"
     },
     "debug": {
       "title": "Depuración",

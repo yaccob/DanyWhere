@@ -29,6 +29,7 @@ import { menuOffset } from "@/lib/menuPlacement";
 import {
   cancelChipDrag,
   describeStep,
+  distinctLines,
   dropSlot,
   moveChip,
   moveTarget,
@@ -190,8 +191,10 @@ export const VersionTrack: React.FC<VersionTrackProps> = ({
 
   const chipTitle = (version: HistoryVersion, index: number) =>
     [
-      ...version.steps.map((step, stepIndex) =>
-        stepLine(step, index, stepIndex),
+      ...distinctLines(
+        version.steps.map((step, stepIndex) =>
+          stepLine(step, index, stepIndex),
+        ),
       ),
       ...(matching.includes(index) ? [t(`${KEYS}.searchMatch`)] : []),
       ...(index === top ? [t(`${KEYS}.isResult`)] : []),

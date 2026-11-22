@@ -37,6 +37,20 @@ export const postProcessAvailability = (
   return provider && model?.trim() && prompt ? "ready" : "not_set_up";
 };
 
+/** The tooltip of "Re-transcribe": what a click does. Handy post-processes
+ * the new transcript of an entry that was post-processed before
+ * (`post_process_requested`, `ReprocessMode::Transcribe`), Shift or not;
+ * any other entry only with Shift (qa 2026-11-22_0107, E6). */
+export const retranscribeTitleKey = (
+  postProcessRequested: boolean,
+  availability: PostProcessAvailability,
+): string => {
+  if (availability !== "ready") return "settings.history.retranscribe";
+  return postProcessRequested
+    ? "settings.history.retranscribeAgain"
+    : "settings.history.retranscribeShift";
+};
+
 /** Re-transcribe with Shift also post-processes, when it can. */
 export const retranscribeMode = (
   shiftKey: boolean,
