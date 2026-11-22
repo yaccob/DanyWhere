@@ -1625,6 +1625,148 @@ mod tests {
         );
     }
 
+    // ---- From the key press ------------------------------------------------
+    //
+    // The real coordinator thread, its debounce and states included, with an
+    // executor that ends a recording as `actions::stop_transcription` does
+    // once the profile is settled: snapshot, `stopped`, `finish_dictation`
+    // on the async runtime.
+
+    use crate::settings::ShortcutActivation;
+    use crate::transcription_coordinator::{
+        EffectRunner, RecordingPhase, TranscriptionCoordinator,
+    };
+
+    /// Ends each recording through the flow with `ports`, `settings` as
+    /// stored.
+    struct FlowRunner {
+        ports: FakePorts,
+        settings: AppSettings,
+    }
+
+    impl EffectRunner for FlowRunner {
+        fn start(&mut self, _binding_id: &str, _hotkey: &str) -> bool {
+            true
+        }
+
+        fn stop(&mut self, binding_id: &str, _hotkey: &str, end: &EndChoice) {
+            let snapshot = build(SnapshotInputs {
+                stored: &self.settings,
+                own_profile: None,
+                end,
+                binding_id,
+                transcribed_with_end_values: false,
+                streaming: false,
+                session: 1,
+                cancel_generation: 0,
+            });
+            stopped(&snapshot, &self.ports);
+            tauri::async_runtime::spawn(finish_dictation(
+                Dictation {
+                    snapshot,
+                    binding_id: binding_id.to_string(),
+                    stop_time: Instant::now(),
+                },
+                self.ports.clone(),
+            ));
+        }
+
+        fn phase(&mut self, _phase: RecordingPhase) {}
+
+        fn recording_locked_changed(&mut self, _locked: bool) {}
+
+        fn keys_end(&mut self, binding_id: &str) -> Option<String> {
+            let values = ProfileValues::from_settings(&self.settings);
+            crate::end_keys::end_with_keys(&values, binding_id).map(|end| end.id.clone())
+        }
+    }
+
+    /// The coordinator thread ending recordings through the flow.
+    fn coordinator_with(ports: &FakePorts, settings: AppSettings) -> TranscriptionCoordinator {
+        let mut settings = settings;
+        ensure_profiles(&mut settings);
+        TranscriptionCoordinator::with_runner(FlowRunner {
+            ports: ports.clone(),
+            settings,
+        })
+    }
+
+    fn toggle_press(coordinator: &TranscriptionCoordinator) {
+        coordinator.send_input(
+            START_BINDINGS[0],
+            "ctrl+space",
+            true,
+            ShortcutActivation::Toggle,
+            Duration::ZERO,
+        );
+    }
+
+    #[test]
+    fn two_presses_of_the_shortcut_dictate_and_paste() {
+        let ports = FakePorts::new(Script::default());
+        let settings = with_end(get_default_settings(), PLAIN, " (sent)", false);
+        let coordinator = coordinator_with(&ports, settings);
+        toggle_press(&coordinator);
+        // Longer than the coordinator's debounce, so the second press counts.
+        std::thread::sleep(Duration::from_millis(60));
+        toggle_press(&coordinator);
+        assert!(ports.wait_finished(Duration::from_secs(10)));
+
+        let events = ports.take_events();
+        assert_eq!(events[..5], stop_events(false)[..]);
+        assert!(events.contains(&Event::Remember {
+            entry_id: 1,
+            profile_id: DEFAULT_PROFILE_ID.to_string(),
+            end_id: PLAIN.to_string(),
+        }));
+        assert!(events.iter().any(|event| matches!(
+            event,
+            Event::Paste { text, append_text, .. } if text == "hello" && append_text == " (sent)"
+        )));
+        assert_eq!(
+            events[events.len() - 2..],
+            [
+                Event::Complete(TranscriptionOutcome::Typed, SAMPLES),
+                Event::Finished,
+            ]
+        );
+    }
+
+    #[test]
+    fn the_post_processing_end_shortcut_post_processes_a_plain_start() {
+        let (url, requests) = llm_server(vec![("200 OK", POLISHED)]);
+        let ports = FakePorts::new(Script::default());
+        let settings = with_end(
+            post_process_settings(&url),
+            POST_PROCESS_ID,
+            " (sent)",
+            false,
+        );
+        let coordinator = coordinator_with(&ports, settings);
+        toggle_press(&coordinator);
+        coordinator.finish_with_end_key(POST_PROCESS_ID);
+        assert!(ports.wait_finished(Duration::from_secs(10)));
+
+        let events = ports.take_events();
+        assert!(events.contains(&Event::PostProcess {
+            post_process: true,
+            with_window: false,
+        }));
+        assert!(events.iter().any(|event| matches!(
+            event,
+            Event::Paste { text, append_text, .. } if text == "polished" && append_text == " (sent)"
+        )));
+        assert!(requests
+            .recv_timeout(Duration::from_secs(5))
+            .unwrap()
+            .to_string()
+            .contains("hello"));
+        assert_eq!(
+            ports.entries()[0].post_processed_text.as_deref(),
+            Some("polished")
+        );
+    }
+
     #[test]
     fn a_refused_effort_is_a_warning_unless_post_processing_failed() {
         assert_eq!(pasted_dictation_notice(false, None), None);

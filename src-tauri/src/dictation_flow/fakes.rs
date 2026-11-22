@@ -170,6 +170,11 @@ pub struct Fake {
     script: Mutex<Script>,
     events: Arc<Mutex<Vec<Event>>>,
     cancelled: AtomicBool,
+    /// One message per finished dictation ([`FakePorts::wait_finished`]).
+    finished: (
+        Mutex<std::sync::mpsc::Sender<()>>,
+        Mutex<std::sync::mpsc::Receiver<()>>,
+    ),
     history: HistoryManager,
     _dir: tempfile::TempDir,
 }
@@ -202,6 +207,10 @@ impl FakePorts {
             script: Mutex::new(script),
             events,
             cancelled: AtomicBool::new(false),
+            finished: {
+                let (tx, rx) = std::sync::mpsc::channel();
+                (Mutex::new(tx), Mutex::new(rx))
+            },
             history,
             _dir: dir,
         }))
@@ -226,6 +235,18 @@ impl FakePorts {
             .expect("rows")
             .map(|row| row.expect("row"))
             .collect()
+    }
+
+    /// Waits until a dictation that runs in the background finished;
+    /// whether one did within `timeout`.
+    pub fn wait_finished(&self, timeout: std::time::Duration) -> bool {
+        self.0
+            .finished
+            .1
+            .lock()
+            .unwrap()
+            .recv_timeout(timeout)
+            .is_ok()
     }
 
     /// The next dictation goes as `script` says, with the same History.
@@ -465,6 +486,7 @@ impl Session for FakePorts {
 
     fn finished(&self) {
         self.record(Event::Finished);
+        let _ = self.0.finished.0.lock().unwrap().send(());
     }
 }
 
