@@ -1,10 +1,9 @@
-use crate::audio_toolkit::audio::output_device_name;
+use crate::audio_toolkit::audio::{output_device_name, OutputHost, SystemOutputHost};
 use crate::settings::SoundTheme;
 use crate::settings::{self, AppSettings};
 use crate::sound_queue::SoundQueue;
 use log::{debug, error, warn};
-use rodio::cpal::traits::HostTrait;
-use rodio::DeviceSinkBuilder;
+use rodio::{cpal, DeviceSinkBuilder, DeviceSinkError};
 use std::fs::File;
 use std::io::BufReader;
 use std::path::{Path, PathBuf};
@@ -186,40 +185,55 @@ fn play_sound_blocking(path: &Path, output: SoundOutput) {
 }
 
 fn play_sound_now(path: &Path, output: &SoundOutput) {
-    if let Err(e) = play_audio_file(path, output.device.clone(), output.volume) {
+    if let Err(e) = play_audio_file_on(
+        &SystemOutputHost,
+        path,
+        output.device.as_deref(),
+        output.volume,
+    ) {
         error!("Failed to play sound '{}': {}", path.display(), e);
     }
 }
 
-fn play_audio_file(
-    path: &std::path::Path,
-    selected_device: Option<String>,
-    volume: f32,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let sink_builder = if let Some(device_name) = selected_device {
-        if device_name == "Default" {
+/// DanyWhere: the device a sound plays on: the one named `selected_device`
+/// among `outputs`, else their default. A list that can't be read fails the
+/// sound; it doesn't fall back.
+fn feedback_device(
+    outputs: &impl OutputHost,
+    selected_device: Option<&str>,
+) -> Result<cpal::Device, Box<dyn std::error::Error>> {
+    // As rodio's `DeviceSinkBuilder::from_default_device`.
+    let default_device = || outputs.default_device().ok_or(DeviceSinkError::NoDevice);
+    match selected_device {
+        None | Some("Default") => {
             debug!("Using default device");
-            DeviceSinkBuilder::from_default_device()?
-        } else {
-            let host = crate::audio_toolkit::get_cpal_host();
-            let found_device = host
-                .output_devices()?
-                .find(|device| output_device_name(device).as_deref() == Some(&device_name));
-
+            Ok(default_device()?)
+        }
+        Some(device_name) => {
+            let found_device = outputs
+                .all_devices()?
+                .find(|device| output_device_name(device).as_deref() == Some(device_name));
             match found_device {
-                Some(device) => DeviceSinkBuilder::from_device(device)?,
+                Some(device) => Ok(device),
                 None => {
                     warn!("Device '{}' not found, using default device", device_name);
-                    DeviceSinkBuilder::from_default_device()?
+                    Ok(default_device()?)
                 }
             }
         }
-    } else {
-        debug!("Using default device");
-        DeviceSinkBuilder::from_default_device()?
-    };
+    }
+}
 
-    let device_sink = sink_builder.open_stream()?;
+/// DanyWhere: plays `path` at `volume` on the device `feedback_device`
+/// picks among `outputs`, and returns once the device has taken all of it.
+fn play_audio_file_on(
+    outputs: &impl OutputHost,
+    path: &Path,
+    selected_device: Option<&str>,
+    volume: f32,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let device = feedback_device(outputs, selected_device)?;
+    let device_sink = DeviceSinkBuilder::from_device(device)?.open_stream()?;
     let mixer = device_sink.mixer();
 
     let file = File::open(path)?;
@@ -234,9 +248,320 @@ fn play_audio_file(
 
 #[cfg(test)]
 mod tests {
-    use super::{sound_location, SoundLocation, SoundType};
+    use super::{play_audio_file_on, sound_location, SoundLocation, SoundType};
+    use crate::audio_toolkit::audio::fake_output::{FakeOutput, FakeOutputs, Running};
     use crate::settings::SoundTheme;
-    use std::path::Path;
+    use rodio::cpal::{BufferSize, ErrorKind, SupportedBufferSize};
+    use std::path::{Path, PathBuf};
+    use std::sync::mpsc;
+    use std::time::{Duration, Instant};
+
+    // DanyWhere: feedback sounds on fake output devices (`fake_output`).
+
+    /// The bundled start sound, a fraction of a second long.
+    fn sound() -> PathBuf {
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("resources/marimba_start.wav")
+    }
+
+    /// An error and every cause behind it, on one line.
+    fn with_causes(error: &dyn std::error::Error) -> String {
+        let mut text = error.to_string();
+        let mut source = error.source();
+        while let Some(cause) = source {
+            text.push_str(": ");
+            text.push_str(&cause.to_string());
+            source = cause.source();
+        }
+        text
+    }
+
+    /// Plays the start sound on `outputs` on a thread of its own, so a
+    /// device that never lets it end can't hang the tests.
+    fn play_in_background(
+        outputs: &FakeOutputs,
+        selected: Option<&str>,
+        volume: f32,
+    ) -> mpsc::Receiver<Result<(), String>> {
+        let outputs = outputs.clone();
+        let selected = selected.map(str::to_string);
+        let (done, result) = mpsc::channel();
+        std::thread::spawn(move || {
+            let played = play_audio_file_on(&outputs.host(), &sound(), selected.as_deref(), volume)
+                .map_err(|e| with_causes(e.as_ref()));
+            let _ = done.send(played);
+        });
+        result
+    }
+
+    /// Plays the start sound on `outputs` and tells how it ended.
+    fn play(outputs: &FakeOutputs, selected: Option<&str>) -> Result<(), String> {
+        play_in_background(outputs, selected, 1.0)
+            .recv_timeout(Duration::from_secs(5))
+            .expect("the sound ends")
+    }
+
+    fn wait_until(what: &str, done: impl Fn() -> bool) {
+        let started = Instant::now();
+        while !done() {
+            assert!(started.elapsed() < Duration::from_secs(5), "{what}");
+            std::thread::sleep(Duration::from_millis(2));
+        }
+    }
+
+    fn speakers() -> FakeOutput {
+        FakeOutput::new("MacBook Pro Speakers")
+    }
+
+    fn headset() -> FakeOutput {
+        FakeOutput::new("USB Headset")
+    }
+
+    #[test]
+    fn without_a_selected_device_the_sound_plays_on_the_default() {
+        let (speakers, headset) = (speakers(), headset());
+        let outputs = FakeOutputs::new(&[&speakers, &headset]).with_default(&speakers);
+        assert_eq!(play(&outputs, None), Ok(()));
+        assert!(
+            speakers.peak() > 0.01,
+            "the sound reached the default device"
+        );
+        assert_eq!(speakers.open_streams(), 0, "its stream closed after it");
+        assert!(headset.asked_buffers().is_empty());
+        assert_eq!(outputs.times_listed(), 0, "the default needs no list");
+    }
+
+    #[test]
+    fn the_device_named_default_is_the_default_without_listing_devices() {
+        let (speakers, headset) = (speakers(), headset());
+        let outputs = FakeOutputs::new(&[&speakers, &headset]).with_default(&speakers);
+        assert_eq!(play(&outputs, Some("Default")), Ok(()));
+        assert!(speakers.peak() > 0.01);
+        assert_eq!(outputs.times_listed(), 0);
+    }
+
+    #[test]
+    fn a_selected_device_is_found_by_its_name() {
+        let (speakers, headset) = (speakers(), headset());
+        let outputs = FakeOutputs::new(&[&speakers, &headset]).with_default(&speakers);
+        assert_eq!(play(&outputs, Some("USB Headset")), Ok(()));
+        assert!(headset.peak() > 0.01, "the sound reached the headset");
+        assert!(
+            speakers.asked_buffers().is_empty(),
+            "the default stayed idle"
+        );
+        assert_eq!(outputs.times_listed(), 1);
+    }
+
+    #[test]
+    fn a_missing_selected_device_falls_back_to_the_default() {
+        let (speakers, headset) = (speakers(), headset());
+        let outputs = FakeOutputs::new(&[&speakers, &headset]).with_default(&speakers);
+        assert_eq!(play(&outputs, Some("AirPods Pro")), Ok(()));
+        assert!(speakers.peak() > 0.01);
+        assert!(headset.asked_buffers().is_empty());
+    }
+
+    #[test]
+    fn a_device_whose_name_can_no_longer_be_read_is_not_chosen() {
+        let speakers = speakers();
+        let gone = FakeOutput::new("AirPods Pro").nameless();
+        let outputs = FakeOutputs::new(&[&speakers, &gone]).with_default(&speakers);
+        assert_eq!(play(&outputs, Some("AirPods Pro")), Ok(()));
+        assert!(speakers.peak() > 0.01, "the default stood in");
+        assert!(gone.asked_buffers().is_empty());
+    }
+
+    #[test]
+    fn without_any_output_device_the_sound_fails() {
+        let outputs = FakeOutputs::new(&[]);
+        let no_device = Err("Could not find any output device".to_string());
+        assert_eq!(play(&outputs, None), no_device);
+        assert_eq!(play(&outputs, Some("USB Headset")), no_device);
+    }
+
+    #[test]
+    fn when_the_devices_cannot_be_listed_the_sound_fails_without_the_default() {
+        let (speakers, headset) = (speakers(), headset());
+        let outputs = FakeOutputs::new(&[&speakers, &headset])
+            .with_default(&speakers)
+            .failing_to_list(ErrorKind::HostUnavailable);
+        assert_eq!(
+            play(&outputs, Some("USB Headset")),
+            Err(ErrorKind::HostUnavailable.to_string())
+        );
+        assert!(speakers.asked_buffers().is_empty(), "no fallback today");
+    }
+
+    #[test]
+    fn a_device_that_has_gone_when_asked_for_its_format_fails_the_sound() {
+        let speakers = speakers().without_format();
+        let outputs = FakeOutputs::new(&[&speakers]).with_default(&speakers);
+        assert_eq!(
+            play(&outputs, None),
+            Err(format!(
+                "Failed to get the config for the given device: {}",
+                ErrorKind::DeviceNotAvailable
+            ))
+        );
+        assert!(speakers.asked_buffers().is_empty());
+    }
+
+    #[test]
+    fn a_sound_asks_the_device_for_rodios_buffer_of_about_50_ms() {
+        // What a fix for Handy's #2525 must keep for every device that takes
+        // it; Handy's own fix asks every device for the system's default.
+        for (rate, frames) in [(44_100, 2048), (48_000, 2048), (96_000, 4096)] {
+            let device = FakeOutput::new("Studio Display Speakers").offering(
+                rate,
+                2,
+                SupportedBufferSize::Range { min: 14, max: 4096 },
+            );
+            let outputs = FakeOutputs::new(&[&device]).with_default(&device);
+            assert_eq!(play(&outputs, None), Ok(()), "{rate} Hz");
+            assert_eq!(
+                device.asked_buffers(),
+                [BufferSize::Fixed(frames)],
+                "{rate} Hz"
+            );
+        }
+    }
+
+    /// Handy's issue #2524: a Bose QC Ultra on macOS takes buffers of 14 to
+    /// 1024 frames only, and says so.
+    fn bose() -> FakeOutput {
+        FakeOutput::new("Bose QC Ultra Headphones")
+            .offering(44_100, 2, SupportedBufferSize::Range { min: 14, max: 1024 })
+            .accepting_buffers(14..=1024)
+    }
+
+    #[test]
+    fn a_device_that_takes_only_short_buffers_refuses_every_sound_today() {
+        // Today's behaviour, held on purpose: Handy's fix #2525 is not taken
+        // over, and how DanyWhere fixes it is still to be decided (ROADMAP,
+        // "Tests: generic fake audio devices instead of real ones"). The fix
+        // turns this test around. The log (`play_sound_now`) shows only the
+        // part before the first colon.
+        let bose = bose();
+        let outputs = FakeOutputs::new(&[&bose]).with_default(&bose);
+        assert_eq!(
+            play(&outputs, Some("Bose QC Ultra Headphones")),
+            Err("Error opening the stream with the OS: \
+                 Buffer size 2048 is not in the supported range 14..=1024"
+                .to_string())
+        );
+        assert_eq!(
+            bose.asked_buffers(),
+            [BufferSize::Fixed(2048)],
+            "asked once, with rodio's buffer, and not again"
+        );
+        assert_eq!(bose.open_streams(), 0);
+    }
+
+    #[test]
+    fn a_device_that_offers_a_rate_it_does_not_take_fails_the_sound() {
+        let device = speakers()
+            .offering(44_100, 2, SupportedBufferSize::Unknown)
+            .accepting_only_rate(48_000);
+        let outputs = FakeOutputs::new(&[&device]).with_default(&device);
+        assert_eq!(
+            play(&outputs, None),
+            Err(format!(
+                "Error opening the stream with the OS: {}",
+                ErrorKind::UnsupportedConfig
+            ))
+        );
+        assert_eq!(device.asked_rates(), [44_100], "no other rate is tried");
+    }
+
+    #[test]
+    fn a_device_that_cannot_be_opened_fails_the_sound() {
+        let device = speakers().failing_to_open(ErrorKind::DeviceBusy);
+        let outputs = FakeOutputs::new(&[&device]).with_default(&device);
+        assert_eq!(
+            play(&outputs, None),
+            Err(format!(
+                "Error opening the stream with the OS: {}",
+                ErrorKind::DeviceBusy
+            ))
+        );
+        assert_eq!(device.asked_buffers().len(), 1);
+    }
+
+    #[test]
+    fn a_device_that_cannot_start_fails_the_sound_and_closes_its_stream() {
+        let device = speakers().failing_to_start(ErrorKind::PermissionDenied);
+        let outputs = FakeOutputs::new(&[&device]).with_default(&device);
+        assert_eq!(
+            play(&outputs, None),
+            Err(format!(
+                "Could not start playing the stream: {}",
+                ErrorKind::PermissionDenied
+            ))
+        );
+        assert_eq!(device.asked_buffers().len(), 1);
+        assert_eq!(device.open_streams(), 0);
+    }
+
+    #[test]
+    fn an_error_while_playing_does_not_end_the_sound() {
+        let device = speakers().running(Running::ReportsThenPulls(ErrorKind::Xrun));
+        let outputs = FakeOutputs::new(&[&device]).with_default(&device);
+        assert_eq!(play(&outputs, None), Ok(()));
+        assert_eq!(device.errors_reported(), 1);
+        assert!(device.peak() > 0.01, "the sound played on");
+    }
+
+    #[test]
+    fn a_device_that_goes_silent_after_an_error_keeps_the_sound_waiting_today() {
+        // Today's behaviour: rodio's `sleep_until_end` waits without a time
+        // limit until the device has taken the whole sound. A device that
+        // goes silent (unplugged in the middle of a sound) holds the thread of
+        // the feedback sounds, every sound after it and a caller that waits
+        // (the start sound before a recording) until it asks for audio again.
+        let headset = headset().running(Running::ReportsThenStalls(ErrorKind::DeviceNotAvailable));
+        let outputs = FakeOutputs::new(&[&headset]).with_default(&headset);
+        let result = play_in_background(&outputs, None, 1.0);
+        wait_until("the device reports its error", || {
+            headset.errors_reported() == 1
+        });
+        assert!(
+            result.recv_timeout(Duration::from_millis(300)).is_err(),
+            "the sound is still waiting"
+        );
+        headset.set_running(Running::Pulls);
+        assert_eq!(
+            result
+                .recv_timeout(Duration::from_secs(5))
+                .expect("it ends once the device asks for audio again"),
+            Ok(())
+        );
+    }
+
+    /// The loudest sample a device gets of the start sound at `volume`. The
+    /// device waits before it asks for audio: rodio reads the volume at the
+    /// sound's first sample, and the volume is set just after it is queued.
+    fn peak_at(volume: f32) -> f32 {
+        let device = speakers().running(Running::Stalls);
+        let outputs = FakeOutputs::new(&[&device]).with_default(&device);
+        let result = play_in_background(&outputs, None, volume);
+        std::thread::sleep(Duration::from_millis(200));
+        device.set_running(Running::Pulls);
+        assert_eq!(
+            result
+                .recv_timeout(Duration::from_secs(5))
+                .expect("the sound ends"),
+            Ok(())
+        );
+        device.peak()
+    }
+
+    #[test]
+    fn the_device_gets_the_sound_at_the_volume_asked_for() {
+        let full = peak_at(1.0);
+        let quarter = peak_at(0.25);
+        assert!(full > 0.01, "{full}");
+        assert!((quarter / full - 0.25).abs() < 0.01, "{quarter} of {full}");
+    }
 
     fn resource(path: &str) -> SoundLocation {
         SoundLocation::Resource(path.to_string())

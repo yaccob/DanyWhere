@@ -11,6 +11,43 @@ pub struct OutputDeviceInfo {
     pub is_default: bool,
 }
 
+/// DanyWhere: where feedback sounds and the settings find output devices:
+/// the system's ([`SystemOutputHost`]) or any `cpal::Host`, such as a fake
+/// one in tests (`fake_output`).
+pub trait OutputHost {
+    /// The device a sound plays on when none is selected or the selected one
+    /// is missing.
+    fn default_device(&self) -> Option<cpal::Device>;
+    /// Every output device, in the host's order.
+    fn all_devices(&self) -> Result<Box<dyn Iterator<Item = cpal::Device>>, cpal::Error>;
+}
+
+impl OutputHost for cpal::Host {
+    fn default_device(&self) -> Option<cpal::Device> {
+        self.default_output_device()
+    }
+
+    fn all_devices(&self) -> Result<Box<dyn Iterator<Item = cpal::Device>>, cpal::Error> {
+        Ok(Box::new(self.output_devices()?))
+    }
+}
+
+/// DanyWhere: the system's output devices as feedback sounds have always
+/// found them: the default through cpal's default host, as rodio's
+/// `DeviceSinkBuilder::from_default_device` does, a selected device by name
+/// through `get_cpal_host` (ALSA on Linux).
+pub struct SystemOutputHost;
+
+impl OutputHost for SystemOutputHost {
+    fn default_device(&self) -> Option<cpal::Device> {
+        cpal::default_host().default_output_device()
+    }
+
+    fn all_devices(&self) -> Result<Box<dyn Iterator<Item = cpal::Device>>, cpal::Error> {
+        crate::audio_toolkit::get_cpal_host().all_devices()
+    }
+}
+
 /// The name feedback sounds match `selected_output_device` against.
 pub fn output_device_name(device: &cpal::Device) -> Option<String> {
     device.description().ok().map(|d| d.name().to_owned())
