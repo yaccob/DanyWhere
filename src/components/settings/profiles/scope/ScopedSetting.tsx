@@ -44,6 +44,7 @@ import {
   useSettingsScope,
 } from "./SettingsScope";
 import { useValueLabels } from "./useValueLabels";
+import { useShowsAnything } from "@/hooks/useShowsAnything";
 
 export interface ScopedSettingProps {
   /** The profile value or values the setting shows (serde names). */
@@ -161,18 +162,24 @@ const InProfile: React.FC<InProfileProps> = ({
   );
   const state = combinedState(states);
   const own = state !== "coupled";
+  // A setting this device doesn't show gets no state line either.
+  const [content, shows] = useShowsAnything();
   return (
     <div
-      className={`border-s-2 ${own ? "border-logo-primary" : "border-transparent"}`}
+      className={`border-s-2 ${own ? "border-logo-primary" : "border-transparent"} ${
+        shows ? "" : "hidden"
+      }`}
     >
-      {children}
-      <StateLine
-        fields={fields}
-        entry={entry}
-        state={state}
-        profile={profile}
-        defaults={defaults}
-      />
+      <div ref={content}>{children}</div>
+      {shows && (
+        <StateLine
+          fields={fields}
+          entry={entry}
+          state={state}
+          profile={profile}
+          defaults={defaults}
+        />
+      )}
     </div>
   );
 };
@@ -339,6 +346,8 @@ const UnderDefaults: React.FC<UnderDefaultsProps> = ({
   const { displayName } = useProfiles();
   const openProfilePage = useOpenProfilePage();
   const { valueLabel, entryName, fieldLabel } = useValueLabels();
+  // A setting this device doesn't show gets no profiles under it either.
+  const [content, shows] = useShowsAnything();
   if (profiles.length === 0) return <>{children}</>;
 
   const fields = asList(field);
@@ -434,8 +443,8 @@ const UnderDefaults: React.FC<UnderDefaultsProps> = ({
           });
 
   return (
-    <div>
-      {children}
+    <div className={shows ? undefined : "hidden"}>
+      <div ref={content}>{children}</div>
       <div className="flex flex-col gap-1 ps-8 pe-4 pb-2">
         {own.map((profile) => {
           const tag = (
