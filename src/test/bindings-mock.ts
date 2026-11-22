@@ -90,22 +90,23 @@ export const PROFILE_LIST_FIELDS: Record<string, FieldKind> = {
 
 /** Answers that a default by type would get wrong, as the backend gives
  * them when nothing special is set up. */
-const DEFAULT_ANSWERS: Partial<Record<string, (...args: unknown[]) => unknown>> =
-  {
-    checkCustomSounds: () => ({ start: false, stop: false }),
-    // An "Append" value as plain text without a key press (append_text.rs
-    // splits off the key and spells the text out).
-    splitAppendText: (value) => ({ text: value, keys: [], kept: false }),
-    composeAppendText: (text) => ({
-      value: text,
-      parts: text ? [{ kind: "text", text }] : [],
-    }),
-    getProfileFields: () =>
-      Object.entries(PROFILE_LIST_FIELDS).map(([name, kind]) => ({
-        name,
-        kind,
-      })),
-  };
+const DEFAULT_ANSWERS: Partial<
+  Record<string, (...args: unknown[]) => unknown>
+> = {
+  checkCustomSounds: () => ({ start: false, stop: false }),
+  // An "Append" value as plain text without a key press (append_text.rs
+  // splits off the key and spells the text out).
+  splitAppendText: (value) => ({ text: value, keys: [], kept: false }),
+  composeAppendText: (text) => ({
+    value: text,
+    parts: text ? [{ kind: "text", text }] : [],
+  }),
+  getProfileFields: () =>
+    Object.entries(PROFILE_LIST_FIELDS).map(([name, kind]) => ({
+      name,
+      kind,
+    })),
+};
 
 export interface CommandCall {
   command: string;
@@ -158,7 +159,11 @@ export const commands = Object.fromEntries(
 
 type Events = typeof RealEvents;
 export type EventName = keyof Events;
-type Listener = (event: { event: string; id: number; payload: unknown }) => void;
+type Listener = (event: {
+  event: string;
+  id: number;
+  payload: unknown;
+}) => void;
 type PayloadOf<K extends EventName> = Parameters<
   Parameters<Events[K]["listen"]>[0]
 >[0]["payload"];

@@ -17,8 +17,7 @@ export { getLanguageDirection, isRTLLanguage } from "@/lib/utils/rtl";
 
 const LOCALES = fileURLToPath(new URL("../i18n/locales/", import.meta.url));
 
-const resources: Record<string, { translation: Record<string, unknown> }> =
-  {};
+const resources: Record<string, { translation: Record<string, unknown> }> = {};
 for (const code of readdirSync(LOCALES)) {
   const tree = JSON.parse(
     readFileSync(`${LOCALES}${code}/translation.json`, "utf8"),

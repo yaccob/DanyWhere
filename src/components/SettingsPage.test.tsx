@@ -112,7 +112,9 @@ describe("Open in … under a default", () => {
         "Work own: PEnde Open in Work",
       ],
     );
-    expect(screen.queryByRole("button", { name: "Open in Private" })).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Open in Private" }),
+    ).toBeNull();
   });
 
   test("opens the profile's page and lights up the end shortcuts there", async () => {

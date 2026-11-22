@@ -55,8 +55,11 @@ export const wordList = (id: string, name: string): WordList => ({
   words: [],
 });
 
-export const prompt = (id: string, name: string): LLMPrompt =>
-  ({ id, name, prompt: `${name} prompt` });
+export const prompt = (id: string, name: string): LLMPrompt => ({
+  id,
+  name,
+  prompt: `${name} prompt`,
+});
 
 /** The defaults' values as DanyWhere ships them, as far as the pages read
  * them: two start shortcuts, an end with each one's combination, nothing

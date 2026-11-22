@@ -52,8 +52,7 @@ const storedEnds = (): EndKey[] => {
   return value as unknown as EndKey[];
 };
 
-const nameFields = () =>
-  screen.getAllByLabelText("Name") as HTMLInputElement[];
+const nameFields = () => screen.getAllByLabelText("Name") as HTMLInputElement[];
 
 describe("End Shortcuts under the defaults", () => {
   test("each end shows its own name, or else its combination, under the label Name", async () => {
@@ -188,7 +187,9 @@ describe("Add End Shortcut", () => {
       send_context: false,
     });
     expect(callsOf("resumeAllBindings")).toEqual([[]]);
-    expect(screen.getByRole("button", { name: "Add End Shortcut" })).toBeTruthy();
+    expect(
+      screen.getByRole("button", { name: "Add End Shortcut" }),
+    ).toBeTruthy();
   });
 
   test("Escape adds nothing", async () => {
@@ -199,7 +200,9 @@ describe("Add End Shortcut", () => {
 
     expect(callsOf("setProfileValue")).toEqual([]);
     expect(callsOf("resumeAllBindings")).toEqual([[]]);
-    expect(screen.getByRole("button", { name: "Add End Shortcut" })).toBeTruthy();
+    expect(
+      screen.getByRole("button", { name: "Add End Shortcut" }),
+    ).toBeTruthy();
   });
 
   test("a press elsewhere adds nothing", async () => {
@@ -210,7 +213,9 @@ describe("Add End Shortcut", () => {
     await settle();
 
     expect(callsOf("setProfileValue")).toEqual([]);
-    expect(screen.getByRole("button", { name: "Add End Shortcut" })).toBeTruthy();
+    expect(
+      screen.getByRole("button", { name: "Add End Shortcut" }),
+    ).toBeTruthy();
   });
 });
 
@@ -229,7 +234,9 @@ describe("refusals of the backend", () => {
 
   test("a combination another shortcut has names that shortcut", async () => {
     const notices = await refuse("conflict:paste_last_transcript");
-    expect(notices).toEqual(["Paste Last Transcript already uses this shortcut"]);
+    expect(notices).toEqual([
+      "Paste Last Transcript already uses this shortcut",
+    ]);
   });
 
   test("on Linux, a change that would leave no way to end says so", async () => {
@@ -276,12 +283,8 @@ describe("End Shortcuts in a profile", () => {
     const text = visibleText();
     expect(text).toContain("PEnde own");
     expect(text).toContain("Senden off");
-    expect(
-      screen.getByRole("button", { name: "Reset PEnde" }),
-    ).toBeTruthy();
-    expect(
-      screen.getByRole("button", { name: "Reset Senden" }),
-    ).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Reset PEnde" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Reset Senden" })).toBeTruthy();
     expect(rawTextIn()).toEqual([]);
   });
 

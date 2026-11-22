@@ -45,11 +45,7 @@ const settings = settingsWith({
     {
       id: WORK,
       name: "Pruefkopie",
-      own: [
-        "post_process_prompt_order",
-        "hold_ends",
-        "selected_microphone",
-      ],
+      own: ["post_process_prompt_order", "hold_ends", "selected_microphone"],
       ownEntries: {
         bindings: { own: ["transcribe"] },
         end_keys: { own: [PENDE.id] },
@@ -126,7 +122,11 @@ describe("the page Profile", () => {
     await press(row("Post Process Active Prompts: Diktat (DE/EN)"));
 
     expect(opened).toEqual([
-      [WORK, "general", { profileId: WORK, field: "end_keys", entry: PENDE.id }],
+      [
+        WORK,
+        "general",
+        { profileId: WORK, field: "end_keys", entry: PENDE.id },
+      ],
       [
         WORK,
         "advanced",
@@ -143,17 +143,23 @@ describe("the page Profile", () => {
   test("a row's reset couples that value or entry again", async () => {
     await renderOverview();
 
-    await press(screen.getByRole("button", { name: "Reset End Shortcuts: PEnde" }));
+    await press(
+      screen.getByRole("button", { name: "Reset End Shortcuts: PEnde" }),
+    );
     await press(screen.getByRole("button", { name: "Reset When Held" }));
 
-    expect(callsOf("resetProfileEntry")).toEqual([[WORK, "end_keys", PENDE.id]]);
+    expect(callsOf("resetProfileEntry")).toEqual([
+      [WORK, "end_keys", PENDE.id],
+    ]);
     expect(callsOf("resetProfileValues")).toEqual([[WORK, ["hold_ends"]]]);
   });
 
   test("the whole profile's reset asks first, naming the values", async () => {
     await renderOverview();
 
-    await press(screen.getByRole("button", { name: "Whole Profile to Defaults" }));
+    await press(
+      screen.getByRole("button", { name: "Whole Profile to Defaults" }),
+    );
     const dialog = screen.getByRole("dialog");
     const text = visibleText(dialog);
     expect(text).toContain("Reset “Pruefkopie” completely to the defaults?");

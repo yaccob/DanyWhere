@@ -13,7 +13,7 @@ interface Resettable<S> {
   setState: (state: S, replace: true) => void;
 }
 
-const reset = <S,>(store: Resettable<S>) =>
+const reset = <S>(store: Resettable<S>) =>
   store.setState(store.getInitialState(), true);
 
 export const resetStores = (): void => {

@@ -42,8 +42,7 @@ const render = (
   profiles: ProfileSpec[],
   scope: Scope,
   defaults: Record<string, unknown> = {},
-) =>
-  renderPage(ui, { settings: settingsWith({ defaults, profiles }), scope });
+) => renderPage(ui, { settings: settingsWith({ defaults, profiles }), scope });
 
 describe("the state line in a profile", () => {
   test("a coupled value says Default, and its chain keeps it as the profile's own", async () => {
@@ -168,7 +167,12 @@ describe("a setting this device doesn't show", () => {
 
 describe("the profiles under a default", () => {
   const profiles: ProfileSpec[] = [
-    { id: WORK, name: "Work", own: ["done_sound"], values: { done_sound: false } },
+    {
+      id: WORK,
+      name: "Work",
+      own: ["done_sound"],
+      values: { done_sound: false },
+    },
     { id: PRIVATE, name: "Private" },
     { id: NEUTEST, name: "Neutest" },
   ];

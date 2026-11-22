@@ -61,7 +61,9 @@ describe("a start shortcut's field in a scope", () => {
     await renderStart({ kind: "profile", id: WORK });
     await recordCtrlE();
 
-    expect(raisedNotices()).toEqual(["Cancel Shortcut already uses this shortcut"]);
+    expect(raisedNotices()).toEqual([
+      "Cancel Shortcut already uses this shortcut",
+    ]);
   });
 
   test("on Linux, a combination after which no end would work says so", async () => {
