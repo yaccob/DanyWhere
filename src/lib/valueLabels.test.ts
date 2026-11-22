@@ -332,6 +332,28 @@ check("an entry: the default's entry", () =>
     formatKeyCombination("ctrl+option+d", "macos"),
   ),
 );
+// A model without an effort switches the profile's effort off (B10); the
+// state line still names the default's level (qa 2026-11-22_0233, point 16).
+const noEffort: LayeredProfile = {
+  ...neutest,
+  values: { ...neutest.values, post_process_efforts: {} },
+  own_entries: {
+    ...neutest.own_entries,
+    post_process_efforts: { own: [], off: ["anthropic"] },
+  },
+};
+check("a switched-off entry: the default's entry", () =>
+  assert.equal(
+    defaultText(de, ["post_process_efforts"], "anthropic", noEffort),
+    "Sehr hoch",
+  ),
+);
+check("a coupled entry has no default text", () =>
+  assert.equal(
+    defaultText(de, ["post_process_efforts"], "anthropic", neutest),
+    null,
+  ),
+);
 check("a whole list has no default text", () =>
   assert.equal(defaultText(de, ["word_lists"], undefined, neutest), null),
 );

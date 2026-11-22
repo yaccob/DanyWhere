@@ -317,9 +317,10 @@ export const defaultText = (
   if (entry !== undefined) {
     const field = fields[0];
     const kind = ctx.kindOf(field);
-    if (entryState(profile, defaults, field, kind, entry) !== "own") {
-      return null;
-    }
+    // An entry the profile switched off (e.g. the effort of a model that
+    // has none) still names the default's entry, as an own one does.
+    const state = entryState(profile, defaults, field, kind, entry);
+    if (state !== "own" && state !== "off") return null;
     const base = entriesOf(kind, defaults[field]).find(
       ([id]) => id === entry,
     )?.[1];
