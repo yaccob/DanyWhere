@@ -800,7 +800,7 @@
       },
       "customWords": {
         "title": "Eigen woordenlijst",
-        "description": "Help ondersteunde modellen namen en vaktermen te herkennen. Fuzzy-correctie is momenteel beperkt tot woorden met de letters A–Z en cijfers.",
+        "description": "Help ondersteunde modellen namen en vaktermen te herkennen.",
         "placeholder": "Woord toevoegen",
         "add": "Toevoegen",
         "remove": "{{word}} verwijderen",
@@ -1099,6 +1099,7 @@
         "postProcessFurtherHint": "De huidige versie gaat naar de AI; het resultaat komt erbij als nieuwe versie.",
         "step": {
           "transcription": "Getranscribeerd",
+          "transcriptionModel": "Getranscribeerd met {{model}}",
           "ai": "Naverwerkt",
           "aiPrompt": "Naverwerkt met ‘{{prompt}}’",
           "user": "Door jou bewerkt",
@@ -1183,10 +1184,6 @@
         "description": "Kies een geluidsthema voor feedback bij het starten en stoppen van opnames",
         "preview": "Geluidsthema beluisteren (speelt start, stop en dan het geluid dat een dictaat beëindigt)",
         "custom": "Aangepast"
-      },
-      "wordCorrectionThreshold": {
-        "title": "Drempelwaarde woordcorrectie",
-        "description": "Gevoeligheid voor eigen woordcorrecties"
       },
       "historyLimit": {
         "title": "Geschiedenislimiet",

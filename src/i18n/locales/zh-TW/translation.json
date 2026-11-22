@@ -800,7 +800,7 @@
       },
       "customWords": {
         "title": "自訂詞彙",
-        "description": "協助支援的模型辨識名稱和專業術語。目前，模糊修正僅適用於使用 A–Z 字母和數字的詞語。",
+        "description": "協助支援的模型辨識名稱和專業術語。",
         "placeholder": "新增詞彙",
         "add": "新增",
         "remove": "刪除 {{word}}",
@@ -1099,6 +1099,7 @@
         "postProcessFurtherHint": "將目前版本傳送給 AI；AI 的結果會作為新版本加入。",
         "step": {
           "transcription": "已轉錄",
+          "transcriptionModel": "已用 {{model}} 轉錄",
           "ai": "已後處理",
           "aiPrompt": "已用「{{prompt}}」後處理",
           "user": "由你編輯",
@@ -1183,10 +1184,6 @@
         "description": "選擇錄製開始和停止回饋的聲音主題",
         "preview": "試聽聲音主題（依序播放開始、停止和結束聽寫的聲音）",
         "custom": "自訂"
-      },
-      "wordCorrectionThreshold": {
-        "title": "詞彙修正閾值",
-        "description": "自訂詞彙修正的靈敏度"
       },
       "historyLimit": {
         "title": "歷史紀錄上限",

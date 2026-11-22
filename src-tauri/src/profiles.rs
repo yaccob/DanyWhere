@@ -1240,10 +1240,7 @@ mod tests {
         assert_eq!(left.selected_language, "it");
         assert_eq!(left.selected_model, "parakeet");
         // Application settings stay.
-        assert_eq!(
-            s.word_correction_threshold,
-            before.word_correction_threshold
-        );
+        assert_eq!(s.paste_delay_ms, before.paste_delay_ms);
         assert_eq!(s.app_language, before.app_language);
         assert_eq!(s.debug_mode, before.debug_mode);
         // The prompt library is shared, not a profile value.

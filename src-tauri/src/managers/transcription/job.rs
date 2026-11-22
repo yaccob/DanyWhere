@@ -47,6 +47,7 @@ impl TranscriptionManager {
                 text: String::new(),
                 language: None,
                 word_replacements: Vec::new(),
+                model_id: None,
             }));
         }
 
@@ -116,7 +117,6 @@ impl TranscriptionManager {
                 let (text, replaced) = post_process_transcription_text_reporting(
                     t.text,
                     &settings,
-                    setup.custom_words_prompted(),
                     &output_language,
                     &setup.languages,
                 );
@@ -143,6 +143,7 @@ impl TranscriptionManager {
             text: paragraphs.join("\n\n"),
             language: Some(language),
             word_replacements,
+            model_id: Some(active_model),
         }))
     }
 }

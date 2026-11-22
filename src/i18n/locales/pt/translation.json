@@ -800,7 +800,7 @@
       },
       "customWords": {
         "title": "Palavras Personalizadas",
-        "description": "Ajude os modelos compatíveis a reconhecer nomes e termos especializados. A correção aproximada está atualmente limitada a palavras que usam letras de A–Z e números.",
+        "description": "Ajude os modelos compatíveis a reconhecer nomes e termos especializados.",
         "placeholder": "Adicionar uma palavra",
         "add": "Adicionar",
         "remove": "Remover {{word}}",
@@ -1099,6 +1099,7 @@
         "postProcessFurtherHint": "A versão atual é enviada à IA; o resultado é adicionado como nova versão.",
         "step": {
           "transcription": "Transcrito",
+          "transcriptionModel": "Transcrito com {{model}}",
           "ai": "Pós-processado",
           "aiPrompt": "Pós-processado com “{{prompt}}”",
           "user": "Editado por você",
@@ -1183,10 +1184,6 @@
         "description": "Escolha um tema de som para feedback de início e parada de gravação",
         "preview": "Ouvir o tema de som (toca o início, a parada e depois o som que encerra um ditado)",
         "custom": "Personalizado"
-      },
-      "wordCorrectionThreshold": {
-        "title": "Limite de Correção de Palavras",
-        "description": "Sensibilidade para correções de palavras personalizadas"
       },
       "historyLimit": {
         "title": "Limite de Histórico",

@@ -800,7 +800,7 @@
       },
       "customWords": {
         "title": "自定义词汇",
-        "description": "帮助受支持的模型识别名称和专业术语。目前，模糊纠错仅适用于使用 A–Z 字母和数字的词语。",
+        "description": "帮助受支持的模型识别名称和专业术语。",
         "placeholder": "添加词汇",
         "add": "添加",
         "remove": "删除 {{word}}",
@@ -1099,6 +1099,7 @@
         "postProcessFurtherHint": "将当前版本发给 AI；AI 的结果作为新版本添加。",
         "step": {
           "transcription": "已转录",
+          "transcriptionModel": "已用 {{model}} 转录",
           "ai": "已后处理",
           "aiPrompt": "已用“{{prompt}}”后处理",
           "user": "由你编辑",
@@ -1183,10 +1184,6 @@
         "description": "选择录制开始和停止反馈的声音主题",
         "preview": "试听声音主题（依次播放开始、停止和结束听写的声音）",
         "custom": "自定义"
-      },
-      "wordCorrectionThreshold": {
-        "title": "词汇修正阈值",
-        "description": "自定义词汇修正的灵敏度"
       },
       "historyLimit": {
         "title": "历史记录上限",

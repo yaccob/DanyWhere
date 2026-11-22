@@ -18,6 +18,7 @@ import {
   indexAfterMove,
   isSaveShortcut,
   matchingVersions,
+  modelName,
   moveTarget,
   saveModes,
   shownVersion,
@@ -46,7 +47,8 @@ const step = (
   by: VersionAuthor,
   at: number | null = null,
   prompt_name: string | null = null,
-): VersionStep => ({ by, at, prompt_name });
+  model: string | null = null,
+): VersionStep => ({ by, at, prompt_name, model });
 
 const version = (text: string, ...by: VersionAuthor[]): HistoryVersion => ({
   text,
@@ -407,16 +409,19 @@ check("a step names who made it", () => {
   assert.deepEqual(describeStep(step("transcription")), {
     key: "transcription",
     prompt: null,
+    model: null,
     atSeconds: null,
   });
   assert.deepEqual(describeStep(step("user")), {
     key: "user",
     prompt: null,
+    model: null,
     atSeconds: null,
   });
   assert.deepEqual(describeStep(step("ai")), {
     key: "ai",
     prompt: null,
+    model: null,
     atSeconds: null,
   });
 });
@@ -425,12 +430,48 @@ check("an AI step names its prompt when it's known", () => {
   assert.deepEqual(describeStep(step("ai", null, "E-Mail")), {
     key: "aiPrompt",
     prompt: "E-Mail",
+    model: null,
     atSeconds: null,
   });
   // A blank name is none.
   assert.equal(describeStep(step("ai", null, "  ")).key, "ai");
   // Only AI steps have a prompt.
   assert.equal(describeStep(step("user", null, "E-Mail")).key, "user");
+});
+
+check("a transcription names its speech model when it's known", () => {
+  assert.deepEqual(
+    describeStep(step("transcription", null, null, "canary-1b-v2")),
+    {
+      key: "transcriptionModel",
+      prompt: null,
+      model: "canary-1b-v2",
+      atSeconds: null,
+    },
+  );
+  // Without one (from before it was recorded), as before.
+  assert.equal(describeStep(step("transcription")).key, "transcription");
+  assert.equal(
+    describeStep(step("transcription", null, null, " ")).key,
+    "transcription",
+  );
+  // Only a transcription has a model.
+  assert.equal(describeStep(step("ai", null, null, "canary-1b-v2")).key, "ai");
+});
+
+check("a model shows by its name, an unknown one by its id", () => {
+  const models = [
+    { id: "canary-1b-v2", name: "Canary 1B v2" },
+    { id: "turbo", name: "Whisper Turbo" },
+  ];
+  assert.equal(modelName("canary-1b-v2", models), "Canary 1B v2");
+  // A deleted or custom model the list no longer has.
+  assert.equal(modelName("gone-model", models), "gone-model");
+  // The name can come translated.
+  assert.equal(
+    modelName("turbo", models, (model) => `${model.name} (de)`),
+    "Whisper Turbo (de)",
+  );
 });
 
 check("a step's time is in seconds, as History formats dates", () => {

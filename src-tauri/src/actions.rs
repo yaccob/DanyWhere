@@ -1148,6 +1148,7 @@ pub fn stop_transcription(
                             text: transcription,
                             language,
                             word_replacements,
+                            model_id,
                         }) => {
                             debug!(
                                 "Transcription completed in {:?}: '{}'",
@@ -1205,7 +1206,10 @@ pub fn stop_transcription(
                                     post_process,
                                     processed.post_processed_text.clone(),
                                     processed.post_process_prompt.clone(),
-                                    language,
+                                    crate::managers::history::TranscribedWith {
+                                        language,
+                                        model: model_id,
+                                    },
                                 ) {
                                     // DanyWhere: its window and context, and
                                     // what it was made with.
@@ -1520,7 +1524,7 @@ pub fn stop_transcription(
                                     post_process,
                                     None,
                                     None,
-                                    None,
+                                    Default::default(),
                                 ) {
                                     error!("Failed to save failed history entry: {}", save_err);
                                 }

@@ -1049,6 +1049,7 @@ impl TranscriptionManager {
                 text: String::new(),
                 language: None,
                 word_replacements: Vec::new(),
+                model_id: None,
             });
         }
 
@@ -1061,6 +1062,7 @@ impl TranscriptionManager {
         let language = outcome
             .setup
             .spoken_language(outcome.model_detected_language.as_deref());
+        let model_id = outcome.model_id.clone();
         let (final_result, word_replacements) = finish_text(outcome, &settings);
 
         let translation_note = if settings.translate_to_english {
@@ -1094,6 +1096,7 @@ impl TranscriptionManager {
             text: final_result,
             language: Some(language),
             word_replacements,
+            model_id: Some(model_id),
         })
     }
 
@@ -1241,6 +1244,7 @@ impl TranscriptionManager {
             setup,
             text,
             model_detected_language,
+            model_id: active_model,
         })
     }
 
@@ -1289,6 +1293,9 @@ pub struct Transcription {
     /// DanyWhere: what the word list replaced in `text`
     /// (`dictation_context`).
     pub word_replacements: Vec<crate::dictation_context::WordReplacement>,
+    /// DanyWhere: the id of the speech model that made `text`; `None` when
+    /// there was no audio to run.
+    pub model_id: Option<String>,
 }
 
 /// What one transcription decoded (live or in batch), with how its runs were
@@ -1298,6 +1305,8 @@ struct RunOutcome {
     text: String,
     /// The language the model itself detected, if it reported one.
     model_detected_language: Option<String>,
+    /// DanyWhere: the id of the model that decoded it.
+    model_id: String,
 }
 
 /// One transcription's final text: its output language resolved, then
@@ -1310,17 +1319,11 @@ fn finish_text(
         setup,
         text,
         model_detected_language,
+        ..
     } = outcome;
     let output_language = setup.output_language(settings, model_detected_language);
     debug!("Output language evidence: {:?}", output_language);
-    // Skip fuzzy correction if the model already got the custom words.
-    post_process_transcription_text_reporting(
-        text,
-        settings,
-        setup.custom_words_prompted(),
-        &output_language,
-        &setup.languages,
-    )
+    post_process_transcription_text_reporting(text, settings, &output_language, &setup.languages)
 }
 
 /// How every run of one transcription (each chunk, or a whole clip) is
@@ -1335,11 +1338,6 @@ struct RunSetup {
 }
 
 impl RunSetup {
-    /// Custom words went to the model as vocabulary; skip fuzzy correction.
-    fn custom_words_prompted(&self) -> bool {
-        !self.run_options.vocabulary.is_empty()
-    }
-
     /// The language the runs were in. When the model decided, the language
     /// it reported (if any).
     fn spoken_language(&self, model_detected_language: Option<&str>) -> LanguageDecision {
@@ -1758,48 +1756,33 @@ fn transcribe_cpp_run_plan(
 fn post_process_transcription_text(
     raw: String,
     settings: &AppSettings,
-    custom_words_already_prompted: bool,
     output_language: &OutputLanguageEvidence,
     supported_languages: &[String],
 ) -> String {
-    post_process_transcription_text_reporting(
-        raw,
-        settings,
-        custom_words_already_prompted,
-        output_language,
-        supported_languages,
-    )
-    .0
+    post_process_transcription_text_reporting(raw, settings, output_language, supported_languages).0
 }
 
 /// DanyWhere: [`post_process_transcription_text`], also reporting what the
-/// word list replaced (`dictation_context` tells the LLM).
+/// word list replaced (`dictation_context` tells the LLM). Since Handy's
+/// fuzzy replacement no longer runs (it turned correct words into list
+/// entries, "Bild" into "Build"), the list replaces nothing and the report is
+/// empty; History keeps what it replaced in older entries.
 pub(crate) fn post_process_transcription_text_reporting(
     raw: String,
     settings: &AppSettings,
-    custom_words_already_prompted: bool,
     output_language: &OutputLanguageEvidence,
     supported_languages: &[String],
 ) -> (String, Vec<crate::dictation_context::WordReplacement>) {
-    let mut replacements = Vec::new();
-    let text = post_process_transcription_text_inner(
-        raw,
-        settings,
-        custom_words_already_prompted,
-        output_language,
-        supported_languages,
-        &mut replacements,
-    );
-    (text, replacements)
+    let text =
+        post_process_transcription_text_inner(raw, settings, output_language, supported_languages);
+    (text, Vec::new())
 }
 
 fn post_process_transcription_text_inner(
     raw: String,
     settings: &AppSettings,
-    custom_words_already_prompted: bool,
     output_language: &OutputLanguageEvidence,
     supported_languages: &[String],
-    replacements: &mut Vec<crate::dictation_context::WordReplacement>,
 ) -> String {
     fail_open_text_transform(raw, |raw| {
         // Last-resort language evidence: confidence-gated detection from the
@@ -1821,46 +1804,23 @@ fn post_process_transcription_text_inner(
             other => other.clone(),
         };
 
-        // Convert the script before custom words so they match in the script
-        // the user writes in. Decided from the text, since mixed Mandarin/English
-        // is often detected as English; Japanese is never rewritten.
+        // Decided from the text, since mixed Mandarin/English is often
+        // detected as English; Japanese is never rewritten.
         let raw = match chinese_variety_for_text(&raw, &output_language) {
             Some(variety) => convert_chinese_script(&raw, variety, settings.chinese_script),
             None => raw,
         };
 
-        // The same words, in the same order, as models with vocabulary get.
-        let words = crate::word_lists::merged_vocabulary(settings);
-        // DanyWhere: also note what the list replaced (`dictation_context`).
-        let (corrected, replaced) = if !words.is_empty() && !custom_words_already_prompted {
-            crate::audio_toolkit::apply_custom_words_with_replacements(
-                &raw,
-                &words,
-                settings.word_correction_threshold,
-            )
-        } else {
-            (raw, Vec::new())
-        };
-
+        // DanyWhere: no fuzzy replacement by the word lists here any more;
+        // only a model that takes them as vocabulary uses them.
         let without_fillers = remove_filler_words(
-            &corrected,
+            &raw,
             &output_language,
             &settings.custom_filler_words,
             settings.filler_word_removal_enabled,
         );
 
         let text = normalize_transcription_output(&without_fillers);
-        // Set last, so a panic above leaves no replacements of a text that
-        // is then not used.
-        *replacements = replaced
-            .into_iter()
-            .map(
-                |(original, replacement)| crate::dictation_context::WordReplacement {
-                    original,
-                    replacement,
-                },
-            )
-            .collect();
         // Short, wordless clips often come back as just "." or "?".
         if text.chars().any(char::is_alphanumeric) {
             text
@@ -2186,37 +2146,40 @@ mod tests {
     }
 
     #[test]
-    fn the_word_lists_replacements_are_reported() {
+    fn the_word_lists_never_replace_words_after_transcription() {
+        // DanyWhere: Handy's fuzzy replacement (edit distance and Soundex)
+        // turned correct words into list entries, "Bild" into "Build" and
+        // "dann eher" into "DanyWhere"; a model without vocabulary now keeps
+        // the text as it heard it, a misheard name too.
         let settings = AppSettings {
-            custom_words: vec!["Build".to_string()],
+            custom_words: vec!["Build".to_string(), "DanyWhere".to_string()],
             filler_word_removal_enabled: false,
             ..Default::default()
         };
-        let (text, replaced) = post_process_transcription_text_reporting(
-            "Schau dir das Bild an.".to_string(),
-            &settings,
-            false,
-            &OutputLanguageEvidence::UserSelected("de".to_string()),
-            &languages(&["de"]),
-        );
-        assert_eq!(text, "Schau dir das Build an.");
-        assert_eq!(
-            replaced,
-            vec![crate::dictation_context::WordReplacement {
-                original: "Bild".to_string(),
-                replacement: "Build".to_string(),
-            }]
-        );
+        let evidence = OutputLanguageEvidence::UserSelected("de".to_string());
+        for said in [
+            "Schau dir das Bild an.",
+            "Das wird dann eher verwirrend.",
+            "Ich nutze Deniware.",
+        ] {
+            let (text, replaced) = post_process_transcription_text_reporting(
+                said.to_string(),
+                &settings,
+                &evidence,
+                &languages(&["de"]),
+            );
+            assert_eq!(text, said);
+            assert!(replaced.is_empty(), "{said}: {replaced:?}");
+        }
 
-        // A model that got the words as vocabulary replaces nothing afterwards.
-        let (_, replaced) = post_process_transcription_text_reporting(
-            "Schau dir das Bild an.".to_string(),
-            &settings,
-            true,
-            &OutputLanguageEvidence::UserSelected("de".to_string()),
-            &languages(&["de"]),
+        // Nor does the active additional list.
+        let text = post_process_transcription_text(
+            "we pay with chargebee".to_string(),
+            &with_work_list(&[], &["ChargeBee"], true),
+            &OutputLanguageEvidence::UserSelected("en".to_string()),
+            &languages(&["en"]),
         );
-        assert!(replaced.is_empty());
+        assert_eq!(text, "we pay with chargebee");
     }
 
     #[test]
@@ -2233,7 +2196,6 @@ mod tests {
             let result = post_process_transcription_text(
                 "学校に行きます".to_string(),
                 &settings,
-                false,
                 &evidence,
                 &languages(&["zh", "ja", "en"]),
             );
@@ -2253,7 +2215,6 @@ mod tests {
         let result = post_process_transcription_text(
             "欸我跟你说，我今天早上本来想要去咖啡厅工作，结果一打开电脑就发现，Oh my god, I forgot to charge my laptop last night.".to_string(),
             &settings,
-            false,
             &OutputLanguageEvidence::ModelDetected("en".to_string()),
             &languages(&["zh", "en", "ja"]),
         );
@@ -2290,7 +2251,6 @@ mod tests {
         let result = post_process_transcription_text(
             "我們今天下午一起去學校圖書館看書，然後再去吃晚飯。".to_string(),
             &settings,
-            false,
             &OutputLanguageEvidence::Unknown,
             &languages(&["zh", "en", "ja"]),
         );
@@ -2312,7 +2272,6 @@ mod tests {
         let result = post_process_transcription_text(
             "eu vi um carro".to_string(),
             &settings,
-            false,
             &evidence,
             &supported,
         );
@@ -2364,7 +2323,6 @@ mod tests {
         let result = post_process_transcription_text(
             "um uhm ok".to_string(),
             &settings,
-            false,
             &evidence,
             &languages(&["en", "pt"]),
         );
@@ -2384,7 +2342,6 @@ mod tests {
             "um so the weather forecast said it would probably rain throughout the whole weekend"
                 .to_string(),
             &settings,
-            false,
             &OutputLanguageEvidence::Unknown,
             &languages(&["en", "pt", "es", "de"]),
         );
@@ -2405,7 +2362,6 @@ mod tests {
         let result = post_process_transcription_text(
             "eu vi um carro na rua ontem de manhã quando fui ao mercado".to_string(),
             &settings,
-            false,
             &OutputLanguageEvidence::Unknown,
             &languages(&["en", "pt", "es", "de"]),
         );
@@ -2492,7 +2448,6 @@ mod tests {
         let result = post_process_transcription_text(
             "eu vi um carro".to_string(),
             &settings,
-            false,
             &evidence,
             &supported,
         );
@@ -2566,37 +2521,6 @@ mod tests {
         assert_eq!(plan.target_language, None);
     }
 
-    #[test]
-    fn fuzzy_correction_is_skipped_exactly_when_vocabulary_was_sent() {
-        let settings = AppSettings {
-            selected_language: "en".to_string(),
-            custom_words: vec!["Handy".to_string()],
-            ..Default::default()
-        };
-        let evidence = OutputLanguageEvidence::UserSelected("en".to_string());
-        let supported = languages(&["en"]);
-
-        // The model was already prompted with the term: leave its output alone.
-        let prompted = post_process_transcription_text(
-            "i use handy every day".to_string(),
-            &settings,
-            true,
-            &evidence,
-            &supported,
-        );
-        assert_eq!(prompted, "i use handy every day");
-
-        // No vocabulary sent: the fuzzy post-correction fixes the casing.
-        let corrected = post_process_transcription_text(
-            "i use handy every day".to_string(),
-            &settings,
-            false,
-            &evidence,
-            &supported,
-        );
-        assert_eq!(corrected, "i use Handy every day");
-    }
-
     fn with_work_list(global: &[&str], work: &[&str], active: bool) -> AppSettings {
         AppSettings {
             selected_language: "en".to_string(),
@@ -2621,30 +2545,6 @@ mod tests {
         let inactive = with_work_list(&["Sayuri"], &["Jira"], false);
         assert_eq!(vocabulary_for_model(true, &inactive), vec!["Sayuri"]);
         assert!(vocabulary_for_model(false, &settings).is_empty());
-    }
-
-    #[test]
-    fn fuzzy_correction_uses_the_active_word_list_too() {
-        let evidence = OutputLanguageEvidence::UserSelected("en".to_string());
-        let supported = languages(&["en"]);
-        let correct = |settings: &AppSettings| {
-            post_process_transcription_text(
-                "we pay with chargebee".to_string(),
-                settings,
-                false,
-                &evidence,
-                &supported,
-            )
-        };
-        assert_eq!(
-            correct(&with_work_list(&[], &["ChargeBee"], true)),
-            "we pay with ChargeBee"
-        );
-        assert_eq!(
-            correct(&with_work_list(&[], &["ChargeBee"], false)),
-            "we pay with chargebee",
-            "a list that isn't switched on doesn't apply"
-        );
     }
 
     #[test]

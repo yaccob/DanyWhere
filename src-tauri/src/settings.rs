@@ -578,8 +578,6 @@ pub struct AppSettings {
     pub dictation_context: crate::dictation_context::DictationContextSettings,
     #[serde(default)]
     pub model_unload_timeout: ModelUnloadTimeout,
-    #[serde(default = "default_word_correction_threshold")]
-    pub word_correction_threshold: f64,
     #[serde(default = "default_history_limit")]
     pub history_limit: usize,
     #[serde(default = "default_recording_retention_period")]
@@ -844,10 +842,6 @@ fn default_debug_mode() -> bool {
 
 fn default_log_level() -> LogLevel {
     LogLevel::Debug
-}
-
-fn default_word_correction_threshold() -> f64 {
-    0.18
 }
 
 fn default_paste_delay_ms() -> u64 {
@@ -1325,7 +1319,6 @@ pub fn get_default_settings() -> AppSettings {
         active_word_list_id: None,
         dictation_context: Default::default(),
         model_unload_timeout: ModelUnloadTimeout::default(),
-        word_correction_threshold: default_word_correction_threshold(),
         history_limit: default_history_limit(),
         recording_retention_period: default_recording_retention_period(),
         recording_storage_limit: RecordingStorageLimit::default(),
@@ -2329,6 +2322,16 @@ mod tests {
         let salvaged = salvage_settings(&stored);
         assert_eq!(salvaged.selected_model, "kept");
         assert_eq!(salvaged.sound_theme, default_sound_theme());
+    }
+
+    #[test]
+    fn the_word_correction_threshold_is_no_setting_any_more() {
+        // DanyWhere: the fuzzy replacement it tuned no longer runs. An older
+        // store's value is read past (see the v0.9 fixture) and not written
+        // again.
+        assert!(default_settings_json()
+            .get("word_correction_threshold")
+            .is_none());
     }
 
     #[test]

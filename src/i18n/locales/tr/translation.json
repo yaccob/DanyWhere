@@ -800,7 +800,7 @@
       },
       "customWords": {
         "title": "Özel Kelimeler",
-        "description": "Desteklenen modellerin adları ve özel terimleri tanımasına yardımcı olun. Bulanık düzeltme şu anda A–Z harflerini ve rakamları kullanan sözcüklerle sınırlıdır.",
+        "description": "Desteklenen modellerin adları ve özel terimleri tanımasına yardımcı olun.",
         "placeholder": "Kelime ekle",
         "add": "Ekle",
         "remove": "{{word}} Kaldır",
@@ -1099,6 +1099,7 @@
         "postProcessFurtherHint": "Geçerli sürüm yapay zekâya gönderilir; sonuç yeni bir sürüm olarak eklenir.",
         "step": {
           "transcription": "Transkribe edildi",
+          "transcriptionModel": "{{model}} ile transkribe edildi",
           "ai": "Son işlem uygulandı",
           "aiPrompt": "“{{prompt}}” ile son işlem uygulandı",
           "user": "Sizin tarafınızdan düzenlendi",
@@ -1183,10 +1184,6 @@
         "description": "Kayıt başlangıç ve bitişi için sesli geri bildirim temasını seçin",
         "preview": "Ses temasını dinle (başlat, durdur ve ardından dikteyi bitiren sesi çalar)",
         "custom": "Özel"
-      },
-      "wordCorrectionThreshold": {
-        "title": "Kelime Düzeltme Eşiği",
-        "description": "Özel kelime düzeltmeleri için hassasiyet"
       },
       "historyLimit": {
         "title": "Geçmiş Limiti",

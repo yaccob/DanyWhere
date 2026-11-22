@@ -263,22 +263,48 @@ export const cancelChipDrag = (
 export type VersionMark = "transcription" | "ai" | "user" | "ai_user";
 
 /** A step as the chip's tooltip names it: the key under
- * `settings.history.versions.step`, the prompt's name, and its time in
- * seconds, as `formatDateTime` takes it. */
+ * `settings.history.versions.step`, the prompt's name, the id of the speech
+ * model that transcribed (when known), and its time in seconds, as
+ * `formatDateTime` takes it. */
 export type StepDescription = {
-  key: "transcription" | "ai" | "aiPrompt" | "user";
+  key: "transcription" | "transcriptionModel" | "ai" | "aiPrompt" | "user";
   prompt: string | null;
+  model: string | null;
   atSeconds: number | null;
+};
+
+const stepKey = (
+  by: VersionStep["by"],
+  prompt: string | null,
+  model: string | null,
+): StepDescription["key"] => {
+  if (by === "ai") return prompt !== null ? "aiPrompt" : "ai";
+  if (by === "transcription" && model !== null) return "transcriptionModel";
+  return by;
 };
 
 export const describeStep = (step: VersionStep): StepDescription => {
   const prompt =
     step.by === "ai" && step.prompt_name?.trim() ? step.prompt_name : null;
+  const model =
+    step.by === "transcription" && step.model?.trim() ? step.model : null;
   return {
-    key: step.by === "ai" ? (prompt !== null ? "aiPrompt" : "ai") : step.by,
+    key: stepKey(step.by, prompt, model),
     prompt,
+    model,
     atSeconds: step.at === null ? null : Math.floor(step.at / 1000),
   };
+};
+
+/** The name a speech model shows under, from the app's model list; one
+ * the list no longer has (deleted, or a custom model gone) by its id. */
+export const modelName = <M extends { id: string; name: string }>(
+  id: string,
+  models: readonly M[],
+  nameOf: (model: M) => string = (model) => model.name,
+): string => {
+  const model = models.find((candidate) => candidate.id === id);
+  return model ? nameOf(model) : id;
 };
 
 /** When step `stepIndex` of version `index` was made, in seconds, for the

@@ -133,14 +133,6 @@ async changeDebugModeSetting(enabled: boolean) : Promise<Result<null, string>> {
     else return { status: "error", error: e  as any };
 }
 },
-async changeWordCorrectionThresholdSetting(threshold: number) : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("change_word_correction_threshold_setting", { threshold }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
 async changeExtraRecordingBufferSetting(ms: number) : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("change_extra_recording_buffer_setting", { ms }) };
@@ -1831,7 +1823,7 @@ active_word_list_id?: string | null;
  * DanyWhere: earlier dictations from the same window as context for
  * post-processing (`dictation_context`).
  */
-dictation_context?: DictationContextSettings; model_unload_timeout?: ModelUnloadTimeout; word_correction_threshold?: number; history_limit?: number; recording_retention_period?: RecordingRetentionPeriod; 
+dictation_context?: DictationContextSettings; model_unload_timeout?: ModelUnloadTimeout; history_limit?: number; recording_retention_period?: RecordingRetentionPeriod; 
 /**
  * Migrated from `recording_retention_period` in `apply_settings_migrations`.
  */
@@ -2223,6 +2215,12 @@ language: string | null;
  * How that language was chosen; `None` before it was recorded.
  */
 language_source: LanguageSource | null; 
+/**
+ * DanyWhere: the id of the speech model of its latest transcription;
+ * `None` before it was recorded, or when no model ran. Each version
+ * keeps the model that made it (`VersionStep::model`).
+ */
+transcription_model: string | null; 
 /**
  * The storage limit deleted the recording; the transcript stays, but
  * there is nothing to play or transcribe again.
@@ -3011,7 +3009,14 @@ at: number | null;
 /**
  * For an AI step: the prompt's name, when known.
  */
-prompt_name: string | null }
+prompt_name: string | null; 
+/**
+ * DanyWhere: for a transcription step, the id of the speech model that
+ * made it; `None` where it isn't known (before it was recorded). Left
+ * out of the column when `None`, so stacks stored without it read the
+ * same.
+ */
+model?: string | null }
 /**
  * What the settings show about window titles on this computer.
  */

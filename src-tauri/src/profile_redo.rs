@@ -568,7 +568,10 @@ fn transcribe_again(
         transcription.text,
         processed.post_processed_text,
         processed.post_process_prompt,
-        transcription.language,
+        crate::managers::history::TranscribedWith {
+            language: transcription.language,
+            model: transcription.model_id,
+        },
         post_process,
     )?;
     if let Err(e) = hm.record_entry_context(
@@ -1082,11 +1085,13 @@ mod tests {
                 by: VersionAuthor::Transcription,
                 at: None,
                 prompt_name: None,
+                model: None,
             },
             crate::history_versions::VersionStep {
                 by: VersionAuthor::User,
                 at: Some(1),
                 prompt_name: None,
+                model: None,
             },
         ];
         assert!(!redoable(&[edited]));

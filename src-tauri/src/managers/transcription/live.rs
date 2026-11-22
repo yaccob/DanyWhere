@@ -90,12 +90,14 @@ impl<'a> LiveSession<'a> {
     pub(super) fn finish(self, recorded_samples: usize) -> StreamFinalizeReply {
         match self.decoder {
             LiveDecoder::Stream(stream, setup) => {
+                let model_id = stream.model_id.clone();
                 Ok(stream
                     .finish()?
                     .map(|(text, model_detected_language)| RunOutcome {
                         setup: *setup,
                         text,
                         model_detected_language,
+                        model_id,
                     }))
             }
             LiveDecoder::Chunked(chunks) => finish_chunks(*chunks, recorded_samples),
@@ -117,6 +119,7 @@ fn finish_chunks(
         return Ok(None);
     }
     let while_recording = chunks.decoded();
+    let model_id = chunks.model_id().to_string();
     match chunks.finish() {
         Ok((transcripts, setup)) => {
             if while_recording > 0 {
@@ -131,6 +134,7 @@ fn finish_chunks(
                 setup,
                 text,
                 model_detected_language,
+                model_id,
             }))
         }
         Err(EngineError::Cancelled) => Err(EngineError::Cancelled),

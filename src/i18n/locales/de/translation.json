@@ -800,7 +800,7 @@
       },
       "customWords": {
         "title": "Benutzerdefinierte Wörter",
-        "description": "Hilf unterstützten Modellen, Namen und Fachbegriffe zu erkennen. Die unscharfe Korrektur ist derzeit auf Wörter mit den Buchstaben A–Z und Zahlen beschränkt.",
+        "description": "Hilf unterstützten Modellen, Namen und Fachbegriffe zu erkennen.",
         "placeholder": "Wort hinzufügen",
         "add": "Hinzufügen",
         "remove": "{{word}} entfernen",
@@ -1099,6 +1099,7 @@
         "postProcessFurtherHint": "Die aktuelle Fassung geht an die KI; ihr Ergebnis kommt als neue Fassung dazu.",
         "step": {
           "transcription": "Transkribiert",
+          "transcriptionModel": "Transkribiert mit {{model}}",
           "ai": "Nachbearbeitet",
           "aiPrompt": "Nachbearbeitet mit „{{prompt}}“",
           "user": "Von dir bearbeitet",
@@ -1183,10 +1184,6 @@
         "description": "Sound-Thema für Aufnahme-Start und -Stop-Feedback auswählen",
         "preview": "Sound-Thema anhören (spielt Start, Stopp und dann den Ton, der ein Diktat beendet)",
         "custom": "Benutzerdefiniert"
-      },
-      "wordCorrectionThreshold": {
-        "title": "Wortkorrektur-Schwelle",
-        "description": "Empfindlichkeit für benutzerdefinierte Wortkorrekturen"
       },
       "historyLimit": {
         "title": "Verlaufslimit",

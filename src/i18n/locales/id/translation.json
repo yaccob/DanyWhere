@@ -800,7 +800,7 @@
       },
       "customWords": {
         "title": "Kata Khusus",
-        "description": "Bantu model yang didukung mengenali nama dan istilah khusus. Koreksi fuzzy saat ini terbatas pada kata yang menggunakan huruf A–Z dan angka.",
+        "description": "Bantu model yang didukung mengenali nama dan istilah khusus.",
         "placeholder": "Tambahkan kata",
         "add": "Tambah",
         "remove": "Hapus {{word}}",
@@ -1099,6 +1099,7 @@
         "postProcessFurtherHint": "Versi saat ini dikirim ke AI; hasil dari AI ditambahkan sebagai versi baru.",
         "step": {
           "transcription": "Ditranskripsikan",
+          "transcriptionModel": "Ditranskripsikan dengan {{model}}",
           "ai": "Dipascaproses",
           "aiPrompt": "Dipascaproses dengan “{{prompt}}”",
           "user": "Diedit oleh Anda",
@@ -1183,10 +1184,6 @@
         "description": "Pilih tema suara untuk umpan balik saat perekaman dimulai dan dihentikan",
         "preview": "Dengarkan tema suara (memutar mulai, berhenti, lalu suara yang mengakhiri dikte)",
         "custom": "Kustom"
-      },
-      "wordCorrectionThreshold": {
-        "title": "Ambang Koreksi Kata",
-        "description": "Sensitivitas untuk koreksi kata khusus"
       },
       "historyLimit": {
         "title": "Batas Riwayat",
