@@ -4,11 +4,47 @@ use rodio::cpal::{
 };
 
 /// An output device for feedback sounds. Microphones are listed by
-/// `handy_recorder::list_input_devices`.
+/// [`list_microphones`].
 pub struct OutputDeviceInfo {
     pub index: String,
     pub name: String,
     pub is_default: bool,
+}
+
+/// DanyWhere: a microphone as the app uses it, from
+/// `handy_recorder::list_input_devices`. handy-recorder's `InputDevice`
+/// can't be built outside it, so tests list these instead.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MicrophoneDevice {
+    /// What `RecorderConfig::device` opens.
+    pub id: String,
+    pub name: String,
+    pub is_default: bool,
+    /// Channels at the device's format; `None` where reading them would
+    /// open the device (ALSA).
+    pub channels: Option<u16>,
+    /// A PulseAudio monitor source, which records a speaker's output.
+    pub is_monitor: bool,
+}
+
+impl From<handy_recorder::InputDevice> for MicrophoneDevice {
+    fn from(device: handy_recorder::InputDevice) -> Self {
+        Self {
+            id: device.id,
+            name: device.name,
+            is_default: device.is_default,
+            channels: device.channels,
+            is_monitor: device.is_monitor,
+        }
+    }
+}
+
+/// DanyWhere: the system's microphones now.
+pub fn list_microphones() -> Result<Vec<MicrophoneDevice>, anyhow::Error> {
+    Ok(handy_recorder::list_input_devices()?
+        .into_iter()
+        .map(MicrophoneDevice::from)
+        .collect())
 }
 
 /// DanyWhere: where feedback sounds and the settings find output devices:

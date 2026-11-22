@@ -11,7 +11,8 @@ mod visualizer;
 
 pub use decode::decode_audio_file;
 pub use device::{
-    list_output_devices, output_device_name, OutputDeviceInfo, OutputHost, SystemOutputHost,
+    list_microphones, list_output_devices, output_device_name, MicrophoneDevice, OutputDeviceInfo,
+    OutputHost, SystemOutputHost,
 };
 pub use opus_file::{read_opus_samples, save_opus_file};
 pub use recording::{
