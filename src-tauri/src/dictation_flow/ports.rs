@@ -8,10 +8,10 @@
 //! flow keeps every decision and the order of what the user sees and hears.
 
 use std::future::Future;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use crate::actions::{ProcessedTranscription, TranscriptionOutcome};
-use crate::delivery::DictationEnd;
+use crate::delivery::{DictationEnd, DictationNotice};
 use crate::dictation_context::{CapturedWindow, ContextQuery};
 use crate::dictation_key_inserts::ClipboardReason;
 use crate::managers::history::{HistoryEntry, HistoryManager};
@@ -78,6 +78,10 @@ pub trait History {
 /// instead goes into `deliver_dictation`, at its one call of
 /// [`Deliver::paste`].
 pub trait Deliver {
+    /// Whether this build offers the "Insert Last Dictation" service
+    /// (`delivery::INSERT_SERVICE_AVAILABLE`), so a dictation without
+    /// Accessibility can wait for it.
+    fn insert_service_available(&self) -> bool;
     /// "Copy Last Transcript" was pressed during dictation `session`: its
     /// text goes on the clipboard instead of being pasted.
     fn copies_instead_of_pasting(&self, session: u64) -> bool;
@@ -120,9 +124,9 @@ pub enum Overlay {
         streaming: bool,
     },
     Hide,
-    /// After a dictation: where the text waits when it was not pasted,
-    /// otherwise nothing (`delivery::finish_overlay_after_dictation`).
-    AfterDictation,
+    /// After a dictation: where the text waits when it was not pasted, and
+    /// for how long; `None`: nothing (`delivery::overlay_after_dictation`).
+    AfterDictation(Option<(DictationNotice, Duration)>),
     /// The text went on the clipboard (`dictation_key_inserts::show_on_clipboard_notice`).
     OnClipboard(ClipboardReason),
 }

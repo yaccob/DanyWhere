@@ -96,6 +96,10 @@ impl History for AppPorts {
 }
 
 impl Deliver for AppPorts {
+    fn insert_service_available(&self) -> bool {
+        crate::delivery::INSERT_SERVICE_AVAILABLE
+    }
+
     fn copies_instead_of_pasting(&self, session: u64) -> bool {
         crate::dictation_key_inserts::copies_instead_of_pasting(session)
     }
@@ -157,7 +161,9 @@ impl Report for AppPorts {
                 streaming: false,
             } => utils::show_processing_overlay(&self.app),
             Overlay::Hide => utils::hide_recording_overlay(&self.app),
-            Overlay::AfterDictation => crate::delivery::finish_overlay_after_dictation(&self.app),
+            Overlay::AfterDictation(after) => {
+                crate::delivery::finish_overlay_after_dictation(&self.app, after)
+            }
             Overlay::OnClipboard(reason) => {
                 crate::dictation_key_inserts::show_on_clipboard_notice(&self.app, &reason)
             }

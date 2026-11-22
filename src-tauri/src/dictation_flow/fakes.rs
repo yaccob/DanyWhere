@@ -88,6 +88,8 @@ pub struct Script {
     pub redo_shows: Vec<Working>,
     /// The paste thread can't be started.
     pub spawn_fails: bool,
+    /// The build offers the "Insert Last Dictation" service, as on macOS.
+    pub service_available: bool,
 }
 
 impl Default for Script {
@@ -113,6 +115,7 @@ impl Default for Script {
             redo: None,
             redo_shows: Vec::new(),
             spawn_fails: false,
+            service_available: true,
         }
     }
 }
@@ -348,6 +351,10 @@ impl History for FakePorts {
 }
 
 impl Deliver for FakePorts {
+    fn insert_service_available(&self) -> bool {
+        self.script().service_available
+    }
+
     fn copies_instead_of_pasting(&self, _session: u64) -> bool {
         self.script().copy_requested
     }

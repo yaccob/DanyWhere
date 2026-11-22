@@ -423,10 +423,11 @@ pub(crate) async fn finish_dictation<P: DictationPorts>(dictation: Dictation, po
 /// it goes as it is, with its own profile's values; as when it is copied
 /// ("Copy Last Transcript" during the dictation) or waits to be inserted.
 /// `settings` are the dictation's (`dictation_snapshot`), with its paste
-/// method.
+/// method; `service_available` is [`ports::Deliver::insert_service_available`].
 fn redo_for_app_in_front<P: DictationPorts>(
     ports: &P,
     settings: &AppSettings,
+    service_available: bool,
     entry_id: Option<i64>,
     session: u64,
     show: &dyn Fn(Working),
@@ -435,7 +436,7 @@ fn redo_for_app_in_front<P: DictationPorts>(
     if ports.copies_instead_of_pasting(session)
         || !crate::delivery::goes_into_app_in_front(
             settings,
-            crate::delivery::INSERT_SERVICE_AVAILABLE,
+            service_available,
             ports.call_waiting(),
         )
     {
@@ -500,6 +501,7 @@ fn deliver_dictation<P: DictationPorts>(ports: &P, delivery: Delivery) {
     let session = snapshot.session;
     let use_streaming_overlay = snapshot.use_streaming_overlay;
     let dictation_values = Some(snapshot.values.clone());
+    let service_available = ports.insert_service_available();
     if ports.cancelled() {
         debug!("Transcription operation cancelled before paste");
         end_cancelled(ports);
@@ -521,6 +523,7 @@ fn deliver_dictation<P: DictationPorts>(ports: &P, delivery: Delivery) {
         match redo_for_app_in_front(
             ports,
             &snapshot.settings,
+            service_available,
             saved_entry_id,
             session,
             &|working| {
@@ -633,8 +636,11 @@ fn deliver_dictation<P: DictationPorts>(ports: &P, delivery: Delivery) {
         (true, None, _) if inserted_by_service => ports.overlay(Overlay::Hide),
         (true, None, Some(reason)) => ports.overlay(Overlay::OnClipboard(reason)),
         // DanyWhere: says where the text waits
-        // when it was not pasted.
-        (true, None, None) => ports.overlay(Overlay::AfterDictation),
+        // when it was not pasted, with the
+        // dictation's settings.
+        (true, None, None) => ports.overlay(Overlay::AfterDictation(
+            crate::delivery::overlay_after_dictation(&snapshot.settings, service_available),
+        )),
         (false, Some(notice), _) => ports.raise_without_overlay(notice),
         (false, None, _) => {}
     }
@@ -885,7 +891,7 @@ mod tests {
                     put_on_clipboard: false,
                     owns_ui: true,
                 }),
-                Event::Overlay(Overlay::AfterDictation),
+                Event::Overlay(Overlay::AfterDictation(None)),
                 Event::Tray(TrayIconState::Idle),
                 Event::Complete(TranscriptionOutcome::Typed, SAMPLES),
                 Event::Finished,
@@ -950,7 +956,7 @@ mod tests {
             paste("polished", &values, " (sent)"),
             Event::ClearNotice,
             Event::SoundAfterDictation(pasted_end()),
-            Event::Overlay(Overlay::AfterDictation),
+            Event::Overlay(Overlay::AfterDictation(None)),
             Event::Tray(TrayIconState::Idle),
             Event::Complete(TranscriptionOutcome::Typed, SAMPLES),
             Event::Finished,
@@ -1502,7 +1508,7 @@ mod tests {
                 paste("redone", &other, " (other)"),
                 Event::ClearNotice,
                 Event::SoundAfterDictation(pasted_end()),
-                Event::Overlay(Overlay::AfterDictation),
+                Event::Overlay(Overlay::AfterDictation(None)),
                 Event::Tray(TrayIconState::Idle),
                 Event::Complete(TranscriptionOutcome::Typed, SAMPLES),
                 Event::Finished,
