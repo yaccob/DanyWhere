@@ -96,12 +96,19 @@ Planned work on DanyWhere, roughly in priority order within each section. Items 
   - The two shortcut backends share no trait.
   - A dictation pastes by `paste_method`, not by the tested `delivery_for`. Read from the code, not tried: a profile set to ⌘V without Accessibility would try to paste and fail.
 
-**Proposal (Claude, not decided):** no application of its own. It would either copy almost all of DanyWhere, or first need a core with exchangeable adapters, which brings the gain in testing without a second application. Instead, four steps:
+**Proposal (Claude):** no application of its own. It would either copy almost all of DanyWhere, or first need a core with exchangeable adapters, which brings the gain in testing without a second application. Instead, four steps:
 
 - **(A) Component tests for the frontend:** happy-dom and testing-library under `bun test`, with `bindings.ts` replaced. Independent of the rest.
 - **(B) The dictation after the recording as a function:** it takes a snapshot of the settings and small interfaces (transcribe, post-process, store in History, deliver, notify). Tests use a fixed transcript or the fake microphone, a local LLM server and a temporary database. B starts after the shortcut rework is merged.
 - **(C) The permission and the shortcut backend as adapters:** one source for the permission, the shortcut backends behind a trait, and delivery by `delivery_for`, so that B's tests run in both states. C comes when the mode without Accessibility is taken up again.
 - **(D) The GUI runs cut to a short smoke test, run before releases:** it covers only what the real app shows (pasting into another application, the services, registering shortcuts, tap and hold, the permissions, the overlay's screen).
+
+**Decided (user, 2026-11-22, later):** the full program, with B in full, even if it takes several sessions ("das amortisiert sich sehr bald"). It is done in sessions of its own, and the shortcut rework is released before it.
+
+Claude's additions:
+
+- The plan and A don't depend on that release and can start before it. B's changes to the code start from the released state, since both B and the shortcut rework change `actions.rs`.
+- B moves code of the mode without Accessibility anyway: the block after the recording copies instead of pasting and hands the text to a waiting service. So C is proposed as part of the redesign, with one short real run without Accessibility at its end; the user hasn't decided this yet.
 
 ### History: per profile and in total
 
