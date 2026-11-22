@@ -300,8 +300,15 @@ pub(crate) async fn finish_dictation<P: DictationPorts>(dictation: Dictation, po
                             file_name,
                             transcription,
                             snapshot.post_process,
-                            processed.post_processed_text.clone(),
-                            processed.post_process_prompt.clone(),
+                            // DanyWhere: with its prompt's name, for the
+                            // ✨ step (as a redo stores it).
+                            processed.post_processed_text.clone().map(|text| {
+                                crate::history_versions::PostProcessed {
+                                    text,
+                                    prompt: processed.post_process_prompt.clone(),
+                                    prompt_name: processed.post_process_prompt_name.clone(),
+                                }
+                            }),
                             crate::managers::history::TranscribedWith {
                                 language,
                                 model: model_id,
@@ -394,7 +401,6 @@ pub(crate) async fn finish_dictation<P: DictationPorts>(dictation: Dictation, po
                             file_name,
                             String::new(),
                             snapshot.post_process,
-                            None,
                             None,
                             Default::default(),
                         ) {
@@ -1059,6 +1065,10 @@ mod tests {
         assert!(snapshot.post_process);
         assert!(!snapshot.with_context);
         let values = snapshot.values.clone();
+        let prompt_name = crate::prompt_library::request_names(&crate::prompt_library::requested(
+            &snapshot.settings,
+        ));
+        assert!(prompt_name.is_some());
         let ports = FakePorts::new(Script::default());
         finish(&ports, snapshot);
 
@@ -1107,6 +1117,15 @@ mod tests {
             .is_some_and(|prompt| !prompt.trim().is_empty()));
         assert_eq!(crate::history_versions::entry_text(entry), "polished");
         assert!(crate::history_versions::has_ai_step(&entry.versions));
+        // Its ✨ step names the prompt, as History's tooltip shows it.
+        let ai_steps: Vec<_> = entry
+            .versions
+            .iter()
+            .flat_map(|version| &version.steps)
+            .filter(|step| step.by == crate::history_versions::VersionAuthor::Ai)
+            .map(|step| step.prompt_name.clone())
+            .collect();
+        assert_eq!(ai_steps, vec![prompt_name]);
         assert!(entry
             .versions
             .iter()

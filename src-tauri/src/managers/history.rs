@@ -452,24 +452,35 @@ impl HistoryManager {
 
     /// Save a new history entry to the database.
     /// The recording should already have been written to the recordings directory.
+    /// DanyWhere: `post_processed` is what the dictation's own
+    /// post-processing came back with, its prompt's name included.
     pub fn save_entry(
         &self,
         file_name: String,
         transcription_text: String,
         post_process_requested: bool,
-        post_processed_text: Option<String>,
-        post_process_prompt: Option<String>,
+        post_processed: Option<crate::history_versions::PostProcessed>,
         made_with: TranscribedWith,
     ) -> Result<HistoryEntry> {
         let (language, language_source) = split_language(made_with.language);
         let timestamp = Utc::now().timestamp();
-        // DanyWhere: as reading it back gives it (`history_versions`).
-        let versions = crate::history_versions::versions_of_new_entry(
+        let (post_processed_text, post_process_prompt, prompt_name) = match post_processed {
+            Some(processed) => (
+                Some(processed.text),
+                processed.prompt,
+                processed.prompt_name,
+            ),
+            None => (None, None, None),
+        };
+        // DanyWhere: as reading it back gives it (`history_versions`), with
+        // the prompt's name on its ✨ step.
+        let mut versions = crate::history_versions::versions_of_new_entry(
             &transcription_text,
             post_processed_text.as_deref(),
             Some(timestamp.saturating_mul(1000)),
             made_with.model.as_deref(),
         );
+        crate::history_versions::name_the_prompt(&mut versions, prompt_name.as_deref());
         let entry = self.insert_entry(HistoryEntry {
             id: 0,
             file_name,
@@ -564,8 +575,9 @@ impl HistoryManager {
                 source_name,
                 language,
                 language_source,
-                transcription_model
-            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
+                transcription_model,
+                versions
+            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
             params![
                 &entry.file_name,
                 entry.timestamp,
@@ -579,6 +591,8 @@ impl HistoryManager {
                 &entry.language,
                 entry.language_source.map(LanguageSource::as_str),
                 &entry.transcription_model,
+                // DanyWhere: only what the other columns don't hold.
+                crate::history_versions::column_of_new_entry(entry)?,
             ],
         )?;
         Ok(conn.last_insert_rowid())
@@ -1703,6 +1717,44 @@ mod tests {
         );
     }
 
+    /// The column `versions` of entry `id` as stored.
+    fn versions_column(conn: &Connection, id: i64) -> Option<String> {
+        conn.query_row(
+            "SELECT versions FROM transcription_history WHERE id = ?1",
+            params![id],
+            |row| row.get(0),
+        )
+        .expect("read versions")
+    }
+
+    #[test]
+    fn a_new_entry_stores_its_stack_only_where_its_columns_lack_something() {
+        let conn = setup_conn();
+        // As before: derived from the other columns when it is read.
+        let id = HistoryManager::insert_with_conn(&conn, &entry_made_by(Some("canary-1b-v2")))
+            .expect("insert entry");
+        assert_eq!(versions_column(&conn, id), None);
+
+        // Its post-processing's prompt has a name those columns don't hold.
+        let mut named = entry_made_by(None);
+        named.post_processed_text = Some("Seven words.".to_string());
+        named.versions = crate::history_versions::versions_of_new_entry(
+            "seven words",
+            Some("Seven words."),
+            Some(7_000),
+            None,
+        );
+        crate::history_versions::name_the_prompt(&mut named.versions, Some("E-Mail"));
+        let id = HistoryManager::insert_with_conn(&conn, &named).expect("insert entry");
+        assert!(versions_column(&conn, id).is_some());
+        let read = entry_by_id(&conn, id).unwrap();
+        assert_eq!(read.versions, named.versions);
+        assert_eq!(
+            read.versions[1].steps[0].prompt_name.as_deref(),
+            Some("E-Mail")
+        );
+    }
+
     #[test]
     fn an_entry_from_before_has_no_model() {
         let conn = setup_conn();
@@ -1813,7 +1865,6 @@ mod tests {
                     file_name.into(),
                     text.into(),
                     false,
-                    None,
                     None,
                     TranscribedWith {
                         language: None,
