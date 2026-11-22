@@ -10,7 +10,8 @@
 // - under the defaults (the settings view, P7.1, P7.2): the profiles that
 //   deviate, each with its own control (the same component, in that
 //   profile's scope) and a reset, or for a large setting (or a control
-//   that draws nothing in that profile) a summary with "Open in …"; the
+//   that draws nothing in that profile) a summary with "Open in …", which
+//   opens the profile's page and jumps to the setting there; the
 //   profiles that follow in one grey line; "+ Profile"
 //   gives another profile its own value here, starting from the default.
 //
@@ -47,6 +48,7 @@ import {
 } from "./SettingsScope";
 import { useValueLabels } from "./useValueLabels";
 import { useJumpHighlight } from "./useJumpHighlight";
+import { openInTarget } from "@/lib/settingJump";
 import { useShowsAnything } from "@/hooks/useShowsAnything";
 import { deviatingRow, wrapperShows } from "@/lib/renderedContent";
 
@@ -523,7 +525,22 @@ const UnderDefaults: React.FC<UnderDefaultsProps> = ({
               {openProfilePage && (
                 <button
                   type="button"
-                  onClick={() => openProfilePage(profile.id, page)}
+                  // It jumps to the setting there, like the page "Profile".
+                  onClick={() =>
+                    openProfilePage(
+                      profile.id,
+                      page,
+                      openInTarget(
+                        profile.id,
+                        fields,
+                        entry,
+                        fields.filter(
+                          (name) =>
+                            deviation([profile], name, entry).own.length > 0,
+                        ),
+                      ),
+                    )
+                  }
                   className="inline-flex shrink-0 items-center gap-1 rounded-md border border-line px-2 py-0.5 text-xs hover:border-logo-primary hover:bg-logo-primary/10 cursor-pointer"
                 >
                   <ArrowRight
