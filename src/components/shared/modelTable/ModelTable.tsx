@@ -15,6 +15,7 @@ import { CODE_CLASS, Codes, rowGrid } from "./columns";
 import { ModelTableContext, type TableModel } from "./context";
 import type { Grading } from "@/lib/models/grading";
 import { isComposingKeyEvent } from "@/lib/utils/keyboard";
+import { escapeLayerOpen } from "@/lib/escapeLayers";
 import { ScrollThumb } from "./ScrollThumb";
 
 /** The search, and per capability whether only models with it are kept. */
@@ -129,6 +130,9 @@ export const ModelTable: React.FC<ModelTableProps> = ({
     const onKey = (e: KeyboardEvent) => {
       if (isComposingKeyEvent(e)) return;
       if (e.key === "Escape") {
+        // DanyWhere: a list or popover open in front closes first; this
+        // listener was added before theirs and hears the press first.
+        if (escapeLayerOpen(window)) return;
         if (query.current) {
           e.preventDefault();
           setFilters((f) => ({ ...f, query: "" }));

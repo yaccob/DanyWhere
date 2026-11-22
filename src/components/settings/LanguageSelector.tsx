@@ -8,6 +8,7 @@ import { Tooltip } from "../ui/Tooltip";
 import { LanguageDetectorDownload } from "./LanguageDetectorDownload";
 import { useSettings } from "../../hooks/useSettings";
 import { isComposingKeyEvent } from "../../lib/utils/keyboard";
+import { cancelOnEscape } from "../../lib/escapeLayers";
 import { useLanguageDetector } from "../../hooks/useLanguageDetector";
 import { languageIdentity } from "@handy-computer/models";
 import {
@@ -43,6 +44,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
   const [searchQuery, setSearchQuery] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   // The persisted *intent* (auto | code). What's shown is what transcription
   // will actually use, which the backend resolves from the same policy.
@@ -98,6 +100,17 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
     if (isOpen && searchInputRef.current) {
       searchInputRef.current.focus();
     }
+  }, [isOpen]);
+
+  // DanyWhere: Escape closes the list, heard on the window, so also when a
+  // click left the focus outside the search; the focus goes to the button.
+  useEffect(() => {
+    if (!isOpen) return;
+    return cancelOnEscape(window, () => {
+      setIsOpen(false);
+      setSearchQuery("");
+      triggerRef.current?.focus();
+    });
   }, [isOpen]);
 
   // The languages they speak lead, in the order they added them.
@@ -193,9 +206,6 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
     if (event.key === "Enter" && first) {
       // Select first selectable filtered language on Enter
       handleLanguageSelect(first.value);
-    } else if (event.key === "Escape") {
-      setIsOpen(false);
-      setSearchQuery("");
     }
   };
 
@@ -209,6 +219,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
       <div className="flex items-center space-x-1">
         <div className="relative" ref={dropdownRef}>
           <button
+            ref={triggerRef}
             type="button"
             className={`px-2 py-1 text-sm font-semibold bg-wash border border-line-strong rounded min-w-[200px] text-start flex items-center justify-between transition-all duration-150 ${
               isUpdating("selected_language")

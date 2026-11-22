@@ -5,6 +5,7 @@ import { GradeChip } from "@/components/shared/GradeChip";
 import { SpeedBars } from "@/components/shared/SpeedBars";
 import { useRubric } from "@/components/shared/modelTable/rubric";
 import { usePressAway } from "@/hooks/usePressAway";
+import { cancelOnEscape } from "@/lib/escapeLayers";
 
 const LETTERS = ["A", "B", "C", "D", "F"] as const;
 
@@ -16,11 +17,11 @@ export const Legend: React.FC<{ tier: "accelerated" | "cpu" }> = ({ tier }) => {
   const ref = useRef<HTMLDivElement>(null);
 
   usePressAway(open, ref, () => setOpen(false));
+  // DanyWhere: Escape is a layer on the window, so the table's search
+  // (which hears Escape on the window too) is left as it is.
   useEffect(() => {
     if (!open) return;
-    const esc = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
-    document.addEventListener("keydown", esc);
-    return () => document.removeEventListener("keydown", esc);
+    return cancelOnEscape(window, () => setOpen(false));
   }, [open]);
 
   return (

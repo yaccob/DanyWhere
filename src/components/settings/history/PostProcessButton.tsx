@@ -8,6 +8,7 @@
 import React, { useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Check, ChevronDown, WandSparkles } from "lucide-react";
+import { cancelOnEscape } from "@/lib/escapeLayers";
 import type { PostProcessAvailability } from "./postProcessEntry";
 import type { PromptMenuItem } from "./promptMenu";
 
@@ -48,7 +49,9 @@ export const PostProcessButton: React.FC<PostProcessButtonProps> = ({
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const menuId = useId();
 
-  // Close on a press outside; the first item takes the focus.
+  // Close on a press outside or on Escape; the first item takes the focus.
+  // Escape is heard on the window, so it closes the menu even when a click
+  // left the focus outside it.
   useEffect(() => {
     if (!open) return;
     itemRefs.current[0]?.focus({ preventScroll: true });
@@ -56,7 +59,14 @@ export const PostProcessButton: React.FC<PostProcessButtonProps> = ({
       if (!wrapRef.current?.contains(event.target as Node)) setOpen(false);
     };
     document.addEventListener("mousedown", onDown);
-    return () => document.removeEventListener("mousedown", onDown);
+    const stopEscape = cancelOnEscape(window, () => {
+      setOpen(false);
+      toggleRef.current?.focus({ preventScroll: true });
+    });
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      stopEscape();
+    };
   }, [open]);
 
   useEffect(() => {
@@ -81,11 +91,7 @@ export const PostProcessButton: React.FC<PostProcessButtonProps> = ({
     else if (event.key === "ArrowUp") move(at - 1);
     else if (event.key === "Home") move(0);
     else if (event.key === "End") move(items.length - 1);
-    else if (event.key === "Escape") {
-      event.preventDefault();
-      event.stopPropagation();
-      close();
-    } else if (event.key === "Tab") setOpen(false);
+    else if (event.key === "Tab") setOpen(false);
   };
 
   const title = ready

@@ -51,7 +51,7 @@ export const ShortcutActivationSetting: React.FC<ShortcutActivationProps> =
       >
         <Dropdown
           options={options}
-          menuClassName="right-0 w-80 max-w-[calc(100vw-2rem)]"
+          menuClassName="w-80 max-w-[calc(100vw-16px)]"
           selectedValue={selected}
           onSelect={(value) =>
             updateSetting("shortcut_activation", value as ShortcutActivation)

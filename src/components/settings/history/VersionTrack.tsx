@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import type { HistoryEntry, HistoryVersion, VersionStep } from "@/bindings";
 import { formatDateTime } from "@/utils/dateFormat";
-import { cancelOnEscape } from "@/lib/dragCancel";
+import { cancelOnEscape } from "@/lib/escapeLayers";
 import { menuOffset } from "@/lib/menuPlacement";
 import {
   cancelChipDrag,
@@ -137,7 +137,9 @@ export const VersionTrack: React.FC<VersionTrackProps> = ({
     );
   }, [menuOpen, i18n]);
 
-  // Close the menu on a press outside; its first item takes the focus.
+  // Close the menu on a press outside or on Escape; its first item takes
+  // the focus. Escape is heard on the window, so it closes the menu even
+  // when a click left the focus outside it.
   useEffect(() => {
     if (!menuOpen) return;
     itemRefs.current[0]?.focus({ preventScroll: true });
@@ -145,7 +147,14 @@ export const VersionTrack: React.FC<VersionTrackProps> = ({
       if (!menuRef.current?.contains(event.target as Node)) setMenuOpen(false);
     };
     document.addEventListener("mousedown", onDown);
-    return () => document.removeEventListener("mousedown", onDown);
+    const stopEscape = cancelOnEscape(window, () => {
+      setMenuOpen(false);
+      menuButtonRef.current?.focus({ preventScroll: true });
+    });
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      stopEscape();
+    };
   }, [menuOpen]);
 
   // While a change is saved, nothing else may start.
@@ -266,11 +275,7 @@ export const VersionTrack: React.FC<VersionTrackProps> = ({
     else if (event.key === "ArrowUp") move(at - 1);
     else if (event.key === "Home") move(0);
     else if (event.key === "End") move(items.length - 1);
-    else if (event.key === "Escape") {
-      event.preventDefault();
-      event.stopPropagation();
-      closeMenu();
-    } else if (event.key === "Tab") setMenuOpen(false);
+    else if (event.key === "Tab") setMenuOpen(false);
   };
 
   const summary = t(`${KEYS}.summary`, { count });

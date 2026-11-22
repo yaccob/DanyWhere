@@ -1,8 +1,10 @@
 /**
  * DanyWhere: a menu opened at a button stays inside the window. It opens
- * at the button's start edge in the reading direction and moves back
- * towards the start just as far as it must (qa 2026-11-22_0107, error 5:
- * History's version menu ran up to 110 px past the right edge).
+ * at the button's start edge in the reading direction; where it doesn't fit
+ * there, it ends flush with the button's other edge, and where that doesn't
+ * fit either, it moves just as far as it must (qa 2026-11-22_0107, error 5:
+ * History's version menu ran up to 110 px past the right edge; qa
+ * 2026-11-22_0233: dropdown menus wider than their button).
  */
 
 /** The gap a menu keeps to the window's edges, in pixels. */
@@ -19,9 +21,10 @@ export interface MenuPlacementInput {
 }
 
 /** Where the menu's left edge goes, in pixels from the anchor's left edge:
- * left-aligned with the anchor (right-aligned right to left) when it fits,
- * else shifted until it keeps `MENU_MARGIN` from both edges; a menu wider
- * than the window starts at the margin. */
+ * left-aligned with the anchor (right-aligned right to left) when it keeps
+ * `MENU_MARGIN` from both window edges, else aligned with the anchor's
+ * other edge when that does, else shifted until it does; a menu wider than
+ * the window starts at the margin. */
 export const menuOffset = ({
   anchorLeft,
   anchorRight,
@@ -29,8 +32,13 @@ export const menuOffset = ({
   viewportWidth,
   rtl,
 }: MenuPlacementInput): number => {
-  const wanted = rtl ? anchorRight - menuWidth : anchorLeft;
   const last = viewportWidth - MENU_MARGIN - menuWidth;
+  const fits = (left: number) => left >= MENU_MARGIN && left <= last;
+  const atLeft = anchorLeft;
+  const atRight = anchorRight - menuWidth;
+  const [wanted, other] = rtl ? [atRight, atLeft] : [atLeft, atRight];
+  if (fits(wanted)) return wanted - anchorLeft;
+  if (fits(other)) return other - anchorLeft;
   const left = Math.max(MENU_MARGIN, Math.min(wanted, last));
   return left - anchorLeft;
 };

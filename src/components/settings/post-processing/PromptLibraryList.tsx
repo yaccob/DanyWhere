@@ -18,7 +18,8 @@ import { Alert } from "../../ui/Alert";
 import { Button } from "../../ui/Button";
 import { Input } from "../../ui/Input";
 import { PromptFrameText, PromptFrameTip } from "./PromptFrame";
-import { cancelOnEscape, followPointer } from "@/lib/dragCancel";
+import { followPointer } from "@/lib/dragCancel";
+import { cancelOnEscape } from "@/lib/escapeLayers";
 import {
   dropIndex,
   isNameTaken,

@@ -526,9 +526,6 @@ const UnderDefaults: React.FC<UnderDefaultsProps> = ({
               compact
               tone="neutral"
               className="shrink-0"
-              // As wide as the names, not as the narrow button; it opens
-              // towards the start, away from the edge the button is at.
-              menuClassName="end-0 w-max min-w-full max-w-64"
               options={following.map((profile) => ({
                 value: profile.id,
                 label: displayName(profile),
