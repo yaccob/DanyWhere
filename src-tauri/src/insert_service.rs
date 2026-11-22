@@ -1326,6 +1326,7 @@ mod macos {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::accessibility::testing::{with_choice, with_system_trusted, STATES};
 
     /// The menu title in `Info.plist` (`NSMenuItem` → `default`); the code
     /// reads it from the bundle, because the test builds (`DanyWhere Dev`,
@@ -2183,10 +2184,7 @@ mod tests {
     /// Default settings with "Paste Last Transcript" on `keys` and the
     /// user's choice set to `skipped`, nothing else changed.
     fn paste_last_on(keys: &str, skipped: bool) -> crate::settings::AppSettings {
-        let mut settings = crate::accessibility::testing::with_choice(
-            crate::settings::get_default_settings(),
-            skipped,
-        );
+        let mut settings = with_choice(crate::settings::get_default_settings(), skipped);
         settings
             .bindings
             .get_mut(PASTE_LAST_BINDING)
@@ -2197,7 +2195,6 @@ mod tests {
 
     #[test]
     fn a_new_paste_last_combination_is_checked_when_the_user_chose_to_go_without() {
-        use crate::accessibility::testing::{with_system_trusted, STATES};
         for (skipped, trusted) in STATES {
             let settings = paste_last_on("ctrl+shift+v", skipped);
             let expected = if skipped {
@@ -2219,7 +2216,6 @@ mod tests {
 
     #[test]
     fn the_service_follows_paste_last_when_the_user_chose_to_go_without() {
-        use crate::accessibility::testing::{with_system_trusted, STATES};
         for (skipped, trusted) in STATES {
             let settings = paste_last_on("ctrl+shift+v", skipped);
             let expected = if skipped {
@@ -2237,7 +2233,6 @@ mod tests {
 
     #[test]
     fn the_end_services_take_the_dictation_shortcuts_when_the_user_chose_to_go_without() {
-        use crate::accessibility::testing::{with_choice, with_system_trusted, STATES};
         for (skipped, trusted) in STATES {
             for inserts in [true, false] {
                 let mut settings = with_choice(crate::settings::get_default_settings(), skipped);
@@ -2253,7 +2248,6 @@ mod tests {
 
     #[test]
     fn the_default_shortcut_is_due_once_when_the_user_chose_to_go_without() {
-        use crate::accessibility::testing::{with_choice, with_system_trusted, STATES};
         for (skipped, trusted) in STATES {
             for set_once in [false, true] {
                 let mut settings = with_choice(crate::settings::get_default_settings(), skipped);

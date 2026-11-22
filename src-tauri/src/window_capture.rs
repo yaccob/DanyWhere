@@ -1262,6 +1262,7 @@ mod platform {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::accessibility::testing::{with_choice, with_system_trusted};
     use std::cell::Cell;
 
     /// The app in front as `capture_front` gets it: it records whether its
@@ -1283,7 +1284,6 @@ mod tests {
     /// [`title_source`] for the user's choice `skipped` and macOS answering
     /// `trusted`.
     fn source_for(skipped: bool, trusted: bool) -> TitleSource {
-        use crate::accessibility::testing::{with_choice, with_system_trusted};
         let settings = with_choice(crate::settings::get_default_settings(), skipped);
         with_system_trusted(trusted, || {
             title_source(&crate::accessibility::state(&settings))

@@ -287,8 +287,10 @@ pub fn paste_text_direct(enigo: &mut Enigo, text: &str) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::enigo_wanted;
+    use crate::accessibility::testing::{
+        settings_without_accessibility, with_choice, with_system_trusted, STATES,
+    };
     use crate::settings::get_default_settings;
-    use crate::shortcut::apply_no_accessibility_mode;
 
     #[test]
     fn enigo_is_set_up_by_default() {
@@ -299,14 +301,11 @@ mod tests {
     fn enigo_is_not_set_up_without_accessibility() {
         // Setting it up would make macOS prompt for the permission the user
         // chose to go without, on every launch.
-        let mut settings = get_default_settings();
-        apply_no_accessibility_mode(&mut settings);
-        assert!(!enigo_wanted(&settings));
+        assert!(!enigo_wanted(&settings_without_accessibility()));
     }
 
     #[test]
     fn enigo_follows_the_users_choice_whatever_macos_answers() {
-        use crate::accessibility::testing::{with_choice, with_system_trusted, STATES};
         for (skipped, trusted) in STATES {
             let settings = with_choice(get_default_settings(), skipped);
             assert_eq!(

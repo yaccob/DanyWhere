@@ -642,6 +642,7 @@ pub fn compose_append_text(text: String, keys: Vec<AppendKey>) -> AppendComposed
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::accessibility::testing::{with_choice, with_system_trusted, STATES};
     use crate::profiles::ProfileValues;
     use crate::settings::{get_default_settings, AppSettings};
     use AppendKey::*;
@@ -1160,7 +1161,6 @@ mod tests {
 
     #[test]
     fn a_dictation_sends_its_key_presses_unless_the_user_chose_to_go_without() {
-        use crate::accessibility::testing::{with_choice, with_system_trusted, STATES};
         let append = for_value(r"\s{Enter}");
         for (skipped, trusted) in STATES {
             let mut settings = with_choice(get_default_settings(), skipped);
