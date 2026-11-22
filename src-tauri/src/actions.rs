@@ -1,17 +1,16 @@
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 use crate::apple_intelligence;
-use crate::audio_feedback::{play_feedback_sound, play_feedback_sound_blocking, SoundType};
+use crate::audio_feedback::{play_feedback_sound_blocking, SoundType};
 use crate::audio_toolkit::VadPolicy;
 use crate::managers::audio::{recording_notice_code, AudioRecordingManager};
 use crate::managers::model::ModelManager;
 use crate::managers::transcription::policy::{live_decode, LiveDecode, ModelTraits};
-use crate::managers::transcription::StreamWorkKind;
 use crate::managers::transcription::TranscriptionManager;
 use crate::notices::{self, Notice, NoticeSource};
 use crate::settings::{AppSettings, OverlayStyle, APPLE_INTELLIGENCE_PROVIDER_ID};
 use crate::shortcut;
 use crate::tray::{set_tray_state, TrayIconState};
-use crate::utils::{self, show_recording_overlay, show_transcribing_overlay};
+use crate::utils::{self, show_recording_overlay};
 use log::{debug, error, warn};
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
@@ -899,7 +898,6 @@ pub fn stop_transcription(
         let stop_time = Instant::now();
         debug!("TranscribeAction::stop called for binding: {}", binding_id);
 
-        let rm = Arc::clone(&app.state::<Arc<AudioRecordingManager>>());
         let tm = Arc::clone(&app.state::<Arc<TranscriptionManager>>());
 
         // DanyWhere: the dictation's profile is chosen again now, by the
@@ -927,43 +925,21 @@ pub fn stop_transcription(
         let snapshot =
             crate::dictation_snapshot::take(app, end, binding_id, transcribed_with_end_values);
 
-        set_tray_state(app, TrayIconState::Transcribing);
-        // Stop should give immediate visual feedback. Live streaming can keep
-        // the larger panel, but it still switches from listening to a working
-        // spinner while the stream finalizes. Non-streaming paths use the
-        // compact transcribing pill (None no-ops in show_*).
-        // DanyWhere: the dictation's profile's style; the snapshot read
-        // whether a stream runs before it is finalized, so every later
-        // working state targets the same overlay that was shown for this
-        // transcription.
-        let use_streaming_overlay = snapshot.use_streaming_overlay;
-        if use_streaming_overlay {
-            tm.emit_stream_working(StreamWorkKind::Transcribing);
-        } else {
-            show_transcribing_overlay(app);
-        }
-
-        // Unmute before playing audio feedback so the stop sound is audible
-        rm.remove_mute();
-
-        // Play audio feedback for recording stop
-        play_feedback_sound(app, SoundType::Stop);
+        // DanyWhere: the rest of the dictation goes through its ports
+        // (`dictation_flow`): what shows and sounds now that the recording
+        // stopped, then the task that finishes it.
+        let ports = crate::dictation_flow::app_ports::AppPorts::new(app, &snapshot);
+        crate::dictation_flow::stopped(&snapshot, &ports);
 
         let binding_id = binding_id.to_string(); // Clone binding_id for the async task
 
-        // DanyWhere: the end shortcut it ended with, in the profile it ends
-        // with (`end_keys`, resolved in the snapshot).
-        log::info!("The recording ends with end shortcut {}", snapshot.end.id);
-        crate::send_context::decide_at_stop(app, snapshot.with_context);
-        // DanyWhere: the window this dictation ends in, for context from
-        // earlier dictations there (`dictation_context`). In the background.
-        crate::window_capture::begin_capture(&snapshot.settings, snapshot.session);
-
         tauri::async_runtime::spawn(crate::dictation_flow::finish_dictation(
-            app.clone(),
-            snapshot,
-            binding_id,
-            stop_time,
+            crate::dictation_flow::Dictation {
+                snapshot,
+                binding_id,
+                stop_time,
+            },
+            ports,
         ));
 
         debug!(
