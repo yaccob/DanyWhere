@@ -338,7 +338,7 @@ export const TryIt: React.FC<TryItProps> = ({
   };
   const { capturing, partial } = e.capture;
   const captureHint = captureHintKey(partial);
-  const keysLabel = keycapLabel(e.shortcut, os);
+  const keysLabel = keycapLabel(e.shortcut, os, t);
 
   /* ---------- what the glove says ---------- */
 

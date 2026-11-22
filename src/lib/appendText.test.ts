@@ -66,11 +66,11 @@ const cases: Array<[string, () => void]> = [
     () => {
       assert.equal(
         describeAppend([space, enter], t, "macos", "en"),
-        "Space, then the Enter key",
+        "Space, then the ↩ key",
       );
       assert.equal(
         describeAppend([space, enter], tDe, "macos", "de"),
-        "Leerzeichen, dann Taste Enter",
+        "Leerzeichen, dann Taste ↩",
       );
     },
   ],
@@ -102,24 +102,25 @@ const cases: Array<[string, () => void]> = [
   [
     "each key press is labelled as the app shows shortcuts on the system",
     () => {
-      const labels = (os: "macos" | "windows" | "linux") =>
+      const labels = (os: "macos" | "windows" | "linux", tr = t) =>
         (
           ["enter", "shift_enter", "cmd_enter", "ctrl_enter", "tab"] as const
-        ).map((key) => appendKeyLabel(key, os));
-      assert.deepEqual(labels("macos"), [
+        ).map((key) => appendKeyLabel(key, os, tr));
+      assert.deepEqual(labels("macos"), ["↩", "⇧↩", "⌘↩", "⌃↩", "⇥"]);
+      assert.deepEqual(labels("windows"), [
         "Enter",
-        "⇧ Enter",
-        "⌘ Enter",
-        "⌃ Enter",
+        "Shift+Enter",
+        "Win+Enter",
+        "Ctrl+Enter",
         "Tab",
       ]);
-      for (const os of ["windows", "linux"] as const) {
-        assert.deepEqual(
-          labels(os),
-          ["Enter", "Shift + Enter", "⊞ + Enter", "Ctrl + Enter", "Tab"],
-          os,
-        );
-      }
+      assert.deepEqual(labels("linux", tDe), [
+        "Eingabe",
+        "Umschalt+Eingabe",
+        "Super+Eingabe",
+        "Strg+Eingabe",
+        "Tab",
+      ]);
     },
   ],
   [
@@ -127,11 +128,11 @@ const cases: Array<[string, () => void]> = [
     () => {
       const cmd: AppendPart = { kind: "key", key: "cmd_enter" };
       const ctrl: AppendPart = { kind: "key", key: "ctrl_enter" };
-      assert.equal(describeAppend([cmd], t, "macos", "en"), "The ⌘ Enter key");
-      assert.equal(describeAppend([cmd], tDe, "macos", "de"), "Taste ⌘ Enter");
+      assert.equal(describeAppend([cmd], t, "macos", "en"), "The ⌘↩ key");
+      assert.equal(describeAppend([cmd], tDe, "macos", "de"), "Taste ⌘↩");
       assert.equal(
         describeAppend([space, ctrl], t, "windows", "en"),
-        "Space, then the Ctrl + Enter key",
+        "Space, then the Ctrl+Enter key",
       );
     },
   ],
@@ -145,12 +146,12 @@ const cases: Array<[string, () => void]> = [
       );
       assert.deepEqual(
         mac.map((option) => option.label),
-        ["No key press", "Enter", "⇧ Enter", "⌘ Enter", "⌃ Enter", "Tab"],
+        ["No key press", "↩", "⇧↩", "⌘↩", "⌃↩", "⇥"],
       );
       const windows = keyOptions(PC_KEYS, choice([]), tDe, "windows");
       assert.deepEqual(
         windows.map((option) => option.label),
-        ["Keine Taste", "Enter", "Shift + Enter", "Ctrl + Enter", "Tab"],
+        ["Keine Taste", "Eingabe", "Umschalt+Eingabe", "Strg+Eingabe", "Tab"],
       );
       assert.ok(windows.every((option) => !option.description));
     },
@@ -182,7 +183,7 @@ const cases: Array<[string, () => void]> = [
 
       const win = choice(["cmd_enter"], true);
       const winOptions = keyOptions(PC_KEYS, win, tDe, "windows");
-      assert.equal(winOptions[winOptions.length - 1].label, "⊞ + Enter");
+      assert.equal(winOptions[winOptions.length - 1].label, "Win+Eingabe");
       assert.equal(selectedKeyOption(win), KEPT_KEYS);
     },
   ],

@@ -28,16 +28,19 @@ const BINDINGS: Record<AppendKey, string> = {
 };
 
 /**
- * A key press as the app shows shortcuts on `os`: "⌘ Enter" on the Mac,
- * "Ctrl + Enter" elsewhere.
+ * A key press as the app shows shortcuts on `os`: "⌘↩" on the Mac,
+ * "Strg+Eingabe" elsewhere in German.
  */
-export const appendKeyLabel = (key: AppendKey, os: OSType): string =>
-  keycapLabel(BINDINGS[key], os);
+export const appendKeyLabel = (
+  key: AppendKey,
+  os: OSType,
+  t: Translate,
+): string => keycapLabel(BINDINGS[key], os, t);
 
 /** Several key presses in their order: "Tab, then Enter". */
 const keysLabel = (keys: AppendKey[], t: Translate, os: OSType): string =>
   keys
-    .map((key) => appendKeyLabel(key, os))
+    .map((key) => appendKeyLabel(key, os, t))
     .reduce((first, next) => t(`${PREFIX}.preview.then`, { first, next }));
 
 const partWords = (part: AppendPart, t: Translate, os: OSType): string => {
@@ -51,7 +54,9 @@ const partWords = (part: AppendPart, t: Translate, os: OSType): string => {
     case "tab":
       return t(`${PREFIX}.preview.tab`);
     case "key":
-      return t(`${PREFIX}.preview.key`, { key: appendKeyLabel(part.key, os) });
+      return t(`${PREFIX}.preview.key`, {
+        key: appendKeyLabel(part.key, os, t),
+      });
   }
 };
 
@@ -85,7 +90,10 @@ export const keyOptions = (
 ): DropdownOption[] => {
   const options: DropdownOption[] = [
     { value: NO_KEY, label: t(`${PREFIX}.keyNone`) },
-    ...offered.map((key) => ({ value: key, label: appendKeyLabel(key, os) })),
+    ...offered.map((key) => ({
+      value: key,
+      label: appendKeyLabel(key, os, t),
+    })),
   ];
   if (choice.kept) {
     options.push({

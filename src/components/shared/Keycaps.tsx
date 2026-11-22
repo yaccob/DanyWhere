@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import {
   bindingKeys,
   isOnlyModifiers,
@@ -38,7 +39,8 @@ export const Keycaps: React.FC<KeycapsProps> = ({
   lift = false,
   className = "",
 }) => {
-  const labels = keycapLabels(binding, osType);
+  const { t } = useTranslation();
+  const labels = keycapLabels(binding, osType, t);
   const state = pressed
     ? "translate-y-[3px] shadow-none bg-plum text-background border-plum"
     : partial
@@ -53,7 +55,7 @@ export const Keycaps: React.FC<KeycapsProps> = ({
     <span
       className={`inline-flex items-center gap-[4px] align-middle ${className}`}
       role="img"
-      aria-label={keycapLabel(binding, osType)}
+      aria-label={keycapLabel(binding, osType, t)}
     >
       {labels.map((label, i) => (
         <span
