@@ -129,6 +129,10 @@ impl Deliver for AppPorts {
         utils::paste_with_values(text, self.app.clone(), values, append_text)
     }
 
+    fn leave_on_clipboard(&self, text: &str) -> Result<(), String> {
+        crate::clipboard::leave_on_clipboard(&self.app, text)
+    }
+
     fn deliver_to_waiting_call(&self, text: &str) -> bool {
         crate::insert_service::deliver_to_waiting_call(text)
     }

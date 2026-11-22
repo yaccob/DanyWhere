@@ -27,6 +27,7 @@ use crate::managers::history::HistoryManager;
 use crate::managers::transcription::Transcription;
 use crate::notices::{Notice, NoticeCode, NoticeSource};
 use crate::profile_redo::{ForInsert, Working};
+use crate::profiles::ProfileValues;
 use crate::settings::AppSettings;
 use crate::tray::TrayIconState;
 use crate::utils::{self, PasteOutcome};
@@ -36,7 +37,7 @@ pub(crate) mod app_ports;
 mod fakes;
 pub mod ports;
 
-use ports::{DictationPorts, Overlay, Recording, Report, Session};
+use ports::{Deliver, DictationPorts, Overlay, Recording, Report, Session};
 
 /// A dictation whose recording was just stopped.
 pub struct Dictation {
@@ -469,6 +470,38 @@ fn pasted_dictation_notice(
     })
 }
 
+/// DanyWhere: gets a dictation's `text` where `delivery::delivery_for` says
+/// for `settings`, the dictation's with the values it goes with: pasted
+/// with the paste method of `values` and its "Append" value `append_text`;
+/// or, where DanyWhere doesn't paste (without Accessibility, or pasting
+/// off), left as a paste with method "None" leaves it: on the clipboard as
+/// `with_append` (its "Append" text without key presses) when
+/// `delivery::copies_dictation_to_clipboard` says so, else only in the
+/// History, waiting for the "Insert Last Dictation" service where it does.
+/// Until 2026-11-23 the paste method alone decided, so a profile with ⌘V
+/// tried to paste without Accessibility and failed.
+fn deliver_text<P: Deliver>(
+    ports: &P,
+    settings: &AppSettings,
+    service_available: bool,
+    text: String,
+    values: Option<ProfileValues>,
+    append_text: &str,
+    with_append: &str,
+) -> Result<PasteOutcome, String> {
+    match crate::delivery::delivery_for(settings) {
+        crate::delivery::Delivery::Paste => ports.paste(text, values, append_text),
+        crate::delivery::Delivery::Clipboard => {
+            log::info!("Not pasting this dictation: without Accessibility, or pasting is off.");
+            if crate::delivery::copies_dictation_to_clipboard(settings, service_available) {
+                ports.leave_on_clipboard(with_append)?;
+            }
+            // Delivered as the settings say, as a paste with method "None".
+            Ok(PasteOutcome::Pasted)
+        }
+    }
+}
+
 /// What the paste thread delivers ([`deliver_dictation`]).
 struct Delivery {
     /// The dictation's snapshot: its settings, profile values, end, session
@@ -562,17 +595,27 @@ fn deliver_dictation<P: DictationPorts>(ports: &P, delivery: Delivery) {
     let text_for_service = final_text.clone();
     // DanyWhere: with its end shortcut's "Append" text.
     let service_text = crate::append_text::text_to_paste(text_for_service, &append_text);
+    // DanyWhere: the settings the text goes
+    // with: the dictation's, with the values
+    // of the profile it goes in with (the
+    // redo's for the application in front).
+    let settings = crate::app_profiles::with_values(&snapshot.settings, dictation_values.as_ref());
     // DanyWhere: "Copy Last Transcript"
     // during this dictation puts it on the
     // clipboard instead (below).
-    // Strand C3 decides here whether the text is pasted at all
-    // (`delivery::delivery_for`); today the paste method inside
-    // `Deliver::paste` does.
     let pasted = if ports.copies_instead_of_pasting(session) {
         log::info!("Copy Last Transcript asked for this dictation; not pasting it.");
         Ok(PasteOutcome::Pasted)
     } else {
-        ports.paste(final_text, dictation_values, &append_text)
+        deliver_text(
+            ports,
+            &settings,
+            service_available,
+            final_text,
+            dictation_values,
+            &append_text,
+            &service_text,
+        )
     };
     let (outcome, notice) = match pasted {
         Ok(PasteOutcome::Pasted) => {
@@ -637,9 +680,9 @@ fn deliver_dictation<P: DictationPorts>(ports: &P, delivery: Delivery) {
         (true, None, Some(reason)) => ports.overlay(Overlay::OnClipboard(reason)),
         // DanyWhere: says where the text waits
         // when it was not pasted, with the
-        // dictation's settings.
+        // settings it went with.
         (true, None, None) => ports.overlay(Overlay::AfterDictation(
-            crate::delivery::overlay_after_dictation(&snapshot.settings, service_available),
+            crate::delivery::overlay_after_dictation(&settings, service_available),
         )),
         (false, Some(notice), _) => ports.raise_without_overlay(notice),
         (false, None, _) => {}
@@ -657,8 +700,9 @@ mod tests {
     };
     use super::ports::{History, Overlay, Recording};
     use super::{finish_dictation, pasted_dictation_notice, stopped, Dictation};
+    use crate::accessibility::testing::settings_without_accessibility;
     use crate::actions::TranscriptionOutcome;
-    use crate::delivery::DictationEnd;
+    use crate::delivery::{DictationEnd, DictationNotice};
     use crate::dictation_context::CapturedWindow;
     use crate::dictation_key_inserts::ClipboardReason;
     use crate::dictation_snapshot::{build, DictationSnapshot, SnapshotInputs};
@@ -666,7 +710,7 @@ mod tests {
     use crate::notices::{Notice, NoticeCode, NoticeSource};
     use crate::profile_redo::{ForInsert, Working};
     use crate::profiles::{ensure_profiles, ProfileValues, DEFAULT_PROFILE_ID};
-    use crate::settings::{get_default_settings, AppSettings, PasteMethod};
+    use crate::settings::{get_default_settings, AppSettings, ClipboardHandling, PasteMethod};
     use crate::tray::TrayIconState;
     use crate::utils::PasteOutcome;
     use std::time::{Duration, Instant};
@@ -1394,6 +1438,131 @@ mod tests {
         }
     }
 
+    // ---- Without Accessibility ---------------------------------------------
+
+    /// How long the overlay says where a waiting text is, by default.
+    const NOTICE_TIME: Duration = Duration::from_millis(2500);
+
+    /// What the user notices of the end of a dictation from the paste thread
+    /// on: the notices, the overlay and the outcome.
+    fn noticed(events: &[Event]) -> Vec<Event> {
+        after(events, &Event::SpawnPaste)
+            .into_iter()
+            .filter(|event| {
+                matches!(
+                    event,
+                    Event::Raise(_)
+                        | Event::RaiseWithoutOverlay(_)
+                        | Event::Overlay(_)
+                        | Event::Complete(..)
+                )
+            })
+            .collect()
+    }
+
+    /// Where a text waits without Accessibility: for the "Insert Last
+    /// Dictation" service, or on the clipboard where there is none.
+    fn waits_without_accessibility(service_available: bool) -> DictationNotice {
+        if service_available {
+            DictationNotice::ReadyToInsert
+        } else {
+            DictationNotice::OnClipboard
+        }
+    }
+
+    // Onboarding's "Continue without Accessibility" sets the paste method
+    // to "None", and only that kept a dictation from pasting. Since profiles
+    // the paste method is a profile value, and a profile can set ⌘V again.
+    #[test]
+    fn without_accessibility_a_paste_method_that_sends_keys_does_not_fail_the_dictation() {
+        let mut differ = Vec::new();
+        let mut cases = 0;
+        for service_available in [true, false] {
+            // As with "None": typed, and the overlay says where it waits.
+            let expected = vec![
+                Event::Overlay(Overlay::AfterDictation(Some((
+                    waits_without_accessibility(service_available),
+                    NOTICE_TIME,
+                )))),
+                Event::Complete(TranscriptionOutcome::Typed, SAMPLES),
+            ];
+            for paste_method in [
+                PasteMethod::None,
+                PasteMethod::CtrlV,
+                PasteMethod::Direct,
+                PasteMethod::CtrlShiftV,
+                PasteMethod::ShiftInsert,
+            ] {
+                cases += 1;
+                let mut settings = settings_without_accessibility();
+                settings.paste_method = paste_method;
+                let ports = FakePorts::new(Script {
+                    input_simulation: false,
+                    service_available,
+                    ..Script::default()
+                });
+                finish(&ports, snapshot_with(settings));
+                let got = noticed(&ports.take_events());
+                if got != expected {
+                    differ.push(format!(
+                        "{paste_method:?}, service {service_available}: {got:?}"
+                    ));
+                }
+            }
+        }
+        assert!(
+            differ.is_empty(),
+            "{} of {cases} cases end otherwise:\n{}",
+            differ.len(),
+            differ.join("\n")
+        );
+    }
+
+    #[test]
+    fn without_accessibility_the_text_waits_where_pasting_off_leaves_it() {
+        for service_available in [true, false] {
+            let left = if service_available {
+                // The service inserts it; the clipboard stays as it was.
+                Vec::new()
+            } else {
+                // With its "Append" text, as the service would insert it.
+                vec![Event::LeftOnClipboard("hello (sent)".to_string())]
+            };
+            let expected = [
+                left,
+                vec![
+                    Event::ClearNotice,
+                    Event::SoundAfterDictation(pasted_end()),
+                    Event::Overlay(Overlay::AfterDictation(Some((
+                        waits_without_accessibility(service_available),
+                        NOTICE_TIME,
+                    )))),
+                    Event::Tray(TrayIconState::Idle),
+                    Event::Complete(TranscriptionOutcome::Typed, SAMPLES),
+                    Event::Finished,
+                ],
+            ]
+            .concat();
+            for paste_method in [PasteMethod::None, PasteMethod::CtrlV] {
+                let mut settings =
+                    with_end(settings_without_accessibility(), PLAIN, " (sent)", false);
+                settings.paste_method = paste_method;
+                let ports = FakePorts::new(Script {
+                    input_simulation: false,
+                    service_available,
+                    ..Script::default()
+                });
+                finish(&ports, snapshot_with(settings));
+                // Neither redone for the app in front nor pasted.
+                assert_eq!(
+                    after(&ports.take_events(), &Event::SpawnPaste),
+                    expected,
+                    "{paste_method:?}, service {service_available}"
+                );
+            }
+        }
+    }
+
     #[test]
     fn a_newer_session_keeps_the_overlay_and_the_tray() {
         // With a notice: it goes to the tray and footer only.
@@ -1531,21 +1700,53 @@ mod tests {
             redo: Some(redo(Some("hello"), true)),
             ..Script::default()
         });
-        finish(&ports, snapshot);
+        finish(&ports, snapshot.clone());
         assert!(ports
             .take_events()
             .contains(&Event::Raise(notice(NoticeCode::PostProcessFailed))));
+
+        // That profile doesn't paste but copies: the text goes as it says,
+        // and the overlay says where it waits.
+        let mut copying = other.clone();
+        copying.paste_method = PasteMethod::None;
+        copying.clipboard_handling = ClipboardHandling::CopyToClipboard;
+        let ports = FakePorts::new(Script {
+            redo: Some(ForInsert {
+                values: copying,
+                ..redo(None, false)
+            }),
+            ..Script::default()
+        });
+        finish(&ports, snapshot);
+        let events = ports.take_events();
+        assert!(events.contains(&Event::LeftOnClipboard("hello (other)".to_string())));
+        assert!(!events
+            .iter()
+            .any(|event| matches!(event, Event::Paste { .. })));
+        assert_eq!(
+            noticed(&events),
+            vec![
+                Event::Overlay(Overlay::AfterDictation(Some((
+                    DictationNotice::OnClipboard,
+                    NOTICE_TIME
+                )))),
+                Event::Complete(TranscriptionOutcome::Typed, SAMPLES),
+            ]
+        );
     }
 
     #[test]
     fn the_dictations_own_profile_decides_how_it_is_pasted_not_the_one_in_use() {
-        // The profile in use pastes with ⌘V and appends nothing; the
-        // dictation's own "mail" doesn't paste and appends " (mail)".
+        // The profile in use pastes with ⌘V, copies nothing and appends
+        // nothing; the dictation's own "mail" doesn't paste, copies and
+        // appends " (mail)".
         let mut stored = get_default_settings();
         ensure_profiles(&mut stored);
         assert_eq!(stored.paste_method, PasteMethod::CtrlV);
+        assert_eq!(stored.clipboard_handling, ClipboardHandling::DontModify);
         let mut mail = ProfileValues::from_settings(&stored);
         mail.paste_method = PasteMethod::None;
+        mail.clipboard_handling = ClipboardHandling::CopyToClipboard;
         mail.end_keys
             .iter_mut()
             .find(|end| end.id == PLAIN)
@@ -1565,11 +1766,22 @@ mod tests {
             profile_id: "mail".to_string(),
             end_id: PLAIN.to_string(),
         }));
-        // Not pasted into the application in front, so not redone for it;
-        // the paste gets mail's values (no paste method) and append text.
+        // Not pasted into the application in front, so not redone for it:
+        // on the clipboard with mail's append text, and the overlay says so.
         assert_eq!(
-            after(&events, &Event::SpawnPaste)[..2],
-            [paste("hello", &mail, " (mail)"), Event::ClearNotice]
+            after(&events, &Event::SpawnPaste),
+            vec![
+                Event::LeftOnClipboard("hello (mail)".to_string()),
+                Event::ClearNotice,
+                Event::SoundAfterDictation(pasted_end()),
+                Event::Overlay(Overlay::AfterDictation(Some((
+                    DictationNotice::OnClipboard,
+                    NOTICE_TIME
+                )))),
+                Event::Tray(TrayIconState::Idle),
+                Event::Complete(TranscriptionOutcome::Typed, SAMPLES),
+                Event::Finished,
+            ]
         );
     }
 

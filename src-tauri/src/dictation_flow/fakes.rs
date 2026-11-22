@@ -90,6 +90,12 @@ pub struct Script {
     pub spawn_fails: bool,
     /// The build offers the "Insert Last Dictation" service, as on macOS.
     pub service_available: bool,
+    /// DanyWhere may send key presses: the app sets up Enigo only with
+    /// Accessibility. Without it a paste that sends keys fails, as in the
+    /// app ("Enigo state not initialized").
+    pub input_simulation: bool,
+    /// What putting the text on the clipboard gives.
+    pub clipboard: Result<(), String>,
 }
 
 impl Default for Script {
@@ -116,6 +122,8 @@ impl Default for Script {
             redo_shows: Vec::new(),
             spawn_fails: false,
             service_available: true,
+            input_simulation: true,
+            clipboard: Ok(()),
         }
     }
 }
@@ -155,7 +163,11 @@ pub enum Event {
         append_text: String,
     },
     ServiceInserted(String),
+    /// "Copy Last Transcript", or an app that missed the shortcut, put the
+    /// text on the clipboard.
     PutOnClipboard(String),
+    /// The text was not pasted and was left on the clipboard instead.
+    LeftOnClipboard(String),
     Tray(TrayIconState),
     Overlay(Overlay),
     StopSound,
@@ -397,12 +409,24 @@ impl Deliver for FakePorts {
         values: Option<ProfileValues>,
         append_text: &str,
     ) -> Result<PasteOutcome, String> {
+        let sends_keys = values
+            .as_ref()
+            .is_some_and(|values| crate::clipboard::sends_keys(values.paste_method));
         self.record(Event::Paste {
             text,
             values,
             append_text: append_text.to_string(),
         });
-        self.script().paste.clone()
+        let script = self.script();
+        if sends_keys && !script.input_simulation {
+            return Err("Enigo state not initialized".to_string());
+        }
+        script.paste.clone()
+    }
+
+    fn leave_on_clipboard(&self, text: &str) -> Result<(), String> {
+        self.record(Event::LeftOnClipboard(text.to_string()));
+        self.script().clipboard.clone()
     }
 
     fn deliver_to_waiting_call(&self, text: &str) -> bool {

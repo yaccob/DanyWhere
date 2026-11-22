@@ -16,7 +16,8 @@ use tauri_plugin_clipboard_manager::ClipboardExt;
 use crate::utils::{is_gnome_wayland, is_kde_wayland, is_wayland};
 
 /// Serializes pastes: overlapping ones would restore each other's transcript as
-/// the user's clipboard. Only taken by `paste`, which never runs on the main thread.
+/// the user's clipboard. Only taken by `paste` and, DanyWhere, by
+/// `leave_on_clipboard`, which never run on the main thread.
 static PASTE_LOCK: Mutex<()> = Mutex::new(());
 
 /// Runs `f` with the shared Enigo on the main thread (macOS TIS APIs require it)
@@ -887,7 +888,7 @@ pub enum PasteOutcome {
 }
 
 /// Whether `paste_method` works by sending keystrokes to the focused window.
-fn sends_keys(paste_method: PasteMethod) -> bool {
+pub(crate) fn sends_keys(paste_method: PasteMethod) -> bool {
     match paste_method {
         PasteMethod::Direct
         | PasteMethod::CtrlV
@@ -942,6 +943,16 @@ pub fn paste_with_values(
         log::warn!("Paste into an elevated window failed: {e}");
     }
     Ok(PasteOutcome::Blocked)
+}
+
+/// DanyWhere: puts a dictation's `text`, its "Append" text included, on the
+/// clipboard without pasting it, where DanyWhere doesn't paste
+/// (`delivery::delivery_for`): what a paste with method "None" does when
+/// the text is to be copied. Takes its turn with pastes, so a paste running
+/// meanwhile doesn't put its saved clipboard back over it.
+pub fn leave_on_clipboard(app_handle: &AppHandle, text: &str) -> Result<(), String> {
+    let _paste = PASTE_LOCK.lock().unwrap_or_else(PoisonError::into_inner);
+    write_text_to_clipboard(app_handle, text)
 }
 
 fn paste_as_configured(
