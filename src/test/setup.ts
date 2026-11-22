@@ -14,6 +14,12 @@ mock.module("@/bindings", () => ({
   events: bindings.events,
 }));
 mock.module("@/i18n", () => testI18n);
+// Modules that use Vite's `import.meta.glob`, which bun doesn't have, get a
+// stand-in here (`src/i18n/index.ts` above). The release notes: none.
+mock.module("@/components/whats-new/releaseNotes", () => ({
+  findReleaseNoteToShow: () => null,
+  findLatestReleaseNote: () => null,
+}));
 
 // Loaded only now, so they see the stand-ins above.
 const { cleanup } = await import("@testing-library/react");

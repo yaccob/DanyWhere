@@ -42,6 +42,16 @@ const collect = (
   }
 };
 
+/** Whether `element` and every element around it show. testing-library's
+ * queries can't tell, since happy-dom applies no stylesheet: filter what
+ * they find with this. */
+export const isVisible = (element: Element): boolean => {
+  for (let node: Element | null = element; node; node = node.parentElement) {
+    if (isHidden(node)) return false;
+  }
+  return true;
+};
+
 /** The visible text of `root`, piece by piece, without tooltips. */
 export const visibleTexts = (root: Node = document.body): string[] => {
   const texts: string[] = [];
