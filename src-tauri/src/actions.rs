@@ -833,11 +833,12 @@ impl ShortcutAction for TranscribeAction {
         // DanyWhere: from two profiles on, the overlay names the dictation's
         // profile with the glyph of choosing it by application.
         crate::overlay::set_dictation_profile(app, dictation_profile);
-        // DanyWhere: and a speech bubble while the end it would take now, its
-        // start shortcut's default end (`end_keys`), sends context.
-        let expected_end = crate::end_keys::default_end(
+        // DanyWhere: and a speech bubble while the end it is expected to
+        // take (`end_keys::expected_end`) sends context.
+        let expected_end = crate::end_keys::expected_end(
             &crate::app_profiles::dictation_profile_and_values(app).1,
             &binding_id,
+            settings.shortcut_activation,
         );
         let expected_post_process = crate::app_profiles::effective_post_process(
             expected_end.post_process,
@@ -957,7 +958,7 @@ impl ShortcutAction for TranscribeAction {
             app,
             binding_id,
             shortcut_str,
-            &crate::end_keys::EndChoice::DefaultOf(binding_id.to_string()),
+            &crate::end_keys::EndChoice::Start(binding_id.to_string()),
         );
     }
 }
@@ -1041,7 +1042,7 @@ pub fn stop_transcription(
         // whether earlier dictations go along. A dictation profile other than
         // the active one decides with its own switch whether to post-process
         // (`app_profiles`).
-        let end = crate::end_keys::resolve(&profile_values, end);
+        let end = crate::end_keys::resolve(&profile_values, end, &binding_id);
         log::info!("The recording ends with end shortcut {}", end.id);
         let post_process = crate::app_profiles::effective_post_process(
             end.post_process,

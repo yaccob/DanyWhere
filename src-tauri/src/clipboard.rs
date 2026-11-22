@@ -904,9 +904,9 @@ fn sends_keys(paste_method: PasteMethod) -> bool {
 #[allow(dead_code)]
 pub fn paste(text: String, app_handle: AppHandle) -> Result<PasteOutcome, String> {
     // DanyWhere: the values of the dictation in progress, if any, and the
-    // "Append" text of their dictation shortcut's default end.
+    // "Append" text of the end a text takes that no end chose.
     let values = crate::app_profiles::dictation_values();
-    let append_text = crate::end_keys::plain_end(&values.clone().unwrap_or_else(|| {
+    let append_text = crate::end_keys::fallback_end(&values.clone().unwrap_or_else(|| {
         crate::profiles::ProfileValues::from_settings(&crate::settings::get_settings(&app_handle))
     }))
     .append_text;

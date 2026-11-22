@@ -388,16 +388,16 @@
         "pressKeys": "Naciśnij klawisze...",
         "bindings": {
           "transcribe": {
-            "name": "Skrót transkrypcji",
-            "description": "Skrót klawiaturowy do nagrywania i transkrypcji głosu."
+            "name": "Skrót rozpoczynający",
+            "description": "Rozpoczyna nagranie. O tym, jak się kończy, decydują skróty kończące, a przy przytrzymaniu „Zachowanie skrótu”."
           },
           "cancel": {
             "name": "Skrót anulowania",
             "description": "Skrót klawiaturowy do anulowania bieżącego nagrywania."
           },
           "transcribe_with_post_process": {
-            "name": "Skrót postprocessingu",
-            "description": "Opcjonalnie: Dedykowany skrót klawiszowy, który zawsze stosuje postprocessing AI do transkrypcji."
+            "name": "Drugi skrót rozpoczynający",
+            "description": "Opcjonalnie: druga kombinacja klawiszy, która rozpoczyna nagranie. Fabrycznie skrót kończący z tą samą kombinacją przetwarza tekst. Zajęta tylko wtedy, gdy przetwarzanie jest włączone."
           },
           "paste_last_transcript": {
             "name": "Wklej ostatnią transkrypcję",
@@ -444,16 +444,16 @@
       },
       "shortcutActivation": {
         "title": "Zachowanie skrótu",
-        "description": "Wybierz, jak skrót transkrypcji rozpoczyna i zatrzymuje nagrywanie.",
+        "description": "Wybierz, jak skrót rozpoczynający rozpoczyna i kończy nagranie.",
         "options": {
           "holdOrToggle": "Automatycznie",
           "pushToTalk": "Przytrzymaj",
           "toggle": "Przełączaj"
         },
         "descriptions": {
-          "hold_or_toggle": "Przytrzymaj, aby nagrywać, lub dotknij, aby przełączyć",
+          "hold_or_toggle": "Przytrzymaj, aby nagrywać, lub dotknij, aby rozpocząć; potem nagranie zatrzymuje skrót kończący",
           "push_to_talk": "Nagrywa, dopóki trzymasz skrót",
-          "toggle": "Dotknij skrótu, aby rozpocząć nagrywanie, dotknij ponownie, aby zatrzymać"
+          "toggle": "Dotknij, aby rozpocząć nagrywanie; ponowne dotknięcie zatrzymuje je tylko wtedy, gdy skrót kończący ma tę samą kombinację"
         }
       },
       "insertService": {
@@ -475,32 +475,31 @@
     },
     "endKeys": {
       "title": "Skróty kończące",
-      "description": "Jak kończy się nagranie i co dalej: każdy skrót kończący określa, co zostanie dołączone, czy tekst zostanie przetworzony i czy wcześniejsze dyktowania zostaną wysłane jako kontekst.",
-      "builtin": {
-        "plain": "Zwykle",
-        "post_process": "Przetwórz"
-      },
+      "description": "Jak kończy się nagranie i co dalej. Każdy skrót kończący ma własną kombinację klawiszy, zajętą tylko podczas nagrywania, i określa, co zostanie dołączone, czy tekst zostanie przetworzony i czy wcześniejsze dyktowania zostaną wysłane jako kontekst. Skrót kończący może mieć kombinację klawiszy skrótu rozpoczynającego: ponowne naciśnięcie tego skrótu rozpoczynającego kończy wtedy nagranie w ten sposób.",
       "name": "Nazwa",
-      "noShortcut": "Brak skrótu",
-      "shortcutHint": "Jego własny skrót kończy nagranie w ten sposób. Jest zajęty tylko podczas nagrywania.",
-      "clearShortcut": "Usuń skrót",
+      "shortcutHint": "Naciśnięcie tej kombinacji podczas nagrywania kończy nagranie w ten sposób. Jest zajęta tylko podczas nagrywania.",
+      "sameAsStart": "Ta sama kombinacja co „{{start}}”: ponowne naciśnięcie podczas nagrywania kończy nagranie w ten sposób.",
       "append": "Dołącz",
       "appendDescription": "Dołączane do dyktowania, które kończy się w ten sposób: tekst, a potem wybrane naciśnięcie klawisza. W tekście \\s to spacja, \\n nowy wiersz, \\t tabulator, a \\\\ ukośnik wsteczny; wszystko inne jest dołączane tak, jak zostało wpisane. Naciśnięcie klawisza jest wysyłane tylko wtedy, gdy tekst jest wklejany.",
+      "postProcess": "Przetwórz",
       "sendContext": "Wysyłaj kontekst",
       "sendContextHint": "Tylko z przetwarzaniem: wcześniejsze dyktowania z tego samego okna są wysyłane jako kontekst.",
       "add": "Dodaj skrót kończący",
-      "newName": "Nowy skrót kończący",
+      "addPressKeys": "Naciśnij kombinację dla nowego skrótu kończącego",
       "delete": "Usuń {{name}}",
-      "inUse": "Skrót rozpoczynający domyślnie nim się kończy; najpierw wybierz inne domyślne zakończenie.",
-      "defaultEnd": {
-        "title": "Domyślne zakończenie dla {{shortcut}}",
-        "description": "Jak drugie naciśnięcie albo puszczenie przytrzymanego skrótu kończy nagranie."
+      "lastOne": "Jeden skrót kończący musi zostać, aby nagranie zawsze dało się zakończyć.",
+      "held": "{{shortcut}} przytrzymany",
+      "holdEnds": {
+        "title": "Przy przytrzymaniu",
+        "description": "Jak puszczenie przytrzymanego skrótu rozpoczynającego kończy nagranie."
       },
-      "linuxNoShortcuts": "W Linuksie skróty klawiszowe skrótów kończących nie są zajmowane; kończą one nagranie tylko jako domyślne zakończenie.",
+      "linuxNoShortcuts": "W Linuksie kombinacje klawiszy skrótów kończących nie są zajmowane podczas nagrywania. Nagranie kończy się tam po puszczeniu przytrzymanego skrótu rozpoczynającego albo po ponownym naciśnięciu skrótu rozpoczynającego, którego kombinację ma któryś skrót kończący.",
       "errors": {
         "save": "Nie udało się zapisać skrótów kończących: {{error}}",
-        "needsName": "Każdy skrót kończący potrzebuje nazwy.",
-        "shortcutTwice": "Dwa skróty kończące nie mogą mieć tego samego skrótu."
+        "needsShortcut": "Każdy skrót kończący potrzebuje kombinacji klawiszy.",
+        "shortcutTwice": "Dwa skróty kończące nie mogą mieć tego samego skrótu.",
+        "last": "Ostatniego skrótu kończącego nie można usunąć: nagranie zawsze musi dać się zakończyć.",
+        "cannotEnd": "W Linuksie nagrania nie dałoby się już zakończyć: zachowaj skrót kończący z kombinacją skrótu rozpoczynającego albo wybierz „Przytrzymaj”."
       }
     },
     "profiles": {
@@ -1322,7 +1321,7 @@
     "profileView": {
       "fields": {
         "shortcuts": "Skróty klawiszowe",
-        "defaultEnds": "Domyślne zakończenia",
+        "holdEnds": "Przy przytrzymaniu",
         "selectedModel": "Model mowy",
         "providers": "Adres i format dostawcy",
         "activePrompts": "Aktywne polecenia",

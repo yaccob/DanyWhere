@@ -5,6 +5,7 @@ import { MicrophoneSelector } from "../MicrophoneSelector";
 import { ChannelSelector } from "../ChannelSelector";
 import { ShortcutInput } from "../ShortcutInput";
 import { EndKeysSettings } from "../end-keys/EndKeysSettings";
+import { HoldEndsSetting } from "../end-keys/HoldEndsSetting";
 import { SettingsGroup } from "../../ui/SettingsGroup";
 import { OutputDeviceSelector } from "../OutputDeviceSelector";
 import { ShortcutActivationSetting } from "../ShortcutActivation";
@@ -17,6 +18,7 @@ import { ModelSettingsCard } from "./ModelSettingsCard";
 import { PreferredLanguages } from "../PreferredLanguages";
 import { ChineseScriptSetting } from "../ChineseScript";
 import { isChinese } from "@/lib/utils/languageSuggestions";
+import { holdPossible } from "@/lib/endKeys";
 // DanyWhere (strand E2): each profile value with its chain and the
 // profiles that deviate from it.
 import { ScopedSetting } from "../profiles/scope/ScopedSetting";
@@ -38,6 +40,13 @@ export const GeneralSettings: React.FC = () => {
         <ScopedSetting field="shortcut_activation">
           <ShortcutActivationSetting descriptionMode="tooltip" grouped={true} />
         </ScopedSetting>
+        {/* DanyWhere: how releasing a held start shortcut ends the
+            recording, wherever it can be held (end_keys.rs). */}
+        {holdPossible(getSetting("shortcut_activation")) && (
+          <ScopedSetting field="hold_ends">
+            <HoldEndsSetting />
+          </ScopedSetting>
+        )}
         {/* DanyWhere: the two switches of the mode without Accessibility
             are in Application settings › Accessibility. */}
         {/* DanyWhere: without Accessibility, on macOS, the paste shortcut is

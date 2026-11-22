@@ -158,9 +158,8 @@ pub struct ProfileValues {
     pub bindings: HashMap<String, crate::settings::ShortcutBinding>,
     /// The end shortcuts (`end_keys`), each with a stable id.
     pub end_keys: Vec<crate::end_keys::EndKey>,
-    /// The default end per start shortcut (`default_ends`), entry by binding
-    /// id.
-    pub default_ends: HashMap<String, String>,
+    /// The hold end per start shortcut (`hold_ends`), one value as a whole.
+    pub hold_ends: HashMap<String, crate::end_keys::HoldEnd>,
 }
 
 impl Default for ProfileValues {
@@ -222,7 +221,7 @@ impl ProfileValues {
             long_form_chunking: settings.long_form_chunking,
             bindings: settings.bindings.clone(),
             end_keys: settings.end_keys.clone(),
-            default_ends: settings.default_ends.clone(),
+            hold_ends: settings.hold_ends.clone(),
         }
     }
 
@@ -251,7 +250,7 @@ impl ProfileValues {
         settings.custom_filler_words = self.custom_filler_words.clone();
         settings.bindings = self.bindings.clone();
         settings.end_keys = self.end_keys.clone();
-        settings.default_ends = self.default_ends.clone();
+        settings.hold_ends = self.hold_ends.clone();
         settings.shortcut_activation = self.shortcut_activation;
         settings.audio_feedback = self.audio_feedback;
         settings.audio_feedback_volume = self.audio_feedback_volume;
@@ -943,10 +942,7 @@ mod tests {
                 bindings
             },
             end_keys: crate::end_keys::builtin(r"\n\n", true),
-            default_ends: HashMap::from([(
-                "transcribe".to_string(),
-                crate::end_keys::POST_PROCESS_ID.to_string(),
-            )]),
+            hold_ends: crate::end_keys::builtin_holds(r"\n\n", true),
         }
     }
 
@@ -1489,10 +1485,7 @@ mod tests {
         switch_to(&mut s, "work", false).expect("switched");
         assert_eq!(s.bindings["transcribe"].current_binding, "option+space");
         assert_eq!(s.end_keys, crate::end_keys::builtin(r"\n\n", true));
-        assert_eq!(
-            s.default_ends.get("transcribe").map(String::as_str),
-            Some(crate::end_keys::POST_PROCESS_ID)
-        );
+        assert_eq!(s.hold_ends, crate::end_keys::builtin_holds(r"\n\n", true));
         switch_to(&mut s, DEFAULT_PROFILE_ID, false).expect("switched back");
         assert_eq!(s.bindings["transcribe"].current_binding, own);
         assert_eq!(s.end_keys, crate::end_keys::default_end_keys());
@@ -1507,7 +1500,7 @@ mod tests {
                 "{gone} is still a profile value"
             );
         }
-        for kept in ["bindings", "end_keys", "default_ends"] {
+        for kept in ["bindings", "end_keys", "hold_ends"] {
             assert!(stored.get(kept).is_some(), "{kept} is no profile value");
         }
     }

@@ -388,16 +388,16 @@
         "pressKeys": "Press keys...",
         "bindings": {
           "transcribe": {
-            "name": "Transcribe Shortcut",
-            "description": "The keyboard shortcut to record and transcribe your voice."
+            "name": "Start Shortcut",
+            "description": "Starts a recording. How it ends is up to the end shortcuts and, when held, to “Shortcut Behavior”."
           },
           "cancel": {
             "name": "Cancel Shortcut",
             "description": "The keyboard shortcut to cancel the current recording."
           },
           "transcribe_with_post_process": {
-            "name": "Post-Processing Hotkey",
-            "description": "Optional: A dedicated hotkey that always applies AI post-processing to your transcription."
+            "name": "Second Start Shortcut",
+            "description": "Optional: a second combination that starts a recording. Out of the box, an end shortcut with the same combination post-processes the text. Taken only while post-processing is on."
           },
           "paste_last_transcript": {
             "name": "Paste Last Transcript",
@@ -444,16 +444,16 @@
       },
       "shortcutActivation": {
         "title": "Shortcut Behavior",
-        "description": "Choose how the transcribe shortcut starts and stops recording.",
+        "description": "Choose how a start shortcut starts and ends a recording.",
         "options": {
           "holdOrToggle": "Auto",
           "pushToTalk": "Hold",
           "toggle": "Toggle"
         },
         "descriptions": {
-          "hold_or_toggle": "Hold to record or tap to toggle",
+          "hold_or_toggle": "Hold to record, or tap to start; then an end shortcut stops it",
           "push_to_talk": "Records while you hold the shortcut",
-          "toggle": "Tap the shortcut to start recording, tap again to stop"
+          "toggle": "Tap to start recording; tapping again stops it only if an end shortcut has the same combination"
         }
       },
       "insertService": {
@@ -475,32 +475,31 @@
     },
     "endKeys": {
       "title": "End Shortcuts",
-      "description": "How a recording ends and what follows: each end shortcut says what is appended, whether the text is post-processed, and whether earlier dictations go along as context.",
-      "builtin": {
-        "plain": "Plain",
-        "post_process": "Post-process"
-      },
+      "description": "How a recording ends and what follows. Each end shortcut has a key combination of its own, taken only while recording, and says what is appended, whether the text is post-processed and whether earlier dictations go along as context. An end shortcut may have a start shortcut's combination: pressing that start shortcut again then ends this way.",
       "name": "Name",
-      "noShortcut": "No shortcut",
-      "shortcutHint": "Its own shortcut ends a recording this way. It is taken only while recording.",
-      "clearShortcut": "Remove shortcut",
+      "shortcutHint": "Pressing this combination during a recording ends it this way. It is taken only while recording.",
+      "sameAsStart": "Same combination as “{{start}}”: pressing it again during a recording ends this way.",
       "append": "Append",
       "appendDescription": "Appended to a dictation that ends this way: the text, then the key press you choose. In the text, \\s is a space, \\n a new line, \\t a tab and \\\\ a backslash; everything else is appended as written. The key press is sent only when the text is pasted.",
+      "postProcess": "Post-process",
       "sendContext": "Send Context",
       "sendContextHint": "Only with post-processing: earlier dictations from the same window go along as context.",
       "add": "Add End Shortcut",
-      "newName": "New End Shortcut",
+      "addPressKeys": "Press the combination for the new end shortcut",
       "delete": "Delete {{name}}",
-      "inUse": "A start shortcut ends with it by default; choose another default end first.",
-      "defaultEnd": {
-        "title": "Default End of {{shortcut}}",
-        "description": "How its second press, or its release when held, ends the recording."
+      "lastOne": "One end shortcut must stay, so that a recording can always be ended.",
+      "held": "{{shortcut}} held",
+      "holdEnds": {
+        "title": "When Held",
+        "description": "How releasing a held start shortcut ends the recording."
       },
-      "linuxNoShortcuts": "On Linux, the shortcuts of end shortcuts aren't taken; they end a recording only as a default end.",
+      "linuxNoShortcuts": "On Linux, the combinations of end shortcuts aren't taken while recording. A recording ends there when a held start shortcut is released, or when a start shortcut is pressed again whose combination an end shortcut has.",
       "errors": {
         "save": "Couldn't save the end shortcuts: {{error}}",
-        "needsName": "Every end shortcut needs a name.",
-        "shortcutTwice": "Two end shortcuts can't share a shortcut."
+        "needsShortcut": "Every end shortcut needs a key combination.",
+        "shortcutTwice": "Two end shortcuts can't share a shortcut.",
+        "last": "The last end shortcut can't go: a recording must always be possible to end.",
+        "cannotEnd": "On Linux a recording could no longer be ended: keep an end shortcut with a start shortcut's combination, or choose “Hold”."
       }
     },
     "profiles": {
@@ -1322,7 +1321,7 @@
     "profileView": {
       "fields": {
         "shortcuts": "Shortcuts",
-        "defaultEnds": "Default Ends",
+        "holdEnds": "When Held",
         "selectedModel": "Speech Model",
         "providers": "Provider Address and Format",
         "activePrompts": "Active Prompts",

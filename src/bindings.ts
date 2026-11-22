@@ -752,12 +752,11 @@ async changeEndKeysSetting(endKeys: EndKey[]) : Promise<Result<null, string>> {
 }
 },
 /**
- * Sets the default end of start shortcut `binding_id` in the active
- * profile.
+ * Stores the active profile's hold ends, by start shortcut.
  */
-async changeDefaultEndSetting(bindingId: string, endId: string) : Promise<Result<null, string>> {
+async changeHoldEndsSetting(holdEnds: Partial<{ [key in string]: HoldEnd }>) : Promise<Result<null, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("change_default_end_setting", { bindingId, endId }) };
+    return { status: "ok", data: await TAURI_INVOKE("change_hold_ends_setting", { holdEnds }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -1940,10 +1939,10 @@ profile_auto_by_app?: boolean;
  */
 end_keys?: EndKey[]; 
 /**
- * DanyWhere: the active profile's default end per start shortcut
+ * DanyWhere: the active profile's hold end per start shortcut
  * (`end_keys`), by binding id.
  */
-default_ends?: Partial<{ [key in string]: string }>; 
+hold_ends?: Partial<{ [key in string]: HoldEnd }>; 
 /**
  * DanyWhere: the height in pixels a History text box may grow to before
  * it scrolls, as dragged at its grip, for the newest entry and for the
@@ -2136,17 +2135,15 @@ export type EffortSource =
  */
 export type EndKey = { 
 /**
- * Stable, so profiles can share the entry; `plain` and `post_process`
- * for the two every profile starts with.
+ * Stable, so profiles can share the entry.
  */
 id: string; 
 /**
- * Empty for the two built-in ones, which show their translated name.
+ * Its name of its own; empty: none, it is shown by its combination.
  */
 name: string; 
 /**
- * The key combination that ends a recording this way; empty: none (it
- * ends a recording only as a start shortcut's default end).
+ * The key combination that ends a recording this way; every end has one.
  */
 shortcut: string; 
 /**
@@ -2280,6 +2277,22 @@ export type HistoryVersion = { text: string;
  * What made it, oldest first; never empty.
  */
 steps: VersionStep[] }
+/**
+ * How releasing a held start shortcut ends the recording.
+ */
+export type HoldEnd = { 
+/**
+ * What is appended, in the "Append" syntax (`append_text`).
+ */
+append_text: string; 
+/**
+ * Whether the text is post-processed (if the profile allows it).
+ */
+post_process: boolean; 
+/**
+ * Whether post-processing gets earlier dictations as context.
+ */
+send_context: boolean }
 /**
  * Result of changing keyboard implementation
  */
@@ -2684,10 +2697,9 @@ bindings: Partial<{ [key in string]: ShortcutBinding }>;
  */
 end_keys: EndKey[]; 
 /**
- * The default end per start shortcut (`default_ends`), entry by binding
- * id.
+ * The hold end per start shortcut (`hold_ends`), one value as a whole.
  */
-default_ends: Partial<{ [key in string]: string }> }
+hold_ends: Partial<{ [key in string]: HoldEnd }> }
 /**
  * One prompt of the library in a profile's list.
  */

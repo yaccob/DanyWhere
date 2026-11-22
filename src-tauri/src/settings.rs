@@ -731,10 +731,10 @@ pub struct AppSettings {
     /// DanyWhere: the active profile's end shortcuts (`end_keys`).
     #[serde(default = "crate::end_keys::default_end_keys")]
     pub end_keys: Vec<crate::end_keys::EndKey>,
-    /// DanyWhere: the active profile's default end per start shortcut
+    /// DanyWhere: the active profile's hold end per start shortcut
     /// (`end_keys`), by binding id.
-    #[serde(default = "crate::end_keys::default_ends")]
-    pub default_ends: HashMap<String, String>,
+    #[serde(default = "crate::end_keys::default_hold_ends")]
+    pub hold_ends: HashMap<String, crate::end_keys::HoldEnd>,
     /// DanyWhere: the height in pixels a History text box may grow to before
     /// it scrolls, as dragged at its grip, for the newest entry and for the
     /// others; `None` = the default lines (`history_box`).
@@ -1286,6 +1286,8 @@ pub fn get_default_settings() -> AppSettings {
         },
     );
 
+    // DanyWhere: the two ends with the start shortcuts' combinations.
+    let end_keys = crate::end_keys::builtin_for(&bindings, "", false);
     AppSettings {
         settings_schema_version: default_settings_schema_version(),
         bindings,
@@ -1376,8 +1378,8 @@ pub fn get_default_settings() -> AppSettings {
         default_values: None,
         profile_words: Vec::new(),
         profile_auto_by_app: default_profile_auto_by_app(),
-        end_keys: crate::end_keys::default_end_keys(),
-        default_ends: crate::end_keys::default_ends(),
+        end_keys,
+        hold_ends: crate::end_keys::default_hold_ends(),
         history_box_height_newest: None,
         history_box_height_other: None,
     }
@@ -2413,6 +2415,8 @@ mod tests {
             .get_mut("copy_last_transcript")
             .unwrap()
             .current_binding = "option_right".to_string();
+        // The ends with the start shortcuts' combinations, as 0.2.5's got them.
+        settings.end_keys = crate::end_keys::builtin_for(&settings.bindings, "", false);
         crate::profiles::ensure_profiles(&mut settings);
         let work = crate::profiles::profile_for_test(&settings, "work", "Work", |_| {});
         settings.profiles.push(work);
@@ -2430,6 +2434,13 @@ mod tests {
                 bindings["copy_last_transcript"].current_binding,
                 "option_right"
             );
+        }
+        for ends in [
+            &settings.end_keys,
+            &defaults.end_keys,
+            &settings.profiles[0].values.end_keys,
+        ] {
+            assert_eq!(ends[0].shortcut, "ctrl+space", "with its start shortcut");
         }
         assert!(
             !crate::profiles::ensure_profiles(&mut settings),

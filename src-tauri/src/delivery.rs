@@ -175,8 +175,8 @@ fn put_on_clipboard_with_notice(app: &AppHandle, text: String) {
 
 /// The "Append" text the last dictation gets outside a dictation: that of
 /// the end shortcut it ended with (`ended_with`), when DanyWhere knows it
-/// (`profile_redo::made_with`); else that of the dictation shortcut's
-/// default end in the profile `settings` hold (`end_keys::plain_end`).
+/// (`profile_redo::made_with`); else that of the end a text takes that no
+/// end chose, in the profile `settings` hold (`end_keys::fallback_end`).
 pub fn append_of_last(
     settings: &AppSettings,
     ended_with: Option<&crate::end_keys::EndKey>,
@@ -184,7 +184,7 @@ pub fn append_of_last(
     match ended_with {
         Some(end) => end.append_text.clone(),
         None => {
-            crate::end_keys::plain_end(&crate::profiles::ProfileValues::from_settings(settings))
+            crate::end_keys::fallback_end(&crate::profiles::ProfileValues::from_settings(settings))
                 .append_text
         }
     }

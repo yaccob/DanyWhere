@@ -87,7 +87,7 @@ pub const APP_SETTINGS: &[(&str, AppPage)] = &[
 /// Fields that concern a dictation but stay the same for every profile
 /// until other work makes them profile values. Since strand D the shortcuts
 /// (`bindings`, a map by id) and the end shortcuts (`end_keys`,
-/// `default_ends`) are profile values.
+/// `hold_ends`) are profile values.
 pub const GLOBAL: &[&str] = &[];
 
 /// Fields shared by all profiles, which choose from them.

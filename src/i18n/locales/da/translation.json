@@ -388,16 +388,16 @@
         "pressKeys": "Tryk på ønskede taster...",
         "bindings": {
           "transcribe": {
-            "name": "Transskriptionsgenvej",
-            "description": "Tastaturgenvejen til at optage og transskribere din stemme."
+            "name": "Startgenvej",
+            "description": "Starter en optagelse. Hvordan den slutter, bestemmer afslutningsgenvejene og, når den holdes nede, »Genvejens adfærd«."
           },
           "cancel": {
             "name": "Annulleringsgenvej",
             "description": "Tastaturgenvejen til at annullere den aktuelle optagelse."
           },
           "transcribe_with_post_process": {
-            "name": "Genvej til efterbehandling",
-            "description": "Valgfrit: En dedikeret genvej, der altid anvender AI-efterbehandling på din transskription."
+            "name": "Anden startgenvej",
+            "description": "Valgfrit: en anden tastekombination, der starter en optagelse. I fabriksindstillingen efterbehandler en afslutningsgenvej med samme tastekombination teksten. Kun optaget, så længe efterbehandling er slået til."
           },
           "paste_last_transcript": {
             "name": "Indsæt seneste transskription",
@@ -444,16 +444,16 @@
       },
       "shortcutActivation": {
         "title": "Genvejens adfærd",
-        "description": "Vælg, hvordan transskriptionsgenvejen starter og stopper optagelsen.",
+        "description": "Vælg, hvordan en startgenvej starter og afslutter en optagelse.",
         "options": {
           "holdOrToggle": "Automatisk",
           "pushToTalk": "Hold",
           "toggle": "Skift"
         },
         "descriptions": {
-          "hold_or_toggle": "Hold nede for at optage, eller tryk kort for at slå til/fra",
+          "hold_or_toggle": "Hold nede for at optage, eller tryk kort for at starte; derefter stopper en afslutningsgenvej den",
           "push_to_talk": "Optager, mens du holder genvejen nede",
-          "toggle": "Tryk på genvejen for at starte optagelsen, tryk igen for at stoppe"
+          "toggle": "Tryk kort for at starte optagelsen; et nyt tryk stopper den kun, hvis en afslutningsgenvej har samme tastekombination"
         }
       },
       "insertService": {
@@ -475,32 +475,31 @@
     },
     "endKeys": {
       "title": "Afslutningsgenveje",
-      "description": "Hvordan en optagelse slutter, og hvad der følger: hver afslutningsgenvej bestemmer, hvad der tilføjes, om teksten efterbehandles, og om tidligere dikteringer sendes med som kontekst.",
-      "builtin": {
-        "plain": "Normal",
-        "post_process": "Efterbehandl"
-      },
+      "description": "Hvordan en optagelse slutter, og hvad der følger. Hver afslutningsgenvej har sin egen tastekombination, som kun er optaget under en optagelse, og bestemmer, hvad der tilføjes, om teksten efterbehandles, og om tidligere dikteringer sendes med som kontekst. En afslutningsgenvej må have en startgenvejs tastekombination: et nyt tryk på den startgenvej afslutter så på denne måde.",
       "name": "Navn",
-      "noShortcut": "Ingen genvej",
-      "shortcutHint": "Dens egen genvej afslutter en optagelse på denne måde. Den er kun optaget under en optagelse.",
-      "clearShortcut": "Fjern genvej",
+      "shortcutHint": "Et tryk på denne tastekombination under en optagelse afslutter den på denne måde. Den er kun optaget under en optagelse.",
+      "sameAsStart": "Samme tastekombination som »{{start}}«: et nyt tryk under en optagelse afslutter på denne måde.",
       "append": "Tilføj",
       "appendDescription": "Tilføjes til en diktering, der slutter på denne måde: teksten og derefter det tastetryk, du vælger. I teksten er \\s et mellemrum, \\n en ny linje, \\t en tabulator og \\\\ en omvendt skråstreg; alt andet tilføjes, som det står. Tastetrykket sendes kun, når teksten indsættes.",
+      "postProcess": "Efterbehandl",
       "sendContext": "Send kontekst",
       "sendContextHint": "Kun med efterbehandling: tidligere dikteringer fra samme vindue sendes med som kontekst.",
       "add": "Tilføj afslutningsgenvej",
-      "newName": "Ny afslutningsgenvej",
+      "addPressKeys": "Tryk på tastekombinationen til den nye afslutningsgenvej",
       "delete": "Slet {{name}}",
-      "inUse": "En startgenvej slutter med den som standard; vælg først en anden standardafslutning.",
-      "defaultEnd": {
-        "title": "Standardafslutning for {{shortcut}}",
-        "description": "Hvordan dens andet tryk, eller når den holdes, dens slip afslutter optagelsen."
+      "lastOne": "Én afslutningsgenvej skal blive, så en optagelse altid kan afsluttes.",
+      "held": "{{shortcut}} holdt nede",
+      "holdEnds": {
+        "title": "Når den holdes nede",
+        "description": "Hvordan slip af en startgenvej, der holdes nede, afslutter optagelsen."
       },
-      "linuxNoShortcuts": "På Linux optages afslutningsgenvejenes egne genveje ikke; de afslutter kun en optagelse som standardafslutning.",
+      "linuxNoShortcuts": "På Linux optages afslutningsgenvejenes tastekombinationer ikke under en optagelse. Der slutter en optagelse, når en startgenvej, der holdes nede, slippes, eller når der igen trykkes på en startgenvej, hvis tastekombination en afslutningsgenvej har.",
       "errors": {
         "save": "Afslutningsgenvejene kunne ikke gemmes: {{error}}",
-        "needsName": "Hver afslutningsgenvej skal have et navn.",
-        "shortcutTwice": "To afslutningsgenveje kan ikke dele en genvej."
+        "needsShortcut": "Hver afslutningsgenvej skal have en tastekombination.",
+        "shortcutTwice": "To afslutningsgenveje kan ikke dele en genvej.",
+        "last": "Den sidste afslutningsgenvej kan ikke fjernes: en optagelse skal altid kunne afsluttes.",
+        "cannotEnd": "På Linux kunne en optagelse ikke længere afsluttes: behold en afslutningsgenvej med en startgenvejs tastekombination, eller vælg »Hold«."
       }
     },
     "profiles": {
@@ -1322,7 +1321,7 @@
     "profileView": {
       "fields": {
         "shortcuts": "Genveje",
-        "defaultEnds": "Standardafslutninger",
+        "holdEnds": "Når den holdes nede",
         "selectedModel": "Talemodel",
         "providers": "Udbyderens adresse og format",
         "activePrompts": "Aktive prompts",

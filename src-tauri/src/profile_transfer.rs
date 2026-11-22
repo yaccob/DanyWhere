@@ -842,7 +842,7 @@ mod tests {
         let (profile, _) = read_import(&yaml, None).expect("import");
         assert_eq!(profile.values.end_keys, s.end_keys);
         assert_eq!(profile.values.bindings["transcribe"].current_binding, "f13");
-        assert_eq!(profile.values.default_ends, s.default_ends);
+        assert_eq!(profile.values.hold_ends, s.hold_ends);
     }
 
     /// A profile written on any system, with any system's name of the
@@ -876,14 +876,14 @@ mod tests {
     }
 
     /// `yaml` as a file from before the end shortcuts: the profile's values
-    /// without them, its default ends and its shortcuts, with `fields`
+    /// without them, its hold ends and its shortcuts, with `fields`
     /// instead.
     fn older_file(yaml: &str, fields: serde_json::Value) -> String {
         let mut file: serde_json::Value = serde_saphyr::from_str(yaml).expect("reads");
         let values = file["profile"]["values"]
             .as_object_mut()
             .expect("the values");
-        for gone in ["end_keys", "default_ends", "bindings"] {
+        for gone in ["end_keys", "hold_ends", "bindings"] {
             values.remove(gone);
         }
         for (key, value) in fields.as_object().expect("fields") {
@@ -905,7 +905,10 @@ mod tests {
             profile.values.end_keys,
             crate::end_keys::builtin(r"\n\n", true)
         );
-        assert_eq!(profile.values.default_ends, crate::end_keys::default_ends());
+        assert_eq!(
+            profile.values.hold_ends,
+            crate::end_keys::builtin_holds(r"\n\n", true)
+        );
         // The shortcuts come from the installation it is imported into.
         assert!(profile.values.bindings.is_empty());
     }

@@ -848,7 +848,7 @@ pub fn run(cli_args: CliArgs) {
             app_profiles::set_profile_auto_by_app,
             app_profiles::list_applications,
             end_keys::change_end_keys_setting,
-            end_keys::change_default_end_setting,
+            end_keys::change_hold_ends_setting,
             shortcut::suspend_all_bindings,
             shortcut::resume_all_bindings,
             shortcut::change_mute_while_recording_setting,

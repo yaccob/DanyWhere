@@ -388,16 +388,16 @@
         "pressKeys": "Premi i tasti...",
         "bindings": {
           "transcribe": {
-            "name": "Scorciatoia Trascrizione",
-            "description": "La scorciatoia da tastiera per registrare e trascrivere la tua voce."
+            "name": "Scorciatoia di avvio",
+            "description": "Avvia una registrazione. Come termina lo decidono le scorciatoie di fine e, se la tieni premuta, «Comportamento della scorciatoia»."
           },
           "cancel": {
             "name": "Scorciatoia Annulla",
             "description": "La scorciatoia da tastiera per annullare la registrazione in corso."
           },
           "transcribe_with_post_process": {
-            "name": "Tasto di post-elaborazione",
-            "description": "Facoltativo: Un tasto di scelta rapida dedicato che applica sempre la post-elaborazione IA alla trascrizione."
+            "name": "Seconda scorciatoia di avvio",
+            "description": "Facoltativo: una seconda combinazione che avvia una registrazione. Di fabbrica, una scorciatoia di fine con la stessa combinazione post-elabora il testo. Occupata solo finché la post-elaborazione è attiva."
           },
           "paste_last_transcript": {
             "name": "Incolla l'ultima trascrizione",
@@ -444,16 +444,16 @@
       },
       "shortcutActivation": {
         "title": "Comportamento della scorciatoia",
-        "description": "Scegli come la scorciatoia di trascrizione avvia e interrompe la registrazione.",
+        "description": "Scegli come una scorciatoia di avvio avvia e termina una registrazione.",
         "options": {
           "holdOrToggle": "Automatico",
           "pushToTalk": "Tieni premuto",
           "toggle": "Alterna"
         },
         "descriptions": {
-          "hold_or_toggle": "Tieni premuto per registrare o tocca per alternare",
+          "hold_or_toggle": "Tieni premuto per registrare, o tocca per avviare; poi una scorciatoia di fine ferma la registrazione",
           "push_to_talk": "Registra finché tieni premuta la scorciatoia",
-          "toggle": "Tocca la scorciatoia per avviare la registrazione, tocca di nuovo per fermarla"
+          "toggle": "Tocca per avviare la registrazione; toccare di nuovo la ferma solo se una scorciatoia di fine ha la stessa combinazione"
         }
       },
       "insertService": {
@@ -475,32 +475,31 @@
     },
     "endKeys": {
       "title": "Scorciatoie di fine",
-      "description": "Come termina una registrazione e cosa segue: ogni scorciatoia di fine stabilisce cosa viene aggiunto, se il testo viene post-elaborato e se le dettature precedenti vengono inviate come contesto.",
-      "builtin": {
-        "plain": "Normale",
-        "post_process": "Post-elabora"
-      },
+      "description": "Come termina una registrazione e cosa segue. Ogni scorciatoia di fine ha una propria combinazione di tasti, occupata solo durante la registrazione, e stabilisce cosa viene aggiunto, se il testo viene post-elaborato e se le dettature precedenti vengono inviate come contesto. Una scorciatoia di fine può avere la combinazione di una scorciatoia di avvio: premere di nuovo quella scorciatoia di avvio termina allora in questo modo.",
       "name": "Nome",
-      "noShortcut": "Nessuna scorciatoia",
-      "shortcutHint": "La sua scorciatoia termina una registrazione in questo modo. È occupata solo durante la registrazione.",
-      "clearShortcut": "Rimuovi scorciatoia",
+      "shortcutHint": "Premere questa combinazione durante una registrazione la termina in questo modo. È occupata solo durante la registrazione.",
+      "sameAsStart": "Stessa combinazione di «{{start}}»: premerla di nuovo durante una registrazione la termina in questo modo.",
       "append": "Aggiungi alla fine",
       "appendDescription": "Aggiunto a una dettatura che termina in questo modo: il testo, poi il tasto che scegli. Nel testo \\s è uno spazio, \\n un a capo, \\t una tabulazione e \\\\ una barra rovesciata; tutto il resto viene aggiunto così com'è scritto. Il tasto viene inviato solo quando il testo viene incollato.",
+      "postProcess": "Post-elabora",
       "sendContext": "Invia contesto",
       "sendContextHint": "Solo con la post-elaborazione: le dettature precedenti della stessa finestra vengono inviate come contesto.",
       "add": "Aggiungi scorciatoia di fine",
-      "newName": "Nuova scorciatoia di fine",
+      "addPressKeys": "Premi la combinazione per la nuova scorciatoia di fine",
       "delete": "Elimina {{name}}",
-      "inUse": "Una scorciatoia di avvio termina così per impostazione predefinita; scegli prima un'altra fine predefinita.",
-      "defaultEnd": {
-        "title": "Fine predefinita di {{shortcut}}",
-        "description": "Come la sua seconda pressione, o il rilascio quando è tenuta premuta, termina la registrazione."
+      "lastOne": "Deve restare una scorciatoia di fine, così una registrazione si può sempre terminare.",
+      "held": "{{shortcut}} tenuta premuta",
+      "holdEnds": {
+        "title": "Tenendo premuto",
+        "description": "Come il rilascio di una scorciatoia di avvio tenuta premuta termina la registrazione."
       },
-      "linuxNoShortcuts": "Su Linux le scorciatoie delle scorciatoie di fine non vengono occupate; terminano una registrazione solo come fine predefinita.",
+      "linuxNoShortcuts": "Su Linux le combinazioni delle scorciatoie di fine non vengono occupate durante la registrazione. Lì una registrazione termina quando si rilascia una scorciatoia di avvio tenuta premuta, o quando si preme di nuovo una scorciatoia di avvio la cui combinazione appartiene anche a una scorciatoia di fine.",
       "errors": {
         "save": "Impossibile salvare le scorciatoie di fine: {{error}}",
-        "needsName": "Ogni scorciatoia di fine ha bisogno di un nome.",
-        "shortcutTwice": "Due scorciatoie di fine non possono condividere una scorciatoia."
+        "needsShortcut": "Ogni scorciatoia di fine ha bisogno di una combinazione di tasti.",
+        "shortcutTwice": "Due scorciatoie di fine non possono condividere una scorciatoia.",
+        "last": "L'ultima scorciatoia di fine non può essere rimossa: deve essere sempre possibile terminare una registrazione.",
+        "cannotEnd": "Su Linux non sarebbe più possibile terminare una registrazione: tieni una scorciatoia di fine con la combinazione di una scorciatoia di avvio, oppure scegli «Tieni premuto»."
       }
     },
     "profiles": {
@@ -1322,7 +1321,7 @@
     "profileView": {
       "fields": {
         "shortcuts": "Scorciatoie",
-        "defaultEnds": "Fini predefinite",
+        "holdEnds": "Tenendo premuto",
         "selectedModel": "Modello vocale",
         "providers": "Indirizzo e formato del fornitore",
         "activePrompts": "Istruzioni attive",

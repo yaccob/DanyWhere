@@ -134,16 +134,12 @@ fn post_processing_differs(
         || (a_end.send_context && context_limits(a) != context_limits(b))
 }
 
-/// The end shortcut a dictation that ended with `made_end` takes in the
-/// profile with `target`: the one with the same id, or, where that profile
-/// has none, the one it ended with.
+/// The end a dictation that ended with `made_end` takes in the profile with
+/// `target`: the one with the same id (a hold end by its start shortcut,
+/// `end_keys::find_end`), or, where that profile has none, the one it ended
+/// with.
 pub fn end_in(target: &ProfileValues, made_end: &EndKey) -> EndKey {
-    target
-        .end_keys
-        .iter()
-        .find(|end| end.id == made_end.id)
-        .cloned()
-        .unwrap_or_else(|| made_end.clone())
+    crate::end_keys::find_end(target, &made_end.id).unwrap_or_else(|| made_end.clone())
 }
 
 /// The first step to redo when a dictation made with `made_with`, ended
@@ -341,7 +337,7 @@ pub fn for_insert(
     let Some(made) = made_with(entry.id) else {
         return Some(ForInsert {
             text: None,
-            end: crate::end_keys::plain_end(&target_values),
+            end: crate::end_keys::fallback_end(&target_values),
             values: target_values,
             post_process_failed: false,
         });
@@ -987,6 +983,33 @@ mod tests {
             ..EndKey::default()
         };
         assert_eq!(end_in(&target, &own), own);
+    }
+
+    #[test]
+    fn a_dictation_ended_by_holding_takes_the_targets_hold_end() {
+        let settings = settings_with_mail();
+        let mut made = default_values(&settings);
+        made.hold_ends.insert(
+            "transcribe".to_string(),
+            crate::end_keys::HoldEnd::default(),
+        );
+        let made_end = crate::end_keys::resolve(
+            &made,
+            &crate::end_keys::EndChoice::Held("transcribe".to_string()),
+            "transcribe",
+        );
+        let mut target = default_values(&settings);
+        target.hold_ends.insert(
+            "transcribe".to_string(),
+            crate::end_keys::HoldEnd {
+                append_text: "{Tab}".to_string(),
+                post_process: true,
+                send_context: false,
+            },
+        );
+        let there = end_in(&target, &made_end);
+        assert_eq!(there.append_text, "{Tab}");
+        assert!(there.post_process);
     }
 
     #[test]

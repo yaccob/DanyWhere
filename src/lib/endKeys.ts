@@ -1,55 +1,70 @@
-import type { EndKey } from "../bindings";
-import type { DropdownOption } from "../components/ui/Dropdown";
+import type {
+  EndKey,
+  HoldEnd,
+  ShortcutActivation,
+  ShortcutBinding,
+} from "../bindings";
 
 /**
- * DanyWhere: the end shortcuts (end_keys.rs). A recording ends with one of
- * them; each says what is appended, whether the text is post-processed and
- * whether earlier dictations go along as context. Every start shortcut has
- * a default end from the list. These helpers keep the editor a controlled
- * component: it gets a list and gives back a changed one.
+ * DanyWhere: the end shortcuts (end_keys.rs, qa 2026-11-22_2134). A
+ * recording ends with one of them; each has a key combination of its own
+ * and says what is appended, whether the text is post-processed and whether
+ * earlier dictations go along as context. Start shortcuts only start: one
+ * ends a recording only through an end with its exact combination, and
+ * when held, through its end for holding (`hold_ends`). These helpers keep
+ * the editor a controlled component: it gets a list and gives back a
+ * changed one.
  */
 
-type Translate = (key: string, options?: Record<string, unknown>) => string;
+/** Writes a stored combination as the shortcut controls do
+ * (`formatKeyCombination` with the system and the interface's language). */
+export type FormatShortcut = (keys: string) => string;
 
-/** The end shortcut without post-processing every profile starts with. */
-export const PLAIN_ID = "plain";
-/** The end shortcut with post-processing every profile starts with. */
-export const POST_PROCESS_ID = "post_process";
-/** The start shortcuts, each with a default end. */
+/** The start shortcuts, each with an end for holding. */
 export const START_BINDINGS = [
   "transcribe",
   "transcribe_with_post_process",
 ] as const;
 
-const BUILTIN_DEFAULT: Record<string, string> = {
-  transcribe: PLAIN_ID,
-  transcribe_with_post_process: POST_PROCESS_ID,
+/** The end for holding of a start shortcut out of the box. */
+const factoryHoldEnd = (binding: string): HoldEnd => ({
+  append_text: "",
+  post_process: binding === "transcribe_with_post_process",
+  send_context: false,
+});
+
+/** The name to show: its own, or else its combination, which it follows
+ * (also the interface's language). */
+export const endKeyName = (end: EndKey, formatShortcut: FormatShortcut) =>
+  end.name.trim() !== "" ? end.name : formatShortcut(end.shortcut);
+
+/** What to store for a typed name: nothing ("no own name") when it is
+ * blank or just the combination's name, else the name. */
+export const nameToStore = (
+  typed: string,
+  end: EndKey,
+  formatShortcut: FormatShortcut,
+): string => {
+  const name = typed.trim();
+  return name === "" || name === formatShortcut(end.shortcut).trim()
+    ? ""
+    : name;
 };
 
-const isBuiltin = (id: string) => id === PLAIN_ID || id === POST_PROCESS_ID;
-
-/** The name to show: its own, or the built-in one's translated name. */
-export const endKeyName = (end: EndKey, t: Translate): string => {
-  if (end.name.trim() !== "" || !isBuiltin(end.id)) return end.name;
-  return t(`settings.endKeys.builtin.${end.id}`);
-};
-
-/** A new end shortcut for `existing`, with an id and a name none has. */
+/** A new end with combination `shortcut` for `existing`, with an id none
+ * has and no own name. */
 export const newEndKey = (
   existing: EndKey[],
-  baseName: string,
+  shortcut: string,
   now: number,
 ): EndKey => {
   const ids = new Set(existing.map((end) => end.id));
   let id = `end_${now}`;
   for (let n = 2; ids.has(id); n += 1) id = `end_${now}_${n}`;
-  const names = new Set(existing.map((end) => end.name.trim()));
-  let name = baseName;
-  for (let n = 2; names.has(name); n += 1) name = `${baseName} ${n}`;
   return {
     id,
-    name,
-    shortcut: "",
+    name: "",
+    shortcut,
     append_text: "",
     post_process: false,
     send_context: false,
@@ -67,29 +82,55 @@ export const updateEndKey = (
 export const removeEndKey = (list: EndKey[], id: string): EndKey[] =>
   list.filter((end) => end.id !== id);
 
-/** The default end of `binding`: its entry, or the built-in one. */
-export const defaultEndOf = (
+/** Whether an entry of `list` may go: one must stay, so that a recording
+ * can always be ended. */
+export const canRemove = (list: readonly EndKey[]): boolean => list.length > 1;
+
+/** A combination as stored, compared without spacing and case. */
+const sameKeys = (a: string, b: string): boolean => {
+  const normal = (keys: string) =>
+    keys
+      .split("+")
+      .map((part) => part.trim().toLowerCase())
+      .join("+");
+  return normal(a) === normal(b);
+};
+
+/** The start shortcuts (binding ids) whose combination is exactly the
+ * end's: pressing one again during a recording ends this way. */
+export const startsSharing = (
+  end: EndKey,
+  bindings: Partial<Record<string, ShortcutBinding>>,
+): string[] => {
+  if (end.shortcut.trim() === "") return [];
+  return START_BINDINGS.filter((binding) => {
+    const keys = bindings[binding]?.current_binding ?? "";
+    return keys.trim() !== "" && sameKeys(keys, end.shortcut);
+  });
+};
+
+/** The end for holding of `binding`: its entry, or the one out of the box
+ * (`transcribe` without, `transcribe_with_post_process` with
+ * post-processing). */
+export const holdEndOf = (
   binding: string,
-  defaultEnds: Partial<Record<string, string>>,
-): string => defaultEnds[binding] ?? BUILTIN_DEFAULT[binding] ?? PLAIN_ID;
+  holdEnds: Partial<Record<string, HoldEnd>>,
+): HoldEnd => ({ ...factoryHoldEnd(binding), ...holdEnds[binding] });
 
-/** The start shortcuts whose default end is `id` (it can't go then). */
-export const startsEndingWith = (
-  id: string,
-  defaultEnds: Partial<Record<string, string>>,
-): string[] =>
-  START_BINDINGS.filter((binding) => defaultEndOf(binding, defaultEnds) === id);
-
-/** The entries of a default-end selection. */
-export const endKeyOptions = (list: EndKey[], t: Translate): DropdownOption[] =>
-  list.map((end) => ({ value: end.id, label: endKeyName(end, t) }));
+/** Whether a start shortcut can be held with `activation`: unless it is
+ * "Toggle" (nothing stored is Auto). */
+export const holdPossible = (
+  activation: ShortcutActivation | null | undefined,
+): boolean => activation !== "toggle";
 
 /** The translation key for a refusal of the backend, if it has one. */
 export const endKeyErrorKey = (error: string): string | null => {
-  if (error.includes("end-key-needs-name:"))
-    return "settings.endKeys.errors.needsName";
+  if (error.includes("end-key-needs-shortcut:"))
+    return "settings.endKeys.errors.needsShortcut";
   if (error.includes("end-key-shortcut-twice:"))
     return "settings.endKeys.errors.shortcutTwice";
-  if (error.includes("end-key-in-use:")) return "settings.endKeys.inUse";
+  if (error.includes("end-key-last")) return "settings.endKeys.errors.last";
+  if (error.includes("end-key-cannot-end"))
+    return "settings.endKeys.errors.cannotEnd";
   return null;
 };
