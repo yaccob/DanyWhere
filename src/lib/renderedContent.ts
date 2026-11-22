@@ -14,6 +14,15 @@ export interface NodeLike {
 const ELEMENT_NODE = 1;
 const TEXT_NODE = 3;
 
+/** Whether a profile wrapper shows its lines: one around a setting only
+ * while the setting shows anything; one without a setting always, since it
+ * stands for a control drawn elsewhere (the speech model's wrapper next to
+ * the model table). */
+export const wrapperShows = (
+  hasSetting: boolean,
+  settingShows: boolean,
+): boolean => !hasSetting || settingShows;
+
 /** Whether rendered `nodes` show anything: an element, or text that isn't
  * only white space. A component that returns `null` renders no node. */
 export const showsAnything = (nodes: ArrayLike<NodeLike>): boolean =>

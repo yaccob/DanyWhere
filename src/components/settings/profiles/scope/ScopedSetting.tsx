@@ -46,6 +46,7 @@ import {
 } from "./SettingsScope";
 import { useValueLabels } from "./useValueLabels";
 import { useShowsAnything } from "@/hooks/useShowsAnything";
+import { wrapperShows } from "@/lib/renderedContent";
 
 export interface ScopedSettingProps {
   /** The profile value or values the setting shows (serde names). */
@@ -163,8 +164,10 @@ const InProfile: React.FC<InProfileProps> = ({
   );
   const state = combinedState(states);
   const own = state !== "coupled";
-  // A setting this device doesn't show gets no state line either.
-  const [content, shows] = useShowsAnything();
+  // A setting this device doesn't show gets no state line either; a
+  // wrapper without a setting stands for a control elsewhere and shows.
+  const [content, settingShows] = useShowsAnything();
+  const shows = wrapperShows(children != null, settingShows);
   return (
     <div
       className={`border-s-2 ${own ? "border-logo-primary" : "border-transparent"} ${
@@ -347,8 +350,10 @@ const UnderDefaults: React.FC<UnderDefaultsProps> = ({
   const { displayName } = useProfiles();
   const openProfilePage = useOpenProfilePage();
   const { valueLabel, entryName, fieldLabel } = useValueLabels();
-  // A setting this device doesn't show gets no profiles under it either.
-  const [content, shows] = useShowsAnything();
+  // A setting this device doesn't show gets no profiles under it either; a
+  // wrapper without a setting stands for a control elsewhere and shows.
+  const [content, settingShows] = useShowsAnything();
+  const shows = wrapperShows(children != null, settingShows);
   if (profiles.length === 0) return <>{children}</>;
 
   const fields = asList(field);

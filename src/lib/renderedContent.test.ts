@@ -6,7 +6,7 @@
 // channel with one channel, the typing tool on macOS, the active list
 // without lists; qa 2026-11-22_0107, error 3).
 import assert from "node:assert/strict";
-import { showsAnything, type NodeLike } from "./renderedContent";
+import { showsAnything, wrapperShows, type NodeLike } from "./renderedContent";
 
 let total = 0;
 const failures: string[] = [];
@@ -46,6 +46,19 @@ check("text shows something", () =>
 );
 check("one element among white space shows something", () =>
   assert.equal(showsAnything([text(" "), element("Kanal"), text(" ")]), true),
+);
+
+// The speech model's wrapper holds no setting: it stands for the model
+// table next to it, so it shows its line although it draws nothing itself
+// (qa 2026-11-22_0233, the speech model's state line was gone).
+check("a wrapper without a setting always shows", () =>
+  assert.equal(wrapperShows(false, false), true),
+);
+check("a wrapper around a setting that draws nothing hides", () =>
+  assert.equal(wrapperShows(true, false), false),
+);
+check("a wrapper around a setting that draws something shows", () =>
+  assert.equal(wrapperShows(true, true), true),
 );
 
 if (failures.length > 0) {
