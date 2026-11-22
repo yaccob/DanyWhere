@@ -1,18 +1,15 @@
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 use crate::apple_intelligence;
-use crate::audio_feedback::{play_feedback_sound, play_feedback_sound_blocking, SoundType};
-use crate::managers::audio::{recording_notice_code, AudioRecordingManager};
+use crate::audio_feedback::{play_feedback_sound, SoundType};
+use crate::managers::audio::AudioRecordingManager;
 use crate::managers::history::HistoryManager;
-use crate::managers::model::ModelManager;
 use crate::managers::transcription::StreamWorkKind;
 use crate::managers::transcription::{Transcription, TranscriptionManager};
 use crate::notices::{self, Notice, NoticeCode, NoticeSource};
 use crate::settings::{AppSettings, OverlayStyle, APPLE_INTELLIGENCE_PROVIDER_ID};
 use crate::shortcut;
 use crate::tray::{set_tray_state, TrayIconState};
-use crate::utils::{
-    self, show_processing_overlay, show_recording_overlay, show_transcribing_overlay,
-};
+use crate::utils::{self, show_processing_overlay, show_transcribing_overlay};
 use crate::TranscriptionCoordinator;
 use log::{debug, error, warn};
 use once_cell::sync::Lazy;
@@ -105,6 +102,11 @@ static RECORDING_SESSION: AtomicU64 = AtomicU64::new(0);
 /// DanyWhere: the current recording session, for `dictation_key_inserts`.
 pub fn current_recording_session() -> u64 {
     RECORDING_SESSION.load(Ordering::SeqCst)
+}
+
+/// DanyWhere: a new recording session begins (`dictation_start`).
+pub(crate) fn begin_recording_session() {
+    RECORDING_SESSION.fetch_add(1, Ordering::SeqCst);
 }
 
 /// Drop guard that finishes the transcription pipeline, including immediate
@@ -733,213 +735,9 @@ fn pasted_dictation_notice(
 
 impl ShortcutAction for TranscribeAction {
     fn start(&self, app: &AppHandle, binding_id: &str, _shortcut_str: &str) {
-        let start_time = Instant::now();
-        debug!("TranscribeAction::start called for binding: {}", binding_id);
-
-        // Load model in the background
-        let tm = app.state::<Arc<TranscriptionManager>>();
-        let rm = app.state::<Arc<AudioRecordingManager>>();
-
-        // DanyWhere: the profile of the app in front, when it has one of
-        // its own (`app_profiles`); its values apply until the dictation ends.
-        // What the overlay shows of the dictation's profile comes back.
-        let dictation_profile = crate::app_profiles::begin_dictation(app);
-
-        // Load ASR model and VAD model in parallel
-        let kickoff_started = Instant::now();
-        // An empty selection has nothing to load; the check below says so.
-        let selected_model = crate::app_profiles::dictation_settings(app).selected_model;
-        let load_started = !selected_model.is_empty() && tm.initiate_model_load(true);
-        let rm_clone = Arc::clone(&rm);
-        std::thread::spawn(move || {
-            if let Err(e) = rm_clone.preload_vad() {
-                debug!("VAD pre-load failed: {}", e);
-            }
-        });
-        let kickoff_elapsed = kickoff_started.elapsed();
-
-        // Don't open the mic if nothing can transcribe the recording. A load
-        // started above reports its own failure; one already running doesn't.
-        // DanyWhere: decided in `dictation_start::check_model`.
-        let loaded_model = tm
-            .is_model_loaded()
-            .then(|| tm.get_current_model())
-            .flatten();
-        let check = crate::dictation_start::check_model(
-            &selected_model,
-            loaded_model.as_deref(),
-            load_started,
-            || {
-                app.state::<Arc<ModelManager>>()
-                    .get_model_path(&selected_model)
-                    .map(|_| ())
-                    .map_err(|e| e.to_string())
-            },
-        );
-        if let crate::dictation_start::ModelCheck::Refuse(notice) = check {
-            crate::app_profiles::end_dictation();
-            match notice {
-                Some(crate::dictation_start::StartNotice::NoModelSelected) => {
-                    tm.raise_no_model_selected()
-                }
-                Some(crate::dictation_start::StartNotice::ModelLoadFailed { model, error }) => {
-                    tm.raise_model_load_failed(&model, &anyhow::anyhow!(error))
-                }
-                None => {}
-            }
-            return;
-        }
-
-        let binding_id = binding_id.to_string();
-        // DanyWhere: the dictation's window is captured when its recording
-        // ends (`stop`), as its profile is chosen then.
-        RECORDING_SESSION.fetch_add(1, Ordering::SeqCst);
-        let tray_started = Instant::now();
-        set_tray_state(app, TrayIconState::Recording);
-        let tray_elapsed = tray_started.elapsed();
-
-        // Get the microphone mode to determine audio feedback timing
-        let plan_started = Instant::now();
-        // DanyWhere: with the values of the dictation's own profile, if any.
-        let settings = crate::app_profiles::dictation_settings(app);
-        let is_always_on = settings.always_on_microphone;
-
-        let selected_model_info = app
-            .state::<Arc<ModelManager>>()
-            .get_model_info(&settings.selected_model);
-
-        // Use the app-facing model capability as the single pre-recording source
-        // for live streaming decisions. Unknown support is represented as false
-        // until the model registry is updated by discovery or runtime load.
-        let model_supports_streaming = selected_model_info
-            .as_ref()
-            .map(|m| m.supports_streaming)
-            .unwrap_or(false);
-        // DanyWhere: decided in `dictation_start::plan_start`.
-        let plan = crate::dictation_start::plan_start(
-            &settings,
-            &crate::app_profiles::dictation_profile_and_values(app).1,
-            crate::app_profiles::dictation_values().as_ref(),
-            &binding_id,
-            model_supports_streaming,
-        );
-        let vad_policy = plan.vad_policy;
-        let expected_post_process = plan.post_process;
-        if plan.live_decode {
-            tm.start_stream();
-        }
-        let plan_elapsed = plan_started.elapsed();
-
-        let overlay_started = Instant::now();
-        // DanyWhere: from two profiles on, the overlay names the dictation's
-        // profile with the glyph of choosing it by application.
-        crate::overlay::set_dictation_profile(app, dictation_profile);
-        // DanyWhere: and a speech bubble while the end it is expected to
-        // take (`end_keys::expected_end`) sends context.
-        crate::send_context::begin_dictation(app, plan.sends_context);
-        match plan.overlay {
-            crate::dictation_start::StartOverlay::Streaming => utils::show_streaming_overlay(app),
-            crate::dictation_start::StartOverlay::Recording => show_recording_overlay(app),
-            crate::dictation_start::StartOverlay::Hidden => {} // show_overlay_state no-ops on None anyway
-        }
-        // Everything above runs before capture can begin, so each span here is
-        // added keypress->capture latency.
-        debug!(
-            "start-path pre-recording steps: model_kickoff={:?} tray={:?} settings+stream_plan={:?} overlay={:?}",
-            kickoff_elapsed,
-            tray_elapsed,
-            plan_elapsed,
-            overlay_started.elapsed()
-        );
-        debug!("Microphone mode - always_on: {}", is_always_on);
-
-        let mut recording_error: Option<anyhow::Error> = None;
-        let recording_start_time = Instant::now();
-        match rm.try_start_recording(&binding_id, vad_policy) {
-            Ok(readiness) => {
-                debug!(
-                    "Recording request accepted in {:?}; waiting for first microphone samples",
-                    recording_start_time.elapsed()
-                );
-                // DanyWhere: an app that answers its first Apple event slowly
-                // is asked now, so the window title comes in time when the
-                // recording ends (`window_capture`, macOS without Accessibility).
-                crate::window_capture::prime_title_query(app);
-                let generation = readiness.generation();
-                let app_clone = app.clone();
-                let rm_clone = Arc::clone(&rm);
-                std::thread::spawn(move || {
-                    if !readiness.wait() {
-                        debug!("Microphone readiness wait ended without receiving samples");
-                        return;
-                    }
-
-                    // Development-only preview hook for evaluating the brief
-                    // arming animation on hardware that normally starts too fast
-                    // to make it visible.
-                    #[cfg(debug_assertions)]
-                    if let Ok(delay_ms) = std::env::var("HANDY_DEBUG_MIC_READY_DELAY_MS")
-                        .unwrap_or_default()
-                        .parse::<u64>()
-                    {
-                        let delay_ms = delay_ms.min(10_000);
-                        if delay_ms > 0 {
-                            debug!("Delaying microphone-ready cue by {delay_ms}ms for UI preview");
-                            std::thread::sleep(Duration::from_millis(delay_ms));
-                        }
-                    }
-
-                    if !rm_clone.is_recording_readiness_current(generation) {
-                        debug!("Microphone became ready for an inactive recording");
-                        return;
-                    }
-
-                    debug!("Microphone is receiving samples; recording is ready");
-                    utils::emit_recording_ready(&app_clone);
-
-                    // The start chime is a readiness cue, so it must follow the
-                    // first real input callback rather than Stream::play() or a
-                    // fixed delay. The helper returns immediately when feedback
-                    // is disabled; mute still follows the same readiness point.
-                    if rm_clone.is_recording_readiness_current(generation) {
-                        play_feedback_sound_blocking(&app_clone, SoundType::Start);
-                    }
-                    if rm_clone.is_recording_readiness_current(generation) {
-                        rm_clone.apply_mute();
-                    }
-                });
-            }
-            Err(e) => {
-                debug!("Failed to start recording: {}", e);
-                recording_error = Some(e);
-            }
-        }
-
-        if recording_error.is_none() {
-            // Dynamically register the cancel shortcut in a separate task to avoid deadlock
-            shortcut::register_cancel_shortcut(app);
-            // DanyWhere: a post-processing model on this computer starts
-            // loading now, so its cold start falls into the speaking time.
-            crate::model_warmup::start(&settings, expected_post_process);
-        } else {
-            // Starting failed (for example due to blocked microphone permissions).
-            // Revert UI state so we don't stay stuck in the recording overlay.
-            tm.cancel_stream();
-            crate::app_profiles::end_dictation();
-            set_tray_state(app, TrayIconState::Idle);
-            if let Some(err) = recording_error {
-                notices::raise(
-                    app,
-                    Notice::new(recording_notice_code(&err), NoticeSource::Dictation)
-                        .with_detail(format!("{err:#}")),
-                );
-            }
-        }
-
-        debug!(
-            "TranscribeAction::start completed in {:?}",
-            start_time.elapsed()
-        );
+        // DanyWhere: decided and done through ports (`dictation_start`), so
+        // tests run it without the app.
+        crate::dictation_start::app_ports::start(app, binding_id);
     }
 
     fn stop(&self, app: &AppHandle, binding_id: &str, shortcut_str: &str) {
