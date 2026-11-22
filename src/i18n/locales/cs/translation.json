@@ -1099,6 +1099,7 @@
         "postProcessFurtherHint": "Aktuální verzi zpracuje AI; výsledek se přidá jako nová verze.",
         "step": {
           "transcription": "Přepsáno",
+          "transcriptionModel": "Přepsáno pomocí {{model}}",
           "ai": "Následně zpracováno",
           "aiPrompt": "Následně zpracováno pomocí „{{prompt}}“",
           "user": "Upraveno vámi",

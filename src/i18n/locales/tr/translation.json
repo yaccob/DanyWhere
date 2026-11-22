@@ -1099,6 +1099,7 @@
         "postProcessFurtherHint": "Geçerli sürüm yapay zekâya gönderilir; sonuç yeni bir sürüm olarak eklenir.",
         "step": {
           "transcription": "Transkribe edildi",
+          "transcriptionModel": "{{model}} ile transkribe edildi",
           "ai": "Son işlem uygulandı",
           "aiPrompt": "“{{prompt}}” ile son işlem uygulandı",
           "user": "Sizin tarafınızdan düzenlendi",

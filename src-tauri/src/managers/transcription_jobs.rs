@@ -478,6 +478,7 @@ impl TranscriptionJobManager {
             text,
             language,
             word_replacements,
+            model_id,
         }) = tm.transcribe_in_chunks(samples, &control)?
         else {
             return Ok(JobEnd::Cancelled);
@@ -526,6 +527,7 @@ impl TranscriptionJobManager {
                     prompt_name: processed.post_process_prompt_name,
                 }),
                 post_process_requested: post_process,
+                model: model_id,
             },
         )?;
         if let Err(e) = hm.record_entry_context(
@@ -818,6 +820,7 @@ mod tests {
             by: VersionAuthor::User,
             at: Some(2),
             prompt_name: None,
+            model: None,
         });
         let edited = entry_with_hint(vec![edited]);
         assert!(post_process_input(&edited, None).unwrap().1.is_empty());

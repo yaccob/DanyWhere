@@ -21,6 +21,8 @@ import { useTranslation } from "react-i18next";
 import { useSettings } from "../../../hooks/useSettings";
 import { useOsType } from "../../../hooks/useOsType";
 import { notify } from "@/stores/noticeStore";
+import { useModelStore } from "@/stores/modelStore";
+import { getTranslatedModelName } from "@/lib/utils/modelTranslation";
 import {
   commands,
   events,
@@ -93,6 +95,7 @@ import {
   indexAfterMove,
   isSaveShortcut,
   matchingVersions,
+  modelName,
   saveModes,
   shownVersion,
   topIndex,
@@ -788,6 +791,7 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
 }) => {
   const { t, i18n } = useTranslation();
   const osType = useOsType();
+  const models = useModelStore((s) => s.models);
   const [showCopied, setShowCopied] = useState(false);
   // Pressed cancel: a running job stops after its current chunk.
   const [cancelling, setCancelling] = useState(false);
@@ -968,6 +972,14 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
   };
 
   const formattedDate = formatDateTime(String(entry.timestamp), i18n.language);
+  // DanyWhere: the speech model of its latest transcription, when known.
+  const transcribedWith = entry.transcription_model?.trim()
+    ? t("settings.history.versions.step.transcriptionModel", {
+        model: modelName(entry.transcription_model, models, (m) =>
+          getTranslatedModelName(m, t),
+        ),
+      })
+    : undefined;
   const saveKeys = osType === "macos" ? "⌘↩" : "Ctrl+Enter";
 
   let progressText = t("settings.history.transcribing");
@@ -988,7 +1000,9 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
     >
       <div className="flex justify-between items-center gap-3">
         <div className="flex items-center gap-2 min-w-0">
-          <p className="text-sm font-medium shrink-0">{formattedDate}</p>
+          <p className="text-sm font-medium shrink-0" title={transcribedWith}>
+            {formattedDate}
+          </p>
           {entry.source_name && (
             <span
               className="flex items-center gap-1 min-w-0 text-sm text-ink-3"

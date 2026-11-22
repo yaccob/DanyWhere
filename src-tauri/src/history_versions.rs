@@ -71,6 +71,12 @@ pub struct VersionStep {
     pub at: Option<i64>,
     /// For an AI step: the prompt's name, when known.
     pub prompt_name: Option<String>,
+    /// DanyWhere: for a transcription step, the id of the speech model that
+    /// made it; `None` where it isn't known (before it was recorded). Left
+    /// out of the column when `None`, so stacks stored without it read the
+    /// same.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub model: Option<String>,
 }
 
 /// One version of an entry's text.
@@ -131,15 +137,24 @@ impl VersionStep {
             by,
             at,
             prompt_name: None,
+            model: None,
         }
     }
 }
 
 impl HistoryVersion {
-    /// A transcription as the speech model wrote it at `at` (Unix
-    /// milliseconds, when known).
-    pub fn transcribed(text: &str, at: Option<i64>) -> Self {
-        Self::made_of(text, VersionStep::new(VersionAuthor::Transcription, at))
+    /// A transcription as the speech model `model` (its id, when known)
+    /// wrote it at `at` (Unix milliseconds, when known).
+    pub fn transcribed_by(text: &str, at: Option<i64>, model: Option<&str>) -> Self {
+        let mut step = VersionStep::new(VersionAuthor::Transcription, at);
+        step.model = model.map(str::to_string);
+        Self::made_of(text, step)
+    }
+
+    /// A transcription by a model not known, for tests.
+    #[cfg(test)]
+    pub(crate) fn transcribed(text: &str, at: Option<i64>) -> Self {
+        Self::transcribed_by(text, at, None)
     }
 
     /// A transcription without a time, for tests.
@@ -206,6 +221,8 @@ pub(crate) struct StackColumns<'a> {
     pub made_at: Option<i64>,
     /// A transcribed file's entry, whose post-processing may have come later.
     pub is_file: bool,
+    /// The id of the speech model that made `transcription`, when known.
+    pub transcription_model: Option<&'a str>,
 }
 
 impl<'a> StackColumns<'a> {
@@ -224,12 +241,13 @@ impl<'a> StackColumns<'a> {
                 .get::<_, Option<i64>>("timestamp")?
                 .map(|seconds| seconds.saturating_mul(1000)),
             is_file: text_ref(row, "source_name")?.is_some(),
+            transcription_model: text_ref(row, "transcription_model")?,
         })
     }
 
     /// The transcription of `transcription_text`.
     fn transcription_version(&self) -> HistoryVersion {
-        HistoryVersion::transcribed(self.transcription, self.made_at)
+        HistoryVersion::transcribed_by(self.transcription, self.made_at, self.transcription_model)
     }
 
     /// The versions above the transcription of an entry from before
@@ -316,17 +334,19 @@ impl<'a> StackColumns<'a> {
     }
 }
 
-/// The stack of an entry just made at `made_at` (Unix milliseconds), as
-/// reading it back gives it.
+/// The stack of an entry just made at `made_at` (Unix milliseconds) by the
+/// speech model `model`, as reading it back gives it.
 pub fn versions_of_new_entry(
     transcription: &str,
     post_processed: Option<&str>,
     made_at: Option<i64>,
+    model: Option<&str>,
 ) -> Vec<HistoryVersion> {
     StackColumns {
         transcription,
         post_processed,
         made_at,
+        transcription_model: model,
         ..Default::default()
     }
     .versions()
@@ -649,6 +669,7 @@ pub(crate) fn store_post_processing_with_conn(
         by: VersionAuthor::Ai,
         at: Some(at),
         prompt_name: result.prompt_name,
+        model: None,
     };
     let applied = apply_post_processing(&entry.versions, target, &result.text, step);
     let unchanged = applied.is_none();
@@ -676,13 +697,16 @@ pub(crate) struct NewTranscription {
     pub post_processed: Option<PostProcessed>,
     /// Whether the entry counts as post-processed from now on.
     pub post_process_requested: bool,
+    /// The id of the speech model that made it.
+    pub model: Option<String>,
 }
 
 /// Puts a new transcription on top of the entry's stack at `at` (Unix
 /// milliseconds), and its post-processing on top of it; the versions there
 /// stay, except the empty transcription of an entry not transcribed yet (a
 /// file, a dictation whose transcription failed). A text equal to the top's
-/// adds nothing. The entry's language becomes the new transcription's.
+/// adds nothing. The entry's language and speech model become the new
+/// transcription's.
 /// Errors: `blank` for an empty transcription, or the database's.
 pub(crate) fn add_transcription_with_conn(
     conn: &Connection,
@@ -702,13 +726,18 @@ pub(crate) fn add_transcription_with_conn(
         .cloned()
         .collect();
     if versions.last().is_none_or(|top| top.text.trim() != text) {
-        versions.push(HistoryVersion::transcribed(text, Some(at)));
+        versions.push(HistoryVersion::transcribed_by(
+            text,
+            Some(at),
+            new.model.as_deref(),
+        ));
     }
     if let Some(post_processed) = &new.post_processed {
         let step = VersionStep {
             by: VersionAuthor::Ai,
             at: Some(at),
             prompt_name: post_processed.prompt_name.clone(),
+            model: None,
         };
         if let Some(applied) = apply_post_processing(
             &versions,
@@ -734,8 +763,15 @@ pub(crate) fn add_transcription_with_conn(
         Some(new.post_process_requested),
     )?;
     transaction.execute(
-        "UPDATE transcription_history SET language = ?1, language_source = ?2 WHERE id = ?3",
-        params![language, language_source.map(LanguageSource::as_str), id],
+        "UPDATE transcription_history
+         SET language = ?1, language_source = ?2, transcription_model = ?3
+         WHERE id = ?4",
+        params![
+            language,
+            language_source.map(LanguageSource::as_str),
+            new.model,
+            id
+        ],
     )?;
     transaction.commit()?;
     HistoryManager::entry_with_conn(conn, id)
@@ -857,6 +893,7 @@ pub(crate) fn test_entry(versions: Vec<HistoryVersion>) -> HistoryEntry {
         source_name: None,
         language: None,
         language_source: None,
+        transcription_model: None,
         recording_removed: false,
         versions,
         window_context: Default::default(),
@@ -883,6 +920,7 @@ mod tests {
             by,
             at: Some(at),
             prompt_name: None,
+            model: None,
         }
     }
 
@@ -1060,10 +1098,10 @@ mod tests {
     #[test]
     fn a_new_entry_has_the_stack_reading_it_back_gives() {
         assert_eq!(
-            texts(&versions_of_new_entry("raw", None, None)),
+            texts(&versions_of_new_entry("raw", None, None, None)),
             vec!["raw"]
         );
-        let processed = versions_of_new_entry("raw", Some("Clean."), Some(7_000));
+        let processed = versions_of_new_entry("raw", Some("Clean."), Some(7_000), None);
         assert_eq!(texts(&processed), vec!["raw", "Clean."]);
         assert_eq!(authors(&processed), vec![vec![Transcription], vec![Ai]]);
         assert_eq!(
@@ -1156,6 +1194,7 @@ mod tests {
                     by: Ai,
                     at: Some(1_700_000_000_123),
                     prompt_name: Some("E-Mail".to_string()),
+                    model: None,
                 },
             ),
         ])
@@ -1163,6 +1202,20 @@ mod tests {
         assert_eq!(
             json,
             r#"{"stack":[{"text":"raw","steps":[{"by":"transcription","at":null,"prompt_name":null}]},{"text":"Clean.","steps":[{"by":"ai","at":1700000000123,"prompt_name":"E-Mail"}]}]}"#
+        );
+    }
+
+    #[test]
+    fn the_column_stores_the_model_of_a_transcription() {
+        let json = stored_json(&[HistoryVersion::transcribed_by(
+            "raw",
+            Some(5),
+            Some("canary-1b-v2"),
+        )])
+        .unwrap();
+        assert_eq!(
+            json,
+            r#"{"stack":[{"text":"raw","steps":[{"by":"transcription","at":5,"prompt_name":null,"model":"canary-1b-v2"}]}]}"#
         );
     }
 
@@ -1591,6 +1644,79 @@ mod tests {
         .expect("set column");
     }
 
+    // ---- Which speech model made a transcription ---------------------------
+
+    #[test]
+    fn the_derived_transcription_names_its_model() {
+        let derived = StackColumns {
+            transcription: "raw",
+            transcription_model: Some("canary-1b-v2"),
+            ..Default::default()
+        }
+        .versions();
+        assert_eq!(derived[0].steps[0].model.as_deref(), Some("canary-1b-v2"));
+    }
+
+    #[test]
+    fn a_stack_stored_before_models_reads_without_one() {
+        let json = r#"{"stack":[{"text":"raw","steps":[{"by":"transcription","at":1000,"prompt_name":null}]}]}"#;
+        // The column names the latest transcription's model, which need not
+        // be the one that made a stored version.
+        let stack = StackColumns {
+            transcription: "not read",
+            versions: Some(json),
+            transcription_model: Some("turbo"),
+            ..Default::default()
+        }
+        .versions();
+        assert_eq!(texts(&stack), vec!["raw"]);
+        assert_eq!(stack[0].steps[0].model, None);
+    }
+
+    #[test]
+    fn transcribing_again_puts_its_model_on_the_new_version_and_keeps_the_old_one() {
+        let conn = database();
+        let id = insert(&conn, "raw", None);
+        set(&conn, id, "transcription_model", "canary-1b-v2");
+        let mut new = new_transcription("raw again", None);
+        new.model = Some("turbo".into());
+
+        let e = add_transcription_with_conn(&conn, id, new, 77).expect("transcribe again");
+
+        assert_eq!(texts(&e.versions), vec!["raw", "raw again"]);
+        let models: Vec<Option<&str>> = e
+            .versions
+            .iter()
+            .map(|v| v.steps[0].model.as_deref())
+            .collect();
+        assert_eq!(models, vec![Some("canary-1b-v2"), Some("turbo")]);
+        assert_eq!(e.transcription_model.as_deref(), Some("turbo"));
+        let stored: Vec<Option<String>> = stored_stack(&conn, id)
+            .into_iter()
+            .map(|v| v.steps[0].model.clone())
+            .collect();
+        assert_eq!(
+            stored,
+            vec![Some("canary-1b-v2".to_string()), Some("turbo".to_string())]
+        );
+    }
+
+    #[test]
+    fn saving_an_edit_keeps_the_model_of_the_transcription() {
+        let conn = database();
+        let id = insert(&conn, "raw", None);
+        set(&conn, id, "transcription_model", "canary-1b-v2");
+
+        save_version_with_conn(&conn, id, 0, "raw, mine", SaveVersionMode::New, 88)
+            .expect("save version");
+
+        let stored = stored_stack(&conn, id);
+        assert_eq!(texts(&stored), vec!["raw", "raw, mine"]);
+        assert_eq!(stored[0].steps[0].model.as_deref(), Some("canary-1b-v2"));
+        // The user's version is no speech model's.
+        assert_eq!(stored[1].steps[0].model, None);
+    }
+
     #[test]
     fn an_old_database_gets_the_versions_column_and_keeps_its_stacks() {
         let mut conn = Connection::open_in_memory().expect("open in-memory db");
@@ -1891,7 +2017,8 @@ mod tests {
             vec![VersionStep {
                 by: Ai,
                 at: Some(77),
-                prompt_name: Some("Grammar".into())
+                prompt_name: Some("Grammar".into()),
+                model: None,
             }]
         );
         assert_eq!(e.post_processed_text.as_deref(), Some("Clean words."));
@@ -1975,6 +2102,7 @@ mod tests {
                 prompt_name: Some("Again".into()),
             }),
             post_process_requested: post_processed.is_some(),
+            model: None,
         }
     }
 
@@ -2061,7 +2189,7 @@ mod tests {
             "new words".into(),
             Some("New words.".into()),
             None,
-            None,
+            crate::managers::history::TranscribedWith::default(),
             true,
         )
         .expect("transcribe again");

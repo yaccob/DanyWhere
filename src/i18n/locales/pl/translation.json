@@ -1099,6 +1099,7 @@
         "postProcessFurtherHint": "Bieżącą wersję przetwarza AI; wynik zostaje dodany jako nowa wersja.",
         "step": {
           "transcription": "Przetranskrybowano",
+          "transcriptionModel": "Przetranskrybowano za pomocą {{model}}",
           "ai": "Po postprocesie",
           "aiPrompt": "Po postprocesie z „{{prompt}}”",
           "user": "Edytowane przez ciebie",

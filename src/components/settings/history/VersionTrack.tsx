@@ -24,6 +24,8 @@ import {
 } from "lucide-react";
 import type { HistoryEntry, HistoryVersion, VersionStep } from "@/bindings";
 import { formatDateTime } from "@/utils/dateFormat";
+import { getTranslatedModelName } from "@/lib/utils/modelTranslation";
+import { useModelStore } from "@/stores/modelStore";
 import { cancelOnEscape } from "@/lib/escapeLayers";
 import { menuOffset } from "@/lib/menuPlacement";
 import {
@@ -32,6 +34,7 @@ import {
   distinctLines,
   dropSlot,
   moveChip,
+  modelName,
   moveTarget,
   pressChip,
   releaseChip,
@@ -106,6 +109,7 @@ export const VersionTrack: React.FC<VersionTrackProps> = ({
   disabled = false,
 }) => {
   const { t, i18n } = useTranslation();
+  const models = useModelStore((s) => s.models);
   const [expanded, setExpanded] = useState(false);
   const [drag, setDrag] = useState<ChipDrag | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -187,8 +191,14 @@ export const VersionTrack: React.FC<VersionTrackProps> = ({
   const rtl = i18n.dir() === "rtl";
 
   const stepLine = (step: VersionStep, index: number, stepIndex: number) => {
-    const { key, prompt } = describeStep(step);
-    const name = t(`${KEYS}.step.${key}`, { prompt });
+    const { key, prompt, model } = describeStep(step);
+    const name = t(`${KEYS}.step.${key}`, {
+      prompt,
+      model:
+        model === null
+          ? null
+          : modelName(model, models, (m) => getTranslatedModelName(m, t)),
+    });
     const seconds = stepSeconds(entry, index, stepIndex);
     return seconds === null
       ? name

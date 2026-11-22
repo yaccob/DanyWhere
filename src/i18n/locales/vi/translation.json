@@ -1099,6 +1099,7 @@
         "postProcessFurtherHint": "Phiên bản hiện tại được gửi cho AI; kết quả của AI được thêm vào thành một phiên bản mới.",
         "step": {
           "transcription": "Đã phiên âm",
+          "transcriptionModel": "Đã phiên âm bằng {{model}}",
           "ai": "Đã xử lý sau",
           "aiPrompt": "Đã xử lý sau với “{{prompt}}”",
           "user": "Do bạn chỉnh sửa",

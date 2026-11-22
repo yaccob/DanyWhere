@@ -1099,6 +1099,7 @@
         "postProcessFurtherHint": "将当前版本发给 AI；AI 的结果作为新版本添加。",
         "step": {
           "transcription": "已转录",
+          "transcriptionModel": "已用 {{model}} 转录",
           "ai": "已后处理",
           "aiPrompt": "已用“{{prompt}}”后处理",
           "user": "由你编辑",

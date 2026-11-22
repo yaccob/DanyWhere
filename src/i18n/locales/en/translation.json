@@ -1099,6 +1099,7 @@
         "postProcessFurtherHint": "The current version goes to the AI; its result is added as a new version.",
         "step": {
           "transcription": "Transcribed",
+          "transcriptionModel": "Transcribed with {{model}}",
           "ai": "Post-processed",
           "aiPrompt": "Post-processed with “{{prompt}}”",
           "user": "Edited by you",

@@ -1099,6 +1099,7 @@
         "postProcessFurtherHint": "Versi saat ini dikirim ke AI; hasil dari AI ditambahkan sebagai versi baru.",
         "step": {
           "transcription": "Ditranskripsikan",
+          "transcriptionModel": "Ditranskripsikan dengan {{model}}",
           "ai": "Dipascaproses",
           "aiPrompt": "Dipascaproses dengan “{{prompt}}”",
           "user": "Diedit oleh Anda",
