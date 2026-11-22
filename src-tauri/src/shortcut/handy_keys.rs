@@ -312,9 +312,11 @@ impl HandyKeysState {
                     modifiers: modifiers_to_strings(key_event.modifiers),
                     key: key_event.key.map(|k| k.to_string().to_lowercase()),
                     is_key_down: key_event.is_key_down,
+                    // DanyWhere: with a main key, either side of each
+                    // modifier (`key_sides`).
                     hotkey_string: key_event
                         .as_hotkey()
-                        .map(|h| h.to_handy_string())
+                        .map(crate::key_sides::recorded_string)
                         .unwrap_or_default(),
                 };
 

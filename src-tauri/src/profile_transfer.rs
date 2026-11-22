@@ -345,6 +345,8 @@ pub fn read_import(
     // "Append" field), without shortcuts, or with another system's key
     // names in it.
     crate::end_keys::prepare_import(text, &mut profile.values);
+    // DanyWhere: key combinations from a file recorded with a side.
+    crate::key_sides::prepare_import(&mut profile.values);
     // DanyWhere: a file from before the prompt library.
     let ExportedProfile {
         profile: inner,
