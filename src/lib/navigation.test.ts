@@ -93,6 +93,28 @@ check("post-processing and debug mode come from the settings", () => {
   assert.equal(ctx.debugMode, false);
   assert.equal(debug.debugMode, true);
 });
+// The flat fields hold the values of whatever is in use; the defaults' pages
+// edit the defaults, so their Post Process page follows the defaults' value.
+const workInUse = navContext({
+  ...settings,
+  post_process_enabled: false,
+  default_values: { post_process_enabled: true },
+});
+const defaultsOff = navContext({
+  ...settings,
+  post_process_enabled: true,
+  default_values: { post_process_enabled: false },
+});
+check("a profile without post-processing in use keeps the defaults' page", () =>
+  assert.equal(workInUse.postProcessEnabled, true),
+);
+check("defaults without post-processing hide it while a profile has it", () =>
+  assert.equal(defaultsOff.postProcessEnabled, false),
+);
+check("the defaults' pages follow the defaults, not what is in use", () => {
+  assert.ok(defaultsPages(workInUse).includes("postprocessing"));
+  assert.ok(!defaultsPages(defaultsOff).includes("postprocessing"));
+});
 
 // --- Which pages each area has --------------------------------------------
 check("the defaults have today's four pages, in order", () =>

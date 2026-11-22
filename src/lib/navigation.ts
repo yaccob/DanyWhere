@@ -65,6 +65,8 @@ export interface NavSettings {
         own_entries?: Partial<Record<string, OwnEntriesLike>> | null;
       }[]
     | null;
+  /** The defaults' own values; the flat fields hold what is in use. */
+  default_values?: { post_process_enabled?: boolean | null } | null;
   post_process_enabled?: boolean | null;
   debug_mode?: boolean | null;
 }
@@ -147,7 +149,13 @@ export const navContext = (
           pageCounts,
         };
       }),
-    postProcessEnabled: settings?.post_process_enabled === true,
+    // The defaults' pages edit the defaults, so their Post Process page
+    // follows the defaults' value; the flat field (what is in use) only
+    // stands in while the settings have no defaults yet.
+    postProcessEnabled:
+      (settings?.default_values
+        ? settings.default_values.post_process_enabled
+        : settings?.post_process_enabled) === true,
     debugMode: settings?.debug_mode === true,
   };
 };
