@@ -2224,6 +2224,12 @@ language: string | null;
  */
 language_source: LanguageSource | null; 
 /**
+ * DanyWhere: the id of the speech model of its latest transcription;
+ * `None` before it was recorded, or when no model ran. Each version
+ * keeps the model that made it (`VersionStep::model`).
+ */
+transcription_model: string | null; 
+/**
  * The storage limit deleted the recording; the transcript stays, but
  * there is nothing to play or transcribe again.
  */
@@ -3011,7 +3017,14 @@ at: number | null;
 /**
  * For an AI step: the prompt's name, when known.
  */
-prompt_name: string | null }
+prompt_name: string | null; 
+/**
+ * DanyWhere: for a transcription step, the id of the speech model that
+ * made it; `None` where it isn't known (before it was recorded). Left
+ * out of the column when `None`, so stacks stored without it read the
+ * same.
+ */
+model?: string | null }
 /**
  * What the settings show about window titles on this computer.
  */

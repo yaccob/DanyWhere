@@ -1099,6 +1099,7 @@
         "postProcessFurtherHint": "De huidige versie gaat naar de AI; het resultaat komt erbij als nieuwe versie.",
         "step": {
           "transcription": "Getranscribeerd",
+          "transcriptionModel": "Getranscribeerd met {{model}}",
           "ai": "Naverwerkt",
           "aiPrompt": "Naverwerkt met ‘{{prompt}}’",
           "user": "Door jou bewerkt",

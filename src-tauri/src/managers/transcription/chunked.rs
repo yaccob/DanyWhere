@@ -91,6 +91,11 @@ impl<'a> ChunkedDecode<'a> {
         decode.finish()
     }
 
+    /// DanyWhere: the id of the model every chunk is decoded with.
+    pub(super) fn model_id(&self) -> &str {
+        &self.model_id
+    }
+
     /// Samples pushed so far.
     pub(super) fn samples(&self) -> usize {
         self.chunker.samples()

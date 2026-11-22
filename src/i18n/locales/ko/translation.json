@@ -1099,6 +1099,7 @@
         "postProcessFurtherHint": "현재 버전을 AI에 보내고, AI의 결과를 새 버전으로 추가합니다.",
         "step": {
           "transcription": "전사됨",
+          "transcriptionModel": "{{model}}(으)로 전사됨",
           "ai": "후처리됨",
           "aiPrompt": "'{{prompt}}'(으)로 후처리됨",
           "user": "직접 수정함",

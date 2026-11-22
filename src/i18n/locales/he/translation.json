@@ -1099,6 +1099,7 @@
         "postProcessFurtherHint": "הגרסה הנוכחית נשלחת ל-AI; התוצאה נוספת כגרסה חדשה.",
         "step": {
           "transcription": "תומלל",
+          "transcriptionModel": "תומלל עם {{model}}",
           "ai": "עבר עיבוד משלים",
           "aiPrompt": "עבר עיבוד משלים עם “{{prompt}}”",
           "user": "נערך על ידך",

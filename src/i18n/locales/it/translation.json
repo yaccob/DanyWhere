@@ -1099,6 +1099,7 @@
         "postProcessFurtherHint": "La versione attuale viene inviata all'IA; il suo risultato viene aggiunto come nuova versione.",
         "step": {
           "transcription": "Trascritto",
+          "transcriptionModel": "Trascritto con {{model}}",
           "ai": "Post-elaborato",
           "aiPrompt": "Post-elaborato con «{{prompt}}»",
           "user": "Modificato da te",

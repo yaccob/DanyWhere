@@ -1099,6 +1099,7 @@
         "postProcessFurtherHint": "現在のバージョンを AI に送り、AI の結果を新しいバージョンとして追加します。",
         "step": {
           "transcription": "文字起こし",
+          "transcriptionModel": "{{model}}で文字起こし",
           "ai": "後処理",
           "aiPrompt": "「{{prompt}}」で後処理",
           "user": "自分で編集",

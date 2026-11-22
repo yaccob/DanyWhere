@@ -1207,10 +1207,12 @@ mod tests {
             source_name: None,
             language: None,
             language_source: None,
+            transcription_model: None,
             recording_removed: false,
             versions: crate::history_versions::versions_of_new_entry(
                 transcription,
                 post_processed,
+                None,
                 None,
             ),
             window_context: Default::default(),

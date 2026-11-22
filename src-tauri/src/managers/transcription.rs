@@ -1049,6 +1049,7 @@ impl TranscriptionManager {
                 text: String::new(),
                 language: None,
                 word_replacements: Vec::new(),
+                model_id: None,
             });
         }
 
@@ -1061,6 +1062,7 @@ impl TranscriptionManager {
         let language = outcome
             .setup
             .spoken_language(outcome.model_detected_language.as_deref());
+        let model_id = outcome.model_id.clone();
         let (final_result, word_replacements) = finish_text(outcome, &settings);
 
         let translation_note = if settings.translate_to_english {
@@ -1094,6 +1096,7 @@ impl TranscriptionManager {
             text: final_result,
             language: Some(language),
             word_replacements,
+            model_id: Some(model_id),
         })
     }
 
@@ -1241,6 +1244,7 @@ impl TranscriptionManager {
             setup,
             text,
             model_detected_language,
+            model_id: active_model,
         })
     }
 
@@ -1289,6 +1293,9 @@ pub struct Transcription {
     /// DanyWhere: what the word list replaced in `text`
     /// (`dictation_context`).
     pub word_replacements: Vec<crate::dictation_context::WordReplacement>,
+    /// DanyWhere: the id of the speech model that made `text`; `None` when
+    /// there was no audio to run.
+    pub model_id: Option<String>,
 }
 
 /// What one transcription decoded (live or in batch), with how its runs were
@@ -1298,6 +1305,8 @@ struct RunOutcome {
     text: String,
     /// The language the model itself detected, if it reported one.
     model_detected_language: Option<String>,
+    /// DanyWhere: the id of the model that decoded it.
+    model_id: String,
 }
 
 /// One transcription's final text: its output language resolved, then
@@ -1310,6 +1319,7 @@ fn finish_text(
         setup,
         text,
         model_detected_language,
+        ..
     } = outcome;
     let output_language = setup.output_language(settings, model_detected_language);
     debug!("Output language evidence: {:?}", output_language);

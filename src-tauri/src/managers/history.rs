@@ -43,7 +43,9 @@ static MIGRATIONS: &[M] = &[
 /// hold the user's corrections from before versions, which an entry's
 /// versions are derived from until `versions` holds them, see
 /// `history_versions`; the `window_*` to `word_replacements` columns the
-/// window a dictation was made in and its context, see `dictation_context`.
+/// window a dictation was made in and its context, see `dictation_context`;
+/// `transcription_model` the id of the speech model of the latest
+/// transcription.
 const ADDED_COLUMNS: &[&str] = &[
     "source_name",
     "language",
@@ -59,6 +61,7 @@ const ADDED_COLUMNS: &[&str] = &[
     "sent_as_context",
     "word_replacements",
     "versions",
+    "transcription_model",
 ];
 
 /// Every column a [`HistoryEntry`] is read from.
@@ -66,7 +69,7 @@ const ENTRY_COLUMNS: &str = "id, file_name, timestamp, saved, title, transcripti
     post_processed_text, post_process_prompt, post_process_requested, source_name, language, \
     language_source, recording_removed, transcription_correction, post_processed_correction, \
     post_processed_from_correction, window_app_id, window_app_name, window_title, \
-    context_entry_ids, sent_as_context, word_replacements, versions";
+    context_entry_ids, sent_as_context, word_replacements, versions, transcription_model";
 
 #[derive(Clone, Debug, Serialize, Deserialize, Type)]
 pub struct PaginatedHistory {
@@ -105,6 +108,10 @@ pub struct HistoryEntry {
     pub language: Option<String>,
     /// How that language was chosen; `None` before it was recorded.
     pub language_source: Option<LanguageSource>,
+    /// DanyWhere: the id of the speech model of its latest transcription;
+    /// `None` before it was recorded, or when no model ran. Each version
+    /// keeps the model that made it (`VersionStep::model`).
+    pub transcription_model: Option<String>,
     /// The storage limit deleted the recording; the transcript stays, but
     /// there is nothing to play or transcribe again.
     pub recording_removed: bool,
@@ -191,6 +198,15 @@ pub struct HistoryManager {
     /// Decoded WAV copies of Opus recordings for the player.
     playback_dir: PathBuf,
     db_path: PathBuf,
+}
+
+/// DanyWhere: what a transcription ran with, as History keeps it.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct TranscribedWith {
+    /// The language it ran in and how that was chosen.
+    pub language: Option<LanguageDecision>,
+    /// The id of the speech model that ran; `None` when none did.
+    pub model: Option<String>,
 }
 
 /// A transcription's language as its two columns.
@@ -390,6 +406,7 @@ impl HistoryManager {
                 .get::<_, Option<String>>("language_source")?
                 .as_deref()
                 .and_then(LanguageSource::parse),
+            transcription_model: row.get("transcription_model")?,
             recording_removed: row.get::<_, Option<String>>("recording_removed")?.is_some(),
             versions: crate::history_versions::StackColumns::from_row(row)?.versions(),
             window_context: crate::dictation_context::window_context_from_row(row)?,
@@ -409,15 +426,16 @@ impl HistoryManager {
         post_process_requested: bool,
         post_processed_text: Option<String>,
         post_process_prompt: Option<String>,
-        language: Option<LanguageDecision>,
+        made_with: TranscribedWith,
     ) -> Result<HistoryEntry> {
-        let (language, language_source) = split_language(language);
+        let (language, language_source) = split_language(made_with.language);
         let timestamp = Utc::now().timestamp();
         // DanyWhere: as reading it back gives it (`history_versions`).
         let versions = crate::history_versions::versions_of_new_entry(
             &transcription_text,
             post_processed_text.as_deref(),
             Some(timestamp.saturating_mul(1000)),
+            made_with.model.as_deref(),
         );
         let entry = self.insert_entry(HistoryEntry {
             id: 0,
@@ -432,6 +450,7 @@ impl HistoryManager {
             source_name: None,
             language,
             language_source,
+            transcription_model: made_with.model,
             recording_removed: false,
             versions,
             window_context: Default::default(),
@@ -460,11 +479,13 @@ impl HistoryManager {
             source_name: Some(source_name),
             language: None,
             language_source: None,
+            transcription_model: None,
             recording_removed: false,
             versions: crate::history_versions::versions_of_new_entry(
                 "",
                 None,
                 Some(timestamp.saturating_mul(1000)),
+                None,
             ),
             window_context: Default::default(),
         })?;
@@ -483,35 +504,7 @@ impl HistoryManager {
         entry.title = self.format_timestamp_title(entry.timestamp);
 
         let conn = self.get_connection()?;
-        conn.execute(
-            "INSERT INTO transcription_history (
-                file_name,
-                timestamp,
-                saved,
-                title,
-                transcription_text,
-                post_processed_text,
-                post_process_prompt,
-                post_process_requested,
-                source_name,
-                language,
-                language_source
-            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
-            params![
-                &entry.file_name,
-                entry.timestamp,
-                entry.saved,
-                &entry.title,
-                &entry.transcription_text,
-                &entry.post_processed_text,
-                &entry.post_process_prompt,
-                entry.post_process_requested,
-                &entry.source_name,
-                &entry.language,
-                entry.language_source.map(LanguageSource::as_str),
-            ],
-        )?;
-        entry.id = conn.last_insert_rowid();
+        entry.id = Self::insert_with_conn(&conn, &entry)?;
 
         debug!("Saved history entry with id {}", entry.id);
 
@@ -527,6 +520,41 @@ impl HistoryManager {
         Ok(entry)
     }
 
+    /// Insert the row of `entry` (its id aside) and return its id.
+    pub(crate) fn insert_with_conn(conn: &Connection, entry: &HistoryEntry) -> Result<i64> {
+        conn.execute(
+            "INSERT INTO transcription_history (
+                file_name,
+                timestamp,
+                saved,
+                title,
+                transcription_text,
+                post_processed_text,
+                post_process_prompt,
+                post_process_requested,
+                source_name,
+                language,
+                language_source,
+                transcription_model
+            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
+            params![
+                &entry.file_name,
+                entry.timestamp,
+                entry.saved,
+                &entry.title,
+                &entry.transcription_text,
+                &entry.post_processed_text,
+                &entry.post_process_prompt,
+                entry.post_process_requested,
+                &entry.source_name,
+                &entry.language,
+                entry.language_source.map(LanguageSource::as_str),
+                &entry.transcription_model,
+            ],
+        )?;
+        Ok(conn.last_insert_rowid())
+    }
+
     /// Update an existing history entry with new transcription results (used
     /// by retry). `post_process_requested` is whether the entry counts as
     /// post-processed from now on, so the next retry post-processes too.
@@ -536,7 +564,7 @@ impl HistoryManager {
         transcription_text: String,
         post_processed_text: Option<String>,
         post_process_prompt: Option<String>,
-        language: Option<LanguageDecision>,
+        made_with: TranscribedWith,
         post_process_requested: bool,
     ) -> Result<HistoryEntry> {
         let conn = self.get_connection()?;
@@ -546,7 +574,7 @@ impl HistoryManager {
             transcription_text,
             post_processed_text,
             post_process_prompt,
-            language,
+            made_with,
             post_process_requested,
         )?;
         debug!("Updated transcription for history entry {}", id);
@@ -560,10 +588,10 @@ impl HistoryManager {
         transcription_text: String,
         post_processed_text: Option<String>,
         post_process_prompt: Option<String>,
-        language: Option<LanguageDecision>,
+        made_with: TranscribedWith,
         post_process_requested: bool,
     ) -> Result<HistoryEntry> {
-        let (language, language_source) = split_language(language);
+        let (language, language_source) = split_language(made_with.language);
         // DanyWhere: a new transcription replaces the user's corrections of the
         // old one and of its post-processing, and every version made of it;
         // the versions are derived anew (`history_versions`).
@@ -575,11 +603,12 @@ impl HistoryManager {
                  language = ?4,
                  language_source = ?5,
                  post_process_requested = ?6,
+                 transcription_model = ?7,
                  transcription_correction = NULL,
                  post_processed_correction = NULL,
                  post_processed_from_correction = NULL,
                  versions = NULL
-             WHERE id = ?7",
+             WHERE id = ?8",
             params![
                 transcription_text,
                 post_processed_text,
@@ -587,6 +616,7 @@ impl HistoryManager {
                 language,
                 language_source.map(LanguageSource::as_str),
                 post_process_requested,
+                made_with.model,
                 id
             ],
         )?;
@@ -1071,7 +1101,8 @@ mod tests {
                 context_entry_ids TEXT,
                 sent_as_context TEXT,
                 word_replacements TEXT,
-                versions TEXT
+                versions TEXT,
+                transcription_model TEXT
             );",
         )
         .expect("create transcription_history table");
@@ -1553,7 +1584,7 @@ mod tests {
             "new words".into(),
             Some("New words.".into()),
             None,
-            None,
+            TranscribedWith::default(),
             true,
         )
         .expect("update transcription");
@@ -1581,7 +1612,7 @@ mod tests {
             "a".into(),
             None,
             None,
-            None,
+            TranscribedWith::default(),
             false,
         )
         .expect("update plain entry");
@@ -1591,12 +1622,99 @@ mod tests {
             "b".into(),
             Some("B.".into()),
             None,
-            None,
+            TranscribedWith::default(),
             true,
         )
         .expect("update post-processed entry");
 
         assert!(!post_process_requested(&conn, 1));
         assert!(post_process_requested(&conn, 2));
+    }
+
+    // DanyWhere: which speech model made an entry's transcription.
+
+    fn entry_made_by(model: Option<&str>) -> HistoryEntry {
+        HistoryEntry {
+            id: 0,
+            file_name: "handy-7.opus".to_string(),
+            timestamp: 7,
+            saved: false,
+            title: "Recording 7".to_string(),
+            transcription_text: "seven words".to_string(),
+            post_processed_text: None,
+            post_process_prompt: None,
+            post_process_requested: false,
+            source_name: None,
+            language: None,
+            language_source: None,
+            transcription_model: model.map(str::to_string),
+            recording_removed: false,
+            versions: crate::history_versions::versions_of_new_entry(
+                "seven words",
+                None,
+                Some(7_000),
+                model,
+            ),
+            window_context: Default::default(),
+        }
+    }
+
+    #[test]
+    fn migrating_adds_the_transcription_model_column() {
+        let mut conn = Connection::open_in_memory().expect("open in-memory db");
+        HistoryManager::apply_migrations(&mut conn).expect("migrate");
+        assert!(HistoryManager::has_column(&conn, "transcription_model").expect("read table info"));
+    }
+
+    #[test]
+    fn a_new_entry_keeps_the_model_that_transcribed_it() {
+        let conn = setup_conn();
+        let id = HistoryManager::insert_with_conn(&conn, &entry_made_by(Some("canary-1b-v2")))
+            .expect("insert entry");
+
+        let entry = entry_by_id(&conn, id).unwrap();
+        assert_eq!(entry.transcription_model.as_deref(), Some("canary-1b-v2"));
+        // Its transcription, the entry's only version, knows it too.
+        assert_eq!(
+            entry.versions[0].steps[0].model.as_deref(),
+            Some("canary-1b-v2")
+        );
+    }
+
+    #[test]
+    fn an_entry_from_before_has_no_model() {
+        let conn = setup_conn();
+        insert_entry(&conn, 100, "old words", Some("Old words."));
+
+        let entry = entry_by_id(&conn, 1).unwrap();
+        assert_eq!(entry.transcription_model, None);
+        assert!(entry.versions.iter().all(|v| v.steps[0].model.is_none()));
+    }
+
+    #[test]
+    fn transcribing_again_records_the_new_model() {
+        let conn = setup_conn();
+        HistoryManager::insert_with_conn(&conn, &entry_made_by(Some("canary-1b-v2")))
+            .expect("insert entry");
+
+        HistoryManager::update_transcription_with_conn(
+            &conn,
+            1,
+            "new words".into(),
+            Some("New words.".into()),
+            None,
+            TranscribedWith {
+                language: None,
+                model: Some("turbo".into()),
+            },
+            true,
+        )
+        .expect("update transcription");
+
+        let entry = entry_by_id(&conn, 1).unwrap();
+        assert_eq!(entry.transcription_model.as_deref(), Some("turbo"));
+        assert_eq!(entry.versions[0].steps[0].model.as_deref(), Some("turbo"));
+        // Post-processing is no speech model's.
+        assert_eq!(entry.versions[1].steps[0].model, None);
     }
 }

@@ -1099,6 +1099,7 @@
         "postProcessFurtherHint": "Den aktuelle version sendes til AI'en; dens resultat tilføjes som en ny version.",
         "step": {
           "transcription": "Transskriberet",
+          "transcriptionModel": "Transskriberet med {{model}}",
           "ai": "Efterbehandlet",
           "aiPrompt": "Efterbehandlet med „{{prompt}}“",
           "user": "Redigeret af dig",
