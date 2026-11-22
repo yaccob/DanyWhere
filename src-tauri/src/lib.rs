@@ -16,6 +16,7 @@ mod dictation_key_inserts;
 mod dictation_microphone;
 // DanyWhere: what the end of a dictation runs with, read once.
 mod dictation_snapshot;
+mod dictation_start;
 mod end_keys;
 pub mod engine_supervisor;
 mod helpers;

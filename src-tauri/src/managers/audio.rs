@@ -357,25 +357,35 @@ pub fn create_smoothed_detector(
     backend: VadBackend,
     app_handle: &tauri::AppHandle,
 ) -> Result<SmoothedVad, anyhow::Error> {
-    let detector: Box<dyn VoiceActivityDetector> = create_detector(backend, app_handle)?;
+    Ok(smooth(create_detector(backend, app_handle)?))
+}
 
+/// DanyWhere: a recording's smoothing around `detector`.
+fn smooth(detector: Box<dyn VoiceActivityDetector>) -> SmoothedVad {
     // Earshot uses 16 ms frames while Silero uses 32 ms. Convert the existing
     // time-based capture profile to each detector's frame size so selecting a
     // backend does not shorten pre-roll, onset, or post-speech audio.
     let frame_samples = detector.frame_samples();
-    Ok(SmoothedVad::new(
+    SmoothedVad::new(
         detector,
         frames_for_duration_ms(VAD_PREFILL_MS, frame_samples),
         frames_for_duration_ms(VAD_OFFLINE_HANGOVER_MS, frame_samples),
         frames_for_duration_ms(VAD_ONSET_MS, frame_samples),
-    ))
+    )
 }
 
 fn create_capture_vad(
     backend: VadBackend,
     app_handle: &tauri::AppHandle,
 ) -> Result<CaptureVad, anyhow::Error> {
-    let smoothed_vad = create_smoothed_detector(backend, app_handle)?;
+    Ok(capture_vad(
+        create_smoothed_detector(backend, app_handle)?,
+        backend,
+    ))
+}
+
+/// DanyWhere: the capture VAD around `smoothed_vad`, a detector of `backend`.
+fn capture_vad(smoothed_vad: SmoothedVad, backend: VadBackend) -> CaptureVad {
     let frame_samples = smoothed_vad.frame_samples();
     let offline_hangover_frames = frames_for_duration_ms(VAD_OFFLINE_HANGOVER_MS, frame_samples);
     let streaming_hangover_frames =
@@ -386,11 +396,11 @@ fn create_capture_vad(
         backend, frame_samples
     );
 
-    Ok(CaptureVad::new(
+    CaptureVad::new(
         Box::new(smoothed_vad),
         offline_hangover_frames,
         streaming_hangover_frames,
-    ))
+    )
 }
 
 /// 16 kHz mono in VAD-frame chunks, from `device` (`None`: the system
@@ -411,13 +421,16 @@ fn microphone_config(
     }
 }
 
-fn open_microphone(config: RecorderConfig) -> Result<OpenMicrophone, handy_recorder::Error> {
+fn open_microphone(
+    open: &OpenRecorder,
+    config: RecorderConfig,
+) -> Result<OpenMicrophone, handy_recorder::Error> {
     let failed = Arc::new(AtomicBool::new(false));
-    let recorder = Recorder::open_with_failure_handler(config, {
+    let recorder = open(config, {
         let failed = Arc::clone(&failed);
         // handy-recorder logs the failure. The stream is rebuilt on the next
         // start; a recording in progress keeps the audio captured before it.
-        move |_| failed.store(true, Ordering::Release)
+        Box::new(move |_| failed.store(true, Ordering::Release))
     })?;
     Ok(OpenMicrophone { recorder, failed })
 }
@@ -425,28 +438,76 @@ fn open_microphone(config: RecorderConfig) -> Result<OpenMicrophone, handy_recor
 /// Opens with the selected channel, or averages all channels if the device
 /// doesn't have it (a different microphone than the one it was chosen on).
 fn open_microphone_on_channel(
+    open: &OpenRecorder,
     device: Option<String>,
     channel: Option<u16>,
     take_headset: bool,
     frames_per_chunk: usize,
 ) -> Result<OpenMicrophone, handy_recorder::Error> {
-    match open_microphone(microphone_config(
-        device.clone(),
-        channel,
-        take_headset,
-        frames_per_chunk,
-    )) {
+    match open_microphone(
+        open,
+        microphone_config(device.clone(), channel, take_headset, frames_per_chunk),
+    ) {
         Err(error) if error.kind() == ErrorKind::InvalidChannel => {
             warn!("{error}; averaging all input channels instead");
-            open_microphone(microphone_config(
-                device,
-                None,
-                take_headset,
-                frames_per_chunk,
-            ))
+            open_microphone(
+                open,
+                microphone_config(device, None, take_headset, frames_per_chunk),
+            )
         }
         result => result,
     }
+}
+
+/// DanyWhere: what a recorder the manager opens calls when it fails.
+pub type RecorderFailureHandler = Box<dyn FnOnce(handy_recorder::Error) + Send + 'static>;
+
+/// DanyWhere: opens the microphone: `Recorder::open_with_failure_handler`
+/// in the app, a fake microphone in tests (`handy_recorder::testing`).
+pub type OpenRecorder = Arc<
+    dyn Fn(
+            RecorderConfig,
+            RecorderFailureHandler,
+        ) -> Result<Recorder<CaptureSink>, handy_recorder::Error>
+        + Send
+        + Sync,
+>;
+
+/// DanyWhere: what the manager takes from the app, as functions, so a test
+/// can build one without it ([`AudioRecordingManager::with_host`]);
+/// [`AudioRecordingManager::new`] wires them to the app.
+#[derive(Clone)]
+pub struct AudioHost {
+    /// The stored settings (`get_settings`), read each time they are needed.
+    pub settings: Arc<dyn Fn() -> AppSettings + Send + Sync>,
+    /// Clears the selected microphone of this name from the settings after
+    /// the default stood in for it, and tells the frontend.
+    pub forget_microphone: Arc<dyn Fn(&str) + Send + Sync>,
+    /// A recording's VAD for the backend.
+    pub create_vad: Arc<dyn Fn(VadBackend) -> Result<CaptureVad, anyhow::Error> + Send + Sync>,
+    pub open_recorder: OpenRecorder,
+    /// Spectrum levels for the overlay.
+    pub on_levels: LevelCallback,
+}
+
+/// Keep persisted settings and the UI aligned with a successful runtime
+/// fallback. Re-read first so recovery cannot clear a microphone the user
+/// selected concurrently while the stream was being rebuilt.
+fn forget_microphone(app: &tauri::AppHandle, unavailable_name: &str) {
+    let mut settings = get_settings(app);
+    if settings.selected_microphone.as_deref() != Some(unavailable_name) {
+        return;
+    }
+
+    settings.selected_microphone = None;
+    write_settings(app, settings);
+    let _ = app.emit(
+        "settings-changed",
+        serde_json::json!({
+            "setting": "selected_microphone",
+            "value": "Default"
+        }),
+    );
 }
 
 /* ──────────────────────────────────────────────────────────────── */
@@ -474,7 +535,8 @@ pub struct AudioRecordingManager {
     /// `set_state()`, which keeps `recording_active` in sync.
     state: Arc<Mutex<RecordingState>>,
     mode: Arc<Mutex<MicrophoneMode>>,
-    app_handle: tauri::AppHandle,
+    /// DanyWhere: the app's settings, microphone and VAD, or a test's.
+    host: AudioHost,
 
     recorder: Arc<Mutex<Option<OpenMicrophone>>>,
     vad: Arc<Mutex<VadSlot>>,
@@ -485,8 +547,6 @@ pub struct AudioRecordingManager {
     /// Hold a Bluetooth headset on this Mac while recording. Held here for
     /// the same reason as `selected_channel`.
     airpods_mode: Arc<AtomicBool>,
-    /// Spectrum levels for the overlay.
-    on_levels: LevelCallback,
     /// VAD-passed frames for live streaming, via a shared `StreamRouter`
     /// (captured directly, not via Tauri state — see its docs).
     on_audio: AudioFrameCallback,
@@ -522,33 +582,48 @@ pub struct AudioRecordingManager {
 impl AudioRecordingManager {
     /* ---------- construction ------------------------------------------------ */
 
+    /// The app's microphone: its settings, the selected device, the VAD
+    /// model in its resources, levels to the overlay and frames to the
+    /// live stream (`stream_router`).
     pub fn new(
         app: &tauri::AppHandle,
         stream_router: Arc<StreamRouter>,
     ) -> Result<Self, anyhow::Error> {
-        let settings = get_settings(app);
+        let settings_app = app.clone();
+        let forget_app = app.clone();
+        let vad_app = app.clone();
+        let levels_app = app.clone();
+        let host = AudioHost {
+            settings: Arc::new(move || get_settings(&settings_app)),
+            forget_microphone: Arc::new(move |name: &str| forget_microphone(&forget_app, name)),
+            create_vad: Arc::new(move |backend| create_capture_vad(backend, &vad_app)),
+            open_recorder: Arc::new(|config, handler| {
+                Recorder::open_with_failure_handler(config, handler)
+            }),
+            on_levels: Arc::new(move |levels| utils::emit_levels(&levels_app, &levels)),
+        };
+        Self::with_host(host, Arc::new(move |frame| stream_router.feed(frame)))
+    }
+
+    /// DanyWhere: a manager without the app: `host` gives it settings,
+    /// microphone and VAD, `on_audio` takes the frames for a live stream.
+    pub fn with_host(host: AudioHost, on_audio: AudioFrameCallback) -> Result<Self, anyhow::Error> {
+        let settings = (host.settings)();
         let mode = if settings.always_on_microphone {
             MicrophoneMode::AlwaysOn
         } else {
             MicrophoneMode::OnDemand
         };
 
-        let on_levels: LevelCallback = {
-            let app_handle = app.clone();
-            Arc::new(move |levels| utils::emit_levels(&app_handle, &levels))
-        };
-        let on_audio: AudioFrameCallback = Arc::new(move |frame| stream_router.feed(frame));
-
         let manager = Self {
             state: Arc::new(Mutex::new(RecordingState::Idle)),
             mode: Arc::new(Mutex::new(mode.clone())),
-            app_handle: app.clone(),
+            host,
 
             recorder: Arc::new(Mutex::new(None)),
             vad: Arc::new(Mutex::new(VadSlot::Unloaded)),
             selected_channel: Arc::new(Mutex::new(settings.selected_channel)),
             airpods_mode: Arc::new(AtomicBool::new(settings.airpods_mode)),
-            on_levels,
             on_audio,
             is_open: Arc::new(Mutex::new(false)),
             is_recording: Arc::new(Mutex::new(false)),
@@ -604,7 +679,7 @@ impl AudioRecordingManager {
     /// here (`dictation_microphone::choose`).
     fn wanted_microphone(&self) -> (AppSettings, MicrophoneChoice) {
         crate::dictation_microphone::choose(
-            &get_settings(&self.app_handle),
+            &(self.host.settings)(),
             *self.selected_channel.lock().unwrap(),
             self.airpods_mode.load(Ordering::Acquire),
             crate::app_profiles::dictation_values().as_ref(),
@@ -705,31 +780,17 @@ impl AudioRecordingManager {
     }
 
     /// Keep persisted settings and the UI aligned with a successful runtime
-    /// fallback. Re-read first so recovery cannot clear a microphone the user
-    /// selected concurrently while the stream was being rebuilt.
+    /// fallback (the host's `forget_microphone`).
     fn persist_default_microphone_after_fallback(&self, unavailable_name: &str) {
-        let mut settings = get_settings(&self.app_handle);
-        if settings.selected_microphone.as_deref() != Some(unavailable_name) {
-            return;
-        }
-
-        settings.selected_microphone = None;
-        write_settings(&self.app_handle, settings);
-        let _ = self.app_handle.emit(
-            "settings-changed",
-            serde_json::json!({
-                "setting": "selected_microphone",
-                "value": "Default"
-            }),
-        );
+        (self.host.forget_microphone)(unavailable_name);
     }
 
     fn schedule_lazy_close(&self) {
         let gen = self.close_generation.fetch_add(1, Ordering::SeqCst) + 1;
-        let app = self.app_handle.clone();
+        // DanyWhere: a clone shares every piece of state with this manager.
+        let rm = self.clone();
         std::thread::spawn(move || {
             std::thread::sleep(STREAM_IDLE_TIMEOUT);
-            let rm = app.state::<Arc<AudioRecordingManager>>();
             // Hold state lock across the check AND close to serialize against
             // try_start_recording, preventing a race where the stream is closed
             // under an active recording.
@@ -753,8 +814,8 @@ impl AudioRecordingManager {
     pub fn preload_vad(&self) -> Result<(), anyhow::Error> {
         let mut vad = self.vad.lock().unwrap();
         if matches!(*vad, VadSlot::Unloaded) {
-            let settings = get_settings(&self.app_handle);
-            *vad = VadSlot::Idle(create_capture_vad(settings.vad_backend, &self.app_handle)?);
+            let settings = (self.host.settings)();
+            *vad = VadSlot::Idle((self.host.create_vad)(settings.vad_backend)?);
         }
         Ok(())
     }
@@ -806,8 +867,12 @@ impl AudioRecordingManager {
     /// Snapshots the system's prior mute state first so `remove_mute` can
     /// restore it instead of unconditionally unmuting.
     pub fn apply_mute(&self) {
-        // DanyWhere: the dictation's profile's switch, if it has its own.
-        let settings = crate::app_profiles::dictation_settings(&self.app_handle);
+        // DanyWhere: the dictation's profile's switch, if it has its own
+        // (as `app_profiles::dictation_settings`).
+        let settings = crate::app_profiles::with_values(
+            &(self.host.settings)(),
+            crate::app_profiles::dictation_values().as_ref(),
+        );
         if !settings.mute_while_recording {
             return;
         }
@@ -926,6 +991,7 @@ impl AudioRecordingManager {
         let (channel, take_headset) = (wanted.channel, wanted.take_headset);
         let open_started = Instant::now();
         let microphone = match open_microphone_on_channel(
+            &self.host.open_recorder,
             resolution.device.clone(),
             channel,
             take_headset,
@@ -939,6 +1005,7 @@ impl AudioRecordingManager {
                 self.invalidate_device_cache();
                 resolution = self.resolve_microphone_device(&settings);
                 open_microphone_on_channel(
+                    &self.host.open_recorder,
                     resolution.device.clone(),
                     channel,
                     take_headset,
@@ -1119,7 +1186,7 @@ impl AudioRecordingManager {
             let sink = CaptureSink::new(
                 self.lend_vad()?,
                 vad_policy,
-                Arc::clone(&self.on_levels),
+                Arc::clone(&self.host.on_levels),
                 Arc::clone(&self.on_audio),
                 ready_tx,
             );
@@ -1170,7 +1237,7 @@ impl AudioRecordingManager {
             ));
         }
 
-        let replacement = create_capture_vad(backend, &self.app_handle)?;
+        let replacement = (self.host.create_vad)(backend)?;
         let was_open = *self.is_open.lock().unwrap();
 
         // Invalidate any delayed close before swapping the detector.
@@ -1309,7 +1376,7 @@ impl AudioRecordingManager {
                 // Optionally keep recording for a bit longer to capture trailing audio.
                 // This is only the explicit user setting; streaming VAD must not add
                 // hidden post-release capture time.
-                let settings = get_settings(&self.app_handle);
+                let settings = (self.host.settings)();
                 let buffer_ms = settings.extra_recording_buffer_ms;
                 if buffer_ms > 0 {
                     debug!(
@@ -1342,7 +1409,7 @@ impl AudioRecordingManager {
 
                 // In on-demand mode, close the mic (lazily if the setting is enabled)
                 if matches!(*self.mode.lock().unwrap(), MicrophoneMode::OnDemand) {
-                    if get_settings(&self.app_handle).lazy_stream_close {
+                    if (self.host.settings)().lazy_stream_close {
                         self.schedule_lazy_close();
                     } else {
                         self.stop_microphone_stream();
@@ -1396,7 +1463,7 @@ impl AudioRecordingManager {
 
                 // In on-demand mode, close the mic (lazily if the setting is enabled)
                 if matches!(*self.mode.lock().unwrap(), MicrophoneMode::OnDemand) {
-                    if get_settings(&self.app_handle).lazy_stream_close {
+                    if (self.host.settings)().lazy_stream_close {
                         self.schedule_lazy_close();
                     } else {
                         self.stop_microphone_stream();
@@ -1411,9 +1478,147 @@ impl AudioRecordingManager {
     }
 }
 
+/// DanyWhere: a manager over handy-recorder's fake microphone, for the tests
+/// here and those of the start of a dictation (`dictation_start`).
+#[cfg(test)]
+pub(crate) mod fake_microphone {
+    use super::*;
+    use handy_recorder::testing::FakeMic;
+
+    /// A device at the rate and channels a recording delivers, so its
+    /// samples come through unchanged.
+    pub(crate) fn mic() -> FakeMic {
+        FakeMic::new(WHISPER_SAMPLE_RATE as u32, 1)
+    }
+
+    /// Settings with nothing that reaches past the fake microphone: the
+    /// default device, opened on demand and closed at once, the system's
+    /// sound left alone, Earshot as the VAD (no model file).
+    pub(crate) fn settings() -> AppSettings {
+        let mut settings = crate::settings::get_default_settings();
+        settings.selected_microphone = None;
+        settings.clamshell_microphone = None;
+        settings.always_on_microphone = false;
+        settings.lazy_stream_close = false;
+        settings.mute_while_recording = false;
+        settings.extra_recording_buffer_ms = 0;
+        settings.vad_backend = VadBackend::Earshot;
+        settings
+    }
+
+    /// A manager recording from `mic`, with `settings`.
+    pub(crate) fn manager(mic: &FakeMic, settings: AppSettings) -> AudioRecordingManager {
+        let mic = mic.clone();
+        let host = AudioHost {
+            settings: Arc::new(move || settings.clone()),
+            forget_microphone: Arc::new(|_| {}),
+            create_vad: Arc::new(|backend| {
+                let detector = EarshotVad::new(EARSHOT_VAD_THRESHOLD)
+                    .map_err(|e| anyhow::anyhow!("Failed to create EarshotVad: {e}"))?;
+                Ok(capture_vad(smooth(Box::new(detector)), backend))
+            }),
+            open_recorder: Arc::new(move |config, handler| {
+                mic.open(config, Some(handler), Duration::from_secs(2))
+            }),
+            on_levels: Arc::new(|_| {}),
+        };
+        AudioRecordingManager::with_host(host, Arc::new(|_| {}))
+            .expect("a manager over the fake microphone")
+    }
+
+    /// `len` samples that are neither silence nor all alike.
+    pub(crate) fn speech(len: usize) -> Vec<f32> {
+        (0..len)
+            .map(|i| (i % 1000) as f32 / 1000.0 - 0.4995)
+            .collect()
+    }
+
+    /// Delivers `samples` in blocks of 10 ms, as the device's audio thread
+    /// would.
+    pub(crate) fn play(mic: &FakeMic, samples: &[f32]) {
+        for block in samples.chunks(160) {
+            assert!(mic.push(block), "the fake microphone is streaming");
+        }
+    }
+
+    /// Stops `binding`'s recording on `rm`, playing the audio thread's part:
+    /// a stop asks the stream to pause and waits for the next callback,
+    /// which belongs to the recording. An empty block is one that adds no
+    /// audio. Returns what `stop_recording` gives back.
+    pub(crate) fn stop(
+        rm: &AudioRecordingManager,
+        mic: &FakeMic,
+        binding: &str,
+    ) -> Option<Vec<f32>> {
+        let stopped = AtomicBool::new(false);
+        std::thread::scope(|scope| {
+            scope.spawn(|| {
+                while !stopped.load(Ordering::Acquire) {
+                    mic.push(&[]);
+                    std::thread::sleep(Duration::from_millis(1));
+                }
+            });
+            let samples = rm.stop_recording(binding, rm.cancel_generation());
+            stopped.store(true, Ordering::Release);
+            samples
+        })
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use handy_recorder::testing::FakeError;
+
+    // DanyWhere: the manager over a fake microphone (`AudioHost`).
+
+    #[test]
+    fn a_recording_gives_back_what_the_microphone_sent() {
+        let mic = fake_microphone::mic();
+        let rm = fake_microphone::manager(&mic, fake_microphone::settings());
+        let readiness = rm
+            .try_start_recording("transcribe", VadPolicy::Disabled)
+            .expect("the recording starts");
+        assert!(rm.is_recording());
+        let speech = fake_microphone::speech(24_000);
+        fake_microphone::play(&mic, &speech);
+        assert!(readiness.wait(), "the first audio makes it ready");
+
+        assert_eq!(fake_microphone::stop(&rm, &mic, "transcribe"), Some(speech));
+        assert!(!rm.is_recording());
+        // On demand, the microphone closes with the recording.
+        assert!(!mic.is_streaming());
+    }
+
+    #[test]
+    fn a_microphone_without_access_fails_the_start_with_its_notice() {
+        let mic = fake_microphone::mic();
+        mic.fail_next_open(FakeError::PermissionDenied);
+        let rm = fake_microphone::manager(&mic, fake_microphone::settings());
+        let error = rm
+            .try_start_recording("transcribe", VadPolicy::Disabled)
+            .err()
+            .expect("the start fails");
+        assert_eq!(
+            recording_notice_code(&error),
+            NoticeCode::MicPermissionDenied
+        );
+        assert!(!rm.is_recording());
+    }
+
+    #[test]
+    fn a_stop_before_any_audio_ends_the_wait_for_readiness() {
+        let mic = fake_microphone::mic();
+        let rm = fake_microphone::manager(&mic, fake_microphone::settings());
+        let readiness = rm
+            .try_start_recording("transcribe", VadPolicy::Disabled)
+            .expect("the recording starts");
+        assert_eq!(
+            fake_microphone::stop(&rm, &mic, "transcribe"),
+            Some(Vec::new())
+        );
+        assert!(!readiness.wait(), "no audio came, so it never got ready");
+    }
 
     /// A recorder error, without touching a device: the request is rejected
     /// before one is opened.
