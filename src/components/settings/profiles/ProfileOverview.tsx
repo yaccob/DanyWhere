@@ -12,7 +12,6 @@ import { useSettingsStore } from "@/stores/settingsStore";
 import { pageLabelKey } from "@/lib/navigation";
 import { pageOfValue } from "@/lib/profileFields";
 import {
-  entriesOf,
   ownValues,
   type LayeredProfile,
   type OwnValue,
@@ -23,7 +22,6 @@ import { SettingsGroup } from "@/components/ui/SettingsGroup";
 import { ProfileApps } from "./ProfileApps";
 import { ProfileExportButton } from "./ProfileExportButton";
 import { ProfileNameDialog } from "./ProfileNameDialog";
-import { kindOf } from "./scope/fieldKinds";
 import { runCoupling } from "./scope/profileWriter";
 import { ResetDialog } from "./scope/ResetDialog";
 import { useOpenProfilePage } from "./scope/SettingsScope";
@@ -50,7 +48,7 @@ export const ProfileOverview: React.FC<{ profileId: string }> = ({
     (s) => (s.settings?.profiles ?? []) as unknown as readonly LayeredProfile[],
   );
   const openPage = useOpenProfilePage();
-  const { ownValueLabel, valueLabel } = useValueLabels();
+  const { ownValueLabel, ownValueRow } = useValueLabels();
   const [pending, setPending] = useState<Pending>(null);
   const [applications, setApplications] = useState<ApplicationInfo[]>([]);
 
@@ -69,27 +67,10 @@ export const ProfileOverview: React.FC<{ profileId: string }> = ({
   const close = () => setPending(null);
 
   /** "Setting: value" for an own value; a switched-off entry says so. */
-  const rowText = (value: OwnValue): string => {
-    const label = ownValueLabel(value);
-    if (value.off) {
-      return `${label} (${t("settings.profileView.state.entryOff")})`;
-    }
-    const current =
-      value.entry === undefined
-        ? stored.values[value.field]
-        : entriesOf(kindOf(value.field), stored.values[value.field]).find(
-            ([id]) => id === value.entry,
-          )?.[1];
-    // An entry of a list (a word list, an end shortcut) is named, not shown.
-    if (
-      value.entry !== undefined &&
-      typeof current === "object" &&
-      current !== null
-    ) {
-      return label;
-    }
-    return `${label}: ${valueLabel(value.field, current)}`;
-  };
+  const rowText = (value: OwnValue): string =>
+    ownValueRow(value, stored.values);
+  const nameOf = (value: OwnValue): string =>
+    ownValueLabel(value, stored.values);
 
   const resetOne = (value: OwnValue) =>
     void runCoupling(() =>
@@ -175,7 +156,7 @@ export const ProfileOverview: React.FC<{ profileId: string }> = ({
                 onClick={() => resetOne(value)}
                 title={t("settings.profileView.resetTooltip")}
                 aria-label={t("settings.profileView.resetEntry", {
-                  name: ownValueLabel(value),
+                  name: nameOf(value),
                 })}
                 className="shrink-0 rounded p-1 text-ink-3 hover:text-logo-primary hover:bg-logo-primary/10 cursor-pointer"
               >
@@ -243,7 +224,7 @@ export const ProfileOverview: React.FC<{ profileId: string }> = ({
       <ResetDialog
         open={pending === "reset"}
         title={t("settings.profileView.overview.resetWholeTitle", { name })}
-        values={own.map(ownValueLabel)}
+        values={own.map(nameOf)}
         note={t("settings.profileView.overview.keeps")}
         busy={busy}
         onConfirm={() => void resetWhole()}

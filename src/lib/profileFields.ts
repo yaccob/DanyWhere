@@ -14,11 +14,24 @@ import type { OwnValue } from "./profileScope";
 
 export type ProfileFieldName = keyof ProfileValues;
 
+/** Where the labels of a setting's choices are, when the generic rule
+ * ("…title" → "…options.<value in camelCase>") doesn't find them. */
+export interface ProfileFieldOptions {
+  /** The translation key the labels are under. */
+  prefix: string;
+  /** Stored values whose label isn't named after the value. */
+  keys?: Readonly<Record<string, string>>;
+  /** The label an empty value shows (the model's own effort). */
+  empty?: string;
+}
+
 export interface ProfileFieldInfo {
   /** The page the setting is on. */
   page: DefaultsPage;
   /** Translation key of the setting's name, without placeholders. */
   label: string;
+  /** The labels of its choices, for "Default: …" and the page "Profile". */
+  options?: ProfileFieldOptions;
   /** A large setting (P7.2): under the defaults, a deviating profile shows
    * a summary with "Open in …" instead of its own control. */
   large?: boolean;
@@ -108,6 +121,10 @@ export const PROFILE_FIELDS = {
   post_process_efforts: {
     page: "postprocessing",
     label: "settings.postProcessing.api.effort.title",
+    options: {
+      prefix: "settings.postProcessing.api.effort.levels",
+      empty: "default",
+    },
   },
   post_process_prompt_order: {
     page: "postprocessing",
@@ -143,6 +160,14 @@ export const PROFILE_FIELDS = {
   paste_method: {
     page: "advanced",
     label: "settings.advanced.pasteMethod.title",
+    options: {
+      prefix: "settings.advanced.pasteMethod.options",
+      keys: {
+        ctrl_v: "clipboard",
+        ctrl_shift_v: "clipboardCtrlShiftV",
+        shift_insert: "clipboardShiftInsert",
+      },
+    },
   },
   external_script_path: {
     page: "advanced",

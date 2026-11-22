@@ -23,6 +23,13 @@ export const DecoupleBar: React.FC<{ profileId: string }> = ({ profileId }) => {
   const { fieldLabel, entryName } = useValueLabels();
   const ref = useRef<HTMLDivElement>(null);
   const shown = bar !== null && bar.profileId === profileId;
+  // The profile's values, to name an entry it has (or the defaults have).
+  const profileValues = useSettingsStore(
+    (s) =>
+      s.settings?.profiles?.find((p) => p.id === profileId)?.values as
+        | Record<string, unknown>
+        | undefined,
+  );
 
   // Gone after a while, or with the next click outside it.
   useEffect(() => {
@@ -55,7 +62,12 @@ export const DecoupleBar: React.FC<{ profileId: string }> = ({ profileId }) => {
   const setting =
     bar.entry === undefined
       ? fieldLabel(bar.field)
-      : `${fieldLabel(bar.field)}: ${entryName(bar.field, bar.entry)}`;
+      : `${fieldLabel(bar.field)}: ${entryName(
+          bar.field,
+          bar.entry,
+          undefined,
+          profileValues,
+        )}`;
 
   /** The default takes the profile's value, the profile follows it again. */
   const changeDefault = () => {

@@ -68,7 +68,7 @@ export const ProfileScopedPage: React.FC<ProfileScopedPageProps> = ({
   const plan = resetPlan(own, page);
   const named = own
     .filter((value) => pageOfValue(value.field, value.entry) === page)
-    .map(ownValueLabel);
+    .map((value) => ownValueLabel(value, stored.values));
 
   const reset = async () => {
     setBusy(true);

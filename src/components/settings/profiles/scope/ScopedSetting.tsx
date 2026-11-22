@@ -193,25 +193,19 @@ const StateLine: React.FC<StateLineProps> = ({
   defaults,
 }) => {
   const { t } = useTranslation();
-  const { valueLabel, entryName } = useValueLabels();
+  const labels = useValueLabels();
   const own = state !== "coupled";
   const single = fields.length === 1 ? fields[0] : null;
   const isList =
     single !== null && entry === undefined && kindOf(single).kind !== "value";
 
-  // "Default: …" for one plain value or one entry.
-  let defaultText: string | null = null;
-  if (state === "own" && single !== null && !isList) {
-    const base =
-      entry !== undefined
-        ? entriesOf(kindOf(single), defaults[single]).find(
-            ([id]) => id === entry,
-          )?.[1]
-        : defaults[single];
-    defaultText = t("settings.profileView.state.defaultIs", {
-      value: valueLabel(single, base),
-    });
-  }
+  // "Default: …" for the value, the entry, or each own value that differs.
+  const defaultValue =
+    state === "own" ? labels.defaultText(fields, entry, profile) : null;
+  const defaultText =
+    defaultValue === null
+      ? null
+      : t("settings.profileView.state.defaultIs", { value: defaultValue });
 
   // A list's own entries, one by one (P10).
   const ownEntries =
@@ -249,7 +243,11 @@ const StateLine: React.FC<StateLineProps> = ({
           kindOf(value.field),
           value.off ? defaults[value.field] : profile.values[value.field],
         ).find(([id]) => id === value.entry)?.[1];
-        const name = entryName(value.field, value.entry ?? "", entryValue);
+        const name = labels.entryName(
+          value.field,
+          value.entry ?? "",
+          entryValue,
+        );
         return (
           <span
             key={`${value.entry}-${value.off ? "off" : "own"}`}
@@ -366,7 +364,7 @@ const UnderDefaults: React.FC<UnderDefaultsProps> = ({
         .filter((name) => deviation([profile], name).own.length > 0)
         .map(
           (name) =>
-            `${fieldLabel(name)}: ${valueLabel(name, profile.values[name])}`,
+            `${fieldLabel(name)}: ${valueLabel(name, profile.values[name], profile.values)}`,
         )
         .join(" · ");
     }
@@ -385,10 +383,10 @@ const UnderDefaults: React.FC<UnderDefaultsProps> = ({
           ? address
           : entryName(single, entry, value);
       }
-      return valueLabel(single, value);
+      return valueLabel(single, value, profile.values);
     }
     if (kind.kind === "value")
-      return valueLabel(single, profile.values[single]);
+      return valueLabel(single, profile.values[single], profile.values);
     const mine = ownValues(profile).filter((v) => v.field === single);
     const names = (off: boolean) =>
       mine
