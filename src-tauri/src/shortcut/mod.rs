@@ -12,6 +12,7 @@
 pub(crate) mod backend;
 mod handler;
 pub mod handy_keys;
+mod lifecycle;
 pub mod profile_sync;
 pub mod tauri_impl;
 
@@ -35,31 +36,9 @@ use crate::tray;
 
 /// Initialize shortcuts using the configured implementation
 pub fn init_shortcuts(app: &AppHandle) {
-    let user_settings = settings::load_or_create_app_settings(app);
-
-    // Check which implementation to use
-    match user_settings.keyboard_implementation {
-        KeyboardImplementation::Tauri => {
-            tauri_impl::init_shortcuts(app);
-        }
-        KeyboardImplementation::HandyKeys => {
-            if let Err(e) = handy_keys::init_shortcuts(app) {
-                error!("Failed to initialize handy-keys shortcuts: {}", e);
-                // Fall back to Tauri implementation and persist this fallback
-                warn!("Falling back to Tauri global shortcut implementation and saving fallback to settings");
-
-                // Update settings to persist the fallback so we don't retry HandyKeys on next launch
-                let mut settings = settings::get_settings(app);
-                settings.keyboard_implementation = KeyboardImplementation::Tauri;
-                settings::write_settings(app, settings);
-
-                tauri_impl::init_shortcuts(app);
-            }
-        }
-        KeyboardImplementation::None => {
-            info!("Built-in keyboard shortcuts disabled; use CLI flags or signals");
-        }
-    }
+    // DanyWhere: with the fallback to Tauri when handy-keys can't start
+    // (`lifecycle::start`).
+    lifecycle::start(&lifecycle::AppHost(app));
 
     // DanyWhere: the shortcuts of the profile that applies now, from here on
     // whenever another application comes to the front (`profile_sync`).
@@ -134,21 +113,17 @@ fn reconcile_cancel_shortcut(app: &AppHandle) {
             return;
         }
 
-        let Some(cancel_binding) = get_settings(app).bindings.get("cancel").cloned() else {
+        let settings = get_settings(app);
+        let Some(cancel_binding) = settings.bindings.get("cancel").cloned() else {
             return;
         };
-
-        if requested {
-            match register_shortcut(app, cancel_binding) {
-                Ok(()) => *registered = true,
-                Err(e) => error!("Failed to register cancel shortcut: {}", e),
-            }
-        } else {
-            match unregister_shortcut(app, cancel_binding) {
-                Ok(()) => *registered = false,
-                Err(e) => error!("Failed to unregister cancel shortcut: {}", e),
-            }
-        }
+        let backend = backend::for_implementation(app, settings.keyboard_implementation);
+        lifecycle::reconcile_cancel(
+            backend.as_ref(),
+            &cancel_binding,
+            requested,
+            &mut registered,
+        );
     }
 }
 
@@ -370,70 +345,9 @@ pub fn change_keyboard_implementation_setting(
     app: AppHandle,
     implementation: String,
 ) -> Result<ImplementationChangeResult, String> {
-    let current_settings = settings::get_settings(&app);
-    let current_impl = current_settings.keyboard_implementation;
-    let new_impl = parse_keyboard_implementation(&implementation);
-
-    // If same implementation, nothing to do
-    if current_impl == new_impl {
-        return Ok(ImplementationChangeResult {
-            success: true,
-            reset_bindings: vec![],
-        });
-    }
-
-    info!(
-        "Switching keyboard implementation from {:?} to {:?}",
-        current_impl, new_impl
-    );
-
-    // Unregister all shortcuts from the current implementation
-    unregister_all_shortcuts(&app, current_impl);
-
-    // Update the setting
-    let mut settings = settings::get_settings(&app);
-    settings.keyboard_implementation = new_impl;
-    settings::write_settings(&app, settings);
-
-    // Carbon fallback registrations use the Tauri plugin. Remove them before
-    // registering the full Tauri implementation to avoid duplicate conflicts.
-    if new_impl == KeyboardImplementation::Tauri {
-        crate::secure_input::reconcile_fallback(&app);
-    }
-
-    // Initialize new implementation if needed (HandyKeys needs state)
-    if new_impl == KeyboardImplementation::HandyKeys && initialize_handy_keys_with_rollback(&app)? {
-        // Shortcuts already registered during init.
-        profile_sync::sync_now(&app);
-        crate::secure_input::reconcile_fallback(&app);
-        return Ok(ImplementationChangeResult {
-            success: true,
-            reset_bindings: vec![],
-        });
-    }
-
-    // Register all shortcuts with new implementation, resetting invalid ones
-    let reset_bindings = register_all_shortcuts_for_implementation(&app, new_impl);
-    // DanyWhere: then those of the profile that applies now.
-    profile_sync::sync_now(&app);
-    crate::secure_input::reconcile_fallback(&app);
-
-    // Emit event to notify frontend of the change
-    let _ = app.emit(
-        "settings-changed",
-        serde_json::json!({
-            "setting": "keyboard_implementation",
-            "value": implementation,
-            "reset_bindings": reset_bindings
-        }),
-    );
-
-    info!("Keyboard implementation switched to {:?}", new_impl);
-
-    Ok(ImplementationChangeResult {
-        success: true,
-        reset_bindings,
-    })
+    // DanyWhere: with the rollback to Tauri when handy-keys can't start
+    // (`lifecycle::switch`).
+    lifecycle::switch(&lifecycle::AppHost(&app), &implementation)
 }
 
 /// Get the current keyboard implementation
@@ -508,76 +422,6 @@ pub fn apply_no_accessibility_mode(settings: &mut settings::AppSettings) -> Vec<
     }
     reset.sort();
     reset
-}
-
-/// Unregister all shortcuts for the current implementation
-fn unregister_all_shortcuts(app: &AppHandle, implementation: KeyboardImplementation) {
-    // DanyWhere: what is registered is known (`profile_sync`); the cancel
-    // shortcut is not among it, as it is registered dynamically.
-    let backend = backend::for_implementation(app, implementation);
-    backend::unregister_all(backend.as_ref(), &profile_sync::take_all(), |binding, e| {
-        warn!(
-            "Failed to unregister shortcut '{}' during switch: {}",
-            binding.id, e
-        )
-    });
-}
-
-/// Register all shortcuts for a specific implementation, validating and resetting invalid ones
-fn register_all_shortcuts_for_implementation(
-    app: &AppHandle,
-    implementation: KeyboardImplementation,
-) -> Vec<String> {
-    let mut current_settings = settings::get_settings(app);
-    let backend = backend::for_implementation(app, implementation);
-    // Skip cancel shortcut as it's dynamically registered, and those
-    // `registers_binding` leaves out.
-    let mut bindings =
-        backend::start_bindings(&current_settings, crate::delivery::INSERT_SERVICE_AVAILABLE);
-    // Validate the shortcuts for the target implementation
-    let reset_bindings =
-        backend::reset_invalid(backend.as_ref(), &mut bindings, &mut current_settings);
-    // Nothing counts as registered with "None".
-    let report = backend::register_all(backend.as_ref(), &bindings, |binding, e| {
-        error!(
-            "Failed to register shortcut '{}' for {:?}: {}",
-            binding.id, implementation, e
-        )
-    });
-    for binding in &report.registered {
-        profile_sync::note_registered(binding);
-    }
-
-    // Save settings if any bindings were reset
-    if !reset_bindings.is_empty() {
-        settings::write_settings(app, current_settings);
-    }
-
-    reset_bindings
-}
-
-/// Initialize HandyKeys if not already initialized, with rollback on failure
-fn initialize_handy_keys_with_rollback(app: &AppHandle) -> Result<bool, String> {
-    if app.try_state::<handy_keys::HandyKeysState>().is_some() {
-        return Ok(false); // Already initialized, caller should continue
-    }
-
-    if let Err(e) = handy_keys::init_shortcuts(app) {
-        error!("Failed to initialize HandyKeys: {}", e);
-        // Rollback to Tauri
-        let mut settings = settings::get_settings(app);
-        settings.keyboard_implementation = KeyboardImplementation::Tauri;
-        settings::write_settings(app, settings);
-        crate::secure_input::reconcile_fallback(app);
-        tauri_impl::init_shortcuts(app);
-        return Err(format!(
-            "Failed to initialize HandyKeys: {}. Reverted to Tauri.",
-            e
-        ));
-    }
-
-    // init_shortcuts already registered shortcuts
-    Ok(true)
 }
 
 // ============================================================================

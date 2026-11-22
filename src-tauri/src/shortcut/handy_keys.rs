@@ -453,26 +453,15 @@ pub fn validate_shortcut(raw: &str) -> Result<(), String> {
         .map_err(|e| format!("Invalid shortcut for HandyKeys: {}", e))
 }
 
-/// Initialize handy-keys shortcuts
-pub fn init_shortcuts(app: &AppHandle) -> Result<(), String> {
+/// DanyWhere: starts the manager; `register` registers the start shortcuts
+/// with it before the app keeps it (`lifecycle::start`). Fails when the
+/// manager can't start (e.g. without Accessibility).
+pub(super) fn start(
+    app: &AppHandle,
+    register: &mut dyn FnMut(&dyn ShortcutBackend),
+) -> Result<(), String> {
     let state = HandyKeysState::new(app.clone())?;
-
-    let user_settings = settings::load_or_create_app_settings(app);
-
-    // Register all bindings except cancel (which is dynamic)
-    let bindings =
-        super::backend::start_bindings(&user_settings, crate::delivery::INSERT_SERVICE_AVAILABLE);
-    let report = super::backend::register_all(&state, &bindings, |binding, e| {
-        error!(
-            "Failed to register handy-keys shortcut {} during init: {}",
-            binding.id, e
-        )
-    });
-    // DanyWhere: known to the shortcuts that follow the profile.
-    for binding in &report.registered {
-        super::profile_sync::note_registered(binding);
-    }
-
+    register(&state);
     app.manage(state);
     info!("handy-keys shortcuts initialized");
     Ok(())

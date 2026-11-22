@@ -7,7 +7,7 @@ use log::{debug, error, warn};
 use tauri::AppHandle;
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
 
-use crate::settings::{self, KeyboardImplementation, ShortcutBinding};
+use crate::settings::{KeyboardImplementation, ShortcutBinding};
 
 use super::backend::ShortcutBackend;
 use super::handler::handle_shortcut_event;
@@ -35,24 +35,6 @@ impl ShortcutBackend for TauriBackend {
 
     fn unregister(&self, binding: &ShortcutBinding) -> Result<(), String> {
         unregister_shortcut(&self.app, binding.clone())
-    }
-}
-
-/// Initialize shortcuts using Tauri's global-shortcut plugin
-pub fn init_shortcuts(app: &AppHandle) {
-    let user_settings = settings::load_or_create_app_settings(app);
-    // Register all default shortcuts, applying user customizations
-    let bindings =
-        super::backend::start_bindings(&user_settings, crate::delivery::INSERT_SERVICE_AVAILABLE);
-    let report = super::backend::register_all(&TauriBackend::new(app), &bindings, |binding, e| {
-        error!(
-            "Failed to register shortcut {} during init: {}",
-            binding.id, e
-        )
-    });
-    // DanyWhere: known to the shortcuts that follow the profile.
-    for binding in &report.registered {
-        super::profile_sync::note_registered(binding);
     }
 }
 
