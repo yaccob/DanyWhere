@@ -91,6 +91,7 @@ Handy is a cross-platform desktop speech-to-text application built with Tauri 2.
 - `stores/noticeStore.ts` - The one place notices are handled: what's active and what's on screen
 - `components/notices/NoticePanel.tsx` - The one place notices are drawn, as a toast or the full list
 - `lib/types.ts` - Shared TypeScript type definitions
+- `test/` - The component test environment (see [Component tests](#component-tests))
 
 ### Key Architecture Patterns
 
@@ -181,6 +182,24 @@ src/i18n/
 ```
 
 For translation contribution guidelines, see [CONTRIBUTING_TRANSLATIONS.md](CONTRIBUTING_TRANSLATIONS.md).
+
+## Component tests
+
+Settings pages and other components are tested in a DOM (happy-dom) with `@testing-library/react`, without the app or a window. Use them for what a user sees and clicks: texts, state lines, names instead of ids, which command a click sends, where a jump goes. Logic that needs no component stays a standalone `*.test.ts` script (run with `bun <file>`).
+
+```bash
+bun run test:components            # every *.test.tsx under src/
+bun test ProfileOverview           # files whose path contains the filter
+```
+
+**Writing one:** name it `<Component>.test.tsx` next to the component and use `bun:test` (`describe`, `test`, `expect`). The preload `src/test/setup.ts` (from `bunfig.toml`) gives every file a DOM and resets everything after each test.
+
+- `renderPage(ui, { settings, scope, acceptWrites })` (`src/test/render.tsx`) renders with settings in the store and as `get_app_settings` answers them; `scope` is `DEFAULTS_SCOPE` or `{ kind: "profile", id }`; `acceptWrites` lets `set_profile_value` change what the next refresh reads. `press(element)` and `pressKeys("ControlLeft", "KeyE")` click and type and let what they start finish inside `act`. `raisedNotices()` lists the toasts raised with `notify`.
+- `settingsWith({ defaults, profiles, app })` (`src/test/fixtures.ts`) builds layered settings: the defaults' values, each profile with its own fields (`own`) and entries (`ownEntries`). Use realistic ids (`profile_1795300000001`, `end_1795307930035`) so a leaked id shows.
+- `visibleText()`, `isVisible(element)` and `rawTextIn()` (`src/test/visible.ts`) read only what the markup shows (happy-dom applies no stylesheet, so `hidden`, `aria-hidden` and the `hidden` attribute count as hidden). `rawTextIn()` lists every readable text, tooltips and labels included, that holds an unfilled `{{placeholder}}`, a translation key or an internal id; expect it to be `[]`.
+- The texts are the real English locale with DanyWhere's branding (`src/test/i18n.ts`); `switchTestLanguage("de")` switches for one test.
+
+**How `bindings.ts` is replaced:** `src/test/bindings-mock.ts` stands in for it (`mock.module` in the preload). Every command of the real `bindings.ts` exists, records its call and answers with a default by its return type (`{ status: "ok", data: [] }` for a list, `false`, `null`, …). In a test, `mockCommand("setProfileValue", async () => err("end-key-last"))` sets an answer, `callsOf("resetProfileEntry")` gives the arguments of each call, `emitEvent("noticesChanged", payload)` sends an event. Tauri plugins stay real; their IPC goes to Tauri's `mockIPC` (`src/test/tauri-mock.ts`: `mockIpc("plugin:dialog|open", …)`, `ipcCalls()`), and `setOsType("linux")` changes what `@tauri-apps/plugin-os` reports (macOS by default). A module that needs Vite's `import.meta.glob` gets a stand-in in the preload, as `src/i18n/index.ts` and the release notes do.
 
 ## Code Style
 

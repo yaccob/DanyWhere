@@ -6,6 +6,8 @@ import { notify } from "@/stores/noticeStore";
 import { commands } from "@/bindings";
 import { SECURE_INPUT_HELP_URL } from "@/components/SecureInputWarning";
 import { useSettings } from "@/hooks/useSettings";
+import { RefusalShown } from "@/components/settings/profiles/scope/profileWriter";
+import { shortcutRefusalText } from "@/lib/shortcutRefusal";
 import {
   getKeyName,
   MODIFIERS,
@@ -23,24 +25,15 @@ interface HandyKeysEvent {
 /**
  * DanyWhere: the toast for a refused binding. Without Accessibility "Paste
  * Last Transcript" is the "Insert Last Dictation" service's shortcut, and
- * the backend refuses what a service can't take with a code of its own.
+ * the backend refuses what a service can't take with a code of its own
+ * (`shortcutRefusalText`).
  */
 const bindingErrorTitle = (
   error: string,
   t: ReturnType<typeof useTranslation>["t"],
-): string => {
-  if (error.includes("service-shortcut-invalid"))
-    return t("settings.general.insertService.invalid");
-  const conflict = /conflict:([a-z_]+)/.exec(error);
-  if (conflict)
-    return t("settings.general.insertService.conflict", {
-      name: t(
-        `settings.general.shortcut.bindings.${conflict[1]}.name`,
-        conflict[1],
-      ),
-    });
-  return t("settings.general.shortcut.errors.set", { error });
-};
+): string =>
+  shortcutRefusalText(error, t) ??
+  t("settings.general.shortcut.errors.set", { error });
 
 /**
  * Records a new binding via handy-keys events, or this window's key events
@@ -104,7 +97,10 @@ export const useShortcutCapture = (
         else if (!inert) await updateBinding(bindingId, binding);
       } catch (error) {
         console.error("Failed to change binding:", error);
-        notify({ title: bindingErrorTitle(String(error), t) });
+        // A scoped write's notice already said why.
+        if (!(error instanceof RefusalShown)) {
+          notify({ title: bindingErrorTitle(String(error), t) });
+        }
       }
       await finish();
     },

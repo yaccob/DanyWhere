@@ -1,0 +1,5 @@
+# DanyWhere: component tests (`bun run test:components`, AGENTS.md
+# "Component tests"). The preload gives them a DOM and replaces bindings.ts.
+[test]
+root = "src"
+preload = ["./src/test/setup.ts"]
