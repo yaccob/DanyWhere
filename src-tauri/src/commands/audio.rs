@@ -1,5 +1,7 @@
 use crate::audio_feedback;
-use crate::audio_toolkit::audio::list_output_devices;
+use crate::audio_toolkit::audio::{
+    list_microphones, list_output_devices, MicrophoneDevice, OutputDeviceInfo,
+};
 use crate::managers::audio::{AudioRecordingManager, MicrophoneMode};
 use crate::settings::{get_settings, write_settings};
 use log::warn;
@@ -204,31 +206,39 @@ pub fn get_microphone_mode(app: AppHandle) -> Result<bool, String> {
 pub async fn get_available_microphones() -> Result<Vec<AudioDevice>, String> {
     // cpal device enumeration can stall — run it off the webview/main run loop.
     tokio::task::spawn_blocking(|| {
-        let devices = handy_recorder::list_input_devices()
-            .map_err(|e| format!("Failed to list audio devices: {}", e))?;
-
-        let mut result = vec![AudioDevice {
-            index: "default".to_string(),
-            name: "Default".to_string(),
-            is_default: true,
-        }];
-
-        // PulseAudio monitor sources record a speaker's output, not a microphone.
-        result.extend(
-            devices
-                .into_iter()
-                .filter(|d| !d.is_monitor)
-                .map(|d| AudioDevice {
-                    index: d.id,
-                    name: d.name,
-                    is_default: false, // The explicit default is handled separately
-                }),
-        );
-
-        Ok::<_, String>(result)
+        let devices =
+            list_microphones().map_err(|e| format!("Failed to list audio devices: {}", e))?;
+        Ok::<_, String>(microphone_choices(devices))
     })
     .await
     .map_err(|e| format!("audio task join failed: {}", e))?
+}
+
+/// The entry that stands for the system's default device, in both lists.
+fn default_choice() -> AudioDevice {
+    AudioDevice {
+        index: "default".to_string(),
+        name: "Default".to_string(),
+        is_default: true,
+    }
+}
+
+/// DanyWhere: the microphones the settings offer: the default first, then
+/// every device but PulseAudio monitor sources, which record a speaker's
+/// output, not a microphone.
+fn microphone_choices(devices: Vec<MicrophoneDevice>) -> Vec<AudioDevice> {
+    let mut result = vec![default_choice()];
+    result.extend(
+        devices
+            .into_iter()
+            .filter(|d| !d.is_monitor)
+            .map(|d| AudioDevice {
+                index: d.id,
+                name: d.name,
+                is_default: false, // The explicit default is handled separately
+            }),
+    );
+    result
 }
 
 #[tauri::command]
@@ -268,23 +278,22 @@ pub async fn get_available_output_devices() -> Result<Vec<AudioDevice>, String> 
     tokio::task::spawn_blocking(|| {
         let devices =
             list_output_devices().map_err(|e| format!("Failed to list output devices: {}", e))?;
-
-        let mut result = vec![AudioDevice {
-            index: "default".to_string(),
-            name: "Default".to_string(),
-            is_default: true,
-        }];
-
-        result.extend(devices.into_iter().map(|d| AudioDevice {
-            index: d.index,
-            name: d.name,
-            is_default: false, // The explicit default is handled separately
-        }));
-
-        Ok::<_, String>(result)
+        Ok::<_, String>(output_device_choices(devices))
     })
     .await
     .map_err(|e| format!("audio task join failed: {}", e))?
+}
+
+/// DanyWhere: the output devices the settings offer: the default first,
+/// then every device.
+fn output_device_choices(devices: Vec<OutputDeviceInfo>) -> Vec<AudioDevice> {
+    let mut result = vec![default_choice()];
+    result.extend(devices.into_iter().map(|d| AudioDevice {
+        index: d.index,
+        name: d.name,
+        is_default: false, // The explicit default is handled separately
+    }));
+    result
 }
 
 #[tauri::command]
@@ -359,20 +368,27 @@ pub fn is_recording(app: AppHandle) -> bool {
 pub async fn get_microphone_channels(device_name: String) -> Result<u16, String> {
     // Device enumeration can stall, so keep it off the webview/main run loop.
     tokio::task::spawn_blocking(move || {
-        let devices = handy_recorder::list_input_devices()
-            .map_err(|e| format!("Failed to list audio devices: {e}"))?;
-        let device = if device_name.eq_ignore_ascii_case("default") {
-            devices.into_iter().find(|device| device.is_default)
-        } else {
-            devices
-                .into_iter()
-                .find(|device| device.name == device_name)
-        };
-        // `channels` is unknown only on ALSA, where reading it opens the device.
-        Ok(device.and_then(|device| device.channels).unwrap_or(1))
+        let devices =
+            list_microphones().map_err(|e| format!("Failed to list audio devices: {e}"))?;
+        Ok(microphone_channels(devices, &device_name))
     })
     .await
     .map_err(|e| format!("audio task join failed: {e}"))?
+}
+
+/// DanyWhere: the channels of the microphone named `device_name` among
+/// `devices` ("default": the system's default device); 1 when it isn't
+/// there or its channels are unknown.
+fn microphone_channels(devices: Vec<MicrophoneDevice>, device_name: &str) -> u16 {
+    let device = if device_name.eq_ignore_ascii_case("default") {
+        devices.into_iter().find(|device| device.is_default)
+    } else {
+        devices
+            .into_iter()
+            .find(|device| device.name == device_name)
+    };
+    // `channels` is unknown only on ALSA, where reading it opens the device.
+    device.and_then(|device| device.channels).unwrap_or(1)
 }
 
 #[tauri::command]
@@ -408,4 +424,116 @@ pub async fn change_airpods_mode_setting(app: AppHandle, enabled: bool) -> Resul
     settings.airpods_mode = enabled;
     write_settings(&app, settings);
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // DanyWhere: what the settings offer from the lists of devices.
+
+    fn microphone(
+        id: &str,
+        name: &str,
+        is_default: bool,
+        channels: Option<u16>,
+    ) -> MicrophoneDevice {
+        MicrophoneDevice {
+            id: id.to_string(),
+            name: name.to_string(),
+            is_default,
+            channels,
+            is_monitor: false,
+        }
+    }
+
+    fn microphones() -> Vec<MicrophoneDevice> {
+        vec![
+            microphone("built-in", "MacBook Pro Microphone", true, Some(1)),
+            microphone("usb-7", "USB Mic", false, Some(4)),
+        ]
+    }
+
+    /// The choices as (index, name, is the default).
+    fn offered(choices: Vec<AudioDevice>) -> Vec<(String, String, bool)> {
+        choices
+            .into_iter()
+            .map(|choice| (choice.index, choice.name, choice.is_default))
+            .collect()
+    }
+
+    fn choice(index: &str, name: &str, is_default: bool) -> (String, String, bool) {
+        (index.to_string(), name.to_string(), is_default)
+    }
+
+    #[test]
+    fn the_microphones_offered_start_with_the_default_and_leave_out_monitors() {
+        let mut devices = microphones();
+        devices.insert(
+            1,
+            MicrophoneDevice {
+                is_monitor: true,
+                ..microphone("monitor-1", "Monitor of Built-in Audio", false, Some(2))
+            },
+        );
+        assert_eq!(
+            offered(microphone_choices(devices)),
+            [
+                choice("default", "Default", true),
+                choice("built-in", "MacBook Pro Microphone", false),
+                choice("usb-7", "USB Mic", false),
+            ]
+        );
+    }
+
+    #[test]
+    fn without_microphones_only_the_default_is_offered() {
+        assert_eq!(
+            offered(microphone_choices(Vec::new())),
+            [choice("default", "Default", true)]
+        );
+    }
+
+    #[test]
+    fn a_microphone_has_the_channels_the_list_gives_it() {
+        assert_eq!(microphone_channels(microphones(), "USB Mic"), 4);
+        // The default is the system's default device, whatever its name.
+        assert_eq!(microphone_channels(microphones(), "default"), 1);
+        assert_eq!(microphone_channels(microphones(), "Default"), 1);
+    }
+
+    #[test]
+    fn unknown_channels_and_missing_microphones_count_as_one_channel() {
+        // ALSA can't tell without opening the device.
+        let alsa = vec![microphone("hw:1", "USB Mic", true, None)];
+        assert_eq!(microphone_channels(alsa.clone(), "USB Mic"), 1);
+        assert_eq!(microphone_channels(alsa, "default"), 1);
+        assert_eq!(microphone_channels(microphones(), "AirPods Pro"), 1);
+        let without_default = vec![microphone("usb-7", "USB Mic", false, Some(4))];
+        assert_eq!(microphone_channels(without_default, "default"), 1);
+    }
+
+    #[test]
+    fn the_outputs_offered_start_with_the_default_and_mark_no_other() {
+        let devices = vec![
+            OutputDeviceInfo {
+                index: "0".to_string(),
+                name: "MacBook Pro Speakers".to_string(),
+                is_default: true,
+            },
+            OutputDeviceInfo {
+                index: "1".to_string(),
+                name: "USB Headset".to_string(),
+                is_default: false,
+            },
+        ];
+        assert_eq!(
+            offered(output_device_choices(devices)),
+            [
+                choice("default", "Default", true),
+                choice("0", "MacBook Pro Speakers", false),
+                choice("1", "USB Headset", false),
+            ]
+        );
+    }
 }

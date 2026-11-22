@@ -1,5 +1,5 @@
 use crate::audio_toolkit::{
-    audio::{AudioFrameCallback, LevelCallback},
+    audio::{AudioFrameCallback, LevelCallback, MicrophoneDevice},
     vad::{
         frames_for_duration_ms, EarshotVad, SmoothedVad, VAD_OFFLINE_HANGOVER_MS, VAD_ONSET_MS,
         VAD_PREFILL_MS, VAD_STREAMING_HANGOVER_MS,
@@ -486,6 +486,13 @@ pub struct AudioHost {
     /// A recording's VAD for the backend.
     pub create_vad: Arc<dyn Fn(VadBackend) -> Result<CaptureVad, anyhow::Error> + Send + Sync>,
     pub open_recorder: OpenRecorder,
+    /// The microphones there are now (`audio_toolkit::audio::list_microphones`),
+    /// to find the selected or the clamshell microphone by its name.
+    pub list_microphones:
+        Arc<dyn Fn() -> Result<Vec<MicrophoneDevice>, anyhow::Error> + Send + Sync>,
+    /// Whether this Mac's lid is closed (`clamshell::is_clamshell`); asked
+    /// only while a clamshell microphone is set.
+    pub is_clamshell: Arc<dyn Fn() -> bool + Send + Sync>,
     /// Spectrum levels for the overlay.
     pub on_levels: LevelCallback,
 }
@@ -600,6 +607,8 @@ impl AudioRecordingManager {
             open_recorder: Arc::new(|config, handler| {
                 Recorder::open_with_failure_handler(config, handler)
             }),
+            list_microphones: Arc::new(crate::audio_toolkit::audio::list_microphones),
+            is_clamshell: Arc::new(|| clamshell::is_clamshell().unwrap_or(false)),
             on_levels: Arc::new(move |levels| utils::emit_levels(&levels_app, &levels)),
         };
         Self::with_host(host, Arc::new(move |frame| stream_router.feed(frame)))
@@ -648,12 +657,13 @@ impl AudioRecordingManager {
     /* ---------- helper methods --------------------------------------------- */
 
     /// The persisted microphone preference currently in effect. Only runs the
-    /// clamshell probe (an `ioreg` subprocess, ~10-20ms) when a clamshell
-    /// microphone is actually configured.
+    /// clamshell probe (the host's `is_clamshell`, in the app an `ioreg`
+    /// subprocess, ~10-20ms) when a clamshell microphone is actually
+    /// configured.
     fn desired_microphone(&self, settings: &AppSettings) -> DesiredMicrophone {
         if let Some(clamshell_microphone) = &settings.clamshell_microphone {
             let clamshell_started = Instant::now();
-            let is_clamshell = clamshell::is_clamshell().unwrap_or(false);
+            let is_clamshell = (self.host.is_clamshell)();
             debug!(
                 "device resolve: clamshell_check={:?} (clamshell={})",
                 clamshell_started.elapsed(),
@@ -745,7 +755,7 @@ impl AudioRecordingManager {
         // itself succeeded. A backend enumeration error may be transient and
         // must not erase the user's persisted preference.
         let enumerate_started = Instant::now();
-        let (device, enumeration_succeeded) = match handy_recorder::list_input_devices() {
+        let (device, enumeration_succeeded) = match (self.host.list_microphones)() {
             Ok(devices) => (
                 devices
                     .into_iter()
@@ -1508,8 +1518,15 @@ pub(crate) mod fake_microphone {
 
     /// A manager recording from `mic`, with `settings`.
     pub(crate) fn manager(mic: &FakeMic, settings: AppSettings) -> AudioRecordingManager {
+        AudioRecordingManager::with_host(host(mic, settings), Arc::new(|_| {}))
+            .expect("a manager over the fake microphone")
+    }
+
+    /// The host of [`manager`]: `mic` is the system default and the only
+    /// device opened; no microphone is listed, and the lid is open.
+    pub(crate) fn host(mic: &FakeMic, settings: AppSettings) -> AudioHost {
         let mic = mic.clone();
-        let host = AudioHost {
+        AudioHost {
             settings: Arc::new(move || settings.clone()),
             forget_microphone: Arc::new(|_| {}),
             create_vad: Arc::new(|backend| {
@@ -1520,10 +1537,186 @@ pub(crate) mod fake_microphone {
             open_recorder: Arc::new(move |config, handler| {
                 mic.open(config, Some(handler), Duration::from_secs(2))
             }),
+            list_microphones: Arc::new(|| Ok(Vec::new())),
+            is_clamshell: Arc::new(|| false),
             on_levels: Arc::new(|_| {}),
-        };
-        AudioRecordingManager::with_host(host, Arc::new(|_| {}))
-            .expect("a manager over the fake microphone")
+        }
+    }
+
+    /// A microphone plugged in: how the list shows it, and the fake behind it.
+    type Plugged = (MicrophoneDevice, FakeMic);
+
+    /// An open asked for: the device (`None`: the default) and channels.
+    type Opened = (Option<String>, Channels);
+
+    /// Several fake microphones behind one host, as on a Mac with its own
+    /// microphone and others plugged in: each with an id and a name, one of
+    /// them the system default. Opening an id opens that fake microphone;
+    /// an id that isn't plugged in fails as a missing device does. Writes
+    /// down every open, every listing, every question about the lid and
+    /// every microphone forgotten. Clones share everything.
+    #[derive(Clone)]
+    pub(crate) struct Microphones {
+        default: FakeMic,
+        plugged: Arc<Mutex<Vec<Plugged>>>,
+        list_fails: Arc<AtomicBool>,
+        lid_closed: Arc<AtomicBool>,
+        opened: Arc<Mutex<Vec<Opened>>>,
+        forgotten: Arc<Mutex<Vec<String>>>,
+        listed: Arc<AtomicU64>,
+        lid_asked: Arc<AtomicU64>,
+    }
+
+    impl Microphones {
+        /// The system default microphone, listed with `id` and `name`.
+        pub(crate) fn with_default(id: &str, name: &str) -> Self {
+            let default = mic();
+            let microphones = Self {
+                default: default.clone(),
+                plugged: Arc::new(Mutex::new(Vec::new())),
+                list_fails: Arc::new(AtomicBool::new(false)),
+                lid_closed: Arc::new(AtomicBool::new(false)),
+                opened: Arc::new(Mutex::new(Vec::new())),
+                forgotten: Arc::new(Mutex::new(Vec::new())),
+                listed: Arc::new(AtomicU64::new(0)),
+                lid_asked: Arc::new(AtomicU64::new(0)),
+            };
+            microphones
+                .plugged
+                .lock()
+                .unwrap()
+                .push((listed(id, name, true, 1), default));
+            microphones
+        }
+
+        pub(crate) fn default_mic(&self) -> FakeMic {
+            self.default.clone()
+        }
+
+        /// Plugs in a microphone with one channel, which the list says has
+        /// `listed_channels`.
+        pub(crate) fn plug(&self, id: &str, name: &str, listed_channels: u16) -> FakeMic {
+            let plugged = mic();
+            self.plugged
+                .lock()
+                .unwrap()
+                .push((listed(id, name, false, listed_channels), plugged.clone()));
+            plugged
+        }
+
+        /// Unplugs the microphone named `name`: it leaves the list, and its
+        /// id no longer opens.
+        pub(crate) fn unplug(&self, name: &str) {
+            self.plugged
+                .lock()
+                .unwrap()
+                .retain(|(device, _)| device.name != name);
+        }
+
+        pub(crate) fn fail_listing(&self) {
+            self.list_fails.store(true, Ordering::Release);
+        }
+
+        pub(crate) fn close_lid(&self) {
+            self.lid_closed.store(true, Ordering::Release);
+        }
+
+        /// The device id every open asked for (`None`: the default).
+        pub(crate) fn opened(&self) -> Vec<Option<String>> {
+            let opened = self.opened.lock().unwrap();
+            opened.iter().map(|(device, _)| device.clone()).collect()
+        }
+
+        /// The channels every open asked for.
+        pub(crate) fn channels_asked(&self) -> Vec<Channels> {
+            let opened = self.opened.lock().unwrap();
+            opened.iter().map(|(_, channels)| *channels).collect()
+        }
+
+        /// The selected microphones the default stood in for.
+        pub(crate) fn forgotten(&self) -> Vec<String> {
+            self.forgotten.lock().unwrap().clone()
+        }
+
+        pub(crate) fn times_listed(&self) -> u64 {
+            self.listed.load(Ordering::Acquire)
+        }
+
+        pub(crate) fn times_lid_asked(&self) -> u64 {
+            self.lid_asked.load(Ordering::Acquire)
+        }
+
+        /// A manager over these microphones, with `settings`.
+        pub(crate) fn manager(&self, settings: AppSettings) -> AudioRecordingManager {
+            let mut host = host(&self.default, settings);
+            let this = self.clone();
+            host.open_recorder = Arc::new(move |config, handler| this.open(config, handler));
+            let this = self.clone();
+            host.list_microphones = Arc::new(move || this.list());
+            let this = self.clone();
+            host.is_clamshell = Arc::new(move || {
+                this.lid_asked.fetch_add(1, Ordering::AcqRel);
+                this.lid_closed.load(Ordering::Acquire)
+            });
+            let this = self.clone();
+            host.forget_microphone =
+                Arc::new(move |name| this.forgotten.lock().unwrap().push(name.to_string()));
+            AudioRecordingManager::with_host(host, Arc::new(|_| {}))
+                .expect("a manager over the fake microphones")
+        }
+
+        fn open(
+            &self,
+            config: RecorderConfig,
+            handler: RecorderFailureHandler,
+        ) -> Result<Recorder<CaptureSink>, handy_recorder::Error> {
+            self.opened
+                .lock()
+                .unwrap()
+                .push((config.device.clone(), config.channels));
+            let plugged = match &config.device {
+                None => Some(self.default.clone()),
+                Some(id) => self
+                    .plugged
+                    .lock()
+                    .unwrap()
+                    .iter()
+                    .find(|(device, _)| device.id == *id)
+                    .map(|(_, plugged)| plugged.clone()),
+            };
+            match plugged {
+                Some(plugged) => plugged.open(
+                    RecorderConfig {
+                        device: None,
+                        ..config
+                    },
+                    Some(handler),
+                    Duration::from_secs(2),
+                ),
+                // A fake microphone knows only its own id, so any other
+                // fails as a device that isn't there.
+                None => mic().open(config, Some(handler), Duration::from_secs(2)),
+            }
+        }
+
+        fn list(&self) -> Result<Vec<MicrophoneDevice>, anyhow::Error> {
+            self.listed.fetch_add(1, Ordering::AcqRel);
+            if self.list_fails.load(Ordering::Acquire) {
+                return Err(anyhow::anyhow!("the fake microphones can't be listed"));
+            }
+            let plugged = self.plugged.lock().unwrap();
+            Ok(plugged.iter().map(|(device, _)| device.clone()).collect())
+        }
+    }
+
+    fn listed(id: &str, name: &str, is_default: bool, channels: u16) -> MicrophoneDevice {
+        MicrophoneDevice {
+            id: id.to_string(),
+            name: name.to_string(),
+            is_default,
+            channels: Some(channels),
+            is_monitor: false,
+        }
     }
 
     /// `len` samples that are neither silence nor all alike.
@@ -1568,7 +1761,7 @@ pub(crate) mod fake_microphone {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use handy_recorder::testing::FakeError;
+    use handy_recorder::testing::{FakeError, FakeMic};
 
     // DanyWhere: the manager over a fake microphone (`AudioHost`).
 
@@ -1673,5 +1866,228 @@ mod tests {
     fn microphone_config_takes_the_headset_only_in_airpods_mode() {
         assert!(!microphone_config(None, None, false, 480).take_headset);
         assert!(microphone_config(None, None, true, 480).take_headset);
+    }
+
+    // DanyWhere: which microphone a recording opens, among several fake
+    // ones (`fake_microphone::Microphones`).
+
+    const BUILT_IN: &str = "MacBook Pro Microphone";
+    const USB: &str = "USB Mic";
+    const DESK: &str = "Desk Mic";
+
+    /// The Mac's own microphone as the default, and a USB microphone.
+    fn built_in_and_usb() -> (fake_microphone::Microphones, FakeMic, FakeMic) {
+        let microphones = fake_microphone::Microphones::with_default("built-in", BUILT_IN);
+        let usb = microphones.plug("usb-7", USB, 1);
+        let built_in = microphones.default_mic();
+        (microphones, built_in, usb)
+    }
+
+    fn selecting(microphone: Option<&str>) -> AppSettings {
+        let mut settings = fake_microphone::settings();
+        settings.selected_microphone = microphone.map(str::to_string);
+        settings
+    }
+
+    fn ids(expected: &[Option<&str>]) -> Vec<Option<String>> {
+        expected.iter().map(|id| id.map(str::to_string)).collect()
+    }
+
+    fn start(rm: &AudioRecordingManager) {
+        rm.try_start_recording("transcribe", VadPolicy::Disabled)
+            .expect("the recording starts");
+    }
+
+    /// Sends speech from `mic` and stops the recording: whether what came
+    /// out is what `mic` sent.
+    fn finish(rm: &AudioRecordingManager, mic: &FakeMic) -> bool {
+        let speech = fake_microphone::speech(24_000);
+        fake_microphone::play(mic, &speech);
+        fake_microphone::stop(rm, mic, "transcribe") == Some(speech)
+    }
+
+    #[test]
+    fn a_selected_microphone_is_opened_by_its_id() {
+        let (microphones, _, usb) = built_in_and_usb();
+        let rm = microphones.manager(selecting(Some(USB)));
+        start(&rm);
+        assert_eq!(microphones.opened(), ids(&[Some("usb-7")]));
+        assert!(
+            finish(&rm, &usb),
+            "the recording came from the USB microphone"
+        );
+        assert!(microphones.forgotten().is_empty());
+    }
+
+    #[test]
+    fn a_missing_selected_microphone_records_from_the_default_and_is_forgotten() {
+        let (microphones, built_in, _) = built_in_and_usb();
+        microphones.unplug(USB);
+        let rm = microphones.manager(selecting(Some(USB)));
+        start(&rm);
+        assert_eq!(microphones.times_listed(), 1);
+        assert_eq!(microphones.opened(), ids(&[None]));
+        assert!(finish(&rm, &built_in));
+        assert_eq!(microphones.forgotten(), [USB]);
+    }
+
+    #[test]
+    fn a_failing_default_keeps_the_missing_microphone_selected() {
+        let (microphones, built_in, _) = built_in_and_usb();
+        microphones.unplug(USB);
+        built_in.fail_next_open(FakeError::DeviceNotAvailable);
+        let rm = microphones.manager(selecting(Some(USB)));
+        let error = rm
+            .try_start_recording("transcribe", VadPolicy::Disabled)
+            .err()
+            .expect("the start fails");
+        assert_eq!(recording_notice_code(&error), NoticeCode::NoMicrophone);
+        assert_eq!(microphones.times_listed(), 1);
+        assert!(
+            microphones.forgotten().is_empty(),
+            "a fallback that failed keeps the choice"
+        );
+    }
+
+    #[test]
+    fn a_list_that_fails_records_from_the_default_and_keeps_the_selection() {
+        let (microphones, built_in, _) = built_in_and_usb();
+        microphones.fail_listing();
+        let rm = microphones.manager(selecting(Some(USB)));
+        start(&rm);
+        assert_eq!(microphones.times_listed(), 1);
+        assert_eq!(microphones.opened(), ids(&[None]));
+        assert!(finish(&rm, &built_in));
+        assert!(
+            microphones.forgotten().is_empty(),
+            "the list may fail only for a moment"
+        );
+    }
+
+    #[test]
+    fn the_clamshell_microphone_is_used_while_the_lid_is_closed() {
+        let (microphones, _, _) = built_in_and_usb();
+        let desk = microphones.plug("desk-3", DESK, 1);
+        microphones.close_lid();
+        let mut settings = selecting(Some(USB));
+        settings.clamshell_microphone = Some(DESK.to_string());
+        let rm = microphones.manager(settings);
+        start(&rm);
+        assert_eq!(microphones.opened(), ids(&[Some("desk-3")]));
+        assert!(finish(&rm, &desk));
+    }
+
+    #[test]
+    fn with_the_lid_open_the_selected_microphone_is_used() {
+        let (microphones, _, usb) = built_in_and_usb();
+        microphones.plug("desk-3", DESK, 1);
+        let mut settings = selecting(Some(USB));
+        settings.clamshell_microphone = Some(DESK.to_string());
+        let rm = microphones.manager(settings);
+        start(&rm);
+        assert_eq!(microphones.times_lid_asked(), 1);
+        assert_eq!(microphones.opened(), ids(&[Some("usb-7")]));
+        assert!(finish(&rm, &usb));
+    }
+
+    #[test]
+    fn the_lid_is_asked_about_only_with_a_clamshell_microphone_set() {
+        let (microphones, _, usb) = built_in_and_usb();
+        microphones.close_lid();
+        let rm = microphones.manager(selecting(Some(USB)));
+        start(&rm);
+        assert_eq!(microphones.opened(), ids(&[Some("usb-7")]));
+        assert_eq!(microphones.times_lid_asked(), 0);
+        assert!(finish(&rm, &usb));
+    }
+
+    #[test]
+    fn a_missing_clamshell_microphone_records_from_the_default_not_the_selected_one() {
+        // Today's behaviour: with the lid closed and the clamshell
+        // microphone gone, the system default stands in, though the
+        // selected microphone is there. Both choices are kept.
+        let (microphones, built_in, _) = built_in_and_usb();
+        microphones.close_lid();
+        let mut settings = selecting(Some(USB));
+        settings.clamshell_microphone = Some(DESK.to_string());
+        let rm = microphones.manager(settings);
+        start(&rm);
+        assert_eq!(microphones.times_listed(), 1);
+        assert_eq!(microphones.opened(), ids(&[None]));
+        assert!(finish(&rm, &built_in));
+        assert!(microphones.forgotten().is_empty());
+    }
+
+    #[test]
+    fn a_found_microphone_opens_again_without_a_new_list() {
+        let (microphones, _, usb) = built_in_and_usb();
+        let rm = microphones.manager(selecting(Some(USB)));
+        for _ in 0..2 {
+            start(&rm);
+            assert!(finish(&rm, &usb));
+        }
+        assert_eq!(microphones.opened(), ids(&[Some("usb-7"), Some("usb-7")]));
+        assert_eq!(microphones.times_listed(), 1);
+    }
+
+    #[test]
+    fn an_unplugged_microphone_is_looked_up_again_and_the_default_stands_in() {
+        let (microphones, built_in, usb) = built_in_and_usb();
+        let rm = microphones.manager(selecting(Some(USB)));
+        start(&rm);
+        assert!(finish(&rm, &usb));
+        microphones.unplug(USB);
+        start(&rm);
+        // The id found before fails, so it lists again and takes the default.
+        assert_eq!(
+            microphones.opened(),
+            ids(&[Some("usb-7"), Some("usb-7"), None])
+        );
+        assert_eq!(microphones.times_listed(), 2);
+        assert!(finish(&rm, &built_in));
+        assert_eq!(microphones.forgotten(), [USB]);
+    }
+
+    #[test]
+    fn a_microphone_without_the_selected_channel_records_all_channels_mixed() {
+        // The list says two channels, the device takes one: the second
+        // channel, chosen there, isn't there when the stream opens.
+        let microphones = fake_microphone::Microphones::with_default("built-in", BUILT_IN);
+        let usb = microphones.plug("usb-7", USB, 2);
+        let mut settings = selecting(Some(USB));
+        settings.selected_channel = Some(1);
+        let rm = microphones.manager(settings);
+        start(&rm);
+        assert_eq!(microphones.opened(), ids(&[Some("usb-7"), Some("usb-7")]));
+        assert_eq!(
+            microphones.channels_asked(),
+            [Channels::Only(1), Channels::MixToMono]
+        );
+        assert!(finish(&rm, &usb));
+    }
+
+    #[test]
+    fn a_microphone_that_fails_while_recording_keeps_the_audio_before_it_and_opens_again() {
+        let (microphones, _, usb) = built_in_and_usb();
+        let mut settings = selecting(Some(USB));
+        settings.always_on_microphone = true;
+        let rm = microphones.manager(settings);
+        assert_eq!(
+            microphones.opened(),
+            ids(&[Some("usb-7")]),
+            "always on: opened at once"
+        );
+        start(&rm);
+        let speech = fake_microphone::speech(24_000);
+        fake_microphone::play(&usb, &speech);
+        assert!(usb.report_error(FakeError::DeviceNotAvailable));
+        assert_eq!(fake_microphone::stop(&rm, &usb, "transcribe"), Some(speech));
+        start(&rm);
+        assert_eq!(
+            microphones.opened(),
+            ids(&[Some("usb-7"), Some("usb-7")]),
+            "the failed stream opened again"
+        );
+        assert!(finish(&rm, &usb));
     }
 }
