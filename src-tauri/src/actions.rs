@@ -611,6 +611,23 @@ pub(crate) async fn process_transcription_output_with(
             ids,
         );
     }
+    process_transcription_with_settings(&settings, transcription, post_process, |instructions| {
+        crate::dictation_context::context_for(app, &settings, instructions, context)
+    })
+    .await
+}
+
+/// DanyWhere: [`process_transcription_output_with`] with the `settings`
+/// given (a dictation's, `dictation_snapshot`) instead of read through the
+/// app. `context_for` builds the context block for the instructions it is
+/// given (`dictation_context::context_for`); it is asked only when the
+/// transcription is post-processed and has speech.
+pub(crate) async fn process_transcription_with_settings(
+    settings: &AppSettings,
+    transcription: &str,
+    post_process: bool,
+    context_for: impl FnOnce(&str) -> Option<crate::dictation_context::ContextBlock>,
+) -> ProcessedTranscription {
     let mut final_text = transcription.to_string();
     let mut post_processed_text: Option<String> = None;
     let mut post_process_prompt: Option<String> = None;
@@ -624,7 +641,7 @@ pub(crate) async fn process_transcription_output_with(
         // (`prompt_library`), and earlier dictations from the same window,
         // if "Send Context" asked for them (the query then has a window).
         let (instructions, prompt_names) = {
-            let prompts = crate::prompt_library::requested(&settings);
+            let prompts = crate::prompt_library::requested(settings);
             (
                 crate::prompt_library::request_instructions(&prompts),
                 crate::prompt_library::request_names(&prompts),
@@ -633,11 +650,11 @@ pub(crate) async fn process_transcription_output_with(
         let context_block = if is_blank_transcription(&final_text) {
             None
         } else {
-            crate::dictation_context::context_for(app, &settings, &instructions, context)
+            context_for(&instructions)
         };
         // A reply that's blank once cleaned is no better than none.
         let report =
-            post_process_within_time_limit(&settings, &final_text, context_block.as_ref()).await;
+            post_process_within_time_limit(settings, &final_text, context_block.as_ref()).await;
         let outcome = match report.outcome {
             PostProcessOutcome::Done(text) => non_blank_post_processed_text(text)
                 .map_or(PostProcessOutcome::Failed, PostProcessOutcome::Done),
@@ -683,8 +700,11 @@ pub(crate) async fn process_transcription_output_with(
 /// application's profile when needed (`profile_redo::for_insert`). `None`:
 /// it goes as it is, with its own profile's values; as when it is copied
 /// ("Copy Last Transcript" during the dictation) or waits to be inserted.
+/// `settings` are the dictation's (`dictation_snapshot`), with its paste
+/// method.
 fn redo_for_app_in_front(
     app: &AppHandle,
+    settings: &AppSettings,
     hm: &HistoryManager,
     entry_id: Option<i64>,
     session: u64,
@@ -693,8 +713,7 @@ fn redo_for_app_in_front(
     let entry_id = entry_id?;
     if crate::dictation_key_inserts::copies_instead_of_pasting(session)
         || !crate::delivery::goes_into_app_in_front(
-            // DanyWhere: the dictation's paste method (this thread's values).
-            &crate::app_profiles::dictation_settings(app),
+            settings,
             crate::delivery::INSERT_SERVICE_AVAILABLE,
             crate::insert_service::call_waiting(),
         )
@@ -1167,12 +1186,22 @@ pub fn stop_transcription(
                                     },
                                     word_replacements.clone(),
                                 );
+                            // DanyWhere: with the snapshot's settings; a
+                            // change made meanwhile applies from the next
+                            // dictation on.
                             let Some(processed) = complete_unless_cancelled(
-                                process_transcription_output(
-                                    &ah,
+                                process_transcription_with_settings(
+                                    &snapshot.settings,
                                     &transcription,
                                     snapshot.post_process,
-                                    &context_query,
+                                    |instructions| {
+                                        crate::dictation_context::context_for(
+                                            &ah,
+                                            &snapshot.settings,
+                                            instructions,
+                                            &context_query,
+                                        )
+                                    },
                                 ),
                                 || rm.was_cancelled_since(cancel_generation),
                             )
@@ -1257,14 +1286,13 @@ pub fn stop_transcription(
                                 // when its recording ended (the snapshot): the
                                 // next session starts only after this task.
                                 let session = snapshot.session;
-                                // DanyWhere: the dictation profile's values for the
-                                // paste and its "Append" field, taken now: the
-                                // profile ends when this task returns.
-                                let dictation_values = crate::app_profiles::dictation_values();
-                                // DanyWhere: and all of them for the paste
-                                // thread's sounds and notices.
-                                let (_, values_here) =
-                                    crate::app_profiles::dictation_profile_and_values(&ah);
+                                // DanyWhere: the dictation profile's values from
+                                // the snapshot, for the paste (the profile ends
+                                // when this task returns) and for the paste
+                                // thread's sounds and notices, which read them
+                                // on that thread (`app_profiles::keep_values_here`).
+                                let dictation_values = Some(snapshot.values.clone());
+                                let values_here = snapshot.values.clone();
                                 // Off the main thread: paste sleeps between steps, and a
                                 // paste into Handy's own windows needs the main thread free.
                                 std::thread::Builder::new()
@@ -1295,6 +1323,7 @@ pub fn stop_transcription(
                                         let (final_text, dictation_values, append_text, post_process_failed, effort_refused_by) =
                                             match redo_for_app_in_front(
                                                 &ah_clone,
+                                                &snapshot.settings,
                                                 &hm_for_paste,
                                                 saved_entry_id,
                                                 session,
@@ -2347,6 +2376,89 @@ mod tests {
             run_post_process(&post_process_settings(&url), "hello"),
             PostProcessOutcome::Failed
         );
+    }
+
+    /// `process_transcription_with_settings` with `settings`; the context is
+    /// answered with `block`. Also returns the instructions it was asked
+    /// for.
+    fn process_with(
+        settings: &AppSettings,
+        transcription: &str,
+        post_process: bool,
+        block: Option<crate::dictation_context::ContextBlock>,
+    ) -> (super::ProcessedTranscription, Vec<String>) {
+        let asked = std::sync::Mutex::new(Vec::new());
+        let processed = tauri::async_runtime::block_on(super::process_transcription_with_settings(
+            settings,
+            transcription,
+            post_process,
+            |instructions| {
+                asked.lock().unwrap().push(instructions.to_string());
+                block
+            },
+        ));
+        (processed, asked.into_inner().unwrap())
+    }
+
+    /// Never contacted: nothing listens there.
+    const NOWHERE: &str = "http://127.0.0.1:9";
+
+    #[test]
+    fn without_post_processing_the_transcript_goes_out_as_it_is() {
+        let settings = post_process_settings(NOWHERE);
+        let (processed, asked) = process_with(&settings, "hello", false, Some(marker_block()));
+        assert_eq!(processed.final_text, "hello");
+        assert_eq!(processed.post_processed_text, None);
+        assert!(!processed.post_process_failed);
+        assert!(processed.context_entry_ids.is_empty());
+        assert!(asked.is_empty(), "no context without post-processing");
+    }
+
+    #[test]
+    fn post_processing_runs_with_the_settings_it_is_given() {
+        let url = serve_once(r#"{"choices":[{"message":{"content":"polished"}}]}"#);
+        let settings = post_process_settings(&url);
+        let (processed, asked) = process_with(&settings, "hello", true, Some(marker_block()));
+        assert_eq!(processed.final_text, "polished");
+        assert_eq!(processed.post_processed_text.as_deref(), Some("polished"));
+        assert!(!processed.post_process_failed);
+        let instructions = crate::prompt_library::request_instructions(
+            &crate::prompt_library::requested(&settings),
+        );
+        assert_eq!(
+            processed.post_process_prompt.as_deref(),
+            Some(instructions.as_str())
+        );
+        // The context was built for these instructions, and went out with
+        // the request.
+        assert_eq!(asked, vec![instructions]);
+        assert_eq!(processed.context_entry_ids, vec![1]);
+    }
+
+    #[test]
+    fn blank_speech_is_not_post_processed_and_asks_for_no_context() {
+        let settings = post_process_settings(NOWHERE);
+        let (processed, asked) = process_with(&settings, "  ", true, Some(marker_block()));
+        assert_eq!(processed.final_text, "  ");
+        assert!(!processed.post_process_failed);
+        assert!(processed.context_entry_ids.is_empty());
+        assert!(asked.is_empty());
+    }
+
+    #[test]
+    fn a_failed_post_processing_keeps_the_transcript_but_its_context_went_out() {
+        let url = serve_once(r#"{"choices":[]}"#);
+        let (processed, asked) = process_with(
+            &post_process_settings(&url),
+            "hello",
+            true,
+            Some(marker_block()),
+        );
+        assert_eq!(processed.final_text, "hello");
+        assert_eq!(processed.post_processed_text, None);
+        assert!(processed.post_process_failed);
+        assert_eq!(asked.len(), 1);
+        assert_eq!(processed.context_entry_ids, vec![1]);
     }
 
     #[test]

@@ -14,6 +14,15 @@
 //!
 //! [`build`] makes it from what was read and needs no app, so tests build it
 //! from fixed settings; [`take`] reads those inputs through the `AppHandle`.
+//!
+//! Helpers the end calls still read the settings themselves, through
+//! `app_profiles::dictation_settings`: the stop sound, the overlay and the
+//! transcription manager get the values of a profile of the dictation's own
+//! as the snapshot has them, but those of the profile in use as they are
+//! when they read. On the paste thread, which keeps the snapshot's values
+//! (`app_profiles::keep_values_here`), the paste and the sounds and notices
+//! after it get the snapshot's profile values; only values no profile holds
+//! (e.g. the paste delays) come from when they read.
 
 use std::sync::Arc;
 
