@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { OverlayPositionSetting, OverlayStyleSetting } from "../ShowOverlay";
 import { CustomWords, ProfileWords } from "../CustomWords";
 import { ActiveWordList, WordLists } from "../WordLists";
+import { WordListModelHint } from "../WordListModelHint";
 import { SettingsGroup } from "../../ui/SettingsGroup";
 import { PasteMethodSetting } from "../PasteMethod";
 import { TypingToolSetting } from "../TypingTool";
@@ -89,6 +90,7 @@ export const AdvancedSettings: React.FC = () => {
       <SettingsGroup
         title={t("settings.advanced.wordLists.groupTitle")}
         description={t("settings.advanced.wordLists.groupDescription")}
+        note={<WordListModelHint />}
       >
         <ScopedSetting field="custom_words">
           <CustomWords descriptionMode="tooltip" grouped />

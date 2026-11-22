@@ -367,6 +367,7 @@ async fn post_process_outcome(
         return PostProcessOutcome::Failed;
     }
     let prompt = crate::prompt_library::request_instructions(&prompts);
+    let prompt = crate::prompt_frame::with_known_terms(&prompt, settings);
     log::info!(
         "Post-processing with {}",
         crate::prompt_library::request_names(&prompts).unwrap_or_default()
@@ -1860,6 +1861,41 @@ mod tests {
             stream.write_all(response.as_bytes()).unwrap();
         });
         (format!("http://{address}"), rx)
+    }
+
+    #[test]
+    fn the_word_lists_go_to_post_processing_as_known_terms_before_the_context() {
+        let (url, request) = serve_once_capturing(
+            r#"{"choices":[{"message":{"content":"{\"transcription\":\"polished\"}"}}]}"#,
+        );
+        let mut settings = post_process_settings(&url);
+        for provider in settings.post_process_providers.iter_mut() {
+            provider.supports_structured_output = true;
+        }
+        settings.custom_words = vec!["BeThLi".to_string()];
+        let outcome = tauri::async_runtime::block_on(post_process_transcription(
+            &settings,
+            "hello",
+            Some(&marker_block()),
+        ))
+        .outcome;
+        assert_eq!(outcome, PostProcessOutcome::Done("polished".to_string()));
+        let request = request.recv_timeout(Duration::from_secs(5)).unwrap();
+        let body = &request[request.find("\r\n\r\n").unwrap() + 4..];
+        let json: serde_json::Value = serde_json::from_str(body).unwrap();
+        let system = json["messages"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|m| m["role"] == "system")
+            .expect("a system message")["content"]
+            .as_str()
+            .unwrap()
+            .to_string();
+        let terms = system.find("<known_terms>").expect("known terms");
+        let term = system.find("BeThLi").expect("the term");
+        let context = system.find("SYSTEM-MARKER").expect("the context block");
+        assert!(terms < term && term < context, "{system}");
     }
 
     #[test]

@@ -242,7 +242,9 @@
       "preview": "Vista prèvia en directe",
       "previewTitle": "Mostra les paraules a la finestra superposada En directe mentre parleu i les escriu quan acabeu",
       "translate": "Tradueix",
-      "translateTitle": "Pot convertir el que digueu en text en anglès. Activeu-ho a la configuració"
+      "translateTitle": "Pot convertir el que digueu en text en anglès. Activeu-ho a la configuració",
+      "wordLists": "Llistes de paraules",
+      "wordListsTitle": "Fa servir les vostres llistes de paraules mentre reconeix la parla"
     },
     "rubric": {
       "gradeTitle": "Precisió en {{language}}: {{grade}}",
@@ -809,6 +811,8 @@
       "wordLists": {
         "groupTitle": "Llistes de paraules",
         "groupDescription": "El model rep primer les paraules de la llista addicional activa, després les paraules addicionals i després la llista de paraules.",
+        "modelUses": "{{model}} fa servir les llistes de paraules mentre reconeix la parla.",
+        "modelIgnores": "{{model}} no fa servir les llistes de paraules; el postprocessament les rep com a termes coneguts.",
         "profileDescription": "Paraules que només afegeix aquest perfil, abans de la llista de paraules. Poseu aquí les paraules d'un context i les que necessiteu a tot arreu a la llista de paraules de la configuració bàsica.",
         "activeTitle": "Llista addicional activa",
         "activeDescription": "Les seves paraules arriben primer al model, abans de les paraules addicionals i de la llista de paraules, que sempre s'apliquen. Canvieu-la amb la drecera o des del menú de la safata.",

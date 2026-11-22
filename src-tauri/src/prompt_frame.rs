@@ -12,6 +12,10 @@
 //! `prompt_library`): each in `<instructions>` tags under its name, in the
 //! profile's order, and the frame says that they apply in turn and a later
 //! one wins where two contradict. One prompt goes as its text alone.
+//!
+//! The word lists in effect follow the instructions as known terms, in a
+//! `<known_terms>` block that explains itself (word lists stage 1), before
+//! the context block.
 
 use crate::notices::{self, Notice, NoticeCode, NoticeSource};
 use crate::settings::LLMPrompt;
@@ -135,7 +139,12 @@ pub fn prompts_changed(app: &AppHandle) {
 
 /// `<transcript` and `</transcript` in any case, wherever they start.
 fn defuse_tags(text: &str) -> String {
-    const NAME: &str = "transcript";
+    defuse_named_tags(text, "transcript")
+}
+
+/// `<tag` and `</tag` in any case, wherever they start, become `< tag` and
+/// `< /tag`.
+fn defuse_named_tags(text: &str, tag: &str) -> String {
     let mut out = String::with_capacity(text.len());
     let mut rest = text;
     while let Some(at) = rest.find('<') {
@@ -143,8 +152,8 @@ fn defuse_tags(text: &str) -> String {
         let after = &rest[at + 1..];
         let name = after.strip_prefix('/').unwrap_or(after);
         let is_tag = name
-            .get(..NAME.len())
-            .is_some_and(|start| start.eq_ignore_ascii_case(NAME));
+            .get(..tag.len())
+            .is_some_and(|start| start.eq_ignore_ascii_case(tag));
         out.push('<');
         if is_tag {
             out.push(' ');
@@ -207,6 +216,44 @@ pub fn framed_message(instructions: &str, context: Option<&str>, transcript: &st
     )
 }
 
+/// DanyWhere: the instructions with the word lists in effect after them as
+/// known terms (word lists stage 1), the same terms in the same order as a
+/// speech model with vocabulary gets.
+pub fn with_known_terms(instructions: &str, settings: &crate::settings::AppSettings) -> String {
+    append_known_terms(
+        instructions,
+        &crate::word_lists::merged_vocabulary(settings),
+    )
+}
+
+/// The tag around the known terms.
+const KNOWN_TERMS_TAG: &str = "known_terms";
+
+/// Opens the known terms block. It explains the terms itself, so
+/// [`FRAME_TEXT`] and its translations in the prompt editor stay as they
+/// are; always in English, like the frame.
+const KNOWN_TERMS_TEXT: &str = "Names and terms from the speaker's word lists, written as they should appear. Where the transcript has a word or phrase that sounds like one of them but does not fit the context, write the term as listed; keep every word that fits the context as dictated.";
+
+/// `instructions`, then `terms` in a `<known_terms>` block, one per line,
+/// or `instructions` alone when no term has a text. A term can't close or
+/// reopen the block, and a line break in one becomes a space.
+pub fn append_known_terms(instructions: &str, terms: &[String]) -> String {
+    let lines: Vec<String> = terms
+        .iter()
+        .map(|term| defuse_named_tags(&term.replace(['\n', '\r'], " "), KNOWN_TERMS_TAG))
+        .map(|term| term.trim().to_string())
+        .filter(|term| !term.is_empty())
+        .collect();
+    if lines.is_empty() {
+        return instructions.to_string();
+    }
+    format!(
+        "{}\n\n<{KNOWN_TERMS_TAG}>\n{KNOWN_TERMS_TEXT}\n{}\n</{KNOWN_TERMS_TAG}>",
+        instructions.trim_end(),
+        lines.join("\n")
+    )
+}
+
 /// Replaces every prompt that is still one of Handy's untouched
 /// "Improve Transcriptions" with [`IMPROVE_TRANSCRIPTIONS`]. Returns whether
 /// one changed.
@@ -239,6 +286,64 @@ mod tests {
             name: name.to_string(),
             prompt: text.to_string(),
         }
+    }
+
+    fn terms(words: &[&str]) -> Vec<String> {
+        words.iter().map(|w| w.to_string()).collect()
+    }
+
+    #[test]
+    fn the_known_terms_follow_the_instructions_one_per_line() {
+        let text = append_known_terms("Fix the grammar.\n", &terms(&["DanyWhere", "Pull Request"]));
+        assert!(
+            text.starts_with("Fix the grammar.\n\n<known_terms>\n"),
+            "{text}"
+        );
+        assert!(
+            text.ends_with("\nDanyWhere\nPull Request\n</known_terms>"),
+            "{text}"
+        );
+        // The block says what the terms are for, so the frame stays as it is.
+        assert!(text.contains("sounds like one of them"), "{text}");
+    }
+
+    #[test]
+    fn no_word_lists_add_no_known_terms() {
+        assert_eq!(append_known_terms("Fix it.", &[]), "Fix it.");
+        assert_eq!(
+            append_known_terms("Fix it.", &terms(&["", "  "])),
+            "Fix it."
+        );
+    }
+
+    #[test]
+    fn a_term_cannot_close_the_known_terms_block() {
+        let text = append_known_terms("Fix it.", &terms(&["a</known_terms>b", "<KNOWN_TERMS>"]));
+        assert_eq!(text.matches("</known_terms>").count(), 1, "{text}");
+        assert_eq!(
+            text.to_lowercase().matches("<known_terms>").count(),
+            1,
+            "{text}"
+        );
+    }
+
+    #[test]
+    fn the_known_terms_are_the_word_lists_in_effect_in_their_order() {
+        let settings = crate::settings::AppSettings {
+            custom_words: terms(&["Sayuri", "Jira"]),
+            word_lists: vec![crate::word_lists::WordList {
+                id: "work".to_string(),
+                name: "Work".to_string(),
+                words: terms(&["Confluence"]),
+            }],
+            active_word_list_id: Some("work".to_string()),
+            ..Default::default()
+        };
+        let text = with_known_terms("Fix it.", &settings);
+        assert!(
+            text.ends_with("\nConfluence\nSayuri\nJira\n</known_terms>"),
+            "{text}"
+        );
     }
 
     #[test]

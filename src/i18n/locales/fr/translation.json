@@ -242,7 +242,9 @@
       "preview": "Aperçu en direct",
       "previewTitle": "Affiche vos mots dans l'overlay Live pendant que vous parlez, puis les saisit quand vous vous arrêtez",
       "translate": "Traduit",
-      "translateTitle": "Peut transformer ce que vous dites en texte anglais. À activer dans les paramètres"
+      "translateTitle": "Peut transformer ce que vous dites en texte anglais. À activer dans les paramètres",
+      "wordLists": "Listes de mots",
+      "wordListsTitle": "Utilise vos listes de mots pendant la reconnaissance de la parole"
     },
     "rubric": {
       "gradeTitle": "Précision en {{language}} : {{grade}}",
@@ -809,6 +811,8 @@
       "wordLists": {
         "groupTitle": "Listes de mots",
         "groupDescription": "Le modèle reçoit d'abord les mots de la liste supplémentaire active, puis les mots supplémentaires, puis la liste de mots.",
+        "modelUses": "{{model}} utilise les listes de mots pendant la reconnaissance de la parole.",
+        "modelIgnores": "{{model}} n'utilise pas lui-même les listes de mots ; le post-traitement les reçoit comme termes connus.",
         "profileDescription": "Mots que seul ce profil ajoute, avant la liste de mots. Mettez ici les mots d'un contexte et ceux dont vous avez besoin partout dans la liste de mots des réglages de base.",
         "activeTitle": "Liste supplémentaire active",
         "activeDescription": "Ses mots vont d'abord au modèle, avant les mots supplémentaires et la liste de mots, qui s'appliquent toujours. Changez-la avec le raccourci ou depuis le menu de la barre d'état.",

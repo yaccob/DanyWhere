@@ -242,7 +242,9 @@
       "preview": "Podgląd na żywo",
       "previewTitle": "Pokazuje Twoje słowa w nakładce Na żywo podczas mówienia, a po zakończeniu wpisuje je",
       "translate": "Tłumaczy",
-      "translateTitle": "Potrafi zamienić to, co mówisz, na tekst angielski. Włącz to w ustawieniach"
+      "translateTitle": "Potrafi zamienić to, co mówisz, na tekst angielski. Włącz to w ustawieniach",
+      "wordLists": "Listy słów",
+      "wordListsTitle": "Korzysta z Twoich list słów podczas rozpoznawania mowy"
     },
     "rubric": {
       "gradeTitle": "Dokładność ({{language}}): {{grade}}",
@@ -809,6 +811,8 @@
       "wordLists": {
         "groupTitle": "Listy słów",
         "groupDescription": "Model dostaje najpierw słowa aktywnej dodatkowej listy, potem dodatkowe słowa, a na końcu listę słów.",
+        "modelUses": "{{model}} korzysta z list słów już podczas rozpoznawania mowy.",
+        "modelIgnores": "{{model}} sam nie korzysta z list słów; postproces dostaje je jako znane terminy.",
         "profileDescription": "Słowa, które dodaje tylko ten profil, przed listą słów. Umieść tu słowa dla jednego kontekstu, a słowa potrzebne wszędzie na liście słów ustawień podstawowych.",
         "activeTitle": "Aktywna lista dodatkowa",
         "activeDescription": "Jej słowa trafiają do modelu jako pierwsze, przed dodatkowymi słowami i listą słów, które obowiązują zawsze. Przełączaj ją skrótem lub w menu zasobnika.",

@@ -242,7 +242,9 @@
       "preview": "实时预览",
       "previewTitle": "说话时在“实时”悬浮窗中显示您的文字，停止后再输入",
       "translate": "可翻译",
-      "translateTitle": "可以把您说的话转成英文文本，需在设置中开启"
+      "translateTitle": "可以把您说的话转成英文文本，需在设置中开启",
+      "wordLists": "词汇列表",
+      "wordListsTitle": "识别语音时会使用您的词汇列表"
     },
     "rubric": {
       "gradeTitle": "{{language}}准确度：{{grade}}",
@@ -809,6 +811,8 @@
       "wordLists": {
         "groupTitle": "词汇列表",
         "groupDescription": "模型先获得启用的附加词表中的词，然后是附加词，最后是词表。",
+        "modelUses": "{{model}} 在识别语音时会使用词汇列表。",
+        "modelIgnores": "{{model}} 本身不使用词汇列表；后处理会把它们作为已知术语。",
         "profileDescription": "只有此配置文件添加的词，排在词表之前。把某一场景的词放在这里，把处处需要的词放进基本设置的词表。",
         "activeTitle": "当前附加列表",
         "activeDescription": "它的词最先发送给模型，先于始终适用的附加词和词表。可用快捷键或托盘菜单切换。",

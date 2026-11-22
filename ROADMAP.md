@@ -246,9 +246,15 @@ Each profile has its own prompt list with one prompt selected, as the post-proce
 
 **Done (2026-11-22, not released yet):** Handy's fuzzy replacement no longer runs: a model without vocabulary keeps the text as it heard it, and the word lists reach only models that take them as vocabulary (the Whisper models). The "Word Correction Threshold" on the Debug page and its setting are gone (a stored value is read past), and the word list's description no longer speaks of a fuzzy correction, in all 26 languages. With Canary or Parakeet the lists therefore do nothing for now, also where the replacement used to be right ("Deniware" stays "Deniware" unless post-processing fixes it). When a profile is chosen again at the end of a recording, a different word list still makes it transcribe again, though for such a model the result is the same. Every History entry now records which speech model made its transcription, taken from the run itself (a new column `transcription_model`, replaced by every new transcription), and each version keeps the model of its transcription step, also after "Transcribe Again" with another model; History names it by its display name ("Transcribed with …") in the tooltip of the entry's date and of a version chip. Entries from before have no model and show as before.
 
+**Decided (user, 2026-11-22):** stage 1 next and at once: show whether the speech model takes the word lists, and send the lists to post-processing as known terms, always (also behind Whisper and without "Send Context"). Exact replacement rules, a dictionary guard, measuring and biasing during decoding wait.
+
+**Done (2026-11-22, not released yet):** every model says whether it takes the word lists: before a load from its architecture as transcribe-cpp 0.4.2 decides it (Whisper, Qwen3-ASR and FunASR-Nano yes, Granite Speech by its header flag, MOSS only once loaded, all others no), after a load from the loaded model. The word lists' group under Advanced, for the defaults and in each profile, names the page's speech model and says either that it uses the word lists while it recognizes speech, or that it doesn't and post-processing gets them as known terms; the model table and the onboarding cards show "Word lists" as a capability, with a filter. Post-processing gets the word lists in effect after the instructions and before the context block, in a `<known_terms>` block that says what they are for, so the fixed frame stays unchanged. New strings in all 26 languages.
+
 ### Post-processing: known terms from the word lists
 
 **Idea (2026-11-15, the user agreed: "words or phrases"):** send the entries of the word lists in effect, words or phrases such as "DanyWhere Dev" or "Pull Request", to the post-processing model as known terms. It could then turn a misheard "Danny Ware" into "DanyWhere" and tell "Bild" from "Build" by the context, which the speech recognition cannot do with a vocabulary alone.
+
+**Done (2026-11-22, not released yet):** as word lists stage 1, see "Word lists behave differently per speech model".
 
 ### Post-processing: choose the effort next to the model
 

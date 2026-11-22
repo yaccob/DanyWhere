@@ -37,6 +37,7 @@ export const toTableModel = (info: ModelInfo, t: TFunction): TableModel => {
     languages: info.supported_languages,
     streaming: info.supports_streaming,
     translate: info.supports_translation,
+    vocabulary: info.supports_vocabulary,
     sizeMb: Number(info.size_mb),
     // The file's own, so a different quant found on disk says so.
     quant: quantOf(info.filename) ?? model?.quant ?? null,

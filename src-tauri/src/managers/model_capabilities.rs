@@ -59,6 +59,8 @@ const KEY_LANGUAGES: &str = "general.languages";
 const KEY_CAP_STREAMING: &str = "stt.capability.streaming";
 const KEY_CAP_TRANSLATE: &str = "stt.capability.translate";
 const KEY_CAP_LANG_DETECT: &str = "stt.capability.lang_detect";
+// DanyWhere: Granite Speech writes whether it takes a vocabulary.
+const KEY_CAP_VOCABULARY: &str = "stt.capability.vocabulary";
 const PROBE_KEYS: &[&str] = &[
     KEY_ARCH,
     KEY_NAME,
@@ -67,6 +69,7 @@ const PROBE_KEYS: &[&str] = &[
     KEY_CAP_STREAMING,
     KEY_CAP_TRANSLATE,
     KEY_CAP_LANG_DETECT,
+    KEY_CAP_VOCABULARY,
 ];
 
 /// How confident we are that Handy can run a given model, judged from its GGUF
@@ -107,6 +110,10 @@ pub struct CapabilityProbe {
     pub supports_translation: Option<bool>,
     /// `stt.capability.lang_detect` — automatic language detection.
     pub supports_language_detect: Option<bool>,
+    /// DanyWhere: whether transcribe-cpp takes the word lists as vocabulary
+    /// for it (`Feature::Vocabulary`), see [`vocabulary_by_architecture`];
+    /// `None` where only a load can tell.
+    pub supports_vocabulary: Option<bool>,
 }
 
 impl CapabilityProbe {
@@ -133,13 +140,43 @@ impl CapabilityProbe {
         CapabilityProbe {
             verdict,
             display_name: meta.get_str(KEY_NAME).map(str::to_string),
-            architecture,
             variant: meta.get_str(KEY_VARIANT).map(str::to_string),
             languages: meta.get_string_array(KEY_LANGUAGES),
             supports_streaming: meta.get_bool(KEY_CAP_STREAMING),
             supports_translation: meta.get_bool(KEY_CAP_TRANSLATE),
             supports_language_detect: meta.get_bool(KEY_CAP_LANG_DETECT),
+            supports_vocabulary: vocabulary_from_header(
+                architecture.as_deref(),
+                meta.get_bool(KEY_CAP_VOCABULARY),
+            ),
+            architecture,
         }
+    }
+}
+
+/// DanyWhere: whether transcribe-cpp takes the word lists as vocabulary
+/// (`RunOptions::vocabulary`, `Feature::Vocabulary`) for a model of
+/// `architecture`, as far as the architecture alone tells. As transcribe-cpp
+/// 0.4.2 sets the feature: Whisper, Qwen3-ASR and FunASR-Nano always; Granite
+/// Speech only for files whose converter wrote `stt.capability.vocabulary`,
+/// MOSS only for weights with the instruction split, so for those two, and
+/// for an architecture we don't know, only the file or a load tells (`None`).
+pub fn vocabulary_by_architecture(architecture: &str) -> Option<bool> {
+    match architecture {
+        "whisper" | "qwen3_asr" | "funasr_nano" => Some(true),
+        "granite" | "granite_speech" | "moss" => None,
+        known if KNOWN_ARCHES.contains(&known) => Some(false),
+        _ => None,
+    }
+}
+
+/// [`vocabulary_by_architecture`], completed by a GGUF header: Granite
+/// Speech takes a vocabulary exactly when its header says so; an absent key
+/// means no, as transcribe-cpp reads it.
+fn vocabulary_from_header(architecture: Option<&str>, flag: Option<bool>) -> Option<bool> {
+    match architecture? {
+        "granite" | "granite_speech" => Some(flag.unwrap_or(false)),
+        arch => vocabulary_by_architecture(arch),
     }
 }
 
@@ -267,5 +304,59 @@ mod tests {
             CapabilityProbe::from_metadata(&meta).verdict,
             Compatibility::MaybeIncompatible
         );
+    }
+
+    #[test]
+    fn the_architecture_says_whether_a_model_takes_word_lists() {
+        // As transcribe-cpp 0.4.2 sets Feature::Vocabulary per architecture.
+        for arch in ["whisper", "qwen3_asr", "funasr_nano"] {
+            assert_eq!(vocabulary_by_architecture(arch), Some(true), "{arch}");
+        }
+        for arch in [
+            "parakeet",
+            "canary",
+            "canary_qwen",
+            "moonshine",
+            "moonshine_streaming",
+            "sensevoice",
+            "gigaam",
+            "cohere_asr",
+            "voxtral",
+            "granite_speech_nar",
+            "granite5_ctc",
+        ] {
+            assert_eq!(vocabulary_by_architecture(arch), Some(false), "{arch}");
+        }
+        // Only the file tells: Granite Speech by a header flag, MOSS by its
+        // weights; and an architecture we don't know.
+        for arch in ["granite_speech", "moss", "llama"] {
+            assert_eq!(vocabulary_by_architecture(arch), None, "{arch}");
+        }
+    }
+
+    #[test]
+    fn a_header_says_whether_its_model_takes_word_lists() {
+        let arch = |name: &str| ("general.architecture", GgufValue::String(name.into()));
+        let probe = |kvs| CapabilityProbe::from_metadata(&meta_with(kvs));
+        assert_eq!(probe(vec![arch("whisper")]).supports_vocabulary, Some(true));
+        assert_eq!(
+            probe(vec![arch("parakeet")]).supports_vocabulary,
+            Some(false)
+        );
+        assert_eq!(
+            probe(vec![
+                arch("granite_speech"),
+                ("stt.capability.vocabulary", GgufValue::Bool(true)),
+            ])
+            .supports_vocabulary,
+            Some(true)
+        );
+        // An absent flag means no, as transcribe-cpp reads it.
+        assert_eq!(
+            probe(vec![arch("granite_speech")]).supports_vocabulary,
+            Some(false)
+        );
+        assert_eq!(probe(vec![arch("moss")]).supports_vocabulary, None);
+        assert_eq!(probe(vec![]).supports_vocabulary, None);
     }
 }
