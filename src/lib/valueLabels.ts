@@ -248,6 +248,17 @@ export const valueLabel = (
     const known = ctx.providers?.find((p) => p.id === value);
     return providerName(known ?? { id: value, label: value }, t);
   }
+  // A string behind a switch shows as the switch does; a fixed name as its
+  // control shows it (qa 2026-11-22_1731).
+  const info = fieldInfo(field);
+  if (info?.switchOn !== undefined && typeof value === "string") {
+    return t(
+      `settings.profileView.value.${value === info.switchOn ? "on" : "off"}`,
+    );
+  }
+  if (typeof value === "string" && info?.names?.[value]) {
+    return info.names[value];
+  }
   const option = optionLabel(ctx, field, value);
   if (option !== null) return option;
   if (MODEL_FIELDS.has(field) && isEmpty(value)) {
