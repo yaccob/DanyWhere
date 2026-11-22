@@ -646,35 +646,173 @@ fn deliver_dictation<P: DictationPorts>(ports: &P, delivery: Delivery) {
 
 #[cfg(test)]
 mod tests {
-    use super::fakes::{Event, FakePorts, Script, MODEL, SAMPLES};
-    use super::ports::{History, Overlay};
+    use super::fakes::{
+        llm_server, no_server, CancelAt, Event, FakePorts, Script, MODEL, POLISHED, SAMPLES,
+    };
+    use super::ports::{History, Overlay, Recording};
     use super::{finish_dictation, pasted_dictation_notice, stopped, Dictation};
     use crate::actions::TranscriptionOutcome;
     use crate::delivery::DictationEnd;
+    use crate::dictation_context::CapturedWindow;
+    use crate::dictation_key_inserts::ClipboardReason;
     use crate::dictation_snapshot::{build, DictationSnapshot, SnapshotInputs};
-    use crate::end_keys::{EndChoice, START_BINDINGS};
+    use crate::end_keys::{EndChoice, EndKey, POST_PROCESS_ID, START_BINDINGS};
     use crate::notices::{Notice, NoticeCode, NoticeSource};
-    use crate::profile_redo::Working;
-    use crate::profiles::{ensure_profiles, DEFAULT_PROFILE_ID};
-    use crate::settings::{get_default_settings, AppSettings};
+    use crate::profile_redo::{ForInsert, Working};
+    use crate::profiles::{ensure_profiles, ProfileValues, DEFAULT_PROFILE_ID};
+    use crate::settings::{get_default_settings, AppSettings, PasteMethod};
     use crate::tray::TrayIconState;
-    use std::time::Instant;
+    use crate::utils::PasteOutcome;
+    use std::time::{Duration, Instant};
+
+    /// The id of the end shortcut a press of the first start shortcut ends
+    /// with in the default profile.
+    const PLAIN: &str = "plain";
 
     /// The snapshot of a dictation with `settings`, in the profile in use,
     /// ended with the start shortcut that started it.
     fn snapshot_with(settings: AppSettings) -> DictationSnapshot {
+        snapshot_of(
+            settings,
+            None,
+            EndChoice::Start(START_BINDINGS[0].to_string()),
+        )
+    }
+
+    /// The snapshot of a dictation with `settings` that ends as `end`, in
+    /// its profile of its own `own` (`None`: the one in use).
+    fn snapshot_of(
+        settings: AppSettings,
+        own: Option<(String, ProfileValues)>,
+        end: EndChoice,
+    ) -> DictationSnapshot {
         let mut stored = settings;
         ensure_profiles(&mut stored);
         build(SnapshotInputs {
             stored: &stored,
-            own_profile: None,
-            end: &EndChoice::Start(START_BINDINGS[0].to_string()),
+            own_profile: own,
+            end: &end,
             binding_id: START_BINDINGS[0],
             transcribed_with_end_values: false,
             streaming: false,
             session: 1,
             cancel_generation: 0,
         })
+    }
+
+    /// Ended with the post-processing end shortcut.
+    fn post_processing() -> EndChoice {
+        EndChoice::Key(POST_PROCESS_ID.to_string())
+    }
+
+    /// `settings` with end shortcut `id` appending `append_text` and
+    /// sending context if `send_context`.
+    fn with_end(
+        mut settings: AppSettings,
+        id: &str,
+        append_text: &str,
+        send_context: bool,
+    ) -> AppSettings {
+        let end = settings
+            .end_keys
+            .iter_mut()
+            .find(|end| end.id == id)
+            .expect("a default end shortcut");
+        end.append_text = append_text.to_string();
+        end.send_context = send_context;
+        settings
+    }
+
+    /// Settings that post-process with the library's first prompt at
+    /// `base_url`, without structured output.
+    fn post_process_settings(base_url: &str) -> AppSettings {
+        let mut settings = get_default_settings();
+        let provider = settings
+            .post_process_providers
+            .iter_mut()
+            .find(|provider| provider.id == settings.post_process_provider_id)
+            .expect("the default provider exists");
+        provider.base_url = base_url.to_string();
+        provider.supports_structured_output = false;
+        let provider_id = provider.id.clone();
+        settings
+            .post_process_models
+            .insert(provider_id, "model".to_string());
+        settings.post_process_prompt_order =
+            crate::prompt_library::default_order(&settings.post_process_prompts);
+        if let Some(first) = settings.post_process_prompt_order.first_mut() {
+            first.active = true;
+        }
+        settings
+    }
+
+    /// The window both dictations of a context test end in.
+    fn notes_window() -> CapturedWindow {
+        CapturedWindow {
+            app_id: "com.apple.TextEdit".to_string(),
+            app_name: "TextEdit".to_string(),
+            title: "Notes.txt".to_string(),
+        }
+    }
+
+    /// What shows and sounds when the recording stops, without a stream.
+    fn stop_events(sends_context: bool) -> Vec<Event> {
+        vec![
+            Event::Tray(TrayIconState::Transcribing),
+            Event::Overlay(Overlay::Working {
+                working: Working::Transcribing,
+                streaming: false,
+            }),
+            Event::StopSound,
+            Event::SendsContext(sends_context),
+            Event::BeginWindowCapture,
+        ]
+    }
+
+    /// The events after the first `event`.
+    fn after(events: &[Event], event: &Event) -> Vec<Event> {
+        let at = events
+            .iter()
+            .position(|e| e == event)
+            .unwrap_or_else(|| panic!("no {event:?} in {events:#?}"));
+        events[at + 1..].to_vec()
+    }
+
+    /// The sound of a dictation of this session that was pasted.
+    fn pasted_end() -> DictationEnd {
+        DictationEnd {
+            outcome: TranscriptionOutcome::Typed,
+            cancelled: false,
+            inserted_by_service: false,
+            put_on_clipboard: false,
+            owns_ui: true,
+        }
+    }
+
+    fn notice(code: NoticeCode) -> Notice {
+        Notice::new(code, NoticeSource::Dictation)
+    }
+
+    fn paste(text: &str, values: &ProfileValues, append_text: &str) -> Event {
+        Event::Paste {
+            text: text.to_string(),
+            values: Some(values.clone()),
+            append_text: append_text.to_string(),
+        }
+    }
+
+    /// What the first entry was saved with, before the paste: saved, its
+    /// profile and end remembered, its window and context stored.
+    fn saved_first(end_id: &str) -> Vec<Event> {
+        vec![
+            Event::HistoryAdded(1),
+            Event::Remember {
+                entry_id: 1,
+                profile_id: DEFAULT_PROFILE_ID.to_string(),
+                end_id: end_id.to_string(),
+            },
+            Event::HistoryUpdated(1),
+        ]
     }
 
     /// Runs the end of a dictation with `snapshot` through `ports`, from the
@@ -767,6 +905,723 @@ mod tests {
                 .join(&entry.file_name)
                 .is_file(),
             "the recording is kept next to History"
+        );
+    }
+
+    // ---- Post-processing ---------------------------------------------------
+
+    #[test]
+    fn a_post_processed_dictation_keeps_both_versions_and_pastes_with_its_append_text() {
+        let (url, requests) = llm_server(vec![("200 OK", POLISHED)]);
+        let settings = with_end(
+            post_process_settings(&url),
+            POST_PROCESS_ID,
+            " (sent)",
+            false,
+        );
+        let snapshot = snapshot_of(settings, None, post_processing());
+        assert!(snapshot.post_process);
+        assert!(!snapshot.with_context);
+        let values = snapshot.values.clone();
+        let ports = FakePorts::new(Script::default());
+        finish(&ports, snapshot);
+
+        let mut expected = stop_events(false);
+        expected.extend([
+            Event::StopRecording,
+            Event::Transcribe {
+                samples: SAMPLES,
+                load_end_model: false,
+            },
+            Event::Overlay(Overlay::Working {
+                working: Working::PostProcessing,
+                streaming: false,
+            }),
+            Event::PostProcess {
+                post_process: true,
+                with_window: false,
+            },
+        ]);
+        expected.extend(saved_first(POST_PROCESS_ID));
+        expected.extend([
+            Event::Hook("polished".to_string()),
+            Event::SpawnPaste,
+            Event::RedoLookedAt(1),
+            paste("polished", &values, " (sent)"),
+            Event::ClearNotice,
+            Event::SoundAfterDictation(pasted_end()),
+            Event::Overlay(Overlay::AfterDictation),
+            Event::Tray(TrayIconState::Idle),
+            Event::Complete(TranscriptionOutcome::Typed, SAMPLES),
+            Event::Finished,
+        ]);
+        assert_eq!(ports.take_events(), expected);
+
+        // The provider got the transcript.
+        let request = requests.recv_timeout(Duration::from_secs(5)).unwrap();
+        assert!(request.to_string().contains("hello"), "{request}");
+        // History has both versions and the prompt that made the second.
+        let entry = &ports.entries()[0];
+        assert_eq!(entry.transcription_text, "hello");
+        assert!(entry.post_process_requested);
+        assert_eq!(entry.post_processed_text.as_deref(), Some("polished"));
+        assert!(entry
+            .post_process_prompt
+            .as_deref()
+            .is_some_and(|prompt| !prompt.trim().is_empty()));
+        assert_eq!(crate::history_versions::entry_text(entry), "polished");
+        assert!(crate::history_versions::has_ai_step(&entry.versions));
+        assert!(entry
+            .versions
+            .iter()
+            .flat_map(|version| &version.steps)
+            .any(|step| step.model.as_deref() == Some(MODEL)));
+    }
+
+    #[test]
+    fn a_failed_post_processing_pastes_the_transcript_and_says_so() {
+        let settings = with_end(
+            post_process_settings(&no_server()),
+            POST_PROCESS_ID,
+            " (sent)",
+            false,
+        );
+        let snapshot = snapshot_of(settings, None, post_processing());
+        let values = snapshot.values.clone();
+        let ports = FakePorts::new(Script::default());
+        finish(&ports, snapshot);
+
+        let events = ports.take_events();
+        assert_eq!(
+            after(&events, &Event::SpawnPaste),
+            vec![
+                Event::RedoLookedAt(1),
+                paste("hello", &values, " (sent)"),
+                Event::ClearNotice,
+                Event::SoundAfterDictation(pasted_end()),
+                Event::Raise(notice(NoticeCode::PostProcessFailed)),
+                Event::Tray(TrayIconState::Idle),
+                Event::Complete(TranscriptionOutcome::Typed, SAMPLES),
+                Event::Finished,
+            ]
+        );
+        let entry = &ports.entries()[0];
+        assert!(entry.post_process_requested);
+        assert_eq!(entry.post_processed_text, None);
+        assert_eq!(entry.transcription_text, "hello");
+    }
+
+    #[test]
+    fn a_refused_effort_still_pastes_the_text_and_names_the_model() {
+        let (url, _requests) = llm_server(vec![
+            (
+                "400 Bad Request",
+                r#"{"error":"unsupported reasoning_effort"}"#,
+            ),
+            ("200 OK", POLISHED),
+        ]);
+        let mut settings = post_process_settings(&url);
+        let provider_id = settings.post_process_provider_id.clone();
+        settings
+            .post_process_efforts
+            .insert(provider_id, "xhigh".to_string());
+        let snapshot = snapshot_of(settings, None, post_processing());
+        let values = snapshot.values.clone();
+        let append_text = snapshot.end.append_text.clone();
+        let ports = FakePorts::new(Script::default());
+        finish(&ports, snapshot);
+
+        let events = ports.take_events();
+        assert_eq!(
+            after(&events, &Event::SpawnPaste),
+            vec![
+                Event::RedoLookedAt(1),
+                paste("polished", &values, &append_text),
+                Event::ClearNotice,
+                Event::SoundAfterDictation(pasted_end()),
+                Event::Raise(
+                    notice(NoticeCode::PostProcessEffortRefused).with_detail("model".to_string())
+                ),
+                Event::Tray(TrayIconState::Idle),
+                Event::Complete(TranscriptionOutcome::Typed, SAMPLES),
+                Event::Finished,
+            ]
+        );
+    }
+
+    // ---- Context -----------------------------------------------------------
+
+    /// Dictates "the first one" in the notes window without post-processing,
+    /// then "hello" there with `settings`, ended with post-processing.
+    /// Returns the ports and the request the provider got.
+    fn two_dictations_in_one_window(settings: AppSettings) -> (FakePorts, serde_json::Value) {
+        let (url, requests) = llm_server(vec![("200 OK", POLISHED)]);
+        let mut settings = settings;
+        for provider in settings.post_process_providers.iter_mut() {
+            provider.base_url = url.clone();
+        }
+        let ports = FakePorts::new(Script {
+            transcription: Ok("the first one".to_string()),
+            window: Some(notes_window()),
+            ..Script::default()
+        });
+        finish(&ports, snapshot_with(settings.clone()));
+        ports.take_events();
+
+        ports.set_script(Script {
+            window: Some(notes_window()),
+            ..Script::default()
+        });
+        finish(&ports, snapshot_of(settings, None, post_processing()));
+        let request = requests.recv_timeout(Duration::from_secs(5)).unwrap();
+        (ports, request)
+    }
+
+    #[test]
+    fn send_context_sends_the_earlier_dictation_from_the_same_window() {
+        let settings = with_end(post_process_settings(""), POST_PROCESS_ID, "", true);
+        assert!(snapshot_of(settings.clone(), None, post_processing()).with_context);
+        let (ports, request) = two_dictations_in_one_window(settings);
+
+        let events = ports.take_events();
+        assert_eq!(events[..5], stop_events(true)[..]);
+        assert!(events.contains(&Event::PostProcess {
+            post_process: true,
+            with_window: true,
+        }));
+        // The provider saw the earlier dictation.
+        assert!(request.to_string().contains("the first one"), "{request}");
+        // History keeps which entry went along, and when it was sent.
+        let entries = ports.entries();
+        assert_eq!(entries.len(), 2);
+        assert_eq!(entries[1].window_context.window(), Some(notes_window()));
+        assert!(entries[1].window_context.context_requested);
+        assert_eq!(
+            entries[1].window_context.context_entry_ids,
+            vec![entries[0].id]
+        );
+        assert!(entries[0].window_context.sent_as_context_at.is_some());
+        // ...and told the frontend about both.
+        assert_eq!(
+            after(&events, &Event::HistoryAdded(2))[..3],
+            [
+                Event::Remember {
+                    entry_id: 2,
+                    profile_id: DEFAULT_PROFILE_ID.to_string(),
+                    end_id: POST_PROCESS_ID.to_string(),
+                },
+                Event::HistoryUpdated(2),
+                Event::HistoryUpdated(1),
+            ]
+        );
+    }
+
+    #[test]
+    fn without_send_context_no_earlier_dictation_goes_along() {
+        let settings = with_end(post_process_settings(""), POST_PROCESS_ID, "", false);
+        let (ports, request) = two_dictations_in_one_window(settings);
+
+        let events = ports.take_events();
+        assert_eq!(events[..5], stop_events(false)[..]);
+        assert!(events.contains(&Event::PostProcess {
+            post_process: true,
+            with_window: false,
+        }));
+        assert!(!request.to_string().contains("the first one"), "{request}");
+        let entries = ports.entries();
+        // Every dictation keeps its window.
+        assert_eq!(entries[1].window_context.window(), Some(notes_window()));
+        assert!(!entries[1].window_context.context_requested);
+        assert!(entries[1].window_context.context_entry_ids.is_empty());
+        assert_eq!(entries[0].window_context.sent_as_context_at, None);
+    }
+
+    // ---- Cancelled, empty, silent, failed ----------------------------------
+
+    #[test]
+    fn a_cancel_ends_the_dictation_at_every_check_without_a_result() {
+        let transcribed = Event::Transcribe {
+            samples: SAMPLES,
+            load_end_model: false,
+        };
+        let post_processed = Event::PostProcess {
+            post_process: false,
+            with_window: false,
+        };
+        let mut saved = vec![transcribed.clone(), post_processed.clone()];
+        saved.extend(saved_first(PLAIN));
+        saved.push(Event::Hook("hello".to_string()));
+        let gone = [
+            Event::Overlay(Overlay::Hide),
+            Event::Tray(TrayIconState::Idle),
+            Event::Finished,
+        ];
+        let cases = [
+            (CancelAt::Recording, vec![Event::CancelStream], 0),
+            (CancelAt::Transcribing, vec![transcribed.clone()], 0),
+            (
+                CancelAt::PostProcessing,
+                vec![transcribed.clone(), post_processed.clone()],
+                0,
+            ),
+            // Cancelled before it was saved.
+            (
+                CancelAt::AfterPostProcessing,
+                vec![transcribed.clone(), post_processed.clone()],
+                0,
+            ),
+            (CancelAt::Hook, saved.clone(), 1),
+            (
+                CancelAt::PasteThread,
+                [saved.clone(), vec![Event::SpawnPaste]].concat(),
+                1,
+            ),
+        ];
+        for (at, before, entries) in cases {
+            let ports = FakePorts::new(Script {
+                cancel_at: Some(at),
+                ..Script::default()
+            });
+            finish(&ports, snapshot_with(get_default_settings()));
+            let events = ports.take_events();
+            assert_eq!(
+                after(&events, &Event::StopRecording),
+                [before, gone.to_vec()].concat(),
+                "cancelled at {at:?}"
+            );
+            assert_eq!(ports.entries().len(), entries, "cancelled at {at:?}");
+        }
+    }
+
+    #[test]
+    fn an_empty_recording_types_nothing_and_keeps_nothing() {
+        for recording in [
+            None,
+            Some(Recording {
+                samples: Vec::new(),
+                input_silent: false,
+            }),
+        ] {
+            let ports = FakePorts::new(Script {
+                recording: recording.clone(),
+                ..Script::default()
+            });
+            finish(&ports, snapshot_with(get_default_settings()));
+            assert_eq!(
+                after(&ports.take_events(), &Event::StopRecording),
+                vec![
+                    Event::CancelStream,
+                    Event::Overlay(Overlay::Hide),
+                    Event::Tray(TrayIconState::Idle),
+                    Event::Complete(TranscriptionOutcome::Empty, 0),
+                    Event::Finished,
+                ],
+                "{recording:?}"
+            );
+            assert!(ports.entries().is_empty());
+        }
+    }
+
+    #[test]
+    fn a_silent_microphone_says_so_instead_of_typing_nothing() {
+        // Zeros only: the model hears nothing.
+        let ports = FakePorts::new(Script {
+            recording: Some(Recording {
+                samples: vec![0.0; SAMPLES],
+                input_silent: true,
+            }),
+            transcription: Ok(String::new()),
+            ..Script::default()
+        });
+        finish(&ports, snapshot_with(get_default_settings()));
+        assert_eq!(
+            after(&ports.take_events(), &Event::Hook(String::new())),
+            vec![
+                Event::Raise(notice(NoticeCode::MicrophoneSilent)),
+                Event::Tray(TrayIconState::Idle),
+                Event::Complete(TranscriptionOutcome::Silent, SAMPLES),
+                Event::Finished,
+            ]
+        );
+
+        // A muted microphone that took nothing at all.
+        let ports = FakePorts::new(Script {
+            recording: Some(Recording {
+                samples: Vec::new(),
+                input_silent: true,
+            }),
+            ..Script::default()
+        });
+        finish(&ports, snapshot_with(get_default_settings()));
+        assert_eq!(
+            after(&ports.take_events(), &Event::StopRecording),
+            vec![
+                Event::CancelStream,
+                Event::Raise(notice(NoticeCode::MicrophoneSilent)),
+                Event::Tray(TrayIconState::Idle),
+                Event::Complete(TranscriptionOutcome::Silent, 0),
+                Event::Finished,
+            ]
+        );
+    }
+
+    #[test]
+    fn a_failed_transcription_says_so_and_keeps_an_empty_entry_to_retry() {
+        let ports = FakePorts::new(Script {
+            transcription: Err("the model crashed".to_string()),
+            ..Script::default()
+        });
+        finish(&ports, snapshot_with(get_default_settings()));
+        assert_eq!(
+            after(&ports.take_events(), &Event::StopRecording),
+            vec![
+                Event::Transcribe {
+                    samples: SAMPLES,
+                    load_end_model: false,
+                },
+                Event::Raise(
+                    notice(NoticeCode::TranscriptionFailed)
+                        .with_detail("the model crashed".to_string())
+                ),
+                Event::HistoryAdded(1),
+                Event::Tray(TrayIconState::Idle),
+                Event::Complete(TranscriptionOutcome::Failed, SAMPLES),
+                Event::Finished,
+            ]
+        );
+        let entries = ports.entries();
+        assert_eq!(entries.len(), 1);
+        assert_eq!(entries[0].transcription_text, "");
+    }
+
+    // ---- Where the text goes -----------------------------------------------
+
+    #[test]
+    fn a_waiting_service_call_inserts_the_text_and_closes_the_overlay() {
+        let snapshot = snapshot_with(with_end(get_default_settings(), PLAIN, " (sent)", false));
+        let values = snapshot.values.clone();
+        let ports = FakePorts::new(Script {
+            call_waiting: true,
+            service_takes: true,
+            ..Script::default()
+        });
+        finish(&ports, snapshot);
+        assert_eq!(
+            after(&ports.take_events(), &Event::SpawnPaste),
+            vec![
+                Event::RedoLookedAt(1),
+                paste("hello", &values, " (sent)"),
+                Event::ClearNotice,
+                Event::ServiceInserted("hello (sent)".to_string()),
+                Event::SoundAfterDictation(DictationEnd {
+                    inserted_by_service: true,
+                    ..pasted_end()
+                }),
+                Event::Overlay(Overlay::Hide),
+                Event::Tray(TrayIconState::Idle),
+                Event::Complete(TranscriptionOutcome::Typed, SAMPLES),
+                Event::Finished,
+            ]
+        );
+    }
+
+    #[test]
+    fn copy_last_transcript_during_the_dictation_puts_it_on_the_clipboard_instead() {
+        let snapshot = snapshot_with(with_end(get_default_settings(), PLAIN, " (sent)", false));
+        let ports = FakePorts::new(Script {
+            copy_requested: true,
+            clipboard_reason: Some(ClipboardReason::CopyLast),
+            ..Script::default()
+        });
+        finish(&ports, snapshot);
+        // Neither redone for the app in front nor pasted.
+        assert_eq!(
+            after(&ports.take_events(), &Event::SpawnPaste),
+            vec![
+                Event::ClearNotice,
+                Event::PutOnClipboard("hello (sent)".to_string()),
+                Event::SoundAfterDictation(DictationEnd {
+                    put_on_clipboard: true,
+                    ..pasted_end()
+                }),
+                Event::Overlay(Overlay::OnClipboard(ClipboardReason::CopyLast)),
+                Event::Tray(TrayIconState::Idle),
+                Event::Complete(TranscriptionOutcome::Typed, SAMPLES),
+                Event::Finished,
+            ]
+        );
+    }
+
+    #[test]
+    fn a_paste_that_is_blocked_or_fails_says_so() {
+        for (pasted, code) in [
+            (Ok(PasteOutcome::Blocked), NoticeCode::PasteBlockedElevated),
+            (Err("no keyboard".to_string()), NoticeCode::PasteFailed),
+        ] {
+            let snapshot = snapshot_with(get_default_settings());
+            let values = snapshot.values.clone();
+            let append_text = snapshot.end.append_text.clone();
+            let ports = FakePorts::new(Script {
+                paste: pasted,
+                // Not even a waiting service call gets a failed text.
+                call_waiting: true,
+                service_takes: true,
+                ..Script::default()
+            });
+            finish(&ports, snapshot);
+            assert_eq!(
+                after(&ports.take_events(), &Event::SpawnPaste),
+                vec![
+                    Event::RedoLookedAt(1),
+                    paste("hello", &values, &append_text),
+                    Event::SoundAfterDictation(DictationEnd {
+                        outcome: TranscriptionOutcome::Failed,
+                        ..pasted_end()
+                    }),
+                    Event::Raise(notice(code)),
+                    Event::Tray(TrayIconState::Idle),
+                    Event::Complete(TranscriptionOutcome::Failed, SAMPLES),
+                    Event::Finished,
+                ],
+                "{code:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn a_newer_session_keeps_the_overlay_and_the_tray() {
+        // With a notice: it goes to the tray and footer only.
+        let settings = post_process_settings(&no_server());
+        let snapshot = snapshot_of(settings, None, post_processing());
+        let values = snapshot.values.clone();
+        let append_text = snapshot.end.append_text.clone();
+        let ports = FakePorts::new(Script {
+            owns_ui: false,
+            ..Script::default()
+        });
+        finish(&ports, snapshot);
+        let newer = DictationEnd {
+            owns_ui: false,
+            ..pasted_end()
+        };
+        assert_eq!(
+            after(&ports.take_events(), &Event::SpawnPaste),
+            vec![
+                Event::RedoLookedAt(1),
+                paste("hello", &values, &append_text),
+                Event::SoundAfterDictation(newer),
+                Event::RaiseWithoutOverlay(notice(NoticeCode::PostProcessFailed)),
+                Event::Complete(TranscriptionOutcome::Typed, SAMPLES),
+                Event::Finished,
+            ]
+        );
+
+        // Without one: nothing on screen changes.
+        let ports = FakePorts::new(Script {
+            owns_ui: false,
+            ..Script::default()
+        });
+        finish(&ports, snapshot_with(get_default_settings()));
+        let events = ports.take_events();
+        assert_eq!(
+            after(&events, &Event::SpawnPaste)[2..],
+            [
+                Event::SoundAfterDictation(newer),
+                Event::Complete(TranscriptionOutcome::Typed, SAMPLES),
+                Event::Finished,
+            ]
+        );
+    }
+
+    #[test]
+    fn the_users_hook_changes_only_what_is_pasted() {
+        let snapshot = snapshot_with(get_default_settings());
+        let values = snapshot.values.clone();
+        let append_text = snapshot.end.append_text.clone();
+        let ports = FakePorts::new(Script {
+            hook: Some(|text| text.to_uppercase()),
+            ..Script::default()
+        });
+        finish(&ports, snapshot);
+        assert!(ports
+            .take_events()
+            .contains(&paste("HELLO", &values, &append_text)));
+        assert_eq!(ports.entries()[0].transcription_text, "hello");
+
+        // A hook that leaves nothing: nothing is typed.
+        let ports = FakePorts::new(Script {
+            hook: Some(|_| String::new()),
+            ..Script::default()
+        });
+        finish(&ports, snapshot_with(get_default_settings()));
+        assert_eq!(
+            after(&ports.take_events(), &Event::Hook("hello".to_string())),
+            vec![
+                Event::Overlay(Overlay::Hide),
+                Event::Tray(TrayIconState::Idle),
+                Event::Complete(TranscriptionOutcome::Empty, SAMPLES),
+                Event::Finished,
+            ]
+        );
+        assert_eq!(ports.entries()[0].transcription_text, "hello");
+    }
+
+    #[test]
+    fn the_application_in_front_with_another_profile_gets_its_redo_and_append_text() {
+        let snapshot = snapshot_with(get_default_settings());
+        let mut other = snapshot.values.clone();
+        other.paste_method = PasteMethod::CtrlShiftV;
+        let other_end = EndKey {
+            id: "send".to_string(),
+            append_text: " (other)".to_string(),
+            ..EndKey::default()
+        };
+        let redo = |text: Option<&str>, post_process_failed: bool| ForInsert {
+            text: text.map(str::to_string),
+            values: other.clone(),
+            end: other_end.clone(),
+            post_process_failed,
+        };
+
+        // Redone there: its text, through the hook, with its values.
+        let ports = FakePorts::new(Script {
+            redo: Some(redo(Some("redone"), false)),
+            redo_shows: vec![Working::PostProcessing],
+            ..Script::default()
+        });
+        finish(&ports, snapshot.clone());
+        assert_eq!(
+            after(&ports.take_events(), &Event::SpawnPaste),
+            vec![
+                Event::RedoLookedAt(1),
+                Event::Overlay(Overlay::Working {
+                    working: Working::PostProcessing,
+                    streaming: false,
+                }),
+                Event::Hook("redone".to_string()),
+                paste("redone", &other, " (other)"),
+                Event::ClearNotice,
+                Event::SoundAfterDictation(pasted_end()),
+                Event::Overlay(Overlay::AfterDictation),
+                Event::Tray(TrayIconState::Idle),
+                Event::Complete(TranscriptionOutcome::Typed, SAMPLES),
+                Event::Finished,
+            ]
+        );
+
+        // Nothing to redo: the text as it is, with that profile's values
+        // and append text.
+        let ports = FakePorts::new(Script {
+            redo: Some(redo(None, false)),
+            ..Script::default()
+        });
+        finish(&ports, snapshot.clone());
+        assert!(ports
+            .take_events()
+            .contains(&paste("hello", &other, " (other)")));
+
+        // Its post-processing failed: the notice says so.
+        let ports = FakePorts::new(Script {
+            redo: Some(redo(Some("hello"), true)),
+            ..Script::default()
+        });
+        finish(&ports, snapshot);
+        assert!(ports
+            .take_events()
+            .contains(&Event::Raise(notice(NoticeCode::PostProcessFailed))));
+    }
+
+    #[test]
+    fn the_dictations_own_profile_decides_how_it_is_pasted_not_the_one_in_use() {
+        // The profile in use pastes with ⌘V and appends nothing; the
+        // dictation's own "mail" doesn't paste and appends " (mail)".
+        let mut stored = get_default_settings();
+        ensure_profiles(&mut stored);
+        assert_eq!(stored.paste_method, PasteMethod::CtrlV);
+        let mut mail = ProfileValues::from_settings(&stored);
+        mail.paste_method = PasteMethod::None;
+        mail.end_keys
+            .iter_mut()
+            .find(|end| end.id == PLAIN)
+            .expect("plain end")
+            .append_text = " (mail)".to_string();
+        let snapshot = snapshot_of(
+            stored,
+            Some(("mail".to_string(), mail.clone())),
+            EndChoice::Start(START_BINDINGS[0].to_string()),
+        );
+        let ports = FakePorts::new(Script::default());
+        finish(&ports, snapshot);
+
+        let events = ports.take_events();
+        assert!(events.contains(&Event::Remember {
+            entry_id: 1,
+            profile_id: "mail".to_string(),
+            end_id: PLAIN.to_string(),
+        }));
+        // Not pasted into the application in front, so not redone for it;
+        // the paste gets mail's values (no paste method) and append text.
+        assert_eq!(
+            after(&events, &Event::SpawnPaste)[..2],
+            [paste("hello", &mail, " (mail)"), Event::ClearNotice]
+        );
+    }
+
+    #[test]
+    fn a_paste_thread_that_cannot_start_ends_the_dictation_as_failed() {
+        let ports = FakePorts::new(Script {
+            spawn_fails: true,
+            ..Script::default()
+        });
+        finish(&ports, snapshot_with(get_default_settings()));
+        assert_eq!(
+            after(&ports.take_events(), &Event::SpawnPaste),
+            vec![
+                Event::Overlay(Overlay::Hide),
+                Event::Tray(TrayIconState::Idle),
+                Event::Complete(TranscriptionOutcome::Failed, SAMPLES),
+                Event::Finished,
+            ]
+        );
+    }
+
+    #[test]
+    fn the_live_overlay_and_the_end_profiles_model_follow_the_snapshot() {
+        let mut stored = post_process_settings(&no_server());
+        ensure_profiles(&mut stored);
+        let snapshot = build(SnapshotInputs {
+            stored: &stored,
+            own_profile: None,
+            end: &post_processing(),
+            binding_id: START_BINDINGS[0],
+            transcribed_with_end_values: true,
+            streaming: true,
+            session: 1,
+            cancel_generation: 0,
+        });
+        assert!(snapshot.use_streaming_overlay);
+        let ports = FakePorts::new(Script::default());
+        finish(&ports, snapshot);
+        let events = ports.take_events();
+        assert_eq!(
+            events[1],
+            Event::Overlay(Overlay::Working {
+                working: Working::Transcribing,
+                streaming: true,
+            })
+        );
+        assert_eq!(
+            after(&events, &Event::StopRecording)[..2],
+            [
+                Event::Transcribe {
+                    samples: SAMPLES,
+                    load_end_model: true,
+                },
+                Event::Overlay(Overlay::Working {
+                    working: Working::PostProcessing,
+                    streaming: true,
+                }),
+            ]
         );
     }
 

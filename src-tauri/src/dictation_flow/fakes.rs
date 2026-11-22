@@ -167,7 +167,7 @@ pub enum Event {
 }
 
 pub struct Fake {
-    script: Script,
+    script: Mutex<Script>,
     events: Arc<Mutex<Vec<Event>>>,
     cancelled: AtomicBool,
     history: HistoryManager,
@@ -199,7 +199,7 @@ impl FakePorts {
             .expect("open history")
         };
         Self(Arc::new(Fake {
-            script,
+            script: Mutex::new(script),
             events,
             cancelled: AtomicBool::new(false),
             history,
@@ -228,12 +228,22 @@ impl FakePorts {
             .collect()
     }
 
+    /// The next dictation goes as `script` says, with the same History.
+    pub fn set_script(&self, script: Script) {
+        *self.0.script.lock().unwrap() = script;
+        self.0.cancelled.store(false, Ordering::SeqCst);
+    }
+
+    fn script(&self) -> std::sync::MutexGuard<'_, Script> {
+        self.0.script.lock().unwrap()
+    }
+
     fn record(&self, event: Event) {
         self.0.events.lock().unwrap().push(event);
     }
 
     fn cancel_if(&self, at: CancelAt) -> bool {
-        let now = self.0.script.cancel_at == Some(at);
+        let now = self.script().cancel_at == Some(at);
         if now {
             self.0.cancelled.store(true, Ordering::SeqCst);
         }
@@ -245,7 +255,7 @@ impl Transcribe for FakePorts {
     fn stop_recording(&self, _binding_id: &str) -> Option<Recording> {
         self.record(Event::StopRecording);
         self.cancel_if(CancelAt::Recording);
-        self.0.script.recording.clone()
+        self.script().recording.clone()
     }
 
     fn cancel_stream(&self) {
@@ -258,11 +268,12 @@ impl Transcribe for FakePorts {
             load_end_model,
         });
         self.cancel_if(CancelAt::Transcribing);
-        match &self.0.script.transcription {
+        let script = self.script();
+        match &script.transcription {
             Ok(text) => Ok(Transcription {
                 text: text.clone(),
                 language: None,
-                word_replacements: self.0.script.word_replacements.clone(),
+                word_replacements: script.word_replacements.clone(),
                 model_id: Some(MODEL.to_string()),
             }),
             Err(error) => Err(anyhow::anyhow!(error.clone())),
@@ -317,11 +328,11 @@ impl History for FakePorts {
 
 impl Deliver for FakePorts {
     fn copies_instead_of_pasting(&self, _session: u64) -> bool {
-        self.0.script.copy_requested
+        self.script().copy_requested
     }
 
     fn call_waiting(&self) -> bool {
-        self.0.script.call_waiting
+        self.script().call_waiting
     }
 
     fn redo_for_app_in_front(
@@ -330,16 +341,17 @@ impl Deliver for FakePorts {
         show: &dyn Fn(Working),
     ) -> Option<ForInsert> {
         self.record(Event::RedoLookedAt(entry.id));
-        for working in &self.0.script.redo_shows {
-            show(*working);
+        let shows = self.script().redo_shows.clone();
+        for working in shows {
+            show(working);
         }
-        self.0.script.redo.clone()
+        self.script().redo.clone()
     }
 
     fn apply_hook(&self, text: String) -> impl std::future::Future<Output = String> + Send {
         self.record(Event::Hook(text.clone()));
         let pend = self.cancel_if(CancelAt::Hook);
-        let hook = self.0.script.hook;
+        let hook = self.script().hook;
         async move {
             if pend {
                 std::future::pending::<()>().await;
@@ -362,18 +374,18 @@ impl Deliver for FakePorts {
             values,
             append_text: append_text.to_string(),
         });
-        self.0.script.paste.clone()
+        self.script().paste.clone()
     }
 
     fn deliver_to_waiting_call(&self, text: &str) -> bool {
-        if self.0.script.service_takes {
+        if self.script().service_takes {
             self.record(Event::ServiceInserted(text.to_string()));
         }
-        self.0.script.service_takes
+        self.script().service_takes
     }
 
     fn put_on_clipboard_if_requested(&self, _session: u64, text: &str) -> Option<ClipboardReason> {
-        let reason = self.0.script.clipboard_reason.clone()?;
+        let reason = self.script().clipboard_reason.clone()?;
         self.record(Event::PutOnClipboard(text.to_string()));
         Some(reason)
     }
@@ -423,7 +435,7 @@ impl Session for FakePorts {
     }
 
     fn owns_ui(&self) -> bool {
-        self.0.script.owns_ui
+        self.script().owns_ui
     }
 
     fn begin_window_capture(&self, _settings: &AppSettings) {
@@ -431,7 +443,7 @@ impl Session for FakePorts {
     }
 
     fn take_window(&self) -> Option<CapturedWindow> {
-        self.0.script.window.clone()
+        self.script().window.clone()
     }
 
     /// Runs `run` on a thread of its own and waits for it, so the paste's
@@ -442,7 +454,7 @@ impl Session for FakePorts {
         run: Box<dyn FnOnce() + Send>,
     ) -> std::io::Result<()> {
         self.record(Event::SpawnPaste);
-        if self.0.script.spawn_fails {
+        if self.script().spawn_fails {
             return Err(std::io::Error::other("no thread for the test"));
         }
         self.cancel_if(CancelAt::PasteThread);
@@ -455,3 +467,66 @@ impl Session for FakePorts {
         self.record(Event::Finished);
     }
 }
+
+/// A post-processing provider on this computer: answers one request per
+/// entry of `responses` (status line, body), in turn, and hands over each
+/// request's JSON body. Returns its URL and the bodies.
+pub fn llm_server(
+    responses: Vec<(&'static str, &'static str)>,
+) -> (String, std::sync::mpsc::Receiver<serde_json::Value>) {
+    use std::io::{Read, Write};
+
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let address = listener.local_addr().unwrap();
+    let (tx, rx) = std::sync::mpsc::channel();
+    std::thread::spawn(move || {
+        for (status, body) in responses {
+            let (mut stream, _) = listener.accept().unwrap();
+            let mut request = Vec::new();
+            let mut buffer = [0; 8192];
+            loop {
+                let n = stream.read(&mut buffer).unwrap_or(0);
+                if n == 0 {
+                    break;
+                }
+                request.extend_from_slice(&buffer[..n]);
+                let text = String::from_utf8_lossy(&request).to_string();
+                if let Some(end) = text.find("\r\n\r\n") {
+                    let length = text[..end]
+                        .lines()
+                        .find_map(|line| {
+                            line.to_ascii_lowercase()
+                                .strip_prefix("content-length:")
+                                .map(|v| v.trim().parse::<usize>().unwrap_or(0))
+                        })
+                        .unwrap_or(0);
+                    if request.len() >= end + 4 + length {
+                        let _ = tx.send(
+                            serde_json::from_str(&text[end + 4..])
+                                .unwrap_or(serde_json::Value::Null),
+                        );
+                        break;
+                    }
+                }
+            }
+            let response = format!(
+                "HTTP/1.1 {status}\r\ncontent-type: application/json\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{}",
+                body.len(),
+                body
+            );
+            stream.write_all(response.as_bytes()).unwrap();
+        }
+    });
+    (format!("http://{address}"), rx)
+}
+
+/// A URL where no provider listens: every request fails at once.
+pub fn no_server() -> String {
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let address = listener.local_addr().unwrap();
+    drop(listener);
+    format!("http://{address}")
+}
+
+/// A provider's reply "polished", without structured output.
+pub const POLISHED: &str = r#"{"choices":[{"message":{"content":"polished"}}]}"#;
