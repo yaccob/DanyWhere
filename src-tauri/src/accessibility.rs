@@ -70,6 +70,14 @@ impl AccessibilityState {
         !self.skipped
     }
 
+    /// Whether DanyWhere reads window titles through the Accessibility API:
+    /// macOS grants it and the user didn't choose to go without. In the mode
+    /// without it titles come by Apple event, also once macOS grants the
+    /// permission, like the rest of the mode.
+    pub fn can_read_windows(&self) -> bool {
+        !self.skipped && self.trusted()
+    }
+
     /// macOS's own answer (`AXIsProcessTrusted`), asked now; always `true`
     /// elsewhere. Callers ask a question above instead, unless they need
     /// exactly this.
@@ -265,6 +273,29 @@ mod tests {
             access.trusted();
         });
         assert_eq!(asked, 2);
+    }
+
+    #[test]
+    fn windows_are_read_only_where_macos_grants_it_and_the_user_kept_it() {
+        for (skipped, trusted) in STATES {
+            let settings = with_choice(get_default_settings(), skipped);
+            assert_eq!(
+                with_system_trusted(trusted, || state(&settings).can_read_windows()),
+                !skipped && trusted,
+                "skipped {skipped}, trusted {trusted}"
+            );
+        }
+    }
+
+    #[test]
+    fn the_mode_without_accessibility_never_asks_macos_about_windows() {
+        let access = state(&settings_without_accessibility());
+        let (read, asked) = times_asked(|| access.can_read_windows());
+        assert!(!read);
+        assert_eq!(asked, 0);
+        let access = state(&get_default_settings());
+        let (_, asked) = times_asked(|| access.can_read_windows());
+        assert_eq!(asked, 1);
     }
 
     #[test]

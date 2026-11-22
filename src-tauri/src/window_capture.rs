@@ -9,7 +9,8 @@
 //!
 //! - macOS with Accessibility: the focused window's title, read through the
 //!   Accessibility API.
-//! - macOS without it: a scriptable app is asked for its title by Apple
+//! - macOS without it, and in the mode without it (`accessibility`) also
+//!   once macOS grants it: a scriptable app is asked for its title by Apple
 //!   event ("Automation"), but only when the user has already allowed
 //!   DanyWhere to control that app; the consent dialog is never shown during
 //!   a dictation, only from the settings (sidecar note
@@ -54,7 +55,7 @@ pub enum TitleSource {
 /// Decides [`TitleSource`] for `access`.
 #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 pub fn title_source(access: &AccessibilityState) -> TitleSource {
-    if access.trusted() {
+    if access.can_read_windows() {
         TitleSource::Accessibility
     } else {
         TitleSource::AppleEvents
@@ -338,7 +339,8 @@ fn capture_front(
 pub struct WindowTitleAccess {
     /// This platform can tell window titles at all (not Linux yet).
     pub supported: bool,
-    /// macOS: DanyWhere has Accessibility, so it reads every window's title.
+    /// macOS: DanyWhere reads every window's title through Accessibility
+    /// ([`TitleSource::Accessibility`]).
     pub accessibility: bool,
     /// macOS without Accessibility: the apps that can tell their window title
     /// and whether DanyWhere may ask them, the running ones first, then the
@@ -960,8 +962,8 @@ mod platform {
         (!title.is_empty()).then_some(title)
     }
 
-    /// With Accessibility every title comes from it; otherwise the apps that
-    /// can tell theirs by Apple event, running ones with their permission
+    /// Through Accessibility ([`title_source`]) every title comes from it;
+    /// otherwise the apps that can tell theirs by Apple event, running ones with their permission
     /// (asked without a dialog).
     pub fn access(own_id: &str, access: AccessibilityState) -> WindowTitleAccess {
         let accessibility = title_source(&access) == TitleSource::Accessibility;
@@ -1300,10 +1302,11 @@ mod tests {
     }
 
     #[test]
-    fn titles_follow_macos_alone_even_when_the_user_chose_to_go_without() {
-        // As before the one source: the mode without Accessibility reads
-        // titles through it once macOS grants it.
-        assert_eq!(source_for(true, true), TitleSource::Accessibility);
+    fn titles_come_by_apple_event_when_the_user_chose_to_go_without() {
+        // Also once macOS grants Accessibility after onboarding: the mode
+        // stays the mode, as Enigo stays off (analysis 2026-11-22, example
+        // 2).
+        assert_eq!(source_for(true, true), TitleSource::AppleEvents);
     }
 
     #[test]
