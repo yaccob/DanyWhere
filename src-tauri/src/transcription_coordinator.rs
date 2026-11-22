@@ -698,6 +698,12 @@ pub fn is_transcribe_binding(id: &str) -> bool {
 
 impl TranscriptionCoordinator {
     pub fn new(app: AppHandle) -> Self {
+        Self::with_runner(AppEffects(app))
+    }
+
+    /// DanyWhere: the coordinator thread with `runner` as its executor: the
+    /// app's is [`AppEffects`], a test's records what it was asked to do.
+    pub(crate) fn with_runner(mut runner: impl EffectRunner) -> Self {
         let (tx, rx) = mpsc::channel();
 
         thread::spawn(move || {
@@ -715,12 +721,12 @@ impl TranscriptionCoordinator {
                             Err(mpsc::RecvTimeoutError::Timeout) => {
                                 let was_locked = state.is_recording_locked();
                                 if let Some(effect) = state.on_grace_expired() {
-                                    run_effect(&app, &mut state, effect);
+                                    run_effect(&mut runner, &mut state, effect);
                                 }
                                 if !was_locked && state.is_recording_locked() {
-                                    emit_recording_phase(&app, RecordingPhase::Locked);
+                                    runner.phase(RecordingPhase::Locked);
                                 }
-                                report_recording_locked(&app, &state, &mut reported_locked);
+                                report_recording_locked(&mut runner, &state, &mut reported_locked);
                                 continue;
                             }
                             Err(mpsc::RecvTimeoutError::Disconnected) => break,
@@ -743,11 +749,10 @@ impl TranscriptionCoordinator {
                             // DanyWhere: the end shortcut with its
                             // combination in the profile that applies now.
                             if input.is_pressed {
-                                input.keys_end =
-                                    crate::end_keys::keys_end_now(&app, &input.binding_id);
+                                input.keys_end = runner.keys_end(&input.binding_id);
                             }
                             if let Some(effect) = state.on_input(input, now) {
-                                run_effect(&app, &mut state, effect);
+                                run_effect(&mut runner, &mut state, effect);
                             }
                         }
                         Command::Cancel {
@@ -758,34 +763,34 @@ impl TranscriptionCoordinator {
                                 recording_was_active || matches!(state.stage, Stage::Processing);
                             state.on_cancel(recording_was_active);
                             if busy {
-                                emit_recording_phase(&app, RecordingPhase::Cancelled);
+                                runner.phase(RecordingPhase::Cancelled);
                             }
                         }
                         Command::ProcessingFinished => {
                             if let Some(effect) = state.on_processing_finished() {
-                                run_effect(&app, &mut state, effect);
+                                run_effect(&mut runner, &mut state, effect);
                             }
                         }
                         Command::Finish { finish_as } => {
                             if let Some(effect) = state.on_finish_as(finish_as.as_deref()) {
-                                run_effect(&app, &mut state, effect);
+                                run_effect(&mut runner, &mut state, effect);
                             }
                         }
                         Command::StartLocked { binding_id } => {
                             match state.on_start_locked(binding_id, Instant::now()) {
-                                Some(effect) => run_effect(&app, &mut state, effect),
+                                Some(effect) => run_effect(&mut runner, &mut state, effect),
                                 None => debug!("Not starting a recording: one runs already"),
                             }
                         }
                         Command::EndKey { end_id } => match state.on_end_key(&end_id) {
-                            Some(effect) => run_effect(&app, &mut state, effect),
+                            Some(effect) => run_effect(&mut runner, &mut state, effect),
                             None => debug!("End shortcut '{end_id}' without a recording"),
                         },
                     }
                     if !was_locked && state.is_recording_locked() {
-                        emit_recording_phase(&app, RecordingPhase::Locked);
+                        runner.phase(RecordingPhase::Locked);
                     }
-                    report_recording_locked(&app, &state, &mut reported_locked);
+                    report_recording_locked(&mut runner, &state, &mut reported_locked);
                 }
                 debug!("Transcription coordinator exited");
             }));
@@ -926,27 +931,72 @@ impl TranscriptionCoordinator {
     }
 }
 
-/// DanyWhere: tells `dictation_key_inserts` when a locked recording begins
-/// or ends (stopped, cancelled, failed to start), so it releases the
-/// dictation shortcuts only meanwhile.
-fn report_recording_locked(app: &AppHandle, state: &CoordinatorState, reported: &mut bool) {
-    let locked = state.is_recording_locked();
-    if locked != *reported {
-        *reported = locked;
-        crate::dictation_key_inserts::recording_locked_changed(app, locked);
+/// DanyWhere: everything the coordinator thread does to the app, so tests
+/// can run the real thread with a fake ([`AppEffects`] in the app).
+pub(crate) trait EffectRunner: Send + 'static {
+    /// Start recording for `binding_id`; whether it began.
+    fn start(&mut self, binding_id: &str, hotkey: &str) -> bool;
+    /// Stop the recording of `binding_id`, ending it with `end`.
+    fn stop(&mut self, binding_id: &str, hotkey: &str, end: &EndChoice);
+    /// Tell the windows that follow along (onboarding's Try it).
+    fn phase(&mut self, phase: RecordingPhase);
+    /// A locked recording began or ended (`dictation_key_inserts`).
+    fn recording_locked_changed(&mut self, locked: bool);
+    /// The end shortcut with `binding_id`'s combination in the profile that
+    /// applies now (`end_keys::keys_end_now`).
+    fn keys_end(&mut self, binding_id: &str) -> Option<String>;
+}
+
+/// DanyWhere: the app as the coordinator's executor.
+struct AppEffects(AppHandle);
+
+impl EffectRunner for AppEffects {
+    fn start(&mut self, binding_id: &str, hotkey: &str) -> bool {
+        start(&self.0, binding_id, hotkey)
+    }
+
+    fn stop(&mut self, binding_id: &str, hotkey: &str, end: &EndChoice) {
+        crate::actions::stop_transcription(&self.0, binding_id, hotkey, end);
+    }
+
+    fn phase(&mut self, phase: RecordingPhase) {
+        emit_recording_phase(&self.0, phase);
+    }
+
+    fn recording_locked_changed(&mut self, locked: bool) {
+        crate::dictation_key_inserts::recording_locked_changed(&self.0, locked);
+    }
+
+    fn keys_end(&mut self, binding_id: &str) -> Option<String> {
+        crate::end_keys::keys_end_now(&self.0, binding_id)
     }
 }
 
-fn run_effect(app: &AppHandle, state: &mut CoordinatorState, effect: Effect) {
+/// DanyWhere: tells `dictation_key_inserts` when a locked recording begins
+/// or ends (stopped, cancelled, failed to start), so it releases the
+/// dictation shortcuts only meanwhile.
+fn report_recording_locked(
+    runner: &mut impl EffectRunner,
+    state: &CoordinatorState,
+    reported: &mut bool,
+) {
+    let locked = state.is_recording_locked();
+    if locked != *reported {
+        *reported = locked;
+        runner.recording_locked_changed(locked);
+    }
+}
+
+fn run_effect(runner: &mut impl EffectRunner, state: &mut CoordinatorState, effect: Effect) {
     match effect {
         Effect::Start {
             binding_id,
             hotkey_string,
         } => {
-            let started = start(app, &binding_id, &hotkey_string);
+            let started = runner.start(&binding_id, &hotkey_string);
             state.on_start_result(&binding_id, started);
             if started {
-                emit_recording_phase(app, RecordingPhase::Started);
+                runner.phase(RecordingPhase::Started);
             }
         }
         Effect::Stop {
@@ -954,8 +1004,8 @@ fn run_effect(app: &AppHandle, state: &mut CoordinatorState, effect: Effect) {
             hotkey_string,
             end,
         } => {
-            crate::actions::stop_transcription(app, &binding_id, &hotkey_string, &end);
-            emit_recording_phase(app, RecordingPhase::Stopped);
+            runner.stop(&binding_id, &hotkey_string, &end);
+            runner.phase(RecordingPhase::Stopped);
         }
     }
 }
@@ -2390,5 +2440,284 @@ mod tests {
         drive_into_processing(&mut state, Instant::now());
         assert!(state.on_end_key("send").is_none());
         assert_eq!(state.stage, Stage::Processing);
+    }
+
+    // ---- The coordinator thread with a fake executor (DanyWhere) ----------
+    //
+    // These run the real thread of `TranscriptionCoordinator`, its timers
+    // included, and record what it has the executor do.
+
+    use std::collections::{HashMap, VecDeque};
+
+    /// What the coordinator thread had the executor do.
+    #[derive(Debug, PartialEq)]
+    enum Did {
+        Start(String),
+        Stop { binding: String, end: EndChoice },
+        Phase(RecordingPhase),
+        LockedChanged(bool),
+    }
+
+    /// An executor that reports what it was asked to do.
+    struct FakeEffects {
+        did: mpsc::Sender<Did>,
+        /// The end with each binding's combination.
+        keys_ends: HashMap<String, String>,
+        /// Whether each start begins recording; `true` once these run out.
+        start_results: VecDeque<bool>,
+    }
+
+    impl EffectRunner for FakeEffects {
+        fn start(&mut self, binding_id: &str, _hotkey: &str) -> bool {
+            let _ = self.did.send(Did::Start(binding_id.to_string()));
+            self.start_results.pop_front().unwrap_or(true)
+        }
+
+        fn stop(&mut self, binding_id: &str, _hotkey: &str, end: &EndChoice) {
+            let _ = self.did.send(Did::Stop {
+                binding: binding_id.to_string(),
+                end: end.clone(),
+            });
+        }
+
+        fn phase(&mut self, phase: RecordingPhase) {
+            let _ = self.did.send(Did::Phase(phase));
+        }
+
+        fn recording_locked_changed(&mut self, locked: bool) {
+            let _ = self.did.send(Did::LockedChanged(locked));
+        }
+
+        fn keys_end(&mut self, binding_id: &str) -> Option<String> {
+            self.keys_ends.get(binding_id).cloned()
+        }
+    }
+
+    /// Long enough for the thread to act, even on a busy machine.
+    const ACTS_WITHIN: Duration = Duration::from_secs(5);
+    /// How long nothing more may happen once the expected effects came.
+    const QUIET_FOR: Duration = Duration::from_millis(150);
+    /// Longer than `DEBOUNCE`, so the next press of a key counts.
+    const AFTER_DEBOUNCE: Duration = Duration::from_millis(40);
+
+    const TRANSCRIBE: &str = "transcribe";
+
+    /// The real coordinator thread with a [`FakeEffects`].
+    struct Running {
+        coordinator: TranscriptionCoordinator,
+        did: mpsc::Receiver<Did>,
+    }
+
+    fn running(keys_ends: &[(&str, &str)], start_results: &[bool]) -> Running {
+        let (tx, did) = mpsc::channel();
+        let coordinator = TranscriptionCoordinator::with_runner(FakeEffects {
+            did: tx,
+            keys_ends: keys_ends
+                .iter()
+                .map(|(binding, end)| (binding.to_string(), end.to_string()))
+                .collect(),
+            start_results: start_results.iter().copied().collect(),
+        });
+        Running { coordinator, did }
+    }
+
+    impl Running {
+        /// The next `n` things done, and whatever else follows within
+        /// `QUIET_FOR`.
+        fn next(&self, n: usize) -> Vec<Did> {
+            let mut got = Vec::new();
+            while got.len() < n {
+                match self.did.recv_timeout(ACTS_WITHIN) {
+                    Ok(did) => got.push(did),
+                    Err(_) => return got,
+                }
+            }
+            while let Ok(extra) = self.did.recv_timeout(QUIET_FOR) {
+                got.push(extra);
+            }
+            got
+        }
+
+        fn key(&self, mode: ShortcutActivation, is_pressed: bool, threshold: Duration) {
+            self.coordinator
+                .send_input(TRANSCRIBE, "ctrl+space", is_pressed, mode, threshold);
+        }
+
+        fn toggle_press(&self) {
+            self.key(ShortcutActivation::Toggle, true, Duration::ZERO);
+        }
+    }
+
+    fn locked_start() -> Vec<Did> {
+        vec![
+            Did::Start(TRANSCRIBE.into()),
+            Did::Phase(RecordingPhase::Started),
+            Did::Phase(RecordingPhase::Locked),
+            Did::LockedChanged(true),
+        ]
+    }
+
+    fn stopped(end: EndChoice, was_locked: bool) -> Vec<Did> {
+        let mut did = vec![
+            Did::Stop {
+                binding: TRANSCRIBE.into(),
+                end,
+            },
+            Did::Phase(RecordingPhase::Stopped),
+        ];
+        if was_locked {
+            did.push(Did::LockedChanged(false));
+        }
+        did
+    }
+
+    #[test]
+    fn the_thread_starts_a_locked_recording_on_a_toggle_press() {
+        let run = running(&[], &[]);
+        run.toggle_press();
+        assert_eq!(run.next(4), locked_start());
+    }
+
+    #[test]
+    fn the_thread_ends_on_the_second_press_with_the_end_of_its_combination() {
+        let run = running(&[(TRANSCRIBE, "send")], &[]);
+        run.toggle_press();
+        assert_eq!(run.next(4), locked_start());
+        std::thread::sleep(AFTER_DEBOUNCE);
+        run.toggle_press();
+        assert_eq!(run.next(3), stopped(EndChoice::Key("send".into()), true));
+    }
+
+    #[test]
+    fn the_thread_ignores_a_second_press_without_an_end_and_an_end_shortcut_ends() {
+        let run = running(&[], &[]);
+        run.toggle_press();
+        assert_eq!(run.next(4), locked_start());
+        std::thread::sleep(AFTER_DEBOUNCE);
+        run.toggle_press();
+        assert_eq!(run.next(0), vec![], "the recording goes on");
+        run.coordinator.finish_with_end_key("send");
+        assert_eq!(run.next(3), stopped(EndChoice::Key("send".into()), true));
+    }
+
+    #[test]
+    fn the_thread_ends_push_to_talk_with_its_hold_end_on_release() {
+        let run = running(&[(TRANSCRIBE, "send")], &[]);
+        run.key(ShortcutActivation::PushToTalk, true, Duration::ZERO);
+        assert_eq!(
+            run.next(2),
+            vec![
+                Did::Start(TRANSCRIBE.into()),
+                Did::Phase(RecordingPhase::Started)
+            ]
+        );
+        run.key(ShortcutActivation::PushToTalk, false, Duration::ZERO);
+        assert_eq!(
+            run.next(2),
+            stopped(EndChoice::Held(TRANSCRIBE.into()), false)
+        );
+    }
+
+    #[test]
+    fn the_thread_ends_a_held_hold_or_toggle_key_on_release() {
+        let run = running(&[], &[]);
+        let threshold = Duration::from_millis(100);
+        run.key(ShortcutActivation::HoldOrToggle, true, threshold);
+        assert_eq!(
+            run.next(2),
+            vec![
+                Did::Start(TRANSCRIBE.into()),
+                Did::Phase(RecordingPhase::Started)
+            ]
+        );
+        std::thread::sleep(Duration::from_millis(150));
+        run.key(ShortcutActivation::HoldOrToggle, false, threshold);
+        assert_eq!(
+            run.next(2),
+            stopped(EndChoice::Held(TRANSCRIBE.into()), false)
+        );
+    }
+
+    #[test]
+    fn the_thread_locks_a_tapped_hold_or_toggle_recording() {
+        let run = running(&[], &[]);
+        // A threshold no tap reaches, however slow the machine.
+        let threshold = Duration::from_secs(2);
+        run.key(ShortcutActivation::HoldOrToggle, true, threshold);
+        run.key(ShortcutActivation::HoldOrToggle, false, threshold);
+        assert_eq!(run.next(4), locked_start(), "locked once the grace passed");
+        run.coordinator.finish_with_end_key("line");
+        assert_eq!(run.next(3), stopped(EndChoice::Key("line".into()), true));
+    }
+
+    #[test]
+    fn the_thread_reports_a_cancel_and_starts_afresh() {
+        let run = running(&[], &[]);
+        run.toggle_press();
+        assert_eq!(run.next(4), locked_start());
+        run.coordinator.notify_cancel(true);
+        assert_eq!(
+            run.next(2),
+            vec![
+                Did::Phase(RecordingPhase::Cancelled),
+                Did::LockedChanged(false)
+            ]
+        );
+        std::thread::sleep(AFTER_DEBOUNCE);
+        run.toggle_press();
+        assert_eq!(run.next(4), locked_start());
+    }
+
+    #[test]
+    fn the_thread_starts_a_press_made_while_processing_once_it_finished() {
+        let run = running(&[], &[]);
+        run.toggle_press();
+        assert_eq!(run.next(4), locked_start());
+        run.coordinator.finish_with_end_key("send");
+        assert_eq!(run.next(3), stopped(EndChoice::Key("send".into()), true));
+        std::thread::sleep(AFTER_DEBOUNCE);
+        run.toggle_press();
+        assert_eq!(run.next(0), vec![], "remembered while processing");
+        run.coordinator.notify_processing_finished();
+        assert_eq!(run.next(4), locked_start());
+    }
+
+    #[test]
+    fn the_thread_stays_idle_when_a_start_does_not_begin_recording() {
+        let run = running(&[(TRANSCRIBE, "send")], &[false]);
+        run.toggle_press();
+        assert_eq!(run.next(1), vec![Did::Start(TRANSCRIBE.into())]);
+        std::thread::sleep(AFTER_DEBOUNCE);
+        // Idle again: the next press starts, it doesn't end anything.
+        run.toggle_press();
+        assert_eq!(run.next(4), locked_start());
+    }
+
+    #[test]
+    fn the_thread_always_ends_on_a_second_remote_control_toggle() {
+        let run = running(&[], &[]);
+        run.coordinator.send_external_input(TRANSCRIBE, "cli");
+        assert_eq!(run.next(4), locked_start());
+        run.coordinator.send_external_input(TRANSCRIBE, "cli");
+        assert_eq!(
+            run.next(3),
+            stopped(EndChoice::Start(TRANSCRIBE.into()), true)
+        );
+    }
+
+    #[test]
+    fn the_thread_runs_a_service_started_recording_to_its_end() {
+        let run = running(&[], &[]);
+        run.coordinator.start_locked_recording(TRANSCRIBE);
+        assert_eq!(run.next(4), locked_start());
+        run.coordinator
+            .finish_recording_as(Some("transcribe_with_post_process"));
+        assert_eq!(
+            run.next(3),
+            stopped(
+                EndChoice::Start("transcribe_with_post_process".into()),
+                true
+            )
+        );
     }
 }
