@@ -8,12 +8,15 @@
 //! flow keeps every decision and the order of what the user sees and hears.
 
 use std::future::Future;
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use crate::actions::{ProcessedTranscription, TranscriptionOutcome};
+use crate::append_text::AppendKey;
 use crate::delivery::{DictationEnd, DictationNotice};
 use crate::dictation_context::{CapturedWindow, ContextQuery};
 use crate::dictation_key_inserts::ClipboardReason;
+use crate::input_method::InputMethod;
 use crate::managers::history::{HistoryEntry, HistoryManager};
 use crate::managers::transcription::Transcription;
 use crate::notices::Notice;
@@ -72,10 +75,11 @@ pub trait History {
 
 /// Getting the text where it goes.
 ///
-/// DanyWhere: whether the text is pasted is decided in the flow, by
-/// `delivery::delivery_for` (`deliver_text`): [`Deliver::paste`] only where
-/// DanyWhere may paste, [`Deliver::leave_on_clipboard`] where it may not and
-/// the text is to be copied.
+/// DanyWhere: how the text is inserted is decided in the flow, by
+/// `delivery::insertion` (`deliver_text`): through [`Deliver::input_method`]
+/// once its source is added, [`Deliver::paste`] only where DanyWhere may
+/// paste, [`Deliver::leave_on_clipboard`] where it may not and the text is
+/// to be copied.
 pub trait Deliver {
     /// Whether this build offers the "Insert Last Dictation" service
     /// (`delivery::INSERT_SERVICE_AVAILABLE`), so a dictation without
@@ -116,6 +120,13 @@ pub trait Deliver {
     /// during `session`, or the app in front missed the dictation shortcut;
     /// says why when it did.
     fn put_on_clipboard_if_requested(&self, session: u64, text: &str) -> Option<ClipboardReason>;
+    /// DanyWhere's input method (`input_method::current`): whether its
+    /// source is added, inserting through it, and selecting the input
+    /// source from before again at the dictation's end.
+    fn input_method(&self) -> Arc<dyn InputMethod>;
+    /// Sends `keys`, the "Append" value's key presses, after the text was
+    /// inserted through the input method (`clipboard::press_keys`).
+    fn press_keys(&self, keys: Vec<AppendKey>) -> Result<(), String>;
 }
 
 /// What the overlay shows.

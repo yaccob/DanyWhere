@@ -14,6 +14,7 @@ use super::{
 use crate::app_profiles::OverlayProfile;
 use crate::audio_feedback::{play_feedback_sound_blocking, SoundType};
 use crate::audio_toolkit::VadPolicy;
+use crate::input_method::InputMethod;
 use crate::managers::audio::{AudioRecordingManager, RecordingReadiness};
 use crate::managers::model::ModelManager;
 use crate::managers::transcription::TranscriptionManager;
@@ -123,6 +124,10 @@ impl StartSession for AppStart {
 
     fn warm_up(&self, settings: &AppSettings, post_process: bool) {
         crate::model_warmup::start(settings, post_process);
+    }
+
+    fn input_method(&self) -> Arc<dyn InputMethod> {
+        crate::input_method::current()
     }
 }
 
