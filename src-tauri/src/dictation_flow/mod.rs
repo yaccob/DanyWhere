@@ -780,9 +780,10 @@ mod tests {
     }
 
     /// Settings that post-process with the library's first prompt at
-    /// `base_url`, without structured output.
+    /// `base_url`, without structured output; the switch is on.
     fn post_process_settings(base_url: &str) -> AppSettings {
         let mut settings = get_default_settings();
+        settings.post_process_enabled = true;
         let provider = settings
             .post_process_providers
             .iter_mut()
@@ -1171,6 +1172,79 @@ mod tests {
             assert_eq!(entry.post_processed_text, None);
             assert_eq!(entry.transcription_text, "hello");
         }
+    }
+
+    /// How a dictation that ended with `end_id` and wasn't post-processed
+    /// goes from its stopped recording on, pasted with `values` and
+    /// `append_text` (with Accessibility).
+    fn delivered_unprocessed(
+        end_id: &str,
+        values: &ProfileValues,
+        append_text: &str,
+    ) -> Vec<Event> {
+        let mut expected = stop_events(false);
+        expected.extend([
+            Event::StopRecording,
+            Event::Transcribe {
+                samples: SAMPLES,
+                load_end_model: false,
+            },
+            Event::PostProcess {
+                post_process: false,
+                with_window: false,
+            },
+        ]);
+        expected.extend(saved_first(end_id));
+        expected.extend([
+            Event::Hook("hello".to_string()),
+            Event::SpawnPaste,
+            Event::RedoLookedAt(1),
+            paste("hello", values, append_text),
+        ]);
+        expected.extend(typed_end(Access::With));
+        expected
+    }
+
+    #[test]
+    fn with_post_processing_off_the_post_processing_end_delivers_the_transcript() {
+        // As the defaults come: the switch is off and post-processing isn't
+        // set up. The built-in end with post-processing (with context)
+        // gives the transcript with its "Append" text, no notice, and an
+        // entry that wasn't post-processed.
+        let factory = with_end(get_default_settings(), POST_PROCESS_ID, " (sent)", true);
+        assert!(!factory.post_process_enabled);
+        // Set up, with the switch off: nothing goes to the provider.
+        let (url, requests) = llm_server(vec![("200 OK", POLISHED)]);
+        let mut set_up = with_end(
+            post_process_settings(&url),
+            POST_PROCESS_ID,
+            " (sent)",
+            true,
+        );
+        set_up.post_process_enabled = false;
+        for (case, settings) in [("factory", factory), ("set up", set_up)] {
+            let snapshot = snapshot_of(settings, None, post_processing());
+            let values = snapshot.values.clone();
+            let ports = FakePorts::new(Script::default());
+            finish(&ports, snapshot);
+            assert_eq!(
+                ports.take_events(),
+                delivered_unprocessed(POST_PROCESS_ID, &values, " (sent)"),
+                "{case}"
+            );
+            let entry = &ports.entries()[0];
+            assert_eq!(entry.transcription_text, "hello", "{case}");
+            assert!(!entry.post_process_requested, "{case}");
+            assert_eq!(entry.post_processed_text, None, "{case}");
+            assert!(
+                !crate::history_versions::has_ai_step(&entry.versions),
+                "{case}"
+            );
+        }
+        assert!(
+            requests.try_recv().is_err(),
+            "a request went to the provider"
+        );
     }
 
     #[test]
@@ -2252,6 +2326,63 @@ mod tests {
         assert_eq!(
             ports.entries()[0].post_processed_text.as_deref(),
             Some("polished")
+        );
+    }
+
+    #[test]
+    fn with_post_processing_off_no_shortcut_post_processes() {
+        // Post-processing is set up but switched off: neither the end
+        // shortcut with post-processing nor the second start shortcut
+        // toggled from outside (`--toggle-post-process`) sends the text to
+        // the provider.
+        let (url, requests) = llm_server(vec![("200 OK", POLISHED), ("200 OK", POLISHED)]);
+        let mut settings = with_end(
+            post_process_settings(&url),
+            POST_PROCESS_ID,
+            " (sent)",
+            false,
+        );
+        settings.post_process_enabled = false;
+
+        let ports = FakePorts::new(Script::default());
+        let coordinator = coordinator_with(&ports, settings.clone());
+        toggle_press(&coordinator);
+        coordinator.finish_with_end_key(POST_PROCESS_ID);
+        assert!(ports.wait_finished(Duration::from_secs(10)));
+        let by_end_key = ports.take_events();
+
+        let ports = FakePorts::new(Script::default());
+        let coordinator = coordinator_with(&ports, settings);
+        coordinator.send_external_input(START_BINDINGS[1], "--toggle-post-process");
+        // Longer than the coordinator's debounce, so the second one counts.
+        std::thread::sleep(Duration::from_millis(60));
+        coordinator.send_external_input(START_BINDINGS[1], "--toggle-post-process");
+        assert!(ports.wait_finished(Duration::from_secs(10)));
+        let toggled = ports.take_events();
+
+        for (case, events) in [("end shortcut", by_end_key), ("toggled", toggled)] {
+            assert!(
+                events.contains(&Event::PostProcess {
+                    post_process: false,
+                    with_window: false,
+                }),
+                "{case}: {events:#?}"
+            );
+            assert!(
+                events.iter().any(|event| matches!(
+                    event,
+                    Event::Paste { text, append_text, .. } if text == "hello" && append_text == " (sent)"
+                )),
+                "{case}: {events:#?}"
+            );
+            assert!(
+                !events.iter().any(|event| matches!(event, Event::Raise(_))),
+                "{case}: {events:#?}"
+            );
+        }
+        assert!(
+            requests.try_recv().is_err(),
+            "a request went to the provider"
         );
     }
 

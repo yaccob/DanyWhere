@@ -106,13 +106,12 @@ pub struct StartPlan {
 
 /// How a dictation started with `binding_id` records: `settings` are the
 /// dictation's (`app_profiles::dictation_settings`), `values` its profile's
-/// values, `own_values` those of its own profile when it isn't the active
-/// one, and `model_streams` whether its model says it streams (unknown
-/// counts as not, until the model registry knows better).
+/// values (its own, or the one in use), and `model_streams` whether its
+/// model says it streams (unknown counts as not, until the model registry
+/// knows better).
 pub fn plan_start(
     settings: &AppSettings,
     values: &ProfileValues,
-    own_values: Option<&ProfileValues>,
     binding_id: &str,
     model_streams: bool,
 ) -> StartPlan {
@@ -142,8 +141,7 @@ pub fn plan_start(
     // The end the recording is expected to take (`end_keys::expected_end`).
     let expected_end =
         crate::end_keys::expected_end(values, binding_id, settings.shortcut_activation);
-    let post_process =
-        crate::app_profiles::effective_post_process(expected_end.post_process, own_values);
+    let post_process = crate::app_profiles::effective_post_process(&expected_end, values);
     StartPlan {
         vad_policy,
         live_decode,
@@ -164,10 +162,8 @@ pub trait StartProfile {
     fn end(&self);
     /// The settings with the values of the dictation's profile.
     fn settings(&self) -> AppSettings;
-    /// The values of the dictation's profile.
+    /// The values of the dictation's profile: its own, or the one in use.
     fn values(&self) -> ProfileValues;
-    /// Those of its own profile, when it isn't the active one.
-    fn own_values(&self) -> Option<ProfileValues>;
 }
 
 /// The speech model (`TranscriptionManager`, `ModelManager`).
@@ -301,7 +297,6 @@ pub fn start_dictation(binding_id: &str, ports: &StartPorts) -> StartOutcome {
     let plan = plan_start(
         &settings,
         &ports.profile.values(),
-        ports.profile.own_values().as_ref(),
         binding_id,
         ports.model.streams(&settings.selected_model),
     );
@@ -511,7 +506,7 @@ mod tests {
 
     fn plan(settings: &AppSettings, binding: &str, streams: bool) -> StartPlan {
         let values = ProfileValues::from_settings(settings);
-        plan_start(settings, &values, None, binding, streams)
+        plan_start(settings, &values, binding, streams)
     }
 
     #[test]
@@ -571,14 +566,42 @@ mod tests {
 
     #[test]
     fn the_second_start_shortcut_is_expected_to_post_process() {
-        let settings = settings();
+        let mut settings = settings();
+        settings.post_process_enabled = true;
         assert!(!plan(&settings, START_BINDINGS[0], false).post_process);
         assert!(plan(&settings, START_BINDINGS[1], false).post_process);
     }
 
     #[test]
+    fn with_post_processing_off_no_start_expects_post_processing() {
+        // As the defaults come: the switch is off, so neither the second
+        // start shortcut nor a hold end with post-processing warms up a
+        // model or shows the speech bubble.
+        let mut settings = settings();
+        assert!(!settings.post_process_enabled);
+        let mut values = ProfileValues::from_settings(&settings);
+        for end in &mut values.end_keys {
+            end.send_context = true;
+        }
+        let pressed = plan_start(&settings, &values, START_BINDINGS[1], false);
+        assert!(!pressed.post_process);
+        assert!(!pressed.sends_context);
+        settings.shortcut_activation = ShortcutActivation::PushToTalk;
+        let held = values
+            .hold_ends
+            .get_mut(START_BINDINGS[0])
+            .expect("the first start shortcut has a hold end");
+        held.post_process = true;
+        held.send_context = true;
+        let held = plan_start(&settings, &values, START_BINDINGS[0], false);
+        assert!(!held.post_process);
+        assert!(!held.sends_context);
+    }
+
+    #[test]
     fn with_hold_the_hold_end_decides_post_processing() {
         let mut settings = settings();
+        settings.post_process_enabled = true;
         settings.shortcut_activation = ShortcutActivation::PushToTalk;
         let mut values = ProfileValues::from_settings(&settings);
         values
@@ -586,30 +609,33 @@ mod tests {
             .get_mut(START_BINDINGS[0])
             .expect("the first start shortcut has a hold end")
             .post_process = true;
-        let plan = plan_start(&settings, &values, None, START_BINDINGS[0], false);
+        let plan = plan_start(&settings, &values, START_BINDINGS[0], false);
         assert!(plan.post_process);
     }
 
     #[test]
     fn an_own_profile_without_post_processing_expects_none() {
-        let settings = settings();
+        // Its own switch counts, not that of the profile in use.
+        let mut settings = settings();
+        settings.post_process_enabled = true;
         let mut own = ProfileValues::from_settings(&settings);
         own.post_process_enabled = false;
-        let plan = plan_start(&settings, &own, Some(&own), START_BINDINGS[1], false);
+        let plan = plan_start(&settings, &own, START_BINDINGS[1], false);
         assert!(!plan.post_process);
     }
 
     #[test]
     fn the_speech_bubble_shows_when_the_expected_end_post_processes_with_context() {
-        let settings = settings();
+        let mut settings = settings();
+        settings.post_process_enabled = true;
         let mut values = ProfileValues::from_settings(&settings);
         for end in &mut values.end_keys {
             end.send_context = true;
         }
-        let with_post_process = plan_start(&settings, &values, None, START_BINDINGS[1], false);
+        let with_post_process = plan_start(&settings, &values, START_BINDINGS[1], false);
         assert!(with_post_process.sends_context);
         // Context goes only with post-processing.
-        let plain = plan_start(&settings, &values, None, START_BINDINGS[0], false);
+        let plain = plan_start(&settings, &values, START_BINDINGS[0], false);
         assert!(!plain.sends_context);
     }
 
@@ -666,9 +692,6 @@ mod tests {
         }
         fn values(&self) -> ProfileValues {
             ProfileValues::from_settings(&self.settings)
-        }
-        fn own_values(&self) -> Option<ProfileValues> {
-            None
         }
     }
 
@@ -907,6 +930,7 @@ mod tests {
         let mut bench = Bench::new(fake_microphone::mic());
         bench.app.streams = true;
         bench.app.settings.overlay_style = OverlayStyle::Live;
+        bench.app.settings.post_process_enabled = true;
         let outcome = bench.start(START_BINDINGS[1]);
         assert!(matches!(outcome, StartOutcome::Recording(_)));
         assert_eq!(
@@ -923,7 +947,8 @@ mod tests {
                 Did::TitleQueryPrimed,
             ]
         );
-        // The second start shortcut post-processes: its model warms up.
+        // The second start shortcut post-processes with the switch on: its
+        // model warms up.
         assert!(bench.log().contains(&Did::WarmUp { post_process: true }));
         fake_microphone::stop(&bench.rm, &bench.mic, START_BINDINGS[1]);
     }

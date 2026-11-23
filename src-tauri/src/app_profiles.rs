@@ -251,11 +251,23 @@ pub fn with_values(settings: &AppSettings, values: Option<&ProfileValues>) -> Ap
     settings
 }
 
-/// Whether a dictation that asked for post-processing (`requested`) does
-/// post-process: a dictation profile other than the active one decides with
-/// its own switch, since its shortcut may be registered for another profile.
-pub fn effective_post_process(requested: bool, dictation_values: Option<&ProfileValues>) -> bool {
-    requested && dictation_values.is_none_or(|values| values.post_process_enabled)
+/// Whether a dictation that ends (or is expected to end) with `end`
+/// post-processes, with `values`, those of its profile: its own or the one
+/// in use. Only while that profile's switch "Post Processing" is on: with it
+/// off no text goes to a language model, whatever the end says, and the
+/// context it would send stays home too (user, 2026-11-23, option a). Until
+/// then the profile in use let its end decide alone, so the built-in end
+/// with post-processing failed in the defaults as they come, and a redo
+/// for another profile, which asked the switch, took the entry for one
+/// that wasn't post-processed.
+///
+/// The one rule for what a dictation expects at its start
+/// (`dictation_start::plan_start`), what it does when it ends
+/// (`dictation_snapshot`) and what a redo for another profile counts and
+/// does (`profile_redo`). History's own actions (✨, "Post-process with")
+/// don't ask it.
+pub fn effective_post_process(end: &crate::end_keys::EndKey, values: &ProfileValues) -> bool {
+    end.post_process && values.post_process_enabled
 }
 
 /// The applications to offer: the running ones first, then the installed
@@ -791,15 +803,25 @@ mod tests {
     }
 
     #[test]
-    fn an_app_profile_without_post_processing_does_not_post_process() {
-        let mut settings = with_mail_profile();
-        settings.profiles[0].values.post_process_enabled = false;
-        assert!(!effective_post_process(
-            true,
-            Some(&settings.profiles[0].values)
-        ));
-        assert!(effective_post_process(true, None));
-        assert!(!effective_post_process(false, None));
+    fn a_dictation_post_processes_only_with_its_profiles_switch_on() {
+        let settings = with_mail_profile();
+        let mut posting = crate::end_keys::EndKey {
+            post_process: true,
+            ..Default::default()
+        };
+        // An application's profile, and the defaults in use.
+        let mut mail = crate::profiles::values_of(&settings, "mail").expect("mail");
+        let mut in_use = ProfileValues::from_settings(&settings);
+        for values in [&mut mail, &mut in_use] {
+            values.post_process_enabled = true;
+            assert!(effective_post_process(&posting, values));
+            values.post_process_enabled = false;
+            assert!(!effective_post_process(&posting, values));
+        }
+        // An end without post-processing never does.
+        posting.post_process = false;
+        in_use.post_process_enabled = true;
+        assert!(!effective_post_process(&posting, &in_use));
     }
 
     fn shown(name: &str, mode: ProfileMode) -> Option<OverlayProfile> {

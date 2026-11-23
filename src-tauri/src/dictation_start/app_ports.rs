@@ -69,10 +69,6 @@ impl StartProfile for AppStart {
     fn values(&self) -> ProfileValues {
         crate::app_profiles::dictation_profile_and_values(&self.app).1
     }
-
-    fn own_values(&self) -> Option<ProfileValues> {
-        crate::app_profiles::dictation_values()
-    }
 }
 
 impl StartModel for AppStart {

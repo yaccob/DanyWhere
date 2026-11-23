@@ -47,9 +47,8 @@ pub struct DictationSnapshot {
     /// The end it takes in that profile (`end_keys::resolve`): its "Append"
     /// text, whether it post-processes and whether it sends context.
     pub end: EndKey,
-    /// Whether it post-processes: the end asks for it and, for a profile of
-    /// its own (not the one in use), that profile's switch allows it
-    /// (`app_profiles::effective_post_process`).
+    /// Whether it post-processes: the end asks for it and the switch of the
+    /// profile it ends with is on (`app_profiles::effective_post_process`).
     pub post_process: bool,
     /// Whether earlier dictations go along as context: only when it
     /// post-processes.
@@ -107,7 +106,7 @@ pub fn build(inputs: SnapshotInputs<'_>) -> DictationSnapshot {
     let settings = crate::app_profiles::with_values(inputs.stored, own_values);
     // The end shortcut it ended with, in the profile it ends with: its
     // append text, whether it post-processes and whether earlier dictations
-    // go along. A profile of its own decides with its own switch whether to
+    // go along. That profile's switch decides with it whether to
     // post-process (`app_profiles::effective_post_process`).
     let (profile_id, values) = match &inputs.own_profile {
         Some((id, values)) => (id.clone(), values.clone()),
@@ -117,7 +116,7 @@ pub fn build(inputs: SnapshotInputs<'_>) -> DictationSnapshot {
         ),
     };
     let end = crate::end_keys::resolve(&values, inputs.end, inputs.binding_id);
-    let post_process = crate::app_profiles::effective_post_process(end.post_process, own_values);
+    let post_process = crate::app_profiles::effective_post_process(&end, &values);
     DictationSnapshot {
         use_streaming_overlay: should_use_streaming_overlay(
             settings.overlay_style,
@@ -280,16 +279,122 @@ mod tests {
         assert_eq!(sent.end.id, "send");
         assert!(!sent.post_process);
         assert!(!sent.with_context);
-        // The profile in use: its end decides alone, as before
-        // (`app_profiles::effective_post_process`).
+    }
+
+    #[test]
+    fn with_post_processing_off_in_use_no_end_post_processes() {
+        // The defaults in use as they come: post-processing off. Neither
+        // the built-in end with post-processing, nor the second start
+        // shortcut pressed again (as `--toggle-post-process` does), nor
+        // holding it post-processes, and no context goes along.
+        let mut stored = with_mail_profile();
         assert!(!stored.post_process_enabled);
-        let in_use = snapshot(
-            &stored,
-            None,
-            EndChoice::Key(crate::end_keys::POST_PROCESS_ID.to_string()),
+        for end in &mut stored.end_keys {
+            end.send_context = true;
+        }
+        stored.hold_ends.insert(
+            START_BINDINGS[1].to_string(),
+            crate::end_keys::HoldEnd {
+                append_text: String::new(),
+                post_process: true,
+                send_context: true,
+            },
         );
-        assert_eq!(in_use.end.id, crate::end_keys::POST_PROCESS_ID);
-        assert!(in_use.post_process);
+        let ended = |end: EndChoice, binding_id: &str| {
+            build(SnapshotInputs {
+                stored: &stored,
+                own_profile: None,
+                end: &end,
+                binding_id,
+                transcribed_with_end_values: false,
+                streaming: false,
+                session: 1,
+                cancel_generation: 0,
+            })
+        };
+        for (end, binding_id) in [
+            (
+                EndChoice::Key(crate::end_keys::POST_PROCESS_ID.to_string()),
+                START_BINDINGS[0],
+            ),
+            (
+                EndChoice::Start(START_BINDINGS[1].to_string()),
+                START_BINDINGS[1],
+            ),
+            (
+                EndChoice::Held(START_BINDINGS[1].to_string()),
+                START_BINDINGS[1],
+            ),
+        ] {
+            let snapshot = ended(end.clone(), binding_id);
+            assert!(snapshot.end.post_process, "{end:?}: its end asks for it");
+            assert!(!snapshot.post_process, "{end:?}");
+            assert!(!snapshot.with_context, "{end:?}");
+        }
+    }
+
+    #[test]
+    fn the_dictation_and_its_redo_agree_whether_it_was_post_processed() {
+        // Every combination of the switch, an end with or without
+        // post-processing, and the profile in use or one of its own: the
+        // redo for another profile counts the entry as post-processed
+        // exactly when the dictation post-processed it. So it redoes the
+        // post-processing for a target that post-processes only when the
+        // dictation didn't, and for one that doesn't only when it did.
+        use crate::end_keys::POST_PROCESS_ID;
+        use crate::profile_redo::{redo_from, RedoFrom};
+        for switch in [true, false] {
+            for end_post_processes in [true, false] {
+                for own in [false, true] {
+                    let mut stored = with_mail_profile();
+                    stored.post_process_enabled = switch;
+                    let mut mail = mail_values(&stored);
+                    mail.post_process_enabled = switch;
+                    let end = if end_post_processes {
+                        EndChoice::Key(POST_PROCESS_ID.to_string())
+                    } else {
+                        EndChoice::Start(START_BINDINGS[0].to_string())
+                    };
+                    let made = snapshot(&stored, own.then_some(mail), end);
+                    let case = format!(
+                        "switch {switch}, end post-processes {end_post_processes}, own profile {own}"
+                    );
+                    assert_eq!(made.end.post_process, end_post_processes, "{case}");
+                    assert_eq!(made.post_process, switch && end_post_processes, "{case}");
+
+                    // A target like the dictation's profile that post-processes
+                    // with the same end, and one that doesn't.
+                    let mut posting = made.values.clone();
+                    posting.post_process_enabled = true;
+                    let posting_end = EndKey {
+                        post_process: true,
+                        ..made.end.clone()
+                    };
+                    let mut plain = made.values.clone();
+                    plain.post_process_enabled = false;
+                    let redo_into = |target: &ProfileValues, target_end: &EndKey| {
+                        redo_from(&stored, &made.values, target, &made.end, target_end)
+                    };
+                    let expected = |redone: bool| {
+                        if redone {
+                            RedoFrom::PostProcessing
+                        } else {
+                            RedoFrom::Nothing
+                        }
+                    };
+                    assert_eq!(
+                        redo_into(&posting, &posting_end),
+                        expected(!made.post_process),
+                        "{case}: into a profile that post-processes"
+                    );
+                    assert_eq!(
+                        redo_into(&plain, &made.end),
+                        expected(made.post_process),
+                        "{case}: into a profile that doesn't"
+                    );
+                }
+            }
+        }
     }
 
     #[test]
