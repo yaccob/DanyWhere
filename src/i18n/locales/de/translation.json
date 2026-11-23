@@ -486,6 +486,7 @@
       "postProcess": "Nachbearbeiten",
       "sendContext": "Kontext senden",
       "sendContextHint": "Nur mit Nachbearbeitung: Frühere Diktate aus demselben Fenster gehen als Kontext mit.",
+      "postProcessOff": "Die Nachbearbeitung ist aus: Ein so beendetes Diktat wird nicht nachbearbeitet. Schalte „Nachbearbeitung“ unter Erweitert ein.",
       "add": "Endtaste hinzufügen",
       "addPressKeys": "Drück die Tastenkombination für die neue Endtaste",
       "delete": "{{name}} löschen",

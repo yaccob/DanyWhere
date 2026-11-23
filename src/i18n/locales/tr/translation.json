@@ -486,6 +486,7 @@
       "postProcess": "Son işle",
       "sendContext": "Bağlam Gönder",
       "sendContextHint": "Yalnızca son işlemeyle: aynı penceredeki önceki dikteler bağlam olarak gönderilir.",
+      "postProcessOff": "Son işlem kapalı: bu şekilde biten bir dikte son işlemden geçmez. Gelişmiş altında “Son İşlem” ayarını açın.",
       "add": "Bitirme Kısayolu Ekle",
       "addPressKeys": "Yeni bitirme kısayolu için tuş kombinasyonuna basın",
       "delete": "{{name}} öğesini sil",

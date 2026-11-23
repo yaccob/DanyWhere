@@ -486,6 +486,7 @@
       "postProcess": "Efterbearbeta",
       "sendContext": "Skicka kontext",
       "sendContextHint": "Bara med efterbearbetning: tidigare dikteringar från samma fönster skickas med som kontext.",
+      "postProcessOff": "Efterbearbetning är avstängd: en diktering som avslutas på det här sättet efterbearbetas inte. Slå på ”Efterbearbetning” under Avancerat.",
       "add": "Lägg till avslutningskortkommando",
       "addPressKeys": "Tryck på tangentkombinationen för det nya avslutningskortkommandot",
       "delete": "Ta bort {{name}}",

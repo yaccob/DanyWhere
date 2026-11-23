@@ -486,6 +486,7 @@
       "postProcess": "Pós-processar",
       "sendContext": "Enviar contexto",
       "sendContextHint": "Só com pós-processamento: os ditados anteriores da mesma janela são enviados como contexto.",
+      "postProcessOff": "O pós-processamento está desligado: um ditado terminado desta forma não é pós-processado. Ative “Pós-Processamento” em Avançado.",
       "add": "Adicionar atalho de fim",
       "addPressKeys": "Prima a combinação para o novo atalho de fim",
       "delete": "Eliminar {{name}}",

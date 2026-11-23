@@ -30,6 +30,9 @@ interface EndKeysEditorProps {
   /** The changed list. */
   onChange: (next: EndKey[]) => Promise<void> | void;
   disabled?: boolean;
+  /** Post-processing is off in the same scope: an end with "Post-process"
+   * says that it doesn't (`postProcessingOn`). */
+  postProcessingOff?: boolean;
 }
 
 /**
@@ -44,6 +47,7 @@ export const EndKeysEditor: React.FC<EndKeysEditorProps> = ({
   bindings,
   onChange,
   disabled = false,
+  postProcessingOff = false,
 }) => {
   const { t } = useTranslation();
   const osType = useOsType();
@@ -67,6 +71,7 @@ export const EndKeysEditor: React.FC<EndKeysEditorProps> = ({
           onChange={(part) => change(end.id, part)}
           onDelete={() => onChange(removeEndKey(value, end.id))}
           disabled={disabled}
+          postProcessingOff={postProcessingOff}
         />
       ))}
       <div className="px-4 py-3">
@@ -147,6 +152,7 @@ interface EndKeyRowProps {
   onChange: (part: Partial<EndKey>) => Promise<void> | void;
   onDelete: () => Promise<void> | void;
   disabled: boolean;
+  postProcessingOff: boolean;
 }
 
 const EndKeyRow: React.FC<EndKeyRowProps> = ({
@@ -157,6 +163,7 @@ const EndKeyRow: React.FC<EndKeyRowProps> = ({
   onChange,
   onDelete,
   disabled,
+  postProcessingOff,
 }) => {
   const { t } = useTranslation();
   const shownName = endKeyName(end, format);
@@ -267,6 +274,13 @@ const EndKeyRow: React.FC<EndKeyRowProps> = ({
           {t("settings.endKeys.sendContext")}
         </label>
       </div>
+      {/* DanyWhere: with post-processing off no end post-processes (user,
+          2026-11-23, option a); the box keeps its value for when it is on. */}
+      {end.post_process && postProcessingOff && (
+        <p className="text-xs text-ink-3">
+          {t("settings.endKeys.postProcessOff")}
+        </p>
+      )}
     </div>
   );
 };

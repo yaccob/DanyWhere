@@ -17,6 +17,7 @@ import {
   renderPage,
   settle,
 } from "@/test/render";
+import { switchTestLanguage } from "@/test/i18n";
 import { setOsType } from "@/test/tauri-mock";
 import { rawTextIn, visibleText } from "@/test/visible";
 
@@ -294,6 +295,92 @@ describe("End Shortcuts in a profile", () => {
     const text = visibleText();
     expect(text).toContain("Work own: PEnde · off: Senden");
     expect(text).toContain("Private follows");
+    expect(rawTextIn()).toEqual([]);
+  });
+});
+
+// With post-processing off no end post-processes (user, 2026-11-23, option
+// a; `app_profiles::effective_post_process`): an end whose "Post-process" is
+// checked says so and where to turn it on, for the scope shown. Its box
+// stays usable: its value counts once post-processing is on.
+describe("End Shortcuts with post-processing off", () => {
+  const HINT =
+    "Post-processing is off: a dictation ended this way isn't post-processed. Turn on “Post Processing” under Advanced.";
+  const hints = () => visibleText().split(HINT).length - 1;
+  const WORK = "profile_1795300000001";
+  /** "Work" with post-processing as its own value `postProcess`, the
+   * defaults with the other one. */
+  const work = (postProcess: boolean): SettingsSpec => ({
+    defaults: { post_process_enabled: !postProcess },
+    profiles: [
+      {
+        id: WORK,
+        name: "Work",
+        own: ["post_process_enabled"],
+        values: { post_process_enabled: postProcess },
+      },
+    ],
+  });
+
+  test("an end with Post-process checked says that it doesn't post-process", async () => {
+    await renderEnds([PLAIN, WITH_POST, SEND]);
+
+    expect(hints()).toBe(1);
+    const post = screen.getAllByRole("checkbox", {
+      name: "Post-process",
+    }) as HTMLInputElement[];
+    expect(post.map((box) => [box.checked, box.disabled])).toEqual([
+      [false, false],
+      [true, false],
+      [false, false],
+    ]);
+    expect(rawTextIn()).toEqual([]);
+  });
+
+  test("with post-processing on, no end says so", async () => {
+    await renderEnds([PLAIN, WITH_POST], DEFAULTS_SCOPE, {
+      defaults: { post_process_enabled: true },
+    });
+
+    expect(hints()).toBe(0);
+  });
+
+  test("checking Post-process with post-processing off brings the hint", async () => {
+    await renderEnds([PLAIN, SEND]);
+    expect(hints()).toBe(0);
+
+    const post = screen.getAllByRole("checkbox", { name: "Post-process" });
+    await press(post[1]);
+
+    expect(storedEnds()[1]).toEqual({ ...SEND, post_process: true });
+    expect(hints()).toBe(1);
+  });
+
+  test("in a profile its own switch counts, not the defaults'", async () => {
+    const scope: Scope = { kind: "profile", id: WORK };
+
+    await renderEnds([PLAIN, WITH_POST], scope, work(false));
+    expect(hints()).toBe(1);
+    expect(rawTextIn()).toEqual([]);
+  });
+
+  test("in a profile with post-processing on, no end says so", async () => {
+    await renderEnds(
+      [PLAIN, WITH_POST],
+      { kind: "profile", id: WORK },
+      work(true),
+    );
+
+    expect(hints()).toBe(0);
+  });
+
+  test("the hint reads in German too", async () => {
+    await switchTestLanguage("de");
+    await renderEnds([PLAIN, WITH_POST]);
+
+    expect(visibleText()).toContain(
+      "Die Nachbearbeitung ist aus: Ein so beendetes Diktat wird nicht nachbearbeitet. Schalte „Nachbearbeitung“ unter Erweitert ein.",
+    );
     expect(rawTextIn()).toEqual([]);
   });
 });

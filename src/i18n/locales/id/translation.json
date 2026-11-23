@@ -486,6 +486,7 @@
       "postProcess": "Proses lanjut",
       "sendContext": "Kirim Konteks",
       "sendContextHint": "Hanya dengan pemrosesan lanjut: dikte sebelumnya dari jendela yang sama ikut dikirim sebagai konteks.",
+      "postProcessOff": "Pascaproses nonaktif: dikte yang diakhiri dengan cara ini tidak diproses lanjut. Aktifkan “Pascaproses” di Lanjutan.",
       "add": "Tambah Pintasan Akhir",
       "addPressKeys": "Tekan kombinasi untuk pintasan akhir yang baru",
       "delete": "Hapus {{name}}",

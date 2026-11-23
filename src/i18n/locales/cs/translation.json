@@ -486,6 +486,7 @@
       "postProcess": "Dodatečně zpracovat",
       "sendContext": "Posílat kontext",
       "sendContextHint": "Jen s dodatečným zpracováním: předchozí diktáty ze stejného okna se pošlou jako kontext.",
+      "postProcessOff": "Následné zpracování je vypnuté: diktát ukončený tímto způsobem se dodatečně nezpracuje. Zapněte „Následné zpracování“ v sekci Pokročilé.",
       "add": "Přidat ukončovací zkratku",
       "addPressKeys": "Stiskněte kombinaci kláves pro novou ukončovací zkratku",
       "delete": "Smazat {{name}}",

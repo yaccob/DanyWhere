@@ -486,6 +486,7 @@
       "postProcess": "Przetwórz",
       "sendContext": "Wysyłaj kontekst",
       "sendContextHint": "Tylko z przetwarzaniem: wcześniejsze dyktowania z tego samego okna są wysyłane jako kontekst.",
+      "postProcessOff": "Postprocess jest wyłączony: dyktowanie zakończone w ten sposób nie jest przetwarzane. Włącz „Postprocess” w sekcji Zaawansowane.",
       "add": "Dodaj skrót kończący",
       "addPressKeys": "Naciśnij kombinację dla nowego skrótu kończącego",
       "delete": "Usuń {{name}}",

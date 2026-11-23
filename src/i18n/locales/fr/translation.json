@@ -486,6 +486,7 @@
       "postProcess": "Post-traiter",
       "sendContext": "Envoyer le contexte",
       "sendContextHint": "Uniquement avec le post-traitement : les dictées précédentes de la même fenêtre sont envoyées comme contexte.",
+      "postProcessOff": "Le post-traitement est désactivé : une dictée terminée de cette façon n'est pas post-traitée. Activez « Post-traitement » dans Avancé.",
       "add": "Ajouter un raccourci de fin",
       "addPressKeys": "Appuyez sur la combinaison du nouveau raccourci de fin",
       "delete": "Supprimer {{name}}",
