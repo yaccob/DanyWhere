@@ -511,7 +511,11 @@ async fn post_process_outcome(
     }
 }
 
-pub(crate) struct ProcessedTranscription {
+// DanyWhere: `pub`, not `pub(crate)`: the public `dictation_flow::ports`
+// traits return it, and the Linux CI's compiler refuses a crate-private type
+// there (E0446), though the local one accepts it. `actions` itself stays a
+// private module.
+pub struct ProcessedTranscription {
     pub final_text: String,
     pub post_processed_text: Option<String>,
     pub post_process_prompt: Option<String>,

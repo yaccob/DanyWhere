@@ -33,10 +33,9 @@ use tauri::{AppHandle, Emitter, Manager};
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 use crate::settings::APPLE_INTELLIGENCE_DEFAULT_MODEL_ID;
 use crate::settings::{
-    self, get_settings, AutoSubmitKey, ChineseScript, ClipboardHandling, KeyboardImplementation,
-    LLMPrompt, LanguageDetectionMode, OverlayPosition, OverlayStyle, PasteMethod,
-    ShortcutActivation, ShortcutBinding, SoundTheme, Theme, TypingTool, VadBackend,
-    APPLE_INTELLIGENCE_PROVIDER_ID,
+    self, AutoSubmitKey, ChineseScript, ClipboardHandling, KeyboardImplementation, LLMPrompt,
+    LanguageDetectionMode, OverlayPosition, OverlayStyle, PasteMethod, ShortcutActivation,
+    ShortcutBinding, SoundTheme, Theme, TypingTool, VadBackend, APPLE_INTELLIGENCE_PROVIDER_ID,
 };
 use crate::tray;
 
@@ -121,7 +120,7 @@ fn reconcile_cancel_shortcut(app: &AppHandle) {
             return;
         }
 
-        let settings = get_settings(app);
+        let settings = settings::get_settings(app);
         let Some(cancel_binding) = settings.bindings.get("cancel").cloned() else {
             return;
         };
