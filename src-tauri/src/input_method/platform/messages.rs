@@ -70,6 +70,9 @@ pub enum ToInputMethod {
     /// one; `None` clears it.
     Restore { source: Option<String> },
     /// Stage 2: catch the next key-down matching `keys` (none disarms).
+    /// The input method knows it already; the app sends it once stage 2
+    /// ("insert and send" with Enter) is built.
+    #[allow(dead_code)]
     Catch {
         id: u64,
         keys: Vec<CatchKey>,
@@ -77,6 +80,7 @@ pub enum ToInputMethod {
         hold_ms: Option<u64>,
     },
     /// Stage 2: insert `text`, then let the held key through.
+    #[allow(dead_code)]
     Release { id: u64, text: String },
     /// Exit (the app replaces the bundle).
     Quit,

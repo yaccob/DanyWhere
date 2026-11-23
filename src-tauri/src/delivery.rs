@@ -620,6 +620,14 @@ pub fn paste_last<P: PasteLastPorts>(
                     }
                     PasteLastOutcome::Pasted
                 }
+                // Nothing more: a paste could put it in twice, and the
+                // "Append" keys could send what isn't there.
+                Err(failure) if failure.may_have_arrived() => {
+                    warn!(
+                        "DanyWhere's input method didn't confirm the last transcript ({failure:?}); not inserting it another way."
+                    );
+                    PasteLastOutcome::Pasted
+                }
                 Err(failure) => {
                     info!(
                         "Couldn't insert the last transcript through DanyWhere's input method ({failure:?}); pasting it."
@@ -2395,6 +2403,17 @@ mod tests {
                 im(ImCall::End)
             ]
         );
+    }
+
+    #[test]
+    fn paste_last_inserts_nothing_more_when_the_input_method_may_have_inserted_it() {
+        // Sent, but not confirmed in time: a ⌘V could put it in twice, and
+        // an Enter could send what isn't there.
+        let mut ports = FakePasteLast::in_use(PasteMethod::CtrlV)
+            .with_input_method(Err(InsertFailure::Unanswered));
+        ports.ended_with = Some(ended_with(r"\s{Enter}"));
+        assert_eq!(paste_last_with(&ports), PasteLastOutcome::Pasted);
+        assert_eq!(ports.did(), vec![insert("Hallo "), im(ImCall::End)]);
     }
 
     #[test]

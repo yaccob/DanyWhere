@@ -212,6 +212,7 @@ impl Shared {
 
 /// The app's end of the link: the listening socket and the one connection.
 pub struct Link {
+    #[cfg_attr(not(test), allow(dead_code))]
     path: PathBuf,
     shared: Arc<Shared>,
 }
@@ -259,18 +260,15 @@ impl Link {
     }
 
     /// The socket's path.
+    #[cfg(test)]
     pub fn path(&self) -> &Path {
         &self.path
     }
 
     /// What the connected input method said in its `hello`.
+    #[cfg(test)]
     pub fn hello(&self) -> Option<Hello> {
         self.shared.lock().hello.clone()
-    }
-
-    /// Sends `message` to the connected input method.
-    pub fn send(&self, message: &ToInputMethod) -> Result<(), LinkError> {
-        self.shared.lock().write(message)
     }
 }
 

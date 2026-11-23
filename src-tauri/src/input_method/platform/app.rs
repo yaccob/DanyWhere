@@ -269,10 +269,8 @@ impl InputMethod for AppInputMethod {
             Ok(InsertAnswer::NoClient) => Err(InsertFailure::NoClient),
             Ok(InsertAnswer::Error(reason)) => Err(InsertFailure::Failed(reason)),
             Err(LinkError::NotConnected) => Err(InsertFailure::NotConnected),
-            Err(LinkError::Timeout) => Err(InsertFailure::Failed("no answer in time".into())),
-            Err(LinkError::Disconnected) => Err(InsertFailure::Failed(
-                "the link broke before the answer".into(),
-            )),
+            // Sent: the text may have arrived all the same.
+            Err(LinkError::Timeout | LinkError::Disconnected) => Err(InsertFailure::Unanswered),
             Err(LinkError::Io(e)) => Err(InsertFailure::Failed(format!("sending failed: {e}"))),
         };
         match &result {
@@ -798,10 +796,15 @@ mod tests {
         let s = ready();
         s.link.answer_with(Ok(InsertAnswer::Error("error".into())));
         assert!(matches!(s.im.insert("x"), Err(InsertFailure::Failed(_))));
+    }
+
+    #[test]
+    fn a_sent_insertion_without_an_answer_may_have_arrived() {
+        let s = ready();
         s.link.answer_with(Err(LinkError::Disconnected));
-        assert!(matches!(s.im.insert("x"), Err(InsertFailure::Failed(_))));
+        assert_eq!(s.im.insert("x"), Err(InsertFailure::Unanswered));
         s.link.answer_with(Err(LinkError::Timeout));
-        assert!(matches!(s.im.insert("x"), Err(InsertFailure::Failed(_))));
+        assert_eq!(s.im.insert("x"), Err(InsertFailure::Unanswered));
     }
 
     #[test]

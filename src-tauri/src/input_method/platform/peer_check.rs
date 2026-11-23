@@ -199,6 +199,7 @@ impl CodeSignaturePeerCheck {
     }
 
     /// Expects a peer that meets `requirement` (code requirement language).
+    #[cfg(test)]
     pub fn with_requirement(requirement: String) -> Self {
         CodeSignaturePeerCheck {
             requirement: Some(requirement),

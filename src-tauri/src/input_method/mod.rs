@@ -14,9 +14,6 @@
 //! carry no input method, [`NotAvailable`] answers: never added, so rule 1
 //! never applies and everything stays as before.
 
-// The contract comes first; the flow and the platform code use it.
-#![allow(dead_code)]
-
 #[cfg(target_os = "macos")]
 pub mod platform;
 
@@ -59,8 +56,21 @@ pub enum InsertFailure {
     /// No text field has the input method (no focus in a text field, a
     /// password field, an app without input method support).
     NoClient,
-    /// No answer in time, or another error; the detail is for the log.
+    /// The text was sent, but the input method didn't confirm it in time or
+    /// the link broke before its answer. The text may have arrived, so it
+    /// is not inserted another way: a ⌘V after a late insertion would put
+    /// it in twice.
+    Unanswered,
+    /// Another error; the detail is for the log.
     Failed(String),
+}
+
+impl InsertFailure {
+    /// Whether the text may have arrived all the same, so that no other way
+    /// of inserting it may follow.
+    pub fn may_have_arrived(&self) -> bool {
+        matches!(self, InsertFailure::Unanswered)
+    }
 }
 
 /// What DanyWhere asks of its input method.

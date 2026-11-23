@@ -554,6 +554,14 @@ fn deliver_text<P: Deliver>(
                 }
                 return Ok(Delivered::ThroughInputMethod);
             }
+            // Nothing more: a paste could put it in twice, and the "Append"
+            // keys could send what isn't there.
+            Err(failure) if failure.may_have_arrived() => {
+                warn!(
+                    "DanyWhere's input method didn't confirm this dictation ({failure:?}); not inserting it another way."
+                );
+                return Ok(Delivered::ThroughInputMethod);
+            }
             Err(failure) => log::info!(
                 "Couldn't insert this dictation through DanyWhere's input method ({failure:?}); it goes as without it."
             ),
@@ -2777,6 +2785,36 @@ mod tests {
                     Event::Finished,
                 ],
                 "{failure:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn an_insertion_the_input_method_may_have_done_is_not_done_again() {
+        // Sent, but not confirmed in time: a ⌘V could put it in twice, and
+        // the Enter could send what isn't there.
+        for access in [Access::With, Access::WithoutForService] {
+            let ports = FakePorts::new(access.script(with_input_method(
+                Script::default(),
+                Err(InsertFailure::Unanswered),
+            )));
+            finish(
+                &ports,
+                snapshot_with(pasting_with_keys(access, r"\s{Enter}")),
+            );
+            assert_eq!(
+                after(&ports.take_events(), &Event::SpawnPaste),
+                [
+                    vec![
+                        Event::RedoLookedAt(1),
+                        im_insert("hello "),
+                        Event::ClearNotice,
+                        im(ImCall::End),
+                    ],
+                    inserted_finish(),
+                ]
+                .concat(),
+                "{access:?}"
             );
         }
     }
