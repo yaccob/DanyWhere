@@ -902,6 +902,10 @@ pub fn run(cli_args: CliArgs) {
             commands::skip_accessibility_permission,
             commands::reset_macos_permission,
             commands::complete_onboarding,
+            // DanyWhere: the input method (input_method).
+            commands::input_method::get_input_method_status,
+            commands::input_method::set_up_input_method,
+            commands::input_method::set_input_method_guide_seen,
             commands::models::get_available_models,
             commands::models::get_model_info,
             commands::models::download_model,
@@ -1264,6 +1268,11 @@ pub fn run(cli_args: CliArgs) {
             // the last dictation without Accessibility (insert_service.rs).
             insert_service::register(&app_handle);
             insert_service::sync_dictation_service_shortcuts(&app_handle);
+
+            // DanyWhere: an input method of DanyWhere's own, macOS's way of
+            // inserting once its source is added (input_method/platform).
+            #[cfg(target_os = "macos")]
+            input_method::platform::start(&app_handle);
 
             // Populate the overlay-enabled cache from initial settings so the
             // audio path (overlay::emit_levels, called ~24 Hz during recording)
