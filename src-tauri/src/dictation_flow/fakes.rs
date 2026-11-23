@@ -15,9 +15,12 @@ use super::ports::{
     Deliver, History, Overlay, PostProcess, Recording, Report, Session, Transcribe,
 };
 use crate::actions::{ProcessedTranscription, TranscriptionOutcome};
+use crate::append_text::AppendKey;
 use crate::delivery::DictationEnd;
 use crate::dictation_context::{CapturedWindow, ContextQuery, WordReplacement};
 use crate::dictation_key_inserts::ClipboardReason;
+use crate::input_method::testing::{inserted, FakeInputMethod, ImCall};
+use crate::input_method::{InputMethod, InsertFailure, Inserted};
 use crate::managers::history::{HistoryEntry, HistoryManager, HistoryUpdatePayload};
 use crate::managers::transcription::Transcription;
 use crate::notices::Notice;
@@ -96,6 +99,10 @@ pub struct Script {
     pub input_simulation: bool,
     /// What putting the text on the clipboard gives.
     pub clipboard: Result<(), String>,
+    /// The user has added DanyWhere's input source.
+    pub input_method_added: bool,
+    /// What inserting through the input method gives while it is added.
+    pub input_method_insert: Result<Inserted, InsertFailure>,
 }
 
 impl Default for Script {
@@ -124,6 +131,8 @@ impl Default for Script {
             service_available: true,
             input_simulation: true,
             clipboard: Ok(()),
+            input_method_added: false,
+            input_method_insert: inserted(),
         }
     }
 }
@@ -168,6 +177,11 @@ pub enum Event {
     PutOnClipboard(String),
     /// The text was not pasted and was left on the clipboard instead.
     LeftOnClipboard(String),
+    /// A call of DanyWhere's input method.
+    InputMethod(ImCall),
+    /// The "Append" value's key presses after an insertion through the
+    /// input method.
+    PressKeys(Vec<AppendKey>),
     Tray(TrayIconState),
     Overlay(Overlay),
     StopSound,
@@ -262,6 +276,20 @@ impl FakePorts {
             .unwrap()
             .recv_timeout(timeout)
             .is_ok()
+    }
+
+    /// Waits until `event` happened; whether it did within `timeout`.
+    pub fn wait_for(&self, event: &Event, timeout: std::time::Duration) -> bool {
+        let deadline = Instant::now() + timeout;
+        loop {
+            if self.0.events.lock().unwrap().contains(event) {
+                return true;
+            }
+            if Instant::now() >= deadline {
+                return false;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(5));
+        }
     }
 
     /// The next dictation goes as `script` says, with the same History.
@@ -440,6 +468,32 @@ impl Deliver for FakePorts {
         let reason = self.script().clipboard_reason.clone()?;
         self.record(Event::PutOnClipboard(text.to_string()));
         Some(reason)
+    }
+
+    /// Added and inserting as the script says now; its calls go into the
+    /// dictation's events.
+    fn input_method(&self) -> Arc<dyn InputMethod> {
+        let (added, insert) = {
+            let script = self.script();
+            (
+                script.input_method_added,
+                script.input_method_insert.clone(),
+            )
+        };
+        let events = Arc::clone(&self.0.events);
+        Arc::new(FakeInputMethod::new(added, insert, move |call| {
+            events.lock().unwrap().push(Event::InputMethod(call));
+        }))
+    }
+
+    /// Fails as a paste that sends keys does without Accessibility.
+    fn press_keys(&self, keys: Vec<AppendKey>) -> Result<(), String> {
+        self.record(Event::PressKeys(keys));
+        if self.script().input_simulation {
+            Ok(())
+        } else {
+            Err("Enigo state not initialized".to_string())
+        }
     }
 }
 

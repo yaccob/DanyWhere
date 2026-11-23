@@ -136,3 +136,99 @@ pub fn current() -> Arc<dyn InputMethod> {
         .cloned()
         .unwrap_or_else(|| Arc::new(NotAvailable))
 }
+
+/// An input method for tests, without macOS: added or not, inserting as a
+/// test says, and telling the test each call in order.
+#[cfg(test)]
+pub mod testing {
+    use std::sync::{Arc, Mutex};
+
+    use super::{InputMethod, InputMethodStatus, InsertFailure, Inserted};
+
+    /// One call of a [`FakeInputMethod`].
+    #[derive(Debug, Clone, PartialEq, Eq)]
+    pub enum ImCall {
+        Begin,
+        /// The text it was asked to insert.
+        Insert(String),
+        End,
+    }
+
+    /// What an insertion that went through answers: the text went into
+    /// TextEdit.
+    pub fn inserted() -> Result<Inserted, InsertFailure> {
+        Ok(Inserted {
+            client: Some("com.apple.TextEdit".to_string()),
+        })
+    }
+
+    /// Records every call, also those a real input method would ignore
+    /// (`begin` and `end` while the source isn't added), so a test sees a
+    /// call that shouldn't have been made.
+    pub struct FakeInputMethod {
+        added: bool,
+        insert: Mutex<Result<Inserted, InsertFailure>>,
+        record: Box<dyn Fn(ImCall) + Send + Sync>,
+    }
+
+    impl FakeInputMethod {
+        /// The source is `added` or not; an insertion while it is answers
+        /// `insert`; each call goes to `record`.
+        pub fn new(
+            added: bool,
+            insert: Result<Inserted, InsertFailure>,
+            record: impl Fn(ImCall) + Send + Sync + 'static,
+        ) -> Self {
+            Self {
+                added,
+                insert: Mutex::new(insert),
+                record: Box::new(record),
+            }
+        }
+
+        /// A fake that keeps its calls in `calls`.
+        pub fn keeping_calls_in(
+            added: bool,
+            insert: Result<Inserted, InsertFailure>,
+            calls: &Arc<Mutex<Vec<ImCall>>>,
+        ) -> Self {
+            let calls = Arc::clone(calls);
+            Self::new(added, insert, move |call| calls.lock().unwrap().push(call))
+        }
+    }
+
+    impl InputMethod for FakeInputMethod {
+        fn added(&self) -> bool {
+            self.added
+        }
+
+        fn status(&self) -> InputMethodStatus {
+            InputMethodStatus {
+                available: true,
+                installed: self.added,
+                added: self.added,
+                connected: self.added,
+            }
+        }
+
+        fn begin(&self) {
+            (self.record)(ImCall::Begin);
+        }
+
+        fn insert(&self, text: &str) -> Result<Inserted, InsertFailure> {
+            (self.record)(ImCall::Insert(text.to_string()));
+            if !self.added {
+                return Err(InsertFailure::NotAdded);
+            }
+            self.insert.lock().unwrap().clone()
+        }
+
+        fn end(&self) {
+            (self.record)(ImCall::End);
+        }
+
+        fn set_up(&self) -> Result<(), String> {
+            Err("A fake input method sets nothing up".into())
+        }
+    }
+}
