@@ -10,7 +10,7 @@ pub(crate) mod app_ports;
 
 use std::sync::Arc;
 use std::thread::JoinHandle;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
 use log::debug;
 
@@ -396,7 +396,7 @@ fn give_cues_when_ready(
             let delay_ms = delay_ms.min(10_000);
             if delay_ms > 0 {
                 debug!("Delaying microphone-ready cue by {delay_ms}ms for UI preview");
-                std::thread::sleep(Duration::from_millis(delay_ms));
+                std::thread::sleep(std::time::Duration::from_millis(delay_ms));
             }
         }
 
