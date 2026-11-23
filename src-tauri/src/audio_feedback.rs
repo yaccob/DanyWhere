@@ -3,12 +3,13 @@ use crate::settings::SoundTheme;
 use crate::settings::{self, AppSettings};
 use crate::sound_queue::SoundQueue;
 use log::{debug, error, warn};
-use rodio::{cpal, DeviceSinkBuilder, DeviceSinkError};
+use rodio::{cpal, Decoder, DeviceSinkBuilder, DeviceSinkError, PlayError, Player, Source};
 use std::fs::File;
 use std::io::BufReader;
 use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
 use std::thread;
+use std::time::{Duration, Instant};
 use tauri::{AppHandle, Manager};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -185,14 +186,80 @@ fn play_sound_blocking(path: &Path, output: SoundOutput) {
 }
 
 fn play_sound_now(path: &Path, output: &SoundOutput) {
-    if let Err(e) = play_audio_file_on(
+    match play_audio_file_on(
         &SystemOutputHost,
         path,
         output.device.as_deref(),
         output.volume,
+        SoundTimeLimit::FEEDBACK,
     ) {
-        error!("Failed to play sound '{}': {}", path.display(), e);
+        Ok(SoundEnd::Played) => {}
+        Ok(SoundEnd::GaveUp { waited }) => warn!(
+            "Gave up on sound '{}' after {} ms: the output device stopped taking it",
+            path.display(),
+            waited.as_millis()
+        ),
+        Err(e) => error!("Failed to play sound '{}': {}", path.display(), e),
     }
+}
+
+/// DanyWhere: how a sound ended.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum SoundEnd {
+    /// The device took all of it.
+    Played,
+    /// The device stopped taking it (unplugged, Bluetooth gone), so it was
+    /// stopped after `waited`.
+    GaveUp { waited: Duration },
+}
+
+/// DanyWhere: how long a sound may take before it is given up. rodio's
+/// `sleep_until_end` waits without a limit, so a device that goes silent in
+/// the middle of a sound held the thread of the feedback sounds, every sound
+/// after it and a caller that waits for its sound (the start sound before a
+/// recording), and with it the start of every later dictation.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct SoundTimeLimit {
+    /// Beyond the sound's own length.
+    grace: Duration,
+    /// For a file that doesn't tell its length.
+    unknown_length: Duration,
+}
+
+impl SoundTimeLimit {
+    /// A sound's length plus 1 s: rodio's buffer (about 50 ms) and the start
+    /// of a Bluetooth device fit in it many times over. 5 s for a file
+    /// without a length: longer than any feedback sound (the bundled ones
+    /// last under 1 s), short enough not to hold a dictation's start long.
+    const FEEDBACK: Self = Self {
+        grace: Duration::from_secs(1),
+        unknown_length: Duration::from_secs(5),
+    };
+
+    /// How long a sound of `length` may take.
+    fn for_length(self, length: Option<Duration>) -> Duration {
+        length.map_or(self.unknown_length, |length| length + self.grace)
+    }
+}
+
+/// DanyWhere: how often `wait_for_end` looks whether a sound has ended.
+const SOUND_END_CHECK: Duration = Duration::from_millis(5);
+
+/// DanyWhere: waits until `player` has played its sound, at most
+/// `time_limit`, and stops it then. rodio offers no `sleep_until_end` with a
+/// time limit, so this looks every few milliseconds, as `Player::empty`
+/// tells the moment `sleep_until_end` would return.
+fn wait_for_end(player: &Player, time_limit: Duration) -> SoundEnd {
+    let started = Instant::now();
+    while !player.empty() {
+        let waited = started.elapsed();
+        if waited >= time_limit {
+            player.stop();
+            return SoundEnd::GaveUp { waited };
+        }
+        thread::sleep(SOUND_END_CHECK.min(time_limit - waited));
+    }
+    SoundEnd::Played
 }
 
 /// DanyWhere: the device a sound plays on: the one named `selected_device`
@@ -225,30 +292,39 @@ fn feedback_device(
 }
 
 /// DanyWhere: plays `path` at `volume` on the device `feedback_device`
-/// picks among `outputs`, and returns once the device has taken all of it.
+/// picks among `outputs`, and returns once the device has taken all of it
+/// or the time `limit` allows for it has passed.
 fn play_audio_file_on(
     outputs: &impl OutputHost,
     path: &Path,
     selected_device: Option<&str>,
     volume: f32,
-) -> Result<(), Box<dyn std::error::Error>> {
+    limit: SoundTimeLimit,
+) -> Result<SoundEnd, Box<dyn std::error::Error>> {
     let device = feedback_device(outputs, selected_device)?;
     let device_sink = DeviceSinkBuilder::from_device(device)?.open_stream()?;
     let mixer = device_sink.mixer();
 
     let file = File::open(path)?;
-    let buf_reader = BufReader::new(file);
+    let sound = Decoder::new(BufReader::new(file)).map_err(PlayError::from)?;
+    let time_limit = limit.for_length(sound.total_duration());
 
-    let player = rodio::play(mixer, buf_reader)?;
+    // As rodio's `play`, which hides the sound's length.
+    let player = Player::connect_new(mixer);
+    player.append(sound);
     player.set_volume(volume);
-    player.sleep_until_end();
 
-    Ok(())
+    // The sink and its stream close when they're dropped here, also after
+    // a sound given up.
+    Ok(wait_for_end(&player, time_limit))
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{play_audio_file_on, sound_location, SoundLocation, SoundType};
+    use super::{
+        play_audio_file_on, sound_location, SoundEnd, SoundLocation, SoundQueue, SoundTimeLimit,
+        SoundType,
+    };
     use crate::audio_toolkit::audio::fake_output::{FakeOutput, FakeOutputs, Running};
     use crate::settings::SoundTheme;
     use rodio::cpal::{BufferSize, ErrorKind, SupportedBufferSize};
@@ -263,6 +339,33 @@ mod tests {
         Path::new(env!("CARGO_MANIFEST_DIR")).join("resources/marimba_start.wav")
     }
 
+    /// A 440 Hz tone of `ms` milliseconds at half the full scale, as a 44.1
+    /// kHz stereo WAV file in `dir`.
+    fn short_tone(dir: &Path, ms: u32) -> PathBuf {
+        let path = dir.join("tone.wav");
+        let spec = hound::WavSpec {
+            channels: 2,
+            sample_rate: 44_100,
+            bits_per_sample: 16,
+            sample_format: hound::SampleFormat::Int,
+        };
+        let mut wav = hound::WavWriter::create(&path, spec).expect("the tone is written");
+        for frame in 0..44_100 * ms / 1000 {
+            let phase = std::f32::consts::TAU * 440.0 * frame as f32 / 44_100.0;
+            let sample = (0.5 * phase.sin() * f32::from(i16::MAX)) as i16;
+            wav.write_sample(sample).expect("the tone is written");
+            wav.write_sample(sample).expect("the tone is written");
+        }
+        wav.finalize().expect("the tone is written");
+        path
+    }
+
+    /// A time limit short enough for a test: a sound's length plus 100 ms.
+    const QUICK_LIMIT: SoundTimeLimit = SoundTimeLimit {
+        grace: Duration::from_millis(100),
+        unknown_length: Duration::from_secs(30),
+    };
+
     /// An error and every cause behind it, on one line.
     fn with_causes(error: &dyn std::error::Error) -> String {
         let mut text = error.to_string();
@@ -275,37 +378,44 @@ mod tests {
         text
     }
 
-    /// Plays the start sound on `outputs` on a thread of its own, so a
+    /// Plays `sound` on `outputs` within `limit` on a thread of its own, so a
     /// device that never lets it end can't hang the tests.
-    fn play_in_background(
+    fn play_file_in_background(
         outputs: &FakeOutputs,
+        sound: PathBuf,
         selected: Option<&str>,
         volume: f32,
-    ) -> mpsc::Receiver<Result<(), String>> {
+        limit: SoundTimeLimit,
+    ) -> mpsc::Receiver<Result<SoundEnd, String>> {
         let outputs = outputs.clone();
         let selected = selected.map(str::to_string);
         let (done, result) = mpsc::channel();
         std::thread::spawn(move || {
-            let played = play_audio_file_on(&outputs.host(), &sound(), selected.as_deref(), volume)
-                .map_err(|e| with_causes(e.as_ref()));
+            let played =
+                play_audio_file_on(&outputs.host(), &sound, selected.as_deref(), volume, limit)
+                    .map_err(|e| with_causes(e.as_ref()));
             let _ = done.send(played);
         });
         result
     }
 
+    /// Plays the start sound on `outputs` on a thread of its own, within the
+    /// app's own time limit.
+    fn play_in_background(
+        outputs: &FakeOutputs,
+        selected: Option<&str>,
+        volume: f32,
+    ) -> mpsc::Receiver<Result<SoundEnd, String>> {
+        play_file_in_background(outputs, sound(), selected, volume, SoundTimeLimit::FEEDBACK)
+    }
+
+    const PLAYED: Result<SoundEnd, String> = Ok(SoundEnd::Played);
+
     /// Plays the start sound on `outputs` and tells how it ended.
-    fn play(outputs: &FakeOutputs, selected: Option<&str>) -> Result<(), String> {
+    fn play(outputs: &FakeOutputs, selected: Option<&str>) -> Result<SoundEnd, String> {
         play_in_background(outputs, selected, 1.0)
             .recv_timeout(Duration::from_secs(5))
             .expect("the sound ends")
-    }
-
-    fn wait_until(what: &str, done: impl Fn() -> bool) {
-        let started = Instant::now();
-        while !done() {
-            assert!(started.elapsed() < Duration::from_secs(5), "{what}");
-            std::thread::sleep(Duration::from_millis(2));
-        }
     }
 
     fn speakers() -> FakeOutput {
@@ -320,7 +430,7 @@ mod tests {
     fn without_a_selected_device_the_sound_plays_on_the_default() {
         let (speakers, headset) = (speakers(), headset());
         let outputs = FakeOutputs::new(&[&speakers, &headset]).with_default(&speakers);
-        assert_eq!(play(&outputs, None), Ok(()));
+        assert_eq!(play(&outputs, None), PLAYED);
         assert!(
             speakers.peak() > 0.01,
             "the sound reached the default device"
@@ -334,7 +444,7 @@ mod tests {
     fn the_device_named_default_is_the_default_without_listing_devices() {
         let (speakers, headset) = (speakers(), headset());
         let outputs = FakeOutputs::new(&[&speakers, &headset]).with_default(&speakers);
-        assert_eq!(play(&outputs, Some("Default")), Ok(()));
+        assert_eq!(play(&outputs, Some("Default")), PLAYED);
         assert!(speakers.peak() > 0.01);
         assert_eq!(outputs.times_listed(), 0);
     }
@@ -343,7 +453,7 @@ mod tests {
     fn a_selected_device_is_found_by_its_name() {
         let (speakers, headset) = (speakers(), headset());
         let outputs = FakeOutputs::new(&[&speakers, &headset]).with_default(&speakers);
-        assert_eq!(play(&outputs, Some("USB Headset")), Ok(()));
+        assert_eq!(play(&outputs, Some("USB Headset")), PLAYED);
         assert!(headset.peak() > 0.01, "the sound reached the headset");
         assert!(
             speakers.asked_buffers().is_empty(),
@@ -356,7 +466,7 @@ mod tests {
     fn a_missing_selected_device_falls_back_to_the_default() {
         let (speakers, headset) = (speakers(), headset());
         let outputs = FakeOutputs::new(&[&speakers, &headset]).with_default(&speakers);
-        assert_eq!(play(&outputs, Some("AirPods Pro")), Ok(()));
+        assert_eq!(play(&outputs, Some("AirPods Pro")), PLAYED);
         assert!(speakers.peak() > 0.01);
         assert!(headset.asked_buffers().is_empty());
     }
@@ -366,7 +476,7 @@ mod tests {
         let speakers = speakers();
         let gone = FakeOutput::new("AirPods Pro").nameless();
         let outputs = FakeOutputs::new(&[&speakers, &gone]).with_default(&speakers);
-        assert_eq!(play(&outputs, Some("AirPods Pro")), Ok(()));
+        assert_eq!(play(&outputs, Some("AirPods Pro")), PLAYED);
         assert!(speakers.peak() > 0.01, "the default stood in");
         assert!(gone.asked_buffers().is_empty());
     }
@@ -417,7 +527,7 @@ mod tests {
                 SupportedBufferSize::Range { min: 14, max: 4096 },
             );
             let outputs = FakeOutputs::new(&[&device]).with_default(&device);
-            assert_eq!(play(&outputs, None), Ok(()), "{rate} Hz");
+            assert_eq!(play(&outputs, None), PLAYED, "{rate} Hz");
             assert_eq!(
                 device.asked_buffers(),
                 [BufferSize::Fixed(frames)],
@@ -506,35 +616,79 @@ mod tests {
     fn an_error_while_playing_does_not_end_the_sound() {
         let device = speakers().running(Running::ReportsThenPulls(ErrorKind::Xrun));
         let outputs = FakeOutputs::new(&[&device]).with_default(&device);
-        assert_eq!(play(&outputs, None), Ok(()));
+        assert_eq!(play(&outputs, None), PLAYED);
         assert_eq!(device.errors_reported(), 1);
         assert!(device.peak() > 0.01, "the sound played on");
     }
 
+    /// A headset that is unplugged in the middle of a sound: it asks for
+    /// audio once, reports the error and goes silent.
+    fn unplugged_headset() -> FakeOutput {
+        headset().running(Running::ReportsThenStalls(ErrorKind::DeviceNotAvailable))
+    }
+
     #[test]
-    fn a_device_that_goes_silent_after_an_error_keeps_the_sound_waiting_today() {
-        // Today's behaviour: rodio's `sleep_until_end` waits without a time
-        // limit until the device has taken the whole sound. A device that
-        // goes silent (unplugged in the middle of a sound) holds the thread of
-        // the feedback sounds, every sound after it and a caller that waits
-        // (the start sound before a recording) until it asks for audio again.
-        let headset = headset().running(Running::ReportsThenStalls(ErrorKind::DeviceNotAvailable));
+    fn a_device_that_goes_silent_after_an_error_has_its_sound_given_up() {
+        // rodio's `sleep_until_end` waited without a time limit, until the
+        // device asked for audio again.
+        let dir = tempfile::tempdir().unwrap();
+        let tone = short_tone(dir.path(), 50);
+        let headset = unplugged_headset();
         let outputs = FakeOutputs::new(&[&headset]).with_default(&headset);
-        let result = play_in_background(&outputs, None, 1.0);
-        wait_until("the device reports its error", || {
-            headset.errors_reported() == 1
-        });
+        let started = Instant::now();
+        let result = play_file_in_background(&outputs, tone, None, 1.0, QUICK_LIMIT);
+        let ended = result
+            .recv_timeout(Duration::from_secs(2))
+            .expect("the sound is given up within 2 s");
+        let took = started.elapsed();
+        let Ok(SoundEnd::GaveUp { waited }) = ended else {
+            panic!("{ended:?}");
+        };
+        assert_eq!(headset.errors_reported(), 1);
         assert!(
-            result.recv_timeout(Duration::from_millis(300)).is_err(),
-            "the sound is still waiting"
+            waited >= Duration::from_millis(150),
+            "the whole sound and its grace: {waited:?}"
         );
-        headset.set_running(Running::Pulls);
+        assert!(took < Duration::from_secs(1), "{took:?}");
+        assert_eq!(headset.open_streams(), 0, "its stream is closed");
+    }
+
+    #[test]
+    fn a_device_that_goes_silent_holds_neither_later_sounds_nor_a_caller_that_waits() {
+        // Every feedback sound plays on one thread (`sound_queue`), and the
+        // start sound before a recording waits for its end
+        // (`play_feedback_sound_blocking`).
+        let dir = tempfile::tempdir().unwrap();
+        let tone = short_tone(dir.path(), 50);
+        let (headset, speakers) = (unplugged_headset(), speakers());
+        let queue = SoundQueue::new(|(outputs, tone): (FakeOutputs, PathBuf)| {
+            let _ = play_audio_file_on(&outputs.host(), &tone, None, 1.0, QUICK_LIMIT);
+        })
+        .unwrap();
+        let on_headset = FakeOutputs::new(&[&headset]).with_default(&headset);
+        let on_speakers = FakeOutputs::new(&[&speakers]).with_default(&speakers);
+        assert!(queue.enqueue((on_headset, tone.clone())).is_ok());
+        let (played, waited) = mpsc::channel();
+        std::thread::spawn(move || {
+            let _ = played.send(queue.play_and_wait((on_speakers, tone)).is_ok());
+        });
         assert_eq!(
-            result
-                .recv_timeout(Duration::from_secs(5))
-                .expect("it ends once the device asks for audio again"),
-            Ok(())
+            waited.recv_timeout(Duration::from_secs(2)),
+            Ok(true),
+            "the caller got its sound within 2 s"
         );
+        assert_eq!(headset.errors_reported(), 1);
+        assert!(speakers.peak() > 0.01, "the next sound played");
+    }
+
+    #[test]
+    fn a_sound_may_take_its_length_and_a_second_or_five_seconds_without_one() {
+        let limit = SoundTimeLimit::FEEDBACK;
+        assert_eq!(
+            limit.for_length(Some(Duration::from_millis(580))),
+            Duration::from_millis(1580)
+        );
+        assert_eq!(limit.for_length(None), Duration::from_secs(5));
     }
 
     /// The loudest sample a device gets of the start sound at `volume`. The
@@ -550,7 +704,7 @@ mod tests {
             result
                 .recv_timeout(Duration::from_secs(5))
                 .expect("the sound ends"),
-            Ok(())
+            PLAYED
         );
         device.peak()
     }
