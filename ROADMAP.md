@@ -4,6 +4,12 @@ Planned work on DanyWhere, roughly in priority order within each section. Items 
 
 ## Features and improvements
 
+### Inserting on macOS: an input method of DanyWhere's own
+
+**Found (user, 2026-11-23, in 0.3.1 on the company Mac):** without Accessibility an end shortcut ends the recording but can't insert (the text waits for the "Insert Last Dictation" service), and a key press in Append is dropped. The input method set aside on 2026-11-11 (see "Running without the Accessibility permission") was tried there with a small test app, the pre-release `eingabe-test-1` of this repository: installing it in the user's folder, selecting it with the keyboard layout kept, inserting into another app and inserting right before an Enter that still reaches the app all worked. Enabling it by a program call (`TISEnableInputSource`) answers success but enables nothing, also on an unmanaged Mac, so the user adds it once in System Settings.
+
+**Decided (user, 2026-11-23):** the input method becomes macOS's general way of inserting, by one rule on what the Mac can do instead of two modes: (1) once the DanyWhere input source is added, DanyWhere inserts through it, with or without Accessibility, without the clipboard; (2) else, with Accessibility, by ⌘V as today; (3) else the text waits as today without Accessibility. Only setups without Accessibility are guided to add it; with Accessibility it is offered in the settings ("insert without the clipboard"), and nothing changes for those who don't. DanyWhere selects its input source only while a dictation runs, keeps the keyboard layout in use, and switches back afterwards. Enter as an end shortcut inserts the text and then lets Enter through ("insert and send"). Key presses DanyWhere would have to generate itself still need Accessibility; with both, the input method inserts and Accessibility presses the key. Shortcuts and window titles stay as they are. The code diverges at one point, how a text is inserted; the dictation flow stays the same. To be planned and built right away, test-first.
+
 ### Notices: a failed post-processing says why
 
 **Found (user, 2026-11-23, in 0.3.1):** Enter and Ctrl+Enter, the end shortcuts with post-processing, pasted the transcript as is, and the notice "Pasted Without Post-Processing" said only that post-processing didn't finish. The cause was in the settings: the profile In Use sent post-processing to a local model that had been removed from Ollama. Only the log said so (`404 … model '…' not found`).
