@@ -8,11 +8,12 @@
 //! A dictation can also end up nowhere, e.g. when no text field had focus.
 //! Instead of dictating again, the user presses the "paste last transcript"
 //! shortcut with the cursor where the text belongs: with Accessibility it is
-//! pasted like a fresh transcript (with pasting switched off it is put on the
-//! clipboard); without it, on macOS, the shortcut is the "Insert Last
-//! Dictation" service's (`insert_service`). "Copy last transcript" puts it
-//! on the clipboard for the user to paste, which is also the way to get it
-//! into apps where the service doesn't work, such as the Finder.
+//! pasted like a fresh transcript (when pasting is switched off in the
+//! profile it goes with, it is put on the clipboard); without it, on macOS,
+//! the shortcut is the "Insert Last Dictation" service's (`insert_service`).
+//! "Copy last transcript" puts it on the clipboard for the user to paste,
+//! which is also the way to get it into apps where the service doesn't work,
+//! such as the Finder.
 
 use std::sync::Arc;
 
@@ -334,59 +335,80 @@ impl PasteLastPorts for AppPasteLast {
     }
 }
 
-/// Delivers `entry`'s `text` for "Paste Last Transcript", pasting it or
-/// leaving it on the clipboard per `delivery_for`. Call from a worker
-/// thread: a paste sleeps between steps.
+/// Delivers `entry`'s `text` for "Paste Last Transcript": pasted, or left on
+/// the clipboard with its sound and notice, as `delivery_for` says for the
+/// values the text goes with. Those are the values of the profile of the
+/// application in front while choosing the profile by application applies
+/// (the text redone for it when needed, `profile_redo`), else the values in
+/// use. Call from a worker thread: a paste sleeps between steps.
 pub fn paste_last<P: PasteLastPorts>(
     ports: &P,
     entry: &HistoryEntry,
     text: String,
 ) -> PasteLastOutcome {
-    let settings = ports.settings();
+    let stored = ports.settings();
+    // DanyWhere: without Accessibility nothing is pasted, whatever the
+    // values say (C3), so the application in front isn't looked at and
+    // nothing is redone for it.
+    let insert = if crate::accessibility::state(&stored).can_simulate_input() {
+        ports.for_app_in_front(entry)
+    } else {
+        None
+    };
+    let (text, values, append_text, post_process_failed) = match insert {
+        Some(insert) => (
+            insert.text.unwrap_or(text),
+            Some(insert.values),
+            insert.end.append_text,
+            insert.post_process_failed,
+        ),
+        None => (
+            text,
+            ports.dictation_values(),
+            append_of_last(&stored, ports.ended_with(entry.id).as_ref()),
+            false,
+        ),
+    };
+    // DanyWhere: decided with the values the text goes with, as a dictation
+    // is (`dictation_flow::deliver_text`). Until 2026-11-23 the profile in
+    // use decided: when the profile of the application in front didn't
+    // paste, the text went nowhere and the log said "Pasted".
+    let settings = crate::app_profiles::with_values(&stored, values.as_ref());
     match delivery_for(&settings) {
-        Delivery::Clipboard => match ports.put_on_clipboard(text, None, true) {
-            Ok(()) => {
-                info!("Put the last transcript on the clipboard.");
-                PasteLastOutcome::OnClipboard
-            }
-            Err(err) => {
-                error!(
-                    "Failed to put the last transcript on the clipboard: {}",
-                    err
-                );
-                PasteLastOutcome::Failed(err)
-            }
-        },
-        Delivery::Paste => {
-            // DanyWhere: redone for the profile of the application in front,
-            // if it differs from the dictation's (`profile_redo`); its
-            // "Append" text in any case.
-            let pasted = match ports.for_app_in_front(entry) {
-                Some(insert) => ports.paste(
-                    insert.text.unwrap_or(text),
-                    Some(insert.values),
-                    &insert.end.append_text,
-                ),
-                None => {
-                    let append = append_of_last(&settings, ports.ended_with(entry.id).as_ref());
-                    ports.paste(text, ports.dictation_values(), &append)
-                }
-            };
-            match pasted {
-                Ok(PasteOutcome::Pasted) => {
-                    info!("Pasted the last transcript.");
-                    PasteLastOutcome::Pasted
-                }
-                Ok(PasteOutcome::Blocked) => {
-                    error!("Couldn't paste the last transcript: the focused window takes no input");
-                    PasteLastOutcome::Blocked
+        Delivery::Clipboard => {
+            info!(
+                "Not pasting the last transcript: without Accessibility, or pasting is off in the profile it goes with."
+            );
+            // A failed post-processing's notice stays on the overlay, as
+            // after a dictation.
+            match ports.put_on_clipboard(text, values, !post_process_failed) {
+                Ok(()) => {
+                    info!("Put the last transcript on the clipboard.");
+                    PasteLastOutcome::OnClipboard
                 }
                 Err(err) => {
-                    error!("Failed to paste the last transcript: {}", err);
+                    error!(
+                        "Failed to put the last transcript on the clipboard: {}",
+                        err
+                    );
                     PasteLastOutcome::Failed(err)
                 }
             }
         }
+        Delivery::Paste => match ports.paste(text, values, &append_text) {
+            Ok(PasteOutcome::Pasted) => {
+                info!("Pasted the last transcript.");
+                PasteLastOutcome::Pasted
+            }
+            Ok(PasteOutcome::Blocked) => {
+                error!("Couldn't paste the last transcript: the focused window takes no input");
+                PasteLastOutcome::Blocked
+            }
+            Err(err) => {
+                error!("Failed to paste the last transcript: {}", err);
+                PasteLastOutcome::Failed(err)
+            }
+        },
     }
 }
 
@@ -1348,5 +1370,158 @@ mod tests {
                 );
             }
         }
+    }
+
+    // Until 2026-11-23 the profile in use decided whether to paste, and the
+    // text went with the values of the application in front's: when that
+    // profile didn't paste, nothing visible happened and the log said
+    // "Pasted". It decides with the values the text goes with now, as a
+    // dictation does (C3).
+
+    #[test]
+    fn paste_last_puts_it_on_the_clipboard_when_the_app_in_front_s_profile_does_not_paste() {
+        let ports = FakePasteLast::in_use(PasteMethod::CtrlV).app_in_front(PasteMethod::None);
+        assert_eq!(paste_last_with(&ports), PasteLastOutcome::OnClipboard);
+        assert_eq!(
+            ports.did(),
+            vec![Did::OnClipboard {
+                text: "Hallo".to_string(),
+                notice_ms: Some(APP_NOTICE_MS),
+            }]
+        );
+    }
+
+    #[test]
+    fn paste_last_pastes_with_the_app_in_front_s_method_when_only_its_profile_pastes() {
+        let ports = FakePasteLast::in_use(PasteMethod::None).app_in_front(PasteMethod::CtrlShiftV);
+        assert_eq!(paste_last_with(&ports), PasteLastOutcome::Pasted);
+        assert_eq!(
+            ports.did(),
+            vec![Did::Pasted {
+                text: "Hallo".to_string(),
+                method: PasteMethod::CtrlShiftV,
+                append: APP_APPEND.to_string(),
+            }]
+        );
+    }
+
+    #[test]
+    fn paste_last_puts_a_text_redone_for_the_app_in_front_on_the_clipboard() {
+        let mut ports = FakePasteLast::in_use(PasteMethod::CtrlV);
+        ports.app_in_front = Some(app_profile(PasteMethod::None, Some("Redone")));
+        assert_eq!(paste_last_with(&ports), PasteLastOutcome::OnClipboard);
+        assert_eq!(
+            ports.did(),
+            vec![Did::OnClipboard {
+                text: "Redone".to_string(),
+                notice_ms: Some(APP_NOTICE_MS),
+            }]
+        );
+    }
+
+    #[test]
+    fn paste_last_shows_no_clipboard_notice_over_a_failed_post_processing() {
+        // As after a dictation, the failure's notice stays on the overlay.
+        let mut ports = FakePasteLast::in_use(PasteMethod::CtrlV);
+        let mut insert = app_profile(PasteMethod::None, Some("Transcript"));
+        insert.post_process_failed = true;
+        ports.app_in_front = Some(insert);
+        assert_eq!(paste_last_with(&ports), PasteLastOutcome::OnClipboard);
+        assert_eq!(
+            ports.did(),
+            vec![Did::OnClipboard {
+                text: "Transcript".to_string(),
+                notice_ms: None,
+            }]
+        );
+    }
+
+    #[test]
+    fn paste_last_follows_the_app_in_front_s_profile_that_does_not_paste_in_every_state() {
+        for (skipped, trusted) in STATES {
+            let mut ports =
+                FakePasteLast::in_use(PasteMethod::CtrlV).app_in_front(PasteMethod::None);
+            ports.settings = with_choice(ports.settings, skipped);
+            let state = format!("skipped {skipped}, trusted {trusted}");
+            let outcome = with_system_trusted(trusted, || paste_last_with(&ports));
+            assert_eq!(outcome, PasteLastOutcome::OnClipboard, "{state}");
+            // Without Accessibility the application in front isn't looked
+            // at: the profile in use's notice.
+            let notice_ms = if skipped { 2500 } else { APP_NOTICE_MS };
+            assert_eq!(
+                ports.did(),
+                vec![Did::OnClipboard {
+                    text: "Hallo".to_string(),
+                    notice_ms: Some(notice_ms),
+                }],
+                "{state}"
+            );
+        }
+    }
+
+    #[test]
+    fn paste_last_follows_the_app_in_front_s_profile_that_pastes_in_every_state() {
+        for (skipped, trusted) in STATES {
+            let mut ports =
+                FakePasteLast::in_use(PasteMethod::None).app_in_front(PasteMethod::CtrlShiftV);
+            ports.settings = with_choice(ports.settings, skipped);
+            let state = format!("skipped {skipped}, trusted {trusted}");
+            let outcome = with_system_trusted(trusted, || paste_last_with(&ports));
+            if skipped {
+                assert_eq!(outcome, PasteLastOutcome::OnClipboard, "{state}");
+                assert_eq!(
+                    ports.did(),
+                    vec![Did::OnClipboard {
+                        text: "Hallo".to_string(),
+                        notice_ms: Some(2500),
+                    }],
+                    "{state}"
+                );
+                assert_eq!(ports.asked_app_in_front.get(), 0, "{state}");
+            } else {
+                assert_eq!(outcome, PasteLastOutcome::Pasted, "{state}");
+                assert_eq!(
+                    ports.did(),
+                    vec![Did::Pasted {
+                        text: "Hallo".to_string(),
+                        method: PasteMethod::CtrlShiftV,
+                        append: APP_APPEND.to_string(),
+                    }],
+                    "{state}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn paste_last_decides_with_the_values_of_a_dictation_in_progress() {
+        // Without profiles by application the text goes with the values of
+        // a dictation in progress whose profile isn't the active one.
+        let mut values = ProfileValues::from_settings(&get_default_settings());
+        values.paste_method = PasteMethod::None;
+        values.clipboard_notice_ms = 1700;
+        let mut ports = FakePasteLast::in_use(PasteMethod::CtrlV);
+        ports.dictation_values = Some(values.clone());
+        assert_eq!(paste_last_with(&ports), PasteLastOutcome::OnClipboard);
+        assert_eq!(
+            ports.did(),
+            vec![Did::OnClipboard {
+                text: "Hallo".to_string(),
+                notice_ms: Some(1700),
+            }]
+        );
+
+        values.paste_method = PasteMethod::CtrlShiftV;
+        let mut ports = FakePasteLast::in_use(PasteMethod::None);
+        ports.dictation_values = Some(values);
+        assert_eq!(paste_last_with(&ports), PasteLastOutcome::Pasted);
+        assert_eq!(
+            ports.did(),
+            vec![Did::Pasted {
+                text: "Hallo".to_string(),
+                method: PasteMethod::CtrlShiftV,
+                append: append_of_last(&ports.settings, None),
+            }]
+        );
     }
 }
