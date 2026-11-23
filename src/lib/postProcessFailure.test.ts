@@ -169,7 +169,7 @@ check("German: a model the custom provider doesn't have", () =>
       de("errors.postProcessFailed"),
       detail({ reason: "model-not-found", ...CUSTOM }),
     ),
-    "Die Nachbearbeitung wurde nicht abgeschlossen, daher wurde das Transkript unverändert eingefügt. Eigener Anbieter kennt das Modell „gemma4-12b-qat“ nicht.",
+    "Die Nachbearbeitung wurde nicht abgeschlossen, daher wurde das Transkript unverändert eingefügt. Der Anbieter „Eigener Anbieter“ kennt das Modell „gemma4-12b-qat“ nicht.",
   ),
 );
 check("German: no API key", () =>
@@ -179,7 +179,7 @@ check("German: no API key", () =>
       "BASE",
       detail({ reason: "no-api-key", ...OPENAI }),
     ),
-    "BASE OpenAI braucht einen API-Schlüssel, es ist aber keiner eingetragen.",
+    "BASE Der Anbieter „OpenAI“ braucht einen API-Schlüssel, es ist aber keiner eingetragen.",
   ),
 );
 check("German: a refused key", () =>
@@ -189,7 +189,7 @@ check("German: a refused key", () =>
       "BASE",
       detail({ reason: "key-refused", ...OPENAI }),
     ),
-    "BASE OpenAI hat den API-Schlüssel abgelehnt.",
+    "BASE Der Anbieter „OpenAI“ hat den API-Schlüssel abgelehnt.",
   ),
 );
 check("German: no answer in time", () =>
@@ -199,7 +199,7 @@ check("German: no answer in time", () =>
       "BASE",
       detail({ reason: "timeout", ...OPENAI, seconds: 60 }),
     ),
-    "BASE OpenAI hat nicht innerhalb der Zeitgrenze geantwortet (60 s).",
+    "BASE Der Anbieter „OpenAI“ hat nicht innerhalb der Zeitgrenze geantwortet (60 s).",
   ),
 );
 check("German: a provider that can't be reached", () =>
@@ -209,7 +209,7 @@ check("German: a provider that can't be reached", () =>
       "BASE",
       detail({ reason: "unreachable", ...CUSTOM }),
     ),
-    "BASE Eigener Anbieter ist nicht erreichbar.",
+    "BASE Der Anbieter „Eigener Anbieter“ ist nicht erreichbar.",
   ),
 );
 

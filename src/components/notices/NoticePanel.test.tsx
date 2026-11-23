@@ -70,7 +70,7 @@ describe("a failed post-processing's notice", () => {
     await switchTestLanguage("de");
     await showToast(notice("PostProcessFailed", "dictation", MODEL_NOT_FOUND));
     expect(visibleText()).toContain(
-      "Eigener Anbieter kennt das Modell „gemma4-12b-qat“ nicht.",
+      "Der Anbieter „Eigener Anbieter“ kennt das Modell „gemma4-12b-qat“ nicht.",
     );
     expect(rawTextIn()).toEqual([]);
   });
