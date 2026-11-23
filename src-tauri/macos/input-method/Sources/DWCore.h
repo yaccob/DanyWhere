@@ -38,6 +38,10 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, readonly, copy, nullable) NSString *restoreSource;
 @property (nonatomic, readonly) DWCatchState *catchState;
 @property (nonatomic, readonly) DWHoldGate *holdGate;
+/// How long an `insert` without a text field waits for one before it answers
+/// `no_client` (default 0.5 s): the app may send it right after selecting the
+/// source, before macOS has activated the input method for the field.
+@property (nonatomic) NSTimeInterval clientWait;
 /// Called for `quit` after logging; exits the process by default.
 @property (nonatomic, copy) void (^quitHandler)(void);
 

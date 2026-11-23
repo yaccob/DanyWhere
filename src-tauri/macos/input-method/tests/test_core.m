@@ -95,6 +95,42 @@ DW_TEST(core_insert_without_a_client_answers_no_client) {
     [rig tearDown];
 }
 
+DW_TEST(core_insert_waits_briefly_for_a_text_field) {
+    // The app selects the source and sends `insert` at once; macOS activates
+    // the input method for the field a moment later.
+    DWCoreRig *rig = [DWCoreRig rigWithTag:@"waitfield"];
+    rig.core.clientWait = 2;
+    CHECK([rig connect]);
+    CHECK([rig.server sendLine:@"{\"type\":\"insert\",\"id\":7,\"text\":\"Hallo\"}"]);
+    // No answer while it waits for a field (this also gives the insert time
+    // to reach the core before the field comes).
+    CHECK_EQ_OBJ([rig.server readLineWithin:0.5], nil);
+    DWFakeClient *client = TextEdit();
+    [rig onMain:^{ [rig.core clientActivated:client]; }];
+    CHECK_EQ_OBJ([rig nextLine], @"{\"type\":\"active\",\"client\":\"com.apple.TextEdit\"}");
+    CHECK_EQ_OBJ([rig nextLine], @"{\"type\":\"inserted\",\"id\":7,\"ok\":true,\"client\":\"com.apple.TextEdit\"}");
+    CHECK_EQ_OBJ(client.inserted, @[@"Hallo"]);
+    [rig tearDown];
+}
+
+DW_TEST(core_a_waiting_insert_ends_with_the_link) {
+    DWCoreRig *rig = [DWCoreRig rigWithTag:@"waitlost"];
+    rig.core.clientWait = 2;
+    CHECK([rig connect]);
+    CHECK([rig.server sendLine:@"{\"type\":\"insert\",\"id\":7,\"text\":\"Hallo\"}"]);
+    CHECK_EQ_OBJ([rig.server readLineWithin:0.5], nil);
+    [rig.core.link disconnect];
+    [rig.core.link sync:^{}];
+    [rig onMain:^{}];
+    // A text field after the link broke gets nothing: the app no longer
+    // waits for this insert and may have inserted the text another way.
+    DWFakeClient *client = TextEdit();
+    [rig onMain:^{ [rig.core clientActivated:client]; }];
+    [rig settle];
+    CHECK_EQ_INT(client.insertCalls, 0);
+    [rig tearDown];
+}
+
 DW_TEST(core_activate_sends_active_and_insert_goes_into_that_field) {
     DWCoreRig *rig = [DWCoreRig rigWithTag:@"insert"];
     CHECK([rig connect]);
