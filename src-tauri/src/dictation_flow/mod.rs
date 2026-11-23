@@ -1993,10 +1993,11 @@ mod tests {
         // The profile in use pastes with ⌘V, copies nothing and appends
         // nothing; the dictation's own "mail" doesn't paste, copies and
         // appends " (mail)".
+        // Set, not taken from the defaults: Linux pastes with ⇧Insert.
         let mut stored = get_default_settings();
+        stored.paste_method = PasteMethod::CtrlV;
+        stored.clipboard_handling = ClipboardHandling::DontModify;
         ensure_profiles(&mut stored);
-        assert_eq!(stored.paste_method, PasteMethod::CtrlV);
-        assert_eq!(stored.clipboard_handling, ClipboardHandling::DontModify);
         let mut mail = ProfileValues::from_settings(&stored);
         mail.paste_method = PasteMethod::None;
         mail.clipboard_handling = ClipboardHandling::CopyToClipboard;
@@ -2058,7 +2059,9 @@ mod tests {
 
     #[test]
     fn the_live_overlay_and_the_end_profiles_model_follow_the_snapshot() {
+        // Set, not taken from the defaults: Linux hides the overlay.
         let mut stored = post_process_settings(&no_server());
+        stored.overlay_style = crate::settings::OverlayStyle::Live;
         ensure_profiles(&mut stored);
         let snapshot = build(SnapshotInputs {
             stored: &stored,
