@@ -31,6 +31,7 @@ mod history_search;
 // DanyWhere: the height of History's text boxes.
 mod history_box;
 mod input;
+mod input_method;
 mod insert_service;
 mod key_sides;
 mod language_detection;
