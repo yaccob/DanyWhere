@@ -41,9 +41,11 @@ pub enum Delivery {
 /// Decides how to deliver a transcript for the given settings.
 pub fn delivery_for(settings: &AppSettings) -> Delivery {
     // Without Accessibility the paste keystroke cannot be simulated, even if
-    // a paste method was configured again later.
-    if !crate::accessibility::state(settings).can_simulate_input()
-        || settings.paste_method == PasteMethod::None
+    // a paste method was configured again later. DanyWhere: an external
+    // script pastes by its own means, so it runs either way.
+    let needs_keys = crate::clipboard::sends_keys(settings.paste_method);
+    if settings.paste_method == PasteMethod::None
+        || (needs_keys && !crate::accessibility::state(settings).can_simulate_input())
     {
         Delivery::Clipboard
     } else {
@@ -1014,6 +1016,21 @@ mod tests {
         let mut settings = with_choice(get_default_settings(), true);
         settings.paste_method = PasteMethod::CtrlV;
         assert_eq!(delivery_for(&settings), Delivery::Clipboard);
+    }
+
+    #[test]
+    fn an_external_script_pastes_without_accessibility_too() {
+        // DanyWhere: the script pastes by its own means; only the methods
+        // that send keystrokes need the permission (`clipboard::sends_keys`).
+        for (skipped, trusted) in STATES {
+            let mut settings = with_choice(get_default_settings(), skipped);
+            settings.paste_method = PasteMethod::ExternalScript;
+            assert_eq!(
+                with_system_trusted(trusted, || delivery_for(&settings)),
+                Delivery::Paste,
+                "skipped {skipped}, trusted {trusted}"
+            );
+        }
     }
 
     #[test]
