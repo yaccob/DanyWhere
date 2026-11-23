@@ -1112,6 +1112,38 @@ async skipAccessibilityPermission() : Promise<string[]> {
     return await TAURI_INVOKE("skip_accessibility_permission");
 },
 /**
+ * DanyWhere: where the input method stands, for the settings and the setup
+ * guide.
+ */
+async getInputMethodStatus() : Promise<InputMethodStatus> {
+    return await TAURI_INVOKE("get_input_method_status");
+},
+/**
+ * DanyWhere: installs or updates the input method in
+ * `~/Library/Input Methods`, registers it and opens System Settings at
+ * Keyboard, where the user adds the input source.
+ */
+async setUpInputMethod() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("set_up_input_method") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * DanyWhere: the user has seen the guide to the input method (onboarding
+ * or the one-time guide at start); it isn't shown by itself again.
+ */
+async setInputMethodGuideSeen(seen: boolean) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("set_input_method_guide_seen", { seen }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
  * Clears Handy's macOS grant for `permission` before asking for it. A grant is
  * tied to the app's code signature, so after an update the old entry stays in
  * System Settings without matching the new build: macOS neither honors it nor
@@ -1772,7 +1804,13 @@ whats_new_last_seen_version?: string; selected_model?: string; onboarding_comple
  * sends them back to the permission screen. See
  * `shortcut::apply_no_accessibility_mode`.
  */
-accessibility_skipped?: boolean; 
+accessibility_skipped?: boolean;
+/**
+ * DanyWhere: the user has seen the guide to the input method, in
+ * onboarding or once at the start of an existing installation without
+ * Accessibility. See `input_method`.
+ */
+input_method_guide_seen?: boolean;
 /**
  * DanyWhere gave the "Insert Last Dictation" service its default
  * shortcut once (or found one set); it never sets it again, so a change
@@ -2360,6 +2398,27 @@ export type ImportedKey =
  * The stored key is the same as the file's.
  */
 "same"
+/**
+ * Where the input method stands, for the settings and the setup guide.
+ */
+export type InputMethodStatus = {
+/**
+ * This build carries an input method (macOS builds made by the release
+ * and test-build scripts).
+ */
+available: boolean;
+/**
+ * A copy is in `~/Library/Input Methods`.
+ */
+installed: boolean;
+/**
+ * The user has added the DanyWhere input source in System Settings.
+ */
+added: boolean;
+/**
+ * The input method is running and linked to DanyWhere.
+ */
+connected: boolean }
 export type JsonValue = null | boolean | number | string | JsonValue[] | Partial<{ [key in string]: JsonValue }>
 /**
  * What to do when the file's key differs from the key stored here for the

@@ -106,6 +106,13 @@ const DEFAULT_ANSWERS: Partial<
       name,
       kind,
     })),
+  // A build without an input method (`input_method::NotAvailable`).
+  getInputMethodStatus: () => ({
+    available: false,
+    installed: false,
+    added: false,
+    connected: false,
+  }),
 };
 
 export interface CommandCall {
