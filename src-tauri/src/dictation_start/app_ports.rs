@@ -129,6 +129,10 @@ impl StartSession for AppStart {
     fn input_method(&self) -> Arc<dyn InputMethod> {
         crate::input_method::current()
     }
+
+    fn keep_input_source(&self, hold: crate::delivery::InputSourceHold) {
+        crate::delivery::keep_recording_hold(hold);
+    }
 }
 
 /// Tray, overlay, sounds, the system's sound and notices in the app.

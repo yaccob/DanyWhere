@@ -1140,7 +1140,9 @@ async completeOnboarding() : Promise<Result<null, string>> {
 },
 /**
  * Where the input method stands. Without one (other platforms, builds
- * without it) everything is `false`.
+ * without it) everything is `false`. Runs off the main thread: the
+ * settings ask every second, and the answer may wait for the main thread
+ * (input sources) and for the link.
  */
 async getInputMethodStatus() : Promise<InputMethodStatus> {
     return await TAURI_INVOKE("get_input_method_status");

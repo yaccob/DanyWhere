@@ -9,8 +9,8 @@
 //! DanyWhere's input source on macOS (`input_method`), a dictation that
 //! would be pasted with keys is inserted through it instead, with
 //! Accessibility or without and without the clipboard; when that fails it
-//! goes as above. [`insertion`] is that rule, [`begin_input_source`] and
-//! [`end_input_source`] select the source around a dictation.
+//! goes as above. [`insertion`] is that rule; an [`InputSourceHold`] holds
+//! the source for one dictation or "Paste Last" ([`begin_input_source`]).
 //!
 //! A dictation can also end up nowhere, e.g. when no text field had focus.
 //! Instead of dictating again, the user presses the "paste last transcript"
@@ -218,25 +218,65 @@ pub fn goes_into_app_in_front(settings: &AppSettings, context: InsertionContext)
     context.call_waiting || dictation_target_with(settings, context) == DictationTarget::Pasted
 }
 
-/// At a recording's start: selects DanyWhere's input source when the text
-/// of a dictation with `settings` (its start profile's) is to go through it
-/// ([`inserts_through_input_method`]). Its end, however it comes, calls
-/// [`end_input_source`].
-pub fn begin_input_source(settings: &AppSettings, input_method: &dyn InputMethod) {
-    if inserts_through_input_method(settings, input_method.added()) {
-        info!("Selecting DanyWhere's input source for this recording.");
+/// One operation's hold on DanyWhere's input source (a dictation, a "Paste
+/// Last"): `InputMethod::begin` when made, `InputMethod::end` once when
+/// dropped, whatever the source answers by then. Operations overlap (a
+/// recording starts while the previous dictation's text is still being
+/// inserted); the input method selects the source from before again only
+/// when the last hold ends.
+pub struct InputSourceHold(Arc<dyn InputMethod>);
+
+impl InputSourceHold {
+    /// Begins a hold on `input_method`'s source.
+    pub fn begin(input_method: Arc<dyn InputMethod>) -> Self {
         input_method.begin();
+        Self(input_method)
     }
 }
 
-/// After a dictation, whatever its outcome, or after a "Paste Last" that
-/// tried the input method: selects the input source from before again
-/// (`InputMethod::end`). Nothing while the source isn't added: DanyWhere
-/// selected nothing then.
-pub fn end_input_source(input_method: &dyn InputMethod) {
-    if input_method.added() {
-        input_method.end();
+impl Drop for InputSourceHold {
+    fn drop(&mut self) {
+        self.0.end();
     }
+}
+
+/// At a recording's start: holds DanyWhere's input source when the text of
+/// a dictation with `settings` (its start profile's) is to go through it
+/// ([`inserts_through_input_method`]). The recording keeps the hold
+/// ([`keep_recording_hold`]); its dictation ends it once its text is in, a
+/// cancel by dropping it.
+pub fn begin_input_source(
+    settings: &AppSettings,
+    input_method: &Arc<dyn InputMethod>,
+) -> Option<InputSourceHold> {
+    inserts_through_input_method(settings, input_method.added()).then(|| {
+        info!("Selecting DanyWhere's input source for this recording.");
+        InputSourceHold::begin(Arc::clone(input_method))
+    })
+}
+
+/// The hold the running recording's start took ([`begin_input_source`]),
+/// until its stop hands it to its dictation or a cancel drops it. One
+/// recording runs at a time.
+static RECORDING_HOLD: std::sync::Mutex<Option<InputSourceHold>> = std::sync::Mutex::new(None);
+
+fn recording_hold() -> std::sync::MutexGuard<'static, Option<InputSourceHold>> {
+    RECORDING_HOLD
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+}
+
+/// Keeps the hold a recording's start took. One left by a recording that
+/// ended unseen is dropped (ended) now.
+pub fn keep_recording_hold(hold: InputSourceHold) {
+    let left = recording_hold().replace(hold);
+    drop(left);
+}
+
+/// The running recording's hold, taken: its stop hands it to its dictation,
+/// a cancel drops it.
+pub fn take_recording_hold() -> Option<InputSourceHold> {
+    recording_hold().take()
 }
 
 /// Whether a dictation's text is written to the clipboard after it was
@@ -517,8 +557,10 @@ impl PasteLastPorts for AppPasteLast {
 /// or on the clipboard as its text without key presses, as a dictation's.
 /// Where it is pasted with keys and DanyWhere's input source is added, it is
 /// inserted through the input method instead, as a dictation is
-/// ([`insertion`]), pasted only when that fails; then the input source from
-/// before is selected again. Call from a worker thread: a paste sleeps
+/// ([`insertion`]), pasted only when that fails; it holds the source for
+/// that ([`InputSourceHold`]) and ends its hold after the last attempt, so
+/// the source from before comes back once no dictation holds it either.
+/// Call from a worker thread: a paste sleeps
 /// between steps, an insertion through the input method waits for it.
 pub fn paste_last<P: PasteLastPorts>(
     ports: &P,
@@ -602,6 +644,8 @@ pub fn paste_last<P: PasteLastPorts>(
                 return paste_last_as_before(ports, text, values, &append_text);
             };
             let with_append = crate::append_text::text_to_paste(text.clone(), &append_text);
+            // Its own hold: a dictation may hold the source at the same time.
+            let hold = InputSourceHold::begin(Arc::clone(&input_method));
             let outcome = match input_method.insert(&with_append) {
                 Ok(inserted) => {
                     info!(
@@ -636,7 +680,7 @@ pub fn paste_last<P: PasteLastPorts>(
                 }
             };
             // After the last attempt to insert it.
-            end_input_source(&*input_method);
+            drop(hold);
             outcome
         }
     }
@@ -852,10 +896,10 @@ mod tests {
     use super::{
         append_of_last, begin_input_source, clipboard_notice_duration,
         copies_dictation_to_clipboard, delivery_for, dictation_notice, dictation_target,
-        dictation_target_with, dictation_waits_for_user, end_input_source, goes_into_app_in_front,
-        insertion, inserts_through_input_method, overlay_after, overlay_after_dictation,
-        paste_last, plays_waiting_sound, sound_after_dictation, text_to_copy, Delivery,
-        DictationEnd, DictationNotice, DictationTarget, Insertion, InsertionContext,
+        dictation_target_with, dictation_waits_for_user, goes_into_app_in_front, insertion,
+        inserts_through_input_method, overlay_after, overlay_after_dictation, paste_last,
+        plays_waiting_sound, sound_after_dictation, text_to_copy, Delivery, DictationEnd,
+        DictationNotice, DictationTarget, InputSourceHold, Insertion, InsertionContext,
         PasteLastOutcome, PasteLastPorts,
     };
     use crate::accessibility::testing::{
@@ -2317,10 +2361,10 @@ mod tests {
     // ---- Selecting the source around a dictation --------------------------
 
     /// A fake input method, added or not, and the calls it got.
-    fn fake_input_method(added: bool) -> (FakeInputMethod, Arc<Mutex<Vec<ImCall>>>) {
+    fn fake_input_method(added: bool) -> (Arc<FakeInputMethod>, Arc<Mutex<Vec<ImCall>>>) {
         let calls = Arc::default();
         (
-            FakeInputMethod::keeping_calls_in(added, inserted(), &calls),
+            Arc::new(FakeInputMethod::keeping_calls_in(added, inserted(), &calls)),
             calls,
         )
     }
@@ -2333,30 +2377,43 @@ mod tests {
                     let mut settings = with_choice(get_default_settings(), skipped);
                     settings.paste_method = method;
                     let (input_method, calls) = fake_input_method(added);
-                    with_system_trusted(trusted, || begin_input_source(&settings, &input_method));
-                    let expected = if added && crate::clipboard::sends_keys(method) {
+                    let input_method: Arc<dyn InputMethod> = input_method;
+                    let hold = with_system_trusted(trusted, || {
+                        begin_input_source(&settings, &input_method)
+                    });
+                    let case =
+                        format!("{method:?}, skipped {skipped}, trusted {trusted}, added {added}");
+                    let goes_through = added && crate::clipboard::sends_keys(method);
+                    assert_eq!(hold.is_some(), goes_through, "{case}");
+                    let begun = if goes_through {
                         vec![ImCall::Begin]
                     } else {
                         Vec::new()
                     };
-                    assert_eq!(
-                        *calls.lock().unwrap(),
-                        expected,
-                        "{method:?}, skipped {skipped}, trusted {trusted}, added {added}"
-                    );
+                    assert_eq!(*calls.lock().unwrap(), begun, "{case}");
+                    // Its end comes with the hold, once.
+                    drop(hold);
+                    let ended = if goes_through {
+                        vec![ImCall::Begin, ImCall::End]
+                    } else {
+                        Vec::new()
+                    };
+                    assert_eq!(*calls.lock().unwrap(), ended, "{case}");
                 }
             }
         }
     }
 
     #[test]
-    fn a_dictations_end_restores_the_source_while_it_is_added() {
-        for added in [false, true] {
-            let (input_method, calls) = fake_input_method(added);
-            end_input_source(&input_method);
-            let expected = if added { vec![ImCall::End] } else { Vec::new() };
-            assert_eq!(*calls.lock().unwrap(), expected, "added {added}");
-        }
+    fn a_hold_ends_whatever_the_source_answers_by_then() {
+        // The main thread didn't answer in time, so the source seems not
+        // added: the hold that began ends all the same, or DanyWhere's
+        // source would stay selected.
+        let (input_method, calls) = fake_input_method(true);
+        let hold = InputSourceHold::begin(input_method.clone());
+        input_method.set_added(false);
+        drop(hold);
+        assert_eq!(*calls.lock().unwrap(), vec![ImCall::Begin, ImCall::End]);
     }
 
     // ---- "Paste Last Transcript" through the input method -----------------
@@ -2379,6 +2436,12 @@ mod tests {
         im(ImCall::Insert(text.to_string()))
     }
 
+    /// "Paste Last" holds the source before it inserts, as every operation
+    /// does; the hold ends after its last attempt.
+    fn begun() -> Did {
+        im(ImCall::Begin)
+    }
+
     #[test]
     fn paste_last_inserts_through_the_input_method_once_its_source_is_added() {
         // With its "Append" text, without the clipboard; then the source
@@ -2386,7 +2449,10 @@ mod tests {
         let mut ports = FakePasteLast::in_use(PasteMethod::CtrlV).with_input_method(inserted());
         ports.ended_with = Some(ended_with(r"\nMfG"));
         assert_eq!(paste_last_with(&ports), PasteLastOutcome::Pasted);
-        assert_eq!(ports.did(), vec![insert("Hallo\nMfG"), im(ImCall::End)]);
+        assert_eq!(
+            ports.did(),
+            vec![begun(), insert("Hallo\nMfG"), im(ImCall::End)]
+        );
         assert_eq!(ports.sounds.get(), 0);
     }
 
@@ -2398,6 +2464,7 @@ mod tests {
         assert_eq!(
             ports.did(),
             vec![
+                begun(),
                 insert("Hallo "),
                 Did::Keys(vec![AppendKey::Enter]),
                 im(ImCall::End)
@@ -2413,7 +2480,10 @@ mod tests {
             .with_input_method(Err(InsertFailure::Unanswered));
         ports.ended_with = Some(ended_with(r"\s{Enter}"));
         assert_eq!(paste_last_with(&ports), PasteLastOutcome::Pasted);
-        assert_eq!(ports.did(), vec![insert("Hallo "), im(ImCall::End)]);
+        assert_eq!(
+            ports.did(),
+            vec![begun(), insert("Hallo "), im(ImCall::End)]
+        );
     }
 
     #[test]
@@ -2426,6 +2496,7 @@ mod tests {
         assert_eq!(
             ports.did(),
             vec![
+                begun(),
                 insert("Hallo "),
                 Did::OnClipboard {
                     text: "Hallo ".to_string(),
@@ -2455,6 +2526,7 @@ mod tests {
             assert_eq!(
                 ports.did(),
                 vec![
+                    begun(),
                     insert("Hallo "),
                     Did::Pasted {
                         text: "Hallo".to_string(),
@@ -2473,7 +2545,10 @@ mod tests {
         let mut ports = FakePasteLast::in_use(PasteMethod::CtrlV).with_input_method(inserted());
         ports.app_in_front = Some(app_profile(PasteMethod::CtrlShiftV, Some("Redone")));
         assert_eq!(paste_last_with(&ports), PasteLastOutcome::Pasted);
-        assert_eq!(ports.did(), vec![insert("Redone [app]"), im(ImCall::End)]);
+        assert_eq!(
+            ports.did(),
+            vec![begun(), insert("Redone [app]"), im(ImCall::End)]
+        );
     }
 
     #[test]

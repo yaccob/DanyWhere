@@ -952,9 +952,9 @@ pub(crate) trait EffectRunner: Send + 'static {
     /// applies now (`end_keys::keys_end_now`).
     fn keys_end(&mut self, binding_id: &str) -> Option<String>;
     /// A running recording was cancelled (Escape): no stop follows, so its
-    /// dictation ends here, and with it the input source it selected
-    /// (`delivery::end_input_source`). A stopped recording's dictation ends
-    /// it itself (`dictation_flow`).
+    /// dictation ends here, and with it its own hold on DanyWhere's input
+    /// source, if its start took one (`delivery::take_recording_hold`). A
+    /// stopped recording's dictation ends its hold itself (`dictation_flow`).
     fn recording_cancelled(&mut self) {}
 }
 
@@ -983,7 +983,7 @@ impl EffectRunner for AppEffects {
     }
 
     fn recording_cancelled(&mut self) {
-        crate::delivery::end_input_source(&*crate::input_method::current());
+        drop(crate::delivery::take_recording_hold());
     }
 }
 
@@ -1038,6 +1038,9 @@ fn start(app: &AppHandle, binding_id: &str, hotkey_string: &str) -> bool {
         .is_some_and(|a| a.is_recording());
     if !recording {
         debug!("Start for '{binding_id}' did not begin recording; staying idle");
+        // DanyWhere: no stop or cancel follows; a hold its start may have
+        // taken on DanyWhere's input source ends now.
+        drop(crate::delivery::take_recording_hold());
     }
     recording
 }

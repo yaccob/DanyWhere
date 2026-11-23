@@ -16,6 +16,7 @@ use log::debug;
 
 use crate::app_profiles::OverlayProfile;
 use crate::audio_toolkit::VadPolicy;
+use crate::delivery::InputSourceHold;
 use crate::input_method::InputMethod;
 use crate::managers::audio::{recording_notice_code, RecordingReadiness};
 use crate::managers::transcription::policy::{live_decode, LiveDecode, ModelTraits};
@@ -230,6 +231,9 @@ pub trait StartSession {
     /// DanyWhere's input method (`input_method::current`), whose source the
     /// recording selects when its text is to go through it.
     fn input_method(&self) -> Arc<dyn InputMethod>;
+    /// Keeps the recording's hold on that source until its stop hands it to
+    /// the dictation or a cancel drops it (`delivery::keep_recording_hold`).
+    fn keep_input_source(&self, hold: InputSourceHold);
 }
 
 /// Everything the start of a dictation acts on. The microphone and the
@@ -352,9 +356,14 @@ pub fn start_dictation(binding_id: &str, ports: &StartPorts) -> StartOutcome {
             ports.session.warm_up(&settings, plan.post_process);
             // DanyWhere: DanyWhere's input source while the recording runs,
             // when its text is to go through the input method (user,
-            // 2026-11-23); its end selects the one from before again
-            // (`dictation_flow`, or the coordinator for a cancelled one).
-            crate::delivery::begin_input_source(&settings, &*ports.session.input_method());
+            // 2026-11-23). The recording keeps its hold: its stop hands it
+            // to the dictation, which ends it once the text is in; a cancel
+            // drops it (the coordinator).
+            if let Some(hold) =
+                crate::delivery::begin_input_source(&settings, &ports.session.input_method())
+            {
+                ports.session.keep_input_source(hold);
+            }
             StartOutcome::Recording(cues)
         }
         Err(e) => {
@@ -690,6 +699,8 @@ mod tests {
         streams: bool,
         /// The user has added DanyWhere's input source.
         input_method_added: bool,
+        /// The holds on its source the start kept for the recording.
+        kept: Mutex<Vec<InputSourceHold>>,
     }
 
     impl StartProfile for FakeApp {
@@ -750,6 +761,9 @@ mod tests {
                 inserted(),
                 move |call| note(&log, Did::InputMethod(call)),
             ))
+        }
+        fn keep_input_source(&self, hold: InputSourceHold) {
+            self.kept.lock().unwrap().push(hold);
         }
     }
 
@@ -812,6 +826,7 @@ mod tests {
                     files: Ok(()),
                     streams: false,
                     input_method_added: false,
+                    kept: Mutex::default(),
                 },
                 report: Arc::new(FakeReport(Arc::clone(&log))),
                 log,
@@ -1022,6 +1037,16 @@ mod tests {
                 ],
                 "skipped {skipped}"
             );
+            // The recording keeps its hold; whoever ends the recording ends
+            // it, once.
+            let kept = std::mem::take(&mut *bench.app.kept.lock().unwrap());
+            assert_eq!(kept.len(), 1, "skipped {skipped}");
+            drop(kept);
+            assert_eq!(
+                input_method_calls(&bench.log()),
+                vec![ImCall::Begin, ImCall::End],
+                "skipped {skipped}"
+            );
             fake_microphone::stop(&bench.rm, &bench.mic, START_BINDINGS[0]);
         }
     }
@@ -1045,6 +1070,10 @@ mod tests {
                 input_method_calls(&bench.log()),
                 Vec::new(),
                 "added {added}, {method:?}"
+            );
+            assert!(
+                bench.app.kept.lock().unwrap().is_empty(),
+                "added {added}, {method:?}: no hold to end"
             );
         }
     }

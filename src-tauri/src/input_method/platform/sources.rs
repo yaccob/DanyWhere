@@ -222,6 +222,9 @@ pub mod testing {
         pub selected: Vec<String>,
         pub registered: Vec<PathBuf>,
         pub select_fails: bool,
+        /// The current source and layout can't be read, as when the main
+        /// thread doesn't answer in time.
+        pub current_unknown: bool,
     }
 
     impl FakeSources {
@@ -266,11 +269,13 @@ pub mod testing {
         }
 
         fn current_source(&self) -> Option<String> {
-            Some(self.state.lock().unwrap().current.clone())
+            let state = self.state.lock().unwrap();
+            (!state.current_unknown).then(|| state.current.clone())
         }
 
         fn current_layout(&self) -> Option<String> {
-            Some(self.state.lock().unwrap().layout.clone())
+            let state = self.state.lock().unwrap();
+            (!state.current_unknown).then(|| state.layout.clone())
         }
 
         fn select(&self, id: &str) -> Result<(), String> {

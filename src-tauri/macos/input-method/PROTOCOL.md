@@ -8,7 +8,7 @@ DanyWhere inserts dictations on macOS through an input method of its own once th
 2. Else, with Accessibility, it pastes with ⌘V as before.
 3. Else the text waits as before without Accessibility (the "Insert Last Dictation" service, ⌃⇧V).
 
-Only setups without Accessibility are guided to add the source; with Accessibility it is offered in the settings. DanyWhere selects its source only while a dictation runs (and for "Paste Last"), with the keyboard layout that was in use before, and selects the previous source again afterwards.
+Only setups without Accessibility are guided to add the source; with Accessibility it is offered in the settings. DanyWhere selects its source only while a dictation runs (and for "Paste Last"), with the keyboard layout that was in use before, and selects the previous source again afterwards. Dictations and "Paste Last" overlap (a recording starts while the previous dictation's text is still being inserted): each holds the source from its start until its text is in, and the previous source comes back only when the last hold ends.
 
 ## Names
 

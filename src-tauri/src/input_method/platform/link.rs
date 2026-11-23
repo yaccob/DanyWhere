@@ -101,22 +101,27 @@ struct State {
 }
 
 impl State {
+    /// Sends one message. A write that fails or times out
+    /// ([`WRITE_TIMEOUT`]) may have left part of a line on the socket, which
+    /// would run into the next message: the connection is closed then (the
+    /// input method connects again). Callers wake the waiters
+    /// ([`Shared::changed`]) after a failure.
     fn write(&mut self, message: &ToInputMethod) -> Result<(), LinkError> {
         let Some(stream) = self.connection.as_mut() else {
             return Err(LinkError::NotConnected);
         };
-        stream
-            .write_all(to_line(message).as_bytes())
-            .map_err(|e| LinkError::Io(e.to_string()))
+        if let Err(e) = stream.write_all(to_line(message).as_bytes()) {
+            log::warn!("Input method link: sending failed ({e}); closing the connection");
+            self.disconnect();
+            return Err(LinkError::Io(e.to_string()));
+        }
+        Ok(())
     }
 
-    /// Sends a standing message if connected; logs a failure.
-    fn write_if_connected(&mut self, message: &ToInputMethod) {
-        if self.connection.is_some() {
-            if let Err(e) = self.write(message) {
-                log::warn!("Input method link: sending failed: {e:?}");
-            }
-        }
+    /// Sends a standing message if connected; whether a failed write closed
+    /// the connection.
+    fn write_if_connected(&mut self, message: &ToInputMethod) -> bool {
+        self.connection.is_some() && matches!(self.write(message), Err(LinkError::Io(_)))
     }
 
     fn apply(&mut self, message: FromInputMethod) {
@@ -312,13 +317,17 @@ impl ImLink for Link {
     fn set_layout(&self, source: Option<String>) {
         let mut state = self.shared.lock();
         state.layout = source.clone();
-        state.write_if_connected(&ToInputMethod::Layout { source });
+        if state.write_if_connected(&ToInputMethod::Layout { source }) {
+            self.shared.changed.notify_all();
+        }
     }
 
     fn set_restore(&self, source: Option<String>) {
         let mut state = self.shared.lock();
         state.restore = source.clone();
-        state.write_if_connected(&ToInputMethod::Restore { source });
+        if state.write_if_connected(&ToInputMethod::Restore { source }) {
+            self.shared.changed.notify_all();
+        }
     }
 
     fn insert(&self, text: &str, timeout: Duration) -> Result<InsertAnswer, LinkError> {
@@ -329,10 +338,13 @@ impl ImLink for Link {
             }
             let id = state.next_id;
             state.next_id += 1;
-            state.write(&ToInputMethod::Insert {
+            if let Err(e) = state.write(&ToInputMethod::Insert {
                 id,
                 text: text.to_string(),
-            })?;
+            }) {
+                self.shared.changed.notify_all();
+                return Err(e);
+            }
             state.pending.insert(id, None);
             (id, state.generation)
         };
@@ -356,7 +368,14 @@ impl ImLink for Link {
 
     fn quit(&self) -> bool {
         let mut state = self.shared.lock();
-        state.connection.is_some() && state.write(&ToInputMethod::Quit).is_ok()
+        if state.connection.is_none() {
+            return false;
+        }
+        let sent = state.write(&ToInputMethod::Quit).is_ok();
+        if !sent {
+            self.shared.changed.notify_all();
+        }
+        sent
     }
 }
 
@@ -494,9 +513,11 @@ impl Server {
             let restore = ToInputMethod::Restore {
                 source: state.restore.clone(),
             };
-            state.write_if_connected(&layout);
-            state.write_if_connected(&restore);
+            let closed = state.write_if_connected(&layout) || state.write_if_connected(&restore);
             self.shared.changed.notify_all();
+            if closed {
+                return;
+            }
             state.generation
         };
         log::info!("Input method link: the input method connected");
@@ -991,6 +1012,26 @@ mod tests {
         link.set_layout(None);
         assert_eq!(again.read(), json!({"type": "restore", "source": null}));
         assert_eq!(again.read(), json!({"type": "layout", "source": null}));
+    }
+
+    #[test]
+    fn a_write_that_fails_closes_the_connection() {
+        // A write that timed out may have left part of a line on the
+        // socket, which would run into the next message.
+        let dir = tempfile::tempdir().unwrap();
+        let link = start(dir.path());
+        let mut im = FakeIm::greet(&link, "0.3.3", 1);
+        // Far more than the socket holds while the input method reads
+        // nothing.
+        let text = "x".repeat(4 << 20);
+        let started = Instant::now();
+        assert!(matches!(link.insert(&text, WAIT), Err(LinkError::Io(_))));
+        assert!(started.elapsed() < WAIT, "{:?}", started.elapsed());
+        assert!(!link.connected(), "the connection is closed");
+        assert!(im.closed().is_some(), "the input method sees it closed");
+        // Nothing more goes out on it.
+        assert_eq!(link.insert("y", WAIT), Err(LinkError::NotConnected));
+        assert!(!link.quit());
     }
 
     #[test]

@@ -6,11 +6,18 @@ use tauri::{AppHandle, Emitter};
 use crate::input_method::{self, InputMethodStatus};
 
 /// Where the input method stands. Without one (other platforms, builds
-/// without it) everything is `false`.
+/// without it) everything is `false`. Runs off the main thread: the
+/// settings ask every second, and the answer may wait for the main thread
+/// (input sources) and for the link.
 #[tauri::command]
 #[specta::specta]
-pub fn get_input_method_status() -> InputMethodStatus {
-    input_method::current().status()
+pub async fn get_input_method_status() -> InputMethodStatus {
+    tauri::async_runtime::spawn_blocking(|| input_method::current().status())
+        .await
+        .unwrap_or_else(|e| {
+            log::warn!("Reading the input method's status stopped: {e}");
+            InputMethodStatus::default()
+        })
 }
 
 /// Installs or updates the input method, registers it and opens System

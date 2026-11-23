@@ -82,21 +82,30 @@ pub trait InputMethod: Send + Sync {
     /// The state for the settings and the setup guide.
     fn status(&self) -> InputMethodStatus;
 
-    /// At a recording's start, when its text is to be inserted through the
-    /// input method: remembers the current input source and keyboard layout,
-    /// tells the input method the layout, and selects the DanyWhere source.
-    /// Does nothing when the source isn't added.
+    /// Adds a hold on the DanyWhere source for one operation (a dictation
+    /// whose text is to go through the input method, from its recording's
+    /// start or right before its insertion; a "Paste Last"). Operations
+    /// overlap: a recording starts while the previous dictation's text is
+    /// still being inserted. While another source is current, remembers it
+    /// and its keyboard layout, tells the input method the layout, and
+    /// selects the DanyWhere source; with it current already, nothing more.
+    /// Selects nothing when the source isn't added or the current source
+    /// can't be read. Every `begin` is ended by exactly one [`Self::end`]
+    /// (`delivery::InputSourceHold`).
     fn begin(&self);
 
     /// Inserts `text` into the focused text field through the input method,
-    /// selecting the source first if it isn't the current one (remembering
-    /// what to go back to). Blocks for at most about two seconds; never call
-    /// it on the main thread.
+    /// within a hold ([`Self::begin`]): selects the source first if it isn't
+    /// the current one (remembering the one that is), never changes the
+    /// holds. `NotSelected` when the current source can't be read. Blocks
+    /// for at most about two seconds; never call it on the main thread.
     fn insert(&self, text: &str) -> Result<Inserted, InsertFailure>;
 
-    /// After a dictation or a "Paste Last", whatever its outcome: selects the
-    /// remembered input source again if the DanyWhere source is still the
-    /// current one (one the user chose meanwhile stays).
+    /// Ends one hold ([`Self::begin`]), whatever its operation's outcome.
+    /// Only when the last hold ends: selects the remembered input source
+    /// again unless the user chose another one meanwhile (that one stays),
+    /// and tells the input method to forget the layout and the source to go
+    /// back to.
     fn end(&self);
 
     /// Installs or updates the copy in `~/Library/Input Methods`, registers
@@ -151,6 +160,7 @@ pub fn current() -> Arc<dyn InputMethod> {
 /// test says, and telling the test each call in order.
 #[cfg(test)]
 pub mod testing {
+    use std::sync::atomic::{AtomicBool, Ordering};
     use std::sync::{Arc, Mutex};
 
     use super::{InputMethod, InputMethodStatus, InsertFailure, Inserted};
@@ -172,11 +182,11 @@ pub mod testing {
         })
     }
 
-    /// Records every call, also those a real input method would ignore
+    /// Records every call, also those a real input method would only count
     /// (`begin` and `end` while the source isn't added), so a test sees a
     /// call that shouldn't have been made.
     pub struct FakeInputMethod {
-        added: bool,
+        added: AtomicBool,
         insert: Mutex<Result<Inserted, InsertFailure>>,
         record: Box<dyn Fn(ImCall) + Send + Sync>,
     }
@@ -190,10 +200,16 @@ pub mod testing {
             record: impl Fn(ImCall) + Send + Sync + 'static,
         ) -> Self {
             Self {
-                added,
+                added: AtomicBool::new(added),
                 insert: Mutex::new(insert),
                 record: Box::new(record),
             }
+        }
+
+        /// From now on the source answers as `added` (e.g. `false` as when
+        /// the main thread doesn't answer in time).
+        pub fn set_added(&self, added: bool) {
+            self.added.store(added, Ordering::SeqCst);
         }
 
         /// A fake that keeps its calls in `calls`.
@@ -209,15 +225,16 @@ pub mod testing {
 
     impl InputMethod for FakeInputMethod {
         fn added(&self) -> bool {
-            self.added
+            self.added.load(Ordering::SeqCst)
         }
 
         fn status(&self) -> InputMethodStatus {
+            let added = self.added();
             InputMethodStatus {
                 available: true,
-                installed: self.added,
-                added: self.added,
-                connected: self.added,
+                installed: added,
+                added,
+                connected: added,
             }
         }
 
@@ -227,7 +244,7 @@ pub mod testing {
 
         fn insert(&self, text: &str) -> Result<Inserted, InsertFailure> {
             (self.record)(ImCall::Insert(text.to_string()));
-            if !self.added {
+            if !self.added() {
                 return Err(InsertFailure::NotAdded);
             }
             self.insert.lock().unwrap().clone()

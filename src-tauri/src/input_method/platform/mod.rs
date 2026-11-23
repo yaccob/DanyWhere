@@ -21,7 +21,7 @@ pub mod paths;
 pub mod peer_check;
 pub mod sources;
 
-use std::path::PathBuf;
+use std::path::Path;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -37,11 +37,16 @@ use sources::CarbonInputSources;
 /// How often the link checks that its socket file is still there.
 const LINK_RECHECK: Duration = Duration::from_secs(60);
 
-/// At startup, after the app handle exists: if the app carries an input
-/// method, starts the link, updates an installed copy that differs, undoes
-/// a selection left over after a crash, and installs it as
-/// `input_method::current()`, all on a thread of its own. A build without
-/// one installs nothing, so `current()` stays `NotAvailable`.
+/// At startup, in the app's setup (on the main thread, before the webview
+/// can ask anything): if the app carries an input method, starts the link
+/// and installs it as `input_method::current()` at once, so the first
+/// status the settings and the guides read is the real one. Nothing here
+/// asks the input sources: from the main thread such a call would run
+/// inline, but setup must not wait for macOS. The slow parts, updating an
+/// installed copy that differs (which may wait for the old input method to
+/// quit) and undoing a selection left over after a crash, follow on a
+/// thread of its own ([`AppInputMethod::install_then_prepare`]). A build
+/// without one installs nothing, so `current()` stays `NotAvailable`.
 pub fn start(app: &AppHandle) {
     let app_id = app.config().identifier.clone();
     let bundled = std::env::current_exe()
@@ -65,37 +70,28 @@ pub fn start(app: &AppHandle) {
         bundled.version,
         bundled.file_name
     );
-    let app = app.clone();
-    if let Err(e) = std::thread::Builder::new()
-        .name("input-method-start".into())
-        .spawn(move || start_in_background(app, app_id, home, bundled))
-    {
-        log::error!("Input method: no thread to start on: {e}");
-    }
+    let input_method = app_input_method(app.clone(), &app_id, &home, bundled);
+    Arc::new(input_method).install_then_prepare(crate::input_method::install);
 }
 
-fn start_in_background(app: AppHandle, app_id: String, home: PathBuf, bundled: BundledInputMethod) {
-    let socket = paths::socket_path(&home, &app_id, paths::darwin_user_temp_dir);
+/// The app's input method: its link listening (binding the socket and
+/// reading the app's own signature, no input sources) and its parts.
+fn app_input_method(
+    app: AppHandle,
+    app_id: &str,
+    home: &Path,
+    bundled: BundledInputMethod,
+) -> AppInputMethod {
+    let socket = paths::socket_path(home, app_id, paths::darwin_user_temp_dir);
     let peer_check = Arc::new(CodeSignaturePeerCheck::for_peer(&bundled.id));
     let link = Link::start(socket, peer_check, LINK_RECHECK);
-    let installed = paths::installed_path(&home, &bundled.file_name);
-    let input_method = AppInputMethod::new(
+    let installed = paths::installed_path(home, &bundled.file_name);
+    AppInputMethod::new(
         Some(bundled),
         installed,
         Arc::new(CarbonInputSources::new(app)),
         link,
         Arc::new(MacHost),
         Timeouts::default(),
-    );
-    match input_method.update_installed_copy() {
-        Ok(true) => log::info!("Input method: the installed copy was updated"),
-        Ok(false) => {}
-        Err(e) => log::warn!("Input method: updating the installed copy failed: {e}"),
-    }
-    input_method.leave_leftover_selection();
-    log::info!(
-        "Input method: ready ({:?})",
-        crate::input_method::InputMethod::status(&input_method)
-    );
-    crate::input_method::install(Arc::new(input_method));
+    )
 }

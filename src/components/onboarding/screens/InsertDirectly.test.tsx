@@ -119,6 +119,31 @@ describe("onboarding: when Insert Directly comes", () => {
     });
   }
 
+  test("a relaunch resumes on it, also when the status comes late", async () => {
+    // The backend installs its input method before the window can ask, so
+    // the first answer is the real one; until it comes, no other screen
+    // takes the step's place.
+    let answer: (state: InputMethodStatus) => void = () => {};
+    mockCommand(
+      "getInputMethodStatus",
+      () =>
+        new Promise<InputMethodStatus>((resolve) => {
+          answer = resolve;
+        }),
+    );
+    await renderFlow({
+      skipped: true,
+      at: "insertDirectly",
+      inputMethod: null,
+    });
+    expect(visibleText()).not.toContain(TITLE);
+    expect(button("Back")).toBeNull();
+    expect(step()).toBe("insertDirectly");
+    answer(status({}));
+    await waitFor(() => expect(visibleText()).toContain(TITLE));
+    expect(step()).toBe("insertDirectly");
+  });
+
   test("counts as a step of the flow", async () => {
     await renderFlow({ skipped: true, at: "insertDirectly" });
     // Welcome, Insert Directly, Model, Demo, Try it, All set: the

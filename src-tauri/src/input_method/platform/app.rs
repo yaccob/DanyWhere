@@ -50,6 +50,26 @@ struct Remembered {
     layout: Option<String>,
 }
 
+/// The operations that hold the DanyWhere source (`InputMethod::begin`), and
+/// what to go back to when the last of them ends. Dictations and "Paste
+/// Last" overlap: a recording starts while the previous dictation's text is
+/// still being inserted.
+#[derive(Debug, Default)]
+struct Holds {
+    /// Operations between their `begin` and their `end`.
+    count: usize,
+    remembered: Option<Remembered>,
+}
+
+/// Why the DanyWhere source isn't selected.
+enum NotSelected {
+    /// The current source can't be read (the main thread didn't answer in
+    /// time): selecting its own then could leave it selected for good.
+    CurrentUnknown,
+    /// Selecting it failed.
+    Failed,
+}
+
 /// The input method of this app on macOS.
 pub struct AppInputMethod {
     bundled: Option<BundledInputMethod>,
@@ -58,7 +78,7 @@ pub struct AppInputMethod {
     link: Arc<dyn ImLink>,
     host: Arc<dyn Host>,
     timeouts: Timeouts,
-    remembered: Mutex<Option<Remembered>>,
+    holds: Mutex<Holds>,
 }
 
 impl AppInputMethod {
@@ -79,7 +99,7 @@ impl AppInputMethod {
             link,
             host,
             timeouts,
-            remembered: Mutex::new(None),
+            holds: Mutex::new(Holds::default()),
         }
     }
 
@@ -98,31 +118,38 @@ impl AppInputMethod {
         self.sources.current_source().as_deref() == Some(id)
     }
 
-    fn remembered(&self) -> std::sync::MutexGuard<'_, Option<Remembered>> {
-        self.remembered
+    /// The holds, locked: `begin`, `insert`'s selecting, `end` and undoing a
+    /// leftover selection each run as one step.
+    fn holds(&self) -> std::sync::MutexGuard<'_, Holds> {
+        self.holds
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
     }
 
-    /// Remembers the current source and layout and tells the input method,
-    /// unless the DanyWhere source is already current. Whether it was.
-    fn remember_current(&self, id: &str) -> bool {
+    /// Makes the DanyWhere source the current one. When another is current,
+    /// remembers it and its keyboard layout to go back to (the user's choice
+    /// made meanwhile replaces what was remembered) and tells the input
+    /// method. Selects nothing while the current source can't be read.
+    fn select_ours(&self, holds: &mut Holds, id: &str) -> Result<(), NotSelected> {
         let Some(current) = self.sources.current_source() else {
-            log::warn!("Input method: the current input source is unknown");
-            return false;
+            log::warn!("Input method: the current input source is unknown; not selecting its own");
+            return Err(NotSelected::CurrentUnknown);
         };
         if current == id {
-            return true;
+            return Ok(());
         }
         let layout = self.sources.current_layout();
         log::debug!("Input method: remembering {current} (layout {layout:?})");
         self.link.set_layout(layout.clone());
         self.link.set_restore(Some(current.clone()));
-        *self.remembered() = Some(Remembered {
+        holds.remembered = Some(Remembered {
             source: current,
             layout,
         });
-        false
+        self.sources.select(id).map_err(|e| {
+            log::warn!("Input method: selecting its source failed: {e}");
+            NotSelected::Failed
+        })
     }
 
     /// Replaces the installed copy with the bundled one and registers it.
@@ -169,14 +196,48 @@ impl AppInputMethod {
         Ok(true)
     }
 
-    /// At startup, before any dictation: if the DanyWhere source is the
-    /// current one (left over after a crash), selects an ASCII-capable
-    /// keyboard layout. Whether it did.
+    /// At startup: installs this input method with `install`
+    /// (`input_method::install`) at once, asking macOS nothing, so whoever
+    /// asks next gets it; then, on a thread of its own, updates an installed
+    /// copy that differs ([`Self::update_installed_copy`]) and undoes a
+    /// selection left over after a crash ([`Self::leave_leftover_selection`],
+    /// which leaves a selection alone that a dictation begun meanwhile
+    /// holds). The thread, for tests.
+    pub fn install_then_prepare(
+        self: Arc<Self>,
+        install: impl FnOnce(Arc<dyn InputMethod>),
+    ) -> Option<std::thread::JoinHandle<()>> {
+        install(Arc::clone(&self) as Arc<dyn InputMethod>);
+        let spawned = std::thread::Builder::new()
+            .name("input-method-start".into())
+            .spawn(move || {
+                match self.update_installed_copy() {
+                    Ok(true) => log::info!("Input method: the installed copy was updated"),
+                    Ok(false) => {}
+                    Err(e) => log::warn!("Input method: updating the installed copy failed: {e}"),
+                }
+                self.leave_leftover_selection();
+                log::info!("Input method: ready ({:?})", self.status());
+            });
+        match spawned {
+            Ok(handle) => Some(handle),
+            Err(e) => {
+                log::error!("Input method: no thread to start on: {e}");
+                None
+            }
+        }
+    }
+
+    /// At startup: if the DanyWhere source is the current one (left over
+    /// after a crash), selects an ASCII-capable keyboard layout. Whether it
+    /// did. Nothing while an operation holds the source: the app installs
+    /// its input method first, so a dictation may already have begun.
     pub fn leave_leftover_selection(&self) -> bool {
         let Some(id) = self.id() else {
             return false;
         };
-        if !self.ours_is_current(id) || self.remembered().is_some() {
+        let holds = self.holds();
+        if holds.count > 0 || !self.ours_is_current(id) {
             return false;
         }
         let Some(layout) = self.sources.ascii_capable_layout() else {
@@ -217,19 +278,18 @@ impl InputMethod for AppInputMethod {
     }
 
     fn begin(&self) {
+        // Counted whatever happens below: its `end` comes all the same.
+        let mut holds = self.holds();
+        holds.count += 1;
+        log::debug!("Input method: {} operation(s) hold its source", holds.count);
         let Some(id) = self.id() else {
             return;
         };
         if !self.added() {
             return;
         }
-        if self.remember_current(id) {
-            log::debug!("Input method: its source is current already");
-            return;
-        }
-        if let Err(e) = self.sources.select(id) {
-            log::warn!("Input method: selecting its source failed: {e}");
-        }
+        // Errors are logged; inserting tries again and falls back.
+        let _ = self.select_ours(&mut holds, id);
     }
 
     fn insert(&self, text: &str) -> Result<Inserted, InsertFailure> {
@@ -240,11 +300,9 @@ impl InputMethod for AppInputMethod {
         if !self.added() {
             return Err(InsertFailure::NotAdded);
         }
-        if !self.remember_current(id) {
-            if let Err(e) = self.sources.select(id) {
-                log::warn!("Input method: selecting its source failed: {e}");
-                return Err(InsertFailure::NotSelected);
-            }
+        // The user may have chosen another source since `begin`.
+        if self.select_ours(&mut self.holds(), id).is_err() {
+            return Err(InsertFailure::NotSelected);
         }
         let left =
             |limit: Duration| limit.min(self.timeouts.total.saturating_sub(started.elapsed()));
@@ -288,21 +346,37 @@ impl InputMethod for AppInputMethod {
     }
 
     fn end(&self) {
+        let mut holds = self.holds();
+        if holds.count == 0 {
+            log::warn!("Input method: an end without its begin; ignored");
+            return;
+        }
+        holds.count -= 1;
+        if holds.count > 0 {
+            log::debug!(
+                "Input method: {} operation(s) still hold its source",
+                holds.count
+            );
+            return;
+        }
         let Some(id) = self.id() else {
             return;
         };
-        let remembered = self.remembered().take();
-        if let Some(remembered) = remembered {
-            if self.ours_is_current(id) {
-                match self.sources.select(&remembered.source) {
+        if let Some(remembered) = holds.remembered.take() {
+            match self.sources.current_source() {
+                Some(current) if current != id => {
+                    log::debug!("Input method: another source was chosen meanwhile; it stays");
+                }
+                // DanyWhere's, or unknown (the main thread didn't answer):
+                // back to the one from before rather than leaving its own
+                // selected.
+                _ => match self.sources.select(&remembered.source) {
                     Ok(()) => log::debug!("Input method: selected {} again", remembered.source),
                     Err(e) => log::warn!(
                         "Input method: selecting {} again failed: {e}",
                         remembered.source
                     ),
-                }
-            } else {
-                log::debug!("Input method: another source was chosen meanwhile; it stays");
+                },
             }
         }
         self.link.set_restore(None);
@@ -486,7 +560,7 @@ mod tests {
         sources: Arc<FakeSources>,
         link: Arc<FakeLink>,
         host: Arc<FakeHost>,
-        im: AppInputMethod,
+        im: Arc<AppInputMethod>,
     }
 
     /// An app with a bundled input method; `installed` puts a copy (the
@@ -516,14 +590,14 @@ mod tests {
         let sources = Arc::new(FakeSources::new(&added_ids, GERMAN));
         let link = Arc::new(FakeLink::new(connected));
         let host = Arc::new(FakeHost::default());
-        let im = AppInputMethod::new(
+        let im = Arc::new(AppInputMethod::new(
             Some(bundled.clone()),
             installed_path.clone(),
             sources.clone(),
             link.clone(),
             host.clone(),
             short(),
-        );
+        ));
         Setup {
             _dir: dir,
             bundled,
@@ -703,8 +777,12 @@ mod tests {
     }
 
     #[test]
-    fn insert_without_begin_selects_ours_and_end_goes_back() {
+    fn insert_selects_ours_where_begin_could_not_and_end_goes_back() {
         let s = ready();
+        s.sources.state.lock().unwrap().select_fails = true;
+        s.im.begin();
+        assert!(s.sources.selected().is_empty());
+        s.sources.state.lock().unwrap().select_fails = false;
         assert!(s.im.insert("Paste Last").is_ok());
         assert_eq!(s.sources.selected(), vec![OURS]);
         assert_eq!(
@@ -727,10 +805,11 @@ mod tests {
     }
 
     #[test]
-    fn end_without_anything_remembered_selects_nothing() {
+    fn an_end_without_its_begin_changes_nothing() {
         let s = ready();
         s.im.end();
         assert!(s.sources.selected().is_empty());
+        assert!(s.link.log().is_empty(), "{:?}", s.link.log());
         s.im.begin();
         s.im.end();
         s.im.end();
@@ -739,6 +818,136 @@ mod tests {
             vec![OURS, GERMAN],
             "forgotten after the first end"
         );
+        assert_eq!(
+            s.link.log(),
+            vec![
+                format!("layout {GERMAN}"),
+                format!("restore {GERMAN}"),
+                "restore null".to_string(),
+                "layout null".to_string()
+            ]
+        );
+    }
+
+    // --- holds: one per operation, the last one goes back ---
+
+    #[test]
+    fn overlapping_holds_go_back_only_when_the_last_ends() {
+        let s = ready();
+        // A dictation's recording, then the next one's while the first
+        // one's text is still being inserted.
+        s.im.begin();
+        s.im.begin();
+        assert_eq!(s.sources.selected(), vec![OURS], "selected once");
+        s.im.end();
+        assert_eq!(s.sources.current(), OURS, "the second recording keeps it");
+        assert!(
+            !s.link.log().contains(&"restore null".to_string()),
+            "{:?}",
+            s.link.log()
+        );
+        s.im.end();
+        assert_eq!(s.sources.selected(), vec![OURS, GERMAN]);
+        assert_eq!(s.sources.current(), GERMAN);
+        assert_eq!(
+            s.link.log()[2..],
+            ["restore null".to_string(), "layout null".to_string()]
+        );
+    }
+
+    #[test]
+    fn three_overlapping_operations_go_back_once_at_the_end() {
+        let s = ready();
+        s.im.begin(); // dictation A
+        s.im.begin(); // dictation B records while A's text goes in
+        assert!(s.im.insert("A").is_ok());
+        s.im.end(); // A is in
+        s.im.begin(); // "Paste Last" during B's recording
+        assert!(s.im.insert("Paste Last").is_ok());
+        s.im.end();
+        assert_eq!(s.sources.current(), OURS, "B still records");
+        assert!(s.im.insert("B").is_ok());
+        s.im.end(); // B is in
+        assert_eq!(s.sources.current(), GERMAN);
+        assert_eq!(
+            s.sources.selected(),
+            vec![OURS, GERMAN],
+            "selected once, back once"
+        );
+    }
+
+    #[test]
+    fn inserting_changes_no_hold() {
+        let s = ready();
+        s.im.begin();
+        assert!(s.im.insert("x").is_ok());
+        assert!(s.im.insert("y").is_ok());
+        s.im.end();
+        assert_eq!(s.sources.current(), GERMAN, "one end for one begin");
+    }
+
+    // --- the current source can't be read (the main thread didn't answer) ---
+
+    fn current_unknown(s: &Setup, unknown: bool) {
+        s.sources.state.lock().unwrap().current_unknown = unknown;
+    }
+
+    #[test]
+    fn begin_selects_nothing_while_the_current_source_is_unknown() {
+        let s = ready();
+        current_unknown(&s, true);
+        s.im.begin();
+        assert!(
+            s.sources.selected().is_empty(),
+            "{:?}",
+            s.sources.selected()
+        );
+        assert!(s.link.log().is_empty(), "{:?}", s.link.log());
+        s.im.end();
+        assert!(s.sources.selected().is_empty());
+        assert_eq!(s.sources.current(), GERMAN);
+    }
+
+    #[test]
+    fn insert_falls_back_while_the_current_source_is_unknown() {
+        let s = ready();
+        current_unknown(&s, true);
+        s.im.begin();
+        assert_eq!(s.im.insert("x"), Err(InsertFailure::NotSelected));
+        assert!(
+            s.sources.selected().is_empty(),
+            "{:?}",
+            s.sources.selected()
+        );
+        assert!(
+            !s.link.log().iter().any(|l| l.starts_with("insert")),
+            "{:?}",
+            s.link.log()
+        );
+        s.im.end();
+        assert_eq!(s.sources.current(), GERMAN);
+    }
+
+    #[test]
+    fn a_hold_that_began_unknown_remembers_once_the_source_is_known() {
+        let s = ready();
+        current_unknown(&s, true);
+        s.im.begin();
+        current_unknown(&s, false);
+        assert!(s.im.insert("x").is_ok());
+        s.im.end();
+        assert_eq!(s.sources.selected(), vec![OURS, GERMAN]);
+    }
+
+    #[test]
+    fn the_last_end_goes_back_when_the_current_source_cant_be_read() {
+        // Better back to the source from before than DanyWhere's left
+        // selected.
+        let s = ready();
+        s.im.begin();
+        current_unknown(&s, true);
+        s.im.end();
+        assert_eq!(s.sources.selected(), vec![OURS, GERMAN]);
     }
 
     #[test]
@@ -943,5 +1152,85 @@ mod tests {
         let s = ready();
         assert!(!s.im.leave_leftover_selection());
         assert!(s.sources.selected().is_empty());
+    }
+
+    /// Starts `s`'s input method as the app does at startup and waits for
+    /// the work after installing it. Whether `install` had been called when
+    /// it returned, and whether the copy was still outdated then.
+    fn install_then_prepare(s: &Setup) -> Option<bool> {
+        let seen: Arc<Mutex<Option<bool>>> = Arc::default();
+        let prepared = {
+            let seen = Arc::clone(&seen);
+            let (bundled, installed) = (s.bundled.clone(), s.installed.clone());
+            Arc::clone(&s.im).install_then_prepare(move |input_method| {
+                assert!(input_method.status().available);
+                *seen.lock().unwrap() = Some(crate::input_method::platform::install::differs(
+                    &bundled.path,
+                    &installed,
+                    &bundled.executable,
+                ));
+            })
+        };
+        let installed_at_once = *seen.lock().unwrap();
+        prepared.expect("a thread").join().expect("it finished");
+        installed_at_once
+    }
+
+    #[test]
+    fn at_start_it_is_installed_at_once_and_the_copy_updated_afterwards() {
+        // An outdated copy whose input method doesn't quit in time: the
+        // update waits for it, but the settings may ask right away.
+        let s = setup(true, true, true);
+        s.link.state.lock().unwrap().quit_disconnects = false;
+        fs::write(s.installed.join("Contents/MacOS/DanyWhereInput"), b"old").unwrap();
+        let installed_at_once = install_then_prepare(&s);
+        assert_eq!(
+            installed_at_once,
+            Some(true),
+            "installed before it returned, with the copy not yet updated"
+        );
+        assert!(!crate::input_method::platform::install::differs(
+            &s.bundled.path,
+            &s.installed,
+            &s.bundled.executable
+        ));
+        assert_eq!(s.host.terminated(), vec![OURS.to_string()]);
+    }
+
+    #[test]
+    fn at_start_a_leftover_selection_is_undone_after_installing() {
+        let s = ready();
+        s.sources.user_selects(OURS);
+        s.sources
+            .state
+            .lock()
+            .unwrap()
+            .added
+            .push("com.apple.keylayout.ABC".into());
+        let installed_at_once = install_then_prepare(&s);
+        assert!(installed_at_once.is_some());
+        assert_eq!(s.sources.current(), "com.apple.keylayout.ABC");
+    }
+
+    #[test]
+    fn a_selection_a_running_dictation_holds_is_no_leftover() {
+        // The app installs its input method before this runs, so a
+        // dictation may already hold the source, even one the user had
+        // selected by hand.
+        for chosen_by_hand in [false, true] {
+            let s = ready();
+            s.sources
+                .state
+                .lock()
+                .unwrap()
+                .added
+                .push("com.apple.keylayout.ABC".into());
+            if chosen_by_hand {
+                s.sources.user_selects(OURS);
+            }
+            s.im.begin();
+            assert!(!s.im.leave_leftover_selection(), "by hand {chosen_by_hand}");
+            assert_eq!(s.sources.current(), OURS, "by hand {chosen_by_hand}");
+        }
     }
 }

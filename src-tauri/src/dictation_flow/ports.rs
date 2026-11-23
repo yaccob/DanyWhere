@@ -121,8 +121,8 @@ pub trait Deliver {
     /// says why when it did.
     fn put_on_clipboard_if_requested(&self, session: u64, text: &str) -> Option<ClipboardReason>;
     /// DanyWhere's input method (`input_method::current`): whether its
-    /// source is added, inserting through it, and selecting the input
-    /// source from before again at the dictation's end.
+    /// source is added, holding that source for the dictation
+    /// (`delivery::InputSourceHold`) and inserting through it.
     fn input_method(&self) -> Arc<dyn InputMethod>;
     /// Sends `keys`, the "Append" value's key presses, after the text was
     /// inserted through the input method (`clipboard::press_keys`).
