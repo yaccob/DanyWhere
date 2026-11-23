@@ -51,12 +51,26 @@ describe("When Held", () => {
     });
   }
 
+  // The second start shortcut's line shows only while DanyWhere takes that
+  // shortcut, i.e. while some dictation can post-process (`secondStartTaken`).
+  const withSecondStart = {
+    shortcut_activation: "push_to_talk",
+    post_process_enabled: true,
+  } as const;
+
   test("names each start shortcut's line by its combination", async () => {
-    await renderGeneral({ defaults: { shortcut_activation: "push_to_talk" } });
+    await renderGeneral({ defaults: withSecondStart });
 
     expect(screen.getByText("⌃ Space held")).toBeTruthy();
     expect(screen.getByText("⌃⇧ Space held")).toBeTruthy();
     expect(rawTextIn()).toEqual([]);
+  });
+
+  test("the second start shortcut's line shows only while DanyWhere takes it", async () => {
+    await renderGeneral({ defaults: { shortcut_activation: "push_to_talk" } });
+
+    expect(screen.getByText("⌃ Space held")).toBeTruthy();
+    expect(screen.queryByText("⌃⇧ Space held")).toBeNull();
   });
 
   test("a start shortcut without a combination is named instead", async () => {
@@ -64,9 +78,7 @@ describe("When Held", () => {
       ...(defaultValues().bindings as Record<string, unknown>),
       transcribe_with_post_process: binding("transcribe_with_post_process", ""),
     };
-    await renderGeneral({
-      defaults: { shortcut_activation: "push_to_talk", bindings },
-    });
+    await renderGeneral({ defaults: { ...withSecondStart, bindings } });
 
     expect(screen.getByText("Second Start Shortcut held")).toBeTruthy();
   });
@@ -90,7 +102,7 @@ describe("When Held", () => {
   });
 
   test("Send Context can be checked only together with Post-process", async () => {
-    await renderGeneral({ defaults: { shortcut_activation: "push_to_talk" } });
+    await renderGeneral({ defaults: withSecondStart });
 
     const context = (title: string) =>
       within(heldLine(title)).getByRole("checkbox", {
