@@ -878,9 +878,6 @@
       }
     },
     "postProcessing": {
-      "hotkey": {
-        "title": "Tasto di scelta rapida"
-      },
       "api": {
         "title": "API",
         "provider": {

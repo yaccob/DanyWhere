@@ -261,16 +261,6 @@ export const PostProcessingSettings: React.FC = () => {
 
   return (
     <div className="max-w-3xl w-full mx-auto space-y-6">
-      <SettingsGroup title={t("settings.postProcessing.hotkey.title")}>
-        <ScopedSetting field="bindings" entry="transcribe_with_post_process">
-          <ShortcutInput
-            shortcutId="transcribe_with_post_process"
-            descriptionMode="tooltip"
-            grouped={true}
-          />
-        </ScopedSetting>
-      </SettingsGroup>
-
       <SettingsGroup title={t("settings.postProcessing.api.title")}>
         <PostProcessingSettingsApi />
       </SettingsGroup>

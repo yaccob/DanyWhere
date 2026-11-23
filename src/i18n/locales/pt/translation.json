@@ -878,9 +878,6 @@
       }
     },
     "postProcessing": {
-      "hotkey": {
-        "title": "Tecla de atalho"
-      },
       "api": {
         "title": "API",
         "provider": {

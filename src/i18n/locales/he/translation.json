@@ -878,9 +878,6 @@
       }
     },
     "postProcessing": {
-      "hotkey": {
-        "title": "קיצור מקשים"
-      },
       "api": {
         "title": "API",
         "provider": {

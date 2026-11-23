@@ -134,3 +134,29 @@ export const endKeyErrorKey = (error: string): string | null => {
     return "settings.endKeys.errors.cannotEnd";
   return null;
 };
+
+/** What [`secondStartTaken`] reads of the settings in use. */
+export interface TakenFrom {
+  post_process_enabled?: boolean;
+  profile_auto_by_app?: boolean;
+  active_profile_id?: string;
+  profiles?: ReadonlyArray<{
+    id: string;
+    apps?: readonly string[];
+    values?: { post_process_enabled?: boolean };
+  }>;
+}
+
+/** Whether DanyWhere takes the second start shortcut: while some dictation
+ * can post-process, as `app_profiles::post_processing_reachable` decides
+ * (Handy's rule, kept with the move to General; user, 2026-11-23). The
+ * flat values are the ones in use. */
+export const secondStartTaken = (settings: TakenFrom): boolean =>
+  settings.post_process_enabled === true ||
+  (settings.profile_auto_by_app === true &&
+    (settings.profiles ?? []).some(
+      (profile) =>
+        profile.id !== settings.active_profile_id &&
+        (profile.apps ?? []).length > 0 &&
+        profile.values?.post_process_enabled === true,
+    ));

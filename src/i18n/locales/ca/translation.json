@@ -878,9 +878,6 @@
       }
     },
     "postProcessing": {
-      "hotkey": {
-        "title": "Drecera de teclat"
-      },
       "api": {
         "title": "API",
         "provider": {

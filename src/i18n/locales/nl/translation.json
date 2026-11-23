@@ -878,9 +878,6 @@
       }
     },
     "postProcessing": {
-      "hotkey": {
-        "title": "Sneltoets"
-      },
       "api": {
         "title": "API",
         "provider": {

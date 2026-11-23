@@ -878,9 +878,6 @@
       }
     },
     "postProcessing": {
-      "hotkey": {
-        "title": "Klávesová zkratka"
-      },
       "api": {
         "title": "API",
         "provider": {
