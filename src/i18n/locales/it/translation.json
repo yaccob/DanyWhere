@@ -486,6 +486,7 @@
       "postProcess": "Post-elabora",
       "sendContext": "Invia contesto",
       "sendContextHint": "Solo con la post-elaborazione: le dettature precedenti della stessa finestra vengono inviate come contesto.",
+      "postProcessOff": "La post-elaborazione è disattivata: una dettatura terminata in questo modo non viene post-elaborata. Attiva «Post-Elaborazione» in Avanzate.",
       "add": "Aggiungi scorciatoia di fine",
       "addPressKeys": "Premi la combinazione per la nuova scorciatoia di fine",
       "delete": "Elimina {{name}}",

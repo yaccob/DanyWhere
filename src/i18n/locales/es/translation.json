@@ -486,6 +486,7 @@
       "postProcess": "Posprocesar",
       "sendContext": "Enviar contexto",
       "sendContextHint": "Solo con posprocesamiento: los dictados anteriores de la misma ventana se envían como contexto.",
+      "postProcessOff": "El post procesamiento está desactivado: un dictado terminado de esta manera no se posprocesa. Activa «Post procesamiento» en Avanzado.",
       "add": "Añadir atajo de fin",
       "addPressKeys": "Pulsa la combinación para el nuevo atajo de fin",
       "delete": "Eliminar {{name}}",

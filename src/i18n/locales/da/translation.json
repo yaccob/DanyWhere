@@ -486,6 +486,7 @@
       "postProcess": "Efterbehandl",
       "sendContext": "Send kontekst",
       "sendContextHint": "Kun med efterbehandling: tidligere dikteringer fra samme vindue sendes med som kontekst.",
+      "postProcessOff": "Efterbehandling er slået fra: en diktering, der afsluttes på denne måde, efterbehandles ikke. Slå »Efterbehandling« til under Avanceret.",
       "add": "Tilføj afslutningsgenvej",
       "addPressKeys": "Tryk på tastekombinationen til den nye afslutningsgenvej",
       "delete": "Slet {{name}}",

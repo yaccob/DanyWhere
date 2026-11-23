@@ -113,6 +113,91 @@ describe("When Held", () => {
   });
 });
 
+// With post-processing off no hold end post-processes either (user,
+// 2026-11-23, option a): a line whose "Post-process" is checked says so, for
+// the scope shown; its box stays usable.
+describe("When Held with post-processing off", () => {
+  const HINT =
+    "Post-processing is off: a dictation ended this way isn't post-processed. Turn on “Post Processing” under Advanced.";
+  const hintIn = (title: string) =>
+    within(heldLine(title)).queryByText(HINT) !== null;
+  const posting = {
+    shortcut_activation: "push_to_talk",
+    hold_ends: {
+      transcribe: holdEnd({ post_process: true }),
+      transcribe_with_post_process: holdEnd({ post_process: true }),
+    },
+  } as const;
+
+  test("a held end with Post-process checked says that it doesn't post-process", async () => {
+    await renderGeneral({ defaults: posting });
+
+    // Only the first start shortcut's line shows without post-processing.
+    // (The page's End Shortcuts say it too, for the built-in end with
+    // post-processing.)
+    expect(hintIn("⌃ Space held")).toBe(true);
+    expect(screen.queryByText("⌃⇧ Space held")).toBeNull();
+    const box = within(heldLine("⌃ Space held")).getByRole("checkbox", {
+      name: "Post-process",
+    }) as HTMLInputElement;
+    expect([box.checked, box.disabled]).toEqual([true, false]);
+    expect(rawTextIn()).toEqual([]);
+  });
+
+  test("a held end without Post-process says nothing", async () => {
+    await renderGeneral({ defaults: { shortcut_activation: "push_to_talk" } });
+
+    expect(hintIn("⌃ Space held")).toBe(false);
+  });
+
+  test("with post-processing on, no line says so", async () => {
+    await renderGeneral({
+      defaults: { ...posting, post_process_enabled: true },
+    });
+
+    expect(screen.getByText("⌃⇧ Space held")).toBeTruthy();
+    expect(visibleText()).not.toContain(HINT);
+  });
+
+  test("in a profile its own switch counts, not the defaults'", async () => {
+    const WORK = "profile_1795300000001";
+    const work = (postProcess: boolean): SettingsSpec => ({
+      defaults: { ...posting, post_process_enabled: !postProcess },
+      profiles: [
+        {
+          id: WORK,
+          name: "Work",
+          own: ["post_process_enabled"],
+          values: { post_process_enabled: postProcess },
+        },
+      ],
+    });
+
+    await renderGeneral(work(false), { kind: "profile", id: WORK });
+    expect(hintIn("⌃ Space held")).toBe(true);
+    expect(rawTextIn()).toEqual([]);
+  });
+
+  test("in a profile with post-processing on, no line says so", async () => {
+    const WORK = "profile_1795300000001";
+    await renderGeneral(
+      {
+        defaults: { ...posting, post_process_enabled: false },
+        profiles: [
+          {
+            id: WORK,
+            name: "Work",
+            own: ["post_process_enabled"],
+            values: { post_process_enabled: true },
+          },
+        ],
+      },
+      { kind: "profile", id: WORK },
+    );
+    expect(visibleText()).not.toContain(HINT);
+  });
+});
+
 describe("When Held in a profile", () => {
   const WORK = "profile_1795300000001";
   const spec: SettingsSpec = {

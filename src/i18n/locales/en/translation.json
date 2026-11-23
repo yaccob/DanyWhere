@@ -486,6 +486,7 @@
       "postProcess": "Post-process",
       "sendContext": "Send Context",
       "sendContextHint": "Only with post-processing: earlier dictations from the same window go along as context.",
+      "postProcessOff": "Post-processing is off: a dictation ended this way isn't post-processed. Turn on “Post Processing” under Advanced.",
       "add": "Add End Shortcut",
       "addPressKeys": "Press the combination for the new end shortcut",
       "delete": "Delete {{name}}",

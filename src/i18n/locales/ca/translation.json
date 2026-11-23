@@ -486,6 +486,7 @@
       "postProcess": "Posprocessa",
       "sendContext": "Envia el context",
       "sendContextHint": "Només amb posprocessament: els dictats anteriors de la mateixa finestra s'envien com a context.",
+      "postProcessOff": "El postprocessament està desactivat: un dictat acabat d'aquesta manera no es posprocessa. Activeu «Postprocessament» a Avançat.",
       "add": "Afegeix una drecera de final",
       "addPressKeys": "Prem la combinació per a la nova drecera de final",
       "delete": "Suprimeix {{name}}",

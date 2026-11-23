@@ -8,6 +8,7 @@ import { formatKeyCombination } from "@/lib/utils/keyboard";
 import {
   START_BINDINGS,
   holdEndOf,
+  postProcessingOn,
   secondStartTaken,
   type TakenFrom,
 } from "@/lib/endKeys";
@@ -43,6 +44,11 @@ export const HoldEndsSetting: React.FC = () => {
       binding !== "transcribe_with_post_process" ||
       secondStartTaken((inUse ?? {}) as TakenFrom),
   );
+  // Whether the page's scope post-processes at all: with its switch off no
+  // held end does (user, 2026-11-23, option a).
+  const postProcessingOff = !postProcessingOn({
+    post_process_enabled: getSetting("post_process_enabled"),
+  });
 
   /** Changes the end of `binding`; both are written, as one value. */
   const change = async (binding: string, part: Partial<HoldEnd>) => {
@@ -132,6 +138,11 @@ export const HoldEndsSetting: React.FC = () => {
                   {t("settings.endKeys.sendContext")}
                 </label>
               </div>
+              {end.post_process && postProcessingOff && (
+                <p className="text-xs text-ink-3">
+                  {t("settings.endKeys.postProcessOff")}
+                </p>
+              )}
             </div>
           );
         })}

@@ -15,6 +15,7 @@ import {
   holdPossible,
   nameToStore,
   newEndKey,
+  postProcessingOn,
   removeEndKey,
   secondStartTaken,
   startsSharing,
@@ -381,6 +382,18 @@ cases.push(
     },
   ],
 );
+
+// With post-processing off no end post-processes (user, 2026-11-23, option
+// a; `app_profiles::effective_post_process`): the pages say so.
+cases.push([
+  "a dictation can post-process only with its values' switch on",
+  () => {
+    assert.equal(postProcessingOn({ post_process_enabled: true }), true);
+    assert.equal(postProcessingOn({ post_process_enabled: false }), false);
+    assert.equal(postProcessingOn({ post_process_enabled: null }), false);
+    assert.equal(postProcessingOn({}), false, "not known: off");
+  },
+]);
 
 let failed = 0;
 for (const [name, check] of cases) {
