@@ -878,9 +878,6 @@
       }
     },
     "postProcessing": {
-      "hotkey": {
-        "title": "مفتاح الاختصار"
-      },
       "api": {
         "title": "API",
         "provider": {

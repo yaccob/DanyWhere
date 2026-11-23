@@ -878,9 +878,6 @@
       }
     },
     "postProcessing": {
-      "hotkey": {
-        "title": "Бърз клавиш"
-      },
       "api": {
         "title": "API",
         "provider": {

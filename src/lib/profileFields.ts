@@ -55,7 +55,6 @@ export const PROFILE_FIELDS = {
   bindings: {
     page: "general",
     label: `${FIELDS}.shortcuts`,
-    entryPages: { transcribe_with_post_process: "postprocessing" },
   },
   shortcut_activation: {
     page: "general",

@@ -878,9 +878,6 @@
       }
     },
     "postProcessing": {
-      "hotkey": {
-        "title": "快捷键"
-      },
       "api": {
         "title": "API",
         "provider": {

@@ -96,10 +96,10 @@ check("every name is an English string without placeholders", () => {
   }
 });
 
-check("the post-processing shortcut is on the post-processing page", () => {
+check("the second start shortcut is on General, under the first", () => {
   assert.equal(
     pageOfValue("bindings", "transcribe_with_post_process"),
-    "postprocessing",
+    "general",
   );
   assert.equal(pageOfValue("bindings", "transcribe"), "general");
   assert.equal(pageOfValue("bindings"), "general");
@@ -132,15 +132,16 @@ check("page reset: whole fields, and entries placed apart one by one", () => {
     { field: "word_lists", entry: "a" },
     { field: "word_lists", entry: "b", off: true },
   ];
+  // Every shortcut is on General now, so its page resets them as a whole.
   assert.deepEqual(resetPlan(own, "general"), {
-    fields: [],
-    entries: [{ field: "bindings", entry: "transcribe" }],
-    count: 1,
+    fields: ["bindings"],
+    entries: [],
+    count: 2,
   });
   assert.deepEqual(resetPlan(own, "postprocessing"), {
     fields: [],
-    entries: [{ field: "bindings", entry: "transcribe_with_post_process" }],
-    count: 1,
+    entries: [],
+    count: 0,
   });
   assert.deepEqual(resetPlan(own, "advanced"), {
     fields: ["paste_method", "word_lists"],
