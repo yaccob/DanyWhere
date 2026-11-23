@@ -122,6 +122,14 @@ pub struct Completion {
     pub effort_ignored: bool,
 }
 
+/// DanyWhere: how the error of an error answer begins; its status and body
+/// follow ("404 Not Found: {…}"). `post_process_failure::classify_llm_error`
+/// reads them, to name the reason in the notice.
+pub(crate) const STATUS_ERROR_PREFIX: &str = "API request failed with status ";
+
+/// DanyWhere: how the error of an answer cut off at the output limit begins.
+pub(crate) const TRUNCATED_ERROR_PREFIX: &str = "Response was truncated";
+
 /// DanyWhere: what to send, in order: each body with the key under which a
 /// refusal of its reasoning fields is remembered (none for the last, plain
 /// one). See [`post_until_accepted`].
@@ -761,10 +769,7 @@ pub async fn send_chat_completion_with_schema(
             .text()
             .await
             .unwrap_or_else(|e| report_reqwest_error("Failed to read API error response", &e));
-        return Err(format!(
-            "API request failed with status {}: {}",
-            status, error_text
-        ));
+        return Err(format!("{}{}: {}", STATUS_ERROR_PREFIX, status, error_text));
     }
 
     let completion: ChatCompletionResponse = response
@@ -783,7 +788,10 @@ pub async fn send_chat_completion_with_schema(
     // it would silently drop the end of the dictation (or, for structured
     // output, paste unparseable JSON).
     if choice.finish_reason.as_deref() == Some("length") {
-        return Err("Response was truncated at the provider's output token limit".to_string());
+        return Err(format!(
+            "{} at the provider's output token limit",
+            TRUNCATED_ERROR_PREFIX
+        ));
     }
 
     Ok(Completion {
@@ -832,10 +840,7 @@ async fn send_anthropic_message(
             .text()
             .await
             .unwrap_or_else(|e| report_reqwest_error("Failed to read API error response", &e));
-        return Err(format!(
-            "API request failed with status {}: {}",
-            status, error_text
-        ));
+        return Err(format!("{}{}: {}", STATUS_ERROR_PREFIX, status, error_text));
     }
 
     let message: AnthropicMessagesResponse = response
@@ -847,8 +852,8 @@ async fn send_anthropic_message(
     // silently drop the end of the dictation.
     if message.stop_reason.as_deref() == Some("max_tokens") {
         return Err(format!(
-            "Response was truncated at the {} token limit",
-            max_tokens
+            "{} at the {} token limit",
+            TRUNCATED_ERROR_PREFIX, max_tokens
         ));
     }
 
@@ -1292,6 +1297,97 @@ mod tests {
         )
         .await;
         assert!(result.unwrap_err().contains("truncated"));
+    }
+
+    /// DanyWhere: what the post-processing notice makes of the error this
+    /// client gives for an answer `status` with `body`
+    /// (`post_process_failure`), sent with `api_key`.
+    async fn reason_for_answer(
+        status: &str,
+        body: &str,
+        api_key: &str,
+    ) -> crate::post_process_failure::FailureReason {
+        let base_url = serve_one_response(status, body).await;
+        let error = send_chat_completion(
+            &provider("custom", &base_url),
+            api_key.to_string(),
+            "gemma4-12b-qat",
+            "raw text".to_string(),
+            &ReasoningRequest::default(),
+        )
+        .await
+        .unwrap_err();
+        crate::post_process_failure::classify_llm_error(&error, !api_key.is_empty())
+    }
+
+    #[tokio::test]
+    async fn the_errors_of_answers_name_their_reason() {
+        use crate::post_process_failure::FailureReason;
+        // Ollama, the model removed (user, 2026-11-23).
+        assert_eq!(
+            reason_for_answer(
+                "404 Not Found",
+                r#"{"error":{"message":"model 'gemma4-12b-qat' not found","type":"not_found_error","param":null,"code":null}}"#,
+                "",
+            )
+            .await,
+            FailureReason::ModelNotFound
+        );
+        // OpenAI and the providers that answer as it does.
+        assert_eq!(
+            reason_for_answer(
+                "404 Not Found",
+                r#"{"error":{"message":"The model `gemma4-12b-qat` does not exist or you do not have access to it.","type":"invalid_request_error","param":null,"code":"model_not_found"}}"#,
+                "key",
+            )
+            .await,
+            FailureReason::ModelNotFound
+        );
+        let refused =
+            r#"{"error":{"message":"Incorrect API key provided","code":"invalid_api_key"}}"#;
+        assert_eq!(
+            reason_for_answer("401 Unauthorized", refused, "key").await,
+            FailureReason::KeyRefused
+        );
+        assert_eq!(
+            reason_for_answer("401 Unauthorized", refused, "").await,
+            FailureReason::NoApiKey
+        );
+        assert_eq!(
+            reason_for_answer("502 Bad Gateway", "upstream down", "key").await,
+            FailureReason::Status(502)
+        );
+        assert_eq!(
+            reason_for_answer(
+                "200 OK",
+                r#"{"choices":[{"message":{"content":"Cut off"},"finish_reason":"length"}]}"#,
+                "key",
+            )
+            .await,
+            FailureReason::Truncated
+        );
+    }
+
+    #[tokio::test]
+    async fn a_provider_nothing_listens_at_is_unreachable() {
+        // A port that was taken and given back: nothing listens there now.
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        drop(listener);
+        let error = send_chat_completion(
+            &provider("custom", &format!("http://{address}")),
+            String::new(),
+            "gemma4-12b-qat",
+            "raw text".to_string(),
+            &ReasoningRequest::default(),
+        )
+        .await
+        .unwrap_err();
+        assert_eq!(
+            crate::post_process_failure::classify_llm_error(&error, false),
+            crate::post_process_failure::FailureReason::Unreachable,
+            "{error}"
+        );
     }
 
     #[tokio::test]

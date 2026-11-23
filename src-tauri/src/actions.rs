@@ -2,6 +2,7 @@
 use crate::apple_intelligence;
 use crate::managers::audio::AudioRecordingManager;
 use crate::managers::transcription::TranscriptionManager;
+use crate::post_process_failure::{FailureReason, PostProcessFailure};
 use crate::settings::{AppSettings, APPLE_INTELLIGENCE_PROVIDER_ID};
 use crate::shortcut;
 use crate::utils;
@@ -198,8 +199,9 @@ enum PostProcessOutcome {
     Skipped,
     Done(String),
     /// The user asked for it, but it couldn't run or produced nothing, so the
-    /// transcript goes out as it is.
-    Failed,
+    /// transcript goes out as it is. DanyWhere: with the reason, for the
+    /// notice (`post_process_failure`).
+    Failed(PostProcessFailure),
 }
 
 /// DanyWhere: a post-processing outcome, and the model that refused the
@@ -240,9 +242,15 @@ async fn post_process_within_time_limit(
                 "Post-processing timed out after {:?}; pasting the original transcription",
                 limit
             );
-            PostProcessOutcome::Failed.into()
+            failed(settings, FailureReason::Timeout).into()
         }
     }
+}
+
+/// DanyWhere: a post-processing with `settings` that failed for `reason`
+/// (`post_process_failure`).
+fn failed(settings: &AppSettings, reason: FailureReason) -> PostProcessOutcome {
+    PostProcessOutcome::Failed(PostProcessFailure::new(settings, reason))
 }
 
 /// DanyWhere: `context` (earlier dictations from the same window, see
@@ -284,7 +292,7 @@ async fn post_process_outcome(
         Some(provider) => provider,
         None => {
             debug!("Post-processing enabled but no provider is selected");
-            return PostProcessOutcome::Failed;
+            return failed(settings, FailureReason::NoProvider);
         }
     };
 
@@ -299,7 +307,7 @@ async fn post_process_outcome(
             "Post-processing skipped because provider '{}' has no model configured",
             provider.id
         );
-        return PostProcessOutcome::Failed;
+        return failed(settings, FailureReason::NoModel);
     }
 
     // DanyWhere: the profile's active prompts from the shared library, all
@@ -307,7 +315,7 @@ async fn post_process_outcome(
     let prompts = crate::prompt_library::requested(settings);
     if prompts.is_empty() {
         debug!("Post-processing skipped because no prompt with a text is active");
-        return PostProcessOutcome::Failed;
+        return failed(settings, FailureReason::NoPrompt);
     }
     let prompt = crate::prompt_library::request_instructions(&prompts);
     let prompt = crate::prompt_frame::with_known_terms(&prompt, settings);
@@ -361,7 +369,7 @@ async fn post_process_outcome(
                     debug!(
                         "Apple Intelligence selected but not currently available on this device"
                     );
-                    return PostProcessOutcome::Failed;
+                    return failed(settings, FailureReason::Unavailable);
                 }
 
                 let token_limit = model.trim().parse::<i32>().unwrap_or(0);
@@ -373,7 +381,7 @@ async fn post_process_outcome(
                     Ok(result) => {
                         if result.trim().is_empty() {
                             debug!("Apple Intelligence returned an empty response");
-                            PostProcessOutcome::Failed
+                            failed(settings, FailureReason::EmptyReply)
                         } else {
                             let result = strip_invisible_chars(&result);
                             debug!(
@@ -385,7 +393,7 @@ async fn post_process_outcome(
                     }
                     Err(err) => {
                         error!("Apple Intelligence post-processing failed: {}", err);
-                        PostProcessOutcome::Failed
+                        failed(settings, FailureReason::other(&err.to_string()))
                     }
                 };
             }
@@ -393,7 +401,7 @@ async fn post_process_outcome(
             #[cfg(not(all(target_os = "macos", target_arch = "aarch64")))]
             {
                 debug!("Apple Intelligence provider selected on unsupported platform");
-                return PostProcessOutcome::Failed;
+                return failed(settings, FailureReason::Unavailable);
             }
         }
 
@@ -456,7 +464,7 @@ async fn post_process_outcome(
             }
             Ok(crate::llm_client::Completion { content: None, .. }) => {
                 error!("LLM API response has no content");
-                return PostProcessOutcome::Failed;
+                return failed(settings, FailureReason::EmptyReply);
             }
             Err(e) => {
                 warn!(
@@ -474,6 +482,8 @@ async fn post_process_outcome(
         single_message_request(&prompt, context.map(|c| c.legacy.as_str()), transcription);
     debug!("Processed prompt length: {} chars", processed_prompt.len());
 
+    // DanyWhere: tells a missing key from a refused one in the notice.
+    let api_key_set = !api_key.trim().is_empty();
     match crate::llm_client::send_chat_completion(
         &provider,
         api_key,
@@ -498,7 +508,7 @@ async fn post_process_outcome(
         }
         Ok(crate::llm_client::Completion { content: None, .. }) => {
             error!("LLM API response has no content");
-            PostProcessOutcome::Failed
+            failed(settings, FailureReason::EmptyReply)
         }
         Err(e) => {
             error!(
@@ -506,7 +516,11 @@ async fn post_process_outcome(
                 provider.id,
                 e
             );
-            PostProcessOutcome::Failed
+            // DanyWhere: the notice names why (`post_process_failure`).
+            failed(
+                settings,
+                crate::post_process_failure::classify_llm_error(&e, api_key_set),
+            )
         }
     }
 }
@@ -522,8 +536,9 @@ pub struct ProcessedTranscription {
     /// DanyWhere: the name of that prompt, for History's versions
     /// (`history_versions`).
     pub post_process_prompt_name: Option<String>,
-    /// `final_text` is the bare transcript because post-processing failed.
-    pub post_process_failed: bool,
+    /// `final_text` is the bare transcript because post-processing failed;
+    /// DanyWhere: why, for the notice (`post_process_failure`).
+    pub post_process_failure: Option<PostProcessFailure>,
     /// DanyWhere: the model that refused the profile's effort, so the text
     /// came at its default (`post_process_effort`).
     pub post_process_effort_refused_by: Option<String>,
@@ -584,7 +599,7 @@ pub(crate) async fn process_transcription_with_settings(
     let mut post_processed_text: Option<String> = None;
     let mut post_process_prompt: Option<String> = None;
     let mut post_process_prompt_name: Option<String> = None;
-    let mut post_process_failed = false;
+    let mut post_process_failure: Option<PostProcessFailure> = None;
     let mut post_process_effort_refused_by: Option<String> = None;
     let mut context_entry_ids: Vec<i64> = Vec::new();
 
@@ -608,8 +623,10 @@ pub(crate) async fn process_transcription_with_settings(
         let report =
             post_process_within_time_limit(settings, &final_text, context_block.as_ref()).await;
         let outcome = match report.outcome {
-            PostProcessOutcome::Done(text) => non_blank_post_processed_text(text)
-                .map_or(PostProcessOutcome::Failed, PostProcessOutcome::Done),
+            PostProcessOutcome::Done(text) => non_blank_post_processed_text(text).map_or_else(
+                || failed(settings, FailureReason::EmptyReply),
+                PostProcessOutcome::Done,
+            ),
             outcome => outcome,
         };
         if matches!(outcome, PostProcessOutcome::Done(_)) {
@@ -623,7 +640,7 @@ pub(crate) async fn process_transcription_with_settings(
         }
         match outcome {
             PostProcessOutcome::Skipped => {}
-            PostProcessOutcome::Failed => post_process_failed = true,
+            PostProcessOutcome::Failed(failure) => post_process_failure = Some(failure),
             PostProcessOutcome::Done(processed_text) => {
                 post_processed_text = Some(processed_text.clone());
                 final_text = processed_text;
@@ -640,7 +657,7 @@ pub(crate) async fn process_transcription_with_settings(
         post_processed_text,
         post_process_prompt,
         post_process_prompt_name,
-        post_process_failed,
+        post_process_failure,
         post_process_effort_refused_by,
         context_entry_ids,
     }
@@ -888,6 +905,7 @@ mod tests {
         post_process_transcription, post_process_within_time_limit, strip_invisible_chars,
         strip_think_block, PostProcessOutcome, PostProcessReport,
     };
+    use crate::post_process_failure::{FailureReason, PostProcessFailure};
     use crate::settings::{get_default_settings, AppSettings};
     use std::future;
     use std::io::{Read, Write};
@@ -922,6 +940,18 @@ mod tests {
 
     /// Answers one chat completion request with `body`, and returns its URL.
     fn serve_once(body: &'static str) -> String {
+        serve_once_with("200 OK", body)
+    }
+
+    /// DanyWhere: the outcome of a post-processing with `settings` that
+    /// failed for `reason`.
+    fn failed(settings: &AppSettings, reason: FailureReason) -> PostProcessOutcome {
+        PostProcessOutcome::Failed(PostProcessFailure::new(settings, reason))
+    }
+
+    /// Answers one chat completion request with `status` and `body`, and
+    /// returns its URL.
+    fn serve_once_with(status: &'static str, body: &'static str) -> String {
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
         let address = listener.local_addr().unwrap();
         thread::spawn(move || {
@@ -929,7 +959,7 @@ mod tests {
             let mut request = [0; 8192];
             let _ = stream.read(&mut request);
             let response = format!(
-                "HTTP/1.1 200 OK\r\ncontent-type: application/json\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{}",
+                "HTTP/1.1 {status}\r\ncontent-type: application/json\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{}",
                 body.len(),
                 body
             );
@@ -973,9 +1003,10 @@ mod tests {
         });
         let elapsed = started.elapsed();
 
+        // DanyWhere: and says so, with the time limit.
         assert_eq!(
             outcome,
-            Ok(PostProcessOutcome::Failed),
+            Ok(failed(&settings, FailureReason::Timeout)),
             "post-processing must give up after the 5 s from the settings"
         );
         assert!(
@@ -1505,7 +1536,7 @@ mod tests {
         settings.post_process_selected_prompt_id = Some("a".to_string());
         assert_eq!(
             run_post_process(&settings, "hello"),
-            PostProcessOutcome::Failed
+            failed(&settings, FailureReason::NoPrompt)
         );
     }
 
@@ -1514,7 +1545,7 @@ mod tests {
         let settings = settings_with_prompt("http://127.0.0.1:1", " \n ", false);
         assert_eq!(
             run_post_process(&settings, "hello"),
-            PostProcessOutcome::Failed
+            failed(&settings, FailureReason::NoPrompt)
         );
     }
 
@@ -1530,7 +1561,15 @@ mod tests {
         settings.post_process_models.clear();
         assert_eq!(
             run_post_process(&settings, "hello"),
-            PostProcessOutcome::Failed
+            failed(&settings, FailureReason::NoModel)
+        );
+
+        // DanyWhere: the provider chosen is gone.
+        let mut settings = post_process_settings("http://127.0.0.1:1");
+        settings.post_process_provider_id = "gone".to_string();
+        assert_eq!(
+            run_post_process(&settings, "hello"),
+            failed(&settings, FailureReason::NoProvider)
         );
     }
 
@@ -1546,9 +1585,62 @@ mod tests {
     #[test]
     fn a_post_processing_reply_with_no_content_failed() {
         let url = serve_once(r#"{"choices":[]}"#);
+        let settings = post_process_settings(&url);
         assert_eq!(
-            run_post_process(&post_process_settings(&url), "hello"),
-            PostProcessOutcome::Failed
+            run_post_process(&settings, "hello"),
+            failed(&settings, FailureReason::EmptyReply)
+        );
+    }
+
+    /// DanyWhere: the case that made the notice name its reason (user,
+    /// 2026-11-23): Ollama no longer has the model.
+    #[test]
+    fn a_model_the_provider_doesn_t_have_is_the_reason() {
+        let url = serve_once_with(
+            "404 Not Found",
+            r#"{"error":{"message":"model 'model' not found","type":"not_found_error","param":null,"code":null}}"#,
+        );
+        let settings = post_process_settings(&url);
+        assert_eq!(
+            run_post_process(&settings, "hello"),
+            failed(&settings, FailureReason::ModelNotFound)
+        );
+    }
+
+    #[test]
+    fn a_refusal_says_whether_the_key_was_missing_or_refused() {
+        let refusal =
+            r#"{"error":{"message":"Incorrect API key provided","code":"invalid_api_key"}}"#;
+        let settings = post_process_settings(&serve_once_with("401 Unauthorized", refusal));
+        assert_eq!(
+            run_post_process(&settings, "hello"),
+            failed(&settings, FailureReason::NoApiKey)
+        );
+
+        let mut settings = post_process_settings(&serve_once_with("401 Unauthorized", refusal));
+        let provider_id = settings.post_process_provider_id.clone();
+        settings
+            .post_process_api_keys
+            .insert(provider_id, "sk-wrong".to_string());
+        assert_eq!(
+            run_post_process(&settings, "hello"),
+            failed(&settings, FailureReason::KeyRefused)
+        );
+    }
+
+    #[test]
+    fn a_provider_that_can_t_be_reached_or_answers_an_error_is_the_reason() {
+        let settings = post_process_settings(NOWHERE);
+        assert_eq!(
+            run_post_process(&settings, "hello"),
+            failed(&settings, FailureReason::Unreachable)
+        );
+
+        let settings =
+            post_process_settings(&serve_once_with("503 Service Unavailable", "overloaded"));
+        assert_eq!(
+            run_post_process(&settings, "hello"),
+            failed(&settings, FailureReason::Status(503))
         );
     }
 
@@ -1583,7 +1675,7 @@ mod tests {
         let (processed, asked) = process_with(&settings, "hello", false, Some(marker_block()));
         assert_eq!(processed.final_text, "hello");
         assert_eq!(processed.post_processed_text, None);
-        assert!(!processed.post_process_failed);
+        assert_eq!(processed.post_process_failure, None);
         assert!(processed.context_entry_ids.is_empty());
         assert!(asked.is_empty(), "no context without post-processing");
     }
@@ -1595,7 +1687,7 @@ mod tests {
         let (processed, asked) = process_with(&settings, "hello", true, Some(marker_block()));
         assert_eq!(processed.final_text, "polished");
         assert_eq!(processed.post_processed_text.as_deref(), Some("polished"));
-        assert!(!processed.post_process_failed);
+        assert_eq!(processed.post_process_failure, None);
         let instructions = crate::prompt_library::request_instructions(
             &crate::prompt_library::requested(&settings),
         );
@@ -1614,7 +1706,7 @@ mod tests {
         let settings = post_process_settings(NOWHERE);
         let (processed, asked) = process_with(&settings, "  ", true, Some(marker_block()));
         assert_eq!(processed.final_text, "  ");
-        assert!(!processed.post_process_failed);
+        assert_eq!(processed.post_process_failure, None);
         assert!(processed.context_entry_ids.is_empty());
         assert!(asked.is_empty());
     }
@@ -1630,9 +1722,32 @@ mod tests {
         );
         assert_eq!(processed.final_text, "hello");
         assert_eq!(processed.post_processed_text, None);
-        assert!(processed.post_process_failed);
+        assert_eq!(
+            processed.post_process_failure,
+            Some(PostProcessFailure::new(
+                &post_process_settings(&url),
+                FailureReason::EmptyReply
+            ))
+        );
         assert_eq!(asked.len(), 1);
         assert_eq!(processed.context_entry_ids, vec![1]);
+    }
+
+    /// DanyWhere: a reply that's blank once cleaned is no better than none,
+    /// and is named as such.
+    #[test]
+    fn a_blank_reply_is_an_empty_reply() {
+        let url = serve_once(r#"{"choices":[{"message":{"content":"  \u200b "}}]}"#);
+        let settings = post_process_settings(&url);
+        let (processed, _) = process_with(&settings, "hello", true, None);
+        assert_eq!(processed.final_text, "hello");
+        assert_eq!(
+            processed.post_process_failure,
+            Some(PostProcessFailure::new(
+                &settings,
+                FailureReason::EmptyReply
+            ))
+        );
     }
 
     #[test]

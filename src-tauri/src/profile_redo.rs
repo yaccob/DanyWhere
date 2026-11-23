@@ -42,7 +42,8 @@ use crate::end_keys::EndKey;
 use crate::history_versions::{HistoryVersion, PostProcessTarget, PostProcessed, VersionAuthor};
 use crate::managers::history::{HistoryEntry, HistoryManager};
 use crate::managers::transcription::TranscriptionManager;
-use crate::notices::{Notice, NoticeCode, NoticeSource};
+use crate::notices::{NoticeCode, NoticeSource};
+use crate::post_process_failure::PostProcessFailure;
 use crate::profiles::ProfileValues;
 use crate::settings::{AppSettings, LLMPrompt};
 
@@ -315,8 +316,9 @@ pub struct ForInsert {
     pub values: ProfileValues,
     /// The end shortcut it takes there, for its "Append" text.
     pub end: EndKey,
-    /// A redone post-processing failed; the text is the transcription.
-    pub post_process_failed: bool,
+    /// A redone post-processing failed, and why; the text is the
+    /// transcription.
+    pub post_process_failure: Option<PostProcessFailure>,
 }
 
 /// Looks at inserting `entry` into the application in front now: redoes it
@@ -341,7 +343,7 @@ pub fn for_insert(
             text: None,
             end: crate::end_keys::fallback_end(&target_values),
             values: target_values,
-            post_process_failed: false,
+            post_process_failure: None,
         });
     };
     let target_end = end_in(&target_values, &made.end);
@@ -370,7 +372,7 @@ pub fn for_insert(
             ),
         );
     }
-    let (text, post_process_failed) = run(
+    let (text, post_process_failure) = run(
         app,
         entry,
         &target_id,
@@ -383,7 +385,7 @@ pub fn for_insert(
         text,
         values: target_values,
         end: target_end,
-        post_process_failed,
+        post_process_failure,
     })
 }
 
@@ -402,8 +404,9 @@ pub fn for_insert_outside_dictation(app: &AppHandle, entry: &HistoryEntry) -> Op
     };
     let insert = for_insert(app, entry, &show)?;
     let dictating = crate::tray::dictation_in_progress(app);
-    if insert.post_process_failed {
-        let notice = Notice::new(NoticeCode::PostProcessFailed, NoticeSource::Dictation);
+    if let Some(failure) = &insert.post_process_failure {
+        // DanyWhere: naming why (`post_process_failure`).
+        let notice = failure.notice(NoticeCode::PostProcessFailed, NoticeSource::Dictation);
         if dictating {
             crate::notices::raise_without_overlay(app, notice);
         } else {
@@ -416,7 +419,7 @@ pub fn for_insert_outside_dictation(app: &AppHandle, entry: &HistoryEntry) -> Op
 }
 
 /// Carries out `plan` for `entry` with the target profile's values; returns
-/// the new text, if any, and whether its post-processing failed.
+/// the new text, if any, and why its post-processing failed, if it did.
 fn run(
     app: &AppHandle,
     entry: &HistoryEntry,
@@ -425,7 +428,7 @@ fn run(
     target_end: &EndKey,
     plan: RedoPlan,
     show: &dyn Fn(Working),
-) -> (Option<String>, bool) {
+) -> (Option<String>, Option<PostProcessFailure>) {
     let redone = || MadeWith {
         entry_id: entry.id,
         profile_id: target_id.to_string(),
@@ -433,8 +436,8 @@ fn run(
         end: target_end.clone(),
     };
     match plan {
-        RedoPlan::Keep => (None, false),
-        RedoPlan::UseTranscription => (Some(transcript_text(entry).to_string()), false),
+        RedoPlan::Keep => (None, None),
+        RedoPlan::UseTranscription => (Some(transcript_text(entry).to_string()), None),
         RedoPlan::PostProcess(where_to) => {
             show(Working::PostProcessing);
             let transcription = transcript_text(entry);
@@ -443,14 +446,14 @@ fn run(
             }) {
                 Ok(text) => {
                     remember(redone());
-                    (Some(text), false)
+                    (Some(text), None)
                 }
-                Err(e) => {
+                Err(failure) => {
                     warn!(
-                        "Post-processing entry {} for profile {target_id} failed: {e}",
-                        entry.id
+                        "Post-processing entry {} for profile {target_id} failed: {:?}",
+                        entry.id, failure.reason
                     );
-                    (Some(transcription.to_string()), true)
+                    (Some(transcription.to_string()), Some(failure))
                 }
             }
         }
@@ -461,16 +464,16 @@ fn run(
             match crate::app_profiles::with_values_here(target.clone(), || {
                 transcribe_again(app, entry, post_process, with_context, show)
             }) {
-                Ok((text, failed)) => {
+                Ok((text, failure)) => {
                     remember(redone());
-                    (Some(text), failed)
+                    (Some(text), failure)
                 }
                 Err(e) => {
                     warn!(
                         "Transcribing entry {} for profile {target_id} failed: {e}",
                         entry.id
                     );
-                    (None, false)
+                    (None, None)
                 }
             }
         }
@@ -479,14 +482,15 @@ fn run(
 
 /// Post-processes `transcription` with this thread's profile values, with
 /// earlier dictations as context if `with_context` (the end shortcut's), and
-/// stores the result as `where_to` says. Errors when no text came out.
+/// stores the result as `where_to` says. Errors with the reason when no text
+/// came out; a result that can't be stored fails for no known reason.
 fn post_process_again(
     app: &AppHandle,
     entry: &HistoryEntry,
     transcription: &str,
     where_to: PostProcessTarget,
     with_context: bool,
-) -> anyhow::Result<String> {
+) -> Result<String, PostProcessFailure> {
     // The word list's hint goes along with the transcription it was made in.
     let mut query = crate::dictation_context::ContextQuery::for_entry(
         entry,
@@ -501,9 +505,11 @@ fn post_process_again(
         true,
         &query,
     ));
-    let text = processed
-        .post_processed_text
-        .ok_or_else(|| anyhow::anyhow!("no post-processed text"))?;
+    let Some(text) = processed.post_processed_text else {
+        return Err(processed
+            .post_process_failure
+            .unwrap_or_else(PostProcessFailure::unknown));
+    };
     let hm = app.state::<Arc<HistoryManager>>();
     hm.store_post_processing(
         entry.id,
@@ -513,7 +519,14 @@ fn post_process_again(
             prompt: processed.post_process_prompt,
             prompt_name: processed.post_process_prompt_name,
         },
-    )?;
+    )
+    .map_err(|e| {
+        warn!(
+            "Failed to store the post-processing of entry {}: {e}",
+            entry.id
+        );
+        PostProcessFailure::unknown()
+    })?;
     if with_context {
         if let Err(e) = hm.record_entry_context(
             entry.id,
@@ -530,15 +543,15 @@ fn post_process_again(
 /// Transcribes the entry's recording again with this thread's profile
 /// values (loading its model), post-processes the result if
 /// `post_process` (with context if `with_context`), and stores both as
-/// "Transcribe Again" does. Returns the text and whether the
-/// post-processing failed.
+/// "Transcribe Again" does. Returns the text and why the post-processing
+/// failed, if it did.
 fn transcribe_again(
     app: &AppHandle,
     entry: &HistoryEntry,
     post_process: bool,
     with_context: bool,
     show: &dyn Fn(Working),
-) -> anyhow::Result<(String, bool)> {
+) -> anyhow::Result<(String, Option<PostProcessFailure>)> {
     let hm = app.state::<Arc<HistoryManager>>();
     let tm = app.state::<Arc<TranscriptionManager>>();
     let samples = HistoryManager::recording_samples_in(entry, hm.recordings_dir())?;
@@ -585,7 +598,7 @@ fn transcribe_again(
     ) {
         warn!("Failed to store the entry's context: {e}");
     }
-    Ok((processed.final_text, processed.post_process_failed))
+    Ok((processed.final_text, processed.post_process_failure))
 }
 
 #[cfg(test)]

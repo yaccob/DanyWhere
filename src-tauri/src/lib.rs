@@ -48,6 +48,7 @@ mod overlay_look;
 mod paste_tx;
 pub mod portable;
 mod post_process_effort;
+mod post_process_failure;
 #[cfg(target_os = "linux")]
 mod primary_selection;
 mod profile_effects;

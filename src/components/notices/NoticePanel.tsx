@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
 import type { NoticeLevel } from "@/bindings";
 import { NoticeBadgeIcon } from "@/components/icons/NoticeBadgeIcon";
-import { noticeDisplay } from "@/lib/notices";
+import { noticeDisplay, separateDetail } from "@/lib/notices";
 import { type LocalNotice, useNoticeStore } from "@/stores/noticeStore";
 
 // Longer than a usual toast: a notice can carry a raw error worth reading.
@@ -135,15 +135,13 @@ export const NoticePanel: React.FC = () => {
     ...notices
       .filter((notice) => isShown(notice.source))
       .map((notice) => {
-        const { title, explanation, detailInExplanation } = noticeDisplay(
-          notice.code,
-        );
+        const { title, explanation } = noticeDisplay(notice.code);
         return {
           id: notice.source,
           level: notice.level,
           title: t(title),
           explanation: explanation?.(t, notice.detail),
-          detail: detailInExplanation ? null : notice.detail,
+          detail: separateDetail(notice.code, notice.detail),
           onDismiss: () => dismiss(notice),
         };
       }),

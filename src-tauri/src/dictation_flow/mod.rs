@@ -26,6 +26,7 @@ use crate::dictation_snapshot::DictationSnapshot;
 use crate::managers::history::HistoryManager;
 use crate::managers::transcription::Transcription;
 use crate::notices::{Notice, NoticeCode, NoticeSource};
+use crate::post_process_failure::PostProcessFailure;
 use crate::profile_redo::{ForInsert, Working};
 use crate::profiles::ProfileValues;
 use crate::settings::AppSettings;
@@ -357,7 +358,7 @@ pub(crate) async fn finish_dictation<P: DictationPorts>(dictation: Dictation, po
                             snapshot,
                             text: final_text,
                             entry_id: saved_entry_id,
-                            post_process_failed: processed.post_process_failed,
+                            post_process_failure: processed.post_process_failure.clone(),
                             effort_refused_by: processed.post_process_effort_refused_by.clone(),
                             sample_count,
                             stop_time,
@@ -456,16 +457,14 @@ fn redo_for_app_in_front<P: DictationPorts>(
 }
 
 /// DanyWhere: the notice a pasted dictation gets: a failed post-processing,
-/// else a refused effort (the text came, but at the model's default).
+/// else a refused effort (the text came, but at the model's default). The
+/// failure's notice names its reason (`post_process_failure`).
 fn pasted_dictation_notice(
-    post_process_failed: bool,
+    post_process_failure: Option<&PostProcessFailure>,
     effort_refused_by: Option<&str>,
 ) -> Option<Notice> {
-    if post_process_failed {
-        return Some(Notice::new(
-            NoticeCode::PostProcessFailed,
-            NoticeSource::Dictation,
-        ));
+    if let Some(failure) = post_process_failure {
+        return Some(failure.notice(NoticeCode::PostProcessFailed, NoticeSource::Dictation));
     }
     effort_refused_by.map(|model| {
         Notice::new(
@@ -517,7 +516,8 @@ struct Delivery {
     text: String,
     /// The History entry it was saved as.
     entry_id: Option<i64>,
-    post_process_failed: bool,
+    /// Why its post-processing failed, if it did.
+    post_process_failure: Option<PostProcessFailure>,
     effort_refused_by: Option<String>,
     sample_count: usize,
     stop_time: Instant,
@@ -531,7 +531,7 @@ fn deliver_dictation<P: DictationPorts>(ports: &P, delivery: Delivery) {
         snapshot,
         text: final_text,
         entry_id: saved_entry_id,
-        post_process_failed,
+        post_process_failure,
         effort_refused_by,
         sample_count,
         stop_time,
@@ -558,7 +558,7 @@ fn deliver_dictation<P: DictationPorts>(ports: &P, delivery: Delivery) {
     // for it from the first step that differs,
     // and its "Append" text applies
     // (`profile_redo`).
-    let (final_text, dictation_values, append_text, post_process_failed, effort_refused_by) =
+    let (final_text, dictation_values, append_text, post_process_failure, effort_refused_by) =
         match redo_for_app_in_front(
             ports,
             &snapshot.settings,
@@ -577,14 +577,14 @@ fn deliver_dictation<P: DictationPorts>(ports: &P, delivery: Delivery) {
                     tauri::async_runtime::block_on(ports.apply_hook(text)),
                     Some(insert.values),
                     insert.end.append_text,
-                    insert.post_process_failed,
+                    insert.post_process_failure,
                     None,
                 ),
                 None => (
                     final_text,
                     Some(insert.values),
                     insert.end.append_text,
-                    post_process_failed,
+                    post_process_failure,
                     effort_refused_by,
                 ),
             },
@@ -592,7 +592,7 @@ fn deliver_dictation<P: DictationPorts>(ports: &P, delivery: Delivery) {
                 final_text,
                 dictation_values,
                 snapshot.end.append_text.clone(),
-                post_process_failed,
+                post_process_failure,
                 effort_refused_by,
             ),
         };
@@ -630,7 +630,10 @@ fn deliver_dictation<P: DictationPorts>(ports: &P, delivery: Delivery) {
             if owns_ui() {
                 ports.clear_notice();
             }
-            let notice = pasted_dictation_notice(post_process_failed, effort_refused_by.as_deref());
+            let notice = pasted_dictation_notice(
+                post_process_failure.as_ref(),
+                effort_refused_by.as_deref(),
+            );
             (TranscriptionOutcome::Typed, notice)
         }
         Ok(PasteOutcome::Blocked) => (
@@ -714,6 +717,7 @@ mod tests {
     use crate::dictation_snapshot::{build, DictationSnapshot, SnapshotInputs};
     use crate::end_keys::{EndChoice, EndKey, POST_PROCESS_ID, START_BINDINGS};
     use crate::notices::{Notice, NoticeCode, NoticeSource};
+    use crate::post_process_failure::{FailureReason, PostProcessFailure};
     use crate::profile_redo::{ForInsert, Working};
     use crate::profiles::{ensure_profiles, ProfileValues, DEFAULT_PROFILE_ID};
     use crate::settings::{get_default_settings, AppSettings, ClipboardHandling, PasteMethod};
@@ -848,6 +852,21 @@ mod tests {
 
     fn notice(code: NoticeCode) -> Notice {
         Notice::new(code, NoticeSource::Dictation)
+    }
+
+    /// The notice of a post-processing with [`post_process_settings`] that
+    /// failed for `reason`: its detail names the reason, the provider and
+    /// the model (`post_process_failure`).
+    fn post_process_failed(reason: &str) -> Notice {
+        notice(NoticeCode::PostProcessFailed).with_detail(
+            serde_json::json!({
+                "reason": reason,
+                "providerId": "openai",
+                "provider": "OpenAI",
+                "model": "model",
+            })
+            .to_string(),
+        )
     }
 
     fn paste(text: &str, values: &ProfileValues, append_text: &str) -> Event {
@@ -1158,7 +1177,8 @@ mod tests {
                     vec![
                         Event::ClearNotice,
                         Event::SoundAfterDictation(pasted_end()),
-                        Event::Raise(notice(NoticeCode::PostProcessFailed)),
+                        // DanyWhere: naming why (nothing listens there).
+                        Event::Raise(post_process_failed("unreachable")),
                         Event::Tray(TrayIconState::Idle),
                         Event::Complete(TranscriptionOutcome::Typed, SAMPLES),
                         Event::Finished,
@@ -1172,6 +1192,27 @@ mod tests {
             assert_eq!(entry.post_processed_text, None);
             assert_eq!(entry.transcription_text, "hello");
         }
+    }
+
+    /// DanyWhere: the case the user met on 2026-11-23: Ollama no longer has
+    /// the model the profile post-processes with, and the notice says so.
+    #[test]
+    fn a_failed_post_processing_names_its_reason() {
+        let (url, _requests) = llm_server(vec![(
+            "404 Not Found",
+            r#"{"error":{"message":"model 'model' not found","type":"not_found_error","param":null,"code":null}}"#,
+        )]);
+        let snapshot = snapshot_of(post_process_settings(&url), None, post_processing());
+        let ports = FakePorts::new(Script::default());
+        finish(&ports, snapshot);
+        let raised: Vec<Event> = noticed(&ports.take_events())
+            .into_iter()
+            .filter(|event| matches!(event, Event::Raise(_)))
+            .collect();
+        assert_eq!(
+            raised,
+            vec![Event::Raise(post_process_failed("model-not-found"))]
+        );
     }
 
     /// How a dictation that ended with `end_id` and wasn't post-processed
@@ -1858,7 +1899,7 @@ mod tests {
                 Event::RedoLookedAt(1),
                 paste("hello", &values, &append_text),
                 Event::SoundAfterDictation(newer),
-                Event::RaiseWithoutOverlay(notice(NoticeCode::PostProcessFailed)),
+                Event::RaiseWithoutOverlay(post_process_failed("unreachable")),
                 Event::Complete(TranscriptionOutcome::Typed, SAMPLES),
                 Event::Finished,
             ]
@@ -1920,7 +1961,7 @@ mod tests {
     fn redo_into_other(
         values: &ProfileValues,
         text: Option<&str>,
-        post_process_failed: bool,
+        post_process_failure: Option<PostProcessFailure>,
     ) -> ForInsert {
         let mut other = values.clone();
         other.paste_method = PasteMethod::CtrlShiftV;
@@ -1932,7 +1973,7 @@ mod tests {
                 append_text: " (other)".to_string(),
                 ..EndKey::default()
             },
-            post_process_failed,
+            post_process_failure,
         }
     }
 
@@ -1946,7 +1987,7 @@ mod tests {
             let snapshot = snapshot_with(access.settings(get_default_settings()));
             let values = snapshot.values.clone();
             let append_text = snapshot.end.append_text.clone();
-            let insert = redo_into_other(&values, Some("redone"), false);
+            let insert = redo_into_other(&values, Some("redone"), None);
             let other = insert.values.clone();
             let for_service = access == Access::WithoutForService;
             let ports = FakePorts::new(access.script(Script {
@@ -2006,15 +2047,15 @@ mod tests {
 
         // With Accessibility, where the text goes there anyway:
         let snapshot = snapshot_with(get_default_settings());
-        let redo = |text: Option<&str>, post_process_failed: bool| {
-            redo_into_other(&snapshot.values, text, post_process_failed)
+        let redo = |text: Option<&str>, post_process_failure: Option<PostProcessFailure>| {
+            redo_into_other(&snapshot.values, text, post_process_failure)
         };
-        let other = redo(None, false).values;
+        let other = redo(None, None).values;
 
         // Nothing to redo: the text as it is, with that profile's values
         // and append text.
         let ports = FakePorts::new(Script {
-            redo: Some(redo(None, false)),
+            redo: Some(redo(None, None)),
             ..Script::default()
         });
         finish(&ports, snapshot.clone());
@@ -2022,15 +2063,19 @@ mod tests {
             .take_events()
             .contains(&paste("hello", &other, " (other)")));
 
-        // Its post-processing failed: the notice says so.
+        // Its post-processing failed: the notice says so, and why.
+        let failure = PostProcessFailure::new(
+            &post_process_settings(&no_server()),
+            FailureReason::ModelNotFound,
+        );
         let ports = FakePorts::new(Script {
-            redo: Some(redo(Some("hello"), true)),
+            redo: Some(redo(Some("hello"), Some(failure))),
             ..Script::default()
         });
         finish(&ports, snapshot.clone());
         assert!(ports
             .take_events()
-            .contains(&Event::Raise(notice(NoticeCode::PostProcessFailed))));
+            .contains(&Event::Raise(post_process_failed("model-not-found"))));
 
         // That profile doesn't paste but copies: the text goes as it says,
         // and the overlay says where it waits.
@@ -2040,7 +2085,7 @@ mod tests {
         let ports = FakePorts::new(Script {
             redo: Some(ForInsert {
                 values: copying,
-                ..redo(None, false)
+                ..redo(None, None)
             }),
             ..Script::default()
         });
@@ -2391,9 +2436,9 @@ mod tests {
 
     #[test]
     fn a_refused_effort_is_a_warning_unless_post_processing_failed() {
-        assert_eq!(pasted_dictation_notice(false, None), None);
+        assert_eq!(pasted_dictation_notice(None, None), None);
         assert_eq!(
-            pasted_dictation_notice(false, Some("claude-sonnet-4-6")),
+            pasted_dictation_notice(None, Some("claude-sonnet-4-6")),
             Some(
                 Notice::new(
                     NoticeCode::PostProcessEffortRefused,
@@ -2402,12 +2447,14 @@ mod tests {
                 .with_detail("claude-sonnet-4-6".to_string())
             )
         );
+        // DanyWhere: the failure's notice names its reason.
+        let failure = PostProcessFailure::new(
+            &post_process_settings(&no_server()),
+            FailureReason::Unreachable,
+        );
         assert_eq!(
-            pasted_dictation_notice(true, Some("claude-sonnet-4-6")),
-            Some(Notice::new(
-                NoticeCode::PostProcessFailed,
-                NoticeSource::Dictation
-            ))
+            pasted_dictation_notice(Some(&failure), Some("claude-sonnet-4-6")),
+            Some(post_process_failed("unreachable"))
         );
     }
 }
