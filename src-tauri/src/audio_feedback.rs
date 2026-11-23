@@ -199,8 +199,32 @@ fn play_sound_now(path: &Path, output: &SoundOutput) {
             path.display(),
             waited.as_millis()
         ),
-        Err(e) => error!("Failed to play sound '{}': {}", path.display(), e),
+        Err(e) => error!("{}", failure_line(path, e.as_ref())),
     }
+}
+
+/// DanyWhere: the log line of a sound that failed, with the reason: rodio's
+/// errors name only their kind ("Error opening the stream with the OS") and
+/// keep the device's reason as their source.
+fn failure_line(path: &Path, error: &dyn std::error::Error) -> String {
+    format!(
+        "Failed to play sound '{}': {}",
+        path.display(),
+        error_chain(error)
+    )
+}
+
+/// DanyWhere: an error and every cause behind it, on one line. `{:#}`
+/// prints the causes only for `anyhow` errors, not for a `dyn Error`.
+fn error_chain(error: &dyn std::error::Error) -> String {
+    let mut text = error.to_string();
+    let mut source = error.source();
+    while let Some(cause) = source {
+        text.push_str(": ");
+        text.push_str(&cause.to_string());
+        source = cause.source();
+    }
+    text
 }
 
 /// DanyWhere: how a sound ended.
@@ -322,8 +346,8 @@ fn play_audio_file_on(
 #[cfg(test)]
 mod tests {
     use super::{
-        play_audio_file_on, sound_location, SoundEnd, SoundLocation, SoundQueue, SoundTimeLimit,
-        SoundType,
+        error_chain, failure_line, play_audio_file_on, sound_location, SoundEnd, SoundLocation,
+        SoundQueue, SoundTimeLimit, SoundType,
     };
     use crate::audio_toolkit::audio::fake_output::{FakeOutput, FakeOutputs, Running};
     use crate::settings::SoundTheme;
@@ -366,18 +390,6 @@ mod tests {
         unknown_length: Duration::from_secs(30),
     };
 
-    /// An error and every cause behind it, on one line.
-    fn with_causes(error: &dyn std::error::Error) -> String {
-        let mut text = error.to_string();
-        let mut source = error.source();
-        while let Some(cause) = source {
-            text.push_str(": ");
-            text.push_str(&cause.to_string());
-            source = cause.source();
-        }
-        text
-    }
-
     /// Plays `sound` on `outputs` within `limit` on a thread of its own, so a
     /// device that never lets it end can't hang the tests.
     fn play_file_in_background(
@@ -393,7 +405,7 @@ mod tests {
         std::thread::spawn(move || {
             let played =
                 play_audio_file_on(&outputs.host(), &sound, selected.as_deref(), volume, limit)
-                    .map_err(|e| with_causes(e.as_ref()));
+                    .map_err(|e| error_chain(e.as_ref()));
             let _ = done.send(played);
         });
         result
@@ -549,8 +561,7 @@ mod tests {
         // Today's behaviour, held on purpose: Handy's fix #2525 is not taken
         // over, and how DanyWhere fixes it is still to be decided (ROADMAP,
         // "Tests: generic fake audio devices instead of real ones"). The fix
-        // turns this test around. The log (`play_sound_now`) shows only the
-        // part before the first colon.
+        // turns this test around.
         let bose = bose();
         let outputs = FakeOutputs::new(&[&bose]).with_default(&bose);
         assert_eq!(
@@ -595,6 +606,28 @@ mod tests {
             ))
         );
         assert_eq!(device.asked_buffers().len(), 1);
+    }
+
+    #[test]
+    fn the_log_line_of_a_failed_sound_tells_why() {
+        let device = speakers().failing_to_open(ErrorKind::DeviceBusy);
+        let outputs = FakeOutputs::new(&[&device]).with_default(&device);
+        let error = play_audio_file_on(
+            &outputs.host(),
+            &sound(),
+            None,
+            1.0,
+            SoundTimeLimit::FEEDBACK,
+        )
+        .expect_err("the sound fails");
+        assert_eq!(
+            failure_line(Path::new("/sounds/start.wav"), error.as_ref()),
+            format!(
+                "Failed to play sound '/sounds/start.wav': \
+                 Error opening the stream with the OS: {}",
+                ErrorKind::DeviceBusy
+            )
+        );
     }
 
     #[test]
