@@ -10,7 +10,13 @@ import { DEFAULTS_SCOPE, type Scope } from "@/lib/profileScope";
 import { ShortcutInput } from "./ShortcutInput";
 import { callsOf, err, mockCommand } from "@/test/bindings-mock";
 import { binding, settingsWith } from "@/test/fixtures";
-import { press, pressKeys, raisedNotices, renderPage } from "@/test/render";
+import {
+  press,
+  pressKeys,
+  raisedNotices,
+  renderPage,
+  typeKeys,
+} from "@/test/render";
 import { setOsType } from "@/test/tauri-mock";
 
 const WORK = "profile_1795300000001";
@@ -84,6 +90,31 @@ describe("a start shortcut's field in a scope", () => {
 
     expect(raisedNotices()).toEqual([
       "Couldn't save the change | Invalid shortcut 'e'",
+    ]);
+  });
+});
+
+// Without Accessibility (the Tauri backend) the field records this window's
+// own key events, one at a time, with the page rendering after each
+// (qa 2026-11-23_1747, point 2).
+describe("recording key by key, as without Accessibility", () => {
+  test("a start shortcut's field in a scope takes every key", async () => {
+    await renderPage(<ShortcutInput shortcutId="transcribe" />, {
+      settings: settingsWith({ app: { keyboard_implementation: "tauri" } }),
+      scope: DEFAULTS_SCOPE,
+    });
+    await press(screen.getByText("⌃ Space"));
+    await typeKeys("ControlLeft", "AltLeft", "KeyY");
+
+    expect(callsOf("setProfileEntry")).toEqual([
+      [
+        DEFAULTS_SCOPE,
+        "bindings",
+        "transcribe",
+        binding("transcribe", "ctrl+space", {
+          current_binding: "ctrl+option+y",
+        }),
+      ],
     ]);
   });
 });

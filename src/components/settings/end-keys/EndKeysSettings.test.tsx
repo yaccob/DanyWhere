@@ -16,6 +16,7 @@ import {
   raisedNotices,
   renderPage,
   settle,
+  typeKeys,
 } from "@/test/render";
 import { switchTestLanguage } from "@/test/i18n";
 import { setOsType } from "@/test/tauri-mock";
@@ -217,6 +218,41 @@ describe("Add End Shortcut", () => {
     expect(
       screen.getByRole("button", { name: "Add End Shortcut" }),
     ).toBeTruthy();
+  });
+});
+
+// Without Accessibility (the Tauri backend) a combination is recorded from
+// this window's own key events, one at a time, and the page renders after
+// each (qa 2026-11-23_1747, point 2: on the company Mac only the last key
+// stayed, and the capture never ended).
+describe("recording key by key, as without Accessibility", () => {
+  const TAURI = { app: { keyboard_implementation: "tauri" as const } };
+
+  test("Add End Shortcut takes every key of the combination", async () => {
+    await renderEnds([PLAIN, SEND], DEFAULTS_SCOPE, TAURI);
+
+    await press(screen.getByRole("button", { name: "Add End Shortcut" }));
+    await typeKeys("ControlLeft", "ShiftLeft", "KeyY");
+
+    const stored = storedEnds();
+    expect(stored).toHaveLength(3);
+    expect(stored[2].shortcut).toBe("ctrl+shift+y");
+    expect(callsOf("resumeAllBindings")).toEqual([[]]);
+    expect(
+      screen.getByRole("button", { name: "Add End Shortcut" }),
+    ).toBeTruthy();
+  });
+
+  test("an end's own combination takes a modifier with Enter", async () => {
+    await renderEnds([PLAIN, SEND], DEFAULTS_SCOPE, TAURI);
+
+    await press(screen.getByRole("button", { name: "⌃↩" }));
+    await typeKeys("ShiftLeft", "Enter");
+
+    expect(storedEnds().find((end) => end.id === SEND.id)?.shortcut).toBe(
+      "shift+enter",
+    );
+    expect(callsOf("resumeAllBindings")).toEqual([[]]);
   });
 });
 

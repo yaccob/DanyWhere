@@ -179,6 +179,26 @@ export const pressKeys = async (...codes: string[]): Promise<void> => {
   await settle();
 };
 
+/** Like `pressKeys`, but each press and release is an event of its own with
+ * the page rendering in between, as a person's key events arrive in the
+ * app: state a capture keeps across renders must survive them. */
+export const typeKeys = async (...codes: string[]): Promise<void> => {
+  const keyOf = (code: string) =>
+    KEY_OF_CODE[code] ?? code.replace(/^Key/, "").toLowerCase();
+  for (const code of codes) {
+    await act(async () => {
+      fireEvent.keyDown(window, { code, key: keyOf(code) });
+    });
+    await settle();
+  }
+  for (const code of [...codes].reverse()) {
+    await act(async () => {
+      fireEvent.keyUp(window, { code, key: keyOf(code) });
+    });
+    await settle();
+  }
+};
+
 /** Clicks `element` and lets what the click started finish (a command, the
  * refresh after it). */
 export const press = async (element: Element): Promise<void> => {
