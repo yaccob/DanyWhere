@@ -578,8 +578,8 @@ check("a profile counts its own values, entries included", () => {
 });
 check("a profile counts its own values per page", () =>
   assert.deepEqual(counted.profiles[0].pageCounts, {
+    general: 1,
     models: 1,
-    postprocessing: 1,
     advanced: 2,
   }),
 );
@@ -595,9 +595,9 @@ check("the tree shows a profile's count and its pages' counts", () => {
   const count = (id: string) => tree.find((item) => item.id === id)?.count;
   assert.equal(count("profile/work"), 4);
   assert.equal(count("profile/work/models"), 1);
-  assert.equal(count("profile/work/postprocessing"), 1);
+  assert.equal(count("profile/work/general"), 1);
   assert.equal(count("profile/work/advanced"), 2);
-  assert.equal(count("profile/work/general"), undefined);
+  assert.equal(count("profile/work/postprocessing"), undefined);
   assert.equal(count("profile/work/profile"), undefined);
   assert.equal(count("profile/private"), undefined);
   assert.equal(count("defaults/general"), undefined);

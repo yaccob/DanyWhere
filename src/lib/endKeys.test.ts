@@ -16,6 +16,7 @@ import {
   nameToStore,
   newEndKey,
   removeEndKey,
+  secondStartTaken,
   startsSharing,
   updateEndKey,
 } from "./endKeys";
@@ -317,6 +318,8 @@ const cases: Array<[string, () => void]> = [
         "settings.endKeys.defaultEnd",
         "settings.endKeys.errors.needsName",
         "settings.profileView.fields.defaultEnds",
+        // The second start shortcut moved to General (user, 2026-11-23).
+        "settings.postProcessing.hotkey",
       ];
       for (const key of gone) {
         assert.equal(lookup(en as Tree, key), undefined, `en ${key}`);
@@ -325,6 +328,59 @@ const cases: Array<[string, () => void]> = [
     },
   ],
 ];
+
+// The second start shortcut is taken as `app_profiles::post_processing_reachable`
+// says (user, 2026-11-23, option a): "When Held" shows it only then.
+const profile = (id: string, apps: string[], postProcess: boolean) => ({
+  id,
+  apps,
+  values: { post_process_enabled: postProcess },
+});
+cases.push(
+  [
+    "the second start shortcut is taken while the values in use post-process",
+    () => {
+      assert.equal(
+        secondStartTaken({ post_process_enabled: true, profiles: [] }),
+        true,
+      );
+      assert.equal(
+        secondStartTaken({ post_process_enabled: false, profiles: [] }),
+        false,
+      );
+    },
+  ],
+  [
+    "or while another profile with applications post-processes, chosen by application",
+    () => {
+      const settings = {
+        post_process_enabled: false,
+        profile_auto_by_app: true,
+        active_profile_id: "default",
+        profiles: [profile("work", ["com.microsoft.VSCode"], true)],
+      };
+      assert.equal(secondStartTaken(settings), true);
+      assert.equal(
+        secondStartTaken({ ...settings, profile_auto_by_app: false }),
+        false,
+        "not chosen by application",
+      );
+      assert.equal(
+        secondStartTaken({ ...settings, active_profile_id: "work" }),
+        false,
+        "the profile in use counts through the flat values",
+      );
+      assert.equal(
+        secondStartTaken({
+          ...settings,
+          profiles: [profile("work", [], true)],
+        }),
+        false,
+        "without applications",
+      );
+    },
+  ],
+);
 
 let failed = 0;
 for (const [name, check] of cases) {

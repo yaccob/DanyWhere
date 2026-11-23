@@ -37,6 +37,15 @@ export const GeneralSettings: React.FC = () => {
         <ScopedSetting field="bindings" entry="transcribe">
           <ShortcutInput shortcutId="transcribe" grouped={true} />
         </ScopedSetting>
+        {/* DanyWhere: the second start shortcut, under the first since start
+            and end shortcuts are apart (user, 2026-11-23). */}
+        <ScopedSetting field="bindings" entry="transcribe_with_post_process">
+          <ShortcutInput
+            shortcutId="transcribe_with_post_process"
+            descriptionMode="tooltip"
+            grouped={true}
+          />
+        </ScopedSetting>
         <ScopedSetting field="shortcut_activation">
           <ShortcutActivationSetting descriptionMode="tooltip" grouped={true} />
         </ScopedSetting>

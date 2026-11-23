@@ -5,7 +5,13 @@ import { notify } from "@/stores/noticeStore";
 import { useSettings } from "@/hooks/useSettings";
 import { useOsType } from "@/hooks/useOsType";
 import { formatKeyCombination } from "@/lib/utils/keyboard";
-import { START_BINDINGS, holdEndOf } from "@/lib/endKeys";
+import {
+  START_BINDINGS,
+  holdEndOf,
+  secondStartTaken,
+  type TakenFrom,
+} from "@/lib/endKeys";
+import { useSettingsStore } from "@/stores/settingsStore";
 import { SettingContainer } from "../../ui/SettingContainer";
 import { AppendTextInput } from "../AppendText";
 import { useSettingsScope } from "../profiles/scope/SettingsScope";
@@ -29,6 +35,14 @@ export const HoldEndsSetting: React.FC = () => {
   const [busy, setBusy] = useState(false);
   const holdEnds = getSetting("hold_ends") ?? {};
   const bindings = getSetting("bindings") ?? {};
+  // The second start shortcut only while DanyWhere takes it, which the
+  // settings in use decide, not the page's scope.
+  const inUse = useSettingsStore((state) => state.settings);
+  const shown = START_BINDINGS.filter(
+    (binding) =>
+      binding !== "transcribe_with_post_process" ||
+      secondStartTaken((inUse ?? {}) as TakenFrom),
+  );
 
   /** Changes the end of `binding`; both are written, as one value. */
   const change = async (binding: string, part: Partial<HoldEnd>) => {
@@ -61,7 +75,7 @@ export const HoldEndsSetting: React.FC = () => {
       layout="stacked"
     >
       <div className="flex flex-col gap-3">
-        {START_BINDINGS.map((binding) => {
+        {shown.map((binding) => {
           const end = holdEndOf(binding, holdEnds);
           const keys = bindings[binding]?.current_binding ?? "";
           const shortcut = keys

@@ -878,9 +878,6 @@
       }
     },
     "postProcessing": {
-      "hotkey": {
-        "title": "हटकी"
-      },
       "api": {
         "title": "API",
         "provider": {
