@@ -4,6 +4,14 @@ Planned work on DanyWhere, roughly in priority order within each section. Items 
 
 ## Features and improvements
 
+### Notices: a failed post-processing says why
+
+**Found (user, 2026-11-23, in 0.3.1):** Enter and Ctrl+Enter, the end shortcuts with post-processing, pasted the transcript as is, and the notice "Pasted Without Post-Processing" said only that post-processing didn't finish. The cause was in the settings: the profile In Use sent post-processing to a local model that had been removed from Ollama. Only the log said so (`404 … model '…' not found`).
+
+**Decided (user, 2026-11-23):** the notice names the actual reason, so the user knows what to change, without a full diagnosis. Examples: the provider doesn't have the model, the API key is missing or refused, the provider can't be reached or didn't answer in time. Nothing else changes; Claude's further proposal, a warning on the Post Process page for a model the provider no longer lists, isn't wanted. **Not on its own: built along with the next code change.**
+
+Where: `PostProcessOutcome::Failed` (`src-tauri/src/actions.rs`) carries no reason, and `pasted_dictation_notice` (`src-tauri/src/dictation_flow/mod.rs`) raises `PostProcessFailed` without `with_detail`; the text comes from `NOTICE_DISPLAY` (`src/lib/notices.ts`). Claude's recommendation: give the post-processing of History entries and files (`HistoryPostProcessFailed`, `FilePostProcessFailed`) the same reason, since they fail the same way.
+
 ### Post-processing: several prompts, chained or as alternatives, chosen and ordered per profile
 
 **Idea (user, 2026-11-18; to be discussed next):** there can still be several post-processing prompts, but they are no longer alternatives to each other: the user decides which of them run and in which order, so they can be chained or used as alternatives, every combination. The order is set by drag and drop or by numbers, best both. The prompts exist in every profile; which of them a profile uses, and in which order, belongs to the profile.
