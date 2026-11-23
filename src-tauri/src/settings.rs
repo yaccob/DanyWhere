@@ -3021,6 +3021,30 @@ mod tests {
     }
 
     #[test]
+    fn a_profiles_api_key_stays_out_of_the_settings_dump() {
+        // DanyWhere: load_or_create_app_settings logs the whole settings at
+        // debug level. Besides the defaults' keys (debug_output_redacts_api_keys)
+        // every profile holds keys of its own; they must stay out too.
+        let mut settings = get_default_settings();
+        settings
+            .post_process_api_keys
+            .insert("anthropic".into(), "sk-ant-defaults-secret".into());
+        let mut values = crate::profiles::ProfileValues::from_settings(&settings);
+        values
+            .post_process_api_keys
+            .insert("openai".into(), "sk-profile-secret".into());
+        settings.profiles.push(crate::profiles::Profile::new(
+            "profile_1795300000001",
+            "Work",
+            values,
+        ));
+        let dump = format!("{:?}", settings);
+        assert!(!dump.contains("defaults-secret"), "the defaults' key");
+        assert!(!dump.contains("profile-secret"), "a profile's key");
+        assert!(dump.contains("[REDACTED]"), "the keys are named as hidden");
+    }
+
+    #[test]
     fn linux_self_update_possible_depends_on_bundle_and_tool() {
         let all = |_: &str| true;
         let none = |_: &str| false;
