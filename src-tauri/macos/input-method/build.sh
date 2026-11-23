@@ -33,7 +33,9 @@ archs=(-arch arm64 -arch x86_64)
 exec_name=DanyWhereInput
 icon_name=DanyWhereInput.tiff
 frameworks=(-framework Foundation -framework AppKit -framework InputMethodKit -framework Carbon -framework Security)
-cflags=(-fobjc-arc -mmacosx-version-min="$min_os" -Wall -Wextra -Wno-unused-parameter -Werror -I"$here/Sources")
+# Warnings fail the tests (development), not a release build: a newer SDK may
+# deprecate an API without anything being wrong.
+cflags=(-fobjc-arc -mmacosx-version-min="$min_os" -Wall -Wextra -Wno-unused-parameter -I"$here/Sources")
 
 phase() {
   echo "== phase: $1 ($(date '+%H:%M:%S'))" >&2
@@ -94,7 +96,7 @@ if [ "$mode" = test ]; then
   mkdir -p "$out"
   runner="$out/input-method-tests"
   phase compile-tests
-  clang "${cflags[@]}" "${archs[@]}" -O1 -I"$here/tests" "${frameworks[@]}" \
+  clang "${cflags[@]}" -Werror "${archs[@]}" -O1 -I"$here/tests" "${frameworks[@]}" \
     "${library_sources[@]}" "$here"/tests/*.m -o "$runner"
   lipo -archs "$runner" >&2
 
