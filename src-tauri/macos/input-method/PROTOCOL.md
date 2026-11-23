@@ -14,18 +14,18 @@ Only setups without Accessibility are guided to add the source; with Accessibili
 
 For an app with bundle id `<app id>` and product name `<name>` (release `com.yaccob.danywhere` / `DanyWhere`, Dev `com.pais.handy.dev` / `DanyWhere Dev`, NoAX `com.pais.handy.noax` / `DanyWhere NoAX`):
 
-| What | Value |
-|---|---|
-| Bundle file name | `<name> Input.app` |
-| `CFBundleIdentifier` = `TISInputSourceID` | `<app id>.inputmethod.DanyWhere` (macOS requires `.inputmethod.` in the id) |
-| `CFBundleName`, `CFBundleDisplayName` (shown in the input menu and System Settings) | `<name>` |
-| `InputMethodConnectionName` | `<input method id>_Connection` |
-| `DanyWhereAppID` (custom Info.plist key) | `<app id>` |
-| `CFBundleVersion`, `CFBundleShortVersionString` | the app's version |
-| `TISIntendedLanguage` | `en` (the setup tells the user to search for the name) |
-| Place in the app | `Contents/Helpers/<name> Input.app`, signed before the app is signed |
-| Installed copy | `~/Library/Input Methods/<name> Input.app` |
-| Log of the input method | `~/Library/Logs/<app id>/input-method.log` (events only, never typed keys or inserted text) |
+| What                                                                                | Value                                                                                       |
+| ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| Bundle file name                                                                    | `<name> Input.app`                                                                          |
+| `CFBundleIdentifier` = `TISInputSourceID`                                           | `<app id>.inputmethod.DanyWhere` (macOS requires `.inputmethod.` in the id)                 |
+| `CFBundleName`, `CFBundleDisplayName` (shown in the input menu and System Settings) | `<name>`                                                                                    |
+| `InputMethodConnectionName`                                                         | `<input method id>_Connection`                                                              |
+| `DanyWhereAppID` (custom Info.plist key)                                            | `<app id>`                                                                                  |
+| `CFBundleVersion`, `CFBundleShortVersionString`                                     | the app's version                                                                           |
+| `TISIntendedLanguage`                                                               | `en` (the setup tells the user to search for the name)                                      |
+| Place in the app                                                                    | `Contents/Helpers/<name> Input.app`, signed before the app is signed                        |
+| Installed copy                                                                      | `~/Library/Input Methods/<name> Input.app`                                                  |
+| Log of the input method                                                             | `~/Library/Logs/<app id>/input-method.log` (events only, never typed keys or inserted text) |
 
 The app finds its bundled input method as the `*.app` in `Contents/Helpers` whose `DanyWhereAppID` equals the app's own bundle id. A build without one (plain `tauri build`, `cargo test`, Windows, Linux) has no input method: rule 1 never applies.
 
@@ -49,25 +49,25 @@ Newline-delimited JSON objects in UTF-8, each with a `"type"`. Unknown types and
 
 Input method → app:
 
-| Message | When |
-|---|---|
-| `{"type":"hello","version":"0.3.3","pid":123}` | first, right after connecting |
-| `{"type":"active","client":"com.apple.TextEdit"}` | `activateServer`: a text field of that app now has the input method |
-| `{"type":"inactive","client":"com.apple.TextEdit"}` | `deactivateServer` |
-| `{"type":"inserted","id":7,"ok":true,"client":"com.apple.TextEdit"}` | after `insert` succeeded |
-| `{"type":"inserted","id":7,"ok":false,"reason":"no_client"}` | after `insert` failed; `reason` is `no_client` (no text field has the input method) or `error` |
-| `{"type":"caught","id":9,"code":36,"mods":0}` | stage 2: a key it was told to catch was pressed |
+| Message                                                              | When                                                                                           |
+| -------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `{"type":"hello","version":"0.3.3","pid":123}`                       | first, right after connecting                                                                  |
+| `{"type":"active","client":"com.apple.TextEdit"}`                    | `activateServer`: a text field of that app now has the input method                            |
+| `{"type":"inactive","client":"com.apple.TextEdit"}`                  | `deactivateServer`                                                                             |
+| `{"type":"inserted","id":7,"ok":true,"client":"com.apple.TextEdit"}` | after `insert` succeeded                                                                       |
+| `{"type":"inserted","id":7,"ok":false,"reason":"no_client"}`         | after `insert` failed; `reason` is `no_client` (no text field has the input method) or `error` |
+| `{"type":"caught","id":9,"code":36,"mods":0}`                        | stage 2: a key it was told to catch was pressed                                                |
 
 App → input method:
 
-| Message | What the input method does |
-|---|---|
-| `{"type":"insert","id":7,"text":"…"}` | `[client insertText:text replacementRange:NSMakeRange(NSNotFound, 0)]` into the text field of the last `activateServer`, then answers `inserted` |
-| `{"type":"layout","source":"com.apple.keylayout.German"}` | while its source is selected, typing uses this keyboard layout (`TISSetInputMethodKeyboardLayoutOverride`), applied now if active and on every `activateServer`; `"source":null` clears it |
-| `{"type":"restore","source":"com.apple.keylayout.German"}` | if the link breaks while its own source is the current one, select this source (`TISSelectInputSource`); `null` clears it |
+| Message                                                                | What the input method does                                                                                                                                                                                                                                   |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `{"type":"insert","id":7,"text":"…"}`                                  | `[client insertText:text replacementRange:NSMakeRange(NSNotFound, 0)]` into the text field of the last `activateServer`, then answers `inserted`                                                                                                             |
+| `{"type":"layout","source":"com.apple.keylayout.German"}`              | while its source is selected, typing uses this keyboard layout (`TISSetInputMethodKeyboardLayoutOverride`), applied now if active and on every `activateServer`; `"source":null` clears it                                                                   |
+| `{"type":"restore","source":"com.apple.keylayout.German"}`             | if the link breaks while its own source is the current one, select this source (`TISSelectInputSource`); `null` clears it                                                                                                                                    |
 | `{"type":"catch","id":9,"keys":[{"code":36,"mods":0}],"hold_ms":1500}` | stage 2: on the next key-down matching one of `keys` (key code and device-independent modifier flags; no auto-repeat) while it has a client, send `caught` and hold the key: wait up to `hold_ms` for `release`. `{"type":"catch","id":9,"keys":[]}` disarms |
-| `{"type":"release","id":9,"text":"…"}` | stage 2: insert `text`, then let the held key through (`handle` returns `NO`). Without `release` in time the key is swallowed (`YES`) and the text comes later with `insert` |
-| `{"type":"quit"}` | exit (the app replaces the bundle) |
+| `{"type":"release","id":9,"text":"…"}`                                 | stage 2: insert `text`, then let the held key through (`handle` returns `NO`). Without `release` in time the key is swallowed (`YES`) and the text comes later with `insert`                                                                                 |
+| `{"type":"quit"}`                                                      | exit (the app replaces the bundle)                                                                                                                                                                                                                           |
 
 Outside stage 2's `catch` the input method lets every key through unchanged (`handle` returns `NO`) and counts nothing.
 
