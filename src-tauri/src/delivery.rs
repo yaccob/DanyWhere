@@ -172,18 +172,21 @@ fn put_on_clipboard_with(
     app: &AppHandle,
     text: String,
     values: Option<ProfileValues>,
+    sound: bool,
     notice: bool,
 ) -> Result<(), String> {
     app.clipboard()
         .write_text(text)
         .map_err(|err| err.to_string())?;
     let settings = crate::app_profiles::with_values(&get_settings(app), values.as_ref());
-    match values {
-        // The sound reads the dictation's values; on this thread, these.
-        Some(values) => crate::app_profiles::with_values_here(values, || {
-            play_feedback_sound(app, SoundType::Clipboard)
-        }),
-        None => play_feedback_sound(app, SoundType::Clipboard),
+    if sound {
+        match values {
+            // The sound reads the dictation's values; on this thread, these.
+            Some(values) => crate::app_profiles::with_values_here(values, || {
+                play_feedback_sound(app, SoundType::Clipboard)
+            }),
+            None => play_feedback_sound(app, SoundType::Clipboard),
+        }
     }
     if notice {
         if let Some(duration) = clipboard_notice_duration(&settings) {
@@ -196,7 +199,7 @@ fn put_on_clipboard_with(
 /// Puts `text` on the clipboard with the clipboard sound and the "on the
 /// clipboard" notice.
 fn put_on_clipboard_with_notice(app: &AppHandle, text: String) {
-    match put_on_clipboard_with(app, text, None, true) {
+    match put_on_clipboard_with(app, text, None, true, true) {
         Ok(()) => info!("Put the last transcript on the clipboard."),
         Err(err) => error!(
             "Failed to put the last transcript on the clipboard: {}",
@@ -285,15 +288,19 @@ pub trait PasteLastPorts {
         values: Option<ProfileValues>,
         append_text: &str,
     ) -> Result<PasteOutcome, String>;
-    /// Puts `text` on the clipboard with the clipboard sound and, if
-    /// `notice`, the "on the clipboard" notice, as the stored settings with
-    /// `values` in them say.
+    /// Puts `text` on the clipboard with, if `sound`, the clipboard sound
+    /// and, if `notice`, the "on the clipboard" notice, as the stored
+    /// settings with `values` in them say.
     fn put_on_clipboard(
         &self,
         text: String,
         values: Option<ProfileValues>,
+        sound: bool,
         notice: bool,
     ) -> Result<(), String>;
+    /// Whether a recording or its transcription is under way
+    /// (`tray::dictation_in_progress`): its overlay and microphone are busy.
+    fn dictating(&self) -> bool;
 }
 
 /// [`PasteLastPorts`] of the running app.
@@ -331,9 +338,14 @@ impl PasteLastPorts for AppPasteLast {
         &self,
         text: String,
         values: Option<ProfileValues>,
+        sound: bool,
         notice: bool,
     ) -> Result<(), String> {
-        put_on_clipboard_with(&self.app, text, values, notice)
+        put_on_clipboard_with(&self.app, text, values, sound, notice)
+    }
+
+    fn dictating(&self) -> bool {
+        crate::tray::dictation_in_progress(&self.app)
     }
 }
 
@@ -382,8 +394,15 @@ pub fn paste_last<P: PasteLastPorts>(
                 "Not pasting the last transcript: without Accessibility, or pasting is off in the profile it goes with."
             );
             // A failed post-processing's notice stays on the overlay, as
-            // after a dictation.
-            match ports.put_on_clipboard(text, values, !post_process_failed) {
+            // after a dictation. During a recording its overlay and its
+            // microphone are busy: no notice and no sound then.
+            let dictating = ports.dictating();
+            match ports.put_on_clipboard(
+                text,
+                values,
+                !dictating,
+                !dictating && !post_process_failed,
+            ) {
                 Ok(()) => {
                     info!("Put the last transcript on the clipboard.");
                     PasteLastOutcome::OnClipboard
@@ -1165,6 +1184,10 @@ mod tests {
         paste_result: Result<PasteOutcome, String>,
         asked_app_in_front: Cell<usize>,
         did: RefCell<Vec<Did>>,
+        /// A recording or its transcription is under way.
+        dictating: bool,
+        /// How many clipboard sounds played.
+        sounds: Cell<usize>,
     }
 
     impl FakePasteLast {
@@ -1181,6 +1204,8 @@ mod tests {
                 paste_result: Ok(PasteOutcome::Pasted),
                 asked_app_in_front: Cell::new(0),
                 did: RefCell::new(Vec::new()),
+                dictating: false,
+                sounds: Cell::new(0),
             }
         }
 
@@ -1238,13 +1263,21 @@ mod tests {
             &self,
             text: String,
             values: Option<ProfileValues>,
+            sound: bool,
             notice: bool,
         ) -> Result<(), String> {
+            if sound {
+                self.sounds.set(self.sounds.get() + 1);
+            }
             self.did.borrow_mut().push(Did::OnClipboard {
                 text,
                 notice_ms: notice.then(|| self.with(values.as_ref()).clipboard_notice_ms),
             });
             Ok(())
+        }
+
+        fn dictating(&self) -> bool {
+            self.dictating
         }
     }
 
@@ -1507,6 +1540,32 @@ mod tests {
                     "{state}"
                 );
             }
+        }
+    }
+
+    #[test]
+    fn paste_last_during_a_recording_leaves_its_overlay_and_microphone_alone() {
+        // DanyWhere: the overlay and the microphone belong to the recording,
+        // so a text that goes on the clipboard then goes without the sound
+        // and the notice; outside a recording it has both.
+        for dictating in [false, true] {
+            let mut ports =
+                FakePasteLast::in_use(PasteMethod::CtrlV).app_in_front(PasteMethod::None);
+            ports.dictating = dictating;
+            assert_eq!(paste_last_with(&ports), PasteLastOutcome::OnClipboard);
+            let did = ports.did();
+            assert!(
+                matches!(
+                    did.as_slice(),
+                    [Did::OnClipboard { notice_ms, .. }] if notice_ms.is_some() != dictating
+                ),
+                "dictating {dictating}: {did:?}"
+            );
+            assert_eq!(
+                ports.sounds.get(),
+                usize::from(!dictating),
+                "dictating {dictating}"
+            );
         }
     }
 
