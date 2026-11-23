@@ -1090,7 +1090,7 @@ mod platform {
     };
 
     pub fn frontmost_app() -> Option<(String, String)> {
-        frontmost(&|_: &str, _: &str| false).map(|(exe, name, _)| (exe, name))
+        foreground(&|_: &str, _: &str| false).map(|(exe, name, _)| (exe, name))
     }
 
     /// The bounds of the monitor Windows puts the foreground window on, in
@@ -1141,11 +1141,18 @@ mod platform {
     }
 
     /// The foreground window's program (exe file name), its name, and the
-    /// window's title when `wants_title` allows it.
+    /// window's title when `wants_title` allows it. Windows needs no
+    /// permission for it, so `_access` doesn't matter here.
     pub fn frontmost(
         wants_title: WantsTitle,
         _access: AccessibilityState,
     ) -> Option<(String, String, Option<String>)> {
+        foreground(wants_title)
+    }
+
+    /// [`frontmost`] without the Accessibility state, for
+    /// [`frontmost_app`], which has no settings to build one from.
+    fn foreground(wants_title: WantsTitle) -> Option<(String, String, Option<String>)> {
         // SAFETY: Win32 calls on the foreground window handle and a process
         // handle opened and closed here.
         unsafe {
