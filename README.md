@@ -25,7 +25,7 @@ The hard problems — local speech recognition, voice activity detection, global
 - **Your word lists as known terms.** Post-processing gets the word lists in effect, so it can write a misheard name as listed and tell it from a word that fits the sentence, with every speech model.
 - **Earlier dictations as context.** An end shortcut can send your earlier dictations from the same window along with its post-processing, so the model knows what the conversation is about.
 - **Post-processing on this computer, and you see where it runs.** Next to the provider, the settings say whether post-processing stays on this computer or goes to the cloud. With a model served on this computer, such as Ollama or LM Studio through the Custom provider, DanyWhere has it loaded as soon as you start speaking, so its cold start doesn't add to the wait.
-- **Decide at the end how a dictation ends.** A recording starts with a start shortcut and ends with an end shortcut of your choice, each with a key combination of its own: whether the text is post-processed, whether earlier dictations go along as context, and what is appended. Out of the box the combinations of the two start shortcuts are ends too, the first without and the second with post-processing, whichever started the recording; releasing a held start shortcut ends as set under **When Held**.
+- **Decide at the end how a dictation ends.** A recording starts with a start shortcut and ends with an end shortcut of your choice, each with a key combination of its own: whether the text is post-processed (while post-processing is switched on), whether earlier dictations go along as context, and what is appended. Out of the box the combinations of the two start shortcuts are ends too, the first without and the second with post-processing, whichever started the recording; releasing a held start shortcut ends as set under **When Held**.
 
 ### History
 
@@ -62,13 +62,13 @@ Everything else works as in Handy.
 
 DanyWhere has its own app name, settings, process name (`danywhere`) and update channel, so it can be installed next to Handy; give the two apps different shortcuts.
 
-The download links below are for DanyWhere 0.3.0; all releases are on this repository's [releases](https://github.com/yaccob/DanyWhere/releases) page. DanyWhere checks the releases for updates on every platform; updates are signed with DanyWhere's own key.
+The download links below are for DanyWhere 0.3.1; all releases are on this repository's [releases](https://github.com/yaccob/DanyWhere/releases) page. DanyWhere checks the releases for updates on every platform; updates are signed with DanyWhere's own key.
 
 ### macOS
 
 You need a Mac with macOS 11 (Big Sur) or later, with Apple silicon or an Intel processor. On Intel Macs, transcription runs on the processor, so older or dual-core Macs work best with the smaller models.
 
-1. Download [DanyWhere_0.3.0_aarch64.dmg](https://github.com/yaccob/DanyWhere/releases/download/danywhere-v0.3.0/DanyWhere_0.3.0_aarch64.dmg) (Apple silicon) or [DanyWhere_0.3.0_x64.dmg](https://github.com/yaccob/DanyWhere/releases/download/danywhere-v0.3.0/DanyWhere_0.3.0_x64.dmg) (Intel). Both are signed with an Apple Developer ID and notarized by Apple.
+1. Download [DanyWhere_0.3.1_aarch64.dmg](https://github.com/yaccob/DanyWhere/releases/download/danywhere-v0.3.1/DanyWhere_0.3.1_aarch64.dmg) (Apple silicon) or [DanyWhere_0.3.1_x64.dmg](https://github.com/yaccob/DanyWhere/releases/download/danywhere-v0.3.1/DanyWhere_0.3.1_x64.dmg) (Intel). Both are signed with an Apple Developer ID and notarized by Apple.
 2. Open the DMG and drag DanyWhere into Applications.
 
    Or install it with [Homebrew](https://brew.sh) instead of steps 1 and 2: `brew install --cask yaccob/tap/danywhere`
@@ -80,7 +80,7 @@ You need a Mac with macOS 11 (Big Sur) or later, with Apple silicon or an Intel 
 
 You need Windows 10 or 11 on an x64 or ARM64 PC. On x64, transcription can use the graphics card (Vulkan); on ARM64, it runs on the processor.
 
-1. Download the installer: [DanyWhere_0.3.0_x64-setup.exe](https://github.com/yaccob/DanyWhere/releases/download/danywhere-v0.3.0/DanyWhere_0.3.0_x64-setup.exe) for x64, [DanyWhere_0.3.0_arm64-setup.exe](https://github.com/yaccob/DanyWhere/releases/download/danywhere-v0.3.0/DanyWhere_0.3.0_arm64-setup.exe) for ARM64. For deployment with tools that need an MSI, use [DanyWhere_0.3.0_x64_en-US.msi](https://github.com/yaccob/DanyWhere/releases/download/danywhere-v0.3.0/DanyWhere_0.3.0_x64_en-US.msi) or [DanyWhere_0.3.0_arm64_en-US.msi](https://github.com/yaccob/DanyWhere/releases/download/danywhere-v0.3.0/DanyWhere_0.3.0_arm64_en-US.msi) instead.
+1. Download the installer: [DanyWhere_0.3.1_x64-setup.exe](https://github.com/yaccob/DanyWhere/releases/download/danywhere-v0.3.1/DanyWhere_0.3.1_x64-setup.exe) for x64, [DanyWhere_0.3.1_arm64-setup.exe](https://github.com/yaccob/DanyWhere/releases/download/danywhere-v0.3.1/DanyWhere_0.3.1_arm64-setup.exe) for ARM64. For deployment with tools that need an MSI, use [DanyWhere_0.3.1_x64_en-US.msi](https://github.com/yaccob/DanyWhere/releases/download/danywhere-v0.3.1/DanyWhere_0.3.1_x64_en-US.msi) or [DanyWhere_0.3.1_arm64_en-US.msi](https://github.com/yaccob/DanyWhere/releases/download/danywhere-v0.3.1/DanyWhere_0.3.1_arm64_en-US.msi) instead.
 2. Run the installer. DanyWhere is not signed with a Windows code-signing certificate yet, so Windows SmartScreen warns "Windows protected your PC": click **More info**, then **Run anyway**. On Windows 11 with Smart App Control switched on (Windows Security → App & browser control), Windows blocks unsigned apps without offering this choice.
 
    The installer asks for a normal or a portable installation. A portable installation keeps settings, models and history in a `Data` folder next to `danywhere.exe`.
@@ -94,26 +94,26 @@ DanyWhere comes for x64 and ARM64 as a `.deb`, an `.rpm` and an AppImage:
 
 | Package                             | x64                                                                                                                                     | ARM64                                                                                                                                       |
 | ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| deb (Debian, Ubuntu 22.04 or later) | [DanyWhere_0.3.0_amd64.deb](https://github.com/yaccob/DanyWhere/releases/download/danywhere-v0.3.0/DanyWhere_0.3.0_amd64.deb)           | [DanyWhere_0.3.0_arm64.deb](https://github.com/yaccob/DanyWhere/releases/download/danywhere-v0.3.0/DanyWhere_0.3.0_arm64.deb)               |
-| rpm (Fedora, openSUSE)              | [DanyWhere-0.3.0-1.x86_64.rpm](https://github.com/yaccob/DanyWhere/releases/download/danywhere-v0.3.0/DanyWhere-0.3.0-1.x86_64.rpm)     | [DanyWhere-0.3.0-1.aarch64.rpm](https://github.com/yaccob/DanyWhere/releases/download/danywhere-v0.3.0/DanyWhere-0.3.0-1.aarch64.rpm)       |
-| AppImage (any distribution)         | [DanyWhere_0.3.0_amd64.AppImage](https://github.com/yaccob/DanyWhere/releases/download/danywhere-v0.3.0/DanyWhere_0.3.0_amd64.AppImage) | [DanyWhere_0.3.0_aarch64.AppImage](https://github.com/yaccob/DanyWhere/releases/download/danywhere-v0.3.0/DanyWhere_0.3.0_aarch64.AppImage) |
+| deb (Debian, Ubuntu 22.04 or later) | [DanyWhere_0.3.1_amd64.deb](https://github.com/yaccob/DanyWhere/releases/download/danywhere-v0.3.1/DanyWhere_0.3.1_amd64.deb)           | [DanyWhere_0.3.1_arm64.deb](https://github.com/yaccob/DanyWhere/releases/download/danywhere-v0.3.1/DanyWhere_0.3.1_arm64.deb)               |
+| rpm (Fedora, openSUSE)              | [DanyWhere-0.3.1-1.x86_64.rpm](https://github.com/yaccob/DanyWhere/releases/download/danywhere-v0.3.1/DanyWhere-0.3.1-1.x86_64.rpm)     | [DanyWhere-0.3.1-1.aarch64.rpm](https://github.com/yaccob/DanyWhere/releases/download/danywhere-v0.3.1/DanyWhere-0.3.1-1.aarch64.rpm)       |
+| AppImage (any distribution)         | [DanyWhere_0.3.1_amd64.AppImage](https://github.com/yaccob/DanyWhere/releases/download/danywhere-v0.3.1/DanyWhere_0.3.1_amd64.AppImage) | [DanyWhere_0.3.1_aarch64.AppImage](https://github.com/yaccob/DanyWhere/releases/download/danywhere-v0.3.1/DanyWhere_0.3.1_aarch64.AppImage) |
 
 1. Download the package for your distribution and processor, and install it (commands for x64):
 
    ```bash
    # deb: apt installs the dependencies too (dpkg -i does not)
-   sudo apt install ./DanyWhere_0.3.0_amd64.deb
+   sudo apt install ./DanyWhere_0.3.1_amd64.deb
    # rpm (openSUSE: sudo zypper install …)
-   sudo dnf install ./DanyWhere-0.3.0-1.x86_64.rpm
+   sudo dnf install ./DanyWhere-0.3.1-1.x86_64.rpm
    # AppImage
-   chmod +x DanyWhere_0.3.0_amd64.AppImage && ./DanyWhere_0.3.0_amd64.AppImage
+   chmod +x DanyWhere_0.3.1_amd64.AppImage && ./DanyWhere_0.3.1_amd64.AppImage
    ```
 
 2. Install the tool DanyWhere pastes with: `xdotool` on X11, `wtype` or `dotool` on Wayland. Without one, pasting may not work, especially on Wayland. Handy's [Linux notes](https://github.com/cjpais/Handy#linux-notes) have the details, for example for Ubuntu 26.04.
 3. Start DanyWhere and follow the setup: allow microphone access and pick a model.
 4. Press Ctrl+Alt+Space and speak; Ctrl+Alt+Shift+Space does the same with post-processing. On Wayland, global shortcuts usually have to be set up in the desktop environment: bind them to `danywhere --toggle-transcription` and `danywhere --toggle-post-process` (see [Command line](#command-line)).
 
-On a Wayland desktop the AppImage runs as a Wayland app, like the deb and rpm, so its window follows your display scaling. If it misbehaves there, start it with `HANDY_GDK_BACKEND=x11 ./DanyWhere_0.3.0_amd64.AppImage` to run it through Xwayland instead.
+On a Wayland desktop the AppImage runs as a Wayland app, like the deb and rpm, so its window follows your display scaling. If it misbehaves there, start it with `HANDY_GDK_BACKEND=x11 ./DanyWhere_0.3.1_amd64.AppImage` to run it through Xwayland instead.
 
 ## Command line
 
