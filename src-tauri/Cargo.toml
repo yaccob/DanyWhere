@@ -237,6 +237,14 @@ tao-macros = { git = "https://github.com/cjpais/tao", rev = "c3bee28c1d446d95f08
 
 [dev-dependencies]
 tempfile = "3"
+# DanyWhere: the fake microphone (`handy_recorder::testing::FakeMic`) for
+# tests of the recording and the start of a dictation; release builds stay
+# without it.
+handy-recorder = { version = "0.1.1", features = ["test-backend"] }
+# DanyWhere: rodio's cpal with its `custom` host, for fake output devices in
+# tests of the feedback sounds (`audio_toolkit::audio::fake_output`); release
+# builds stay without it. Code uses it as `rodio::cpal`.
+cpal = { version = "0.18.2", features = ["custom"] }
 # Test-only tokio features for the local socket servers exercising the
 # resumable HTTP downloader; normal builds keep the leaner feature set.
 tokio = { version = "1.43.0", features = ["macros", "net", "io-util", "sync", "time", "rt-multi-thread"] }

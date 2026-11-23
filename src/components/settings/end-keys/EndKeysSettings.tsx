@@ -4,6 +4,7 @@ import { type } from "@tauri-apps/plugin-os";
 import { commands } from "@/bindings";
 import { notify } from "@/stores/noticeStore";
 import { useSettings } from "@/hooks/useSettings";
+import { postProcessingOn } from "@/lib/endKeys";
 import { SettingsGroup } from "../../ui/SettingsGroup";
 import { EndKeysEditor } from "./EndKeysEditor";
 // DanyWhere (strand E2): the end shortcuts of the page's scope, the defaults
@@ -25,6 +26,10 @@ export const EndKeysSettings: React.FC = () => {
   const [busy, setBusy] = useState(false);
   const endKeys = getSetting("end_keys") ?? [];
   const bindings = getSetting("bindings") ?? {};
+  // The scope's own switch: the defaults' or the profile's value.
+  const postProcessingOff = !postProcessingOn({
+    post_process_enabled: getSetting("post_process_enabled"),
+  });
   const isLinux = type() === "linux";
   const scope = useSettingsScope();
   const describe = useDescribeEndKeyError();
@@ -74,6 +79,7 @@ export const EndKeysSettings: React.FC = () => {
           value={endKeys}
           bindings={bindings}
           disabled={busy}
+          postProcessingOff={postProcessingOff}
           onChange={(next) =>
             scope
               ? save("end_keys", next)

@@ -1,21 +1,10 @@
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 use crate::apple_intelligence;
-use crate::audio_feedback::{play_feedback_sound, play_feedback_sound_blocking, SoundType};
-use crate::audio_toolkit::VadPolicy;
-use crate::managers::audio::{recording_notice_code, AudioRecordingManager};
-use crate::managers::history::HistoryManager;
-use crate::managers::model::ModelManager;
-use crate::managers::transcription::policy::{live_decode, LiveDecode, ModelTraits};
-use crate::managers::transcription::StreamWorkKind;
-use crate::managers::transcription::{Transcription, TranscriptionManager};
-use crate::notices::{self, Notice, NoticeCode, NoticeSource};
-use crate::settings::{AppSettings, OverlayStyle, APPLE_INTELLIGENCE_PROVIDER_ID};
+use crate::managers::audio::AudioRecordingManager;
+use crate::managers::transcription::TranscriptionManager;
+use crate::settings::{AppSettings, APPLE_INTELLIGENCE_PROVIDER_ID};
 use crate::shortcut;
-use crate::tray::{set_tray_state, TrayIconState};
-use crate::utils::{
-    self, show_processing_overlay, show_recording_overlay, show_transcribing_overlay,
-};
-use crate::TranscriptionCoordinator;
+use crate::utils;
 use log::{debug, error, warn};
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
@@ -50,7 +39,7 @@ pub struct TranscriptionCompleteEvent {
     pub wait_seconds: f64,
 }
 
-fn emit_transcription_complete(
+pub(crate) fn emit_transcription_complete(
     app: &AppHandle,
     outcome: TranscriptionOutcome,
     sample_count: usize,
@@ -67,37 +56,6 @@ fn emit_transcription_complete(
     }
 }
 
-/// Nothing to type: `Silent` if the microphone sent only zeros, else `Empty`.
-fn empty_outcome(input_silent: bool) -> TranscriptionOutcome {
-    if input_silent {
-        TranscriptionOutcome::Silent
-    } else {
-        TranscriptionOutcome::Empty
-    }
-}
-
-/// Ends a dictation that has nothing to type. A microphone that sent only
-/// digital silence (muted, or the wrong default device) gets a notice, so it
-/// doesn't look like the model missed the speech (#1899).
-fn finish_without_text(
-    app: &AppHandle,
-    input_silent: bool,
-    sample_count: usize,
-    stop_time: Instant,
-) {
-    if input_silent {
-        warn!("The microphone sent only digital silence; nothing was transcribed");
-        notices::raise(
-            app,
-            Notice::new(NoticeCode::MicrophoneSilent, NoticeSource::Dictation),
-        );
-    } else {
-        utils::hide_recording_overlay(app);
-    }
-    set_tray_state(app, TrayIconState::Idle);
-    emit_transcription_complete(app, empty_outcome(input_silent), sample_count, stop_time);
-}
-
 const CANCELLATION_POLL_INTERVAL: Duration = Duration::from_millis(25);
 
 /// Bumped per recording session, so a late paste from an earlier session
@@ -109,23 +67,9 @@ pub fn current_recording_session() -> u64 {
     RECORDING_SESSION.load(Ordering::SeqCst)
 }
 
-/// Drop guard that finishes the transcription pipeline, including immediate
-/// model unloading on early exits.
-struct FinishGuard(AppHandle, Arc<TranscriptionManager>);
-impl Drop for FinishGuard {
-    fn drop(&mut self) {
-        // DanyWhere: the dictation's own profile ends with it, before the
-        // coordinator may start the next one.
-        crate::app_profiles::end_dictation();
-        self.1.maybe_unload_immediately("transcription session");
-        if let Some(c) = self.0.try_state::<TranscriptionCoordinator>() {
-            c.notify_processing_finished();
-        }
-        // The pipeline just freed its large transient buffers (captured PCM,
-        // WAV copy, engine scratch); hand the cached pages back to the OS so
-        // they don't sit in malloc arenas until they get swapped out (#1792).
-        crate::memory::trim_freed_memory();
-    }
+/// DanyWhere: a new recording session begins (`dictation_start`).
+pub(crate) fn begin_recording_session() {
+    RECORDING_SESSION.fetch_add(1, Ordering::SeqCst);
 }
 
 // Shortcut Action Trait
@@ -224,7 +168,10 @@ fn non_blank_post_processed_text(text: String) -> Option<String> {
     }
 }
 
-async fn complete_unless_cancelled<F, C>(operation: F, is_cancelled: C) -> Option<F::Output>
+pub(crate) async fn complete_unless_cancelled<F, C>(
+    operation: F,
+    is_cancelled: C,
+) -> Option<F::Output>
 where
     F: Future,
     C: Fn() -> bool,
@@ -242,10 +189,6 @@ where
             return Some(result);
         }
     }
-}
-
-fn should_use_streaming_overlay(style: OverlayStyle, is_streaming: bool) -> bool {
-    style == OverlayStyle::Live && is_streaming
 }
 
 /// What became of a transcription's post-processing.
@@ -568,7 +511,11 @@ async fn post_process_outcome(
     }
 }
 
-pub(crate) struct ProcessedTranscription {
+// DanyWhere: `pub`, not `pub(crate)`: the public `dictation_flow::ports`
+// traits return it, and the Linux CI's compiler refuses a crate-private type
+// there (E0446), though the local one accepts it. `actions` itself stays a
+// private module.
+pub struct ProcessedTranscription {
     pub final_text: String,
     pub post_processed_text: Option<String>,
     pub post_process_prompt: Option<String>,
@@ -616,6 +563,23 @@ pub(crate) async fn process_transcription_output_with(
             ids,
         );
     }
+    process_transcription_with_settings(&settings, transcription, post_process, |instructions| {
+        crate::dictation_context::context_for(app, &settings, instructions, context)
+    })
+    .await
+}
+
+/// DanyWhere: [`process_transcription_output_with`] with the `settings`
+/// given (a dictation's, `dictation_snapshot`) instead of read through the
+/// app. `context_for` builds the context block for the instructions it is
+/// given (`dictation_context::context_for`); it is asked only when the
+/// transcription is post-processed and has speech.
+pub(crate) async fn process_transcription_with_settings(
+    settings: &AppSettings,
+    transcription: &str,
+    post_process: bool,
+    context_for: impl FnOnce(&str) -> Option<crate::dictation_context::ContextBlock>,
+) -> ProcessedTranscription {
     let mut final_text = transcription.to_string();
     let mut post_processed_text: Option<String> = None;
     let mut post_process_prompt: Option<String> = None;
@@ -629,7 +593,7 @@ pub(crate) async fn process_transcription_output_with(
         // (`prompt_library`), and earlier dictations from the same window,
         // if "Send Context" asked for them (the query then has a window).
         let (instructions, prompt_names) = {
-            let prompts = crate::prompt_library::requested(&settings);
+            let prompts = crate::prompt_library::requested(settings);
             (
                 crate::prompt_library::request_instructions(&prompts),
                 crate::prompt_library::request_names(&prompts),
@@ -638,11 +602,11 @@ pub(crate) async fn process_transcription_output_with(
         let context_block = if is_blank_transcription(&final_text) {
             None
         } else {
-            crate::dictation_context::context_for(app, &settings, &instructions, context)
+            context_for(&instructions)
         };
         // A reply that's blank once cleaned is no better than none.
         let report =
-            post_process_within_time_limit(&settings, &final_text, context_block.as_ref()).await;
+            post_process_within_time_limit(settings, &final_text, context_block.as_ref()).await;
         let outcome = match report.outcome {
             PostProcessOutcome::Done(text) => non_blank_post_processed_text(text)
                 .map_or(PostProcessOutcome::Failed, PostProcessOutcome::Done),
@@ -682,276 +646,11 @@ pub(crate) async fn process_transcription_output_with(
     }
 }
 
-/// DanyWhere: looks at a finished dictation (`entry_id`, the History entry
-/// it was saved as) going into the application in front right away, pasted
-/// or inserted by the service call waiting for it, and redoes it for that
-/// application's profile when needed (`profile_redo::for_insert`). `None`:
-/// it goes as it is, with its own profile's values; as when it is copied
-/// ("Copy Last Transcript" during the dictation) or waits to be inserted.
-fn redo_for_app_in_front(
-    app: &AppHandle,
-    hm: &HistoryManager,
-    entry_id: Option<i64>,
-    session: u64,
-    show: &dyn Fn(crate::profile_redo::Working),
-) -> Option<crate::profile_redo::ForInsert> {
-    let entry_id = entry_id?;
-    if crate::dictation_key_inserts::copies_instead_of_pasting(session)
-        || !crate::delivery::goes_into_app_in_front(
-            // DanyWhere: the dictation's paste method (this thread's values).
-            &crate::app_profiles::dictation_settings(app),
-            crate::delivery::INSERT_SERVICE_AVAILABLE,
-            crate::insert_service::call_waiting(),
-        )
-    {
-        return None;
-    }
-    let entry = tauri::async_runtime::block_on(hm.get_entry_by_id(entry_id))
-        .ok()
-        .flatten()?;
-    crate::profile_redo::for_insert(app, &entry, show)
-}
-
-/// DanyWhere: the notice a pasted dictation gets: a failed post-processing,
-/// else a refused effort (the text came, but at the model's default).
-fn pasted_dictation_notice(
-    post_process_failed: bool,
-    effort_refused_by: Option<&str>,
-) -> Option<Notice> {
-    if post_process_failed {
-        return Some(Notice::new(
-            NoticeCode::PostProcessFailed,
-            NoticeSource::Dictation,
-        ));
-    }
-    effort_refused_by.map(|model| {
-        Notice::new(
-            NoticeCode::PostProcessEffortRefused,
-            NoticeSource::Dictation,
-        )
-        .with_detail(model.to_string())
-    })
-}
-
 impl ShortcutAction for TranscribeAction {
     fn start(&self, app: &AppHandle, binding_id: &str, _shortcut_str: &str) {
-        let start_time = Instant::now();
-        debug!("TranscribeAction::start called for binding: {}", binding_id);
-
-        // Load model in the background
-        let tm = app.state::<Arc<TranscriptionManager>>();
-        let rm = app.state::<Arc<AudioRecordingManager>>();
-
-        // DanyWhere: the profile of the app in front, when it has one of
-        // its own (`app_profiles`); its values apply until the dictation ends.
-        // What the overlay shows of the dictation's profile comes back.
-        let dictation_profile = crate::app_profiles::begin_dictation(app);
-
-        // Load ASR model and VAD model in parallel
-        let kickoff_started = Instant::now();
-        // An empty selection has nothing to load; the check below says so.
-        let selected_model = crate::app_profiles::dictation_settings(app).selected_model;
-        let load_started = !selected_model.is_empty() && tm.initiate_model_load(true);
-        let rm_clone = Arc::clone(&rm);
-        std::thread::spawn(move || {
-            if let Err(e) = rm_clone.preload_vad() {
-                debug!("VAD pre-load failed: {}", e);
-            }
-        });
-        let kickoff_elapsed = kickoff_started.elapsed();
-
-        // Don't open the mic if nothing can transcribe the recording. A load
-        // started above reports its own failure; one already running doesn't.
-        // DanyWhere: also when another model than this dictation's is loaded.
-        if !tm.is_model_loaded() || tm.get_current_model().as_deref() != Some(&selected_model) {
-            if selected_model.is_empty() {
-                warn!("Not starting recording: no model is selected");
-                crate::app_profiles::end_dictation();
-                tm.raise_no_model_selected();
-                return;
-            }
-            if let Err(e) = app
-                .state::<Arc<ModelManager>>()
-                .get_model_path(&selected_model)
-            {
-                warn!("Not starting recording: no model can transcribe it ({})", e);
-                crate::app_profiles::end_dictation();
-                if !load_started {
-                    tm.raise_model_load_failed(&selected_model, &e);
-                }
-                return;
-            }
-        }
-
-        let binding_id = binding_id.to_string();
-        // DanyWhere: the dictation's window is captured when its recording
-        // ends (`stop`), as its profile is chosen then.
-        RECORDING_SESSION.fetch_add(1, Ordering::SeqCst);
-        let tray_started = Instant::now();
-        set_tray_state(app, TrayIconState::Recording);
-        let tray_elapsed = tray_started.elapsed();
-
-        // Get the microphone mode to determine audio feedback timing
-        let plan_started = Instant::now();
-        // DanyWhere: with the values of the dictation's own profile, if any.
-        let settings = crate::app_profiles::dictation_settings(app);
-        let is_always_on = settings.always_on_microphone;
-
-        let selected_model_info = app
-            .state::<Arc<ModelManager>>()
-            .get_model_info(&settings.selected_model);
-
-        // Use the app-facing model capability as the single pre-recording source
-        // for live streaming decisions. Unknown support is represented as false
-        // until the model registry is updated by discovery or runtime load.
-        let model_supports_streaming = selected_model_info
-            .as_ref()
-            .map(|m| m.supports_streaming)
-            .unwrap_or(false);
-        let vad_policy = if !settings.vad_enabled {
-            VadPolicy::Disabled
-        } else if model_supports_streaming {
-            VadPolicy::Streaming
-        } else {
-            VadPolicy::Offline
-        };
-        // Before the model loads, whether it keeps its accuracy on long audio
-        // is unknown, so assume not: the worker decides again with the loaded
-        // model, and a wrong guess costs only an idle worker.
-        let expected_model = ModelTraits {
-            streaming: model_supports_streaming,
-            long_form: false,
-        };
-        if live_decode(expected_model, settings.long_form_chunking) != LiveDecode::None {
-            tm.start_stream();
-        }
-        let plan_elapsed = plan_started.elapsed();
-
-        // Sizing the overlay follows the same advertised capability. A model that
-        // doesn't stream (or whose capability is not known yet) gets the compact
-        // pill instead of an oversized transparent live window.
-        let overlay_started = Instant::now();
-        // DanyWhere: from two profiles on, the overlay names the dictation's
-        // profile with the glyph of choosing it by application.
-        crate::overlay::set_dictation_profile(app, dictation_profile);
-        // DanyWhere: and a speech bubble while the end it is expected to
-        // take (`end_keys::expected_end`) sends context.
-        let expected_end = crate::end_keys::expected_end(
-            &crate::app_profiles::dictation_profile_and_values(app).1,
-            &binding_id,
-            settings.shortcut_activation,
-        );
-        let expected_post_process = crate::app_profiles::effective_post_process(
-            expected_end.post_process,
-            crate::app_profiles::dictation_values().as_ref(),
-        );
-        crate::send_context::begin_dictation(
-            app,
-            expected_post_process && expected_end.send_context,
-        );
-        match settings.overlay_style {
-            OverlayStyle::Live if model_supports_streaming => utils::show_streaming_overlay(app),
-            OverlayStyle::Live | OverlayStyle::Minimal => show_recording_overlay(app),
-            OverlayStyle::None => {} // show_overlay_state no-ops on None anyway
-        }
-        // Everything above runs before capture can begin, so each span here is
-        // added keypress->capture latency.
-        debug!(
-            "start-path pre-recording steps: model_kickoff={:?} tray={:?} settings+stream_plan={:?} overlay={:?}",
-            kickoff_elapsed,
-            tray_elapsed,
-            plan_elapsed,
-            overlay_started.elapsed()
-        );
-        debug!("Microphone mode - always_on: {}", is_always_on);
-
-        let mut recording_error: Option<anyhow::Error> = None;
-        let recording_start_time = Instant::now();
-        match rm.try_start_recording(&binding_id, vad_policy) {
-            Ok(readiness) => {
-                debug!(
-                    "Recording request accepted in {:?}; waiting for first microphone samples",
-                    recording_start_time.elapsed()
-                );
-                // DanyWhere: an app that answers its first Apple event slowly
-                // is asked now, so the window title comes in time when the
-                // recording ends (`window_capture`, macOS without Accessibility).
-                crate::window_capture::prime_title_query(app);
-                let generation = readiness.generation();
-                let app_clone = app.clone();
-                let rm_clone = Arc::clone(&rm);
-                std::thread::spawn(move || {
-                    if !readiness.wait() {
-                        debug!("Microphone readiness wait ended without receiving samples");
-                        return;
-                    }
-
-                    // Development-only preview hook for evaluating the brief
-                    // arming animation on hardware that normally starts too fast
-                    // to make it visible.
-                    #[cfg(debug_assertions)]
-                    if let Ok(delay_ms) = std::env::var("HANDY_DEBUG_MIC_READY_DELAY_MS")
-                        .unwrap_or_default()
-                        .parse::<u64>()
-                    {
-                        let delay_ms = delay_ms.min(10_000);
-                        if delay_ms > 0 {
-                            debug!("Delaying microphone-ready cue by {delay_ms}ms for UI preview");
-                            std::thread::sleep(Duration::from_millis(delay_ms));
-                        }
-                    }
-
-                    if !rm_clone.is_recording_readiness_current(generation) {
-                        debug!("Microphone became ready for an inactive recording");
-                        return;
-                    }
-
-                    debug!("Microphone is receiving samples; recording is ready");
-                    utils::emit_recording_ready(&app_clone);
-
-                    // The start chime is a readiness cue, so it must follow the
-                    // first real input callback rather than Stream::play() or a
-                    // fixed delay. The helper returns immediately when feedback
-                    // is disabled; mute still follows the same readiness point.
-                    if rm_clone.is_recording_readiness_current(generation) {
-                        play_feedback_sound_blocking(&app_clone, SoundType::Start);
-                    }
-                    if rm_clone.is_recording_readiness_current(generation) {
-                        rm_clone.apply_mute();
-                    }
-                });
-            }
-            Err(e) => {
-                debug!("Failed to start recording: {}", e);
-                recording_error = Some(e);
-            }
-        }
-
-        if recording_error.is_none() {
-            // Dynamically register the cancel shortcut in a separate task to avoid deadlock
-            shortcut::register_cancel_shortcut(app);
-            // DanyWhere: a post-processing model on this computer starts
-            // loading now, so its cold start falls into the speaking time.
-            crate::model_warmup::start(&settings, expected_post_process);
-        } else {
-            // Starting failed (for example due to blocked microphone permissions).
-            // Revert UI state so we don't stay stuck in the recording overlay.
-            tm.cancel_stream();
-            crate::app_profiles::end_dictation();
-            set_tray_state(app, TrayIconState::Idle);
-            if let Some(err) = recording_error {
-                notices::raise(
-                    app,
-                    Notice::new(recording_notice_code(&err), NoticeSource::Dictation)
-                        .with_detail(format!("{err:#}")),
-                );
-            }
-        }
-
-        debug!(
-            "TranscribeAction::start completed in {:?}",
-            start_time.elapsed()
-        );
+        // DanyWhere: decided and done through ports (`dictation_start`), so
+        // tests run it without the app.
+        crate::dictation_start::app_ports::start(app, binding_id);
     }
 
     fn stop(&self, app: &AppHandle, binding_id: &str, shortcut_str: &str) {
@@ -988,10 +687,7 @@ pub fn stop_transcription(
         let stop_time = Instant::now();
         debug!("TranscribeAction::stop called for binding: {}", binding_id);
 
-        let ah = app.clone();
-        let rm = Arc::clone(&app.state::<Arc<AudioRecordingManager>>());
         let tm = Arc::clone(&app.state::<Arc<TranscriptionManager>>());
-        let hm = Arc::clone(&app.state::<Arc<HistoryManager>>());
 
         // DanyWhere: the dictation's profile is chosen again now, by the
         // application in front when the recording ends, which is where its
@@ -1010,547 +706,30 @@ pub fn stop_transcription(
             }
             None => false,
         };
+        // DanyWhere: everything the rest of this dictation runs with, read
+        // once now that its profile is settled (`dictation_snapshot`): its
+        // profile's settings and values, the end it ends with, whether it
+        // post-processes and sends context, its session and cancel
+        // generation.
+        let snapshot =
+            crate::dictation_snapshot::take(app, end, binding_id, transcribed_with_end_values);
 
-        set_tray_state(app, TrayIconState::Transcribing);
-        // Stop should give immediate visual feedback. Live streaming can keep
-        // the larger panel, but it still switches from listening to a working
-        // spinner while the stream finalizes. Non-streaming paths use the
-        // compact transcribing pill (None no-ops in show_*).
-        // DanyWhere: the dictation's profile's style.
-        let style = crate::app_profiles::dictation_settings(app).overlay_style;
-        // Capture this before finalizing the stream so every later working state
-        // targets the same overlay that was shown for this transcription.
-        let use_streaming_overlay = should_use_streaming_overlay(style, tm.is_streaming());
-        if use_streaming_overlay {
-            tm.emit_stream_working(StreamWorkKind::Transcribing);
-        } else {
-            show_transcribing_overlay(app);
-        }
-
-        // Unmute before playing audio feedback so the stop sound is audible
-        rm.remove_mute();
-
-        // Play audio feedback for recording stop
-        play_feedback_sound(app, SoundType::Stop);
+        // DanyWhere: the rest of the dictation goes through its ports
+        // (`dictation_flow`): what shows and sounds now that the recording
+        // stopped, then the task that finishes it.
+        let ports = crate::dictation_flow::app_ports::AppPorts::new(app, &snapshot);
+        crate::dictation_flow::stopped(&snapshot, &ports);
 
         let binding_id = binding_id.to_string(); // Clone binding_id for the async task
 
-        // DanyWhere: what it is made with, for redoing it when its text goes
-        // into an application with another profile (`profile_redo`).
-        let (profile_id, profile_values) = crate::app_profiles::dictation_profile_and_values(app);
-        // DanyWhere: the end shortcut it ended with, in the profile it ends
-        // with (`end_keys`): its append text, whether it post-processes and
-        // whether earlier dictations go along. A dictation profile other than
-        // the active one decides with its own switch whether to post-process
-        // (`app_profiles`).
-        let end = crate::end_keys::resolve(&profile_values, end, &binding_id);
-        log::info!("The recording ends with end shortcut {}", end.id);
-        let post_process = crate::app_profiles::effective_post_process(
-            end.post_process,
-            crate::app_profiles::dictation_values().as_ref(),
-        );
-        let with_context =
-            crate::send_context::decide_at_stop(app, post_process && end.send_context);
-        // DanyWhere: the window this dictation ends in, for context from
-        // earlier dictations there (`dictation_context`). In the background.
-        let context_session = RECORDING_SESSION.load(Ordering::SeqCst);
-        crate::window_capture::begin_capture(app, context_session);
-        let cancel_generation = rm.cancel_generation();
-
-        tauri::async_runtime::spawn(async move {
-            let _guard = FinishGuard(ah.clone(), Arc::clone(&tm));
-            debug!(
-                "Starting async transcription task for binding: {}",
-                binding_id
-            );
-
-            let stop_recording_time = Instant::now();
-            if let Some(samples) = rm.stop_recording(&binding_id, cancel_generation) {
-                // Read now: by the time transcribing ends, another take may
-                // have replaced it.
-                let input_silent = rm.last_input_silent();
-                debug!(
-                    "Recording stopped and samples retrieved in {:?}, sample count: {}",
-                    stop_recording_time.elapsed(),
-                    samples.len()
-                );
-
-                if rm.was_cancelled_since(cancel_generation) {
-                    debug!("Transcription operation cancelled after recording stop");
-                    tm.cancel_stream();
-                    utils::hide_recording_overlay(&ah);
-                    set_tray_state(&ah, TrayIconState::Idle);
-                    return;
-                }
-
-                if samples.is_empty() {
-                    debug!("Recording produced no audio samples; skipping persistence");
-                    // Tear down any streaming worker so its channel doesn't leak
-                    // and block the next start_stream.
-                    tm.cancel_stream();
-                    finish_without_text(&ah, input_silent, 0, stop_time);
-                } else {
-                    // Save the recording (Opus) and check it by decoding it,
-                    // concurrently with transcription
-                    let sample_count = samples.len();
-                    let file_name = crate::audio_toolkit::recording_file_name(&format!(
-                        "handy-{}",
-                        chrono::Utc::now().timestamp()
-                    ));
-                    let wav_path = hm.recordings_dir().join(&file_name);
-                    let samples_for_wav = samples.clone();
-                    let wav_handle = tauri::async_runtime::spawn_blocking(move || {
-                        crate::audio_toolkit::save_recording(&wav_path, &samples_for_wav)
-                            .map_err(|e| (false, e))
-                            .and_then(|()| {
-                                crate::audio_toolkit::verify_recording(&wav_path, sample_count)
-                                    .map_err(|e| (true, e))
-                            })
-                    });
-
-                    // Transcribe concurrently with WAV save: the live decode's
-                    // result when it has one (all audio was already fed to it),
-                    // otherwise a batch run of the samples. A cancel is surfaced
-                    // as an error, so it never starts a batch run.
-                    let transcription_time = Instant::now();
-                    // DanyWhere: the end's model, also when the start's was
-                    // still loading at the end of the recording.
-                    if transcribed_with_end_values {
-                        tm.load_wanted_model_after_current(true);
-                    }
-                    let transcription_result = tm.transcribe_recording(samples);
-
-                    // Await the saved and verified recording
-                    let wav_saved = match wav_handle.await {
-                        Ok(Ok(())) => true,
-                        Ok(Err((true, e))) => {
-                            error!("Recording verification failed: {}", e);
-                            false
-                        }
-                        Ok(Err((false, e))) => {
-                            error!("Failed to save recording: {}", e);
-                            false
-                        }
-                        Err(e) => {
-                            error!("Recording save task panicked: {}", e);
-                            false
-                        }
-                    };
-
-                    if rm.was_cancelled_since(cancel_generation) {
-                        debug!("Transcription operation cancelled before output handling");
-                        utils::hide_recording_overlay(&ah);
-                        set_tray_state(&ah, TrayIconState::Idle);
-                        return;
-                    }
-
-                    match transcription_result {
-                        Ok(Transcription {
-                            text: transcription,
-                            language,
-                            word_replacements,
-                            model_id,
-                        }) => {
-                            debug!(
-                                "Transcription completed in {:?}: '{}'",
-                                transcription_time.elapsed(),
-                                utils::redact_text(&transcription)
-                            );
-
-                            if post_process {
-                                if use_streaming_overlay {
-                                    tm.emit_stream_working(StreamWorkKind::Polishing);
-                                } else {
-                                    show_processing_overlay(&ah);
-                                }
-                            }
-                            // DanyWhere: the window this dictation started
-                            // in, and what the word list replaced in it.
-                            let window = crate::window_capture::take_capture(context_session);
-                            let context_query =
-                                crate::dictation_context::ContextQuery::for_new_dictation(
-                                    // Only "Send Context" sends context; every
-                                    // dictation keeps its window.
-                                    if with_context { window.clone() } else { None },
-                                    word_replacements.clone(),
-                                );
-                            let Some(processed) = complete_unless_cancelled(
-                                process_transcription_output(
-                                    &ah,
-                                    &transcription,
-                                    post_process,
-                                    &context_query,
-                                ),
-                                || rm.was_cancelled_since(cancel_generation),
-                            )
-                            .await
-                            else {
-                                debug!("Transcription operation cancelled during output handling");
-                                utils::hide_recording_overlay(&ah);
-                                set_tray_state(&ah, TrayIconState::Idle);
-                                return;
-                            };
-
-                            if rm.was_cancelled_since(cancel_generation) {
-                                debug!("Transcription operation cancelled before paste");
-                                utils::hide_recording_overlay(&ah);
-                                set_tray_state(&ah, TrayIconState::Idle);
-                                return;
-                            }
-
-                            // Save to history if WAV was saved
-                            let mut saved_entry_id: Option<i64> = None;
-                            if wav_saved {
-                                match hm.save_entry(
-                                    file_name,
-                                    transcription,
-                                    post_process,
-                                    processed.post_processed_text.clone(),
-                                    processed.post_process_prompt.clone(),
-                                    crate::managers::history::TranscribedWith {
-                                        language,
-                                        model: model_id,
-                                    },
-                                ) {
-                                    // DanyWhere: its window and context, and
-                                    // what it was made with.
-                                    Ok(entry) => {
-                                        saved_entry_id = Some(entry.id);
-                                        crate::profile_redo::remember(
-                                            crate::profile_redo::MadeWith {
-                                                entry_id: entry.id,
-                                                profile_id,
-                                                values: profile_values,
-                                                end: end.clone(),
-                                            },
-                                        );
-                                        if let Err(err) = hm.record_entry_context(
-                                            entry.id,
-                                            window.as_ref(),
-                                            &word_replacements,
-                                            with_context
-                                                .then_some(processed.context_entry_ids.as_slice()),
-                                        ) {
-                                            warn!(
-                                                "Failed to store the dictation's window: {}",
-                                                err
-                                            );
-                                        }
-                                    }
-                                    Err(err) => error!("Failed to save history entry: {}", err),
-                                }
-                            }
-
-                            // The user's hook only changes what gets pasted;
-                            // history above keeps the text as produced.
-                            let Some(final_text) = complete_unless_cancelled(
-                                crate::transcription_hook::apply(&ah, processed.final_text),
-                                || rm.was_cancelled_since(cancel_generation),
-                            )
-                            .await
-                            else {
-                                debug!("Transcription operation cancelled during hook");
-                                utils::hide_recording_overlay(&ah);
-                                set_tray_state(&ah, TrayIconState::Idle);
-                                return;
-                            };
-
-                            if final_text.is_empty() {
-                                finish_without_text(&ah, input_silent, sample_count, stop_time);
-                            } else {
-                                let ah_clone = ah.clone();
-                                let paste_time = Instant::now();
-                                let post_process_failed = processed.post_process_failed;
-                                let effort_refused_by =
-                                    processed.post_process_effort_refused_by.clone();
-                                let rm_for_paste = Arc::clone(&rm);
-                                let hm_for_paste = Arc::clone(&hm);
-                                let tm_for_paste = Arc::clone(&tm);
-                                // Taken before the paste thread exists, and so
-                                // before the next session can start.
-                                let session = RECORDING_SESSION.load(Ordering::SeqCst);
-                                // DanyWhere: the dictation profile's values for the
-                                // paste and its "Append" field, taken now: the
-                                // profile ends when this task returns.
-                                let dictation_values = crate::app_profiles::dictation_values();
-                                // DanyWhere: and all of them for the paste
-                                // thread's sounds and notices.
-                                let (_, values_here) =
-                                    crate::app_profiles::dictation_profile_and_values(&ah);
-                                // Off the main thread: paste sleeps between steps, and a
-                                // paste into Handy's own windows needs the main thread free.
-                                std::thread::Builder::new()
-                                    .name("paste".into())
-                                    .spawn(move || {
-                                        crate::app_profiles::keep_values_here(values_here);
-                                        if rm_for_paste.was_cancelled_since(cancel_generation) {
-                                            debug!(
-                                                "Transcription operation cancelled before paste"
-                                            );
-                                            utils::hide_recording_overlay(&ah_clone);
-                                            set_tray_state(&ah_clone, TrayIconState::Idle);
-                                            return;
-                                        }
-
-                                        // A new session may have taken over the
-                                        // UI while this paste ran.
-                                        let owns_ui =
-                                            || RECORDING_SESSION.load(Ordering::SeqCst) == session;
-                                        // DanyWhere: the text goes into the
-                                        // application in front now, or the one
-                                        // whose service call waits for it. When
-                                        // that application's profile differs from
-                                        // the dictation's, the dictation is redone
-                                        // for it from the first step that differs,
-                                        // and its "Append" text applies
-                                        // (`profile_redo`).
-                                        let (final_text, dictation_values, append_text, post_process_failed, effort_refused_by) =
-                                            match redo_for_app_in_front(
-                                                &ah_clone,
-                                                &hm_for_paste,
-                                                saved_entry_id,
-                                                session,
-                                                &|working| match (use_streaming_overlay, working) {
-                                                    (true, crate::profile_redo::Working::Transcribing) => {
-                                                        tm_for_paste.emit_stream_working(StreamWorkKind::Transcribing)
-                                                    }
-                                                    (true, crate::profile_redo::Working::PostProcessing) => {
-                                                        tm_for_paste.emit_stream_working(StreamWorkKind::Polishing)
-                                                    }
-                                                    (false, crate::profile_redo::Working::Transcribing) => {
-                                                        show_transcribing_overlay(&ah_clone)
-                                                    }
-                                                    (false, crate::profile_redo::Working::PostProcessing) => {
-                                                        show_processing_overlay(&ah_clone)
-                                                    }
-                                                },
-                                            ) {
-                                                Some(insert) => match insert.text {
-                                                    Some(text) => (
-                                                        tauri::async_runtime::block_on(
-                                                            crate::transcription_hook::apply(&ah_clone, text),
-                                                        ),
-                                                        Some(insert.values),
-                                                        insert.end.append_text,
-                                                        insert.post_process_failed,
-                                                        None,
-                                                    ),
-                                                    None => (
-                                                        final_text,
-                                                        Some(insert.values),
-                                                        insert.end.append_text,
-                                                        post_process_failed,
-                                                        effort_refused_by,
-                                                    ),
-                                                },
-                                                None => (
-                                                    final_text,
-                                                    dictation_values,
-                                                    end.append_text.clone(),
-                                                    post_process_failed,
-                                                    effort_refused_by,
-                                                ),
-                                            };
-                                        // DanyWhere: the "Insert Last Dictation"
-                                        // service may be waiting for this text.
-                                        let text_for_service = final_text.clone();
-                                        // DanyWhere: with its end shortcut's "Append" text.
-                                        let service_text = crate::append_text::text_to_paste(
-                                            text_for_service,
-                                            &append_text,
-                                        );
-                                        // DanyWhere: "Copy Last Transcript"
-                                        // during this dictation puts it on the
-                                        // clipboard instead (below).
-                                        let pasted = if crate::dictation_key_inserts::copies_instead_of_pasting(session) {
-                                            log::info!("Copy Last Transcript asked for this dictation; not pasting it.");
-                                            Ok(utils::PasteOutcome::Pasted)
-                                        } else {
-                                            utils::paste_with_values(final_text, ah_clone.clone(), dictation_values, &append_text)
-                                        };
-                                        let (outcome, notice) =
-                                            match pasted {
-                                                Ok(utils::PasteOutcome::Pasted) => {
-                                                    debug!(
-                                                        "Text pasted successfully in {:?}",
-                                                        paste_time.elapsed()
-                                                    );
-                                                    // Leave a newer session's notice alone.
-                                                    if owns_ui() {
-                                                        notices::clear(
-                                                            &ah_clone,
-                                                            NoticeSource::Dictation,
-                                                        );
-                                                    }
-                                                    let notice = pasted_dictation_notice(
-                                                        post_process_failed,
-                                                        effort_refused_by.as_deref(),
-                                                    );
-                                                    (TranscriptionOutcome::Typed, notice)
-                                                }
-                                                Ok(utils::PasteOutcome::Blocked) => (
-                                                    TranscriptionOutcome::Failed,
-                                                    Some(Notice::new(
-                                                        NoticeCode::PasteBlockedElevated,
-                                                        NoticeSource::Dictation,
-                                                    )),
-                                                ),
-                                                Err(e) => {
-                                                    error!("Failed to paste transcription: {}", e);
-                                                    (
-                                                        TranscriptionOutcome::Failed,
-                                                        Some(Notice::new(
-                                                            NoticeCode::PasteFailed,
-                                                            NoticeSource::Dictation,
-                                                        )),
-                                                    )
-                                                }
-                                            };
-                                        // DanyWhere: a service call that ended
-                                        // this dictation inserts it now, so it
-                                        // doesn't wait for the user.
-                                        let inserted_by_service = outcome
-                                            == TranscriptionOutcome::Typed
-                                            && crate::insert_service::deliver_to_waiting_call(
-                                                &service_text,
-                                            );
-                                        // DanyWhere: "Copy Last Transcript"
-                                        // during this dictation, or an app that
-                                        // didn't know the dictation shortcut,
-                                        // asked for its text on the clipboard,
-                                        // with its "Append" text as the service
-                                        // would have inserted it (user, 2026-11-16).
-                                        let put_on_clipboard = if outcome
-                                            == TranscriptionOutcome::Typed
-                                            && !inserted_by_service
-                                        {
-                                            crate::dictation_key_inserts::put_on_clipboard_if_requested(
-                                                &ah_clone,
-                                                session,
-                                                &service_text,
-                                            )
-                                        } else {
-                                            None
-                                        };
-                                        // DanyWhere: one sound says the dictation
-                                        // is done, post-processing included, also
-                                        // when post-processing failed (or, with
-                                        // that sound off, that its text waits to
-                                        // be pasted or inserted); not while a
-                                        // newer session records.
-                                        crate::delivery::play_sound_after_dictation(
-                                            &ah_clone,
-                                            crate::delivery::DictationEnd {
-                                                outcome,
-                                                cancelled: rm_for_paste
-                                                    .was_cancelled_since(cancel_generation),
-                                                inserted_by_service,
-                                                put_on_clipboard: put_on_clipboard.is_some(),
-                                                owns_ui: owns_ui(),
-                                            },
-                                        );
-                                        match (owns_ui(), notice, &put_on_clipboard) {
-                                            (true, Some(notice), _) => {
-                                                notices::raise(&ah_clone, notice)
-                                            }
-                                            (true, None, _) if inserted_by_service => {
-                                                utils::hide_recording_overlay(&ah_clone)
-                                            }
-                                            (true, None, Some(reason)) => {
-                                                crate::dictation_key_inserts::show_on_clipboard_notice(
-                                                    &ah_clone,
-                                                    reason,
-                                                )
-                                            }
-                                            // DanyWhere: says where the text waits
-                                            // when it was not pasted.
-                                            (true, None, None) => {
-                                                crate::delivery::finish_overlay_after_dictation(
-                                                    &ah_clone,
-                                                )
-                                            }
-                                            (false, Some(notice), _) => {
-                                                notices::raise_without_overlay(&ah_clone, notice)
-                                            }
-                                            (false, None, _) => {}
-                                        }
-                                        if owns_ui() {
-                                            set_tray_state(&ah_clone, TrayIconState::Idle);
-                                        }
-                                        emit_transcription_complete(
-                                            &ah_clone,
-                                            outcome,
-                                            sample_count,
-                                            stop_time,
-                                        );
-                                    })
-                                    .map(|_| ())
-                                    .unwrap_or_else(|e| {
-                                        error!("Failed to start the paste thread: {:?}", e);
-                                        utils::hide_recording_overlay(&ah);
-                                        set_tray_state(&ah, TrayIconState::Idle);
-                                        emit_transcription_complete(
-                                            &ah,
-                                            TranscriptionOutcome::Failed,
-                                            sample_count,
-                                            stop_time,
-                                        );
-                                    });
-                            }
-                        }
-                        Err(err) => {
-                            if rm.was_cancelled_since(cancel_generation) {
-                                debug!(
-                                    "Transcription operation cancelled after transcription error"
-                                );
-                                utils::hide_recording_overlay(&ah);
-                                set_tray_state(&ah, TrayIconState::Idle);
-                                return;
-                            }
-
-                            error!("Transcription failed: {}", err);
-                            notices::raise(
-                                &ah,
-                                Notice::new(
-                                    NoticeCode::TranscriptionFailed,
-                                    NoticeSource::Dictation,
-                                )
-                                .with_detail(err.to_string()),
-                            );
-                            // Save entry with empty text so user can retry
-                            if wav_saved {
-                                if let Err(save_err) = hm.save_entry(
-                                    file_name,
-                                    String::new(),
-                                    post_process,
-                                    None,
-                                    None,
-                                    Default::default(),
-                                ) {
-                                    error!("Failed to save failed history entry: {}", save_err);
-                                }
-                            }
-                            set_tray_state(&ah, TrayIconState::Idle);
-                            emit_transcription_complete(
-                                &ah,
-                                TranscriptionOutcome::Failed,
-                                sample_count,
-                                stop_time,
-                            );
-                        }
-                    }
-                }
-            } else {
-                debug!("No samples retrieved from recording stop");
-                // Tear down any streaming worker so its channel doesn't leak.
-                tm.cancel_stream();
-                utils::hide_recording_overlay(&ah);
-                set_tray_state(&ah, TrayIconState::Idle);
-                if !rm.was_cancelled_since(cancel_generation) {
-                    emit_transcription_complete(&ah, TranscriptionOutcome::Empty, 0, stop_time);
-                }
-            }
-        });
+        tauri::async_runtime::spawn(crate::dictation_flow::finish_dictation(
+            crate::dictation_flow::Dictation {
+                snapshot,
+                binding_id,
+                stop_time,
+            },
+            ports,
+        ));
 
         debug!(
             "TranscribeAction::stop completed in {:?}",
@@ -1706,12 +885,10 @@ pub static ACTION_MAP: Lazy<HashMap<String, Arc<dyn ShortcutAction>>> = Lazy::ne
 mod tests {
     use super::{
         complete_unless_cancelled, is_blank_transcription, non_blank_post_processed_text,
-        pasted_dictation_notice, post_process_transcription, post_process_within_time_limit,
-        should_use_streaming_overlay, strip_invisible_chars, strip_think_block, PostProcessOutcome,
-        PostProcessReport,
+        post_process_transcription, post_process_within_time_limit, strip_invisible_chars,
+        strip_think_block, PostProcessOutcome, PostProcessReport,
     };
-    use crate::notices::{Notice, NoticeCode, NoticeSource};
-    use crate::settings::{get_default_settings, AppSettings, OverlayStyle};
+    use crate::settings::{get_default_settings, AppSettings};
     use std::future;
     use std::io::{Read, Write};
     use std::net::TcpListener;
@@ -2074,28 +1251,6 @@ mod tests {
         assert!(retry.get("reasoning_effort").is_none(), "{retry}");
     }
 
-    #[test]
-    fn a_refused_effort_is_a_warning_unless_post_processing_failed() {
-        assert_eq!(pasted_dictation_notice(false, None), None);
-        assert_eq!(
-            pasted_dictation_notice(false, Some("claude-sonnet-4-6")),
-            Some(
-                Notice::new(
-                    NoticeCode::PostProcessEffortRefused,
-                    NoticeSource::Dictation
-                )
-                .with_detail("claude-sonnet-4-6".to_string())
-            )
-        );
-        assert_eq!(
-            pasted_dictation_notice(true, Some("claude-sonnet-4-6")),
-            Some(Notice::new(
-                NoticeCode::PostProcessFailed,
-                NoticeSource::Dictation
-            ))
-        );
-    }
-
     // DanyWhere: the fixed frame (`prompt_frame`), checked on the request
     // that leaves the computer.
 
@@ -2397,6 +1552,89 @@ mod tests {
         );
     }
 
+    /// `process_transcription_with_settings` with `settings`; the context is
+    /// answered with `block`. Also returns the instructions it was asked
+    /// for.
+    fn process_with(
+        settings: &AppSettings,
+        transcription: &str,
+        post_process: bool,
+        block: Option<crate::dictation_context::ContextBlock>,
+    ) -> (super::ProcessedTranscription, Vec<String>) {
+        let asked = std::sync::Mutex::new(Vec::new());
+        let processed = tauri::async_runtime::block_on(super::process_transcription_with_settings(
+            settings,
+            transcription,
+            post_process,
+            |instructions| {
+                asked.lock().unwrap().push(instructions.to_string());
+                block
+            },
+        ));
+        (processed, asked.into_inner().unwrap())
+    }
+
+    /// Never contacted: nothing listens there.
+    const NOWHERE: &str = "http://127.0.0.1:9";
+
+    #[test]
+    fn without_post_processing_the_transcript_goes_out_as_it_is() {
+        let settings = post_process_settings(NOWHERE);
+        let (processed, asked) = process_with(&settings, "hello", false, Some(marker_block()));
+        assert_eq!(processed.final_text, "hello");
+        assert_eq!(processed.post_processed_text, None);
+        assert!(!processed.post_process_failed);
+        assert!(processed.context_entry_ids.is_empty());
+        assert!(asked.is_empty(), "no context without post-processing");
+    }
+
+    #[test]
+    fn post_processing_runs_with_the_settings_it_is_given() {
+        let url = serve_once(r#"{"choices":[{"message":{"content":"polished"}}]}"#);
+        let settings = post_process_settings(&url);
+        let (processed, asked) = process_with(&settings, "hello", true, Some(marker_block()));
+        assert_eq!(processed.final_text, "polished");
+        assert_eq!(processed.post_processed_text.as_deref(), Some("polished"));
+        assert!(!processed.post_process_failed);
+        let instructions = crate::prompt_library::request_instructions(
+            &crate::prompt_library::requested(&settings),
+        );
+        assert_eq!(
+            processed.post_process_prompt.as_deref(),
+            Some(instructions.as_str())
+        );
+        // The context was built for these instructions, and went out with
+        // the request.
+        assert_eq!(asked, vec![instructions]);
+        assert_eq!(processed.context_entry_ids, vec![1]);
+    }
+
+    #[test]
+    fn blank_speech_is_not_post_processed_and_asks_for_no_context() {
+        let settings = post_process_settings(NOWHERE);
+        let (processed, asked) = process_with(&settings, "  ", true, Some(marker_block()));
+        assert_eq!(processed.final_text, "  ");
+        assert!(!processed.post_process_failed);
+        assert!(processed.context_entry_ids.is_empty());
+        assert!(asked.is_empty());
+    }
+
+    #[test]
+    fn a_failed_post_processing_keeps_the_transcript_but_its_context_went_out() {
+        let url = serve_once(r#"{"choices":[]}"#);
+        let (processed, asked) = process_with(
+            &post_process_settings(&url),
+            "hello",
+            true,
+            Some(marker_block()),
+        );
+        assert_eq!(processed.final_text, "hello");
+        assert_eq!(processed.post_processed_text, None);
+        assert!(processed.post_process_failed);
+        assert_eq!(asked.len(), 1);
+        assert_eq!(processed.context_entry_ids, vec![1]);
+    }
+
     #[test]
     fn every_default_shortcut_has_an_action() {
         for id in crate::settings::get_default_settings().bindings.keys() {
@@ -2501,13 +1739,5 @@ mod tests {
             strip_think_block("<think>never closed"),
             "<think>never closed"
         );
-    }
-
-    #[test]
-    fn live_overlay_uses_streaming_states_only_for_streaming_models() {
-        assert!(should_use_streaming_overlay(OverlayStyle::Live, true));
-        assert!(!should_use_streaming_overlay(OverlayStyle::Live, false));
-        assert!(!should_use_streaming_overlay(OverlayStyle::Minimal, true));
-        assert!(!should_use_streaming_overlay(OverlayStyle::None, true));
     }
 }

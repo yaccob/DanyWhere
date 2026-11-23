@@ -486,6 +486,7 @@
       "postProcess": "后处理",
       "sendContext": "发送上下文",
       "sendContextHint": "仅在后处理时：同一窗口中之前的听写会作为上下文一并发送。",
+      "postProcessOff": "后处理已关闭：以这种方式结束的听写不会进行后处理。请在“高级”中打开“后处理”。",
       "add": "添加结束快捷键",
       "addPressKeys": "按下新结束快捷键的按键组合",
       "delete": "删除 {{name}}",

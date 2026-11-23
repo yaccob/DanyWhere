@@ -486,6 +486,7 @@
       "postProcess": "Nabewerken",
       "sendContext": "Context meesturen",
       "sendContextHint": "Alleen met nabewerking: eerdere dictaten uit hetzelfde venster worden als context meegestuurd.",
+      "postProcessOff": "Naverwerking staat uit: een dictaat dat zo eindigt, wordt niet nabewerkt. Zet „Naverwerking” aan onder Geavanceerd.",
       "add": "Eindsneltoets toevoegen",
       "addPressKeys": "Druk op de toetsencombinatie voor de nieuwe eindsneltoets",
       "delete": "{{name}} verwijderen",

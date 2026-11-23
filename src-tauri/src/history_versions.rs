@@ -352,6 +352,43 @@ pub fn versions_of_new_entry(
     .versions()
 }
 
+/// DanyWhere: names the prompt `prompt_name` in the ✨ steps of a new
+/// entry's `versions`, made by its own post-processing, as a
+/// post-processing made later in History names it.
+pub(crate) fn name_the_prompt(versions: &mut [HistoryVersion], prompt_name: Option<&str>) {
+    let Some(name) = prompt_name.filter(|name| !name.trim().is_empty()) else {
+        return;
+    };
+    for step in versions
+        .iter_mut()
+        .flat_map(|version| version.steps.iter_mut())
+        .filter(|step| step.by == VersionAuthor::Ai)
+    {
+        step.prompt_name = Some(name.to_string());
+    }
+}
+
+/// DanyWhere: what the column `versions` stores for a new `entry`: nothing
+/// (NULL) while its other columns give its stack back, as for every entry
+/// made before; else the whole stack, such as one whose ✨ step names its
+/// prompt ([`name_the_prompt`]), which those columns don't hold.
+pub(crate) fn column_of_new_entry(entry: &HistoryEntry) -> Result<Option<String>> {
+    let derived = StackColumns {
+        transcription: &entry.transcription_text,
+        post_processed: entry.post_processed_text.as_deref(),
+        made_at: Some(entry.timestamp.saturating_mul(1000)),
+        is_file: entry.source_name.is_some(),
+        transcription_model: entry.transcription_model.as_deref(),
+        ..Default::default()
+    }
+    .versions();
+    if derived == entry.versions {
+        Ok(None)
+    } else {
+        stored_json(&entry.versions).map(Some)
+    }
+}
+
 /// What the entry "is": the text of its top version.
 pub fn entry_text(entry: &HistoryEntry) -> &str {
     entry

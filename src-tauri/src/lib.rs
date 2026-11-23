@@ -1,3 +1,4 @@
+mod accessibility;
 mod actions;
 mod app_profiles;
 mod append_text;
@@ -14,6 +15,11 @@ mod commands;
 mod delivery;
 mod dictation_key_inserts;
 mod dictation_microphone;
+// DanyWhere: the end of a dictation, from the stopped recording to its text.
+mod dictation_flow;
+// DanyWhere: what the end of a dictation runs with, read once.
+mod dictation_snapshot;
+mod dictation_start;
 mod end_keys;
 pub mod engine_supervisor;
 mod helpers;
@@ -279,7 +285,7 @@ fn initialize_core_logic(app_handle: &AppHandle) {
 
     // DanyWhere: without Accessibility, read in the background which apps can
     // tell their window title, so a dictation's capture finds it in a cache.
-    window_capture::warm_up();
+    window_capture::warm_up(&settings::get_settings(app_handle));
 
     // Note: Shortcuts are NOT initialized here.
     // The frontend is responsible for calling the `initialize_shortcuts` command

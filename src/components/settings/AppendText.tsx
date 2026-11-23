@@ -8,7 +8,7 @@ import {
 } from "@/bindings";
 import { Dropdown } from "../ui/Dropdown";
 import { Input } from "../ui/Input";
-import { useSettings } from "../../hooks/useSettings";
+import { useAccessibility } from "../../hooks/useAccessibility";
 import { useOsType } from "../../hooks/useOsType";
 import {
   describeAppend,
@@ -40,9 +40,8 @@ export const AppendTextInput: React.FC<AppendTextInputProps> = React.memo(
   ({ value, onChange, disabled = false }) => {
     const { t, i18n } = useTranslation();
     const os = useOsType();
-    const { getSetting } = useSettings();
-    const withoutAccessibility =
-      os === "macos" && getSetting("accessibility_skipped") === true;
+    const { runsWithoutAccessibility: withoutAccessibility } =
+      useAccessibility();
     const [offered, setOffered] = useState<AppendKey[]>([]);
     const [choice, setChoice] = useState<AppendChoice | null>(null);
     const [draft, setDraft] = useState("");

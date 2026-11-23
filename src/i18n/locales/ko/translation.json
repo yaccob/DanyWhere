@@ -486,6 +486,7 @@
       "postProcess": "후처리",
       "sendContext": "컨텍스트 보내기",
       "sendContextHint": "후처리할 때만: 같은 창의 이전 받아쓰기가 컨텍스트로 함께 보내집니다.",
+      "postProcessOff": "후처리가 꺼져 있습니다. 이 방식으로 끝난 받아쓰기는 후처리되지 않습니다. 고급에서 ‘후처리’를 켜세요.",
       "add": "종료 단축키 추가",
       "addPressKeys": "새 종료 단축키의 키 조합을 누르세요",
       "delete": "{{name}} 삭제",

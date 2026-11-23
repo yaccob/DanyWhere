@@ -135,28 +135,41 @@ export const endKeyErrorKey = (error: string): string | null => {
   return null;
 };
 
+/** What [`postProcessingOn`] reads: a profile's values, the defaults' or
+ * the flat values in use. */
+export interface PostProcessSwitch {
+  post_process_enabled?: boolean | null;
+}
+
+/** Whether a dictation with `values` can post-process: their switch "Post
+ * Processing" is on. Only then does an end (or a held start shortcut) with
+ * "Post-process" post-process, as `app_profiles::effective_post_process`
+ * decides (user, 2026-11-23, option a). */
+export const postProcessingOn = (values: PostProcessSwitch): boolean =>
+  values.post_process_enabled === true;
+
 /** What [`secondStartTaken`] reads of the settings in use. */
-export interface TakenFrom {
-  post_process_enabled?: boolean;
+export interface TakenFrom extends PostProcessSwitch {
   profile_auto_by_app?: boolean;
   active_profile_id?: string;
   profiles?: ReadonlyArray<{
     id: string;
     apps?: readonly string[];
-    values?: { post_process_enabled?: boolean };
+    values?: PostProcessSwitch;
   }>;
 }
 
 /** Whether DanyWhere takes the second start shortcut: while some dictation
- * can post-process, as `app_profiles::post_processing_reachable` decides
- * (Handy's rule, kept with the move to General; user, 2026-11-23). The
- * flat values are the ones in use. */
+ * can post-process ([`postProcessingOn`]), as
+ * `app_profiles::post_processing_reachable` decides (Handy's rule, kept with
+ * the move to General; user, 2026-11-23). The flat values are the ones in
+ * use. */
 export const secondStartTaken = (settings: TakenFrom): boolean =>
-  settings.post_process_enabled === true ||
+  postProcessingOn(settings) ||
   (settings.profile_auto_by_app === true &&
     (settings.profiles ?? []).some(
       (profile) =>
         profile.id !== settings.active_profile_id &&
         (profile.apps ?? []).length > 0 &&
-        profile.values?.post_process_enabled === true,
+        postProcessingOn(profile.values ?? {}),
     ));

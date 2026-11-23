@@ -8,10 +8,11 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 import { platform } from "@tauri-apps/plugin-os";
+import { checkMicrophonePermission } from "tauri-plugin-macos-permissions-api";
 import {
-  checkAccessibilityPermission,
-  checkMicrophonePermission,
-} from "tauri-plugin-macos-permissions-api";
+  choseToGoWithout,
+  macosGrantsAccessibility,
+} from "./lib/accessibility";
 import "./App.css";
 import SecureInputWarning from "./components/SecureInputWarning";
 import Footer from "./components/footer";
@@ -176,9 +177,9 @@ function App() {
       const hasCompletedOnboarding =
         settingsResult.status === "ok" &&
         settingsResult.data.onboarding_completed === true;
-      const accessibilitySkipped =
-        settingsResult.status === "ok" &&
-        settingsResult.data.accessibility_skipped === true;
+      const accessibilitySkipped = choseToGoWithout(
+        settingsResult.status === "ok" ? settingsResult.data : null,
+      );
       const currentPlatform = platform();
 
       if (hasCompletedOnboarding) {
@@ -191,7 +192,7 @@ function App() {
         if (currentPlatform === "macos") {
           try {
             const [hasAccessibility, hasMicrophone] = await Promise.all([
-              checkAccessibilityPermission(),
+              macosGrantsAccessibility(),
               checkMicrophonePermission(),
             ]);
             const satisfied = permissionsSatisfied(

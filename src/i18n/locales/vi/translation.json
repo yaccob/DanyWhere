@@ -486,6 +486,7 @@
       "postProcess": "Xử lý hậu kỳ",
       "sendContext": "Gửi ngữ cảnh",
       "sendContextHint": "Chỉ khi xử lý hậu kỳ: các lần đọc chính tả trước từ cùng cửa sổ được gửi làm ngữ cảnh.",
+      "postProcessOff": "Xử lý sau đang tắt: bản đọc chính tả kết thúc theo cách này sẽ không được xử lý hậu kỳ. Hãy bật “Xử lý sau” trong mục Nâng cao.",
       "add": "Thêm phím tắt kết thúc",
       "addPressKeys": "Nhấn tổ hợp phím cho phím tắt kết thúc mới",
       "delete": "Xóa {{name}}",

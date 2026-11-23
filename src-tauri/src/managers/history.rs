@@ -7,10 +7,12 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use tauri::AppHandle;
 use tauri_specta::Event;
 
 use crate::language_detection::{LanguageDecision, LanguageSource};
+use crate::settings::RecordingStorageLimit;
 
 /// Database migrations for transcription history.
 /// Each migration is applied in order. The library tracks which migrations
@@ -192,8 +194,17 @@ pub fn storage_usage(recordings: &[StoredRecording]) -> RecordingStorageUsage {
         })
 }
 
+/// DanyWhere: how History tells the frontend that entries changed.
+pub type HistoryEmit = Arc<dyn Fn(HistoryUpdatePayload) + Send + Sync>;
+
+/// DanyWhere: the recordings' storage limit, read each time it is applied.
+pub type StorageLimit = Arc<dyn Fn() -> RecordingStorageLimit + Send + Sync>;
+
+/// DanyWhere: holds no `AppHandle`, so a test can open it in a folder of its
+/// own ([`HistoryManager::open`]); [`HistoryManager::new`] wires it to the app.
 pub struct HistoryManager {
-    app_handle: AppHandle,
+    emit: HistoryEmit,
+    storage_limit: StorageLimit,
     recordings_dir: PathBuf,
     /// Decoded WAV copies of Opus recordings for the player.
     playback_dir: PathBuf,
@@ -218,9 +229,30 @@ fn split_language(language: Option<LanguageDecision>) -> (Option<String>, Option
 }
 
 impl HistoryManager {
+    /// History in the app's data folder: changes go to the frontend as
+    /// `history-updated` events, and the storage limit is the setting's.
     pub fn new(app_handle: &AppHandle) -> Result<Self> {
-        // Create recordings directory in app data dir
         let app_data_dir = crate::portable::app_data_dir(app_handle)?;
+        let emit_app = app_handle.clone();
+        let settings_app = app_handle.clone();
+        Self::open(
+            &app_data_dir,
+            Arc::new(move |payload: HistoryUpdatePayload| {
+                if let Err(e) = payload.emit(&emit_app) {
+                    error!("Failed to emit history-updated event: {}", e);
+                }
+            }),
+            Arc::new(move || crate::settings::get_recording_storage_limit(&settings_app)),
+        )
+    }
+
+    /// DanyWhere: History in `app_data_dir`, without the app: changes go to
+    /// `emit`, and `storage_limit` is asked whenever the limit is applied.
+    pub fn open(
+        app_data_dir: &Path,
+        emit: HistoryEmit,
+        storage_limit: StorageLimit,
+    ) -> Result<Self> {
         let recordings_dir = app_data_dir.join("recordings");
         let playback_dir = app_data_dir.join("recording-playback");
         let db_path = app_data_dir.join("history.db");
@@ -232,7 +264,8 @@ impl HistoryManager {
         }
 
         let manager = Self {
-            app_handle: app_handle.clone(),
+            emit,
+            storage_limit,
             recordings_dir,
             playback_dir,
             db_path,
@@ -419,24 +452,35 @@ impl HistoryManager {
 
     /// Save a new history entry to the database.
     /// The recording should already have been written to the recordings directory.
+    /// DanyWhere: `post_processed` is what the dictation's own
+    /// post-processing came back with, its prompt's name included.
     pub fn save_entry(
         &self,
         file_name: String,
         transcription_text: String,
         post_process_requested: bool,
-        post_processed_text: Option<String>,
-        post_process_prompt: Option<String>,
+        post_processed: Option<crate::history_versions::PostProcessed>,
         made_with: TranscribedWith,
     ) -> Result<HistoryEntry> {
         let (language, language_source) = split_language(made_with.language);
         let timestamp = Utc::now().timestamp();
-        // DanyWhere: as reading it back gives it (`history_versions`).
-        let versions = crate::history_versions::versions_of_new_entry(
+        let (post_processed_text, post_process_prompt, prompt_name) = match post_processed {
+            Some(processed) => (
+                Some(processed.text),
+                processed.prompt,
+                processed.prompt_name,
+            ),
+            None => (None, None, None),
+        };
+        // DanyWhere: as reading it back gives it (`history_versions`), with
+        // the prompt's name on its ✨ step.
+        let mut versions = crate::history_versions::versions_of_new_entry(
             &transcription_text,
             post_processed_text.as_deref(),
             Some(timestamp.saturating_mul(1000)),
             made_with.model.as_deref(),
         );
+        crate::history_versions::name_the_prompt(&mut versions, prompt_name.as_deref());
         let entry = self.insert_entry(HistoryEntry {
             id: 0,
             file_name,
@@ -509,13 +553,9 @@ impl HistoryManager {
         debug!("Saved history entry with id {}", entry.id);
 
         // Emit typed event for real-time frontend updates
-        if let Err(e) = (HistoryUpdatePayload::Added {
+        self.announce(HistoryUpdatePayload::Added {
             entry: entry.clone(),
-        })
-        .emit(&self.app_handle)
-        {
-            error!("Failed to emit history-updated event: {}", e);
-        }
+        });
 
         Ok(entry)
     }
@@ -535,8 +575,9 @@ impl HistoryManager {
                 source_name,
                 language,
                 language_source,
-                transcription_model
-            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
+                transcription_model,
+                versions
+            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
             params![
                 &entry.file_name,
                 entry.timestamp,
@@ -550,6 +591,8 @@ impl HistoryManager {
                 &entry.language,
                 entry.language_source.map(LanguageSource::as_str),
                 &entry.transcription_model,
+                // DanyWhere: only what the other columns don't hold.
+                crate::history_versions::column_of_new_entry(entry)?,
             ],
         )?;
         Ok(conn.last_insert_rowid())
@@ -639,20 +682,21 @@ impl HistoryManager {
     /// Tell the frontend that `entry` changed.
     // DanyWhere: pub(crate) for `history_versions`.
     pub(crate) fn emit_entry(&self, entry: &HistoryEntry) {
-        if let Err(e) = (HistoryUpdatePayload::Updated {
+        self.announce(HistoryUpdatePayload::Updated {
             entry: entry.clone(),
-        })
-        .emit(&self.app_handle)
-        {
-            error!("Failed to emit history-updated event: {}", e);
-        }
+        });
+    }
+
+    /// Hand `payload` to the frontend (the app's `emit`, or a test's).
+    fn announce(&self, payload: HistoryUpdatePayload) {
+        (self.emit)(payload);
     }
 
     /// Keep the recordings within the storage limit: the oldest that are
     /// neither starred nor transcribed files go first. Their entries and
     /// transcripts stay; the entries say the recording was removed.
     pub fn cleanup_old_entries(&self) -> Result<()> {
-        let limit = crate::settings::get_recording_storage_limit(&self.app_handle).bytes();
+        let limit = (self.storage_limit)().bytes();
         let conn = self.get_connection()?;
         let recordings = Self::stored_recordings_with_conn(&conn, &self.recordings_dir)?;
         let remove = recordings_to_remove(&recordings, limit);
@@ -715,11 +759,7 @@ impl HistoryManager {
             Self::map_history_entry,
         );
         match entry {
-            Ok(entry) => {
-                if let Err(e) = (HistoryUpdatePayload::Updated { entry }).emit(&self.app_handle) {
-                    error!("Failed to emit history-updated event: {}", e);
-                }
-            }
+            Ok(entry) => self.announce(HistoryUpdatePayload::Updated { entry }),
             Err(e) => warn!("Failed to read history entry {} after a change: {}", id, e),
         }
     }
@@ -834,9 +874,7 @@ impl HistoryManager {
         debug!("Toggled saved status for entry {}: {}", id, new_saved);
 
         // Emit history updated event
-        if let Err(e) = (HistoryUpdatePayload::Toggled { id }).emit(&self.app_handle) {
-            error!("Failed to emit history-updated event: {}", e);
-        }
+        self.announce(HistoryUpdatePayload::Toggled { id });
 
         Ok(())
     }
@@ -882,9 +920,7 @@ impl HistoryManager {
         debug!("Deleted history entry with id: {}", id);
 
         // Emit history updated event
-        if let Err(e) = (HistoryUpdatePayload::Deleted { id }).emit(&self.app_handle) {
-            error!("Failed to emit history-updated event: {}", e);
-        }
+        self.announce(HistoryUpdatePayload::Deleted { id });
 
         Ok(())
     }
@@ -1681,6 +1717,44 @@ mod tests {
         );
     }
 
+    /// The column `versions` of entry `id` as stored.
+    fn versions_column(conn: &Connection, id: i64) -> Option<String> {
+        conn.query_row(
+            "SELECT versions FROM transcription_history WHERE id = ?1",
+            params![id],
+            |row| row.get(0),
+        )
+        .expect("read versions")
+    }
+
+    #[test]
+    fn a_new_entry_stores_its_stack_only_where_its_columns_lack_something() {
+        let conn = setup_conn();
+        // As before: derived from the other columns when it is read.
+        let id = HistoryManager::insert_with_conn(&conn, &entry_made_by(Some("canary-1b-v2")))
+            .expect("insert entry");
+        assert_eq!(versions_column(&conn, id), None);
+
+        // Its post-processing's prompt has a name those columns don't hold.
+        let mut named = entry_made_by(None);
+        named.post_processed_text = Some("Seven words.".to_string());
+        named.versions = crate::history_versions::versions_of_new_entry(
+            "seven words",
+            Some("Seven words."),
+            Some(7_000),
+            None,
+        );
+        crate::history_versions::name_the_prompt(&mut named.versions, Some("E-Mail"));
+        let id = HistoryManager::insert_with_conn(&conn, &named).expect("insert entry");
+        assert!(versions_column(&conn, id).is_some());
+        let read = entry_by_id(&conn, id).unwrap();
+        assert_eq!(read.versions, named.versions);
+        assert_eq!(
+            read.versions[1].steps[0].prompt_name.as_deref(),
+            Some("E-Mail")
+        );
+    }
+
     #[test]
     fn an_entry_from_before_has_no_model() {
         let conn = setup_conn();
@@ -1716,5 +1790,259 @@ mod tests {
         assert_eq!(entry.versions[0].steps[0].model.as_deref(), Some("turbo"));
         // Post-processing is no speech model's.
         assert_eq!(entry.versions[1].steps[0].model, None);
+    }
+
+    // ---- History without the app (DanyWhere) -----------------------------
+
+    use std::sync::Mutex;
+
+    /// History opened in a folder of its own, with what it announced and a
+    /// storage limit the test can change.
+    struct OpenHistory {
+        dir: tempfile::TempDir,
+        history: HistoryManager,
+        announced: Arc<Mutex<Vec<HistoryUpdatePayload>>>,
+        limit: Arc<Mutex<RecordingStorageLimit>>,
+    }
+
+    fn open_history(limit: RecordingStorageLimit) -> OpenHistory {
+        let dir = tempfile::tempdir().expect("temp dir");
+        let announced: Arc<Mutex<Vec<HistoryUpdatePayload>>> = Arc::default();
+        let limit = Arc::new(Mutex::new(limit));
+        let history = HistoryManager::open(
+            dir.path(),
+            {
+                let announced = Arc::clone(&announced);
+                Arc::new(move |payload| announced.lock().unwrap().push(payload))
+            },
+            {
+                let limit = Arc::clone(&limit);
+                Arc::new(move || *limit.lock().unwrap())
+            },
+        )
+        .expect("open history");
+        OpenHistory {
+            dir,
+            history,
+            announced,
+            limit,
+        }
+    }
+
+    /// What a payload is about: its action and the entry's id.
+    fn about(payload: &HistoryUpdatePayload) -> (&'static str, i64) {
+        match payload {
+            HistoryUpdatePayload::Added { entry } => ("added", entry.id),
+            HistoryUpdatePayload::Updated { entry } => ("updated", entry.id),
+            HistoryUpdatePayload::Deleted { id } => ("deleted", *id),
+            HistoryUpdatePayload::Toggled { id } => ("toggled", *id),
+        }
+    }
+
+    impl OpenHistory {
+        /// What it announced since the last call.
+        fn take_announced(&self) -> Vec<HistoryUpdatePayload> {
+            std::mem::take(&mut *self.announced.lock().unwrap())
+        }
+
+        fn announced_about(&self) -> Vec<(&'static str, i64)> {
+            self.take_announced().iter().map(about).collect()
+        }
+
+        /// A recording `file_name` of `bytes` (sparse: only its size counts).
+        fn recording(&self, file_name: &str, bytes: u64) -> PathBuf {
+            let path = self.history.recordings_dir().join(file_name);
+            fs::File::create(&path)
+                .and_then(|file| file.set_len(bytes))
+                .expect("write recording");
+            path
+        }
+
+        /// Save a dictation of `text` whose recording is `file_name`.
+        fn save(&self, file_name: &str, text: &str) -> HistoryEntry {
+            self.history
+                .save_entry(
+                    file_name.into(),
+                    text.into(),
+                    false,
+                    None,
+                    TranscribedWith {
+                        language: None,
+                        model: Some("test-model".into()),
+                    },
+                )
+                .expect("save entry")
+        }
+
+        fn entry(&self, id: i64) -> Option<HistoryEntry> {
+            tauri::async_runtime::block_on(self.history.get_entry_by_id(id)).expect("read entry")
+        }
+    }
+
+    const MB: u64 = 1_000_000;
+
+    #[test]
+    fn opening_a_folder_creates_the_recordings_folder_and_the_database() {
+        let open = open_history(RecordingStorageLimit::Unlimited);
+        assert_eq!(
+            open.history.recordings_dir(),
+            open.dir.path().join("recordings")
+        );
+        assert!(open.dir.path().join("recordings").is_dir());
+        assert!(open.dir.path().join("history.db").is_file());
+        assert!(open.take_announced().is_empty());
+    }
+
+    #[test]
+    fn saving_a_dictation_stores_it_and_announces_it() {
+        let open = open_history(RecordingStorageLimit::Unlimited);
+        open.recording("handy-1.opus", 1_000);
+
+        let saved = open.save("handy-1.opus", "hello world");
+
+        let announced = open.take_announced();
+        assert_eq!(
+            announced.iter().map(about).collect::<Vec<_>>(),
+            vec![("added", saved.id)]
+        );
+        let HistoryUpdatePayload::Added { entry } = &announced[0] else {
+            unreachable!()
+        };
+        assert_eq!(entry.transcription_text, "hello world");
+        let stored = open.entry(saved.id).expect("stored");
+        assert_eq!(stored.transcription_text, "hello world");
+        assert_eq!(stored.file_name, "handy-1.opus");
+        assert_eq!(stored.transcription_model.as_deref(), Some("test-model"));
+        assert!(!stored.recording_removed);
+    }
+
+    #[test]
+    fn the_storage_limit_is_read_each_time_it_is_applied() {
+        let open = open_history(RecordingStorageLimit::Unlimited);
+        let a_path = open.recording("a.opus", 60 * MB);
+        let a = open.save("a.opus", "first");
+        let b_path = open.recording("b.opus", 60 * MB);
+        let b = open.save("b.opus", "second");
+        // Unlimited: both stay.
+        assert_eq!(
+            open.announced_about(),
+            vec![("added", a.id), ("added", b.id)]
+        );
+        assert!(a_path.exists() && b_path.exists());
+
+        *open.limit.lock().unwrap() = RecordingStorageLimit::Mb100;
+        let c_path = open.recording("c.opus", 60 * MB);
+        let c = open.save("c.opus", "third");
+
+        // 180 MB in 100 MB: the two older go, the newest stays.
+        assert_eq!(
+            open.announced_about(),
+            vec![("added", c.id), ("updated", a.id), ("updated", b.id)]
+        );
+        assert!(!a_path.exists() && !b_path.exists() && c_path.exists());
+        assert!(open.entry(a.id).unwrap().recording_removed);
+        assert!(open.entry(b.id).unwrap().recording_removed);
+        assert!(!open.entry(c.id).unwrap().recording_removed);
+        assert_eq!(open.entry(a.id).unwrap().transcription_text, "first");
+    }
+
+    #[test]
+    fn recording_the_context_announces_the_entry_and_its_context() {
+        let open = open_history(RecordingStorageLimit::Unlimited);
+        open.recording("a.opus", 1_000);
+        let earlier = open.save("a.opus", "earlier");
+        open.recording("b.opus", 1_000);
+        let current = open.save("b.opus", "current");
+        open.take_announced();
+
+        let window = crate::dictation_context::CapturedWindow {
+            app_id: "com.apple.TextEdit".into(),
+            app_name: "TextEdit".into(),
+            title: "Notes".into(),
+        };
+        open.history
+            .record_entry_context(current.id, Some(&window), &[], Some(&[earlier.id]))
+            .expect("record context");
+
+        let announced = open.take_announced();
+        assert_eq!(
+            announced.iter().map(about).collect::<Vec<_>>(),
+            vec![("updated", current.id), ("updated", earlier.id)]
+        );
+        let HistoryUpdatePayload::Updated { entry } = &announced[0] else {
+            unreachable!()
+        };
+        let context = &entry.window_context;
+        assert_eq!(context.window_app_id.as_deref(), Some("com.apple.TextEdit"));
+        assert_eq!(context.window_title.as_deref(), Some("Notes"));
+        assert_eq!(context.context_entry_ids, vec![earlier.id]);
+        let stored_earlier = open.entry(earlier.id).unwrap();
+        assert!(stored_earlier.window_context.sent_as_context_at.is_some());
+    }
+
+    #[test]
+    fn starring_an_entry_announces_it() {
+        let open = open_history(RecordingStorageLimit::Unlimited);
+        open.recording("a.opus", 1_000);
+        let entry = open.save("a.opus", "keep me");
+        open.take_announced();
+
+        tauri::async_runtime::block_on(open.history.toggle_saved_status(entry.id)).expect("toggle");
+        assert!(open.entry(entry.id).unwrap().saved);
+        tauri::async_runtime::block_on(open.history.toggle_saved_status(entry.id))
+            .expect("toggle back");
+        assert!(!open.entry(entry.id).unwrap().saved);
+
+        assert_eq!(
+            open.announced_about(),
+            vec![("toggled", entry.id), ("toggled", entry.id)]
+        );
+    }
+
+    #[test]
+    fn deleting_an_entry_removes_its_recording_and_announces_it() {
+        let open = open_history(RecordingStorageLimit::Unlimited);
+        let path = open.recording("a.opus", 1_000);
+        let entry = open.save("a.opus", "gone soon");
+        open.take_announced();
+
+        tauri::async_runtime::block_on(open.history.delete_entry(entry.id)).expect("delete");
+
+        assert!(!path.exists());
+        assert!(open.entry(entry.id).is_none());
+        assert_eq!(open.announced_about(), vec![("deleted", entry.id)]);
+    }
+
+    #[test]
+    fn transcribing_again_announces_the_new_text() {
+        let open = open_history(RecordingStorageLimit::Unlimited);
+        open.recording("a.opus", 1_000);
+        let entry = open.save("a.opus", "old words");
+        open.take_announced();
+
+        open.history
+            .update_transcription(
+                entry.id,
+                "new words".into(),
+                None,
+                None,
+                TranscribedWith {
+                    language: None,
+                    model: Some("other-model".into()),
+                },
+                false,
+            )
+            .expect("update transcription");
+
+        let announced = open.take_announced();
+        assert_eq!(
+            announced.iter().map(about).collect::<Vec<_>>(),
+            vec![("updated", entry.id)]
+        );
+        let HistoryUpdatePayload::Updated { entry: updated } = &announced[0] else {
+            unreachable!()
+        };
+        assert_eq!(updated.transcription_text, "new words");
+        assert_eq!(updated.transcription_model.as_deref(), Some("other-model"));
     }
 }

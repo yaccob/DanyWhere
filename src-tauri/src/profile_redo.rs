@@ -155,8 +155,10 @@ pub fn redo_from(
     if transcription_differs(base, made_with, target) {
         return RedoFrom::Transcription;
     }
-    let made_post_processed = made_end.post_process && made_with.post_process_enabled;
-    let target_post_processes = target_end.post_process && target.post_process_enabled;
+    // As the dictation decided, and as it would decide in the target
+    // (`app_profiles::effective_post_process`).
+    let made_post_processed = crate::app_profiles::effective_post_process(made_end, made_with);
+    let target_post_processes = crate::app_profiles::effective_post_process(target_end, target);
     if made_post_processed != target_post_processes
         || (made_post_processed
             && post_processing_differs(
@@ -350,7 +352,8 @@ pub fn for_insert(
         &made.end,
         &target_end,
     );
-    let target_post_processes = target_end.post_process && target_values.post_process_enabled;
+    let target_post_processes =
+        crate::app_profiles::effective_post_process(&target_end, &target_values);
     let plan = plan(from, entry, target_post_processes);
     if plan != RedoPlan::Keep {
         info!(
@@ -453,7 +456,7 @@ fn run(
         }
         RedoPlan::Transcribe => {
             show(Working::Transcribing);
-            let post_process = target_end.post_process && target.post_process_enabled;
+            let post_process = crate::app_profiles::effective_post_process(target_end, target);
             let with_context = post_process && target_end.send_context;
             match crate::app_profiles::with_values_here(target.clone(), || {
                 transcribe_again(app, entry, post_process, with_context, show)

@@ -1464,7 +1464,7 @@ pub fn registers_binding(id: &str, settings: &AppSettings, service_available: bo
             })
             .unwrap_or_default();
         return !crate::insert_service::paste_last_is_service_shortcut(
-            settings.accessibility_skipped,
+            crate::accessibility::state(settings).runs_without_accessibility(),
             &binding,
             service_available,
         );
@@ -1911,6 +1911,9 @@ pub fn get_recording_storage_limit(app: &AppHandle) -> RecordingStorageLimit {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::accessibility::testing::{
+        settings_without_accessibility, with_choice, with_system_trusted, STATES,
+    };
 
     #[test]
     fn the_post_processing_shortcut_needs_post_processing() {
@@ -1926,12 +1929,6 @@ mod tests {
         assert!(!binding_needs_post_processing("paste_last_transcript"));
     }
 
-    fn without_accessibility() -> AppSettings {
-        let mut settings = get_default_settings();
-        crate::shortcut::apply_no_accessibility_mode(&mut settings);
-        settings
-    }
-
     fn with_paste_last(mut settings: AppSettings, keys: &str) -> AppSettings {
         settings
             .bindings
@@ -1943,7 +1940,7 @@ mod tests {
 
     #[test]
     fn without_accessibility_danywhere_leaves_paste_last_to_the_service() {
-        let settings = with_paste_last(without_accessibility(), "ctrl+shift+v");
+        let settings = with_paste_last(settings_without_accessibility(), "ctrl+shift+v");
         assert!(!registers_binding("paste_last_transcript", &settings, true));
         // The others stay DanyWhere's, the copy shortcut included.
         assert!(registers_binding("copy_last_transcript", &settings, true));
@@ -1955,10 +1952,27 @@ mod tests {
     fn paste_last_stays_registered_where_the_service_cant_take_it() {
         let settings = with_paste_last(get_default_settings(), "ctrl+shift+v");
         assert!(registers_binding("paste_last_transcript", &settings, true));
-        let settings = with_paste_last(without_accessibility(), "ctrl+shift+v");
+        let settings = with_paste_last(settings_without_accessibility(), "ctrl+shift+v");
         assert!(registers_binding("paste_last_transcript", &settings, false));
-        let settings = with_paste_last(without_accessibility(), "option+shift+v");
+        let settings = with_paste_last(settings_without_accessibility(), "option+shift+v");
         assert!(registers_binding("paste_last_transcript", &settings, true));
+    }
+
+    #[test]
+    fn paste_last_goes_to_the_service_when_the_user_chose_to_go_without() {
+        for (skipped, trusted) in STATES {
+            let settings =
+                with_paste_last(with_choice(get_default_settings(), skipped), "ctrl+shift+v");
+            assert_eq!(
+                with_system_trusted(trusted, || registers_binding(
+                    "paste_last_transcript",
+                    &settings,
+                    true
+                )),
+                !skipped,
+                "skipped {skipped}, trusted {trusted}"
+            );
+        }
     }
 
     /// DanyWhere: the defaults (in use, post-processing off) and "mail"

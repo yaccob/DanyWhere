@@ -81,6 +81,10 @@ Planned work on DanyWhere, roughly in priority order within each section. Items 
 - Places that touch a device without a seam today: opening and playing a feedback sound, and finding the selected output device by name with its fallback to the default (`audio_feedback.rs`); the list of output devices (`audio_toolkit/audio/device.rs`); opening the microphone with its fallback when the chosen channel is missing, and the lists of microphones (`managers/audio.rs`, `commands/audio.rs`).
 - On #2525: rodio 0.23 asks for a fixed buffer of about 50 ms (2048 frames at 44.1 and 48 kHz), and a Bose QC Ultra on macOS accepts only 14..=1024, so every feedback sound fails there. Handy's fix asks for the system's default buffer on every platform and device, but rodio 0.22.2 moved away from that default on purpose ("Incorrectly set system default audio buffer size breaks playback"). Claude's proposal for then, to be decided when it is built: fit rodio's size into the range the device itself offers (the Bose would get 1024, every other device stays as today), and try the system default once only if opening still fails.
 
+**Built (2026-11-23, not released yet):** the seams and their tests, as (E) of the test redesign below.
+
+**#2525 fixed (2026-11-23, Claude decided it as proposed, on the user's request to decide on their own overnight):** rodio's buffer is fitted into the range the device reports (the Bose gets 1024 frames, a device without a range keeps 2048), and a device that refuses to build the stream is asked once more with the system's default buffer. Also from the fake devices: a feedback sound gives up after its length plus 1 s (5 s when its file tells no length), so a device that goes silent no longer holds the later sounds and the start of the next dictation, and the log line of a failed sound names its cause.
+
 ### Tests: a dictation as a whole below the GUI, and the mode without Accessibility only where it differs
 
 **Idea (user, 2026-11-22):** thorough checks of a change go almost only through the scripted GUI. That takes long, and every GUI run re-checks logic decided below the GUI. The user asks whether the layers are separated well enough, or whether a clear separation goes unused in testing. The user also asks whether the mode without Accessibility should become an application of its own: its real runs re-test much that is tested already, while only what differs should need testing.
@@ -109,6 +113,25 @@ Claude's additions:
 
 - The plan and A don't depend on that release and can start before it. B's changes to the code start from the released state, since both B and the shortcut rework change `actions.rs`.
 - B moves code of the mode without Accessibility anyway: the block after the recording copies instead of pasting and hands the text to a waiting service. So C is proposed as part of the redesign, with one short real run without Accessibility at its end; the user hasn't decided this yet.
+
+**Decided (user, 2026-11-22, 22:44):** C is part of it, and the work starts at once.
+
+**Built (2026-11-23, not released yet):** A to D in full, and E of "Tests: generic fake audio devices instead of real ones". 1315 Rust tests on `main` (`dfa9e574`), 1483 on the branch, in about 5 s plus about 25 s of building; the frontend has 84 component tests besides its 58 scripts, in about 1.5 s.
+
+- **(A)** Component tests: happy-dom and testing-library under `bun run test:components`, `bindings.ts` replaced by a mock of all its commands, Tauri's IPC by `mockIPC`, the real English texts (AGENTS.md, "Component tests"). They cover the end shortcut pages, the profiles' state lines and names, and the jumps of "Open in …"; each of the three frontend faults of the GUI check of 2026-11-22, put back on purpose, turns 3 to 8 of them red. They found one fault, fixed: a refused shortcut combination on the scoped pages showed the backend's code and a second notice instead of one sentence.
+- **(B)** The dictation as functions: the start (`dictation_start`: pure decisions, five ports, the recording manager without the app and tested with handy-recorder's `FakeMic`), a snapshot of the settings taken once at the stop (`dictation_snapshot`), and the end (`dictation_flow`: six ports, the real History opened without the app, post-processing against a local server). 21 flow tests play the cases of the dictation runs, two of them from the key press through the real coordinator, whose effects now go through an exchangeable executor. Settings changed while a dictation is transcribed apply from the next dictation on.
+- **(C)** One source for the permission (`accessibility.rs`, `lib/accessibility.ts`), the shortcut backends behind a trait with one registration loop, and delivery by `delivery_for`; the flow tests run in three states (with Accessibility, without it with the service, without it on the clipboard). Fixed test-first: without Accessibility a profile with a paste method that sends keys ended with PasteFailed; with the mode on, window titles now come by Apple event also when macOS grants Accessibility later; a new dictation's post-processing names its prompt in History.
+- **(D)** `tools/ui/smoke-test.py dev|noax` in the sidecar: seven checks of what only the real app shows, instead of the long GUI runs; first run with the user's go on 2026-11-23 01:20–01:47: Dev 7 of 7, NoAX 6 of 7 with the window title skipped.
+- **(E)** Output devices, the output list, the microphone list and the lid behind seams; tests run through rodio's and cpal's real code on fake devices (cpal's `custom` feature as a dev-dependency only). #2525 is fixed on top of them, see "Tests: generic fake audio devices instead of real ones".
+
+Found, then decided and fixed (Claude, 2026-11-23, on the user's request to decide on their own overnight; sidecar `qa/2026-11-23_0040_test-redesign-bericht.md` and `qa/2026-11-23_0915_release-0.3.1-vorbereitet.md`):
+
+- A feedback sound waited without a time limit for a device that goes silent: fixed, see "Tests: generic fake audio devices instead of real ones".
+- With the factory values the end shortcut "with post-processing" post-processed although the switch was off, and the redo for another profile then took the entry as not post-processed: the switch decides now, for every end, for holding and for `--toggle-post-process`, and the end shortcut pages say so at every end that would post-process.
+- "Paste Last" with profiles by application decided with the profile in use but pasted with the values of the application in front: it decides now with the values the text goes with, and where they don't paste, the text goes to the clipboard.
+- A permission macOS takes away while the switch is not set still ends in PasteFailed and leads to the permission page at the next start: left as it is, for "Switch automatically" below.
+
+Found by a review afterwards and fixed: the Windows build no longer compiled (a call in `window_capture.rs`), the Linux CI's compiler refused a crate-private type in the flow's ports, and following `delivery_for` had stopped an external paste script from running without Accessibility.
 
 ### History: per profile and in total
 
