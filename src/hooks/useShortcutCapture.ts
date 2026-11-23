@@ -90,21 +90,30 @@ export const useShortcutCapture = (
     onDoneRef.current?.();
   }, [release]);
 
+  // What a commit stores with, as of the last render. Every key re-renders
+  // the page (`setPartial`), and in a scope `updateBinding` and an end's
+  // `onCapture` are new functions each time; were they dependencies of
+  // `commit`, the key effects below would restart mid-capture and forget
+  // the keys held so far (without Accessibility each event has one key).
+  const latest = useRef({ bindingId, inert, onCapture, t, updateBinding });
+  latest.current = { bindingId, inert, onCapture, t, updateBinding };
+
   const commit = useCallback(
     async (binding: string) => {
+      const now = latest.current;
       try {
-        if (onCapture) await onCapture(binding);
-        else if (!inert) await updateBinding(bindingId, binding);
+        if (now.onCapture) await now.onCapture(binding);
+        else if (!now.inert) await now.updateBinding(now.bindingId, binding);
       } catch (error) {
         console.error("Failed to change binding:", error);
         // A scoped write's notice already said why.
         if (!(error instanceof RefusalShown)) {
-          notify({ title: bindingErrorTitle(String(error), t) });
+          notify({ title: bindingErrorTitle(String(error), now.t) });
         }
       }
       await finish();
     },
-    [bindingId, finish, inert, onCapture, t, updateBinding],
+    [finish],
   );
 
   /** Resolves to whether capture began. */
