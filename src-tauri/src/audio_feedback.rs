@@ -3,7 +3,10 @@ use crate::settings::SoundTheme;
 use crate::settings::{self, AppSettings};
 use crate::sound_queue::SoundQueue;
 use log::{debug, error, warn};
-use rodio::{cpal, Decoder, DeviceSinkBuilder, DeviceSinkError, PlayError, Player, Source};
+use rodio::cpal::{traits::DeviceTrait, BufferSize, FrameCount, SupportedBufferSize};
+use rodio::{
+    cpal, Decoder, DeviceSinkBuilder, DeviceSinkError, MixerDeviceSink, PlayError, Player, Source,
+};
 use std::fs::File;
 use std::io::BufReader;
 use std::path::{Path, PathBuf};
@@ -315,6 +318,79 @@ fn feedback_device(
     }
 }
 
+/// DanyWhere: the buffer rodio's `DeviceSinkBuilder::from_device` asks every
+/// device for: about 50 ms at `sample_rate`, rounded to the nearest power of
+/// two (rodio's own `nearest_multiple_of_two` is private).
+fn rodio_buffer_frames(sample_rate: u32) -> FrameCount {
+    let frames = sample_rate / (1000 / 50);
+    if frames <= 1 {
+        return 1;
+    }
+    let above = frames.next_power_of_two();
+    let below = above >> 1;
+    if frames - below <= above - frames {
+        below
+    } else {
+        above
+    }
+}
+
+/// DanyWhere: `rodio_frames` fitted into the buffers a device `offered`.
+/// cpal refuses a buffer outside that range on macOS and Linux, so a Bose QC
+/// Ultra, which takes 14 to 1024 frames only, refused rodio's 2048 for every
+/// sound (Handy's #2524). Without a range, or with one that can't be right
+/// (empty, or 0 frames at most), rodio's buffer as it is.
+fn fitted_buffer(rodio_frames: FrameCount, offered: &SupportedBufferSize) -> BufferSize {
+    match *offered {
+        SupportedBufferSize::Range { min, max } if min <= max && max > 0 => {
+            BufferSize::Fixed(rodio_frames.clamp(min.max(1), max))
+        }
+        _ => BufferSize::Fixed(rodio_frames),
+    }
+}
+
+/// DanyWhere: opens `device` as rodio's `DeviceSinkBuilder::from_device`
+/// would, in the format the device offers, with the buffer `fitted_buffer`
+/// gives. A device that refuses to build that stream is asked once more,
+/// with the system's default buffer. Handy's fix for #2525 asks every device
+/// for the system's default; DanyWhere keeps rodio's buffer of about 50 ms
+/// wherever a device takes it, as rodio chose it against playback that
+/// breaks on systems whose default is set wrong.
+fn open_sink(device: cpal::Device) -> Result<MixerDeviceSink, DeviceSinkError> {
+    let offered = device
+        .default_output_config()
+        .map_err(DeviceSinkError::DefaultSinkConfigError)?;
+    let open_with = |buffer: BufferSize| {
+        DeviceSinkBuilder::default()
+            .with_device(device.clone())
+            .with_supported_config(&offered)
+            .with_buffer_size(buffer)
+            .open_stream()
+    };
+    let buffer = fitted_buffer(
+        rodio_buffer_frames(offered.sample_rate()),
+        offered.buffer_size(),
+    );
+    match open_with(buffer) {
+        Err(DeviceSinkError::BuildError(refused)) => {
+            warn!(
+                "The output device refused a stream with a buffer of {:?} ({}); \
+                 trying the system's default buffer",
+                buffer,
+                error_chain(&refused)
+            );
+            open_with(BufferSize::Default).map_err(|again| {
+                warn!(
+                    "The output device refused the system's default buffer too: {}",
+                    error_chain(&again)
+                );
+                DeviceSinkError::BuildError(refused)
+            })
+        }
+        opened => opened,
+    }
+}
+
 /// DanyWhere: plays `path` at `volume` on the device `feedback_device`
 /// picks among `outputs`, and returns once the device has taken all of it
 /// or the time `limit` allows for it has passed.
@@ -326,7 +402,7 @@ fn play_audio_file_on(
     limit: SoundTimeLimit,
 ) -> Result<SoundEnd, Box<dyn std::error::Error>> {
     let device = feedback_device(outputs, selected_device)?;
-    let device_sink = DeviceSinkBuilder::from_device(device)?.open_stream()?;
+    let device_sink = open_sink(device)?;
     let mixer = device_sink.mixer();
 
     let file = File::open(path)?;
@@ -346,8 +422,8 @@ fn play_audio_file_on(
 #[cfg(test)]
 mod tests {
     use super::{
-        error_chain, failure_line, play_audio_file_on, sound_location, SoundEnd, SoundLocation,
-        SoundQueue, SoundTimeLimit, SoundType,
+        error_chain, failure_line, fitted_buffer, play_audio_file_on, sound_location, SoundEnd,
+        SoundLocation, SoundQueue, SoundTimeLimit, SoundType,
     };
     use crate::audio_toolkit::audio::fake_output::{FakeOutput, FakeOutputs, Running};
     use crate::settings::SoundTheme;
@@ -530,8 +606,9 @@ mod tests {
 
     #[test]
     fn a_sound_asks_the_device_for_rodios_buffer_of_about_50_ms() {
-        // What a fix for Handy's #2525 must keep for every device that takes
-        // it; Handy's own fix asks every device for the system's default.
+        // What DanyWhere's fix for Handy's #2525 keeps for every device that
+        // takes it; Handy's own fix asks every device for the system's
+        // default.
         for (rate, frames) in [(44_100, 2048), (48_000, 2048), (96_000, 4096)] {
             let device = FakeOutput::new("Studio Display Speakers").offering(
                 rate,
@@ -557,25 +634,82 @@ mod tests {
     }
 
     #[test]
-    fn a_device_that_takes_only_short_buffers_refuses_every_sound_today() {
-        // Today's behaviour, held on purpose: Handy's fix #2525 is not taken
-        // over, and how DanyWhere fixes it is still to be decided (ROADMAP,
-        // "Tests: generic fake audio devices instead of real ones"). The fix
-        // turns this test around.
+    fn a_device_that_takes_only_short_buffers_plays_with_the_largest_it_offers() {
+        // Handy's #2525: rodio's 2048 frames failed every sound on it.
         let bose = bose();
         let outputs = FakeOutputs::new(&[&bose]).with_default(&bose);
-        assert_eq!(
-            play(&outputs, Some("Bose QC Ultra Headphones")),
-            Err("Error opening the stream with the OS: \
-                 Buffer size 2048 is not in the supported range 14..=1024"
-                .to_string())
-        );
-        assert_eq!(
-            bose.asked_buffers(),
-            [BufferSize::Fixed(2048)],
-            "asked once, with rodio's buffer, and not again"
-        );
+        assert_eq!(play(&outputs, Some("Bose QC Ultra Headphones")), PLAYED);
+        assert_eq!(bose.asked_buffers(), [BufferSize::Fixed(1024)]);
+        assert!(bose.peak() > 0.01, "the sound reached the headphones");
         assert_eq!(bose.open_streams(), 0);
+    }
+
+    #[test]
+    fn a_device_that_takes_only_long_buffers_plays_with_the_shortest_it_offers() {
+        let device = FakeOutput::new("Conference Speaker")
+            .offering(
+                44_100,
+                2,
+                SupportedBufferSize::Range {
+                    min: 4096,
+                    max: 8192,
+                },
+            )
+            .accepting_buffers(4096..=8192);
+        let outputs = FakeOutputs::new(&[&device]).with_default(&device);
+        assert_eq!(play(&outputs, None), PLAYED);
+        assert_eq!(device.asked_buffers(), [BufferSize::Fixed(4096)]);
+    }
+
+    #[test]
+    fn a_device_that_refuses_the_buffer_it_offers_plays_with_the_system_default() {
+        let device = FakeOutput::new("Lying Headset")
+            .offering(44_100, 2, SupportedBufferSize::Range { min: 14, max: 4096 })
+            .accepting_buffers(14..=1024);
+        let outputs = FakeOutputs::new(&[&device]).with_default(&device);
+        assert_eq!(play(&outputs, None), PLAYED);
+        assert_eq!(
+            device.asked_buffers(),
+            [BufferSize::Fixed(2048), BufferSize::Default],
+            "asked once more, and only once"
+        );
+        assert!(device.peak() > 0.01);
+        assert_eq!(device.open_streams(), 0);
+    }
+
+    #[test]
+    fn a_device_without_a_buffer_range_gets_rodios_buffer() {
+        let device = speakers().offering(48_000, 2, SupportedBufferSize::Unknown);
+        let outputs = FakeOutputs::new(&[&device]).with_default(&device);
+        assert_eq!(play(&outputs, None), PLAYED);
+        assert_eq!(device.asked_buffers(), [BufferSize::Fixed(2048)]);
+    }
+
+    #[test]
+    fn rodios_buffer_is_fitted_into_a_range_that_makes_sense_only() {
+        let range = |min, max| SupportedBufferSize::Range { min, max };
+        assert_eq!(
+            fitted_buffer(2048, &range(14, 1024)),
+            BufferSize::Fixed(1024)
+        );
+        assert_eq!(
+            fitted_buffer(2048, &range(4096, 8192)),
+            BufferSize::Fixed(4096)
+        );
+        assert_eq!(
+            fitted_buffer(2048, &range(14, 4096)),
+            BufferSize::Fixed(2048)
+        );
+        assert_eq!(
+            fitted_buffer(2048, &range(1024, 14)),
+            BufferSize::Fixed(2048)
+        );
+        assert_eq!(fitted_buffer(2048, &range(0, 0)), BufferSize::Fixed(2048));
+        assert_eq!(fitted_buffer(2048, &range(0, 512)), BufferSize::Fixed(512));
+        assert_eq!(
+            fitted_buffer(2048, &SupportedBufferSize::Unknown),
+            BufferSize::Fixed(2048)
+        );
     }
 
     #[test]
@@ -591,11 +725,15 @@ mod tests {
                 ErrorKind::UnsupportedConfig
             ))
         );
-        assert_eq!(device.asked_rates(), [44_100], "no other rate is tried");
+        assert_eq!(
+            device.asked_rates(),
+            [44_100, 44_100],
+            "the system's buffer is tried once more, and no other rate"
+        );
     }
 
     #[test]
-    fn a_device_that_cannot_be_opened_fails_the_sound() {
+    fn a_device_that_cannot_be_opened_fails_the_sound_with_its_first_refusal() {
         let device = speakers().failing_to_open(ErrorKind::DeviceBusy);
         let outputs = FakeOutputs::new(&[&device]).with_default(&device);
         assert_eq!(
@@ -605,7 +743,10 @@ mod tests {
                 ErrorKind::DeviceBusy
             ))
         );
-        assert_eq!(device.asked_buffers().len(), 1);
+        assert_eq!(
+            device.asked_buffers(),
+            [BufferSize::Fixed(2048), BufferSize::Default]
+        );
     }
 
     #[test]
@@ -641,7 +782,11 @@ mod tests {
                 ErrorKind::PermissionDenied
             ))
         );
-        assert_eq!(device.asked_buffers().len(), 1);
+        assert_eq!(
+            device.asked_buffers().len(),
+            1,
+            "a stream it took is not asked for again with another buffer"
+        );
         assert_eq!(device.open_streams(), 0);
     }
 
