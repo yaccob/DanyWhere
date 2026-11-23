@@ -41,7 +41,8 @@ The app finds its bundled input method as the `*.app` in `Contents/Helpers` whos
 - Path: `~/Library/Application Support/<app id>/input-method.sock`; if that is longer than 103 bytes, `<_CS_DARWIN_USER_TEMP_DIR><app id>.input-method.sock`. The directory is `0700`, the socket `0600`. The app removes a stale file before binding and binds again if the file disappears while it runs (checked every 60 s).
 - The input method connects at launch, on every `activateServer` while not connected, and every 2 s while its source is selected and it is not connected.
 - **Both ends check the peer** before reading or writing anything else: the peer's audit token (`getsockopt(fd, SOL_LOCAL, LOCAL_PEERTOKEN, …)`) → `SecCodeCopyGuestWithAttributes` with `kSecGuestAttributeAudit` → `SecCodeCheckValidity` against the requirement `identifier "<expected id>" and certificate leaf = H"<SHA-1 of the checking side's own leaf certificate>"`. The app expects the bundled input method's id, the input method expects `DanyWhereAppID`. A side whose own code has no certificate (ad hoc, unsigned) accepts no peer. Release builds are signed with the Developer ID, Dev and NoAX with the self-signed "DanyWhere Local Signing"; app and input method are always signed with the same certificate.
-- One connection at a time; a new verified connection replaces the old one.
+- One connection at a time; a new verified connection replaces the old one. A write that fails or times out closes the connection, so a half-written line never merges with the next message.
+- **On every (re)connection** the app sends the current `layout` and `restore` (both `null` when nothing is selected), and the input method sends `hello` and then `active` for the text field it has, if any. `restore` belongs to the connection that sent it: the input method applies it once when that connection breaks and then forgets it.
 
 ## Messages
 
@@ -71,6 +72,18 @@ App → input method:
 
 Outside stage 2's `catch` the input method lets every key through unchanged (`handle` returns `NO`) and counts nothing.
 
+**An `insert` without a text field waits** up to 0.5 s for the next `activateServer` before it answers `no_client`: the app sends it right after selecting the source, and macOS activates the input method for the focused field a moment later. A newer `insert` ends an older waiting one with `no_client`; a broken link drops a waiting one without inserting it.
+
+**`inserted` with `ok:true` means the client took the text.** Some apps (Chromium, Electron) accept `insertText` even without a focused input field and drop the text; the input method can't tell.
+
+**An `insert` the input method doesn't answer in time, or whose link breaks before the answer, may still have arrived.** The app then inserts it no other way and presses no "Append" keys (`InsertFailure::Unanswered`).
+
 ## Stage 2 (Enter as an end shortcut, later)
 
 "Insert and send": while a recording runs, the input method catches the end shortcut Enter, holds it until the text is ready, inserts the text and lets Enter through. How long a key may be held before the app in front suffers is measured first (with the user's go); the app side is built after that.
+
+Open before the app side is built (review of 2026-11-23):
+
+- `release` has no answer. A `release` that comes just after `hold_ms` finds the key already swallowed, and the app can't tell whether the text went in; add e.g. `released {id, ok}` or `hold_timeout {id}`.
+- An Enter held longer than the key repeat delay repeats after it is let through, sending more Enters.
+- The input method caps `hold_ms` at 10 000 ms and compares only Shift, Control, Option and Command for `mods`.
