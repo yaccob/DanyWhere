@@ -379,7 +379,7 @@ pub fn paste_last<P: PasteLastPorts>(
             insert.text.unwrap_or(text),
             Some(insert.values),
             insert.end.append_text,
-            insert.post_process_failed,
+            insert.post_process_failure.is_some(),
         ),
         None => (
             text,
@@ -1310,7 +1310,7 @@ mod tests {
                 append_text: APP_APPEND.to_string(),
                 ..Default::default()
             },
-            post_process_failed: false,
+            post_process_failure: None,
         }
     }
 
@@ -1484,7 +1484,8 @@ mod tests {
         // As after a dictation, the failure's notice stays on the overlay.
         let mut ports = FakePasteLast::in_use(PasteMethod::CtrlV);
         let mut insert = app_profile(PasteMethod::None, Some("Transcript"));
-        insert.post_process_failed = true;
+        insert.post_process_failure =
+            Some(crate::post_process_failure::PostProcessFailure::unknown());
         ports.app_in_front = Some(insert);
         assert_eq!(paste_last_with(&ports), PasteLastOutcome::OnClipboard);
         assert_eq!(

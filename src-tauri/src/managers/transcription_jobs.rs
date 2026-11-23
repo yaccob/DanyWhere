@@ -25,6 +25,7 @@ use crate::managers::transcription::{
     panic_payload_message, ChunkControl, Transcription, TranscriptionManager,
 };
 use crate::notices::{self, Notice, NoticeCode, NoticeSource};
+use crate::post_process_failure::PostProcessFailure;
 
 /// How often a waiting chunk checks whether dictation has finished.
 const DICTATION_POLL: Duration = Duration::from_millis(200);
@@ -112,12 +113,14 @@ fn post_process_input(
 
 /// The notice for a post-processing that failed: after a transcription the
 /// new transcript is kept as it is, without one the entry is unchanged.
-fn post_process_failure_notice(transcribed: bool) -> NoticeCode {
-    if transcribed {
+/// DanyWhere: it names the reason (`post_process_failure`).
+fn post_process_failure_notice(failure: &PostProcessFailure, transcribed: bool) -> Notice {
+    let code = if transcribed {
         NoticeCode::FilePostProcessFailed
     } else {
         NoticeCode::HistoryPostProcessFailed
-    }
+    };
+    failure.notice(code, NoticeSource::File)
 }
 
 struct Running {
@@ -428,19 +431,16 @@ impl TranscriptionJobManager {
                     }
                 }
                 Ok(JobEnd::Finished {
-                    post_process_failed,
+                    post_process_failure,
                     transcribed,
                     unchanged,
                 }) => {
                     // Clear first, so the warning about this job survives it.
                     notices::clear(&self.app, NoticeSource::File);
-                    if post_process_failed {
+                    if let Some(failure) = &post_process_failure {
                         notices::raise(
                             &self.app,
-                            Notice::new(
-                                post_process_failure_notice(transcribed),
-                                NoticeSource::File,
-                            ),
+                            post_process_failure_notice(failure, transcribed),
                         );
                     }
                     finished_status(unchanged)
@@ -512,7 +512,7 @@ impl TranscriptionJobManager {
         if cancelled.load(Ordering::Acquire) {
             return Ok(JobEnd::Cancelled);
         }
-        let post_process_failed = processed.post_process_failed;
+        let post_process_failure = processed.post_process_failure.clone();
         let context_entry_ids = processed.context_entry_ids.clone();
         // DanyWhere: the new transcription goes on top; the versions there
         // stay (`history_versions`).
@@ -539,7 +539,7 @@ impl TranscriptionJobManager {
             warn!("Failed to store the entry's context: {}", e);
         }
         Ok(JobEnd::Finished {
-            post_process_failed,
+            post_process_failure,
             transcribed: true,
             unchanged: false,
         })
@@ -590,7 +590,7 @@ impl TranscriptionJobManager {
             }
         }
         // The result goes onto the stack as it is now.
-        let (post_process_failed, unchanged) = match processed.post_processed_text {
+        let (post_process_failure, unchanged) = match processed.post_processed_text {
             Some(text) => {
                 let stored = hm.store_post_processing(
                     entry.id,
@@ -601,12 +601,19 @@ impl TranscriptionJobManager {
                         prompt_name: processed.post_process_prompt_name,
                     },
                 )?;
-                (false, stored.unchanged)
+                (None, stored.unchanged)
             }
-            None => (true, false),
+            None => (
+                Some(
+                    processed
+                        .post_process_failure
+                        .unwrap_or_else(PostProcessFailure::unknown),
+                ),
+                false,
+            ),
         };
         Ok(JobEnd::Finished {
-            post_process_failed,
+            post_process_failure,
             transcribed: false,
             unchanged,
         })
@@ -616,9 +623,10 @@ impl TranscriptionJobManager {
 /// A cancelled job changes no notices.
 enum JobEnd {
     /// `transcribed` is false when the job only post-processed;
-    /// `unchanged`: its result equals the entry's top version.
+    /// `unchanged`: its result equals the entry's top version;
+    /// `post_process_failure`: why its post-processing failed, if it did.
     Finished {
-        post_process_failed: bool,
+        post_process_failure: Option<PostProcessFailure>,
         transcribed: bool,
         unchanged: bool,
     },
@@ -842,14 +850,40 @@ mod tests {
 
     #[test]
     fn a_failed_post_processing_without_transcription_has_its_own_notice() {
+        let failure = PostProcessFailure::unknown();
         assert_eq!(
-            post_process_failure_notice(true),
+            post_process_failure_notice(&failure, true).code,
             NoticeCode::FilePostProcessFailed
         );
         assert_eq!(
-            post_process_failure_notice(false),
+            post_process_failure_notice(&failure, false).code,
             NoticeCode::HistoryPostProcessFailed
         );
+    }
+
+    /// DanyWhere: both notices name the reason, as a dictation's does.
+    #[test]
+    fn a_failed_post_processing_of_an_entry_names_its_reason() {
+        let mut settings = crate::settings::get_default_settings();
+        settings
+            .post_process_models
+            .insert("openai".to_string(), "gpt-9".to_string());
+        let failure = PostProcessFailure::new(
+            &settings,
+            crate::post_process_failure::FailureReason::ModelNotFound,
+        );
+        let detail = serde_json::json!({
+            "reason": "model-not-found",
+            "providerId": "openai",
+            "provider": "OpenAI",
+            "model": "gpt-9",
+        })
+        .to_string();
+        for transcribed in [true, false] {
+            let notice = post_process_failure_notice(&failure, transcribed);
+            assert_eq!(notice.source, NoticeSource::File);
+            assert_eq!(notice.detail.as_deref(), Some(detail.as_str()));
+        }
     }
 
     #[test]
