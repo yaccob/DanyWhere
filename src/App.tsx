@@ -20,8 +20,10 @@ import { OnboardingFlow } from "./components/onboarding/OnboardingFlow";
 import ModelMigration from "./components/onboarding/ModelMigration";
 import {
   ReplaceModel,
+  ReturningInputMethodGuide,
   ReturningPermissions,
 } from "./components/onboarding/StandaloneScreens";
+import { inputMethodGuideDue, readInputMethodStatus } from "./lib/inputMethod";
 import {
   clearOnboardingProgress,
   type OnboardingStep as OnboardingPreviewStep,
@@ -55,6 +57,8 @@ type OnboardingStep =
   | "permissions"
   | "migration"
   | "replaceModel"
+  // DanyWhere: once, for an installation without Accessibility.
+  | "inputMethodGuide"
   | "done";
 
 function App() {
@@ -67,6 +71,9 @@ function App() {
   // Set when a returning user's selected model is a retired (ONNX) model that
   // is still on disk: they must update it before the app can transcribe.
   const [migrationModelId, setMigrationModelId] = useState<string | null>(null);
+  // DanyWhere: the one-time guide to the input method is due at this start
+  // (lib/inputMethod.ts); shown after the permissions, if they need a screen.
+  const [inputMethodGuide, setInputMethodGuide] = useState(false);
   // DanyWhere: where the navigation is (lib/navigation.ts).
   const [location, setLocation] = useState<NavLocation>(START_LOCATION);
   const showHistory = useCallback(() => setLocation({ kind: "history" }), []);
@@ -160,12 +167,20 @@ function App() {
     return retired.some((m) => m.id === selectedModel) ? selectedModel : null;
   };
 
-  // Returning users land in the app unless their model needs updating. The
-  // window may start hidden, so bring it forward for the update screen.
-  const finishReturningUser = async (retiredModelId: string | null) => {
+  // Returning users land in the app unless their model needs updating, or
+  // (DanyWhere) the input method's guide is due. The window may start
+  // hidden, so bring it forward for either screen. A model update comes
+  // first; the guide then waits for the next start.
+  const finishReturningUser = async (
+    retiredModelId: string | null,
+    guideDue: boolean,
+  ) => {
     if (retiredModelId) {
       await revealMainWindowForPermissions();
       setOnboardingStep("migration");
+    } else if (guideDue) {
+      await revealMainWindowForPermissions();
+      setOnboardingStep("inputMethodGuide");
     } else {
       setOnboardingStep("done");
     }
@@ -188,6 +203,14 @@ function App() {
           settingsResult.data.selected_model ?? "",
         );
         setMigrationModelId(retiredModelId);
+        const guideDue =
+          currentPlatform === "macos" &&
+          inputMethodGuideDue(
+            currentPlatform,
+            settingsResult.data,
+            await readInputMethodStatus(),
+          );
+        setInputMethodGuide(guideDue);
 
         if (currentPlatform === "macos") {
           try {
@@ -229,7 +252,7 @@ function App() {
           }
         }
 
-        await finishReturningUser(retiredModelId);
+        await finishReturningUser(retiredModelId, guideDue);
       } else {
         // New user - start full onboarding
         setOnboardingStep("flow");
@@ -301,8 +324,14 @@ function App() {
   } else if (onboardingStep === "permissions") {
     content = (
       <ReturningPermissions
-        onComplete={() => finishReturningUser(migrationModelId)}
+        onComplete={() =>
+          finishReturningUser(migrationModelId, inputMethodGuide)
+        }
       />
+    );
+  } else if (onboardingStep === "inputMethodGuide") {
+    content = (
+      <ReturningInputMethodGuide onComplete={() => setOnboardingStep("done")} />
     );
   } else if (onboardingStep === "migration" && migrationModelId) {
     content = (

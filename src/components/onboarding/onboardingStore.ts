@@ -9,6 +9,7 @@ import {
 export type OnboardingStep =
   | "welcome"
   | "permissions"
+  | "insertDirectly"
   | "model"
   | "demo"
   | "try"
@@ -17,6 +18,8 @@ export type OnboardingStep =
 export const STEP_ORDER: OnboardingStep[] = [
   "welcome",
   "permissions",
+  // DanyWhere: macOS without Accessibility, in a build with the input method.
+  "insertDirectly",
   "model",
   "demo",
   "try",

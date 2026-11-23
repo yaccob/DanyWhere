@@ -13,7 +13,10 @@ import type { ChineseScriptChoice } from "@/lib/utils/languageSuggestions";
 import { isChinese } from "@/lib/utils/languageSuggestions";
 import { Welcome } from "./screens/Welcome";
 import { Permissions } from "./screens/Permissions";
+import { InsertDirectly } from "./screens/InsertDirectly";
 import { Model } from "./screens/Model";
+import { useInputMethod } from "@/hooks/useInputMethod";
+import { offersInputMethod } from "@/lib/inputMethod";
 import { Demo } from "./screens/Demo";
 import { TryIt } from "./screens/TryIt";
 import { useOsType } from "@/hooks/useOsType";
@@ -55,6 +58,13 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   const models = useOnboardingModels(store.languages);
   const currentModel = useModelStore((s) => s.currentModel);
   const selectModel = useModelStore((s) => s.selectModel);
+  // DanyWhere: whether this build carries the input method (macOS); the
+  // step itself follows the source's state.
+  const asksInputMethod = osType === "macos" && !preview;
+  const inputMethod = useInputMethod({
+    enabled: asksInputMethod,
+    poll: false,
+  });
 
   // Once models load: start from an on-disk model if there is one, or flag a
   // download interrupted by a quit. Reads the store since reset() runs first.
@@ -124,10 +134,22 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
     };
   }, [preview]);
 
-  if (!permissions.checked) return null;
+  // DanyWhere: Insert Directly needs the input method's status first, so a
+  // relaunch that resumes on it doesn't flash another screen.
+  if (!permissions.checked || (asksInputMethod && !inputMethod.status))
+    return null;
 
+  // DanyWhere: once the user continues without Accessibility on a Mac whose
+  // build carries the input method, adding its input source comes next.
+  const insertsDirectly =
+    osType === "macos" &&
+    (preview ||
+      (permissions.accessibilitySkipped &&
+        offersInputMethod(osType, inputMethod.status)));
   const steps = STEP_ORDER.filter(
-    (s) => s !== "permissions" || permissions.needed || store.welcomeBack,
+    (s) =>
+      (s !== "permissions" || permissions.needed || store.welcomeBack) &&
+      (s !== "insertDirectly" || insertsDirectly),
   );
   const step = steps.includes(store.step) ? store.step : steps[0];
   const progress = { index: steps.indexOf(step), count: steps.length };
@@ -215,6 +237,15 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
           progress={progress}
           onBack={back}
           onContinue={next}
+        />
+      );
+    case "insertDirectly":
+      return (
+        <InsertDirectly
+          progress={progress}
+          preview={preview}
+          onBack={back}
+          onLeave={next}
         />
       );
     case "model":

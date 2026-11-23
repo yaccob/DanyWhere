@@ -6,11 +6,13 @@ import { useAccessibility } from "../../../hooks/useAccessibility";
 import { KeyboardImplementationSelector } from "../debug/KeyboardImplementationSelector";
 import { DictationKeyInserts } from "../DictationKeyInserts";
 import { DictationServiceWhenIdleSetting } from "../DictationServiceWhenIdle";
+import { InputMethodSettings } from "./InputMethodSettings";
 
 /** DanyWhere: Application settings › Accessibility (P11): how shortcuts are
  * read, and, in the mode without Accessibility (chosen in onboarding), what
  * the dictation shortcut's second press does. The keyboard implementation was
- * on Debug, the two switches of the mode in General. */
+ * on Debug, the two switches of the mode in General. On macOS, below them,
+ * inserting through DanyWhere's own input method. */
 export const AccessibilitySettings: React.FC = () => {
   const { t } = useTranslation();
   const { getSetting } = useSettings();
@@ -34,6 +36,8 @@ export const AccessibilitySettings: React.FC = () => {
           />
         )}
       </SettingsGroup>
+      {/* DanyWhere: inserting through its own input method (macOS). */}
+      <InputMethodSettings />
     </div>
   );
 };

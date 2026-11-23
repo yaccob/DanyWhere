@@ -220,6 +220,10 @@ const settingUpdaters: {
     commands.changeAppendTrailingSpaceSetting(value as boolean),
   dictation_key_inserts: (value) =>
     commands.changeDictationKeyInsertsSetting(value as boolean),
+  input_method_guide_seen: async (value) => {
+    const result = await commands.setInputMethodGuideSeen(value as boolean);
+    if (result.status === "error") throw new Error(result.error);
+  },
   dictation_service_when_idle: (value) =>
     commands.changeDictationServiceWhenIdleSetting(
       value as DictationServiceWhenIdle,

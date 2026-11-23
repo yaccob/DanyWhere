@@ -105,6 +105,14 @@
       "welcomeBack": "Bentornato. Riprendiamo da dove eri rimasto.",
       "relaunch": "La scorciatoia non risponde dopo questo passaggio? <relaunch>Riavvia Handy</relaunch> e tornerai subito qui."
     },
+    "insertDirectly": {
+      "title": "Inserisci direttamente",
+      "why": "Senza Accessibilità, una dettatura attende finché non la inserisci con ⌃⇧V. Una volta aggiunta la sorgente di input, le scorciatoie di fine la inseriscono subito.",
+      "notAdded": "Non ancora aggiunta",
+      "added": "Aggiunta. Ora le tue dettature arrivano direttamente nel campo di testo.",
+      "later": "Più tardi",
+      "laterHint": "Puoi aggiungerla più tardi in Impostazioni dell'applicazione › Accessibilità."
+    },
     "shell": {
       "back": "Indietro",
       "continue": "Continua",
@@ -504,6 +512,18 @@
         "last": "L'ultima scorciatoia di fine non può essere rimossa: deve essere sempre possibile terminare una registrazione.",
         "cannotEnd": "Su Linux non sarebbe più possibile terminare una registrazione: tieni una scorciatoia di fine con la combinazione di una scorciatoia di avvio, oppure scegli «Tieni premuto»."
       }
+    },
+    "inputMethod": {
+      "title": "Inserisci senza gli Appunti",
+      "description": "Le dettature arrivano direttamente nel campo di testo tramite la sorgente di input di DanyWhere, e gli Appunti restano come sono.",
+      "howItWorks": "La sorgente di input è selezionata solo durante una dettatura; quando digiti, il layout della tastiera resta il tuo.",
+      "offer": "Facoltativo: con Accessibilità, DanyWhere incolla già le dettature tramite gli Appunti.",
+      "withoutAccessibility": "Una volta aggiunta, le scorciatoie di fine inseriscono subito il testo invece di lasciarlo per «{{shortcut}}».",
+      "setUp": "Aggiungi in Impostazioni di Sistema",
+      "steps": "In «Tastiera», fai clic su «Modifica…» accanto a «Sorgenti di input», poi su «+», cerca «{{name}}» e fai clic su «Aggiungi».",
+      "setUpFailed": "Impossibile configurare la sorgente di input",
+      "added": "Le dettature vengono inserite direttamente, senza gli Appunti.",
+      "stop": "Per smettere, rimuovi «{{name}}» dalle sorgenti di input in Impostazioni di Sistema."
     },
     "profiles": {
       "title": "Profili",
@@ -1165,6 +1185,7 @@
         "screens": {
           "welcome": "Benvenuto",
           "permissions": "Permessi",
+          "insertDirectly": "Inserisci direttamente",
           "model": "Modello",
           "demo": "Demo",
           "try": "Provalo",

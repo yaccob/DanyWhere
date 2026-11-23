@@ -105,6 +105,14 @@
       "welcomeBack": "Bem-vindo de volta. Retomando de onde você parou.",
       "relaunch": "O atalho não responde depois disso? <relaunch>Reinicie o Handy</relaunch> e você volta direto para cá."
     },
+    "insertDirectly": {
+      "title": "Inserir diretamente",
+      "why": "Sem Acessibilidade, um ditado espera até que você o insira com ⌃⇧V. Depois de adicionar o layout de teclado do DanyWhere, os atalhos de fim o inserem na hora.",
+      "notAdded": "Ainda não adicionado",
+      "added": "Adicionado. Seus ditados agora vão direto para o campo de texto.",
+      "later": "Mais tarde",
+      "laterHint": "Você pode adicioná-lo mais tarde em Configurações do aplicativo › Acessibilidade."
+    },
     "shell": {
       "back": "Voltar",
       "continue": "Continuar",
@@ -504,6 +512,18 @@
         "last": "O último atalho de fim não pode ser removido: deve ser sempre possível terminar uma gravação.",
         "cannotEnd": "No Linux já não seria possível terminar uma gravação: mantenha um atalho de fim com a combinação de um atalho de início, ou escolha “Segurar”."
       }
+    },
+    "inputMethod": {
+      "title": "Inserir sem a área de transferência",
+      "description": "Os ditados vão direto para o campo de texto pelo layout de teclado próprio do DanyWhere, e a área de transferência fica como está.",
+      "howItWorks": "O layout de teclado do DanyWhere só fica selecionado enquanto um ditado está em andamento; ao digitar, você continua com o seu layout de sempre.",
+      "offer": "Opcional: com Acessibilidade, o DanyWhere já cola os ditados pela área de transferência.",
+      "withoutAccessibility": "Depois de adicioná-lo, os atalhos de fim inserem o texto na hora, em vez de deixá-lo para “{{shortcut}}”.",
+      "setUp": "Adicionar em Ajustes do Sistema",
+      "steps": "Em “Teclado”, clique em “Editar…” ao lado de “Layouts de Teclado”, depois em “+”, procure “{{name}}” e clique em “Adicionar”.",
+      "setUpFailed": "Não foi possível configurar o layout de teclado",
+      "added": "Os ditados são inseridos diretamente, sem a área de transferência.",
+      "stop": "Para parar, remova “{{name}}” dos layouts de teclado em Ajustes do Sistema."
     },
     "profiles": {
       "title": "Perfis",
@@ -1165,6 +1185,7 @@
         "screens": {
           "welcome": "Boas-vindas",
           "permissions": "Permissões",
+          "insertDirectly": "Inserir diretamente",
           "model": "Modelo",
           "demo": "Demonstração",
           "try": "Experimente",

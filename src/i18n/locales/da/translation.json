@@ -105,6 +105,14 @@
       "welcomeBack": "Velkommen tilbage. Vi fortsætter, hvor du slap.",
       "relaunch": "Reagerer genvejen ikke efter dette? <relaunch>Genstart Handy</relaunch>, så lander du lige her igen."
     },
+    "insertDirectly": {
+      "title": "Indsæt direkte",
+      "why": "Uden Tilgængelighed venter en diktering, til du indsætter den med ⌃⇧V. Når indtastningsenheden er tilføjet, indsætter afslutningsgenveje den med det samme.",
+      "notAdded": "Ikke tilføjet endnu",
+      "added": "Tilføjet. Dine dikteringer kommer nu direkte ind i tekstfeltet.",
+      "later": "Senere",
+      "laterHint": "Du kan tilføje den senere under Programindstillinger › Tilgængelighed."
+    },
     "shell": {
       "back": "Tilbage",
       "continue": "Fortsæt",
@@ -504,6 +512,18 @@
         "last": "Den sidste afslutningsgenvej kan ikke fjernes: en optagelse skal altid kunne afsluttes.",
         "cannotEnd": "På Linux kunne en optagelse ikke længere afsluttes: behold en afslutningsgenvej med en startgenvejs tastekombination, eller vælg »Hold«."
       }
+    },
+    "inputMethod": {
+      "title": "Indsæt uden udklipsholder",
+      "description": "Dikteringer kommer direkte ind i tekstfeltet via DanyWheres egen indtastningsenhed, og udklipsholderen forbliver uændret.",
+      "howItWorks": "Indtastningsenheden er kun valgt, mens en diktering kører, og når du skriver, beholder du dit tastaturlayout.",
+      "offer": "Valgfrit: med Tilgængelighed indsætter DanyWhere allerede dikteringer via udklipsholderen.",
+      "withoutAccessibility": "Når den er tilføjet, indsætter afslutningsgenveje teksten med det samme i stedet for at lade den ligge til »{{shortcut}}«.",
+      "setUp": "Tilføj i Systemindstillinger",
+      "steps": "Klik under »Tastatur« på »Rediger…« ud for »Indtastningsenheder«, derefter på »+«, søg efter »{{name}}«, og klik på »Tilføj«.",
+      "setUpFailed": "Indtastningsenheden kunne ikke indstilles",
+      "added": "Dikteringer indsættes direkte, uden udklipsholderen.",
+      "stop": "Hvis du vil stoppe, skal du fjerne »{{name}}« fra indtastningsenhederne i Systemindstillinger."
     },
     "profiles": {
       "title": "Profiler",
@@ -1165,6 +1185,7 @@
         "screens": {
           "welcome": "Velkommen",
           "permissions": "Tilladelser",
+          "insertDirectly": "Indsæt direkte",
           "model": "Model",
           "demo": "Demo",
           "try": "Prøv det",

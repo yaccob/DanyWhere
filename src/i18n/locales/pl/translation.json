@@ -105,6 +105,14 @@
       "welcomeBack": "Witaj z powrotem. Kontynuujemy od miejsca, w którym skończyliśmy.",
       "relaunch": "Skrót nadal nie reaguje? <relaunch>Uruchom Handy ponownie</relaunch>, a wrócisz dokładnie tutaj."
     },
+    "insertDirectly": {
+      "title": "Wstawianie bezpośrednie",
+      "why": "Bez dostępności dyktowanie czeka, aż wstawisz je skrótem ⌃⇧V. Po dodaniu źródła wprowadzania skróty kończące wstawiają je od razu.",
+      "notAdded": "Jeszcze nie dodano",
+      "added": "Dodano. Twoje dyktowania trafiają teraz prosto do pola tekstowego.",
+      "later": "Później",
+      "laterHint": "Możesz je dodać później w Ustawieniach aplikacji › Dostępność."
+    },
     "shell": {
       "back": "Wstecz",
       "continue": "Dalej",
@@ -504,6 +512,18 @@
         "last": "Ostatniego skrótu kończącego nie można usunąć: nagranie zawsze musi dać się zakończyć.",
         "cannotEnd": "W Linuksie nagrania nie dałoby się już zakończyć: zachowaj skrót kończący z kombinacją skrótu rozpoczynającego albo wybierz „Przytrzymaj”."
       }
+    },
+    "inputMethod": {
+      "title": "Wstawianie bez schowka",
+      "description": "Dyktowania trafiają prosto do pola tekstowego przez własne źródło wprowadzania DanyWhere, a schowek pozostaje bez zmian.",
+      "howItWorks": "Źródło wprowadzania jest wybrane tylko podczas dyktowania, a przy pisaniu zostaje Twój układ klawiatury.",
+      "offer": "Opcjonalnie: z dostępnością DanyWhere już wkleja dyktowania przez schowek.",
+      "withoutAccessibility": "Po jego dodaniu skróty kończące wstawiają tekst od razu, zamiast zostawiać go dla „{{shortcut}}”.",
+      "setUp": "Dodaj w Ustawieniach systemowych",
+      "steps": "W ustawieniach „Klawiatura” kliknij „Edycja…” obok „Źródła wprowadzania”, potem „+”, wyszukaj „{{name}}” i kliknij „Dodaj”.",
+      "setUpFailed": "Nie udało się skonfigurować źródła wprowadzania",
+      "added": "Dyktowania są wstawiane bezpośrednio, bez schowka.",
+      "stop": "Aby z tego zrezygnować, usuń „{{name}}” ze źródeł wprowadzania w Ustawieniach systemowych."
     },
     "profiles": {
       "title": "Profile",
@@ -1165,6 +1185,7 @@
         "screens": {
           "welcome": "Powitanie",
           "permissions": "Uprawnienia",
+          "insertDirectly": "Wstawianie bezpośrednie",
           "model": "Model",
           "demo": "Demo",
           "try": "Wypróbuj",

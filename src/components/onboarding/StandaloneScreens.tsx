@@ -7,8 +7,10 @@ import { useOnboardingModels } from "./useOnboardingModels";
 import { downloadPick } from "./downloadPick";
 import { Permissions } from "./screens/Permissions";
 import { Model } from "./screens/Model";
+import { InsertDirectly } from "./screens/InsertDirectly";
 
-/** Onboarding screens reused later: a revoked permission, a retired model. */
+/** Onboarding screens reused later: a revoked permission, a retired model,
+ * DanyWhere's input method. */
 
 export const ReturningPermissions: React.FC<{ onComplete: () => void }> = ({
   onComplete,
@@ -17,6 +19,13 @@ export const ReturningPermissions: React.FC<{ onComplete: () => void }> = ({
   if (!permissions.checked) return null;
   return <Permissions permissions={permissions} onContinue={onComplete} />;
 };
+
+/** DanyWhere: the one-time guide to the input method for an installation
+ * that chose to go without Accessibility before the input method existed:
+ * onboarding's Insert Directly on its own. Leaving it marks it as seen. */
+export const ReturningInputMethodGuide: React.FC<{
+  onComplete: () => void;
+}> = ({ onComplete }) => <InsertDirectly onLeave={onComplete} />;
 
 export const ReplaceModel: React.FC<{
   onBack: () => void;

@@ -105,6 +105,14 @@
       "welcomeBack": "欢迎回来，我们接着刚才的步骤继续。",
       "relaunch": "之后快捷键没有反应？<relaunch>重新启动 Handy</relaunch>，您会直接回到这里。"
     },
+    "insertDirectly": {
+      "title": "直接插入",
+      "why": "没有辅助功能权限时，听写会等待你用 ⌃⇧V 插入。添加输入法后，结束快捷键会立即插入。",
+      "notAdded": "尚未添加",
+      "added": "已添加。听写内容现在会直接进入文本框。",
+      "later": "稍后",
+      "laterHint": "你可以稍后在“应用程序设置 › 辅助功能”中添加。"
+    },
     "shell": {
       "back": "返回",
       "continue": "继续",
@@ -504,6 +512,18 @@
         "last": "无法删除最后一个结束快捷键：录音必须始终能够结束。",
         "cannotEnd": "在 Linux 上将无法再结束录音：请保留一个使用开始快捷键按键组合的结束快捷键，或选择“按住”。"
       }
+    },
+    "inputMethod": {
+      "title": "不经剪贴板插入",
+      "description": "听写通过 DanyWhere 自带的输入法直接进入文本框，剪贴板保持不变。",
+      "howItWorks": "该输入法仅在听写进行时被选中，打字时键盘布局保持不变。",
+      "offer": "可选：有辅助功能权限时，DanyWhere 已经会通过剪贴板粘贴听写内容。",
+      "withoutAccessibility": "添加后，结束快捷键会立即插入文本，而不是留给“{{shortcut}}”。",
+      "setUp": "在系统设置中添加",
+      "steps": "在“键盘”中，点击“输入法”旁边的“编辑…”，然后点击“+”，搜索“{{name}}”并点击“添加”。",
+      "setUpFailed": "无法设置输入法",
+      "added": "听写内容会直接插入，不经过剪贴板。",
+      "stop": "如需停用，请在“系统设置”的“输入法”中移除“{{name}}”。"
     },
     "profiles": {
       "title": "配置文件",
@@ -1165,6 +1185,7 @@
         "screens": {
           "welcome": "欢迎",
           "permissions": "权限",
+          "insertDirectly": "直接插入",
           "model": "模型",
           "demo": "演示",
           "try": "试一试",
