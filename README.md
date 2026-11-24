@@ -52,7 +52,7 @@ Speech recognition runs offline, on your own computer, with a model you choose. 
 - **A sound when everything is done,** post-processing included, so you know when to look back.
 - **The overlay on the screen you work on**, the one with the window in front, with or without Accessibility (macOS and Windows).
 - **Your own colours** in a `theme.css` next to the settings, applied without a restart (Debug → Open Theme File).
-- **Key combinations as the system writes them** (⌃⌥D on macOS, Ctrl+Shift+V elsewhere), and in a combination with a main key the left and the right modifier keys count alike.
+- **Key combinations as the system writes them** (⌥⌃D on macOS, Ctrl+Shift+V elsewhere), and in a combination with a main key the left and the right modifier keys count alike.
 - **What's new after an update,** in English or German.
 
 Underneath all this are the basics of dictation: global shortcuts that you hold or tap, voice activity detection, a choice of microphone, and pasting into any app on all three platforms.
