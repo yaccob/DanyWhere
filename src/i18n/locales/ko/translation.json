@@ -23,6 +23,7 @@
     "advanced": "고급",
     "postProcessing": "후처리",
     "history": "히스토리",
+    "manual": "설명서",
     "debug": "디버그",
     "about": "정보",
     "areas": {
@@ -34,6 +35,14 @@
     "updates": "업데이트",
     "storage": "저장 공간",
     "profile": "프로필"
+  },
+  "manual": {
+    "openChapter": "설명서 열기: {{chapter}}",
+    "chapters": {
+      "startAndEndShortcuts": "시작 및 종료 단축키",
+      "defaultsAndProfiles": "기본 설정 및 프로필"
+    },
+    "unavailable": "이 DanyWhere 빌드에는 설명서가 포함되어 있지 않습니다."
   },
   "onboarding": {
     "customModelDescription": "공식 지원되지 않음",
@@ -389,6 +398,8 @@
     },
     "general": {
       "title": "일반",
+      "startShortcuts": "시작 단축키",
+      "otherShortcuts": "기타 단축키",
       "shortcut": {
         "title": "Handy 단축키",
         "description": "음성-텍스트 녹음을 시작하는 키보드 단축키를 설정하세요",
@@ -399,7 +410,7 @@
         "bindings": {
           "transcribe": {
             "name": "시작 단축키",
-            "description": "녹음을 시작합니다. 끝나는 방식은 종료 단축키가 정하고, 길게 누를 때는 ‘단축키 동작’이 정합니다."
+            "description": "녹음을 시작합니다. 끝나는 방식은 길게 누를 때도 종료 단축키가 정합니다."
           },
           "cancel": {
             "name": "취소 단축키",
@@ -407,7 +418,8 @@
           },
           "transcribe_with_post_process": {
             "name": "두 번째 시작 단축키",
-            "description": "선택 사항: 녹음을 시작하는 두 번째 키 조합입니다. 공장 설정에서는 같은 키 조합의 종료 단축키가 텍스트를 후처리합니다. 후처리가 켜져 있는 동안에만 사용됩니다."
+            "description": "선택 사항: 녹음을 시작하는 두 번째 키 조합입니다. 공장 설정에서는 같은 키 조합의 종료 단축키가 텍스트를 후처리합니다. 후처리가 켜져 있는 동안에만 사용됩니다.",
+            "descriptionMacos": "선택 사항: 녹음을 시작하는 두 번째 키 조합입니다. 공장 설정에서는 길게 누르고 있다가 놓으면 텍스트를 후처리하고, 다시 누르면 ⌥가 없는 모든 종료 단축키처럼 후처리 없이 끝납니다. 후처리가 켜져 있는 동안에만 사용됩니다."
           },
           "paste_last_transcript": {
             "name": "마지막 받아쓰기 붙여넣기",
@@ -503,6 +515,17 @@
       "holdEnds": {
         "title": "길게 누를 때",
         "description": "길게 누르고 있던 시작 단축키를 놓을 때 녹음을 끝내는 방식입니다."
+      },
+      "factoryNames": {
+        "pattern": "{{mode}} · {{effect}}",
+        "direct": "바로",
+        "postProcessed": "후처리",
+        "space": "공백",
+        "noSpace": "공백 없음",
+        "paragraph": "문단",
+        "line": "줄",
+        "enter": "Enter 보내기",
+        "shiftEnter": "Shift+Enter 보내기"
       },
       "linuxNoShortcuts": "Linux에서는 녹음하는 동안 종료 단축키의 키 조합이 사용되지 않습니다. 이 경우 길게 누르고 있던 시작 단축키를 놓거나, 종료 단축키와 같은 키 조합을 가진 시작 단축키를 다시 누르면 녹음이 끝납니다.",
       "errors": {
@@ -1316,8 +1339,8 @@
         "button": "GitHub에서 보기"
       },
       "basedOn": {
-        "title": "Handy 기반",
-        "description": "DanyWhere는 CJ Pais와 기여자들이 만든 Handy를 기반으로 합니다",
+        "title": "Handy에서 출발",
+        "description": "DanyWhere는 CJ Pais와 기여자들이 만든 Handy에서 출발했습니다. 지금도 DanyWhere를 떠받치는 토대를 마련해 준 그들에게 감사드립니다.",
         "button": "Handy 방문"
       },
       "supportDevelopment": {

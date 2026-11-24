@@ -1,0 +1,24 @@
+@startuml
+' Which setting a dictation uses, in German. The structure is in
+' which-setting-applies.iuml; UI terms as in
+' src/i18n/locales/de/translation.json.
+' "\n" breaks a line; no ";" in a text (it would end a step).
+!$yes = "ja"
+!$no = "nein"
+!$ends = "Eine Aufnahme endet"
+!$noteStart = "Schon beim Start wurde ein\nProfil gewählt, damit sein\nSprachmodell laden kann. Es\nentscheidet das Ende: Der Text\ngeht dorthin, wo du dann bist."
+!$qByApp = "„Profil nach Anwendung wählen“\nein, und die Anwendung vorn\neinem Profil zugeordnet?"
+!$appProfile = "Das Profil dieser\nAnwendung"
+!$inUse = "Was „In Verwendung“ zeigt:\ndie „Grundeinstellungen“\noder ein Profil"
+!$noteLinux = "Unter Linux sieht\nDanyWhere die Anwendung\nvorn nicht: Dort gilt\nimmer, was „In\nVerwendung“ zeigt."
+!$qSetting = "Für jede Einstellung: Was\nzeigt das Profil darunter?"
+!$aOwn = "„eigener\nWert“"
+!$own = "Der eigene Wert\ndes Profils"
+!$aCoupled = "„Grundwert“"
+!$default = "Der Grundwert"
+!$aDefaults = "kein Profil: die\n„Grundeinstellungen“"
+!$runs = "Das Diktat läuft mit diesen Werten"
+!$noteRedo = "Geht sein Text in eine\nAnwendung mit einem anderen\nProfil, macht DanyWhere neu,\nwas dieses Profil anders macht:\nTranskription, Nachbearbeitung\noder nur „Anhängen“. Nur mit\n„Profil nach Anwendung wählen“ ein."
+!include style.iuml
+!include which-setting-applies.iuml
+@enduml

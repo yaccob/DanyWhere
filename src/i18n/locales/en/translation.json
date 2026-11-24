@@ -23,6 +23,7 @@
     "advanced": "Advanced",
     "postProcessing": "Post Process",
     "history": "History",
+    "manual": "Manual",
     "debug": "Debug",
     "about": "About",
     "areas": {
@@ -34,6 +35,14 @@
     "updates": "Updates",
     "storage": "Storage",
     "profile": "Profile"
+  },
+  "manual": {
+    "openChapter": "Open the manual: {{chapter}}",
+    "chapters": {
+      "startAndEndShortcuts": "Start and End Shortcuts",
+      "defaultsAndProfiles": "Defaults and Profiles"
+    },
+    "unavailable": "This build of DanyWhere has no manual."
   },
   "onboarding": {
     "customModelDescription": "Not officially supported",
@@ -389,6 +398,8 @@
     },
     "general": {
       "title": "General",
+      "startShortcuts": "Start Shortcuts",
+      "otherShortcuts": "Other Shortcuts",
       "shortcut": {
         "title": "Handy Shortcuts",
         "description": "Configure keyboard shortcuts to trigger speech-to-text recording",
@@ -399,7 +410,7 @@
         "bindings": {
           "transcribe": {
             "name": "Start Shortcut",
-            "description": "Starts a recording. How it ends is up to the end shortcuts and, when held, to “Shortcut Behavior”."
+            "description": "Starts a recording. How it ends is up to the end shortcuts, also when held."
           },
           "cancel": {
             "name": "Cancel Shortcut",
@@ -407,7 +418,8 @@
           },
           "transcribe_with_post_process": {
             "name": "Second Start Shortcut",
-            "description": "Optional: a second combination that starts a recording. Out of the box, an end shortcut with the same combination post-processes the text. Taken only while post-processing is on."
+            "description": "Optional: a second combination that starts a recording. Out of the box, an end shortcut with the same combination post-processes the text. Taken only while post-processing is on.",
+            "descriptionMacos": "Optional: a second combination that starts a recording. Out of the box, releasing it after holding it post-processes the text; pressing it again ends without post-processing, as every end shortcut without ⌥ does. Taken only while post-processing is on."
           },
           "paste_last_transcript": {
             "name": "Paste Last Transcript",
@@ -503,6 +515,17 @@
       "holdEnds": {
         "title": "When Held",
         "description": "How releasing a held start shortcut ends the recording."
+      },
+      "factoryNames": {
+        "pattern": "{{mode}} · {{effect}}",
+        "direct": "Direct",
+        "postProcessed": "Post-processed",
+        "space": "Space",
+        "noSpace": "No space",
+        "paragraph": "Paragraph",
+        "line": "Line",
+        "enter": "Send Enter",
+        "shiftEnter": "Send Shift+Enter"
       },
       "linuxNoShortcuts": "On Linux, the combinations of end shortcuts aren't taken while recording. A recording ends there when a held start shortcut is released, or when a start shortcut is pressed again whose combination an end shortcut has.",
       "errors": {
@@ -1320,8 +1343,8 @@
         "button": "View on GitHub"
       },
       "basedOn": {
-        "title": "Based on Handy",
-        "description": "DanyWhere is built on Handy by CJ Pais and contributors",
+        "title": "Grown out of Handy",
+        "description": "DanyWhere grew out of Handy by CJ Pais and contributors. Thanks to them for the groundwork it still stands on.",
         "button": "Visit Handy"
       },
       "supportDevelopment": {

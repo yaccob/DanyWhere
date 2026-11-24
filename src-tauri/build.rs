@@ -269,7 +269,9 @@ fn split_versioned_so(name: &str) -> Option<(&str, usize)> {
 ///
 /// Source of truth: src/i18n/locales/*/translation.json
 /// The English "tray" section defines the struct fields, plus every
-/// `errors.*Title` for notice titles.
+/// `errors.*Title` for notice titles and the words of
+/// `settings.endKeys.factoryNames` for the factory end shortcuts' names
+/// (`factory_end_name_*`).
 fn generate_tray_translations() {
     use std::collections::BTreeMap;
     use std::fs;
@@ -306,6 +308,23 @@ fn generate_tray_translations() {
                 .filter(|(key, _)| key.ends_with("Title"));
             for (key, title) in titles {
                 tray[key] = title.clone();
+            }
+            // DanyWhere: the words of the factory end shortcuts' names
+            // (`end_keys::FactoryEndNames`), as `factory_end_name_*`.
+            let factory_names = parsed
+                .pointer("/settings/endKeys/factoryNames")
+                .and_then(|names| names.as_object())
+                .into_iter()
+                .flatten();
+            for (key, word) in factory_names {
+                let mut capitalized = key.chars();
+                let first = capitalized.next().map(|c| c.to_ascii_uppercase());
+                let field = format!(
+                    "factoryEndName{}{}",
+                    first.map(String::from).unwrap_or_default(),
+                    capitalized.as_str()
+                );
+                tray[field] = word.clone();
             }
             translations.insert(lang, tray);
         }

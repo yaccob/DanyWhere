@@ -1,0 +1,71 @@
+---
+// The figure behind <Diagram> and <Screenshot>: the light and the dark file,
+// each shown only in its theme, a click opens the shown one full size.
+import { resolveMedia, type MediaKind } from "../lib/media";
+
+interface Props {
+  kind: MediaKind;
+  name: string;
+  alt: string;
+  caption?: string;
+}
+
+const { kind, name, alt, caption } = Astro.props;
+const tag = kind === "diagrams" ? "Diagram" : "Screenshot";
+if (typeof alt !== "string" || alt.trim() === "") {
+  throw new Error(`[manual] <${tag} name="${name}"> needs an alt text`);
+}
+
+const media = resolveMedia(kind, name, Astro.currentLocale);
+const t = Astro.locals.t;
+if (!media.light || !media.dark) {
+  console.warn(
+    `[manual] ${Astro.url.pathname}: no file for <${tag} name="${name}">; looked for ${media.tried.join(", ")}`,
+  );
+}
+const files =
+  media.light && media.dark
+    ? media.light.src === media.dark.src
+      ? [{ file: media.light, hideIn: undefined }]
+      : [
+          { file: media.light, hideIn: "dark:sl-hidden" },
+          { file: media.dark, hideIn: "light:sl-hidden" },
+        ]
+    : [];
+---
+
+<figure class:list={["dw-figure", `dw-figure--${kind}`]} data-dw-figure={name}>
+  {
+    files.length === 0 ? (
+      <div class="dw-figure-missing" role="img" aria-label={alt} data-dw-missing={name}>
+        {t("dw.figure.missing")}: {kind}/{name}
+      </div>
+    ) : (
+      files.map(({ file, hideIn }) => (
+        <a
+          href={file.src}
+          class:list={["dw-figure-link", hideIn]}
+          title={t("dw.figure.zoom")}
+          data-dw-zoom
+          data-dw-close-label={t("dw.figure.close")}
+        >
+          <img
+            src={file.src}
+            alt={alt}
+            class={hideIn}
+            width={file.width}
+            height={file.height}
+            loading="lazy"
+            decoding="async"
+            data-dw-lang={file.lang}
+          />
+        </a>
+      ))
+    )
+  }
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+  import "../scripts/zoom";
+</script>

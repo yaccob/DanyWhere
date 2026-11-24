@@ -23,6 +23,7 @@
     "advanced": "Lanjutan",
     "postProcessing": "Pascaproses",
     "history": "Riwayat",
+    "manual": "Panduan",
     "debug": "Debug",
     "about": "Tentang",
     "areas": {
@@ -34,6 +35,14 @@
     "updates": "Pembaruan",
     "storage": "Penyimpanan",
     "profile": "Profil"
+  },
+  "manual": {
+    "openChapter": "Buka panduan: {{chapter}}",
+    "chapters": {
+      "startAndEndShortcuts": "Pintasan Mulai dan Akhir",
+      "defaultsAndProfiles": "Pengaturan Dasar dan Profil"
+    },
+    "unavailable": "Build DanyWhere ini tidak menyertakan panduan."
   },
   "onboarding": {
     "customModelDescription": "Tidak didukung secara resmi",
@@ -389,6 +398,8 @@
     },
     "general": {
       "title": "Umum",
+      "startShortcuts": "Pintasan Mulai",
+      "otherShortcuts": "Pintasan Lain",
       "shortcut": {
         "title": "Pintasan Handy",
         "description": "Atur pintasan keyboard untuk memulai perekaman ucapan-ke-teks",
@@ -399,7 +410,7 @@
         "bindings": {
           "transcribe": {
             "name": "Pintasan Mulai",
-            "description": "Memulai rekaman. Cara berakhirnya ditentukan oleh pintasan akhir dan, saat ditahan, oleh “Perilaku Pintasan”."
+            "description": "Memulai rekaman. Cara berakhirnya ditentukan oleh pintasan akhir, juga saat ditahan."
           },
           "cancel": {
             "name": "Pintasan Batal",
@@ -407,7 +418,8 @@
           },
           "transcribe_with_post_process": {
             "name": "Pintasan Mulai Kedua",
-            "description": "Opsional: kombinasi kedua yang memulai rekaman. Pada setelan pabrik, pintasan akhir dengan kombinasi yang sama memproses lanjut teks. Hanya dipakai selama pemrosesan lanjut aktif."
+            "description": "Opsional: kombinasi kedua yang memulai rekaman. Pada setelan pabrik, pintasan akhir dengan kombinasi yang sama memproses lanjut teks. Hanya dipakai selama pemrosesan lanjut aktif.",
+            "descriptionMacos": "Opsional: kombinasi kedua yang memulai rekaman. Pada setelan pabrik, melepasnya setelah ditahan memproses lanjut teks; menekannya lagi mengakhiri tanpa pemrosesan lanjut, seperti setiap pintasan akhir tanpa ⌥. Hanya dipakai selama pemrosesan lanjut aktif."
           },
           "paste_last_transcript": {
             "name": "Tempel transkripsi terakhir",
@@ -503,6 +515,17 @@
       "holdEnds": {
         "title": "Saat Ditahan",
         "description": "Cara melepas pintasan mulai yang ditahan mengakhiri rekaman."
+      },
+      "factoryNames": {
+        "pattern": "{{mode}} · {{effect}}",
+        "direct": "Langsung",
+        "postProcessed": "Diproses lanjut",
+        "space": "Spasi",
+        "noSpace": "Tanpa spasi",
+        "paragraph": "Paragraf",
+        "line": "Baris",
+        "enter": "Kirim Enter",
+        "shiftEnter": "Kirim Shift+Enter"
       },
       "linuxNoShortcuts": "Di Linux, kombinasi tombol pintasan akhir tidak dipakai selama merekam. Di sana rekaman berakhir saat pintasan mulai yang ditahan dilepas, atau saat pintasan mulai yang kombinasinya juga dimiliki sebuah pintasan akhir ditekan lagi.",
       "errors": {
@@ -1320,8 +1343,8 @@
         "button": "Lihat di GitHub"
       },
       "basedOn": {
-        "title": "Berbasis Handy",
-        "description": "DanyWhere dibangun di atas Handy karya CJ Pais dan para kontributor",
+        "title": "Tumbuh dari Handy",
+        "description": "DanyWhere tumbuh dari Handy karya CJ Pais dan para kontributor. Terima kasih kepada mereka atas fondasi yang masih menopangnya.",
         "button": "Kunjungi Handy"
       },
       "supportDevelopment": {

@@ -23,6 +23,7 @@
     "advanced": "Gelişmiş",
     "postProcessing": "Son İşlem",
     "history": "Geçmiş",
+    "manual": "Kılavuz",
     "debug": "Hata Ayıklama",
     "about": "Hakkında",
     "areas": {
@@ -34,6 +35,14 @@
     "updates": "Güncellemeler",
     "storage": "Depolama",
     "profile": "Profil"
+  },
+  "manual": {
+    "openChapter": "Kılavuzu aç: {{chapter}}",
+    "chapters": {
+      "startAndEndShortcuts": "Başlatma ve Bitirme Kısayolları",
+      "defaultsAndProfiles": "Temel Ayarlar ve Profiller"
+    },
+    "unavailable": "DanyWhere'in bu sürümünde kılavuz bulunmuyor."
   },
   "onboarding": {
     "customModelDescription": "Resmi olarak desteklenmiyor",
@@ -389,6 +398,8 @@
     },
     "general": {
       "title": "Genel",
+      "startShortcuts": "Başlatma Kısayolları",
+      "otherShortcuts": "Diğer Kısayollar",
       "shortcut": {
         "title": "Handy Kısayolları",
         "description": "Sesle yazma kaydını başlatmak için klavye kısayollarını yapılandırın",
@@ -399,7 +410,7 @@
         "bindings": {
           "transcribe": {
             "name": "Başlatma Kısayolu",
-            "description": "Bir kayıt başlatır. Nasıl biteceğini bitirme kısayolları ve, basılı tutulduğunda, “Kısayol davranışı” belirler."
+            "description": "Bir kayıt başlatır. Nasıl biteceğini, basılı tutulduğunda da, bitirme kısayolları belirler."
           },
           "cancel": {
             "name": "İptal Kısayolu",
@@ -407,7 +418,8 @@
           },
           "transcribe_with_post_process": {
             "name": "İkinci Başlatma Kısayolu",
-            "description": "İsteğe bağlı: kayıt başlatan ikinci bir tuş kombinasyonu. Fabrika ayarında, aynı kombinasyona sahip bir bitirme kısayolu metni son işler. Yalnızca son işleme açıkken kullanılır."
+            "description": "İsteğe bağlı: kayıt başlatan ikinci bir tuş kombinasyonu. Fabrika ayarında, aynı kombinasyona sahip bir bitirme kısayolu metni son işler. Yalnızca son işleme açıkken kullanılır.",
+            "descriptionMacos": "İsteğe bağlı: kayıt başlatan ikinci bir tuş kombinasyonu. Fabrika ayarında, basılı tutup bırakmak metni son işler; yeniden basmak ise ⌥ içermeyen her bitirme kısayolu gibi son işleme olmadan bitirir. Yalnızca son işleme açıkken kullanılır."
           },
           "paste_last_transcript": {
             "name": "Son transkripti yapıştır",
@@ -503,6 +515,17 @@
       "holdEnds": {
         "title": "Basılı Tutulunca",
         "description": "Basılı tutulan bir başlatma kısayolunu bırakmanın kaydı nasıl bitirdiği."
+      },
+      "factoryNames": {
+        "pattern": "{{mode}} · {{effect}}",
+        "direct": "Doğrudan",
+        "postProcessed": "Son işlemli",
+        "space": "Boşluk",
+        "noSpace": "Boşluksuz",
+        "paragraph": "Paragraf",
+        "line": "Satır",
+        "enter": "Enter gönder",
+        "shiftEnter": "Shift+Enter gönder"
       },
       "linuxNoShortcuts": "Linux'ta bitirme kısayollarının tuş kombinasyonları kayıt sırasında kullanılmaz. Orada kayıt, basılı tutulan bir başlatma kısayolu bırakıldığında ya da tuş kombinasyonu bir bitirme kısayolunda da bulunan bir başlatma kısayoluna yeniden basıldığında biter.",
       "errors": {
@@ -1316,8 +1339,8 @@
         "button": "GitHub'da Görüntüle"
       },
       "basedOn": {
-        "title": "Handy tabanlı",
-        "description": "DanyWhere, CJ Pais ve katkıda bulunanların geliştirdiği Handy üzerine kuruludur",
+        "title": "Handy'den doğdu",
+        "description": "DanyWhere, CJ Pais ve katkıda bulunanların geliştirdiği Handy'den doğdu. Hâlâ üzerinde durduğu temel için onlara teşekkürler.",
         "button": "Handy'yi ziyaret et"
       },
       "supportDevelopment": {

@@ -1,0 +1,29 @@
+@startuml
+' How a recording ends, in French. The structure is in
+' how-a-recording-ends.iuml; UI terms as in
+' src/i18n/locales/fr/translation.json.
+' "\n" breaks a line; no ";" in a text (it would end a step). A no-break
+' space goes inside « » and before : and ?.
+!$yes = "oui"
+!$no = "non"
+!$runs = "Un enregistrement tourne"
+!$noteCopy = "« Copier la dernière\ntranscription » le termine aussi,\ncomme son raccourci de début\nle ferait, et met le texte dans\nle presse-papiers"
+!$noteLinux = "Sous Linux, la combinaison\npropre d'un raccourci de fin\nn'est pas prise, et Échap\nn'annule pas"
+!$qWhat = "Qu'est-ce qui\nle termine ?"
+!$aEndKey = "un raccourci\nde fin"
+!$endKey = "Ce raccourci de\nfin le termine"
+!$aStartAgain = "un raccourci\nde début,\nà nouveau"
+!$startAgain = "Le raccourci de fin\nde même combinaison\nle termine, s'il existe"
+!$aReleased = "un raccourci\nde début\nmaintenu,\nrelâché"
+!$held = "Sa fin « Lorsqu'il\nest maintenu » le\ntermine, avec\n« Maintenir », ou\n« Auto » après\nun maintien"
+!$aCancel = "« Raccourci\nd'Annulation »\n(Échap)"
+!$cancelled = "Annulé :\nrien n'est\ntranscrit\nni gardé"
+!$qPost = "« Post-traiter » pour cette fin,\net « Post-traitement » activé\ndans le profil ?"
+!$post = "Post-traité avec les\nprompts actifs du profil"
+!$qContext = "« Envoyer le contexte »\npour cette fin ?"
+!$context = "Les dictées précédentes de la\nmême fenêtre vont comme contexte"
+!$notPost = "Pas de post-traitement,\npas de contexte"
+!$append = "« Ajouter à la fin » : son texte est\najouté, puis sa touche, envoyée\nseulement quand le texte est collé"
+!include style.iuml
+!include how-a-recording-ends.iuml
+@enduml

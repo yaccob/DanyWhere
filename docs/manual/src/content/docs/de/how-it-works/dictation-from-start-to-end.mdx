@@ -1,0 +1,103 @@
+---
+title: "Ein Diktat von Anfang bis Ende"
+description: "Was zwischen dem Druck auf eine Starttaste und dem fertigen Text an der richtigen Stelle passiert, und wo du jeden Schritt steuern kannst."
+sidebar:
+  order: 1
+---
+
+import Diagram from '@components/Diagram.astro';
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+Du drückst eine Tastenkombination, sagst, was du schreiben willst, und beendest die Aufnahme. Einen Moment später steht der Text in der App, in der du gerade arbeitest: so, wie du ihn gesagt hast, oder von einem KI-Modell überarbeitet, mit einem Leerzeichen oder einem neuen Absatz dahinter, oder schon abgeschickt. Dieses Kapitel begleitet ein Diktat auf diesem Weg. Wenn du die Schritte kennst, weißt du auch, wo du ansetzt, wenn das Ergebnis nicht passt.
+
+<Diagram
+  name="dictation-flow"
+  caption="Ein Diktat von Anfang bis Ende"
+  alt="Der Weg eines Diktats. Eine Starttaste startet die Aufnahme. Sie endet, wenn du eine gehaltene Starttaste loslässt, eine Endtaste drückst oder eine Starttaste erneut drückst; Esc bricht sie ab. Das Sprachmodell transkribiert die Aufnahme. Wenn das Ende es verlangt, bearbeitet ein KI-Modell den Text mit den aktiven Prompts nach, mit „Kontext senden“ auch mit früheren Diktaten aus demselben Fenster. Danach kommt der Text aus „Anhängen“, der Text wird eingefügt, und ein Tastendruck wie Enter kann folgen. Das Diktat wird im Verlauf gespeichert, und der Ton für „fertig“ erklingt."
+/>
+
+## Die Aufnahme starten
+
+Drück die **Starttaste**: <kbd>⌃ Leertaste</kbd> auf dem Mac, <kbd>Strg+Leertaste</kbd> unter Windows, <kbd>Strg+Alt+Leertaste</kbd> unter Linux. DanyWhere hört sofort zu. Auf dem Mac und unter Windows zeigt ein kleines Overlay unten am Bildschirm, dass es aufnimmt, und wenn du **Audio-Feedback** eingeschaltet hast, sagt dir das auch ein kurzer Ton.
+
+Du kannst die Tastenkombination auf zwei Arten benutzen: Halte sie gedrückt, während du sprichst, und lass los, wenn du fertig bist. Oder tipp sie kurz an und sprich, so lange du willst. Das ist die Werkseinstellung **Automatisch** unter **Verhalten der Tastenkombination**; **Halten** und **Umschalten** erlauben nur eine der beiden Arten.
+
+## So beenden, wie du den Text haben willst
+
+Wie du die Aufnahme beendest, entscheidet, was mit dem Text geschieht. Dafür gibt es drei Wege:
+
+- **Loslassen**, wenn du eine Starttaste gehalten hast. Die Aufnahme endet, wie es unter **Beim Halten** eingestellt ist.
+- **Eine Endtaste drücken.** Jede legt fest, was nach dem Text kommt, ob ein KI-Modell ihn überarbeitet und ob frühere Diktate als Kontext mitgehen. Auf dem Mac beendet zum Beispiel <kbd>↩</kbd> die Aufnahme und beginnt nach dem Text einen neuen Absatz.
+- **Die Starttaste noch einmal drücken.** Das beendet die Aufnahme, wenn eine Endtaste dieselbe Tastenkombination hat. Auf dem Mac setzt ein zweiter Druck auf <kbd>⌃ Leertaste</kbd> ein Leerzeichen hinter den Text, bereit für den nächsten Satz.
+
+Für eine App, in die sich nichts einfügen lässt, beendest du stattdessen mit **Letzte Transkription kopieren**: <kbd>⌃⇧C</kbd> auf dem Mac, <kbd>Alt+Umschalt+C</kbd> unter Windows und Linux. Das beendet die Aufnahme wie ein erneuter Druck auf die Starttaste, legt den Text aber in die Zwischenablage, statt ihn einzufügen.
+
+Doch anders überlegt? <kbd>Esc</kbd> bricht die Aufnahme auf dem Mac und unter Windows ab. Dann wird nichts transkribiert, eingefügt oder aufbewahrt.
+
+Die Endtasten sind das Herzstück von DanyWhere; alle stehen in [Start- und Endtasten](../start-and-end-shortcuts/).
+
+## Welches Profil gilt
+
+Die Einstellungen, die ein Diktat prägen, werden gewählt, wenn die Aufnahme endet. Ist **Profil nach Anwendung wählen** eingeschaltet und führt ein Profil die App, die in diesem Moment vorn ist, dann gilt dieses Profil. Sonst gilt, was oben in der Seitenleiste unter **In Verwendung** gewählt ist: die **Grundeinstellungen** oder ein Profil. Ein Profil folgt den Grundeinstellungen überall, wo bei einer Einstellung nicht **eigener Wert** steht. Es hält also nur fest, was anders sein soll, etwa ein anderes Sprachmodell für dein Terminal. Weil erst am Ende gewählt wird, kannst du ein Diktat irgendwo beginnen und vor dem Beenden in die App wechseln, in die der Text gehört. Wie Profile funktionieren, zeigt [Grundeinstellungen und Profile](../defaults-and-profiles/).
+
+## Transkription
+
+Sobald die Aufnahme endet, macht das Sprachmodell Text daraus. Das geschieht auf deinem Computer; die Aufnahme verlässt ihn nicht. Das Overlay zeigt **Transkribiere...**.
+
+Namen und Fachbegriffe kommen öfter richtig heraus, wenn sie auf einer Wortliste stehen. Whisper-Modelle nutzen die Listen schon beim Erkennen der Sprache, und bei jedem Modell bekommt die Nachbearbeitung sie als bekannte Begriffe.
+
+## Nachbearbeitung
+
+Ist beim gewählten Ende **Nachbearbeiten** angehakt, überarbeitet ein KI-Modell den Text, bevor er ankommt. Es bekommt die Prompts, die auf der Seite **Nachbearbeitung** als **Aktiv** markiert sind, in ihrer Reihenfolge. DanyWhere setzt einen Rahmen darum, der dem Modell sagt, dass es eine Transkription bearbeiten und keine Frage beantworten soll und dass der Text in seiner Sprache bleibt. Das Overlay zeigt **Verarbeite...**.
+
+Nachbearbeitet wird nur, solange der Schalter **Nachbearbeitung** eingeschaltet ist, unter **Grundeinstellungen › Erweitert** oder im Profil. Ob der Text an einen Anbieter in der Cloud geht oder an ein Modell auf deinem eigenen Computer, hängt vom Anbieter ab, den du auf der Seite **Nachbearbeitung** wählst, und die Seite sagt dir, welches von beiden.
+
+Mit **Kontext senden** gehen frühere Diktate aus demselben Fenster mit, damit das Modell weiß, worum es gerade geht: ab Werk bis zu fünf aus der letzten Stunde. Der Verlauf markiert jeden Eintrag, der so hinausging.
+
+Schlägt die Nachbearbeitung fehl, etwa weil der Anbieter nicht erreichbar ist, bekommst du trotzdem deine Worte. DanyWhere fügt die Transkription unverändert ein, und eine Meldung, **Ohne Nachbearbeitung eingefügt**, sagt dir, warum.
+
+## Anhängen
+
+Dann kommt hinter den Text, was beim Ende unter **Anhängen** steht: ein Leerzeichen, ein Zeilenumbruch oder ein beliebiger Text, und auf Wunsch ein Tastendruck wie Enter. Der Text wird angehängt, egal wie das Diktat ankommt. Der Tastendruck folgt nur, wenn DanyWhere den Text selbst einfügt. So setzt eine Endtaste deinen Satz fort, und eine andere schickt eine Chatnachricht gleich ab.
+
+## Einfügen
+
+Jetzt kommt der Text dorthin, wo dein Cursor steht.
+
+<Tabs syncKey="os">
+<TabItem label="macOS">
+
+Mit der Berechtigung **Bedienungshilfen** legt DanyWhere den Text in die Zwischenablage, drückt für dich <kbd>⌘V</kbd> und legt danach zurück, was vorher in der Zwischenablage war. Dann folgt der Tastendruck aus **Anhängen**, falls es einen gibt.
+
+</TabItem>
+<TabItem label="Windows">
+
+DanyWhere legt den Text in die Zwischenablage, drückt für dich <kbd>Strg+V</kbd> und legt danach zurück, was vorher in der Zwischenablage war. Dann folgt der Tastendruck aus **Anhängen**, falls es einen gibt. Die **Einfügemethode** unter **Grundeinstellungen › Erweitert** bietet andere Wege, etwa den Text direkt zu tippen.
+
+</TabItem>
+<TabItem label="Linux">
+
+DanyWhere fügt mit <kbd>Umschalt+Einfg</kbd> ein, was im Terminal genauso klappt wie in anderen Apps, und legt danach zurück, was vorher in der Zwischenablage war. Dann folgt der Tastendruck aus **Anhängen**, falls es einen gibt. Die **Einfügemethode** unter **Grundeinstellungen › Erweitert** bietet andere Wege, auch ein eigenes Skript.
+
+</TabItem>
+</Tabs>
+
+:::tip[Der Text ist nirgends angekommen?]
+Wenn kein Textfeld den Fokus hatte, ist nichts verloren. Setz den Cursor dorthin, wo der Text hingehört, und drück **Letzte Transkription einfügen**: <kbd>⌃⇧V</kbd> auf dem Mac, <kbd>Alt+Umschalt+V</kbd> unter Windows und Linux.
+:::
+
+:::caution[Auf einem Mac ohne Bedienungshilfen]
+Wo die Berechtigung Bedienungshilfen gesperrt ist, wie auf vielen Firmen-Macs, kann DanyWhere nicht einfügen. Der Text wartet dann in DanyWhere, bis du dort, wo er hingehört, **Letzte Transkription einfügen** (<kbd>⌃⇧V</kbd>) drückst; **Letzte Transkription kopieren** (<kbd>⌃⇧C</kbd>) legt ihn stattdessen in die Zwischenablage. Tastendrücke aus **Anhängen** werden nicht gesendet. Dieser Teil ändert sich bald: DanyWhere bekommt eine eigene Eingabemethode, die den Text für dich einfügt.
+:::
+
+## Verlauf
+
+Jedes Diktat landet im **Verlauf**: die Aufnahme, die Transkription und, wenn nachbearbeitet wurde, der überarbeitete Text als zweite Fassung darüber. DanyWhere speichert das Diktat, bevor es einfügt; geht beim Einfügen etwas schief, ist also nichts verloren. Du kannst einen Eintrag später bearbeiten oder noch einmal nachbearbeiten lassen. Jede Änderung kommt als neue Fassung obendrauf, und die darunter bleiben.
+
+## Der Ton für „fertig“
+
+Mit **Audio-Feedback**, das ab Werk aus ist, begleiten dich drei Töne, jeder höher als der vorige: einer, wenn die Aufnahme beginnt, einer, wenn sie endet, und der höchste, wenn alles fertig ist, Nachbearbeitung eingeschlossen. Braucht ein KI-Modell ein paar Sekunden und du schaust inzwischen woanders hin, sagt dir dieser letzte Ton, dass der Text bereit ist. **Audio-Feedback** und den Schalter **Ton, wenn alles fertig ist**, der nur den letzten Ton abschaltet, findest du unter **Grundeinstellungen › Allgemein**.
+
+## Weiter
+
+Das Ende einer Aufnahme entscheidet am meisten. [Start- und Endtasten](../start-and-end-shortcuts/) zeigt die Endtasten einer neuen Installation, woraus jede besteht und wie du eigene einrichtest.

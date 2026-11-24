@@ -23,6 +23,7 @@
     "advanced": "Pokročilé",
     "postProcessing": "Následné zpracování",
     "history": "Historie",
+    "manual": "Příručka",
     "debug": "Ladění",
     "about": "O aplikaci",
     "areas": {
@@ -34,6 +35,14 @@
     "updates": "Aktualizace",
     "storage": "Úložiště",
     "profile": "Profil"
+  },
+  "manual": {
+    "openChapter": "Otevřít příručku: {{chapter}}",
+    "chapters": {
+      "startAndEndShortcuts": "Spouštěcí a ukončovací zkratky",
+      "defaultsAndProfiles": "Základní nastavení a profily"
+    },
+    "unavailable": "Toto sestavení DanyWhere neobsahuje příručku."
   },
   "onboarding": {
     "customModelDescription": "Oficiálně nepodporováno",
@@ -389,6 +398,8 @@
     },
     "general": {
       "title": "Obecné",
+      "startShortcuts": "Spouštěcí zkratky",
+      "otherShortcuts": "Další zkratky",
       "shortcut": {
         "title": "Zkratky Handy",
         "description": "Nastavte klávesové zkratky pro spuštění nahrávání řeči na text",
@@ -399,7 +410,7 @@
         "bindings": {
           "transcribe": {
             "name": "Spouštěcí zkratka",
-            "description": "Spustí nahrávání. Jak skončí, určují ukončovací zkratky a při podržení „Chování zkratky“."
+            "description": "Spustí nahrávání. Jak skončí, určují ukončovací zkratky, i při podržení."
           },
           "cancel": {
             "name": "Zkratka zrušení",
@@ -407,7 +418,8 @@
           },
           "transcribe_with_post_process": {
             "name": "Druhá spouštěcí zkratka",
-            "description": "Volitelné: druhá kombinace kláves, která spouští nahrávání. V továrním nastavení ukončovací zkratka se stejnou kombinací kláves text dodatečně zpracuje. Obsazena jen, dokud je dodatečné zpracování zapnuté."
+            "description": "Volitelné: druhá kombinace kláves, která spouští nahrávání. V továrním nastavení ukončovací zkratka se stejnou kombinací kláves text dodatečně zpracuje. Obsazena jen, dokud je dodatečné zpracování zapnuté.",
+            "descriptionMacos": "Volitelné: druhá kombinace kláves, která spouští nahrávání. V továrním nastavení se text dodatečně zpracuje, když ji podržíte a uvolníte; její opětovné stisknutí ukončí nahrávání bez dodatečného zpracování, jako každá ukončovací zkratka bez ⌥. Obsazena jen, dokud je dodatečné zpracování zapnuté."
           },
           "paste_last_transcript": {
             "name": "Vložit poslední přepis",
@@ -503,6 +515,17 @@
       "holdEnds": {
         "title": "Při podržení",
         "description": "Jak uvolnění podržené spouštěcí zkratky ukončí nahrávání."
+      },
+      "factoryNames": {
+        "pattern": "{{mode}} · {{effect}}",
+        "direct": "Přímo",
+        "postProcessed": "Dodatečně zpracováno",
+        "space": "Mezera",
+        "noSpace": "Bez mezery",
+        "paragraph": "Odstavec",
+        "line": "Řádek",
+        "enter": "Odeslat Enter",
+        "shiftEnter": "Odeslat Shift+Enter"
       },
       "linuxNoShortcuts": "V Linuxu se kombinace kláves ukončovacích zkratek během nahrávání neobsazují. Nahrávání tam skončí, když uvolníte podrženou spouštěcí zkratku, nebo když znovu stisknete spouštěcí zkratku, jejíž kombinaci kláves má některá ukončovací zkratka.",
       "errors": {
@@ -1316,8 +1339,8 @@
         "button": "Zobrazit na GitHubu"
       },
       "basedOn": {
-        "title": "Založeno na Handy",
-        "description": "DanyWhere vychází z aplikace Handy, kterou vytvořil CJ Pais a další přispěvatelé",
+        "title": "Vzešlo z Handy",
+        "description": "DanyWhere vzešlo z aplikace Handy, kterou vytvořil CJ Pais a další přispěvatelé. Děkujeme jim za základy, na kterých dodnes stojí.",
         "button": "Navštívit Handy"
       },
       "supportDevelopment": {

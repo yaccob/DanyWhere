@@ -23,6 +23,7 @@
     "advanced": "高级",
     "postProcessing": "后处理",
     "history": "历史记录",
+    "manual": "使用手册",
     "debug": "调试",
     "about": "关于",
     "areas": {
@@ -34,6 +35,14 @@
     "updates": "更新",
     "storage": "存储",
     "profile": "配置文件"
+  },
+  "manual": {
+    "openChapter": "打开使用手册：{{chapter}}",
+    "chapters": {
+      "startAndEndShortcuts": "开始与结束快捷键",
+      "defaultsAndProfiles": "基本设置与配置文件"
+    },
+    "unavailable": "此 DanyWhere 版本不含使用手册。"
   },
   "onboarding": {
     "customModelDescription": "非官方支持",
@@ -389,6 +398,8 @@
     },
     "general": {
       "title": "通用",
+      "startShortcuts": "开始快捷键",
+      "otherShortcuts": "其他快捷键",
       "shortcut": {
         "title": "Handy 快捷键",
         "description": "配置启动语音转文字录制的键盘快捷键",
@@ -399,7 +410,7 @@
         "bindings": {
           "transcribe": {
             "name": "开始快捷键",
-            "description": "开始录音。如何结束由结束快捷键决定，按住时由“快捷键行为”决定。"
+            "description": "开始录音。如何结束由结束快捷键决定，按住时也是如此。"
           },
           "cancel": {
             "name": "取消快捷键",
@@ -407,7 +418,8 @@
           },
           "transcribe_with_post_process": {
             "name": "第二开始快捷键",
-            "description": "可选：第二个用于开始录音的按键组合。出厂设置下，具有相同按键组合的结束快捷键会对文本进行后处理。仅在后处理开启时占用。"
+            "description": "可选：第二个用于开始录音的按键组合。出厂设置下，具有相同按键组合的结束快捷键会对文本进行后处理。仅在后处理开启时占用。",
+            "descriptionMacos": "可选：第二个用于开始录音的按键组合。出厂设置下，按住后松开会对文本进行后处理；再次按下则不经后处理直接结束，与所有不含 ⌥ 的结束快捷键相同。仅在后处理开启时占用。"
           },
           "paste_last_transcript": {
             "name": "粘贴最近的转录",
@@ -503,6 +515,17 @@
       "holdEnds": {
         "title": "按住时",
         "description": "松开按住的开始快捷键时如何结束录音。"
+      },
+      "factoryNames": {
+        "pattern": "{{mode}} · {{effect}}",
+        "direct": "直接",
+        "postProcessed": "后处理",
+        "space": "空格",
+        "noSpace": "无空格",
+        "paragraph": "段落",
+        "line": "换行",
+        "enter": "发送 Enter",
+        "shiftEnter": "发送 Shift+Enter"
       },
       "linuxNoShortcuts": "在 Linux 上，录音时不会占用结束快捷键的按键组合。在那里，松开按住的开始快捷键，或再次按下某个与结束快捷键按键组合相同的开始快捷键时，录音才会结束。",
       "errors": {
@@ -1316,8 +1339,8 @@
         "button": "在 GitHub 上查看"
       },
       "basedOn": {
-        "title": "基于 Handy",
-        "description": "DanyWhere 基于 CJ Pais 及贡献者开发的 Handy",
+        "title": "源自 Handy",
+        "description": "DanyWhere 源自 CJ Pais 及贡献者开发的 Handy。感谢他们打下至今仍支撑着它的基础。",
         "button": "访问 Handy"
       },
       "supportDevelopment": {

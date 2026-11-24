@@ -1,0 +1,35 @@
+@startuml
+' A dictation from start to end, in French. The structure is in
+' dictation-flow.iuml; UI terms as in src/i18n/locales/fr/translation.json.
+' "\n" breaks a line; no ";" in a text (it would end a step). A no-break
+' space goes inside « » and before : and ?.
+!$yes = "oui"
+!$no = "non"
+!$press = "Appuyer sur un raccourci de début"
+!$noteProfile = "Le profil : l'application au premier\nplan décide (« Choisir le profil selon\nl'application »), sinon celui « En\ncours d'utilisation ». Rechoisi à la fin."
+!$recording = "L'enregistrement tourne : son\nde début, l'overlay montre le niveau"
+!$noteEnds = "Comment il peut se terminer et ce\nque la fin décide : voir « Comment\nse termine un enregistrement »"
+!$qEnd = "Comment se termine-t-il ?"
+!$aEnds = "un raccourci de fin,\nou un raccourci de début\nmaintenu, relâché"
+!$aCancel = "« Raccourci\nd'Annulation » (Échap)"
+!$stopped = "L'enregistrement s'arrête : son d'arrêt"
+!$cancelled = "Annulé : rien n'est\ntranscrit ni gardé"
+!$transcribe = "Le modèle vocal transcrit"
+!$noteWords = "Listes de mots : un modèle qui\nles prend, comme Whisper, les\nutilise ici"
+!$qPost = "La fin post-traite-t-elle, et\n« Post-traitement » est-il activé ?"
+!$qContext = "« Envoyer le contexte »\npour cette fin ?"
+!$context = "Les dictées précédentes de la\nmême fenêtre sont envoyées\ncomme contexte"
+!$edit = "Le modèle de post-traitement\nretravaille le texte : les prompts\nactifs dans leur ordre, les listes\nde mots comme termes connus"
+!$noteFailed = "En cas d'échec, la transcription\ncontinue telle quelle, et une\nnotification dit pourquoi"
+!$history = "Enregistré dans l'« Historique »"
+!$qWaits = "Un Mac sans\nAccessibilité ?"
+!$waits = "Il attend qu'un service macOS\nl'insère, p. ex. avec « Coller\nla dernière transcription »"
+!$qNone = "« Méthode de collage » :\n« Aucun » ?"
+!$clipboard = "Dans le presse-papiers, ou\nseulement dans l'« Historique »,\nselon la « Gestion du\npresse-papiers »"
+!$pasted = "Collé là où est le curseur,\npuis le texte de\n« Ajouter à la fin »"
+!$qKey = "Une touche dans\n« Ajouter à la fin » ?"
+!$key = "La touche est pressée,\np. ex. Entrée envoie"
+!$done = "Son de fin, avec « Signal sonore »\net « Son à la fin » activés"
+!include style.iuml
+!include dictation-flow.iuml
+@enduml

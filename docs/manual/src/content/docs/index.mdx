@@ -1,0 +1,50 @@
+---
+title: DanyWhere manual
+description: How DanyWhere turns what you say into text in any app, and how to make it end each dictation the way you write.
+template: splash
+hero:
+  title: Dictate anywhere.
+  tagline: DanyWhere turns what you say into text, right where your cursor is, in whatever app you're working in. Speech recognition runs on your own computer, and if you like, a language model polishes the text before it arrives.
+  actions:
+    - text: How a dictation works
+      link: how-it-works/dictation-from-start-to-end/
+      icon: right-arrow
+      variant: primary
+    - text: Start and end shortcuts
+      link: how-it-works/start-and-end-shortcuts/
+      variant: minimal
+---
+
+import { CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+## Try it now
+
+Once DanyWhere is set up, put the cursor in any text field, press <kbd>⌃ Space</kbd> on a Mac (<kbd>Ctrl+Space</kbd> on Windows, <kbd>Ctrl+Alt+Space</kbd> on Linux) and say a sentence. Press the same keys again, and your words appear where the cursor is. Everything else in this manual is about making that moment fit the way you write.
+
+## What this manual explains
+
+This manual is new, and it starts with how DanyWhere works. Three chapters are ready:
+
+<CardGrid>
+  <LinkCard
+    title="A dictation from start to end"
+    description="What happens between pressing a key and your text arriving, and where you can steer it."
+    href="how-it-works/dictation-from-start-to-end/"
+  />
+  <LinkCard
+    title="Start and end shortcuts"
+    description="Start every dictation the same way, and decide at the end whether it gets a space, a new paragraph, a polish or is sent right away."
+    href="how-it-works/start-and-end-shortcuts/"
+  />
+  <LinkCard
+    title="Defaults and profiles"
+    description="Dictate one way into your terminal and another into your chat, and still change a setting in one place for all of them."
+    href="how-it-works/defaults-and-profiles/"
+  />
+</CardGrid>
+
+More chapters follow: getting started on each system, post-processing and prompts, speech models and word lists, the History, and what to do when something doesn't work.
+
+## Where to start
+
+If you're new to DanyWhere, read [A dictation from start to end](how-it-works/dictation-from-start-to-end/) first. It walks through one dictation from the first key press to the done sound, and every later chapter builds on it. If you already dictate every day and want more out of the end of a dictation, go straight to [Start and end shortcuts](how-it-works/start-and-end-shortcuts/). If you dictate into very different apps, [Defaults and profiles](how-it-works/defaults-and-profiles/) shows how each can get settings of its own.

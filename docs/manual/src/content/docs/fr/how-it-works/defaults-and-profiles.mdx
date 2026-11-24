@@ -1,0 +1,146 @@
+---
+title: "Paramètres de base et profils"
+description: "Dictez d'une façon dans votre terminal et d'une autre dans votre chat, tout en modifiant un réglage à un seul endroit pour tous."
+sidebar:
+  order: 3
+---
+
+import Diagram from '@components/Diagram.astro';
+import Screenshot from '@components/Screenshot.astro';
+import { Tabs, TabItem, Steps } from '@astrojs/starlight/components';
+
+Toutes les apps ne veulent pas vos mots de la même façon. Dans un terminal, vous voulez exactement ce que vous avez dit, et Retour ne doit pas lancer une commande avant que vous l'ayez relue. Dans un chat, Retour doit envoyer le message. Au travail, le post-traitement doit peut-être passer par le fournisseur de votre entreprise ; chez vous, par le vôtre. Un profil retient ces différences pour un type de travail, et DanyWhere peut le choisir selon l'app dans laquelle vous dictez. Ce chapitre montre comment les profils et les paramètres de base fonctionnent ensemble, pour que vous sachiez où s'applique une modification avant de la faire.
+
+## Les paramètres de base contiennent tout, un profil seulement ce qui change
+
+Sous **Paramètres de base**, dans la barre latérale, vous trouvez tous les réglages qui façonnent une dictée, sur les pages **Général**, **Modèles**, **Post-traitement** et **Avancé**. Une nouvelle installation dicte avec les seuls paramètres de base ; un profil ne devient utile que lorsque quelque chose doit être différent.
+
+Un profil se pose par-dessus les paramètres de base. Ses pages ressemblent exactement aux leurs, mais il ne retient que ses valeurs propres, et partout ailleurs la valeur de base transparaît. Modifiez une valeur de base, et chaque profil qui n'a pas de valeur propre à cet endroit la suit aussitôt. Modifiez une valeur dans un profil, et seul ce profil change.
+
+<Diagram
+  name="defaults-and-profiles"
+  caption="Les paramètres de base et les profils par-dessus"
+  alt="Des couches. En bas, les paramètres de base ont une valeur pour chaque réglage. Un profil par-dessus ne retient que ses valeurs propres ; pour tous les autres réglages, la valeur des paramètres de base transparaît. Les listes, comme les listes de mots et les raccourcis de fin, diffèrent entrée par entrée : un profil peut avoir sa propre version d'une entrée, en ajouter une ou désactiver une entrée des paramètres de base. Les paramètres de l'application, comme la langue de l'interface, ne font partie d'aucune couche et sont les mêmes pour tous les profils."
+/>
+
+## Les valeurs propres d'un profil
+
+Ouvrez un profil sous **Paramètres des profils**, dans la barre latérale, par exemple **Paramètres des profils › Terminal › Avancé**. Sous chaque réglage, une ligne indique d'où vient sa valeur :
+
+- Une chaîne entière et, en gris, **Valeur de base** : le réglage suit les paramètres de base.
+- Une chaîne brisée et, en bleu pétrole, **Valeur propre** : le profil garde cette valeur, quoi qu'il arrive à la valeur de base. **Valeur de base : …** indique la valeur des paramètres de base, ou **identique à la valeur de base** signale que les deux coïncident pour l'instant. **Réinitialiser** fait de nouveau suivre les paramètres de base au réglage.
+
+<Screenshot
+  name="profile-own-values"
+  alt="Le groupe Transcription de la page Avancé du profil Terminal. Sous chaque réglage se trouve une ligne d'état. Trois réglages montrent une chaîne entière et le mot gris Valeur de base : ils suivent les paramètres de base. Post-traitement, désactivé, montre une chaîne brisée, Valeur propre en bleu pétrole, Valeur de base : activé, et un bouton Réinitialiser."
+  caption="Dans un profil, chaque réglage indique s'il suit les paramètres de base."
+/>
+
+Si vous modifiez un réglage qui suit la valeur de base, il devient une valeur propre du profil. Une barre en bas vous le signale, par exemple **« Post-traitement » ne s'applique plus qu'à « Terminal ».** Si vous vouliez le modifier pour tous les profils, cliquez sur **Modifier plutôt la valeur de base** : les paramètres de base prennent la nouvelle valeur, et le profil les suit de nouveau. **Annuler** rétablit la valeur de base.
+
+**Page aux réglages de base**, en haut d'une page, réinitialise toutes ses valeurs propres. La première page du profil, **Profil**, rassemble sous **Valeurs propres** tout ce qu'il a de différent : un clic sur une ligne ouvre ce réglage, la flèche circulaire ne réinitialise que lui, et **Tout le profil aux réglages de base** les réinitialise toutes, en gardant le nom et les apps du profil. Avant de réinitialiser plus d'une valeur, DanyWhere demande confirmation et les nomme. Dans la barre latérale, un nombre à côté d'un profil et de ses pages compte leurs valeurs propres.
+
+:::tip[Garder une valeur qui se trouve être la même]
+Pour garder une valeur que les paramètres de base ont aussi, comme le post-traitement désactivé pour votre terminal, cliquez sur la chaîne entière. La valeur devient propre au profil sans changer, et elle reste quand vous modifiez plus tard la valeur de base. Un clic sur la chaîne brisée la fait de nouveau suivre.
+:::
+
+## Vu depuis les paramètres de base
+
+Vous pouvez aussi travailler dans l'autre sens, un réglage à la fois. Sur les pages des **Paramètres de base**, sous un réglage, figure chaque profil qui l'a autrement, avec sa propre commande et une flèche circulaire qui le réinitialise. Pour les réglages plus grands, comme les prompts, les listes de mots ou les raccourcis de fin, un résumé remplace la commande, et **Ouvrir dans Terminal** vous mène au réglage dans le profil. Une ligne grise nomme les profils qui suivent, ou indique **Tous les profils suivent**, et **+ Profil** donne ici une valeur propre à un profil de plus, en partant de la valeur de base.
+
+<Screenshot
+  name="defaults-with-profiles"
+  alt="Le réglage Post-traitement sur la page Avancé des paramètres de base, activé. En dessous, le profil Terminal avec une chaîne brisée, son propre interrupteur, désactivé, et une flèche circulaire pour le réinitialiser. Plus bas, une ligne grise avec une chaîne entière indique Chat suit, avec à côté un menu + Profil."
+  caption="Dans les paramètres de base, chaque réglage montre les profils qui diffèrent."
+/>
+
+Les pages des **Paramètres de base** montrent et modifient toujours les paramètres de base, quel que soit le profil en cours d'utilisation.
+
+## Les listes, entrée par entrée
+
+Certains réglages sont des listes : les **Raccourcis de fin** et les autres raccourcis, les listes de mots sous **Listes supplémentaires**, et les fournisseurs de post-traitement avec leurs modèles. Un profil diffère d'une telle liste entrée par entrée : il modifie une entrée, en ajoute une ou désactive une entrée des paramètres de base. La ligne d'état marque chacune **propre** ou **désactivée**, avec son propre bouton pour la réinitialiser. Toutes les autres entrées continuent de suivre les paramètres de base, y compris celles que vous y ajoutez plus tard. Sur un Mac, un profil pour vos chats pourrait envoyer ainsi avec <kbd>↩</kbd> : il ne modifie que **Direct · Paragraphe**, pour que ce raccourci de fin appuie sur Entrée au lieu de commencer un nouveau paragraphe.
+
+Les mots et les prompts fonctionnent un peu différemment. La **Liste de mots** des paramètres de base s'applique dans chaque profil. Un profil peut la remplacer entièrement, mais le plus souvent il place devant elle des **Mots supplémentaires**, qu'il est seul à utiliser. Les prompts appartiennent à tous les profils ; lesquels ont la case **Actif** cochée, et dans quel ordre, relève du profil.
+
+## Quel profil une dictée utilise
+
+Ce qu'utilisent les dictées se choisit en haut de la barre latérale, dans l'encadré **En cours d'utilisation**, ou dans le menu de la barre système, sous **Profil** : les paramètres de base, que la liste appelle **Réglages de base**, ou l'un de vos profils. Ce choix décide seulement de ce qu'utilisent vos dictées, pas des réglages que vous modifiez.
+
+Les profils donnent le plus quand DanyWhere les choisit pour vous. Donnez à un profil les apps pour lesquelles il est fait, et laissez **Choisir le profil selon l'application** activé, comme il l'est d'usine. Une dictée dans l'une de ces apps utilise alors ce profil ; partout ailleurs, c'est ce qu'affiche **En cours d'utilisation** qui s'applique.
+
+<Diagram
+  name="which-setting-applies"
+  caption="Quel profil et quelle valeur une dictée utilise"
+  alt="Comment DanyWhere trouve la valeur d'un réglage pour une dictée. À la fin de l'enregistrement : si Choisir le profil selon l'application est activé et que l'app au premier plan a un profil, ce profil s'applique. Sinon, c'est ce qu'affiche En cours d'utilisation qui s'applique : les paramètres de base ou un profil. Ensuite, pour chaque réglage : si le profil a une valeur propre, c'est elle qui s'applique ; sinon, la valeur de base."
+/>
+
+C'est l'app au premier plan **à la fin de l'enregistrement** qui décide, car c'est là que va le texte. Vous pouvez donc commencer une dictée n'importe où et passer à votre chat avant de la terminer. Si vous insérez plus tard le texte dans une autre app avec **Coller la dernière transcription**, DanyWhere refait ce que le profil de cette app fait autrement : il transcrit de nouveau avec un autre modèle vocal, post-traite de nouveau, ou ajoute seulement autre chose à la fin. **Copier la dernière transcription** garde le profil de la dictée, et une dictée que vous avez modifiée dans l'**Historique** garde votre texte.
+
+Tant qu'un profil s'applique, l'overlay le nomme pendant la dictée ; avec les paramètres de base, il n'affiche aucun nom.
+
+Pour désactiver un moment le choix selon l'application, sans retirer leurs apps aux profils, utilisez l'interrupteur des **Paramètres des profils**, **Selon l'application** sous **En cours d'utilisation**, le menu de la barre système ou le raccourci **Choisir le profil selon l'application** : <kbd>⌃⇧A</kbd> sur un Mac, <kbd>Alt+Maj+A</kbd> sous Windows. L'overlay montre alors brièvement si le choix est activé ou non, et quel profil une dictée recevrait ici. Tant qu'il est désactivé, le profil sous **En cours d'utilisation** s'applique partout, et l'icône de la barre système affiche un cadenas.
+
+Une modification faite depuis la barre système ou avec un raccourci, comme passer à la liste de mots suivante, va là d'où vient la valeur : dans le profil en cours d'utilisation s'il y a une valeur propre, sinon dans les paramètres de base.
+
+### Donner ses apps à un profil
+
+<Tabs syncKey="os">
+<TabItem label="macOS">
+
+Dans la ligne du profil sous **Paramètres des profils**, ou sur sa page **Profil**, cliquez sur **Ajouter une application…** et choisissez l'app : d'abord les apps ouvertes, puis celles qui sont installées. Une app appartient à un seul profil au plus ; si elle est déjà dans un autre profil, elle l'indique et change de profil.
+
+</TabItem>
+<TabItem label="Windows">
+
+Saisissez le nom de fichier du programme, par exemple `WindowsTerminal.exe`, et cliquez sur **Ajouter**. Écrivez-le exactement comme le Gestionnaire des tâches l'affiche sous **Détails**, majuscules comprises. Un programme appartient à un seul profil au plus.
+
+</TabItem>
+<TabItem label="Linux">
+
+Sous Linux, DanyWhere ne sait pas encore quelle app est au premier plan, si bien que les apps données à un profil ne le choisissent pas. Choisissez plutôt le profil sous **En cours d'utilisation** ou dans le menu de la barre système.
+
+</TabItem>
+</Tabs>
+
+## Ce qui est pareil pour tous les profils
+
+Certains réglages concernent DanyWhere lui-même et non une dictée. Ils se trouvent sous **Paramètres de l'application** et restent les mêmes quel que soit le profil : le lancement avec l'ordinateur, l'icône de la barre système, la langue et l'apparence de l'interface, les mises à jour, le stockage et la page **Accessibilité**. L'**Historique** est commun lui aussi : il réunit les dictées de tous les profils.
+
+## Créer, dupliquer, supprimer, partager
+
+**Paramètres des profils** ouvre la vue d'ensemble : une ligne pour les paramètres de base et une pour chaque profil, avec les apps dans lesquelles il sert, et en dessous **Choisir le profil selon l'application**.
+
+<Screenshot
+  name="profiles-overview"
+  alt="La vue d'ensemble Paramètres des profils, groupe Profils. Une ligne pour les paramètres de base, appelée Réglages de base et marquée Actif, puis les profils Terminal et Chat, chacun avec ses boutons. Sous Terminal, Utilisé automatiquement dans : iTerm2 et Terminal ; sous Chat, Slack et Signal. Sous les lignes, l'interrupteur Choisir le profil selon l'application, activé, puis les boutons Nouveau profil et Importer un profil."
+  caption="La vue d'ensemble des profils avec deux profils et leurs apps."
+/>
+
+- **Nouveau profil** crée un profil qui suit les paramètres de base en tout.
+- **Dupliquer** copie un profil avec ses valeurs propres. Une copie des paramètres de base les suit en tout. La copie n'est pas mise en service ; choisissez-la sous **En cours d'utilisation** ou avec **Utiliser**.
+- **Supprimer** efface les réglages d'un profil et ses propres listes de mots ; les prompts restent. Vous pouvez supprimer tous les profils ; les paramètres de base restent toujours.
+- **Exporter** enregistre un profil dans un fichier : chaque valeur avec laquelle il dicte, ses prompts actifs, ses listes de mots et ses apps. **Importer un profil** fait d'un tel fichier un nouveau profil, qui suit vos paramètres de base partout où ses valeurs leur sont égales. Une app qu'un autre profil a déjà reste où elle est.
+
+Si le fournisseur de post-traitement du profil a une clé API, l'export demande un **Mot de passe** et chiffre la clé avec. Pour importer la clé, il faut le même mot de passe. Sans lui, **Importer sans la clé** importe tout le reste, et le profil utilise la clé déjà saisie sur cet ordinateur, s'il y en a une.
+
+## Recette : un profil pour votre terminal
+
+<Steps>
+
+1. Ouvrez **Paramètres des profils**, cliquez sur **Nouveau profil** et nommez-le `Terminal`.
+
+2. Dans la ligne de Terminal, cliquez sur **Ajouter une application…** et choisissez Terminal ou iTerm2. Sous Windows, saisissez `WindowsTerminal.exe` et cliquez sur **Ajouter**. Sous Linux, choisissez **Terminal** sous **En cours d'utilisation** quand vous travaillez dans le terminal, et passez l'étape suivante.
+
+3. Vérifiez que **Choisir le profil selon l'application** est activé.
+
+4. Ouvrez **Paramètres des profils › Terminal › Avancé** et cherchez **Post-traitement**. S'il est activé, désactivez-le. S'il est déjà désactivé, comme d'usine, cliquez sur la chaîne en dessous, pour que le terminal reste sans post-traitement même après que vous l'aurez activé dans les paramètres de base. La ligne en dessous indique maintenant **Valeur propre**.
+
+5. Sur un Mac, ouvrez **Paramètres des profils › Terminal › Général**, descendez jusqu'aux **Raccourcis de fin** et videz le champ **Ajouter à la fin** de **Direct · Paragraphe**. <kbd>↩</kbd> termine alors une dictée dans le terminal sans saut de ligne.
+
+6. Essayez : dans le terminal, commencez une dictée, dites une commande et terminez avec <kbd>↩</kbd>. L'overlay nomme **Terminal**, et la commande apparaît telle que vous l'avez dite, prête à être lancée.
+
+</Steps>
+
+## Ensuite
+
+Ce que les profils modifient le plus souvent, ce sont les raccourcis de fin. [Raccourcis de début et de fin](../start-and-end-shortcuts/) montre de quoi se compose chacun et comment créer les vôtres.

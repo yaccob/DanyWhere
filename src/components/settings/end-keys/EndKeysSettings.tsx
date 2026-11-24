@@ -6,6 +6,9 @@ import { notify } from "@/stores/noticeStore";
 import { useSettings } from "@/hooks/useSettings";
 import { postProcessingOn } from "@/lib/endKeys";
 import { SettingsGroup } from "../../ui/SettingsGroup";
+// DanyWhere: the "?" to the manual's chapter on start and end shortcuts.
+import { ManualHelpButton } from "../../ui/ManualHelpButton";
+import { MANUAL_PAGES } from "@/lib/manual";
 import { EndKeysEditor } from "./EndKeysEditor";
 // DanyWhere (strand E2): the end shortcuts of the page's scope, the defaults
 // or a profile, each with its chain.
@@ -14,13 +17,25 @@ import { useSettingsScope } from "../profiles/scope/SettingsScope";
 import { writeValue } from "../profiles/scope/profileWriter";
 import { useDescribeEndKeyError } from "./describeEndKeyError";
 
+interface EndKeysSettingsProps {
+  /** Rows above the list, e.g. how a held start shortcut ends ("When
+   * Held", `HoldEndsSetting`). */
+  before?: React.ReactNode;
+  /** Rows below the list, e.g. the cancel shortcut. */
+  after?: React.ReactNode;
+}
+
 /**
  * DanyWhere: the end shortcuts on the shortcut settings (end_keys.rs, qa
  * 2026-11-22_2134): the list of the page's scope (the defaults or a
- * profile; outside one, the values in use). How a held start shortcut ends
- * is "When Held", under "Shortcut Behavior" (`HoldEndsSetting`).
+ * profile; outside one, the values in use). The page General puts "When
+ * Held" above it and Cancel below it (`before`, `after`; user, 2026-11-24),
+ * so the card holds every way a recording ends.
  */
-export const EndKeysSettings: React.FC = () => {
+export const EndKeysSettings: React.FC<EndKeysSettingsProps> = ({
+  before,
+  after,
+}) => {
   const { t } = useTranslation();
   const { getSetting, refreshSettings } = useSettings();
   const [busy, setBusy] = useState(false);
@@ -68,12 +83,19 @@ export const EndKeysSettings: React.FC = () => {
     <SettingsGroup
       title={t("settings.endKeys.title")}
       description={t("settings.endKeys.description")}
+      titleAction={
+        <ManualHelpButton
+          page={MANUAL_PAGES.startAndEndShortcuts}
+          chapter={t("manual.chapters.startAndEndShortcuts")}
+        />
+      }
     >
       {isLinux && (
         <p className="px-4 py-2 text-xs text-ink-3">
           {t("settings.endKeys.linuxNoShortcuts")}
         </p>
       )}
+      {before}
       <ScopedSetting field="end_keys">
         <EndKeysEditor
           value={endKeys}
@@ -87,6 +109,7 @@ export const EndKeysSettings: React.FC = () => {
           }
         />
       </ScopedSetting>
+      {after}
     </SettingsGroup>
   );
 };

@@ -23,6 +23,7 @@
     "advanced": "Geavanceerd",
     "postProcessing": "Naverwerking",
     "history": "Geschiedenis",
+    "manual": "Handleiding",
     "debug": "Probleemoplossing",
     "about": "Over Handy",
     "areas": {
@@ -34,6 +35,14 @@
     "updates": "Updates",
     "storage": "Opslag",
     "profile": "Profiel"
+  },
+  "manual": {
+    "openChapter": "Handleiding openen: {{chapter}}",
+    "chapters": {
+      "startAndEndShortcuts": "Start- en eindsneltoetsen",
+      "defaultsAndProfiles": "Basisinstellingen en profielen"
+    },
+    "unavailable": "Deze build van DanyWhere bevat geen handleiding."
   },
   "onboarding": {
     "customModelDescription": "Niet officieel ondersteund",
@@ -389,6 +398,8 @@
     },
     "general": {
       "title": "Algemeen",
+      "startShortcuts": "Startsneltoetsen",
+      "otherShortcuts": "Overige sneltoetsen",
       "shortcut": {
         "title": "Sneltoetsen",
         "description": "Configureer sneltoetsen om spraak-naar-tekst-opnames te starten",
@@ -399,7 +410,7 @@
         "bindings": {
           "transcribe": {
             "name": "Startsneltoets",
-            "description": "Start een opname. Hoe die eindigt, bepalen de eindsneltoetsen en, bij vasthouden, „Gedrag van sneltoets”."
+            "description": "Start een opname. Hoe die eindigt, bepalen de eindsneltoetsen, ook bij vasthouden."
           },
           "cancel": {
             "name": "Sneltoets voor annuleren",
@@ -407,7 +418,8 @@
           },
           "transcribe_with_post_process": {
             "name": "Tweede startsneltoets",
-            "description": "Optioneel: een tweede toetsencombinatie die een opname start. In de fabrieksinstelling bewerkt een eindsneltoets met dezelfde toetsencombinatie de tekst na. Alleen bezet zolang nabewerking aan staat."
+            "description": "Optioneel: een tweede toetsencombinatie die een opname start. In de fabrieksinstelling bewerkt een eindsneltoets met dezelfde toetsencombinatie de tekst na. Alleen bezet zolang nabewerking aan staat.",
+            "descriptionMacos": "Optioneel: een tweede toetsencombinatie die een opname start. In de fabrieksinstelling bewerkt loslaten na vasthouden de tekst na; opnieuw drukken beëindigt zonder nabewerking, zoals elke eindsneltoets zonder ⌥. Alleen bezet zolang nabewerking aan staat."
           },
           "paste_last_transcript": {
             "name": "Laatste transcriptie plakken",
@@ -503,6 +515,17 @@
       "holdEnds": {
         "title": "Bij vasthouden",
         "description": "Hoe het loslaten van een vastgehouden startsneltoets de opname beëindigt."
+      },
+      "factoryNames": {
+        "pattern": "{{mode}} · {{effect}}",
+        "direct": "Direct",
+        "postProcessed": "Nabewerkt",
+        "space": "Spatie",
+        "noSpace": "Zonder spatie",
+        "paragraph": "Alinea",
+        "line": "Regel",
+        "enter": "Enter sturen",
+        "shiftEnter": "Shift+Enter sturen"
       },
       "linuxNoShortcuts": "Op Linux worden de toetsencombinaties van eindsneltoetsen tijdens een opname niet bezet. Een opname eindigt daar wanneer je een vastgehouden startsneltoets loslaat, of wanneer je opnieuw drukt op een startsneltoets waarvan een eindsneltoets de toetsencombinatie heeft.",
       "errors": {
@@ -1320,8 +1343,8 @@
         "button": "Bekijk op GitHub"
       },
       "basedOn": {
-        "title": "Gebaseerd op Handy",
-        "description": "DanyWhere is gebaseerd op Handy van CJ Pais en bijdragers",
+        "title": "Voortgekomen uit Handy",
+        "description": "DanyWhere is voortgekomen uit Handy van CJ Pais en bijdragers. Dank aan hen voor het fundament waar het nog steeds op rust.",
         "button": "Naar Handy"
       },
       "supportDevelopment": {

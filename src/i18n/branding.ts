@@ -14,7 +14,8 @@ const PRODUCT_NAME_PATTERN = /\bHandy(?=s?\b)/g;
 export const UPSTREAM_REFERENCE_KEYS: ReadonlySet<string> = new Set([
   // The Donate button funds upstream.
   "settings.about.supportDevelopment.description",
-  // About page row crediting Handy as DanyWhere's base, with a link to it.
+  // About page row saying DanyWhere grew out of Handy and thanking its
+  // makers, with a link to it.
   "settings.about.basedOn.title",
   "settings.about.basedOn.description",
   "settings.about.basedOn.button",

@@ -1,0 +1,237 @@
+# Writing the DanyWhere manual
+
+This is the style guide for everyone who writes or translates a chapter of the manual in `src/content/docs/`. Read it before you start, and keep the glossary at the end open while you write.
+
+## Who reads it
+
+People who dictate: they write emails, chat messages, documents and code with their voice, and they want the text to arrive the way they meant it. They are not developers of DanyWhere and don't care how it is built. Many open a chapter from the app, in the middle of something, with one question in mind.
+
+So:
+
+- Explain what something does for the reader before how it works inside.
+- Never mention code, file names, settings keys, ids or internal names (`end_keys`, `post_process_enabled`, `hold_ends`).
+- Don't explain what a reader can't see or change.
+
+## Voice and tone
+
+Warm, plain and short. Write as a friendly colleague who knows the app well, sits next to the reader and shows them around.
+
+- **Short sentences**, one thought each. Split a sentence that needs two commas and a "which".
+- **Active voice.** "DanyWhere pastes the text", not "the text is pasted".
+- **Present tense.** "The recording ends", not "the recording will end".
+- **Concrete before abstract.** "End with ↩ and the next paragraph starts on its own" beats "end shortcuts can append line breaks".
+- **No marketing.** No "powerful", "seamless", "simply", "just", "easily". If something is easy, the reader will notice.
+- **No jokes, no exclamation marks.** A light touch is fine; a pun is not.
+- **Say "you"** and address the reader as the app does in their language (see the next section).
+
+### How each language addresses the reader
+
+Follow the app's own locale files (`src/i18n/locales/<lang>/translation.json`). Checked on 2026-11-24:
+
+| Language | Address            | Evidence in the locale file                                                                                                            |
+| -------- | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
+| English  | you                | "Press the combination for the new end shortcut"                                                                                       |
+| German   | **du**, lower case | `settings.endKeys.postProcessOff`: "Schalte „Nachbearbeitung“ unter Erweitert ein."; `addPressKeys`: "Drück die Tastenkombination …"   |
+| Spanish  | **tú**             | `settings.endKeys.postProcessOff`: "Activa «Post procesamiento» en Avanzado."; `appendDescription`: "la pulsación de tecla que elijas" |
+| French   | **vous**           | `settings.endKeys.postProcessOff`: "Activez « Post-traitement » dans Avancé."; `addPressKeys`: "Appuyez sur la combinaison …"          |
+
+German imperatives use the short form ("drück", "wähl", "schalte … ein"), and strong verbs change their vowel: "lies", "gib", "nimm", "sieh", never "lese", "gebe", "nehme", "sehe". German keeps the established terms of the trade where German users say them ("Prompt", "Overlay", "Tray").
+
+## Structure of a chapter
+
+1. **Frontmatter** with `title` (what the chapter is about, in a few words) and `description` (one sentence: what the reader gets out of it).
+2. **An opening paragraph that says what the reader gets out of the chapter**, in terms of their own work. No heading above it. It answers "why read this?" in three or four sentences.
+3. **Then the how,** in sections with `##` headings. Use `###` sparingly, and nothing deeper.
+4. **One idea per paragraph.** A paragraph is two to five sentences.
+5. **Examples from real use:** a chat message sent with ⌃↩, an email written paragraph by paragraph, a terminal with its own profile. Prefer one good example to three abstract rules.
+6. **End with where to go next**, as a link to the chapter that naturally follows.
+
+A chapter is as long as it needs to be and no longer; most land between 600 and 1200 words. If a chapter grows beyond that, it is probably two chapters.
+
+## Naming the interface
+
+- **Bold**, and **exactly** as the interface shows it in the page's language, with its capitalization: **End Shortcuts**, **Add End Shortcut**, **Send Context**. Take the text from the locale file, never from memory and never translated by yourself. The glossary lists the common ones.
+- **A path** to a page or group is one bold run with › between the steps, in the order the reader clicks: **Defaults › General › End Shortcuts** (area › page › group).
+- **Values a reader chooses** are bold too: choose **Hold**, tick **Post-process**.
+- **Texts the app shows** (overlay, notices) are bold as well: the overlay shows **Transcribing...**; a notice, **Pasted Without Post-Processing**.
+- **Names of end shortcuts** that a new installation brings are bold, written as the app writes them: **Direct · Space**.
+- Don't put interface names in quotes, and don't use code formatting for them. Code formatting is only for what the reader types into a field, such as `\n` in **Append**.
+- In running text, use the plain words of the glossary's second part (dictation, recording, post-processing) without bold.
+
+## Keys
+
+- Write a key combination as **one** `<kbd>` element, exactly as the app shows it on that system: `<kbd>⌃ Space</kbd>`, `<kbd>⌥⌃↩</kbd>`, `<kbd>Ctrl+Shift+Space</kbd>`. The reader then finds the same text in the settings.
+- **macOS** uses the symbols on the keys, written together, ⌥ before ⌃ (since 2026-11-24), then ⇧ and ⌘: ⌥⌃⇧↩. A key named by a word is set apart by a space: ⌃ Space. Return is ↩, Escape is Esc.
+- **Windows and Linux** use the key names joined by "+", Ctrl before Alt before Shift: Ctrl+Alt+Shift+Space.
+- **Key names are translated** as the app translates them (`keyNames.*`): German `<kbd>⌃ Leertaste</kbd>` and `<kbd>Strg+Umschalt+Leertaste</kbd>`, Spanish `<kbd>Ctrl+Mayús+Espacio</kbd>`, French `<kbd>Ctrl+Maj+Espace</kbd>`. The macOS symbols stay as they are in every language.
+- Name the symbols the first time a chapter uses them in a list or table: ⌃ Control, ⌥ Option, ⇧ Shift, ⌘ Command, ↩ Return.
+- **Where the platforms differ**, give all three in one sentence when it's short ("<kbd>⌃ Space</kbd> on a Mac, <kbd>Ctrl+Space</kbd> on Windows, <kbd>Ctrl+Alt+Space</kbd> on Linux"), or use platform tabs when more than the keys differs.
+
+The factory shortcuts, for reference (English names):
+
+|                       | macOS    | Windows          | Linux                |
+| --------------------- | -------- | ---------------- | -------------------- |
+| Start Shortcut        | ⌃ Space  | Ctrl+Space       | Ctrl+Alt+Space       |
+| Second Start Shortcut | ⌃⇧ Space | Ctrl+Shift+Space | Ctrl+Alt+Shift+Space |
+| Paste Last Transcript | ⌃⇧V      | Alt+Shift+V      | Alt+Shift+V          |
+| Copy Last Transcript  | ⌃⇧C      | Alt+Shift+C      | Alt+Shift+C          |
+| Cancel Shortcut       | Esc      | Esc              | (none)               |
+
+## Components: when to use which
+
+- **Diagram** (`<Diagram name="…" alt="…" />`) where the reader has to see a way with branches (what happens in which order, and where it forks) or a structure, such as the profiles lying on top of the Defaults. Usually one per chapter, near the top, so the text can walk along it; a second only where the chapter explains two separate things that each need a picture, as **Defaults and profiles** does with the layers and with which profile applies. The `alt` text describes the whole picture in sentences, so the chapter works without it.
+- **Screenshot** (`<Screenshot name="…" alt="…" />`) where the reader has to find something on a page. Not to decorate. Screenshots are generated, so never describe details that depend on the reader's own data.
+- **Asides:**
+  - `:::note` for something worth knowing that doesn't change what the reader does (a factory setting only applies to new installations).
+  - `:::tip` for a shortcut or a better way (Paste Last Transcript when the text went nowhere).
+  - `:::caution` for a limit the reader will run into (Linux doesn't take end shortcuts' own combinations; a part that changes soon).
+  - At most three asides per chapter. An aside is not a place for the main point.
+- **Tabs** (`<Tabs syncKey="os">` with `<TabItem label="macOS">`, `"Windows"`, `"Linux"`) when more than a key differs between the platforms. Keep the labels exactly these three, untranslated, so the reader's choice carries over from page to page.
+- **Steps** (`<Steps>` around one numbered list) for a recipe the reader follows from top to bottom. Each step starts with the action ("Click **Add End Shortcut**").
+- **Tables** for sets the reader compares, such as the factory end shortcuts. Not for prose.
+
+## Links
+
+- Link between chapters with relative links to the page's folder: `[Start and end shortcuts](../start-and-end-shortcuts/)`. The same link works in every language.
+- Don't link to a heading anchor in another chapter: anchors differ between languages.
+- Link the first mention of a concept that has its own chapter, not every mention.
+
+## Facts
+
+- Every statement must be true of the code of the version the manual ships with. Check it in the code, not only in the ROADMAP or the README; where they disagree, the code wins.
+- Write the factory settings of a **new installation**, and say so where an update keeps the reader's own values.
+- Where something is about to change (inserting on a Mac without Accessibility), say so in a `:::caution`, briefly, without promising a date.
+- Don't describe what is shown only in debug mode.
+
+## MDX
+
+- Imports come right after the frontmatter.
+- `{` and `}` start an expression in MDX. In prose, put anything with braces in inline code (`` `{Enter}` ``) or write `\{` and `\}`. Never write a heading id like `{#id}`.
+- `<` starts a tag. Write "less than" or use inline code.
+- Close every tag; `<kbd>…</kbd>` is a tag too.
+- Leave a blank line after an opening component tag (`<TabItem …>`) and before its closing tag, so the Markdown inside is parsed.
+
+## Translating
+
+- Translate the meaning, not the words. A German, Spanish or French reader should not be able to tell that the English came first.
+- Keep the same structure: the same sections in the same order, the same components with the same `name`s, the same links.
+- Interface texts come **verbatim** from the locale file of that language, even where you would have chosen another word. List such places in your report, so the locale can be improved.
+- Translate the `alt` and `caption` texts and the frontmatter.
+- Where the locale file itself uses two words for one thing (see the notes in the glossary), use the one the reader sees at that spot.
+
+## Glossary
+
+### Interface terms, verbatim from the locale files
+
+Checked against `src/i18n/locales/{en,de,es,fr}/translation.json` on 2026-11-24. The key says where each comes from.
+
+| Term                                               | English                                                        | German                                                                         | Spanish                                                                | French                                                                     | Key                                                               |
+| -------------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------- | -------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| start shortcut                                     | Start Shortcut                                                 | Starttaste                                                                     | Atajo de inicio                                                        | Raccourci de début                                                         | `settings.general.shortcut.bindings.transcribe.name`              |
+| second start shortcut                              | Second Start Shortcut                                          | Zweite Starttaste                                                              | Segundo atajo de inicio                                                | Deuxième raccourci de début                                                | `….transcribe_with_post_process.name`                             |
+| cancel shortcut                                    | Cancel Shortcut                                                | Abbrechen-Tastenkürzel                                                         | Atajo de cancelar                                                      | Raccourci d'Annulation                                                     | `….cancel.name`                                                   |
+| end shortcuts (group)                              | End Shortcuts                                                  | Endtasten                                                                      | Atajos de fin                                                          | Raccourcis de fin                                                          | `settings.endKeys.title`                                          |
+| end shortcut (one)                                 | end shortcut                                                   | Endtaste                                                                       | atajo de fin                                                           | raccourci de fin                                                           | `settings.endKeys.add`                                            |
+| add an end shortcut                                | Add End Shortcut                                               | Endtaste hinzufügen                                                            | Añadir atajo de fin                                                    | Ajouter un raccourci de fin                                                | `settings.endKeys.add`                                            |
+| an end shortcut's name                             | Name                                                           | Name                                                                           | Nombre                                                                 | Nom                                                                        | `settings.endKeys.name`                                           |
+| Append                                             | Append                                                         | Anhängen                                                                       | Añadir al final                                                        | Ajouter à la fin                                                           | `settings.endKeys.append`                                         |
+| no key press                                       | No key press                                                   | Keine Taste                                                                    | Ninguna tecla                                                          | Aucune touche                                                              | `settings.advanced.appendText.keyNone`                            |
+| Post-process (checkbox)                            | Post-process                                                   | Nachbearbeiten                                                                 | Posprocesar                                                            | Post-traiter                                                               | `settings.endKeys.postProcess`                                    |
+| Send Context                                       | Send Context                                                   | Kontext senden                                                                 | Enviar contexto                                                        | Envoyer le contexte                                                        | `settings.endKeys.sendContext`                                    |
+| When Held                                          | When Held                                                      | Beim Halten                                                                    | Al mantener pulsado                                                    | Lorsqu'il est maintenu                                                     | `settings.endKeys.holdEnds.title`                                 |
+| Shortcut Behavior                                  | Shortcut Behavior                                              | Verhalten der Tastenkombination                                                | Comportamiento del atajo                                               | Comportement du raccourci                                                  | `settings.general.shortcutActivation.title`                       |
+| … its options                                      | Auto / Hold / Toggle                                           | Automatisch / Halten / Umschalten                                              | Automático / Mantener / Alternar                                       | Auto / Maintenir / Basculer                                                | `….shortcutActivation.options.*`                                  |
+| factory end names                                  | Direct · … / Post-processed · …                                | Direkt · … / Nachbearbeitet · …                                                | Directo · … / Posprocesado · …                                         | Direct · … / Post-traité · …                                               | `settings.endKeys.factoryNames.*`                                 |
+| … their effects                                    | Space, No space, Paragraph, Line, Send Enter, Send Shift+Enter | Leerzeichen, ohne Leerzeichen, Absatz, Zeile, Enter senden, Shift-Enter senden | Espacio, Sin espacio, Párrafo, Línea, Enviar Enter, Enviar Mayús+Enter | Espace, Sans espace, Paragraphe, Ligne, Envoyer Entrée, Envoyer Maj+Entrée | `settings.endKeys.factoryNames.*`                                 |
+| Paste Last Transcript                              | Paste Last Transcript                                          | Letzte Transkription einfügen                                                  | Pegar la última transcripción                                          | Coller la dernière transcription                                           | `….bindings.paste_last_transcript.name`                           |
+| Copy Last Transcript                               | Copy Last Transcript                                           | Letzte Transkription kopieren                                                  | Copiar la última transcripción                                         | Copier la dernière transcription                                           | `….bindings.copy_last_transcript.name`                            |
+| Defaults (area)                                    | Defaults                                                       | Grundeinstellungen                                                             | Configuración básica                                                   | Paramètres de base                                                         | `sidebar.areas.defaults`                                          |
+| Profile Settings (area)                            | Profile Settings                                               | Profileinstellungen                                                            | Configuración de perfiles                                              | Paramètres des profils                                                     | `sidebar.areas.profiles`                                          |
+| Application Settings (area)                        | Application Settings                                           | Applikationseinstellungen                                                      | Configuración de la aplicación                                         | Paramètres de l'application                                                | `sidebar.areas.application`                                       |
+| profile                                            | Profile                                                        | Profil                                                                         | Perfil                                                                 | Profil                                                                     | `sidebar.profile`                                                 |
+| In Use (sidebar box)                               | In Use                                                         | In Verwendung                                                                  | En uso                                                                 | En cours d'utilisation                                                     | `sidebar.inUse`                                                   |
+| Choose Profile by Application                      | Choose Profile by Application                                  | Profil nach Anwendung wählen                                                   | Elegir perfil según la aplicación                                      | Choisir le profil selon l'application                                      | `settings.profiles.autoByApp.label`                               |
+| … short, in the In Use box                         | By application                                                 | Nach Anwendung                                                                 | Según la aplicación                                                    | Selon l'application                                                        | `settings.profiles.autoByApp.short`                               |
+| a value that follows the default                   | Default                                                        | Grundwert                                                                      | Valor básico                                                           | Valeur de base                                                             | `settings.profileView.state.coupled`                              |
+| own value                                          | Own value                                                      | eigener Wert                                                                   | Valor propio                                                           | Valeur propre                                                              | `settings.profileView.state.own`                                  |
+| reset to the default                               | Reset                                                          | Zurücksetzen                                                                   | Restablecer                                                            | Réinitialiser                                                              | `settings.profileView.reset`                                      |
+| the defaults in the In Use list and the tray       | Defaults                                                       | Grundeinstellungen                                                             | Ajustes básicos                                                        | Réglages de base                                                           | `tray.defaultSettings`                                            |
+| state line: the value of the defaults              | Default: …                                                     | Grundwert: …                                                                   | Valor básico: …                                                        | Valeur de base : …                                                         | `settings.profileView.state.defaultIs`                            |
+| state line: own, but equal                         | same as the default                                            | gleich wie Grundwert                                                           | igual que el valor básico                                              | identique à la valeur de base                                              | `settings.profileView.state.sameAsDefault`                        |
+| a list entry of a profile                          | own / off                                                      | eigen / aus                                                                    | propio / desactivado                                                   | propre / désactivée                                                        | `settings.profileView.state.entryOwn`, `….entryOff`               |
+| bar after changing a value in a profile            | “…” now applies only to “…”.                                   | „…“ gilt jetzt nur für „…“.                                                    | «…» ahora solo se aplica a «…».                                        | « … » ne s'applique plus qu'à « … ».                                       | `settings.profileView.bar.onlyFor`                                |
+| … its buttons                                      | Change the Default Instead / Undo                              | Stattdessen Grundwert ändern / Rückgängig                                      | Cambiar el valor básico en su lugar / Deshacer                         | Modifier plutôt la valeur de base / Annuler                                | `settings.profileView.bar.*`                                      |
+| reset a page of a profile                          | Page to Defaults                                               | Seite auf Grundeinstellungen                                                   | Página a ajustes básicos                                               | Page aux réglages de base                                                  | `settings.profileView.page.reset`                                 |
+| a profile's own values (group on Profile)          | Own Values                                                     | Eigene Werte                                                                   | Valores propios                                                        | Valeurs propres                                                            | `settings.profileView.overview.ownValues`                         |
+| reset a whole profile                              | Whole Profile to Defaults                                      | Ganzes Profil auf Grundeinstellungen                                           | Todo el perfil a ajustes básicos                                       | Tout le profil aux réglages de base                                        | `settings.profileView.overview.resetWhole`                        |
+| under a default: nobody deviates                   | All profiles follow                                            | Alle Profile folgen                                                            | Todos los perfiles siguen                                              | Tous les profils suivent                                                   | `settings.profileView.deviations.allFollow`                       |
+| under a default: give a profile its own value      | + Profile                                                      | + Profil                                                                       | + Perfil                                                               | + Profil                                                                   | `settings.profileView.deviations.add`                             |
+| under a default: jump into a profile               | Open in …                                                      | In … öffnen                                                                    | Abrir en …                                                             | Ouvrir dans …                                                              | `settings.profileView.deviations.openIn`                          |
+| a profile's named word lists                       | Additional Lists                                               | Zusätzliche Listen                                                             | Listas adicionales                                                     | Listes supplémentaires                                                     | `settings.profileView.fields.wordLists`                           |
+| profile overview: buttons                          | New Profile, Use, Duplicate, Rename, Delete                    | Neues Profil, Verwenden, Duplizieren, Umbenennen, Löschen                      | Perfil nuevo, Usar, Duplicar, Renombrar, Eliminar                      | Nouveau profil, Utiliser, Dupliquer, Renommer, Supprimer                   | `settings.profileView.overview.newProfile`, `settings.profiles.*` |
+| a profile's apps                                   | Used automatically in:                                         | Automatisch verwenden in:                                                      | Se usa automáticamente en:                                             | Utilisé automatiquement dans :                                             | `settings.profiles.apps.label`                                    |
+| … adding one                                       | Add application… / Add                                         | Anwendung hinzufügen… / Hinzufügen                                             | Añadir aplicación… / Añadir                                            | Ajouter une application… / Ajouter                                         | `settings.profiles.apps.add`, `….addTyped`                        |
+| export and import                                  | Export / Import Profile                                        | Exportieren / Profil importieren                                               | Exportar / Importar perfil                                             | Exporter / Importer un profil                                              | `settings.profileTransfer.export`, `….importButton`               |
+| … the API key                                      | Password / Import Without Key                                  | Passwort / Ohne Schlüssel importieren                                          | Contraseña / Importar sin la clave                                     | Mot de passe / Importer sans la clé                                        | `settings.profileTransfer.password`, `….withoutKey`               |
+| pages                                              | General, Models, Post Process, Advanced                        | Allgemein, Modelle, Nachbearbeitung, Erweitert                                 | General, Modelos, Post proceso, Avanzado                               | Général, Modèles, Post-traitement, Avancé                                  | `sidebar.*`                                                       |
+| Post Processing (switch, Advanced › Transcription) | Post Processing                                                | Nachbearbeitung                                                                | Post procesamiento                                                     | Post-traitement                                                            | `settings.debug.postProcessingToggle.label`                       |
+| Transcription (group on Advanced)                  | Transcription                                                  | Transkription                                                                  | Transcripción                                                          | Transcription                                                              | `settings.advanced.groups.transcription`                          |
+| Prompts                                            | Prompts                                                        | Prompts                                                                        | Prompts                                                                | Prompts                                                                    | `settings.postProcessing.prompts.library.title`                   |
+| a prompt's checkbox                                | Active                                                         | Aktiv                                                                          | Activo                                                                 | Actif                                                                      | `settings.postProcessing.prompts.library.active`                  |
+| Context from Earlier Dictations                    | Context from Earlier Dictations                                | Kontext aus früheren Diktaten                                                  | Contexto de dictados anteriores                                        | Contexte des dictées précédentes                                           | `settings.postProcessing.context.title`                           |
+| word list (of the defaults)                        | Word List                                                      | Wortliste                                                                      | Lista de palabras                                                      | Liste de mots                                                              | `settings.profileView.fields.customWords`                         |
+| a profile's own words                              | Additional Words                                               | Zusätzliche Wörter                                                             | Palabras adicionales                                                   | Mots supplémentaires                                                       | `settings.profileView.fields.profileWords`                        |
+| word lists (group)                                 | Word Lists                                                     | Wortlisten                                                                     | Listas de palabras                                                     | Listes de mots                                                             | `settings.advanced.wordLists.groupTitle`                          |
+| History                                            | History                                                        | Verlauf                                                                        | Historial                                                              | Historique                                                                 | `sidebar.history`                                                 |
+| a version of a History entry                       | version                                                        | Fassung                                                                        | versión                                                                | version                                                                    | `settings.history.versions.*`                                     |
+| Sound (group)                                      | Sound                                                          | Ton                                                                            | Sonido                                                                 | Son                                                                        | `settings.sound.title`                                            |
+| Audio Feedback                                     | Audio Feedback                                                 | Audio-Feedback                                                                 | Retroalimentación de audio                                             | Signal sonore                                                              | `settings.sound.audioFeedback.label`                              |
+| Sound When Done                                    | Sound When Done                                                | Ton, wenn alles fertig ist                                                     | Sonido al terminar                                                     | Son à la fin                                                               | `settings.sound.doneSound.label`                                  |
+| Paste Method                                       | Paste Method                                                   | Einfügemethode                                                                 | Método de pegado                                                       | Méthode de collage                                                         | `settings.advanced.pasteMethod.title`                             |
+| Clipboard Handling                                 | Clipboard Handling                                             | Zwischenablage-Verhalten                                                       | Manejo del portapapeles                                                | Gestion du presse-papiers                                                  | `settings.advanced.clipboardHandling.title`                       |
+| Accessibility (macOS permission)                   | Accessibility                                                  | Bedienungshilfen                                                               | Accesibilidad                                                          | Accessibilité                                                              | `onboarding.permissions.accessibility.name`                       |
+| Continue without Accessibility                     | Continue without Accessibility                                 | Ohne Bedienungshilfen fortfahren                                               | Continuar sin accesibilidad                                            | Continuer sans l'accessibilité                                             | `onboarding.permissions.accessibility.skip`                       |
+| overlay while transcribing                         | Transcribing...                                                | Transkribiere...                                                               | Transcribiendo...                                                      | Transcription...                                                           | `overlay.transcribing`                                            |
+| overlay while post-processing                      | Processing...                                                  | Verarbeite...                                                                  | Procesando...                                                          | Traitement...                                                              | `overlay.processing`                                              |
+| notice after failed post-processing                | Pasted Without Post-Processing                                 | Ohne Nachbearbeitung eingefügt                                                 | Pegado sin post proceso                                                | Collé sans post-traitement                                                 | `errors.postProcessFailedTitle`                                   |
+| app version                                        | Version                                                        | Version                                                                        | Versión                                                                | Version                                                                    | `settings.about.version.title`                                    |
+
+Notes on the locale files (to be fixed there, not worked around here):
+
+- **Spanish and French name the defaults in two ways.** The sidebar says "Configuración básica" / "Paramètres de base"; the tray, the list in the box **In Use**, the chain's tooltips, the description on the profile overview and the buttons **Página a ajustes básicos** / **Page aux réglages de base** and **Todo el perfil a ajustes básicos** / **Tout le profil aux réglages de base** say "Ajustes básicos" / "Réglages de base". The manual uses the sidebar's words, since paths lead through the sidebar, quotes the buttons as they are, and says once where the list in **In Use** shows the other word.
+- **German says "Apps" once:** the reset question of a whole profile says "Name und Apps des Profils bleiben.", while every other label says "Anwendung". The manual says "App" in running text anyway, as for every language.
+- **Spanish writes post-processing in three ways:** "Post proceso" (page), "Post procesamiento" (switch, notice) and "posprocesar"/"posprocesamiento" (end shortcuts). The manual quotes each label as it is and uses "posprocesamiento" in running text.
+- **Spanish and French name Shift+Insert untranslated** in the paste method ("Portapapeles (Shift+Insert)", "Presse-papiers (Shift+Insert)"), while the key names say "Mayús" and "Maj". The manual writes the key as the paste method shows it.
+
+### Words in running text
+
+Not interface labels, but use them consistently:
+
+| English                                | German                        | Spanish                        | French                        |
+| -------------------------------------- | ----------------------------- | ------------------------------ | ----------------------------- |
+| dictation                              | Diktat                        | dictado                        | dictée                        |
+| recording                              | Aufnahme                      | grabación                      | enregistrement                |
+| transcript, transcription              | Transkription, Transkript     | transcripción                  | transcription                 |
+| post-processing                        | Nachbearbeitung               | posprocesamiento               | post-traitement               |
+| speech model                           | Sprachmodell                  | modelo de voz                  | modèle vocal                  |
+| language model                         | Sprachmodell (KI)             | modelo de lenguaje             | modèle de langage             |
+| key combination                        | Tastenkombination             | combinación de teclas          | combinaison de touches        |
+| key press                              | Tastendruck                   | pulsación de tecla             | touche (envoyée)              |
+| clipboard                              | Zwischenablage                | portapapeles                   | presse-papiers                |
+| overlay                                | Overlay                       | overlay                        | overlay                       |
+| tray                                   | Tray                          | bandeja                        | barre système                 |
+| profile                                | Profil                        | perfil                         | profil                        |
+| the defaults                           | die Grundeinstellungen        | la configuración básica        | les paramètres de base        |
+| a default (one value)                  | Grundwert                     | valor básico                   | valeur de base                |
+| own value                              | eigener Wert                  | valor propio                   | valeur propre                 |
+| follow the defaults                    | den Grundeinstellungen folgen | seguir la configuración básica | suivre les paramètres de base |
+| the chain (whole, broken)              | die Kette (ganze, gebrochene) | la cadena (entera, rota)       | la chaîne (entière, brisée)   |
+| state line                             | Zustandszeile                 | línea de estado                | ligne d'état                  |
+| entry by entry                         | Eintrag für Eintrag           | entrada por entrada            | entrée par entrée             |
+| app (the interface says "application") | App                           | app                            | app                           |
+| the app in front                       | die App, die vorn ist         | la app en primer plano         | l'app au premier plan         |
+| petrol (the accent colour)             | Petrol                        | azul petróleo                  | bleu pétrole                  |
+| factory setting                        | Werkseinstellung              | configuración de fábrica       | réglage d'usine               |
+| context                                | Kontext                       | contexto                       | contexte                      |
+
+In German, "Sprachmodell" is ambiguous; say "das Sprachmodell" only for speech recognition and "ein KI-Modell" or "ein Sprachmodell der Nachbearbeitung" for post-processing where it could be mistaken.

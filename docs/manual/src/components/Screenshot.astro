@@ -1,0 +1,16 @@
+---
+// <Screenshot name="end-shortcuts" alt="…" caption="…" />
+// Shows public/screenshots/<lang>/<name>.light.svg or .dark.svg to match the
+// theme, in the page's language or else in English.
+import Figure from "./Figure.astro";
+
+interface Props {
+  name: string;
+  alt: string;
+  caption?: string;
+}
+
+const { name, alt, caption } = Astro.props;
+---
+
+<Figure kind="screenshots" name={name} alt={alt} caption={caption} />

@@ -23,6 +23,7 @@
     "advanced": "Avancé",
     "postProcessing": "Post-traitement",
     "history": "Historique",
+    "manual": "Manuel",
     "debug": "Débogage",
     "about": "À propos",
     "areas": {
@@ -34,6 +35,14 @@
     "updates": "Mises à jour",
     "storage": "Stockage",
     "profile": "Profil"
+  },
+  "manual": {
+    "openChapter": "Ouvrir le manuel : {{chapter}}",
+    "chapters": {
+      "startAndEndShortcuts": "Raccourcis de début et de fin",
+      "defaultsAndProfiles": "Paramètres de base et profils"
+    },
+    "unavailable": "Cette version de DanyWhere ne contient pas le manuel."
   },
   "onboarding": {
     "customModelDescription": "Non officiellement pris en charge",
@@ -389,6 +398,8 @@
     },
     "general": {
       "title": "Général",
+      "startShortcuts": "Raccourcis de début",
+      "otherShortcuts": "Autres raccourcis",
       "shortcut": {
         "title": "Raccourcis Handy",
         "description": "Configurer les raccourcis clavier pour déclencher l'enregistrement de la reconnaissance vocale",
@@ -399,7 +410,7 @@
         "bindings": {
           "transcribe": {
             "name": "Raccourci de début",
-            "description": "Démarre un enregistrement. Sa fin dépend des raccourcis de fin et, s'il est maintenu, de « Comportement du raccourci »."
+            "description": "Démarre un enregistrement. Sa fin dépend des raccourcis de fin, y compris lorsqu'il est maintenu."
           },
           "cancel": {
             "name": "Raccourci d'Annulation",
@@ -407,7 +418,8 @@
           },
           "transcribe_with_post_process": {
             "name": "Deuxième raccourci de début",
-            "description": "Facultatif : une deuxième combinaison qui démarre un enregistrement. Dans le réglage d'usine, un raccourci de fin avec la même combinaison post-traite le texte. Pris uniquement tant que le post-traitement est activé."
+            "description": "Facultatif : une deuxième combinaison qui démarre un enregistrement. Dans le réglage d'usine, un raccourci de fin avec la même combinaison post-traite le texte. Pris uniquement tant que le post-traitement est activé.",
+            "descriptionMacos": "Facultatif : une deuxième combinaison qui démarre un enregistrement. Dans le réglage d'usine, le relâcher après l'avoir maintenu post-traite le texte ; appuyer à nouveau dessus termine sans post-traitement, comme tout raccourci de fin sans ⌥. Pris uniquement tant que le post-traitement est activé."
           },
           "paste_last_transcript": {
             "name": "Coller la dernière transcription",
@@ -503,6 +515,17 @@
       "holdEnds": {
         "title": "Lorsqu'il est maintenu",
         "description": "Comment le relâchement d'un raccourci de début maintenu termine l'enregistrement."
+      },
+      "factoryNames": {
+        "pattern": "{{mode}} · {{effect}}",
+        "direct": "Direct",
+        "postProcessed": "Post-traité",
+        "space": "Espace",
+        "noSpace": "Sans espace",
+        "paragraph": "Paragraphe",
+        "line": "Ligne",
+        "enter": "Envoyer Entrée",
+        "shiftEnter": "Envoyer Maj+Entrée"
       },
       "linuxNoShortcuts": "Sous Linux, les combinaisons des raccourcis de fin ne sont pas prises pendant l'enregistrement. Un enregistrement s'y termine quand on relâche un raccourci de début maintenu, ou quand on appuie à nouveau sur un raccourci de début dont un raccourci de fin a la combinaison.",
       "errors": {
@@ -1316,8 +1339,8 @@
         "button": "Voir sur GitHub"
       },
       "basedOn": {
-        "title": "Basé sur Handy",
-        "description": "DanyWhere repose sur Handy, de CJ Pais et ses contributeurs",
+        "title": "Issu de Handy",
+        "description": "DanyWhere est issu de Handy, de CJ Pais et ses contributeurs. Merci à eux pour les fondations sur lesquelles il repose encore.",
         "button": "Visiter Handy"
       },
       "supportDevelopment": {

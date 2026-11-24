@@ -23,6 +23,7 @@
     "advanced": "Avanzado",
     "postProcessing": "Post proceso",
     "history": "Historial",
+    "manual": "Manual",
     "debug": "Depuración",
     "about": "Acerca de",
     "areas": {
@@ -34,6 +35,14 @@
     "updates": "Actualizaciones",
     "storage": "Almacenamiento",
     "profile": "Perfil"
+  },
+  "manual": {
+    "openChapter": "Abrir el manual: {{chapter}}",
+    "chapters": {
+      "startAndEndShortcuts": "Atajos de inicio y de fin",
+      "defaultsAndProfiles": "Configuración básica y perfiles"
+    },
+    "unavailable": "Esta compilación de DanyWhere no incluye el manual."
   },
   "onboarding": {
     "customModelDescription": "Sin soporte oficial",
@@ -389,6 +398,8 @@
     },
     "general": {
       "title": "General",
+      "startShortcuts": "Atajos de inicio",
+      "otherShortcuts": "Otros atajos",
       "shortcut": {
         "title": "Atajos de Handy",
         "description": "Configura atajos de teclado para activar la grabación de voz a texto",
@@ -399,7 +410,7 @@
         "bindings": {
           "transcribe": {
             "name": "Atajo de inicio",
-            "description": "Inicia una grabación. Cómo termina lo deciden los atajos de fin y, al mantenerlo pulsado, «Comportamiento del atajo»."
+            "description": "Inicia una grabación. Cómo termina lo deciden los atajos de fin, también al mantenerlo pulsado."
           },
           "cancel": {
             "name": "Atajo de cancelar",
@@ -407,7 +418,8 @@
           },
           "transcribe_with_post_process": {
             "name": "Segundo atajo de inicio",
-            "description": "Opcional: una segunda combinación que inicia una grabación. De fábrica, un atajo de fin con la misma combinación posprocesa el texto. Solo se ocupa mientras el posprocesamiento está activado."
+            "description": "Opcional: una segunda combinación que inicia una grabación. De fábrica, un atajo de fin con la misma combinación posprocesa el texto. Solo se ocupa mientras el posprocesamiento está activado.",
+            "descriptionMacos": "Opcional: una segunda combinación que inicia una grabación. De fábrica, soltarla tras mantenerla pulsada posprocesa el texto; volver a pulsarla termina sin posprocesamiento, como todo atajo de fin sin ⌥. Solo se ocupa mientras el posprocesamiento está activado."
           },
           "paste_last_transcript": {
             "name": "Pegar la última transcripción",
@@ -503,6 +515,17 @@
       "holdEnds": {
         "title": "Al mantener pulsado",
         "description": "Cómo termina la grabación al soltar un atajo de inicio mantenido."
+      },
+      "factoryNames": {
+        "pattern": "{{mode}} · {{effect}}",
+        "direct": "Directo",
+        "postProcessed": "Posprocesado",
+        "space": "Espacio",
+        "noSpace": "Sin espacio",
+        "paragraph": "Párrafo",
+        "line": "Línea",
+        "enter": "Enviar Enter",
+        "shiftEnter": "Enviar Mayús+Enter"
       },
       "linuxNoShortcuts": "En Linux, las combinaciones de los atajos de fin no se ocupan mientras se graba. Allí una grabación termina al soltar un atajo de inicio mantenido, o al volver a pulsar un atajo de inicio cuya combinación tiene un atajo de fin.",
       "errors": {
@@ -1316,8 +1339,8 @@
         "button": "Ver en GitHub"
       },
       "basedOn": {
-        "title": "Basado en Handy",
-        "description": "DanyWhere se basa en Handy, de CJ Pais y colaboradores",
+        "title": "Nacido de Handy",
+        "description": "DanyWhere nació de Handy, de CJ Pais y colaboradores. Gracias a ellos por las bases sobre las que todavía se apoya.",
         "button": "Visitar Handy"
       },
       "supportDevelopment": {

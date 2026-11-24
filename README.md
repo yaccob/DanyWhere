@@ -1,17 +1,16 @@
 # DanyWhere
 
-**Dictate anywhere.** DanyWhere is a personal distribution of [Handy](https://github.com/cjpais/Handy), the free, open-source, offline speech-to-text app by CJ Pais and contributors.
+**Dictate anywhere.** DanyWhere turns what you say into text, right where your cursor is, in whatever app you're working in. It is free, open-source software for macOS, Windows and Linux.
 
-The hard problems — local speech recognition, voice activity detection, global shortcuts and pasting into any app on three platforms — are solved in Handy. DanyWhere admires that work and builds on it with additions its author needs in daily use, for example running on managed Macs where the Accessibility permission is blocked. Anything here that is useful to Handy is happily offered upstream.
+Speech recognition runs offline, on your own computer, with a model you choose. What sets DanyWhere apart is how much of each dictation you can shape: end it with the shortcut that does what you need, from a plain space or a new paragraph to post-processing by a language model or Enter to send a message; give each app a profile of its own; and find every dictation again in a History that keeps each version. It also works on managed Macs where the Accessibility permission is blocked.
 
-- **Not affiliated with or endorsed by Handy or CJ Pais.** The Handy name, logo and icon belong to the Handy project; DanyWhere uses its own branding.
-- **Report DanyWhere problems in this repository**, not in Handy's issue tracker.
-- **Support the original:** if you find this useful, consider supporting Handy via [handy.computer](https://handy.computer).
+- **Report DanyWhere problems in this repository's [issues](https://github.com/yaccob/DanyWhere/issues).**
 - What is planned: [ROADMAP.md](ROADMAP.md).
+- Where DanyWhere comes from: [Origin and thanks](#origin-and-thanks).
 
 > Status: early. Releases are for macOS (Apple silicon and Intel), Windows and Linux (each x64 and ARM64). The Windows and Linux builds are new since 0.1.2 and have hardly been tried yet; reports are welcome.
 
-## What DanyWhere adds to Handy
+## What DanyWhere does
 
 ### Defaults and profiles
 
@@ -25,7 +24,7 @@ The hard problems — local speech recognition, voice activity detection, global
 - **Your word lists as known terms.** Post-processing gets the word lists in effect, so it can write a misheard name as listed and tell it from a word that fits the sentence, with every speech model.
 - **Earlier dictations as context.** An end shortcut can send your earlier dictations from the same window along with its post-processing, so the model knows what the conversation is about.
 - **Post-processing on this computer, and you see where it runs.** Next to the provider, the settings say whether post-processing stays on this computer or goes to the cloud. With a model served on this computer, such as Ollama or LM Studio through the Custom provider, DanyWhere has it loaded as soon as you start speaking, so its cold start doesn't add to the wait.
-- **Decide at the end how a dictation ends.** A recording starts with a start shortcut and ends with an end shortcut of your choice, each with a key combination of its own: whether the text is post-processed (while post-processing is switched on), whether earlier dictations go along as context, and what is appended. Out of the box the combinations of the two start shortcuts are ends too, the first without and the second with post-processing, whichever started the recording; releasing a held start shortcut ends as set under **When Held**.
+- **Decide at the end how a dictation ends.** A recording starts with a start shortcut and ends with an end shortcut of your choice, each with a key combination of its own: whether the text is post-processed (while post-processing is switched on), whether earlier dictations go along as context, and what is appended. On macOS twelve end shortcuts come out of the box (eight without Accessibility, since DanyWhere can't press keys without it), following one rule: Option post-processes, Shift picks the smaller variant, and Control with Return presses a key. So Control+Space ends with a space, Return with a new paragraph and Control+Return with a press of Enter, to send a message; Option+Control+Space, Option+Return and Option+Control+Return do the same with post-processing. Pressing a start shortcut again is one of these ends, so it ends without post-processing. On Windows and Linux the combinations of the two start shortcuts are the ends, the first without and the second with post-processing, whichever started the recording. Releasing a held start shortcut ends as set under **When Held**; out of the box the second one post-processes.
 
 ### History
 
@@ -48,15 +47,15 @@ The hard problems — local speech recognition, voice activity detection, global
 - **A small model selection for laptops.** Six models that are fast enough for dictation on a MacBook: Parakeet Ultra (25 European languages), Whisper large-v3-turbo (100 languages), Canary 1B v2 (translates to English), Parakeet unified EN 0.6B (English with live preview), Whisper small and Canary 180M flash. Setup recommends one for the languages you speak and starts downloading it while you grant permissions. Models and the language detector some of them use download from DanyWhere's own mirror, [yaccob/DanyWhere-models](https://github.com/yaccob/DanyWhere-models), with Hugging Face as a fallback, and every file is checked against its SHA-256 hash.
 - **Word lists per topic.** The word list of the defaults always applies, each profile can add words of its own, and named additional lists, for example one per project, can be switched on one at a time in the settings, from the tray or with Control+Shift+L (Alt+Shift+L on Windows and Linux). Speech models that take a vocabulary, the Whisper models, use them while they recognize speech; with every model, post-processing gets them as known terms. The settings and the model list say which models use them.
 
-### Also new
+### More
 
 - **A sound when everything is done,** post-processing included, so you know when to look back.
 - **The overlay on the screen you work on**, the one with the window in front, with or without Accessibility (macOS and Windows).
 - **Your own colours** in a `theme.css` next to the settings, applied without a restart (Debug → Open Theme File).
-- **Key combinations as the system writes them** (⌃⌥D on macOS, Ctrl+Shift+V elsewhere), and in a combination with a main key the left and the right modifier keys count alike.
+- **Key combinations as the system writes them** (⌥⌃D on macOS, Ctrl+Shift+V elsewhere), and in a combination with a main key the left and the right modifier keys count alike.
 - **What's new after an update,** in English or German.
 
-Everything else works as in Handy.
+Underneath all this are the basics of dictation: global shortcuts that you hold or tap, voice activity detection, a choice of microphone, and pasting into any app on all three platforms.
 
 ## Install
 
@@ -74,7 +73,7 @@ You need a Mac with macOS 11 (Big Sur) or later, with Apple silicon or an Intel 
    Or install it with [Homebrew](https://brew.sh) instead of steps 1 and 2: `brew install --cask yaccob/tap/danywhere`
 
 3. Start DanyWhere and follow the setup: allow microphone access, then grant Accessibility, or choose "Continue without Accessibility" if your organization blocks it.
-4. Press Control+Space and speak. Hold the shortcut to record and release it to stop, or tap it to start and tap again to stop. Once post-processing is switched on (Settings → Advanced → Transcription) and set up, Control+Shift+Space does the same and post-processes the transcript.
+4. Press Control+Space and speak. Hold the shortcut to record and release it to stop, or tap it to start and tap again to stop; either way a space follows the text. Once post-processing is switched on (Settings → Advanced → Transcription) and set up, the transcript is post-processed when you hold Control+Shift+Space instead and release it, or when you end a recording with Option+Control+Space instead of Control+Space.
 
 ### Windows
 
@@ -163,8 +162,15 @@ Handy is open-source software, but the Handy name, logo, icon and brand assets a
 
 ## Acknowledgments
 
-- **[Handy](https://github.com/cjpais/Handy)** by CJ Pais and contributors — the app DanyWhere is built on
+Besides Handy (see [Origin and thanks](#origin-and-thanks)), DanyWhere relies on:
+
 - **Whisper** by OpenAI, **Parakeet** and **Canary** by NVIDIA for the speech recognition models
 - **ggml** for an amazing cross-platform tensor library
 - **Silero** for great lightweight VAD
 - **Tauri** team for the excellent Rust-based app framework
+
+## Origin and thanks
+
+DanyWhere began as a fork of [Handy](https://github.com/cjpais/Handy), CJ Pais's open-source speech-to-text app, and has since gone its own way, with profiles, end shortcuts, post-processing and a History that keeps every version. Handy's groundwork still carries it (local speech recognition, voice detection, global shortcuts, inserting text on three platforms), and we are grateful for it; DanyWhere is an independent project, and Handy's makers are neither involved in it nor responsible for it.
+
+If DanyWhere is useful to you, please support Handy too, at [handy.computer](https://handy.computer).

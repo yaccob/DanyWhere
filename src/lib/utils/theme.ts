@@ -18,12 +18,29 @@ import { commands, type Theme } from "@/bindings";
 
 export const THEME_STORAGE_KEY = "handy.theme";
 
+/**
+ * DanyWhere: where the user manual (Astro Starlight, in a frame on its page
+ * of the settings window, `ManualPage`) reads its theme on every page it
+ * loads: "light", "dark", or empty for the system's appearance. The manual
+ * is served from the app's own origin, so it shares this window's
+ * localStorage; writing it here, at start and on every change, makes the
+ * manual follow Application Theme. The page on screen read it before, so a
+ * change reaches it through `applyManualTheme`.
+ */
+export const MANUAL_THEME_STORAGE_KEY = "starlight-theme";
+
+/** Starlight's stored theme for `theme`: "light", "dark", or empty for the
+ * system's appearance. */
+const manualThemeValue = (theme: Theme): string =>
+  theme === "system" ? "" : theme;
+
 export const THEME_OPTIONS: Theme[] = ["system", "light", "dark"];
 
 const isTheme = (value: unknown): value is Theme =>
   value === "system" || value === "light" || value === "dark";
 
-/** Apply a theme to the document root and remember it for the next launch. */
+/** Apply a theme to the document root and remember it for the next launch
+ * and for the manual. */
 export const applyTheme = (theme: Theme): void => {
   const root = document.documentElement;
   if (theme === "system") {
@@ -33,10 +50,29 @@ export const applyTheme = (theme: Theme): void => {
   }
   try {
     localStorage.setItem(THEME_STORAGE_KEY, theme);
+    localStorage.setItem(MANUAL_THEME_STORAGE_KEY, manualThemeValue(theme));
   } catch {
     // localStorage may be unavailable (e.g. private mode); the setting still
     // persists in AppSettings, so this only costs a one-frame flash on boot.
   }
+};
+
+/**
+ * DanyWhere: brings the manual's page `doc` on screen into `theme` at once,
+ * as Starlight's own theme menu does: the `data-theme` its styles follow
+ * (for System the appearance the page's window has) and the menu's choice.
+ */
+export const applyManualTheme = (doc: Document, theme: Theme): void => {
+  const stored = manualThemeValue(theme);
+  const light =
+    doc.defaultView?.matchMedia?.("(prefers-color-scheme: light)").matches ===
+    true;
+  doc.documentElement.dataset.theme = stored || (light ? "light" : "dark");
+  doc
+    .querySelectorAll<HTMLSelectElement>("starlight-theme-select select")
+    .forEach((select) => {
+      select.value = stored || "auto";
+    });
 };
 
 /** Read the last-applied theme for synchronous boot-time application. */

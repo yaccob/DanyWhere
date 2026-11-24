@@ -159,6 +159,18 @@ pub fn builtin(append_text: &str, send_context: bool) -> Vec<EndKey> {
     )
 }
 
+/// Test fixtures elsewhere: `settings` with the two built-in ends and hold
+/// ends without text or context, the factory ones before 2026-11-24 and
+/// still on Windows and Linux. The dictation tests are written against
+/// them (an end `plain` without and `post_process` with post-processing),
+/// whatever this system's factory ends are.
+#[cfg(test)]
+pub fn with_builtin_ends(mut settings: AppSettings) -> AppSettings {
+    settings.end_keys = builtin_for(&settings.bindings, "", false);
+    settings.hold_ends = builtin_holds("", false);
+    settings
+}
+
 /// The hold ends every layer starts with: without and with post-processing,
 /// with `append_text` and `send_context`.
 pub fn builtin_holds(append_text: &str, send_context: bool) -> HashMap<String, HoldEnd> {
@@ -175,14 +187,254 @@ pub fn builtin_holds(append_text: &str, send_context: bool) -> HashMap<String, H
         .collect()
 }
 
-/// A new installation's end shortcuts (serde default of the settings).
+/// A new installation's end shortcuts on this system.
 pub fn default_end_keys() -> Vec<EndKey> {
     settings::get_default_settings().end_keys
 }
 
-/// A new installation's hold ends (serde default of the settings).
+/// A new installation's hold ends on this system.
 pub fn default_hold_ends() -> HashMap<String, HoldEnd> {
+    factory_hold_ends_on(KeyPlatform::current())
+}
+
+/// What a store without end shortcuts (0.2.5 and before) reads as, the serde
+/// default of the settings and of a stored profile: the two built-in ends
+/// with a new installation's start shortcuts, without text or context, as
+/// before the factory ends of 2026-11-24. [`migrate`] then carries the
+/// store's own values over; kept apart from the factory ends so that a store
+/// with nothing to carry over still needs no write.
+pub fn stored_before_end_keys() -> Vec<EndKey> {
+    builtin_for(&settings::get_default_settings().bindings, "", false)
+}
+
+/// The hold ends a store without them reads as; see
+/// [`stored_before_end_keys`].
+pub fn stored_before_hold_ends() -> HashMap<String, HoldEnd> {
     builtin_holds("", false)
+}
+
+/// The words the names of macOS's factory ends are made of, in one
+/// language: "{mode} · {effect}", e.g. "Nachbearbeitet · Absatz". The
+/// source is `settings.endKeys.factoryNames` of the locale files, which
+/// build.rs carries into the tray's strings (`factory_end_name_*`).
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct FactoryEndNames {
+    /// With `{{mode}}` and `{{effect}}`.
+    pub pattern: String,
+    /// The mode without post-processing.
+    pub direct: String,
+    /// The mode with post-processing.
+    pub post_processed: String,
+    pub space: String,
+    pub no_space: String,
+    pub paragraph: String,
+    pub line: String,
+    pub enter: String,
+    pub shift_enter: String,
+}
+
+impl FactoryEndNames {
+    /// The words in the language of `locale` (e.g. the system's `de-AT`),
+    /// found as the tray finds its strings: the locale, its language, else
+    /// English.
+    pub fn for_locale(locale: &str) -> Self {
+        let strings = crate::tray_i18n::get_tray_translations(Some(locale.to_string()));
+        Self {
+            pattern: strings.factory_end_name_pattern,
+            direct: strings.factory_end_name_direct,
+            post_processed: strings.factory_end_name_post_processed,
+            space: strings.factory_end_name_space,
+            no_space: strings.factory_end_name_no_space,
+            paragraph: strings.factory_end_name_paragraph,
+            line: strings.factory_end_name_line,
+            enter: strings.factory_end_name_enter,
+            shift_enter: strings.factory_end_name_shift_enter,
+        }
+    }
+
+    /// The name of a factory end that does `effect`, with post-processing
+    /// or without.
+    fn name(&self, post_process: bool, effect: &str) -> String {
+        let mode = if post_process {
+            &self.post_processed
+        } else {
+            &self.direct
+        };
+        self.pattern
+            .replace("{{mode}}", mode)
+            .replace("{{effect}}", effect)
+    }
+}
+
+/// One factory end: named by what it does, and "Send Context" exactly
+/// where it post-processes, as the context goes nowhere else.
+fn factory_end(
+    id: &str,
+    shortcut: &str,
+    append_text: &str,
+    post_process: bool,
+    name: String,
+) -> EndKey {
+    EndKey {
+        id: id.to_string(),
+        name,
+        shortcut: shortcut.to_string(),
+        append_text: append_text.to_string(),
+        post_process,
+        send_context: post_process,
+    }
+}
+
+/// A new installation's end shortcuts on `platform`, with its start
+/// shortcuts `bindings`.
+///
+/// macOS (user, 2026-11-24, the ends of their release, qa note
+/// `2026-11-23_2135_endetasten-grundeinstellungen`): one rule for all
+/// twelve: ⌥ post-processes, ⇧ picks the smaller variant, ⌃ on Enter
+/// presses a key instead of appending text; first the six without
+/// post-processing, then the same six with it. ⌃Space and ⌃⇧Space are the
+/// factory start shortcuts, so their second press ends without
+/// post-processing.
+///
+/// Windows and Linux keep the two ends with the start shortcuts'
+/// combinations: Linux takes no end's own combination
+/// (`shortcut::profile_sync`), and on Windows Ctrl+Alt is AltGr.
+///
+/// The macOS ends get names from `names` (user, 2026-11-24, "Variante 2"):
+/// written once, in the language of a new installation, and from then on
+/// names like typed ones, which follow neither a change of language nor a
+/// changed end. Windows' and Linux' two ends stay unnamed.
+pub fn factory_end_keys_on(
+    bindings: &HashMap<String, ShortcutBinding>,
+    platform: KeyPlatform,
+    names: &FactoryEndNames,
+) -> Vec<EndKey> {
+    if platform != KeyPlatform::Macos {
+        return builtin_for(bindings, "", false);
+    }
+    // (id, combination, Append, post-processing, what it does)
+    let ends = [
+        ("direct_space", "ctrl+space", " ", false, &names.space),
+        (
+            "direct_no_space",
+            "ctrl+shift+space",
+            "",
+            false,
+            &names.no_space,
+        ),
+        (
+            "direct_paragraph",
+            "return",
+            r"\n\n",
+            false,
+            &names.paragraph,
+        ),
+        ("direct_line", "shift+return", r"\n", false, &names.line),
+        (
+            "direct_enter",
+            "ctrl+return",
+            "{Enter}",
+            false,
+            &names.enter,
+        ),
+        (
+            "direct_shift_enter",
+            "ctrl+shift+return",
+            "{Shift+Enter}",
+            false,
+            &names.shift_enter,
+        ),
+        ("post_space", "ctrl+option+space", " ", true, &names.space),
+        (
+            "post_no_space",
+            "ctrl+option+shift+space",
+            "",
+            true,
+            &names.no_space,
+        ),
+        (
+            "post_paragraph",
+            "option+return",
+            r"\n\n",
+            true,
+            &names.paragraph,
+        ),
+        ("post_line", "option+shift+return", r"\n", true, &names.line),
+        (
+            "post_enter",
+            "ctrl+option+return",
+            "{Enter}",
+            true,
+            &names.enter,
+        ),
+        (
+            "post_shift_enter",
+            "ctrl+option+shift+return",
+            "{Shift+Enter}",
+            true,
+            &names.shift_enter,
+        ),
+    ];
+    ends.into_iter()
+        .map(|(id, shortcut, append_text, post_process, effect)| {
+            factory_end(
+                id,
+                shortcut,
+                append_text,
+                post_process,
+                names.name(post_process, effect),
+            )
+        })
+        .collect()
+}
+
+/// A new installation's hold ends on `platform`. On macOS both append a
+/// space, as the ends of ⌃Space do, and the second start shortcut's
+/// post-processes with context; elsewhere the hold ends of
+/// [`builtin_holds`] without text or context.
+pub fn factory_hold_ends_on(platform: KeyPlatform) -> HashMap<String, HoldEnd> {
+    if platform != KeyPlatform::Macos {
+        return builtin_holds("", false);
+    }
+    START_BINDINGS
+        .into_iter()
+        .map(|binding| {
+            let post_process = HoldEnd::factory(binding).post_process;
+            let hold = HoldEnd {
+                append_text: " ".to_string(),
+                post_process,
+                send_context: post_process,
+            };
+            (binding.to_string(), hold)
+        })
+        .collect()
+}
+
+/// Without Accessibility DanyWhere can't press keys, not even with its
+/// input method, so the factory ends whose "Append" presses one go; the
+/// others stay in their order. A list that isn't this system's factory list
+/// is the user's and stays as it is; the names don't count, as they are
+/// written in the language of the first start and a name changes nothing an
+/// end does. Returns whether any went.
+pub fn drop_factory_key_presses(end_keys: &mut Vec<EndKey>) -> bool {
+    let unnamed = |ends: &[EndKey]| -> Vec<EndKey> {
+        ends.iter()
+            .map(|end| EndKey {
+                name: String::new(),
+                ..end.clone()
+            })
+            .collect()
+    };
+    if unnamed(end_keys) != unnamed(&default_end_keys()) {
+        return false;
+    }
+    let before = end_keys.len();
+    end_keys.retain(|end| {
+        crate::append_text::for_value(&end.append_text)
+            .keys
+            .is_empty()
+    });
+    end_keys.len() != before
 }
 
 /// How a recording ends.
@@ -855,25 +1107,299 @@ mod tests {
 
     // ---- Out of the box --------------------------------------------------
 
+    /// The names a list of ends carries, in its order.
+    fn names_of(ends: &[EndKey]) -> Vec<&str> {
+        ends.iter().map(|end| end.name.as_str()).collect()
+    }
+
+    /// The macOS factory ends named in `locale`.
+    fn macos_ends_in(locale: &str) -> Vec<EndKey> {
+        factory_end_keys_on(
+            &get_default_settings().bindings,
+            KeyPlatform::Macos,
+            &FactoryEndNames::for_locale(locale),
+        )
+    }
+
     #[test]
-    fn a_new_installation_ends_with_the_start_shortcuts_combinations() {
+    fn a_new_installation_gets_this_systems_factory_ends() {
         let settings = get_default_settings();
-        let (plain_keys, post_keys) = start_keys();
         assert_eq!(
             settings.end_keys,
+            factory_end_keys_on(
+                &settings.bindings,
+                KeyPlatform::current(),
+                &FactoryEndNames::for_locale(&settings.app_language)
+            )
+        );
+        assert_eq!(
+            settings.hold_ends,
+            factory_hold_ends_on(KeyPlatform::current())
+        );
+    }
+
+    /// Variante 2 (user, 2026-11-24): a new installation writes the names
+    /// once, in its language (the system's, as `app_language` starts).
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn on_macos_a_new_installation_names_its_ends_in_its_language() {
+        let settings = get_default_settings();
+        assert_eq!(
+            names_of(&settings.end_keys),
+            names_of(&macos_ends_in(&settings.app_language))
+        );
+        assert!(
+            settings.end_keys.iter().all(|end| !end.name.is_empty()),
+            "{:?}",
+            names_of(&settings.end_keys)
+        );
+    }
+
+    /// The user's end shortcuts of 2026-11-23 (qa note
+    /// `2026-11-23_2135_endetasten-grundeinstellungen`), by their rule: ⌥
+    /// post-processes, ⇧ picks the smaller variant, ⌃ on Enter presses a
+    /// key instead of appending text. First the six without post-processing,
+    /// then the same six with it; "Send Context" only where post-processing
+    /// is on, as the context goes nowhere else. In German with exactly the
+    /// user's names.
+    #[test]
+    fn on_macos_a_new_installation_ends_by_the_users_scheme() {
+        assert_eq!(
+            macos_ends_in("de"),
             vec![
-                end(PLAIN_ID, "", &plain_keys, "", false, false),
-                end(POST_PROCESS_ID, "", &post_keys, "", true, false),
+                end(
+                    "direct_space",
+                    "Direkt · Leerzeichen",
+                    "ctrl+space",
+                    " ",
+                    false,
+                    false
+                ),
+                end(
+                    "direct_no_space",
+                    "Direkt · ohne Leerzeichen",
+                    "ctrl+shift+space",
+                    "",
+                    false,
+                    false
+                ),
+                end(
+                    "direct_paragraph",
+                    "Direkt · Absatz",
+                    "return",
+                    r"\n\n",
+                    false,
+                    false
+                ),
+                end(
+                    "direct_line",
+                    "Direkt · Zeile",
+                    "shift+return",
+                    r"\n",
+                    false,
+                    false
+                ),
+                end(
+                    "direct_enter",
+                    "Direkt · Enter senden",
+                    "ctrl+return",
+                    "{Enter}",
+                    false,
+                    false
+                ),
+                end(
+                    "direct_shift_enter",
+                    "Direkt · Shift-Enter senden",
+                    "ctrl+shift+return",
+                    "{Shift+Enter}",
+                    false,
+                    false
+                ),
+                end(
+                    "post_space",
+                    "Nachbearbeitet · Leerzeichen",
+                    "ctrl+option+space",
+                    " ",
+                    true,
+                    true
+                ),
+                end(
+                    "post_no_space",
+                    "Nachbearbeitet · ohne Leerzeichen",
+                    "ctrl+option+shift+space",
+                    "",
+                    true,
+                    true
+                ),
+                end(
+                    "post_paragraph",
+                    "Nachbearbeitet · Absatz",
+                    "option+return",
+                    r"\n\n",
+                    true,
+                    true
+                ),
+                end(
+                    "post_line",
+                    "Nachbearbeitet · Zeile",
+                    "option+shift+return",
+                    r"\n",
+                    true,
+                    true
+                ),
+                end(
+                    "post_enter",
+                    "Nachbearbeitet · Enter senden",
+                    "ctrl+option+return",
+                    "{Enter}",
+                    true,
+                    true
+                ),
+                end(
+                    "post_shift_enter",
+                    "Nachbearbeitet · Shift-Enter senden",
+                    "ctrl+option+shift+return",
+                    "{Shift+Enter}",
+                    true,
+                    true
+                ),
             ]
         );
+    }
+
+    #[test]
+    fn in_english_the_factory_ends_are_named_alike() {
         assert_eq!(
-            settings.hold_ends.get(START_BINDINGS[0]),
-            Some(&hold("", false, false))
+            names_of(&macos_ends_in("en")),
+            [
+                "Direct · Space",
+                "Direct · No space",
+                "Direct · Paragraph",
+                "Direct · Line",
+                "Direct · Send Enter",
+                "Direct · Send Shift+Enter",
+                "Post-processed · Space",
+                "Post-processed · No space",
+                "Post-processed · Paragraph",
+                "Post-processed · Line",
+                "Post-processed · Send Enter",
+                "Post-processed · Send Shift+Enter",
+            ]
+        );
+    }
+
+    /// A regional locale (the system's, e.g. `de-AT`) takes its language's
+    /// names, as the tray does.
+    #[test]
+    fn a_regional_locale_takes_its_languages_names() {
+        let german = FactoryEndNames::for_locale("de");
+        assert_eq!(german.direct, "Direkt");
+        assert_eq!(FactoryEndNames::for_locale("de-AT"), german);
+        assert_eq!(FactoryEndNames::for_locale("de_CH"), german);
+    }
+
+    #[test]
+    fn an_unsupported_locale_takes_the_english_names() {
+        let english = FactoryEndNames::for_locale("en");
+        assert_eq!(english.post_processed, "Post-processed");
+        assert_eq!(FactoryEndNames::for_locale("xx-YY"), english);
+    }
+
+    /// Every language of the interface names all twelve, each apart from
+    /// the others and with nothing left unfilled.
+    #[test]
+    fn every_language_names_every_factory_end_apart() {
+        for locale in crate::tray_i18n::TRANSLATIONS.keys() {
+            let ends = macos_ends_in(locale);
+            let names = names_of(&ends);
+            assert!(
+                names
+                    .iter()
+                    .all(|name| !name.trim().is_empty() && !name.contains("{{")),
+                "{locale}: {names:?}"
+            );
+            let apart: std::collections::HashSet<_> = names.iter().collect();
+            assert_eq!(apart.len(), ends.len(), "{locale}: {names:?}");
+            assert_eq!(validate(&ends), Ok(()), "{locale}");
+        }
+    }
+
+    #[test]
+    fn on_macos_holding_appends_a_space_and_only_the_second_post_processes() {
+        let holds = factory_hold_ends_on(KeyPlatform::Macos);
+        assert_eq!(holds.len(), 2);
+        assert_eq!(holds[START_BINDINGS[0]], hold(" ", false, false));
+        assert_eq!(holds[START_BINDINGS[1]], hold(" ", true, true));
+    }
+
+    /// Windows and Linux keep the two ends with the start shortcuts'
+    /// combinations, unnamed in every language: Linux takes no end's own
+    /// combination, and on Windows Ctrl+Alt is AltGr.
+    #[test]
+    fn on_windows_and_linux_a_new_installation_ends_with_the_start_shortcuts_combinations() {
+        let bindings = get_default_settings().bindings;
+        let (plain_keys, post_keys) = start_keys();
+        let german = FactoryEndNames::for_locale("de");
+        for platform in [KeyPlatform::Windows, KeyPlatform::Linux] {
+            assert_eq!(
+                factory_end_keys_on(&bindings, platform, &german),
+                vec![
+                    end(PLAIN_ID, "", &plain_keys, "", false, false),
+                    end(POST_PROCESS_ID, "", &post_keys, "", true, false),
+                ],
+                "{platform:?}"
+            );
+            let holds = factory_hold_ends_on(platform);
+            assert_eq!(holds.len(), 2);
+            assert_eq!(holds[START_BINDINGS[0]], hold("", false, false));
+            assert_eq!(holds[START_BINDINGS[1]], hold("", true, false));
+        }
+    }
+
+    /// The first two macOS ends are what a second press of the factory start
+    /// shortcuts does, so a recording started with ⌃Space ends with it.
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn on_macos_the_start_shortcuts_end_without_post_processing() {
+        let values = ProfileValues::from_settings(&get_default_settings());
+        assert_eq!(
+            end_with_keys(&values, START_BINDINGS[0]).map(|end| end.id.as_str()),
+            Some("direct_space")
         );
         assert_eq!(
-            settings.hold_ends.get(START_BINDINGS[1]),
-            Some(&hold("", true, false))
+            end_with_keys(&values, START_BINDINGS[1]).map(|end| end.id.as_str()),
+            Some("direct_no_space")
         );
+    }
+
+    #[test]
+    fn every_factory_end_is_a_valid_one() {
+        let bindings = get_default_settings().bindings;
+        let english = FactoryEndNames::for_locale("en");
+        for platform in [KeyPlatform::Macos, KeyPlatform::Windows, KeyPlatform::Linux] {
+            let ends = factory_end_keys_on(&bindings, platform, &english);
+            assert_eq!(validate(&ends), Ok(()), "{platform:?}");
+        }
+        // This system's factory ends against its factory shortcuts and the
+        // backend that takes them with Accessibility.
+        let settings = get_default_settings();
+        for end in &settings.end_keys {
+            assert_eq!(
+                check_end_against_bindings(&end.shortcut, &settings.bindings),
+                Ok(()),
+                "{}",
+                end.shortcut
+            );
+            assert_eq!(
+                crate::shortcut::validate_shortcut_for_implementation(
+                    &end.shortcut,
+                    crate::settings::KeyboardImplementation::HandyKeys,
+                ),
+                Ok(()),
+                "{}",
+                end.shortcut
+            );
+        }
     }
 
     #[test]

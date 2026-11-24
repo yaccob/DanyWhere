@@ -23,6 +23,7 @@
     "advanced": "詳細設定",
     "postProcessing": "後処理",
     "history": "履歴",
+    "manual": "マニュアル",
     "debug": "デバッグ",
     "about": "概要",
     "areas": {
@@ -34,6 +35,14 @@
     "updates": "アップデート",
     "storage": "ストレージ",
     "profile": "プロファイル"
+  },
+  "manual": {
+    "openChapter": "マニュアルを開く: {{chapter}}",
+    "chapters": {
+      "startAndEndShortcuts": "開始・終了ショートカット",
+      "defaultsAndProfiles": "基本設定とプロファイル"
+    },
+    "unavailable": "このビルドの DanyWhere にはマニュアルが含まれていません。"
   },
   "onboarding": {
     "customModelDescription": "公式サポート対象外",
@@ -389,6 +398,8 @@
     },
     "general": {
       "title": "一般",
+      "startShortcuts": "開始ショートカット",
+      "otherShortcuts": "その他のショートカット",
       "shortcut": {
         "title": "Handy ショートカット",
         "description": "音声録音を開始するキーボードショートカットを設定",
@@ -399,7 +410,7 @@
         "bindings": {
           "transcribe": {
             "name": "開始ショートカット",
-            "description": "録音を開始します。終わり方は終了ショートカットと、長押ししたときは「ショートカットの動作」で決まります。"
+            "description": "録音を開始します。終わり方は、長押ししたときも含めて終了ショートカットで決まります。"
           },
           "cancel": {
             "name": "キャンセルのショートカット",
@@ -407,7 +418,8 @@
           },
           "transcribe_with_post_process": {
             "name": "2 つ目の開始ショートカット",
-            "description": "任意：録音を開始する 2 つ目のキーの組み合わせ。工場出荷時の設定では、同じキーの組み合わせの終了ショートカットがテキストを後処理します。後処理がオンのときだけ割り当てられます。"
+            "description": "任意：録音を開始する 2 つ目のキーの組み合わせ。工場出荷時の設定では、同じキーの組み合わせの終了ショートカットがテキストを後処理します。後処理がオンのときだけ割り当てられます。",
+            "descriptionMacos": "任意：録音を開始する 2 つ目のキーの組み合わせ。工場出荷時の設定では、長押ししてから離すとテキストが後処理されます。もう一度押すと、⌥ のないすべての終了ショートカットと同じく、後処理なしで終了します。後処理がオンのときだけ割り当てられます。"
           },
           "paste_last_transcript": {
             "name": "最後の文字起こしを貼り付け",
@@ -503,6 +515,17 @@
       "holdEnds": {
         "title": "長押ししたとき",
         "description": "長押ししている開始ショートカットを離したときに、録音をどう終了するか。"
+      },
+      "factoryNames": {
+        "pattern": "{{mode}} · {{effect}}",
+        "direct": "そのまま",
+        "postProcessed": "後処理あり",
+        "space": "スペース",
+        "noSpace": "スペースなし",
+        "paragraph": "段落",
+        "line": "改行",
+        "enter": "Enter を送信",
+        "shiftEnter": "Shift+Enter を送信"
       },
       "linuxNoShortcuts": "Linux では、録音中に終了ショートカットのキーの組み合わせは割り当てられません。そこでは、長押ししている開始ショートカットを離したとき、または終了ショートカットと同じキーの組み合わせを持つ開始ショートカットをもう一度押したときに録音が終了します。",
       "errors": {
@@ -1316,8 +1339,8 @@
         "button": "GitHub で見る"
       },
       "basedOn": {
-        "title": "Handy をベースにしています",
-        "description": "DanyWhere は CJ Pais と貢献者による Handy をベースにしています",
+        "title": "Handy から生まれました",
+        "description": "DanyWhere は CJ Pais と貢献者による Handy から生まれました。今も DanyWhere を支える土台を築いてくれたことに感謝します。",
         "button": "Handy を見る"
       },
       "supportDevelopment": {

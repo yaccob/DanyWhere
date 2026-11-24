@@ -1,0 +1,103 @@
+---
+title: A dictation from start to end
+description: What happens between pressing a start shortcut and your text arriving where you want it, and where you can steer each step.
+sidebar:
+  order: 1
+---
+
+import Diagram from '@components/Diagram.astro';
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+You press a key combination, say what you want to write, and end the recording. A moment later the text is in the app you're working in: as you said it or polished by a language model, followed by a space or a new paragraph, or already sent. This chapter follows one dictation along that way. Once you know the steps, you know where to change something when the result isn't what you wanted.
+
+<Diagram
+  name="dictation-flow"
+  caption="A dictation from start to end"
+  alt="The way of a dictation. A start shortcut starts the recording. It ends when you let go of a held start shortcut, press an end shortcut, or press a start shortcut again; Esc cancels it. The speech model transcribes the recording. If the end asks for it, a language model post-processes the text with the active prompts and, with Send Context, with earlier dictations from the same window. The end's Append text follows, the text is inserted, and a key press such as Enter can follow. The dictation is saved in the History, and the done sound plays."
+/>
+
+## Start the recording
+
+Press the **Start Shortcut**: <kbd>⌃ Space</kbd> on a Mac, <kbd>Ctrl+Space</kbd> on Windows, <kbd>Ctrl+Alt+Space</kbd> on Linux. DanyWhere starts listening at once. On a Mac and on Windows, a small overlay at the bottom of the screen shows that it's recording, and if you've switched on **Audio Feedback**, a short sound tells you too.
+
+You can use the combination in two ways: hold it while you speak and let go when you're done, or tap it and talk for as long as you like. That's the factory setting **Auto** of **Shortcut Behavior**. **Hold** and **Toggle** allow only one of the two.
+
+## End it the way you want the text
+
+How you end the recording decides what happens to the text. There are three ways:
+
+- **Let go** of a held start shortcut. The recording ends as set under **When Held**.
+- **Press an end shortcut.** Each one says what comes after the text, whether a language model polishes it and whether earlier dictations go along as context. On a Mac, for example, <kbd>↩</kbd> ends the recording and starts a new paragraph after the text.
+- **Press the start shortcut again.** This ends the recording when an end shortcut has the same combination. On a Mac, <kbd>⌃ Space</kbd> again puts a space after the text, ready for the next sentence.
+
+For an app where inserting doesn't work, end with **Copy Last Transcript** instead: <kbd>⌃⇧C</kbd> on a Mac, <kbd>Alt+Shift+C</kbd> on Windows and Linux. It ends the recording like pressing the start shortcut again, but puts the text on the clipboard instead of inserting it.
+
+Changed your mind? <kbd>Esc</kbd> cancels the recording on a Mac and on Windows. Nothing is transcribed, inserted or kept.
+
+End shortcuts are the heart of DanyWhere, and [Start and end shortcuts](../start-and-end-shortcuts/) covers them all.
+
+## Which profile applies
+
+The settings that shape a dictation are chosen when the recording ends. If **Choose Profile by Application** is on and a profile lists the app in front at that moment, that profile applies. Otherwise the one chosen under **In Use** at the top of the sidebar applies: the **Defaults** or a profile. A profile follows the defaults wherever it has no **Own value**, so it only holds what should differ, such as another speech model for your terminal. Because the choice is made at the end, you can start a dictation anywhere and switch to the app the text belongs in before you end it. [Defaults and profiles](../defaults-and-profiles/) shows how profiles work.
+
+## Transcription
+
+As soon as the recording ends, the speech model turns it into text. This happens on your computer; the recording doesn't leave it. The overlay shows **Transcribing...**.
+
+Names and technical terms come out right more often when they're on a word list. Whisper models use the lists while they recognize speech, and with every model, post-processing gets them as known terms.
+
+## Post-processing
+
+If the end you chose has **Post-process** ticked, a language model works on the text before it arrives. It gets the prompts marked **Active** on the page **Post Process**, in their order. DanyWhere puts a frame around them that tells the model it has a transcript to work on, not a question to answer, and that the text keeps its language. The overlay shows **Processing...**.
+
+Post-processing only runs while the switch **Post Processing** is on, under **Defaults › Advanced** or in the profile. Whether the text goes to a provider in the cloud or to a model on your own computer depends on the provider you choose on the page **Post Process**, and the page says which.
+
+With **Send Context**, earlier dictations from the same window go along, so the model knows what you've been writing about: by default up to five from the last hour. The History marks every entry that went out this way.
+
+If post-processing fails, say because the provider can't be reached, you still get your words. DanyWhere inserts the transcript as it is, and a notice, **Pasted Without Post-Processing**, tells you why.
+
+## Append
+
+Next, the end's **Append** comes after the text: a space, a line break or any text you like, and if you want, a key press such as Enter. The text is appended however the dictation arrives. The key press only follows when DanyWhere pastes the text itself. That's how one end shortcut continues your sentence and another sends a chat message right away.
+
+## Insert
+
+Now the text goes where your cursor is.
+
+<Tabs syncKey="os">
+<TabItem label="macOS">
+
+With the **Accessibility** permission, DanyWhere puts the text on the clipboard, presses <kbd>⌘V</kbd> for you and then puts back what was on the clipboard before. The key press from **Append** follows, if there is one.
+
+</TabItem>
+<TabItem label="Windows">
+
+DanyWhere puts the text on the clipboard, presses <kbd>Ctrl+V</kbd> for you and then puts back what was on the clipboard before. The key press from **Append** follows, if there is one. **Paste Method** under **Defaults › Advanced** offers other ways, such as typing the text directly.
+
+</TabItem>
+<TabItem label="Linux">
+
+DanyWhere pastes with <kbd>Shift+Insert</kbd>, which works in terminals as well as in other apps, and then puts back what was on the clipboard before. The key press from **Append** follows, if there is one. **Paste Method** under **Defaults › Advanced** offers other ways, including a script of your own.
+
+</TabItem>
+</Tabs>
+
+:::tip[The text went nowhere?]
+If no text field had the focus, nothing is lost. Put the cursor where the text belongs and press **Paste Last Transcript**: <kbd>⌃⇧V</kbd> on a Mac, <kbd>Alt+Shift+V</kbd> on Windows and Linux.
+:::
+
+:::caution[On a Mac without Accessibility]
+Where the Accessibility permission is blocked, as on many company Macs, DanyWhere can't paste. The text waits in DanyWhere until you press **Paste Last Transcript** (<kbd>⌃⇧V</kbd>) where it belongs; **Copy Last Transcript** (<kbd>⌃⇧C</kbd>) puts it on the clipboard instead. Key presses from **Append** aren't sent. This part is changing soon: DanyWhere is getting an input method of its own that inserts the text for you.
+:::
+
+## History
+
+Every dictation lands in the **History**: the recording, the transcription and, if it was post-processed, the polished text as a second version on top. DanyWhere saves it before inserting, so nothing is lost when pasting goes wrong. You can edit an entry or post-process it again later; each change adds a new version on top and keeps the ones below.
+
+## The done sound
+
+With **Audio Feedback** on (it's off out of the box), three sounds mark the way, each higher than the one before: one when the recording starts, one when it stops, and the highest once everything is done, post-processing included. When a language model takes a few seconds and you've looked elsewhere, that last sound tells you the text is ready. You'll find **Audio Feedback** and **Sound When Done**, which turns off just the last sound, under **Defaults › General**.
+
+## Next
+
+The end of a recording decides the most. [Start and end shortcuts](../start-and-end-shortcuts/) shows the end shortcuts a new installation brings, what each one is made of, and how to set up your own.

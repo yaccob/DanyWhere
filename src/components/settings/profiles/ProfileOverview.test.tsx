@@ -2,7 +2,8 @@
 // and 2; qa 2026-11-22_2202 "die Profilseite mit ⌃⌥D gehalten"): the own
 // values by name with their values, never "{{number}}" or an internal id;
 // a row opens its page and jumps to the setting; each row and the whole
-// profile reset to the defaults.
+// profile reset to the defaults; the "?" opens the manual's chapter on the
+// defaults and profiles.
 import { describe, expect, test } from "bun:test";
 import { screen, within } from "@testing-library/react";
 import type { JumpTarget } from "@/lib/settingJump";
@@ -19,7 +20,9 @@ import {
   wordList,
 } from "@/test/fixtures";
 import { press, renderPage } from "@/test/render";
+import { switchTestLanguage } from "@/test/i18n";
 import { rawTextIn, visibleText } from "@/test/visible";
+import { OpenManualProvider } from "@/hooks/useOpenManual";
 
 const WORK = "profile_1795300000001";
 const PENDE = endKey("end_1795307930035", "ctrl+alt+l", { name: "PEnde" });
@@ -98,9 +101,9 @@ describe("the page Profile", () => {
     const text = visibleText();
     for (const expected of [
       "Post Process Active Prompts: Diktat (DE/EN)",
-      "General When Held: ⌃⌥E held: Post-process, Send Context · ⌃⇧ Space held: Post-process",
+      "General When Held: ⌥⌃E held: Post-process, Send Context · ⌃⇧ Space held: Post-process",
       "General Microphone: MacBook Pro Microphone",
-      "General Shortcuts: Start Shortcut: ⌃⌥E",
+      "General Shortcuts: Start Shortcut: ⌥⌃E",
       "General End Shortcuts: PEnde",
       "Advanced Additional Lists: PListe",
       "Advanced Additional Lists: GListe (off)",
@@ -194,5 +197,67 @@ describe("the page Profile", () => {
       screen.getByText("This profile follows the defaults in everything."),
     ).toBeTruthy();
     expect(rawTextIn()).toEqual([]);
+  });
+});
+
+// DanyWhere: the "?" next to the page's title opens the manual's chapter on
+// the defaults and profiles, on the manual's page of the settings window
+// (`OpenManualProvider`; what that page shows: ManualPage.test.tsx).
+describe("the manual's chapter from the page Profile", () => {
+  const CHAPTER = "how-it-works/defaults-and-profiles/";
+  const NAME = "Open the manual: Defaults and Profiles";
+  const chapters: (string | undefined)[] = [];
+  const renderWithManual = () => {
+    chapters.length = 0;
+    return renderPage(
+      <OpenManualProvider value={(page) => chapters.push(page)}>
+        <ProfileOverview profileId={WORK} />
+      </OpenManualProvider>,
+      { settings },
+    );
+  };
+  const helpButton = (name = NAME) => screen.getByRole("button", { name });
+
+  test("a button next to the title opens the chapter", async () => {
+    await renderWithManual();
+
+    const title = screen.getByRole("heading", { name: "Own Values (7)" });
+    expect(title.parentElement?.contains(helpButton())).toBe(true);
+
+    await press(helpButton());
+
+    expect(chapters).toEqual([CHAPTER]);
+    expect(callsOf("resetWholeProfile")).toEqual([]);
+    expect(callsOf("resetProfileValues")).toEqual([]);
+  });
+
+  test("shows a question mark icon and a tooltip", async () => {
+    await renderWithManual();
+
+    const icon = helpButton().querySelector("svg");
+    expect(icon?.getAttribute("class")).toContain(
+      "lucide-circle-question-mark",
+    );
+    expect(icon?.getAttribute("aria-hidden")).toBe("true");
+    expect(helpButton().textContent).toBe("");
+    expect(helpButton().getAttribute("title")).toBe(NAME);
+    expect(rawTextIn()).toEqual([]);
+  });
+
+  test("names the chapter in French", async () => {
+    await switchTestLanguage("fr");
+    await renderWithManual();
+
+    await press(helpButton("Ouvrir le manuel : Paramètres de base et profils"));
+
+    expect(chapters).toEqual([CHAPTER]);
+    expect(rawTextIn()).toEqual([]);
+  });
+
+  test("outside the settings window there is no button that does nothing", async () => {
+    await renderOverview();
+
+    expect(screen.getByText("Own Values (7)")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: NAME }) === null).toBe(true);
   });
 });

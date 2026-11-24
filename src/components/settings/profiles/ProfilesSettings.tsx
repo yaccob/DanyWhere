@@ -11,6 +11,9 @@ import {
 import { Button } from "../../ui/Button";
 import { Dialog } from "../../ui/Dialog";
 import { SettingsGroup } from "../../ui/SettingsGroup";
+// DanyWhere: the "?" to the manual's chapter on the defaults and profiles.
+import { ManualHelpButton } from "../../ui/ManualHelpButton";
+import { MANUAL_PAGES } from "@/lib/manual";
 import { ProfileApps } from "./ProfileApps";
 import { ProfileAutoByApp } from "./ProfileAutoByApp";
 import { ProfileNameDialog } from "./ProfileNameDialog";
@@ -76,6 +79,12 @@ export const ProfilesSettings: React.FC = () => {
       <SettingsGroup
         title={t("settings.profiles.title")}
         description={t("settings.profiles.description")}
+        titleAction={
+          <ManualHelpButton
+            page={MANUAL_PAGES.defaultsAndProfiles}
+            chapter={t("manual.chapters.defaultsAndProfiles")}
+          />
+        }
       >
         {[
           { profile: DEFAULTS_ROW, stored: null },

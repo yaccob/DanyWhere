@@ -23,6 +23,7 @@
     "advanced": "Avanzate",
     "postProcessing": "Post-Elaborazione",
     "history": "Cronologia",
+    "manual": "Manuale",
     "debug": "Debug",
     "about": "Informazioni",
     "areas": {
@@ -34,6 +35,14 @@
     "updates": "Aggiornamenti",
     "storage": "Archiviazione",
     "profile": "Profilo"
+  },
+  "manual": {
+    "openChapter": "Apri il manuale: {{chapter}}",
+    "chapters": {
+      "startAndEndShortcuts": "Scorciatoie di avvio e di fine",
+      "defaultsAndProfiles": "Impostazioni di base e profili"
+    },
+    "unavailable": "Questa build di DanyWhere non include il manuale."
   },
   "onboarding": {
     "customModelDescription": "Non ufficialmente supportato",
@@ -389,6 +398,8 @@
     },
     "general": {
       "title": "Generale",
+      "startShortcuts": "Scorciatoie di avvio",
+      "otherShortcuts": "Altre scorciatoie",
       "shortcut": {
         "title": "Scorciatoie di Handy",
         "description": "Configura le scorciatoie per attivare la trascrizione vocale",
@@ -399,7 +410,7 @@
         "bindings": {
           "transcribe": {
             "name": "Scorciatoia di avvio",
-            "description": "Avvia una registrazione. Come termina lo decidono le scorciatoie di fine e, se la tieni premuta, «Comportamento della scorciatoia»."
+            "description": "Avvia una registrazione. Come termina lo decidono le scorciatoie di fine, anche tenendo premuto."
           },
           "cancel": {
             "name": "Scorciatoia Annulla",
@@ -407,7 +418,8 @@
           },
           "transcribe_with_post_process": {
             "name": "Seconda scorciatoia di avvio",
-            "description": "Facoltativo: una seconda combinazione che avvia una registrazione. Di fabbrica, una scorciatoia di fine con la stessa combinazione post-elabora il testo. Occupata solo finché la post-elaborazione è attiva."
+            "description": "Facoltativo: una seconda combinazione che avvia una registrazione. Di fabbrica, una scorciatoia di fine con la stessa combinazione post-elabora il testo. Occupata solo finché la post-elaborazione è attiva.",
+            "descriptionMacos": "Facoltativo: una seconda combinazione che avvia una registrazione. Di fabbrica, rilasciarla dopo averla tenuta premuta post-elabora il testo; premerla di nuovo termina senza post-elaborazione, come ogni scorciatoia di fine senza ⌥. Occupata solo finché la post-elaborazione è attiva."
           },
           "paste_last_transcript": {
             "name": "Incolla l'ultima trascrizione",
@@ -503,6 +515,17 @@
       "holdEnds": {
         "title": "Tenendo premuto",
         "description": "Come il rilascio di una scorciatoia di avvio tenuta premuta termina la registrazione."
+      },
+      "factoryNames": {
+        "pattern": "{{mode}} · {{effect}}",
+        "direct": "Diretto",
+        "postProcessed": "Post-elaborato",
+        "space": "Spazio",
+        "noSpace": "Senza spazio",
+        "paragraph": "Paragrafo",
+        "line": "Riga",
+        "enter": "Invia Invio",
+        "shiftEnter": "Invia Maiusc+Invio"
       },
       "linuxNoShortcuts": "Su Linux le combinazioni delle scorciatoie di fine non vengono occupate durante la registrazione. Lì una registrazione termina quando si rilascia una scorciatoia di avvio tenuta premuta, o quando si preme di nuovo una scorciatoia di avvio la cui combinazione appartiene anche a una scorciatoia di fine.",
       "errors": {
@@ -1316,8 +1339,8 @@
         "button": "Vedi su GitHub"
       },
       "basedOn": {
-        "title": "Basato su Handy",
-        "description": "DanyWhere si basa su Handy, di CJ Pais e dei suoi collaboratori",
+        "title": "Nato da Handy",
+        "description": "DanyWhere è nato da Handy, di CJ Pais e dei suoi collaboratori. Grazie a loro per le fondamenta su cui poggia ancora oggi.",
         "button": "Visita Handy"
       },
       "supportDevelopment": {

@@ -1,6 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import {
+  BookOpen,
   History,
   Info,
   Layers,
@@ -29,6 +30,8 @@ const ICONS: Record<NavIcon, LucideIcon> = {
   profiles: Layers,
   application: MonitorCog,
   history: History,
+  // DanyWhere: the user manual's page.
+  manual: BookOpen,
   about: Info,
 };
 
@@ -44,7 +47,8 @@ interface NavRowProps {
 
 const NavRow: React.FC<NavRowProps> = ({ item, label, onClick }) => {
   const Icon = item.icon ? ICONS[item.icon] : null;
-  // The three areas head their pages; History and About are single pages.
+  // The three areas head their pages; History, Manual and About are single
+  // pages.
   const heading =
     item.icon === "defaults" ||
     item.icon === "profiles" ||
@@ -97,7 +101,8 @@ interface SidebarProps {
 
 /** DanyWhere: the sidebar. On top the profile in use ("In Use"), below it
  * the tree: Defaults, Profile settings (the overview, then each profile, the
- * chosen one open with its pages), Application settings, History, About. */
+ * chosen one open with its pages), Application settings, History, Manual,
+ * About. */
 export const Sidebar: React.FC<SidebarProps> = ({ location, onNavigate }) => {
   const { t, i18n } = useTranslation();
   const { settings } = useSettings();

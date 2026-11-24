@@ -1,0 +1,141 @@
+---
+title: "Start- und Endtasten"
+description: "Jedes Diktat gleich beginnen und erst am Ende entscheiden, was damit geschieht, vom Leerzeichen hinter dem Text bis zur überarbeiteten Nachricht, die gleich abgeschickt wird."
+sidebar:
+  order: 2
+---
+
+import Diagram from '@components/Diagram.astro';
+import Screenshot from '@components/Screenshot.astro';
+import { Tabs, TabItem, Steps } from '@astrojs/starlight/components';
+
+Mit DanyWhere musst du nicht schon vor dem Sprechen entscheiden, was mit deinen Worten geschehen soll. Du beginnst jedes Diktat gleich und wählst am Ende: Die Tasten, mit denen du aufhörst, sagen auch, ob ein Leerzeichen oder ein neuer Absatz folgt, ob ein KI-Modell den Text überarbeitet und ob eine Chatnachricht gleich abgeschickt wird. Dieses Kapitel zeigt die Endtasten einer neuen Installation, woraus jede besteht und wie du eigene einrichtest.
+
+## Starttasten starten, Endtasten beenden
+
+Eine **Starttaste** startet nur eine Aufnahme. Eine Endtaste beendet nur eine, und DanyWhere belegt ihre Tastenkombination nur, solange eine Aufnahme läuft, so wie <kbd>Esc</kbd>. Deshalb kann <kbd>↩</kbd> ein Diktat beenden, ohne dir sonst in die Quere zu kommen: Den Rest der Zeit tut die Taste, was sie immer tut.
+
+<Diagram
+  name="how-a-recording-ends"
+  caption="Wie eine Aufnahme endet"
+  alt="Die Wege, auf denen eine Aufnahme endet. Eine Endtaste beendet sie mit ihren eigenen Werten. Eine Starttaste, noch einmal gedrückt, beendet sie wie die Endtaste mit derselben Tastenkombination und tut nichts, wenn es keine solche gibt. Das Loslassen einer gehaltenen Starttaste beendet sie, wie es unter „Beim Halten“ eingestellt ist. Esc bricht sie ab. Jeder Weg entscheidet, was angehängt wird, ob der Text nachbearbeitet wird und ob frühere Diktate als Kontext mitgehen."
+/>
+
+Jeder Weg, eine Aufnahme zu beenden, entscheidet dieselben drei Dinge: was nach dem Text kommt, ob der Text nachbearbeitet wird und ob frühere Diktate als Kontext mitgehen.
+
+## Die Endtasten einer neuen Installation
+
+<Tabs syncKey="os">
+<TabItem label="macOS">
+
+Auf dem Mac folgen zwölf Endtasten einer Regel, sodass dir schon die Tasten sagen, was jede tut:
+
+- <kbd>⌥</kbd> (Option) bearbeitet den Text nach.
+- <kbd>⇧</kbd> (Shift) wählt die kleinere Variante: kein Leerzeichen statt eines Leerzeichens, eine Zeile statt eines Absatzes.
+- <kbd>⌃</kbd> (Control) zusammen mit <kbd>↩</kbd> (Return) drückt eine Taste, statt Text anzuhängen.
+
+| Tastenkombination | Name | Was nach dem Text kommt |
+|---|---|---|
+| <kbd>⌃ Leertaste</kbd> | **Direkt · Leerzeichen** | ein Leerzeichen |
+| <kbd>⌃⇧ Leertaste</kbd> | **Direkt · ohne Leerzeichen** | nichts |
+| <kbd>↩</kbd> | **Direkt · Absatz** | zwei Zeilenumbrüche |
+| <kbd>⇧↩</kbd> | **Direkt · Zeile** | ein Zeilenumbruch |
+| <kbd>⌃↩</kbd> | **Direkt · Enter senden** | ein Druck auf Enter |
+| <kbd>⌃⇧↩</kbd> | **Direkt · Shift-Enter senden** | ein Druck auf Shift+Enter |
+
+Dieselben sechs mit <kbd>⌥</kbd> davor, von <kbd>⌥⌃ Leertaste</kbd> bis <kbd>⌥⌃⇧↩</kbd>, heißen **Nachbearbeitet · Leerzeichen** und so weiter. Sie bearbeiten den Text nach und schicken frühere Diktate aus demselben Fenster als Kontext mit.
+
+Im Alltag: Für einen längeren Text tippst du <kbd>⌃ Leertaste</kbd> zum Starten an und noch einmal zum Beenden; jedes Stück bekommt sein Leerzeichen und ist bereit für das nächste. In einer E-Mail beendest du mit <kbd>↩</kbd>, und der nächste Absatz steht bereit. Im Chat schickt <kbd>⌃↩</kbd> die Nachricht ab, und <kbd>⌥⌃↩</kbd> überarbeitet sie vorher.
+
+Lässt du eine gehaltene Starttaste los, wird ein Leerzeichen angehängt. Ist es die **Zweite Starttaste**, wird der Text außerdem nachbearbeitet.
+
+</TabItem>
+<TabItem label="Windows">
+
+Windows beginnt mit zwei Endtasten, die die Tastenkombinationen der beiden Starttasten haben: <kbd>Strg+Leertaste</kbd> beendet ohne Nachbearbeitung, <kbd>Strg+Umschalt+Leertaste</kbd> mit. Keine von beiden hängt etwas an. Du drückst also zum Beenden die Starttaste noch einmal und nimmst die zweite, wenn der Text überarbeitet werden soll.
+
+Lässt du eine gehaltene Starttaste los, gilt dasselbe: Die **Starttaste** beendet ohne Nachbearbeitung, die **Zweite Starttaste** mit.
+
+Für alles andere legst du eigene Endtasten an, wie weiter unten beschrieben.
+
+</TabItem>
+<TabItem label="Linux">
+
+Linux beginnt wie Windows mit zwei Endtasten, die die Tastenkombinationen der beiden Starttasten haben: <kbd>Strg+Alt+Leertaste</kbd> beendet ohne Nachbearbeitung, <kbd>Strg+Alt+Umschalt+Leertaste</kbd> mit. Keine von beiden hängt etwas an.
+
+Lässt du eine gehaltene Starttaste los, gilt dasselbe: Die **Starttaste** beendet ohne Nachbearbeitung, die **Zweite Starttaste** mit.
+
+Unter Linux endet eine Aufnahme nur über eine Starttaste. Mehr dazu unter „Grenzen“ am Ende dieses Kapitels.
+
+</TabItem>
+</Tabs>
+
+:::note
+Das sind die Werkseinstellungen einer neuen Installation. Hast du DanyWhere schon vorher benutzt, lässt ein Update deine Endtasten, wie sie sind. Die Namen werden einmal geschrieben, in der Sprache deines Systems beim ersten Start, und du kannst sie umbenennen, wie du magst.
+:::
+
+## Woraus eine Endtaste besteht
+
+Jeder Eintrag unter **Endtasten** hat diese Teile:
+
+- **Name:** So zeigt die Liste den Eintrag an. Solange du keinen Namen eintippst, steht dort die Tastenkombination.
+- **Die Tastenkombination,** die die Aufnahme auf diese Weise beendet. Jede Endtaste braucht eine, und keine zwei dürfen dieselbe haben.
+- **Anhängen:** was nach dem Text kommt. Im Textfeld ist `\s` ein Leerzeichen, `\n` ein Zeilenumbruch und `\t` ein Tabulator; alles andere wird angehängt, wie es dasteht. Daneben kannst du einen Tastendruck wählen, etwa Enter, der gesendet wird, nachdem der Text eingefügt ist. Eine Zeile darunter sagt in Worten, was angehängt wird.
+- **Nachbearbeiten:** Ein KI-Modell überarbeitet den Text, bevor er ankommt, mit den Prompts, die im Profil aktiv sind. Das geht nur, solange **Nachbearbeitung** unter **Grundeinstellungen › Erweitert** eingeschaltet ist; sonst weist der Eintrag darauf hin.
+- **Kontext senden:** nur mit Nachbearbeitung. Frühere Diktate aus demselben Fenster gehen mit, damit das Modell weiß, worum es gerade geht.
+
+## Die Starttasten und wie sie beenden
+
+**Drückst du eine Starttaste während einer Aufnahme noch einmal,** beendet sie die Aufnahme nur über eine Endtaste mit genau ihrer Tastenkombination. Die Liste weist mit einer Zeile unter einem solchen Eintrag darauf hin. Hat keine Endtaste diese Tastenkombination, tut die Starttaste während einer Aufnahme nichts.
+
+**Beim Halten**, ganz oben bei den **Endtasten**, legt fest, wie das Loslassen einer gehaltenen Starttaste die Aufnahme beendet. Jede Starttaste hat dort ihre eigene Einstellung mit **Anhängen**, **Nachbearbeiten** und **Kontext senden**, aber ohne Namen und ohne Tastenkombination. Steht **Verhalten der Tastenkombination** auf **Umschalten**, wird nichts gehalten, und **Beim Halten** ist ausgeblendet.
+
+Die **Zweite Starttaste** ist optional: eine zweite Tastenkombination, die eine Aufnahme startet, auf dem Mac <kbd>⌃⇧ Leertaste</kbd>. DanyWhere belegt sie nur, solange die Nachbearbeitung eingeschaltet ist. Sie ist fürs Halten gedacht: Halte <kbd>⌃ Leertaste</kbd> für den Text, wie du ihn gesagt hast, und <kbd>⌃⇧ Leertaste</kbd> für den überarbeiteten.
+
+## Eine Endtaste hinzufügen oder ändern
+
+Die Endtasten findest du unter **Grundeinstellungen › Allgemein › Endtasten**.
+
+<Screenshot
+  name="end-shortcuts"
+  alt="Die Gruppe Endtasten unter Grundeinstellungen › Allgemein. Ganz oben steht Beim Halten mit einem Block je Starttaste: dem Feld Anhängen, einer Auswahl für den Tastendruck und den Kästchen Nachbearbeiten und Kontext senden. Darunter ist jede Endtaste eine Zeile mit ihrem Namen, ihrer Tastenkombination und denselben Feldern, zuerst die beiden mit den Tastenkombinationen der Starttasten."
+  caption="Die Endtasten unter Grundeinstellungen › Allgemein."
+/>
+
+Um eine hinzuzufügen, klick auf **Endtaste hinzufügen** und drück die gewünschte Tastenkombination; dann stellst du ein, was sie tut. Um eine Tastenkombination zu ändern, klick darauf und drück die neue. Das Papierkorb-Symbol daneben löscht einen Eintrag. Eine Endtaste bleibt immer, damit sich eine Aufnahme immer beenden lässt.
+
+Ein Profil kann von den Grundeinstellungen abweichen. Ändere auf der Seite **Allgemein** des Profils eine Endtaste, füge eine hinzu oder lösche eine, und nur dieser Eintrag gehört dann dem Profil allein. Alle anderen folgen weiter den Grundeinstellungen, auch deinen späteren Änderungen dort. Wie das bei jeder Einstellung funktioniert, zeigt [Grundeinstellungen und Profile](../defaults-and-profiles/).
+
+## Rezept: eine Chatnachricht gleich abschicken
+
+Im Chat willst du meist deine Nachricht sagen und sie abgeschickt haben, ohne zur Maus zu greifen. Eine Endtaste, die nach dem Text Enter drückt, macht genau das.
+
+<Steps>
+
+1. Öffne **Grundeinstellungen › Allgemein** und scroll zu **Endtasten**.
+
+2. Klick auf **Endtaste hinzufügen** und drück die Tastenkombination, mit der du abschicken willst, zum Beispiel <kbd>Strg+Eingabe</kbd> unter Windows oder <kbd>⌘↩</kbd> auf dem Mac.
+
+3. Lass unter **Anhängen** das Textfeld leer und wähl als Tastendruck **Eingabe** (<kbd>↩</kbd> auf dem Mac).
+
+4. Soll das Modell die Nachricht vorher überarbeiten, hak **Nachbearbeiten** an, und **Kontext senden**, wenn es sehen soll, was vorher gesagt wurde.
+
+5. Gib ihr einen Namen, den du wiedererkennst, etwa `Senden`.
+
+6. Probier es aus: Beginne in einem Chat ein Diktat, sprich deine Nachricht und beende mit der neuen Tastenkombination. Der Text erscheint und wird abgeschickt.
+
+</Steps>
+
+:::tip
+Auf dem Mac bringt eine neue Installation das schon mit: <kbd>⌃↩</kbd> schickt die Nachricht ab, <kbd>⌥⌃↩</kbd> überarbeitet sie vorher.
+:::
+
+## Grenzen
+
+:::caution[Linux]
+Unter Linux kann DanyWhere die eigene Tastenkombination einer Endtaste während einer Aufnahme nicht belegen. Eine Aufnahme endet dort, wenn du eine gehaltene Starttaste loslässt oder eine Starttaste erneut drückst, deren Tastenkombination eine Endtaste hat. Für das Rezept oben gibst du den Druck auf Enter deshalb einer Endtaste, die die Tastenkombination einer Starttaste hat, oder trägst ihn unter **Beim Halten** ein. Den letzten Weg zum Beenden lassen die Einstellungen nicht entfernen: Behalte eine Endtaste mit der Tastenkombination einer Starttaste oder wähl **Halten**.
+:::
+
+**Auf einem Mac ohne Bedienungshilfen** kann DanyWhere keine Tasten drücken. Fährst du ohne die Berechtigung fort, lässt eine neue Installation die vier Endtasten weg, die Enter oder Shift-Enter senden, und ein unter **Anhängen** gewählter Tastendruck wird nicht gesendet.
+
+**macOS selbst nutzt <kbd>⌃ Leertaste</kbd> und <kbd>⌥⌃ Leertaste</kbd>**, um zwischen Eingabequellen zu wechseln. Wechselst du so dein Tastaturlayout, schalte diese Kurzbefehle in den Systemeinstellungen unter Tastatur › Tastaturkurzbefehle › Eingabequellen aus, oder gib DanyWhere andere Tastenkombinationen.

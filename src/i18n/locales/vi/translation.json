@@ -23,6 +23,7 @@
     "advanced": "Nâng cao",
     "postProcessing": "Xử lý sau",
     "history": "Lịch sử",
+    "manual": "Hướng dẫn sử dụng",
     "debug": "Gỡ lỗi",
     "about": "Giới thiệu",
     "areas": {
@@ -34,6 +35,14 @@
     "updates": "Cập nhật",
     "storage": "Lưu trữ",
     "profile": "Hồ sơ"
+  },
+  "manual": {
+    "openChapter": "Mở hướng dẫn sử dụng: {{chapter}}",
+    "chapters": {
+      "startAndEndShortcuts": "Phím tắt bắt đầu và kết thúc",
+      "defaultsAndProfiles": "Cài đặt cơ bản và hồ sơ"
+    },
+    "unavailable": "Bản dựng DanyWhere này không có hướng dẫn sử dụng."
   },
   "onboarding": {
     "customModelDescription": "Không được hỗ trợ chính thức",
@@ -389,6 +398,8 @@
     },
     "general": {
       "title": "Chung",
+      "startShortcuts": "Phím tắt bắt đầu",
+      "otherShortcuts": "Phím tắt khác",
       "shortcut": {
         "title": "Phím tắt Handy",
         "description": "Cấu hình phím tắt để kích hoạt ghi âm chuyển đổi giọng nói thành văn bản",
@@ -399,7 +410,7 @@
         "bindings": {
           "transcribe": {
             "name": "Phím tắt bắt đầu",
-            "description": "Bắt đầu ghi âm. Cách kết thúc do các phím tắt kết thúc quyết định và, khi giữ, do “Hành vi phím tắt”."
+            "description": "Bắt đầu ghi âm. Cách kết thúc do các phím tắt kết thúc quyết định, kể cả khi giữ."
           },
           "cancel": {
             "name": "Phím tắt hủy",
@@ -407,7 +418,8 @@
           },
           "transcribe_with_post_process": {
             "name": "Phím tắt bắt đầu thứ hai",
-            "description": "Tùy chọn: tổ hợp phím thứ hai để bắt đầu ghi âm. Theo cài đặt gốc, phím tắt kết thúc có cùng tổ hợp phím sẽ xử lý hậu kỳ văn bản. Chỉ được chiếm khi xử lý hậu kỳ đang bật."
+            "description": "Tùy chọn: tổ hợp phím thứ hai để bắt đầu ghi âm. Theo cài đặt gốc, phím tắt kết thúc có cùng tổ hợp phím sẽ xử lý hậu kỳ văn bản. Chỉ được chiếm khi xử lý hậu kỳ đang bật.",
+            "descriptionMacos": "Tùy chọn: tổ hợp phím thứ hai để bắt đầu ghi âm. Theo cài đặt gốc, giữ rồi thả tổ hợp này sẽ xử lý hậu kỳ văn bản; nhấn lại sẽ kết thúc mà không xử lý hậu kỳ, như mọi phím tắt kết thúc không có ⌥. Chỉ được chiếm khi xử lý hậu kỳ đang bật."
           },
           "paste_last_transcript": {
             "name": "Dán bản chép gần nhất",
@@ -503,6 +515,17 @@
       "holdEnds": {
         "title": "Khi giữ",
         "description": "Cách việc thả một phím tắt bắt đầu đang giữ kết thúc bản ghi."
+      },
+      "factoryNames": {
+        "pattern": "{{mode}} · {{effect}}",
+        "direct": "Trực tiếp",
+        "postProcessed": "Xử lý hậu kỳ",
+        "space": "Dấu cách",
+        "noSpace": "Không dấu cách",
+        "paragraph": "Đoạn",
+        "line": "Dòng",
+        "enter": "Gửi Enter",
+        "shiftEnter": "Gửi Shift+Enter"
       },
       "linuxNoShortcuts": "Trên Linux, tổ hợp phím của các phím tắt kết thúc không được chiếm trong khi ghi. Ở đó bản ghi kết thúc khi thả một phím tắt bắt đầu đang giữ, hoặc khi nhấn lại một phím tắt bắt đầu có cùng tổ hợp phím với một phím tắt kết thúc.",
       "errors": {
@@ -1316,8 +1339,8 @@
         "button": "Xem trên GitHub"
       },
       "basedOn": {
-        "title": "Dựa trên Handy",
-        "description": "DanyWhere được xây dựng dựa trên Handy của CJ Pais và các cộng tác viên",
+        "title": "Phát triển từ Handy",
+        "description": "DanyWhere phát triển từ Handy của CJ Pais và các cộng tác viên. Cảm ơn họ vì nền móng mà DanyWhere vẫn đang dựa vào.",
         "button": "Truy cập Handy"
       },
       "supportDevelopment": {

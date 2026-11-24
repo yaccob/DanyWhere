@@ -1,0 +1,103 @@
+---
+title: "Une dictée du début à la fin"
+description: "Ce qui se passe entre l'appui sur un raccourci de début et l'arrivée de votre texte au bon endroit, et où vous pouvez orienter chaque étape."
+sidebar:
+  order: 1
+---
+
+import Diagram from '@components/Diagram.astro';
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+Vous appuyez sur une combinaison de touches, vous dites ce que vous voulez écrire, puis vous terminez l'enregistrement. Un instant plus tard, le texte se trouve dans l'app où vous travaillez : tel que vous l'avez dit ou peaufiné par un modèle de langage, suivi d'une espace ou d'un nouveau paragraphe, ou déjà envoyé. Ce chapitre accompagne une dictée sur ce chemin. Quand vous connaissez les étapes, vous savez où intervenir si le résultat n'est pas celui que vous attendiez.
+
+<Diagram
+  name="dictation-flow"
+  caption="Une dictée du début à la fin"
+  alt="Le chemin d'une dictée. Un raccourci de début démarre l'enregistrement. Il se termine quand vous relâchez un raccourci de début maintenu, appuyez sur un raccourci de fin ou appuyez à nouveau sur un raccourci de début ; Esc l'annule. Le modèle vocal transcrit l'enregistrement. Si la fin le demande, un modèle de langage post-traite le texte avec les prompts actifs et, avec « Envoyer le contexte », avec des dictées précédentes de la même fenêtre. Vient ensuite le texte réglé sous « Ajouter à la fin », le texte est inséré, et une touche comme Entrée peut suivre. La dictée est enregistrée dans l'historique, et le son de fin retentit."
+/>
+
+## Démarrer l'enregistrement
+
+Appuyez sur le **Raccourci de début** : <kbd>⌃ Espace</kbd> sur un Mac, <kbd>Ctrl+Espace</kbd> sous Windows, <kbd>Ctrl+Alt+Espace</kbd> sous Linux. DanyWhere commence à écouter aussitôt. Sur Mac et sous Windows, un petit overlay en bas de l'écran indique qu'il enregistre et, si vous avez activé le **Signal sonore**, un bref son vous le dit aussi.
+
+Vous pouvez utiliser la combinaison de deux façons : maintenez-la pendant que vous parlez et relâchez-la quand vous avez fini, ou appuyez brièvement et parlez aussi longtemps que vous voulez. C'est le réglage d'usine **Auto** de **Comportement du raccourci** ; **Maintenir** et **Basculer** ne permettent que l'une des deux.
+
+## Terminer selon ce que vous voulez du texte
+
+La façon dont vous terminez l'enregistrement décide de ce qui arrive au texte. Il y en a trois :
+
+- **Relâchez** un raccourci de début maintenu. L'enregistrement se termine comme réglé sous **Lorsqu'il est maintenu**.
+- **Appuyez sur un raccourci de fin.** Chacun indique ce qui suit le texte, si un modèle de langage le peaufine et si les dictées précédentes sont envoyées comme contexte. Sur un Mac, par exemple, <kbd>↩</kbd> termine l'enregistrement et commence un nouveau paragraphe après le texte.
+- **Appuyez à nouveau sur le raccourci de début.** Cela termine l'enregistrement si un raccourci de fin a la même combinaison. Sur un Mac, un nouvel appui sur <kbd>⌃ Espace</kbd> place une espace après le texte, prête pour la phrase suivante.
+
+Pour une app où l'insertion ne fonctionne pas, terminez plutôt avec **Copier la dernière transcription** : <kbd>⌃⇧C</kbd> sur un Mac, <kbd>Alt+Maj+C</kbd> sous Windows et Linux. Cela termine l'enregistrement comme un nouvel appui sur le raccourci de début, mais place le texte dans le presse-papiers au lieu de l'insérer.
+
+Vous avez changé d'avis ? <kbd>Esc</kbd> annule l'enregistrement sur Mac et sous Windows. Rien n'est transcrit, inséré ni conservé.
+
+Les raccourcis de fin sont au cœur de DanyWhere, et [Raccourcis de début et de fin](../start-and-end-shortcuts/) les présente tous.
+
+## Quel profil s'applique
+
+Les réglages qui façonnent une dictée sont choisis à la fin de l'enregistrement. Si **Choisir le profil selon l'application** est activé et qu'un profil inclut l'app au premier plan à ce moment-là, c'est ce profil qui s'applique. Sinon, c'est ce qui est choisi sous **En cours d'utilisation**, en haut de la barre latérale : les **Paramètres de base** ou un profil. Un profil suit les paramètres de base partout où un réglage n'a pas de **Valeur propre** ; il ne contient donc que ce qui doit être différent, par exemple un autre modèle vocal pour votre terminal. Comme le choix se fait à la fin, vous pouvez commencer une dictée n'importe où et passer à l'app où va le texte avant de la terminer. [Paramètres de base et profils](../defaults-and-profiles/) montre comment fonctionnent les profils.
+
+## Transcription
+
+Dès que l'enregistrement se termine, le modèle vocal le transforme en texte. Cela se passe sur votre ordinateur ; l'enregistrement n'en sort pas. L'overlay affiche **Transcription...**.
+
+Les noms et les termes techniques sortent plus souvent correctement quand ils figurent sur une liste de mots. Les modèles Whisper utilisent les listes pendant la reconnaissance de la parole et, avec tous les modèles, le post-traitement les reçoit comme termes connus.
+
+## Post-traitement
+
+Si la fin choisie a **Post-traiter** coché, un modèle de langage retravaille le texte avant qu'il n'arrive. Il reçoit les prompts marqués **Actif** sur la page **Post-traitement**, dans leur ordre. DanyWhere les place dans un cadre qui indique au modèle qu'il a une transcription à traiter, pas une question à laquelle répondre, et que le texte garde sa langue. L'overlay affiche **Traitement...**.
+
+Le post-traitement n'a lieu que si l'interrupteur **Post-traitement** est activé, sous **Paramètres de base › Avancé** ou dans le profil. Que le texte parte chez un fournisseur dans le cloud ou vers un modèle sur votre propre ordinateur dépend du fournisseur choisi sur la page **Post-traitement**, et la page vous indique lequel des deux.
+
+Avec **Envoyer le contexte**, les dictées précédentes de la même fenêtre sont envoyées aussi, pour que le modèle sache de quoi il est question : par défaut, jusqu'à cinq de la dernière heure. L'historique marque chaque entrée envoyée ainsi.
+
+Si le post-traitement échoue, par exemple parce que le fournisseur est injoignable, vous obtenez quand même vos mots. DanyWhere insère la transcription telle quelle, et une notification, **Collé sans post-traitement**, vous dit pourquoi.
+
+## Ajouter à la fin
+
+Vient ensuite, après le texte, ce que la fin indique sous **Ajouter à la fin** : une espace, un saut de ligne ou n'importe quel texte, et si vous le souhaitez une touche comme Entrée. Le texte est ajouté quelle que soit la façon dont la dictée arrive. La touche ne suit que lorsque DanyWhere colle le texte lui-même. C'est ainsi qu'un raccourci de fin poursuit votre phrase et qu'un autre envoie aussitôt un message de chat.
+
+## Insérer
+
+Le texte va maintenant là où se trouve votre curseur.
+
+<Tabs syncKey="os">
+<TabItem label="macOS">
+
+Avec l'autorisation **Accessibilité**, DanyWhere place le texte dans le presse-papiers, appuie sur <kbd>⌘V</kbd> pour vous, puis remet dans le presse-papiers ce qui s'y trouvait avant. La touche choisie sous **Ajouter à la fin** suit, s'il y en a une.
+
+</TabItem>
+<TabItem label="Windows">
+
+DanyWhere place le texte dans le presse-papiers, appuie sur <kbd>Ctrl+V</kbd> pour vous, puis remet dans le presse-papiers ce qui s'y trouvait avant. La touche choisie sous **Ajouter à la fin** suit, s'il y en a une. La **Méthode de collage**, sous **Paramètres de base › Avancé**, propose d'autres façons, comme taper le texte directement.
+
+</TabItem>
+<TabItem label="Linux">
+
+DanyWhere colle avec <kbd>Shift+Insert</kbd>, qui fonctionne dans les terminaux comme dans les autres apps, puis remet dans le presse-papiers ce qui s'y trouvait avant. La touche choisie sous **Ajouter à la fin** suit, s'il y en a une. La **Méthode de collage**, sous **Paramètres de base › Avancé**, propose d'autres façons, dont un script à vous.
+
+</TabItem>
+</Tabs>
+
+:::tip[Le texte n'est arrivé nulle part ?]
+Si aucun champ de texte n'avait le focus, rien n'est perdu. Placez le curseur là où le texte doit aller et appuyez sur **Coller la dernière transcription** : <kbd>⌃⇧V</kbd> sur un Mac, <kbd>Alt+Maj+V</kbd> sous Windows et Linux.
+:::
+
+:::caution[Sur un Mac sans Accessibilité]
+Là où l'autorisation Accessibilité est bloquée, comme sur beaucoup de Mac d'entreprise, DanyWhere ne peut pas coller. Le texte attend alors dans DanyWhere jusqu'à ce que vous appuyiez sur **Coller la dernière transcription** (<kbd>⌃⇧V</kbd>) à l'endroit voulu ; **Copier la dernière transcription** (<kbd>⌃⇧C</kbd>) le place plutôt dans le presse-papiers. Les touches choisies sous **Ajouter à la fin** ne sont pas envoyées. Cette partie va bientôt changer : DanyWhere aura sa propre méthode de saisie, qui insérera le texte pour vous.
+:::
+
+## Historique
+
+Chaque dictée arrive dans l'**Historique** : l'enregistrement, la transcription et, si elle a été post-traitée, le texte retravaillé comme deuxième version au-dessus. DanyWhere l'enregistre avant de l'insérer, donc rien n'est perdu si le collage échoue. Vous pouvez modifier une entrée ou la post-traiter à nouveau plus tard ; chaque changement ajoute une nouvelle version au-dessus et garde celles d'en dessous.
+
+## Le son de fin
+
+Avec le **Signal sonore** activé (il est désactivé par défaut), trois sons jalonnent le chemin, chacun plus aigu que le précédent : un au début de l'enregistrement, un à la fin, et le plus aigu quand tout est terminé, post-traitement compris. Quand un modèle de langage met quelques secondes et que vous regardez ailleurs, ce dernier son vous dit que le texte est prêt. Vous trouverez **Signal sonore** et **Son à la fin**, qui coupe seulement le dernier son, sous **Paramètres de base › Général**.
+
+## Ensuite
+
+C'est la fin d'un enregistrement qui décide le plus. [Raccourcis de début et de fin](../start-and-end-shortcuts/) présente les raccourcis de fin d'une nouvelle installation, ce qui compose chacun d'eux et comment créer les vôtres.

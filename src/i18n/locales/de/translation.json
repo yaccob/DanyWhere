@@ -23,6 +23,7 @@
     "advanced": "Erweitert",
     "postProcessing": "Nachbearbeitung",
     "history": "Verlauf",
+    "manual": "Handbuch",
     "debug": "Debug",
     "about": "Info",
     "areas": {
@@ -34,6 +35,14 @@
     "updates": "Updates",
     "storage": "Speicher",
     "profile": "Profil"
+  },
+  "manual": {
+    "openChapter": "Handbuch öffnen: {{chapter}}",
+    "chapters": {
+      "startAndEndShortcuts": "Start- und Endtasten",
+      "defaultsAndProfiles": "Grundeinstellungen und Profile"
+    },
+    "unavailable": "Dieser Build von DanyWhere enthält kein Handbuch."
   },
   "onboarding": {
     "customModelDescription": "Nicht offiziell unterstützt",
@@ -389,6 +398,8 @@
     },
     "general": {
       "title": "Allgemein",
+      "startShortcuts": "Starttasten",
+      "otherShortcuts": "Weitere Tastenkombinationen",
       "shortcut": {
         "title": "Handy-Tastenkürzel",
         "description": "Tastenkürzel für die Sprachaufnahme konfigurieren",
@@ -399,7 +410,7 @@
         "bindings": {
           "transcribe": {
             "name": "Starttaste",
-            "description": "Startet eine Aufnahme. Wie sie endet, legen die Endtasten fest und, wenn man sie hält, „Verhalten der Tastenkombination“."
+            "description": "Startet eine Aufnahme. Wie sie endet, legen die Endtasten fest, auch beim Halten."
           },
           "cancel": {
             "name": "Abbrechen-Tastenkürzel",
@@ -407,7 +418,8 @@
           },
           "transcribe_with_post_process": {
             "name": "Zweite Starttaste",
-            "description": "Optional: eine zweite Tastenkombination, die eine Aufnahme startet. Ab Werk bearbeitet eine Endtaste mit derselben Tastenkombination den Text nach. Nur belegt, solange die Nachbearbeitung eingeschaltet ist."
+            "description": "Optional: eine zweite Tastenkombination, die eine Aufnahme startet. Ab Werk bearbeitet eine Endtaste mit derselben Tastenkombination den Text nach. Nur belegt, solange die Nachbearbeitung eingeschaltet ist.",
+            "descriptionMacos": "Optional: eine zweite Tastenkombination, die eine Aufnahme startet. Ab Werk wird der Text nachbearbeitet, wenn man sie hält und loslässt; ein erneuter Druck beendet ohne Nachbearbeitung, wie jede Endtaste ohne ⌥. Nur belegt, solange die Nachbearbeitung eingeschaltet ist."
           },
           "paste_last_transcript": {
             "name": "Letzte Transkription einfügen",
@@ -503,6 +515,17 @@
       "holdEnds": {
         "title": "Beim Halten",
         "description": "Wie das Loslassen einer gehaltenen Starttaste die Aufnahme beendet."
+      },
+      "factoryNames": {
+        "pattern": "{{mode}} · {{effect}}",
+        "direct": "Direkt",
+        "postProcessed": "Nachbearbeitet",
+        "space": "Leerzeichen",
+        "noSpace": "ohne Leerzeichen",
+        "paragraph": "Absatz",
+        "line": "Zeile",
+        "enter": "Enter senden",
+        "shiftEnter": "Shift-Enter senden"
       },
       "linuxNoShortcuts": "Unter Linux werden die Tastenkombinationen der Endtasten während einer Aufnahme nicht belegt. Eine Aufnahme endet dort, wenn man eine gehaltene Starttaste loslässt oder eine Starttaste erneut drückt, deren Tastenkombination eine Endtaste hat.",
       "errors": {
@@ -1316,8 +1339,8 @@
         "button": "Auf GitHub ansehen"
       },
       "basedOn": {
-        "title": "Basiert auf Handy",
-        "description": "DanyWhere baut auf Handy von CJ Pais und Mitwirkenden auf",
+        "title": "Aus Handy entstanden",
+        "description": "DanyWhere ist aus Handy von CJ Pais und Mitwirkenden entstanden. Danke für das Fundament, auf dem es bis heute steht.",
         "button": "Handy besuchen"
       },
       "supportDevelopment": {

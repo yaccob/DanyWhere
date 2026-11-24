@@ -23,6 +23,7 @@
     "advanced": "Avancerat",
     "postProcessing": "Efterbearbetning",
     "history": "Historik",
+    "manual": "Handbok",
     "debug": "Felsökning",
     "about": "Om",
     "areas": {
@@ -34,6 +35,14 @@
     "updates": "Uppdateringar",
     "storage": "Lagring",
     "profile": "Profil"
+  },
+  "manual": {
+    "openChapter": "Öppna handboken: {{chapter}}",
+    "chapters": {
+      "startAndEndShortcuts": "Start- och avslutningskortkommandon",
+      "defaultsAndProfiles": "Grundinställningar och profiler"
+    },
+    "unavailable": "Den här versionen av DanyWhere har ingen handbok."
   },
   "onboarding": {
     "customModelDescription": "Stöds inte officiellt",
@@ -389,6 +398,8 @@
     },
     "general": {
       "title": "Allmänt",
+      "startShortcuts": "Startkortkommandon",
+      "otherShortcuts": "Övriga kortkommandon",
       "shortcut": {
         "title": "Handy-kortkommandon",
         "description": "Konfigurera kortkommandon för att starta tal-till-text-inspelning",
@@ -399,7 +410,7 @@
         "bindings": {
           "transcribe": {
             "name": "Startkortkommando",
-            "description": "Startar en inspelning. Hur den slutar bestämmer avslutningskortkommandona och, när det hålls nere, ”Genvägens beteende”."
+            "description": "Startar en inspelning. Hur den slutar bestämmer avslutningskortkommandona, även när det hålls nere."
           },
           "cancel": {
             "name": "Kortkommando för att avbryta",
@@ -407,7 +418,8 @@
           },
           "transcribe_with_post_process": {
             "name": "Andra startkortkommandot",
-            "description": "Valfritt: en andra tangentkombination som startar en inspelning. I fabriksinställningen efterbearbetar ett avslutningskortkommando med samma tangentkombination texten. Bara upptagen så länge efterbearbetning är påslagen."
+            "description": "Valfritt: en andra tangentkombination som startar en inspelning. I fabriksinställningen efterbearbetar ett avslutningskortkommando med samma tangentkombination texten. Bara upptagen så länge efterbearbetning är påslagen.",
+            "descriptionMacos": "Valfritt: en andra tangentkombination som startar en inspelning. I fabriksinställningen efterbearbetas texten när du håller den nere och släpper den; ett nytt tryck avslutar utan efterbearbetning, som alla avslutningskortkommandon utan ⌥. Bara upptagen så länge efterbearbetning är påslagen."
           },
           "paste_last_transcript": {
             "name": "Klistra in senaste transkriptionen",
@@ -503,6 +515,17 @@
       "holdEnds": {
         "title": "När det hålls nere",
         "description": "Hur ett släpp av ett startkortkommando som hålls nere avslutar inspelningen."
+      },
+      "factoryNames": {
+        "pattern": "{{mode}} · {{effect}}",
+        "direct": "Direkt",
+        "postProcessed": "Efterbearbetad",
+        "space": "Mellanslag",
+        "noSpace": "Utan mellanslag",
+        "paragraph": "Stycke",
+        "line": "Rad",
+        "enter": "Skicka Enter",
+        "shiftEnter": "Skicka Shift+Enter"
       },
       "linuxNoShortcuts": "På Linux tas avslutningskortkommandonas tangentkombinationer inte upp under en inspelning. Där slutar en inspelning när ett startkortkommando som hålls nere släpps, eller när man åter trycker på ett startkortkommando vars tangentkombination ett avslutningskortkommando har.",
       "errors": {
@@ -1316,8 +1339,8 @@
         "button": "Visa på GitHub"
       },
       "basedOn": {
-        "title": "Baserad på Handy",
-        "description": "DanyWhere bygger på Handy av CJ Pais och bidragsgivare",
+        "title": "Sprunget ur Handy",
+        "description": "DanyWhere växte fram ur Handy av CJ Pais och bidragsgivare. Tack till dem för grunden som det fortfarande står på.",
         "button": "Besök Handy"
       },
       "supportDevelopment": {

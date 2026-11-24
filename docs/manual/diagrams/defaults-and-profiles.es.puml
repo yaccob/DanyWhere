@@ -1,0 +1,40 @@
+@startuml
+' The Defaults and two profiles as layers, in Spanish. The structure is in
+' defaults-and-profiles.iuml (a Graphviz graph); UI terms as in
+' src/i18n/locales/es/translation.json. The texts go into an HTML label:
+' write & as &amp; and < as &lt;, and break a line with $br.
+' The defaults are named as the sidebar's area names them ("Configuración
+' básica", sidebar.areas.defaults), where their pages are.
+!include graphviz.iuml
+' The columns: the post-processing switch, the end shortcuts, the rest.
+!$hPost = "Post procesamiento"
+!$hEnd = "Atajos de fin"
+!$hRest = "Todo lo demás"
+' The rows.
+!$chat = "Chat"
+!$terminal = "Terminal"
+!$profile = "Perfil"
+!$defaults = "Configuración" + $br + "básica"
+!$defaultsKind = "cada valor"
+' What a profile page says under a value and next to a list entry.
+!$tDefault = "Valor básico"
+!$tOwnValue = "Valor propio"
+!$tOwn = "propio"
+!$tAdded = "propio, nuevo"
+!$tOff = "desactivado"
+' Values: the switch, and end shortcuts a new Mac installation brings,
+' plus one of the profile's own.
+!$on = "activado"
+!$off = "desactivado"
+!$space = "Directo · Espacio"
+!$enter = "Directo · Enviar Enter"
+!$paragraph = "Directo · Párrafo"
+!$reply = "Responder"
+!$restList = "Modelo de voz," + $br + "Micrófono," + $br + "Método de pegado, …"
+!$caption = "Un perfil se basa en la configuración básica: valen sus valores propios," + $br + "todo lo demás viene de la configuración básica. Un perfil no toma nada" + $br + "de otro."
+' Outside the layers.
+!$appTitle = "Configuración de la aplicación"
+!$appList = "Idioma de la aplicación · Iniciar al arranque · Buscar actualizaciones · …"
+!$appNote = "En ningún perfil: igual para cada dictado."
+!include defaults-and-profiles.iuml
+@enduml

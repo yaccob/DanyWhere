@@ -445,10 +445,16 @@ mod tests {
     use crate::end_keys::START_BINDINGS;
     use crate::input_method::testing::{inserted, FakeInputMethod, ImCall};
     use crate::managers::audio::{fake_microphone, AudioRecordingManager};
-    use crate::settings::{get_default_settings, ShortcutActivation};
+    use crate::settings::ShortcutActivation;
     use handy_recorder::testing::{FakeError, FakeMic};
     use std::cell::Cell;
     use std::sync::Mutex;
+    /// A new installation's settings with the two built-in ends these tests
+    /// are written against (`end_keys::with_builtin_ends`): macOS has other
+    /// factory ends since 2026-11-24.
+    fn get_default_settings() -> crate::settings::AppSettings {
+        crate::end_keys::with_builtin_ends(crate::settings::get_default_settings())
+    }
 
     const MODEL: &str = "parakeet-tdt-0.6b-v3";
 
@@ -809,7 +815,8 @@ mod tests {
 
     impl Bench {
         fn new(mic: FakeMic) -> Self {
-            let mut settings = fake_microphone::settings();
+            // The two built-in ends these tests are written against.
+            let mut settings = crate::end_keys::with_builtin_ends(fake_microphone::settings());
             settings.selected_model = MODEL.to_string();
             settings.vad_enabled = false;
             settings.overlay_style = OverlayStyle::Minimal;

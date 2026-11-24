@@ -1,0 +1,109 @@
+' The Defaults and two profiles built on them: the structure, a Graphviz
+' graph. The texts come from defaults-and-profiles.<lang>.puml, which
+' includes graphviz.iuml before its texts and this file after them. Facts
+' checked against the code; see the comments for where.
+'
+' profile_layers.rs (module comment): the defaults hold a value for every
+' field of ProfileValues; a profile holds each field coupled (it follows
+' the default) or as its own, and takes nothing from another profile
+' (effective_fields: its own values over the defaults). Lists (LIST_FIELDS:
+' end_keys, word_lists, bindings, the providers' entries) are coupled or
+' own entry by entry: merge_list keeps the defaults' entries the profile
+' follows, its own versions of others, drops those it switched off, then
+' adds its own. The profile pages say "Default" under a coupled value and
+' "Own value" under an own one, and mark list entries "own" or "off",
+' struck through (ScopedSetting.tsx, StateLine). The post-processing
+' switch (post_process_enabled) is a profile value like any other.
+' setting_classes.rs (APP_SETTINGS): app_language, autostart_enabled and
+' update_checks_enabled are application settings, in no profile.
+'
+' The Defaults sit between the two profiles, so that each profile's arrows
+' point straight at them: drawn above each other, the profiles would look
+' as if one took its values from the other.
+
+' A value the profile follows: dashed, the arrow points at the Defaults.
+!procedure $coupled($arrow)
+<td><table style="rounded,dashed" border="1" color="$quietLine" cellborder="0" cellpadding="10" cellspacing="0"><tr><td><font color="$inkSoft">$arrow $tDefault</font></td></tr></table></td>
+!endprocedure
+
+' A profile's own value, with the state line the profile page shows.
+!procedure $own($value)
+<td><table style="rounded" border="1" color="$petrol" bgcolor="$stepFill" cellborder="0" cellpadding="3" cellspacing="0"><tr><td><b>$value</b></td></tr><tr><td><font color="$petrol" point-size="$tinySize"><b>$tOwnValue</b></font></td></tr></table></td>
+!endprocedure
+
+' A value of the defaults, and a list of them.
+!procedure $base($value)
+<td><table style="rounded" border="2" color="$petrol" bgcolor="$stepFill" cellborder="0" cellpadding="10" cellspacing="0"><tr><td>$value</td></tr></table></td>
+!endprocedure
+!procedure $baseList($value)
+<td><table style="rounded" border="2" color="$petrol" bgcolor="$stepFill" cellborder="0" cellpadding="10" cellspacing="0"><tr><td align="left" balign="left">$value</td></tr></table></td>
+!endprocedure
+
+' A row's head: the layer's name, and what it is.
+!procedure $head($name, $kind)
+<td align="left" balign="left" cellpadding="6"><b>$name</b><br align="left"/><font color="$inkSoft" point-size="$tinySize">$kind</font></td>
+!endprocedure
+
+' A column's head: the setting.
+!procedure $column($name)
+<td><font color="$inkSoft" point-size="$smallSize"><b>$name</b></font></td>
+!endprocedure
+
+' An entry of a profile's list: its name and its state.
+!procedure $entryCoupled($name, $arrow)
+<tr><td align="left">$name</td><td align="right"><font color="$inkSoft" point-size="$tinySize">$arrow $tDefault</font></td></tr>
+!endprocedure
+!procedure $entryOwn($name, $state)
+<tr><td align="left" bgcolor="$stepFill"><b>$name</b></td><td align="right" bgcolor="$stepFill"><font color="$petrol" point-size="$tinySize"><b>$state</b></font></td></tr>
+!endprocedure
+!procedure $entryOff($name)
+<tr><td align="left"><font color="$inkSoft"><s>$name</s></font></td><td align="right"><font color="$inkSoft" point-size="$tinySize">$tOff</font></td></tr>
+!endprocedure
+
+digraph defaults_and_profiles {
+  graph [bgcolor="transparent" pad="0.2"];
+  node [shape=plain fontname="$font" fontsize="$fontSize" fontcolor="$ink"];
+
+  layers [label=<<table border="0" cellborder="0" cellspacing="6" cellpadding="0">
+<tr>
+<td></td>
+$column($hPost)
+$column($hEnd)
+$column($hRest)
+</tr>
+<tr>
+$head($chat, $profile)
+$coupled("↓")
+<td><table style="rounded" border="1" color="$petrol" cellborder="0" cellpadding="5" cellspacing="2">
+$entryCoupled($space, "↓")
+$entryOwn($enter, $tOwn)
+$entryOff($paragraph)
+$entryOwn($reply, $tAdded)
+</table></td>
+$coupled("↓")
+</tr>
+<tr>
+$head($defaults, $defaultsKind)
+$base($on)
+$baseList($space + $br + $enter + $br + $paragraph + $br + "…")
+$baseList($restList)
+</tr>
+<tr>
+$head($terminal, $profile)
+$own($off)
+$coupled("↑")
+$coupled("↑")
+</tr>
+<tr>
+<td></td>
+<td colspan="3" align="left" balign="left"><font color="$inkSoft" point-size="$smallSize">$caption</font></td>
+</tr>
+<tr>
+<td colspan="4"><table style="rounded,dashed" border="1" color="$noteLine" bgcolor="$noteFill" cellborder="0" cellpadding="4" cellspacing="4">
+<tr><td align="left"><b>$appTitle</b></td></tr>
+<tr><td align="left">$appList</td></tr>
+<tr><td align="left"><font color="$inkSoft" point-size="$smallSize">$appNote</font></td></tr>
+</table></td>
+</tr>
+</table>>];
+}

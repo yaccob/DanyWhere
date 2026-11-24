@@ -1,0 +1,60 @@
+name: "Manual: GitHub Pages"
+
+# Builds the user manual's website (docs/manual, base /DanyWhere) and
+# publishes it at https://yaccob.github.io/DanyWhere/: whenever a DanyWhere
+# release is published, from that release's tag, so the site describes the
+# newest version people can download; or by hand from any branch the
+# github-pages environment lets deploy.
+#
+# The github-pages environment needs a deployment rule for the tags
+# danywhere-v* besides the default branch, or the release run is refused.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    # Only DanyWhere's own releases; other pre-releases of the repository,
+    # such as test apps, leave the site alone.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (startsWith(github.event.release.tag_name, 'danywhere-v') &&
+      !github.event.release.prerelease)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      # Installs docs/manual's own dependencies from its lockfile; the app's
+      # are not needed.
+      - name: Build the manual's website
+        run: bun run build:manual:web
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: docs/manual/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

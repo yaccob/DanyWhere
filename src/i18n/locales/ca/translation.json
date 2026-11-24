@@ -23,6 +23,7 @@
     "advanced": "Avançat",
     "postProcessing": "Postprocessament",
     "history": "Historial",
+    "manual": "Manual",
     "debug": "Depuració",
     "about": "Quant a",
     "areas": {
@@ -34,6 +35,14 @@
     "updates": "Actualitzacions",
     "storage": "Emmagatzematge",
     "profile": "Perfil"
+  },
+  "manual": {
+    "openChapter": "Obre el manual: {{chapter}}",
+    "chapters": {
+      "startAndEndShortcuts": "Dreceres d'inici i de final",
+      "defaultsAndProfiles": "Configuració bàsica i perfils"
+    },
+    "unavailable": "Aquesta compilació de DanyWhere no inclou el manual."
   },
   "onboarding": {
     "customModelDescription": "Sense suport oficial",
@@ -389,6 +398,8 @@
     },
     "general": {
       "title": "General",
+      "startShortcuts": "Dreceres d'inici",
+      "otherShortcuts": "Altres dreceres",
       "shortcut": {
         "title": "Dreceres del Handy",
         "description": "Configura les dreceres de teclat per iniciar l'enregistrament de veu per a la transcripció",
@@ -399,7 +410,7 @@
         "bindings": {
           "transcribe": {
             "name": "Drecera d'inici",
-            "description": "Inicia una gravació. Com acaba ho decideixen les dreceres de final i, quan es manté premuda, «Comportament de la drecera»."
+            "description": "Inicia una gravació. Com acaba ho decideixen les dreceres de final, també quan es manté premuda."
           },
           "cancel": {
             "name": "Drecera de cancel·lació",
@@ -407,7 +418,8 @@
           },
           "transcribe_with_post_process": {
             "name": "Segona drecera d'inici",
-            "description": "Opcional: una segona combinació de tecles que inicia una gravació. De fàbrica, una drecera de final amb la mateixa combinació posprocessa el text. Només s'ocupa mentre el posprocessament està activat."
+            "description": "Opcional: una segona combinació de tecles que inicia una gravació. De fàbrica, una drecera de final amb la mateixa combinació posprocessa el text. Només s'ocupa mentre el posprocessament està activat.",
+            "descriptionMacos": "Opcional: una segona combinació de tecles que inicia una gravació. De fàbrica, deixar-la anar després de mantenir-la premuda posprocessa el text; tornar-la a prémer acaba sense posprocessament, com totes les dreceres de final sense ⌥. Només s'ocupa mentre el posprocessament està activat."
           },
           "paste_last_transcript": {
             "name": "Enganxa l'última transcripció",
@@ -503,6 +515,17 @@
       "holdEnds": {
         "title": "Quan es manté premuda",
         "description": "Com acaba la gravació en deixar anar una drecera d'inici mantinguda premuda."
+      },
+      "factoryNames": {
+        "pattern": "{{mode}} · {{effect}}",
+        "direct": "Directe",
+        "postProcessed": "Posprocessat",
+        "space": "Espai",
+        "noSpace": "Sense espai",
+        "paragraph": "Paràgraf",
+        "line": "Línia",
+        "enter": "Envia Enter",
+        "shiftEnter": "Envia Maj+Enter"
       },
       "linuxNoShortcuts": "A Linux, les combinacions de les dreceres de final no s'ocupen mentre es grava. Allà una gravació acaba quan es deixa anar una drecera d'inici mantinguda premuda, o quan es torna a prémer una drecera d'inici la combinació de la qual té una drecera de final.",
       "errors": {
@@ -1320,8 +1343,8 @@
         "button": "Mostra al GitHub"
       },
       "basedOn": {
-        "title": "Basat en Handy",
-        "description": "DanyWhere es basa en Handy, de CJ Pais i col·laboradors",
+        "title": "Nascut de Handy",
+        "description": "DanyWhere va néixer de Handy, de CJ Pais i col·laboradors. Gràcies a ells pels fonaments sobre els quals encara es basa.",
         "button": "Visita Handy"
       },
       "supportDevelopment": {

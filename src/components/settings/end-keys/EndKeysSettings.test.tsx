@@ -21,6 +21,7 @@ import {
 import { switchTestLanguage } from "@/test/i18n";
 import { setOsType } from "@/test/tauri-mock";
 import { rawTextIn, visibleText } from "@/test/visible";
+import { OpenManualProvider } from "@/hooks/useOpenManual";
 
 const PLAIN = endKey("plain", "ctrl+space");
 const SEND = endKey("end_1795307754299", "ctrl+return", { name: "Senden" });
@@ -29,20 +30,31 @@ const WITH_POST = endKey("end_1795307811111", "ctrl+alt+k", {
   post_process: true,
 });
 
+/** The manual's chapters the page asked the settings window to show (none
+ * for its home page). */
+const openedChapters: (string | undefined)[] = [];
+
 const renderEnds = (
   ends: EndKey[],
   scope: Scope = DEFAULTS_SCOPE,
   spec: SettingsSpec = {},
   acceptWrites = true,
-) =>
-  renderPage(<EndKeysSettings />, {
-    settings: settingsWith({
-      ...spec,
-      defaults: { end_keys: ends, ...spec.defaults },
-    }),
-    scope,
-    acceptWrites,
-  });
+) => {
+  openedChapters.length = 0;
+  return renderPage(
+    <OpenManualProvider value={(page) => openedChapters.push(page)}>
+      <EndKeysSettings />
+    </OpenManualProvider>,
+    {
+      settings: settingsWith({
+        ...spec,
+        defaults: { end_keys: ends, ...spec.defaults },
+      }),
+      scope,
+      acceptWrites,
+    },
+  );
+};
 
 /** The list the page last asked the backend to store. */
 const storedEnds = (): EndKey[] => {
@@ -63,10 +75,10 @@ describe("End Shortcuts under the defaults", () => {
     expect(nameFields().map((field) => field.value)).toEqual([
       "⌃ Space",
       "Senden",
-      "⌃⌥J",
+      "⌥⌃J",
     ]);
     // The combinations on their buttons, written as macOS does.
-    for (const keys of ["⌃ Space", "⌃↩", "⌃⌥J"]) {
+    for (const keys of ["⌃ Space", "⌃↩", "⌥⌃J"]) {
       expect(screen.getAllByText(keys).length).toBeGreaterThan(0);
     }
     expect(rawTextIn()).toEqual([]);
@@ -141,7 +153,7 @@ describe("End Shortcuts under the defaults", () => {
     await renderEnds([PLAIN, UNNAMED]);
 
     const field = nameFields()[1];
-    fireEvent.change(field, { target: { value: "⌃⌥J" } });
+    fireEvent.change(field, { target: { value: "⌥⌃J" } });
     fireEvent.blur(field);
     await settle();
 
@@ -418,5 +430,84 @@ describe("End Shortcuts with post-processing off", () => {
       "Die Nachbearbeitung ist aus: Ein so beendetes Diktat wird nicht nachbearbeitet. Schalte „Nachbearbeitung“ unter Erweitert ein.",
     );
     expect(rawTextIn()).toEqual([]);
+  });
+});
+
+// DanyWhere: the "?" next to the group's title opens the manual's chapter on
+// start and end shortcuts, on the manual's page of the settings window
+// (`OpenManualProvider`; what that page shows: ManualPage.test.tsx).
+describe("the manual's chapter from End Shortcuts", () => {
+  const CHAPTER = "how-it-works/start-and-end-shortcuts/";
+  const helpButton = () =>
+    screen.getByRole("button", {
+      name: "Open the manual: Start and End Shortcuts",
+    });
+
+  test("a button next to the title opens the chapter", async () => {
+    await renderEnds([PLAIN, SEND]);
+
+    const title = screen.getByRole("heading", { name: "End Shortcuts" });
+    expect(title.parentElement?.contains(helpButton())).toBe(true);
+
+    await press(helpButton());
+
+    expect(openedChapters).toEqual([CHAPTER]);
+    expect(callsOf("setProfileValue")).toEqual([]);
+  });
+
+  test("shows a question mark icon and a tooltip", async () => {
+    await renderEnds([PLAIN, SEND]);
+
+    // Lucide's CircleHelp, the same "?" in a circle as the Models legend.
+    const icon = helpButton().querySelector("svg");
+    expect(icon?.getAttribute("class")).toContain(
+      "lucide-circle-question-mark",
+    );
+    expect(icon?.getAttribute("aria-hidden")).toBe("true");
+    expect(helpButton().textContent).toBe("");
+    expect(helpButton().getAttribute("title")).toBe(
+      "Open the manual: Start and End Shortcuts",
+    );
+    expect(rawTextIn()).toEqual([]);
+  });
+
+  test("is there in a profile too", async () => {
+    const work = "profile_1795300000001";
+    await renderEnds(
+      [PLAIN, SEND],
+      { kind: "profile", id: work },
+      { profiles: [{ id: work, name: "Work" }] },
+    );
+
+    await press(helpButton());
+
+    expect(openedChapters).toEqual([CHAPTER]);
+  });
+
+  test("names the chapter in German", async () => {
+    await switchTestLanguage("de");
+    await renderEnds([PLAIN, SEND]);
+
+    await press(
+      screen.getByRole("button", {
+        name: "Handbuch öffnen: Start- und Endtasten",
+      }),
+    );
+
+    expect(openedChapters).toEqual([CHAPTER]);
+    expect(rawTextIn()).toEqual([]);
+  });
+
+  test("outside the settings window there is no button that does nothing", async () => {
+    await renderPage(<EndKeysSettings />, {
+      settings: settingsWith({ defaults: { end_keys: [PLAIN, SEND] } }),
+      scope: DEFAULTS_SCOPE,
+    });
+
+    expect(screen.getByRole("heading", { name: "End Shortcuts" })).toBeTruthy();
+    const button = screen.queryByRole("button", {
+      name: "Open the manual: Start and End Shortcuts",
+    });
+    expect(button === null).toBe(true);
   });
 });

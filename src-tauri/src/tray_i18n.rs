@@ -5,7 +5,9 @@
 //!
 //! The English translation.json is the single source of truth:
 //! - TrayStrings struct fields are derived from the English "tray" keys, plus
-//!   the notice titles (see `build.rs`)
+//!   the notice titles and the words of the factory end shortcuts' names
+//!   (`factory_end_name_*`, used by `end_keys::FactoryEndNames`; see
+//!   `build.rs`)
 //! - All languages are auto-discovered from the locales directory
 //!
 //! To add a new tray menu item:
