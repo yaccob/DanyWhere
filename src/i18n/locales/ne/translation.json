@@ -41,9 +41,7 @@
     "chapters": {
       "startAndEndShortcuts": "सुरु र अन्त्य सर्टकटहरू"
     },
-    "errors": {
-      "open": "पुस्तिका खोल्न सकिएन: {{error}}"
-    }
+    "unavailable": "DanyWhere को यो बिल्डमा पुस्तिका समावेश छैन।"
   },
   "onboarding": {
     "customModelDescription": "आधिकारिक रूपमा समर्थित छैन",

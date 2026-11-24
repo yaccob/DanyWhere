@@ -1,9 +1,9 @@
 // DanyWhere: the preload of the component tests (`bunfig.toml`, `bun test`).
 // It gives every test file a DOM, replaces `src/bindings.ts` and
 // `src/i18n/index.ts` before any component loads, answers the Tauri plugins,
-// and after every test unmounts what was rendered and resets the stand-ins,
-// the stores and the language. How to write a test: AGENTS.md, "Component
-// tests".
+// lets frames load the user manual's pages (`manual-frame.ts`), and after
+// every test unmounts what was rendered and resets the stand-ins, the stores
+// and the language. How to write a test: AGENTS.md, "Component tests".
 import "./dom";
 import { afterEach, mock } from "bun:test";
 import * as bindings from "./bindings-mock";
@@ -25,14 +25,17 @@ mock.module("@/components/whats-new/releaseNotes", () => ({
 const { cleanup } = await import("@testing-library/react");
 const { installTauriMocks, resetTauriMocks } = await import("./tauri-mock");
 const { resetStores } = await import("./stores");
+const { installManualPages, resetManualPages } = await import("./manual-frame");
 
 installTauriMocks();
+installManualPages();
 
 afterEach(async () => {
   cleanup();
   bindings.resetBindingsMock();
   resetTauriMocks();
   resetStores();
+  resetManualPages();
   await testI18n.resetTestLanguage();
   document.body.innerHTML = "";
 });

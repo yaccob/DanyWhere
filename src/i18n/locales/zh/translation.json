@@ -41,9 +41,7 @@
     "chapters": {
       "startAndEndShortcuts": "开始与结束快捷键"
     },
-    "errors": {
-      "open": "无法打开使用手册：{{error}}"
-    }
+    "unavailable": "此 DanyWhere 版本不含使用手册。"
   },
   "onboarding": {
     "customModelDescription": "非官方支持",

@@ -41,9 +41,7 @@
     "chapters": {
       "startAndEndShortcuts": "Başlatma ve Bitirme Kısayolları"
     },
-    "errors": {
-      "open": "Kılavuz açılamadı: {{error}}"
-    }
+    "unavailable": "DanyWhere'in bu sürümünde kılavuz bulunmuyor."
   },
   "onboarding": {
     "customModelDescription": "Resmi olarak desteklenmiyor",

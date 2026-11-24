@@ -41,9 +41,7 @@
     "chapters": {
       "startAndEndShortcuts": "Spouštěcí a ukončovací zkratky"
     },
-    "errors": {
-      "open": "Příručku se nepodařilo otevřít: {{error}}"
-    }
+    "unavailable": "Toto sestavení DanyWhere neobsahuje příručku."
   },
   "onboarding": {
     "customModelDescription": "Oficiálně nepodporováno",

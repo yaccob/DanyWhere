@@ -41,9 +41,7 @@
     "chapters": {
       "startAndEndShortcuts": "קיצורי התחלה וסיום"
     },
-    "errors": {
-      "open": "לא ניתן לפתוח את המדריך: {{error}}"
-    }
+    "unavailable": "גרסה זו של DanyWhere אינה כוללת את המדריך."
   },
   "onboarding": {
     "customModelDescription": "לא נתמך באופן רשמי",

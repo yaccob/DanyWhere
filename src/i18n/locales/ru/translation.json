@@ -41,9 +41,7 @@
     "chapters": {
       "startAndEndShortcuts": "Клавиши запуска и завершения"
     },
-    "errors": {
-      "open": "Не удалось открыть руководство: {{error}}"
-    }
+    "unavailable": "В этой сборке DanyWhere нет руководства."
   },
   "onboarding": {
     "customModelDescription": "Официально не поддерживается",

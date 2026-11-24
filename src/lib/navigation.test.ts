@@ -13,6 +13,7 @@ import {
   applicationPages,
   areaLabelKey,
   defaultsPages,
+  edgeToEdge,
   fillsWindow,
   locationKey,
   navContext,
@@ -201,6 +202,7 @@ check("the areas have their labels", () => {
   assert.equal(areaLabelKey("profiles"), "sidebar.areas.profiles");
   assert.equal(areaLabelKey("application"), "sidebar.areas.application");
   assert.equal(areaLabelKey("history"), "sidebar.history");
+  assert.equal(areaLabelKey("manual"), "sidebar.manual");
   assert.equal(areaLabelKey("about"), "sidebar.about");
 });
 
@@ -220,6 +222,7 @@ const everyLocation: NavLocation[] = [
   })),
   ...APPLICATION_PAGES.map((page) => ({ kind: "application" as const, page })),
   { kind: "history" },
+  { kind: "manual" },
   { kind: "about" },
 ];
 check("every place has a key of its own", () => {
@@ -271,6 +274,25 @@ check("a click on Application settings shows its first page", () =>
 check("a click on History or About shows it", () => {
   assert.deepEqual(selectArea("history"), { kind: "history" });
   assert.deepEqual(selectArea("about"), { kind: "about" });
+});
+check("a click on Manual shows the manual's home page", () =>
+  assert.deepEqual(selectArea("manual"), { kind: "manual" }),
+);
+check("a chapter of the manual is the same place as its home page", () =>
+  assert.equal(
+    sameLocation(
+      { kind: "manual" },
+      { kind: "manual", page: "how-it-works/start-and-end-shortcuts/" },
+    ),
+    true,
+  ),
+);
+check("the manual stays when the settings change", () => {
+  const chapter: NavLocation = {
+    kind: "manual",
+    page: "how-it-works/start-and-end-shortcuts/",
+  };
+  assert.deepEqual(resolveLocation(chapter, ctx), chapter);
 });
 check("a click on a profile from elsewhere opens its page Profile", () =>
   assert.deepEqual(
@@ -401,24 +423,27 @@ const inWork = navTree(ctx, {
   page: "models",
 });
 
-check("the tree: three areas, their pages, then History and About", () =>
-  assert.deepEqual(ids(atStart), [
-    "defaults",
-    "defaults/general",
-    "defaults/models",
-    "defaults/postprocessing",
-    "defaults/advanced",
-    "profiles",
-    "profile/work",
-    "profile/private",
-    "application",
-    "application/general",
-    "application/updates",
-    "application/storage",
-    "application/accessibility",
-    "history",
-    "about",
-  ]),
+check(
+  "the tree: three areas, their pages, then History, Manual and About",
+  () =>
+    assert.deepEqual(ids(atStart), [
+      "defaults",
+      "defaults/general",
+      "defaults/models",
+      "defaults/postprocessing",
+      "defaults/advanced",
+      "profiles",
+      "profile/work",
+      "profile/private",
+      "application",
+      "application/general",
+      "application/updates",
+      "application/storage",
+      "application/accessibility",
+      "history",
+      "manual",
+      "about",
+    ]),
 );
 check("the chosen profile is open, with its pages under it", () =>
   assert.deepEqual(ids(inWork).slice(5, 13), [
@@ -445,10 +470,22 @@ check("one row is current: the page shown", () => {
 check("the overview makes the area row current", () =>
   assert.deepEqual(current(navTree(ctx, { kind: "profiles" })), ["profiles"]),
 );
-check("History and About are current when shown", () => {
+check("History, Manual and About are current when shown", () => {
   assert.deepEqual(current(navTree(ctx, { kind: "history" })), ["history"]);
+  assert.deepEqual(current(navTree(ctx, { kind: "manual" })), ["manual"]);
   assert.deepEqual(current(navTree(ctx, { kind: "about" })), ["about"]);
 });
+check("Manual is current at any of its chapters", () =>
+  assert.deepEqual(
+    current(
+      navTree(ctx, {
+        kind: "manual",
+        page: "how-it-works/start-and-end-shortcuts/",
+      }),
+    ),
+    ["manual"],
+  ),
+);
 check("levels: areas 0, pages and profiles 1, a profile's pages 2", () => {
   const level = (id: string) => inWork.find((item) => item.id === id)?.level;
   assert.equal(level("defaults"), 0);
@@ -456,6 +493,7 @@ check("levels: areas 0, pages and profiles 1, a profile's pages 2", () => {
   assert.equal(level("profile/work"), 1);
   assert.equal(level("profile/work/models"), 2);
   assert.equal(level("application/storage"), 1);
+  assert.equal(level("manual"), 0);
   assert.equal(level("about"), 0);
 });
 check("areas, History and About carry their icon, other rows none", () => {
@@ -467,6 +505,7 @@ check("areas, History and About carry their icon, other rows none", () => {
     "profiles:profiles",
     "application:application",
     "history:history",
+    "manual:manual",
     "about:about",
   ]);
 });
@@ -548,12 +587,30 @@ check("the overview, History and About have a path of one", () => {
   ]);
   assert.deepEqual(navPath({ kind: "history" }), [{ key: "sidebar.history" }]);
   assert.deepEqual(navPath({ kind: "about" }), [{ key: "sidebar.about" }]);
+  assert.deepEqual(navPath({ kind: "manual" }), [{ key: "sidebar.manual" }]);
 });
 
 // --- Layout -----------------------------------------------------------------
 check("Models fills the window, other pages don't", () => {
   assert.equal(fillsWindow({ kind: "defaults", page: "models" }), true);
   assert.equal(fillsWindow({ kind: "defaults", page: "general" }), false);
+});
+check("the manual fills the window, edge to edge", () => {
+  assert.equal(fillsWindow({ kind: "manual" }), true);
+  assert.equal(edgeToEdge({ kind: "manual" }), true);
+  assert.equal(
+    edgeToEdge({
+      kind: "manual",
+      page: "how-it-works/start-and-end-shortcuts/",
+    }),
+    true,
+  );
+});
+check("every other page keeps its margin", () => {
+  for (const location of everyLocation) {
+    if (location.kind === "manual") continue;
+    assert.equal(edgeToEdge(location), false, locationKey(location));
+  }
 });
 
 // --- Counts of own values (P5) --------------------------------------------
@@ -619,8 +676,9 @@ check("every page of the three areas shows its path, the overview too", () => {
   );
   assert.equal(showsPath({ kind: "application", page: "storage" }), true);
 });
-check("History and About, outside the areas, show none", () => {
+check("History, Manual and About, outside the areas, show none", () => {
   assert.equal(showsPath({ kind: "history" }), false);
+  assert.equal(showsPath({ kind: "manual" }), false);
   assert.equal(showsPath({ kind: "about" }), false);
 });
 

@@ -8,7 +8,7 @@ import { postProcessingOn } from "@/lib/endKeys";
 import { SettingsGroup } from "../../ui/SettingsGroup";
 // DanyWhere: the "?" to the manual's chapter on start and end shortcuts.
 import { ManualHelpButton } from "../../ui/ManualHelpButton";
-import { MANUAL_PAGES } from "@/hooks/useOpenManual";
+import { MANUAL_PAGES } from "@/lib/manual";
 import { EndKeysEditor } from "./EndKeysEditor";
 // DanyWhere (strand E2): the end shortcuts of the page's scope, the defaults
 // or a profile, each with its chain.

@@ -41,9 +41,7 @@
     "chapters": {
       "startAndEndShortcuts": "Start- och avslutningskortkommandon"
     },
-    "errors": {
-      "open": "Det gick inte att öppna handboken: {{error}}"
-    }
+    "unavailable": "Den här versionen av DanyWhere har ingen handbok."
   },
   "onboarding": {
     "customModelDescription": "Stöds inte officiellt",

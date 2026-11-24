@@ -41,9 +41,7 @@
     "chapters": {
       "startAndEndShortcuts": "Start and End Shortcuts"
     },
-    "errors": {
-      "open": "Couldn't open the manual: {{error}}"
-    }
+    "unavailable": "This build of DanyWhere has no manual."
   },
   "onboarding": {
     "customModelDescription": "Not officially supported",

@@ -41,9 +41,7 @@
     "chapters": {
       "startAndEndShortcuts": "Клавіші запуску та завершення"
     },
-    "errors": {
-      "open": "Не вдалося відкрити посібник: {{error}}"
-    }
+    "unavailable": "У цій збірці DanyWhere немає посібника."
   },
   "onboarding": {
     "customModelDescription": "Офіційно не підтримується",

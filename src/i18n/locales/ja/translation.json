@@ -41,9 +41,7 @@
     "chapters": {
       "startAndEndShortcuts": "開始・終了ショートカット"
     },
-    "errors": {
-      "open": "マニュアルを開けませんでした: {{error}}"
-    }
+    "unavailable": "このビルドの DanyWhere にはマニュアルが含まれていません。"
   },
   "onboarding": {
     "customModelDescription": "公式サポート対象外",

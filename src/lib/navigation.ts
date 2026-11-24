@@ -1,8 +1,9 @@
 /**
  * DanyWhere: where the settings window is. The sidebar is a tree of three
  * areas (qa 2026-11-19_1711 P3, P6, P11): the defaults, the profile settings
- * and the application settings, then History and About. Everything here is
- * pure, so it can be checked without a window (navigation.test.ts).
+ * and the application settings, then History, the user manual and About.
+ * Everything here is pure, so it can be checked without a window
+ * (navigation.test.ts).
  */
 import { DEFAULT_PROFILE_ID } from "./utils/profiles";
 // DanyWhere (strand E2): the counts of own values per profile and page (P5).
@@ -37,6 +38,7 @@ export type NavArea =
   | "profiles"
   | "application"
   | "history"
+  | "manual"
   | "about";
 
 /** What the content area shows. */
@@ -47,6 +49,9 @@ export type NavLocation =
   | { kind: "profile"; profileId: string; page: ProfilePage }
   | { kind: "application"; page: ApplicationPage }
   | { kind: "history" }
+  /** The user manual, at `page` (a page's slug, `MANUAL_PAGES`) or at its
+   * home page; every page of it is the same place. */
+  | { kind: "manual"; page?: string }
   | { kind: "about" };
 
 /** Where the window opens. */
@@ -205,6 +210,7 @@ const AREA_LABELS: Record<NavArea, string> = {
   profiles: "sidebar.areas.profiles",
   application: "sidebar.areas.application",
   history: "sidebar.history",
+  manual: "sidebar.manual",
   about: "sidebar.about",
 };
 
@@ -226,8 +232,9 @@ export const locationKey = (location: NavLocation): string => {
 export const sameLocation = (a: NavLocation, b: NavLocation): boolean =>
   locationKey(a) === locationKey(b);
 
-/** What a click on an area's row (or History, About) shows: its first page,
- * or for the profile settings the overview of all profiles. */
+/** What a click on an area's row (or History, Manual, About) shows: its
+ * first page, for the profile settings the overview of all profiles, for
+ * the manual its home page. */
 export const selectArea = (area: NavArea): NavLocation => {
   switch (area) {
     case "defaults":
@@ -238,6 +245,8 @@ export const selectArea = (area: NavArea): NavLocation => {
       return { kind: "application", page: APPLICATION_PAGES[0] };
     case "history":
       return { kind: "history" };
+    case "manual":
+      return { kind: "manual" };
     case "about":
       return { kind: "about" };
   }
@@ -313,10 +322,13 @@ export const navTree = (ctx: NavContext, location: NavLocation): NavItem[] => {
       label: { key: areaLabelKey(which) },
       target,
       // An area whose click shows a page of its own (the overview, History,
-      // About) is current then; Defaults and Application settings never are,
-      // their page is.
+      // the manual, About) is current then; Defaults and Application
+      // settings never are, their page is.
       current:
-        (which === "profiles" || which === "history" || which === "about") &&
+        (which === "profiles" ||
+          which === "history" ||
+          which === "manual" ||
+          which === "about") &&
         locationKey(target) === shown,
       icon: which,
     };
@@ -356,7 +368,7 @@ export const navTree = (ctx: NavContext, location: NavLocation): NavItem[] => {
   for (const p of applicationPages(ctx)) {
     items.push(page({ kind: "application", page: p }, pageLabelKey(p), 1));
   }
-  items.push(area("history"), area("about"));
+  items.push(area("history"), area("manual"), area("about"));
   return items;
 };
 
@@ -383,6 +395,8 @@ export const navPath = (location: NavLocation): NavLabel[] => {
       ];
     case "history":
       return [{ key: areaLabelKey("history") }];
+    case "manual":
+      return [{ key: areaLabelKey("manual") }];
     case "about":
       return [{ key: areaLabelKey("about") }];
   }
@@ -390,12 +404,21 @@ export const navPath = (location: NavLocation): NavLabel[] => {
 
 /** Whether the page shows its path above it: every page of the three
  * areas, the overview of the profiles too (qa 2026-11-22_0107, A3); not
- * History and About, which are no area's. */
+ * History, the manual and About, which are no area's. */
 export const showsPath = (location: NavLocation): boolean =>
-  location.kind !== "history" && location.kind !== "about";
+  location.kind !== "history" &&
+  location.kind !== "manual" &&
+  location.kind !== "about";
 
 /** The Models page fills the window, the defaults' and a profile's: its
- * table scrolls, not the page. */
+ * table scrolls, not the page. So does the manual, which scrolls in its
+ * frame. */
 export const fillsWindow = (location: NavLocation): boolean =>
-  (location.kind === "defaults" || location.kind === "profile") &&
-  location.page === "models";
+  location.kind === "manual" ||
+  ((location.kind === "defaults" || location.kind === "profile") &&
+    location.page === "models");
+
+/** The manual's page has no margin: its frame reaches the content area's
+ * edges. */
+export const edgeToEdge = (location: NavLocation): boolean =>
+  location.kind === "manual";

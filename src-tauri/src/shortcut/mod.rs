@@ -516,8 +516,6 @@ pub fn change_theme_setting(app: AppHandle, theme: String) -> Result<(), String>
     settings::write_settings(&app, settings);
     #[cfg(any(target_os = "windows", target_os = "macos"))]
     apply_window_theme(&app, parsed);
-    // DanyWhere: the page the user manual shows, while it is open.
-    crate::manual::apply_theme(&app, parsed);
     // Notify other webviews (the recording overlay) so they re-apply the palette
     // live — they set `data-theme` on their own document and can't see this one.
     let _ = app.emit("theme-changed", parsed);
@@ -540,12 +538,9 @@ pub fn apply_window_theme(app: &AppHandle, theme: Theme) {
         Theme::Light => Some(tauri::Theme::Light),
         Theme::Dark => Some(tauri::Theme::Dark),
     };
-    // DanyWhere: the user manual's window too, while it is open (manual.rs).
-    for label in ["main", crate::manual::MANUAL_WINDOW] {
-        if let Some(window) = app.get_webview_window(label) {
-            if let Err(e) = window.set_theme(window_theme) {
-                warn!("Failed to apply window theme: {}", e);
-            }
+    if let Some(window) = app.get_webview_window("main") {
+        if let Err(e) = window.set_theme(window_theme) {
+            warn!("Failed to apply window theme: {}", e);
         }
     }
 }

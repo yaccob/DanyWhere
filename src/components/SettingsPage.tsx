@@ -17,6 +17,9 @@ import {
   UpdatesSettings,
 } from "./settings/application";
 import { ProfilesPage } from "./settings/profiles/ProfilesPage";
+// DanyWhere: the user manual, as a page of its own.
+import { ManualPage } from "./settings/manual/ManualPage";
+import { OpenManualProvider } from "@/hooks/useOpenManual";
 // DanyWhere (strand E2): the profile view and the settings view.
 import { ProfileOverview } from "./settings/profiles/ProfileOverview";
 import { ProfileScopedPage } from "./settings/profiles/ProfileScopedPage";
@@ -174,6 +177,9 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
     case "history":
       page = <HistorySettings />;
       break;
+    case "manual":
+      page = <ManualPage page={location.page} />;
+      break;
     case "about":
       page = <AboutSettings />;
       break;
@@ -194,11 +200,16 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
       page: known ? (target as ProfilePage) : "profile",
     });
   };
+  // DanyWhere: a "?" on a page shows the manual's chapter on its page.
+  const openManual = (manualPage?: string) =>
+    onNavigate({ kind: "manual", page: manualPage });
 
   return (
     <OpenProfilePageProvider value={openProfilePage}>
-      <PagePath location={location} />
-      {page}
+      <OpenManualProvider value={openManual}>
+        <PagePath location={location} />
+        {page}
+      </OpenManualProvider>
     </OpenProfilePageProvider>
   );
 };

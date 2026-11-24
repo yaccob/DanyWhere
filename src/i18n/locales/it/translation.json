@@ -41,9 +41,7 @@
     "chapters": {
       "startAndEndShortcuts": "Scorciatoie di avvio e di fine"
     },
-    "errors": {
-      "open": "Impossibile aprire il manuale: {{error}}"
-    }
+    "unavailable": "Questa build di DanyWhere non include il manuale."
   },
   "onboarding": {
     "customModelDescription": "Non ufficialmente supportato",

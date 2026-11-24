@@ -41,9 +41,7 @@
     "chapters": {
       "startAndEndShortcuts": "Atajos de inicio y de fin"
     },
-    "errors": {
-      "open": "No se pudo abrir el manual: {{error}}"
-    }
+    "unavailable": "Esta compilación de DanyWhere no incluye el manual."
   },
   "onboarding": {
     "customModelDescription": "Sin soporte oficial",

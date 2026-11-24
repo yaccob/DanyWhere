@@ -41,9 +41,7 @@
     "chapters": {
       "startAndEndShortcuts": "시작 및 종료 단축키"
     },
-    "errors": {
-      "open": "설명서를 열 수 없습니다: {{error}}"
-    }
+    "unavailable": "이 DanyWhere 빌드에는 설명서가 포함되어 있지 않습니다."
   },
   "onboarding": {
     "customModelDescription": "공식 지원되지 않음",

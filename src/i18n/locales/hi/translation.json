@@ -41,9 +41,7 @@
     "chapters": {
       "startAndEndShortcuts": "प्रारंभ और समाप्ति शॉर्टकट"
     },
-    "errors": {
-      "open": "मैनुअल नहीं खुल सका: {{error}}"
-    }
+    "unavailable": "DanyWhere के इस बिल्ड में मैनुअल शामिल नहीं है।"
   },
   "onboarding": {
     "customModelDescription": "आधिकारिक रूप से समर्थित नहीं",

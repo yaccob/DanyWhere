@@ -41,9 +41,7 @@
     "chapters": {
       "startAndEndShortcuts": "اختصارات البدء والإنهاء"
     },
-    "errors": {
-      "open": "تعذّر فتح الدليل: {{error}}"
-    }
+    "unavailable": "هذا الإصدار من DanyWhere لا يتضمن الدليل."
   },
   "onboarding": {
     "customModelDescription": "غير مدعوم رسميًا",

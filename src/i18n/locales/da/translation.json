@@ -41,9 +41,7 @@
     "chapters": {
       "startAndEndShortcuts": "Start- og afslutningsgenveje"
     },
-    "errors": {
-      "open": "Kunne ikke åbne brugervejledningen: {{error}}"
-    }
+    "unavailable": "Denne udgave af DanyWhere har ingen brugervejledning."
   },
   "onboarding": {
     "customModelDescription": "Ikke officielt understøttet",

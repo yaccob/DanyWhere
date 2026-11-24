@@ -21,6 +21,7 @@ import {
 import { switchTestLanguage } from "@/test/i18n";
 import { setOsType } from "@/test/tauri-mock";
 import { rawTextIn, visibleText } from "@/test/visible";
+import { OpenManualProvider } from "@/hooks/useOpenManual";
 
 const PLAIN = endKey("plain", "ctrl+space");
 const SEND = endKey("end_1795307754299", "ctrl+return", { name: "Senden" });
@@ -29,20 +30,31 @@ const WITH_POST = endKey("end_1795307811111", "ctrl+alt+k", {
   post_process: true,
 });
 
+/** The manual's chapters the page asked the settings window to show (none
+ * for its home page). */
+const openedChapters: (string | undefined)[] = [];
+
 const renderEnds = (
   ends: EndKey[],
   scope: Scope = DEFAULTS_SCOPE,
   spec: SettingsSpec = {},
   acceptWrites = true,
-) =>
-  renderPage(<EndKeysSettings />, {
-    settings: settingsWith({
-      ...spec,
-      defaults: { end_keys: ends, ...spec.defaults },
-    }),
-    scope,
-    acceptWrites,
-  });
+) => {
+  openedChapters.length = 0;
+  return renderPage(
+    <OpenManualProvider value={(page) => openedChapters.push(page)}>
+      <EndKeysSettings />
+    </OpenManualProvider>,
+    {
+      settings: settingsWith({
+        ...spec,
+        defaults: { end_keys: ends, ...spec.defaults },
+      }),
+      scope,
+      acceptWrites,
+    },
+  );
+};
 
 /** The list the page last asked the backend to store. */
 const storedEnds = (): EndKey[] => {
@@ -422,7 +434,8 @@ describe("End Shortcuts with post-processing off", () => {
 });
 
 // DanyWhere: the "?" next to the group's title opens the manual's chapter on
-// start and end shortcuts (`open_manual`, src-tauri/src/manual.rs).
+// start and end shortcuts, on the manual's page of the settings window
+// (`OpenManualProvider`; what that page shows: ManualPage.test.tsx).
 describe("the manual's chapter from End Shortcuts", () => {
   const CHAPTER = "how-it-works/start-and-end-shortcuts/";
   const helpButton = () =>
@@ -438,7 +451,7 @@ describe("the manual's chapter from End Shortcuts", () => {
 
     await press(helpButton());
 
-    expect(callsOf("openManual")).toEqual([[CHAPTER]]);
+    expect(openedChapters).toEqual([CHAPTER]);
     expect(callsOf("setProfileValue")).toEqual([]);
   });
 
@@ -468,7 +481,7 @@ describe("the manual's chapter from End Shortcuts", () => {
 
     await press(helpButton());
 
-    expect(callsOf("openManual")).toEqual([[CHAPTER]]);
+    expect(openedChapters).toEqual([CHAPTER]);
   });
 
   test("names the chapter in German", async () => {
@@ -481,16 +494,20 @@ describe("the manual's chapter from End Shortcuts", () => {
       }),
     );
 
-    expect(callsOf("openManual")).toEqual([[CHAPTER]]);
+    expect(openedChapters).toEqual([CHAPTER]);
     expect(rawTextIn()).toEqual([]);
   });
 
-  test("says so when the manual can't open", async () => {
-    mockCommand("openManual", async () => err("no window"));
-    await renderEnds([PLAIN, SEND]);
+  test("outside the settings window there is no button that does nothing", async () => {
+    await renderPage(<EndKeysSettings />, {
+      settings: settingsWith({ defaults: { end_keys: [PLAIN, SEND] } }),
+      scope: DEFAULTS_SCOPE,
+    });
 
-    await press(helpButton());
-
-    expect(raisedNotices()).toEqual(["Couldn't open the manual: no window"]);
+    expect(screen.getByRole("heading", { name: "End Shortcuts" })).toBeTruthy();
+    const button = screen.queryByRole("button", {
+      name: "Open the manual: Start and End Shortcuts",
+    });
+    expect(button === null).toBe(true);
   });
 });

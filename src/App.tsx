@@ -33,6 +33,7 @@ import { Sidebar } from "./components/Sidebar";
 import { SettingsPage } from "./components/SettingsPage";
 import {
   START_LOCATION,
+  edgeToEdge,
   fillsWindow,
   locationKey,
   navContext,
@@ -334,9 +335,10 @@ function App() {
           {/* Scrollable content area */}
           <div className="flex-1 flex flex-col overflow-hidden">
             <div ref={settingsScrollRef} className="flex-1 overflow-y-auto">
-              {/* Models fills the window: its table scrolls, not the page. */}
+              {/* Models fills the window: its table scrolls, not the page.
+                  The manual fills it edge to edge: its frame scrolls. */}
               <div
-                className={`flex flex-col items-center p-4 gap-4 ${fillsWindow(shown) ? "h-full" : ""}`}
+                className={`flex flex-col items-center ${edgeToEdge(shown) ? "" : "p-4 gap-4"} ${fillsWindow(shown) ? "h-full" : ""}`}
               >
                 <SecureInputWarning />
                 <SettingsPage

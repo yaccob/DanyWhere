@@ -1,7 +1,8 @@
-// DanyWhere: the manual's window follows the app's theme. The manual is
-// served from the app's own origin, so it shares the main window's
+// DanyWhere: the user manual follows the app's theme. The manual is served
+// from the app's own origin, so it shares the settings window's
 // localStorage; Starlight reads its theme from `starlight-theme` there
-// ("light", "dark", or empty for the system's) on every page it loads.
+// ("light", "dark", or empty for the system's) on every page it loads. The
+// page on screen follows a change too (ManualPage.test.tsx).
 import { beforeEach, describe, expect, test } from "bun:test";
 import { screen } from "@testing-library/react";
 import { ThemeSelector } from "./ThemeSelector";

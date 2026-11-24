@@ -14,7 +14,6 @@ import { useSettings } from "../hooks/useSettings";
 // DanyWhere: the profile in use, on every page ("In Use", qa 2026-11-19_1711 P2).
 import { ProfileSelector } from "./settings/profiles/ProfileSelector";
 import { useProfiles } from "@/hooks/useProfiles";
-import { useOpenManual } from "@/hooks/useOpenManual";
 // DanyWhere: names a test build (Dev, NoAX) under the wordmark.
 import VariantBadge from "./VariantBadge";
 // DanyWhere: the tree of three areas (P3, P6, P11).
@@ -31,6 +30,8 @@ const ICONS: Record<NavIcon, LucideIcon> = {
   profiles: Layers,
   application: MonitorCog,
   history: History,
+  // DanyWhere: the user manual's page.
+  manual: BookOpen,
   about: Info,
 };
 
@@ -38,25 +39,16 @@ const ICONS: Record<NavIcon, LucideIcon> = {
  * one step further in. */
 const INDENT = ["ps-2", "ps-[34px]", "ps-[46px]"] as const;
 
-/** What a row's look depends on. */
-type RowLook = Pick<NavItem, "level" | "current" | "open" | "count" | "icon">;
-
-/** DanyWhere: the user manual's row looks like History's and About's, a
- * single page's, but is never current: it opens a window of its own. */
-const MANUAL_ROW: RowLook = { level: 0, current: false };
-
 interface NavRowProps {
-  item: RowLook;
+  item: NavItem;
   label: string;
   onClick: () => void;
-  /** DanyWhere: an icon of its own, for a row that is no place of the
-   * tree (the manual). */
-  icon?: LucideIcon;
 }
 
-const NavRow: React.FC<NavRowProps> = ({ item, label, onClick, icon }) => {
-  const Icon = icon ?? (item.icon ? ICONS[item.icon] : null);
-  // The three areas head their pages; History and About are single pages.
+const NavRow: React.FC<NavRowProps> = ({ item, label, onClick }) => {
+  const Icon = item.icon ? ICONS[item.icon] : null;
+  // The three areas head their pages; History, Manual and About are single
+  // pages.
   const heading =
     item.icon === "defaults" ||
     item.icon === "profiles" ||
@@ -115,7 +107,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ location, onNavigate }) => {
   const { t, i18n } = useTranslation();
   const { settings } = useSettings();
   const { profiles, displayName } = useProfiles();
-  const openManual = useOpenManual();
   const items = navTree(navContext(settings), location);
 
   const label = (item: NavItem): string => {
@@ -138,22 +129,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ location, onNavigate }) => {
         className="flex-1 min-h-0 overflow-y-auto flex flex-col w-full gap-0.5 pb-3"
       >
         {items.map((item) => (
-          <React.Fragment key={item.id}>
-            {/* DanyWhere: the user manual, between History and About. */}
-            {item.id === "about" && (
-              <NavRow
-                item={MANUAL_ROW}
-                label={t("sidebar.manual")}
-                icon={BookOpen}
-                onClick={() => void openManual()}
-              />
-            )}
-            <NavRow
-              item={item}
-              label={label(item)}
-              onClick={() => onNavigate(item.target)}
-            />
-          </React.Fragment>
+          <NavRow
+            key={item.id}
+            item={item}
+            label={label(item)}
+            onClick={() => onNavigate(item.target)}
+          />
         ))}
       </nav>
     </div>

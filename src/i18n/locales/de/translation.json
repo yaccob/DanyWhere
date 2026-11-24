@@ -41,9 +41,7 @@
     "chapters": {
       "startAndEndShortcuts": "Start- und Endtasten"
     },
-    "errors": {
-      "open": "Das Handbuch konnte nicht geöffnet werden: {{error}}"
-    }
+    "unavailable": "Dieser Build von DanyWhere enthält kein Handbuch."
   },
   "onboarding": {
     "customModelDescription": "Nicht offiziell unterstützt",

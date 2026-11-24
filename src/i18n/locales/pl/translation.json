@@ -41,9 +41,7 @@
     "chapters": {
       "startAndEndShortcuts": "Skróty rozpoczynające i kończące"
     },
-    "errors": {
-      "open": "Nie udało się otworzyć instrukcji: {{error}}"
-    }
+    "unavailable": "Ta wersja DanyWhere nie zawiera instrukcji."
   },
   "onboarding": {
     "customModelDescription": "Nieoficjalnie wspierane",

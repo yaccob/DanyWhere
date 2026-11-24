@@ -41,9 +41,7 @@
     "chapters": {
       "startAndEndShortcuts": "Pintasan Mulai dan Akhir"
     },
-    "errors": {
-      "open": "Tidak dapat membuka panduan: {{error}}"
-    }
+    "unavailable": "Build DanyWhere ini tidak menyertakan panduan."
   },
   "onboarding": {
     "customModelDescription": "Tidak didukung secara resmi",

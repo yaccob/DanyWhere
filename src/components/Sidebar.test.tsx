@@ -1,24 +1,20 @@
 // DanyWhere: the sidebar's entry for the user manual. It sits between
-// History and About and opens the manual's home page in a window of its own
-// (`open_manual`, src-tauri/src/manual.rs); the settings window stays on the
-// page it shows.
+// History and About and, like them, shows a page of its own in the settings
+// window: the manual (`ManualPage`), marked as the current page while shown.
 import { describe, expect, test } from "bun:test";
 import { screen, within } from "@testing-library/react";
 import type { NavLocation } from "@/lib/navigation";
 import { Sidebar } from "./Sidebar";
-import { callsOf, err, mockCommand } from "@/test/bindings-mock";
-import { press, raisedNotices, renderPage } from "@/test/render";
+import { press, renderPage } from "@/test/render";
 import { switchTestLanguage } from "@/test/i18n";
 
+const CHAPTER = "how-it-works/start-and-end-shortcuts/";
 const navigated: NavLocation[] = [];
 
-const renderSidebar = () => {
+const renderSidebar = (location: NavLocation = { kind: "history" }) => {
   navigated.length = 0;
   return renderPage(
-    <Sidebar
-      location={{ kind: "history" }}
-      onNavigate={(next) => navigated.push(next)}
-    />,
+    <Sidebar location={location} onNavigate={(next) => navigated.push(next)} />,
   );
 };
 
@@ -27,6 +23,9 @@ const rowNames = (): string[] =>
   within(screen.getByRole("navigation"))
     .getAllByRole("button")
     .map((row) => row.textContent ?? "");
+
+const isCurrent = (name: string): boolean =>
+  screen.getByRole("button", { name }).getAttribute("aria-current") === "page";
 
 describe("the sidebar's Manual entry", () => {
   test("sits between History and About", async () => {
@@ -42,30 +41,32 @@ describe("the sidebar's Manual entry", () => {
     ]);
   });
 
-  test("opens the manual's home page and leaves the window where it is", async () => {
+  test("shows the manual's page, at its home page", async () => {
     await renderSidebar();
 
     await press(screen.getByRole("button", { name: "Manual" }));
 
-    expect(callsOf("openManual")).toEqual([[null]]);
-    expect(navigated).toEqual([]);
-    expect(
-      screen
-        .getByRole("button", { name: "History" })
-        .getAttribute("aria-current"),
-    ).toBe("page");
+    expect(navigated).toEqual([{ kind: "manual" }]);
   });
 
-  test("is never the current page", async () => {
-    await renderSidebar();
+  test("is the current page while the manual shows", async () => {
+    await renderSidebar({ kind: "manual" });
 
-    await press(screen.getByRole("button", { name: "Manual" }));
+    expect(isCurrent("Manual")).toBe(true);
+    expect(isCurrent("History")).toBe(false);
+    expect(isCurrent("About")).toBe(false);
+  });
 
-    expect(
-      screen
-        .getByRole("button", { name: "Manual" })
-        .hasAttribute("aria-current"),
-    ).toBe(false);
+  test("is current at any chapter of the manual too", async () => {
+    await renderSidebar({ kind: "manual", page: CHAPTER });
+
+    expect(isCurrent("Manual")).toBe(true);
+  });
+
+  test("isn't current on another page", async () => {
+    await renderSidebar({ kind: "history" });
+
+    expect(isCurrent("Manual")).toBe(false);
   });
 
   test("reads Handbuch in German", async () => {
@@ -74,15 +75,6 @@ describe("the sidebar's Manual entry", () => {
 
     await press(screen.getByRole("button", { name: "Handbuch" }));
 
-    expect(callsOf("openManual")).toEqual([[null]]);
-  });
-
-  test("says so when the manual can't open", async () => {
-    mockCommand("openManual", async () => err("no window"));
-    await renderSidebar();
-
-    await press(screen.getByRole("button", { name: "Manual" }));
-
-    expect(raisedNotices()).toEqual(["Couldn't open the manual: no window"]);
+    expect(navigated).toEqual([{ kind: "manual" }]);
   });
 });

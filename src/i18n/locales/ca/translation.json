@@ -41,9 +41,7 @@
     "chapters": {
       "startAndEndShortcuts": "Dreceres d'inici i de final"
     },
-    "errors": {
-      "open": "No s'ha pogut obrir el manual: {{error}}"
-    }
+    "unavailable": "Aquesta compilació de DanyWhere no inclou el manual."
   },
   "onboarding": {
     "customModelDescription": "Sense suport oficial",

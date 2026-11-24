@@ -41,9 +41,7 @@
     "chapters": {
       "startAndEndShortcuts": "Start- en eindsneltoetsen"
     },
-    "errors": {
-      "open": "Kan de handleiding niet openen: {{error}}"
-    }
+    "unavailable": "Deze build van DanyWhere bevat geen handleiding."
   },
   "onboarding": {
     "customModelDescription": "Niet officieel ondersteund",

@@ -1070,19 +1070,6 @@ async openAppDataDir() : Promise<Result<null, string>> {
 }
 },
 /**
- * Opens the manual's window at `page` (a page's slug, see `manual_url`),
- * or its home page, in the app's interface language; a window already open
- * goes to that page and comes to the front.
- */
-async openManual(page: string | null) : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("open_manual", { page }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-/**
  * Check if Apple Intelligence is available on this device.
  * Called by the frontend when the user selects Apple Intelligence provider.
  */

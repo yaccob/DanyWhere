@@ -41,9 +41,7 @@
     "chapters": {
       "startAndEndShortcuts": "Phím tắt bắt đầu và kết thúc"
     },
-    "errors": {
-      "open": "Không thể mở hướng dẫn sử dụng: {{error}}"
-    }
+    "unavailable": "Bản dựng DanyWhere này không có hướng dẫn sử dụng."
   },
   "onboarding": {
     "customModelDescription": "Không được hỗ trợ chính thức",

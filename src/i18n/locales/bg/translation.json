@@ -41,9 +41,7 @@
     "chapters": {
       "startAndEndShortcuts": "Клавиши за старт и край"
     },
-    "errors": {
-      "open": "Ръководството не можа да се отвори: {{error}}"
-    }
+    "unavailable": "Тази версия на DanyWhere няма ръководство."
   },
   "onboarding": {
     "customModelDescription": "Не се поддържа официално",
