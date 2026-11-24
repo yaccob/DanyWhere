@@ -11,6 +11,7 @@ use std::future::Future;
 use std::time::{Duration, Instant};
 
 use crate::actions::{ProcessedTranscription, TranscriptionOutcome};
+use crate::audio_toolkit::WordListMatch;
 use crate::delivery::{DictationEnd, DictationNotice};
 use crate::dictation_context::{CapturedWindow, ContextQuery};
 use crate::dictation_key_inserts::ClipboardReason;
@@ -58,6 +59,19 @@ pub trait PostProcess {
         post_process: bool,
         context: &ContextQuery,
     ) -> impl Future<Output = ProcessedTranscription> + Send;
+}
+
+/// The word list check (`word_list_check`).
+pub trait CheckWordList {
+    /// Which of `candidates` the post-processing provider of `settings`
+    /// confirms as meant in the sentence `text` (`word_list_check::check`);
+    /// an error when it can't be asked or its answer can't be read.
+    fn check_word_list(
+        &self,
+        settings: &AppSettings,
+        text: &str,
+        candidates: &[WordListMatch],
+    ) -> impl Future<Output = Result<Vec<WordListMatch>, String>> + Send;
 }
 
 /// History.
@@ -182,13 +196,24 @@ pub trait Session {
 
 /// Everything the end of a dictation needs, as one bound.
 pub trait DictationPorts:
-    Transcribe + PostProcess + History + Deliver + Report + Session + Clone + Send + Sync + 'static
+    Transcribe
+    + PostProcess
+    + CheckWordList
+    + History
+    + Deliver
+    + Report
+    + Session
+    + Clone
+    + Send
+    + Sync
+    + 'static
 {
 }
 
 impl<T> DictationPorts for T where
     T: Transcribe
         + PostProcess
+        + CheckWordList
         + History
         + Deliver
         + Report

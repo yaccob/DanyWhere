@@ -1298,6 +1298,16 @@ pub fn change_filler_word_removal_enabled_setting(
     Ok(())
 }
 
+/// DanyWhere: switches the word list check (`word_list_check`) on or off.
+#[tauri::command]
+#[specta::specta]
+pub fn change_word_list_llm_check_setting(app: AppHandle, enabled: bool) -> Result<(), String> {
+    let mut settings = settings::get_settings(&app);
+    settings.word_list_llm_check = enabled;
+    settings::write_settings(&app, settings);
+    Ok(())
+}
+
 #[tauri::command]
 #[specta::specta]
 pub fn change_chinese_script_setting(app: AppHandle, script: ChineseScript) -> Result<(), String> {

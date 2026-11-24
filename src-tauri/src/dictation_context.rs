@@ -163,6 +163,11 @@ pub struct ContextQuery {
     pub before_id: i64,
     /// What the word list replaced in the dictation, for the hint.
     pub word_replacements: Vec<WordReplacement>,
+    /// DanyWhere: words of the dictation that resemble a word list's term,
+    /// after a speech model that didn't take the lists: a hint in the known
+    /// terms block (`word_list_check`, `prompt_frame`). Only a new
+    /// dictation has them; a redo passes none.
+    pub misheard: Vec<crate::audio_toolkit::WordListMatch>,
 }
 
 impl ContextQuery {
@@ -176,7 +181,14 @@ impl ContextQuery {
             before_timestamp: chrono::Utc::now().timestamp(),
             before_id: i64::MAX,
             word_replacements,
+            misheard: Vec::new(),
         }
+    }
+
+    /// This query with `misheard` as the dictation's possibly misheard
+    /// words.
+    pub fn with_misheard(self, misheard: Vec<crate::audio_toolkit::WordListMatch>) -> Self {
+        Self { misheard, ..self }
     }
 
     /// For processing `entry` again: its own window, and only the entries
@@ -188,6 +200,7 @@ impl ContextQuery {
             before_timestamp: entry.timestamp,
             before_id: entry.id,
             word_replacements,
+            misheard: Vec::new(),
         }
     }
 }
@@ -1023,6 +1036,7 @@ mod tests {
             before_timestamp: before,
             before_id,
             word_replacements: Vec::new(),
+            misheard: Vec::new(),
         }
     }
 

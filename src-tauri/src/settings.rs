@@ -668,6 +668,13 @@ pub struct AppSettings {
     pub filler_word_removal_enabled: bool,
     #[serde(default)]
     pub custom_filler_words: Option<Vec<String>>,
+    /// DanyWhere: after a speech model that took no vocabulary, words that
+    /// resemble a word list's term go to the post-processing provider in a
+    /// small request, which decides from the sentence whether the term was
+    /// meant; only confirmed ones are replaced (`word_list_check`). Off
+    /// unless the user switches it on.
+    #[serde(default)]
+    pub word_list_llm_check: bool,
     /// Fresh installs default from the OS locale; existing stores are migrated
     /// in `apply_settings_migrations`.
     #[serde(default)]
@@ -1356,6 +1363,7 @@ pub fn get_default_settings() -> AppSettings {
         external_script_path: None,
         filler_word_removal_enabled: default_filler_word_removal_enabled(),
         custom_filler_words: None,
+        word_list_llm_check: false,
         chinese_script: default_chinese_script(),
         transcribe_accelerator: TranscribeAcceleratorSetting::default(),
         transcribe_gpu_device: default_transcribe_gpu_device(),
@@ -2090,6 +2098,20 @@ mod tests {
         assert!(settings.filler_word_removal_enabled);
         // Bindings default to empty; the load path merges the real defaults in.
         assert!(settings.bindings.is_empty());
+    }
+
+    /// DanyWhere: the word list check costs a request to the provider, so
+    /// it is off for new installations and for stores from before it.
+    #[test]
+    fn the_word_list_check_is_off_until_switched_on() {
+        assert!(!get_default_settings().word_list_llm_check);
+        let stored: AppSettings = serde_json::from_value(serde_json::json!({}))
+            .expect("all AppSettings fields need serde defaults");
+        assert!(!stored.word_list_llm_check);
+        let on: AppSettings =
+            serde_json::from_value(serde_json::json!({ "word_list_llm_check": true }))
+                .expect("parses");
+        assert!(on.word_list_llm_check);
     }
 
     /// DanyWhere: the done sound is on for new installations and for every

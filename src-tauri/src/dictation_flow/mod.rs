@@ -21,7 +21,8 @@ use log::{debug, error, warn};
 
 use crate::actions::{complete_unless_cancelled, process_transcription_with_settings};
 use crate::actions::{ProcessedTranscription, TranscriptionOutcome};
-use crate::dictation_context::ContextQuery;
+use crate::audio_toolkit::WordListMatch;
+use crate::dictation_context::{ContextQuery, WordReplacement};
 use crate::dictation_snapshot::DictationSnapshot;
 use crate::managers::history::HistoryManager;
 use crate::managers::transcription::Transcription;
@@ -34,8 +35,10 @@ use crate::tray::TrayIconState;
 use crate::utils::{self, PasteOutcome};
 
 pub(crate) mod app_ports;
+// `pub(crate)`: other modules' tests reach a local provider through
+// `fakes::llm_server` too (`word_list_check`).
 #[cfg(test)]
-mod fakes;
+pub(crate) mod fakes;
 pub mod ports;
 
 use ports::{Deliver, DictationPorts, Overlay, Recording, Report, Session};
@@ -135,15 +138,56 @@ pub(crate) async fn post_process_dictation(
     post_process: bool,
     context: &ContextQuery,
 ) -> ProcessedTranscription {
-    process_transcription_with_settings(settings, transcription, post_process, |instructions| {
-        crate::dictation_context::context_from(history, settings, instructions, context)
-    })
+    process_transcription_with_settings(
+        settings,
+        transcription,
+        post_process,
+        &context.misheard,
+        |instructions| {
+            crate::dictation_context::context_from(history, settings, instructions, context)
+        },
+    )
     .await
+}
+
+/// DanyWhere: `transcription` with the candidates the word list check
+/// confirmed replaced by their terms (`checked`), and what was replaced;
+/// as heard when the check failed (`word_list_check`).
+fn apply_word_list_check(
+    settings: &AppSettings,
+    transcription: String,
+    checked: Result<Vec<WordListMatch>, String>,
+) -> (String, Vec<WordReplacement>) {
+    match checked {
+        Ok(confirmed) => {
+            let terms = crate::word_lists::merged_vocabulary(settings);
+            let (text, replaced) = crate::audio_toolkit::apply_word_list_matches(
+                &transcription,
+                &terms,
+                crate::word_list_check::CANDIDATE_THRESHOLD,
+                &confirmed,
+            );
+            let replaced = replaced
+                .into_iter()
+                .map(|(original, replacement)| WordReplacement {
+                    original,
+                    replacement,
+                })
+                .collect();
+            (text, replaced)
+        }
+        Err(e) => {
+            warn!("The word list check failed, keeping the transcript as heard: {e}");
+            (transcription, Vec::new())
+        }
+    }
 }
 
 /// Finishes `dictation`: stops its recording, transcribes it, post-processes
 /// it, saves it to History and hands it to the paste thread, with what its
-/// snapshot holds.
+/// snapshot holds. DanyWhere: after a speech model without vocabulary, the
+/// words that resemble a word list's term are checked before
+/// post-processing (`word_list_check`).
 pub(crate) async fn finish_dictation<P: DictationPorts>(dictation: Dictation, ports: P) {
     let Dictation {
         snapshot,
@@ -241,14 +285,54 @@ pub(crate) async fn finish_dictation<P: DictationPorts>(dictation: Dictation, po
                 Ok(Transcription {
                     text: transcription,
                     language,
-                    word_replacements,
+                    mut word_replacements,
                     model_id,
+                    takes_vocabulary,
                 }) => {
                     debug!(
                         "Transcription completed in {:?}: '{}'",
                         transcription_time.elapsed(),
                         utils::redact_text(&transcription)
                     );
+
+                    // DanyWhere: words that resemble a word list's term,
+                    // after a model that didn't take the lists: checked
+                    // with the post-processing provider when the user
+                    // wants it, else a hint for post-processing
+                    // (`word_list_check`).
+                    let candidates = crate::word_list_check::candidates(
+                        &snapshot.settings,
+                        &transcription,
+                        takes_vocabulary,
+                    );
+                    let transcription = if !candidates.is_empty()
+                        && crate::word_list_check::wanted(&snapshot.settings, snapshot.post_process)
+                    {
+                        ports.overlay(Overlay::Working {
+                            working: Working::PostProcessing,
+                            streaming: use_streaming_overlay,
+                        });
+                        let Some(checked) = complete_unless_cancelled(
+                            ports.check_word_list(&snapshot.settings, &transcription, &candidates),
+                            || ports.cancelled(),
+                        )
+                        .await
+                        else {
+                            debug!("Transcription operation cancelled during the word list check");
+                            end_cancelled(&ports);
+                            return;
+                        };
+                        let (text, replaced) =
+                            apply_word_list_check(&snapshot.settings, transcription, checked);
+                        for replacement in replaced {
+                            if !word_replacements.contains(&replacement) {
+                                word_replacements.push(replacement);
+                            }
+                        }
+                        text
+                    } else {
+                        transcription
+                    };
 
                     if snapshot.post_process {
                         ports.overlay(Overlay::Working {
@@ -268,7 +352,8 @@ pub(crate) async fn finish_dictation<P: DictationPorts>(dictation: Dictation, po
                             None
                         },
                         word_replacements.clone(),
-                    );
+                    )
+                    .with_misheard(candidates);
                     // DanyWhere: with the snapshot's settings; a
                     // change made meanwhile applies from the next
                     // dictation on.
@@ -711,8 +796,9 @@ mod tests {
     use super::{finish_dictation, pasted_dictation_notice, stopped, Dictation};
     use crate::accessibility::testing::settings_without_accessibility;
     use crate::actions::TranscriptionOutcome;
+    use crate::audio_toolkit::WordListMatch;
     use crate::delivery::{DictationEnd, DictationNotice};
-    use crate::dictation_context::CapturedWindow;
+    use crate::dictation_context::{CapturedWindow, WordReplacement};
     use crate::dictation_key_inserts::ClipboardReason;
     use crate::dictation_snapshot::{build, DictationSnapshot, SnapshotInputs};
     use crate::end_keys::{EndChoice, EndKey, POST_PROCESS_ID, START_BINDINGS};
@@ -1324,6 +1410,240 @@ mod tests {
                 Event::Finished,
             ]
         );
+    }
+
+    // ---- The word list check -----------------------------------------------
+
+    /// What a model without vocabulary heard: "DanyWhere" as "Deniware",
+    /// and the right word "Bild", which sounds like "Build".
+    const HEARD: &str = "Deniware zeigt das Bild.";
+
+    /// [`post_process_settings`] at `base_url` with "DanyWhere" and "Build"
+    /// in the global word list and the word list check as `check` says.
+    fn word_list_settings(base_url: &str, check: bool) -> AppSettings {
+        let mut settings = post_process_settings(base_url);
+        settings.custom_words = vec!["DanyWhere".to_string(), "Build".to_string()];
+        settings.word_list_llm_check = check;
+        settings
+    }
+
+    fn pair(heard: &str, term: &str) -> WordListMatch {
+        WordListMatch {
+            heard: heard.to_string(),
+            term: term.to_string(),
+        }
+    }
+
+    /// The candidates of [`HEARD`] with `settings`, both pairs among them.
+    fn candidates_of_heard(settings: &AppSettings) -> Vec<WordListMatch> {
+        let found = crate::word_list_check::candidates(settings, HEARD, false);
+        assert!(found.contains(&pair("Deniware", "DanyWhere")), "{found:?}");
+        assert!(found.contains(&pair("Bild", "Build")), "{found:?}");
+        found
+    }
+
+    /// Whether `events` hold a word list check.
+    fn checked(events: &[Event]) -> bool {
+        events
+            .iter()
+            .any(|event| matches!(event, Event::CheckWordList(_)))
+    }
+
+    #[test]
+    fn only_what_the_check_confirms_is_replaced_in_history_and_in_the_paste() {
+        let snapshot = snapshot_with(word_list_settings("", true));
+        assert!(!snapshot.post_process);
+        let found = candidates_of_heard(&snapshot.settings);
+        let values = snapshot.values.clone();
+        let append_text = snapshot.end.append_text.clone();
+        let ports = FakePorts::new(Script {
+            transcription: Ok(HEARD.to_string()),
+            word_list_check: Ok(vec!["Deniware"]),
+            ..Script::default()
+        });
+        finish(&ports, snapshot);
+
+        let corrected = "DanyWhere zeigt das Bild.";
+        let mut expected = stop_events(false);
+        expected.extend([
+            Event::StopRecording,
+            Event::Transcribe {
+                samples: SAMPLES,
+                load_end_model: false,
+            },
+            // The check shows as post-processing does.
+            Event::Overlay(Overlay::Working {
+                working: Working::PostProcessing,
+                streaming: false,
+            }),
+            Event::CheckWordList(found),
+            Event::PostProcess {
+                post_process: false,
+                with_window: false,
+            },
+        ]);
+        expected.extend(saved_first(PLAIN));
+        expected.extend([
+            Event::Hook(corrected.to_string()),
+            Event::SpawnPaste,
+            Event::RedoLookedAt(1),
+            paste(corrected, &values, &append_text),
+        ]);
+        expected.extend(typed_end(Access::With));
+        assert_eq!(ports.take_events(), expected);
+
+        // History keeps the corrected text and what was replaced.
+        let entry = &ports.entries()[0];
+        assert_eq!(entry.transcription_text, corrected);
+        assert_eq!(
+            entry.window_context.word_replacements,
+            vec![WordReplacement {
+                original: "Deniware".to_string(),
+                replacement: "DanyWhere".to_string(),
+            }]
+        );
+    }
+
+    #[test]
+    fn no_check_without_the_switch_after_a_model_with_vocabulary_or_without_candidates() {
+        let cases = [
+            ("switched off", word_list_settings("", false), HEARD, false),
+            ("vocabulary", word_list_settings("", true), HEARD, true),
+            (
+                "no candidates",
+                word_list_settings("", true),
+                "hello",
+                false,
+            ),
+        ];
+        for (case, settings, heard, takes_vocabulary) in cases {
+            let snapshot = snapshot_with(settings);
+            let values = snapshot.values.clone();
+            let append_text = snapshot.end.append_text.clone();
+            let ports = FakePorts::new(Script {
+                transcription: Ok(heard.to_string()),
+                takes_vocabulary,
+                word_list_check: Ok(vec!["Deniware", "Bild"]),
+                ..Script::default()
+            });
+            finish(&ports, snapshot);
+            let events = ports.take_events();
+            assert!(!checked(&events), "{case}: {events:#?}");
+            assert!(
+                !events.contains(&Event::Overlay(Overlay::Working {
+                    working: Working::PostProcessing,
+                    streaming: false,
+                })),
+                "{case}"
+            );
+            assert!(
+                events.contains(&paste(heard, &values, &append_text)),
+                "{case}"
+            );
+            let entry = &ports.entries()[0];
+            assert_eq!(entry.transcription_text, heard, "{case}");
+            assert!(entry.window_context.word_replacements.is_empty(), "{case}");
+        }
+    }
+
+    #[test]
+    fn a_failed_check_keeps_the_text_as_heard_and_still_pastes() {
+        let snapshot = snapshot_with(word_list_settings("", true));
+        let values = snapshot.values.clone();
+        let append_text = snapshot.end.append_text.clone();
+        let ports = FakePorts::new(Script {
+            transcription: Ok(HEARD.to_string()),
+            word_list_check: Err("the provider can't be reached".to_string()),
+            ..Script::default()
+        });
+        finish(&ports, snapshot);
+        let events = ports.take_events();
+        assert!(checked(&events));
+        // Delivered without a notice, as heard.
+        assert_eq!(
+            after(&events, &Event::SpawnPaste),
+            [
+                vec![Event::RedoLookedAt(1), paste(HEARD, &values, &append_text)],
+                typed_end(Access::With),
+            ]
+            .concat()
+        );
+        let entry = &ports.entries()[0];
+        assert_eq!(entry.transcription_text, HEARD);
+        assert!(entry.window_context.word_replacements.is_empty());
+    }
+
+    #[test]
+    fn a_cancel_during_the_check_ends_the_dictation_like_one_during_post_processing() {
+        let snapshot = snapshot_with(word_list_settings("", true));
+        let found = candidates_of_heard(&snapshot.settings);
+        let ports = FakePorts::new(Script {
+            transcription: Ok(HEARD.to_string()),
+            word_list_check: Ok(vec!["Deniware"]),
+            cancel_at: Some(CancelAt::WordListCheck),
+            ..Script::default()
+        });
+        finish(&ports, snapshot);
+        assert_eq!(
+            after(&ports.take_events(), &Event::StopRecording),
+            vec![
+                Event::Transcribe {
+                    samples: SAMPLES,
+                    load_end_model: false,
+                },
+                Event::Overlay(Overlay::Working {
+                    working: Working::PostProcessing,
+                    streaming: false,
+                }),
+                Event::CheckWordList(found),
+                Event::Overlay(Overlay::Hide),
+                Event::Tray(TrayIconState::Idle),
+                Event::Finished,
+            ]
+        );
+        assert!(ports.entries().is_empty());
+    }
+
+    /// A post-processed dictation gets no check, switch or not: its
+    /// candidates go to post-processing as a hint with the known terms,
+    /// unless the model took the word lists.
+    #[test]
+    fn post_processing_gets_the_candidates_as_a_hint_instead_of_a_check() {
+        for takes_vocabulary in [false, true] {
+            let (url, requests) = llm_server(vec![("200 OK", POLISHED)]);
+            let snapshot = snapshot_of(word_list_settings(&url, true), None, post_processing());
+            assert!(snapshot.post_process);
+            let ports = FakePorts::new(Script {
+                transcription: Ok(HEARD.to_string()),
+                takes_vocabulary,
+                word_list_check: Ok(vec!["Deniware"]),
+                ..Script::default()
+            });
+            finish(&ports, snapshot);
+            let events = ports.take_events();
+            assert!(!checked(&events), "{takes_vocabulary}");
+
+            let request = requests.recv_timeout(Duration::from_secs(5)).unwrap();
+            let message = request["messages"][0]["content"]
+                .as_str()
+                .expect("one message")
+                .to_string();
+            assert!(message.contains("<known_terms>"), "{message}");
+            assert_eq!(
+                message.contains(
+                    "Possibly misheard in this dictation:\n\"Deniware\" (DanyWhere?)\n\"Bild\" (Build?)\n</known_terms>"
+                ),
+                !takes_vocabulary,
+                "{message}"
+            );
+            assert_eq!(
+                message.contains("Possibly misheard"),
+                !takes_vocabulary,
+                "{message}"
+            );
+            // The transcript goes as heard; History keeps it.
+            assert_eq!(ports.entries()[0].transcription_text, HEARD);
+        }
     }
 
     // ---- Context -----------------------------------------------------------
