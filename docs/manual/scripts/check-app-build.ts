@@ -8,11 +8,13 @@
 //   stylesheet and image on it resolves to a file of the build;
 // - no figure is missing its file, and each theme shows its own variant;
 // - a click on a figure opens it full size, Escape closes it;
-// - Pagefind's search finds the test page by a word only it contains.
+// - Pagefind's search finds a page by a word only it contains.
+// The figure and search checks use the chapter on start and end shortcuts,
+// which has a diagram, a screenshot and such a word.
 //
 // Run after `bun run build:manual`:
 //   bun docs/manual/scripts/check-app-build.ts [screenshot folder]
-// With a folder it also saves PNG screenshots of the test page there.
+// With a folder it also saves PNG screenshots of that chapter there.
 
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative, sep } from "node:path";
@@ -21,11 +23,13 @@ import { chromium, type Page } from "@playwright/test";
 const repoDir = join(import.meta.dir, "..", "..", "..");
 const buildDir = join(repoDir, "public", "manual");
 const BASE = "/manual";
-const TEST_PAGE = `${BASE}/dev/components/`;
-const SEARCH_WORD = "zymurgy";
+const TEST_PAGE = `${BASE}/how-it-works/start-and-end-shortcuts/`;
+const TEST_PAGE_TITLE = "Start and end shortcuts";
+const TEST_PAGE_DIAGRAM = "how-a-recording-ends";
+const SEARCH_WORD = "layouts";
 const screenshotDir = process.argv[2];
 
-if (!existsSync(join(buildDir, "dev", "components", "index.html"))) {
+if (!existsSync(join(buildDir, TEST_PAGE.slice(BASE.length), "index.html"))) {
   console.error(`no app build in ${buildDir}; run \`bun run build:manual\``);
   process.exit(2);
 }
@@ -199,6 +203,14 @@ for (const scheme of ["light", "dark"] as const) {
     const visible = page.locator(`figure.dw-figure--${figure} img:visible`);
     const count = await visible.count();
     const src = count === 1 ? await visible.getAttribute("src") : null;
+    // A figure further down loads lazily: bring it into view and let it
+    // finish loading (or fail) before asking whether it loaded.
+    if (count === 1) {
+      await visible.scrollIntoViewIfNeeded();
+      await visible.evaluate((img: HTMLImageElement) =>
+        img.decode().catch(() => undefined),
+      );
+    }
     const loaded =
       count === 1 &&
       (await visible.evaluate(
@@ -221,7 +233,7 @@ for (const scheme of ["light", "dark"] as const) {
   const dialog = page.locator("dialog.dw-zoom");
   const open = await dialog.evaluate((d: HTMLDialogElement) => d.open);
   const zoomSrc = await dialog.locator("img").getAttribute("src");
-  if (open && zoomSrc?.endsWith(`sample.${scheme}.svg`))
+  if (open && zoomSrc?.endsWith(`${TEST_PAGE_DIAGRAM}.${scheme}.svg`))
     pass(`${scheme}: click opens ${zoomSrc}`);
   else fail(`${scheme}: click: open ${open}, ${zoomSrc}`);
   if (screenshotDir) {
@@ -245,7 +257,7 @@ console.log(`Search for "${SEARCH_WORD}"`);
   await page.locator("site-search button[data-open-modal]").click();
   await page.locator("site-search dialog input").fill(SEARCH_WORD);
   const result = page
-    .locator("site-search dialog a", { hasText: "Components test page" })
+    .locator("site-search dialog a", { hasText: TEST_PAGE_TITLE })
     .first();
   try {
     await result.waitFor({ timeout: 10000 });
@@ -255,7 +267,7 @@ console.log(`Search for "${SEARCH_WORD}"`);
       new URL(href, origin).pathname === TEST_PAGE &&
       resolveLikeTauri(new URL(href, origin).pathname)
     ) {
-      pass(`found the test page: ${href}`);
+      pass(`found ${TEST_PAGE}: ${href}`);
     } else fail(`result links to ${href}`);
   } catch {
     fail(`no result for ${SEARCH_WORD}; page errors: ${errors.join(" | ")}`);
