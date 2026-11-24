@@ -1,0 +1,74 @@
+' The shared look of the manual's diagrams. render.sh sets THEME to
+' "light" or "dark" (-DTHEME=...); the colours come from style-<theme>.iuml.
+' Text is measured in Arial; render.sh widens the font to a stack of
+' metric-compatible fonts (Helvetica, Liberation Sans) in the SVG.
+!if %variable_exists("THEME")
+!$theme = THEME
+!else
+!$theme = "light"
+!endif
+!if $theme == "dark"
+!include style-dark.iuml
+!else
+!include style-light.iuml
+!endif
+
+skinparam shadowing false
+' A plain line, not a diamond, where an if's branches meet again.
+skinparam ConditionEndStyle hline
+
+<style>
+document {
+  BackgroundColor transparent
+  Margin 16
+}
+activityDiagram {
+  FontName Arial
+  FontSize 14
+  FontColor $ink
+  activity {
+    BackgroundColor $stepFill
+    LineColor $petrol
+    LineThickness 1.25
+    FontColor $ink
+    RoundCorner 20
+    Padding 12
+    Margin 10
+  }
+  diamond {
+    BackgroundColor $questionFill
+    LineColor $petrol
+    LineThickness 1.25
+    FontColor $petrolDeep
+    FontSize 14
+  }
+  circle {
+    BackgroundColor $dot
+    LineColor $dot
+  }
+  arrow {
+    LineColor $petrol
+    LineThickness 1.25
+    FontColor $inkSoft
+    FontSize 13
+  }
+  note {
+    BackgroundColor $noteFill
+    LineColor $noteLine
+    LineThickness 1
+    FontColor $inkSoft
+    FontSize 13
+    RoundCorner 12
+    Padding 10
+  }
+  .quiet {
+    BackgroundColor $quietFill
+    LineColor $quietLine
+    FontColor $inkSoft
+  }
+  .stop {
+    BackgroundColor $stopFill
+    LineColor $stopLine
+  }
+}
+</style>

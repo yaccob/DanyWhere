@@ -1,0 +1,34 @@
+@startuml
+' A dictation from start to end, in Spanish. The structure is in
+' dictation-flow.iuml; UI terms as in src/i18n/locales/es/translation.json.
+' "\n" breaks a line; no ";" in a text (it would end a step).
+!$yes = "sí"
+!$no = "no"
+!$press = "Pulsar un atajo de inicio"
+!$noteProfile = "El perfil: lo decide la aplicación en primer\nplano («Elegir perfil según la aplicación»),\nsi no, el de «En uso». Se elige de nuevo\nal terminar la grabación."
+!$recording = "La grabación está en curso:\nsonido de inicio, la superposición\nmuestra el nivel"
+!$noteEnds = "Cómo puede terminar y qué decide el\nfinal: ver «Cómo termina una grabación»"
+!$qEnd = "¿Cómo termina?"
+!$aEnds = "un atajo de fin,\no se suelta un atajo\nde inicio mantenido"
+!$aCancel = "«Atajo de cancelar»\n(Esc)"
+!$stopped = "La grabación se detiene:\nsonido de parada"
+!$cancelled = "Cancelada: no se\ntranscribe ni se\nguarda nada"
+!$transcribe = "El modelo de voz transcribe"
+!$noteWords = "Listas de palabras: un modelo que las\nadmite, como Whisper, las usa aquí"
+!$qPost = "¿El final posprocesa, y está\nactivado «Post procesamiento»?"
+!$qContext = "¿«Enviar contexto»\nen este final?"
+!$context = "Los dictados anteriores de la\nmisma ventana se envían\ncomo contexto"
+!$edit = "El modelo del post procesamiento\nedita el texto: los prompts activos\nen su orden, las listas de palabras\ncomo términos conocidos"
+!$noteFailed = "Si falla, la transcripción sigue\ntal cual, y un aviso dice por qué"
+!$history = "Se guarda en el «Historial»"
+!$qWaits = "¿Un Mac sin\nAccesibilidad?"
+!$waits = "Espera hasta que un servicio\nde macOS lo inserte, p. ej. con\n«Pegar la última transcripción»"
+!$qNone = "¿«Método de pegado»:\n«Ninguno»?"
+!$clipboard = "En el portapapeles, o solo\nen el «Historial», según el\n«Manejo del portapapeles»"
+!$pasted = "Se pega donde está el cursor,\ny luego el texto de\n«Añadir al final»"
+!$qKey = "¿Una tecla en\n«Añadir al final»?"
+!$key = "Se pulsa la tecla,\np. ej. Enter envía"
+!$done = "Sonido final, con «Retroalimentación\nde audio» y «Sonido al terminar»\nactivados"
+!include style.iuml
+!include dictation-flow.iuml
+@enduml

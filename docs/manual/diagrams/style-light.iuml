@@ -1,0 +1,15 @@
+' Colours of the light theme, from src/styles/theme.css (--light-*):
+' petrol #3c9caa, its stroke #1e3a44, text #0f0f0f, error #dc2626.
+!$ink = "#0f0f0f"
+!$inkSoft = "#3d5257"
+!$petrol = "#3c9caa"
+!$petrolDeep = "#1e3a44"
+!$stepFill = "#e7f3f5"
+!$questionFill = "#ffffff"
+!$noteFill = "#f3f5f5"
+!$noteLine = "#c9d6d9"
+!$quietFill = "#f3f5f5"
+!$quietLine = "#a9babe"
+!$stopFill = "#fdecec"
+!$stopLine = "#dc2626"
+!$dot = "#1e3a44"

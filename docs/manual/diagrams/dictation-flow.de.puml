@@ -1,0 +1,34 @@
+@startuml
+' A dictation from start to end, in German. The structure is in
+' dictation-flow.iuml; UI terms as in src/i18n/locales/de/translation.json.
+' "\n" breaks a line; no ";" in a text (it would end a step).
+!$yes = "ja"
+!$no = "nein"
+!$press = "Starttaste drücken"
+!$noteProfile = "Das Profil: Die Anwendung vorn\nentscheidet („Profil nach Anwendung\nwählen“), sonst gilt „In Verwendung“.\nBeim Ende neu gewählt."
+!$recording = "Die Aufnahme läuft: Startton,\ndas Overlay zeigt den Pegel"
+!$noteEnds = "Wie sie enden kann und was das\nEnde entscheidet: siehe „Wie eine\nAufnahme endet“"
+!$qEnd = "Wie endet sie?"
+!$aEnds = "eine Endtaste, oder\neine gehaltene Starttaste\nlosgelassen"
+!$aCancel = "„Abbrechen-Tastenkürzel“\n(Esc)"
+!$stopped = "Die Aufnahme stoppt: Stoppton"
+!$cancelled = "Abgebrochen: nichts wird\ntranskribiert oder behalten"
+!$transcribe = "Das Sprachmodell transkribiert"
+!$noteWords = "Wortlisten: Ein Modell, das sie\nnimmt, wie Whisper, nutzt sie hier"
+!$qPost = "Sagt das Ende „Nachbearbeiten“,\nund ist „Nachbearbeitung“ ein?"
+!$qContext = "„Kontext senden“\nbei diesem Ende?"
+!$context = "Frühere Diktate aus demselben\nFenster gehen als Kontext mit"
+!$edit = "Das Modell der Nachbearbeitung\nbearbeitet den Text: die aktiven\nPrompts der Reihe nach, die Wort-\nlisten als bekannte Begriffe"
+!$noteFailed = "Schlägt das fehl, geht die\nTranskription unverändert weiter,\nund eine Meldung sagt, warum"
+!$history = "Gespeichert im „Verlauf“"
+!$qWaits = "Ein Mac ohne\nBedienungshilfen?"
+!$waits = "Der Text wartet, bis ein\nmacOS-Dienst ihn einfügt,\nz. B. mit „Letzte\nTranskription einfügen“"
+!$qNone = "„Einfügemethode“:\n„Keine“?"
+!$clipboard = "In der Zwischenablage oder\nnur im „Verlauf“, je nach\n„Zwischenablage-Verhalten“"
+!$pasted = "Eingefügt, wo der Cursor steht,\ndann der Text aus „Anhängen“"
+!$qKey = "Ein Tastendruck\nin „Anhängen“?"
+!$key = "Die Taste wird gedrückt,\nz. B. schickt Enter ab"
+!$done = "Ton am Ende, wenn „Audio-Feedback“\nund „Ton, wenn alles fertig ist“ ein sind"
+!include style.iuml
+!include dictation-flow.iuml
+@enduml

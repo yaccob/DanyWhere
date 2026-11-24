@@ -1,0 +1,16 @@
+' Colours of the dark theme, from src/styles/theme.css (--dark-*):
+' petrol #5bb3c0, text #fbfbfb, error #f87171; fills dark enough for
+' Starlight's dark background.
+!$ink = "#f2f6f7"
+!$inkSoft = "#c3d3d6"
+!$petrol = "#5bb3c0"
+!$petrolDeep = "#cfe9ed"
+!$stepFill = "#1d3a40"
+!$questionFill = "#182327"
+!$noteFill = "#262b2d"
+!$noteLine = "#4b5759"
+!$quietFill = "#262b2d"
+!$quietLine = "#6d7e82"
+!$stopFill = "#3d2224"
+!$stopLine = "#f87171"
+!$dot = "#cfe9ed"
