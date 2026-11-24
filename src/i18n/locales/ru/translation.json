@@ -39,7 +39,8 @@
   "manual": {
     "openChapter": "Открыть руководство: {{chapter}}",
     "chapters": {
-      "startAndEndShortcuts": "Клавиши запуска и завершения"
+      "startAndEndShortcuts": "Клавиши запуска и завершения",
+      "defaultsAndProfiles": "Основные настройки и профили"
     },
     "unavailable": "В этой сборке DanyWhere нет руководства."
   },

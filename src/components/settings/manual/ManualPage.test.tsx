@@ -1,6 +1,7 @@
 // DanyWhere: the user manual as a page of the settings window, like History
 // and About (not a window of its own, which on macOS opened on another
-// Space). The sidebar's Manual and the "?" next to End Shortcuts show it;
+// Space). The sidebar's Manual and the "?" next to End Shortcuts, Profile
+// Settings and a profile's page Profile show it;
 // a frame fills the content area with the manual in the interface's
 // language. Inside it, links to other pages of the manual stay there, links
 // leaving the app open in the default browser, and the page on screen
@@ -45,8 +46,10 @@ const Window: React.FC<{ start: NavLocation }> = ({ start }) => {
   );
 };
 
-const renderWindow = (start: NavLocation = { kind: "about" }) =>
-  renderPage(<Window start={start} />);
+const renderWindow = (
+  start: NavLocation = { kind: "about" },
+  settings = settingsWith(),
+) => renderPage(<Window start={start} />, { settings });
 
 const frame = (): HTMLIFrameElement | null => document.querySelector("iframe");
 
@@ -141,6 +144,78 @@ describe("the manual's page in the settings window", () => {
     expect(frame()?.getAttribute("src")).toBe(
       "/manual/de/how-it-works/start-and-end-shortcuts/",
     );
+  });
+
+  // The "?" on the profile pages: the chapter on the defaults and profiles.
+  const WORK = "profile_1795300000001";
+  const withWork = settingsWith({ profiles: [{ id: WORK, name: "Work" }] });
+
+  test("the ? on Profile Settings opens the manual at its chapter", async () => {
+    await renderWindow({ kind: "profiles" }, withWork);
+
+    await press(
+      screen.getByRole("button", {
+        name: "Open the manual: Defaults and Profiles",
+      }),
+    );
+
+    expect(frame()?.getAttribute("src")).toBe(
+      "/manual/how-it-works/defaults-and-profiles/",
+    );
+    expect(isCurrent("Manual")).toBe(true);
+    expect(isCurrent("Profile Settings")).toBe(false);
+  });
+
+  test("in German the ? on Profile Settings opens the German chapter", async () => {
+    await switchTestLanguage("de");
+    await renderWindow({ kind: "profiles" }, withWork);
+
+    await press(
+      screen.getByRole("button", {
+        name: "Handbuch öffnen: Grundeinstellungen und Profile",
+      }),
+    );
+
+    expect(frame()?.getAttribute("src")).toBe(
+      "/manual/de/how-it-works/defaults-and-profiles/",
+    );
+  });
+
+  test("the ? on a profile's page Profile opens the manual at its chapter", async () => {
+    await renderWindow(
+      { kind: "profile", profileId: WORK, page: "profile" },
+      withWork,
+    );
+
+    await press(
+      screen.getByRole("button", {
+        name: "Open the manual: Defaults and Profiles",
+      }),
+    );
+
+    expect(frame()?.getAttribute("src")).toBe(
+      "/manual/how-it-works/defaults-and-profiles/",
+    );
+    expect(isCurrent("Manual")).toBe(true);
+  });
+
+  test("in German the ? on a profile's page Profile opens the German chapter", async () => {
+    await switchTestLanguage("de");
+    await renderWindow(
+      { kind: "profile", profileId: WORK, page: "profile" },
+      withWork,
+    );
+
+    await press(
+      screen.getByRole("button", {
+        name: "Handbuch öffnen: Grundeinstellungen und Profile",
+      }),
+    );
+
+    expect(frame()?.getAttribute("src")).toBe(
+      "/manual/de/how-it-works/defaults-and-profiles/",
+    );
+    expect(isCurrent("Handbuch")).toBe(true);
   });
 
   test("a manual on screen goes to the chapter asked for", async () => {

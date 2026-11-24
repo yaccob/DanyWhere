@@ -39,7 +39,8 @@
   "manual": {
     "openChapter": "Handbuch öffnen: {{chapter}}",
     "chapters": {
-      "startAndEndShortcuts": "Start- und Endtasten"
+      "startAndEndShortcuts": "Start- und Endtasten",
+      "defaultsAndProfiles": "Grundeinstellungen und Profile"
     },
     "unavailable": "Dieser Build von DanyWhere enthält kein Handbuch."
   },

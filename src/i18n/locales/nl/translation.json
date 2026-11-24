@@ -39,7 +39,8 @@
   "manual": {
     "openChapter": "Handleiding openen: {{chapter}}",
     "chapters": {
-      "startAndEndShortcuts": "Start- en eindsneltoetsen"
+      "startAndEndShortcuts": "Start- en eindsneltoetsen",
+      "defaultsAndProfiles": "Basisinstellingen en profielen"
     },
     "unavailable": "Deze build van DanyWhere bevat geen handleiding."
   },

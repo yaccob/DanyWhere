@@ -39,7 +39,8 @@
   "manual": {
     "openChapter": "マニュアルを開く: {{chapter}}",
     "chapters": {
-      "startAndEndShortcuts": "開始・終了ショートカット"
+      "startAndEndShortcuts": "開始・終了ショートカット",
+      "defaultsAndProfiles": "基本設定とプロファイル"
     },
     "unavailable": "このビルドの DanyWhere にはマニュアルが含まれていません。"
   },

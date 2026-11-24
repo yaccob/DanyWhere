@@ -39,7 +39,8 @@
   "manual": {
     "openChapter": "Kılavuzu aç: {{chapter}}",
     "chapters": {
-      "startAndEndShortcuts": "Başlatma ve Bitirme Kısayolları"
+      "startAndEndShortcuts": "Başlatma ve Bitirme Kısayolları",
+      "defaultsAndProfiles": "Temel Ayarlar ve Profiller"
     },
     "unavailable": "DanyWhere'in bu sürümünde kılavuz bulunmuyor."
   },

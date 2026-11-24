@@ -2,7 +2,8 @@
 // P5, P8, P9): its name and applications, all its own values in one place
 // (each opens its page and has its own reset), "Whole Profile to Defaults"
 // (a question naming the values; name and applications stay), duplicate,
-// export, delete.
+// export, delete; a "?" to the manual's chapter on the defaults and
+// profiles.
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link2Off, RotateCcw } from "lucide-react";
@@ -20,6 +21,9 @@ import {
 import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
 import { SettingsGroup } from "@/components/ui/SettingsGroup";
+// DanyWhere: the "?" to the manual's chapter on the defaults and profiles.
+import { ManualHelpButton } from "@/components/ui/ManualHelpButton";
+import { MANUAL_PAGES } from "@/lib/manual";
 import { ProfileApps } from "./ProfileApps";
 import { ProfileExportButton } from "./ProfileExportButton";
 import { ProfileNameDialog } from "./ProfileNameDialog";
@@ -125,6 +129,14 @@ export const ProfileOverview: React.FC<{ profileId: string }> = ({
         title={t("settings.profileView.overview.ownValues", {
           number: own.length,
         })}
+        // The page's title: own values and what follows the defaults is
+        // what the chapter explains.
+        titleAction={
+          <ManualHelpButton
+            page={MANUAL_PAGES.defaultsAndProfiles}
+            chapter={t("manual.chapters.defaultsAndProfiles")}
+          />
+        }
         description={
           own.length > 0
             ? t("settings.profileView.overview.jumpHint")

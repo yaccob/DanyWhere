@@ -39,7 +39,8 @@
   "manual": {
     "openChapter": "पुस्तिका खोल्नुहोस्: {{chapter}}",
     "chapters": {
-      "startAndEndShortcuts": "सुरु र अन्त्य सर्टकटहरू"
+      "startAndEndShortcuts": "सुरु र अन्त्य सर्टकटहरू",
+      "defaultsAndProfiles": "आधारभूत सेटिङहरू र प्रोफाइलहरू"
     },
     "unavailable": "DanyWhere को यो बिल्डमा पुस्तिका समावेश छैन।"
   },
