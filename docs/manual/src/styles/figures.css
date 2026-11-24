@@ -1,0 +1,101 @@
+/* <Diagram> and <Screenshot> (src/components/Figure.astro) and the dialog
+   that shows one full size (src/scripts/zoom.ts). */
+
+.sl-markdown-content .dw-figure {
+  margin-block: 1.75rem;
+  margin-inline: 0;
+}
+
+.dw-figure-link {
+  display: block;
+  cursor: zoom-in;
+  border-radius: 0.75rem;
+  text-decoration: none;
+}
+/* The display rules here are unlayered and so beat Starlight's layered
+   light:sl-hidden / dark:sl-hidden; repeat those for the figure. */
+[data-theme="light"] .dw-figure .light\:sl-hidden,
+[data-theme="dark"] .dw-figure .dark\:sl-hidden {
+  display: none;
+}
+.dw-figure-link:focus-visible {
+  outline: 2px solid var(--sl-color-accent);
+  outline-offset: 4px;
+}
+
+.dw-figure img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin-inline: auto;
+}
+
+/* Screenshots sit on the page like a window: rounded, a hairline, a soft
+   shadow. Diagrams stand on the page itself. */
+.dw-figure--screenshots img {
+  border-radius: 0.75rem;
+  border: 1px solid var(--dw-line);
+  box-shadow: 0 12px 32px -12px rgb(0 0 0 / 0.35);
+}
+
+.dw-figure figcaption {
+  margin-top: 0.6rem;
+  color: var(--sl-color-gray-3);
+  font-size: var(--sl-text-sm);
+  line-height: 1.5;
+  text-align: center;
+}
+
+.dw-figure-missing {
+  display: grid;
+  place-items: center;
+  min-height: 8rem;
+  padding: 1rem;
+  border: 2px dashed var(--sl-color-red);
+  border-radius: 0.75rem;
+  color: var(--sl-color-red-high);
+  font-size: var(--sl-text-sm);
+}
+
+/* The full-size view. */
+dialog.dw-zoom {
+  width: 100vw;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 2.5rem 1.5rem 1.5rem;
+  border: 0;
+  background: transparent;
+  cursor: zoom-out;
+}
+dialog.dw-zoom::backdrop {
+  background: var(--sl-color-backdrop-overlay);
+  backdrop-filter: blur(3px);
+}
+dialog.dw-zoom img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.dw-zoom-close {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.75rem;
+  width: 2rem;
+  height: 2rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--sl-color-gray-6);
+  color: var(--sl-color-white);
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.dw-zoom-close:focus-visible {
+  outline: 2px solid var(--sl-color-accent);
+  outline-offset: 2px;
+}
+html.dw-zoom-open {
+  overflow: hidden;
+}
