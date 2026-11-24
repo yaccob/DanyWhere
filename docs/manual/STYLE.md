@@ -28,12 +28,12 @@ Warm, plain and short. Write as a friendly colleague who knows the app well, sit
 
 Follow the app's own locale files (`src/i18n/locales/<lang>/translation.json`). Checked on 2026-11-24:
 
-| Language | Address | Evidence in the locale file |
-|---|---|---|
-| English | you | "Press the combination for the new end shortcut" |
-| German | **du**, lower case | `settings.endKeys.postProcessOff`: "Schalte „Nachbearbeitung“ unter Erweitert ein."; `addPressKeys`: "Drück die Tastenkombination …" |
-| Spanish | **tú** | `settings.endKeys.postProcessOff`: "Activa «Post procesamiento» en Avanzado."; `appendDescription`: "la pulsación de tecla que elijas" |
-| French | **vous** | `settings.endKeys.postProcessOff`: "Activez « Post-traitement » dans Avancé."; `addPressKeys`: "Appuyez sur la combinaison …" |
+| Language | Address            | Evidence in the locale file                                                                                                            |
+| -------- | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
+| English  | you                | "Press the combination for the new end shortcut"                                                                                       |
+| German   | **du**, lower case | `settings.endKeys.postProcessOff`: "Schalte „Nachbearbeitung“ unter Erweitert ein."; `addPressKeys`: "Drück die Tastenkombination …"   |
+| Spanish  | **tú**             | `settings.endKeys.postProcessOff`: "Activa «Post procesamiento» en Avanzado."; `appendDescription`: "la pulsación de tecla que elijas" |
+| French   | **vous**           | `settings.endKeys.postProcessOff`: "Activez « Post-traitement » dans Avancé."; `addPressKeys`: "Appuyez sur la combinaison …"          |
 
 German imperatives use the short form ("drück", "wähl", "schalte … ein"), and strong verbs change their vowel: "lies", "gib", "nimm", "sieh", never "lese", "gebe", "nehme", "sehe". German keeps the established terms of the trade where German users say them ("Prompt", "Overlay", "Tray").
 
@@ -69,13 +69,13 @@ A chapter is as long as it needs to be and no longer; most land between 600 and 
 
 The factory shortcuts, for reference (English names):
 
-| | macOS | Windows | Linux |
-|---|---|---|---|
-| Start Shortcut | ⌃ Space | Ctrl+Space | Ctrl+Alt+Space |
+|                       | macOS    | Windows          | Linux                |
+| --------------------- | -------- | ---------------- | -------------------- |
+| Start Shortcut        | ⌃ Space  | Ctrl+Space       | Ctrl+Alt+Space       |
 | Second Start Shortcut | ⌃⇧ Space | Ctrl+Shift+Space | Ctrl+Alt+Shift+Space |
-| Paste Last Transcript | ⌃⇧V | Alt+Shift+V | Alt+Shift+V |
-| Copy Last Transcript | ⌃⇧C | Alt+Shift+C | Alt+Shift+C |
-| Cancel Shortcut | Esc | Esc | (none) |
+| Paste Last Transcript | ⌃⇧V      | Alt+Shift+V      | Alt+Shift+V          |
+| Copy Last Transcript  | ⌃⇧C      | Alt+Shift+C      | Alt+Shift+C          |
+| Cancel Shortcut       | Esc      | Esc              | (none)               |
 
 ## Components: when to use which
 
@@ -125,58 +125,58 @@ The factory shortcuts, for reference (English names):
 
 Checked against `src/i18n/locales/{en,de,es,fr}/translation.json` on 2026-11-24. The key says where each comes from.
 
-| Term | English | German | Spanish | French | Key |
-|---|---|---|---|---|---|
-| start shortcut | Start Shortcut | Starttaste | Atajo de inicio | Raccourci de début | `settings.general.shortcut.bindings.transcribe.name` |
-| second start shortcut | Second Start Shortcut | Zweite Starttaste | Segundo atajo de inicio | Deuxième raccourci de début | `….transcribe_with_post_process.name` |
-| cancel shortcut | Cancel Shortcut | Abbrechen-Tastenkürzel | Atajo de cancelar | Raccourci d'Annulation | `….cancel.name` |
-| end shortcuts (group) | End Shortcuts | Endtasten | Atajos de fin | Raccourcis de fin | `settings.endKeys.title` |
-| end shortcut (one) | end shortcut | Endtaste | atajo de fin | raccourci de fin | `settings.endKeys.add` |
-| add an end shortcut | Add End Shortcut | Endtaste hinzufügen | Añadir atajo de fin | Ajouter un raccourci de fin | `settings.endKeys.add` |
-| an end shortcut's name | Name | Name | Nombre | Nom | `settings.endKeys.name` |
-| Append | Append | Anhängen | Añadir al final | Ajouter à la fin | `settings.endKeys.append` |
-| no key press | No key press | Keine Taste | Ninguna tecla | Aucune touche | `settings.advanced.appendText.keyNone` |
-| Post-process (checkbox) | Post-process | Nachbearbeiten | Posprocesar | Post-traiter | `settings.endKeys.postProcess` |
-| Send Context | Send Context | Kontext senden | Enviar contexto | Envoyer le contexte | `settings.endKeys.sendContext` |
-| When Held | When Held | Beim Halten | Al mantener pulsado | Lorsqu'il est maintenu | `settings.endKeys.holdEnds.title` |
-| Shortcut Behavior | Shortcut Behavior | Verhalten der Tastenkombination | Comportamiento del atajo | Comportement du raccourci | `settings.general.shortcutActivation.title` |
-| … its options | Auto / Hold / Toggle | Automatisch / Halten / Umschalten | Automático / Mantener / Alternar | Auto / Maintenir / Basculer | `….shortcutActivation.options.*` |
-| factory end names | Direct · … / Post-processed · … | Direkt · … / Nachbearbeitet · … | Directo · … / Posprocesado · … | Direct · … / Post-traité · … | `settings.endKeys.factoryNames.*` |
-| … their effects | Space, No space, Paragraph, Line, Send Enter, Send Shift+Enter | Leerzeichen, ohne Leerzeichen, Absatz, Zeile, Enter senden, Shift-Enter senden | Espacio, Sin espacio, Párrafo, Línea, Enviar Enter, Enviar Mayús+Enter | Espace, Sans espace, Paragraphe, Ligne, Envoyer Entrée, Envoyer Maj+Entrée | `settings.endKeys.factoryNames.*` |
-| Paste Last Transcript | Paste Last Transcript | Letzte Transkription einfügen | Pegar la última transcripción | Coller la dernière transcription | `….bindings.paste_last_transcript.name` |
-| Copy Last Transcript | Copy Last Transcript | Letzte Transkription kopieren | Copiar la última transcripción | Copier la dernière transcription | `….bindings.copy_last_transcript.name` |
-| Defaults (area) | Defaults | Grundeinstellungen | Configuración básica | Paramètres de base | `sidebar.areas.defaults` |
-| Profile Settings (area) | Profile Settings | Profileinstellungen | Configuración de perfiles | Paramètres des profils | `sidebar.areas.profiles` |
-| Application Settings (area) | Application Settings | Applikationseinstellungen | Configuración de la aplicación | Paramètres de l'application | `sidebar.areas.application` |
-| profile | Profile | Profil | Perfil | Profil | `sidebar.profile` |
-| In Use (sidebar box) | In Use | In Verwendung | En uso | En cours d'utilisation | `sidebar.inUse` |
-| Choose Profile by Application | Choose Profile by Application | Profil nach Anwendung wählen | Elegir perfil según la aplicación | Choisir le profil selon l'application | `settings.profiles.autoByApp.label` |
-| … short, in the In Use box | By application | Nach Anwendung | Según la aplicación | Selon l'application | `settings.profiles.autoByApp.short` |
-| a value that follows the default | Default | Grundwert | Valor básico | Valeur de base | `settings.profileView.state.coupled` |
-| own value | Own value | eigener Wert | Valor propio | Valeur propre | `settings.profileView.state.own` |
-| reset to the default | Reset | Zurücksetzen | Restablecer | Réinitialiser | `settings.profileView.reset` |
-| pages | General, Models, Post Process, Advanced | Allgemein, Modelle, Nachbearbeitung, Erweitert | General, Modelos, Post proceso, Avanzado | Général, Modèles, Post-traitement, Avancé | `sidebar.*` |
-| Post Processing (switch, Advanced › Transcription) | Post Processing | Nachbearbeitung | Post procesamiento | Post-traitement | `settings.debug.postProcessingToggle.label` |
-| Transcription (group on Advanced) | Transcription | Transkription | Transcripción | Transcription | `settings.advanced.groups.transcription` |
-| Prompts | Prompts | Prompts | Prompts | Prompts | `settings.postProcessing.prompts.library.title` |
-| a prompt's checkbox | Active | Aktiv | Activo | Actif | `settings.postProcessing.prompts.library.active` |
-| Context from Earlier Dictations | Context from Earlier Dictations | Kontext aus früheren Diktaten | Contexto de dictados anteriores | Contexte des dictées précédentes | `settings.postProcessing.context.title` |
-| word list (of the defaults) | Word List | Wortliste | Lista de palabras | Liste de mots | `settings.profileView.fields.customWords` |
-| a profile's own words | Additional Words | Zusätzliche Wörter | Palabras adicionales | Mots supplémentaires | `settings.profileView.fields.profileWords` |
-| word lists (group) | Word Lists | Wortlisten | Listas de palabras | Listes de mots | `settings.advanced.wordLists.groupTitle` |
-| History | History | Verlauf | Historial | Historique | `sidebar.history` |
-| a version of a History entry | version | Fassung | versión | version | `settings.history.versions.*` |
-| Sound (group) | Sound | Ton | Sonido | Son | `settings.sound.title` |
-| Audio Feedback | Audio Feedback | Audio-Feedback | Retroalimentación de audio | Signal sonore | `settings.sound.audioFeedback.label` |
-| Sound When Done | Sound When Done | Ton, wenn alles fertig ist | Sonido al terminar | Son à la fin | `settings.sound.doneSound.label` |
-| Paste Method | Paste Method | Einfügemethode | Método de pegado | Méthode de collage | `settings.advanced.pasteMethod.title` |
-| Clipboard Handling | Clipboard Handling | Zwischenablage-Verhalten | Manejo del portapapeles | Gestion du presse-papiers | `settings.advanced.clipboardHandling.title` |
-| Accessibility (macOS permission) | Accessibility | Bedienungshilfen | Accesibilidad | Accessibilité | `onboarding.permissions.accessibility.name` |
-| Continue without Accessibility | Continue without Accessibility | Ohne Bedienungshilfen fortfahren | Continuar sin accesibilidad | Continuer sans l'accessibilité | `onboarding.permissions.accessibility.skip` |
-| overlay while transcribing | Transcribing... | Transkribiere... | Transcribiendo... | Transcription... | `overlay.transcribing` |
-| overlay while post-processing | Processing... | Verarbeite... | Procesando... | Traitement... | `overlay.processing` |
-| notice after failed post-processing | Pasted Without Post-Processing | Ohne Nachbearbeitung eingefügt | Pegado sin post proceso | Collé sans post-traitement | `errors.postProcessFailedTitle` |
-| app version | Version | Version | Versión | Version | `settings.about.version.title` |
+| Term                                               | English                                                        | German                                                                         | Spanish                                                                | French                                                                     | Key                                                  |
+| -------------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------- | -------------------------------------------------------------------------- | ---------------------------------------------------- |
+| start shortcut                                     | Start Shortcut                                                 | Starttaste                                                                     | Atajo de inicio                                                        | Raccourci de début                                                         | `settings.general.shortcut.bindings.transcribe.name` |
+| second start shortcut                              | Second Start Shortcut                                          | Zweite Starttaste                                                              | Segundo atajo de inicio                                                | Deuxième raccourci de début                                                | `….transcribe_with_post_process.name`                |
+| cancel shortcut                                    | Cancel Shortcut                                                | Abbrechen-Tastenkürzel                                                         | Atajo de cancelar                                                      | Raccourci d'Annulation                                                     | `….cancel.name`                                      |
+| end shortcuts (group)                              | End Shortcuts                                                  | Endtasten                                                                      | Atajos de fin                                                          | Raccourcis de fin                                                          | `settings.endKeys.title`                             |
+| end shortcut (one)                                 | end shortcut                                                   | Endtaste                                                                       | atajo de fin                                                           | raccourci de fin                                                           | `settings.endKeys.add`                               |
+| add an end shortcut                                | Add End Shortcut                                               | Endtaste hinzufügen                                                            | Añadir atajo de fin                                                    | Ajouter un raccourci de fin                                                | `settings.endKeys.add`                               |
+| an end shortcut's name                             | Name                                                           | Name                                                                           | Nombre                                                                 | Nom                                                                        | `settings.endKeys.name`                              |
+| Append                                             | Append                                                         | Anhängen                                                                       | Añadir al final                                                        | Ajouter à la fin                                                           | `settings.endKeys.append`                            |
+| no key press                                       | No key press                                                   | Keine Taste                                                                    | Ninguna tecla                                                          | Aucune touche                                                              | `settings.advanced.appendText.keyNone`               |
+| Post-process (checkbox)                            | Post-process                                                   | Nachbearbeiten                                                                 | Posprocesar                                                            | Post-traiter                                                               | `settings.endKeys.postProcess`                       |
+| Send Context                                       | Send Context                                                   | Kontext senden                                                                 | Enviar contexto                                                        | Envoyer le contexte                                                        | `settings.endKeys.sendContext`                       |
+| When Held                                          | When Held                                                      | Beim Halten                                                                    | Al mantener pulsado                                                    | Lorsqu'il est maintenu                                                     | `settings.endKeys.holdEnds.title`                    |
+| Shortcut Behavior                                  | Shortcut Behavior                                              | Verhalten der Tastenkombination                                                | Comportamiento del atajo                                               | Comportement du raccourci                                                  | `settings.general.shortcutActivation.title`          |
+| … its options                                      | Auto / Hold / Toggle                                           | Automatisch / Halten / Umschalten                                              | Automático / Mantener / Alternar                                       | Auto / Maintenir / Basculer                                                | `….shortcutActivation.options.*`                     |
+| factory end names                                  | Direct · … / Post-processed · …                                | Direkt · … / Nachbearbeitet · …                                                | Directo · … / Posprocesado · …                                         | Direct · … / Post-traité · …                                               | `settings.endKeys.factoryNames.*`                    |
+| … their effects                                    | Space, No space, Paragraph, Line, Send Enter, Send Shift+Enter | Leerzeichen, ohne Leerzeichen, Absatz, Zeile, Enter senden, Shift-Enter senden | Espacio, Sin espacio, Párrafo, Línea, Enviar Enter, Enviar Mayús+Enter | Espace, Sans espace, Paragraphe, Ligne, Envoyer Entrée, Envoyer Maj+Entrée | `settings.endKeys.factoryNames.*`                    |
+| Paste Last Transcript                              | Paste Last Transcript                                          | Letzte Transkription einfügen                                                  | Pegar la última transcripción                                          | Coller la dernière transcription                                           | `….bindings.paste_last_transcript.name`              |
+| Copy Last Transcript                               | Copy Last Transcript                                           | Letzte Transkription kopieren                                                  | Copiar la última transcripción                                         | Copier la dernière transcription                                           | `….bindings.copy_last_transcript.name`               |
+| Defaults (area)                                    | Defaults                                                       | Grundeinstellungen                                                             | Configuración básica                                                   | Paramètres de base                                                         | `sidebar.areas.defaults`                             |
+| Profile Settings (area)                            | Profile Settings                                               | Profileinstellungen                                                            | Configuración de perfiles                                              | Paramètres des profils                                                     | `sidebar.areas.profiles`                             |
+| Application Settings (area)                        | Application Settings                                           | Applikationseinstellungen                                                      | Configuración de la aplicación                                         | Paramètres de l'application                                                | `sidebar.areas.application`                          |
+| profile                                            | Profile                                                        | Profil                                                                         | Perfil                                                                 | Profil                                                                     | `sidebar.profile`                                    |
+| In Use (sidebar box)                               | In Use                                                         | In Verwendung                                                                  | En uso                                                                 | En cours d'utilisation                                                     | `sidebar.inUse`                                      |
+| Choose Profile by Application                      | Choose Profile by Application                                  | Profil nach Anwendung wählen                                                   | Elegir perfil según la aplicación                                      | Choisir le profil selon l'application                                      | `settings.profiles.autoByApp.label`                  |
+| … short, in the In Use box                         | By application                                                 | Nach Anwendung                                                                 | Según la aplicación                                                    | Selon l'application                                                        | `settings.profiles.autoByApp.short`                  |
+| a value that follows the default                   | Default                                                        | Grundwert                                                                      | Valor básico                                                           | Valeur de base                                                             | `settings.profileView.state.coupled`                 |
+| own value                                          | Own value                                                      | eigener Wert                                                                   | Valor propio                                                           | Valeur propre                                                              | `settings.profileView.state.own`                     |
+| reset to the default                               | Reset                                                          | Zurücksetzen                                                                   | Restablecer                                                            | Réinitialiser                                                              | `settings.profileView.reset`                         |
+| pages                                              | General, Models, Post Process, Advanced                        | Allgemein, Modelle, Nachbearbeitung, Erweitert                                 | General, Modelos, Post proceso, Avanzado                               | Général, Modèles, Post-traitement, Avancé                                  | `sidebar.*`                                          |
+| Post Processing (switch, Advanced › Transcription) | Post Processing                                                | Nachbearbeitung                                                                | Post procesamiento                                                     | Post-traitement                                                            | `settings.debug.postProcessingToggle.label`          |
+| Transcription (group on Advanced)                  | Transcription                                                  | Transkription                                                                  | Transcripción                                                          | Transcription                                                              | `settings.advanced.groups.transcription`             |
+| Prompts                                            | Prompts                                                        | Prompts                                                                        | Prompts                                                                | Prompts                                                                    | `settings.postProcessing.prompts.library.title`      |
+| a prompt's checkbox                                | Active                                                         | Aktiv                                                                          | Activo                                                                 | Actif                                                                      | `settings.postProcessing.prompts.library.active`     |
+| Context from Earlier Dictations                    | Context from Earlier Dictations                                | Kontext aus früheren Diktaten                                                  | Contexto de dictados anteriores                                        | Contexte des dictées précédentes                                           | `settings.postProcessing.context.title`              |
+| word list (of the defaults)                        | Word List                                                      | Wortliste                                                                      | Lista de palabras                                                      | Liste de mots                                                              | `settings.profileView.fields.customWords`            |
+| a profile's own words                              | Additional Words                                               | Zusätzliche Wörter                                                             | Palabras adicionales                                                   | Mots supplémentaires                                                       | `settings.profileView.fields.profileWords`           |
+| word lists (group)                                 | Word Lists                                                     | Wortlisten                                                                     | Listas de palabras                                                     | Listes de mots                                                             | `settings.advanced.wordLists.groupTitle`             |
+| History                                            | History                                                        | Verlauf                                                                        | Historial                                                              | Historique                                                                 | `sidebar.history`                                    |
+| a version of a History entry                       | version                                                        | Fassung                                                                        | versión                                                                | version                                                                    | `settings.history.versions.*`                        |
+| Sound (group)                                      | Sound                                                          | Ton                                                                            | Sonido                                                                 | Son                                                                        | `settings.sound.title`                               |
+| Audio Feedback                                     | Audio Feedback                                                 | Audio-Feedback                                                                 | Retroalimentación de audio                                             | Signal sonore                                                              | `settings.sound.audioFeedback.label`                 |
+| Sound When Done                                    | Sound When Done                                                | Ton, wenn alles fertig ist                                                     | Sonido al terminar                                                     | Son à la fin                                                               | `settings.sound.doneSound.label`                     |
+| Paste Method                                       | Paste Method                                                   | Einfügemethode                                                                 | Método de pegado                                                       | Méthode de collage                                                         | `settings.advanced.pasteMethod.title`                |
+| Clipboard Handling                                 | Clipboard Handling                                             | Zwischenablage-Verhalten                                                       | Manejo del portapapeles                                                | Gestion du presse-papiers                                                  | `settings.advanced.clipboardHandling.title`          |
+| Accessibility (macOS permission)                   | Accessibility                                                  | Bedienungshilfen                                                               | Accesibilidad                                                          | Accessibilité                                                              | `onboarding.permissions.accessibility.name`          |
+| Continue without Accessibility                     | Continue without Accessibility                                 | Ohne Bedienungshilfen fortfahren                                               | Continuar sin accesibilidad                                            | Continuer sans l'accessibilité                                             | `onboarding.permissions.accessibility.skip`          |
+| overlay while transcribing                         | Transcribing...                                                | Transkribiere...                                                               | Transcribiendo...                                                      | Transcription...                                                           | `overlay.transcribing`                               |
+| overlay while post-processing                      | Processing...                                                  | Verarbeite...                                                                  | Procesando...                                                          | Traitement...                                                              | `overlay.processing`                                 |
+| notice after failed post-processing                | Pasted Without Post-Processing                                 | Ohne Nachbearbeitung eingefügt                                                 | Pegado sin post proceso                                                | Collé sans post-traitement                                                 | `errors.postProcessFailedTitle`                      |
+| app version                                        | Version                                                        | Version                                                                        | Versión                                                                | Version                                                                    | `settings.about.version.title`                       |
 
 Notes on the locale files (to be fixed there, not worked around here):
 
@@ -188,22 +188,22 @@ Notes on the locale files (to be fixed there, not worked around here):
 
 Not interface labels, but use them consistently:
 
-| English | German | Spanish | French |
-|---|---|---|---|
-| dictation | Diktat | dictado | dictée |
-| recording | Aufnahme | grabación | enregistrement |
-| transcript, transcription | Transkription, Transkript | transcripción | transcription |
-| post-processing | Nachbearbeitung | posprocesamiento | post-traitement |
-| speech model | Sprachmodell | modelo de voz | modèle vocal |
-| language model | Sprachmodell (KI) | modelo de lenguaje | modèle de langage |
-| key combination | Tastenkombination | combinación de teclas | combinaison de touches |
-| key press | Tastendruck | pulsación de tecla | touche (envoyée) |
-| clipboard | Zwischenablage | portapapeles | presse-papiers |
-| overlay | Overlay | overlay | overlay |
-| tray | Tray | bandeja | barre système |
-| profile | Profil | perfil | profil |
-| the defaults | die Grundeinstellungen | la configuración básica | les paramètres de base |
-| factory setting | Werkseinstellung | configuración de fábrica | réglage d'usine |
-| context | Kontext | contexto | contexte |
+| English                   | German                    | Spanish                  | French                 |
+| ------------------------- | ------------------------- | ------------------------ | ---------------------- |
+| dictation                 | Diktat                    | dictado                  | dictée                 |
+| recording                 | Aufnahme                  | grabación                | enregistrement         |
+| transcript, transcription | Transkription, Transkript | transcripción            | transcription          |
+| post-processing           | Nachbearbeitung           | posprocesamiento         | post-traitement        |
+| speech model              | Sprachmodell              | modelo de voz            | modèle vocal           |
+| language model            | Sprachmodell (KI)         | modelo de lenguaje       | modèle de langage      |
+| key combination           | Tastenkombination         | combinación de teclas    | combinaison de touches |
+| key press                 | Tastendruck               | pulsación de tecla       | touche (envoyée)       |
+| clipboard                 | Zwischenablage            | portapapeles             | presse-papiers         |
+| overlay                   | Overlay                   | overlay                  | overlay                |
+| tray                      | Tray                      | bandeja                  | barre système          |
+| profile                   | Profil                    | perfil                   | profil                 |
+| the defaults              | die Grundeinstellungen    | la configuración básica  | les paramètres de base |
+| factory setting           | Werkseinstellung          | configuración de fábrica | réglage d'usine        |
+| context                   | Kontext                   | contexto                 | contexte               |
 
 In German, "Sprachmodell" is ambiguous; say "das Sprachmodell" only for speech recognition and "ein KI-Modell" or "ein Sprachmodell der Nachbearbeitung" for post-processing where it could be mistaken.
