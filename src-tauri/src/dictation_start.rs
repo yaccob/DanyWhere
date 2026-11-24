@@ -1059,6 +1059,31 @@ mod tests {
     }
 
     #[test]
+    fn without_accessibility_the_mode_s_own_settings_select_an_added_source() {
+        // As "Continue without Accessibility" leaves them: paste method
+        // "None", set by the mode (found in the first real run, 2026-11-24).
+        let mut bench = Bench::new(fake_microphone::mic());
+        bench.app.input_method_added = true;
+        crate::shortcut::apply_no_accessibility_mode(&mut bench.app.settings);
+        assert_eq!(
+            bench.app.settings.paste_method,
+            crate::settings::PasteMethod::None
+        );
+        let outcome = bench.start(START_BINDINGS[0]);
+        fake_microphone::play(&bench.mic, &fake_microphone::speech(24_000));
+        cues_given(outcome);
+        assert_eq!(input_method_calls(&bench.log()), vec![ImCall::Begin]);
+        let kept = std::mem::take(&mut *bench.app.kept.lock().unwrap());
+        assert_eq!(kept.len(), 1);
+        drop(kept);
+        assert_eq!(
+            input_method_calls(&bench.log()),
+            vec![ImCall::Begin, ImCall::End]
+        );
+        fake_microphone::stop(&bench.rm, &bench.mic, START_BINDINGS[0]);
+    }
+
+    #[test]
     fn a_recording_whose_text_does_not_go_through_the_input_method_leaves_the_source_alone() {
         use crate::settings::PasteMethod;
         for (added, method) in [

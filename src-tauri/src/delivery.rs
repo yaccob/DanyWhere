@@ -155,11 +155,16 @@ pub enum Insertion {
 
 /// Whether a text that goes with `settings` goes through DanyWhere's input
 /// method, once its source is added (`input_method_added`): with a paste
-/// method that sends keys, with Accessibility or without. Not with "None"
-/// (pasting off), nor with an external script, which pastes by its own
-/// means.
+/// method that sends keys, with Accessibility or without. In the mode
+/// without Accessibility also with "None", which the mode sets itself
+/// (`shortcut::apply_no_accessibility_mode`); with Accessibility "None" is
+/// pasting turned off. Never with an external script, which pastes by its
+/// own means.
 pub fn inserts_through_input_method(settings: &AppSettings, input_method_added: bool) -> bool {
-    input_method_added && crate::clipboard::sends_keys(settings.paste_method)
+    input_method_added
+        && (crate::clipboard::sends_keys(settings.paste_method)
+            || (settings.paste_method == PasteMethod::None
+                && crate::accessibility::state(settings).runs_without_accessibility()))
 }
 
 /// The rule for inserting a text that goes with `settings`
@@ -2170,7 +2175,10 @@ mod tests {
         // 1. A waiting service call keeps the text; else an added source
         //    inserts what would be pasted with keys, with or without
         //    Accessibility; the key presses and the copy only with it.
-        if context.input_method_added && sends_keys && !context.call_waiting {
+        //    Without Accessibility "None" is the mode's own paste method,
+        //    not pasting turned off.
+        let through_input_method = sends_keys || (method == PasteMethod::None && skipped);
+        if context.input_method_added && through_input_method && !context.call_waiting {
             return Insertion::InputMethod {
                 then_keys: !skipped,
                 then_copy: !skipped && copies,
@@ -2260,6 +2268,50 @@ mod tests {
     }
 
     #[test]
+    fn without_accessibility_the_mode_s_own_settings_insert_through_an_added_source() {
+        // As "Continue without Accessibility" leaves them: paste method
+        // "None", set by the mode, not chosen by the user. Every Mac without
+        // Accessibility has it (found in the first real run, 2026-11-24).
+        let settings = settings_without_accessibility();
+        assert_eq!(settings.paste_method, PasteMethod::None);
+        let added = InsertionContext {
+            service_available: true,
+            input_method_added: true,
+            ..InsertionContext::default()
+        };
+        assert!(inserts_through_input_method(&settings, true));
+        assert_eq!(
+            insertion(&settings, added),
+            Insertion::InputMethod {
+                then_keys: false,
+                then_copy: false
+            }
+        );
+        assert_eq!(
+            dictation_target_with(&settings, added),
+            DictationTarget::Pasted
+        );
+        // Not added: it waits for the service, as before.
+        assert_eq!(
+            insertion(&settings, added.without_input_method()),
+            Insertion::WaitForService
+        );
+        // A waiting service call still gets it.
+        let called = InsertionContext {
+            call_waiting: true,
+            ..added
+        };
+        assert_eq!(insertion(&settings, called), Insertion::WaitForService);
+        // With Accessibility, "None" is pasting turned off, and it stays off.
+        let off = with_choice(settings.clone(), false);
+        assert!(!inserts_through_input_method(&off, true));
+        assert!(!matches!(
+            insertion(&off, added),
+            Insertion::InputMethod { .. }
+        ));
+    }
+
+    #[test]
     fn an_insertion_that_fails_falls_back_as_without_the_input_method() {
         let added = InsertionContext {
             service_available: true,
@@ -2331,13 +2383,17 @@ mod tests {
             dictation_target_with(&settings, copied),
             DictationTarget::InsertService
         );
-        // Pasting off: nothing goes through the input method.
+        // "None", as the mode itself sets it: through the input method too.
         settings.paste_method = PasteMethod::None;
         assert_eq!(
             dictation_target_with(&settings, added),
-            DictationTarget::InsertService
+            DictationTarget::Pasted
         );
-        assert!(!goes_into_app_in_front(&settings, added));
+        assert!(goes_into_app_in_front(&settings, added));
+        // An external script pastes by its own means; nothing goes through
+        // the input method.
+        settings.paste_method = PasteMethod::ExternalScript;
+        assert!(!inserts_through_input_method(&settings, true));
     }
 
     #[test]
@@ -2396,7 +2452,11 @@ mod tests {
                     });
                     let case =
                         format!("{method:?}, skipped {skipped}, trusted {trusted}, added {added}");
-                    let goes_through = added && crate::clipboard::sends_keys(method);
+                    // Without Accessibility "None" is the mode's own paste
+                    // method, not pasting turned off.
+                    let goes_through = added
+                        && (crate::clipboard::sends_keys(method)
+                            || (method == PasteMethod::None && skipped));
                     assert_eq!(hold.is_some(), goes_through, "{case}");
                     let begun = if goes_through {
                         vec![ImCall::Begin]

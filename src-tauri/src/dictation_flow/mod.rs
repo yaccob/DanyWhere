@@ -2738,6 +2738,37 @@ mod tests {
     }
 
     #[test]
+    fn without_accessibility_the_mode_s_own_settings_insert_through_an_added_source() {
+        // As "Continue without Accessibility" leaves them, paste method
+        // "None" included (Access::settings keeps a paste method of its own).
+        let settings = with_end(
+            crate::end_keys::with_builtin_ends(
+                crate::accessibility::testing::settings_without_accessibility(),
+            ),
+            PLAIN,
+            " (sent)",
+            false,
+        );
+        assert_eq!(settings.paste_method, PasteMethod::None);
+        let access = Access::WithoutForService;
+        let ports = FakePorts::new(access.script(with_input_method(Script::default(), inserted())));
+        finish(&ports, snapshot_with(settings));
+        assert_eq!(
+            after(&ports.take_events(), &Event::SpawnPaste),
+            [
+                vec![
+                    Event::RedoLookedAt(1),
+                    im_insert("hello (sent)"),
+                    Event::ClearNotice,
+                    im(ImCall::End),
+                ],
+                inserted_finish(),
+            ]
+            .concat()
+        );
+    }
+
+    #[test]
     fn with_accessibility_an_added_source_inserts_and_the_append_keys_follow() {
         for clipboard in [
             ClipboardHandling::DontModify,
