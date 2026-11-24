@@ -1315,8 +1315,8 @@
         "button": "在 GitHub 上檢視"
       },
       "basedOn": {
-        "title": "基於 Handy",
-        "description": "DanyWhere 基於 CJ Pais 及貢獻者開發的 Handy",
+        "title": "源自 Handy",
+        "description": "DanyWhere 源自 CJ Pais 及貢獻者開發的 Handy。感謝他們打下至今仍支撐著它的基礎。",
         "button": "前往 Handy"
       },
       "supportDevelopment": {
