@@ -395,6 +395,76 @@ cases.push([
   },
 ]);
 
+// Holding and tapping are the two gestures (user, 2026-11-24; sidecar qa
+// 2026-11-24_1716): a short press is "tap" / "antippen" wherever it stands
+// against holding, never "press" / "drücken" / "Druck", which holding is
+// too, and never a bare "Tippen", which is typing text in German.
+const SHORT_PRESS_KEYS = [
+  "settings.endKeys.description",
+  "settings.endKeys.sameAsStart",
+  "settings.endKeys.linuxNoShortcuts",
+  "settings.general.shortcut.bindings.transcribe_with_post_process.descriptionMacos",
+  "settings.general.dictationKeyInserts.description",
+  "settings.general.shortcutActivation.descriptions.toggle",
+];
+const SHORT_PRESS_DE_ONLY = [
+  "settings.general.dictationKeyInserts.label",
+  "settings.debug.holdThreshold.description",
+  "onboarding.demo.tap",
+  "onboarding.try.tapNext",
+  "onboarding.try.tapAgain",
+  "onboarding.try.doneTap",
+  "onboarding.done.subMac",
+  "onboarding.done.subTray",
+];
+cases.push(
+  [
+    "the two ways to end are When Held and When Tapped, the behavior that only taps is Tap",
+    () => {
+      assert.equal(t("settings.endKeys.holdEnds.title"), "When Held");
+      assert.equal(t("settings.endKeys.tapEnds.title"), "When Tapped");
+      assert.equal(tDe("settings.endKeys.holdEnds.title"), "Beim Halten");
+      assert.equal(tDe("settings.endKeys.tapEnds.title"), "Beim Antippen");
+      assert.equal(
+        tDe("settings.endKeys.tapEnds.description"),
+        "Wie das Antippen einer Endtaste die Aufnahme beendet.",
+      );
+      assert.equal(
+        t("settings.general.shortcutActivation.options.toggle"),
+        "Tap",
+      );
+      assert.equal(
+        tDe("settings.general.shortcutActivation.options.toggle"),
+        "Antippen",
+      );
+    },
+  ],
+  [
+    "a short press is tapping, in English and German",
+    () => {
+      for (const key of SHORT_PRESS_KEYS) {
+        const english = t(key, { start: "Start Shortcut" });
+        assert.ok(!/\bpress/i.test(english), `en ${key}: ${english}`);
+        assert.ok(/\btap/i.test(english), `en ${key}: ${english}`);
+      }
+      for (const key of [...SHORT_PRESS_KEYS, ...SHORT_PRESS_DE_ONLY]) {
+        const german = tDe(key, { start: "Starttaste" });
+        assert.ok(
+          // "gedrückt" belongs to holding ("gedrückt halten").
+          !/Druck|(?<!ge)drück|\bTippen\b|tippe darauf|Tippe (auf|erneut auf)|wo du tippen/.test(
+            german,
+          ),
+          `de ${key}: ${german}`,
+        );
+        assert.ok(
+          /[Aa]ntipp|[Tt]ipp\S* .*\ban\b/.test(german),
+          `de ${key}: ${german}`,
+        );
+      }
+    },
+  ],
+);
+
 let failed = 0;
 for (const [name, check] of cases) {
   try {

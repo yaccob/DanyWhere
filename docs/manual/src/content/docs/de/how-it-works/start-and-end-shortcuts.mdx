@@ -18,7 +18,7 @@ Eine **Starttaste** startet nur eine Aufnahme. Eine Endtaste beendet nur eine, u
 <Diagram
   name="how-a-recording-ends"
   caption="Wie eine Aufnahme endet"
-  alt="Die Wege, auf denen eine Aufnahme endet. Eine Endtaste beendet sie mit ihren eigenen Werten. Eine Starttaste, noch einmal gedrückt, beendet sie wie die Endtaste mit derselben Tastenkombination und tut nichts, wenn es keine solche gibt. Das Loslassen einer gehaltenen Starttaste beendet sie, wie es unter „Beim Halten“ eingestellt ist. Esc bricht sie ab. Jeder Weg entscheidet, was angehängt wird, ob der Text nachbearbeitet wird und ob frühere Diktate als Kontext mitgehen."
+  alt="Die Wege, auf denen eine Aufnahme endet. Eine Endtaste, angetippt, beendet sie mit ihren eigenen Werten. Eine Starttaste, erneut angetippt, beendet sie wie die Endtaste mit derselben Tastenkombination und tut nichts, wenn es keine solche gibt. Das Loslassen einer gehaltenen Starttaste beendet sie, wie es unter „Beim Halten“ eingestellt ist. Esc bricht sie ab. Jeder Weg entscheidet, was angehängt wird, ob der Text nachbearbeitet wird und ob frühere Diktate als Kontext mitgehen."
 />
 
 Jeder Weg, eine Aufnahme zu beenden, entscheidet dieselben drei Dinge: was nach dem Text kommt, ob der Text nachbearbeitet wird und ob frühere Diktate als Kontext mitgehen.
@@ -52,7 +52,7 @@ Lässt du eine gehaltene Starttaste los, wird ein Leerzeichen angehängt. Ist es
 </TabItem>
 <TabItem label="Windows">
 
-Windows beginnt mit zwei Endtasten, die die Tastenkombinationen der beiden Starttasten haben: <kbd>Strg+Leertaste</kbd> beendet ohne Nachbearbeitung, <kbd>Strg+Umschalt+Leertaste</kbd> mit. Keine von beiden hängt etwas an. Du drückst also zum Beenden die Starttaste noch einmal und nimmst die zweite, wenn der Text überarbeitet werden soll.
+Windows beginnt mit zwei Endtasten, die die Tastenkombinationen der beiden Starttasten haben: <kbd>Strg+Leertaste</kbd> beendet ohne Nachbearbeitung, <kbd>Strg+Umschalt+Leertaste</kbd> mit. Keine von beiden hängt etwas an. Du tippst also zum Beenden die Starttaste erneut an und nimmst die zweite, wenn der Text überarbeitet werden soll.
 
 Lässt du eine gehaltene Starttaste los, gilt dasselbe: Die **Starttaste** beendet ohne Nachbearbeitung, die **Zweite Starttaste** mit.
 
@@ -86,9 +86,9 @@ Jeder Eintrag unter **Endtasten** hat diese Teile:
 
 ## Die Starttasten und wie sie beenden
 
-**Drückst du eine Starttaste während einer Aufnahme noch einmal,** beendet sie die Aufnahme nur über eine Endtaste mit genau ihrer Tastenkombination. Die Liste weist mit einer Zeile unter einem solchen Eintrag darauf hin. Hat keine Endtaste diese Tastenkombination, tut die Starttaste während einer Aufnahme nichts.
+**Tippst du eine Starttaste während einer Aufnahme erneut an,** beendet sie die Aufnahme nur über eine Endtaste mit genau ihrer Tastenkombination. Die Liste weist mit einer Zeile unter einem solchen Eintrag darauf hin. Hat keine Endtaste diese Tastenkombination, tut die Starttaste während einer Aufnahme nichts.
 
-**Beim Halten**, ganz oben bei den **Endtasten**, legt fest, wie das Loslassen einer gehaltenen Starttaste die Aufnahme beendet. Jede Starttaste hat dort ihre eigene Einstellung mit **Anhängen**, **Nachbearbeiten** und **Kontext senden**, aber ohne Namen und ohne Tastenkombination. Steht **Verhalten der Tastenkombination** auf **Umschalten**, wird nichts gehalten, und **Beim Halten** ist ausgeblendet.
+**Beim Halten**, ganz oben bei den **Endtasten**, legt fest, wie das Loslassen einer gehaltenen Starttaste die Aufnahme beendet. Jede Starttaste hat dort ihre eigene Einstellung mit **Anhängen**, **Nachbearbeiten** und **Kontext senden**, aber ohne Namen und ohne Tastenkombination. Darunter steht **Beim Antippen** über den Endtasten. Steht **Verhalten der Tastenkombination** auf **Antippen**, wird nichts gehalten: **Beim Halten** ist dann ausgeblendet, und die Endtasten brauchen keine eigene Überschrift.
 
 Die **Zweite Starttaste** ist optional: eine zweite Tastenkombination, die eine Aufnahme startet, auf dem Mac <kbd>⌃⇧ Leertaste</kbd>. DanyWhere belegt sie nur, solange die Nachbearbeitung eingeschaltet ist. Sie ist fürs Halten gedacht: Halte <kbd>⌃ Leertaste</kbd> für den Text, wie du ihn gesagt hast, und <kbd>⌃⇧ Leertaste</kbd> für den überarbeiteten.
 
@@ -98,7 +98,7 @@ Die Endtasten findest du unter **Grundeinstellungen › Allgemein › Endtasten*
 
 <Screenshot
   name="end-shortcuts"
-  alt="Die Gruppe Endtasten unter Grundeinstellungen › Allgemein. Ganz oben steht Beim Halten mit einem Block je Starttaste: dem Feld Anhängen, einer Auswahl für den Tastendruck und den Kästchen Nachbearbeiten und Kontext senden. Darunter ist jede Endtaste eine Zeile mit ihrem Namen, ihrer Tastenkombination und denselben Feldern, zuerst die beiden mit den Tastenkombinationen der Starttasten."
+  alt="Die Gruppe Endtasten unter Grundeinstellungen › Allgemein. Ganz oben steht Beim Halten mit einem Block je Starttaste: dem Feld Anhängen, einer Auswahl für den Tastendruck und den Kästchen Nachbearbeiten und Kontext senden. Darunter, unter Beim Antippen, ist jede Endtaste eine Zeile mit ihrem Namen, ihrer Tastenkombination und denselben Feldern, zuerst die beiden mit den Tastenkombinationen der Starttasten."
   caption="Die Endtasten unter Grundeinstellungen › Allgemein."
 />
 
@@ -133,7 +133,7 @@ Auf dem Mac bringt eine neue Installation das schon mit: <kbd>⌃↩</kbd> schic
 ## Grenzen
 
 :::caution[Linux]
-Unter Linux kann DanyWhere die eigene Tastenkombination einer Endtaste während einer Aufnahme nicht belegen. Eine Aufnahme endet dort, wenn du eine gehaltene Starttaste loslässt oder eine Starttaste erneut drückst, deren Tastenkombination eine Endtaste hat. Für das Rezept oben gibst du den Druck auf Enter deshalb einer Endtaste, die die Tastenkombination einer Starttaste hat, oder trägst ihn unter **Beim Halten** ein. Den letzten Weg zum Beenden lassen die Einstellungen nicht entfernen: Behalte eine Endtaste mit der Tastenkombination einer Starttaste oder wähl **Halten**.
+Unter Linux kann DanyWhere die eigene Tastenkombination einer Endtaste während einer Aufnahme nicht belegen. Eine Aufnahme endet dort, wenn du eine gehaltene Starttaste loslässt oder eine Starttaste erneut antippst, deren Tastenkombination eine Endtaste hat. Für das Rezept oben gibst du den Druck auf Enter deshalb einer Endtaste, die die Tastenkombination einer Starttaste hat, oder trägst ihn unter **Beim Halten** ein. Den letzten Weg zum Beenden lassen die Einstellungen nicht entfernen: Behalte eine Endtaste mit der Tastenkombination einer Starttaste oder wähl **Halten**.
 :::
 
 **Auf einem Mac ohne Bedienungshilfen** kann DanyWhere keine Tasten drücken. Fährst du ohne die Berechtigung fort, lässt eine neue Installation die vier Endtasten weg, die Enter oder Shift-Enter senden, und ein unter **Anhängen** gewählter Tastendruck wird nicht gesendet.

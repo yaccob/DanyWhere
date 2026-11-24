@@ -2,15 +2,24 @@
 // 2026-11-24_0141): start and end shortcuts follow each other. First the
 // start shortcuts with the behavior on top, then the end shortcuts, which
 // begin with "When Held" (releasing a held start shortcut is an end too) and
-// close with Cancel, then the other shortcuts.
+// close with Cancel, then the other shortcuts. Above the list, "When Tapped"
+// says where "When Held" ends (user, 2026-11-24; sidecar qa
+// 2026-11-24_1716): holding and tapping are the two gestures, never
+// "pressing", which holding is too.
 import { describe, expect, test } from "bun:test";
 import { act, fireEvent, screen, within } from "@testing-library/react";
 import { GeneralSettings } from "./GeneralSettings";
 import { DEFAULTS_SCOPE } from "@/lib/profileScope";
 import { settingsWith, type SettingsSpec } from "@/test/fixtures";
+import { switchTestLanguage } from "@/test/i18n";
 import { renderPage, settle } from "@/test/render";
 import { setOsType } from "@/test/tauri-mock";
-import { rawTextIn, visibleText, visibleTexts } from "@/test/visible";
+import {
+  rawTextIn,
+  readableTexts,
+  visibleText,
+  visibleTexts,
+} from "@/test/visible";
 
 const renderGeneral = (spec: SettingsSpec = {}) =>
   renderPage(<GeneralSettings />, {
@@ -53,6 +62,7 @@ const ROWS = [
   "When Held",
   "⌃ Space held",
   "⌃⇧ Space held",
+  "When Tapped",
   "Add End Shortcut",
   "Cancel Shortcut",
   "Paste Last Transcript",
@@ -84,25 +94,77 @@ describe("General: start and end shortcuts together", () => {
     ]);
   });
 
-  test("End Shortcuts: When Held first, then the ends, Cancel last", async () => {
+  test("End Shortcuts: When Held first, then When Tapped with the ends, Cancel last", async () => {
     await renderGeneral(holdBoth);
 
     expect(shownIn("End Shortcuts", ROWS)).toEqual([
       "When Held",
       "⌃ Space held",
       "⌃⇧ Space held",
+      "When Tapped",
       "Add End Shortcut",
       "Cancel Shortcut",
     ]);
   });
 
-  test("End Shortcuts while the shortcuts toggle: the ends, Cancel last", async () => {
+  test("When Tapped heads the list: no line between it and the first end", async () => {
+    await renderGeneral(holdBoth);
+
+    const heading = screen.getByRole("heading", {
+      level: 3,
+      name: "When Tapped",
+    });
+    const firstEnd = card("End Shortcuts").querySelector(
+      '[id^="end-key-name-"]',
+    );
+    if (!firstEnd) throw new Error("no end shortcut");
+    // The card's rows are the children of its list (`SettingsGroup`), with a
+    // line between each two; heading and list share one of them.
+    const rows = card("End Shortcuts").querySelector(
+      ":scope > div.border > div",
+    );
+    const rowOf = (element: Element) =>
+      Array.from(rows?.children ?? []).find((row) => row.contains(element));
+    expect(rowOf(heading)).toBeDefined();
+    expect(rowOf(heading)).toBe(rowOf(firstEnd));
+    expect(
+      heading.compareDocumentPosition(firstEnd) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
+  test("End Shortcuts while the shortcuts are only tapped: the ends without a heading, Cancel last", async () => {
     await renderGeneral({ defaults: { shortcut_activation: "toggle" } });
 
     expect(shownIn("End Shortcuts", ROWS)).toEqual([
       "Add End Shortcut",
       "Cancel Shortcut",
     ]);
+  });
+
+  test("the behavior that allows only tapping is called Tap", async () => {
+    await renderGeneral({ defaults: { shortcut_activation: "toggle" } });
+
+    const texts = visibleTexts(card("Start Shortcuts"));
+    expect(texts).toContain("Tap");
+    expect(texts).not.toContain("Toggle");
+  });
+
+  test("in German: Beim Halten and Beim Antippen, and a short press is Antippen, never Druck", async () => {
+    await switchTestLanguage("de");
+    await renderGeneral(holdBoth);
+
+    const texts = visibleTexts(card("Endtasten"));
+    const held = texts.indexOf("Beim Halten");
+    const tapped = texts.indexOf("Beim Antippen");
+    expect(held).toBeGreaterThan(-1);
+    expect(tapped).toBeGreaterThan(held);
+    const readable = readableTexts().join(" ");
+    expect(readable).toContain("Erneutes Antippen während einer Aufnahme");
+    expect(readable).not.toMatch(
+      /erneute[rn]? Druck|zweiten Druck|erneut drück/,
+    );
+    expect(rawTextIn()).toEqual([]);
   });
 
   test("Other Shortcuts: paste, copy, word list, profile by application", async () => {

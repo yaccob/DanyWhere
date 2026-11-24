@@ -145,11 +145,11 @@ describe("the second start shortcut's description", () => {
     return screen.getByRole("tooltip").textContent;
   };
 
-  test("on macOS, says that holding post-processes and a second press doesn't", async () => {
+  test("on macOS, says that holding post-processes and tapping again doesn't", async () => {
     await renderSecond();
 
     expect(await description()).toBe(
-      "Optional: a second combination that starts a recording. Out of the box, releasing it after holding it post-processes the text; pressing it again ends without post-processing, as every end shortcut without ⌥ does. Taken only while post-processing is on.",
+      "Optional: a second combination that starts a recording. Out of the box, releasing it after holding it post-processes the text; tapping it again ends without post-processing, as every end shortcut without ⌥ does. Taken only while post-processing is on.",
     );
     expect(rawTextIn()).toEqual([]);
   });
@@ -159,7 +159,7 @@ describe("the second start shortcut's description", () => {
     await renderSecond();
 
     expect(await description()).toBe(
-      "Optional: eine zweite Tastenkombination, die eine Aufnahme startet. Ab Werk wird der Text nachbearbeitet, wenn man sie hält und loslässt; ein erneuter Druck beendet ohne Nachbearbeitung, wie jede Endtaste ohne ⌥. Nur belegt, solange die Nachbearbeitung eingeschaltet ist.",
+      "Optional: eine zweite Tastenkombination, die eine Aufnahme startet. Ab Werk wird der Text nachbearbeitet, wenn man sie hält und loslässt; erneutes Antippen beendet ohne Nachbearbeitung, wie jede Endtaste ohne ⌥. Nur belegt, solange die Nachbearbeitung eingeschaltet ist.",
     );
   });
 

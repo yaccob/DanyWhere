@@ -411,7 +411,7 @@
           "transcribe_with_post_process": {
             "name": "Druhá spouštěcí zkratka",
             "description": "Volitelné: druhá kombinace kláves, která spouští nahrávání. V továrním nastavení ukončovací zkratka se stejnou kombinací kláves text dodatečně zpracuje. Obsazena jen, dokud je dodatečné zpracování zapnuté.",
-            "descriptionMacos": "Volitelné: druhá kombinace kláves, která spouští nahrávání. V továrním nastavení se text dodatečně zpracuje, když ji podržíte a uvolníte; její opětovné stisknutí ukončí nahrávání bez dodatečného zpracování, jako každá ukončovací zkratka bez ⌥. Obsazena jen, dokud je dodatečné zpracování zapnuté."
+            "descriptionMacos": "Volitelné: druhá kombinace kláves, která spouští nahrávání. V továrním nastavení se text dodatečně zpracuje, když ji podržíte a uvolníte; opětovné klepnutí na ni ukončí nahrávání bez dodatečného zpracování, jako každá ukončovací zkratka bez ⌥. Obsazena jen, dokud je dodatečné zpracování zapnuté."
           },
           "paste_last_transcript": {
             "name": "Vložit poslední přepis",
@@ -462,7 +462,7 @@
         "options": {
           "holdOrToggle": "Automaticky",
           "pushToTalk": "Podržet",
-          "toggle": "Přepínat"
+          "toggle": "Klepnout"
         },
         "descriptions": {
           "hold_or_toggle": "Podržte pro nahrávání, nebo klepněte pro spuštění; pak ho zastaví ukončovací zkratka",
@@ -476,7 +476,7 @@
       },
       "dictationKeyInserts": {
         "label": "Zkratka diktování také vkládá",
-        "description": "Stiskněte zkratku diktování znovu, aby se diktování ukončilo a vložilo, jakmile bude hotové, v aplikacích, které podporují služby macOS. Již otevřené aplikace to převezmou až po restartu. Kde nelze nic vložit, použijte „Zkopírovat poslední přepis“."
+        "description": "Klepněte na zkratku diktování znovu, aby se diktování ukončilo a vložilo, jakmile bude hotové, v aplikacích, které podporují služby macOS. Již otevřené aplikace to převezmou až po restartu. Kde nelze nic vložit, použijte „Zkopírovat poslední přepis“."
       },
       "dictationServiceWhenIdle": {
         "title": "Když se nic nenahrává",
@@ -489,10 +489,10 @@
     },
     "endKeys": {
       "title": "Ukončovací zkratky",
-      "description": "Jak nahrávání skončí a co následuje. Každá ukončovací zkratka má vlastní kombinaci kláves, obsazenou jen během nahrávání, a určuje, co se připojí, zda se text dodatečně zpracuje a zda se předchozí diktáty pošlou jako kontext. Ukončovací zkratka smí mít kombinaci kláves spouštěcí zkratky: opětovné stisknutí této spouštěcí zkratky pak nahrávání ukončí tímto způsobem.",
+      "description": "Jak nahrávání skončí a co následuje. Každá ukončovací zkratka má vlastní kombinaci kláves, obsazenou jen během nahrávání, a určuje, co se připojí, zda se text dodatečně zpracuje a zda se předchozí diktáty pošlou jako kontext. Ukončovací zkratka smí mít kombinaci kláves spouštěcí zkratky: opětovné klepnutí na tuto spouštěcí zkratku pak nahrávání ukončí tímto způsobem.",
       "name": "Název",
       "shortcutHint": "Stisknutí této kombinace kláves během nahrávání ho ukončí tímto způsobem. Je obsazena jen během nahrávání.",
-      "sameAsStart": "Stejná kombinace kláves jako „{{start}}“: její opětovné stisknutí během nahrávání ho ukončí tímto způsobem.",
+      "sameAsStart": "Stejná kombinace kláves jako „{{start}}“: opětovné klepnutí na ni během nahrávání ho ukončí tímto způsobem.",
       "append": "Připojit",
       "appendDescription": "Připojí se k diktátu, který skončí tímto způsobem: text a potom zvolený stisk klávesy. V textu je \\s mezera, \\n nový řádek, \\t tabulátor a \\\\ zpětné lomítko; vše ostatní se připojí tak, jak je napsáno. Stisk klávesy se odešle, jen když se text vkládá.",
       "postProcess": "Dodatečně zpracovat",
@@ -508,6 +508,10 @@
         "title": "Při podržení",
         "description": "Jak uvolnění podržené spouštěcí zkratky ukončí nahrávání."
       },
+      "tapEnds": {
+        "title": "Při klepnutí",
+        "description": "Jak klepnutí na ukončovací zkratku ukončí nahrávání."
+      },
       "factoryNames": {
         "pattern": "{{mode}} · {{effect}}",
         "direct": "Přímo",
@@ -519,7 +523,7 @@
         "enter": "Odeslat Enter",
         "shiftEnter": "Odeslat Shift+Enter"
       },
-      "linuxNoShortcuts": "V Linuxu se kombinace kláves ukončovacích zkratek během nahrávání neobsazují. Nahrávání tam skončí, když uvolníte podrženou spouštěcí zkratku, nebo když znovu stisknete spouštěcí zkratku, jejíž kombinaci kláves má některá ukončovací zkratka.",
+      "linuxNoShortcuts": "V Linuxu se kombinace kláves ukončovacích zkratek během nahrávání neobsazují. Nahrávání tam skončí, když uvolníte podrženou spouštěcí zkratku, nebo když znovu klepnete na spouštěcí zkratku, jejíž kombinaci kláves má některá ukončovací zkratka.",
       "errors": {
         "save": "Ukončovací zkratky se nepodařilo uložit: {{error}}",
         "needsShortcut": "Každá ukončovací zkratka potřebuje kombinaci kláves.",

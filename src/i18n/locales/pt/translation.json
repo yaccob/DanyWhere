@@ -411,7 +411,7 @@
           "transcribe_with_post_process": {
             "name": "Segundo Atalho de Início",
             "description": "Opcional: uma segunda combinação que inicia uma gravação. De fábrica, um atalho de fim com a mesma combinação pós-processa o texto. Só fica ocupada enquanto o pós-processamento estiver ativado.",
-            "descriptionMacos": "Opcional: uma segunda combinação que inicia uma gravação. De fábrica, soltá-la depois de a manter premida pós-processa o texto; premi-la de novo termina sem pós-processamento, como qualquer atalho de fim sem ⌥. Só fica ocupada enquanto o pós-processamento estiver ativado."
+            "descriptionMacos": "Opcional: uma segunda combinação que inicia uma gravação. De fábrica, soltá-la depois de a manter premida pós-processa o texto; tocar nela de novo termina sem pós-processamento, como qualquer atalho de fim sem ⌥. Só fica ocupada enquanto o pós-processamento estiver ativado."
           },
           "paste_last_transcript": {
             "name": "Colar a última transcrição",
@@ -462,7 +462,7 @@
         "options": {
           "holdOrToggle": "Automático",
           "pushToTalk": "Segurar",
-          "toggle": "Alternar"
+          "toggle": "Tocar"
         },
         "descriptions": {
           "hold_or_toggle": "Segure para gravar, ou toque para começar; depois um atalho de fim interrompe a gravação",
@@ -476,7 +476,7 @@
       },
       "dictationKeyInserts": {
         "label": "O atalho de ditado também insere",
-        "description": "Prima novamente o atalho de ditado para terminar o ditado e inseri-lo assim que estiver pronto, nas apps que suportam os serviços do macOS. As apps que já estão abertas só aplicam isto depois de reiniciadas. Onde não for possível inserir nada, use «Copiar a última transcrição»."
+        "description": "Toque novamente no atalho de ditado para terminar o ditado e inseri-lo assim que estiver pronto, nas apps que suportam os serviços do macOS. As apps que já estão abertas só aplicam isto depois de reiniciadas. Onde não for possível inserir nada, use «Copiar a última transcrição»."
       },
       "dictationServiceWhenIdle": {
         "title": "Quando nada está a ser gravado",
@@ -489,10 +489,10 @@
     },
     "endKeys": {
       "title": "Atalhos de fim",
-      "description": "Como uma gravação termina e o que se segue. Cada atalho de fim tem a sua própria combinação de teclas, ocupada só durante a gravação, e define o que é acrescentado, se o texto é pós-processado e se os ditados anteriores são enviados como contexto. Um atalho de fim pode ter a combinação de um atalho de início: premir de novo esse atalho de início termina então desta forma.",
+      "description": "Como uma gravação termina e o que se segue. Cada atalho de fim tem a sua própria combinação de teclas, ocupada só durante a gravação, e define o que é acrescentado, se o texto é pós-processado e se os ditados anteriores são enviados como contexto. Um atalho de fim pode ter a combinação de um atalho de início: tocar de novo nesse atalho de início termina então desta forma.",
       "name": "Nome",
       "shortcutHint": "Premir esta combinação durante uma gravação termina-a desta forma. Só fica ocupada durante a gravação.",
-      "sameAsStart": "A mesma combinação que “{{start}}”: premi-la de novo durante uma gravação termina-a desta forma.",
+      "sameAsStart": "A mesma combinação que “{{start}}”: tocar nela de novo durante uma gravação termina-a desta forma.",
       "append": "Acrescentar",
       "appendDescription": "Acrescentado a um ditado que termina desta forma: o texto e depois a tecla que escolher. No texto, \\s é um espaço, \\n uma nova linha, \\t uma tabulação e \\\\ uma barra invertida; todo o resto é acrescentado como está escrito. A tecla só é enviada quando o texto é colado.",
       "postProcess": "Pós-processar",
@@ -508,6 +508,10 @@
         "title": "Ao segurar",
         "description": "Como soltar um atalho de início mantido premido termina a gravação."
       },
+      "tapEnds": {
+        "title": "Ao tocar",
+        "description": "Como tocar num atalho de fim termina a gravação."
+      },
       "factoryNames": {
         "pattern": "{{mode}} · {{effect}}",
         "direct": "Direto",
@@ -519,7 +523,7 @@
         "enter": "Enviar Enter",
         "shiftEnter": "Enviar Shift+Enter"
       },
-      "linuxNoShortcuts": "No Linux, as combinações dos atalhos de fim não ficam ocupadas durante a gravação. Aí, uma gravação termina quando se solta um atalho de início mantido premido, ou quando se prime de novo um atalho de início cuja combinação também pertence a um atalho de fim.",
+      "linuxNoShortcuts": "No Linux, as combinações dos atalhos de fim não ficam ocupadas durante a gravação. Aí, uma gravação termina quando se solta um atalho de início mantido premido, ou quando se toca de novo num atalho de início cuja combinação também pertence a um atalho de fim.",
       "errors": {
         "save": "Não foi possível guardar os atalhos de fim: {{error}}",
         "needsShortcut": "Cada atalho de fim precisa de uma combinação de teclas.",
@@ -1267,7 +1271,7 @@
       },
       "holdThreshold": {
         "title": "Limite de tempo de pressão",
-        "description": "Apenas no modo Automático: por quanto tempo (em milissegundos) o atalho precisa ficar pressionado para contar como segurar em vez de um toque. Diminua se a gravação continuar ativa após pressões curtas; aumente se toques intencionais forem tratados como segurar."
+        "description": "Apenas no modo Automático: por quanto tempo (em milissegundos) o atalho precisa ficar pressionado para contar como segurar em vez de um toque. Diminua se a gravação continuar ativa após segurar o atalho por pouco tempo; aumente se toques intencionais forem tratados como segurar."
       },
       "reliablePaste": {
         "title": "Colagem confiável (Beta)",

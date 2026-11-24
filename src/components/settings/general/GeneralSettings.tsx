@@ -52,9 +52,11 @@ export const GeneralSettings: React.FC = () => {
       </SettingsGroup>
       {/* DanyWhere: how a recording ends and what follows (end_keys.rs).
           Releasing a held start shortcut is an end too, so "When Held" opens
-          the end shortcuts, wherever a start shortcut can be held; Cancel,
-          which ends without a text, closes them. */}
+          the end shortcuts, wherever a start shortcut can be held, and
+          "When Tapped" heads the list after it; Cancel, which ends without a
+          text, closes them. */}
       <EndKeysSettings
+        tapHeading={holdPossible(getSetting("shortcut_activation"))}
         before={
           holdPossible(getSetting("shortcut_activation")) && (
             <ScopedSetting field="hold_ends">

@@ -411,7 +411,7 @@
           "transcribe_with_post_process": {
             "name": "Pintasan Mulai Kedua",
             "description": "Opsional: kombinasi kedua yang memulai rekaman. Pada setelan pabrik, pintasan akhir dengan kombinasi yang sama memproses lanjut teks. Hanya dipakai selama pemrosesan lanjut aktif.",
-            "descriptionMacos": "Opsional: kombinasi kedua yang memulai rekaman. Pada setelan pabrik, melepasnya setelah ditahan memproses lanjut teks; menekannya lagi mengakhiri tanpa pemrosesan lanjut, seperti setiap pintasan akhir tanpa ⌥. Hanya dipakai selama pemrosesan lanjut aktif."
+            "descriptionMacos": "Opsional: kombinasi kedua yang memulai rekaman. Pada setelan pabrik, melepasnya setelah ditahan memproses lanjut teks; mengetuknya lagi mengakhiri tanpa pemrosesan lanjut, seperti setiap pintasan akhir tanpa ⌥. Hanya dipakai selama pemrosesan lanjut aktif."
           },
           "paste_last_transcript": {
             "name": "Tempel transkripsi terakhir",
@@ -462,7 +462,7 @@
         "options": {
           "holdOrToggle": "Otomatis",
           "pushToTalk": "Tahan",
-          "toggle": "Tekan"
+          "toggle": "Ketuk"
         },
         "descriptions": {
           "hold_or_toggle": "Tahan untuk merekam, atau ketuk untuk mulai; lalu pintasan akhir menghentikannya",
@@ -476,7 +476,7 @@
       },
       "dictationKeyInserts": {
         "label": "Pintasan dikte juga menyisipkan",
-        "description": "Tekan pintasan dikte sekali lagi untuk mengakhiri dikte dan menyisipkannya segera setelah siap, di aplikasi yang mendukung layanan macOS. Aplikasi yang sudah terbuka baru menerapkannya setelah dimulai ulang. Jika tidak ada yang bisa disisipkan, gunakan Salin transkripsi terakhir."
+        "description": "Ketuk pintasan dikte sekali lagi untuk mengakhiri dikte dan menyisipkannya segera setelah siap, di aplikasi yang mendukung layanan macOS. Aplikasi yang sudah terbuka baru menerapkannya setelah dimulai ulang. Jika tidak ada yang bisa disisipkan, gunakan Salin transkripsi terakhir."
       },
       "dictationServiceWhenIdle": {
         "title": "Saat tidak ada yang direkam",
@@ -489,10 +489,10 @@
     },
     "endKeys": {
       "title": "Pintasan Akhir",
-      "description": "Cara rekaman berakhir dan apa yang menyusul. Setiap pintasan akhir punya kombinasi tombolnya sendiri, yang hanya dipakai selama merekam, dan menentukan apa yang ditambahkan, apakah teks diproses lanjut, dan apakah dikte sebelumnya ikut dikirim sebagai konteks. Pintasan akhir boleh memakai kombinasi tombol sebuah pintasan mulai: menekan pintasan mulai itu lagi lalu mengakhiri rekaman dengan cara ini.",
+      "description": "Cara rekaman berakhir dan apa yang menyusul. Setiap pintasan akhir punya kombinasi tombolnya sendiri, yang hanya dipakai selama merekam, dan menentukan apa yang ditambahkan, apakah teks diproses lanjut, dan apakah dikte sebelumnya ikut dikirim sebagai konteks. Pintasan akhir boleh memakai kombinasi tombol sebuah pintasan mulai: mengetuk pintasan mulai itu lagi lalu mengakhiri rekaman dengan cara ini.",
       "name": "Nama",
       "shortcutHint": "Menekan kombinasi ini selama rekaman mengakhirinya dengan cara ini. Kombinasi ini hanya dipakai selama merekam.",
-      "sameAsStart": "Kombinasi yang sama dengan “{{start}}”: menekannya lagi selama rekaman mengakhirinya dengan cara ini.",
+      "sameAsStart": "Kombinasi yang sama dengan “{{start}}”: mengetuknya lagi selama rekaman mengakhirinya dengan cara ini.",
       "append": "Tambahkan di akhir",
       "appendDescription": "Ditambahkan ke dikte yang berakhir dengan cara ini: teksnya, lalu tombol yang Anda pilih. Dalam teks, \\s adalah spasi, \\n baris baru, \\t tab, dan \\\\ garis miring terbalik; selebihnya ditambahkan seperti yang tertulis. Tombol hanya dikirim saat teks ditempelkan.",
       "postProcess": "Proses lanjut",
@@ -508,6 +508,10 @@
         "title": "Saat Ditahan",
         "description": "Cara melepas pintasan mulai yang ditahan mengakhiri rekaman."
       },
+      "tapEnds": {
+        "title": "Saat Diketuk",
+        "description": "Cara mengetuk pintasan akhir mengakhiri rekaman."
+      },
       "factoryNames": {
         "pattern": "{{mode}} · {{effect}}",
         "direct": "Langsung",
@@ -519,7 +523,7 @@
         "enter": "Kirim Enter",
         "shiftEnter": "Kirim Shift+Enter"
       },
-      "linuxNoShortcuts": "Di Linux, kombinasi tombol pintasan akhir tidak dipakai selama merekam. Di sana rekaman berakhir saat pintasan mulai yang ditahan dilepas, atau saat pintasan mulai yang kombinasinya juga dimiliki sebuah pintasan akhir ditekan lagi.",
+      "linuxNoShortcuts": "Di Linux, kombinasi tombol pintasan akhir tidak dipakai selama merekam. Di sana rekaman berakhir saat pintasan mulai yang ditahan dilepas, atau saat pintasan mulai yang kombinasinya juga dimiliki sebuah pintasan akhir diketuk lagi.",
       "errors": {
         "save": "Pintasan akhir tidak dapat disimpan: {{error}}",
         "needsShortcut": "Setiap pintasan akhir memerlukan kombinasi tombol.",
@@ -1267,7 +1271,7 @@
       },
       "holdThreshold": {
         "title": "Ambang Waktu Tahan",
-        "description": "Hanya mode Otomatis: berapa lama (dalam milidetik) pintasan harus ditahan agar dianggap ditahan, bukan ditekan singkat. Turunkan jika penahanan singkat membuat perekaman tetap aktif; naikkan jika ketukan yang disengaja dianggap sebagai penahanan."
+        "description": "Hanya mode Otomatis: berapa lama (dalam milidetik) pintasan harus ditahan agar dianggap ditahan, bukan diketuk. Turunkan jika penahanan singkat membuat perekaman tetap aktif; naikkan jika ketukan yang disengaja dianggap sebagai penahanan."
       },
       "reliablePaste": {
         "title": "Tempel Lebih Andal (Beta)",

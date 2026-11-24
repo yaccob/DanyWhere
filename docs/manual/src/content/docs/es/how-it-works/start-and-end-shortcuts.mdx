@@ -18,7 +18,7 @@ Un **Atajo de inicio** solo inicia una grabación. Un atajo de fin solo la termi
 <Diagram
   name="how-a-recording-ends"
   caption="Cómo termina una grabación"
-  alt="Las formas en que termina una grabación. Un atajo de fin la termina con sus propios valores. Un atajo de inicio, pulsado de nuevo, la termina como el atajo de fin que tiene la misma combinación, y no hace nada si no hay ninguno. Soltar un atajo de inicio mantenido la termina según lo configurado en «Al mantener pulsado». Esc la cancela. Cada forma decide qué se añade, si el texto se posprocesa y si los dictados anteriores se envían como contexto."
+  alt="Las formas en que termina una grabación. Un atajo de fin, al tocarlo, la termina con sus propios valores. Un atajo de inicio, tocado de nuevo, la termina como el atajo de fin que tiene la misma combinación, y no hace nada si no hay ninguno. Soltar un atajo de inicio mantenido la termina según lo configurado en «Al mantener pulsado». Esc la cancela. Cada forma decide qué se añade, si el texto se posprocesa y si los dictados anteriores se envían como contexto."
 />
 
 Cada forma de terminar una grabación decide las mismas tres cosas: qué va detrás del texto, si el texto se posprocesa y si los dictados anteriores se envían como contexto.
@@ -52,7 +52,7 @@ Al soltar un atajo de inicio mantenido se añade un espacio. Si es el **Segundo 
 </TabItem>
 <TabItem label="Windows">
 
-Windows empieza con dos atajos de fin que tienen las combinaciones de los dos atajos de inicio: <kbd>Ctrl+Espacio</kbd> termina sin posprocesamiento y <kbd>Ctrl+Mayús+Espacio</kbd>, con él. Ninguno añade nada. Así que, para terminar, vuelves a pulsar el atajo de inicio, y eliges el segundo cuando quieres el texto pulido.
+Windows empieza con dos atajos de fin que tienen las combinaciones de los dos atajos de inicio: <kbd>Ctrl+Espacio</kbd> termina sin posprocesamiento y <kbd>Ctrl+Mayús+Espacio</kbd>, con él. Ninguno añade nada. Así que, para terminar, vuelves a tocar el atajo de inicio, y eliges el segundo cuando quieres el texto pulido.
 
 Al soltar un atajo de inicio mantenido pasa lo mismo: el **Atajo de inicio** termina sin posprocesamiento y el **Segundo atajo de inicio**, con él.
 
@@ -86,9 +86,9 @@ Cada entrada de **Atajos de fin** tiene estas partes:
 
 ## Los atajos de inicio y cómo terminan
 
-**Si vuelves a pulsar un atajo de inicio** durante una grabación, solo la termina a través de un atajo de fin con exactamente su combinación. La lista lo señala con una línea bajo esa entrada. Si ningún atajo de fin tiene esa combinación, el atajo de inicio no hace nada mientras se graba.
+**Si vuelves a tocar un atajo de inicio** durante una grabación, solo la termina a través de un atajo de fin con exactamente su combinación. La lista lo señala con una línea bajo esa entrada. Si ningún atajo de fin tiene esa combinación, el atajo de inicio no hace nada mientras se graba.
 
-**Al mantener pulsado**, al principio de **Atajos de fin**, define cómo termina la grabación al soltar un atajo de inicio mantenido. Cada atajo de inicio tiene el suyo, con **Añadir al final**, **Posprocesar** y **Enviar contexto**, pero sin nombre ni combinación. Si **Comportamiento del atajo** está en **Alternar**, no se mantiene nada pulsado y **Al mantener pulsado** queda oculto.
+**Al mantener pulsado**, al principio de **Atajos de fin**, define cómo termina la grabación al soltar un atajo de inicio mantenido. Cada atajo de inicio tiene el suyo, con **Añadir al final**, **Posprocesar** y **Enviar contexto**, pero sin nombre ni combinación. Debajo, **Al tocar** encabeza los atajos de fin. Si **Comportamiento del atajo** está en **Tocar**, no se mantiene nada pulsado: **Al mantener pulsado** queda oculto y los atajos de fin no necesitan encabezado propio.
 
 El **Segundo atajo de inicio** es opcional: una segunda combinación que inicia una grabación, <kbd>⌃⇧ Espacio</kbd> en un Mac. DanyWhere solo la ocupa mientras el posprocesamiento está activado. Está pensado para mantenerlo pulsado: mantén <kbd>⌃ Espacio</kbd> para el texto tal cual y <kbd>⌃⇧ Espacio</kbd> para el pulido.
 
@@ -98,7 +98,7 @@ Encontrarás los atajos de fin en **Configuración básica › General › Atajo
 
 <Screenshot
   name="end-shortcuts"
-  alt="El grupo Atajos de fin en Configuración básica › General. Arriba, Al mantener pulsado tiene un bloque por atajo de inicio, con el campo Añadir al final, una selección para la pulsación de tecla y las casillas Posprocesar y Enviar contexto. Debajo, cada atajo de fin es una fila con su nombre, su combinación de teclas y los mismos campos, empezando por los dos que tienen las combinaciones de los atajos de inicio."
+  alt="El grupo Atajos de fin en Configuración básica › General. Arriba, Al mantener pulsado tiene un bloque por atajo de inicio, con el campo Añadir al final, una selección para la pulsación de tecla y las casillas Posprocesar y Enviar contexto. Debajo, bajo Al tocar, cada atajo de fin es una fila con su nombre, su combinación de teclas y los mismos campos, empezando por los dos que tienen las combinaciones de los atajos de inicio."
   caption="Los atajos de fin en Configuración básica › General."
 />
 
@@ -133,7 +133,7 @@ En un Mac, una instalación nueva ya lo trae: <kbd>⌃↩</kbd> envía el mensaj
 ## Límites
 
 :::caution[Linux]
-En Linux, DanyWhere no puede ocupar la combinación propia de un atajo de fin durante una grabación. Allí una grabación termina al soltar un atajo de inicio mantenido o al volver a pulsar un atajo de inicio cuya combinación tiene un atajo de fin. Por eso, para la receta de arriba, da la pulsación de Intro a un atajo de fin que tenga la combinación de un atajo de inicio, o ponla en **Al mantener pulsado**. La configuración no te deja quitar la última forma de terminar: conserva un atajo de fin con la combinación de un atajo de inicio o elige **Mantener**.
+En Linux, DanyWhere no puede ocupar la combinación propia de un atajo de fin durante una grabación. Allí una grabación termina al soltar un atajo de inicio mantenido o al volver a tocar un atajo de inicio cuya combinación tiene un atajo de fin. Por eso, para la receta de arriba, da la pulsación de Intro a un atajo de fin que tenga la combinación de un atajo de inicio, o ponla en **Al mantener pulsado**. La configuración no te deja quitar la última forma de terminar: conserva un atajo de fin con la combinación de un atajo de inicio o elige **Mantener**.
 :::
 
 **En un Mac sin Accesibilidad**, DanyWhere no puede pulsar teclas. Si continúas sin el permiso, una instalación nueva omite los cuatro atajos de fin que envían Intro o Mayús+Intro, y no se envía la pulsación de tecla elegida en **Añadir al final**.
