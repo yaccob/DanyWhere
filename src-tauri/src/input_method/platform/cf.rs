@@ -82,7 +82,13 @@ impl Owned {
     /// `object` must be null or a reference the caller owns (Create/Copy
     /// rule), released nowhere else.
     pub unsafe fn take(object: CFTypeRef) -> Option<Owned> {
-        (!object.is_null()).then_some(Owned(object))
+        // Not `then_some(Owned(object))`: it builds the `Owned` first, and
+        // dropping it for null would release null.
+        if object.is_null() {
+            None
+        } else {
+            Some(Owned(object))
+        }
     }
 
     pub fn as_ptr(&self) -> CFTypeRef {
@@ -202,5 +208,27 @@ pub fn file_url(path: &Path, is_directory: bool) -> Option<Owned> {
             bytes.len() as CFIndex,
             u8::from(is_directory),
         ))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{string, Owned};
+
+    #[test]
+    fn taking_null_gives_nothing_and_releases_nothing() {
+        // A Create or Copy function that found nothing returns null, e.g.
+        // TISCreateInputSourceList for a source that isn't added. Releasing
+        // it would stop the app (CFRelease(NULL); NoAX, 2026-11-24).
+        // SAFETY: null is allowed and owns nothing.
+        let taken = unsafe { Owned::take(std::ptr::null()) };
+        assert!(taken.is_none());
+    }
+
+    #[test]
+    fn an_owned_object_is_released_once_on_drop() {
+        let text = string("DanyWhere").expect("a CFString");
+        assert!(!text.as_ptr().is_null());
+        drop(text);
     }
 }
