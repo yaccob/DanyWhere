@@ -2717,13 +2717,15 @@ vad_enabled: boolean; long_form_chunking: boolean;
  */
 bindings: Partial<{ [key in string]: ShortcutBinding }>; 
 /**
- * The end shortcuts (`end_keys`), each with a stable id.
+ * The end shortcuts (`end_keys`), each with a stable id. A stored
+ * profile without them reads the ends of a store from before them,
+ * which `end_keys::migrate` replaces with its own.
  */
-end_keys: EndKey[]; 
+end_keys?: EndKey[]; 
 /**
  * The hold end per start shortcut (`hold_ends`), one value as a whole.
  */
-hold_ends: Partial<{ [key in string]: HoldEnd }>; 
+hold_ends?: Partial<{ [key in string]: HoldEnd }>; 
 /**
  * Check the words that resemble a word list's term with the
  * post-processing provider (`word_list_check`).
