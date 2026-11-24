@@ -1,0 +1,61 @@
+' A dictation from start to end: the structure. The texts come from
+' dictation-flow.<lang>.puml, which includes this file after style.iuml.
+' Facts checked against the code; see the comments for where.
+
+' An elseif chain stacks its questions, so the diagram stays narrow.
+!pragma useVerticalIf on
+
+start
+' Only the start shortcuts of the profile that applies now are taken
+' (shortcut/profile_sync.rs); the profile is chosen again when the
+' recording ends (app_profiles::settle_dictation).
+:$press;
+note right: $noteProfile
+:$recording;
+note right: $noteEnds
+' Escape is the cancel shortcut, registered only while recording and
+' never on Linux (shortcut/mod.rs, reconcile_cancel_shortcut); a cancel
+' discards the recording (utils::cancel_current_operation).
+if ($qEnd) then ($aEnds)
+  :$stopped;
+else ($aCancel)
+  :$cancelled; <<stop>>
+  stop
+endif
+' Word lists go to the model as vocabulary only where it takes one
+' (managers/transcription.rs, vocabulary_for_model).
+:$transcribe;
+note right: $noteWords
+' post_process = the end's "Post-process" and the profile's switch;
+' context only with post-processing (dictation_snapshot.rs, build).
+if ($qPost) then ($yes)
+  if ($qContext) then ($yes)
+    :$context;
+  else ($no)
+  endif
+  ' The active prompts in one request, the word lists as known terms
+  ' (actions.rs, process_transcription_with_settings; prompt_frame.rs).
+  :$edit;
+  note right: $noteFailed
+else ($no)
+endif
+' Saved before the text goes anywhere (dictation_flow/mod.rs).
+:$history;
+' delivery.rs, dictation_target: without Accessibility on macOS the
+' service; else the paste method; else clipboard or History only.
+if ($qWaits) then ($yes)
+  :$waits;
+elseif ($qNone) then ($yes)
+  :$clipboard;
+else ($no)
+  :$pasted;
+  ' The key press of "Append" is sent only after a paste
+  ' (clipboard.rs, append_keys).
+  if ($qKey) then ($yes)
+    :$key;
+  else ($no)
+  endif
+endif
+' delivery.rs, sound_after_dictation.
+:$done;
+stop

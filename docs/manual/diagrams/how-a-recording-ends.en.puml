@@ -1,0 +1,28 @@
+@startuml
+' How a recording ends, in English. The structure is in
+' how-a-recording-ends.iuml; UI terms as in
+' src/i18n/locales/en/translation.json.
+' "\n" breaks a line; no ";" in a text (it would end a step).
+!$yes = "yes"
+!$no = "no"
+!$runs = "A recording runs"
+!$noteCopy = "“Copy Last Transcript” ends it\ntoo, as its start shortcut would,\nand puts the text on the\nclipboard instead"
+!$noteLinux = "On Linux, an end shortcut's\nown combination isn't taken,\nand Esc doesn't cancel"
+!$qWhat = "What ends it?"
+!$aEndKey = "an end\nshortcut"
+!$endKey = "That end\nshortcut ends it"
+!$aStartAgain = "a start shortcut,\npressed again"
+!$startAgain = "The end shortcut\nwith the same\ncombination ends it,\nif there is one"
+!$aReleased = "a held start\nshortcut, released"
+!$held = "Its end “When\nHeld” ends it, with\n“Hold”, or “Auto”\nafter holding"
+!$aCancel = "“Cancel\nShortcut” (Esc)"
+!$cancelled = "Cancelled:\nnothing is\ntranscribed\nor kept"
+!$qPost = "“Post-process” on for this end,\nand “Post Processing” on\nin the profile?"
+!$post = "Post-processed with the\nprofile's active prompts"
+!$qContext = "“Send Context” on\nfor this end?"
+!$context = "Earlier dictations from the\nsame window go along"
+!$notPost = "Not post-processed,\nno context"
+!$append = "“Append”: its text is added, then\nits key press, which is sent\nonly when the text is pasted"
+!include style.iuml
+!include how-a-recording-ends.iuml
+@enduml

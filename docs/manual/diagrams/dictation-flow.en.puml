@@ -1,0 +1,34 @@
+@startuml
+' A dictation from start to end, in English. The structure is in
+' dictation-flow.iuml; UI terms as in src/i18n/locales/en/translation.json.
+' "\n" breaks a line; no ";" in a text (it would end a step).
+!$yes = "yes"
+!$no = "no"
+!$press = "Press a start shortcut"
+!$noteProfile = "The profile: the application in front decides\n(“Choose Profile by Application”), else the one\n“In Use”. Chosen again when the recording ends."
+!$recording = "The recording runs: start sound,\nthe overlay shows the level"
+!$noteEnds = "How it can end, and what the end\ndecides: see “How a recording ends”"
+!$qEnd = "How does it end?"
+!$aEnds = "an end shortcut, or a held\nstart shortcut released"
+!$aCancel = "“Cancel Shortcut”\n(Esc)"
+!$stopped = "The recording stops: stop sound"
+!$cancelled = "Cancelled: nothing is\ntranscribed or kept"
+!$transcribe = "The speech model transcribes"
+!$noteWords = "Word lists: a model that takes them,\nsuch as Whisper, uses them here"
+!$qPost = "Does the end post-process,\nand is “Post Processing” on?"
+!$qContext = "“Send Context”\nfor this end?"
+!$context = "Earlier dictations from the same\nwindow go along as context"
+!$edit = "The post-processing model edits\nthe text: the active prompts in\ntheir order, the word lists as\nknown terms"
+!$noteFailed = "If it fails, the transcript goes on\nas it is, and a notice says why"
+!$history = "Saved in “History”"
+!$qWaits = "A Mac without\nAccessibility?"
+!$waits = "It waits until a macOS\nservice inserts it, e.g. with\n“Paste Last Transcript”"
+!$qNone = "“Paste Method”:\n“None”?"
+!$clipboard = "On the clipboard, or only\nin “History”, as “Clipboard\nHandling” says"
+!$pasted = "Pasted where the cursor is,\nthen the “Append” text"
+!$qKey = "A key press\nin “Append”?"
+!$key = "The key is pressed,\ne.g. Enter sends"
+!$done = "Done sound, with “Audio Feedback”\nand “Sound When Done” on"
+!include style.iuml
+!include dictation-flow.iuml
+@enduml

@@ -1,0 +1,28 @@
+@startuml
+' How a recording ends, in Spanish. The structure is in
+' how-a-recording-ends.iuml; UI terms as in
+' src/i18n/locales/es/translation.json.
+' "\n" breaks a line; no ";" in a text (it would end a step).
+!$yes = "sí"
+!$no = "no"
+!$runs = "Una grabación está en curso"
+!$noteCopy = "«Copiar la última transcripción»\ntambién la termina, como lo haría\nsu atajo de inicio, y deja el texto\nen el portapapeles"
+!$noteLinux = "En Linux, la combinación propia\nde un atajo de fin no se ocupa,\ny Esc no cancela"
+!$qWhat = "¿Qué la termina?"
+!$aEndKey = "un atajo\nde fin"
+!$endKey = "Ese atajo de fin\nla termina"
+!$aStartAgain = "un atajo de inicio,\npulsado de nuevo"
+!$startAgain = "El atajo de fin con\nla misma combinación\nla termina, si existe"
+!$aReleased = "un atajo de\ninicio mantenido,\nsoltado"
+!$held = "Su final «Al\nmantener pulsado»\nla termina, con\n«Mantener», o con\n«Automático» tras\nmantenerlo"
+!$aCancel = "«Atajo de\ncancelar»\n(Esc)"
+!$cancelled = "Cancelada:\nno se transcribe\nni se guarda nada"
+!$qPost = "¿«Posprocesar» en este final,\ny «Post procesamiento»\nactivado en el perfil?"
+!$post = "Posprocesado con los\nprompts activos del perfil"
+!$qContext = "¿«Enviar contexto»\nen este final?"
+!$context = "Los dictados anteriores de la\nmisma ventana van como contexto"
+!$notPost = "Sin posprocesar,\nsin contexto"
+!$append = "«Añadir al final»: se añade su texto,\ny luego su tecla, que solo se envía\ncuando se pega el texto"
+!include style.iuml
+!include how-a-recording-ends.iuml
+@enduml

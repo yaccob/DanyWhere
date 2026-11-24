@@ -1,0 +1,28 @@
+@startuml
+' How a recording ends, in German. The structure is in
+' how-a-recording-ends.iuml; UI terms as in
+' src/i18n/locales/de/translation.json.
+' "\n" breaks a line; no ";" in a text (it would end a step).
+!$yes = "ja"
+!$no = "nein"
+!$runs = "Eine Aufnahme läuft"
+!$noteCopy = "„Letzte Transkription kopieren“\nbeendet sie auch, wie ihre Starttaste\nes täte, und legt den Text statt-\ndessen in die Zwischenablage"
+!$noteLinux = "Unter Linux gilt die eigene\nTastenkombination einer Endtaste\nnicht, und Esc bricht nicht ab"
+!$qWhat = "Was beendet sie?"
+!$aEndKey = "eine\nEndtaste"
+!$endKey = "Diese Endtaste\nbeendet sie"
+!$aStartAgain = "eine Starttaste,\nerneut gedrückt"
+!$startAgain = "Die Endtaste mit\nderselben Tasten-\nkombination beendet\nsie, falls es eine gibt"
+!$aReleased = "eine gehaltene\nStarttaste,\nlosgelassen"
+!$held = "Ihr Ende „Beim\nHalten“ beendet sie,\nbei „Halten“, oder\nbei „Automatisch“\nnach längerem Halten"
+!$aCancel = "„Abbrechen-\nTastenkürzel“\n(Esc)"
+!$cancelled = "Abgebrochen:\nnichts wird\ntranskribiert\noder behalten"
+!$qPost = "„Nachbearbeiten“ bei diesem Ende\nund „Nachbearbeitung“\nim Profil ein?"
+!$post = "Nachbearbeitet mit den\naktiven Prompts des Profils"
+!$qContext = "„Kontext senden“\nbei diesem Ende?"
+!$context = "Frühere Diktate aus demselben\nFenster gehen als Kontext mit"
+!$notPost = "Nicht nachbearbeitet,\nkein Kontext"
+!$append = "„Anhängen“: Sein Text kommt dazu,\ndann sein Tastendruck, der nur\ngesendet wird, wenn der Text\neingefügt wird"
+!include style.iuml
+!include how-a-recording-ends.iuml
+@enduml
