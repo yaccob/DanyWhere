@@ -1,0 +1,41 @@
+@startuml
+' The Defaults and two profiles as layers, in French. The structure is in
+' defaults-and-profiles.iuml (a Graphviz graph); UI terms as in
+' src/i18n/locales/fr/translation.json. The texts go into an HTML label:
+' write & as &amp; and < as &lt;, and break a line with $br. A no-break
+' space goes inside « » and before : ; and ?.
+' The defaults are named as the sidebar's area names them ("Paramètres de
+' base", sidebar.areas.defaults), where their pages are.
+!include graphviz.iuml
+' The columns: the post-processing switch, the end shortcuts, the rest.
+!$hPost = "Post-traitement"
+!$hEnd = "Raccourcis de fin"
+!$hRest = "Tout le reste"
+' The rows.
+!$chat = "Chat"
+!$terminal = "Terminal"
+!$profile = "Profil"
+!$defaults = "Paramètres" + $br + "de base"
+!$defaultsKind = "chaque valeur"
+' What a profile page says under a value and next to a list entry.
+!$tDefault = "Valeur de base"
+!$tOwnValue = "Valeur propre"
+!$tOwn = "propre"
+!$tAdded = "propre, nouveau"
+!$tOff = "désactivée"
+' Values: the switch, and end shortcuts a new Mac installation brings,
+' plus one of the profile's own.
+!$on = "activé"
+!$off = "désactivé"
+!$space = "Direct · Espace"
+!$enter = "Direct · Envoyer Entrée"
+!$paragraph = "Direct · Paragraphe"
+!$reply = "Répondre"
+!$restList = "Modèle vocal," + $br + "Microphone," + $br + "Méthode de collage, …"
+!$caption = "Un profil s'appuie sur les paramètres de base : ses valeurs propres comptent," + $br + "tout le reste vient des paramètres de base. Un profil ne reprend rien" + $br + "d'un autre."
+' Outside the layers.
+!$appTitle = "Paramètres de l'application"
+!$appList = "Langue de l'application · Lancer au démarrage · Vérifier les mises à jour · …"
+!$appNote = "Dans aucun profil : les mêmes pour chaque dictée."
+!include defaults-and-profiles.iuml
+@enduml
