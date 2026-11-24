@@ -18,6 +18,8 @@ Planned work on DanyWhere, roughly in priority order within each section. Items 
 
 **Claude's proposal (not decided):** one source in Markdown, in English and German, built with Astro Starlight into a site that is published on GitHub Pages and also bundled into the app, where a window of its own shows it offline and matching the installed version. Diagrams in PlantUML and Graphviz, rendered to SVG in DanyWhere's colours; screenshots generated from the real interface with Playwright and the component tests' mocks, in every language and appearance and without private data. A "Manual" entry in the sidebar and the tray, a "?" on each settings page and a "Learn more" on each notice open the matching chapter; tests check that every such link has its chapter. The README shrinks to a pitch, installation and a link. A prototype with two chapters comes first, so the look and the tone can be judged before everything is written; the chapter on inserting waits for the input method above.
 
+**Decided (user, 2026-11-24):** as proposed: one source for the website and the app; in English, German, Spanish and French (the app's other languages show the English manual); screenshots generated automatically; the README shrinks once the manual is online. The prototype starts now, next to the input method.
+
 ### Notices: a failed post-processing says why
 
 **Found (user, 2026-11-23, in 0.3.1):** Enter and Ctrl+Enter, the end shortcuts with post-processing, pasted the transcript as is, and the notice "Pasted Without Post-Processing" said only that post-processing didn't finish. The cause was in the settings: the profile In Use sent post-processing to a local model that had been removed from Ollama. Only the log said so (`404 … model '…' not found`).
