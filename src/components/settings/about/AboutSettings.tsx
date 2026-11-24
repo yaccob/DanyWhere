@@ -75,10 +75,12 @@ export const AboutSettings: React.FC = () => {
 
       <SettingsGroup title={t("settings.about.acknowledgments.title")}>
         {/* DanyWhere: Handy comes first among the acknowledgments: the row
-            says DanyWhere grew out of it and thanks its makers. */}
+            says DanyWhere grew out of it and thanks its makers, on the page
+            rather than behind the info icon. */}
         <SettingContainer
           title={t("settings.about.basedOn.title")}
           description={t("settings.about.basedOn.description")}
+          descriptionMode="inline"
           grouped={true}
         >
           <Button
