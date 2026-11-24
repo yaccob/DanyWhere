@@ -1,0 +1,16 @@
+---
+// <Diagram name="dictation-flow" alt="…" caption="…" />
+// Shows public/diagrams/<lang>/<name>.light.svg or .dark.svg to match the
+// theme, in the page's language or else in English.
+import Figure from "./Figure.astro";
+
+interface Props {
+  name: string;
+  alt: string;
+  caption?: string;
+}
+
+const { name, alt, caption } = Astro.props;
+---
+
+<Figure kind="diagrams" name={name} alt={alt} caption={caption} />

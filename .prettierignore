@@ -16,6 +16,12 @@ src-tauri/gen
 src/bindings.ts
 src-tauri/src/catalog/catalog.json
 
+# The user manual's builds and generated files
+public/manual
+docs/manual/.astro
+# MDX 3 pages: Prettier's MDX parser only knows MDX 1
+docs/manual/src/content/docs
+
 # Misc
 .DS_Store
 *.log

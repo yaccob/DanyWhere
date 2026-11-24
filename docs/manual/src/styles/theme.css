@@ -1,0 +1,170 @@
+/* The manual's look: the app's colours and fonts on Starlight's tokens.
+ *
+ * Colours come from the app's src/styles/theme.css and
+ * src/styles/danywhere-wordmark.css (petrol accent, warm greys around the
+ * app's backgrounds #fbfbfb and #2c2b29). Starlight's dark theme is its
+ * `:root`, the light one `:root[data-theme="light"]`.
+ */
+
+:root {
+  /* App tokens the manual uses directly (theme.css, dark values). */
+  --dw-petrol: #5bb3c0; /* --dark-color-logo-primary */
+  --dw-petrol-ui: #2f7d8e; /* --color-background-ui */
+  --dw-background: #2c2b29; /* --dark-color-background */
+  --dw-text: #fbfbfb; /* --dark-color-text */
+  --dw-mid-gray: #808080; /* --color-mid-gray */
+  --dw-line: color-mix(in srgb, var(--dw-mid-gray) 20%, transparent);
+  --dw-line-strong: color-mix(in srgb, var(--dw-mid-gray) 55%, transparent);
+  --dw-wash: color-mix(in srgb, var(--dw-mid-gray) 10%, transparent);
+  /* The selected sidebar row, as in the app's sidebar (logo-primary/80). */
+  --dw-current: color-mix(in srgb, var(--dw-petrol) 80%, var(--dw-background));
+  --dw-current-text: var(--dw-text);
+  --dw-keycap-ink: var(--dw-text); /* --dark-color-plum */
+
+  /* Starlight, dark: warm greys from the app's dark background. */
+  --sl-color-white: #fbfbfb;
+  --sl-color-gray-1: #eceae6;
+  --sl-color-gray-2: #cfccc6;
+  --sl-color-gray-3: #9c9993;
+  --sl-color-gray-4: #6a6762;
+  --sl-color-gray-5: #4a4844;
+  --sl-color-gray-6: #353431;
+  --sl-color-black: #2c2b29;
+
+  --sl-color-accent-low: #1e4950;
+  --sl-color-accent: #5bb3c0;
+  --sl-color-accent-high: #bee2ea; /* the dark wordmark's "Where" */
+
+  --sl-color-bg-nav: #31302d;
+  --sl-color-bg-sidebar: #31302d;
+
+  /* Asides: "note" in the app's petrol, "danger" in its error red. */
+  --sl-color-blue-low: #1e4950;
+  --sl-color-blue: #5bb3c0;
+  --sl-color-blue-high: #bee2ea;
+  --sl-hue-red: 0;
+
+  /* The app's fonts: the system UI face for text, the rounded display face
+     for titles (App.css: --font-ui, --font-display). Starlight avoids
+     `system-ui` because of Windows' fallback fonts in some languages, so
+     the stack starts with the platforms' own names. */
+  --sl-font:
+    -apple-system, BlinkMacSystemFont, "Segoe UI Variable Text", "Segoe UI",
+    Roboto, "Noto Sans", "Helvetica Neue", Arial, sans-serif;
+  --dw-font-display:
+    ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont,
+    "Segoe UI Variable Display", "Segoe UI", Roboto, "Noto Sans", sans-serif;
+
+  /* About 70 characters per line at the body size. */
+  --sl-content-width: 41rem;
+  --sl-line-height: 1.7;
+}
+
+:root[data-theme="light"] {
+  --dw-petrol: #3c9caa; /* --light-color-logo-primary */
+  --dw-background: #fbfbfb; /* --light-color-background */
+  --dw-text: #0f0f0f; /* --light-color-text */
+  --dw-current-text: var(--dw-text);
+  --dw-keycap-ink: #1e3a44; /* --light-color-plum (logo stroke) */
+
+  /* Starlight, light. */
+  --sl-color-white: #0f0f0f;
+  --sl-color-gray-1: #22211f;
+  --sl-color-gray-2: #3a3935;
+  --sl-color-gray-3: #5c5a55;
+  --sl-color-gray-4: #8a8780;
+  --sl-color-gray-5: #c9c6bf;
+  --sl-color-gray-6: #ebe9e5;
+  --sl-color-gray-7: #f4f3f0;
+  --sl-color-black: #fbfbfb;
+
+  --sl-color-accent-low: #d3ebef;
+  /* The app's primary button fill: 4.5:1 on the background, so it also
+     works as text. */
+  --sl-color-accent: #2f7d8e;
+  --sl-color-accent-high: #164f5b;
+  /* Links: the light wordmark's "Where", 5.8:1 on the background. */
+  --sl-color-text-accent: #0e6c7b;
+
+  --sl-color-bg-nav: #f4f3f0;
+  --sl-color-bg-sidebar: #f4f3f0;
+
+  --sl-color-blue-low: #d3ebef;
+  --sl-color-blue: #3c9caa;
+  --sl-color-blue-high: #164f5b;
+}
+
+/* Focus rings and form controls in petrol instead of the browser's blue. */
+:root {
+  accent-color: var(--sl-color-accent);
+}
+:focus-visible {
+  outline-color: var(--sl-color-accent);
+}
+site-search .pagefind-ui__search-input:focus {
+  outline: 2px solid var(--sl-color-accent);
+  outline-offset: -1px;
+}
+
+/* Titles in the app's rounded display face. */
+:is(h1, h2, h3, .site-title, .hero h1, .sl-markdown-content :is(h1, h2, h3)) {
+  font-family: var(--dw-font-display);
+  letter-spacing: -0.01em;
+}
+
+h1#_top {
+  font-weight: 700;
+}
+
+/* Body text: a touch more air between paragraphs. */
+.sl-markdown-content :is(p, ul, ol) + :is(p, ul, ol) {
+  margin-top: 0.9rem;
+}
+
+/* Sidebar rows look like the app's sidebar: rounded rows, a petrol fill for
+   the page shown, a grey wash on hover. */
+.sidebar-content a {
+  border-radius: 0.5rem;
+}
+.sidebar-content a:hover {
+  background-color: var(--dw-wash);
+}
+.sidebar-content a[aria-current="page"],
+.sidebar-content a[aria-current="page"]:hover,
+.sidebar-content a[aria-current="page"]:focus {
+  background-color: var(--dw-current);
+  color: var(--dw-current-text);
+  font-weight: 600;
+}
+
+/* Keys as keycaps, like the app shows shortcuts. */
+.sl-markdown-content kbd {
+  display: inline-block;
+  min-width: 1.6em;
+  padding: 0.05em 0.45em;
+  border: 1px solid var(--dw-line-strong);
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  background: var(--dw-wash);
+  color: var(--dw-keycap-ink);
+  font-family: var(--sl-font);
+  font-size: 0.85em;
+  font-weight: 600;
+  line-height: 1.5;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* The theme menu's fixed width cuts off "System" and "Automático"; Starlight
+   sets it inline, hence !important. */
+:root[lang="de"] starlight-theme-select label {
+  --sl-select-width: 7em !important;
+}
+:root[lang="es"] starlight-theme-select label {
+  --sl-select-width: 8.5em !important;
+}
+
+/* Tables: hairlines in the app's line colour. */
+.sl-markdown-content :is(th, td) {
+  border-color: var(--dw-line);
+}
