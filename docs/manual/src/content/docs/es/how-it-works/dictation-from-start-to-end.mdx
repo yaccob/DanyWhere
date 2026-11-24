@@ -13,24 +13,24 @@ Pulsas una combinación de teclas, dices lo que quieres escribir y terminas la g
 <Diagram
   name="dictation-flow"
   caption="Un dictado de principio a fin"
-  alt="El camino de un dictado. Un atajo de inicio inicia la grabación. Termina cuando sueltas un atajo de inicio mantenido, pulsas un atajo de fin o vuelves a pulsar un atajo de inicio; Esc la cancela. El modelo de voz transcribe la grabación. Si el final lo pide, un modelo de lenguaje posprocesa el texto con los prompts activos y, con «Enviar contexto», con dictados anteriores de la misma ventana. Luego viene el texto de «Añadir al final», el texto se inserta y puede seguir una pulsación de tecla como Intro. El dictado se guarda en el historial y suena el sonido final."
+  alt="El camino de un dictado. Un atajo de inicio inicia la grabación. Termina cuando sueltas un atajo de inicio mantenido, tocas un atajo de fin o vuelves a tocar un atajo de inicio; Esc la cancela. El modelo de voz transcribe la grabación. Si el final lo pide, un modelo de lenguaje posprocesa el texto con los prompts activos y, con «Enviar contexto», con dictados anteriores de la misma ventana. Luego viene el texto de «Añadir al final», el texto se inserta y puede seguir una pulsación de tecla como Intro. El dictado se guarda en el historial y suena el sonido final."
 />
 
 ## Inicia la grabación
 
 Pulsa el **Atajo de inicio**: <kbd>⌃ Espacio</kbd> en un Mac, <kbd>Ctrl+Espacio</kbd> en Windows, <kbd>Ctrl+Alt+Espacio</kbd> en Linux. DanyWhere empieza a escuchar al instante. En Mac y en Windows, un pequeño overlay en la parte inferior de la pantalla muestra que está grabando y, si has activado la **Retroalimentación de audio**, también te lo dice un sonido breve.
 
-Puedes usar la combinación de dos maneras: mantenla pulsada mientras hablas y suéltala cuando termines, o tócala y habla todo lo que quieras. Es el ajuste de fábrica **Automático** de **Comportamiento del atajo**; **Mantener** y **Alternar** solo permiten una de las dos.
+Puedes usar la combinación de dos maneras: mantenla pulsada mientras hablas y suéltala cuando termines, o tócala y habla todo lo que quieras. Es el ajuste de fábrica **Automático** de **Comportamiento del atajo**; **Mantener** y **Tocar** solo permiten una de las dos.
 
 ## Termina como quieras el texto
 
 La forma en que terminas la grabación decide qué pasa con el texto. Hay tres maneras:
 
 - **Suelta** un atajo de inicio mantenido. La grabación termina como esté configurado en **Al mantener pulsado**.
-- **Pulsa un atajo de fin.** Cada uno indica qué va detrás del texto, si un modelo de lenguaje lo pule y si los dictados anteriores se envían como contexto. En un Mac, por ejemplo, <kbd>↩</kbd> termina la grabación y empieza un párrafo nuevo después del texto.
-- **Vuelve a pulsar el atajo de inicio.** Esto termina la grabación si un atajo de fin tiene la misma combinación. En un Mac, pulsar otra vez <kbd>⌃ Espacio</kbd> pone un espacio detrás del texto, listo para la siguiente frase.
+- **Toca un atajo de fin.** Cada uno indica qué va detrás del texto, si un modelo de lenguaje lo pule y si los dictados anteriores se envían como contexto. En un Mac, por ejemplo, <kbd>↩</kbd> termina la grabación y empieza un párrafo nuevo después del texto.
+- **Vuelve a tocar el atajo de inicio.** Esto termina la grabación si un atajo de fin tiene la misma combinación. En un Mac, tocar otra vez <kbd>⌃ Espacio</kbd> pone un espacio detrás del texto, listo para la siguiente frase.
 
-Para una app en la que no se puede insertar, termina con **Copiar la última transcripción**: <kbd>⌃⇧C</kbd> en un Mac, <kbd>Alt+Mayús+C</kbd> en Windows y Linux. Termina la grabación como si volvieras a pulsar el atajo de inicio, pero pone el texto en el portapapeles en lugar de insertarlo.
+Para una app en la que no se puede insertar, termina con **Copiar la última transcripción**: <kbd>⌃⇧C</kbd> en un Mac, <kbd>Alt+Mayús+C</kbd> en Windows y Linux. Termina la grabación como si volvieras a tocar el atajo de inicio, pero pone el texto en el portapapeles en lugar de insertarlo.
 
 ¿Has cambiado de idea? <kbd>Esc</kbd> cancela la grabación en Mac y en Windows. No se transcribe, inserta ni guarda nada.
 

@@ -419,7 +419,7 @@
           "transcribe_with_post_process": {
             "name": "İkinci Başlatma Kısayolu",
             "description": "İsteğe bağlı: kayıt başlatan ikinci bir tuş kombinasyonu. Fabrika ayarında, aynı kombinasyona sahip bir bitirme kısayolu metni son işler. Yalnızca son işleme açıkken kullanılır.",
-            "descriptionMacos": "İsteğe bağlı: kayıt başlatan ikinci bir tuş kombinasyonu. Fabrika ayarında, basılı tutup bırakmak metni son işler; yeniden basmak ise ⌥ içermeyen her bitirme kısayolu gibi son işleme olmadan bitirir. Yalnızca son işleme açıkken kullanılır."
+            "descriptionMacos": "İsteğe bağlı: kayıt başlatan ikinci bir tuş kombinasyonu. Fabrika ayarında, basılı tutup bırakmak metni son işler; yeniden dokunmak ise ⌥ içermeyen her bitirme kısayolu gibi son işleme olmadan bitirir. Yalnızca son işleme açıkken kullanılır."
           },
           "paste_last_transcript": {
             "name": "Son transkripti yapıştır",
@@ -470,7 +470,7 @@
         "options": {
           "holdOrToggle": "Otomatik",
           "pushToTalk": "Basılı tut",
-          "toggle": "Aç/Kapat"
+          "toggle": "Dokun"
         },
         "descriptions": {
           "hold_or_toggle": "Kaydetmek için basılı tutun veya başlatmak için dokunun; ardından bir bitirme kısayolu kaydı durdurur",
@@ -484,7 +484,7 @@
       },
       "dictationKeyInserts": {
         "label": "Dikte kısayolu ekleme de yapar",
-        "description": "Dikteyi bitirmek ve hazır olur olmaz eklemek için dikte kısayoluna tekrar basın; macOS hizmetlerini destekleyen uygulamalarda çalışır. Zaten açık olan uygulamalar bunu ancak yeniden başlatıldıktan sonra uygular. Hiçbir şeyin eklenemediği yerlerde Son transkripti kopyala'yı kullanın."
+        "description": "Dikteyi bitirmek ve hazır olur olmaz eklemek için dikte kısayoluna tekrar dokunun; macOS hizmetlerini destekleyen uygulamalarda çalışır. Zaten açık olan uygulamalar bunu ancak yeniden başlatıldıktan sonra uygular. Hiçbir şeyin eklenemediği yerlerde Son transkripti kopyala'yı kullanın."
       },
       "dictationServiceWhenIdle": {
         "title": "Kayıt yapılmıyorken",
@@ -497,10 +497,10 @@
     },
     "endKeys": {
       "title": "Bitirme Kısayolları",
-      "description": "Kaydın nasıl bittiği ve ardından ne olduğu. Her bitirme kısayolunun yalnızca kayıt sırasında kullanılan kendi tuş kombinasyonu vardır ve neyin ekleneceğini, metnin son işlenip işlenmeyeceğini ve önceki diktelerin bağlam olarak gönderilip gönderilmeyeceğini belirler. Bir bitirme kısayolu, bir başlatma kısayolunun tuş kombinasyonuna sahip olabilir: o başlatma kısayoluna yeniden basmak kaydı bu durumda bu şekilde bitirir.",
+      "description": "Kaydın nasıl bittiği ve ardından ne olduğu. Her bitirme kısayolunun yalnızca kayıt sırasında kullanılan kendi tuş kombinasyonu vardır ve neyin ekleneceğini, metnin son işlenip işlenmeyeceğini ve önceki diktelerin bağlam olarak gönderilip gönderilmeyeceğini belirler. Bir bitirme kısayolu, bir başlatma kısayolunun tuş kombinasyonuna sahip olabilir: o başlatma kısayoluna yeniden dokunmak kaydı bu durumda bu şekilde bitirir.",
       "name": "Ad",
       "shortcutHint": "Kayıt sırasında bu kombinasyona basmak kaydı bu şekilde bitirir. Yalnızca kayıt sırasında kullanılır.",
-      "sameAsStart": "“{{start}}” ile aynı kombinasyon: kayıt sırasında yeniden basmak kaydı bu şekilde bitirir.",
+      "sameAsStart": "“{{start}}” ile aynı kombinasyon: kayıt sırasında yeniden dokunmak kaydı bu şekilde bitirir.",
       "append": "Sona ekle",
       "appendDescription": "Bu şekilde biten bir diktenin sonuna eklenir: metin, ardından seçtiğiniz tuş. Metinde \\s boşluk, \\n yeni satır, \\t sekme ve \\\\ ters eğik çizgidir; geri kalan her şey yazıldığı gibi eklenir. Tuş yalnızca metin yapıştırıldığında gönderilir.",
       "postProcess": "Son işle",
@@ -516,6 +516,10 @@
         "title": "Basılı Tutulunca",
         "description": "Basılı tutulan bir başlatma kısayolunu bırakmanın kaydı nasıl bitirdiği."
       },
+      "tapEnds": {
+        "title": "Dokunulunca",
+        "description": "Bir bitirme kısayoluna dokunmanın kaydı nasıl bitirdiği."
+      },
       "factoryNames": {
         "pattern": "{{mode}} · {{effect}}",
         "direct": "Doğrudan",
@@ -527,7 +531,7 @@
         "enter": "Enter gönder",
         "shiftEnter": "Shift+Enter gönder"
       },
-      "linuxNoShortcuts": "Linux'ta bitirme kısayollarının tuş kombinasyonları kayıt sırasında kullanılmaz. Orada kayıt, basılı tutulan bir başlatma kısayolu bırakıldığında ya da tuş kombinasyonu bir bitirme kısayolunda da bulunan bir başlatma kısayoluna yeniden basıldığında biter.",
+      "linuxNoShortcuts": "Linux'ta bitirme kısayollarının tuş kombinasyonları kayıt sırasında kullanılmaz. Orada kayıt, basılı tutulan bir başlatma kısayolu bırakıldığında ya da tuş kombinasyonu bir bitirme kısayolunda da bulunan bir başlatma kısayoluna yeniden dokunulduğunda biter.",
       "errors": {
         "save": "Bitirme kısayolları kaydedilemedi: {{error}}",
         "needsShortcut": "Her bitirme kısayolunun bir tuş kombinasyonu olmalı.",

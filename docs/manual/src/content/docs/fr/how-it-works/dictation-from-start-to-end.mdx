@@ -13,24 +13,24 @@ Vous appuyez sur une combinaison de touches, vous dites ce que vous voulez écri
 <Diagram
   name="dictation-flow"
   caption="Une dictée du début à la fin"
-  alt="Le chemin d'une dictée. Un raccourci de début démarre l'enregistrement. Il se termine quand vous relâchez un raccourci de début maintenu, appuyez sur un raccourci de fin ou appuyez à nouveau sur un raccourci de début ; Esc l'annule. Le modèle vocal transcrit l'enregistrement. Si la fin le demande, un modèle de langage post-traite le texte avec les prompts actifs et, avec « Envoyer le contexte », avec des dictées précédentes de la même fenêtre. Vient ensuite le texte réglé sous « Ajouter à la fin », le texte est inséré, et une touche comme Entrée peut suivre. La dictée est enregistrée dans l'historique, et le son de fin retentit."
+  alt="Le chemin d'une dictée. Un raccourci de début démarre l'enregistrement. Il se termine quand vous relâchez un raccourci de début maintenu, appuyez brièvement sur un raccourci de fin ou appuyez à nouveau brièvement sur un raccourci de début ; Esc l'annule. Le modèle vocal transcrit l'enregistrement. Si la fin le demande, un modèle de langage post-traite le texte avec les prompts actifs et, avec « Envoyer le contexte », avec des dictées précédentes de la même fenêtre. Vient ensuite le texte réglé sous « Ajouter à la fin », le texte est inséré, et une touche comme Entrée peut suivre. La dictée est enregistrée dans l'historique, et le son de fin retentit."
 />
 
 ## Démarrer l'enregistrement
 
 Appuyez sur le **Raccourci de début** : <kbd>⌃ Espace</kbd> sur un Mac, <kbd>Ctrl+Espace</kbd> sous Windows, <kbd>Ctrl+Alt+Espace</kbd> sous Linux. DanyWhere commence à écouter aussitôt. Sur Mac et sous Windows, un petit overlay en bas de l'écran indique qu'il enregistre et, si vous avez activé le **Signal sonore**, un bref son vous le dit aussi.
 
-Vous pouvez utiliser la combinaison de deux façons : maintenez-la pendant que vous parlez et relâchez-la quand vous avez fini, ou appuyez brièvement et parlez aussi longtemps que vous voulez. C'est le réglage d'usine **Auto** de **Comportement du raccourci** ; **Maintenir** et **Basculer** ne permettent que l'une des deux.
+Vous pouvez utiliser la combinaison de deux façons : maintenez-la pendant que vous parlez et relâchez-la quand vous avez fini, ou appuyez brièvement et parlez aussi longtemps que vous voulez. C'est le réglage d'usine **Auto** de **Comportement du raccourci** ; **Maintenir** et **Appui bref** ne permettent que l'une des deux.
 
 ## Terminer selon ce que vous voulez du texte
 
 La façon dont vous terminez l'enregistrement décide de ce qui arrive au texte. Il y en a trois :
 
 - **Relâchez** un raccourci de début maintenu. L'enregistrement se termine comme réglé sous **Lorsqu'il est maintenu**.
-- **Appuyez sur un raccourci de fin.** Chacun indique ce qui suit le texte, si un modèle de langage le peaufine et si les dictées précédentes sont envoyées comme contexte. Sur un Mac, par exemple, <kbd>↩</kbd> termine l'enregistrement et commence un nouveau paragraphe après le texte.
-- **Appuyez à nouveau sur le raccourci de début.** Cela termine l'enregistrement si un raccourci de fin a la même combinaison. Sur un Mac, un nouvel appui sur <kbd>⌃ Espace</kbd> place une espace après le texte, prête pour la phrase suivante.
+- **Appuyez brièvement sur un raccourci de fin.** Chacun indique ce qui suit le texte, si un modèle de langage le peaufine et si les dictées précédentes sont envoyées comme contexte. Sur un Mac, par exemple, <kbd>↩</kbd> termine l'enregistrement et commence un nouveau paragraphe après le texte.
+- **Appuyez à nouveau brièvement sur le raccourci de début.** Cela termine l'enregistrement si un raccourci de fin a la même combinaison. Sur un Mac, un nouvel appui bref sur <kbd>⌃ Espace</kbd> place une espace après le texte, prête pour la phrase suivante.
 
-Pour une app où l'insertion ne fonctionne pas, terminez plutôt avec **Copier la dernière transcription** : <kbd>⌃⇧C</kbd> sur un Mac, <kbd>Alt+Maj+C</kbd> sous Windows et Linux. Cela termine l'enregistrement comme un nouvel appui sur le raccourci de début, mais place le texte dans le presse-papiers au lieu de l'insérer.
+Pour une app où l'insertion ne fonctionne pas, terminez plutôt avec **Copier la dernière transcription** : <kbd>⌃⇧C</kbd> sur un Mac, <kbd>Alt+Maj+C</kbd> sous Windows et Linux. Cela termine l'enregistrement comme un nouvel appui bref sur le raccourci de début, mais place le texte dans le presse-papiers au lieu de l'insérer.
 
 Vous avez changé d'avis ? <kbd>Esc</kbd> annule l'enregistrement sur Mac et sous Windows. Rien n'est transcrit, inséré ni conservé.
 

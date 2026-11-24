@@ -188,7 +188,7 @@
     "demo": {
       "title": "Mów w dowolnej aplikacji, jednym skrótem",
       "hold": "<0>Kliknij tam, gdzie chcesz pisać.</0> <1>Przytrzymaj skrót i mów.</1> <2>Puść, a Twoje słowa się pojawią.</2>",
-      "tap": "<0>Kliknij tam, gdzie chcesz pisać.</0> <1>Naciśnij skrót i mów.</1> <2>Naciśnij ponownie, a Twoje słowa się pojawią.</2>",
+      "tap": "<0>Kliknij tam, gdzie chcesz pisać.</0> <1>Dotknij skrótu i mów.</1> <2>Dotknij go ponownie, a Twoje słowa się pojawią.</2>",
       "apps": {
         "messages": "Wiadomości",
         "notes": "Notatki"
@@ -209,14 +209,14 @@
       "noteLabel": "Notatka",
       "placeholder": "Nowa notatka",
       "hold": "Przytrzymaj <keys/> i mów.",
-      "tapNext": "Teraz naciśnij <keys/> raz i mów.",
+      "tapNext": "Teraz dotknij <keys/> raz i mów.",
       "letGo": "Puść <keys/>, gdy skończysz.",
-      "tapAgain": "Naciśnij <keys/> ponownie, gdy skończysz.",
+      "tapAgain": "Dotknij <keys/> ponownie, gdy skończysz.",
       "watch": "Patrz na notatkę.",
       "changeKeys": "Zmień skrót, {{keys}}",
       "doneHold": "Piątka! Tak działa przytrzymanie.",
       "doneHoldNext": "Teraz sposób bez rąk.",
-      "doneTap": "Piątka! Tak działa naciśnięcie.",
+      "doneTap": "Piątka! Tak działa dotknięcie.",
       "doneTapNext": "Teraz spróbuj przytrzymać je podczas mówienia.",
       "giveFive": "Udało się! Przybij piątkę",
       "highFive": "Piątka",
@@ -233,8 +233,8 @@
     },
     "done": {
       "title": "Wszystko gotowe",
-      "subMac": "Handy jest teraz na pasku menu. Przytrzymaj lub naciśnij <keys/> w dowolnej aplikacji, aby mówić.",
-      "subTray": "Handy jest teraz w zasobniku systemowym. Przytrzymaj lub naciśnij <keys/> w dowolnej aplikacji, aby mówić.",
+      "subMac": "Handy jest teraz na pasku menu. Przytrzymaj lub dotknij <keys/> w dowolnej aplikacji, aby mówić.",
+      "subTray": "Handy jest teraz w zasobniku systemowym. Przytrzymaj lub dotknij <keys/> w dowolnej aplikacji, aby mówić.",
       "hint": "Możesz to później zmienić w Ustawieniach",
       "highFiveLabel": "Piątka",
       "atLogin": "Uruchamiaj Handy po zalogowaniu",
@@ -419,7 +419,7 @@
           "transcribe_with_post_process": {
             "name": "Drugi skrót rozpoczynający",
             "description": "Opcjonalnie: druga kombinacja klawiszy, która rozpoczyna nagranie. Fabrycznie skrót kończący z tą samą kombinacją przetwarza tekst. Zajęta tylko wtedy, gdy przetwarzanie jest włączone.",
-            "descriptionMacos": "Opcjonalnie: druga kombinacja klawiszy, która rozpoczyna nagranie. Fabrycznie puszczenie jej po przytrzymaniu przetwarza tekst, a ponowne naciśnięcie kończy nagranie bez przetwarzania, jak każdy skrót kończący bez ⌥. Zajęta tylko wtedy, gdy przetwarzanie jest włączone."
+            "descriptionMacos": "Opcjonalnie: druga kombinacja klawiszy, która rozpoczyna nagranie. Fabrycznie puszczenie jej po przytrzymaniu przetwarza tekst, a ponowne dotknięcie kończy nagranie bez przetwarzania, jak każdy skrót kończący bez ⌥. Zajęta tylko wtedy, gdy przetwarzanie jest włączone."
           },
           "paste_last_transcript": {
             "name": "Wklej ostatnią transkrypcję",
@@ -470,7 +470,7 @@
         "options": {
           "holdOrToggle": "Automatycznie",
           "pushToTalk": "Przytrzymaj",
-          "toggle": "Przełączaj"
+          "toggle": "Dotknij"
         },
         "descriptions": {
           "hold_or_toggle": "Przytrzymaj, aby nagrywać, lub dotknij, aby rozpocząć; potem nagranie zatrzymuje skrót kończący",
@@ -484,7 +484,7 @@
       },
       "dictationKeyInserts": {
         "label": "Skrót dyktowania również wstawia",
-        "description": "Naciśnij ponownie skrót dyktowania, aby zakończyć dyktowanie i wstawić je, gdy tylko będzie gotowe, w aplikacjach obsługujących usługi macOS. Aplikacje, które są już otwarte, uwzględnią to dopiero po ponownym uruchomieniu. Tam, gdzie nie da się nic wstawić, użyj „Kopiuj ostatnią transkrypcję”."
+        "description": "Dotknij ponownie skrótu dyktowania, aby zakończyć dyktowanie i wstawić je, gdy tylko będzie gotowe, w aplikacjach obsługujących usługi macOS. Aplikacje, które są już otwarte, uwzględnią to dopiero po ponownym uruchomieniu. Tam, gdzie nie da się nic wstawić, użyj „Kopiuj ostatnią transkrypcję”."
       },
       "dictationServiceWhenIdle": {
         "title": "Gdy nic nie jest nagrywane",
@@ -497,10 +497,10 @@
     },
     "endKeys": {
       "title": "Skróty kończące",
-      "description": "Jak kończy się nagranie i co dalej. Każdy skrót kończący ma własną kombinację klawiszy, zajętą tylko podczas nagrywania, i określa, co zostanie dołączone, czy tekst zostanie przetworzony i czy wcześniejsze dyktowania zostaną wysłane jako kontekst. Skrót kończący może mieć kombinację klawiszy skrótu rozpoczynającego: ponowne naciśnięcie tego skrótu rozpoczynającego kończy wtedy nagranie w ten sposób.",
+      "description": "Jak kończy się nagranie i co dalej. Każdy skrót kończący ma własną kombinację klawiszy, zajętą tylko podczas nagrywania, i określa, co zostanie dołączone, czy tekst zostanie przetworzony i czy wcześniejsze dyktowania zostaną wysłane jako kontekst. Skrót kończący może mieć kombinację klawiszy skrótu rozpoczynającego: ponowne dotknięcie tego skrótu rozpoczynającego kończy wtedy nagranie w ten sposób.",
       "name": "Nazwa",
       "shortcutHint": "Naciśnięcie tej kombinacji podczas nagrywania kończy nagranie w ten sposób. Jest zajęta tylko podczas nagrywania.",
-      "sameAsStart": "Ta sama kombinacja co „{{start}}”: ponowne naciśnięcie podczas nagrywania kończy nagranie w ten sposób.",
+      "sameAsStart": "Ta sama kombinacja co „{{start}}”: ponowne dotknięcie podczas nagrywania kończy nagranie w ten sposób.",
       "append": "Dołącz",
       "appendDescription": "Dołączane do dyktowania, które kończy się w ten sposób: tekst, a potem wybrane naciśnięcie klawisza. W tekście \\s to spacja, \\n nowy wiersz, \\t tabulator, a \\\\ ukośnik wsteczny; wszystko inne jest dołączane tak, jak zostało wpisane. Naciśnięcie klawisza jest wysyłane tylko wtedy, gdy tekst jest wklejany.",
       "postProcess": "Przetwórz",
@@ -516,6 +516,10 @@
         "title": "Przy przytrzymaniu",
         "description": "Jak puszczenie przytrzymanego skrótu rozpoczynającego kończy nagranie."
       },
+      "tapEnds": {
+        "title": "Przy dotknięciu",
+        "description": "Jak dotknięcie skrótu kończącego kończy nagranie."
+      },
       "factoryNames": {
         "pattern": "{{mode}} · {{effect}}",
         "direct": "Bezpośrednio",
@@ -527,7 +531,7 @@
         "enter": "Wyślij Enter",
         "shiftEnter": "Wyślij Shift+Enter"
       },
-      "linuxNoShortcuts": "W Linuksie kombinacje klawiszy skrótów kończących nie są zajmowane podczas nagrywania. Nagranie kończy się tam po puszczeniu przytrzymanego skrótu rozpoczynającego albo po ponownym naciśnięciu skrótu rozpoczynającego, którego kombinację ma któryś skrót kończący.",
+      "linuxNoShortcuts": "W Linuksie kombinacje klawiszy skrótów kończących nie są zajmowane podczas nagrywania. Nagranie kończy się tam po puszczeniu przytrzymanego skrótu rozpoczynającego albo po ponownym dotknięciu skrótu rozpoczynającego, którego kombinację ma któryś skrót kończący.",
       "errors": {
         "save": "Nie udało się zapisać skrótów kończących: {{error}}",
         "needsShortcut": "Każdy skrót kończący potrzebuje kombinacji klawiszy.",

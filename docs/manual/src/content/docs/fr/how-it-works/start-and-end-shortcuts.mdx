@@ -18,7 +18,7 @@ Un **Raccourci de début** ne fait que démarrer un enregistrement. Un raccourci
 <Diagram
   name="how-a-recording-ends"
   caption="Comment se termine un enregistrement"
-  alt="Les façons dont un enregistrement se termine. Un raccourci de fin le termine avec ses propres valeurs. Un raccourci de début, pressé à nouveau, le termine comme le raccourci de fin qui a la même combinaison, et ne fait rien s'il n'y en a aucun. Relâcher un raccourci de début maintenu le termine comme réglé sous « Lorsqu'il est maintenu ». Esc l'annule. Chaque façon décide de ce qui est ajouté, du post-traitement du texte et de l'envoi des dictées précédentes comme contexte."
+  alt="Les façons dont un enregistrement se termine. Un appui bref sur un raccourci de fin le termine avec ses propres valeurs. Un nouvel appui bref sur un raccourci de début le termine comme le raccourci de fin qui a la même combinaison, et ne fait rien s'il n'y en a aucun. Relâcher un raccourci de début maintenu le termine comme réglé sous « Lorsqu'il est maintenu ». Esc l'annule. Chaque façon décide de ce qui est ajouté, du post-traitement du texte et de l'envoi des dictées précédentes comme contexte."
 />
 
 Chaque façon de terminer un enregistrement décide des trois mêmes choses : ce qui suit le texte, si le texte est post-traité et si les dictées précédentes sont envoyées comme contexte.
@@ -52,7 +52,7 @@ Quand vous relâchez un raccourci de début maintenu, une espace est ajoutée. S
 </TabItem>
 <TabItem label="Windows">
 
-Windows commence avec deux raccourcis de fin qui ont les combinaisons des deux raccourcis de début : <kbd>Ctrl+Espace</kbd> termine sans post-traitement, <kbd>Ctrl+Maj+Espace</kbd> avec. Aucun des deux n'ajoute quoi que ce soit. Pour terminer, vous appuyez donc à nouveau sur le raccourci de début, et vous prenez le deuxième quand vous voulez un texte peaufiné.
+Windows commence avec deux raccourcis de fin qui ont les combinaisons des deux raccourcis de début : <kbd>Ctrl+Espace</kbd> termine sans post-traitement, <kbd>Ctrl+Maj+Espace</kbd> avec. Aucun des deux n'ajoute quoi que ce soit. Pour terminer, vous appuyez donc à nouveau brièvement sur le raccourci de début, et vous prenez le deuxième quand vous voulez un texte peaufiné.
 
 Relâcher un raccourci de début maintenu fonctionne de la même façon : le **Raccourci de début** termine sans post-traitement, le **Deuxième raccourci de début** avec.
 
@@ -86,9 +86,9 @@ Chaque entrée sous **Raccourcis de fin** comporte ces éléments :
 
 ## Les raccourcis de début et leur façon de terminer
 
-**Si vous appuyez à nouveau sur un raccourci de début** pendant un enregistrement, il ne le termine que par un raccourci de fin ayant exactement sa combinaison. La liste le signale par une ligne sous cette entrée. Si aucun raccourci de fin n'a cette combinaison, le raccourci de début ne fait rien pendant un enregistrement.
+**Si vous appuyez à nouveau brièvement sur un raccourci de début** pendant un enregistrement, il ne le termine que par un raccourci de fin ayant exactement sa combinaison. La liste le signale par une ligne sous cette entrée. Si aucun raccourci de fin n'a cette combinaison, le raccourci de début ne fait rien pendant un enregistrement.
 
-**Lorsqu'il est maintenu**, en tête des **Raccourcis de fin**, règle la façon dont le relâchement d'un raccourci de début maintenu termine l'enregistrement. Chaque raccourci de début a le sien, avec **Ajouter à la fin**, **Post-traiter** et **Envoyer le contexte**, mais sans nom ni combinaison. Si **Comportement du raccourci** est sur **Basculer**, rien n'est maintenu, et **Lorsqu'il est maintenu** est masqué.
+**Lorsqu'il est maintenu**, en tête des **Raccourcis de fin**, règle la façon dont le relâchement d'un raccourci de début maintenu termine l'enregistrement. Chaque raccourci de début a le sien, avec **Ajouter à la fin**, **Post-traiter** et **Envoyer le contexte**, mais sans nom ni combinaison. En dessous, **Lors d'un appui bref** coiffe les raccourcis de fin. Si **Comportement du raccourci** est sur **Appui bref**, rien n'est maintenu : **Lorsqu'il est maintenu** est masqué, et les raccourcis de fin n'ont pas besoin de titre propre.
 
 Le **Deuxième raccourci de début** est facultatif : une deuxième combinaison qui démarre un enregistrement, <kbd>⌃⇧ Espace</kbd> sur un Mac. DanyWhere ne la prend que si le post-traitement est activé. Il est fait pour être maintenu : maintenez <kbd>⌃ Espace</kbd> pour le texte tel que vous l'avez dit, <kbd>⌃⇧ Espace</kbd> pour le texte peaufiné.
 
@@ -98,7 +98,7 @@ Vous trouverez les raccourcis de fin sous **Paramètres de base › Général �
 
 <Screenshot
   name="end-shortcuts"
-  alt="Le groupe Raccourcis de fin sous Paramètres de base › Général. En haut, Lorsqu'il est maintenu a un bloc par raccourci de début, avec le champ Ajouter à la fin, un choix de touche et les cases Post-traiter et Envoyer le contexte. En dessous, chaque raccourci de fin est une ligne avec son nom, sa combinaison de touches et les mêmes champs, en commençant par les deux qui ont les combinaisons des raccourcis de début."
+  alt="Le groupe Raccourcis de fin sous Paramètres de base › Général. En haut, Lorsqu'il est maintenu a un bloc par raccourci de début, avec le champ Ajouter à la fin, un choix de touche et les cases Post-traiter et Envoyer le contexte. En dessous, sous Lors d'un appui bref, chaque raccourci de fin est une ligne avec son nom, sa combinaison de touches et les mêmes champs, en commençant par les deux qui ont les combinaisons des raccourcis de début."
   caption="Les raccourcis de fin sous Paramètres de base › Général."
 />
 
@@ -133,7 +133,7 @@ Sur un Mac, une nouvelle installation le propose déjà : <kbd>⌃↩</kbd> env
 ## Limites
 
 :::caution[Linux]
-Sous Linux, DanyWhere ne peut pas prendre la combinaison propre d'un raccourci de fin pendant un enregistrement. Un enregistrement s'y termine quand vous relâchez un raccourci de début maintenu, ou quand vous appuyez à nouveau sur un raccourci de début dont un raccourci de fin a la combinaison. Pour la recette ci-dessus, confiez donc l'appui sur Entrée à un raccourci de fin qui a la combinaison d'un raccourci de début, ou réglez-le sous **Lorsqu'il est maintenu**. Les réglages ne vous laissent pas supprimer la dernière façon de terminer : gardez un raccourci de fin avec la combinaison d'un raccourci de début, ou choisissez **Maintenir**.
+Sous Linux, DanyWhere ne peut pas prendre la combinaison propre d'un raccourci de fin pendant un enregistrement. Un enregistrement s'y termine quand vous relâchez un raccourci de début maintenu, ou quand vous appuyez à nouveau brièvement sur un raccourci de début dont un raccourci de fin a la combinaison. Pour la recette ci-dessus, confiez donc l'appui sur Entrée à un raccourci de fin qui a la combinaison d'un raccourci de début, ou réglez-le sous **Lorsqu'il est maintenu**. Les réglages ne vous laissent pas supprimer la dernière façon de terminer : gardez un raccourci de fin avec la combinaison d'un raccourci de début, ou choisissez **Maintenir**.
 :::
 
 **Sur un Mac sans Accessibilité**, DanyWhere ne peut pas appuyer sur des touches. Si vous continuez sans l'autorisation, une nouvelle installation laisse de côté les quatre raccourcis de fin qui envoient Entrée ou Maj+Entrée, et la touche choisie sous **Ajouter à la fin** n'est pas envoyée.

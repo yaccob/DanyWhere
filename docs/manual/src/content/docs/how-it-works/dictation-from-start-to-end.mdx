@@ -13,24 +13,24 @@ You press a key combination, say what you want to write, and end the recording. 
 <Diagram
   name="dictation-flow"
   caption="A dictation from start to end"
-  alt="The way of a dictation. A start shortcut starts the recording. It ends when you let go of a held start shortcut, press an end shortcut, or press a start shortcut again; Esc cancels it. The speech model transcribes the recording. If the end asks for it, a language model post-processes the text with the active prompts and, with Send Context, with earlier dictations from the same window. The end's Append text follows, the text is inserted, and a key press such as Enter can follow. The dictation is saved in the History, and the done sound plays."
+  alt="The way of a dictation. A start shortcut starts the recording. It ends when you let go of a held start shortcut, tap an end shortcut, or tap a start shortcut again; Esc cancels it. The speech model transcribes the recording. If the end asks for it, a language model post-processes the text with the active prompts and, with Send Context, with earlier dictations from the same window. The end's Append text follows, the text is inserted, and a key press such as Enter can follow. The dictation is saved in the History, and the done sound plays."
 />
 
 ## Start the recording
 
 Press the **Start Shortcut**: <kbd>⌃ Space</kbd> on a Mac, <kbd>Ctrl+Space</kbd> on Windows, <kbd>Ctrl+Alt+Space</kbd> on Linux. DanyWhere starts listening at once. On a Mac and on Windows, a small overlay at the bottom of the screen shows that it's recording, and if you've switched on **Audio Feedback**, a short sound tells you too.
 
-You can use the combination in two ways: hold it while you speak and let go when you're done, or tap it and talk for as long as you like. That's the factory setting **Auto** of **Shortcut Behavior**. **Hold** and **Toggle** allow only one of the two.
+You can use the combination in two ways: hold it while you speak and let go when you're done, or tap it and talk for as long as you like. That's the factory setting **Auto** of **Shortcut Behavior**. **Hold** and **Tap** allow only one of the two.
 
 ## End it the way you want the text
 
 How you end the recording decides what happens to the text. There are three ways:
 
 - **Let go** of a held start shortcut. The recording ends as set under **When Held**.
-- **Press an end shortcut.** Each one says what comes after the text, whether a language model polishes it and whether earlier dictations go along as context. On a Mac, for example, <kbd>↩</kbd> ends the recording and starts a new paragraph after the text.
-- **Press the start shortcut again.** This ends the recording when an end shortcut has the same combination. On a Mac, <kbd>⌃ Space</kbd> again puts a space after the text, ready for the next sentence.
+- **Tap an end shortcut.** Each one says what comes after the text, whether a language model polishes it and whether earlier dictations go along as context. On a Mac, for example, <kbd>↩</kbd> ends the recording and starts a new paragraph after the text.
+- **Tap the start shortcut again.** This ends the recording when an end shortcut has the same combination. On a Mac, <kbd>⌃ Space</kbd> again puts a space after the text, ready for the next sentence.
 
-For an app where inserting doesn't work, end with **Copy Last Transcript** instead: <kbd>⌃⇧C</kbd> on a Mac, <kbd>Alt+Shift+C</kbd> on Windows and Linux. It ends the recording like pressing the start shortcut again, but puts the text on the clipboard instead of inserting it.
+For an app where inserting doesn't work, end with **Copy Last Transcript** instead: <kbd>⌃⇧C</kbd> on a Mac, <kbd>Alt+Shift+C</kbd> on Windows and Linux. It ends the recording like tapping the start shortcut again, but puts the text on the clipboard instead of inserting it.
 
 Changed your mind? <kbd>Esc</kbd> cancels the recording on a Mac and on Windows. Nothing is transcribed, inserted or kept.
 

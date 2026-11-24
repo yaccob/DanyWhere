@@ -188,7 +188,7 @@
     "demo": {
       "title": "Tala i vilken app som helst, med en enda genväg",
       "hold": "<0>Klicka där du vill skriva.</0> <1>Håll in genvägen och tala.</1> <2>Släpp, så dyker orden upp.</2>",
-      "tap": "<0>Klicka där du vill skriva.</0> <1>Tryck på genvägen och tala.</1> <2>Tryck igen, så dyker orden upp.</2>",
+      "tap": "<0>Klicka där du vill skriva.</0> <1>Tryck kort på genvägen och tala.</1> <2>Tryck kort igen, så dyker orden upp.</2>",
       "apps": {
         "messages": "Meddelanden",
         "notes": "Anteckningar"
@@ -209,14 +209,14 @@
       "noteLabel": "Anteckning",
       "placeholder": "Ny anteckning",
       "hold": "Håll in <keys/> och tala.",
-      "tapNext": "Tryck nu på <keys/> en gång och tala sedan.",
+      "tapNext": "Tryck nu kort på <keys/> en gång och tala sedan.",
       "letGo": "Släpp <keys/> när du är klar.",
-      "tapAgain": "Tryck på <keys/> igen när du är klar.",
+      "tapAgain": "Tryck kort på <keys/> igen när du är klar.",
       "watch": "Titta på anteckningen.",
       "changeKeys": "Ändra din genväg, {{keys}}",
       "doneHold": "Femman! Så fungerar det att hålla in.",
       "doneHoldNext": "Nu till det handsfree-sättet.",
-      "doneTap": "Klappa till! Så fungerar det att trycka.",
+      "doneTap": "Klappa till! Så fungerar det att trycka kort.",
       "doneTapNext": "Prova nu att hålla in dem medan du talar.",
       "giveFive": "Du klarade det! Ge mig en femma",
       "highFive": "Femman",
@@ -233,8 +233,8 @@
     },
     "done": {
       "title": "Nu är allt klart",
-      "subMac": "Handy finns nu i menyraden. Håll in eller tryck på <keys/> i valfri app för att tala.",
-      "subTray": "Handy finns nu i systemfältet. Håll in eller tryck på <keys/> i valfri app för att tala.",
+      "subMac": "Handy finns nu i menyraden. Håll in eller tryck kort på <keys/> i valfri app för att tala.",
+      "subTray": "Handy finns nu i systemfältet. Håll in eller tryck kort på <keys/> i valfri app för att tala.",
       "hint": "Du kan ändra detta senare i Inställningar",
       "highFiveLabel": "Femman",
       "atLogin": "Starta Handy när jag loggar in",
@@ -419,7 +419,7 @@
           "transcribe_with_post_process": {
             "name": "Andra startkortkommandot",
             "description": "Valfritt: en andra tangentkombination som startar en inspelning. I fabriksinställningen efterbearbetar ett avslutningskortkommando med samma tangentkombination texten. Bara upptagen så länge efterbearbetning är påslagen.",
-            "descriptionMacos": "Valfritt: en andra tangentkombination som startar en inspelning. I fabriksinställningen efterbearbetas texten när du håller den nere och släpper den; ett nytt tryck avslutar utan efterbearbetning, som alla avslutningskortkommandon utan ⌥. Bara upptagen så länge efterbearbetning är påslagen."
+            "descriptionMacos": "Valfritt: en andra tangentkombination som startar en inspelning. I fabriksinställningen efterbearbetas texten när du håller den nere och släpper den; ett nytt kort tryck avslutar utan efterbearbetning, som alla avslutningskortkommandon utan ⌥. Bara upptagen så länge efterbearbetning är påslagen."
           },
           "paste_last_transcript": {
             "name": "Klistra in senaste transkriptionen",
@@ -470,12 +470,12 @@
         "options": {
           "holdOrToggle": "Automatiskt",
           "pushToTalk": "Håll",
-          "toggle": "Växla"
+          "toggle": "Tryck kort"
         },
         "descriptions": {
           "hold_or_toggle": "Håll nere för att spela in, eller tryck kort för att starta; sedan stoppar ett avslutningskortkommando den",
           "push_to_talk": "Spelar in så länge du håller genvägen nedtryckt",
-          "toggle": "Tryck kort för att starta inspelningen; ett nytt tryck stoppar den bara om ett avslutningskortkommando har samma tangentkombination"
+          "toggle": "Tryck kort för att starta inspelningen; ett nytt kort tryck stoppar den bara om ett avslutningskortkommando har samma tangentkombination"
         }
       },
       "insertService": {
@@ -484,7 +484,7 @@
       },
       "dictationKeyInserts": {
         "label": "Kortkommandot för diktering infogar också",
-        "description": "Tryck på kortkommandot för diktering en gång till för att avsluta dikteringen och infoga den så snart den är klar, i appar som stöder macOS-tjänster. Appar som redan är öppna tar till sig detta först efter en omstart. Där inget kan infogas använder du Kopiera senaste transkriptionen."
+        "description": "Tryck kort på kortkommandot för diktering en gång till för att avsluta dikteringen och infoga den så snart den är klar, i appar som stöder macOS-tjänster. Appar som redan är öppna tar till sig detta först efter en omstart. Där inget kan infogas använder du Kopiera senaste transkriptionen."
       },
       "dictationServiceWhenIdle": {
         "title": "När inget spelas in",
@@ -497,10 +497,10 @@
     },
     "endKeys": {
       "title": "Avslutningskortkommandon",
-      "description": "Hur en inspelning slutar och vad som följer. Varje avslutningskortkommando har en egen tangentkombination, som bara är upptagen under en inspelning, och bestämmer vad som läggs till, om texten efterbearbetas och om tidigare dikteringar skickas med som kontext. Ett avslutningskortkommando får ha ett startkortkommandos tangentkombination: ett nytt tryck på det startkortkommandot avslutar då på det här sättet.",
+      "description": "Hur en inspelning slutar och vad som följer. Varje avslutningskortkommando har en egen tangentkombination, som bara är upptagen under en inspelning, och bestämmer vad som läggs till, om texten efterbearbetas och om tidigare dikteringar skickas med som kontext. Ett avslutningskortkommando får ha ett startkortkommandos tangentkombination: ett nytt kort tryck på det startkortkommandot avslutar då på det här sättet.",
       "name": "Namn",
       "shortcutHint": "Ett tryck på den här tangentkombinationen under en inspelning avslutar den på det här sättet. Den är bara upptagen under en inspelning.",
-      "sameAsStart": "Samma tangentkombination som ”{{start}}”: ett nytt tryck under en inspelning avslutar på det här sättet.",
+      "sameAsStart": "Samma tangentkombination som ”{{start}}”: ett nytt kort tryck under en inspelning avslutar på det här sättet.",
       "append": "Lägg till",
       "appendDescription": "Läggs till i en diktering som slutar på det här sättet: texten och sedan den tangenttryckning du väljer. I texten är \\s ett mellanslag, \\n en ny rad, \\t en tabb och \\\\ ett omvänt snedstreck; allt annat läggs till som det står. Tangenttryckningen skickas bara när texten klistras in.",
       "postProcess": "Efterbearbeta",
@@ -516,6 +516,10 @@
         "title": "När det hålls nere",
         "description": "Hur ett släpp av ett startkortkommando som hålls nere avslutar inspelningen."
       },
+      "tapEnds": {
+        "title": "När det trycks kort",
+        "description": "Hur ett kort tryck på ett avslutningskortkommando avslutar inspelningen."
+      },
       "factoryNames": {
         "pattern": "{{mode}} · {{effect}}",
         "direct": "Direkt",
@@ -527,7 +531,7 @@
         "enter": "Skicka Enter",
         "shiftEnter": "Skicka Shift+Enter"
       },
-      "linuxNoShortcuts": "På Linux tas avslutningskortkommandonas tangentkombinationer inte upp under en inspelning. Där slutar en inspelning när ett startkortkommando som hålls nere släpps, eller när man åter trycker på ett startkortkommando vars tangentkombination ett avslutningskortkommando har.",
+      "linuxNoShortcuts": "På Linux tas avslutningskortkommandonas tangentkombinationer inte upp under en inspelning. Där slutar en inspelning när ett startkortkommando som hålls nere släpps, eller när man åter trycker kort på ett startkortkommando vars tangentkombination ett avslutningskortkommando har.",
       "errors": {
         "save": "Avslutningskortkommandona kunde inte sparas: {{error}}",
         "needsShortcut": "Varje avslutningskortkommando behöver en tangentkombination.",
@@ -1288,7 +1292,7 @@
       },
       "holdThreshold": {
         "title": "Tröskel för hållning",
-        "description": "Endast i automatiskt läge: hur länge (i millisekunder) genvägen måste hållas nere för att räknas som hållning i stället för ett tryck. Sänk värdet om inspelningen fortsätter efter korta hållningar; höj det om avsiktliga tryck tolkas som hållning."
+        "description": "Endast i automatiskt läge: hur länge (i millisekunder) genvägen måste hållas nere för att räknas som hållning i stället för ett kort tryck. Sänk värdet om inspelningen fortsätter efter korta hållningar; höj det om avsiktliga korta tryck tolkas som hållning."
       },
       "reliablePaste": {
         "title": "Tillförlitlig inklistring (Beta)",

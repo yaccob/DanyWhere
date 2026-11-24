@@ -93,10 +93,10 @@ describe("End Shortcuts under the defaults", () => {
 
     const text = visibleText();
     expect(text).toContain(
-      "Same combination as “Start Shortcut”: pressing it again during a recording ends this way.",
+      "Same combination as “Start Shortcut”: tapping it again during a recording ends this way.",
     );
     expect(text).toContain(
-      "Same combination as “Second Start Shortcut”: pressing it again during a recording ends this way.",
+      "Same combination as “Second Start Shortcut”: tapping it again during a recording ends this way.",
     );
     expect(text.match(/Same combination as/g)?.length).toBe(2);
   });

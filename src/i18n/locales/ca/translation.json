@@ -188,7 +188,7 @@
     "demo": {
       "title": "Parleu a qualsevol aplicació, amb una sola drecera",
       "hold": "<0>Feu clic on voldríeu escriure.</0> <1>Manteniu premuda la drecera i parleu.</1> <2>Deixeu-la anar i les paraules apareixeran.</2>",
-      "tap": "<0>Feu clic on voldríeu escriure.</0> <1>Premeu la drecera i parleu.</1> <2>Torneu-la a prémer i les paraules apareixeran.</2>",
+      "tap": "<0>Feu clic on voldríeu escriure.</0> <1>Toqueu la drecera i parleu.</1> <2>Torneu-la a tocar i les paraules apareixeran.</2>",
       "apps": {
         "messages": "Missatges",
         "notes": "Notes"
@@ -209,14 +209,14 @@
       "noteLabel": "Nota",
       "placeholder": "Nota nova",
       "hold": "Manteniu premut <keys/> i parleu.",
-      "tapNext": "Ara premeu <keys/> una vegada i parleu.",
+      "tapNext": "Ara toqueu <keys/> una vegada i parleu.",
       "letGo": "Deixeu anar <keys/> quan acabeu.",
-      "tapAgain": "Torneu a prémer <keys/> quan acabeu.",
+      "tapAgain": "Torneu a tocar <keys/> quan acabeu.",
       "watch": "Mireu la nota.",
       "changeKeys": "Canvia la drecera, {{keys}}",
       "doneHold": "Xoqueu-la! Això era mantenir premut.",
       "doneHoldNext": "Ara, la manera sense mans.",
-      "doneTap": "Xoqueu-la! Això era prémer una vegada.",
+      "doneTap": "Xoqueu-la! Això era tocar.",
       "doneTapNext": "Ara proveu de mantenir-les premudes mentre parleu.",
       "giveFive": "Ho heu aconseguit! Xoqueu-la",
       "highFive": "Xoqueu-la",
@@ -233,8 +233,8 @@
     },
     "done": {
       "title": "Tot a punt",
-      "subMac": "El Handy ja és a la barra de menús. Manteniu premut o premeu <keys/> a qualsevol aplicació per parlar.",
-      "subTray": "El Handy ja és a la safata del sistema. Manteniu premut o premeu <keys/> a qualsevol aplicació per parlar.",
+      "subMac": "El Handy ja és a la barra de menús. Manteniu premut o toqueu <keys/> a qualsevol aplicació per parlar.",
+      "subTray": "El Handy ja és a la safata del sistema. Manteniu premut o toqueu <keys/> a qualsevol aplicació per parlar.",
       "hint": "Podeu canviar-ho més tard a la configuració",
       "highFiveLabel": "Xoqueu-la",
       "atLogin": "Inicia el Handy quan entri a la sessió",
@@ -419,7 +419,7 @@
           "transcribe_with_post_process": {
             "name": "Segona drecera d'inici",
             "description": "Opcional: una segona combinació de tecles que inicia una gravació. De fàbrica, una drecera de final amb la mateixa combinació posprocessa el text. Només s'ocupa mentre el posprocessament està activat.",
-            "descriptionMacos": "Opcional: una segona combinació de tecles que inicia una gravació. De fàbrica, deixar-la anar després de mantenir-la premuda posprocessa el text; tornar-la a prémer acaba sense posprocessament, com totes les dreceres de final sense ⌥. Només s'ocupa mentre el posprocessament està activat."
+            "descriptionMacos": "Opcional: una segona combinació de tecles que inicia una gravació. De fàbrica, deixar-la anar després de mantenir-la premuda posprocessa el text; tornar-la a tocar acaba sense posprocessament, com totes les dreceres de final sense ⌥. Només s'ocupa mentre el posprocessament està activat."
           },
           "paste_last_transcript": {
             "name": "Enganxa l'última transcripció",
@@ -470,12 +470,12 @@
         "options": {
           "holdOrToggle": "Automàtic",
           "pushToTalk": "Mantén premuda",
-          "toggle": "Commuta"
+          "toggle": "Toca"
         },
         "descriptions": {
-          "hold_or_toggle": "Manteniu-la premuda per enregistrar, o feu una pulsació breu per iniciar; després una drecera de final l'atura",
+          "hold_or_toggle": "Manteniu-la premuda per enregistrar, o toqueu-la per iniciar; després una drecera de final l'atura",
           "push_to_talk": "Enregistreu mentre manteniu premuda la drecera",
-          "toggle": "Feu una pulsació breu per iniciar l'enregistrament; una nova pulsació només l'atura si una drecera de final té la mateixa combinació"
+          "toggle": "Toqueu-la per iniciar l'enregistrament; tornar-la a tocar només l'atura si una drecera de final té la mateixa combinació"
         }
       },
       "insertService": {
@@ -484,7 +484,7 @@
       },
       "dictationKeyInserts": {
         "label": "La drecera de dictat també insereix",
-        "description": "Torna a prémer la drecera de dictat per acabar el dictat i inserir-lo tan aviat com estigui llest, a les aplicacions que admeten els serveis de macOS. Les aplicacions que ja estan obertes ho apliquen després de reiniciar-les. On no es pot inserir res, fes servir «Copia l'última transcripció»."
+        "description": "Torna a tocar la drecera de dictat per acabar el dictat i inserir-lo tan aviat com estigui llest, a les aplicacions que admeten els serveis de macOS. Les aplicacions que ja estan obertes ho apliquen després de reiniciar-les. On no es pot inserir res, fes servir «Copia l'última transcripció»."
       },
       "dictationServiceWhenIdle": {
         "title": "Quan no s'enregistra res",
@@ -497,10 +497,10 @@
     },
     "endKeys": {
       "title": "Dreceres de final",
-      "description": "Com acaba una gravació i què ve després. Cada drecera de final té una combinació de tecles pròpia, que només s'ocupa mentre es grava, i diu què s'afegeix, si el text es posprocessa i si els dictats anteriors s'envien com a context. Una drecera de final pot tenir la combinació d'una drecera d'inici: llavors, tornar a prémer aquesta drecera d'inici acaba d'aquesta manera.",
+      "description": "Com acaba una gravació i què ve després. Cada drecera de final té una combinació de tecles pròpia, que només s'ocupa mentre es grava, i diu què s'afegeix, si el text es posprocessa i si els dictats anteriors s'envien com a context. Una drecera de final pot tenir la combinació d'una drecera d'inici: llavors, tornar a tocar aquesta drecera d'inici acaba d'aquesta manera.",
       "name": "Nom",
       "shortcutHint": "Prémer aquesta combinació durant una gravació l'acaba d'aquesta manera. Només s'ocupa mentre es grava.",
-      "sameAsStart": "La mateixa combinació que «{{start}}»: tornar-la a prémer durant una gravació l'acaba d'aquesta manera.",
+      "sameAsStart": "La mateixa combinació que «{{start}}»: tornar-la a tocar durant una gravació l'acaba d'aquesta manera.",
       "append": "Afegeix al final",
       "appendDescription": "S'afegeix a un dictat que acaba d'aquesta manera: el text i després la pulsació de tecla que triïs. Al text, \\s és un espai, \\n un salt de línia, \\t una tabulació i \\\\ una barra inversa; la resta s'afegeix tal com està escrit. La pulsació de tecla només s'envia quan s'enganxa el text.",
       "postProcess": "Posprocessa",
@@ -516,6 +516,10 @@
         "title": "Quan es manté premuda",
         "description": "Com acaba la gravació en deixar anar una drecera d'inici mantinguda premuda."
       },
+      "tapEnds": {
+        "title": "Quan es toca",
+        "description": "Com acaba la gravació en tocar una drecera de final."
+      },
       "factoryNames": {
         "pattern": "{{mode}} · {{effect}}",
         "direct": "Directe",
@@ -527,7 +531,7 @@
         "enter": "Envia Enter",
         "shiftEnter": "Envia Maj+Enter"
       },
-      "linuxNoShortcuts": "A Linux, les combinacions de les dreceres de final no s'ocupen mentre es grava. Allà una gravació acaba quan es deixa anar una drecera d'inici mantinguda premuda, o quan es torna a prémer una drecera d'inici la combinació de la qual té una drecera de final.",
+      "linuxNoShortcuts": "A Linux, les combinacions de les dreceres de final no s'ocupen mentre es grava. Allà una gravació acaba quan es deixa anar una drecera d'inici mantinguda premuda, o quan es torna a tocar una drecera d'inici la combinació de la qual té una drecera de final.",
       "errors": {
         "save": "No s'han pogut desar les dreceres de final: {{error}}",
         "needsShortcut": "Cada drecera de final necessita una combinació de tecles.",
@@ -1288,7 +1292,7 @@
       },
       "holdThreshold": {
         "title": "Llindar de pulsació llarga",
-        "description": "Només en mode automàtic: temps (en mil·lisegons) que cal mantenir premuda la drecera perquè es consideri una pulsació llarga en lloc d'una de breu. Reduïu-lo si les pulsacions llargues curtes deixen l'enregistrament actiu; augmenteu-lo si les pulsacions breus intencionades es tracten com a llargues."
+        "description": "Només en mode automàtic: temps (en mil·lisegons) que cal mantenir premuda la drecera perquè es consideri una pulsació llarga en lloc d'un toc. Reduïu-lo si les pulsacions llargues curtes deixen l'enregistrament actiu; augmenteu-lo si els tocs intencionats es tracten com a pulsacions llargues."
       },
       "reliablePaste": {
         "title": "Enganxament fiable (beta)",
