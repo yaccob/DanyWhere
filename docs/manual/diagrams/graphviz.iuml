@@ -1,0 +1,16 @@
+' The shared look of the manual's Graphviz diagrams. A <name>.<lang>.puml
+' whose text, after PlantUML's preprocessor, is a Graphviz graph is drawn
+' with Graphviz (render.sh): PlantUML's own preprocessor fills in the texts
+' and the colours, Graphviz lays out tables better than PlantUML does.
+' Colours from theme.iuml, as in the PlantUML diagrams; text in Arial, which
+' render.sh widens to the same font stack. render.sh draws one SVG unit as
+' one pixel, so the sizes here are in pixels, as in style.iuml.
+!include theme.iuml
+
+!$font = "Arial"
+!$fontSize = 14
+!$smallSize = 13
+!$tinySize = 12
+' A line break inside a text of an HTML label; a text can contain it
+' ("first" + $br + "second").
+!$br = '<br align="left"/>'

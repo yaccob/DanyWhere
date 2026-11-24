@@ -1,0 +1,13 @@
+' The colours of the theme render.sh asks for: it sets THEME to "light" or
+' "dark" (-DTHEME=...); the colours come from style-<theme>.iuml. Included
+' by style.iuml (PlantUML diagrams) and graphviz.iuml (Graphviz diagrams).
+!if %variable_exists("THEME")
+!$theme = THEME
+!else
+!$theme = "light"
+!endif
+!if $theme == "dark"
+!include style-dark.iuml
+!else
+!include style-light.iuml
+!endif
