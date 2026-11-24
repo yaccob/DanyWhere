@@ -1646,6 +1646,22 @@ mod tests {
             }
         }
 
+        /// The names don't make the list the user's: they are written in the
+        /// language of the first start, which may not be the one in use
+        /// now, and a typed name changes nothing an end does.
+        #[test]
+        fn drops_them_whatever_the_factory_ends_are_named() {
+            let mut settings = get_default_settings();
+            for end in settings.end_keys.iter_mut() {
+                end.name = format!("Renamed {}", end.id);
+            }
+            let named = settings.end_keys.clone();
+            apply_no_accessibility_mode(&mut settings);
+            assert_eq!(settings.end_keys, without_key_presses(&named));
+            #[cfg(target_os = "macos")]
+            assert_eq!(settings.end_keys.len(), 8);
+        }
+
         #[test]
         fn keeps_a_users_own_end_shortcuts_with_their_key_presses() {
             let mut settings = get_default_settings();

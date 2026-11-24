@@ -496,6 +496,17 @@
         "title": "길게 누를 때",
         "description": "길게 누르고 있던 시작 단축키를 놓을 때 녹음을 끝내는 방식입니다."
       },
+      "factoryNames": {
+        "pattern": "{{mode}} · {{effect}}",
+        "direct": "바로",
+        "postProcessed": "후처리",
+        "space": "공백",
+        "noSpace": "공백 없음",
+        "paragraph": "문단",
+        "line": "줄",
+        "enter": "Enter 보내기",
+        "shiftEnter": "Shift+Enter 보내기"
+      },
       "linuxNoShortcuts": "Linux에서는 녹음하는 동안 종료 단축키의 키 조합이 사용되지 않습니다. 이 경우 길게 누르고 있던 시작 단축키를 놓거나, 종료 단축키와 같은 키 조합을 가진 시작 단축키를 다시 누르면 녹음이 끝납니다.",
       "errors": {
         "save": "종료 단축키를 저장할 수 없습니다: {{error}}",

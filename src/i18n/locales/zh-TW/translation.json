@@ -496,6 +496,17 @@
         "title": "按住時",
         "description": "放開按住的開始快捷鍵時如何結束錄音。"
       },
+      "factoryNames": {
+        "pattern": "{{mode}} · {{effect}}",
+        "direct": "直接",
+        "postProcessed": "後處理",
+        "space": "空格",
+        "noSpace": "無空格",
+        "paragraph": "段落",
+        "line": "換行",
+        "enter": "傳送 Enter",
+        "shiftEnter": "傳送 Shift+Enter"
+      },
       "linuxNoShortcuts": "在 Linux 上，錄音時不會佔用結束快捷鍵的按鍵組合。在那裡，放開按住的開始快捷鍵，或再次按下某個與結束快捷鍵按鍵組合相同的開始快捷鍵時，錄音才會結束。",
       "errors": {
         "save": "無法儲存結束快捷鍵：{{error}}",

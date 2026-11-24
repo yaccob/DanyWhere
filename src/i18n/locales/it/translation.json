@@ -496,6 +496,17 @@
         "title": "Tenendo premuto",
         "description": "Come il rilascio di una scorciatoia di avvio tenuta premuta termina la registrazione."
       },
+      "factoryNames": {
+        "pattern": "{{mode}} · {{effect}}",
+        "direct": "Diretto",
+        "postProcessed": "Post-elaborato",
+        "space": "Spazio",
+        "noSpace": "Senza spazio",
+        "paragraph": "Paragrafo",
+        "line": "Riga",
+        "enter": "Invia Invio",
+        "shiftEnter": "Invia Maiusc+Invio"
+      },
       "linuxNoShortcuts": "Su Linux le combinazioni delle scorciatoie di fine non vengono occupate durante la registrazione. Lì una registrazione termina quando si rilascia una scorciatoia di avvio tenuta premuta, o quando si preme di nuovo una scorciatoia di avvio la cui combinazione appartiene anche a una scorciatoia di fine.",
       "errors": {
         "save": "Impossibile salvare le scorciatoie di fine: {{error}}",

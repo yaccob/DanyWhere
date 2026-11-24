@@ -496,6 +496,17 @@
         "title": "När det hålls nere",
         "description": "Hur ett släpp av ett startkortkommando som hålls nere avslutar inspelningen."
       },
+      "factoryNames": {
+        "pattern": "{{mode}} · {{effect}}",
+        "direct": "Direkt",
+        "postProcessed": "Efterbearbetad",
+        "space": "Mellanslag",
+        "noSpace": "Utan mellanslag",
+        "paragraph": "Stycke",
+        "line": "Rad",
+        "enter": "Skicka Enter",
+        "shiftEnter": "Skicka Shift+Enter"
+      },
       "linuxNoShortcuts": "På Linux tas avslutningskortkommandonas tangentkombinationer inte upp under en inspelning. Där slutar en inspelning när ett startkortkommando som hålls nere släpps, eller när man åter trycker på ett startkortkommando vars tangentkombination ett avslutningskortkommando har.",
       "errors": {
         "save": "Avslutningskortkommandona kunde inte sparas: {{error}}",

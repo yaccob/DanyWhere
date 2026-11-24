@@ -1281,9 +1281,14 @@ pub fn get_default_settings() -> AppSettings {
     );
 
     // DanyWhere: this system's factory ends (on macOS the user's twelve of
-    // 2026-11-24, elsewhere the two with the start shortcuts' combinations).
-    let end_keys =
-        crate::end_keys::factory_end_keys_on(&bindings, crate::append_text::KeyPlatform::current());
+    // 2026-11-24, named in the new installation's language; elsewhere the
+    // two unnamed ones with the start shortcuts' combinations).
+    let app_language = default_app_language();
+    let end_keys = crate::end_keys::factory_end_keys_on(
+        &bindings,
+        crate::append_text::KeyPlatform::current(),
+        &crate::end_keys::FactoryEndNames::for_locale(&app_language),
+    );
     AppSettings {
         settings_schema_version: default_settings_schema_version(),
         bindings,
@@ -1343,7 +1348,7 @@ pub fn get_default_settings() -> AppSettings {
         model_list_timeout_secs: crate::llm_timeouts::default_model_list_timeout_secs(),
         mute_while_recording: false,
         append_trailing_space: false,
-        app_language: default_app_language(),
+        app_language,
         theme: default_theme(),
         experimental_enabled: false,
         lazy_stream_close: false,
