@@ -85,7 +85,10 @@ interface Shot {
 }
 
 const SHOTS: Shot[] = [
-  { name: "end-shortcuts", groupTitleKey: "settings.endKeys.title", rows: 4 },
+  // "When Held" opens the group, so two ends keep the picture about as tall
+  // as four were without it: the ends of the two start shortcuts, right
+  // under how each ends when held.
+  { name: "end-shortcuts", groupTitleKey: "settings.endKeys.title", rows: 2 },
   // A profile's page: values that follow the defaults and one of its own
   // (Terminal doesn't post-process).
   {
