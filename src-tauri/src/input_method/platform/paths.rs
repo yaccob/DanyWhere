@@ -97,22 +97,26 @@ pub fn socket_path(
 
 /// `confstr(_CS_DARWIN_USER_TEMP_DIR)`: the per-user temporary folder.
 pub fn darwin_user_temp_dir() -> Option<PathBuf> {
+    confstr_dir(libc::_CS_DARWIN_USER_TEMP_DIR)
+}
+
+/// A folder `confstr` names, e.g. `_CS_DARWIN_USER_TEMP_DIR`.
+fn confstr_dir(name: libc::c_int) -> Option<PathBuf> {
     use std::os::unix::ffi::OsStringExt;
     let mut buffer = vec![0u8; 1024];
     // SAFETY: the buffer is valid for its length; confstr writes at most
     // that many bytes, NUL included.
-    let needed = unsafe {
-        libc::confstr(
-            libc::_CS_DARWIN_USER_TEMP_DIR,
-            buffer.as_mut_ptr().cast(),
-            buffer.len(),
-        )
-    };
+    let needed = unsafe { libc::confstr(name, buffer.as_mut_ptr().cast(), buffer.len()) };
     if needed == 0 || needed > buffer.len() {
         return None;
     }
     buffer.truncate(needed - 1);
     Some(PathBuf::from(std::ffi::OsString::from_vec(buffer)))
+}
+
+/// `confstr(_CS_DARWIN_USER_CACHE_DIR)`: the per-user cache folder.
+pub fn darwin_user_cache_dir() -> Option<PathBuf> {
+    confstr_dir(libc::_CS_DARWIN_USER_CACHE_DIR)
 }
 
 #[cfg(test)]
@@ -282,5 +286,17 @@ mod tests {
         let dir = darwin_user_temp_dir().expect("confstr answers");
         assert!(dir.is_absolute(), "{dir:?}");
         assert!(dir.is_dir(), "{dir:?}");
+    }
+
+    #[test]
+    fn the_user_cache_dir_is_known() {
+        let dir = darwin_user_cache_dir().expect("confstr answers");
+        assert!(dir.is_absolute(), "{dir:?}");
+        assert!(dir.is_dir(), "{dir:?}");
+        assert_ne!(
+            Some(dir),
+            darwin_user_temp_dir(),
+            "the cache, not the temp folder"
+        );
     }
 }

@@ -22,7 +22,7 @@ For an app with bundle id `<app id>` and product name `<name>` (release `com.yac
 | `InputMethodConnectionName`                                                         | `<input method id>_Connection`                                                              |
 | `DanyWhereAppID` (custom Info.plist key)                                            | `<app id>`                                                                                  |
 | `CFBundleVersion`, `CFBundleShortVersionString`                                     | the app's version                                                                           |
-| `TISIntendedLanguage`                                                               | `en` (the setup tells the user to search for the name)                                      |
+| `TISIntendedLanguage`                                                               | `en` (System Settings lists it under English; its search finds only languages)              |
 | Place in the app                                                                    | `Contents/Helpers/<name> Input.app`, signed before the app is signed                        |
 | Installed copy                                                                      | `~/Library/Input Methods/<name> Input.app`                                                  |
 | Log of the input method                                                             | `~/Library/Logs/<app id>/input-method.log` (events only, never typed keys or inserted text) |
@@ -31,7 +31,7 @@ The app finds its bundled input method as the `*.app` in `Contents/Helpers` whos
 
 ## Installing and updating
 
-- **Setup** (the user clicks the button): copy the bundled input method to `~/Library/Input Methods/` (into a temporary name, then rename over the old one), remove `com.apple.quarantine` from the copy, `TISRegisterInputSource(<copy>)`, then open System Settings at Keyboard (macOS 13 and later `x-apple.systempreferences:com.apple.Keyboard-Settings.extension`, before that `x-apple.systempreferences:com.apple.preference.keyboard?InputSources`). `TISEnableInputSource` is not called: macOS ignores it (tried 2026-11-23); the user adds the source.
+- **Setup** (the user clicks the button): copy the bundled input method to `~/Library/Input Methods/` (into a temporary name, then rename over the old one), remove `com.apple.quarantine` from the copy, `TISRegisterInputSource(<copy>)`, ask a running System Settings to quit and remove its own cache of input sources (`com.apple.Keyboard-Settings.extension/com.apple.IntlDataCache.le` and `….le.kbdx` in `confstr(_CS_DARWIN_USER_CACHE_DIR)`; it is not renewed when a source is registered, so the new one would be missing under "+"), then open System Settings at Keyboard (macOS 13 and later `x-apple.systempreferences:com.apple.Keyboard-Settings.extension`, before that `x-apple.systempreferences:com.apple.preference.keyboard?InputSources`). `TISEnableInputSource` is not called: macOS ignores it (tried 2026-11-23); the user adds the source.
 - **Update** (at every app start): if an installed copy exists and its executable or `Info.plist` differ from the bundled one, ask the running input method to quit (`quit`, else terminate the process with its bundle id), replace the copy as above and register it again. Without an installed copy nothing is installed at start.
 - **Added** means: `TISCreateInputSourceList({kTISPropertyInputSourceID: <input method id>}, false)` is not empty (only enabled sources are listed).
 

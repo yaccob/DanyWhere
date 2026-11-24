@@ -17,8 +17,38 @@ pub const QUARANTINE: &str = "com.apple.quarantine";
 pub trait Host: Send + Sync {
     /// Ends the running processes with this bundle id.
     fn terminate(&self, bundle_id: &str);
+    /// Asks a running System Settings to quit: it holds its list of input
+    /// sources in memory, so only a new start reads them anew.
+    fn quit_settings(&self) {}
+    /// Removes System Settings' own cache of input sources
+    /// ([`forget_keyboard_settings_cache`]).
+    fn forget_settings_cache(&self) {}
     /// Opens System Settings at Keyboard, where the user adds the source.
     fn open_settings(&self) -> Result<(), String>;
+}
+
+/// The files of System Settings' own cache of input sources (its Keyboard
+/// page), under the per-user cache folder. System Settings doesn't renew it
+/// when an input method is registered, so a new source stays missing under
+/// "+" until the cache is gone (found 2026-11-24, on macOS 27).
+pub const KEYBOARD_SETTINGS_CACHE: [&str; 2] = [
+    "com.apple.Keyboard-Settings.extension/com.apple.IntlDataCache.le",
+    "com.apple.Keyboard-Settings.extension/com.apple.IntlDataCache.le.kbdx",
+];
+
+/// Removes [`KEYBOARD_SETTINGS_CACHE`] under `cache_dir` (the per-user cache
+/// folder), so System Settings builds it anew and lists DanyWhere's source.
+/// Returns how many files went; a missing file is no error.
+pub fn forget_keyboard_settings_cache(cache_dir: &Path) -> io::Result<usize> {
+    let mut removed = 0;
+    for name in KEYBOARD_SETTINGS_CACHE {
+        match fs::remove_file(cache_dir.join(name)) {
+            Ok(()) => removed += 1,
+            Err(e) if e.kind() == io::ErrorKind::NotFound => {}
+            Err(e) => return Err(e),
+        }
+    }
+    Ok(removed)
 }
 
 /// System Settings' Keyboard page: macOS 13 and later name it differently.
@@ -163,6 +193,12 @@ fn remove_xattr(path: &Path, name: &str) -> io::Result<()> {
 /// How long a running input method gets to quit before it is forced.
 const TERMINATE_WAIT: Duration = Duration::from_secs(1);
 
+/// System Settings (System Preferences before macOS 13).
+const SYSTEM_SETTINGS_ID: &str = "com.apple.systempreferences";
+
+/// How long a running System Settings gets to quit before it opens anew.
+const SETTINGS_QUIT_WAIT: Duration = Duration::from_secs(2);
+
 /// The real system.
 pub struct MacHost;
 
@@ -205,6 +241,44 @@ impl Host for MacHost {
         }
     }
 
+    fn quit_settings(&self) {
+        use objc2_app_kit::NSRunningApplication;
+        use objc2_foundation::NSString;
+
+        let running: Vec<_> = NSRunningApplication::runningApplicationsWithBundleIdentifier(
+            &NSString::from_str(SYSTEM_SETTINGS_ID),
+        )
+        .iter()
+        .collect();
+        if running.is_empty() {
+            return;
+        }
+        log::info!("Input method: asking System Settings to quit, so it reads the sources anew");
+        for app in &running {
+            app.terminate();
+        }
+        // Only asked, never forced; it opens again either way.
+        let deadline = Instant::now() + SETTINGS_QUIT_WAIT;
+        while running.iter().any(|app| !app.isTerminated()) && Instant::now() < deadline {
+            std::thread::sleep(Duration::from_millis(50));
+        }
+    }
+
+    fn forget_settings_cache(&self) {
+        let Some(cache_dir) = super::paths::darwin_user_cache_dir() else {
+            log::warn!("Input method: no per-user cache folder; System Settings keeps its cache");
+            return;
+        };
+        match forget_keyboard_settings_cache(&cache_dir) {
+            Ok(removed) => log::info!(
+                "Input method: removed {removed} file(s) of System Settings' cache of input sources"
+            ),
+            Err(e) => log::warn!(
+                "Input method: System Settings' cache of input sources wasn't removed: {e}"
+            ),
+        }
+    }
+
     fn open_settings(&self) -> Result<(), String> {
         let version = objc2_foundation::NSProcessInfo::processInfo().operatingSystemVersion();
         let url = settings_url(version.majorVersion as u64);
@@ -226,11 +300,13 @@ pub mod testing {
     use super::Host;
     use std::sync::Mutex;
 
-    /// The system, played by the test: records terminations and openings.
+    /// The system, played by the test: records terminations, openings and,
+    /// in order, what was done to System Settings.
     #[derive(Default)]
     pub struct FakeHost {
         pub terminated: Mutex<Vec<String>>,
         pub settings_opened: Mutex<usize>,
+        pub settings_steps: Mutex<Vec<&'static str>>,
     }
 
     impl FakeHost {
@@ -241,6 +317,11 @@ pub mod testing {
         pub fn settings_opened(&self) -> usize {
             *self.settings_opened.lock().unwrap()
         }
+
+        /// "forget cache" and "open", in the order they happened.
+        pub fn settings_steps(&self) -> Vec<&'static str> {
+            self.settings_steps.lock().unwrap().clone()
+        }
     }
 
     impl Host for FakeHost {
@@ -248,8 +329,17 @@ pub mod testing {
             self.terminated.lock().unwrap().push(bundle_id.into());
         }
 
+        fn quit_settings(&self) {
+            self.settings_steps.lock().unwrap().push("quit");
+        }
+
+        fn forget_settings_cache(&self) {
+            self.settings_steps.lock().unwrap().push("forget cache");
+        }
+
         fn open_settings(&self) -> Result<(), String> {
             *self.settings_opened.lock().unwrap() += 1;
+            self.settings_steps.lock().unwrap().push("open");
             Ok(())
         }
     }
@@ -337,6 +427,31 @@ mod tests {
         walk(root, root, &mut out);
         out.sort();
         out
+    }
+
+    #[test]
+    fn system_settings_cache_of_input_sources_is_forgotten() {
+        let dir = tempfile::tempdir().unwrap();
+        let page = dir.path().join("com.apple.Keyboard-Settings.extension");
+        fs::create_dir_all(&page).unwrap();
+        for name in [
+            "com.apple.IntlDataCache.le",
+            "com.apple.IntlDataCache.le.kbdx",
+            "com.apple.Keyboard-Settings.extension",
+            "com.apple.scriptmanager2.le.cache",
+        ] {
+            fs::write(page.join(name), b"cache").unwrap();
+        }
+        assert_eq!(forget_keyboard_settings_cache(dir.path()).unwrap(), 2);
+        assert!(!page.join("com.apple.IntlDataCache.le").exists());
+        assert!(!page.join("com.apple.IntlDataCache.le.kbdx").exists());
+        // Only the cache of input sources goes.
+        assert!(page.join("com.apple.Keyboard-Settings.extension").exists());
+        assert!(page.join("com.apple.scriptmanager2.le.cache").exists());
+        // Gone already, or never there: nothing to do, no error.
+        assert_eq!(forget_keyboard_settings_cache(dir.path()).unwrap(), 0);
+        let empty = tempfile::tempdir().unwrap();
+        assert_eq!(forget_keyboard_settings_cache(empty.path()).unwrap(), 0);
     }
 
     #[test]

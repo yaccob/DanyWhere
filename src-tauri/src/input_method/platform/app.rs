@@ -394,6 +394,11 @@ impl InputMethod for AppInputMethod {
         } else {
             self.sources.register(&self.installed)?;
         }
+        // System Settings doesn't renew its own cache of input sources when
+        // one is registered, and a running one keeps its list in memory;
+        // without this the source may be missing under "+".
+        self.host.quit_settings();
+        self.host.forget_settings_cache();
         self.host.open_settings()
     }
 }
@@ -1048,6 +1053,23 @@ mod tests {
         assert_eq!(s.sources.registered(), vec![s.installed.clone()]);
         assert_eq!(s.host.settings_opened(), 1);
         assert!(s.host.terminated().is_empty(), "nothing to end");
+    }
+
+    #[test]
+    fn set_up_forgets_system_settings_cache_before_opening_them() {
+        // Else System Settings, already opened once, doesn't list the source
+        // under "+" (found in the first real run, 2026-11-24).
+        for (copied, same) in [(false, false), (true, true)] {
+            let s = setup(copied, false, same);
+            s.im.set_up().expect("set up");
+            // A running System Settings keeps its list in memory: it quits
+            // first, then the cache goes, then it opens anew.
+            assert_eq!(
+                s.host.settings_steps(),
+                vec!["quit", "forget cache", "open"],
+                "copied {copied}"
+            );
+        }
     }
 
     #[test]
