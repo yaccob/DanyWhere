@@ -34,8 +34,10 @@ use crate::tray::TrayIconState;
 use crate::utils::{self, PasteOutcome};
 
 pub(crate) mod app_ports;
+// `pub(crate)`: other modules' tests reach a local provider through
+// `fakes::llm_server` too (`word_list_check`).
 #[cfg(test)]
-mod fakes;
+pub(crate) mod fakes;
 pub mod ports;
 
 use ports::{Deliver, DictationPorts, Overlay, Recording, Report, Session};

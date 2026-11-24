@@ -78,6 +78,7 @@ mod utils;
 mod variant;
 pub mod webkit_renderer;
 mod window_capture;
+mod word_list_check;
 mod word_lists;
 
 pub use cli::CliArgs;

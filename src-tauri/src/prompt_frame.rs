@@ -144,7 +144,7 @@ fn defuse_tags(text: &str) -> String {
 
 /// `<tag` and `</tag` in any case, wherever they start, become `< tag` and
 /// `< /tag`.
-fn defuse_named_tags(text: &str, tag: &str) -> String {
+pub(crate) fn defuse_named_tags(text: &str, tag: &str) -> String {
     let mut out = String::with_capacity(text.len());
     let mut rest = text;
     while let Some(at) = rest.find('<') {
