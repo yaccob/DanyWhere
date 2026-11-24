@@ -496,6 +496,17 @@
         "title": "按住时",
         "description": "松开按住的开始快捷键时如何结束录音。"
       },
+      "factoryNames": {
+        "pattern": "{{mode}} · {{effect}}",
+        "direct": "直接",
+        "postProcessed": "后处理",
+        "space": "空格",
+        "noSpace": "无空格",
+        "paragraph": "段落",
+        "line": "换行",
+        "enter": "发送 Enter",
+        "shiftEnter": "发送 Shift+Enter"
+      },
       "linuxNoShortcuts": "在 Linux 上，录音时不会占用结束快捷键的按键组合。在那里，松开按住的开始快捷键，或再次按下某个与结束快捷键按键组合相同的开始快捷键时，录音才会结束。",
       "errors": {
         "save": "无法保存结束快捷键：{{error}}",

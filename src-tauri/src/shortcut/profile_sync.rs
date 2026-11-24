@@ -401,7 +401,12 @@ mod tests {
     use super::*;
     use crate::end_keys::EndKey;
     use crate::profiles::ensure_profiles;
-    use crate::settings::get_default_settings;
+    /// A new installation's settings with the two built-in ends these tests
+    /// are written against (`end_keys::with_builtin_ends`): macOS has other
+    /// factory ends since 2026-11-24.
+    fn get_default_settings() -> crate::settings::AppSettings {
+        crate::end_keys::with_builtin_ends(crate::settings::get_default_settings())
+    }
 
     fn with_shortcut(mut settings: AppSettings, id: &str, keys: &str) -> AppSettings {
         settings

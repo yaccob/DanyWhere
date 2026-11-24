@@ -182,15 +182,16 @@ mod tests {
     }
 
     /// The defaults in use (Parakeet, no post-processing, the small
-    /// overlay) and "mail" (Whisper, post-processing on, the live overlay)
-    /// with two ends of its own: "send" appends a line break, post-processes
-    /// and sends context; "quote" sends context without post-processing.
+    /// overlay, the two built-in ends of `end_keys::with_builtin_ends`) and
+    /// "mail" (Whisper, post-processing on, the live overlay) with two ends
+    /// of its own: "send" appends a line break, post-processes and sends
+    /// context; "quote" sends context without post-processing.
     fn with_mail_profile() -> AppSettings {
         let mut settings = AppSettings {
             selected_model: "parakeet".to_string(),
             post_process_enabled: false,
             overlay_style: OverlayStyle::Minimal,
-            ..Default::default()
+            ..crate::end_keys::with_builtin_ends(AppSettings::default())
         };
         ensure_profiles(&mut settings);
         let mut mail = crate::profiles::profile_for_test(&settings, "mail", "Mail", |values| {

@@ -496,6 +496,17 @@
         "title": "Når den holdes nede",
         "description": "Hvordan slip af en startgenvej, der holdes nede, afslutter optagelsen."
       },
+      "factoryNames": {
+        "pattern": "{{mode}} · {{effect}}",
+        "direct": "Direkte",
+        "postProcessed": "Efterbehandlet",
+        "space": "Mellemrum",
+        "noSpace": "Uden mellemrum",
+        "paragraph": "Afsnit",
+        "line": "Linje",
+        "enter": "Send Enter",
+        "shiftEnter": "Send Shift+Enter"
+      },
       "linuxNoShortcuts": "På Linux optages afslutningsgenvejenes tastekombinationer ikke under en optagelse. Der slutter en optagelse, når en startgenvej, der holdes nede, slippes, eller når der igen trykkes på en startgenvej, hvis tastekombination en afslutningsgenvej har.",
       "errors": {
         "save": "Afslutningsgenvejene kunne ikke gemmes: {{error}}",

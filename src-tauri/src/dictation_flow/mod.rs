@@ -709,7 +709,6 @@ mod tests {
     };
     use super::ports::{History, Overlay, Recording};
     use super::{finish_dictation, pasted_dictation_notice, stopped, Dictation};
-    use crate::accessibility::testing::settings_without_accessibility;
     use crate::actions::TranscriptionOutcome;
     use crate::delivery::{DictationEnd, DictationNotice};
     use crate::dictation_context::CapturedWindow;
@@ -720,10 +719,25 @@ mod tests {
     use crate::post_process_failure::{FailureReason, PostProcessFailure};
     use crate::profile_redo::{ForInsert, Working};
     use crate::profiles::{ensure_profiles, ProfileValues, DEFAULT_PROFILE_ID};
-    use crate::settings::{get_default_settings, AppSettings, ClipboardHandling, PasteMethod};
+    use crate::settings::{AppSettings, ClipboardHandling, PasteMethod};
     use crate::tray::TrayIconState;
     use crate::utils::PasteOutcome;
     use std::time::{Duration, Instant};
+
+    /// A new installation's settings with the two built-in ends these tests
+    /// are written against (`end_keys::with_builtin_ends`): macOS has other
+    /// factory ends since 2026-11-24.
+    fn get_default_settings() -> AppSettings {
+        crate::end_keys::with_builtin_ends(crate::settings::get_default_settings())
+    }
+
+    /// [`get_default_settings`] as onboarding's "Continue without
+    /// Accessibility" leaves them.
+    fn settings_without_accessibility() -> AppSettings {
+        crate::end_keys::with_builtin_ends(
+            crate::accessibility::testing::settings_without_accessibility(),
+        )
+    }
 
     /// The id of the end shortcut a press of the first start shortcut ends
     /// with in the default profile.

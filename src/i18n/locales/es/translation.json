@@ -496,6 +496,17 @@
         "title": "Al mantener pulsado",
         "description": "Cómo termina la grabación al soltar un atajo de inicio mantenido."
       },
+      "factoryNames": {
+        "pattern": "{{mode}} · {{effect}}",
+        "direct": "Directo",
+        "postProcessed": "Posprocesado",
+        "space": "Espacio",
+        "noSpace": "Sin espacio",
+        "paragraph": "Párrafo",
+        "line": "Línea",
+        "enter": "Enviar Enter",
+        "shiftEnter": "Enviar Mayús+Enter"
+      },
       "linuxNoShortcuts": "En Linux, las combinaciones de los atajos de fin no se ocupan mientras se graba. Allí una grabación termina al soltar un atajo de inicio mantenido, o al volver a pulsar un atajo de inicio cuya combinación tiene un atajo de fin.",
       "errors": {
         "save": "No se pudieron guardar los atajos de fin: {{error}}",

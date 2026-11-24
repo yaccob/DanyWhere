@@ -496,6 +496,17 @@
         "title": "Ao segurar",
         "description": "Como soltar um atalho de início mantido premido termina a gravação."
       },
+      "factoryNames": {
+        "pattern": "{{mode}} · {{effect}}",
+        "direct": "Direto",
+        "postProcessed": "Pós-processado",
+        "space": "Espaço",
+        "noSpace": "Sem espaço",
+        "paragraph": "Parágrafo",
+        "line": "Linha",
+        "enter": "Enviar Enter",
+        "shiftEnter": "Enviar Shift+Enter"
+      },
       "linuxNoShortcuts": "No Linux, as combinações dos atalhos de fim não ficam ocupadas durante a gravação. Aí, uma gravação termina quando se solta um atalho de início mantido premido, ou quando se prime de novo um atalho de início cuja combinação também pertence a um atalho de fim.",
       "errors": {
         "save": "Não foi possível guardar os atalhos de fim: {{error}}",
