@@ -269,6 +269,9 @@ pub mod testing {
     use std::path::{Path, PathBuf};
     use std::sync::Mutex;
 
+    type OnReconnect = Box<dyn Fn() + Send + Sync>;
+    type OnSelect = Box<dyn Fn(&str) + Send + Sync>;
+
     /// macOS's input sources, played by the test: a list of added sources,
     /// the current one and every selection and registration.
     #[derive(Default)]
@@ -276,7 +279,10 @@ pub mod testing {
         pub state: Mutex<FakeState>,
         /// What the application in front does when its activation goes
         /// round (`reconnect_focused_field`), e.g. a text field reports.
-        pub on_reconnect: Mutex<Option<Box<dyn Fn() + Send + Sync>>>,
+        pub on_reconnect: Mutex<Option<OnReconnect>>,
+        /// What macOS does after a source was selected, e.g. starting the
+        /// input method.
+        pub on_select: Mutex<Option<OnSelect>>,
     }
 
     #[derive(Default)]
@@ -308,6 +314,7 @@ pub mod testing {
                     ..FakeState::default()
                 }),
                 on_reconnect: Mutex::new(None),
+                on_select: Mutex::new(None),
             }
         }
 
@@ -340,6 +347,11 @@ pub mod testing {
         pub fn reconnects(&self) -> usize {
             self.state.lock().unwrap().reconnects
         }
+
+        /// From now on, after each selection, `then` runs with its id.
+        pub fn when_selected(&self, then: impl Fn(&str) + Send + Sync + 'static) {
+            *self.on_select.lock().unwrap() = Some(Box::new(then));
+        }
     }
 
     impl InputSources for FakeSources {
@@ -358,14 +370,19 @@ pub mod testing {
         }
 
         fn select(&self, id: &str) -> Result<(), String> {
-            let mut state = self.state.lock().unwrap();
-            if state.select_fails || !state.added.iter().any(|a| a == id) {
-                return Err(format!("{id} can't be selected"));
+            {
+                let mut state = self.state.lock().unwrap();
+                if state.select_fails || !state.added.iter().any(|a| a == id) {
+                    return Err(format!("{id} can't be selected"));
+                }
+                state.selected.push(id.into());
+                state.current = id.into();
+                if id.contains(".keylayout.") {
+                    state.layout = id.into();
+                }
             }
-            state.selected.push(id.into());
-            state.current = id.into();
-            if id.contains(".keylayout.") {
-                state.layout = id.into();
+            if let Some(then) = self.on_select.lock().unwrap().as_ref() {
+                then(id);
             }
             Ok(())
         }

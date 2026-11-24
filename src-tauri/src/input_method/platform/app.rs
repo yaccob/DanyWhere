@@ -18,6 +18,9 @@ use crate::input_method::{InputMethod, InputMethodStatus, InsertFailure, Inserte
 pub struct Timeouts {
     /// For the input method to link up after its source was selected.
     pub link: Duration,
+    /// How long of `link` passes before the source is selected once more
+    /// (another source, then DanyWhere's).
+    pub reselect_after: Duration,
     /// For a text field to have the input method.
     pub client: Duration,
     /// How long of `client` passes before the activation of the application
@@ -37,6 +40,7 @@ impl Default for Timeouts {
     fn default() -> Self {
         Timeouts {
             link: Duration::from_millis(1500),
+            reselect_after: Duration::from_millis(500),
             client: Duration::from_millis(1000),
             reconnect_after: Duration::from_millis(250),
             answer: Duration::from_millis(1500),
@@ -154,6 +158,29 @@ impl AppInputMethod {
             log::warn!("Input method: selecting its source failed: {e}");
             NotSelected::Failed
         })
+    }
+
+    /// Selects another source and then DanyWhere's again, leaving the holds
+    /// and what they go back to as they are: the source from before, else
+    /// macOS's ASCII-capable layout.
+    fn select_ours_once_more(&self, id: &str) {
+        let holds = self.holds();
+        let other = holds
+            .remembered
+            .as_ref()
+            .map(|remembered| remembered.source.clone())
+            .or_else(|| self.sources.ascii_capable_layout());
+        let Some(other) = other.filter(|other| other != id) else {
+            log::debug!("Input method: no other source to select in between");
+            return;
+        };
+        if let Err(e) = self.sources.select(&other) {
+            log::warn!("Input method: selecting {other} in between failed: {e}");
+            return;
+        }
+        if let Err(e) = self.sources.select(id) {
+            log::warn!("Input method: selecting its source again failed: {e}");
+        }
     }
 
     /// Replaces the installed copy with the bundled one and registers it.
@@ -310,7 +337,22 @@ impl InputMethod for AppInputMethod {
         }
         let left =
             |limit: Duration| limit.min(self.timeouts.total.saturating_sub(started.elapsed()));
-        if !self.link.wait_connected(left(self.timeouts.link)) {
+        // A replaced copy (an update) wasn't started by the first selection
+        // of its source, but by the next one (2026-11-24).
+        if !self
+            .link
+            .wait_connected(left(self.timeouts.link.min(self.timeouts.reselect_after)))
+        {
+            log::info!(
+                "Input method: it didn't link up in {} ms; selecting its source once more",
+                started.elapsed().as_millis()
+            );
+            self.select_ours_once_more(id);
+        }
+        if !self
+            .link
+            .wait_connected(left(self.timeouts.link.saturating_sub(started.elapsed())))
+        {
             log::info!("Input method: it didn't link up in time");
             return Err(InsertFailure::NotConnected);
         }
@@ -593,6 +635,7 @@ mod tests {
     fn short() -> Timeouts {
         Timeouts {
             link: Duration::from_millis(200),
+            reselect_after: Duration::from_millis(50),
             client: Duration::from_millis(150),
             reconnect_after: Duration::from_millis(50),
             answer: Duration::from_millis(300),
@@ -882,6 +925,46 @@ mod tests {
         assert_eq!(s.im.insert("x"), Err(InsertFailure::NoClient));
         assert_eq!(s.sources.reconnects(), 1);
         s.im.end();
+    }
+
+    // --- an input method that doesn't start (after its copy was replaced,
+    // 2026-11-24) ---
+
+    #[test]
+    fn an_input_method_that_doesnt_start_at_the_first_selection_starts_at_the_next() {
+        // macOS didn't start the replaced input method when its source was
+        // selected; the next selection of it did.
+        let s = setup(true, true, false);
+        let link = s.link.clone();
+        let ours_selected = Arc::new(Mutex::new(0usize));
+        let counted = ours_selected.clone();
+        s.sources.when_selected(move |id| {
+            if id != OURS {
+                return;
+            }
+            let mut count = counted.lock().unwrap();
+            *count += 1;
+            if *count == 2 {
+                let mut state = link.state.lock().unwrap();
+                state.connected = true;
+                state.active = Some("com.apple.TextEdit".into());
+            }
+        });
+        s.im.begin();
+        assert!(s.im.insert("Nach dem Update").is_ok());
+        assert_eq!(s.sources.selected(), vec![OURS, GERMAN, OURS]);
+        s.im.end();
+        assert_eq!(s.sources.current(), GERMAN);
+    }
+
+    #[test]
+    fn an_input_method_that_never_starts_is_selected_once_more_then_given_up() {
+        let s = setup(true, true, false);
+        s.im.begin();
+        assert_eq!(s.im.insert("x"), Err(InsertFailure::NotConnected));
+        assert_eq!(s.sources.selected(), vec![OURS, GERMAN, OURS]);
+        s.im.end();
+        assert_eq!(s.sources.current(), GERMAN);
     }
 
     #[test]
