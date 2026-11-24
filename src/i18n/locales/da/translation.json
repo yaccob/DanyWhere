@@ -180,7 +180,7 @@
     "demo": {
       "title": "Tal i enhver app med én genvej",
       "hold": "<0>Klik dér, hvor du vil skrive.</0> <1>Hold din genvej nede, og tal.</1> <2>Slip, og dine ord dukker op.</2>",
-      "tap": "<0>Klik dér, hvor du vil skrive.</0> <1>Tryk på din genvej, og tal.</1> <2>Tryk igen, og dine ord dukker op.</2>",
+      "tap": "<0>Klik dér, hvor du vil skrive.</0> <1>Tryk kort på din genvej, og tal.</1> <2>Tryk kort igen, og dine ord dukker op.</2>",
       "apps": {
         "messages": "Beskeder",
         "notes": "Noter"
@@ -201,14 +201,14 @@
       "noteLabel": "Note",
       "placeholder": "Ny note",
       "hold": "Hold <keys/> nede, og tal.",
-      "tapNext": "Tryk nu på <keys/> én gang, og tal.",
+      "tapNext": "Tryk nu kort på <keys/> én gang, og tal.",
       "letGo": "Slip <keys/>, når du er færdig.",
-      "tapAgain": "Tryk på <keys/> igen, når du er færdig.",
+      "tapAgain": "Tryk kort på <keys/> igen, når du er færdig.",
       "watch": "Se på noten.",
       "changeKeys": "Skift din genvej, {{keys}}",
       "doneHold": "Highfive! Det var at holde nede.",
       "doneHoldNext": "Nu til den håndfri måde.",
-      "doneTap": "Highfive! Det var at trykke.",
+      "doneTap": "Highfive! Det var at trykke kort.",
       "doneTapNext": "Prøv nu at holde dem nede, mens du taler.",
       "giveFive": "Du fik det til! Highfive",
       "highFive": "Highfive",
@@ -225,8 +225,8 @@
     },
     "done": {
       "title": "Så er du klar",
-      "subMac": "Handy ligger nu i din menulinje. Hold eller tryk på <keys/> i en vilkårlig app for at tale.",
-      "subTray": "Handy ligger nu i dit meddelelsesområde. Hold eller tryk på <keys/> i en vilkårlig app for at tale.",
+      "subMac": "Handy ligger nu i din menulinje. Hold eller tryk kort på <keys/> i en vilkårlig app for at tale.",
+      "subTray": "Handy ligger nu i dit meddelelsesområde. Hold eller tryk kort på <keys/> i en vilkårlig app for at tale.",
       "hint": "Du kan ændre disse senere i Indstillinger",
       "highFiveLabel": "Highfive",
       "atLogin": "Start Handy, når jeg logger ind",
@@ -411,7 +411,7 @@
           "transcribe_with_post_process": {
             "name": "Anden startgenvej",
             "description": "Valgfrit: en anden tastekombination, der starter en optagelse. I fabriksindstillingen efterbehandler en afslutningsgenvej med samme tastekombination teksten. Kun optaget, så længe efterbehandling er slået til.",
-            "descriptionMacos": "Valgfrit: en anden tastekombination, der starter en optagelse. I fabriksindstillingen efterbehandles teksten, når du holder den nede og slipper den; et nyt tryk afslutter uden efterbehandling, ligesom alle afslutningsgenveje uden ⌥. Kun optaget, så længe efterbehandling er slået til."
+            "descriptionMacos": "Valgfrit: en anden tastekombination, der starter en optagelse. I fabriksindstillingen efterbehandles teksten, når du holder den nede og slipper den; et nyt kort tryk afslutter uden efterbehandling, ligesom alle afslutningsgenveje uden ⌥. Kun optaget, så længe efterbehandling er slået til."
           },
           "paste_last_transcript": {
             "name": "Indsæt seneste transskription",
@@ -462,12 +462,12 @@
         "options": {
           "holdOrToggle": "Automatisk",
           "pushToTalk": "Hold",
-          "toggle": "Skift"
+          "toggle": "Tryk kort"
         },
         "descriptions": {
           "hold_or_toggle": "Hold nede for at optage, eller tryk kort for at starte; derefter stopper en afslutningsgenvej den",
           "push_to_talk": "Optager, mens du holder genvejen nede",
-          "toggle": "Tryk kort for at starte optagelsen; et nyt tryk stopper den kun, hvis en afslutningsgenvej har samme tastekombination"
+          "toggle": "Tryk kort for at starte optagelsen; et nyt kort tryk stopper den kun, hvis en afslutningsgenvej har samme tastekombination"
         }
       },
       "insertService": {
@@ -476,7 +476,7 @@
       },
       "dictationKeyInserts": {
         "label": "Dikteringsgenvejen indsætter også",
-        "description": "Tryk på dikteringsgenvejen igen for at afslutte dikteringen og indsætte den, så snart den er klar, i apps, der understøtter macOS-tjenester. Apps, der allerede er åbne, bruger det først efter en genstart. Hvor intet kan indsættes, så brug Kopiér seneste transskription."
+        "description": "Tryk kort på dikteringsgenvejen igen for at afslutte dikteringen og indsætte den, så snart den er klar, i apps, der understøtter macOS-tjenester. Apps, der allerede er åbne, bruger det først efter en genstart. Hvor intet kan indsættes, så brug Kopiér seneste transskription."
       },
       "dictationServiceWhenIdle": {
         "title": "Når der ikke optages",
@@ -489,10 +489,10 @@
     },
     "endKeys": {
       "title": "Afslutningsgenveje",
-      "description": "Hvordan en optagelse slutter, og hvad der følger. Hver afslutningsgenvej har sin egen tastekombination, som kun er optaget under en optagelse, og bestemmer, hvad der tilføjes, om teksten efterbehandles, og om tidligere dikteringer sendes med som kontekst. En afslutningsgenvej må have en startgenvejs tastekombination: et nyt tryk på den startgenvej afslutter så på denne måde.",
+      "description": "Hvordan en optagelse slutter, og hvad der følger. Hver afslutningsgenvej har sin egen tastekombination, som kun er optaget under en optagelse, og bestemmer, hvad der tilføjes, om teksten efterbehandles, og om tidligere dikteringer sendes med som kontekst. En afslutningsgenvej må have en startgenvejs tastekombination: et nyt kort tryk på den startgenvej afslutter så på denne måde.",
       "name": "Navn",
       "shortcutHint": "Et tryk på denne tastekombination under en optagelse afslutter den på denne måde. Den er kun optaget under en optagelse.",
-      "sameAsStart": "Samme tastekombination som »{{start}}«: et nyt tryk under en optagelse afslutter på denne måde.",
+      "sameAsStart": "Samme tastekombination som »{{start}}«: et nyt kort tryk under en optagelse afslutter på denne måde.",
       "append": "Tilføj",
       "appendDescription": "Tilføjes til en diktering, der slutter på denne måde: teksten og derefter det tastetryk, du vælger. I teksten er \\s et mellemrum, \\n en ny linje, \\t en tabulator og \\\\ en omvendt skråstreg; alt andet tilføjes, som det står. Tastetrykket sendes kun, når teksten indsættes.",
       "postProcess": "Efterbehandl",
@@ -508,6 +508,10 @@
         "title": "Når den holdes nede",
         "description": "Hvordan slip af en startgenvej, der holdes nede, afslutter optagelsen."
       },
+      "tapEnds": {
+        "title": "Når den trykkes kort",
+        "description": "Hvordan et kort tryk på en afslutningsgenvej afslutter optagelsen."
+      },
       "factoryNames": {
         "pattern": "{{mode}} · {{effect}}",
         "direct": "Direkte",
@@ -519,7 +523,7 @@
         "enter": "Send Enter",
         "shiftEnter": "Send Shift+Enter"
       },
-      "linuxNoShortcuts": "På Linux optages afslutningsgenvejenes tastekombinationer ikke under en optagelse. Der slutter en optagelse, når en startgenvej, der holdes nede, slippes, eller når der igen trykkes på en startgenvej, hvis tastekombination en afslutningsgenvej har.",
+      "linuxNoShortcuts": "På Linux optages afslutningsgenvejenes tastekombinationer ikke under en optagelse. Der slutter en optagelse, når en startgenvej, der holdes nede, slippes, eller når der igen trykkes kort på en startgenvej, hvis tastekombination en afslutningsgenvej har.",
       "errors": {
         "save": "Afslutningsgenvejene kunne ikke gemmes: {{error}}",
         "needsShortcut": "Hver afslutningsgenvej skal have en tastekombination.",
@@ -1267,7 +1271,7 @@
       },
       "holdThreshold": {
         "title": "Holdetærskel",
-        "description": "Kun i automatisk tilstand: hvor længe (i millisekunder) genvejen skal holdes nede, før det tæller som et hold i stedet for et tryk. Sænk værdien, hvis korte hold lader optagelsen køre videre; hæv den, hvis bevidste tryk behandles som hold."
+        "description": "Kun i automatisk tilstand: hvor længe (i millisekunder) genvejen skal holdes nede, før det tæller som et hold i stedet for et kort tryk. Sænk værdien, hvis korte hold lader optagelsen køre videre; hæv den, hvis bevidste korte tryk behandles som hold."
       },
       "reliablePaste": {
         "title": "Pålidelig indsættelse (Beta)",

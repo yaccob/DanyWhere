@@ -411,7 +411,7 @@
           "transcribe_with_post_process": {
             "name": "Second Start Shortcut",
             "description": "Optional: a second combination that starts a recording. Out of the box, an end shortcut with the same combination post-processes the text. Taken only while post-processing is on.",
-            "descriptionMacos": "Optional: a second combination that starts a recording. Out of the box, releasing it after holding it post-processes the text; pressing it again ends without post-processing, as every end shortcut without ⌥ does. Taken only while post-processing is on."
+            "descriptionMacos": "Optional: a second combination that starts a recording. Out of the box, releasing it after holding it post-processes the text; tapping it again ends without post-processing, as every end shortcut without ⌥ does. Taken only while post-processing is on."
           },
           "paste_last_transcript": {
             "name": "Paste Last Transcript",
@@ -462,7 +462,7 @@
         "options": {
           "holdOrToggle": "Auto",
           "pushToTalk": "Hold",
-          "toggle": "Toggle"
+          "toggle": "Tap"
         },
         "descriptions": {
           "hold_or_toggle": "Hold to record, or tap to start; then an end shortcut stops it",
@@ -476,7 +476,7 @@
       },
       "dictationKeyInserts": {
         "label": "Dictation Shortcut Also Inserts",
-        "description": "Press the dictation shortcut again to end the dictation and insert it as soon as it's ready, in apps that support macOS services. Apps that are already open pick this up after a restart. Where nothing can be inserted, use Copy Last Transcript."
+        "description": "Tap the dictation shortcut again to end the dictation and insert it as soon as it's ready, in apps that support macOS services. Apps that are already open pick this up after a restart. Where nothing can be inserted, use Copy Last Transcript."
       },
       "dictationServiceWhenIdle": {
         "title": "When Nothing Is Being Recorded",
@@ -489,10 +489,10 @@
     },
     "endKeys": {
       "title": "End Shortcuts",
-      "description": "How a recording ends and what follows. Each end shortcut has a key combination of its own, taken only while recording, and says what is appended, whether the text is post-processed and whether earlier dictations go along as context. An end shortcut may have a start shortcut's combination: pressing that start shortcut again then ends this way.",
+      "description": "How a recording ends and what follows. Each end shortcut has a key combination of its own, taken only while recording, and says what is appended, whether the text is post-processed and whether earlier dictations go along as context. An end shortcut may have a start shortcut's combination: tapping that start shortcut again then ends this way.",
       "name": "Name",
       "shortcutHint": "Pressing this combination during a recording ends it this way. It is taken only while recording.",
-      "sameAsStart": "Same combination as “{{start}}”: pressing it again during a recording ends this way.",
+      "sameAsStart": "Same combination as “{{start}}”: tapping it again during a recording ends this way.",
       "append": "Append",
       "appendDescription": "Appended to a dictation that ends this way: the text, then the key press you choose. In the text, \\s is a space, \\n a new line, \\t a tab and \\\\ a backslash; everything else is appended as written. The key press is sent only when the text is pasted.",
       "postProcess": "Post-process",
@@ -508,6 +508,10 @@
         "title": "When Held",
         "description": "How releasing a held start shortcut ends the recording."
       },
+      "tapEnds": {
+        "title": "When Tapped",
+        "description": "How tapping an end shortcut ends the recording."
+      },
       "factoryNames": {
         "pattern": "{{mode}} · {{effect}}",
         "direct": "Direct",
@@ -519,7 +523,7 @@
         "enter": "Send Enter",
         "shiftEnter": "Send Shift+Enter"
       },
-      "linuxNoShortcuts": "On Linux, the combinations of end shortcuts aren't taken while recording. A recording ends there when a held start shortcut is released, or when a start shortcut is pressed again whose combination an end shortcut has.",
+      "linuxNoShortcuts": "On Linux, the combinations of end shortcuts aren't taken while recording. A recording ends there when a held start shortcut is released, or when a start shortcut is tapped again whose combination an end shortcut has.",
       "errors": {
         "save": "Couldn't save the end shortcuts: {{error}}",
         "needsShortcut": "Every end shortcut needs a key combination.",

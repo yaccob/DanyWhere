@@ -179,8 +179,8 @@
     },
     "demo": {
       "title": "Sprich in jeder App, mit einem Tastenkürzel",
-      "hold": "<0>Klicke dorthin, wo du tippen würdest.</0> <1>Halte dein Tastenkürzel gedrückt und sprich.</1> <2>Lass los, und deine Worte erscheinen.</2>",
-      "tap": "<0>Klicke dorthin, wo du tippen würdest.</0> <1>Tippe auf dein Tastenkürzel und sprich.</1> <2>Tippe erneut, und deine Worte erscheinen.</2>",
+      "hold": "<0>Klicke dorthin, wo du schreiben würdest.</0> <1>Halte dein Tastenkürzel gedrückt und sprich.</1> <2>Lass los, und deine Worte erscheinen.</2>",
+      "tap": "<0>Klicke dorthin, wo du schreiben würdest.</0> <1>Tippe dein Tastenkürzel an und sprich.</1> <2>Tippe es erneut an, und deine Worte erscheinen.</2>",
       "apps": {
         "messages": "Nachrichten",
         "notes": "Notizen"
@@ -201,14 +201,14 @@
       "noteLabel": "Notiz",
       "placeholder": "Neue Notiz",
       "hold": "Halte <keys/> gedrückt und sprich.",
-      "tapNext": "Tippe jetzt einmal auf <keys/> und sprich dann.",
+      "tapNext": "Tippe <keys/> jetzt einmal an und sprich dann.",
       "letGo": "Lass <keys/> los, wenn du fertig bist.",
-      "tapAgain": "Tippe erneut auf <keys/>, wenn du fertig bist.",
+      "tapAgain": "Tippe <keys/> erneut an, wenn du fertig bist.",
       "watch": "Schau auf die Notiz.",
       "changeKeys": "Tastenkürzel ändern, {{keys}}",
       "doneHold": "Abklatschen! Das war Halten.",
       "doneHoldNext": "Als Nächstes: freihändig.",
-      "doneTap": "Hoch die Hände! Das war Tippen.",
+      "doneTap": "Hoch die Hände! Das war Antippen.",
       "doneTapNext": "Probier jetzt, sie beim Sprechen gedrückt zu halten.",
       "giveFive": "Geschafft! Gib mir fünf",
       "highFive": "High Five",
@@ -225,8 +225,8 @@
     },
     "done": {
       "title": "Alles bereit",
-      "subMac": "Handy ist jetzt in deiner Menüleiste. Halte <keys/> gedrückt oder tippe darauf, um in jeder App zu sprechen.",
-      "subTray": "Handy ist jetzt in deinem Infobereich. Halte <keys/> gedrückt oder tippe darauf, um in jeder App zu sprechen.",
+      "subMac": "Handy ist jetzt in deiner Menüleiste. Halte <keys/> gedrückt oder tippe sie an, um in jeder App zu sprechen.",
+      "subTray": "Handy ist jetzt in deinem Infobereich. Halte <keys/> gedrückt oder tippe sie an, um in jeder App zu sprechen.",
       "hint": "Du kannst das später in den Einstellungen ändern",
       "highFiveLabel": "High Five",
       "atLogin": "Handy beim Anmelden starten",
@@ -411,7 +411,7 @@
           "transcribe_with_post_process": {
             "name": "Zweite Starttaste",
             "description": "Optional: eine zweite Tastenkombination, die eine Aufnahme startet. Ab Werk bearbeitet eine Endtaste mit derselben Tastenkombination den Text nach. Nur belegt, solange die Nachbearbeitung eingeschaltet ist.",
-            "descriptionMacos": "Optional: eine zweite Tastenkombination, die eine Aufnahme startet. Ab Werk wird der Text nachbearbeitet, wenn man sie hält und loslässt; ein erneuter Druck beendet ohne Nachbearbeitung, wie jede Endtaste ohne ⌥. Nur belegt, solange die Nachbearbeitung eingeschaltet ist."
+            "descriptionMacos": "Optional: eine zweite Tastenkombination, die eine Aufnahme startet. Ab Werk wird der Text nachbearbeitet, wenn man sie hält und loslässt; erneutes Antippen beendet ohne Nachbearbeitung, wie jede Endtaste ohne ⌥. Nur belegt, solange die Nachbearbeitung eingeschaltet ist."
           },
           "paste_last_transcript": {
             "name": "Letzte Transkription einfügen",
@@ -462,7 +462,7 @@
         "options": {
           "holdOrToggle": "Automatisch",
           "pushToTalk": "Halten",
-          "toggle": "Umschalten"
+          "toggle": "Antippen"
         },
         "descriptions": {
           "hold_or_toggle": "Gedrückt halten zum Aufnehmen oder antippen zum Starten; dann beendet eine Endtaste",
@@ -475,8 +475,8 @@
         "conflict": "„{{name}}“ verwendet dieses Kürzel schon"
       },
       "dictationKeyInserts": {
-        "label": "Tastenkombination fügt beim zweiten Druck ein",
-        "description": "Drück die Tastenkombination fürs Diktieren ein zweites Mal, um das Diktat zu beenden und einzufügen, sobald es fertig ist, in Apps, die macOS-Dienste unterstützen. Apps, die schon geöffnet sind, übernehmen das erst nach einem Neustart. Wo sich nichts einfügen lässt, nimm „Letzte Transkription kopieren“."
+        "label": "Tastenkombination fügt beim erneuten Antippen ein",
+        "description": "Tipp die Tastenkombination fürs Diktieren erneut an, um das Diktat zu beenden und einzufügen, sobald es fertig ist, in Apps, die macOS-Dienste unterstützen. Apps, die schon geöffnet sind, übernehmen das erst nach einem Neustart. Wo sich nichts einfügen lässt, nimm „Letzte Transkription kopieren“."
       },
       "dictationServiceWhenIdle": {
         "title": "Wenn gerade nichts aufgenommen wird",
@@ -489,10 +489,10 @@
     },
     "endKeys": {
       "title": "Endtasten",
-      "description": "Wie eine Aufnahme endet und was folgt. Jede Endtaste hat eine eigene Tastenkombination, die nur während einer Aufnahme belegt ist, und legt fest, was angehängt wird, ob der Text nachbearbeitet wird und ob frühere Diktate als Kontext mitgehen. Eine Endtaste darf die Tastenkombination einer Starttaste haben: Ein erneuter Druck dieser Starttaste beendet dann so.",
+      "description": "Wie eine Aufnahme endet und was folgt. Jede Endtaste hat eine eigene Tastenkombination, die nur während einer Aufnahme belegt ist, und legt fest, was angehängt wird, ob der Text nachbearbeitet wird und ob frühere Diktate als Kontext mitgehen. Eine Endtaste darf die Tastenkombination einer Starttaste haben: Erneutes Antippen dieser Starttaste beendet dann so.",
       "name": "Name",
       "shortcutHint": "Diese Tastenkombination beendet eine laufende Aufnahme auf diese Weise. Sie ist nur während einer Aufnahme belegt.",
-      "sameAsStart": "Dieselbe Tastenkombination wie „{{start}}“: Ein erneuter Druck während einer Aufnahme beendet so.",
+      "sameAsStart": "Dieselbe Tastenkombination wie „{{start}}“: Erneutes Antippen während einer Aufnahme beendet so.",
       "append": "Anhängen",
       "appendDescription": "Wird an ein Diktat angehängt, das so endet: der Text, dann der gewählte Tastendruck. Im Text ist \\s ein Leerzeichen, \\n ein Zeilenumbruch, \\t ein Tabulator und \\\\ ein Backslash; alles andere wird angehängt, wie es dasteht. Der Tastendruck wird nur gesendet, wenn der Text eingefügt wird.",
       "postProcess": "Nachbearbeiten",
@@ -508,6 +508,10 @@
         "title": "Beim Halten",
         "description": "Wie das Loslassen einer gehaltenen Starttaste die Aufnahme beendet."
       },
+      "tapEnds": {
+        "title": "Beim Antippen",
+        "description": "Wie das Antippen einer Endtaste die Aufnahme beendet."
+      },
       "factoryNames": {
         "pattern": "{{mode}} · {{effect}}",
         "direct": "Direkt",
@@ -519,7 +523,7 @@
         "enter": "Enter senden",
         "shiftEnter": "Shift-Enter senden"
       },
-      "linuxNoShortcuts": "Unter Linux werden die Tastenkombinationen der Endtasten während einer Aufnahme nicht belegt. Eine Aufnahme endet dort, wenn man eine gehaltene Starttaste loslässt oder eine Starttaste erneut drückt, deren Tastenkombination eine Endtaste hat.",
+      "linuxNoShortcuts": "Unter Linux werden die Tastenkombinationen der Endtasten während einer Aufnahme nicht belegt. Eine Aufnahme endet dort, wenn man eine gehaltene Starttaste loslässt oder eine Starttaste erneut antippt, deren Tastenkombination eine Endtaste hat.",
       "errors": {
         "save": "Die Endtasten konnten nicht gespeichert werden: {{error}}",
         "needsShortcut": "Jede Endtaste braucht eine Tastenkombination.",
@@ -1267,7 +1271,7 @@
       },
       "holdThreshold": {
         "title": "Halte-Schwellenwert",
-        "description": "Nur im Modus „Automatisch“: wie lange (in Millisekunden) die Tastenkombination gedrückt bleiben muss, damit sie als Halten statt als Tippen zählt. Verringern, wenn die Aufnahme nach kurzem Halten weiterläuft; erhöhen, wenn bewusstes Tippen als Halten gewertet wird."
+        "description": "Nur im Modus „Automatisch“: wie lange (in Millisekunden) die Tastenkombination gedrückt bleiben muss, damit sie als Halten statt als Antippen zählt. Verringern, wenn die Aufnahme nach kurzem Halten weiterläuft; erhöhen, wenn bewusstes Antippen als Halten gewertet wird."
       },
       "reliablePaste": {
         "title": "Zuverlässiges Einfügen (Beta)",

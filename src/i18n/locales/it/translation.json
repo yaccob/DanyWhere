@@ -411,7 +411,7 @@
           "transcribe_with_post_process": {
             "name": "Seconda scorciatoia di avvio",
             "description": "Facoltativo: una seconda combinazione che avvia una registrazione. Di fabbrica, una scorciatoia di fine con la stessa combinazione post-elabora il testo. Occupata solo finché la post-elaborazione è attiva.",
-            "descriptionMacos": "Facoltativo: una seconda combinazione che avvia una registrazione. Di fabbrica, rilasciarla dopo averla tenuta premuta post-elabora il testo; premerla di nuovo termina senza post-elaborazione, come ogni scorciatoia di fine senza ⌥. Occupata solo finché la post-elaborazione è attiva."
+            "descriptionMacos": "Facoltativo: una seconda combinazione che avvia una registrazione. Di fabbrica, rilasciarla dopo averla tenuta premuta post-elabora il testo; toccarla di nuovo termina senza post-elaborazione, come ogni scorciatoia di fine senza ⌥. Occupata solo finché la post-elaborazione è attiva."
           },
           "paste_last_transcript": {
             "name": "Incolla l'ultima trascrizione",
@@ -462,7 +462,7 @@
         "options": {
           "holdOrToggle": "Automatico",
           "pushToTalk": "Tieni premuto",
-          "toggle": "Alterna"
+          "toggle": "Tocca"
         },
         "descriptions": {
           "hold_or_toggle": "Tieni premuto per registrare, o tocca per avviare; poi una scorciatoia di fine ferma la registrazione",
@@ -476,7 +476,7 @@
       },
       "dictationKeyInserts": {
         "label": "La scorciatoia di dettatura inserisce anche",
-        "description": "Premi di nuovo la scorciatoia di dettatura per terminare la dettatura e inserirla non appena è pronta, nelle app che supportano i servizi di macOS. Le app già aperte lo applicano dopo un riavvio. Dove non si può inserire nulla, usa «Copia l'ultima trascrizione»."
+        "description": "Tocca di nuovo la scorciatoia di dettatura per terminare la dettatura e inserirla non appena è pronta, nelle app che supportano i servizi di macOS. Le app già aperte lo applicano dopo un riavvio. Dove non si può inserire nulla, usa «Copia l'ultima trascrizione»."
       },
       "dictationServiceWhenIdle": {
         "title": "Quando non si sta registrando",
@@ -489,10 +489,10 @@
     },
     "endKeys": {
       "title": "Scorciatoie di fine",
-      "description": "Come termina una registrazione e cosa segue. Ogni scorciatoia di fine ha una propria combinazione di tasti, occupata solo durante la registrazione, e stabilisce cosa viene aggiunto, se il testo viene post-elaborato e se le dettature precedenti vengono inviate come contesto. Una scorciatoia di fine può avere la combinazione di una scorciatoia di avvio: premere di nuovo quella scorciatoia di avvio termina allora in questo modo.",
+      "description": "Come termina una registrazione e cosa segue. Ogni scorciatoia di fine ha una propria combinazione di tasti, occupata solo durante la registrazione, e stabilisce cosa viene aggiunto, se il testo viene post-elaborato e se le dettature precedenti vengono inviate come contesto. Una scorciatoia di fine può avere la combinazione di una scorciatoia di avvio: toccare di nuovo quella scorciatoia di avvio termina allora in questo modo.",
       "name": "Nome",
       "shortcutHint": "Premere questa combinazione durante una registrazione la termina in questo modo. È occupata solo durante la registrazione.",
-      "sameAsStart": "Stessa combinazione di «{{start}}»: premerla di nuovo durante una registrazione la termina in questo modo.",
+      "sameAsStart": "Stessa combinazione di «{{start}}»: toccarla di nuovo durante una registrazione la termina in questo modo.",
       "append": "Aggiungi alla fine",
       "appendDescription": "Aggiunto a una dettatura che termina in questo modo: il testo, poi il tasto che scegli. Nel testo \\s è uno spazio, \\n un a capo, \\t una tabulazione e \\\\ una barra rovesciata; tutto il resto viene aggiunto così com'è scritto. Il tasto viene inviato solo quando il testo viene incollato.",
       "postProcess": "Post-elabora",
@@ -508,6 +508,10 @@
         "title": "Tenendo premuto",
         "description": "Come il rilascio di una scorciatoia di avvio tenuta premuta termina la registrazione."
       },
+      "tapEnds": {
+        "title": "Toccando",
+        "description": "Come il tocco di una scorciatoia di fine termina la registrazione."
+      },
       "factoryNames": {
         "pattern": "{{mode}} · {{effect}}",
         "direct": "Diretto",
@@ -519,7 +523,7 @@
         "enter": "Invia Invio",
         "shiftEnter": "Invia Maiusc+Invio"
       },
-      "linuxNoShortcuts": "Su Linux le combinazioni delle scorciatoie di fine non vengono occupate durante la registrazione. Lì una registrazione termina quando si rilascia una scorciatoia di avvio tenuta premuta, o quando si preme di nuovo una scorciatoia di avvio la cui combinazione appartiene anche a una scorciatoia di fine.",
+      "linuxNoShortcuts": "Su Linux le combinazioni delle scorciatoie di fine non vengono occupate durante la registrazione. Lì una registrazione termina quando si rilascia una scorciatoia di avvio tenuta premuta, o quando si tocca di nuovo una scorciatoia di avvio la cui combinazione appartiene anche a una scorciatoia di fine.",
       "errors": {
         "save": "Impossibile salvare le scorciatoie di fine: {{error}}",
         "needsShortcut": "Ogni scorciatoia di fine ha bisogno di una combinazione di tasti.",
@@ -1267,7 +1271,7 @@
       },
       "holdThreshold": {
         "title": "Soglia di pressione prolungata",
-        "description": "Solo in modalità Automatico: per quanto tempo (in millisecondi) la scorciatoia deve restare premuta per contare come pressione prolungata invece di un tocco. Riduci se la registrazione resta attiva dopo pressioni brevi; aumenta se i tocchi intenzionali vengono interpretati come pressioni prolungate."
+        "description": "Solo in modalità Automatico: per quanto tempo (in millisecondi) la scorciatoia deve restare premuta per contare come pressione prolungata invece di un tocco. Riduci se la registrazione resta attiva dopo averla tenuta premuta brevemente; aumenta se i tocchi intenzionali vengono interpretati come pressioni prolungate."
       },
       "reliablePaste": {
         "title": "Incolla affidabile (Beta)",

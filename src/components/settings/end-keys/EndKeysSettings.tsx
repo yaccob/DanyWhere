@@ -6,6 +6,7 @@ import { notify } from "@/stores/noticeStore";
 import { useSettings } from "@/hooks/useSettings";
 import { postProcessingOn } from "@/lib/endKeys";
 import { SettingsGroup } from "../../ui/SettingsGroup";
+import { InfoTooltip } from "../../ui/InfoTooltip";
 // DanyWhere: the "?" to the manual's chapter on start and end shortcuts.
 import { ManualHelpButton } from "../../ui/ManualHelpButton";
 import { MANUAL_PAGES } from "@/lib/manual";
@@ -23,6 +24,9 @@ interface EndKeysSettingsProps {
   before?: React.ReactNode;
   /** Rows below the list, e.g. the cancel shortcut. */
   after?: React.ReactNode;
+  /** Heads the list with "When Tapped", in the list's own row, so that a
+   * heading above it ("When Held") doesn't read as the whole card's. */
+  tapHeading?: boolean;
 }
 
 /**
@@ -30,11 +34,14 @@ interface EndKeysSettingsProps {
  * 2026-11-22_2134): the list of the page's scope (the defaults or a
  * profile; outside one, the values in use). The page General puts "When
  * Held" above it and Cancel below it (`before`, `after`; user, 2026-11-24),
- * so the card holds every way a recording ends.
+ * so the card holds every way a recording ends, and then heads the list
+ * with "When Tapped" (`tapHeading`; user, 2026-11-24, sidecar qa
+ * 2026-11-24_1716): holding and tapping are the two gestures.
  */
 export const EndKeysSettings: React.FC<EndKeysSettingsProps> = ({
   before,
   after,
+  tapHeading = false,
 }) => {
   const { t } = useTranslation();
   const { getSetting, refreshSettings } = useSettings();
@@ -96,19 +103,30 @@ export const EndKeysSettings: React.FC<EndKeysSettingsProps> = ({
         </p>
       )}
       {before}
-      <ScopedSetting field="end_keys">
-        <EndKeysEditor
-          value={endKeys}
-          bindings={bindings}
-          disabled={busy}
-          postProcessingOff={postProcessingOff}
-          onChange={(next) =>
-            scope
-              ? save("end_keys", next)
-              : run(() => commands.changeEndKeysSetting(next))
-          }
-        />
-      </ScopedSetting>
+      <div>
+        {tapHeading && (
+          // The same heading as a stacked setting's (`SettingContainer`).
+          <div className="flex items-center gap-2 px-4 pt-3">
+            <h3 className="text-sm font-medium">
+              {t("settings.endKeys.tapEnds.title")}
+            </h3>
+            <InfoTooltip text={t("settings.endKeys.tapEnds.description")} />
+          </div>
+        )}
+        <ScopedSetting field="end_keys">
+          <EndKeysEditor
+            value={endKeys}
+            bindings={bindings}
+            disabled={busy}
+            postProcessingOff={postProcessingOff}
+            onChange={(next) =>
+              scope
+                ? save("end_keys", next)
+                : run(() => commands.changeEndKeysSetting(next))
+            }
+          />
+        </ScopedSetting>
+      </div>
       {after}
     </SettingsGroup>
   );

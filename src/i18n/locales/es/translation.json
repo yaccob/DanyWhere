@@ -411,7 +411,7 @@
           "transcribe_with_post_process": {
             "name": "Segundo atajo de inicio",
             "description": "Opcional: una segunda combinación que inicia una grabación. De fábrica, un atajo de fin con la misma combinación posprocesa el texto. Solo se ocupa mientras el posprocesamiento está activado.",
-            "descriptionMacos": "Opcional: una segunda combinación que inicia una grabación. De fábrica, soltarla tras mantenerla pulsada posprocesa el texto; volver a pulsarla termina sin posprocesamiento, como todo atajo de fin sin ⌥. Solo se ocupa mientras el posprocesamiento está activado."
+            "descriptionMacos": "Opcional: una segunda combinación que inicia una grabación. De fábrica, soltarla tras mantenerla pulsada posprocesa el texto; volver a tocarla termina sin posprocesamiento, como todo atajo de fin sin ⌥. Solo se ocupa mientras el posprocesamiento está activado."
           },
           "paste_last_transcript": {
             "name": "Pegar la última transcripción",
@@ -462,7 +462,7 @@
         "options": {
           "holdOrToggle": "Automático",
           "pushToTalk": "Mantener",
-          "toggle": "Alternar"
+          "toggle": "Tocar"
         },
         "descriptions": {
           "hold_or_toggle": "Mantén pulsado para grabar, o toca para empezar; después un atajo de fin detiene la grabación",
@@ -476,7 +476,7 @@
       },
       "dictationKeyInserts": {
         "label": "El atajo de dictado también inserta",
-        "description": "Vuelve a pulsar el atajo de dictado para terminar el dictado e insertarlo en cuanto esté listo, en las apps que admiten los servicios de macOS. Las apps que ya están abiertas lo aplican después de reiniciarlas. Donde no se pueda insertar nada, usa «Copiar la última transcripción»."
+        "description": "Vuelve a tocar el atajo de dictado para terminar el dictado e insertarlo en cuanto esté listo, en las apps que admiten los servicios de macOS. Las apps que ya están abiertas lo aplican después de reiniciarlas. Donde no se pueda insertar nada, usa «Copiar la última transcripción»."
       },
       "dictationServiceWhenIdle": {
         "title": "Cuando no se está grabando nada",
@@ -489,10 +489,10 @@
     },
     "endKeys": {
       "title": "Atajos de fin",
-      "description": "Cómo termina una grabación y qué sigue. Cada atajo de fin tiene su propia combinación de teclas, que solo se ocupa mientras se graba, e indica qué se añade, si el texto se posprocesa y si los dictados anteriores se envían como contexto. Un atajo de fin puede tener la combinación de un atajo de inicio: volver a pulsar ese atajo de inicio termina entonces de esta manera.",
+      "description": "Cómo termina una grabación y qué sigue. Cada atajo de fin tiene su propia combinación de teclas, que solo se ocupa mientras se graba, e indica qué se añade, si el texto se posprocesa y si los dictados anteriores se envían como contexto. Un atajo de fin puede tener la combinación de un atajo de inicio: volver a tocar ese atajo de inicio termina entonces de esta manera.",
       "name": "Nombre",
       "shortcutHint": "Pulsar esta combinación durante una grabación la termina de esta manera. Solo se ocupa mientras se graba.",
-      "sameAsStart": "La misma combinación que «{{start}}»: volver a pulsarla durante una grabación la termina de esta manera.",
+      "sameAsStart": "La misma combinación que «{{start}}»: volver a tocarla durante una grabación la termina de esta manera.",
       "append": "Añadir al final",
       "appendDescription": "Se añade a un dictado que termina de esta manera: el texto y luego la pulsación de tecla que elijas. En el texto, \\s es un espacio, \\n un salto de línea, \\t una tabulación y \\\\ una barra invertida; todo lo demás se añade tal como está escrito. La pulsación de tecla solo se envía cuando se pega el texto.",
       "postProcess": "Posprocesar",
@@ -508,6 +508,10 @@
         "title": "Al mantener pulsado",
         "description": "Cómo termina la grabación al soltar un atajo de inicio mantenido."
       },
+      "tapEnds": {
+        "title": "Al tocar",
+        "description": "Cómo termina la grabación al tocar un atajo de fin."
+      },
       "factoryNames": {
         "pattern": "{{mode}} · {{effect}}",
         "direct": "Directo",
@@ -519,7 +523,7 @@
         "enter": "Enviar Enter",
         "shiftEnter": "Enviar Mayús+Enter"
       },
-      "linuxNoShortcuts": "En Linux, las combinaciones de los atajos de fin no se ocupan mientras se graba. Allí una grabación termina al soltar un atajo de inicio mantenido, o al volver a pulsar un atajo de inicio cuya combinación tiene un atajo de fin.",
+      "linuxNoShortcuts": "En Linux, las combinaciones de los atajos de fin no se ocupan mientras se graba. Allí una grabación termina al soltar un atajo de inicio mantenido, o al volver a tocar un atajo de inicio cuya combinación tiene un atajo de fin.",
       "errors": {
         "save": "No se pudieron guardar los atajos de fin: {{error}}",
         "needsShortcut": "Cada atajo de fin necesita una combinación de teclas.",
@@ -1267,7 +1271,7 @@
       },
       "holdThreshold": {
         "title": "Umbral de pulsación",
-        "description": "Solo en el modo Automático: cuánto tiempo (en milisegundos) debe mantenerse pulsado el atajo para contar como mantener en lugar de un toque. Redúcelo si la grabación sigue activa tras pulsaciones cortas; auméntalo si los toques deliberados se interpretan como mantener."
+        "description": "Solo en el modo Automático: cuánto tiempo (en milisegundos) debe mantenerse pulsado el atajo para contar como mantener en lugar de un toque. Redúcelo si la grabación sigue activa tras mantenerlo pulsado poco tiempo; auméntalo si los toques deliberados se interpretan como mantener."
       },
       "reliablePaste": {
         "title": "Pegado fiable (Beta)",

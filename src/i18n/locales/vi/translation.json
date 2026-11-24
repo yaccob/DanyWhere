@@ -180,7 +180,7 @@
     "demo": {
       "title": "Nói trong mọi ứng dụng, chỉ với một phím tắt",
       "hold": "<0>Nhấp vào nơi bạn muốn gõ.</0> <1>Giữ phím tắt và nói.</1> <2>Thả ra, và lời bạn nói sẽ hiện lên.</2>",
-      "tap": "<0>Nhấp vào nơi bạn muốn gõ.</0> <1>Nhấn phím tắt và nói.</1> <2>Nhấn lại, và lời bạn nói sẽ hiện lên.</2>",
+      "tap": "<0>Nhấp vào nơi bạn muốn gõ.</0> <1>Nhấn nhanh phím tắt và nói.</1> <2>Nhấn nhanh lại, và lời bạn nói sẽ hiện lên.</2>",
       "apps": {
         "messages": "Tin nhắn",
         "notes": "Ghi chú"
@@ -201,14 +201,14 @@
       "noteLabel": "Ghi chú",
       "placeholder": "Ghi chú mới",
       "hold": "Giữ <keys/> và nói.",
-      "tapNext": "Giờ nhấn <keys/> một lần, rồi nói.",
+      "tapNext": "Giờ nhấn nhanh <keys/> một lần, rồi nói.",
       "letGo": "Thả <keys/> ra khi bạn nói xong.",
-      "tapAgain": "Nhấn <keys/> lần nữa khi bạn nói xong.",
+      "tapAgain": "Nhấn nhanh <keys/> lần nữa khi bạn nói xong.",
       "watch": "Nhìn vào ghi chú nhé.",
       "changeKeys": "Đổi phím tắt của bạn, {{keys}}",
       "doneHold": "Đập tay nào! Đó là cách giữ phím.",
       "doneHoldNext": "Tiếp theo, cách rảnh tay.",
-      "doneTap": "Đập tay nào! Đó là cách nhấn phím.",
+      "doneTap": "Đập tay nào! Đó là cách nhấn nhanh phím.",
       "doneTapNext": "Giờ thử giữ phím trong lúc nói nhé.",
       "giveFive": "Bạn làm được rồi! Đập tay nào",
       "highFive": "Đập tay",
@@ -225,8 +225,8 @@
     },
     "done": {
       "title": "Mọi thứ đã sẵn sàng",
-      "subMac": "Handy giờ đã ở trên thanh menu. Giữ hoặc nhấn <keys/> trong bất kỳ ứng dụng nào để nói.",
-      "subTray": "Handy giờ đã ở trong khay hệ thống. Giữ hoặc nhấn <keys/> trong bất kỳ ứng dụng nào để nói.",
+      "subMac": "Handy giờ đã ở trên thanh menu. Giữ hoặc nhấn nhanh <keys/> trong bất kỳ ứng dụng nào để nói.",
+      "subTray": "Handy giờ đã ở trong khay hệ thống. Giữ hoặc nhấn nhanh <keys/> trong bất kỳ ứng dụng nào để nói.",
       "hint": "Bạn có thể thay đổi những mục này sau trong Cài đặt",
       "highFiveLabel": "Đập tay",
       "atLogin": "Khởi động Handy khi tôi đăng nhập",
@@ -411,7 +411,7 @@
           "transcribe_with_post_process": {
             "name": "Phím tắt bắt đầu thứ hai",
             "description": "Tùy chọn: tổ hợp phím thứ hai để bắt đầu ghi âm. Theo cài đặt gốc, phím tắt kết thúc có cùng tổ hợp phím sẽ xử lý hậu kỳ văn bản. Chỉ được chiếm khi xử lý hậu kỳ đang bật.",
-            "descriptionMacos": "Tùy chọn: tổ hợp phím thứ hai để bắt đầu ghi âm. Theo cài đặt gốc, giữ rồi thả tổ hợp này sẽ xử lý hậu kỳ văn bản; nhấn lại sẽ kết thúc mà không xử lý hậu kỳ, như mọi phím tắt kết thúc không có ⌥. Chỉ được chiếm khi xử lý hậu kỳ đang bật."
+            "descriptionMacos": "Tùy chọn: tổ hợp phím thứ hai để bắt đầu ghi âm. Theo cài đặt gốc, giữ rồi thả tổ hợp này sẽ xử lý hậu kỳ văn bản; nhấn nhanh lại sẽ kết thúc mà không xử lý hậu kỳ, như mọi phím tắt kết thúc không có ⌥. Chỉ được chiếm khi xử lý hậu kỳ đang bật."
           },
           "paste_last_transcript": {
             "name": "Dán bản chép gần nhất",
@@ -462,12 +462,12 @@
         "options": {
           "holdOrToggle": "Tự động",
           "pushToTalk": "Giữ",
-          "toggle": "Bật/tắt"
+          "toggle": "Nhấn nhanh"
         },
         "descriptions": {
           "hold_or_toggle": "Giữ để ghi âm, hoặc nhấn nhanh để bắt đầu; sau đó một phím tắt kết thúc sẽ dừng",
           "push_to_talk": "Ghi âm trong lúc bạn giữ phím tắt",
-          "toggle": "Nhấn nhanh để bắt đầu ghi âm; nhấn lại chỉ dừng nếu một phím tắt kết thúc có cùng tổ hợp phím"
+          "toggle": "Nhấn nhanh để bắt đầu ghi âm; nhấn nhanh lại chỉ dừng nếu một phím tắt kết thúc có cùng tổ hợp phím"
         }
       },
       "insertService": {
@@ -476,7 +476,7 @@
       },
       "dictationKeyInserts": {
         "label": "Phím tắt đọc chính tả cũng chèn văn bản",
-        "description": "Nhấn phím tắt đọc chính tả lần nữa để kết thúc và chèn bản đọc ngay khi sẵn sàng, trong các ứng dụng hỗ trợ dịch vụ của macOS. Các ứng dụng đang mở chỉ áp dụng sau khi khởi động lại. Ở nơi không thể chèn gì, hãy dùng Sao chép bản chép gần nhất."
+        "description": "Nhấn nhanh phím tắt đọc chính tả lần nữa để kết thúc và chèn bản đọc ngay khi sẵn sàng, trong các ứng dụng hỗ trợ dịch vụ của macOS. Các ứng dụng đang mở chỉ áp dụng sau khi khởi động lại. Ở nơi không thể chèn gì, hãy dùng Sao chép bản chép gần nhất."
       },
       "dictationServiceWhenIdle": {
         "title": "Khi không có gì đang được ghi",
@@ -489,10 +489,10 @@
     },
     "endKeys": {
       "title": "Phím tắt kết thúc",
-      "description": "Cách một bản ghi kết thúc và điều gì tiếp theo. Mỗi phím tắt kết thúc có tổ hợp phím riêng, chỉ được chiếm trong khi ghi, và quyết định thêm gì, có xử lý hậu kỳ văn bản không, và có gửi các lần đọc chính tả trước làm ngữ cảnh không. Một phím tắt kết thúc có thể dùng tổ hợp phím của một phím tắt bắt đầu: khi đó nhấn lại phím tắt bắt đầu đó sẽ kết thúc theo cách này.",
+      "description": "Cách một bản ghi kết thúc và điều gì tiếp theo. Mỗi phím tắt kết thúc có tổ hợp phím riêng, chỉ được chiếm trong khi ghi, và quyết định thêm gì, có xử lý hậu kỳ văn bản không, và có gửi các lần đọc chính tả trước làm ngữ cảnh không. Một phím tắt kết thúc có thể dùng tổ hợp phím của một phím tắt bắt đầu: khi đó nhấn nhanh lại phím tắt bắt đầu đó sẽ kết thúc theo cách này.",
       "name": "Tên",
       "shortcutHint": "Nhấn tổ hợp phím này trong khi ghi sẽ kết thúc bản ghi theo cách này. Tổ hợp chỉ được chiếm trong khi ghi.",
-      "sameAsStart": "Cùng tổ hợp phím với “{{start}}”: nhấn lại trong khi ghi sẽ kết thúc theo cách này.",
+      "sameAsStart": "Cùng tổ hợp phím với “{{start}}”: nhấn nhanh lại trong khi ghi sẽ kết thúc theo cách này.",
       "append": "Thêm vào cuối",
       "appendDescription": "Được thêm vào lần đọc chính tả kết thúc theo cách này: văn bản, rồi đến phím bạn chọn. Trong văn bản, \\s là dấu cách, \\n là xuống dòng, \\t là tab và \\\\ là dấu gạch chéo ngược; mọi thứ khác được thêm đúng như đã viết. Phím chỉ được gửi khi văn bản được dán.",
       "postProcess": "Xử lý hậu kỳ",
@@ -508,6 +508,10 @@
         "title": "Khi giữ",
         "description": "Cách việc thả một phím tắt bắt đầu đang giữ kết thúc bản ghi."
       },
+      "tapEnds": {
+        "title": "Khi nhấn nhanh",
+        "description": "Cách việc nhấn nhanh một phím tắt kết thúc làm dừng bản ghi."
+      },
       "factoryNames": {
         "pattern": "{{mode}} · {{effect}}",
         "direct": "Trực tiếp",
@@ -519,7 +523,7 @@
         "enter": "Gửi Enter",
         "shiftEnter": "Gửi Shift+Enter"
       },
-      "linuxNoShortcuts": "Trên Linux, tổ hợp phím của các phím tắt kết thúc không được chiếm trong khi ghi. Ở đó bản ghi kết thúc khi thả một phím tắt bắt đầu đang giữ, hoặc khi nhấn lại một phím tắt bắt đầu có cùng tổ hợp phím với một phím tắt kết thúc.",
+      "linuxNoShortcuts": "Trên Linux, tổ hợp phím của các phím tắt kết thúc không được chiếm trong khi ghi. Ở đó bản ghi kết thúc khi thả một phím tắt bắt đầu đang giữ, hoặc khi nhấn nhanh lại một phím tắt bắt đầu có cùng tổ hợp phím với một phím tắt kết thúc.",
       "errors": {
         "save": "Không thể lưu các phím tắt kết thúc: {{error}}",
         "needsShortcut": "Mỗi phím tắt kết thúc cần có tổ hợp phím.",

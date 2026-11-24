@@ -180,7 +180,7 @@
     "demo": {
       "title": "Parlez dans n'importe quelle app, avec un seul raccourci",
       "hold": "<0>Cliquez là où vous voulez écrire.</0> <1>Maintenez votre raccourci et parlez.</1> <2>Relâchez, et vos mots apparaissent.</2>",
-      "tap": "<0>Cliquez là où vous voulez écrire.</0> <1>Appuyez sur votre raccourci et parlez.</1> <2>Appuyez à nouveau, et vos mots apparaissent.</2>",
+      "tap": "<0>Cliquez là où vous voulez écrire.</0> <1>Appuyez brièvement sur votre raccourci et parlez.</1> <2>Un nouvel appui bref, et vos mots apparaissent.</2>",
       "apps": {
         "messages": "Messages",
         "notes": "Notes"
@@ -201,14 +201,14 @@
       "noteLabel": "Note",
       "placeholder": "Nouvelle note",
       "hold": "Maintenez <keys/> et parlez.",
-      "tapNext": "Maintenant, appuyez une fois sur <keys/>, puis parlez.",
+      "tapNext": "Maintenant, appuyez brièvement une fois sur <keys/>, puis parlez.",
       "letGo": "Relâchez <keys/> quand vous avez terminé.",
-      "tapAgain": "Appuyez à nouveau sur <keys/> quand vous avez terminé.",
+      "tapAgain": "Appuyez à nouveau brièvement sur <keys/> quand vous avez terminé.",
       "watch": "Regardez la note.",
       "changeKeys": "Modifier votre raccourci, {{keys}}",
       "doneHold": "Tope là ! Ça, c'était en maintenant.",
       "doneHoldNext": "Place à la méthode mains libres.",
-      "doneTap": "Tope là ! Ça, c'était en appuyant.",
+      "doneTap": "Tope là ! Ça, c'était en appuyant brièvement.",
       "doneTapNext": "Essayez maintenant de les maintenir enfoncées pendant que vous parlez.",
       "giveFive": "Bien joué ! Tope là",
       "highFive": "Tope là",
@@ -225,8 +225,8 @@
     },
     "done": {
       "title": "Tout est prêt",
-      "subMac": "Handy est maintenant dans votre barre des menus. Maintenez ou appuyez sur <keys/> dans n'importe quelle app pour parler.",
-      "subTray": "Handy est maintenant dans votre zone de notification. Maintenez ou appuyez sur <keys/> dans n'importe quelle app pour parler.",
+      "subMac": "Handy est maintenant dans votre barre des menus. Maintenez ou appuyez brièvement sur <keys/> dans n'importe quelle app pour parler.",
+      "subTray": "Handy est maintenant dans votre zone de notification. Maintenez ou appuyez brièvement sur <keys/> dans n'importe quelle app pour parler.",
       "hint": "Vous pourrez modifier tout cela plus tard dans les Paramètres",
       "highFiveLabel": "Tope là",
       "atLogin": "Lancer Handy à l'ouverture de ma session",
@@ -411,7 +411,7 @@
           "transcribe_with_post_process": {
             "name": "Deuxième raccourci de début",
             "description": "Facultatif : une deuxième combinaison qui démarre un enregistrement. Dans le réglage d'usine, un raccourci de fin avec la même combinaison post-traite le texte. Pris uniquement tant que le post-traitement est activé.",
-            "descriptionMacos": "Facultatif : une deuxième combinaison qui démarre un enregistrement. Dans le réglage d'usine, le relâcher après l'avoir maintenu post-traite le texte ; appuyer à nouveau dessus termine sans post-traitement, comme tout raccourci de fin sans ⌥. Pris uniquement tant que le post-traitement est activé."
+            "descriptionMacos": "Facultatif : une deuxième combinaison qui démarre un enregistrement. Dans le réglage d'usine, le relâcher après l'avoir maintenu post-traite le texte ; un nouvel appui bref termine sans post-traitement, comme tout raccourci de fin sans ⌥. Pris uniquement tant que le post-traitement est activé."
           },
           "paste_last_transcript": {
             "name": "Coller la dernière transcription",
@@ -462,12 +462,12 @@
         "options": {
           "holdOrToggle": "Auto",
           "pushToTalk": "Maintenir",
-          "toggle": "Basculer"
+          "toggle": "Appui bref"
         },
         "descriptions": {
           "hold_or_toggle": "Maintenez pour enregistrer, ou appuyez brièvement pour démarrer ; un raccourci de fin l'arrête ensuite",
           "push_to_talk": "Enregistre tant que le raccourci est maintenu",
-          "toggle": "Appuyez brièvement pour démarrer l'enregistrement ; un nouvel appui ne l'arrête que si un raccourci de fin a la même combinaison"
+          "toggle": "Appuyez brièvement pour démarrer l'enregistrement ; un nouvel appui bref ne l'arrête que si un raccourci de fin a la même combinaison"
         }
       },
       "insertService": {
@@ -476,7 +476,7 @@
       },
       "dictationKeyInserts": {
         "label": "Le raccourci de dictée insère aussi",
-        "description": "Appuyez à nouveau sur le raccourci de dictée pour terminer la dictée et l'insérer dès qu'elle est prête, dans les apps qui prennent en charge les services de macOS. Les apps déjà ouvertes en tiennent compte après un redémarrage. Là où rien ne peut être inséré, utilisez « Copier la dernière transcription »."
+        "description": "Appuyez à nouveau brièvement sur le raccourci de dictée pour terminer la dictée et l'insérer dès qu'elle est prête, dans les apps qui prennent en charge les services de macOS. Les apps déjà ouvertes en tiennent compte après un redémarrage. Là où rien ne peut être inséré, utilisez « Copier la dernière transcription »."
       },
       "dictationServiceWhenIdle": {
         "title": "Quand rien n'est enregistré",
@@ -489,10 +489,10 @@
     },
     "endKeys": {
       "title": "Raccourcis de fin",
-      "description": "Comment un enregistrement se termine et ce qui suit. Chaque raccourci de fin a sa propre combinaison de touches, prise uniquement pendant l'enregistrement, et indique ce qui est ajouté, si le texte est post-traité et si les dictées précédentes sont envoyées comme contexte. Un raccourci de fin peut avoir la combinaison d'un raccourci de début : appuyer à nouveau sur ce raccourci de début termine alors de cette façon.",
+      "description": "Comment un enregistrement se termine et ce qui suit. Chaque raccourci de fin a sa propre combinaison de touches, prise uniquement pendant l'enregistrement, et indique ce qui est ajouté, si le texte est post-traité et si les dictées précédentes sont envoyées comme contexte. Un raccourci de fin peut avoir la combinaison d'un raccourci de début : un nouvel appui bref sur ce raccourci de début termine alors de cette façon.",
       "name": "Nom",
       "shortcutHint": "Appuyer sur cette combinaison pendant un enregistrement le termine de cette façon. Elle n'est prise que pendant l'enregistrement.",
-      "sameAsStart": "Même combinaison que « {{start}} » : appuyer à nouveau dessus pendant un enregistrement le termine de cette façon.",
+      "sameAsStart": "Même combinaison que « {{start}} » : un nouvel appui bref pendant un enregistrement le termine de cette façon.",
       "append": "Ajouter à la fin",
       "appendDescription": "Ajouté à une dictée qui se termine de cette façon: le texte, puis la touche que vous choisissez. Dans le texte, \\s est une espace, \\n un saut de ligne, \\t une tabulation et \\\\ une barre oblique inverse ; tout le reste est ajouté tel qu'écrit. La touche n'est envoyée que lorsque le texte est collé.",
       "postProcess": "Post-traiter",
@@ -508,6 +508,10 @@
         "title": "Lorsqu'il est maintenu",
         "description": "Comment le relâchement d'un raccourci de début maintenu termine l'enregistrement."
       },
+      "tapEnds": {
+        "title": "Lors d'un appui bref",
+        "description": "Comment un appui bref sur un raccourci de fin termine l'enregistrement."
+      },
       "factoryNames": {
         "pattern": "{{mode}} · {{effect}}",
         "direct": "Direct",
@@ -519,7 +523,7 @@
         "enter": "Envoyer Entrée",
         "shiftEnter": "Envoyer Maj+Entrée"
       },
-      "linuxNoShortcuts": "Sous Linux, les combinaisons des raccourcis de fin ne sont pas prises pendant l'enregistrement. Un enregistrement s'y termine quand on relâche un raccourci de début maintenu, ou quand on appuie à nouveau sur un raccourci de début dont un raccourci de fin a la combinaison.",
+      "linuxNoShortcuts": "Sous Linux, les combinaisons des raccourcis de fin ne sont pas prises pendant l'enregistrement. Un enregistrement s'y termine quand on relâche un raccourci de début maintenu, ou par un nouvel appui bref sur un raccourci de début dont un raccourci de fin a la combinaison.",
       "errors": {
         "save": "Impossible d'enregistrer les raccourcis de fin : {{error}}",
         "needsShortcut": "Chaque raccourci de fin a besoin d'une combinaison de touches.",
@@ -1267,7 +1271,7 @@
       },
       "holdThreshold": {
         "title": "Seuil de maintien",
-        "description": "Mode Auto uniquement : durée (en millisecondes) pendant laquelle le raccourci doit rester enfoncé pour compter comme un maintien plutôt qu'une pression brève. Diminuez si l'enregistrement reste actif après un maintien court ; augmentez si des pressions brèves volontaires sont traitées comme un maintien."
+        "description": "Mode Auto uniquement : durée (en millisecondes) pendant laquelle le raccourci doit rester enfoncé pour compter comme un maintien plutôt qu'un appui bref. Diminuez si l'enregistrement reste actif après un maintien court ; augmentez si des appuis brefs volontaires sont traités comme un maintien."
       },
       "reliablePaste": {
         "title": "Collage fiable (Beta)",
