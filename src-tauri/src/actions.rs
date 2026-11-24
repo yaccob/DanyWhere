@@ -744,6 +744,9 @@ pub fn stop_transcription(
                 snapshot,
                 binding_id,
                 stop_time,
+                // DanyWhere: the hold on DanyWhere's input source the
+                // recording's start took, if any (`dictation_start`).
+                input_source: crate::delivery::take_recording_hold(),
             },
             ports,
         ));

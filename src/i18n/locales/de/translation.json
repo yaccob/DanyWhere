@@ -114,6 +114,14 @@
       "welcomeBack": "Willkommen zurück. Es geht dort weiter, wo du aufgehört hast.",
       "relaunch": "Tastenkürzel reagiert danach nicht? <relaunch>Handy neu starten</relaunch> und du landest direkt wieder hier."
     },
+    "insertDirectly": {
+      "title": "Direkt einfügen",
+      "why": "Ohne Bedienungshilfen wartet ein Diktat, bis du es mit ⌃⇧V einfügst. Sobald die Eingabequelle hinzugefügt ist, fügen Endtasten es sofort ein.",
+      "notAdded": "Noch nicht hinzugefügt",
+      "added": "Hinzugefügt. Deine Diktate kommen jetzt direkt ins Textfeld.",
+      "later": "Später",
+      "laterHint": "Du kannst sie später unter Applikationseinstellungen › Bedienungshilfen hinzufügen."
+    },
     "shell": {
       "back": "Zurück",
       "continue": "Weiter",
@@ -531,6 +539,18 @@
         "last": "Die letzte Endtaste kann nicht weg: Eine Aufnahme muss sich immer beenden lassen.",
         "cannotEnd": "Unter Linux ließe sich eine Aufnahme nicht mehr beenden: Behalte eine Endtaste mit der Tastenkombination einer Starttaste oder wähle „Halten“."
       }
+    },
+    "inputMethod": {
+      "title": "Ohne Zwischenablage einfügen",
+      "description": "Diktate kommen über die eigene Eingabequelle von DanyWhere direkt ins Textfeld, und die Zwischenablage bleibt, wie sie ist.",
+      "howItWorks": "Die Eingabequelle ist nur ausgewählt, während ein Diktat läuft; beim Tippen bleibt deine Tastaturbelegung.",
+      "offer": "Optional: Mit Bedienungshilfen fügt DanyWhere Diktate bereits über die Zwischenablage ein.",
+      "withoutAccessibility": "Sobald sie hinzugefügt ist, fügen Endtasten den Text sofort ein, statt ihn für „{{shortcut}}“ liegen zu lassen.",
+      "setUp": "In den Systemeinstellungen hinzufügen",
+      "steps": "Klick unter „Tastatur“ neben „Eingabequellen“ auf „Bearbeiten …“, dann auf „+“ und „Englisch“, wähl „{{name}}“ und klick auf „Hinzufügen“.",
+      "setUpFailed": "Die Eingabequelle ließ sich nicht einrichten",
+      "added": "Diktate werden direkt eingefügt, ohne Zwischenablage.",
+      "stop": "Zum Beenden entferne „{{name}}“ in den Systemeinstellungen aus den Eingabequellen."
     },
     "profiles": {
       "title": "Profile",
@@ -1192,6 +1212,7 @@
         "screens": {
           "welcome": "Willkommen",
           "permissions": "Berechtigungen",
+          "insertDirectly": "Direkt einfügen",
           "model": "Modell",
           "demo": "Demo",
           "try": "Ausprobieren",

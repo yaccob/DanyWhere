@@ -114,6 +114,14 @@
       "welcomeBack": "Välkommen tillbaka. Vi fortsätter där du slutade.",
       "relaunch": "Svarar inte genvägen efter detta? <relaunch>Starta om Handy</relaunch> så hamnar du direkt här igen."
     },
+    "insertDirectly": {
+      "title": "Infoga direkt",
+      "why": "Utan Hjälpmedel väntar en diktering tills du infogar den med ⌃⇧V. När inmatningskällan har lagts till infogar avslutningskortkommandon den direkt.",
+      "notAdded": "Inte tillagd än",
+      "added": "Tillagd. Dina dikteringar hamnar nu direkt i textfältet.",
+      "later": "Senare",
+      "laterHint": "Du kan lägga till den senare under Programinställningar › Hjälpmedel."
+    },
     "shell": {
       "back": "Tillbaka",
       "continue": "Fortsätt",
@@ -531,6 +539,18 @@
         "last": "Det sista avslutningskortkommandot kan inte tas bort: en inspelning måste alltid gå att avsluta.",
         "cannotEnd": "På Linux skulle en inspelning inte längre gå att avsluta: behåll ett avslutningskortkommando med ett startkortkommandos tangentkombination, eller välj ”Håll”."
       }
+    },
+    "inputMethod": {
+      "title": "Infoga utan urklipp",
+      "description": "Dikteringar hamnar direkt i textfältet via DanyWheres egen inmatningskälla, och urklippet lämnas orört.",
+      "howItWorks": "Inmatningskällan är bara vald medan en diktering pågår, och när du skriver behåller du din tangentbordslayout.",
+      "offer": "Valfritt: med Hjälpmedel klistrar DanyWhere redan in dikteringar via urklipp.",
+      "withoutAccessibility": "När den har lagts till infogar avslutningskortkommandon texten direkt i stället för att lämna den åt ”{{shortcut}}”.",
+      "setUp": "Lägg till i Systeminställningar",
+      "steps": "Under ”Tangentbord” klickar du på ”Redigera…” bredvid ”Inmatningskällor”, sedan på ”+” och ”Engelska”, väljer ”{{name}}” och klickar på ”Lägg till”.",
+      "setUpFailed": "Det gick inte att ställa in inmatningskällan",
+      "added": "Dikteringar infogas direkt, utan urklipp.",
+      "stop": "Om du vill sluta tar du bort ”{{name}}” från inmatningskällorna i Systeminställningar."
     },
     "profiles": {
       "title": "Profiler",
@@ -1192,6 +1212,7 @@
         "screens": {
           "welcome": "Välkommen",
           "permissions": "Behörigheter",
+          "insertDirectly": "Infoga direkt",
           "model": "Modell",
           "demo": "Demo",
           "try": "Testa",

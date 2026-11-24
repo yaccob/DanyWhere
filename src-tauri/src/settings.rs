@@ -536,6 +536,12 @@ pub struct AppSettings {
     /// don't know the shortcut until they restart. See `dictation_key_inserts`.
     #[serde(default)]
     pub dictation_service_shortcuts_written_at: Option<u64>,
+    /// DanyWhere: the user has seen the guide to adding DanyWhere's input
+    /// source (onboarding's step, or the guide shown once at the next start
+    /// without Accessibility). Settings saved before it existed lack it, so
+    /// those users see the guide once. See `input_method`.
+    #[serde(default)]
+    pub input_method_guide_seen: bool,
     #[serde(default = "default_always_on_microphone")]
     pub always_on_microphone: bool,
     #[serde(default)]
@@ -1310,6 +1316,7 @@ pub fn get_default_settings() -> AppSettings {
         dictation_key_inserts: default_dictation_key_inserts(),
         dictation_service_when_idle: DictationServiceWhenIdle::default(),
         dictation_service_shortcuts_written_at: None,
+        input_method_guide_seen: false,
         always_on_microphone: false,
         spoken_languages: Vec::new(),
         selected_microphone: None,
@@ -2080,6 +2087,25 @@ mod tests {
 
     fn default_settings_json() -> serde_json::Value {
         serde_json::to_value(get_default_settings()).unwrap()
+    }
+
+    /// DanyWhere: the input method's guide is unseen on a new install and
+    /// in settings saved before it existed (those users see it once).
+    #[test]
+    fn the_input_method_guide_starts_unseen() {
+        assert!(!get_default_settings().input_method_guide_seen);
+        let mut stored = default_settings_json();
+        stored
+            .as_object_mut()
+            .unwrap()
+            .remove("input_method_guide_seen");
+        let settings: AppSettings = serde_json::from_value(stored).expect("old settings parse");
+        assert!(!settings.input_method_guide_seen);
+
+        let mut stored = default_settings_json();
+        stored["input_method_guide_seen"] = serde_json::json!(true);
+        let settings: AppSettings = serde_json::from_value(stored).unwrap();
+        assert!(settings.input_method_guide_seen);
     }
 
     /// Every field must survive a partial store: a missing key must never fail

@@ -114,6 +114,14 @@
       "welcomeBack": "Content de vous revoir. On reprend là où vous en étiez.",
       "relaunch": "Le raccourci ne répond pas après ça ? <relaunch>Relancez Handy</relaunch> et vous reviendrez directement ici."
     },
+    "insertDirectly": {
+      "title": "Insérer directement",
+      "why": "Sans l'autorisation Accessibilité, une dictée attend que vous l'insériez avec ⌃⇧V. Une fois la méthode de saisie ajoutée, les raccourcis de fin l'insèrent aussitôt.",
+      "notAdded": "Pas encore ajoutée",
+      "added": "Ajoutée. Vos dictées vont désormais directement dans le champ de texte.",
+      "later": "Plus tard",
+      "laterHint": "Vous pourrez l'ajouter plus tard dans Paramètres de l'application › Accessibilité."
+    },
     "shell": {
       "back": "Retour",
       "continue": "Continuer",
@@ -531,6 +539,18 @@
         "last": "Le dernier raccourci de fin ne peut pas être supprimé : un enregistrement doit toujours pouvoir être terminé.",
         "cannotEnd": "Sous Linux, un enregistrement ne pourrait plus être terminé : gardez un raccourci de fin avec la combinaison d'un raccourci de début, ou choisissez « Maintenir »."
       }
+    },
+    "inputMethod": {
+      "title": "Insérer sans le presse-papiers",
+      "description": "Les dictées vont directement dans le champ de texte grâce à la méthode de saisie propre à DanyWhere, et le presse-papiers reste tel quel.",
+      "howItWorks": "La méthode de saisie n'est sélectionnée que pendant une dictée ; quand vous tapez, votre disposition de clavier ne change pas.",
+      "offer": "Facultatif : avec l'autorisation Accessibilité, DanyWhere colle déjà les dictées via le presse-papiers.",
+      "withoutAccessibility": "Une fois la méthode de saisie ajoutée, les raccourcis de fin insèrent le texte aussitôt au lieu de le laisser pour « {{shortcut}} ».",
+      "setUp": "Ajouter dans Réglages Système",
+      "steps": "Dans « Clavier », cliquez sur « Modifier… » à côté de « Méthodes de saisie », puis sur « + » et sur « Anglais », choisissez « {{name}} » et cliquez sur « Ajouter ».",
+      "setUpFailed": "Impossible de configurer la méthode de saisie",
+      "added": "Les dictées sont insérées directement, sans le presse-papiers.",
+      "stop": "Pour arrêter, supprimez « {{name}} » des méthodes de saisie dans Réglages Système."
     },
     "profiles": {
       "title": "Profils",
@@ -1192,6 +1212,7 @@
         "screens": {
           "welcome": "Bienvenue",
           "permissions": "Autorisations",
+          "insertDirectly": "Insérer directement",
           "model": "Modèle",
           "demo": "Démo",
           "try": "Essai",

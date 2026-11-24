@@ -5,6 +5,13 @@
 //! Last Dictation" service (`insert_service`), so the user's clipboard stays
 //! as it was; elsewhere it is left on the clipboard.
 //!
+//! DanyWhere (user's decision, 2026-11-23): once the user has added
+//! DanyWhere's input source on macOS (`input_method`), a dictation that
+//! would be pasted with keys is inserted through it instead, with
+//! Accessibility or without and without the clipboard; when that fails it
+//! goes as above. [`insertion`] is that rule; an [`InputSourceHold`] holds
+//! the source for one dictation or "Paste Last" ([`begin_input_source`]).
+//!
 //! A dictation can also end up nowhere, e.g. when no text field had focus.
 //! Instead of dictating again, the user presses the "paste last transcript"
 //! shortcut with the cursor where the text belongs: with Accessibility it is
@@ -22,8 +29,10 @@ use log::{error, info, warn};
 use tauri::{AppHandle, Manager};
 use tauri_plugin_clipboard_manager::ClipboardExt;
 
+use crate::append_text::AppendKey;
 use crate::audio_feedback::{play_feedback_sound, SoundType};
 use crate::end_keys::EndKey;
+use crate::input_method::InputMethod;
 use crate::managers::history::{HistoryEntry, HistoryManager};
 use crate::profile_redo::ForInsert;
 use crate::profiles::ProfileValues;
@@ -61,7 +70,8 @@ pub const INSERT_SERVICE_AVAILABLE: bool = cfg!(target_os = "macos");
 /// Where a finished dictation ends up.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DictationTarget {
-    /// Pasted into the focused application.
+    /// Pasted into the focused application, or inserted there through
+    /// DanyWhere's input method ([`dictation_target_with`]).
     Pasted,
     /// Left on the clipboard for the user to paste.
     Clipboard,
@@ -72,8 +82,13 @@ pub enum DictationTarget {
     HistoryOnly,
 }
 
-/// Decides where a finished dictation goes. `service_available` is
-/// [`INSERT_SERVICE_AVAILABLE`], passed in so tests cover every platform.
+/// Decides where a finished dictation goes when DanyWhere's input method has
+/// no part in it. `service_available` is [`INSERT_SERVICE_AVAILABLE`],
+/// passed in so tests cover every platform. `insert_service` and
+/// `dictation_key_inserts` ask it whether dictations wait for the service
+/// (the mode without Accessibility), which the input method doesn't change:
+/// a service call still gets its text. [`dictation_target_with`] takes the
+/// input method into account.
 pub fn dictation_target(settings: &AppSettings, service_available: bool) -> DictationTarget {
     // The user's decision (2026-11-11): without Accessibility the dictation
     // no longer replaces what the user copied. Older installations stored
@@ -89,16 +104,184 @@ pub fn dictation_target(settings: &AppSettings, service_available: bool) -> Dict
     }
 }
 
+/// What, besides the settings a text goes with, decides how it is inserted
+/// ([`insertion`]).
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct InsertionContext {
+    /// This build offers the "Insert Last Dictation" service
+    /// ([`INSERT_SERVICE_AVAILABLE`]).
+    pub service_available: bool,
+    /// The user has added DanyWhere's input source
+    /// (`input_method::InputMethod::added`); never on Windows and Linux.
+    pub input_method_added: bool,
+    /// A call of the "Insert Last Dictation" service waits for the text.
+    pub call_waiting: bool,
+    /// "Copy Last Transcript" asked for the dictation's text.
+    pub copy_requested: bool,
+}
+
+impl InsertionContext {
+    /// The context as if DanyWhere's input source weren't added: where a
+    /// text goes when inserting it through the input method fails.
+    pub fn without_input_method(self) -> Self {
+        Self {
+            input_method_added: false,
+            ..self
+        }
+    }
+}
+
+/// How a text is inserted ([`insertion`]).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Insertion {
+    /// "Copy Last Transcript" asked for it during the dictation: it goes on
+    /// the clipboard instead (`dictation_key_inserts`).
+    CopyInstead,
+    /// Through DanyWhere's input method, without the clipboard; then the
+    /// "Append" value's key presses if `then_keys`, and the text copied to
+    /// the clipboard if `then_copy`. When that fails, as the rule says for
+    /// [`InsertionContext::without_input_method`].
+    InputMethod { then_keys: bool, then_copy: bool },
+    /// Pasted with the paste method: keys sent with Accessibility, or an
+    /// external script.
+    Paste,
+    /// Not inserted: it waits for the "Insert Last Dictation" service.
+    WaitForService,
+    /// Not inserted: left on the clipboard with its "Append" text.
+    LeaveOnClipboard,
+    /// Not inserted: kept only in the History.
+    HistoryOnly,
+}
+
+/// Whether a text that goes with `settings` goes through DanyWhere's input
+/// method, once its source is added (`input_method_added`): with a paste
+/// method that sends keys, with Accessibility or without. In the mode
+/// without Accessibility also with "None", which the mode sets itself
+/// (`shortcut::apply_no_accessibility_mode`); with Accessibility "None" is
+/// pasting turned off. Never with an external script, which pastes by its
+/// own means.
+pub fn inserts_through_input_method(settings: &AppSettings, input_method_added: bool) -> bool {
+    input_method_added
+        && (crate::clipboard::sends_keys(settings.paste_method)
+            || (settings.paste_method == PasteMethod::None
+                && crate::accessibility::state(settings).runs_without_accessibility()))
+}
+
+/// The rule for inserting a text that goes with `settings`
+/// (`input_method`; `src-tauri/macos/input-method/PROTOCOL.md`, "The rule").
+pub fn insertion(settings: &AppSettings, context: InsertionContext) -> Insertion {
+    if context.copy_requested {
+        return Insertion::CopyInstead;
+    }
+    // 1. Through the input method, with or without Accessibility. Not for a
+    // service call that waits: it inserts the text itself, which would then
+    // arrive twice. The key presses after it need Accessibility, and without
+    // it a dictation never replaces the clipboard (user, 2026-11-11).
+    if !context.call_waiting && inserts_through_input_method(settings, context.input_method_added) {
+        let with_accessibility = crate::accessibility::state(settings).can_simulate_input();
+        return Insertion::InputMethod {
+            then_keys: with_accessibility,
+            then_copy: with_accessibility
+                && settings.clipboard_handling == ClipboardHandling::CopyToClipboard,
+        };
+    }
+    // 2. and 3. As before the input method: pasted with Accessibility (or
+    // by an external script), else it waits as the settings say.
+    match delivery_for(settings) {
+        Delivery::Paste => Insertion::Paste,
+        Delivery::Clipboard
+            if copies_dictation_to_clipboard(settings, context.service_available) =>
+        {
+            Insertion::LeaveOnClipboard
+        }
+        Delivery::Clipboard
+            if dictation_target(settings, context.service_available)
+                == DictationTarget::InsertService =>
+        {
+            Insertion::WaitForService
+        }
+        Delivery::Clipboard => Insertion::HistoryOnly,
+    }
+}
+
+/// Where a finished dictation goes by [`insertion`]: as [`dictation_target`]
+/// says, except that a text inserted through DanyWhere's input method goes
+/// into the application in front, also without Accessibility.
+pub fn dictation_target_with(settings: &AppSettings, context: InsertionContext) -> DictationTarget {
+    match insertion(settings, context) {
+        Insertion::InputMethod { .. } => DictationTarget::Pasted,
+        _ => dictation_target(settings, context.service_available),
+    }
+}
+
 /// Whether a finished dictation's text goes into the application in front
-/// right away: pasted there, or inserted by the service call it made
-/// (`call_waiting`). Only then can that application's profile redo it
-/// (`profile_redo`); a text that waits is looked at when it is inserted.
-pub fn goes_into_app_in_front(
+/// right away: pasted there or inserted through DanyWhere's input method
+/// ([`dictation_target_with`]), or inserted by the service call it made
+/// (`context.call_waiting`). Only then can that application's profile redo
+/// it (`profile_redo`); a text that waits is looked at when it is inserted.
+pub fn goes_into_app_in_front(settings: &AppSettings, context: InsertionContext) -> bool {
+    context.call_waiting || dictation_target_with(settings, context) == DictationTarget::Pasted
+}
+
+/// One operation's hold on DanyWhere's input source (a dictation, a "Paste
+/// Last"): `InputMethod::begin` when made, `InputMethod::end` once when
+/// dropped, whatever the source answers by then. Operations overlap (a
+/// recording starts while the previous dictation's text is still being
+/// inserted); the input method selects the source from before again only
+/// when the last hold ends.
+pub struct InputSourceHold(Arc<dyn InputMethod>);
+
+impl InputSourceHold {
+    /// Begins a hold on `input_method`'s source.
+    pub fn begin(input_method: Arc<dyn InputMethod>) -> Self {
+        input_method.begin();
+        Self(input_method)
+    }
+}
+
+impl Drop for InputSourceHold {
+    fn drop(&mut self) {
+        self.0.end();
+    }
+}
+
+/// At a recording's start: holds DanyWhere's input source when the text of
+/// a dictation with `settings` (its start profile's) is to go through it
+/// ([`inserts_through_input_method`]). The recording keeps the hold
+/// ([`keep_recording_hold`]); its dictation ends it once its text is in, a
+/// cancel by dropping it.
+pub fn begin_input_source(
     settings: &AppSettings,
-    service_available: bool,
-    call_waiting: bool,
-) -> bool {
-    call_waiting || dictation_target(settings, service_available) == DictationTarget::Pasted
+    input_method: &Arc<dyn InputMethod>,
+) -> Option<InputSourceHold> {
+    inserts_through_input_method(settings, input_method.added()).then(|| {
+        info!("Selecting DanyWhere's input source for this recording.");
+        InputSourceHold::begin(Arc::clone(input_method))
+    })
+}
+
+/// The hold the running recording's start took ([`begin_input_source`]),
+/// until its stop hands it to its dictation or a cancel drops it. One
+/// recording runs at a time.
+static RECORDING_HOLD: std::sync::Mutex<Option<InputSourceHold>> = std::sync::Mutex::new(None);
+
+fn recording_hold() -> std::sync::MutexGuard<'static, Option<InputSourceHold>> {
+    RECORDING_HOLD
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+}
+
+/// Keeps the hold a recording's start took. One left by a recording that
+/// ended unseen is dropped (ended) now.
+pub fn keep_recording_hold(hold: InputSourceHold) {
+    let left = recording_hold().replace(hold);
+    drop(left);
+}
+
+/// The running recording's hold, taken: its stop hands it to its dictation,
+/// a cancel drops it.
+pub fn take_recording_hold() -> Option<InputSourceHold> {
+    recording_hold().take()
 }
 
 /// Whether a dictation's text is written to the clipboard after it was
@@ -123,7 +306,12 @@ pub fn dictation_notice(
     settings: &AppSettings,
     service_available: bool,
 ) -> Option<DictationNotice> {
-    match dictation_target(settings, service_available) {
+    notice_for(dictation_target(settings, service_available))
+}
+
+/// The overlay notice after a dictation that went to `target`, if any.
+pub fn notice_for(target: DictationTarget) -> Option<DictationNotice> {
+    match target {
         DictationTarget::Clipboard => Some(DictationNotice::OnClipboard),
         DictationTarget::InsertService => Some(DictationNotice::ReadyToInsert),
         DictationTarget::Pasted | DictationTarget::HistoryOnly => None,
@@ -303,6 +491,11 @@ pub trait PasteLastPorts {
     /// Whether a recording or its transcription is under way
     /// (`tray::dictation_in_progress`): its overlay and microphone are busy.
     fn dictating(&self) -> bool;
+    /// DanyWhere's input method (`input_method::current`).
+    fn input_method(&self) -> Arc<dyn InputMethod>;
+    /// Sends `keys`, the "Append" value's key presses, after a text was
+    /// inserted through the input method (`clipboard::press_keys`).
+    fn press_keys(&self, keys: Vec<AppendKey>) -> Result<(), String>;
 }
 
 /// [`PasteLastPorts`] of the running app.
@@ -349,6 +542,14 @@ impl PasteLastPorts for AppPasteLast {
     fn dictating(&self) -> bool {
         crate::tray::dictation_in_progress(&self.app)
     }
+
+    fn input_method(&self) -> Arc<dyn InputMethod> {
+        crate::input_method::current()
+    }
+
+    fn press_keys(&self, keys: Vec<AppendKey>) -> Result<(), String> {
+        crate::clipboard::press_keys(&self.app, keys)
+    }
 }
 
 /// Delivers `entry`'s `text` for "Paste Last Transcript": pasted, or left on
@@ -359,7 +560,13 @@ impl PasteLastPorts for AppPasteLast {
 /// use. Either way it ends with the "Append" text of the end it takes there
 /// (else of the end it ended with, [`append_of_last`]): sent after the paste,
 /// or on the clipboard as its text without key presses, as a dictation's.
-/// Call from a worker thread: a paste sleeps between steps.
+/// Where it is pasted with keys and DanyWhere's input source is added, it is
+/// inserted through the input method instead, as a dictation is
+/// ([`insertion`]), pasted only when that fails; it holds the source for
+/// that ([`InputSourceHold`]) and ends its hold after the last attempt, so
+/// the source from before comes back once no dictation holds it either.
+/// Call from a worker thread: a paste sleeps
+/// between steps, an insertion through the input method waits for it.
 pub fn paste_last<P: PasteLastPorts>(
     ports: &P,
     entry: &HistoryEntry,
@@ -425,20 +632,103 @@ pub fn paste_last<P: PasteLastPorts>(
                 }
             }
         }
-        Delivery::Paste => match ports.paste(text, values, &append_text) {
-            Ok(PasteOutcome::Pasted) => {
-                info!("Pasted the last transcript.");
-                PasteLastOutcome::Pasted
-            }
-            Ok(PasteOutcome::Blocked) => {
-                error!("Couldn't paste the last transcript: the focused window takes no input");
-                PasteLastOutcome::Blocked
-            }
-            Err(err) => {
-                error!("Failed to paste the last transcript: {}", err);
-                PasteLastOutcome::Failed(err)
-            }
-        },
+        Delivery::Paste => {
+            // DanyWhere: through the input method once its source is added
+            // (user, 2026-11-23), as a dictation (`insertion`).
+            let input_method = ports.input_method();
+            let context = InsertionContext {
+                service_available: INSERT_SERVICE_AVAILABLE,
+                input_method_added: input_method.added(),
+                ..InsertionContext::default()
+            };
+            let Insertion::InputMethod {
+                then_keys,
+                then_copy,
+            } = insertion(&settings, context)
+            else {
+                return paste_last_as_before(ports, text, values, &append_text);
+            };
+            let with_append = crate::append_text::text_to_paste(text.clone(), &append_text);
+            // Its own hold: a dictation may hold the source at the same time.
+            let hold = InputSourceHold::begin(Arc::clone(&input_method));
+            let outcome = match input_method.insert(&with_append) {
+                Ok(inserted) => {
+                    info!(
+                        "Inserted the last transcript through DanyWhere's input method (into {:?}).",
+                        inserted.client
+                    );
+                    if then_keys {
+                        press_append_keys(&append_text, |keys| ports.press_keys(keys));
+                    }
+                    if then_copy {
+                        // Quietly, as a paste copies.
+                        if let Err(err) = ports.put_on_clipboard(with_append, values, false, false)
+                        {
+                            warn!("Inserted the last transcript, but couldn't copy it: {err}");
+                        }
+                    }
+                    PasteLastOutcome::Pasted
+                }
+                // Nothing more: a paste could put it in twice, and the
+                // "Append" keys could send what isn't there.
+                Err(failure) if failure.may_have_arrived() => {
+                    warn!(
+                        "DanyWhere's input method didn't confirm the last transcript ({failure:?}); not inserting it another way."
+                    );
+                    PasteLastOutcome::Pasted
+                }
+                Err(failure) => {
+                    info!(
+                        "Couldn't insert the last transcript through DanyWhere's input method ({failure:?}); pasting it."
+                    );
+                    paste_last_as_before(ports, text, values, &append_text)
+                }
+            };
+            // After the last attempt to insert it.
+            drop(hold);
+            outcome
+        }
+    }
+}
+
+/// Pastes the last transcript as before the input method, and says how it
+/// went.
+fn paste_last_as_before<P: PasteLastPorts>(
+    ports: &P,
+    text: String,
+    values: Option<ProfileValues>,
+    append_text: &str,
+) -> PasteLastOutcome {
+    match ports.paste(text, values, append_text) {
+        Ok(PasteOutcome::Pasted) => {
+            info!("Pasted the last transcript.");
+            PasteLastOutcome::Pasted
+        }
+        Ok(PasteOutcome::Blocked) => {
+            error!("Couldn't paste the last transcript: the focused window takes no input");
+            PasteLastOutcome::Blocked
+        }
+        Err(err) => {
+            error!("Failed to paste the last transcript: {}", err);
+            PasteLastOutcome::Failed(err)
+        }
+    }
+}
+
+/// After a text was inserted through DanyWhere's input method: sends the
+/// key presses of its "Append" value `append_text` with `press`, as after a
+/// paste. A failure only goes to the log, as after a paste
+/// (`clipboard::paste_as_configured`).
+pub(crate) fn press_append_keys(
+    append_text: &str,
+    press: impl FnOnce(Vec<AppendKey>) -> Result<(), String>,
+) {
+    let keys = crate::append_text::for_value(append_text).keys;
+    if keys.is_empty() {
+        return;
+    }
+    if let Err(err) = press(keys) {
+        warn!("Inserted the text, but the appended key presses failed: {err}");
     }
 }
 
@@ -482,6 +772,9 @@ pub struct DictationEnd {
     pub cancelled: bool,
     /// The service call that ended the dictation inserted it right away.
     pub inserted_by_service: bool,
+    /// DanyWhere's input method inserted it into the application in front,
+    /// also without Accessibility: nothing waits.
+    pub inserted_by_input_method: bool,
     /// "Copy Last Transcript", or an app that missed the dictation shortcut,
     /// put its text on the clipboard.
     pub put_on_clipboard: bool,
@@ -519,6 +812,7 @@ pub fn sound_after_dictation(
     } else if settings.done_sound {
         Some(SoundType::Done)
     } else if !end.inserted_by_service
+        && !end.inserted_by_input_method
         && plays_waiting_sound(settings, service_available, end.put_on_clipboard)
     {
         Some(SoundType::Clipboard)
@@ -552,10 +846,16 @@ pub fn overlay_after_dictation(
     settings: &AppSettings,
     service_available: bool,
 ) -> Option<(DictationNotice, std::time::Duration)> {
-    Some((
-        dictation_notice(settings, service_available)?,
-        clipboard_notice_duration(settings)?,
-    ))
+    overlay_after(dictation_target(settings, service_available), settings)
+}
+
+/// [`overlay_after_dictation`] for a dictation that went to `target`, with
+/// the notice time of `settings`.
+pub fn overlay_after(
+    target: DictationTarget,
+    settings: &AppSettings,
+) -> Option<(DictationNotice, std::time::Duration)> {
+    Some((notice_for(target)?, clipboard_notice_duration(settings)?))
 }
 
 /// Ends the overlay after a finished dictation as `after` says
@@ -599,22 +899,28 @@ pub fn change_clipboard_notice_ms_setting(app: AppHandle, ms: u64) -> Result<(),
 #[cfg(test)]
 mod tests {
     use super::{
-        append_of_last, clipboard_notice_duration, copies_dictation_to_clipboard, delivery_for,
-        dictation_notice, dictation_target, dictation_waits_for_user, goes_into_app_in_front,
-        overlay_after_dictation, paste_last, plays_waiting_sound, sound_after_dictation,
-        text_to_copy, Delivery, DictationEnd, DictationNotice, DictationTarget, PasteLastOutcome,
-        PasteLastPorts,
+        append_of_last, begin_input_source, clipboard_notice_duration,
+        copies_dictation_to_clipboard, delivery_for, dictation_notice, dictation_target,
+        dictation_target_with, dictation_waits_for_user, goes_into_app_in_front, insertion,
+        inserts_through_input_method, overlay_after, overlay_after_dictation, paste_last,
+        plays_waiting_sound, sound_after_dictation, text_to_copy, Delivery, DictationEnd,
+        DictationNotice, DictationTarget, InputSourceHold, Insertion, InsertionContext,
+        PasteLastOutcome, PasteLastPorts,
     };
     use crate::accessibility::testing::{with_choice, with_system_trusted, STATES};
     use crate::actions::TranscriptionOutcome;
+    use crate::append_text::AppendKey;
     use crate::audio_feedback::SoundType;
     use crate::end_keys::EndKey;
+    use crate::input_method::testing::{inserted, FakeInputMethod, ImCall};
+    use crate::input_method::{InputMethod, InsertFailure, Inserted};
     use crate::managers::history::HistoryEntry;
     use crate::profile_redo::ForInsert;
     use crate::profiles::ProfileValues;
     use crate::settings::{AppSettings, ClipboardHandling, PasteMethod};
     use crate::utils::PasteOutcome;
-    use std::cell::{Cell, RefCell};
+    use std::cell::Cell;
+    use std::sync::{Arc, Mutex};
     use std::time::Duration;
 
     /// A new installation's settings with the two built-in ends these tests
@@ -646,6 +952,7 @@ mod tests {
             outcome: TranscriptionOutcome::Typed,
             cancelled: false,
             inserted_by_service: false,
+            inserted_by_input_method: false,
             put_on_clipboard: false,
             owns_ui: true,
         }
@@ -1157,14 +1464,23 @@ mod tests {
 
     #[test]
     fn a_pasted_dictation_or_one_a_call_waits_for_goes_into_the_app_in_front() {
+        // The input source isn't added.
+        let alone = InsertionContext {
+            service_available: true,
+            ..InsertionContext::default()
+        };
+        let called = InsertionContext {
+            call_waiting: true,
+            ..alone
+        };
         let pasting = get_default_settings();
-        assert!(goes_into_app_in_front(&pasting, true, false));
+        assert!(goes_into_app_in_front(&pasting, alone));
         let waiting = settings_without_accessibility();
-        assert!(!goes_into_app_in_front(&waiting, true, false));
-        assert!(goes_into_app_in_front(&waiting, true, true));
+        assert!(!goes_into_app_in_front(&waiting, alone));
+        assert!(goes_into_app_in_front(&waiting, called));
         let mut waiting = with_choice(waiting, false);
         waiting.paste_method = PasteMethod::None;
-        assert!(!goes_into_app_in_front(&waiting, true, false));
+        assert!(!goes_into_app_in_front(&waiting, alone));
     }
 
     #[test]
@@ -1195,6 +1511,10 @@ mod tests {
             text: String,
             notice_ms: Option<u64>,
         },
+        /// A call of DanyWhere's input method.
+        InputMethod(ImCall),
+        /// Sent the "Append" value's key presses.
+        Keys(Vec<AppendKey>),
     }
 
     /// Ports for `paste_last` that record what it did.
@@ -1205,11 +1525,15 @@ mod tests {
         ended_with: Option<EndKey>,
         paste_result: Result<PasteOutcome, String>,
         asked_app_in_front: Cell<usize>,
-        did: RefCell<Vec<Did>>,
+        did: Arc<Mutex<Vec<Did>>>,
         /// A recording or its transcription is under way.
         dictating: bool,
         /// How many clipboard sounds played.
         sounds: Cell<usize>,
+        /// The user has added DanyWhere's input source.
+        input_method_added: bool,
+        /// What inserting through it gives while it is added.
+        input_method_insert: Result<Inserted, InsertFailure>,
     }
 
     impl FakePasteLast {
@@ -1225,9 +1549,11 @@ mod tests {
                 ended_with: None,
                 paste_result: Ok(PasteOutcome::Pasted),
                 asked_app_in_front: Cell::new(0),
-                did: RefCell::new(Vec::new()),
+                did: Arc::default(),
                 dictating: false,
                 sounds: Cell::new(0),
+                input_method_added: false,
+                input_method_insert: inserted(),
             }
         }
 
@@ -1239,7 +1565,7 @@ mod tests {
         }
 
         fn did(&self) -> Vec<Did> {
-            self.did.borrow().clone()
+            self.did.lock().unwrap().clone()
         }
 
         /// The settings the text went with: the stored ones with `values`.
@@ -1273,7 +1599,7 @@ mod tests {
             values: Option<ProfileValues>,
             append_text: &str,
         ) -> Result<PasteOutcome, String> {
-            self.did.borrow_mut().push(Did::Pasted {
+            self.did.lock().unwrap().push(Did::Pasted {
                 text,
                 method: self.with(values.as_ref()).paste_method,
                 append: append_text.to_string(),
@@ -1291,7 +1617,7 @@ mod tests {
             if sound {
                 self.sounds.set(self.sounds.get() + 1);
             }
-            self.did.borrow_mut().push(Did::OnClipboard {
+            self.did.lock().unwrap().push(Did::OnClipboard {
                 text,
                 notice_ms: notice.then(|| self.with(values.as_ref()).clipboard_notice_ms),
             });
@@ -1300,6 +1626,20 @@ mod tests {
 
         fn dictating(&self) -> bool {
             self.dictating
+        }
+
+        fn input_method(&self) -> Arc<dyn InputMethod> {
+            let did = Arc::clone(&self.did);
+            Arc::new(FakeInputMethod::new(
+                self.input_method_added,
+                self.input_method_insert.clone(),
+                move |call| did.lock().unwrap().push(Did::InputMethod(call)),
+            ))
+        }
+
+        fn press_keys(&self, keys: Vec<AppendKey>) -> Result<(), String> {
+            self.did.lock().unwrap().push(Did::Keys(keys));
+            Ok(())
         }
     }
 
@@ -1797,5 +2137,530 @@ mod tests {
                 append: r"\s{Enter}".to_string(),
             }]
         );
+    }
+
+    // -----------------------------------------------------------------------
+    // DanyWhere's input method (user's decision, 2026-11-23): the rule
+    // -----------------------------------------------------------------------
+
+    const METHODS: [PasteMethod; 6] = [
+        PasteMethod::None,
+        PasteMethod::ExternalScript,
+        PasteMethod::CtrlV,
+        PasteMethod::Direct,
+        PasteMethod::CtrlShiftV,
+        PasteMethod::ShiftInsert,
+    ];
+
+    /// The rule as decided (PROTOCOL.md "The rule", the plan of 2026-11-23),
+    /// written out apart from the code: `skipped` is the choice to go
+    /// without Accessibility.
+    fn ruled(
+        method: PasteMethod,
+        skipped: bool,
+        clipboard: ClipboardHandling,
+        context: InsertionContext,
+    ) -> Insertion {
+        let sends_keys = matches!(
+            method,
+            PasteMethod::CtrlV
+                | PasteMethod::Direct
+                | PasteMethod::CtrlShiftV
+                | PasteMethod::ShiftInsert
+        );
+        let copies = clipboard == ClipboardHandling::CopyToClipboard;
+        if context.copy_requested {
+            return Insertion::CopyInstead;
+        }
+        // 1. A waiting service call keeps the text; else an added source
+        //    inserts what would be pasted with keys, with or without
+        //    Accessibility; the key presses and the copy only with it.
+        //    Without Accessibility "None" is the mode's own paste method,
+        //    not pasting turned off.
+        let through_input_method = sends_keys || (method == PasteMethod::None && skipped);
+        if context.input_method_added && through_input_method && !context.call_waiting {
+            return Insertion::InputMethod {
+                then_keys: !skipped,
+                then_copy: !skipped && copies,
+            };
+        }
+        // 2. and 3. As before the input method.
+        if method == PasteMethod::ExternalScript || (sends_keys && !skipped) {
+            Insertion::Paste
+        } else if skipped && context.service_available {
+            Insertion::WaitForService
+        } else if copies {
+            Insertion::LeaveOnClipboard
+        } else {
+            Insertion::HistoryOnly
+        }
+    }
+
+    /// Every context: service, source added, call waiting, copy asked.
+    fn contexts() -> Vec<InsertionContext> {
+        let mut all = Vec::new();
+        for service_available in [true, false] {
+            for input_method_added in [false, true] {
+                for call_waiting in [false, true] {
+                    for copy_requested in [false, true] {
+                        all.push(InsertionContext {
+                            service_available,
+                            input_method_added,
+                            call_waiting,
+                            copy_requested,
+                        });
+                    }
+                }
+            }
+        }
+        all
+    }
+
+    #[test]
+    fn the_rule_decides_every_combination_as_decided() {
+        let mut differ = Vec::new();
+        let mut cases = 0;
+        for method in METHODS {
+            for (skipped, trusted) in STATES {
+                for clipboard in [
+                    ClipboardHandling::DontModify,
+                    ClipboardHandling::CopyToClipboard,
+                ] {
+                    for context in contexts() {
+                        cases += 1;
+                        let mut settings = with_choice(get_default_settings(), skipped);
+                        settings.paste_method = method;
+                        settings.clipboard_handling = clipboard;
+                        let got = with_system_trusted(trusted, || insertion(&settings, context));
+                        let expected = ruled(method, skipped, clipboard, context);
+                        if got != expected {
+                            differ.push(format!(
+                                "{method:?}, skipped {skipped}, trusted {trusted}, {clipboard:?}, {context:?}: {got:?}, expected {expected:?}"
+                            ));
+                        }
+                    }
+                }
+            }
+        }
+        assert!(
+            differ.is_empty(),
+            "{} of {cases} cases differ:\n{}",
+            differ.len(),
+            differ.join("\n")
+        );
+    }
+
+    #[test]
+    fn a_text_goes_through_the_input_method_only_with_a_method_that_sends_keys() {
+        for method in METHODS {
+            let mut settings = get_default_settings();
+            settings.paste_method = method;
+            assert!(
+                !inserts_through_input_method(&settings, false),
+                "{method:?}, not added"
+            );
+            assert_eq!(
+                inserts_through_input_method(&settings, true),
+                crate::clipboard::sends_keys(method),
+                "{method:?}, added"
+            );
+        }
+    }
+
+    #[test]
+    fn without_accessibility_the_mode_s_own_settings_insert_through_an_added_source() {
+        // As "Continue without Accessibility" leaves them: paste method
+        // "None", set by the mode, not chosen by the user. Every Mac without
+        // Accessibility has it (found in the first real run, 2026-11-24).
+        let settings = settings_without_accessibility();
+        assert_eq!(settings.paste_method, PasteMethod::None);
+        let added = InsertionContext {
+            service_available: true,
+            input_method_added: true,
+            ..InsertionContext::default()
+        };
+        assert!(inserts_through_input_method(&settings, true));
+        assert_eq!(
+            insertion(&settings, added),
+            Insertion::InputMethod {
+                then_keys: false,
+                then_copy: false
+            }
+        );
+        assert_eq!(
+            dictation_target_with(&settings, added),
+            DictationTarget::Pasted
+        );
+        // Not added: it waits for the service, as before.
+        assert_eq!(
+            insertion(&settings, added.without_input_method()),
+            Insertion::WaitForService
+        );
+        // A waiting service call still gets it.
+        let called = InsertionContext {
+            call_waiting: true,
+            ..added
+        };
+        assert_eq!(insertion(&settings, called), Insertion::WaitForService);
+        // With Accessibility, "None" is pasting turned off, and it stays off.
+        let off = with_choice(settings.clone(), false);
+        assert!(!inserts_through_input_method(&off, true));
+        assert!(!matches!(
+            insertion(&off, added),
+            Insertion::InputMethod { .. }
+        ));
+    }
+
+    #[test]
+    fn an_insertion_that_fails_falls_back_as_without_the_input_method() {
+        let added = InsertionContext {
+            service_available: true,
+            input_method_added: true,
+            ..InsertionContext::default()
+        };
+        // With Accessibility: pasted as today.
+        let mut with = get_default_settings();
+        with.paste_method = PasteMethod::CtrlV;
+        assert!(matches!(
+            insertion(&with, added),
+            Insertion::InputMethod { .. }
+        ));
+        assert_eq!(
+            insertion(&with, added.without_input_method()),
+            Insertion::Paste
+        );
+        // Without: it waits for the service as today.
+        let mut without = settings_without_accessibility();
+        without.paste_method = PasteMethod::CtrlV;
+        assert!(matches!(
+            insertion(&without, added),
+            Insertion::InputMethod { .. }
+        ));
+        assert_eq!(
+            insertion(&without, added.without_input_method()),
+            Insertion::WaitForService
+        );
+    }
+
+    #[test]
+    fn without_accessibility_a_text_through_the_input_method_goes_into_the_app_in_front() {
+        let mut settings = settings_without_accessibility();
+        settings.paste_method = PasteMethod::CtrlV;
+        let added = InsertionContext {
+            service_available: true,
+            input_method_added: true,
+            ..InsertionContext::default()
+        };
+        assert_eq!(
+            dictation_target_with(&settings, added),
+            DictationTarget::Pasted
+        );
+        // So the profile of the application in front may redo it.
+        assert!(goes_into_app_in_front(&settings, added));
+        // Not added: it waits, as before.
+        let not_added = added.without_input_method();
+        assert_eq!(
+            dictation_target_with(&settings, not_added),
+            DictationTarget::InsertService
+        );
+        assert!(!goes_into_app_in_front(&settings, not_added));
+        // A waiting service call inserts it there itself.
+        let called = InsertionContext {
+            call_waiting: true,
+            ..added
+        };
+        assert_eq!(
+            dictation_target_with(&settings, called),
+            DictationTarget::InsertService
+        );
+        assert!(goes_into_app_in_front(&settings, called));
+        // "Copy Last Transcript" puts it on the clipboard instead.
+        let copied = InsertionContext {
+            copy_requested: true,
+            ..added
+        };
+        assert_eq!(
+            dictation_target_with(&settings, copied),
+            DictationTarget::InsertService
+        );
+        // "None", as the mode itself sets it: through the input method too.
+        settings.paste_method = PasteMethod::None;
+        assert_eq!(
+            dictation_target_with(&settings, added),
+            DictationTarget::Pasted
+        );
+        assert!(goes_into_app_in_front(&settings, added));
+        // An external script pastes by its own means; nothing goes through
+        // the input method.
+        settings.paste_method = PasteMethod::ExternalScript;
+        assert!(!inserts_through_input_method(&settings, true));
+    }
+
+    #[test]
+    fn a_dictation_the_input_method_inserted_waits_for_nothing() {
+        let end = DictationEnd {
+            inserted_by_input_method: true,
+            ..delivered()
+        };
+        for settings in [get_default_settings(), settings_without_accessibility()] {
+            // No waiting sound with the done sound off; the done sound on.
+            assert_eq!(
+                sound_after_dictation(&with_sounds(settings.clone(), false), true, end),
+                None
+            );
+            assert_eq!(
+                sound_after_dictation(&with_sounds(settings, true), true, end),
+                Some(SoundType::Done)
+            );
+        }
+        // And the overlay just hides.
+        assert_eq!(
+            overlay_after(DictationTarget::Pasted, &settings_without_accessibility()),
+            None
+        );
+        assert_eq!(
+            overlay_after(
+                DictationTarget::InsertService,
+                &settings_without_accessibility()
+            ),
+            Some((DictationNotice::ReadyToInsert, Duration::from_millis(2500)))
+        );
+    }
+
+    // ---- Selecting the source around a dictation --------------------------
+
+    /// A fake input method, added or not, and the calls it got.
+    fn fake_input_method(added: bool) -> (Arc<FakeInputMethod>, Arc<Mutex<Vec<ImCall>>>) {
+        let calls = Arc::default();
+        (
+            Arc::new(FakeInputMethod::keeping_calls_in(added, inserted(), &calls)),
+            calls,
+        )
+    }
+
+    #[test]
+    fn a_recording_selects_the_source_only_when_its_text_goes_through_it() {
+        for method in METHODS {
+            for (skipped, trusted) in STATES {
+                for added in [false, true] {
+                    let mut settings = with_choice(get_default_settings(), skipped);
+                    settings.paste_method = method;
+                    let (input_method, calls) = fake_input_method(added);
+                    let input_method: Arc<dyn InputMethod> = input_method;
+                    let hold = with_system_trusted(trusted, || {
+                        begin_input_source(&settings, &input_method)
+                    });
+                    let case =
+                        format!("{method:?}, skipped {skipped}, trusted {trusted}, added {added}");
+                    // Without Accessibility "None" is the mode's own paste
+                    // method, not pasting turned off.
+                    let goes_through = added
+                        && (crate::clipboard::sends_keys(method)
+                            || (method == PasteMethod::None && skipped));
+                    assert_eq!(hold.is_some(), goes_through, "{case}");
+                    let begun = if goes_through {
+                        vec![ImCall::Begin]
+                    } else {
+                        Vec::new()
+                    };
+                    assert_eq!(*calls.lock().unwrap(), begun, "{case}");
+                    // Its end comes with the hold, once.
+                    drop(hold);
+                    let ended = if goes_through {
+                        vec![ImCall::Begin, ImCall::End]
+                    } else {
+                        Vec::new()
+                    };
+                    assert_eq!(*calls.lock().unwrap(), ended, "{case}");
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn a_hold_ends_whatever_the_source_answers_by_then() {
+        // The main thread didn't answer in time, so the source seems not
+        // added: the hold that began ends all the same, or DanyWhere's
+        // source would stay selected.
+        let (input_method, calls) = fake_input_method(true);
+        let hold = InputSourceHold::begin(input_method.clone());
+        input_method.set_added(false);
+        drop(hold);
+        assert_eq!(*calls.lock().unwrap(), vec![ImCall::Begin, ImCall::End]);
+    }
+
+    // ---- "Paste Last Transcript" through the input method -----------------
+
+    impl FakePasteLast {
+        /// The user has added DanyWhere's input source; inserting through
+        /// it gives `insert`.
+        fn with_input_method(mut self, insert: Result<Inserted, InsertFailure>) -> Self {
+            self.input_method_added = true;
+            self.input_method_insert = insert;
+            self
+        }
+    }
+
+    fn im(call: ImCall) -> Did {
+        Did::InputMethod(call)
+    }
+
+    fn insert(text: &str) -> Did {
+        im(ImCall::Insert(text.to_string()))
+    }
+
+    /// "Paste Last" holds the source before it inserts, as every operation
+    /// does; the hold ends after its last attempt.
+    fn begun() -> Did {
+        im(ImCall::Begin)
+    }
+
+    #[test]
+    fn paste_last_inserts_through_the_input_method_once_its_source_is_added() {
+        // With its "Append" text, without the clipboard; then the source
+        // from before again.
+        let mut ports = FakePasteLast::in_use(PasteMethod::CtrlV).with_input_method(inserted());
+        ports.ended_with = Some(ended_with(r"\nMfG"));
+        assert_eq!(paste_last_with(&ports), PasteLastOutcome::Pasted);
+        assert_eq!(
+            ports.did(),
+            vec![begun(), insert("Hallo\nMfG"), im(ImCall::End)]
+        );
+        assert_eq!(ports.sounds.get(), 0);
+    }
+
+    #[test]
+    fn paste_last_through_the_input_method_sends_the_append_keys_after_it() {
+        let mut ports = FakePasteLast::in_use(PasteMethod::CtrlV).with_input_method(inserted());
+        ports.ended_with = Some(ended_with(r"\s{Enter}"));
+        assert_eq!(paste_last_with(&ports), PasteLastOutcome::Pasted);
+        assert_eq!(
+            ports.did(),
+            vec![
+                begun(),
+                insert("Hallo "),
+                Did::Keys(vec![AppendKey::Enter]),
+                im(ImCall::End)
+            ]
+        );
+    }
+
+    #[test]
+    fn paste_last_inserts_nothing_more_when_the_input_method_may_have_inserted_it() {
+        // Sent, but not confirmed in time: a ⌘V could put it in twice, and
+        // an Enter could send what isn't there.
+        let mut ports = FakePasteLast::in_use(PasteMethod::CtrlV)
+            .with_input_method(Err(InsertFailure::Unanswered));
+        ports.ended_with = Some(ended_with(r"\s{Enter}"));
+        assert_eq!(paste_last_with(&ports), PasteLastOutcome::Pasted);
+        assert_eq!(
+            ports.did(),
+            vec![begun(), insert("Hallo "), im(ImCall::End)]
+        );
+    }
+
+    #[test]
+    fn paste_last_through_the_input_method_copies_only_when_set_so() {
+        let mut ports = FakePasteLast::in_use(PasteMethod::CtrlV).with_input_method(inserted());
+        ports.settings.clipboard_handling = ClipboardHandling::CopyToClipboard;
+        ports.ended_with = Some(ended_with(r"\s"));
+        assert_eq!(paste_last_with(&ports), PasteLastOutcome::Pasted);
+        // Quietly, as a paste copies.
+        assert_eq!(
+            ports.did(),
+            vec![
+                begun(),
+                insert("Hallo "),
+                Did::OnClipboard {
+                    text: "Hallo ".to_string(),
+                    notice_ms: None,
+                },
+                im(ImCall::End)
+            ]
+        );
+        assert_eq!(ports.sounds.get(), 0);
+    }
+
+    #[test]
+    fn paste_last_pastes_as_before_when_the_input_method_cannot_insert() {
+        for failure in [
+            InsertFailure::NoClient,
+            InsertFailure::NotConnected,
+            InsertFailure::Failed("timeout".to_string()),
+        ] {
+            let mut ports =
+                FakePasteLast::in_use(PasteMethod::CtrlV).with_input_method(Err(failure.clone()));
+            ports.ended_with = Some(ended_with(r"\s{Enter}"));
+            assert_eq!(
+                paste_last_with(&ports),
+                PasteLastOutcome::Pasted,
+                "{failure:?}"
+            );
+            assert_eq!(
+                ports.did(),
+                vec![
+                    begun(),
+                    insert("Hallo "),
+                    Did::Pasted {
+                        text: "Hallo".to_string(),
+                        method: PasteMethod::CtrlV,
+                        append: r"\s{Enter}".to_string(),
+                    },
+                    im(ImCall::End)
+                ],
+                "{failure:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn paste_last_inserts_through_the_input_method_with_the_app_in_front_s_profile() {
+        let mut ports = FakePasteLast::in_use(PasteMethod::CtrlV).with_input_method(inserted());
+        ports.app_in_front = Some(app_profile(PasteMethod::CtrlShiftV, Some("Redone")));
+        assert_eq!(paste_last_with(&ports), PasteLastOutcome::Pasted);
+        assert_eq!(
+            ports.did(),
+            vec![begun(), insert("Redone [app]"), im(ImCall::End)]
+        );
+    }
+
+    #[test]
+    fn paste_last_leaves_the_input_method_alone_where_nothing_is_pasted_with_keys() {
+        // Pasting off, an external script, or no Accessibility: as before,
+        // and the input source isn't touched.
+        let off = FakePasteLast::in_use(PasteMethod::None).with_input_method(inserted());
+        assert_eq!(paste_last_with(&off), PasteLastOutcome::OnClipboard);
+        assert_eq!(
+            off.did(),
+            vec![Did::OnClipboard {
+                text: "Hallo".to_string(),
+                notice_ms: Some(2500),
+            }]
+        );
+        let script =
+            FakePasteLast::in_use(PasteMethod::ExternalScript).with_input_method(inserted());
+        assert_eq!(paste_last_with(&script), PasteLastOutcome::Pasted);
+        assert!(matches!(
+            script.did().as_slice(),
+            [Did::Pasted {
+                method: PasteMethod::ExternalScript,
+                ..
+            }]
+        ));
+        for trusted in [true, false] {
+            let mut without =
+                FakePasteLast::in_use(PasteMethod::CtrlV).with_input_method(inserted());
+            without.settings = with_choice(without.settings, true);
+            let outcome = with_system_trusted(trusted, || paste_last_with(&without));
+            assert_eq!(outcome, PasteLastOutcome::OnClipboard, "trusted {trusted}");
+            assert!(
+                !without
+                    .did()
+                    .iter()
+                    .any(|did| matches!(did, Did::InputMethod(_))),
+                "trusted {trusted}: {:?}",
+                without.did()
+            );
+        }
     }
 }

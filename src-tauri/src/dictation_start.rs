@@ -16,6 +16,8 @@ use log::debug;
 
 use crate::app_profiles::OverlayProfile;
 use crate::audio_toolkit::VadPolicy;
+use crate::delivery::InputSourceHold;
+use crate::input_method::InputMethod;
 use crate::managers::audio::{recording_notice_code, RecordingReadiness};
 use crate::managers::transcription::policy::{live_decode, LiveDecode, ModelTraits};
 use crate::notices::NoticeCode;
@@ -226,6 +228,12 @@ pub trait StartSession {
     fn register_cancel_shortcut(&self);
     /// Warms up a local post-processing model, if the dictation needs one.
     fn warm_up(&self, settings: &AppSettings, post_process: bool);
+    /// DanyWhere's input method (`input_method::current`), whose source the
+    /// recording selects when its text is to go through it.
+    fn input_method(&self) -> Arc<dyn InputMethod>;
+    /// Keeps the recording's hold on that source until its stop hands it to
+    /// the dictation or a cancel drops it (`delivery::keep_recording_hold`).
+    fn keep_input_source(&self, hold: InputSourceHold);
 }
 
 /// Everything the start of a dictation acts on. The microphone and the
@@ -346,6 +354,16 @@ pub fn start_dictation(binding_id: &str, ports: &StartPorts) -> StartOutcome {
             // DanyWhere: a post-processing model on this computer starts
             // loading now, so its cold start falls into the speaking time.
             ports.session.warm_up(&settings, plan.post_process);
+            // DanyWhere: DanyWhere's input source while the recording runs,
+            // when its text is to go through the input method (user,
+            // 2026-11-23). The recording keeps its hold: its stop hands it
+            // to the dictation, which ends it once the text is in; a cancel
+            // drops it (the coordinator).
+            if let Some(hold) =
+                crate::delivery::begin_input_source(&settings, &ports.session.input_method())
+            {
+                ports.session.keep_input_source(hold);
+            }
             StartOutcome::Recording(cues)
         }
         Err(e) => {
@@ -425,6 +443,7 @@ fn give_cues_when_ready(
 mod tests {
     use super::*;
     use crate::end_keys::START_BINDINGS;
+    use crate::input_method::testing::{inserted, FakeInputMethod, ImCall};
     use crate::managers::audio::{fake_microphone, AudioRecordingManager};
     use crate::settings::ShortcutActivation;
     use handy_recorder::testing::{FakeError, FakeMic};
@@ -668,6 +687,7 @@ mod tests {
         StartSound,
         Mute,
         Notice(StartNotice),
+        InputMethod(ImCall),
     }
 
     type Log = Arc<Mutex<Vec<Did>>>;
@@ -683,6 +703,10 @@ mod tests {
         loaded: Option<String>,
         files: Result<(), String>,
         streams: bool,
+        /// The user has added DanyWhere's input source.
+        input_method_added: bool,
+        /// The holds on its source the start kept for the recording.
+        kept: Mutex<Vec<InputSourceHold>>,
     }
 
     impl StartProfile for FakeApp {
@@ -735,6 +759,17 @@ mod tests {
         }
         fn warm_up(&self, _settings: &AppSettings, post_process: bool) {
             note(&self.log, Did::WarmUp { post_process });
+        }
+        fn input_method(&self) -> Arc<dyn InputMethod> {
+            let log = Arc::clone(&self.log);
+            Arc::new(FakeInputMethod::new(
+                self.input_method_added,
+                inserted(),
+                move |call| note(&log, Did::InputMethod(call)),
+            ))
+        }
+        fn keep_input_source(&self, hold: InputSourceHold) {
+            self.kept.lock().unwrap().push(hold);
         }
     }
 
@@ -797,6 +832,8 @@ mod tests {
                     loaded: Some(MODEL.to_string()),
                     files: Ok(()),
                     streams: false,
+                    input_method_added: false,
+                    kept: Mutex::default(),
                 },
                 report: Arc::new(FakeReport(Arc::clone(&log))),
                 log,
@@ -958,5 +995,144 @@ mod tests {
         // model warms up.
         assert!(bench.log().contains(&Did::WarmUp { post_process: true }));
         fake_microphone::stop(&bench.rm, &bench.mic, START_BINDINGS[1]);
+    }
+
+    // DanyWhere's input method (user's decision, 2026-11-23): a recording
+    // whose text is to go through it selects its source.
+
+    /// The input method's calls in the start's log.
+    fn input_method_calls(log: &[Did]) -> Vec<ImCall> {
+        log.iter()
+            .filter_map(|did| match did {
+                Did::InputMethod(call) => Some(call.clone()),
+                _ => None,
+            })
+            .collect()
+    }
+
+    #[test]
+    fn a_recording_whose_text_goes_through_the_input_method_selects_its_source() {
+        // With Accessibility or without: the input method inserts either way.
+        for skipped in [false, true] {
+            let mut bench = Bench::new(fake_microphone::mic());
+            bench.app.input_method_added = true;
+            bench.app.settings.paste_method = crate::settings::PasteMethod::CtrlV;
+            bench.app.settings.accessibility_skipped = skipped;
+            let outcome = bench.start(START_BINDINGS[0]);
+            fake_microphone::play(&bench.mic, &fake_microphone::speech(24_000));
+            cues_given(outcome);
+            assert_eq!(
+                bench.log(),
+                vec![
+                    Did::ProfileBegun,
+                    Did::LoadAsked,
+                    Did::SessionBegun,
+                    Did::Tray(TrayIconState::Recording),
+                    Did::PillProfile,
+                    Did::ContextBubble(false),
+                    Did::Overlay(StartOverlay::Recording),
+                    Did::TitleQueryPrimed,
+                    Did::CancelShortcutRegistered,
+                    Did::WarmUp {
+                        post_process: false
+                    },
+                    // Once the recording runs.
+                    Did::InputMethod(ImCall::Begin),
+                    Did::Ready,
+                    Did::StartSound,
+                    Did::Mute,
+                ],
+                "skipped {skipped}"
+            );
+            // The recording keeps its hold; whoever ends the recording ends
+            // it, once.
+            let kept = std::mem::take(&mut *bench.app.kept.lock().unwrap());
+            assert_eq!(kept.len(), 1, "skipped {skipped}");
+            drop(kept);
+            assert_eq!(
+                input_method_calls(&bench.log()),
+                vec![ImCall::Begin, ImCall::End],
+                "skipped {skipped}"
+            );
+            fake_microphone::stop(&bench.rm, &bench.mic, START_BINDINGS[0]);
+        }
+    }
+
+    #[test]
+    fn without_accessibility_the_mode_s_own_settings_select_an_added_source() {
+        // As "Continue without Accessibility" leaves them: paste method
+        // "None", set by the mode (found in the first real run, 2026-11-24).
+        let mut bench = Bench::new(fake_microphone::mic());
+        bench.app.input_method_added = true;
+        crate::shortcut::apply_no_accessibility_mode(&mut bench.app.settings);
+        assert_eq!(
+            bench.app.settings.paste_method,
+            crate::settings::PasteMethod::None
+        );
+        let outcome = bench.start(START_BINDINGS[0]);
+        fake_microphone::play(&bench.mic, &fake_microphone::speech(24_000));
+        cues_given(outcome);
+        assert_eq!(input_method_calls(&bench.log()), vec![ImCall::Begin]);
+        let kept = std::mem::take(&mut *bench.app.kept.lock().unwrap());
+        assert_eq!(kept.len(), 1);
+        drop(kept);
+        assert_eq!(
+            input_method_calls(&bench.log()),
+            vec![ImCall::Begin, ImCall::End]
+        );
+        fake_microphone::stop(&bench.rm, &bench.mic, START_BINDINGS[0]);
+    }
+
+    #[test]
+    fn a_recording_whose_text_does_not_go_through_the_input_method_leaves_the_source_alone() {
+        use crate::settings::PasteMethod;
+        for (added, method) in [
+            (false, PasteMethod::CtrlV),
+            (true, PasteMethod::None),
+            (true, PasteMethod::ExternalScript),
+        ] {
+            let mut bench = Bench::new(fake_microphone::mic());
+            bench.app.input_method_added = added;
+            bench.app.settings.paste_method = method;
+            let outcome = bench.start(START_BINDINGS[0]);
+            assert!(matches!(outcome, StartOutcome::Recording(_)));
+            fake_microphone::stop(&bench.rm, &bench.mic, START_BINDINGS[0]);
+            cues_given(outcome);
+            assert_eq!(
+                input_method_calls(&bench.log()),
+                Vec::new(),
+                "added {added}, {method:?}"
+            );
+            assert!(
+                bench.app.kept.lock().unwrap().is_empty(),
+                "added {added}, {method:?}: no hold to end"
+            );
+        }
+    }
+
+    #[test]
+    fn a_start_that_does_not_record_leaves_the_source_alone() {
+        // No model.
+        let mut bench = Bench::new(fake_microphone::mic());
+        bench.app.input_method_added = true;
+        bench.app.settings.paste_method = crate::settings::PasteMethod::CtrlV;
+        bench.app.settings.selected_model = String::new();
+        bench.app.loaded = None;
+        assert!(matches!(
+            bench.start(START_BINDINGS[0]),
+            StartOutcome::NoModel
+        ));
+        assert_eq!(input_method_calls(&bench.log()), Vec::new());
+        // The microphone doesn't start.
+        let mic = fake_microphone::mic();
+        mic.fail_next_open(FakeError::PermissionDenied);
+        let mut bench = Bench::new(mic);
+        bench.app.input_method_added = true;
+        bench.app.settings.paste_method = crate::settings::PasteMethod::CtrlV;
+        assert!(matches!(
+            bench.start(START_BINDINGS[0]),
+            StartOutcome::RecordingFailed
+        ));
+        assert_eq!(input_method_calls(&bench.log()), Vec::new());
     }
 }

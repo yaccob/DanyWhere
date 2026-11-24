@@ -11,11 +11,13 @@ use super::ports::{
     Deliver, History, Overlay, PostProcess, Recording, Report, Session, Transcribe,
 };
 use crate::actions::{ProcessedTranscription, TranscriptionOutcome};
+use crate::append_text::AppendKey;
 use crate::audio_feedback::{play_feedback_sound, SoundType};
 use crate::delivery::DictationEnd;
 use crate::dictation_context::{CapturedWindow, ContextQuery};
 use crate::dictation_key_inserts::ClipboardReason;
 use crate::dictation_snapshot::DictationSnapshot;
+use crate::input_method::InputMethod;
 use crate::managers::audio::AudioRecordingManager;
 use crate::managers::history::{HistoryEntry, HistoryManager};
 use crate::managers::transcription::{StreamWorkKind, Transcription, TranscriptionManager};
@@ -139,6 +141,14 @@ impl Deliver for AppPorts {
 
     fn put_on_clipboard_if_requested(&self, session: u64, text: &str) -> Option<ClipboardReason> {
         crate::dictation_key_inserts::put_on_clipboard_if_requested(&self.app, session, text)
+    }
+
+    fn input_method(&self) -> Arc<dyn InputMethod> {
+        crate::input_method::current()
+    }
+
+    fn press_keys(&self, keys: Vec<AppendKey>) -> Result<(), String> {
+        crate::clipboard::press_keys(&self.app, keys)
     }
 }
 

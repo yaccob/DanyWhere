@@ -114,6 +114,14 @@
       "welcomeBack": "Welcome back. Picking up where you left off.",
       "relaunch": "Shortcut not responding after this? <relaunch>Relaunch Handy</relaunch> and you'll land right back here."
     },
+    "insertDirectly": {
+      "title": "Insert Directly",
+      "why": "Without Accessibility, a dictation waits until you insert it with ⌃⇧V. Once the input source is added, end shortcuts insert it right away.",
+      "notAdded": "Not added yet",
+      "added": "Added. Your dictations now go straight into the text field.",
+      "later": "Later",
+      "laterHint": "You can add it later under Application Settings › Accessibility."
+    },
     "shell": {
       "back": "Back",
       "continue": "Continue",
@@ -531,6 +539,18 @@
         "last": "The last end shortcut can't go: a recording must always be possible to end.",
         "cannotEnd": "On Linux a recording could no longer be ended: keep an end shortcut with a start shortcut's combination, or choose “Hold”."
       }
+    },
+    "inputMethod": {
+      "title": "Insert Without the Clipboard",
+      "description": "Dictations go straight into the text field through DanyWhere's own input source, and the clipboard stays as it is.",
+      "howItWorks": "The input source is selected only while a dictation runs, and typing keeps your keyboard layout.",
+      "offer": "Optional: with Accessibility, DanyWhere already pastes dictations through the clipboard.",
+      "withoutAccessibility": "Once it's added, end shortcuts insert the text right away instead of leaving it for “{{shortcut}}”.",
+      "setUp": "Add in System Settings",
+      "steps": "In Keyboard, click Edit… next to Input Sources, then + and English, choose “{{name}}” and click Add.",
+      "setUpFailed": "Couldn't set up the input source",
+      "added": "Dictations are inserted directly, without the clipboard.",
+      "stop": "To stop, remove “{{name}}” from Input Sources in System Settings."
     },
     "profiles": {
       "title": "Profiles",
@@ -1192,6 +1212,7 @@
         "screens": {
           "welcome": "Welcome",
           "permissions": "Permissions",
+          "insertDirectly": "Insert Directly",
           "model": "Model",
           "demo": "Demo",
           "try": "Try it",

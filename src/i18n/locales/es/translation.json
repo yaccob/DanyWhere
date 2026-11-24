@@ -114,6 +114,14 @@
       "welcomeBack": "Te damos la bienvenida de nuevo. Seguimos donde lo dejaste.",
       "relaunch": "¿El atajo no responde después de esto? <relaunch>Reinicia Handy</relaunch> y volverás justo aquí."
     },
+    "insertDirectly": {
+      "title": "Insertar directamente",
+      "why": "Sin Accesibilidad, un dictado espera hasta que lo insertes con ⌃⇧V. Una vez añadida la fuente de entrada, los atajos de fin lo insertan al momento.",
+      "notAdded": "Aún no añadida",
+      "added": "Añadida. Tus dictados van ahora directamente al campo de texto.",
+      "later": "Más tarde",
+      "laterHint": "Puedes añadirla más tarde en Configuración de la aplicación › Accesibilidad."
+    },
     "shell": {
       "back": "Atrás",
       "continue": "Continuar",
@@ -531,6 +539,18 @@
         "last": "El último atajo de fin no se puede quitar: siempre debe ser posible terminar una grabación.",
         "cannotEnd": "En Linux ya no se podría terminar una grabación: conserva un atajo de fin con la combinación de un atajo de inicio o elige «Mantener»."
       }
+    },
+    "inputMethod": {
+      "title": "Insertar sin el portapapeles",
+      "description": "Los dictados van directamente al campo de texto a través de la fuente de entrada propia de DanyWhere, y el portapapeles queda como está.",
+      "howItWorks": "La fuente de entrada solo está seleccionada mientras dura un dictado; al escribir, mantienes tu distribución de teclado.",
+      "offer": "Opcional: con Accesibilidad, DanyWhere ya pega los dictados a través del portapapeles.",
+      "withoutAccessibility": "Una vez añadida, los atajos de fin insertan el texto al momento en lugar de dejarlo para «{{shortcut}}».",
+      "setUp": "Añadir en Ajustes del Sistema",
+      "steps": "En «Teclado», haz clic en «Editar…» junto a «Fuentes de entrada», luego en «+» y en «Inglés», elige «{{name}}» y haz clic en «Añadir».",
+      "setUpFailed": "No se pudo configurar la fuente de entrada",
+      "added": "Los dictados se insertan directamente, sin el portapapeles.",
+      "stop": "Para dejar de usarla, quita «{{name}}» de las fuentes de entrada en Ajustes del Sistema."
     },
     "profiles": {
       "title": "Perfiles",
@@ -1192,6 +1212,7 @@
         "screens": {
           "welcome": "Bienvenida",
           "permissions": "Permisos",
+          "insertDirectly": "Insertar directamente",
           "model": "Modelo",
           "demo": "Demostración",
           "try": "Pruébalo",

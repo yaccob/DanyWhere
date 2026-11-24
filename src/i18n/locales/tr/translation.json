@@ -114,6 +114,14 @@
       "welcomeBack": "Tekrar hoş geldiniz. Kaldığınız yerden devam ediyoruz.",
       "relaunch": "Bundan sonra kısayol yanıt vermiyor mu? <relaunch>Handy'yi yeniden başlatın</relaunch>, doğrudan buraya döneceksiniz."
     },
+    "insertDirectly": {
+      "title": "Doğrudan ekle",
+      "why": "Erişilebilirlik olmadan bir dikte, siz onu ⌃⇧V ile ekleyene kadar bekler. Giriş kaynağı eklendikten sonra bitirme kısayolları onu hemen ekler.",
+      "notAdded": "Henüz eklenmedi",
+      "added": "Eklendi. Dikteleriniz artık doğrudan metin alanına gidiyor.",
+      "later": "Daha sonra",
+      "laterHint": "Bunu daha sonra Uygulama Ayarları › Erişilebilirlik altında ekleyebilirsiniz."
+    },
     "shell": {
       "back": "Geri",
       "continue": "Devam",
@@ -531,6 +539,18 @@
         "last": "Son bitirme kısayolu kaldırılamaz: kayıt her zaman bitirilebilmelidir.",
         "cannotEnd": "Linux'ta kayıt artık bitirilemezdi: bir başlatma kısayolunun tuş kombinasyonuna sahip bir bitirme kısayolu bırakın ya da “Basılı tut” seçeneğini seçin."
       }
+    },
+    "inputMethod": {
+      "title": "Pano Olmadan Ekleme",
+      "description": "Dikteler, DanyWhere'in kendi giriş kaynağı üzerinden doğrudan metin alanına gider ve pano olduğu gibi kalır.",
+      "howItWorks": "Giriş kaynağı yalnızca dikte sürerken seçili olur; yazarken klavye düzeniniz değişmez.",
+      "offer": "İsteğe bağlı: Erişilebilirlik ile DanyWhere dikteleri zaten pano üzerinden yapıştırır.",
+      "withoutAccessibility": "Eklendikten sonra bitirme kısayolları metni “{{shortcut}}” için bekletmek yerine hemen ekler.",
+      "setUp": "Sistem Ayarları'nda Ekle",
+      "steps": "“Klavye” bölümünde “Giriş Kaynakları” yanındaki “Düzenle…” düğmesini, ardından “+” düğmesini ve “İngilizce”yi tıklayın, “{{name}}” öğesini seçin ve “Ekle” düğmesini tıklayın.",
+      "setUpFailed": "Giriş kaynağı ayarlanamadı",
+      "added": "Dikteler pano kullanılmadan doğrudan eklenir.",
+      "stop": "Durdurmak için Sistem Ayarları'nda “{{name}}” öğesini Giriş Kaynakları'ndan kaldırın."
     },
     "profiles": {
       "title": "Profiller",
@@ -1192,6 +1212,7 @@
         "screens": {
           "welcome": "Hoş geldiniz",
           "permissions": "İzinler",
+          "insertDirectly": "Doğrudan ekle",
           "model": "Model",
           "demo": "Demo",
           "try": "Deneyin",

@@ -114,6 +114,14 @@
       "welcomeBack": "Us donem la benvinguda de nou. Continuem on ho havíeu deixat.",
       "relaunch": "La drecera no respon després d'això? <relaunch>Reinicieu el Handy</relaunch> i tornareu a aparèixer just aquí."
     },
+    "insertDirectly": {
+      "title": "Insereix directament",
+      "why": "Sense Accessibilitat, un dictat espera fins que l'inseriu amb ⌃⇧V. Un cop afegida la font d'entrada, les dreceres de final l'insereixen de seguida.",
+      "notAdded": "Encara no s'ha afegit",
+      "added": "Afegida. Ara els vostres dictats van directament al camp de text.",
+      "later": "Més tard",
+      "laterHint": "La podeu afegir més tard a Configuració de l'aplicació › Accessibilitat."
+    },
     "shell": {
       "back": "Enrere",
       "continue": "Continua",
@@ -531,6 +539,18 @@
         "last": "L'última drecera de final no es pot treure: una gravació sempre s'ha de poder acabar.",
         "cannotEnd": "A Linux ja no es podria acabar una gravació: conserva una drecera de final amb la combinació d'una drecera d'inici, o tria «Mantén premuda»."
       }
+    },
+    "inputMethod": {
+      "title": "Insereix sense el porta-retalls",
+      "description": "Els dictats van directament al camp de text a través de la font d'entrada pròpia del DanyWhere, i el porta-retalls queda tal com és.",
+      "howItWorks": "La font d'entrada només està seleccionada mentre dura un dictat; quan escriviu, conserveu la vostra distribució de teclat.",
+      "offer": "Opcional: amb Accessibilitat, el DanyWhere ja enganxa els dictats a través del porta-retalls.",
+      "withoutAccessibility": "Un cop afegida, les dreceres de final insereixen el text de seguida en lloc de deixar-lo per a «{{shortcut}}».",
+      "setUp": "Afegeix a Configuració del Sistema",
+      "steps": "A «Teclat», feu clic a «Edita…» al costat de «Fonts d'entrada», després a «+» i a «Anglès», seleccioneu «{{name}}» i feu clic a «Afegeix».",
+      "setUpFailed": "No s'ha pogut configurar la font d'entrada",
+      "added": "Els dictats s'insereixen directament, sense el porta-retalls.",
+      "stop": "Per deixar de fer-la servir, traieu «{{name}}» de les fonts d'entrada a Configuració del Sistema."
     },
     "profiles": {
       "title": "Perfils",
@@ -1192,6 +1212,7 @@
         "screens": {
           "welcome": "Benvinguda",
           "permissions": "Permisos",
+          "insertDirectly": "Insereix directament",
           "model": "Model",
           "demo": "Demostració",
           "try": "Prova-ho",

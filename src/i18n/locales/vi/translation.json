@@ -114,6 +114,14 @@
       "welcomeBack": "Chào mừng bạn quay lại. Tiếp tục từ chỗ bạn đã dừng.",
       "relaunch": "Phím tắt không phản hồi sau bước này? <relaunch>Khởi chạy lại Handy</relaunch> và bạn sẽ quay lại đúng chỗ này."
     },
+    "insertDirectly": {
+      "title": "Chèn trực tiếp",
+      "why": "Khi không có Trợ năng, bản đọc chính tả sẽ chờ cho đến khi bạn chèn bằng ⌃⇧V. Sau khi thêm nguồn đầu vào, phím tắt kết thúc sẽ chèn ngay.",
+      "notAdded": "Chưa thêm",
+      "added": "Đã thêm. Giờ đây bản đọc chính tả của bạn đi thẳng vào ô văn bản.",
+      "later": "Để sau",
+      "laterHint": "Bạn có thể thêm sau trong Cài đặt ứng dụng › Trợ năng."
+    },
     "shell": {
       "back": "Quay lại",
       "continue": "Tiếp tục",
@@ -531,6 +539,18 @@
         "last": "Không thể bỏ phím tắt kết thúc cuối cùng: bản ghi phải luôn có thể kết thúc.",
         "cannotEnd": "Trên Linux sẽ không thể kết thúc bản ghi nữa: hãy giữ lại một phím tắt kết thúc có tổ hợp phím của một phím tắt bắt đầu, hoặc chọn “Giữ”."
       }
+    },
+    "inputMethod": {
+      "title": "Chèn không qua bảng nhớ tạm",
+      "description": "Bản đọc chính tả đi thẳng vào ô văn bản qua nguồn đầu vào riêng của DanyWhere, và bảng nhớ tạm được giữ nguyên.",
+      "howItWorks": "Nguồn đầu vào chỉ được chọn trong khi đọc chính tả, và khi gõ bạn vẫn dùng bố cục bàn phím của mình.",
+      "offer": "Tùy chọn: khi có Trợ năng, DanyWhere đã dán bản đọc chính tả qua bảng nhớ tạm.",
+      "withoutAccessibility": "Sau khi thêm, phím tắt kết thúc sẽ chèn văn bản ngay thay vì để lại cho “{{shortcut}}”.",
+      "setUp": "Thêm trong Cài đặt hệ thống",
+      "steps": "Trong “Bàn phím”, bấm “Sửa…” bên cạnh “Nguồn đầu vào”, rồi bấm “+” và “Tiếng Anh”, chọn “{{name}}” và bấm “Thêm”.",
+      "setUpFailed": "Không thể thiết lập nguồn đầu vào",
+      "added": "Bản đọc chính tả được chèn trực tiếp, không qua bảng nhớ tạm.",
+      "stop": "Để dừng, hãy xóa “{{name}}” khỏi Nguồn đầu vào trong Cài đặt hệ thống."
     },
     "profiles": {
       "title": "Hồ sơ",
@@ -1192,6 +1212,7 @@
         "screens": {
           "welcome": "Chào mừng",
           "permissions": "Quyền",
+          "insertDirectly": "Chèn trực tiếp",
           "model": "Mô hình",
           "demo": "Demo",
           "try": "Thử xem",

@@ -114,6 +114,14 @@
       "welcomeBack": "Selamat datang kembali. Kita lanjutkan dari tadi.",
       "relaunch": "Pintasan tidak merespons setelah ini? <relaunch>Luncurkan ulang Handy</relaunch> dan Anda akan kembali tepat ke sini."
     },
+    "insertDirectly": {
+      "title": "Sisipkan langsung",
+      "why": "Tanpa Aksesibilitas, dikte menunggu hingga Anda menyisipkannya dengan ⌃⇧V. Setelah sumber input ditambahkan, pintasan akhir langsung menyisipkannya.",
+      "notAdded": "Belum ditambahkan",
+      "added": "Ditambahkan. Dikte Anda kini langsung masuk ke kolom teks.",
+      "later": "Nanti",
+      "laterHint": "Anda dapat menambahkannya nanti di Pengaturan Aplikasi › Aksesibilitas."
+    },
     "shell": {
       "back": "Kembali",
       "continue": "Lanjutkan",
@@ -531,6 +539,18 @@
         "last": "Pintasan akhir terakhir tidak bisa dihapus: rekaman harus selalu bisa diakhiri.",
         "cannotEnd": "Di Linux rekaman tidak akan bisa diakhiri lagi: pertahankan satu pintasan akhir dengan kombinasi sebuah pintasan mulai, atau pilih “Tahan”."
       }
+    },
+    "inputMethod": {
+      "title": "Sisipkan Tanpa Papan Klip",
+      "description": "Dikte langsung masuk ke kolom teks melalui sumber input milik DanyWhere sendiri, dan papan klip tetap seperti semula.",
+      "howItWorks": "Sumber input hanya dipilih selama dikte berjalan, dan saat mengetik tata letak papan ketik Anda tetap dipakai.",
+      "offer": "Opsional: dengan Aksesibilitas, DanyWhere sudah menempelkan dikte melalui papan klip.",
+      "withoutAccessibility": "Setelah ditambahkan, pintasan akhir langsung menyisipkan teks, bukan membiarkannya untuk “{{shortcut}}”.",
+      "setUp": "Tambahkan di Pengaturan Sistem",
+      "steps": "Di “Papan Ketik”, klik “Edit…” di samping “Sumber Input”, lalu “+” dan “Inggris”, pilih “{{name}}”, dan klik “Tambah”.",
+      "setUpFailed": "Tidak dapat menyiapkan sumber input",
+      "added": "Dikte disisipkan langsung, tanpa papan klip.",
+      "stop": "Untuk berhenti, hapus “{{name}}” dari Sumber Input di Pengaturan Sistem."
     },
     "profiles": {
       "title": "Profil",
@@ -1192,6 +1212,7 @@
         "screens": {
           "welcome": "Selamat datang",
           "permissions": "Izin",
+          "insertDirectly": "Sisipkan langsung",
           "model": "Model",
           "demo": "Demo",
           "try": "Coba",

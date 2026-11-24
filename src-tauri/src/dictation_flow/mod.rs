@@ -15,14 +15,17 @@
 //! server. The flow keeps every decision and the order of what the user
 //! sees and hears.
 
+use std::sync::Arc;
 use std::time::Instant;
 
 use log::{debug, error, warn};
 
 use crate::actions::{complete_unless_cancelled, process_transcription_with_settings};
 use crate::actions::{ProcessedTranscription, TranscriptionOutcome};
+use crate::delivery::{DictationTarget, Insertion, InsertionContext};
 use crate::dictation_context::ContextQuery;
 use crate::dictation_snapshot::DictationSnapshot;
+use crate::input_method::InputMethod;
 use crate::managers::history::HistoryManager;
 use crate::managers::transcription::Transcription;
 use crate::notices::{Notice, NoticeCode, NoticeSource};
@@ -48,6 +51,9 @@ pub struct Dictation {
     pub binding_id: String,
     /// When its recording was stopped.
     pub stop_time: Instant,
+    /// The hold on DanyWhere's input source its recording's start took
+    /// (`delivery::begin_input_source`), if it took one.
+    pub input_source: Option<crate::delivery::InputSourceHold>,
 }
 
 /// What the user sees and hears right when the recording of `snapshot`'s
@@ -85,6 +91,37 @@ struct Finished<'a, P: Session>(&'a P);
 impl<P: Session> Drop for Finished<'_, P> {
     fn drop(&mut self) {
         self.0.finished();
+    }
+}
+
+/// DanyWhere: the dictation's hold on DanyWhere's input source
+/// (`delivery::InputSourceHold`), if it has one: taken by its recording's
+/// start when the start profile's text goes through the input method
+/// (`delivery::begin_input_source`), else right before its text is
+/// inserted through it ([`DictationInputSource::hold`]). Handed to the paste
+/// thread with the text and dropped there once the text is in, ending the
+/// hold after the last attempt to insert it; or dropped with the task when
+/// the dictation ends without text. The paste thread may still run when the
+/// next recording starts and holds the source too: the input method selects
+/// the source from before only when the last hold ends.
+struct DictationInputSource {
+    input_method: Arc<dyn InputMethod>,
+    hold: Option<crate::delivery::InputSourceHold>,
+}
+
+impl DictationInputSource {
+    fn input_method(&self) -> &dyn InputMethod {
+        &*self.input_method
+    }
+
+    /// Before inserting through the input method: a hold of the dictation's
+    /// own, unless its recording's start took one.
+    fn hold(&mut self) {
+        if self.hold.is_none() {
+            self.hold = Some(crate::delivery::InputSourceHold::begin(Arc::clone(
+                &self.input_method,
+            )));
+        }
     }
 }
 
@@ -149,10 +186,16 @@ pub(crate) async fn finish_dictation<P: DictationPorts>(dictation: Dictation, po
         snapshot,
         binding_id,
         stop_time,
+        input_source: start_hold,
     } = dictation;
     let use_streaming_overlay = snapshot.use_streaming_overlay;
 
     let _guard = Finished(&ports);
+    // Dropped before `_guard`, or handed to the paste thread.
+    let input_source = DictationInputSource {
+        input_method: ports.input_method(),
+        hold: start_hold,
+    };
     debug!(
         "Starting async transcription task for binding: {}",
         binding_id
@@ -363,6 +406,7 @@ pub(crate) async fn finish_dictation<P: DictationPorts>(dictation: Dictation, po
                             sample_count,
                             stop_time,
                             paste_time: Instant::now(),
+                            input_source,
                         };
                         // DanyWhere: the dictation profile's values from
                         // the snapshot, for the paste (the profile ends
@@ -431,23 +475,18 @@ pub(crate) async fn finish_dictation<P: DictationPorts>(dictation: Dictation, po
 /// it goes as it is, with its own profile's values; as when it is copied
 /// ("Copy Last Transcript" during the dictation) or waits to be inserted.
 /// `settings` are the dictation's (`dictation_snapshot`), with its paste
-/// method; `service_available` is [`ports::Deliver::insert_service_available`].
+/// method; `context` what else decides how its text is inserted
+/// (`delivery::insertion`): through DanyWhere's input method it goes into
+/// the application in front also without Accessibility.
 fn redo_for_app_in_front<P: DictationPorts>(
     ports: &P,
     settings: &AppSettings,
-    service_available: bool,
+    context: InsertionContext,
     entry_id: Option<i64>,
-    session: u64,
     show: &dyn Fn(Working),
 ) -> Option<ForInsert> {
     let entry_id = entry_id?;
-    if ports.copies_instead_of_pasting(session)
-        || !crate::delivery::goes_into_app_in_front(
-            settings,
-            service_available,
-            ports.call_waiting(),
-        )
-    {
+    if context.copy_requested || !crate::delivery::goes_into_app_in_front(settings, context) {
         return None;
     }
     let entry = tauri::async_runtime::block_on(ports.history().get_entry_by_id(entry_id))
@@ -475,34 +514,94 @@ fn pasted_dictation_notice(
     })
 }
 
-/// DanyWhere: gets a dictation's `text` where `delivery::delivery_for` says
-/// for `settings`, the dictation's with the values it goes with: pasted
-/// with the paste method of `values` and its "Append" value `append_text`;
-/// or, where DanyWhere doesn't paste (without Accessibility, or pasting
-/// off), left as a paste with method "None" leaves it: on the clipboard as
-/// `with_append` (its "Append" text without key presses) when
-/// `delivery::copies_dictation_to_clipboard` says so, else only in the
-/// History, waiting for the "Insert Last Dictation" service where it does.
-/// Until 2026-11-23 the paste method alone decided, so a profile with ⌘V
-/// tried to paste without Accessibility and failed.
+/// How a dictation's text got where it goes ([`deliver_text`]).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Delivered {
+    /// DanyWhere's input method inserted it into the application in front.
+    ThroughInputMethod,
+    /// As before the input method: pasted, or left where the settings say.
+    AsBefore(PasteOutcome),
+}
+
+/// DanyWhere: the one point where a dictation's text goes where
+/// `delivery::insertion` says for `settings`, the dictation's with the
+/// values it goes with, and `context`. Once the user has added DanyWhere's
+/// input source, a text that would be pasted with keys is inserted through
+/// it as `with_append` (with its "Append" text), with Accessibility or
+/// without and without the clipboard; then, with Accessibility, the
+/// "Append" value's key presses and the copy the settings ask for. If that
+/// fails, and where the input method has no part, as before: pasted with
+/// the paste method of `values` and its "Append" value `append_text`; or,
+/// where DanyWhere doesn't paste (without Accessibility, or pasting off),
+/// left as a paste with method "None" leaves it: on the clipboard as
+/// `with_append` when `delivery::copies_dictation_to_clipboard` says so,
+/// else only in the History, waiting for the "Insert Last Dictation"
+/// service where it does. A failed insertion through the input method gets
+/// no notice, only a log line: the text went as it did before. The
+/// dictation holds DanyWhere's input source before inserting through it
+/// (`input_source`).
+#[allow(clippy::too_many_arguments)]
 fn deliver_text<P: Deliver>(
     ports: &P,
+    input_source: &mut DictationInputSource,
     settings: &AppSettings,
-    service_available: bool,
+    context: InsertionContext,
     text: String,
     values: Option<ProfileValues>,
     append_text: &str,
     with_append: &str,
-) -> Result<PasteOutcome, String> {
-    match crate::delivery::delivery_for(settings) {
-        crate::delivery::Delivery::Paste => ports.paste(text, values, append_text),
-        crate::delivery::Delivery::Clipboard => {
-            log::info!("Not pasting this dictation: without Accessibility, or pasting is off.");
-            if crate::delivery::copies_dictation_to_clipboard(settings, service_available) {
-                ports.leave_on_clipboard(with_append)?;
+) -> Result<Delivered, String> {
+    if let Insertion::InputMethod {
+        then_keys,
+        then_copy,
+    } = crate::delivery::insertion(settings, context)
+    {
+        input_source.hold();
+        match input_source.input_method().insert(with_append) {
+            Ok(inserted) => {
+                log::info!(
+                    "Inserted this dictation through DanyWhere's input method (into {:?}).",
+                    inserted.client
+                );
+                if then_keys {
+                    crate::delivery::press_append_keys(append_text, |keys| ports.press_keys(keys));
+                }
+                if then_copy {
+                    if let Err(err) = ports.leave_on_clipboard(with_append) {
+                        warn!("Inserted this dictation, but couldn't copy it: {err}");
+                    }
+                }
+                return Ok(Delivered::ThroughInputMethod);
             }
+            // Nothing more: a paste could put it in twice, and the "Append"
+            // keys could send what isn't there.
+            Err(failure) if failure.may_have_arrived() => {
+                warn!(
+                    "DanyWhere's input method didn't confirm this dictation ({failure:?}); not inserting it another way."
+                );
+                return Ok(Delivered::ThroughInputMethod);
+            }
+            Err(failure) => log::info!(
+                "Couldn't insert this dictation through DanyWhere's input method ({failure:?}); it goes as without it."
+            ),
+        }
+    }
+    match crate::delivery::insertion(settings, context.without_input_method()) {
+        Insertion::Paste => ports
+            .paste(text, values, append_text)
+            .map(Delivered::AsBefore),
+        Insertion::LeaveOnClipboard => {
+            log::info!("Not pasting this dictation: without Accessibility, or pasting is off.");
+            ports.leave_on_clipboard(with_append)?;
             // Delivered as the settings say, as a paste with method "None".
-            Ok(PasteOutcome::Pasted)
+            Ok(Delivered::AsBefore(PasteOutcome::Pasted))
+        }
+        Insertion::WaitForService
+        | Insertion::HistoryOnly
+        | Insertion::CopyInstead
+        | Insertion::InputMethod { .. } => {
+            log::info!("Not pasting this dictation: without Accessibility, or pasting is off.");
+            Ok(Delivered::AsBefore(PasteOutcome::Pasted))
         }
     }
 }
@@ -522,6 +621,9 @@ struct Delivery {
     sample_count: usize,
     stop_time: Instant,
     paste_time: Instant,
+    /// The dictation's hold on DanyWhere's input source, ended once the
+    /// text is in.
+    input_source: DictationInputSource,
 }
 
 /// The paste thread: puts the dictation's text where it goes, says how it
@@ -536,6 +638,7 @@ fn deliver_dictation<P: DictationPorts>(ports: &P, delivery: Delivery) {
         sample_count,
         stop_time,
         paste_time,
+        mut input_source,
     } = delivery;
     let session = snapshot.session;
     let use_streaming_overlay = snapshot.use_streaming_overlay;
@@ -547,6 +650,14 @@ fn deliver_dictation<P: DictationPorts>(ports: &P, delivery: Delivery) {
         return;
     }
 
+    // DanyWhere: what besides the settings decides how the text is inserted
+    // (`delivery::insertion`).
+    let context = InsertionContext {
+        service_available,
+        input_method_added: input_source.input_method().added(),
+        call_waiting: ports.call_waiting(),
+        copy_requested: ports.copies_instead_of_pasting(session),
+    };
     // A new session may have taken over the
     // UI while this paste ran.
     let owns_ui = || ports.owns_ui();
@@ -562,9 +673,8 @@ fn deliver_dictation<P: DictationPorts>(ports: &P, delivery: Delivery) {
         match redo_for_app_in_front(
             ports,
             &snapshot.settings,
-            service_available,
+            context,
             saved_entry_id,
-            session,
             &|working| {
                 ports.overlay(Overlay::Working {
                     working,
@@ -606,25 +716,35 @@ fn deliver_dictation<P: DictationPorts>(ports: &P, delivery: Delivery) {
     // of the profile it goes in with (the
     // redo's for the application in front).
     let settings = crate::app_profiles::with_values(&snapshot.settings, dictation_values.as_ref());
+    // DanyWhere: asked again, as a redo can take
+    // a while: "Copy Last Transcript" or a
+    // service call may have come meanwhile.
+    let context = InsertionContext {
+        call_waiting: ports.call_waiting(),
+        copy_requested: ports.copies_instead_of_pasting(session),
+        ..context
+    };
     // DanyWhere: "Copy Last Transcript"
     // during this dictation puts it on the
     // clipboard instead (below).
-    let pasted = if ports.copies_instead_of_pasting(session) {
+    let pasted = if context.copy_requested {
         log::info!("Copy Last Transcript asked for this dictation; not pasting it.");
-        Ok(PasteOutcome::Pasted)
+        Ok(Delivered::AsBefore(PasteOutcome::Pasted))
     } else {
         deliver_text(
             ports,
+            &mut input_source,
             &settings,
-            service_available,
+            context,
             final_text,
             dictation_values,
             &append_text,
             &service_text,
         )
     };
+    let inserted_by_input_method = pasted == Ok(Delivered::ThroughInputMethod);
     let (outcome, notice) = match pasted {
-        Ok(PasteOutcome::Pasted) => {
+        Ok(Delivered::ThroughInputMethod | Delivered::AsBefore(PasteOutcome::Pasted)) => {
             debug!("Text pasted successfully in {:?}", paste_time.elapsed());
             // Leave a newer session's notice alone.
             if owns_ui() {
@@ -636,7 +756,7 @@ fn deliver_dictation<P: DictationPorts>(ports: &P, delivery: Delivery) {
             );
             (TranscriptionOutcome::Typed, notice)
         }
-        Ok(PasteOutcome::Blocked) => (
+        Ok(Delivered::AsBefore(PasteOutcome::Blocked)) => (
             TranscriptionOutcome::Failed,
             Some(Notice::new(
                 NoticeCode::PasteBlockedElevated,
@@ -656,16 +776,32 @@ fn deliver_dictation<P: DictationPorts>(ports: &P, delivery: Delivery) {
     };
     // DanyWhere: a service call that ended
     // this dictation inserts it now, so it
-    // doesn't wait for the user.
-    let inserted_by_service =
-        outcome == TranscriptionOutcome::Typed && ports.deliver_to_waiting_call(&service_text);
+    // doesn't wait for the user. Not one that
+    // came once the input method had it: the
+    // text would arrive twice.
+    let inserted_by_service = outcome == TranscriptionOutcome::Typed
+        && !inserted_by_input_method
+        && ports.deliver_to_waiting_call(&service_text);
+    // DanyWhere: the text is where it goes;
+    // the dictation's hold on the input
+    // source ends.
+    drop(input_source);
     // DanyWhere: "Copy Last Transcript"
     // during this dictation, or an app that
     // didn't know the dictation shortcut,
     // asked for its text on the clipboard,
     // with its "Append" text as the service
     // would have inserted it (user, 2026-11-16).
-    let put_on_clipboard = if outcome == TranscriptionOutcome::Typed && !inserted_by_service {
+    // Not once the service or the input method
+    // put it in (or may have): the app needs no
+    // copy, and without Accessibility a
+    // dictation never replaces the clipboard.
+    // "Copy Last Transcript" decided before
+    // inserting: its text was not inserted.
+    let put_on_clipboard = if outcome == TranscriptionOutcome::Typed
+        && !inserted_by_service
+        && !inserted_by_input_method
+    {
         ports.put_on_clipboard_if_requested(session, &service_text)
     } else {
         None
@@ -680,6 +816,7 @@ fn deliver_dictation<P: DictationPorts>(ports: &P, delivery: Delivery) {
         outcome,
         cancelled: ports.cancelled(),
         inserted_by_service,
+        inserted_by_input_method,
         put_on_clipboard: put_on_clipboard.is_some(),
         owns_ui: owns_ui(),
     });
@@ -689,10 +826,13 @@ fn deliver_dictation<P: DictationPorts>(ports: &P, delivery: Delivery) {
         (true, None, Some(reason)) => ports.overlay(Overlay::OnClipboard(reason)),
         // DanyWhere: says where the text waits
         // when it was not pasted, with the
-        // settings it went with.
-        (true, None, None) => ports.overlay(Overlay::AfterDictation(
-            crate::delivery::overlay_after_dictation(&settings, service_available),
-        )),
+        // settings it went with. Nothing waits
+        // that the input method inserted.
+        (true, None, None) => ports.overlay(Overlay::AfterDictation(if inserted_by_input_method {
+            crate::delivery::overlay_after(DictationTarget::Pasted, &settings)
+        } else {
+            crate::delivery::overlay_after_dictation(&settings, service_available)
+        })),
         (false, Some(notice), _) => ports.raise_without_overlay(notice),
         (false, None, _) => {}
     }
@@ -859,6 +999,7 @@ mod tests {
             outcome: TranscriptionOutcome::Typed,
             cancelled: false,
             inserted_by_service: false,
+            inserted_by_input_method: false,
             put_on_clipboard: false,
             owns_ui: true,
         }
@@ -906,14 +1047,27 @@ mod tests {
     }
 
     /// Runs the end of a dictation with `snapshot` through `ports`, from the
-    /// moment its recording stops.
+    /// moment its recording stops; its recording's start held DanyWhere's
+    /// input source when its text is to go through it, as `dictation_start`
+    /// does (`delivery::begin_input_source`).
     fn finish(ports: &FakePorts, snapshot: DictationSnapshot) {
+        let held = crate::delivery::begin_input_source(&snapshot.settings, &ports.input_method());
+        finish_with(ports, snapshot, held);
+    }
+
+    /// [`finish`] with the hold its recording's start took, if any.
+    fn finish_with(
+        ports: &FakePorts,
+        snapshot: DictationSnapshot,
+        input_source: Option<crate::delivery::InputSourceHold>,
+    ) {
         stopped(&snapshot, ports);
         tauri::async_runtime::block_on(finish_dictation(
             Dictation {
                 snapshot,
                 binding_id: START_BINDINGS[0].to_string(),
                 stop_time: Instant::now(),
+                input_source,
             },
             ports.clone(),
         ));
@@ -2249,10 +2403,17 @@ mod tests {
     struct FlowRunner {
         ports: FakePorts,
         settings: AppSettings,
+        /// The running recording's hold on DanyWhere's input source, as the
+        /// app keeps it (`delivery::keep_recording_hold`).
+        hold: Option<crate::delivery::InputSourceHold>,
     }
 
     impl EffectRunner for FlowRunner {
+        /// Selects the input source as `dictation_start` does once the
+        /// recording runs, and keeps the hold.
         fn start(&mut self, _binding_id: &str, _hotkey: &str) -> bool {
+            self.hold =
+                crate::delivery::begin_input_source(&self.settings, &self.ports.input_method());
             true
         }
 
@@ -2273,6 +2434,8 @@ mod tests {
                     snapshot,
                     binding_id: binding_id.to_string(),
                     stop_time: Instant::now(),
+                    // As `actions::stop_transcription` takes it.
+                    input_source: self.hold.take(),
                 },
                 self.ports.clone(),
             ));
@@ -2286,6 +2449,11 @@ mod tests {
             let values = ProfileValues::from_settings(&self.settings);
             crate::end_keys::end_with_keys(&values, binding_id).map(|end| end.id.clone())
         }
+
+        /// Drops the recording's own hold, as the app does.
+        fn recording_cancelled(&mut self) {
+            drop(self.hold.take());
+        }
     }
 
     /// The coordinator thread ending recordings through the flow.
@@ -2295,6 +2463,7 @@ mod tests {
         TranscriptionCoordinator::with_runner(FlowRunner {
             ports: ports.clone(),
             settings,
+            hold: None,
         })
     }
 
@@ -2469,6 +2638,716 @@ mod tests {
         assert_eq!(
             pasted_dictation_notice(Some(&failure), Some("claude-sonnet-4-6")),
             Some(post_process_failed("unreachable"))
+        );
+    }
+
+    // ---- DanyWhere's input method (user's decision, 2026-11-23) -----------
+    //
+    // Once the user has added DanyWhere's input source, a text that would be
+    // pasted with keys goes through it, with Accessibility or without,
+    // without the clipboard (`delivery::insertion`).
+
+    use super::ports::Deliver;
+    use crate::append_text::AppendKey;
+    use crate::input_method::testing::{inserted, ImCall};
+    use crate::input_method::{InsertFailure, Inserted};
+
+    fn im(call: ImCall) -> Event {
+        Event::InputMethod(call)
+    }
+
+    fn im_insert(text: &str) -> Event {
+        im(ImCall::Insert(text.to_string()))
+    }
+
+    /// The input method's calls among `events`.
+    fn input_method_calls(events: &[Event]) -> Vec<ImCall> {
+        events
+            .iter()
+            .filter_map(|event| match event {
+                Event::InputMethod(call) => Some(call.clone()),
+                _ => None,
+            })
+            .collect()
+    }
+
+    /// `script` with DanyWhere's input source added; inserting through it
+    /// gives `insert`.
+    fn with_input_method(script: Script, insert: Result<Inserted, InsertFailure>) -> Script {
+        Script {
+            input_method_added: true,
+            input_method_insert: insert,
+            ..script
+        }
+    }
+
+    /// Settings in `access` that paste with ⌘V, their plain end appending
+    /// `append_text`.
+    fn pasting_with_keys(access: Access, append_text: &str) -> AppSettings {
+        let mut settings = with_end(get_default_settings(), PLAIN, append_text, false);
+        settings.paste_method = PasteMethod::CtrlV;
+        access.settings(settings)
+    }
+
+    /// The sound of a dictation the input method inserted.
+    fn inserted_end() -> DictationEnd {
+        DictationEnd {
+            inserted_by_input_method: true,
+            ..pasted_end()
+        }
+    }
+
+    /// How the paste thread ends a dictation the input method inserted:
+    /// nothing waits, the overlay just hides.
+    fn inserted_finish() -> Vec<Event> {
+        vec![
+            Event::SoundAfterDictation(inserted_end()),
+            Event::Overlay(Overlay::AfterDictation(None)),
+            Event::Tray(TrayIconState::Idle),
+            Event::Complete(TranscriptionOutcome::Typed, SAMPLES),
+            Event::Finished,
+        ]
+    }
+
+    #[test]
+    fn without_accessibility_an_added_source_inserts_the_dictation_without_the_clipboard() {
+        let access = Access::WithoutForService;
+        let settings = pasting_with_keys(access, " (sent)");
+        // As onboarding leaves it: a copy that never happens without
+        // Accessibility (user, 2026-11-11).
+        assert_eq!(
+            settings.clipboard_handling,
+            ClipboardHandling::CopyToClipboard
+        );
+        let ports = FakePorts::new(access.script(with_input_method(Script::default(), inserted())));
+        finish(&ports, snapshot_with(settings));
+        assert_eq!(
+            after(&ports.take_events(), &Event::SpawnPaste),
+            [
+                vec![
+                    // It goes into the application in front now.
+                    Event::RedoLookedAt(1),
+                    im_insert("hello (sent)"),
+                    Event::ClearNotice,
+                    im(ImCall::End),
+                ],
+                inserted_finish(),
+            ]
+            .concat()
+        );
+    }
+
+    #[test]
+    fn without_accessibility_the_mode_s_own_settings_insert_through_an_added_source() {
+        // As "Continue without Accessibility" leaves them, paste method
+        // "None" included (Access::settings keeps a paste method of its own).
+        let settings = with_end(
+            crate::end_keys::with_builtin_ends(
+                crate::accessibility::testing::settings_without_accessibility(),
+            ),
+            PLAIN,
+            " (sent)",
+            false,
+        );
+        assert_eq!(settings.paste_method, PasteMethod::None);
+        let access = Access::WithoutForService;
+        let ports = FakePorts::new(access.script(with_input_method(Script::default(), inserted())));
+        finish(&ports, snapshot_with(settings));
+        assert_eq!(
+            after(&ports.take_events(), &Event::SpawnPaste),
+            [
+                vec![
+                    Event::RedoLookedAt(1),
+                    im_insert("hello (sent)"),
+                    Event::ClearNotice,
+                    im(ImCall::End),
+                ],
+                inserted_finish(),
+            ]
+            .concat()
+        );
+    }
+
+    #[test]
+    fn with_accessibility_an_added_source_inserts_and_the_append_keys_follow() {
+        for clipboard in [
+            ClipboardHandling::DontModify,
+            ClipboardHandling::CopyToClipboard,
+        ] {
+            let mut settings = pasting_with_keys(Access::With, r"\s{Enter}");
+            settings.clipboard_handling = clipboard;
+            let ports = FakePorts::new(with_input_method(Script::default(), inserted()));
+            finish(&ports, snapshot_with(settings));
+            let copied = if clipboard == ClipboardHandling::CopyToClipboard {
+                vec![Event::LeftOnClipboard("hello ".to_string())]
+            } else {
+                Vec::new()
+            };
+            assert_eq!(
+                after(&ports.take_events(), &Event::SpawnPaste),
+                [
+                    vec![
+                        Event::RedoLookedAt(1),
+                        // The text with its space, then Enter.
+                        im_insert("hello "),
+                        Event::PressKeys(vec![AppendKey::Enter]),
+                    ],
+                    copied,
+                    vec![Event::ClearNotice, im(ImCall::End)],
+                    inserted_finish(),
+                ]
+                .concat(),
+                "{clipboard:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn without_accessibility_the_append_keys_are_dropped_after_the_input_method() {
+        let access = Access::WithoutForService;
+        let ports = FakePorts::new(access.script(with_input_method(Script::default(), inserted())));
+        finish(
+            &ports,
+            snapshot_with(pasting_with_keys(access, r"\s{Enter}")),
+        );
+        assert_eq!(
+            after(&ports.take_events(), &Event::SpawnPaste),
+            [
+                vec![
+                    Event::RedoLookedAt(1),
+                    im_insert("hello "),
+                    Event::ClearNotice,
+                    im(ImCall::End),
+                ],
+                inserted_finish(),
+            ]
+            .concat()
+        );
+    }
+
+    #[test]
+    fn a_failed_insertion_with_accessibility_is_pasted_as_before() {
+        for failure in [
+            InsertFailure::NoClient,
+            InsertFailure::NotConnected,
+            InsertFailure::NotSelected,
+            InsertFailure::Failed("no answer".to_string()),
+        ] {
+            let snapshot = snapshot_with(pasting_with_keys(Access::With, " (sent)"));
+            let values = snapshot.values.clone();
+            let ports = FakePorts::new(with_input_method(Script::default(), Err(failure.clone())));
+            finish(&ports, snapshot);
+            // No notice: the paste did the job.
+            assert_eq!(
+                after(&ports.take_events(), &Event::SpawnPaste),
+                vec![
+                    Event::RedoLookedAt(1),
+                    im_insert("hello (sent)"),
+                    paste("hello", &values, " (sent)"),
+                    Event::ClearNotice,
+                    im(ImCall::End),
+                    Event::SoundAfterDictation(pasted_end()),
+                    Event::Overlay(Overlay::AfterDictation(None)),
+                    Event::Tray(TrayIconState::Idle),
+                    Event::Complete(TranscriptionOutcome::Typed, SAMPLES),
+                    Event::Finished,
+                ],
+                "{failure:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn a_failed_insertion_without_accessibility_waits_for_the_service_without_a_notice() {
+        let access = Access::WithoutForService;
+        for failure in [InsertFailure::NoClient, InsertFailure::NotConnected] {
+            let ports = FakePorts::new(
+                access.script(with_input_method(Script::default(), Err(failure.clone()))),
+            );
+            finish(&ports, snapshot_with(pasting_with_keys(access, " (sent)")));
+            // Exactly as without the input method: it waits, and the
+            // clipboard stays as it was.
+            assert_eq!(
+                after(&ports.take_events(), &Event::SpawnPaste),
+                vec![
+                    Event::RedoLookedAt(1),
+                    im_insert("hello (sent)"),
+                    Event::ClearNotice,
+                    im(ImCall::End),
+                    Event::SoundAfterDictation(pasted_end()),
+                    Event::Overlay(access.after_dictation()),
+                    Event::Tray(TrayIconState::Idle),
+                    Event::Complete(TranscriptionOutcome::Typed, SAMPLES),
+                    Event::Finished,
+                ],
+                "{failure:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn an_insertion_the_input_method_may_have_done_is_not_done_again() {
+        // Sent, but not confirmed in time: a ⌘V could put it in twice, and
+        // the Enter could send what isn't there.
+        for access in [Access::With, Access::WithoutForService] {
+            let ports = FakePorts::new(access.script(with_input_method(
+                Script::default(),
+                Err(InsertFailure::Unanswered),
+            )));
+            finish(
+                &ports,
+                snapshot_with(pasting_with_keys(access, r"\s{Enter}")),
+            );
+            assert_eq!(
+                after(&ports.take_events(), &Event::SpawnPaste),
+                [
+                    vec![
+                        Event::RedoLookedAt(1),
+                        im_insert("hello "),
+                        Event::ClearNotice,
+                        im(ImCall::End),
+                    ],
+                    inserted_finish(),
+                ]
+                .concat(),
+                "{access:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn a_waiting_service_call_gets_the_text_and_the_input_method_inserts_nothing() {
+        let access = Access::WithoutForService;
+        let ports = FakePorts::new(access.script(with_input_method(
+            Script {
+                call_waiting: true,
+                service_takes: true,
+                ..Script::default()
+            },
+            inserted(),
+        )));
+        finish(&ports, snapshot_with(pasting_with_keys(access, " (sent)")));
+        assert_eq!(
+            after(&ports.take_events(), &Event::SpawnPaste),
+            vec![
+                Event::RedoLookedAt(1),
+                Event::ClearNotice,
+                Event::ServiceInserted("hello (sent)".to_string()),
+                im(ImCall::End),
+                Event::SoundAfterDictation(DictationEnd {
+                    inserted_by_service: true,
+                    ..pasted_end()
+                }),
+                Event::Overlay(Overlay::Hide),
+                Event::Tray(TrayIconState::Idle),
+                Event::Complete(TranscriptionOutcome::Typed, SAMPLES),
+                Event::Finished,
+            ]
+        );
+    }
+
+    #[test]
+    fn a_service_call_after_the_input_method_inserted_the_text_gets_nothing() {
+        // The call came once the text was on its way: it would arrive twice.
+        let access = Access::WithoutForService;
+        let ports = FakePorts::new(access.script(with_input_method(
+            Script {
+                call_waiting: false,
+                service_takes: true,
+                ..Script::default()
+            },
+            inserted(),
+        )));
+        finish(&ports, snapshot_with(pasting_with_keys(access, " (sent)")));
+        let events = ports.take_events();
+        assert!(events.contains(&im_insert("hello (sent)")), "{events:#?}");
+        assert!(
+            !events
+                .iter()
+                .any(|event| matches!(event, Event::ServiceInserted(_))),
+            "{events:#?}"
+        );
+    }
+
+    #[test]
+    fn a_text_the_input_method_inserted_goes_on_no_clipboard_for_an_app_that_missed_the_shortcut() {
+        // The app in front didn't know the dictation shortcut, but the input
+        // method put the text in (or may have): as after a service call,
+        // nothing goes on the clipboard and no notice names the app. Without
+        // Accessibility a dictation never replaces the clipboard.
+        for access in [Access::WithoutForService, Access::With] {
+            for insert in [inserted(), Err(InsertFailure::Unanswered)] {
+                let ports = FakePorts::new(access.script(with_input_method(
+                    Script {
+                        clipboard_reason: Some(ClipboardReason::AppMissedShortcut {
+                            app: "iTerm2".to_string(),
+                        }),
+                        ..Script::default()
+                    },
+                    insert.clone(),
+                )));
+                finish(&ports, snapshot_with(pasting_with_keys(access, " (sent)")));
+                let events = after(&ports.take_events(), &Event::SpawnPaste);
+                let case = format!("{access:?}, {insert:?}: {events:#?}");
+                assert!(events.contains(&im_insert("hello (sent)")), "{case}");
+                assert!(
+                    !events
+                        .iter()
+                        .any(|event| matches!(event, Event::PutOnClipboard(_))),
+                    "{case}"
+                );
+                assert_eq!(
+                    events[events.len() - inserted_finish().len()..],
+                    inserted_finish()[..],
+                    "{case}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn copy_last_transcript_during_the_dictation_still_copies_with_the_input_method() {
+        // It decides before inserting: nothing goes through the input
+        // method, the text goes on the clipboard as before.
+        for access in [Access::With, Access::WithoutForService] {
+            let ports = FakePorts::new(access.script(with_input_method(
+                Script {
+                    copy_requested: true,
+                    clipboard_reason: Some(ClipboardReason::CopyLast),
+                    ..Script::default()
+                },
+                inserted(),
+            )));
+            finish(&ports, snapshot_with(pasting_with_keys(access, " (sent)")));
+            let events = after(&ports.take_events(), &Event::SpawnPaste);
+            assert!(
+                events.contains(&Event::PutOnClipboard("hello (sent)".to_string())),
+                "{access:?}: {events:#?}"
+            );
+            assert!(
+                events.contains(&Event::Overlay(Overlay::OnClipboard(
+                    ClipboardReason::CopyLast
+                ))),
+                "{access:?}: {events:#?}"
+            );
+            assert!(
+                !events
+                    .iter()
+                    .any(|event| matches!(event, Event::InputMethod(ImCall::Insert(_)))),
+                "{access:?}: {events:#?}"
+            );
+        }
+    }
+
+    #[test]
+    fn without_accessibility_the_app_in_front_s_profile_redoes_a_text_for_the_input_method() {
+        let access = Access::WithoutForService;
+        let snapshot = snapshot_with(pasting_with_keys(access, " (sent)"));
+        let insert = redo_into_other(&snapshot.values, Some("redone"), None);
+        let ports = FakePorts::new(access.script(with_input_method(
+            Script {
+                redo: Some(insert),
+                redo_shows: vec![Working::PostProcessing],
+                ..Script::default()
+            },
+            inserted(),
+        )));
+        finish(&ports, snapshot);
+        assert_eq!(
+            after(&ports.take_events(), &Event::SpawnPaste),
+            [
+                vec![
+                    Event::RedoLookedAt(1),
+                    Event::Overlay(Overlay::Working {
+                        working: Working::PostProcessing,
+                        streaming: false,
+                    }),
+                    Event::Hook("redone".to_string()),
+                    im_insert("redone (other)"),
+                    Event::ClearNotice,
+                    im(ImCall::End),
+                ],
+                inserted_finish(),
+            ]
+            .concat()
+        );
+    }
+
+    #[test]
+    fn every_end_of_a_dictation_restores_the_input_source_once_after_its_last_insertion() {
+        let silent = Script {
+            recording: Some(Recording {
+                samples: vec![0.0; SAMPLES],
+                input_silent: true,
+            }),
+            transcription: Ok(String::new()),
+            ..Script::default()
+        };
+        let mut ends: Vec<(String, Script)> = [
+            CancelAt::Recording,
+            CancelAt::Transcribing,
+            CancelAt::PostProcessing,
+            CancelAt::AfterPostProcessing,
+            CancelAt::Hook,
+            CancelAt::PasteThread,
+        ]
+        .into_iter()
+        .map(|at| {
+            (
+                format!("Escape, {at:?}"),
+                Script {
+                    cancel_at: Some(at),
+                    ..Script::default()
+                },
+            )
+        })
+        .collect();
+        ends.extend([
+            (
+                "no recording".to_string(),
+                Script {
+                    recording: None,
+                    ..Script::default()
+                },
+            ),
+            (
+                "an empty recording".to_string(),
+                Script {
+                    recording: Some(Recording {
+                        samples: Vec::new(),
+                        input_silent: false,
+                    }),
+                    ..Script::default()
+                },
+            ),
+            ("a silent microphone".to_string(), silent),
+            (
+                "a failed transcription".to_string(),
+                Script {
+                    transcription: Err("the model crashed".to_string()),
+                    ..Script::default()
+                },
+            ),
+            (
+                "a hook that leaves nothing".to_string(),
+                Script {
+                    hook: Some(|_| String::new()),
+                    ..Script::default()
+                },
+            ),
+            (
+                "no paste thread".to_string(),
+                Script {
+                    spawn_fails: true,
+                    ..Script::default()
+                },
+            ),
+            (
+                "a newer dictation took over".to_string(),
+                Script {
+                    owns_ui: false,
+                    ..Script::default()
+                },
+            ),
+            (
+                "Copy Last Transcript".to_string(),
+                Script {
+                    copy_requested: true,
+                    clipboard_reason: Some(ClipboardReason::CopyLast),
+                    ..Script::default()
+                },
+            ),
+            ("inserted".to_string(), Script::default()),
+        ]);
+        let mut wrong = Vec::new();
+        let mut cases = 0;
+        for access in [Access::With, Access::WithoutForService] {
+            for failing in [false, true] {
+                for start_held in [true, false] {
+                    for (case, script) in &ends {
+                        cases += 1;
+                        let insert = if failing {
+                            Err(InsertFailure::NoClient)
+                        } else {
+                            inserted()
+                        };
+                        let ports = FakePorts::new(
+                            access.script(with_input_method(script.clone(), insert)),
+                        );
+                        let snapshot = snapshot_with(pasting_with_keys(access, " (sent)"));
+                        if start_held {
+                            finish(&ports, snapshot);
+                        } else {
+                            // Its start profile didn't insert through the
+                            // input method.
+                            finish_with(&ports, snapshot, None);
+                        }
+                        let calls = input_method_calls(&ports.take_events());
+                        let count = |wanted: &ImCall| calls.iter().filter(|c| *c == wanted).count();
+                        let inserts = calls
+                            .iter()
+                            .filter(|call| matches!(call, ImCall::Insert(_)))
+                            .count();
+                        // One hold, begun at the start or right before the
+                        // first insertion, ended once after the last; none
+                        // where nothing held it and nothing was inserted.
+                        let held = start_held || inserts > 0;
+                        let ok = if held {
+                            count(&ImCall::Begin) == 1
+                                && count(&ImCall::End) == 1
+                                && calls.first() == Some(&ImCall::Begin)
+                                && calls.last() == Some(&ImCall::End)
+                        } else {
+                            calls.is_empty()
+                        }
+                        // "Copy Last Transcript" inserts nothing.
+                        && (case != "Copy Last Transcript" || inserts == 0);
+                        if !ok {
+                            wrong.push(format!(
+                                "{access:?}, failing {failing}, start held {start_held}, {case}: {calls:?}"
+                            ));
+                        }
+                    }
+                }
+            }
+        }
+        assert!(
+            wrong.is_empty(),
+            "{} of {cases} ends hold the source otherwise:\n{}",
+            wrong.len(),
+            wrong.join("\n")
+        );
+    }
+
+    #[test]
+    fn a_dictation_whose_start_held_nothing_holds_the_source_right_before_inserting() {
+        // Its start profile didn't insert through the input method, the end
+        // profile does: a hold of its own, ended once its text is in, also
+        // when the input method may have inserted it or failed.
+        for insert in [
+            inserted(),
+            Err(InsertFailure::Unanswered),
+            Err(InsertFailure::NoClient),
+        ] {
+            let access = Access::WithoutForService;
+            let ports =
+                FakePorts::new(access.script(with_input_method(Script::default(), insert.clone())));
+            finish_with(
+                &ports,
+                snapshot_with(pasting_with_keys(access, " (sent)")),
+                None,
+            );
+            let events = after(&ports.take_events(), &Event::SpawnPaste);
+            assert_eq!(
+                events[..4],
+                [
+                    Event::RedoLookedAt(1),
+                    im(ImCall::Begin),
+                    im_insert("hello (sent)"),
+                    Event::ClearNotice,
+                ],
+                "{insert:?}"
+            );
+            assert_eq!(
+                input_method_calls(&events),
+                vec![
+                    ImCall::Begin,
+                    ImCall::Insert("hello (sent)".to_string()),
+                    ImCall::End
+                ],
+                "{insert:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn a_dictation_hands_the_hold_its_start_took_to_its_end() {
+        // Begun once, at the start; ended once, after the insertion.
+        let access = Access::With;
+        let ports = FakePorts::new(access.script(with_input_method(Script::default(), inserted())));
+        finish(&ports, snapshot_with(pasting_with_keys(access, " (sent)")));
+        assert_eq!(
+            input_method_calls(&ports.take_events()),
+            vec![
+                ImCall::Begin,
+                ImCall::Insert("hello (sent)".to_string()),
+                ImCall::End
+            ]
+        );
+    }
+
+    #[test]
+    fn the_source_is_selected_when_the_recording_starts_and_restored_after_the_insertion() {
+        for access in [Access::With, Access::WithoutForService] {
+            let ports =
+                FakePorts::new(access.script(with_input_method(Script::default(), inserted())));
+            let coordinator = coordinator_with(&ports, pasting_with_keys(access, " (sent)"));
+            toggle_press(&coordinator);
+            // Longer than the coordinator's debounce, so the second press counts.
+            std::thread::sleep(Duration::from_millis(60));
+            toggle_press(&coordinator);
+            assert!(ports.wait_finished(Duration::from_secs(10)), "{access:?}");
+            assert_eq!(
+                input_method_calls(&ports.take_events()),
+                vec![
+                    ImCall::Begin,
+                    ImCall::Insert("hello (sent)".to_string()),
+                    ImCall::End
+                ],
+                "{access:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn escape_while_recording_restores_the_source_once() {
+        let ports = FakePorts::new(with_input_method(Script::default(), inserted()));
+        let coordinator = coordinator_with(&ports, pasting_with_keys(Access::With, ""));
+        toggle_press(&coordinator);
+        coordinator.notify_cancel(true);
+        assert!(ports.wait_for(&im(ImCall::End), Duration::from_secs(5)));
+        // Nothing else ends it: no dictation runs.
+        std::thread::sleep(Duration::from_millis(150));
+        let events = ports.take_events();
+        assert_eq!(
+            input_method_calls(&events),
+            vec![ImCall::Begin, ImCall::End]
+        );
+        assert!(!events.contains(&Event::Finished), "{events:#?}");
+    }
+
+    #[test]
+    fn escape_on_a_recording_that_held_nothing_ends_no_hold() {
+        // Its text doesn't go through the input method (pasting is off), so
+        // its start held nothing: its cancel ends no other operation's hold.
+        let ports = FakePorts::new(with_input_method(Script::default(), inserted()));
+        let mut settings = pasting_with_keys(Access::With, "");
+        settings.paste_method = PasteMethod::None;
+        let coordinator = coordinator_with(&ports, settings);
+        toggle_press(&coordinator);
+        coordinator.notify_cancel(true);
+        std::thread::sleep(Duration::from_millis(150));
+        assert_eq!(input_method_calls(&ports.take_events()), Vec::new());
+    }
+
+    #[test]
+    fn escape_while_transcribing_leaves_restoring_the_source_to_the_dictation() {
+        let ports = FakePorts::new(with_input_method(Script::default(), inserted()));
+        let coordinator = coordinator_with(&ports, pasting_with_keys(Access::With, ""));
+        toggle_press(&coordinator);
+        std::thread::sleep(Duration::from_millis(60));
+        toggle_press(&coordinator);
+        assert!(ports.wait_finished(Duration::from_secs(10)));
+        // The coordinator still counts the dictation as processing.
+        coordinator.notify_cancel(false);
+        std::thread::sleep(Duration::from_millis(150));
+        assert_eq!(
+            input_method_calls(&ports.take_events()),
+            vec![
+                ImCall::Begin,
+                ImCall::Insert("hello".to_string()),
+                ImCall::End
+            ]
         );
     }
 }

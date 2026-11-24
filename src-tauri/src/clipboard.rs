@@ -955,6 +955,23 @@ pub fn leave_on_clipboard(app_handle: &AppHandle, text: &str) -> Result<(), Stri
     write_text_to_clipboard(app_handle, text)
 }
 
+/// DanyWhere: sends `keys`, an "Append" value's key presses, after a text
+/// was inserted through DanyWhere's input method, as `paste_as_configured`
+/// sends them after a paste. Needs Accessibility (Enigo). Call from a worker
+/// thread.
+pub fn press_keys(
+    app_handle: &AppHandle,
+    keys: Vec<crate::append_text::AppendKey>,
+) -> Result<(), String> {
+    if keys.is_empty() {
+        return Ok(());
+    }
+    std::thread::sleep(Duration::from_millis(50));
+    with_enigo(app_handle, move |enigo| {
+        crate::append_text::send_keys(enigo, &keys)
+    })
+}
+
 fn paste_as_configured(
     text: String,
     app_handle: AppHandle,

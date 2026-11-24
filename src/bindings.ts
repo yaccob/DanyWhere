@@ -1138,6 +1138,39 @@ async completeOnboarding() : Promise<Result<null, string>> {
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * Where the input method stands. Without one (other platforms, builds
+ * without it) everything is `false`. Runs off the main thread: the
+ * settings ask every second, and the answer may wait for the main thread
+ * (input sources) and for the link.
+ */
+async getInputMethodStatus() : Promise<InputMethodStatus> {
+    return await TAURI_INVOKE("get_input_method_status");
+},
+/**
+ * Installs or updates the input method, registers it and opens System
+ * Settings where the user adds its source. Runs off the main thread: it
+ * may wait for the running input method to quit.
+ */
+async setUpInputMethod() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("set_up_input_method") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Records that the user has seen the guide to adding the input source.
+ */
+async setInputMethodGuideSeen(seen: boolean) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("set_input_method_guide_seen", { seen }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async getAvailableModels() : Promise<Result<ModelInfo[], string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_available_models") };
@@ -1795,7 +1828,14 @@ dictation_service_when_idle?: DictationServiceWhenIdle;
  * shortcut, in seconds since the Unix epoch. Apps launched before it
  * don't know the shortcut until they restart. See `dictation_key_inserts`.
  */
-dictation_service_shortcuts_written_at?: number | null; always_on_microphone?: boolean; selected_microphone?: string | null; 
+dictation_service_shortcuts_written_at?: number | null; 
+/**
+ * DanyWhere: the user has seen the guide to adding DanyWhere's input
+ * source (onboarding's step, or the guide shown once at the next start
+ * without Accessibility). Settings saved before it existed lack it, so
+ * those users see the guide once. See `input_method`.
+ */
+input_method_guide_seen?: boolean; always_on_microphone?: boolean; selected_microphone?: string | null; 
 /**
  * Which input channel to use on the selected microphone device.
  * None means "average all channels" (original behavior).
@@ -2360,6 +2400,27 @@ export type ImportedKey =
  * The stored key is the same as the file's.
  */
 "same"
+/**
+ * Where the input method stands, for the settings and the setup guide.
+ */
+export type InputMethodStatus = { 
+/**
+ * This build carries an input method (macOS builds made by the release
+ * and test-build scripts).
+ */
+available: boolean; 
+/**
+ * A copy is in `~/Library/Input Methods`.
+ */
+installed: boolean; 
+/**
+ * The user has added the DanyWhere input source in System Settings.
+ */
+added: boolean; 
+/**
+ * The input method is running and linked to DanyWhere.
+ */
+connected: boolean }
 export type JsonValue = null | boolean | number | string | JsonValue[] | Partial<{ [key in string]: JsonValue }>
 /**
  * What to do when the file's key differs from the key stored here for the

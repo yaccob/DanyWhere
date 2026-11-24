@@ -111,6 +111,8 @@ pub const INTERNAL: &[&str] = &[
     "insert_service_shortcut_set",
     "dictation_service_shortcuts_written_at",
     "whats_new_last_seen_version",
+    // The input method's setup guide was shown (`input_method`).
+    "input_method_guide_seen",
     "history_box_height_newest",
     "history_box_height_other",
 ];

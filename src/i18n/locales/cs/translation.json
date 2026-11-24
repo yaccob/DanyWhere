@@ -114,6 +114,14 @@
       "welcomeBack": "Vítejte zpět. Pokračujeme tam, kde jste skončili.",
       "relaunch": "Zkratka po tomhle nereaguje? <relaunch>Restartujte Handy</relaunch> a skončíte hned zase tady."
     },
+    "insertDirectly": {
+      "title": "Přímé vkládání",
+      "why": "Bez zpřístupnění diktát počká, dokud ho nevložíte pomocí ⌃⇧V. Po přidání vstupního zdroje ho ukončovací zkratky vloží hned.",
+      "notAdded": "Zatím nepřidáno",
+      "added": "Přidáno. Vaše diktáty teď jdou přímo do textového pole.",
+      "later": "Později",
+      "laterHint": "Můžete ho přidat později v Nastavení aplikace › Zpřístupnění."
+    },
     "shell": {
       "back": "Zpět",
       "continue": "Pokračovat",
@@ -531,6 +539,18 @@
         "last": "Poslední ukončovací zkratku nelze odebrat: nahrávání musí jít vždy ukončit.",
         "cannotEnd": "V Linuxu by už nahrávání nešlo ukončit: ponechte ukončovací zkratku s kombinací kláves spouštěcí zkratky, nebo zvolte „Podržet“."
       }
+    },
+    "inputMethod": {
+      "title": "Vkládání bez schránky",
+      "description": "Diktáty jdou přes vlastní vstupní zdroj DanyWhere přímo do textového pole a schránka zůstane beze změny.",
+      "howItWorks": "Vstupní zdroj je vybraný jen během diktování; při psaní zůstává vaše rozložení klávesnice.",
+      "offer": "Volitelné: se zpřístupněním už DanyWhere vkládá diktáty přes schránku.",
+      "withoutAccessibility": "Po jeho přidání vloží ukončovací zkratky text hned, místo aby ho nechaly pro „{{shortcut}}“.",
+      "setUp": "Přidat v Nastavení systému",
+      "steps": "V nastavení „Klávesnice“ klikněte vedle „Vstupní zdroje“ na „Upravit…“, pak na „+“ a „Angličtina“, vyberte „{{name}}“ a klikněte na „Přidat“.",
+      "setUpFailed": "Vstupní zdroj se nepodařilo nastavit",
+      "added": "Diktáty se vkládají přímo, bez schránky.",
+      "stop": "Chcete-li to ukončit, odstraňte „{{name}}“ ze vstupních zdrojů v Nastavení systému."
     },
     "profiles": {
       "title": "Profily",
@@ -1192,6 +1212,7 @@
         "screens": {
           "welcome": "Vítejte",
           "permissions": "Oprávnění",
+          "insertDirectly": "Přímé vkládání",
           "model": "Model",
           "demo": "Ukázka",
           "try": "Vyzkoušet",

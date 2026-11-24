@@ -761,9 +761,15 @@ impl TranscriptionCoordinator {
                             // A cancel while transcribing ends the take too.
                             let busy =
                                 recording_was_active || matches!(state.stage, Stage::Processing);
+                            // DanyWhere: a recording dropped before its
+                            // stop; a stopped one is the dictation's.
+                            let dropped = matches!(state.stage, Stage::Recording(_));
                             state.on_cancel(recording_was_active);
                             if busy {
                                 runner.phase(RecordingPhase::Cancelled);
+                            }
+                            if dropped {
+                                runner.recording_cancelled();
                             }
                         }
                         Command::ProcessingFinished => {
@@ -945,6 +951,11 @@ pub(crate) trait EffectRunner: Send + 'static {
     /// The end shortcut with `binding_id`'s combination in the profile that
     /// applies now (`end_keys::keys_end_now`).
     fn keys_end(&mut self, binding_id: &str) -> Option<String>;
+    /// A running recording was cancelled (Escape): no stop follows, so its
+    /// dictation ends here, and with it its own hold on DanyWhere's input
+    /// source, if its start took one (`delivery::take_recording_hold`). A
+    /// stopped recording's dictation ends its hold itself (`dictation_flow`).
+    fn recording_cancelled(&mut self) {}
 }
 
 /// DanyWhere: the app as the coordinator's executor.
@@ -969,6 +980,10 @@ impl EffectRunner for AppEffects {
 
     fn keys_end(&mut self, binding_id: &str) -> Option<String> {
         crate::end_keys::keys_end_now(&self.0, binding_id)
+    }
+
+    fn recording_cancelled(&mut self) {
+        drop(crate::delivery::take_recording_hold());
     }
 }
 
@@ -1023,6 +1038,9 @@ fn start(app: &AppHandle, binding_id: &str, hotkey_string: &str) -> bool {
         .is_some_and(|a| a.is_recording());
     if !recording {
         debug!("Start for '{binding_id}' did not begin recording; staying idle");
+        // DanyWhere: no stop or cancel follows; a hold its start may have
+        // taken on DanyWhere's input source ends now.
+        drop(crate::delivery::take_recording_hold());
     }
     recording
 }

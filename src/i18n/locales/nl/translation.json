@@ -114,6 +114,14 @@
       "welcomeBack": "Welkom terug. We gaan verder waar je was gebleven.",
       "relaunch": "Reageert de sneltoets hierna niet? <relaunch>Start Handy opnieuw</relaunch> en je komt direct weer hier uit."
     },
+    "insertDirectly": {
+      "title": "Direct invoegen",
+      "why": "Zonder Toegankelijkheid wacht een dictaat tot je het invoegt met ⌃⇧V. Zodra de invoerbron is toegevoegd, voegen eindsneltoetsen het meteen in.",
+      "notAdded": "Nog niet toegevoegd",
+      "added": "Toegevoegd. Je dictaten gaan nu direct naar het tekstveld.",
+      "later": "Later",
+      "laterHint": "Je kunt de invoerbron later toevoegen via Applicatie-instellingen › Toegankelijkheid."
+    },
     "shell": {
       "back": "Terug",
       "continue": "Doorgaan",
@@ -531,6 +539,18 @@
         "last": "De laatste eindsneltoets kan niet weg: een opname moet altijd te beëindigen zijn.",
         "cannotEnd": "Op Linux zou een opname niet meer te beëindigen zijn: houd een eindsneltoets met de toetsencombinatie van een startsneltoets, of kies „Vasthouden”."
       }
+    },
+    "inputMethod": {
+      "title": "Invoegen zonder klembord",
+      "description": "Dictaten gaan via de eigen invoerbron van DanyWhere direct naar het tekstveld, en het klembord blijft zoals het is.",
+      "howItWorks": "De invoerbron is alleen geselecteerd terwijl een dictaat loopt; tijdens het typen houd je je eigen toetsenbordindeling.",
+      "offer": "Optioneel: met Toegankelijkheid plakt DanyWhere dictaten al via het klembord.",
+      "withoutAccessibility": "Zodra de invoerbron is toegevoegd, voegen eindsneltoetsen de tekst meteen in, in plaats van hem te laten liggen voor „{{shortcut}}”.",
+      "setUp": "Toevoegen in Systeeminstellingen",
+      "steps": "Klik bij „Toetsenbord” naast „Invoerbronnen” op „Wijzig…”, dan op „+” en „Engels”, kies „{{name}}” en klik op „Voeg toe”.",
+      "setUpFailed": "Kan de invoerbron niet instellen",
+      "added": "Dictaten worden direct ingevoegd, zonder klembord.",
+      "stop": "Om te stoppen verwijder je „{{name}}” uit de invoerbronnen in Systeeminstellingen."
     },
     "profiles": {
       "title": "Profielen",
@@ -1192,6 +1212,7 @@
         "screens": {
           "welcome": "Welkom",
           "permissions": "Machtigingen",
+          "insertDirectly": "Direct invoegen",
           "model": "Model",
           "demo": "Demo",
           "try": "Proberen",
