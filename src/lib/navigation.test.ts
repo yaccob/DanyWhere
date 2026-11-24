@@ -24,6 +24,7 @@ import {
   profilePages,
   resolveLocation,
   sameLocation,
+  scopePage,
   selectArea,
   selectProfile,
   type NavContext,
@@ -681,6 +682,20 @@ check("History, Manual and About, outside the areas, show none", () => {
   assert.equal(showsPath({ kind: "manual" }), false);
   assert.equal(showsPath({ kind: "about" }), false);
 });
+
+// --- A page of the same scope (word lists: "Set Up Post-Processing") ------
+check("a page of the defaults' scope is the defaults' page", () =>
+  assert.deepEqual(scopePage({ kind: "defaults" }, "postprocessing"), {
+    kind: "defaults",
+    page: "postprocessing",
+  }),
+);
+check("a page of a profile's scope is that profile's page", () =>
+  assert.deepEqual(
+    scopePage({ kind: "profile", id: "profile_1795300000001" }, "models"),
+    { kind: "profile", profileId: "profile_1795300000001", page: "models" },
+  ),
+);
 
 if (failures.length > 0) {
   console.error(

@@ -15,8 +15,8 @@ pub use audio::{
 };
 pub use lang_id::detect_output_language;
 pub use text::{
-    apply_custom_words_with_replacements, normalize_transcription_output, remove_filler_words,
-    OutputLanguageEvidence,
+    apply_custom_words_with_replacements, apply_word_list_matches, normalize_transcription_output,
+    remove_filler_words, word_list_candidates, OutputLanguageEvidence, WordListMatch,
 };
 pub use utils::get_cpal_host;
 pub use vad::{EarshotVad, SileroVad, SpeechScorer, VoiceActivityDetector};

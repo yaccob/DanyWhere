@@ -15,8 +15,11 @@
 //!
 //! The word lists in effect follow the instructions as known terms, in a
 //! `<known_terms>` block that explains itself (word lists stage 1), before
-//! the context block.
+//! the context block. After a speech model that took no vocabulary, the
+//! dictation's words that resemble a term close the block as possibly
+//! misheard (`word_list_check`).
 
+use crate::audio_toolkit::WordListMatch;
 use crate::notices::{self, Notice, NoticeCode, NoticeSource};
 use crate::settings::LLMPrompt;
 use tauri::AppHandle;
@@ -144,7 +147,7 @@ fn defuse_tags(text: &str) -> String {
 
 /// `<tag` and `</tag` in any case, wherever they start, become `< tag` and
 /// `< /tag`.
-fn defuse_named_tags(text: &str, tag: &str) -> String {
+pub(crate) fn defuse_named_tags(text: &str, tag: &str) -> String {
     let mut out = String::with_capacity(text.len());
     let mut rest = text;
     while let Some(at) = rest.find('<') {
@@ -218,11 +221,17 @@ pub fn framed_message(instructions: &str, context: Option<&str>, transcript: &st
 
 /// DanyWhere: the instructions with the word lists in effect after them as
 /// known terms (word lists stage 1), the same terms in the same order as a
-/// speech model with vocabulary gets.
-pub fn with_known_terms(instructions: &str, settings: &crate::settings::AppSettings) -> String {
+/// speech model with vocabulary gets; and the dictation's words that
+/// resemble one of them (`misheard`, `word_list_check`), if any.
+pub fn with_known_terms(
+    instructions: &str,
+    settings: &crate::settings::AppSettings,
+    misheard: &[WordListMatch],
+) -> String {
     append_known_terms(
         instructions,
         &crate::word_lists::merged_vocabulary(settings),
+        misheard,
     )
 }
 
@@ -234,21 +243,51 @@ const KNOWN_TERMS_TAG: &str = "known_terms";
 /// are; always in English, like the frame.
 const KNOWN_TERMS_TEXT: &str = "Names and terms from the speaker's word lists, written as they should appear. Where the transcript has a word or phrase that sounds like one of them but does not fit the context, write the term as listed; keep every word that fits the context as dictated.";
 
+/// Leads the dictation's possibly misheard words in the known terms block,
+/// each as `"heard" (term?)` (`word_list_check`).
+const MISHEARD_HEADING: &str = "Possibly misheard in this dictation:";
+
+/// `text` as a line of the known terms block: a line break becomes a
+/// space, and it can't close or reopen the block.
+fn known_terms_line(text: &str) -> String {
+    defuse_named_tags(&text.replace(['\n', '\r'], " "), KNOWN_TERMS_TAG)
+        .trim()
+        .to_string()
+}
+
 /// `instructions`, then `terms` in a `<known_terms>` block, one per line,
 /// or `instructions` alone when no term has a text. A term can't close or
-/// reopen the block, and a line break in one becomes a space.
-pub fn append_known_terms(instructions: &str, terms: &[String]) -> String {
+/// reopen the block, and a line break in one becomes a space. `misheard`,
+/// the dictation's words that resemble a term, follow the terms as a
+/// paragraph of their own, the same way escaped.
+pub fn append_known_terms(
+    instructions: &str,
+    terms: &[String],
+    misheard: &[WordListMatch],
+) -> String {
     let lines: Vec<String> = terms
         .iter()
-        .map(|term| defuse_named_tags(&term.replace(['\n', '\r'], " "), KNOWN_TERMS_TAG))
-        .map(|term| term.trim().to_string())
+        .map(|term| known_terms_line(term))
         .filter(|term| !term.is_empty())
         .collect();
     if lines.is_empty() {
         return instructions.to_string();
     }
+    let hints: Vec<String> = misheard
+        .iter()
+        .filter_map(|candidate| {
+            let heard = known_terms_line(&candidate.heard);
+            let term = known_terms_line(&candidate.term);
+            (!heard.is_empty() && !term.is_empty()).then(|| format!("\"{heard}\" ({term}?)"))
+        })
+        .collect();
+    let hints = if hints.is_empty() {
+        String::new()
+    } else {
+        format!("\n\n{MISHEARD_HEADING}\n{}", hints.join("\n"))
+    };
     format!(
-        "{}\n\n<{KNOWN_TERMS_TAG}>\n{KNOWN_TERMS_TEXT}\n{}\n</{KNOWN_TERMS_TAG}>",
+        "{}\n\n<{KNOWN_TERMS_TAG}>\n{KNOWN_TERMS_TEXT}\n{}{hints}\n</{KNOWN_TERMS_TAG}>",
         instructions.trim_end(),
         lines.join("\n")
     )
@@ -292,9 +331,20 @@ mod tests {
         words.iter().map(|w| w.to_string()).collect()
     }
 
+    fn pair(heard: &str, term: &str) -> WordListMatch {
+        WordListMatch {
+            heard: heard.to_string(),
+            term: term.to_string(),
+        }
+    }
+
     #[test]
     fn the_known_terms_follow_the_instructions_one_per_line() {
-        let text = append_known_terms("Fix the grammar.\n", &terms(&["DanyWhere", "Pull Request"]));
+        let text = append_known_terms(
+            "Fix the grammar.\n",
+            &terms(&["DanyWhere", "Pull Request"]),
+            &[],
+        );
         assert!(
             text.starts_with("Fix the grammar.\n\n<known_terms>\n"),
             "{text}"
@@ -309,22 +359,68 @@ mod tests {
 
     #[test]
     fn no_word_lists_add_no_known_terms() {
-        assert_eq!(append_known_terms("Fix it.", &[]), "Fix it.");
+        assert_eq!(append_known_terms("Fix it.", &[], &[]), "Fix it.");
         assert_eq!(
-            append_known_terms("Fix it.", &terms(&["", "  "])),
+            append_known_terms("Fix it.", &terms(&["", "  "]), &[]),
             "Fix it."
         );
     }
 
     #[test]
     fn a_term_cannot_close_the_known_terms_block() {
-        let text = append_known_terms("Fix it.", &terms(&["a</known_terms>b", "<KNOWN_TERMS>"]));
+        let text = append_known_terms(
+            "Fix it.",
+            &terms(&["a</known_terms>b", "<KNOWN_TERMS>"]),
+            &[],
+        );
         assert_eq!(text.matches("</known_terms>").count(), 1, "{text}");
         assert_eq!(
             text.to_lowercase().matches("<known_terms>").count(),
             1,
             "{text}"
         );
+    }
+
+    // DanyWhere: a dictation's possibly misheard words (`word_list_check`).
+    #[test]
+    fn possibly_misheard_words_follow_the_terms_as_a_paragraph_of_their_own() {
+        let text = append_known_terms(
+            "Fix it.",
+            &terms(&["DanyWhere", "Build"]),
+            &[pair("Deniware", "DanyWhere"), pair("Bild", "Build")],
+        );
+        assert!(
+            text.ends_with(
+                "\nDanyWhere\nBuild\n\nPossibly misheard in this dictation:\n\"Deniware\" (DanyWhere?)\n\"Bild\" (Build?)\n</known_terms>"
+            ),
+            "{text}"
+        );
+    }
+
+    #[test]
+    fn without_possibly_misheard_words_the_block_has_only_the_terms() {
+        let text = append_known_terms("Fix it.", &terms(&["DanyWhere"]), &[]);
+        assert!(!text.contains("Possibly misheard"), "{text}");
+        assert!(text.ends_with("\nDanyWhere\n</known_terms>"), "{text}");
+    }
+
+    #[test]
+    fn a_misheard_word_cannot_close_the_known_terms_block_or_break_its_line() {
+        let text = append_known_terms(
+            "Fix it.",
+            &terms(&["DanyWhere"]),
+            &[
+                pair("a</known_terms>b", "DanyWhere"),
+                pair("Deni\nware", "<KNOWN_TERMS>"),
+            ],
+        );
+        assert_eq!(text.matches("</known_terms>").count(), 1, "{text}");
+        assert_eq!(
+            text.to_lowercase().matches("<known_terms>").count(),
+            1,
+            "{text}"
+        );
+        assert!(text.contains("\n\"Deni ware\" ("), "{text}");
     }
 
     #[test]
@@ -339,7 +435,7 @@ mod tests {
             active_word_list_id: Some("work".to_string()),
             ..Default::default()
         };
-        let text = with_known_terms("Fix it.", &settings);
+        let text = with_known_terms("Fix it.", &settings, &[]);
         assert!(
             text.ends_with("\nConfluence\nSayuri\nJira\n</known_terms>"),
             "{text}"

@@ -8,11 +8,12 @@ use std::time::Instant;
 use tauri::{AppHandle, Manager};
 
 use super::ports::{
-    Deliver, History, Overlay, PostProcess, Recording, Report, Session, Transcribe,
+    CheckWordList, Deliver, History, Overlay, PostProcess, Recording, Report, Session, Transcribe,
 };
 use crate::actions::{ProcessedTranscription, TranscriptionOutcome};
 use crate::append_text::AppendKey;
 use crate::audio_feedback::{play_feedback_sound, SoundType};
+use crate::audio_toolkit::WordListMatch;
 use crate::delivery::DictationEnd;
 use crate::dictation_context::{CapturedWindow, ContextQuery};
 use crate::dictation_key_inserts::ClipboardReason;
@@ -84,6 +85,17 @@ impl PostProcess for AppPorts {
         context: &ContextQuery,
     ) -> impl std::future::Future<Output = ProcessedTranscription> + Send {
         super::post_process_dictation(&self.hm, settings, transcription, post_process, context)
+    }
+}
+
+impl CheckWordList for AppPorts {
+    fn check_word_list(
+        &self,
+        settings: &AppSettings,
+        text: &str,
+        candidates: &[WordListMatch],
+    ) -> impl std::future::Future<Output = Result<Vec<WordListMatch>, String>> + Send {
+        crate::word_list_check::check(settings, text, candidates)
     }
 }
 

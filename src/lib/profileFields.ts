@@ -229,6 +229,10 @@ export const PROFILE_FIELDS = {
     label: "settings.advanced.wordLists.activeTitle",
   },
   word_lists: { page: "advanced", label: `${FIELDS}.wordLists`, large: true },
+  word_list_llm_check: {
+    page: "advanced",
+    label: "settings.advanced.wordLists.llmCheckTitle",
+  },
   language_detection: {
     page: "advanced",
     label: "settings.advanced.languageDetection.title",

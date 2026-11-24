@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { OverlayPositionSetting, OverlayStyleSetting } from "../ShowOverlay";
 import { CustomWords, ProfileWords } from "../CustomWords";
 import { ActiveWordList, WordLists } from "../WordLists";
-import { WordListModelHint } from "../WordListModelHint";
+import { WordListLlmCheck, WordListModelHint } from "../WordListModelHint";
 import { SettingsGroup } from "../../ui/SettingsGroup";
 import { PasteMethodSetting } from "../PasteMethod";
 import { TypingToolSetting } from "../TypingTool";
@@ -92,6 +92,10 @@ export const AdvancedSettings: React.FC = () => {
         description={t("settings.advanced.wordLists.groupDescription")}
         note={<WordListModelHint />}
       >
+        {/* DanyWhere: only for a speech model without vocabulary. */}
+        <ScopedSetting field="word_list_llm_check">
+          <WordListLlmCheck descriptionMode="inline" grouped />
+        </ScopedSetting>
         <ScopedSetting field="custom_words">
           <CustomWords descriptionMode="tooltip" grouped />
         </ScopedSetting>

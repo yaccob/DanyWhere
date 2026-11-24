@@ -164,6 +164,9 @@ pub struct ProfileValues {
     /// The hold end per start shortcut (`hold_ends`), one value as a whole.
     #[serde(default = "crate::end_keys::stored_before_hold_ends")]
     pub hold_ends: HashMap<String, crate::end_keys::HoldEnd>,
+    /// Check the words that resemble a word list's term with the
+    /// post-processing provider (`word_list_check`).
+    pub word_list_llm_check: bool,
 }
 
 impl Default for ProfileValues {
@@ -226,6 +229,7 @@ impl ProfileValues {
             bindings: settings.bindings.clone(),
             end_keys: settings.end_keys.clone(),
             hold_ends: settings.hold_ends.clone(),
+            word_list_llm_check: settings.word_list_llm_check,
         }
     }
 
@@ -281,6 +285,7 @@ impl ProfileValues {
         settings.post_process_timeout_secs = self.post_process_timeout_secs;
         settings.vad_enabled = self.vad_enabled;
         settings.long_form_chunking = self.long_form_chunking;
+        settings.word_list_llm_check = self.word_list_llm_check;
     }
 }
 
@@ -853,6 +858,7 @@ mod tests {
             "post_process_timeout_secs": 15,
             "vad_enabled": false,
             "long_form_chunking": false,
+            "word_list_llm_check": true,
         })
     }
 
@@ -947,6 +953,7 @@ mod tests {
             },
             end_keys: crate::end_keys::builtin(r"\n\n", true),
             hold_ends: crate::end_keys::builtin_holds(r"\n\n", true),
+            word_list_llm_check: true,
         }
     }
 

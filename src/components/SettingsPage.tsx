@@ -24,6 +24,7 @@ import { OpenManualProvider } from "@/hooks/useOpenManual";
 import { ProfileOverview } from "./settings/profiles/ProfileOverview";
 import { ProfileScopedPage } from "./settings/profiles/ProfileScopedPage";
 import {
+  OpenLocationProvider,
   OpenProfilePageProvider,
   SettingsScopeProvider,
 } from "./settings/profiles/scope/SettingsScope";
@@ -204,12 +205,16 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
   const openManual = (manualPage?: string) =>
     onNavigate({ kind: "manual", page: manualPage });
 
+  // A setting may point to another page of its scope (the word lists to
+  // Post Process).
   return (
-    <OpenProfilePageProvider value={openProfilePage}>
-      <OpenManualProvider value={openManual}>
-        <PagePath location={location} />
-        {page}
-      </OpenManualProvider>
-    </OpenProfilePageProvider>
+    <OpenLocationProvider value={onNavigate}>
+      <OpenProfilePageProvider value={openProfilePage}>
+        <OpenManualProvider value={openManual}>
+          <PagePath location={location} />
+          {page}
+        </OpenManualProvider>
+      </OpenProfilePageProvider>
+    </OpenLocationProvider>
   );
 };

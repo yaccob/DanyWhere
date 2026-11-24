@@ -1051,6 +1051,7 @@ impl TranscriptionManager {
                 language: None,
                 word_replacements: Vec::new(),
                 model_id: None,
+                takes_vocabulary: false,
             });
         }
 
@@ -1064,6 +1065,7 @@ impl TranscriptionManager {
             .setup
             .spoken_language(outcome.model_detected_language.as_deref());
         let model_id = outcome.model_id.clone();
+        let takes_vocabulary = outcome.setup.takes_vocabulary;
         let (final_result, word_replacements) = finish_text(outcome, &settings);
 
         let translation_note = if settings.translate_to_english {
@@ -1098,6 +1100,7 @@ impl TranscriptionManager {
             language: Some(language),
             word_replacements,
             model_id: Some(model_id),
+            takes_vocabulary,
         })
     }
 
@@ -1297,6 +1300,10 @@ pub struct Transcription {
     /// DanyWhere: the id of the speech model that made `text`; `None` when
     /// there was no audio to run.
     pub model_id: Option<String>,
+    /// DanyWhere: whether that model took the word lists as vocabulary;
+    /// false when there was no audio to run. Without it, words that resemble
+    /// a list's term are candidates for `word_list_check`.
+    pub takes_vocabulary: bool,
 }
 
 /// What one transcription decoded (live or in batch), with how its runs were
@@ -1336,6 +1343,9 @@ struct RunSetup {
     languages: Vec<String>,
     applied_language_hint: Option<String>,
     output_was_translated: bool,
+    /// DanyWhere: the model takes the word lists as vocabulary
+    /// (`LoadedInfo::supports_vocabulary`).
+    takes_vocabulary: bool,
 }
 
 impl RunSetup {
@@ -1439,6 +1449,7 @@ fn run_setup(info: &LoadedInfo, settings: &AppSettings, language: LanguageDecisi
         languages,
         applied_language_hint,
         output_was_translated,
+        takes_vocabulary: info.supports_vocabulary,
     }
 }
 
@@ -2546,6 +2557,52 @@ mod tests {
         let inactive = with_work_list(&["Sayuri"], &["Jira"], false);
         assert_eq!(vocabulary_for_model(true, &inactive), vec!["Sayuri"]);
         assert!(vocabulary_for_model(false, &settings).is_empty());
+    }
+
+    /// A loaded model with or without `Feature::Vocabulary`.
+    fn loaded_info(supports_vocabulary: bool) -> LoadedInfo {
+        LoadedInfo {
+            arch: "test".to_string(),
+            variant: "test".to_string(),
+            backend: "cpu".to_string(),
+            device: "cpu".to_string(),
+            on_gpu: false,
+            capabilities: transcribe_cpp::Capabilities {
+                native_sample_rate: 16000,
+                languages: languages(&["en"]),
+                translate_target_languages: Vec::new(),
+                max_timestamp_kind: Default::default(),
+                supports_language_detect: true,
+                supports_translate: false,
+                supports_streaming: false,
+                supports_spec_decode: false,
+                max_audio_ms: 0,
+            },
+            supports_initial_prompt: supports_vocabulary,
+            supports_long_form: false,
+            supports_vocabulary,
+        }
+    }
+
+    /// DanyWhere: whether the model took the word lists goes with every
+    /// run's setup, so the transcription can say it (`word_list_check`).
+    #[test]
+    fn the_run_setup_says_whether_the_model_takes_the_word_lists() {
+        let settings = with_work_list(&["Sayuri"], &[], false);
+        let language = || LanguageDecision {
+            language: Some("en".to_string()),
+            source: LanguageSource::Selected,
+        };
+        let whisper = run_setup(&loaded_info(true), &settings, language());
+        assert!(whisper.takes_vocabulary);
+        assert_eq!(whisper.run_options.vocabulary, vec!["Sayuri"]);
+        let parakeet = run_setup(&loaded_info(false), &settings, language());
+        assert!(!parakeet.takes_vocabulary);
+        assert!(parakeet.run_options.vocabulary.is_empty());
+        // Without words the model still takes vocabulary: no candidates
+        // either way.
+        let without_words = run_setup(&loaded_info(true), &AppSettings::default(), language());
+        assert!(without_words.takes_vocabulary);
     }
 
     #[test]

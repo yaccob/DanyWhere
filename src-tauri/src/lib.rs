@@ -79,6 +79,7 @@ mod utils;
 mod variant;
 pub mod webkit_renderer;
 mod window_capture;
+mod word_list_check;
 mod word_lists;
 
 pub use cli::CliArgs;
@@ -868,6 +869,7 @@ pub fn run(cli_args: CliArgs) {
             shortcut::change_long_form_chunking_setting,
             shortcut::change_vad_backend_setting,
             shortcut::change_filler_word_removal_enabled_setting,
+            shortcut::change_word_list_llm_check_setting,
             shortcut::change_chinese_script_setting,
             shortcut::change_app_language_setting,
             shortcut::change_update_checks_setting,

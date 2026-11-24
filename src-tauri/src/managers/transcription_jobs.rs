@@ -479,6 +479,7 @@ impl TranscriptionJobManager {
             language,
             word_replacements,
             model_id,
+            ..
         }) = tm.transcribe_in_chunks(samples, &control)?
         else {
             return Ok(JobEnd::Cancelled);

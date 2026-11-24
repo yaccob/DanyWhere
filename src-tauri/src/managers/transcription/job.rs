@@ -48,6 +48,7 @@ impl TranscriptionManager {
                 language: None,
                 word_replacements: Vec::new(),
                 model_id: None,
+                takes_vocabulary: false,
             }));
         }
 
@@ -144,6 +145,7 @@ impl TranscriptionManager {
             language: Some(language),
             word_replacements,
             model_id: Some(active_model),
+            takes_vocabulary: setup.takes_vocabulary,
         }))
     }
 }
