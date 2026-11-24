@@ -1,0 +1,146 @@
+---
+title: "Configuración básica y perfiles"
+description: "Dicta de una manera en la terminal y de otra en el chat, y aun así cambia un ajuste en un solo sitio para todos."
+sidebar:
+  order: 3
+---
+
+import Diagram from '@components/Diagram.astro';
+import Screenshot from '@components/Screenshot.astro';
+import { Tabs, TabItem, Steps } from '@astrojs/starlight/components';
+
+No todas las apps quieren tus palabras de la misma manera. En una terminal quieres exactamente lo que dijiste, y Return no debería ejecutar un comando antes de que lo hayas leído. En un chat, Return debería enviar el mensaje. En el trabajo, quizá el posprocesamiento tenga que pasar por el proveedor de tu empresa; en casa, por el tuyo. Un perfil guarda esas diferencias para un tipo de trabajo, y DanyWhere puede elegirlo según la app en la que dictas. Este capítulo muestra cómo funcionan juntos los perfiles y la configuración básica, para que sepas dónde se aplica un cambio antes de hacerlo.
+
+## La configuración básica lo tiene todo; un perfil, solo lo que cambia
+
+En **Configuración básica**, en la barra lateral, encuentras todos los ajustes que dan forma a un dictado, en las páginas **General**, **Modelos**, **Post proceso** y **Avanzado**. Una instalación nueva dicta solo con la configuración básica; un perfil te hace falta cuando algo deba ser distinto.
+
+Un perfil se coloca encima de la configuración básica. Sus páginas son iguales que las de ella, pero solo guarda sus valores propios, y en todo lo demás se transparenta el valor básico. Si cambias un valor básico, todos los perfiles que no tienen ahí un valor propio lo siguen al instante. Si cambias un valor dentro de un perfil, solo cambia ese perfil.
+
+<Diagram
+  name="defaults-and-profiles"
+  caption="La configuración básica y los perfiles encima"
+  alt="Capas. Abajo, la configuración básica tiene un valor para cada ajuste. Un perfil encima solo guarda sus valores propios; en todos los demás ajustes se transparenta el valor de la configuración básica. Las listas, como las listas de palabras y los atajos de fin, difieren entrada por entrada: un perfil puede tener su propia versión de una entrada, añadir una o desactivar una entrada de la configuración básica. La configuración de la aplicación, como el idioma de la interfaz, no forma parte de las capas y es igual para todos los perfiles."
+/>
+
+## Los valores propios de un perfil
+
+Abre un perfil en **Configuración de perfiles**, en la barra lateral, por ejemplo **Configuración de perfiles › Terminal › Avanzado**. Debajo de cada ajuste, una línea dice de dónde viene su valor:
+
+- Una cadena entera y, en gris, **Valor básico**: el ajuste sigue la configuración básica.
+- Una cadena rota y, en azul petróleo, **Valor propio**: el perfil conserva este valor pase lo que pase con el valor básico. **Valor básico: …** indica el valor de la configuración básica, o **igual que el valor básico** dice que ahora coinciden. **Restablecer** hace que el ajuste vuelva a seguir la configuración básica.
+
+<Screenshot
+  name="profile-own-values"
+  alt="El grupo Transcripción en la página Avanzado del perfil Terminal. Debajo de cada ajuste hay una línea de estado. Tres ajustes muestran una cadena entera y la palabra gris Valor básico: siguen la configuración básica. Post procesamiento, desactivado, muestra una cadena rota, Valor propio en azul petróleo, Valor básico: activado y un botón Restablecer."
+  caption="Dentro de un perfil, cada ajuste dice si sigue la configuración básica."
+/>
+
+Si cambias un ajuste que sigue el valor básico, pasa a ser un valor propio del perfil. Una barra abajo te lo dice, por ejemplo **«Post procesamiento» ahora solo se aplica a «Terminal».** Si querías cambiarlo para todos los perfiles, haz clic en **Cambiar el valor básico en su lugar**: la configuración básica toma el valor nuevo y el perfil vuelve a seguirla. **Deshacer** recupera el valor básico.
+
+**Página a ajustes básicos**, arriba de una página, restablece todos sus valores propios. La primera página del perfil, **Perfil**, reúne en **Valores propios** todo lo que tiene distinto: un clic en una fila abre ese ajuste, la flecha circular restablece solo ese, y **Todo el perfil a ajustes básicos** los restablece todos, manteniendo el nombre y las apps del perfil. Antes de restablecer más de un valor, DanyWhere pregunta y los nombra. En la barra lateral, un número junto a un perfil y a sus páginas cuenta sus valores propios.
+
+:::tip[Conservar un valor que ahora coincide]
+Para conservar un valor que también tiene la configuración básica, como el posprocesamiento desactivado en tu terminal, haz clic en la cadena entera. El valor pasa a ser propio del perfil sin cambiar, y se mantiene cuando cambies el valor básico más adelante. Un clic en la cadena rota hace que vuelva a seguirlo.
+:::
+
+## Visto desde la configuración básica
+
+También puedes trabajar al revés, ajuste por ajuste. En las páginas de **Configuración básica**, debajo de un ajuste aparece cada perfil que lo tiene distinto, con su propio control y una flecha circular que lo restablece. En los ajustes más grandes, como los prompts, las listas de palabras o los atajos de fin, un resumen ocupa el lugar del control, y **Abrir en Terminal** te lleva al ajuste dentro del perfil. Una línea gris nombra los perfiles que siguen, o dice **Todos los perfiles siguen**, y **+ Perfil** da a un perfil más un valor propio aquí, partiendo del valor básico.
+
+<Screenshot
+  name="defaults-with-profiles"
+  alt="El ajuste Post procesamiento en la página Avanzado de la configuración básica, activado. Debajo, el perfil Terminal con una cadena rota, su propio interruptor, desactivado, y una flecha circular para restablecerlo. Más abajo, una línea gris con una cadena entera dice Chat sigue, y al lado hay un menú + Perfil."
+  caption="En la configuración básica, cada ajuste muestra los perfiles que difieren."
+/>
+
+Las páginas de **Configuración básica** siempre muestran y cambian la configuración básica, sea cual sea el perfil en uso.
+
+## Listas, entrada por entrada
+
+Algunos ajustes son listas: los **Atajos de fin** y los demás atajos, las listas de palabras de **Listas adicionales** y los proveedores de posprocesamiento con sus modelos. Un perfil difiere de una lista así entrada por entrada: cambia una entrada, añade una o desactiva una entrada de la configuración básica. La línea de estado marca cada una como **propio** o **desactivado**, con su propio botón para restablecerla. Todas las demás entradas siguen la configuración básica, también las que añadas allí más tarde. En un Mac, un perfil para tus chats podría enviar así con <kbd>↩</kbd>: solo cambia **Directo · Párrafo**, para que ese atajo de fin pulse Enter en lugar de empezar un párrafo nuevo.
+
+Las palabras y los prompts funcionan un poco distinto. La **Lista de palabras** de la configuración básica se aplica en todos los perfiles. Un perfil puede sustituirla entera, pero lo normal es que le anteponga **Palabras adicionales**, que solo usa él. Los prompts son de todos los perfiles; cuáles tienen marcada la casilla **Activo**, y en qué orden, es cosa del perfil.
+
+## Qué perfil usa un dictado
+
+Lo que usan los dictados se elige arriba en la barra lateral, en el recuadro **En uso**, o en el menú de la bandeja, en **Perfil**: la configuración básica, que la lista llama **Ajustes básicos**, o uno de tus perfiles. Eso solo decide con qué trabajan tus dictados, no qué ajustes editas.
+
+Los perfiles rinden más cuando DanyWhere los elige por ti. Da a un perfil las apps para las que está pensado y deja activado **Elegir perfil según la aplicación**, como viene de fábrica. Un dictado en una de esas apps usa entonces ese perfil; en cualquier otro sitio se aplica lo que muestra **En uso**.
+
+<Diagram
+  name="which-setting-applies"
+  caption="Qué perfil y qué valor usa un dictado"
+  alt="Cómo encuentra DanyWhere el valor de un ajuste para un dictado. Cuando termina la grabación: si Elegir perfil según la aplicación está activado y la app en primer plano tiene un perfil, se aplica ese perfil. Si no, se aplica lo que muestra En uso: la configuración básica o un perfil. Después, para cada ajuste: si el perfil tiene un valor propio, se aplica ese valor; si no, el valor básico."
+/>
+
+Decide la app que está en primer plano **cuando termina la grabación**, porque ahí va el texto. Puedes empezar un dictado en cualquier sitio y pasar a tu chat antes de terminarlo. Si más tarde insertas el texto en otra app con **Pegar la última transcripción**, DanyWhere rehace lo que el perfil de esa app hace distinto: vuelve a transcribir con otro modelo de voz, vuelve a posprocesar o solo añade otra cosa al final. **Copiar la última transcripción** mantiene el perfil del dictado, y un dictado que hayas editado en el **Historial** conserva tu texto.
+
+Mientras se aplica un perfil, el overlay lo nombra durante el dictado; con la configuración básica no muestra ningún nombre.
+
+Para desactivar un rato la elección según la aplicación, sin quitarle a ningún perfil sus apps, usa el interruptor de **Configuración de perfiles**, **Según la aplicación** en **En uso**, el menú de la bandeja o el atajo **Elegir perfil según la aplicación**: <kbd>⌃⇧A</kbd> en un Mac, <kbd>Alt+Mayús+A</kbd> en Windows. El overlay muestra entonces un momento si la elección está activada o no, y qué perfil tendría un dictado aquí. Mientras está desactivada, se aplica en todas partes el perfil de **En uso**, y el icono de la bandeja muestra un candado.
+
+Un cambio desde la bandeja o con un atajo, como pasar a la siguiente lista de palabras, va adonde viene el valor: al perfil en uso si tiene ahí un valor propio; si no, a la configuración básica.
+
+### Dar a un perfil sus apps
+
+<Tabs syncKey="os">
+<TabItem label="macOS">
+
+En la fila del perfil en **Configuración de perfiles**, o en su página **Perfil**, haz clic en **Añadir aplicación…** y elige la app: primero las que están abiertas, luego las instaladas. Una app pertenece como mucho a un perfil; si ya está en otro, lo indica y se cambia.
+
+</TabItem>
+<TabItem label="Windows">
+
+Escribe el nombre de archivo del programa, por ejemplo `WindowsTerminal.exe`, y haz clic en **Añadir**. Escríbelo tal como lo muestra el Administrador de tareas en **Detalles**, con sus mayúsculas y minúsculas. Un programa pertenece como mucho a un perfil.
+
+</TabItem>
+<TabItem label="Linux">
+
+En Linux, DanyWhere todavía no sabe qué app está en primer plano, así que las apps que des a un perfil no lo eligen. Elige el perfil en **En uso** o en el menú de la bandeja.
+
+</TabItem>
+</Tabs>
+
+## Lo que es igual para todos los perfiles
+
+Algunos ajustes tienen que ver con DanyWhere y no con un dictado. Están en **Configuración de la aplicación** y no cambian sea cual sea el perfil: el inicio con el equipo, el icono de la bandeja, el idioma y el aspecto de la interfaz, las actualizaciones, el almacenamiento y la página **Accesibilidad**. El **Historial** también es común: reúne los dictados de todos los perfiles.
+
+## Nuevo, duplicar, eliminar, compartir
+
+**Configuración de perfiles** abre la vista general: una fila para la configuración básica y una para cada perfil, con las apps en las que se usa, y debajo **Elegir perfil según la aplicación**.
+
+<Screenshot
+  name="profiles-overview"
+  alt="La vista general Configuración de perfiles, grupo Perfiles. Una fila para la configuración básica, llamada Ajustes básicos y marcada como Activo, y después los perfiles Terminal y Chat, cada uno con sus botones. Bajo Terminal, Se usa automáticamente en: iTerm2 y Terminal; bajo Chat, Slack y Signal. Debajo de las filas, el interruptor Elegir perfil según la aplicación, activado, y los botones Perfil nuevo e Importar perfil."
+  caption="La vista general de perfiles con dos perfiles y sus apps."
+/>
+
+- **Perfil nuevo** crea un perfil que sigue la configuración básica en todo.
+- **Duplicar** copia un perfil con sus valores propios. Una copia de la configuración básica la sigue en todo. La copia no se pone en uso; elígela en **En uso** o con **Usar**.
+- **Eliminar** borra los ajustes de un perfil y sus listas de palabras propias; los prompts se quedan. Puedes eliminar todos los perfiles; la configuración básica siempre se queda.
+- **Exportar** guarda un perfil en un archivo: cada valor con el que dicta, sus prompts activos, sus listas de palabras y sus apps. **Importar perfil** convierte ese archivo en un perfil nuevo, que sigue tu configuración básica allí donde sus valores coinciden con ella. Una app que ya tiene otro perfil se queda donde está.
+
+Si el proveedor de posprocesamiento del perfil tiene una clave API, la exportación pide una **Contraseña** y cifra la clave con ella. Para importar la clave hace falta la misma contraseña. Sin ella, **Importar sin la clave** trae todo lo demás, y el perfil usa la clave que ya esté guardada en ese equipo, si la hay.
+
+## Receta: un perfil para tu terminal
+
+<Steps>
+
+1. Abre **Configuración de perfiles**, haz clic en **Perfil nuevo** y llámalo `Terminal`.
+
+2. En la fila de Terminal, haz clic en **Añadir aplicación…** y elige Terminal o iTerm2. En Windows, escribe `WindowsTerminal.exe` y haz clic en **Añadir**. En Linux, elige **Terminal** en **En uso** mientras trabajas en la terminal y sáltate el paso siguiente.
+
+3. Comprueba que **Elegir perfil según la aplicación** está activado.
+
+4. Abre **Configuración de perfiles › Terminal › Avanzado** y busca **Post procesamiento**. Si está activado, desactívalo. Si ya está desactivado, como viene de fábrica, haz clic en la cadena de debajo, para que la terminal siga sin posprocesamiento aunque lo actives en la configuración básica. La línea de debajo dice ahora **Valor propio**.
+
+5. En un Mac, abre **Configuración de perfiles › Terminal › General**, baja hasta **Atajos de fin** y vacía el campo **Añadir al final** de **Directo · Párrafo**. Así <kbd>↩</kbd> termina un dictado en la terminal sin salto de línea.
+
+6. Pruébalo: en la terminal, empieza un dictado, di un comando y termínalo con <kbd>↩</kbd>. El overlay nombra **Terminal**, y el comando aparece tal como lo dijiste, esperando a que lo ejecutes.
+
+</Steps>
+
+## Siguiente
+
+Lo que más cambian los perfiles son los atajos de fin. [Atajos de inicio y de fin](../start-and-end-shortcuts/) muestra de qué se compone cada uno y cómo crear los tuyos.

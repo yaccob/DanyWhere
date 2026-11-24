@@ -1,0 +1,146 @@
+---
+title: "Grundeinstellungen und Profile"
+description: "Ins Terminal anders diktieren als in den Chat und eine Einstellung trotzdem an einer Stelle für alle ändern."
+sidebar:
+  order: 3
+---
+
+import Diagram from '@components/Diagram.astro';
+import Screenshot from '@components/Screenshot.astro';
+import { Tabs, TabItem, Steps } from '@astrojs/starlight/components';
+
+Nicht jede App will deine Worte gleich. Im Terminal willst du genau das, was du gesagt hast, und Return soll keinen Befehl ausführen, bevor du ihn gelesen hast. Im Chat soll Return die Nachricht abschicken. Bei der Arbeit muss die Nachbearbeitung vielleicht über den Anbieter deiner Firma laufen, daheim über deinen eigenen. Ein Profil hält solche Unterschiede für eine Art von Arbeit fest, und DanyWhere kann es nach der App wählen, in die du diktierst. Dieses Kapitel zeigt, wie Profile und Grundeinstellungen zusammenspielen, damit du vor einer Änderung weißt, wo sie gilt.
+
+## Die Grundeinstellungen haben alles, ein Profil nur, was anders ist
+
+Unter **Grundeinstellungen** in der Seitenleiste findest du jede Einstellung, die ein Diktat prägt, auf den Seiten **Allgemein**, **Modelle**, **Nachbearbeitung** und **Erweitert**. Eine neue Installation diktiert allein mit den Grundeinstellungen; ein Profil brauchst du erst, wenn etwas anders sein soll.
+
+Ein Profil liegt über den Grundeinstellungen. Seine Seiten sehen genauso aus wie ihre, aber es hält nur seine eigenen Werte fest, und überall sonst scheint der Grundwert durch. Änderst du einen Grundwert, folgt ihm sofort jedes Profil, das dort keinen eigenen Wert hat. Änderst du einen Wert in einem Profil, ändert sich nur dieses Profil.
+
+<Diagram
+  name="defaults-and-profiles"
+  caption="Die Grundeinstellungen und die Profile darüber"
+  alt="Schichten. Unten haben die Grundeinstellungen einen Wert für jede Einstellung. Ein Profil darüber hält nur seine eigenen Werte fest; bei jeder anderen Einstellung scheint der Wert der Grundeinstellungen durch. Listen wie Wortlisten und Endtasten weichen Eintrag für Eintrag ab: Ein Profil kann einen Eintrag anders haben, einen hinzufügen oder einen Eintrag der Grundeinstellungen ausschalten. Applikationseinstellungen wie die Sprache der Oberfläche gehören zu keiner Schicht und sind für alle Profile gleich."
+/>
+
+## Die eigenen Werte eines Profils
+
+Öffne ein Profil unter **Profileinstellungen** in der Seitenleiste, zum Beispiel **Profileinstellungen › Terminal › Erweitert**. Unter jeder Einstellung sagt eine Zeile, woher ihr Wert kommt:
+
+- Eine ganze Kette und, in Grau, **Grundwert**: Die Einstellung folgt den Grundeinstellungen.
+- Eine gebrochene Kette und, in Petrol, **eigener Wert**: Das Profil behält diesen Wert, was auch immer mit dem Grundwert geschieht. **Grundwert: …** nennt den Wert der Grundeinstellungen, oder **gleich wie Grundwert** sagt, dass beide gerade übereinstimmen. **Zurücksetzen** lässt die Einstellung wieder den Grundeinstellungen folgen.
+
+<Screenshot
+  name="profile-own-values"
+  alt="Die Gruppe Transkription auf der Seite Erweitert des Profils Terminal. Unter jeder Einstellung steht eine Zustandszeile. Drei Einstellungen zeigen eine ganze Kette und das graue Wort Grundwert: Sie folgen den Grundeinstellungen. Nachbearbeitung, ausgeschaltet, zeigt eine gebrochene Kette, eigener Wert in Petrol, Grundwert: an und einen Knopf Zurücksetzen."
+  caption="In einem Profil sagt jede Einstellung, ob sie den Grundeinstellungen folgt."
+/>
+
+Änderst du eine Einstellung, die dem Grundwert folgt, wird sie zum eigenen Wert des Profils. Eine Leiste unten sagt dir das, zum Beispiel **„Nachbearbeitung“ gilt jetzt nur für „Terminal“.** Wolltest du es für alle Profile ändern, klick auf **Stattdessen Grundwert ändern**: Die Grundeinstellungen übernehmen den neuen Wert, und das Profil folgt ihnen wieder. **Rückgängig** holt den Grundwert zurück.
+
+**Seite auf Grundeinstellungen** oben auf einer Seite setzt all ihre eigenen Werte zurück. Die erste Seite des Profils, **Profil**, listet unter **Eigene Werte** alles auf, was es anders hat: Ein Klick auf eine Zeile öffnet diese Einstellung, der runde Pfeil setzt nur sie zurück, und **Ganzes Profil auf Grundeinstellungen** setzt alle zurück; Name und Apps des Profils bleiben. Bevor DanyWhere mehr als einen Wert zurücksetzt, fragt es nach und nennt sie. In der Seitenleiste zählt eine Zahl neben einem Profil und seinen Seiten deren eigene Werte.
+
+:::tip[Einen Wert festhalten, der gerade gleich ist]
+Willst du einen Wert behalten, den auch die Grundeinstellungen haben, etwa eine ausgeschaltete Nachbearbeitung für dein Terminal, klick auf die ganze Kette. Der Wert wird zum eigenen Wert des Profils, ohne sich zu ändern, und er bleibt, wenn du den Grundwert später änderst. Ein Klick auf die gebrochene Kette lässt ihn wieder folgen.
+:::
+
+## Von den Grundeinstellungen aus gesehen
+
+Du kannst auch andersherum arbeiten, eine Einstellung nach der anderen. Auf den Seiten unter **Grundeinstellungen** steht unter einer Einstellung jedes Profil, das sie anders hat, mit seinem eigenen Bedienelement und einem runden Pfeil, der es zurücksetzt. Bei größeren Einstellungen wie den Prompts, den Wortlisten oder den Endtasten steht statt des Bedienelements eine Zusammenfassung, und **In Terminal öffnen** bringt dich zur Einstellung im Profil. Eine graue Zeile nennt die Profile, die folgen, oder sagt **Alle Profile folgen**, und **+ Profil** gibt einem weiteren Profil hier einen eigenen Wert, ausgehend vom Grundwert.
+
+<Screenshot
+  name="defaults-with-profiles"
+  alt="Die Einstellung Nachbearbeitung auf der Seite Erweitert der Grundeinstellungen, eingeschaltet. Darunter das Profil Terminal mit einer gebrochenen Kette, seinem eigenen Schalter, ausgeschaltet, und einem runden Pfeil zum Zurücksetzen. Darunter eine graue Zeile mit einer ganzen Kette: Chat folgt, daneben ein Menü + Profil."
+  caption="Unter den Grundeinstellungen zeigt jede Einstellung die Profile, die abweichen."
+/>
+
+Die Seiten unter **Grundeinstellungen** zeigen und ändern immer die Grundeinstellungen, egal welches Profil gerade in Verwendung ist.
+
+## Listen, Eintrag für Eintrag
+
+Manche Einstellungen sind Listen: die **Endtasten** und die anderen Tastenkombinationen, die Wortlisten unter **Zusätzliche Listen** und die Anbieter der Nachbearbeitung mit ihren Modellen. Ein Profil weicht von so einer Liste Eintrag für Eintrag ab: Es ändert einen Eintrag, fügt einen hinzu oder schaltet einen Eintrag der Grundeinstellungen aus. Die Zustandszeile markiert jeden davon mit **eigen** oder **aus**, mit einem eigenen Knopf zum Zurücksetzen. Alle anderen Einträge folgen weiter den Grundeinstellungen, auch solche, die du dort später hinzufügst. Auf dem Mac könnte ein Profil für deine Chats so mit <kbd>↩</kbd> abschicken: Es ändert nur **Direkt · Absatz**, sodass diese Endtaste Enter drückt, statt einen neuen Absatz zu beginnen.
+
+Wörter und Prompts funktionieren ein wenig anders. Die **Wortliste** der Grundeinstellungen gilt in jedem Profil. Ein Profil kann sie als Ganzes ersetzen, meist stellt es ihr aber **Zusätzliche Wörter** voran, die nur es selbst verwendet. Die Prompts gehören allen Profilen; welche davon **Aktiv** sind und in welcher Reihenfolge, gehört zum Profil.
+
+## Welches Profil ein Diktat verwendet
+
+Was Diktate verwenden, wählst du oben in der Seitenleiste im Kasten **In Verwendung** oder im Tray-Menü unter **Profil**: die **Grundeinstellungen** oder eines deiner Profile. Das entscheidet nur, womit deine Diktate arbeiten, nicht, welche Einstellungen du bearbeitest.
+
+Am meisten bringen Profile, wenn DanyWhere sie für dich wählt. Gib einem Profil die Apps, für die es gedacht ist, und lass **Profil nach Anwendung wählen** eingeschaltet, wie es ab Werk ist. Ein Diktat in eine dieser Apps verwendet dann dieses Profil; überall sonst gilt, was **In Verwendung** zeigt.
+
+<Diagram
+  name="which-setting-applies"
+  caption="Welches Profil und welcher Wert für ein Diktat gilt"
+  alt="Wie DanyWhere den Wert einer Einstellung für ein Diktat findet. Wenn die Aufnahme endet: Ist Profil nach Anwendung wählen eingeschaltet und hat die App, die vorn ist, ein Profil, gilt dieses Profil. Sonst gilt, was In Verwendung zeigt: die Grundeinstellungen oder ein Profil. Dann für jede Einstellung: Hat das Profil einen eigenen Wert, gilt dieser, sonst der Grundwert."
+/>
+
+Es entscheidet die App, die vorn ist, **wenn die Aufnahme endet**, denn dorthin geht der Text. Du kannst ein Diktat also irgendwo beginnen und vor dem Beenden in deinen Chat wechseln. Fügst du den Text später mit **Letzte Transkription einfügen** in eine andere App ein, macht DanyWhere neu, was deren Profil anders macht: Es transkribiert noch einmal mit einem anderen Sprachmodell, bearbeitet noch einmal nach oder hängt nur etwas anderes an. **Letzte Transkription kopieren** behält das Profil des Diktats, und ein Diktat, das du im **Verlauf** bearbeitet hast, behält deinen Text.
+
+Solange ein Profil gilt, nennt das Overlay es während des Diktats; bei den Grundeinstellungen zeigt es keinen Namen.
+
+Um die Wahl nach Anwendung eine Weile auszuschalten, ohne einem Profil seine Apps wegzunehmen, nimm den Schalter auf **Profileinstellungen**, **Nach Anwendung** unter **In Verwendung**, das Tray-Menü oder die Tastenkombination **Profil nach Anwendung wählen**: <kbd>⌃⇧A</kbd> auf dem Mac, <kbd>Alt+Umschalt+A</kbd> unter Windows. Das Overlay zeigt dann kurz, ob die Wahl an oder aus ist und welches Profil ein Diktat hier bekäme. Solange sie aus ist, gilt überall das Profil unter **In Verwendung**, und das Tray-Symbol zeigt ein Schloss.
+
+Eine Änderung über das Tray oder eine Tastenkombination, etwa der Wechsel zur nächsten Wortliste, geht dorthin, woher der Wert kommt: ins Profil in Verwendung, wenn es dort einen eigenen Wert hat, sonst in die Grundeinstellungen.
+
+### Einem Profil seine Apps geben
+
+<Tabs syncKey="os">
+<TabItem label="macOS">
+
+Klick in der Zeile des Profils unter **Profileinstellungen** oder auf seiner Seite **Profil** auf **Anwendung hinzufügen…** und wähl die App: zuerst die laufenden Apps, dann die installierten. Eine App gehört zu höchstens einem Profil; eine, die schon in einem anderen Profil ist, sagt das und wechselt.
+
+</TabItem>
+<TabItem label="Windows">
+
+Tipp den Dateinamen des Programms ein, etwa `WindowsTerminal.exe`, und klick auf **Hinzufügen**. Schreib ihn genau so, wie ihn der Task-Manager unter **Details** zeigt, mit Groß- und Kleinschreibung. Ein Programm gehört zu höchstens einem Profil.
+
+</TabItem>
+<TabItem label="Linux">
+
+Unter Linux kann DanyWhere noch nicht erkennen, welche App vorn ist. Apps, die du einem Profil gibst, wählen es deshalb nicht. Wähl das Profil stattdessen unter **In Verwendung** oder im Tray-Menü.
+
+</TabItem>
+</Tabs>
+
+## Was für alle Profile gleich ist
+
+Manche Einstellungen betreffen DanyWhere selbst und kein Diktat. Sie stehen unter **Applikationseinstellungen** und bleiben gleich, egal welches Profil gilt: der Start mit dem Computer, das Tray-Symbol, Sprache und Aussehen der Oberfläche, Updates, Speicher und die Seite **Bedienungshilfen**. Auch der **Verlauf** ist gemeinsam: Er sammelt die Diktate aller Profile.
+
+## Neu, duplizieren, löschen, weitergeben
+
+**Profileinstellungen** öffnet die Übersicht: eine Zeile für die Grundeinstellungen und eine für jedes Profil, mit den Apps, in denen es verwendet wird, und darunter **Profil nach Anwendung wählen**.
+
+<Screenshot
+  name="profiles-overview"
+  alt="Die Übersicht Profileinstellungen, Gruppe Profile. Eine Zeile für die Grundeinstellungen, als Aktiv markiert, dann die Profile Terminal und Chat, jedes mit seinen Knöpfen. Unter Terminal steht Automatisch verwenden in: iTerm2 und Terminal, unter Chat Slack und Signal. Unter den Zeilen der Schalter Profil nach Anwendung wählen, eingeschaltet, dann die Knöpfe Neues Profil und Profil importieren."
+  caption="Die Profilübersicht mit zwei Profilen und ihren Apps."
+/>
+
+- **Neues Profil** legt ein Profil an, das in allem den Grundeinstellungen folgt.
+- **Duplizieren** kopiert ein Profil mit seinen eigenen Werten. Eine Kopie der Grundeinstellungen folgt ihnen in allem. Die Kopie wird nicht in Verwendung genommen; wähl sie unter **In Verwendung** oder mit **Verwenden**.
+- **Löschen** löscht die Einstellungen eines Profils und seine eigenen Wortlisten; die Prompts bleiben. Du kannst jedes Profil löschen; die Grundeinstellungen bleiben immer.
+- **Exportieren** speichert ein Profil in eine Datei: jeden Wert, mit dem es diktiert, seine aktiven Prompts, seine Wortlisten und seine Apps. **Profil importieren** macht aus so einer Datei ein neues Profil, das deinen Grundeinstellungen überall folgt, wo seine Werte ihnen gleichen. Eine App, die schon ein anderes Profil hat, bleibt dort.
+
+Hat der Anbieter der Nachbearbeitung im Profil einen API-Schlüssel, fragt der Export nach einem **Passwort** und verschlüsselt den Schlüssel damit. Um den Schlüssel zu importieren, braucht es dasselbe Passwort. Ohne es bringt **Ohne Schlüssel importieren** alles andere herein, und das Profil verwendet den Schlüssel, der auf diesem Computer schon eingetragen ist, falls es einen gibt.
+
+## Rezept: ein Profil für dein Terminal
+
+<Steps>
+
+1. Öffne **Profileinstellungen**, klick auf **Neues Profil** und nenn es `Terminal`.
+
+2. Klick in der Zeile von Terminal auf **Anwendung hinzufügen…** und wähl Terminal oder iTerm2. Unter Windows tippst du `WindowsTerminal.exe` ein und klickst auf **Hinzufügen**. Unter Linux wählst du **Terminal** unter **In Verwendung**, solange du im Terminal arbeitest, und überspringst den nächsten Schritt.
+
+3. Prüf, dass **Profil nach Anwendung wählen** eingeschaltet ist.
+
+4. Öffne **Profileinstellungen › Terminal › Erweitert** und such **Nachbearbeitung**. Ist sie eingeschaltet, schalte sie aus. Ist sie schon aus, wie ab Werk, klick auf die Kette darunter, damit das Terminal ohne Nachbearbeitung bleibt, auch wenn du sie in den Grundeinstellungen einschaltest. Die Zeile darunter sagt jetzt **eigener Wert**.
+
+5. Auf dem Mac öffnest du **Profileinstellungen › Terminal › Allgemein**, scrollst zu **Endtasten** und leerst das Feld **Anhängen** von **Direkt · Absatz**. Dann beendet <kbd>↩</kbd> ein Diktat im Terminal ohne Zeilenumbruch.
+
+6. Probier es aus: Starte im Terminal ein Diktat, sag einen Befehl und beende mit <kbd>↩</kbd>. Das Overlay nennt **Terminal**, und der Befehl steht da, wie du ihn gesagt hast, und wartet darauf, dass du ihn ausführst.
+
+</Steps>
+
+## Weiter
+
+Am häufigsten ändern Profile die Endtasten. [Start- und Endtasten](../start-and-end-shortcuts/) zeigt, woraus jede besteht und wie du eigene einrichtest.
