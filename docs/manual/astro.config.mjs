@@ -72,6 +72,16 @@ export default defineConfig({
           },
           items: [{ autogenerate: { directory: "how-it-works" } }],
         },
+        // Origin, thanks and the repository; last, after every chapter.
+        {
+          label: "About DanyWhere",
+          translations: {
+            de: "Über DanyWhere",
+            es: "Acerca de DanyWhere",
+            fr: "À propos de DanyWhere",
+          },
+          slug: "about",
+        },
       ],
       lastUpdated: false,
       credits: false,
