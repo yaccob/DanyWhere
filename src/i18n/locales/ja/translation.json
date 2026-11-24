@@ -23,6 +23,7 @@
     "advanced": "詳細設定",
     "postProcessing": "後処理",
     "history": "履歴",
+    "manual": "マニュアル",
     "debug": "デバッグ",
     "about": "概要",
     "areas": {
@@ -34,6 +35,15 @@
     "updates": "アップデート",
     "storage": "ストレージ",
     "profile": "プロファイル"
+  },
+  "manual": {
+    "openChapter": "マニュアルを開く: {{chapter}}",
+    "chapters": {
+      "startAndEndShortcuts": "開始・終了ショートカット"
+    },
+    "errors": {
+      "open": "マニュアルを開けませんでした: {{error}}"
+    }
   },
   "onboarding": {
     "customModelDescription": "公式サポート対象外",

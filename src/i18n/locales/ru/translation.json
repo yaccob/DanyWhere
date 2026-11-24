@@ -23,6 +23,7 @@
     "advanced": "Продвинутые",
     "postProcessing": "Постобработка",
     "history": "История",
+    "manual": "Руководство",
     "debug": "Отладка",
     "about": "О программе",
     "areas": {
@@ -34,6 +35,15 @@
     "updates": "Обновления",
     "storage": "Хранилище",
     "profile": "Профиль"
+  },
+  "manual": {
+    "openChapter": "Открыть руководство: {{chapter}}",
+    "chapters": {
+      "startAndEndShortcuts": "Клавиши запуска и завершения"
+    },
+    "errors": {
+      "open": "Не удалось открыть руководство: {{error}}"
+    }
   },
   "onboarding": {
     "customModelDescription": "Официально не поддерживается",

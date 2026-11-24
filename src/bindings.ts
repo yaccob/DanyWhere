@@ -1070,6 +1070,19 @@ async openAppDataDir() : Promise<Result<null, string>> {
 }
 },
 /**
+ * Opens the manual's window at `page` (a page's slug, see `manual_url`),
+ * or its home page, in the app's interface language; a window already open
+ * goes to that page and comes to the front.
+ */
+async openManual(page: string | null) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("open_manual", { page }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
  * Check if Apple Intelligence is available on this device.
  * Called by the frontend when the user selects Apple Intelligence provider.
  */
@@ -2698,13 +2711,15 @@ vad_enabled: boolean; long_form_chunking: boolean;
  */
 bindings: Partial<{ [key in string]: ShortcutBinding }>; 
 /**
- * The end shortcuts (`end_keys`), each with a stable id.
+ * The end shortcuts (`end_keys`), each with a stable id. A stored
+ * profile without them reads the ends of a store from before them,
+ * which `end_keys::migrate` replaces with its own.
  */
-end_keys: EndKey[]; 
+end_keys?: EndKey[]; 
 /**
  * The hold end per start shortcut (`hold_ends`), one value as a whole.
  */
-hold_ends: Partial<{ [key in string]: HoldEnd }> }
+hold_ends?: Partial<{ [key in string]: HoldEnd }> }
 /**
  * One prompt of the library in a profile's list.
  */
@@ -3033,7 +3048,8 @@ export type WindowTitleAccess = {
  */
 supported: boolean; 
 /**
- * macOS: DanyWhere has Accessibility, so it reads every window's title.
+ * macOS: DanyWhere reads every window's title through Accessibility
+ * ([`TitleSource::Accessibility`]).
  */
 accessibility: boolean; 
 /**

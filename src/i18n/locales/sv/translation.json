@@ -23,6 +23,7 @@
     "advanced": "Avancerat",
     "postProcessing": "Efterbearbetning",
     "history": "Historik",
+    "manual": "Handbok",
     "debug": "Felsökning",
     "about": "Om",
     "areas": {
@@ -34,6 +35,15 @@
     "updates": "Uppdateringar",
     "storage": "Lagring",
     "profile": "Profil"
+  },
+  "manual": {
+    "openChapter": "Öppna handboken: {{chapter}}",
+    "chapters": {
+      "startAndEndShortcuts": "Start- och avslutningskortkommandon"
+    },
+    "errors": {
+      "open": "Det gick inte att öppna handboken: {{error}}"
+    }
   },
   "onboarding": {
     "customModelDescription": "Stöds inte officiellt",

@@ -23,6 +23,7 @@
     "advanced": "Avanceret",
     "postProcessing": "Efterbehandling",
     "history": "Historik",
+    "manual": "Brugervejledning",
     "debug": "Fejlfinding",
     "about": "Om",
     "areas": {
@@ -34,6 +35,15 @@
     "updates": "Opdateringer",
     "storage": "Lagring",
     "profile": "Profil"
+  },
+  "manual": {
+    "openChapter": "Åbn brugervejledningen: {{chapter}}",
+    "chapters": {
+      "startAndEndShortcuts": "Start- og afslutningsgenveje"
+    },
+    "errors": {
+      "open": "Kunne ikke åbne brugervejledningen: {{error}}"
+    }
   },
   "onboarding": {
     "customModelDescription": "Ikke officielt understøttet",

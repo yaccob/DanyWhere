@@ -23,6 +23,7 @@
     "advanced": "Lanjutan",
     "postProcessing": "Pascaproses",
     "history": "Riwayat",
+    "manual": "Panduan",
     "debug": "Debug",
     "about": "Tentang",
     "areas": {
@@ -34,6 +35,15 @@
     "updates": "Pembaruan",
     "storage": "Penyimpanan",
     "profile": "Profil"
+  },
+  "manual": {
+    "openChapter": "Buka panduan: {{chapter}}",
+    "chapters": {
+      "startAndEndShortcuts": "Pintasan Mulai dan Akhir"
+    },
+    "errors": {
+      "open": "Tidak dapat membuka panduan: {{error}}"
+    }
   },
   "onboarding": {
     "customModelDescription": "Tidak didukung secara resmi",

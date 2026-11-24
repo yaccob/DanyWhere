@@ -23,6 +23,7 @@
     "advanced": "ऐडवांस",
     "postProcessing": "पोस्ट प्रोसेस",
     "history": "इतिहास",
+    "manual": "मैनुअल",
     "debug": "डिबग",
     "about": "के बारे में",
     "areas": {
@@ -34,6 +35,15 @@
     "updates": "अपडेट",
     "storage": "स्टोरेज",
     "profile": "प्रोफ़ाइल"
+  },
+  "manual": {
+    "openChapter": "मैनुअल खोलें: {{chapter}}",
+    "chapters": {
+      "startAndEndShortcuts": "प्रारंभ और समाप्ति शॉर्टकट"
+    },
+    "errors": {
+      "open": "मैनुअल नहीं खुल सका: {{error}}"
+    }
   },
   "onboarding": {
     "customModelDescription": "आधिकारिक रूप से समर्थित नहीं",

@@ -23,6 +23,7 @@
     "advanced": "Gelişmiş",
     "postProcessing": "Son İşlem",
     "history": "Geçmiş",
+    "manual": "Kılavuz",
     "debug": "Hata Ayıklama",
     "about": "Hakkında",
     "areas": {
@@ -34,6 +35,15 @@
     "updates": "Güncellemeler",
     "storage": "Depolama",
     "profile": "Profil"
+  },
+  "manual": {
+    "openChapter": "Kılavuzu aç: {{chapter}}",
+    "chapters": {
+      "startAndEndShortcuts": "Başlatma ve Bitirme Kısayolları"
+    },
+    "errors": {
+      "open": "Kılavuz açılamadı: {{error}}"
+    }
   },
   "onboarding": {
     "customModelDescription": "Resmi olarak desteklenmiyor",

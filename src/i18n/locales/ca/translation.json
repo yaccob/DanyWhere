@@ -23,6 +23,7 @@
     "advanced": "Avançat",
     "postProcessing": "Postprocessament",
     "history": "Historial",
+    "manual": "Manual",
     "debug": "Depuració",
     "about": "Quant a",
     "areas": {
@@ -34,6 +35,15 @@
     "updates": "Actualitzacions",
     "storage": "Emmagatzematge",
     "profile": "Perfil"
+  },
+  "manual": {
+    "openChapter": "Obre el manual: {{chapter}}",
+    "chapters": {
+      "startAndEndShortcuts": "Dreceres d'inici i de final"
+    },
+    "errors": {
+      "open": "No s'ha pogut obrir el manual: {{error}}"
+    }
   },
   "onboarding": {
     "customModelDescription": "Sense suport oficial",

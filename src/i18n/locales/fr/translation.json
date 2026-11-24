@@ -23,6 +23,7 @@
     "advanced": "Avancé",
     "postProcessing": "Post-traitement",
     "history": "Historique",
+    "manual": "Manuel",
     "debug": "Débogage",
     "about": "À propos",
     "areas": {
@@ -34,6 +35,15 @@
     "updates": "Mises à jour",
     "storage": "Stockage",
     "profile": "Profil"
+  },
+  "manual": {
+    "openChapter": "Ouvrir le manuel : {{chapter}}",
+    "chapters": {
+      "startAndEndShortcuts": "Raccourcis de début et de fin"
+    },
+    "errors": {
+      "open": "Impossible d'ouvrir le manuel : {{error}}"
+    }
   },
   "onboarding": {
     "customModelDescription": "Non officiellement pris en charge",

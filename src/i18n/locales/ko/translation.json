@@ -23,6 +23,7 @@
     "advanced": "고급",
     "postProcessing": "후처리",
     "history": "히스토리",
+    "manual": "설명서",
     "debug": "디버그",
     "about": "정보",
     "areas": {
@@ -34,6 +35,15 @@
     "updates": "업데이트",
     "storage": "저장 공간",
     "profile": "프로필"
+  },
+  "manual": {
+    "openChapter": "설명서 열기: {{chapter}}",
+    "chapters": {
+      "startAndEndShortcuts": "시작 및 종료 단축키"
+    },
+    "errors": {
+      "open": "설명서를 열 수 없습니다: {{error}}"
+    }
   },
   "onboarding": {
     "customModelDescription": "공식 지원되지 않음",

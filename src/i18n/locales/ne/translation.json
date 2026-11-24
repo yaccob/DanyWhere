@@ -23,6 +23,7 @@
     "advanced": "उन्नत",
     "postProcessing": "पोस्ट प्रोसेस",
     "history": "हिस्ट्री",
+    "manual": "पुस्तिका",
     "debug": "डिबग",
     "about": "बारेमा",
     "areas": {
@@ -34,6 +35,15 @@
     "updates": "अपडेटहरू",
     "storage": "भण्डारण",
     "profile": "प्रोफाइल"
+  },
+  "manual": {
+    "openChapter": "पुस्तिका खोल्नुहोस्: {{chapter}}",
+    "chapters": {
+      "startAndEndShortcuts": "सुरु र अन्त्य सर्टकटहरू"
+    },
+    "errors": {
+      "open": "पुस्तिका खोल्न सकिएन: {{error}}"
+    }
   },
   "onboarding": {
     "customModelDescription": "आधिकारिक रूपमा समर्थित छैन",

@@ -23,6 +23,7 @@
     "advanced": "מתקדם",
     "postProcessing": "עיבוד משלים",
     "history": "היסטוריה",
+    "manual": "מדריך",
     "debug": "ניפוי שגיאות",
     "about": "אודות",
     "areas": {
@@ -34,6 +35,15 @@
     "updates": "עדכונים",
     "storage": "אחסון",
     "profile": "פרופיל"
+  },
+  "manual": {
+    "openChapter": "פתיחת המדריך: {{chapter}}",
+    "chapters": {
+      "startAndEndShortcuts": "קיצורי התחלה וסיום"
+    },
+    "errors": {
+      "open": "לא ניתן לפתוח את המדריך: {{error}}"
+    }
   },
   "onboarding": {
     "customModelDescription": "לא נתמך באופן רשמי",
