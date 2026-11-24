@@ -7,6 +7,7 @@
 import React, { createContext, useContext } from "react";
 import type { Scope } from "@/lib/profileScope";
 import type { JumpTarget } from "@/lib/settingJump";
+import type { NavLocation } from "@/lib/navigation";
 
 const SettingsScopeContext = createContext<Scope | null>(null);
 
@@ -66,3 +67,22 @@ export const OpenProfilePageProvider: React.FC<{
 
 export const useOpenProfilePage = (): OpenProfilePage | null =>
   useContext(OpenProfilePageContext);
+
+/** Shows another place of the settings window, e.g. a page of the same
+ * scope (`scopePage`); the settings page provides it. */
+export type OpenLocation = (location: NavLocation) => void;
+
+const OpenLocationContext = createContext<OpenLocation | null>(null);
+
+export const OpenLocationProvider: React.FC<{
+  value: OpenLocation;
+  children: React.ReactNode;
+}> = ({ value, children }) => (
+  <OpenLocationContext.Provider value={value}>
+    {children}
+  </OpenLocationContext.Provider>
+);
+
+/** How to show another place, or `null` outside the settings window. */
+export const useOpenLocation = (): OpenLocation | null =>
+  useContext(OpenLocationContext);
