@@ -29,6 +29,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, test, type Page } from "@playwright/test";
 import { optimize } from "svgo";
+import type { Scene } from "./example-data";
 
 const ROOT = fileURLToPath(new URL("../../..", import.meta.url));
 const OUT = join(ROOT, "docs/manual/public/screenshots");
@@ -45,6 +46,9 @@ const WINDOW = { width: 720, height: 600 };
 const MARGIN = 12;
 /** How far a cut-off list shows its next row, fading out, in CSS pixels. */
 const FADE = 40;
+/** How far the card around a single setting goes on above and below it,
+ * fading out, in CSS pixels. */
+const SLICE_FADE = 16;
 /** CSS pixels to PDF points. */
 const PT_PER_PX = 72 / 96;
 /** The cut snaps outward to this many points, 4 CSS pixels, so the
@@ -54,19 +58,63 @@ const GRID_PT = 3;
 /** The only fonts a picture may use (`boot.ts`). */
 const FONTS = ["Inter", "JetBrains Mono"];
 
+/** A row of the sidebar: its label's translation key, or a profile's name
+ * as it stands. */
+type NavStep = { key: string } | { name: string };
+
 interface Shot {
   /** The file name, without language and theme. */
   name: string;
+  /** What the window holds (`example-data.ts`); a fresh installation when
+   * missing. */
+  scene?: Scene;
+  /** The sidebar rows clicked one after the other to reach the page, each
+   * the first with its label below the one before (a profile's page below
+   * the profile); none for Defaults › General, where the window opens
+   * (`START_LOCATION`). */
+  path?: NavStep[];
   /** The settings group shown, by its title's translation key. */
   groupTitleKey: string;
   /** Show only the group's title, description and first rows of its list;
    * all of it when missing. */
   rows?: number;
+  /** Show only this setting of the group, by its title's translation key,
+   * with what its scope shows under it (chain, deviating profiles); the
+   * whole group when missing. */
+  settingTitleKey?: string;
 }
 
-/** Defaults › General is where the window opens (`START_LOCATION`). */
 const SHOTS: Shot[] = [
   { name: "end-shortcuts", groupTitleKey: "settings.endKeys.title", rows: 4 },
+  // A profile's page: values that follow the defaults and one of its own
+  // (Terminal doesn't post-process).
+  {
+    name: "profile-own-values",
+    scene: "profiles",
+    path: [
+      { key: "sidebar.areas.profiles" },
+      { name: "Terminal" },
+      { key: "sidebar.advanced" },
+    ],
+    groupTitleKey: "settings.advanced.groups.transcription",
+  },
+  // A default with the profile that deviates from it, its own control and
+  // reset, and the profile that follows.
+  {
+    name: "defaults-with-profiles",
+    scene: "profiles",
+    path: [{ key: "sidebar.advanced" }],
+    groupTitleKey: "settings.advanced.groups.transcription",
+    settingTitleKey: "settings.debug.postProcessingToggle.label",
+  },
+  // The overview of the profile settings: the profiles with their
+  // applications, choosing by application.
+  {
+    name: "profiles-overview",
+    scene: "profiles",
+    path: [{ key: "sidebar.areas.profiles" }],
+    groupTitleKey: "settings.profiles.title",
+  },
 ];
 
 /** A translation as the app shows it: the locale's text, the product named
@@ -91,17 +139,19 @@ const translation = (language: string, key: string): string => {
   return text.replace(/\bHandy(?=s?\b)/g, "DanyWhere");
 };
 
-/** Opens the window in `language` and `theme` and waits until it shows the
- * settings in that language, theme and fonts. */
+/** Opens the window in `language`, `theme` and `scene` and waits until it
+ * shows the settings in that language, theme and fonts. */
 const openWindow = async (
   page: Page,
   language: string,
   theme: string,
+  scene: Scene,
 ): Promise<void> => {
   await page.setViewportSize(WINDOW);
   await page.emulateMedia({ media: "screen", colorScheme: theme as "light" });
   await page.goto(
-    `/docs/manual/screenshots/app.html?lang=${language}&theme=${theme}`,
+    `/docs/manual/screenshots/app.html?lang=${language}&theme=${theme}` +
+      (scene === "fresh" ? "" : `&scene=${scene}`),
   );
   await page.waitForFunction(
     ([lang, mode]) =>
@@ -112,9 +162,69 @@ const openWindow = async (
   );
   await page.waitForLoadState("networkidle");
   await page.evaluate(() => document.fonts.ready);
-  // Let the window grow until its settings no longer scroll, so the PDF
-  // (one page, the window's size) holds all of them. The scrollbars are
-  // overlays, as on macOS, so the width of the content stays the same.
+};
+
+/** Clicks the sidebar rows of `path` one after the other (`NavStep`) and
+ * waits until the page shows the group titled `title` and nothing on it
+ * changes any more (the commands it asks are answered). */
+const navigate = async (
+  page: Page,
+  language: string,
+  path: NavStep[],
+  title: string,
+): Promise<void> => {
+  for (let step = 1; step <= path.length; step += 1) {
+    const labels = path
+      .slice(0, step)
+      .map((part) =>
+        "key" in part ? translation(language, part.key) : part.name,
+      );
+    // Each row is looked for below the one before, as a person reads the
+    // tree: a profile's Advanced, not the defaults' one above it.
+    await page.evaluate((wanted) => {
+      const rows = [...document.querySelectorAll<HTMLElement>("nav button")];
+      let from = 0;
+      let row: HTMLElement | undefined;
+      for (const label of wanted) {
+        const index = rows.findIndex(
+          (candidate, at) => at >= from && candidate.title === label,
+        );
+        if (index < 0) throw new Error(`no sidebar row "${label}"`);
+        row = rows[index];
+        from = index + 1;
+      }
+      row?.click();
+    }, labels);
+  }
+  await page.waitForFunction(
+    (wanted) =>
+      [...document.querySelectorAll("h2")].some(
+        (element) => element.textContent?.trim() === wanted,
+      ),
+    title,
+  );
+  await page.waitForLoadState("networkidle");
+  // Settled: the markup stayed the same over a few frames.
+  await page.evaluate(async () => {
+    const frame = () =>
+      new Promise((done) =>
+        requestAnimationFrame(() => requestAnimationFrame(done)),
+      );
+    let before = "";
+    for (let same = 0; same < 3; ) {
+      await frame();
+      const now = document.body.innerHTML;
+      same = now === before ? same + 1 : 0;
+      before = now;
+    }
+    await document.fonts.ready;
+  });
+};
+
+/** Lets the window grow until its settings no longer scroll, so the PDF
+ * (one page, the window's size) holds all of them. The scrollbars are
+ * overlays, as on macOS, so the width of the content stays the same. */
+const growWindow = async (page: Page): Promise<void> => {
   for (let round = 0; round < 5; round += 1) {
     const overflow = await page.evaluate(async () => {
       await new Promise((done) =>
@@ -140,6 +250,21 @@ const openWindow = async (
   throw new Error("the settings still scroll");
 };
 
+/** Makes the window at least as tall as wide: of a landscape page,
+ * pdftocairo turns the cut sideways (`-paperw`/`-paperh` swap). The
+ * settings start at the top, so more height only adds room below them. */
+const keepUpright = async (page: Page): Promise<void> => {
+  const size = page.viewportSize() ?? WINDOW;
+  if (size.height >= size.width) return;
+  await page.setViewportSize({ width: size.width, height: size.width });
+  await page.evaluate(
+    () =>
+      new Promise((done) =>
+        requestAnimationFrame(() => requestAnimationFrame(done)),
+      ),
+  );
+};
+
 /** The marked part of a shot (`data-manual-shot`). */
 const SHOT_SELECTOR = "[data-manual-shot]";
 
@@ -149,17 +274,42 @@ const SHOT_SELECTOR = "[data-manual-shot]";
  * rows and the next one (to fade out), with the window's background. The
  * layout stays as it is, so the PDF holds nothing else. Returns the part's
  * box in CSS pixels, where the list is cut, and the window's background.
+ *
+ * With `setting`, only the setting with that title shows, with what its
+ * scope shows under it, in the card's frame: the group's title and the
+ * other settings' contents go invisible, the card's border and the lines
+ * between the settings stay. `start` and `cut` are then where the setting
+ * begins and ends (the line under it included); the frame fades out above
+ * and below.
+ *
+ * The "?" beside a group's title, which opens the manual's chapter
+ * (`ManualHelpButton`), leaves the layout: a picture in the manual needs
+ * no way into the manual.
  */
-const prepareShot = (page: Page, title: string, rows: number | undefined) =>
+const prepareShot = (
+  page: Page,
+  title: string,
+  rows: number | undefined,
+  setting: string | null,
+) =>
   page.evaluate(
-    ([wanted, shown]) => {
+    ([wanted, shown, only]) => {
       const heading = [...document.querySelectorAll("h2")].find(
         (element) => element.textContent?.trim() === wanted,
       );
-      // SettingsGroup: the title's block, then the card, in one element.
-      const group = heading?.parentElement?.parentElement;
+      // SettingsGroup: the title's block, then the card, in one element
+      // (the only one around the title with `space-y-2`).
+      const group = heading?.closest("div.space-y-2");
       if (!group) throw new Error(`no settings group "${wanted}"`);
       group.setAttribute("data-manual-shot", "");
+      for (const icon of group.querySelectorAll(
+        "svg.lucide-circle-help, svg.lucide-circle-question-mark",
+      )) {
+        const help = icon.closest("button");
+        if (help && heading?.parentElement?.contains(help)) {
+          help.style.setProperty("display", "none", "important");
+        }
+      }
       const hide = (element: Element) => {
         if (element instanceof HTMLElement) {
           element.style.setProperty("visibility", "hidden", "important");
@@ -177,6 +327,34 @@ const prepareShot = (page: Page, title: string, rows: number | undefined) =>
       }
       const { x, y, width, height } = group.getBoundingClientRect();
       let cut: number | null = null;
+      let start: number | null = null;
+      if (only !== null) {
+        const titled = [...group.querySelectorAll("h3")].find(
+          (element) => element.textContent?.trim() === only,
+        );
+        // The card's list of settings (`SettingsGroup`), and the setting's
+        // element in it.
+        const list = group.querySelector(":scope > div.border > div");
+        let block: Element | null | undefined = titled;
+        while (block && block.parentElement !== list) {
+          block = block.parentElement;
+        }
+        if (!block || !list) {
+          throw new Error(`no setting "${only}" in "${wanted}"`);
+        }
+        if (group.firstElementChild !== list.parentElement) {
+          hide(group.firstElementChild as Element);
+        }
+        for (const other of list.children) {
+          if (other === block) continue;
+          for (const part of other.children) hide(part);
+        }
+        // The line above it is the setting before's, the line under it its
+        // own (Tailwind 4's `divide-y`).
+        const { top, bottom } = block.getBoundingClientRect();
+        start = top;
+        cut = bottom;
+      }
       if (shown !== null) {
         // A row of the list: the element around one end's name field whose
         // parent holds the others too.
@@ -205,11 +383,12 @@ const prepareShot = (page: Page, title: string, rows: number | undefined) =>
       }
       return {
         box: { x, y, width, height },
+        start,
         cut,
         background: getComputedStyle(document.documentElement).backgroundColor,
       };
     },
-    [title, rows ?? null] as const,
+    [title, rows ?? null, setting] as const,
   );
 
 /** The fonts that draw the text of the shot's elements, by family, as
@@ -287,16 +466,18 @@ const sizeSvg = (svg: string, widthPt: number, heightPt: number): string =>
   );
 
 /** The SVG for the site: sized in CSS pixels, where the list was cut its
- * last part fading into the window's background, clip paths merged, and
+ * last part fading into the window's background (and the first part, where
+ * the picture starts inside a card: `fadeIn`), clip paths merged, and
  * svgo's safe default optimizations. */
 const finishSvg = (
   raw: string,
   widthPt: number,
   heightPt: number,
   fade: { heightPt: number; color: string } | null,
+  fadeIn: { heightPt: number; color: string } | null = null,
 ): string => {
   const sized = sizeSvg(raw, widthPt, heightPt);
-  const faded = fade
+  const fadedOut = fade
     ? sized.replace(
         /<\/svg>\s*$/,
         `<linearGradient id="fade" x1="0" y1="0" x2="0" y2="1">` +
@@ -307,6 +488,17 @@ const finishSvg = (
           `height="${fade.heightPt}" fill="url(#fade)"/></svg>\n`,
       )
     : sized;
+  const faded = fadeIn
+    ? fadedOut.replace(
+        /<\/svg>\s*$/,
+        `<linearGradient id="fade-in" x1="0" y1="0" x2="0" y2="1">` +
+          `<stop offset="0" stop-color="${fadeIn.color}"/>` +
+          `<stop offset="1" stop-color="${fadeIn.color}" stop-opacity="0"/>` +
+          `</linearGradient>` +
+          `<rect x="0" y="0" width="${widthPt}" ` +
+          `height="${fadeIn.heightPt}" fill="url(#fade-in)"/></svg>\n`,
+      )
+    : fadedOut;
   return optimize(mergeClipPaths(faded), {
     multipass: true,
     floatPrecision: 2,
@@ -324,10 +516,13 @@ for (const language of LANGUAGES) {
         if (message.type() === "error") errors.push(message.text());
       });
       for (const shot of SHOTS) {
-        await openWindow(page, language, theme);
+        const title = translation(language, shot.groupTitleKey);
+        await openWindow(page, language, theme, shot.scene ?? "fresh");
+        if (shot.path) await navigate(page, language, shot.path, title);
+        await growWindow(page);
+        await keepUpright(page);
         const viewport = page.viewportSize();
         if (!viewport) throw new Error("no viewport");
-        const title = translation(language, shot.groupTitleKey);
         const preview =
           PREVIEW && join(PREVIEW, `${shot.name}.${language}.${theme}`);
         if (preview) {
@@ -335,10 +530,14 @@ for (const language of LANGUAGES) {
           mkdirSync(PREVIEW as string, { recursive: true });
           await page.screenshot({ path: `${preview}.window.png` });
         }
-        const { box, cut, background } = await prepareShot(
+        const setting = shot.settingTitleKey
+          ? translation(language, shot.settingTitleKey)
+          : null;
+        const { box, start, cut, background } = await prepareShot(
           page,
           title,
           shot.rows,
+          setting,
         );
         // Open fonts only, on any machine (`boot.ts`).
         const fonts = await fontsOfShot(page);
@@ -348,13 +547,17 @@ for (const language of LANGUAGES) {
         // points (pdftocairo's unit), snapped outward to the grid.
         const snap = (px: number, round: (n: number) => number) =>
           round((px * PT_PER_PX) / GRID_PT) * GRID_PT;
+        const fadeLength = setting === null ? FADE : SLICE_FADE;
         const left = snap(box.x - MARGIN, Math.floor);
-        const top = snap(box.y - MARGIN, Math.floor);
+        const top =
+          start === null
+            ? snap(box.y - MARGIN, Math.floor)
+            : snap(start - fadeLength, Math.floor);
         const right = snap(box.x + box.width + MARGIN, Math.ceil);
         const bottom =
           cut === null
             ? snap(box.y + box.height + MARGIN, Math.ceil)
-            : snap(cut + FADE, Math.ceil);
+            : snap(cut + fadeLength, Math.ceil);
         const [width, height] = [right - left, bottom - top];
 
         const work = mkdtempSync(join(tmpdir(), "manual-screenshots-"));
@@ -388,6 +591,8 @@ for (const language of LANGUAGES) {
           // From the cut, in the picture's points, to its bottom.
           const fadeHeight =
             cut === null ? null : height - (cut * PT_PER_PX - top);
+          // From the picture's top to where the setting starts.
+          const fadeInHeight = start === null ? null : start * PT_PER_PX - top;
           const svg = finishSvg(
             raw,
             width,
@@ -395,6 +600,9 @@ for (const language of LANGUAGES) {
             fadeHeight === null
               ? null
               : { heightPt: fadeHeight, color: background },
+            fadeInHeight === null
+              ? null
+              : { heightPt: fadeInHeight, color: background },
           );
           expect(svg).toContain("<svg");
           const dir = join(OUT, language);

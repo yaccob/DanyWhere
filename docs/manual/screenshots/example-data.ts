@@ -2,19 +2,74 @@
 // installation on macOS, in the language of the shot, with post-processing
 // set up with a made-up provider, and nothing of a real user's: no models,
 // microphones, word lists, History or real keys. Only made-up or factory
-// values.
+// values. The scene "profiles" adds two example profiles (`EXAMPLE_PROFILES`).
 import type {
   AppendChoice,
   AppendComposed,
   AppendKey,
   AppendPart,
+  ApplicationInfo,
   AppSettings,
   EndKey,
 } from "../../../src/bindings";
-import { settingsWith } from "../../../src/test/fixtures";
+import { settingsWith, type ProfileSpec } from "../../../src/test/fixtures";
 import { answerCommand, ok } from "./mocks/bindings";
 
 export type Theme = "light" | "dark";
+
+/** What the window holds: a fresh installation, or the same with the two
+ * example profiles (`app.html?scene=profiles`). */
+export type Scene = "fresh" | "profiles";
+
+/** Applications a Mac might list for assigning to a profile
+ * (`list_applications`), running ones first as the backend sorts them. */
+export const EXAMPLE_APPLICATIONS: ApplicationInfo[] = [
+  { id: "com.googlecode.iterm2", name: "iTerm2", running: true },
+  { id: "com.tinyspeck.slackmacgap", name: "Slack", running: true },
+  { id: "com.apple.mail", name: "Mail", running: true },
+  { id: "com.apple.Terminal", name: "Terminal", running: false },
+  { id: "org.whispersystems.signal-desktop", name: "Signal", running: false },
+  { id: "com.apple.TextEdit", name: "TextEdit", running: false },
+];
+
+/** Two profiles, each with one value of its own; everything else follows
+ * the defaults:
+ *
+ * - "Terminal" (iTerm2, Terminal) doesn't post-process, so a command is
+ *   typed as spoken;
+ * - "Chat" (Slack, Signal) appends Enter when the held start shortcut is
+ *   released, so the message goes out ("When Held").
+ *
+ * Choosing the profile by application is on; the defaults are in use. */
+export const EXAMPLE_PROFILES: ProfileSpec[] = [
+  {
+    id: "profile_1795300000001",
+    name: "Terminal",
+    apps: ["com.googlecode.iterm2", "com.apple.Terminal"],
+    values: { post_process_enabled: false },
+    own: ["post_process_enabled"],
+  },
+  {
+    id: "profile_1795300000002",
+    name: "Chat",
+    apps: ["com.tinyspeck.slackmacgap", "org.whispersystems.signal-desktop"],
+    values: {
+      hold_ends: {
+        transcribe: {
+          append_text: "{Enter}",
+          post_process: false,
+          send_context: false,
+        },
+        transcribe_with_post_process: {
+          append_text: " ",
+          post_process: true,
+          send_context: true,
+        },
+      },
+    },
+    own: ["hold_ends"],
+  },
+];
 
 /** The locale files, for the factory end shortcuts' names. */
 const LOCALES = import.meta.glob<{ default: Record<string, unknown> }>(
@@ -113,9 +168,14 @@ const EXAMPLE_PROVIDER = {
 
 /** The settings of a fresh macOS installation in `language`, onboarding
  * done, with the app theme `theme` and post-processing set up
- * (`EXAMPLE_PROVIDER`). */
-export const freshMacSettings = (language: string, theme: Theme): AppSettings =>
+ * (`EXAMPLE_PROVIDER`); in the scene "profiles" with `EXAMPLE_PROFILES`. */
+export const freshMacSettings = (
+  language: string,
+  theme: Theme,
+  scene: Scene = "fresh",
+): AppSettings =>
   settingsWith({
+    ...(scene === "profiles" ? { profiles: EXAMPLE_PROFILES } : {}),
     defaults: {
       post_process_enabled: true,
       post_process_provider_id: EXAMPLE_PROVIDER.id,
@@ -227,9 +287,14 @@ const LIST_FIELDS = {
   end_keys: { kind: "list", key: "id" },
 } as const;
 
-/** The mocked backend answers as a fresh macOS installation in `language`. */
-export const answerAsFreshMac = (language: string, theme: Theme): void => {
-  const settings = freshMacSettings(language, theme);
+/** The mocked backend answers as a fresh macOS installation in `language`,
+ * in the scene "profiles" with the example profiles. */
+export const answerAsFreshMac = (
+  language: string,
+  theme: Theme,
+  scene: Scene = "fresh",
+): void => {
+  const settings = freshMacSettings(language, theme, scene);
   answerCommand("getAppSettings", async () => ok(settings));
   answerCommand("getDefaultSettings", async () => ok(settings));
   answerCommand("getProfileFields", async () =>
@@ -250,4 +315,7 @@ export const answerAsFreshMac = (language: string, theme: Theme): void => {
     start: false,
     stop: false,
   }));
+  if (scene === "profiles") {
+    answerCommand("listApplications", async () => EXAMPLE_APPLICATIONS);
+  }
 };
