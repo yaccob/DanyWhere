@@ -6,7 +6,7 @@
  */
 import { DEFAULT_PROFILE_ID } from "./utils/profiles";
 // DanyWhere (strand E2): the counts of own values per profile and page (P5).
-import { ownValues, type OwnEntriesLike } from "./profileScope";
+import { ownValues, type OwnEntriesLike, type Scope } from "./profileScope";
 import { pageOfValue } from "./profileFields";
 
 /** The pages of the defaults: today's pages minus the application settings. */
@@ -399,3 +399,11 @@ export const showsPath = (location: NavLocation): boolean =>
 export const fillsWindow = (location: NavLocation): boolean =>
   (location.kind === "defaults" || location.kind === "profile") &&
   location.page === "models";
+
+/** Page `page` of the scope a page reads and writes: the defaults' page, or
+ * that profile's. A setting points to another page of its scope with it,
+ * e.g. the word lists to Post Process. */
+export const scopePage = (scope: Scope, page: DefaultsPage): NavLocation =>
+  scope.kind === "defaults"
+    ? { kind: "defaults", page }
+    : { kind: "profile", profileId: scope.id, page };

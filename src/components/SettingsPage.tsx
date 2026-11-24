@@ -21,6 +21,7 @@ import { ProfilesPage } from "./settings/profiles/ProfilesPage";
 import { ProfileOverview } from "./settings/profiles/ProfileOverview";
 import { ProfileScopedPage } from "./settings/profiles/ProfileScopedPage";
 import {
+  OpenLocationProvider,
   OpenProfilePageProvider,
   SettingsScopeProvider,
 } from "./settings/profiles/scope/SettingsScope";
@@ -195,10 +196,14 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
     });
   };
 
+  // A setting may point to another page of its scope (the word lists to
+  // Post Process).
   return (
-    <OpenProfilePageProvider value={openProfilePage}>
-      <PagePath location={location} />
-      {page}
-    </OpenProfilePageProvider>
+    <OpenLocationProvider value={onNavigate}>
+      <OpenProfilePageProvider value={openProfilePage}>
+        <PagePath location={location} />
+        {page}
+      </OpenProfilePageProvider>
+    </OpenLocationProvider>
   );
 };
