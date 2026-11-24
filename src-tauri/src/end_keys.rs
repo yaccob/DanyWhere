@@ -159,6 +159,18 @@ pub fn builtin(append_text: &str, send_context: bool) -> Vec<EndKey> {
     )
 }
 
+/// Test fixtures elsewhere: `settings` with the two built-in ends and hold
+/// ends without text or context, the factory ones before 2026-11-24 and
+/// still on Windows and Linux. The dictation tests are written against
+/// them (an end `plain` without and `post_process` with post-processing),
+/// whatever this system's factory ends are.
+#[cfg(test)]
+pub fn with_builtin_ends(mut settings: AppSettings) -> AppSettings {
+    settings.end_keys = builtin_for(&settings.bindings, "", false);
+    settings.hold_ends = builtin_holds("", false);
+    settings
+}
+
 /// The hold ends every layer starts with: without and with post-processing,
 /// with `append_text` and `send_context`.
 pub fn builtin_holds(append_text: &str, send_context: bool) -> HashMap<String, HoldEnd> {
@@ -175,14 +187,129 @@ pub fn builtin_holds(append_text: &str, send_context: bool) -> HashMap<String, H
         .collect()
 }
 
-/// A new installation's end shortcuts (serde default of the settings).
+/// A new installation's end shortcuts on this system.
 pub fn default_end_keys() -> Vec<EndKey> {
     settings::get_default_settings().end_keys
 }
 
-/// A new installation's hold ends (serde default of the settings).
+/// A new installation's hold ends on this system.
 pub fn default_hold_ends() -> HashMap<String, HoldEnd> {
+    factory_hold_ends_on(KeyPlatform::current())
+}
+
+/// What a store without end shortcuts (0.2.5 and before) reads as, the serde
+/// default of the settings and of a stored profile: the two built-in ends
+/// with a new installation's start shortcuts, without text or context, as
+/// before the factory ends of 2026-11-24. [`migrate`] then carries the
+/// store's own values over; kept apart from the factory ends so that a store
+/// with nothing to carry over still needs no write.
+pub fn stored_before_end_keys() -> Vec<EndKey> {
+    builtin_for(&settings::get_default_settings().bindings, "", false)
+}
+
+/// The hold ends a store without them reads as; see
+/// [`stored_before_end_keys`].
+pub fn stored_before_hold_ends() -> HashMap<String, HoldEnd> {
     builtin_holds("", false)
+}
+
+/// One factory end: no name of its own yet, and "Send Context" exactly
+/// where it post-processes, as the context goes nowhere else.
+fn factory_end(id: &str, shortcut: &str, append_text: &str, post_process: bool) -> EndKey {
+    EndKey {
+        id: id.to_string(),
+        name: String::new(),
+        shortcut: shortcut.to_string(),
+        append_text: append_text.to_string(),
+        post_process,
+        send_context: post_process,
+    }
+}
+
+/// A new installation's end shortcuts on `platform`, with its start
+/// shortcuts `bindings`.
+///
+/// macOS (user, 2026-11-24, the ends of their release, qa note
+/// `2026-11-23_2135_endetasten-grundeinstellungen`): one rule for all
+/// twelve: ⌥ post-processes, ⇧ picks the smaller variant, ⌃ on Enter
+/// presses a key instead of appending text; first the six without
+/// post-processing, then the same six with it. ⌃Space and ⌃⇧Space are the
+/// factory start shortcuts, so their second press ends without
+/// post-processing.
+///
+/// Windows and Linux keep the two ends with the start shortcuts'
+/// combinations: Linux takes no end's own combination
+/// (`shortcut::profile_sync`), and on Windows Ctrl+Alt is AltGr.
+pub fn factory_end_keys_on(
+    bindings: &HashMap<String, ShortcutBinding>,
+    platform: KeyPlatform,
+) -> Vec<EndKey> {
+    if platform != KeyPlatform::Macos {
+        return builtin_for(bindings, "", false);
+    }
+    vec![
+        factory_end("direct_space", "ctrl+space", " ", false),
+        factory_end("direct_no_space", "ctrl+shift+space", "", false),
+        factory_end("direct_paragraph", "return", r"\n\n", false),
+        factory_end("direct_line", "shift+return", r"\n", false),
+        factory_end("direct_enter", "ctrl+return", "{Enter}", false),
+        factory_end(
+            "direct_shift_enter",
+            "ctrl+shift+return",
+            "{Shift+Enter}",
+            false,
+        ),
+        factory_end("post_space", "ctrl+option+space", " ", true),
+        factory_end("post_no_space", "ctrl+option+shift+space", "", true),
+        factory_end("post_paragraph", "option+return", r"\n\n", true),
+        factory_end("post_line", "option+shift+return", r"\n", true),
+        factory_end("post_enter", "ctrl+option+return", "{Enter}", true),
+        factory_end(
+            "post_shift_enter",
+            "ctrl+option+shift+return",
+            "{Shift+Enter}",
+            true,
+        ),
+    ]
+}
+
+/// A new installation's hold ends on `platform`. On macOS both append a
+/// space, as the ends of ⌃Space do, and the second start shortcut's
+/// post-processes with context; elsewhere the hold ends of
+/// [`builtin_holds`] without text or context.
+pub fn factory_hold_ends_on(platform: KeyPlatform) -> HashMap<String, HoldEnd> {
+    if platform != KeyPlatform::Macos {
+        return builtin_holds("", false);
+    }
+    START_BINDINGS
+        .into_iter()
+        .map(|binding| {
+            let post_process = HoldEnd::factory(binding).post_process;
+            let hold = HoldEnd {
+                append_text: " ".to_string(),
+                post_process,
+                send_context: post_process,
+            };
+            (binding.to_string(), hold)
+        })
+        .collect()
+}
+
+/// Without Accessibility DanyWhere can't press keys, not even with its
+/// input method, so the factory ends whose "Append" presses one go; the
+/// others stay in their order. A list that isn't this system's factory list
+/// is the user's and stays as it is. Returns whether any went.
+pub fn drop_factory_key_presses(end_keys: &mut Vec<EndKey>) -> bool {
+    if *end_keys != default_end_keys() {
+        return false;
+    }
+    let before = end_keys.len();
+    end_keys.retain(|end| {
+        crate::append_text::for_value(&end.append_text)
+            .keys
+            .is_empty()
+    });
+    end_keys.len() != before
 }
 
 /// How a recording ends.
@@ -856,24 +983,148 @@ mod tests {
     // ---- Out of the box --------------------------------------------------
 
     #[test]
-    fn a_new_installation_ends_with_the_start_shortcuts_combinations() {
+    fn a_new_installation_gets_this_systems_factory_ends() {
         let settings = get_default_settings();
-        let (plain_keys, post_keys) = start_keys();
         assert_eq!(
             settings.end_keys,
+            factory_end_keys_on(&settings.bindings, KeyPlatform::current())
+        );
+        assert_eq!(
+            settings.hold_ends,
+            factory_hold_ends_on(KeyPlatform::current())
+        );
+    }
+
+    /// The user's end shortcuts of 2026-11-23 (qa note
+    /// `2026-11-23_2135_endetasten-grundeinstellungen`), by their rule: ⌥
+    /// post-processes, ⇧ picks the smaller variant, ⌃ on Enter presses a
+    /// key instead of appending text. First the six without post-processing,
+    /// then the same six with it; "Send Context" only where post-processing
+    /// is on, as the context goes nowhere else.
+    #[test]
+    fn on_macos_a_new_installation_ends_by_the_users_scheme() {
+        let bindings = get_default_settings().bindings;
+        assert_eq!(
+            factory_end_keys_on(&bindings, KeyPlatform::Macos),
             vec![
-                end(PLAIN_ID, "", &plain_keys, "", false, false),
-                end(POST_PROCESS_ID, "", &post_keys, "", true, false),
+                end("direct_space", "", "ctrl+space", " ", false, false),
+                end("direct_no_space", "", "ctrl+shift+space", "", false, false),
+                end("direct_paragraph", "", "return", r"\n\n", false, false),
+                end("direct_line", "", "shift+return", r"\n", false, false),
+                end("direct_enter", "", "ctrl+return", "{Enter}", false, false),
+                end(
+                    "direct_shift_enter",
+                    "",
+                    "ctrl+shift+return",
+                    "{Shift+Enter}",
+                    false,
+                    false
+                ),
+                end("post_space", "", "ctrl+option+space", " ", true, true),
+                end(
+                    "post_no_space",
+                    "",
+                    "ctrl+option+shift+space",
+                    "",
+                    true,
+                    true
+                ),
+                end("post_paragraph", "", "option+return", r"\n\n", true, true),
+                end("post_line", "", "option+shift+return", r"\n", true, true),
+                end(
+                    "post_enter",
+                    "",
+                    "ctrl+option+return",
+                    "{Enter}",
+                    true,
+                    true
+                ),
+                end(
+                    "post_shift_enter",
+                    "",
+                    "ctrl+option+shift+return",
+                    "{Shift+Enter}",
+                    true,
+                    true
+                ),
             ]
         );
+    }
+
+    #[test]
+    fn on_macos_holding_appends_a_space_and_only_the_second_post_processes() {
+        let holds = factory_hold_ends_on(KeyPlatform::Macos);
+        assert_eq!(holds.len(), 2);
+        assert_eq!(holds[START_BINDINGS[0]], hold(" ", false, false));
+        assert_eq!(holds[START_BINDINGS[1]], hold(" ", true, true));
+    }
+
+    /// Windows and Linux keep the two ends with the start shortcuts'
+    /// combinations: Linux takes no end's own combination, and on Windows
+    /// Ctrl+Alt is AltGr.
+    #[test]
+    fn on_windows_and_linux_a_new_installation_ends_with_the_start_shortcuts_combinations() {
+        let bindings = get_default_settings().bindings;
+        let (plain_keys, post_keys) = start_keys();
+        for platform in [KeyPlatform::Windows, KeyPlatform::Linux] {
+            assert_eq!(
+                factory_end_keys_on(&bindings, platform),
+                vec![
+                    end(PLAIN_ID, "", &plain_keys, "", false, false),
+                    end(POST_PROCESS_ID, "", &post_keys, "", true, false),
+                ],
+                "{platform:?}"
+            );
+            let holds = factory_hold_ends_on(platform);
+            assert_eq!(holds.len(), 2);
+            assert_eq!(holds[START_BINDINGS[0]], hold("", false, false));
+            assert_eq!(holds[START_BINDINGS[1]], hold("", true, false));
+        }
+    }
+
+    /// The first two macOS ends are what a second press of the factory start
+    /// shortcuts does, so a recording started with ⌃Space ends with it.
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn on_macos_the_start_shortcuts_end_without_post_processing() {
+        let values = ProfileValues::from_settings(&get_default_settings());
         assert_eq!(
-            settings.hold_ends.get(START_BINDINGS[0]),
-            Some(&hold("", false, false))
+            end_with_keys(&values, START_BINDINGS[0]).map(|end| end.id.as_str()),
+            Some("direct_space")
         );
         assert_eq!(
-            settings.hold_ends.get(START_BINDINGS[1]),
-            Some(&hold("", true, false))
+            end_with_keys(&values, START_BINDINGS[1]).map(|end| end.id.as_str()),
+            Some("direct_no_space")
         );
+    }
+
+    #[test]
+    fn every_factory_end_is_a_valid_one() {
+        let bindings = get_default_settings().bindings;
+        for platform in [KeyPlatform::Macos, KeyPlatform::Windows, KeyPlatform::Linux] {
+            let ends = factory_end_keys_on(&bindings, platform);
+            assert_eq!(validate(&ends), Ok(()), "{platform:?}");
+        }
+        // This system's factory ends against its factory shortcuts and the
+        // backend that takes them with Accessibility.
+        let settings = get_default_settings();
+        for end in &settings.end_keys {
+            assert_eq!(
+                check_end_against_bindings(&end.shortcut, &settings.bindings),
+                Ok(()),
+                "{}",
+                end.shortcut
+            );
+            assert_eq!(
+                crate::shortcut::validate_shortcut_for_implementation(
+                    &end.shortcut,
+                    crate::settings::KeyboardImplementation::HandyKeys,
+                ),
+                Ok(()),
+                "{}",
+                end.shortcut
+            );
+        }
     }
 
     #[test]

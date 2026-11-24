@@ -38,6 +38,23 @@ impl ShortcutBackend for TauriBackend {
     }
 }
 
+/// DanyWhere: a stored combination in the accelerator parser's key names.
+/// handy-keys' recorder writes Return as `return`, which the parser doesn't
+/// know (it takes `enter`), so a combination with Return recorded with
+/// Accessibility never registered without it.
+fn accelerator(raw: &str) -> String {
+    raw.split('+')
+        .map(|part| {
+            if part.trim().eq_ignore_ascii_case("return") {
+                "enter"
+            } else {
+                part
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("+")
+}
+
 /// Validate a shortcut string for the Tauri global-shortcut implementation.
 /// Tauri requires at least one non-modifier key and doesn't support the fn key.
 pub(super) fn validate_shortcut(raw: &str) -> Result<(), String> {
@@ -69,7 +86,8 @@ pub(super) fn validate_shortcut(raw: &str) -> Result<(), String> {
     // `option_left`, which the handy-keys recorder saves but the accelerator
     // parser rejects. Parse here so a binding carried over from handy-keys is
     // reset to the default instead of failing to register.
-    raw.parse::<Shortcut>()
+    accelerator(raw)
+        .parse::<Shortcut>()
         .map(|_| ())
         .map_err(|e| format!("Failed to parse shortcut '{}': {}", raw, e))
 }
@@ -86,7 +104,7 @@ fn register_shortcut(app: &AppHandle, binding: &ShortcutBinding) -> Result<(), S
     }
 
     // Parse shortcut and return error if it fails
-    let shortcut = match binding.current_binding.parse::<Shortcut>() {
+    let shortcut = match accelerator(&binding.current_binding).parse::<Shortcut>() {
         Ok(s) => s,
         Err(e) => {
             let error_msg = format!(
@@ -142,7 +160,7 @@ fn register_shortcut(app: &AppHandle, binding: &ShortcutBinding) -> Result<(), S
 
 /// Unregister a shortcut from Tauri's global-shortcut plugin
 fn unregister_shortcut(app: &AppHandle, binding: &ShortcutBinding) -> Result<(), String> {
-    let shortcut = match binding.current_binding.parse::<Shortcut>() {
+    let shortcut = match accelerator(&binding.current_binding).parse::<Shortcut>() {
         Ok(s) => s,
         Err(e) => {
             let error_msg = format!(
@@ -195,5 +213,28 @@ mod tests {
         ] {
             assert_eq!(validate_shortcut(raw), Ok(()), "{raw} should be accepted");
         }
+    }
+
+    /// handy-keys' recorder writes Return as `return`, which the
+    /// accelerator parser doesn't know; the factory end shortcuts on macOS
+    /// have it (2026-11-24) and must register without Accessibility too.
+    #[test]
+    fn takes_return_as_the_recorder_writes_it() {
+        use tauri_plugin_global_shortcut::Shortcut;
+        for raw in [
+            "return",
+            "shift+return",
+            "option+return",
+            "option+shift+return",
+        ] {
+            assert_eq!(validate_shortcut(raw), Ok(()), "{raw} should be accepted");
+        }
+        assert_eq!(
+            super::accelerator("ctrl+option+shift+return")
+                .parse::<Shortcut>()
+                .ok(),
+            "ctrl+option+shift+enter".parse::<Shortcut>().ok()
+        );
+        assert_eq!(super::accelerator("ctrl+space"), "ctrl+space");
     }
 }

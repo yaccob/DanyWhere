@@ -605,19 +605,32 @@ mod tests {
         text_to_copy, Delivery, DictationEnd, DictationNotice, DictationTarget, PasteLastOutcome,
         PasteLastPorts,
     };
-    use crate::accessibility::testing::{
-        settings_without_accessibility, with_choice, with_system_trusted, STATES,
-    };
+    use crate::accessibility::testing::{with_choice, with_system_trusted, STATES};
     use crate::actions::TranscriptionOutcome;
     use crate::audio_feedback::SoundType;
     use crate::end_keys::EndKey;
     use crate::managers::history::HistoryEntry;
     use crate::profile_redo::ForInsert;
     use crate::profiles::ProfileValues;
-    use crate::settings::{get_default_settings, AppSettings, ClipboardHandling, PasteMethod};
+    use crate::settings::{AppSettings, ClipboardHandling, PasteMethod};
     use crate::utils::PasteOutcome;
     use std::cell::{Cell, RefCell};
     use std::time::Duration;
+
+    /// A new installation's settings with the two built-in ends these tests
+    /// are written against (`end_keys::with_builtin_ends`): macOS has other
+    /// factory ends since 2026-11-24.
+    fn get_default_settings() -> AppSettings {
+        crate::end_keys::with_builtin_ends(crate::settings::get_default_settings())
+    }
+
+    /// [`get_default_settings`] as onboarding's "Continue without
+    /// Accessibility" leaves them.
+    fn settings_without_accessibility() -> AppSettings {
+        crate::end_keys::with_builtin_ends(
+            crate::accessibility::testing::settings_without_accessibility(),
+        )
+    }
 
     /// `settings` with the feedback sounds switched on (they're off by
     /// default) and the done sound as given.
