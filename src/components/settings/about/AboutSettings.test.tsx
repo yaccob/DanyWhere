@@ -18,7 +18,6 @@ const openedInBrowser = (): string[] =>
     .filter((call) => call.cmd === "plugin:opener|open_url")
     .map((call) => (call.args as { url: string }).url);
 
-
 describe("About: where DanyWhere comes from", () => {
   test("the row says DanyWhere grew out of Handy, not out of DanyWhere", async () => {
     await renderPage(<AboutSettings />);
