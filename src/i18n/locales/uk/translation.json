@@ -39,7 +39,8 @@
   "manual": {
     "openChapter": "Відкрити посібник: {{chapter}}",
     "chapters": {
-      "startAndEndShortcuts": "Клавіші запуску та завершення"
+      "startAndEndShortcuts": "Клавіші запуску та завершення",
+      "defaultsAndProfiles": "Основні налаштування та профілі"
     },
     "unavailable": "У цій збірці DanyWhere немає посібника."
   },

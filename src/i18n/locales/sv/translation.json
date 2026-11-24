@@ -39,7 +39,8 @@
   "manual": {
     "openChapter": "Öppna handboken: {{chapter}}",
     "chapters": {
-      "startAndEndShortcuts": "Start- och avslutningskortkommandon"
+      "startAndEndShortcuts": "Start- och avslutningskortkommandon",
+      "defaultsAndProfiles": "Grundinställningar och profiler"
     },
     "unavailable": "Den här versionen av DanyWhere har ingen handbok."
   },

@@ -39,7 +39,8 @@
   "manual": {
     "openChapter": "فتح الدليل: {{chapter}}",
     "chapters": {
-      "startAndEndShortcuts": "اختصارات البدء والإنهاء"
+      "startAndEndShortcuts": "اختصارات البدء والإنهاء",
+      "defaultsAndProfiles": "الإعدادات الأساسية والملفات الشخصية"
     },
     "unavailable": "هذا الإصدار من DanyWhere لا يتضمن الدليل."
   },

@@ -39,7 +39,8 @@
   "manual": {
     "openChapter": "Open the manual: {{chapter}}",
     "chapters": {
-      "startAndEndShortcuts": "Start and End Shortcuts"
+      "startAndEndShortcuts": "Start and End Shortcuts",
+      "defaultsAndProfiles": "Defaults and Profiles"
     },
     "unavailable": "This build of DanyWhere has no manual."
   },

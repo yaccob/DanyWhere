@@ -39,7 +39,8 @@
   "manual": {
     "openChapter": "Apri il manuale: {{chapter}}",
     "chapters": {
-      "startAndEndShortcuts": "Scorciatoie di avvio e di fine"
+      "startAndEndShortcuts": "Scorciatoie di avvio e di fine",
+      "defaultsAndProfiles": "Impostazioni di base e profili"
     },
     "unavailable": "Questa build di DanyWhere non include il manuale."
   },

@@ -39,7 +39,8 @@
   "manual": {
     "openChapter": "Buka panduan: {{chapter}}",
     "chapters": {
-      "startAndEndShortcuts": "Pintasan Mulai dan Akhir"
+      "startAndEndShortcuts": "Pintasan Mulai dan Akhir",
+      "defaultsAndProfiles": "Pengaturan Dasar dan Profil"
     },
     "unavailable": "Build DanyWhere ini tidak menyertakan panduan."
   },
