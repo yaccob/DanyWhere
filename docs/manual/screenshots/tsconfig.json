@@ -1,0 +1,11 @@
+{
+  "extends": "../../../tsconfig.json",
+  "compilerOptions": {
+    "types": ["node", "vite/client"],
+    "lib": ["ES2022", "ES2021.Intl", "DOM", "DOM.Iterable"],
+    "target": "ES2022",
+    "composite": false
+  },
+  "include": ["."],
+  "references": []
+}
