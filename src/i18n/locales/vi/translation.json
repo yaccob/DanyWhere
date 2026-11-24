@@ -23,6 +23,7 @@
     "advanced": "Nâng cao",
     "postProcessing": "Xử lý sau",
     "history": "Lịch sử",
+    "manual": "Hướng dẫn sử dụng",
     "debug": "Gỡ lỗi",
     "about": "Giới thiệu",
     "areas": {
@@ -34,6 +35,15 @@
     "updates": "Cập nhật",
     "storage": "Lưu trữ",
     "profile": "Hồ sơ"
+  },
+  "manual": {
+    "openChapter": "Mở hướng dẫn sử dụng: {{chapter}}",
+    "chapters": {
+      "startAndEndShortcuts": "Phím tắt bắt đầu và kết thúc"
+    },
+    "errors": {
+      "open": "Không thể mở hướng dẫn sử dụng: {{error}}"
+    }
   },
   "onboarding": {
     "customModelDescription": "Không được hỗ trợ chính thức",

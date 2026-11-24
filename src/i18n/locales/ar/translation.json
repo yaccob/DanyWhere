@@ -22,6 +22,7 @@
     "advanced": "متقدم",
     "postProcessing": "معالجة لاحقة",
     "history": "السجل",
+    "manual": "الدليل",
     "debug": "تصحيح الأخطاء",
     "about": "حول",
     "areas": {
@@ -34,6 +35,15 @@
     "storage": "التخزين",
     "models": "النماذج",
     "profile": "الملف الشخصي"
+  },
+  "manual": {
+    "openChapter": "فتح الدليل: {{chapter}}",
+    "chapters": {
+      "startAndEndShortcuts": "اختصارات البدء والإنهاء"
+    },
+    "errors": {
+      "open": "تعذّر فتح الدليل: {{error}}"
+    }
   },
   "onboarding": {
     "customModelDescription": "غير مدعوم رسميًا",

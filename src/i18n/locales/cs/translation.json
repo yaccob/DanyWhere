@@ -23,6 +23,7 @@
     "advanced": "Pokročilé",
     "postProcessing": "Následné zpracování",
     "history": "Historie",
+    "manual": "Příručka",
     "debug": "Ladění",
     "about": "O aplikaci",
     "areas": {
@@ -34,6 +35,15 @@
     "updates": "Aktualizace",
     "storage": "Úložiště",
     "profile": "Profil"
+  },
+  "manual": {
+    "openChapter": "Otevřít příručku: {{chapter}}",
+    "chapters": {
+      "startAndEndShortcuts": "Spouštěcí a ukončovací zkratky"
+    },
+    "errors": {
+      "open": "Příručku se nepodařilo otevřít: {{error}}"
+    }
   },
   "onboarding": {
     "customModelDescription": "Oficiálně nepodporováno",

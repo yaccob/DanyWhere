@@ -420,3 +420,77 @@ describe("End Shortcuts with post-processing off", () => {
     expect(rawTextIn()).toEqual([]);
   });
 });
+
+// DanyWhere: the "?" next to the group's title opens the manual's chapter on
+// start and end shortcuts (`open_manual`, src-tauri/src/manual.rs).
+describe("the manual's chapter from End Shortcuts", () => {
+  const CHAPTER = "how-it-works/start-and-end-shortcuts/";
+  const helpButton = () =>
+    screen.getByRole("button", {
+      name: "Open the manual: Start and End Shortcuts",
+    });
+
+  test("a button next to the title opens the chapter", async () => {
+    await renderEnds([PLAIN, SEND]);
+
+    const title = screen.getByRole("heading", { name: "End Shortcuts" });
+    expect(title.parentElement?.contains(helpButton())).toBe(true);
+
+    await press(helpButton());
+
+    expect(callsOf("openManual")).toEqual([[CHAPTER]]);
+    expect(callsOf("setProfileValue")).toEqual([]);
+  });
+
+  test("shows a question mark icon and a tooltip", async () => {
+    await renderEnds([PLAIN, SEND]);
+
+    // Lucide's CircleHelp, the same "?" in a circle as the Models legend.
+    const icon = helpButton().querySelector("svg");
+    expect(icon?.getAttribute("class")).toContain(
+      "lucide-circle-question-mark",
+    );
+    expect(icon?.getAttribute("aria-hidden")).toBe("true");
+    expect(helpButton().textContent).toBe("");
+    expect(helpButton().getAttribute("title")).toBe(
+      "Open the manual: Start and End Shortcuts",
+    );
+    expect(rawTextIn()).toEqual([]);
+  });
+
+  test("is there in a profile too", async () => {
+    const work = "profile_1795300000001";
+    await renderEnds(
+      [PLAIN, SEND],
+      { kind: "profile", id: work },
+      { profiles: [{ id: work, name: "Work" }] },
+    );
+
+    await press(helpButton());
+
+    expect(callsOf("openManual")).toEqual([[CHAPTER]]);
+  });
+
+  test("names the chapter in German", async () => {
+    await switchTestLanguage("de");
+    await renderEnds([PLAIN, SEND]);
+
+    await press(
+      screen.getByRole("button", {
+        name: "Handbuch öffnen: Start- und Endtasten",
+      }),
+    );
+
+    expect(callsOf("openManual")).toEqual([[CHAPTER]]);
+    expect(rawTextIn()).toEqual([]);
+  });
+
+  test("says so when the manual can't open", async () => {
+    mockCommand("openManual", async () => err("no window"));
+    await renderEnds([PLAIN, SEND]);
+
+    await press(helpButton());
+
+    expect(raisedNotices()).toEqual(["Couldn't open the manual: no window"]);
+  });
+});

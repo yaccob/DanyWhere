@@ -23,6 +23,7 @@
     "advanced": "Geavanceerd",
     "postProcessing": "Naverwerking",
     "history": "Geschiedenis",
+    "manual": "Handleiding",
     "debug": "Probleemoplossing",
     "about": "Over Handy",
     "areas": {
@@ -34,6 +35,15 @@
     "updates": "Updates",
     "storage": "Opslag",
     "profile": "Profiel"
+  },
+  "manual": {
+    "openChapter": "Handleiding openen: {{chapter}}",
+    "chapters": {
+      "startAndEndShortcuts": "Start- en eindsneltoetsen"
+    },
+    "errors": {
+      "open": "Kan de handleiding niet openen: {{error}}"
+    }
   },
   "onboarding": {
     "customModelDescription": "Niet officieel ondersteund",

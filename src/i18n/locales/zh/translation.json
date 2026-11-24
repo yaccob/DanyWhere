@@ -23,6 +23,7 @@
     "advanced": "高级",
     "postProcessing": "后处理",
     "history": "历史记录",
+    "manual": "使用手册",
     "debug": "调试",
     "about": "关于",
     "areas": {
@@ -34,6 +35,15 @@
     "updates": "更新",
     "storage": "存储",
     "profile": "配置文件"
+  },
+  "manual": {
+    "openChapter": "打开使用手册：{{chapter}}",
+    "chapters": {
+      "startAndEndShortcuts": "开始与结束快捷键"
+    },
+    "errors": {
+      "open": "无法打开使用手册：{{error}}"
+    }
   },
   "onboarding": {
     "customModelDescription": "非官方支持",

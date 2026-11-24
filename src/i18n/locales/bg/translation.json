@@ -23,6 +23,7 @@
     "advanced": "Разширени",
     "postProcessing": "Постобработка",
     "history": "История",
+    "manual": "Ръководство",
     "debug": "Отстраняване",
     "about": "За приложението",
     "areas": {
@@ -34,6 +35,15 @@
     "updates": "Актуализации",
     "storage": "Съхранение",
     "profile": "Профил"
+  },
+  "manual": {
+    "openChapter": "Отваряне на ръководството: {{chapter}}",
+    "chapters": {
+      "startAndEndShortcuts": "Клавиши за старт и край"
+    },
+    "errors": {
+      "open": "Ръководството не можа да се отвори: {{error}}"
+    }
   },
   "onboarding": {
     "customModelDescription": "Не се поддържа официално",

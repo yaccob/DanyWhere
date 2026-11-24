@@ -6,6 +6,9 @@ import { notify } from "@/stores/noticeStore";
 import { useSettings } from "@/hooks/useSettings";
 import { postProcessingOn } from "@/lib/endKeys";
 import { SettingsGroup } from "../../ui/SettingsGroup";
+// DanyWhere: the "?" to the manual's chapter on start and end shortcuts.
+import { ManualHelpButton } from "../../ui/ManualHelpButton";
+import { MANUAL_PAGES } from "@/hooks/useOpenManual";
 import { EndKeysEditor } from "./EndKeysEditor";
 // DanyWhere (strand E2): the end shortcuts of the page's scope, the defaults
 // or a profile, each with its chain.
@@ -68,6 +71,12 @@ export const EndKeysSettings: React.FC = () => {
     <SettingsGroup
       title={t("settings.endKeys.title")}
       description={t("settings.endKeys.description")}
+      titleAction={
+        <ManualHelpButton
+          page={MANUAL_PAGES.startAndEndShortcuts}
+          chapter={t("manual.chapters.startAndEndShortcuts")}
+        />
+      }
     >
       {isLinux && (
         <p className="px-4 py-2 text-xs text-ink-3">

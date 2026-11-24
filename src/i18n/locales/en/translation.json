@@ -23,6 +23,7 @@
     "advanced": "Advanced",
     "postProcessing": "Post Process",
     "history": "History",
+    "manual": "Manual",
     "debug": "Debug",
     "about": "About",
     "areas": {
@@ -34,6 +35,15 @@
     "updates": "Updates",
     "storage": "Storage",
     "profile": "Profile"
+  },
+  "manual": {
+    "openChapter": "Open the manual: {{chapter}}",
+    "chapters": {
+      "startAndEndShortcuts": "Start and End Shortcuts"
+    },
+    "errors": {
+      "open": "Couldn't open the manual: {{error}}"
+    }
   },
   "onboarding": {
     "customModelDescription": "Not officially supported",

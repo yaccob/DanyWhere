@@ -38,6 +38,8 @@ mod languages;
 mod llm_client;
 mod llm_timeouts;
 mod managers;
+// DanyWhere: the user manual in a window of its own.
+mod manual;
 mod memory;
 mod model_selection;
 // DanyWhere: loads a local post-processing model when a dictation starts.
@@ -895,6 +897,7 @@ pub fn run(cli_args: CliArgs) {
             commands::open_recordings_folder,
             commands::open_log_dir,
             commands::open_app_data_dir,
+            manual::open_manual,
             commands::check_apple_intelligence_available,
             commands::initialize_enigo,
             commands::initialize_shortcuts,
@@ -987,7 +990,20 @@ pub fn run(cli_args: CliArgs) {
         )
         .expect("Failed to export typescript bindings");
 
-    let invoke_handler = specta_builder.invoke_handler();
+    let specta_handler = specta_builder.invoke_handler();
+    // DanyWhere: the user manual's window is static content and calls no
+    // command. Tauri checks the app's own commands against the capabilities
+    // only with an ACL manifest of them, which the app has not, so they are
+    // refused here (manual.rs).
+    let invoke_handler = move |invoke: tauri::ipc::Invoke<tauri::Wry>| {
+        if manual::denies_ipc(invoke.message.webview_ref().label()) {
+            invoke
+                .resolver
+                .reject("The manual's window has no access to the app's commands");
+            return true;
+        }
+        specta_handler(invoke)
+    };
 
     // The headless path must run as its own instance (see the single-instance
     // note below), not forward to an already-running app.
@@ -1310,7 +1326,10 @@ pub fn run(cli_args: CliArgs) {
             Ok(())
         })
         .on_window_event(|window, event| match event {
-            tauri::WindowEvent::CloseRequested { api, .. } => {
+            // DanyWhere: the user manual's window just closes (manual.rs).
+            tauri::WindowEvent::CloseRequested { api, .. }
+                if !manual::closes_for_good(window.label()) =>
+            {
                 api.prevent_close();
                 let _res = window.hide();
 

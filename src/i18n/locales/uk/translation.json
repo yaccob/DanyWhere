@@ -23,6 +23,7 @@
     "advanced": "Розширені",
     "postProcessing": "Постобробка",
     "history": "Історія",
+    "manual": "Посібник",
     "debug": "Дебаг",
     "about": "Інфо",
     "areas": {
@@ -34,6 +35,15 @@
     "updates": "Оновлення",
     "storage": "Сховище",
     "profile": "Профіль"
+  },
+  "manual": {
+    "openChapter": "Відкрити посібник: {{chapter}}",
+    "chapters": {
+      "startAndEndShortcuts": "Клавіші запуску та завершення"
+    },
+    "errors": {
+      "open": "Не вдалося відкрити посібник: {{error}}"
+    }
   },
   "onboarding": {
     "customModelDescription": "Офіційно не підтримується",

@@ -23,6 +23,7 @@
     "advanced": "Zaawansowane",
     "postProcessing": "Postproces",
     "history": "Historia",
+    "manual": "Instrukcja",
     "debug": "Debugowanie",
     "about": "O programie",
     "areas": {
@@ -34,6 +35,15 @@
     "updates": "Aktualizacje",
     "storage": "Pamięć",
     "profile": "Profil"
+  },
+  "manual": {
+    "openChapter": "Otwórz instrukcję: {{chapter}}",
+    "chapters": {
+      "startAndEndShortcuts": "Skróty rozpoczynające i kończące"
+    },
+    "errors": {
+      "open": "Nie udało się otworzyć instrukcji: {{error}}"
+    }
   },
   "onboarding": {
     "customModelDescription": "Nieoficjalnie wspierane",

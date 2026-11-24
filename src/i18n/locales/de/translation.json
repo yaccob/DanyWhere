@@ -23,6 +23,7 @@
     "advanced": "Erweitert",
     "postProcessing": "Nachbearbeitung",
     "history": "Verlauf",
+    "manual": "Handbuch",
     "debug": "Debug",
     "about": "Info",
     "areas": {
@@ -34,6 +35,15 @@
     "updates": "Updates",
     "storage": "Speicher",
     "profile": "Profil"
+  },
+  "manual": {
+    "openChapter": "Handbuch öffnen: {{chapter}}",
+    "chapters": {
+      "startAndEndShortcuts": "Start- und Endtasten"
+    },
+    "errors": {
+      "open": "Das Handbuch konnte nicht geöffnet werden: {{error}}"
+    }
   },
   "onboarding": {
     "customModelDescription": "Nicht offiziell unterstützt",
