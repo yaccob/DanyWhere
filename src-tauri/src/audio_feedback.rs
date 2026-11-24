@@ -1021,4 +1021,118 @@ mod tests {
             );
         }
     }
+
+    /// A bundled sound of `theme`: its path below `src-tauri`, its samples
+    /// mixed to mono between -1 and 1, and its sample rate.
+    fn bundled_sound(theme: SoundTheme, sound_type: SoundType) -> (String, Vec<f64>, u32) {
+        let SoundLocation::Resource(relative) = sound_location(theme, sound_type, NO_CUSTOM_FILES)
+        else {
+            panic!("{theme:?}: the {sound_type:?} sound is not bundled");
+        };
+        let file = Path::new(env!("CARGO_MANIFEST_DIR")).join(&relative);
+        let mut reader =
+            hound::WavReader::open(&file).unwrap_or_else(|e| panic!("{}: {e}", file.display()));
+        let spec = reader.spec();
+        assert_eq!(
+            (spec.sample_format, spec.bits_per_sample),
+            (hound::SampleFormat::Int, 16),
+            "{relative}"
+        );
+        let channels = usize::from(spec.channels);
+        let samples: Vec<i16> = reader
+            .samples::<i16>()
+            .map(|sample| sample.unwrap_or_else(|e| panic!("{relative}: {e}")))
+            .collect();
+        let mono = samples
+            .chunks(channels)
+            .map(|frame| {
+                frame.iter().map(|&s| f64::from(s)).sum::<f64>() / channels as f64 / 32768.0
+            })
+            .collect();
+        (relative, mono, spec.sample_rate)
+    }
+
+    /// The strongest frequency of a sound just after its attack: a Hann
+    /// window of 8192 samples from 10 ms after its loudest sample, scanned
+    /// with the Goertzel algorithm in quarter semitones from 100 Hz to 5 kHz.
+    fn strongest_frequency(samples: &[f64], rate: u32) -> f64 {
+        const LENGTH: usize = 8192;
+        let loudest = (0..samples.len())
+            .max_by(|&a, &b| samples[a].abs().total_cmp(&samples[b].abs()))
+            .expect("the sound has samples");
+        let start = (loudest + rate as usize / 100).min(samples.len().saturating_sub(LENGTH));
+        let window = &samples[start..samples.len().min(start + LENGTH)];
+        let last = (window.len() - 1) as f64;
+        let windowed: Vec<f64> = window
+            .iter()
+            .enumerate()
+            .map(|(i, x)| x * (0.5 - 0.5 * (std::f64::consts::TAU * i as f64 / last).cos()))
+            .collect();
+        let power = |freq: f64| {
+            let coeff = 2.0 * (std::f64::consts::TAU * freq / f64::from(rate)).cos();
+            let (mut s1, mut s2) = (0.0, 0.0);
+            for x in &windowed {
+                let s0 = x + coeff * s1 - s2;
+                s2 = s1;
+                s1 = s0;
+            }
+            s1 * s1 + s2 * s2 - coeff * s1 * s2
+        };
+        let mut strongest = (0.0, 0.0);
+        let mut freq: f64 = 100.0;
+        while freq < 5000.0 {
+            let p = power(freq);
+            if p > strongest.0 {
+                strongest = (p, freq);
+            }
+            freq *= 2f64.powf(1.0 / 48.0);
+        }
+        strongest.1
+    }
+
+    /// The pitch shows how far a dictation has got (user, 2026-11-24): the
+    /// start sound is the lowest, the stop sound is in the middle and the
+    /// done sound, which is also the clipboard sound, is the highest. Each
+    /// step is at least a whole tone, so it can be heard.
+    fn assert_rising(theme: SoundTheme) {
+        let pitches: Vec<(String, f64)> = [SoundType::Start, SoundType::Stop, SoundType::Done]
+            .into_iter()
+            .map(|sound_type| {
+                let (relative, samples, rate) = bundled_sound(theme, sound_type);
+                (relative, strongest_frequency(&samples, rate))
+            })
+            .collect();
+        for pair in pitches.windows(2) {
+            let [(lower, lower_hz), (higher, higher_hz)] = pair else {
+                unreachable!()
+            };
+            assert!(
+                *higher_hz > lower_hz * 2f64.powf(2.0 / 12.0),
+                "{theme:?}: {higher} ({higher_hz:.0} Hz) is not a whole tone above \
+                 {lower} ({lower_hz:.0} Hz); all: {pitches:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn the_marimba_sounds_rise_from_start_to_stop_to_done() {
+        assert_rising(SoundTheme::Marimba);
+    }
+
+    #[test]
+    fn the_pop_sounds_rise_from_start_to_stop_to_done() {
+        assert_rising(SoundTheme::Pop);
+    }
+
+    /// The start sound rings while the recording already runs and the user
+    /// begins to speak, and muting the other sounds waits for its end
+    /// (`dictation_start`), so it stays as short as Handy's.
+    #[test]
+    fn the_bundled_start_sounds_last_at_most_six_tenths_of_a_second() {
+        for theme in [SoundTheme::Marimba, SoundTheme::Pop] {
+            let (relative, samples, rate) = bundled_sound(theme, SoundType::Start);
+            let seconds = samples.len() as f64 / f64::from(rate);
+            assert!(seconds <= 0.6, "{relative} lasts {seconds:.2} s");
+        }
+    }
 }
