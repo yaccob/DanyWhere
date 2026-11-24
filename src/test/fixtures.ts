@@ -8,6 +8,7 @@ import type {
   EndKey,
   HoldEnd,
   LLMPrompt,
+  ModelInfo,
   Profile,
   ShortcutBinding,
   WordList,
@@ -59,6 +60,35 @@ export const prompt = (id: string, name: string): LLMPrompt => ({
   id,
   name,
   prompt: `${name} prompt`,
+});
+
+/** A speech model as `get_available_models` lists it: a catalog model on
+ * disk, without vocabulary unless `extra` says so. */
+export const modelInfo = (
+  id: string,
+  name: string,
+  extra: Partial<ModelInfo> = {},
+): ModelInfo => ({
+  id,
+  name,
+  description: "",
+  filename: `${id}.gguf`,
+  source: { HuggingFace: { repo_id: `test/${id}`, revision: "main" } },
+  size_mb: 1000,
+  is_downloaded: true,
+  is_downloading: false,
+  partial_size: 0,
+  accuracy_score: 0.8,
+  speed_score: 0.8,
+  supports_translation: false,
+  is_recommended: false,
+  supported_languages: ["en", "de"],
+  supports_language_selection: true,
+  is_custom: false,
+  supports_streaming: false,
+  supports_language_detection: false,
+  supports_vocabulary: false,
+  ...extra,
 });
 
 /** The defaults' values as DanyWhere ships them, as far as the pages read
@@ -123,6 +153,7 @@ export const defaultValues = (): Values => ({
   external_script_path: null,
   filler_word_removal_enabled: false,
   custom_filler_words: null,
+  word_list_llm_check: false,
   vad_enabled: true,
   long_form_chunking: false,
   context_age_limit_minutes: 10,
