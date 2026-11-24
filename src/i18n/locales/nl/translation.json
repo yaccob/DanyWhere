@@ -381,6 +381,8 @@
     },
     "general": {
       "title": "Algemeen",
+      "startShortcuts": "Startsneltoetsen",
+      "otherShortcuts": "Overige sneltoetsen",
       "shortcut": {
         "title": "Sneltoetsen",
         "description": "Configureer sneltoetsen om spraak-naar-tekst-opnames te starten",
@@ -391,7 +393,7 @@
         "bindings": {
           "transcribe": {
             "name": "Startsneltoets",
-            "description": "Start een opname. Hoe die eindigt, bepalen de eindsneltoetsen en, bij vasthouden, „Gedrag van sneltoets”."
+            "description": "Start een opname. Hoe die eindigt, bepalen de eindsneltoetsen, ook bij vasthouden."
           },
           "cancel": {
             "name": "Sneltoets voor annuleren",

@@ -381,6 +381,8 @@
     },
     "general": {
       "title": "Obecné",
+      "startShortcuts": "Spouštěcí zkratky",
+      "otherShortcuts": "Další zkratky",
       "shortcut": {
         "title": "Zkratky Handy",
         "description": "Nastavte klávesové zkratky pro spuštění nahrávání řeči na text",
@@ -391,7 +393,7 @@
         "bindings": {
           "transcribe": {
             "name": "Spouštěcí zkratka",
-            "description": "Spustí nahrávání. Jak skončí, určují ukončovací zkratky a při podržení „Chování zkratky“."
+            "description": "Spustí nahrávání. Jak skončí, určují ukončovací zkratky, i při podržení."
           },
           "cancel": {
             "name": "Zkratka zrušení",

@@ -381,6 +381,8 @@
     },
     "general": {
       "title": "Geral",
+      "startShortcuts": "Atalhos de Início",
+      "otherShortcuts": "Outros Atalhos",
       "shortcut": {
         "title": "Atalhos do Handy",
         "description": "Configure atalhos de teclado para iniciar a gravação de voz para texto",
@@ -391,7 +393,7 @@
         "bindings": {
           "transcribe": {
             "name": "Atalho de Início",
-            "description": "Inicia uma gravação. Como termina depende dos atalhos de fim e, ao segurar, de “Comportamento do atalho”."
+            "description": "Inicia uma gravação. Como termina depende dos atalhos de fim, também ao segurar."
           },
           "cancel": {
             "name": "Atalho de Cancelar",

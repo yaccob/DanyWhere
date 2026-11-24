@@ -381,6 +381,8 @@
     },
     "general": {
       "title": "Umum",
+      "startShortcuts": "Pintasan Mulai",
+      "otherShortcuts": "Pintasan Lain",
       "shortcut": {
         "title": "Pintasan Handy",
         "description": "Atur pintasan keyboard untuk memulai perekaman ucapan-ke-teks",
@@ -391,7 +393,7 @@
         "bindings": {
           "transcribe": {
             "name": "Pintasan Mulai",
-            "description": "Memulai rekaman. Cara berakhirnya ditentukan oleh pintasan akhir dan, saat ditahan, oleh “Perilaku Pintasan”."
+            "description": "Memulai rekaman. Cara berakhirnya ditentukan oleh pintasan akhir, juga saat ditahan."
           },
           "cancel": {
             "name": "Pintasan Batal",

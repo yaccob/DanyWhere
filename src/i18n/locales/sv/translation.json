@@ -381,6 +381,8 @@
     },
     "general": {
       "title": "Allmänt",
+      "startShortcuts": "Startkortkommandon",
+      "otherShortcuts": "Övriga kortkommandon",
       "shortcut": {
         "title": "Handy-kortkommandon",
         "description": "Konfigurera kortkommandon för att starta tal-till-text-inspelning",
@@ -391,7 +393,7 @@
         "bindings": {
           "transcribe": {
             "name": "Startkortkommando",
-            "description": "Startar en inspelning. Hur den slutar bestämmer avslutningskortkommandona och, när det hålls nere, ”Genvägens beteende”."
+            "description": "Startar en inspelning. Hur den slutar bestämmer avslutningskortkommandona, även när det hålls nere."
           },
           "cancel": {
             "name": "Kortkommando för att avbryta",

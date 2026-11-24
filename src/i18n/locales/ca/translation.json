@@ -381,6 +381,8 @@
     },
     "general": {
       "title": "General",
+      "startShortcuts": "Dreceres d'inici",
+      "otherShortcuts": "Altres dreceres",
       "shortcut": {
         "title": "Dreceres del Handy",
         "description": "Configura les dreceres de teclat per iniciar l'enregistrament de veu per a la transcripció",
@@ -391,7 +393,7 @@
         "bindings": {
           "transcribe": {
             "name": "Drecera d'inici",
-            "description": "Inicia una gravació. Com acaba ho decideixen les dreceres de final i, quan es manté premuda, «Comportament de la drecera»."
+            "description": "Inicia una gravació. Com acaba ho decideixen les dreceres de final, també quan es manté premuda."
           },
           "cancel": {
             "name": "Drecera de cancel·lació",
