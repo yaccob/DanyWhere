@@ -408,7 +408,8 @@
           },
           "transcribe_with_post_process": {
             "name": "Segundo atajo de inicio",
-            "description": "Opcional: una segunda combinación que inicia una grabación. De fábrica, un atajo de fin con la misma combinación posprocesa el texto. Solo se ocupa mientras el posprocesamiento está activado."
+            "description": "Opcional: una segunda combinación que inicia una grabación. De fábrica, un atajo de fin con la misma combinación posprocesa el texto. Solo se ocupa mientras el posprocesamiento está activado.",
+            "descriptionMacos": "Opcional: una segunda combinación que inicia una grabación. De fábrica, soltarla tras mantenerla pulsada posprocesa el texto; volver a pulsarla termina sin posprocesamiento, como todo atajo de fin sin ⌥. Solo se ocupa mientras el posprocesamiento está activado."
           },
           "paste_last_transcript": {
             "name": "Pegar la última transcripción",

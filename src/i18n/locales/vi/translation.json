@@ -408,7 +408,8 @@
           },
           "transcribe_with_post_process": {
             "name": "Phím tắt bắt đầu thứ hai",
-            "description": "Tùy chọn: tổ hợp phím thứ hai để bắt đầu ghi âm. Theo cài đặt gốc, phím tắt kết thúc có cùng tổ hợp phím sẽ xử lý hậu kỳ văn bản. Chỉ được chiếm khi xử lý hậu kỳ đang bật."
+            "description": "Tùy chọn: tổ hợp phím thứ hai để bắt đầu ghi âm. Theo cài đặt gốc, phím tắt kết thúc có cùng tổ hợp phím sẽ xử lý hậu kỳ văn bản. Chỉ được chiếm khi xử lý hậu kỳ đang bật.",
+            "descriptionMacos": "Tùy chọn: tổ hợp phím thứ hai để bắt đầu ghi âm. Theo cài đặt gốc, giữ rồi thả tổ hợp này sẽ xử lý hậu kỳ văn bản; nhấn lại sẽ kết thúc mà không xử lý hậu kỳ, như mọi phím tắt kết thúc không có ⌥. Chỉ được chiếm khi xử lý hậu kỳ đang bật."
           },
           "paste_last_transcript": {
             "name": "Dán bản chép gần nhất",

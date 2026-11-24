@@ -408,7 +408,8 @@
           },
           "transcribe_with_post_process": {
             "name": "Tweede startsneltoets",
-            "description": "Optioneel: een tweede toetsencombinatie die een opname start. In de fabrieksinstelling bewerkt een eindsneltoets met dezelfde toetsencombinatie de tekst na. Alleen bezet zolang nabewerking aan staat."
+            "description": "Optioneel: een tweede toetsencombinatie die een opname start. In de fabrieksinstelling bewerkt een eindsneltoets met dezelfde toetsencombinatie de tekst na. Alleen bezet zolang nabewerking aan staat.",
+            "descriptionMacos": "Optioneel: een tweede toetsencombinatie die een opname start. In de fabrieksinstelling bewerkt loslaten na vasthouden de tekst na; opnieuw drukken beëindigt zonder nabewerking, zoals elke eindsneltoets zonder ⌥. Alleen bezet zolang nabewerking aan staat."
           },
           "paste_last_transcript": {
             "name": "Laatste transcriptie plakken",

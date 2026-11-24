@@ -408,7 +408,8 @@
           },
           "transcribe_with_post_process": {
             "name": "Andra startkortkommandot",
-            "description": "Valfritt: en andra tangentkombination som startar en inspelning. I fabriksinställningen efterbearbetar ett avslutningskortkommando med samma tangentkombination texten. Bara upptagen så länge efterbearbetning är påslagen."
+            "description": "Valfritt: en andra tangentkombination som startar en inspelning. I fabriksinställningen efterbearbetar ett avslutningskortkommando med samma tangentkombination texten. Bara upptagen så länge efterbearbetning är påslagen.",
+            "descriptionMacos": "Valfritt: en andra tangentkombination som startar en inspelning. I fabriksinställningen efterbearbetas texten när du håller den nere och släpper den; ett nytt tryck avslutar utan efterbearbetning, som alla avslutningskortkommandon utan ⌥. Bara upptagen så länge efterbearbetning är påslagen."
           },
           "paste_last_transcript": {
             "name": "Klistra in senaste transkriptionen",

@@ -408,7 +408,8 @@
           },
           "transcribe_with_post_process": {
             "name": "Segona drecera d'inici",
-            "description": "Opcional: una segona combinació de tecles que inicia una gravació. De fàbrica, una drecera de final amb la mateixa combinació posprocessa el text. Només s'ocupa mentre el posprocessament està activat."
+            "description": "Opcional: una segona combinació de tecles que inicia una gravació. De fàbrica, una drecera de final amb la mateixa combinació posprocessa el text. Només s'ocupa mentre el posprocessament està activat.",
+            "descriptionMacos": "Opcional: una segona combinació de tecles que inicia una gravació. De fàbrica, deixar-la anar després de mantenir-la premuda posprocessa el text; tornar-la a prémer acaba sense posprocessament, com totes les dreceres de final sense ⌥. Només s'ocupa mentre el posprocessament està activat."
           },
           "paste_last_transcript": {
             "name": "Enganxa l'última transcripció",

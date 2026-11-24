@@ -408,7 +408,8 @@
           },
           "transcribe_with_post_process": {
             "name": "İkinci Başlatma Kısayolu",
-            "description": "İsteğe bağlı: kayıt başlatan ikinci bir tuş kombinasyonu. Fabrika ayarında, aynı kombinasyona sahip bir bitirme kısayolu metni son işler. Yalnızca son işleme açıkken kullanılır."
+            "description": "İsteğe bağlı: kayıt başlatan ikinci bir tuş kombinasyonu. Fabrika ayarında, aynı kombinasyona sahip bir bitirme kısayolu metni son işler. Yalnızca son işleme açıkken kullanılır.",
+            "descriptionMacos": "İsteğe bağlı: kayıt başlatan ikinci bir tuş kombinasyonu. Fabrika ayarında, basılı tutup bırakmak metni son işler; yeniden basmak ise ⌥ içermeyen her bitirme kısayolu gibi son işleme olmadan bitirir. Yalnızca son işleme açıkken kullanılır."
           },
           "paste_last_transcript": {
             "name": "Son transkripti yapıştır",

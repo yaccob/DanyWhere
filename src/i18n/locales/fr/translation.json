@@ -408,7 +408,8 @@
           },
           "transcribe_with_post_process": {
             "name": "Deuxième raccourci de début",
-            "description": "Facultatif : une deuxième combinaison qui démarre un enregistrement. Dans le réglage d'usine, un raccourci de fin avec la même combinaison post-traite le texte. Pris uniquement tant que le post-traitement est activé."
+            "description": "Facultatif : une deuxième combinaison qui démarre un enregistrement. Dans le réglage d'usine, un raccourci de fin avec la même combinaison post-traite le texte. Pris uniquement tant que le post-traitement est activé.",
+            "descriptionMacos": "Facultatif : une deuxième combinaison qui démarre un enregistrement. Dans le réglage d'usine, le relâcher après l'avoir maintenu post-traite le texte ; appuyer à nouveau dessus termine sans post-traitement, comme tout raccourci de fin sans ⌥. Pris uniquement tant que le post-traitement est activé."
           },
           "paste_last_transcript": {
             "name": "Coller la dernière transcription",

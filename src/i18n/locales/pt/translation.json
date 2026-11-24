@@ -408,7 +408,8 @@
           },
           "transcribe_with_post_process": {
             "name": "Segundo Atalho de Início",
-            "description": "Opcional: uma segunda combinação que inicia uma gravação. De fábrica, um atalho de fim com a mesma combinação pós-processa o texto. Só fica ocupada enquanto o pós-processamento estiver ativado."
+            "description": "Opcional: uma segunda combinação que inicia uma gravação. De fábrica, um atalho de fim com a mesma combinação pós-processa o texto. Só fica ocupada enquanto o pós-processamento estiver ativado.",
+            "descriptionMacos": "Opcional: uma segunda combinação que inicia uma gravação. De fábrica, soltá-la depois de a manter premida pós-processa o texto; premi-la de novo termina sem pós-processamento, como qualquer atalho de fim sem ⌥. Só fica ocupada enquanto o pós-processamento estiver ativado."
           },
           "paste_last_transcript": {
             "name": "Colar a última transcrição",

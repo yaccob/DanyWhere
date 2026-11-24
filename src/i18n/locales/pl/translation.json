@@ -408,7 +408,8 @@
           },
           "transcribe_with_post_process": {
             "name": "Drugi skrót rozpoczynający",
-            "description": "Opcjonalnie: druga kombinacja klawiszy, która rozpoczyna nagranie. Fabrycznie skrót kończący z tą samą kombinacją przetwarza tekst. Zajęta tylko wtedy, gdy przetwarzanie jest włączone."
+            "description": "Opcjonalnie: druga kombinacja klawiszy, która rozpoczyna nagranie. Fabrycznie skrót kończący z tą samą kombinacją przetwarza tekst. Zajęta tylko wtedy, gdy przetwarzanie jest włączone.",
+            "descriptionMacos": "Opcjonalnie: druga kombinacja klawiszy, która rozpoczyna nagranie. Fabrycznie puszczenie jej po przytrzymaniu przetwarza tekst, a ponowne naciśnięcie kończy nagranie bez przetwarzania, jak każdy skrót kończący bez ⌥. Zajęta tylko wtedy, gdy przetwarzanie jest włączone."
           },
           "paste_last_transcript": {
             "name": "Wklej ostatnią transkrypcję",
