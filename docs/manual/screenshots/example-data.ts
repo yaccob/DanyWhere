@@ -1,7 +1,8 @@
 // The manual's screenshots: what the mocked backend answers. A fresh
-// installation on macOS, in the language of the shot, with nothing of a
-// real user's: no models, microphones, word lists, History or keys. Only
-// made-up or factory values.
+// installation on macOS, in the language of the shot, with post-processing
+// set up with a made-up provider, and nothing of a real user's: no models,
+// microphones, word lists, History or real keys. Only made-up or factory
+// values.
 import type {
   AppendChoice,
   AppendComposed,
@@ -98,11 +99,29 @@ export const factoryEndKeys = (language: string): EndKey[] => {
   }));
 };
 
+/** Post-processing set up with a made-up provider and model, so the pages
+ * show the post-processing ends as working (the manual explains them). */
+const EXAMPLE_PROVIDER = {
+  id: "custom",
+  label: "Custom",
+  base_url: "https://llm.example.com/v1",
+  allow_base_url_edit: true,
+  models_endpoint: "/models",
+  supports_structured_output: false,
+  api_format: "openai",
+} as const;
+
 /** The settings of a fresh macOS installation in `language`, onboarding
- * done, with the app theme `theme`. */
+ * done, with the app theme `theme` and post-processing set up
+ * (`EXAMPLE_PROVIDER`). */
 export const freshMacSettings = (language: string, theme: Theme): AppSettings =>
   settingsWith({
     defaults: {
+      post_process_enabled: true,
+      post_process_provider_id: EXAMPLE_PROVIDER.id,
+      post_process_providers: [EXAMPLE_PROVIDER],
+      post_process_models: { [EXAMPLE_PROVIDER.id]: "example-model" },
+      post_process_api_keys: { [EXAMPLE_PROVIDER.id]: "example-key" },
       shortcut_activation: "hold_or_toggle",
       end_keys: factoryEndKeys(language),
       hold_ends: {

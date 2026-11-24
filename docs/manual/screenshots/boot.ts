@@ -2,6 +2,20 @@
 // `app.html?lang=de&theme=dark` mocks the backend as a fresh macOS
 // installation in that language and app theme, then loads `src/main.tsx`
 // as the app's window would.
+//
+// The pictures are drawn with open fonts that ship with the repository's
+// dependencies instead of the system's: the glyph outlines end up in the
+// published SVGs (Apple's licence doesn't allow passing on SF Pro), and the
+// pictures look the same on any machine. Inter (OFL) stands in for the
+// system font, in full (`inter-ui`, not Fontsource's subsets) since only the
+// full font has the key symbols (⌃ ⌥ ⇧ ⌘ ↩); JetBrains Mono (OFL) stands in
+// for the monospaced one. `screenshots.spec.ts` checks that no other font
+// draws anything.
+import "inter-ui/inter.css";
+import "@fontsource/jetbrains-mono/400.css";
+import "@fontsource/jetbrains-mono/500.css";
+import "@fontsource/jetbrains-mono/600.css";
+import "@fontsource/jetbrains-mono/700.css";
 import { answerAsFreshMac, type Theme } from "./example-data";
 import { installTauriMocks } from "./mocks/tauri";
 
@@ -18,28 +32,25 @@ try {
   // Without storage the settings' theme follows a moment later.
 }
 
-// A still picture: no transitions, animations or blinking caret.
-//
-// And the app's glyphs as macOS's WebKit (the app's webview) draws them:
-// Tailwind's font list names "Apple Color Emoji" before the system's own
-// fallback, so Chromium draws a character the system font lacks, such as
-// the key chips' "↩", as a colour emoji (a bitmap, even in the PDF), where
-// WebKit takes a text font's outline. Limited to the emoji planes, the
-// emoji font no longer takes such characters, and Chromium falls back as
-// WebKit does.
-const still = document.createElement("style");
-still.textContent = `
+// The fonts above in place of the app's font lists (Tailwind's and
+// App.css'), and a still picture: no transitions, animations or caret.
+const style = document.createElement("style");
+style.textContent = `
+:root {
+  --font-sans: "Inter";
+  --font-mono: "JetBrains Mono", "Inter";
+  --default-font-family: var(--font-sans);
+  --default-mono-font-family: var(--font-mono);
+  --font-ui: var(--font-sans);
+  --font-display: var(--font-sans);
+  --font-cjk-subset: var(--font-sans);
+}
 *, *::before, *::after {
   transition: none !important;
   animation: none !important;
   caret-color: transparent !important;
 }
-@font-face {
-  font-family: "Apple Color Emoji";
-  src: local("Apple Color Emoji"), local("AppleColorEmoji");
-  unicode-range: U+1F000-1FFFF;
-}
 `;
-document.head.append(still);
+document.head.append(style);
 
 await import("../../../src/main.tsx");
