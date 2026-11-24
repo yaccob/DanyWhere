@@ -543,7 +543,7 @@
       "offer": "İsteğe bağlı: Erişilebilirlik ile DanyWhere dikteleri zaten pano üzerinden yapıştırır.",
       "withoutAccessibility": "Eklendikten sonra bitirme kısayolları metni “{{shortcut}}” için bekletmek yerine hemen ekler.",
       "setUp": "Sistem Ayarları'nda Ekle",
-      "steps": "“Klavye” bölümünde “Giriş Kaynakları” yanındaki “Düzenle…” düğmesini, ardından “+” düğmesini tıklayın, “{{name}}” adını arayın ve “Ekle” düğmesini tıklayın.",
+      "steps": "“Klavye” bölümünde “Giriş Kaynakları” yanındaki “Düzenle…” düğmesini, ardından “+” düğmesini ve “İngilizce”yi tıklayın, “{{name}}” öğesini seçin ve “Ekle” düğmesini tıklayın.",
       "setUpFailed": "Giriş kaynağı ayarlanamadı",
       "added": "Dikteler pano kullanılmadan doğrudan eklenir.",
       "stop": "Durdurmak için Sistem Ayarları'nda “{{name}}” öğesini Giriş Kaynakları'ndan kaldırın."

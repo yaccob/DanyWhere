@@ -543,7 +543,7 @@
       "offer": "Opcional: amb Accessibilitat, el DanyWhere ja enganxa els dictats a través del porta-retalls.",
       "withoutAccessibility": "Un cop afegida, les dreceres de final insereixen el text de seguida en lloc de deixar-lo per a «{{shortcut}}».",
       "setUp": "Afegeix a Configuració del Sistema",
-      "steps": "A «Teclat», feu clic a «Edita…» al costat de «Fonts d'entrada», després a «+», cerqueu «{{name}}» i feu clic a «Afegeix».",
+      "steps": "A «Teclat», feu clic a «Edita…» al costat de «Fonts d'entrada», després a «+» i a «Anglès», seleccioneu «{{name}}» i feu clic a «Afegeix».",
       "setUpFailed": "No s'ha pogut configurar la font d'entrada",
       "added": "Els dictats s'insereixen directament, sense el porta-retalls.",
       "stop": "Per deixar de fer-la servir, traieu «{{name}}» de les fonts d'entrada a Configuració del Sistema."

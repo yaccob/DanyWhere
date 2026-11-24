@@ -543,7 +543,7 @@
       "offer": "Valgfrit: med Tilgængelighed indsætter DanyWhere allerede dikteringer via udklipsholderen.",
       "withoutAccessibility": "Når den er tilføjet, indsætter afslutningsgenveje teksten med det samme i stedet for at lade den ligge til »{{shortcut}}«.",
       "setUp": "Tilføj i Systemindstillinger",
-      "steps": "Klik under »Tastatur« på »Rediger…« ud for »Indtastningsenheder«, derefter på »+«, søg efter »{{name}}«, og klik på »Tilføj«.",
+      "steps": "Klik under »Tastatur« på »Rediger…« ud for »Indtastningsenheder«, derefter på »+« og »Engelsk«, vælg »{{name}}«, og klik på »Tilføj«.",
       "setUpFailed": "Indtastningsenheden kunne ikke indstilles",
       "added": "Dikteringer indsættes direkte, uden udklipsholderen.",
       "stop": "Hvis du vil stoppe, skal du fjerne »{{name}}« fra indtastningsenhederne i Systemindstillinger."

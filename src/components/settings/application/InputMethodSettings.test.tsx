@@ -27,7 +27,7 @@ const WITHOUT =
   "Once it's added, end shortcuts insert the text right away instead of leaving it for “Paste Last Transcript”.";
 const SET_UP = "Add in System Settings";
 const steps = (name: string) =>
-  `In Keyboard, click Edit… next to Input Sources, then +, search for “${name}” and click Add.`;
+  `In Keyboard, click Edit… next to Input Sources, then + and English, choose “${name}” and click Add.`;
 const FAILED = "Couldn't set up the input source";
 const ADDED = "Dictations are inserted directly, without the clipboard.";
 const stop = (name: string) =>
@@ -191,7 +191,7 @@ describe("Accessibility › Insert Without the Clipboard in German", () => {
     expect(text).toContain("Endtasten");
     expect(text).toContain("„Letzte Transkription einfügen“");
     expect(text).toContain(
-      "Klick unter „Tastatur“ neben „Eingabequellen“ auf „Bearbeiten …“, dann auf „+“, such nach „DanyWhere“ und klick auf „Hinzufügen“.",
+      "Klick unter „Tastatur“ neben „Eingabequellen“ auf „Bearbeiten …“, dann auf „+“ und „Englisch“, wähl „DanyWhere“ und klick auf „Hinzufügen“.",
     );
     expect(
       screen.queryByRole("button", {

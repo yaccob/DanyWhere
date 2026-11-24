@@ -543,7 +543,7 @@
       "offer": "Opcjonalnie: z dostępnością DanyWhere już wkleja dyktowania przez schowek.",
       "withoutAccessibility": "Po jego dodaniu skróty kończące wstawiają tekst od razu, zamiast zostawiać go dla „{{shortcut}}”.",
       "setUp": "Dodaj w Ustawieniach systemowych",
-      "steps": "W ustawieniach „Klawiatura” kliknij „Edycja…” obok „Źródła wprowadzania”, potem „+”, wyszukaj „{{name}}” i kliknij „Dodaj”.",
+      "steps": "W ustawieniach „Klawiatura” kliknij „Edycja…” obok „Źródła wprowadzania”, potem „+” i „Angielski”, wybierz „{{name}}” i kliknij „Dodaj”.",
       "setUpFailed": "Nie udało się skonfigurować źródła wprowadzania",
       "added": "Dyktowania są wstawiane bezpośrednio, bez schowka.",
       "stop": "Aby z tego zrezygnować, usuń „{{name}}” ze źródeł wprowadzania w Ustawieniach systemowych."

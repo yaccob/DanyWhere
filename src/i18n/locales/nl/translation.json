@@ -543,7 +543,7 @@
       "offer": "Optioneel: met Toegankelijkheid plakt DanyWhere dictaten al via het klembord.",
       "withoutAccessibility": "Zodra de invoerbron is toegevoegd, voegen eindsneltoetsen de tekst meteen in, in plaats van hem te laten liggen voor „{{shortcut}}”.",
       "setUp": "Toevoegen in Systeeminstellingen",
-      "steps": "Klik bij „Toetsenbord” naast „Invoerbronnen” op „Wijzig…”, dan op „+”, zoek naar „{{name}}” en klik op „Voeg toe”.",
+      "steps": "Klik bij „Toetsenbord” naast „Invoerbronnen” op „Wijzig…”, dan op „+” en „Engels”, kies „{{name}}” en klik op „Voeg toe”.",
       "setUpFailed": "Kan de invoerbron niet instellen",
       "added": "Dictaten worden direct ingevoegd, zonder klembord.",
       "stop": "Om te stoppen verwijder je „{{name}}” uit de invoerbronnen in Systeeminstellingen."

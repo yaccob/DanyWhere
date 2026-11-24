@@ -543,7 +543,7 @@
       "offer": "Facoltativo: con Accessibilità, DanyWhere incolla già le dettature tramite gli Appunti.",
       "withoutAccessibility": "Una volta aggiunta, le scorciatoie di fine inseriscono subito il testo invece di lasciarlo per «{{shortcut}}».",
       "setUp": "Aggiungi in Impostazioni di Sistema",
-      "steps": "In «Tastiera», fai clic su «Modifica…» accanto a «Sorgenti di input», poi su «+», cerca «{{name}}» e fai clic su «Aggiungi».",
+      "steps": "In «Tastiera», fai clic su «Modifica…» accanto a «Sorgenti di input», poi su «+» e su «Inglese», scegli «{{name}}» e fai clic su «Aggiungi».",
       "setUpFailed": "Impossibile configurare la sorgente di input",
       "added": "Le dettature vengono inserite direttamente, senza gli Appunti.",
       "stop": "Per smettere, rimuovi «{{name}}» dalle sorgenti di input in Impostazioni di Sistema."

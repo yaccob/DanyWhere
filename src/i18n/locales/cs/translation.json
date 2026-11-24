@@ -543,7 +543,7 @@
       "offer": "Volitelné: se zpřístupněním už DanyWhere vkládá diktáty přes schránku.",
       "withoutAccessibility": "Po jeho přidání vloží ukončovací zkratky text hned, místo aby ho nechaly pro „{{shortcut}}“.",
       "setUp": "Přidat v Nastavení systému",
-      "steps": "V nastavení „Klávesnice“ klikněte vedle „Vstupní zdroje“ na „Upravit…“, pak na „+“, vyhledejte „{{name}}“ a klikněte na „Přidat“.",
+      "steps": "V nastavení „Klávesnice“ klikněte vedle „Vstupní zdroje“ na „Upravit…“, pak na „+“ a „Angličtina“, vyberte „{{name}}“ a klikněte na „Přidat“.",
       "setUpFailed": "Vstupní zdroj se nepodařilo nastavit",
       "added": "Diktáty se vkládají přímo, bez schránky.",
       "stop": "Chcete-li to ukončit, odstraňte „{{name}}“ ze vstupních zdrojů v Nastavení systému."

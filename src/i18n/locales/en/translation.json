@@ -543,7 +543,7 @@
       "offer": "Optional: with Accessibility, DanyWhere already pastes dictations through the clipboard.",
       "withoutAccessibility": "Once it's added, end shortcuts insert the text right away instead of leaving it for “{{shortcut}}”.",
       "setUp": "Add in System Settings",
-      "steps": "In Keyboard, click Edit… next to Input Sources, then +, search for “{{name}}” and click Add.",
+      "steps": "In Keyboard, click Edit… next to Input Sources, then + and English, choose “{{name}}” and click Add.",
       "setUpFailed": "Couldn't set up the input source",
       "added": "Dictations are inserted directly, without the clipboard.",
       "stop": "To stop, remove “{{name}}” from Input Sources in System Settings."

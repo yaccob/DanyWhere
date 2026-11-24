@@ -543,7 +543,7 @@
       "offer": "Tùy chọn: khi có Trợ năng, DanyWhere đã dán bản đọc chính tả qua bảng nhớ tạm.",
       "withoutAccessibility": "Sau khi thêm, phím tắt kết thúc sẽ chèn văn bản ngay thay vì để lại cho “{{shortcut}}”.",
       "setUp": "Thêm trong Cài đặt hệ thống",
-      "steps": "Trong “Bàn phím”, bấm “Sửa…” bên cạnh “Nguồn đầu vào”, rồi bấm “+”, tìm “{{name}}” và bấm “Thêm”.",
+      "steps": "Trong “Bàn phím”, bấm “Sửa…” bên cạnh “Nguồn đầu vào”, rồi bấm “+” và “Tiếng Anh”, chọn “{{name}}” và bấm “Thêm”.",
       "setUpFailed": "Không thể thiết lập nguồn đầu vào",
       "added": "Bản đọc chính tả được chèn trực tiếp, không qua bảng nhớ tạm.",
       "stop": "Để dừng, hãy xóa “{{name}}” khỏi Nguồn đầu vào trong Cài đặt hệ thống."

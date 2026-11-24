@@ -543,7 +543,7 @@
       "offer": "Facultatif : avec l'autorisation Accessibilité, DanyWhere colle déjà les dictées via le presse-papiers.",
       "withoutAccessibility": "Une fois la méthode de saisie ajoutée, les raccourcis de fin insèrent le texte aussitôt au lieu de le laisser pour « {{shortcut}} ».",
       "setUp": "Ajouter dans Réglages Système",
-      "steps": "Dans « Clavier », cliquez sur « Modifier… » à côté de « Méthodes de saisie », puis sur « + », recherchez « {{name}} » et cliquez sur « Ajouter ».",
+      "steps": "Dans « Clavier », cliquez sur « Modifier… » à côté de « Méthodes de saisie », puis sur « + » et sur « Anglais », choisissez « {{name}} » et cliquez sur « Ajouter ».",
       "setUpFailed": "Impossible de configurer la méthode de saisie",
       "added": "Les dictées sont insérées directement, sans le presse-papiers.",
       "stop": "Pour arrêter, supprimez « {{name}} » des méthodes de saisie dans Réglages Système."

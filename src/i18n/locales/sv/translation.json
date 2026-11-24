@@ -543,7 +543,7 @@
       "offer": "Valfritt: med Hjälpmedel klistrar DanyWhere redan in dikteringar via urklipp.",
       "withoutAccessibility": "När den har lagts till infogar avslutningskortkommandon texten direkt i stället för att lämna den åt ”{{shortcut}}”.",
       "setUp": "Lägg till i Systeminställningar",
-      "steps": "Under ”Tangentbord” klickar du på ”Redigera…” bredvid ”Inmatningskällor”, sedan på ”+”, söker efter ”{{name}}” och klickar på ”Lägg till”.",
+      "steps": "Under ”Tangentbord” klickar du på ”Redigera…” bredvid ”Inmatningskällor”, sedan på ”+” och ”Engelska”, väljer ”{{name}}” och klickar på ”Lägg till”.",
       "setUpFailed": "Det gick inte att ställa in inmatningskällan",
       "added": "Dikteringar infogas direkt, utan urklipp.",
       "stop": "Om du vill sluta tar du bort ”{{name}}” från inmatningskällorna i Systeminställningar."

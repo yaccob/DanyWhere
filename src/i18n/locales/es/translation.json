@@ -543,7 +543,7 @@
       "offer": "Opcional: con Accesibilidad, DanyWhere ya pega los dictados a través del portapapeles.",
       "withoutAccessibility": "Una vez añadida, los atajos de fin insertan el texto al momento en lugar de dejarlo para «{{shortcut}}».",
       "setUp": "Añadir en Ajustes del Sistema",
-      "steps": "En «Teclado», haz clic en «Editar…» junto a «Fuentes de entrada», luego en «+», busca «{{name}}» y haz clic en «Añadir».",
+      "steps": "En «Teclado», haz clic en «Editar…» junto a «Fuentes de entrada», luego en «+» y en «Inglés», elige «{{name}}» y haz clic en «Añadir».",
       "setUpFailed": "No se pudo configurar la fuente de entrada",
       "added": "Los dictados se insertan directamente, sin el portapapeles.",
       "stop": "Para dejar de usarla, quita «{{name}}» de las fuentes de entrada en Ajustes del Sistema."

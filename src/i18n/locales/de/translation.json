@@ -543,7 +543,7 @@
       "offer": "Optional: Mit Bedienungshilfen fügt DanyWhere Diktate bereits über die Zwischenablage ein.",
       "withoutAccessibility": "Sobald sie hinzugefügt ist, fügen Endtasten den Text sofort ein, statt ihn für „{{shortcut}}“ liegen zu lassen.",
       "setUp": "In den Systemeinstellungen hinzufügen",
-      "steps": "Klick unter „Tastatur“ neben „Eingabequellen“ auf „Bearbeiten …“, dann auf „+“, such nach „{{name}}“ und klick auf „Hinzufügen“.",
+      "steps": "Klick unter „Tastatur“ neben „Eingabequellen“ auf „Bearbeiten …“, dann auf „+“ und „Englisch“, wähl „{{name}}“ und klick auf „Hinzufügen“.",
       "setUpFailed": "Die Eingabequelle ließ sich nicht einrichten",
       "added": "Diktate werden direkt eingefügt, ohne Zwischenablage.",
       "stop": "Zum Beenden entferne „{{name}}“ in den Systemeinstellungen aus den Eingabequellen."

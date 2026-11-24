@@ -543,7 +543,7 @@
       "offer": "Opsional: dengan Aksesibilitas, DanyWhere sudah menempelkan dikte melalui papan klip.",
       "withoutAccessibility": "Setelah ditambahkan, pintasan akhir langsung menyisipkan teks, bukan membiarkannya untuk “{{shortcut}}”.",
       "setUp": "Tambahkan di Pengaturan Sistem",
-      "steps": "Di “Papan Ketik”, klik “Edit…” di samping “Sumber Input”, lalu “+”, cari “{{name}}”, dan klik “Tambah”.",
+      "steps": "Di “Papan Ketik”, klik “Edit…” di samping “Sumber Input”, lalu “+” dan “Inggris”, pilih “{{name}}”, dan klik “Tambah”.",
       "setUpFailed": "Tidak dapat menyiapkan sumber input",
       "added": "Dikte disisipkan langsung, tanpa papan klip.",
       "stop": "Untuk berhenti, hapus “{{name}}” dari Sumber Input di Pengaturan Sistem."

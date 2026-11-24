@@ -27,7 +27,7 @@ const DESCRIPTION =
   "Dictations go straight into the text field through DanyWhere's own input source, and the clipboard stays as it is.";
 const SET_UP = "Add in System Settings";
 const STEPS =
-  "In Keyboard, click Edit… next to Input Sources, then +, search for “DanyWhere” and click Add.";
+  "In Keyboard, click Edit… next to Input Sources, then + and English, choose “DanyWhere” and click Add.";
 const NOT_ADDED = "Not added yet";
 const ADDED = "Added. Your dictations now go straight into the text field.";
 const SKIP = "Continue without Accessibility";

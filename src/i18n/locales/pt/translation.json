@@ -543,7 +543,7 @@
       "offer": "Opcional: com Acessibilidade, o DanyWhere já cola os ditados pela área de transferência.",
       "withoutAccessibility": "Depois de adicioná-lo, os atalhos de fim inserem o texto na hora, em vez de deixá-lo para “{{shortcut}}”.",
       "setUp": "Adicionar em Ajustes do Sistema",
-      "steps": "Em “Teclado”, clique em “Editar…” ao lado de “Layouts de Teclado”, depois em “+”, procure “{{name}}” e clique em “Adicionar”.",
+      "steps": "Em “Teclado”, clique em “Editar…” ao lado de “Layouts de Teclado”, depois em “+” e em “Inglês”, escolha “{{name}}” e clique em “Adicionar”.",
       "setUpFailed": "Não foi possível configurar o layout de teclado",
       "added": "Os ditados são inseridos diretamente, sem a área de transferência.",
       "stop": "Para parar, remova “{{name}}” dos layouts de teclado em Ajustes do Sistema."

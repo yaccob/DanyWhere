@@ -20,7 +20,7 @@ const CHECK_MICROPHONE = "plugin:macos-permissions|check_microphone_permission";
 
 const TITLE = "Insert Directly";
 const STEPS =
-  "In Keyboard, click Edit… next to Input Sources, then +, search for “DanyWhere” and click Add.";
+  "In Keyboard, click Edit… next to Input Sources, then + and English, choose “DanyWhere” and click Add.";
 
 interface StartSetup {
   os?: TestOsType;
