@@ -160,6 +160,10 @@
 
             env = commonEnv pkgs // {
               OPENSSL_NO_VENDOR = "1";
+              # The user manual (docs/manual) has a bun.lock of its own that
+              # .nix/bun.nix doesn't cover, and the sandbox has no network to
+              # install it, so the Nix package is built without the manual.
+              DANYWHERE_SKIP_MANUAL = "1";
             };
 
             preFixup = ''
