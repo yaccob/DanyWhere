@@ -339,10 +339,12 @@ pub fn status_key(bundle_id: &str, menu_title: &str, message: &str) -> String {
     format!("{bundle_id} - {menu_title} - {message}")
 }
 
-/// Shows a key equivalent from `NSServicesStatus` the way macOS menus do,
-/// e.g. `@~^v` → `⌃⌥⌘V`. `None` when there is no shortcut.
+/// Shows a key equivalent from `NSServicesStatus` as DanyWhere writes key
+/// combinations (`formatKeyCombination`): ⌥ first, then ⌃⇧⌘ as macOS menus
+/// do (user, 2026-11-24), e.g. `@~^v` → `⌥⌃⌘V`. `None` when there is no
+/// shortcut.
 pub fn display_key_equivalent(key_equivalent: &str) -> Option<String> {
-    const MODIFIERS: [(char, char); 4] = [('^', '⌃'), ('~', '⌥'), ('$', '⇧'), ('@', '⌘')];
+    const MODIFIERS: [(char, char); 4] = [('~', '⌥'), ('^', '⌃'), ('$', '⇧'), ('@', '⌘')];
     let is_modifier = |c: char| MODIFIERS.iter().any(|(code, _)| *code == c);
     let key: String = key_equivalent
         .chars()
@@ -1574,14 +1576,15 @@ mod tests {
     fn shows_the_default_shortcut_with_mac_symbols() {
         assert_eq!(
             display_key_equivalent(DEFAULT_KEY_EQUIVALENT).as_deref(),
-            Some("⌃⌥⌘V")
+            Some("⌥⌃⌘V")
         );
     }
 
     #[test]
-    fn orders_modifiers_as_macos_menus_do() {
-        assert_eq!(display_key_equivalent("$@^~k").as_deref(), Some("⌃⌥⇧⌘K"));
+    fn puts_option_first_then_orders_as_macos_menus_do() {
+        assert_eq!(display_key_equivalent("$@^~k").as_deref(), Some("⌥⌃⇧⌘K"));
         assert_eq!(display_key_equivalent("@$v").as_deref(), Some("⇧⌘V"));
+        assert_eq!(display_key_equivalent("^$v").as_deref(), Some("⌃⇧V"));
     }
 
     #[test]

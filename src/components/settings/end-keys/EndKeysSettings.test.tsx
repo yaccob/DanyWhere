@@ -63,10 +63,10 @@ describe("End Shortcuts under the defaults", () => {
     expect(nameFields().map((field) => field.value)).toEqual([
       "⌃ Space",
       "Senden",
-      "⌃⌥J",
+      "⌥⌃J",
     ]);
     // The combinations on their buttons, written as macOS does.
-    for (const keys of ["⌃ Space", "⌃↩", "⌃⌥J"]) {
+    for (const keys of ["⌃ Space", "⌃↩", "⌥⌃J"]) {
       expect(screen.getAllByText(keys).length).toBeGreaterThan(0);
     }
     expect(rawTextIn()).toEqual([]);
@@ -141,7 +141,7 @@ describe("End Shortcuts under the defaults", () => {
     await renderEnds([PLAIN, UNNAMED]);
 
     const field = nameFields()[1];
-    fireEvent.change(field, { target: { value: "⌃⌥J" } });
+    fireEvent.change(field, { target: { value: "⌥⌃J" } });
     fireEvent.blur(field);
     await settle();
 

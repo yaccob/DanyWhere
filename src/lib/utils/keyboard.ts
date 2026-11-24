@@ -261,8 +261,11 @@ const MODIFIER_KINDS: Record<string, ModifierKind> = {
   windows: "super",
 };
 
-// The order of the system's menus: ⌃⌥⇧⌘ on macOS, Ctrl+Alt+Shift+Win elsewhere.
-const MAC_ORDER: ModifierKind[] = ["fn", "ctrl", "alt", "shift", "super"];
+// Ctrl+Alt+Shift+Win off macOS, as the system's menus do. On macOS ⌥ comes
+// first, then ⌃⇧⌘ as the menus do (user, 2026-11-24): with ⌥ standing for
+// post-processing in the end shortcuts, the first symbol already tells it
+// (⌥⌃↩), and with ⌃ and ⌥ swapped on the keyboard it is the keys' order.
+const MAC_ORDER: ModifierKind[] = ["fn", "alt", "ctrl", "shift", "super"];
 const PC_ORDER: ModifierKind[] = ["ctrl", "alt", "shift", "super", "fn"];
 
 const MAC_MODIFIERS: Record<ModifierKind, string> = {
@@ -404,8 +407,9 @@ const isWord = (label: string): boolean =>
 
 /**
  * DanyWhere: a stored combination as the system names it (user,
- * 2026-11-22). macOS writes the symbols on the keys together, in the
- * order of its menus ("⌃⌥D", "⌃↩", "⌥ Leertaste"); Windows and Linux write
+ * 2026-11-22). macOS writes the symbols on the keys together, ⌥ first and
+ * the others in the order of its menus ("⌥⌃D", "⌃↩", "⌥ Leertaste"; ⌥
+ * first since 2026-11-24, `MAC_ORDER`); Windows and Linux write
  * the names on the keys, translated, joined with "+" ("Strg+Umschalt+V").
  * A side shows only where the combination keeps one (`key_sides.rs`):
  * "⌥ rechts", "Alt links+Q". Without `t` the names are English.
