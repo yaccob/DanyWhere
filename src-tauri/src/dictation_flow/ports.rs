@@ -172,6 +172,12 @@ pub trait Report {
     /// The one sound that ends a dictation, if any
     /// (`delivery::play_sound_after_dictation`).
     fn sound_after_dictation(&self, end: DictationEnd);
+    /// The dictation's text is in the application in front (the input
+    /// method or a waiting service call inserted it): now, and only now,
+    /// macOS may be asked whether DanyWhere may read that application's
+    /// window title (`window_capture::ask_pending_consent`), so its dialog
+    /// never takes the focus before the text is there.
+    fn after_text_inserted(&self);
     /// A dictation notice, in place of the overlay.
     fn raise(&self, notice: Notice);
     /// A dictation notice, leaving the overlay to a newer session.

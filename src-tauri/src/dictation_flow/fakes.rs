@@ -7,7 +7,7 @@
 //! sets one up). Every effect goes into one ordered list of [`Event`]s, so
 //! a test checks what the user sees and hears, and in which order.
 
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
@@ -211,6 +211,8 @@ pub struct Fake {
     script: Mutex<Script>,
     events: Arc<Mutex<Vec<Event>>>,
     cancelled: AtomicBool,
+    /// [`FakePorts::texts_inserted`].
+    texts_inserted: AtomicUsize,
     /// One message per finished dictation ([`FakePorts::wait_finished`]).
     finished: (
         Mutex<std::sync::mpsc::Sender<()>>,
@@ -248,6 +250,7 @@ impl FakePorts {
             script: Mutex::new(script),
             events,
             cancelled: AtomicBool::new(false),
+            texts_inserted: AtomicUsize::new(0),
             finished: {
                 let (tx, rx) = std::sync::mpsc::channel();
                 (Mutex::new(tx), Mutex::new(rx))
@@ -255,6 +258,13 @@ impl FakePorts {
             history,
             _dir: dir,
         }))
+    }
+
+    /// How often a dictation's text was in the application in front
+    /// (`after_text_inserted`); kept apart from the events, which tests
+    /// compare as a whole.
+    pub fn texts_inserted(&self) -> usize {
+        self.0.texts_inserted.load(Ordering::SeqCst)
     }
 
     /// Everything that happened so far, in order; and forgets it.
@@ -555,6 +565,10 @@ impl Report for FakePorts {
 
     fn sound_after_dictation(&self, end: DictationEnd) {
         self.record(Event::SoundAfterDictation(end));
+    }
+
+    fn after_text_inserted(&self) {
+        self.0.texts_inserted.fetch_add(1, Ordering::SeqCst);
     }
 
     fn raise(&self, notice: Notice) {

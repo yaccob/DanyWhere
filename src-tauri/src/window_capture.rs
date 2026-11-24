@@ -29,6 +29,7 @@
 //! recording overlay shows on that window's screen (`overlay`); that needs no
 //! permission on macOS or Windows.
 
+#[cfg(target_os = "macos")]
 use std::path::{Path, PathBuf};
 use std::sync::{Condvar, Mutex};
 use std::time::{Duration, Instant};
@@ -39,6 +40,9 @@ use tauri::AppHandle;
 
 use crate::accessibility::AccessibilityState;
 use crate::dictation_context::{self, CapturedWindow};
+// The title query by Apple event exists on macOS only (`title_query`), and
+// with it everything below that asks for a title that way.
+#[cfg(target_os = "macos")]
 use crate::title_query::{self, TitleQuery};
 
 /// How long a capture may take before the dictation goes on without it.
@@ -471,10 +475,64 @@ pub async fn request_window_title_access(bundle_id: String) -> AutomationStatus 
         .unwrap_or(AutomationStatus::Unknown)
 }
 
+/// The apps macOS is asked about once a dictation's text is in them (user's
+/// choice, 2026-11-24): without Accessibility, an app that could tell its
+/// window title but DanyWhere was never allowed to ask gets macOS's dialog
+/// once per run, right after a dictation was inserted into it and never
+/// before, so the dialog can't take the focus from the text field.
+#[derive(Default)]
+struct ConsentAsks {
+    /// The app to ask after the next insertion.
+    pending: Option<String>,
+    /// The apps asked in this run.
+    asked: std::collections::HashSet<String>,
+}
+
+impl ConsentAsks {
+    /// `bundle_id` could tell its window title, but DanyWhere was never
+    /// allowed to ask it (not asked yet).
+    #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+    fn note_not_asked(&mut self, bundle_id: &str) {
+        if !self.asked.contains(bundle_id) {
+            self.pending = Some(bundle_id.to_string());
+        }
+    }
+
+    /// The app to ask now that a dictation's text is in, at most once per
+    /// app and run.
+    fn take_after_insertion(&mut self) -> Option<String> {
+        let bundle_id = self.pending.take()?;
+        self.asked.insert(bundle_id.clone()).then_some(bundle_id)
+    }
+}
+
+static CONSENT_ASKS: std::sync::LazyLock<Mutex<ConsentAsks>> =
+    std::sync::LazyLock::new(Default::default);
+
+/// A dictation's text is in the application in front: shows macOS's dialog
+/// for the app noted as not asked yet, if any, on a thread of its own (it
+/// waits for the user's answer).
+pub fn ask_pending_consent() {
+    let pending = CONSENT_ASKS
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .take_after_insertion();
+    let Some(bundle_id) = pending else {
+        return;
+    };
+    log::info!(
+        "Window title of {bundle_id}: the text is in; asking macOS once whether DanyWhere may ask it"
+    );
+    std::thread::spawn(move || {
+        let answer = platform::request(&bundle_id);
+        log::info!("Window title of {bundle_id}: macOS's answer: {answer:?}");
+    });
+}
+
 /// What asking an app for its window title by Apple event needs from macOS
 /// ([`ask_for_title`]), so the steps can be tested without apps or
 /// osascript.
-#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+#[cfg(target_os = "macos")]
 trait TitlePort {
     /// Where the bundle of the app running as `pid` lies.
     fn bundle_path(&self, pid: i32) -> Option<PathBuf>;
@@ -489,7 +547,7 @@ trait TitlePort {
 }
 
 /// How an osascript run ended.
-#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+#[cfg(target_os = "macos")]
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum ScriptRun {
     Done {
@@ -505,7 +563,7 @@ enum ScriptRun {
 
 /// What asking an app for its window title by Apple event gave: the title,
 /// or why there is none.
-#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+#[cfg(target_os = "macos")]
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum TitleOutcome {
     Title(String),
@@ -527,7 +585,7 @@ enum TitleOutcome {
     Empty,
 }
 
-#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+#[cfg(target_os = "macos")]
 impl TitleOutcome {
     fn into_title(self) -> Option<String> {
         match self {
@@ -590,7 +648,7 @@ impl TitleOutcome {
 
 /// The permission check's `OSStatus` `code` by name, with where to change
 /// it.
-#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+#[cfg(target_os = "macos")]
 fn not_allowed_reason(code: i32) -> String {
     match status_from_os(code) {
         AutomationStatus::NotAsked => format!(
@@ -609,7 +667,7 @@ fn not_allowed_reason(code: i32) -> String {
 
 /// What an error number of an Apple event or of osascript means, for the
 /// ones a title query can meet.
-#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+#[cfg(target_os = "macos")]
 fn apple_event_error(number: i32) -> Option<&'static str> {
     Some(match number {
         -600 => "procNotFound: the app isn't running",
@@ -633,7 +691,7 @@ fn apple_event_error(number: i32) -> Option<&'static str> {
 /// `port`, within `limit`; never shows the consent dialog. An app that can't
 /// be asked isn't checked for permission, and one DanyWhere may not ask gets
 /// no script.
-#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+#[cfg(target_os = "macos")]
 fn ask_for_title(
     port: &impl TitlePort,
     bundle_id: &str,
@@ -679,7 +737,7 @@ fn ask_for_title(
 /// The error number osascript ends its message with, as in "0:42: execution
 /// error: Can’t get window 1 of application \"Terminal\". (-1728)": the
 /// last line that ends with one.
-#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+#[cfg(target_os = "macos")]
 fn error_number(stderr: &str) -> Option<i32> {
     stderr.lines().rev().find_map(|line| {
         let inner = line.trim_end().strip_suffix(')')?;
@@ -691,12 +749,12 @@ fn error_number(stderr: &str) -> Option<i32> {
 /// The reasons already logged on INFO in this run, by bundle id, so the log
 /// tells each app's reason once and not at every dictation.
 #[derive(Default)]
-#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+#[cfg(target_os = "macos")]
 struct LoggedReasons {
     seen: std::collections::HashSet<(String, String)>,
 }
 
-#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+#[cfg(target_os = "macos")]
 impl LoggedReasons {
     /// More entries than this start the set afresh.
     const LIMIT: usize = 256;
@@ -715,14 +773,14 @@ impl LoggedReasons {
     }
 }
 
-#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+#[cfg(target_os = "macos")]
 static LOGGED_REASONS: std::sync::LazyLock<Mutex<LoggedReasons>> =
     std::sync::LazyLock::new(Default::default);
 
 /// The log level and line for `outcome` of asking `bundle_id` within
 /// `limit`: INFO the first time the app gives this reason in this run,
 /// DEBUG after that.
-#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+#[cfg(target_os = "macos")]
 fn title_log(
     logged: &Mutex<LoggedReasons>,
     bundle_id: &str,
@@ -1199,11 +1257,21 @@ mod platform {
 
     /// The window title of the app `bundle_id` running as `pid` by Apple
     /// event, if it answers within `limit`; `None` without permission, query
-    /// or title. The log tells why there is none ([`title_log`]).
+    /// or title. The log tells why there is none ([`title_log`]); an app
+    /// not asked yet gets macOS's dialog once the dictation's text is in it
+    /// ([`super::ask_pending_consent`]).
     fn query_title(bundle_id: &str, pid: i32, limit: Duration) -> Option<String> {
         let outcome = ask_for_title(&Mac, bundle_id, pid, limit);
         let (level, line) = title_log(&LOGGED_REASONS, bundle_id, &outcome, limit);
         log::log!(level, "{line}");
+        if let super::TitleOutcome::NotAllowed(code) = outcome {
+            if status_from_os(code) == AutomationStatus::NotAsked {
+                super::CONSENT_ASKS
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner())
+                    .note_not_asked(bundle_id);
+            }
+        }
         outcome.into_title()
     }
 
@@ -1884,261 +1952,311 @@ mod tests {
         assert!(started.elapsed() < Duration::from_secs(1));
     }
 
-    /// A Mac as [`ask_for_title`] sees it, counting the permission checks
-    /// and the scripts it runs.
-    struct FakeMac {
-        bundle: Option<PathBuf>,
-        query: Option<TitleQuery>,
-        permission: i32,
-        run: ScriptRun,
-        permission_checks: Cell<u32>,
-        scripts: Cell<u32>,
+    // --- macOS's dialog once the text is in (user's choice "A", 2026-11-24) ---
+
+    #[test]
+    fn an_app_not_asked_yet_is_asked_once_its_text_is_in() {
+        let mut asks = ConsentAsks::default();
+        asks.note_not_asked("com.apple.Terminal");
+        assert_eq!(
+            asks.take_after_insertion(),
+            Some("com.apple.Terminal".to_string())
+        );
+        assert_eq!(asks.take_after_insertion(), None);
     }
 
-    impl FakeMac {
-        /// TextEdit, allowed, answering with `run`.
-        fn answering(run: ScriptRun) -> Self {
-            FakeMac {
-                bundle: Some(PathBuf::from("/System/Applications/TextEdit.app")),
-                query: Some(TitleQuery::FrontWindow),
-                permission: 0,
-                run,
-                permission_checks: Cell::new(0),
-                scripts: Cell::new(0),
+    #[test]
+    fn an_app_is_asked_at_most_once_per_run() {
+        let mut asks = ConsentAsks::default();
+        asks.note_not_asked("com.microsoft.Outlook");
+        assert!(asks.take_after_insertion().is_some());
+        // The user closed the dialog or macOS didn't show it: no second one.
+        asks.note_not_asked("com.microsoft.Outlook");
+        assert_eq!(asks.take_after_insertion(), None);
+    }
+
+    #[test]
+    fn the_app_noted_last_before_the_insertion_is_the_one_asked() {
+        // Asked ahead at the start in one app, the text went into another.
+        let mut asks = ConsentAsks::default();
+        asks.note_not_asked("com.apple.Safari");
+        asks.note_not_asked("com.apple.Terminal");
+        assert_eq!(
+            asks.take_after_insertion(),
+            Some("com.apple.Terminal".to_string())
+        );
+        assert_eq!(asks.take_after_insertion(), None);
+    }
+
+    #[test]
+    fn nothing_is_asked_without_an_app_not_asked_yet() {
+        let mut asks = ConsentAsks::default();
+        assert_eq!(asks.take_after_insertion(), None);
+    }
+
+    /// Asking for a title by Apple event, which exists on macOS only.
+    #[cfg(target_os = "macos")]
+    mod asking_for_titles {
+        use super::*;
+
+        /// A Mac as [`ask_for_title`] sees it, counting the permission checks
+        /// and the scripts it runs.
+        struct FakeMac {
+            bundle: Option<PathBuf>,
+            query: Option<TitleQuery>,
+            permission: i32,
+            run: ScriptRun,
+            permission_checks: Cell<u32>,
+            scripts: Cell<u32>,
+        }
+
+        impl FakeMac {
+            /// TextEdit, allowed, answering with `run`.
+            fn answering(run: ScriptRun) -> Self {
+                FakeMac {
+                    bundle: Some(PathBuf::from("/System/Applications/TextEdit.app")),
+                    query: Some(TitleQuery::FrontWindow),
+                    permission: 0,
+                    run,
+                    permission_checks: Cell::new(0),
+                    scripts: Cell::new(0),
+                }
+            }
+
+            fn ask(&self) -> TitleOutcome {
+                ask_for_title(self, "com.apple.TextEdit", 42, Duration::from_millis(700))
             }
         }
 
-        fn ask(&self) -> TitleOutcome {
-            ask_for_title(self, "com.apple.TextEdit", 42, Duration::from_millis(700))
+        impl TitlePort for FakeMac {
+            fn bundle_path(&self, _pid: i32) -> Option<PathBuf> {
+                self.bundle.clone()
+            }
+
+            fn title_query(&self, _bundle_id: &str, _bundle: &Path) -> Option<TitleQuery> {
+                self.query
+            }
+
+            fn permission(&self, _bundle_id: &str) -> i32 {
+                self.permission_checks.set(self.permission_checks.get() + 1);
+                self.permission
+            }
+
+            fn run_script(&self, _script: &str, _limit: Duration) -> ScriptRun {
+                self.scripts.set(self.scripts.get() + 1);
+                self.run.clone()
+            }
         }
-    }
 
-    impl TitlePort for FakeMac {
-        fn bundle_path(&self, _pid: i32) -> Option<PathBuf> {
-            self.bundle.clone()
+        fn done(success: bool, stdout: &str, stderr: &str) -> ScriptRun {
+            ScriptRun::Done {
+                success,
+                stdout: stdout.to_string(),
+                stderr: stderr.to_string(),
+            }
         }
 
-        fn title_query(&self, _bundle_id: &str, _bundle: &Path) -> Option<TitleQuery> {
-            self.query
+        #[test]
+        fn an_allowed_app_tells_its_title_trimmed() {
+            let mac = FakeMac::answering(done(true, "Notes about the trip\n", ""));
+            assert_eq!(
+                mac.ask(),
+                TitleOutcome::Title("Notes about the trip".to_string())
+            );
+            assert_eq!(mac.scripts.get(), 1);
         }
 
-        fn permission(&self, _bundle_id: &str) -> i32 {
-            self.permission_checks.set(self.permission_checks.get() + 1);
-            self.permission
-        }
-
-        fn run_script(&self, _script: &str, _limit: Duration) -> ScriptRun {
-            self.scripts.set(self.scripts.get() + 1);
-            self.run.clone()
-        }
-    }
-
-    fn done(success: bool, stdout: &str, stderr: &str) -> ScriptRun {
-        ScriptRun::Done {
-            success,
-            stdout: stdout.to_string(),
-            stderr: stderr.to_string(),
-        }
-    }
-
-    #[test]
-    fn an_allowed_app_tells_its_title_trimmed() {
-        let mac = FakeMac::answering(done(true, "Notes about the trip\n", ""));
-        assert_eq!(
-            mac.ask(),
-            TitleOutcome::Title("Notes about the trip".to_string())
-        );
-        assert_eq!(mac.scripts.get(), 1);
-    }
-
-    #[test]
-    fn an_app_not_asked_yet_gets_no_script() {
-        let mut mac = FakeMac::answering(done(true, "Notes", ""));
-        mac.permission = -1744;
-        assert_eq!(mac.ask(), TitleOutcome::NotAllowed(-1744));
-        assert_eq!(mac.scripts.get(), 0, "a script ran without permission");
-    }
-
-    #[test]
-    fn a_denied_or_quit_app_gets_no_script() {
-        for code in [-1743, -600, -50] {
+        #[test]
+        fn an_app_not_asked_yet_gets_no_script() {
             let mut mac = FakeMac::answering(done(true, "Notes", ""));
-            mac.permission = code;
-            assert_eq!(mac.ask(), TitleOutcome::NotAllowed(code));
+            mac.permission = -1744;
+            assert_eq!(mac.ask(), TitleOutcome::NotAllowed(-1744));
+            assert_eq!(mac.scripts.get(), 0, "a script ran without permission");
+        }
+
+        #[test]
+        fn a_denied_or_quit_app_gets_no_script() {
+            for code in [-1743, -600, -50] {
+                let mut mac = FakeMac::answering(done(true, "Notes", ""));
+                mac.permission = code;
+                assert_eq!(mac.ask(), TitleOutcome::NotAllowed(code));
+                assert_eq!(mac.scripts.get(), 0);
+            }
+        }
+
+        #[test]
+        fn an_app_without_a_title_query_is_not_checked_for_permission() {
+            let mut mac = FakeMac::answering(done(true, "Notes", ""));
+            mac.query = None;
+            assert_eq!(mac.ask(), TitleOutcome::NoQuery);
+            assert_eq!(mac.permission_checks.get(), 0);
             assert_eq!(mac.scripts.get(), 0);
         }
-    }
 
-    #[test]
-    fn an_app_without_a_title_query_is_not_checked_for_permission() {
-        let mut mac = FakeMac::answering(done(true, "Notes", ""));
-        mac.query = None;
-        assert_eq!(mac.ask(), TitleOutcome::NoQuery);
-        assert_eq!(mac.permission_checks.get(), 0);
-        assert_eq!(mac.scripts.get(), 0);
-    }
+        #[test]
+        fn an_app_whose_bundle_is_gone_is_not_asked() {
+            let mut mac = FakeMac::answering(done(true, "Notes", ""));
+            mac.bundle = None;
+            assert_eq!(mac.ask(), TitleOutcome::NoBundle);
+            assert_eq!(mac.permission_checks.get(), 0);
+            assert_eq!(mac.scripts.get(), 0);
+        }
 
-    #[test]
-    fn an_app_whose_bundle_is_gone_is_not_asked() {
-        let mut mac = FakeMac::answering(done(true, "Notes", ""));
-        mac.bundle = None;
-        assert_eq!(mac.ask(), TitleOutcome::NoBundle);
-        assert_eq!(mac.permission_checks.get(), 0);
-        assert_eq!(mac.scripts.get(), 0);
-    }
+        #[test]
+        fn a_failing_script_tells_its_error_number() {
+            let mac = FakeMac::answering(done(
+                false,
+                "",
+                "0:72: execution error: Can’t get window 1 of application \"TextEdit\". (-1728)\n",
+            ));
+            assert_eq!(mac.ask(), TitleOutcome::Failed(Some(-1728)));
+            let mac = FakeMac::answering(done(false, "", ""));
+            assert_eq!(mac.ask(), TitleOutcome::Failed(None));
+        }
 
-    #[test]
-    fn a_failing_script_tells_its_error_number() {
-        let mac = FakeMac::answering(done(
-            false,
-            "",
-            "0:72: execution error: Can’t get window 1 of application \"TextEdit\". (-1728)\n",
-        ));
-        assert_eq!(mac.ask(), TitleOutcome::Failed(Some(-1728)));
-        let mac = FakeMac::answering(done(false, "", ""));
-        assert_eq!(mac.ask(), TitleOutcome::Failed(None));
-    }
+        #[test]
+        fn a_script_out_of_time_has_timed_out() {
+            let mac = FakeMac::answering(ScriptRun::TimedOut);
+            assert_eq!(mac.ask(), TitleOutcome::TimedOut);
+        }
 
-    #[test]
-    fn a_script_out_of_time_has_timed_out() {
-        let mac = FakeMac::answering(ScriptRun::TimedOut);
-        assert_eq!(mac.ask(), TitleOutcome::TimedOut);
-    }
+        #[test]
+        fn a_script_that_could_not_run_says_why() {
+            let mac = FakeMac::answering(ScriptRun::CouldNotRun("No such file".to_string()));
+            assert_eq!(
+                mac.ask(),
+                TitleOutcome::CouldNotRun("No such file".to_string())
+            );
+        }
 
-    #[test]
-    fn a_script_that_could_not_run_says_why() {
-        let mac = FakeMac::answering(ScriptRun::CouldNotRun("No such file".to_string()));
-        assert_eq!(
-            mac.ask(),
-            TitleOutcome::CouldNotRun("No such file".to_string())
-        );
-    }
+        #[test]
+        fn an_empty_answer_is_empty() {
+            let mac = FakeMac::answering(done(true, "  \n", ""));
+            assert_eq!(mac.ask(), TitleOutcome::Empty);
+        }
 
-    #[test]
-    fn an_empty_answer_is_empty() {
-        let mac = FakeMac::answering(done(true, "  \n", ""));
-        assert_eq!(mac.ask(), TitleOutcome::Empty);
-    }
-
-    #[test]
-    fn the_error_number_is_read_from_osascripts_message() {
-        assert_eq!(
-            error_number("0:72: execution error: Can’t get window 1. (-1728)\n"),
-            Some(-1728)
-        );
-        assert_eq!(
+        #[test]
+        fn the_error_number_is_read_from_osascripts_message() {
+            assert_eq!(
+                error_number("0:72: execution error: Can’t get window 1. (-1728)\n"),
+                Some(-1728)
+            );
+            assert_eq!(
             error_number("0:31: execution error: Microsoft Outlook got an error: AppleEvent handler failed. (-10000)"),
             Some(-10000)
         );
-        // A script's own error number can be positive; the last line counts.
-        assert_eq!(
-            error_number("warning: something\n0:9: execution error: Oops (5)\n"),
-            Some(5)
-        );
-        assert_eq!(error_number(""), None);
-        assert_eq!(error_number("execution error: no number"), None);
-        assert_eq!(error_number("execution error: (see above)"), None);
-    }
+            // A script's own error number can be positive; the last line counts.
+            assert_eq!(
+                error_number("warning: something\n0:9: execution error: Oops (5)\n"),
+                Some(5)
+            );
+            assert_eq!(error_number(""), None);
+            assert_eq!(error_number("execution error: no number"), None);
+            assert_eq!(error_number("execution error: (see above)"), None);
+        }
 
-    fn reason(outcome: TitleOutcome) -> String {
-        outcome.log_reason(Duration::from_millis(700)).1
-    }
+        fn reason(outcome: TitleOutcome) -> String {
+            outcome.log_reason(Duration::from_millis(700)).1
+        }
 
-    #[test]
-    fn the_reason_names_the_permission_state() {
-        let not_asked = reason(TitleOutcome::NotAllowed(-1744));
-        assert!(not_asked.contains("not asked yet"), "{not_asked}");
-        assert!(not_asked.contains("-1744"), "{not_asked}");
-        assert!(
-            not_asked.contains(
-                "Defaults › Post Process › Context from Earlier Dictations › Window Titles"
-            ),
-            "{not_asked}"
-        );
-        let denied = reason(TitleOutcome::NotAllowed(-1743));
-        assert!(denied.contains("denied"), "{denied}");
-        assert!(
-            denied.contains("Privacy & Security › Automation"),
-            "{denied}"
-        );
-        assert!(reason(TitleOutcome::NotAllowed(-600)).contains("not running"));
-        let other = reason(TitleOutcome::NotAllowed(-50));
-        assert!(other.contains("other") && other.contains("-50"), "{other}");
-    }
+        #[test]
+        fn the_reason_names_the_permission_state() {
+            let not_asked = reason(TitleOutcome::NotAllowed(-1744));
+            assert!(not_asked.contains("not asked yet"), "{not_asked}");
+            assert!(not_asked.contains("-1744"), "{not_asked}");
+            assert!(
+                not_asked.contains(
+                    "Defaults › Post Process › Context from Earlier Dictations › Window Titles"
+                ),
+                "{not_asked}"
+            );
+            let denied = reason(TitleOutcome::NotAllowed(-1743));
+            assert!(denied.contains("denied"), "{denied}");
+            assert!(
+                denied.contains("Privacy & Security › Automation"),
+                "{denied}"
+            );
+            assert!(reason(TitleOutcome::NotAllowed(-600)).contains("not running"));
+            let other = reason(TitleOutcome::NotAllowed(-50));
+            assert!(other.contains("other") && other.contains("-50"), "{other}");
+        }
 
-    #[test]
-    fn the_reason_tells_what_went_wrong() {
-        let failed = reason(TitleOutcome::Failed(Some(-1728)));
-        assert!(failed.contains("-1728") && failed.contains("errAENoSuchObject"));
-        assert!(reason(TitleOutcome::Failed(None)).contains("without an error number"));
-        assert!(reason(TitleOutcome::TimedOut).contains("700ms"));
-        assert!(reason(TitleOutcome::NoQuery).contains("scripting definition"));
-        assert!(reason(TitleOutcome::NoBundle).contains("bundle"));
-        assert!(reason(TitleOutcome::Empty).contains("empty"));
-        assert!(reason(TitleOutcome::CouldNotRun("No such file".into())).contains("No such file"));
-    }
-
-    #[test]
-    fn a_reason_goes_to_info_once_per_app() {
-        let logged = Mutex::new(LoggedReasons::default());
-        let limit = Duration::from_millis(700);
-        let not_asked = TitleOutcome::NotAllowed(-1744);
-        let log = |id: &str, outcome: &TitleOutcome| title_log(&logged, id, outcome, limit);
-
-        let (level, line) = log("com.apple.Terminal", &not_asked);
-        assert_eq!(level, log::Level::Info);
-        assert!(
-            line.starts_with("Window title of com.apple.Terminal: "),
-            "{line}"
-        );
-        assert!(line.contains("not asked yet"), "{line}");
-        assert_eq!(log("com.apple.Terminal", &not_asked).0, log::Level::Debug);
-        // Another reason of the same app, the same reason of another app.
-        assert_eq!(
-            log("com.apple.Terminal", &TitleOutcome::Failed(Some(-1728))).0,
-            log::Level::Info
-        );
-        assert_eq!(log("com.microsoft.Outlook", &not_asked).0, log::Level::Info);
-        // Another error number is another reason; the same one isn't.
-        assert_eq!(
-            log("com.apple.Terminal", &TitleOutcome::Failed(Some(-1708))).0,
-            log::Level::Info
-        );
-        assert_eq!(
-            log("com.apple.Terminal", &TitleOutcome::Failed(Some(-1728))).0,
-            log::Level::Debug
-        );
-    }
-
-    #[test]
-    fn a_title_goes_to_the_log_by_its_length_only() {
-        let logged = Mutex::new(LoggedReasons::default());
-        let limit = Duration::from_millis(700);
-        let title = TitleOutcome::Title("Plan for Anna's party".to_string());
-        let (level, line) = title_log(&logged, "com.apple.TextEdit", &title, limit);
-        assert_eq!(level, log::Level::Info);
-        assert!(!line.contains("Anna"), "{line}");
-        assert!(line.contains("21 characters"), "{line}");
-        // Another title of the same app is no new reason.
-        let other = TitleOutcome::Title("Shopping".to_string());
-        assert_eq!(
-            title_log(&logged, "com.apple.TextEdit", &other, limit).0,
-            log::Level::Debug
-        );
-    }
-
-    #[test]
-    fn the_logged_reasons_stay_few() {
-        let logged = Mutex::new(LoggedReasons::default());
-        let limit = Duration::from_millis(700);
-        for app in 0..=LoggedReasons::LIMIT {
-            title_log(
-                &logged,
-                &format!("com.example.app{app}"),
-                &TitleOutcome::Empty,
-                limit,
+        #[test]
+        fn the_reason_tells_what_went_wrong() {
+            let failed = reason(TitleOutcome::Failed(Some(-1728)));
+            assert!(failed.contains("-1728") && failed.contains("errAENoSuchObject"));
+            assert!(reason(TitleOutcome::Failed(None)).contains("without an error number"));
+            assert!(reason(TitleOutcome::TimedOut).contains("700ms"));
+            assert!(reason(TitleOutcome::NoQuery).contains("scripting definition"));
+            assert!(reason(TitleOutcome::NoBundle).contains("bundle"));
+            assert!(reason(TitleOutcome::Empty).contains("empty"));
+            assert!(
+                reason(TitleOutcome::CouldNotRun("No such file".into())).contains("No such file")
             );
         }
-        assert!(logged.lock().unwrap().seen.len() <= LoggedReasons::LIMIT);
+
+        #[test]
+        fn a_reason_goes_to_info_once_per_app() {
+            let logged = Mutex::new(LoggedReasons::default());
+            let limit = Duration::from_millis(700);
+            let not_asked = TitleOutcome::NotAllowed(-1744);
+            let log = |id: &str, outcome: &TitleOutcome| title_log(&logged, id, outcome, limit);
+
+            let (level, line) = log("com.apple.Terminal", &not_asked);
+            assert_eq!(level, log::Level::Info);
+            assert!(
+                line.starts_with("Window title of com.apple.Terminal: "),
+                "{line}"
+            );
+            assert!(line.contains("not asked yet"), "{line}");
+            assert_eq!(log("com.apple.Terminal", &not_asked).0, log::Level::Debug);
+            // Another reason of the same app, the same reason of another app.
+            assert_eq!(
+                log("com.apple.Terminal", &TitleOutcome::Failed(Some(-1728))).0,
+                log::Level::Info
+            );
+            assert_eq!(log("com.microsoft.Outlook", &not_asked).0, log::Level::Info);
+            // Another error number is another reason; the same one isn't.
+            assert_eq!(
+                log("com.apple.Terminal", &TitleOutcome::Failed(Some(-1708))).0,
+                log::Level::Info
+            );
+            assert_eq!(
+                log("com.apple.Terminal", &TitleOutcome::Failed(Some(-1728))).0,
+                log::Level::Debug
+            );
+        }
+
+        #[test]
+        fn a_title_goes_to_the_log_by_its_length_only() {
+            let logged = Mutex::new(LoggedReasons::default());
+            let limit = Duration::from_millis(700);
+            let title = TitleOutcome::Title("Plan for Anna's party".to_string());
+            let (level, line) = title_log(&logged, "com.apple.TextEdit", &title, limit);
+            assert_eq!(level, log::Level::Info);
+            assert!(!line.contains("Anna"), "{line}");
+            assert!(line.contains("21 characters"), "{line}");
+            // Another title of the same app is no new reason.
+            let other = TitleOutcome::Title("Shopping".to_string());
+            assert_eq!(
+                title_log(&logged, "com.apple.TextEdit", &other, limit).0,
+                log::Level::Debug
+            );
+        }
+
+        #[test]
+        fn the_logged_reasons_stay_few() {
+            let logged = Mutex::new(LoggedReasons::default());
+            let limit = Duration::from_millis(700);
+            for app in 0..=LoggedReasons::LIMIT {
+                title_log(
+                    &logged,
+                    &format!("com.example.app{app}"),
+                    &TitleOutcome::Empty,
+                    limit,
+                );
+            }
+            assert!(logged.lock().unwrap().seen.len() <= LoggedReasons::LIMIT);
+        }
     }
 }
