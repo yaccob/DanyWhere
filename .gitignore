@@ -45,3 +45,10 @@ result
 
 # Python bytecode (scripts/)
 __pycache__/
+
+# The user manual (docs/manual/): the app build, the web build, its
+# dependencies and Astro's generated types
+/public/manual/
+/docs/manual/dist/
+/docs/manual/node_modules/
+/docs/manual/.astro/

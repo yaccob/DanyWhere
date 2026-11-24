@@ -5,7 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "bun run build:manual && tsc && vite build",
+    "build:manual": "bun docs/manual/scripts/manual.ts build app",
+    "build:manual:web": "bun docs/manual/scripts/manual.ts build web",
+    "dev:manual": "bun docs/manual/scripts/manual.ts dev",
     "preview": "vite preview",
     "tauri": "tauri",
     "lint": "eslint src",
