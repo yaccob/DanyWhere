@@ -98,9 +98,9 @@ describe("the page Profile", () => {
     const text = visibleText();
     for (const expected of [
       "Post Process Active Prompts: Diktat (DE/EN)",
-      "General When Held: ⌃⌥E held: Post-process, Send Context · ⌃⇧ Space held: Post-process",
+      "General When Held: ⌥⌃E held: Post-process, Send Context · ⌃⇧ Space held: Post-process",
       "General Microphone: MacBook Pro Microphone",
-      "General Shortcuts: Start Shortcut: ⌃⌥E",
+      "General Shortcuts: Start Shortcut: ⌥⌃E",
       "General End Shortcuts: PEnde",
       "Advanced Additional Lists: PListe",
       "Advanced Additional Lists: GListe (off)",

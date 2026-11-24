@@ -734,11 +734,11 @@ pub struct AppSettings {
     #[serde(default = "default_profile_auto_by_app")]
     pub profile_auto_by_app: bool,
     /// DanyWhere: the active profile's end shortcuts (`end_keys`).
-    #[serde(default = "crate::end_keys::default_end_keys")]
+    #[serde(default = "crate::end_keys::stored_before_end_keys")]
     pub end_keys: Vec<crate::end_keys::EndKey>,
     /// DanyWhere: the active profile's hold end per start shortcut
     /// (`end_keys`), by binding id.
-    #[serde(default = "crate::end_keys::default_hold_ends")]
+    #[serde(default = "crate::end_keys::stored_before_hold_ends")]
     pub hold_ends: HashMap<String, crate::end_keys::HoldEnd>,
     /// DanyWhere: the height in pixels a History text box may grow to before
     /// it scrolls, as dragged at its grip, for the newest entry and for the
@@ -1287,8 +1287,15 @@ pub fn get_default_settings() -> AppSettings {
         },
     );
 
-    // DanyWhere: the two ends with the start shortcuts' combinations.
-    let end_keys = crate::end_keys::builtin_for(&bindings, "", false);
+    // DanyWhere: this system's factory ends (on macOS the user's twelve of
+    // 2026-11-24, named in the new installation's language; elsewhere the
+    // two unnamed ones with the start shortcuts' combinations).
+    let app_language = default_app_language();
+    let end_keys = crate::end_keys::factory_end_keys_on(
+        &bindings,
+        crate::append_text::KeyPlatform::current(),
+        &crate::end_keys::FactoryEndNames::for_locale(&app_language),
+    );
     AppSettings {
         settings_schema_version: default_settings_schema_version(),
         bindings,
@@ -1348,7 +1355,7 @@ pub fn get_default_settings() -> AppSettings {
         model_list_timeout_secs: crate::llm_timeouts::default_model_list_timeout_secs(),
         mute_while_recording: false,
         append_trailing_space: false,
-        app_language: default_app_language(),
+        app_language,
         theme: default_theme(),
         experimental_enabled: false,
         lazy_stream_close: false,
@@ -2876,7 +2883,10 @@ mod tests {
             "transcribe_accelerator": "gpu",
             "transcribe_gpu_device": settings.transcribe_gpu_device,
             // DanyWhere: the prompt library is there already.
-            "post_process_prompt_order": []
+            "post_process_prompt_order": [],
+            // DanyWhere: and the end shortcuts with their hold ends.
+            "end_keys": settings.end_keys,
+            "hold_ends": settings.hold_ends
         });
 
         assert!(!apply_settings_migrations(&mut settings, &raw));

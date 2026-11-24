@@ -496,6 +496,17 @@
         "title": "Quan es manté premuda",
         "description": "Com acaba la gravació en deixar anar una drecera d'inici mantinguda premuda."
       },
+      "factoryNames": {
+        "pattern": "{{mode}} · {{effect}}",
+        "direct": "Directe",
+        "postProcessed": "Posprocessat",
+        "space": "Espai",
+        "noSpace": "Sense espai",
+        "paragraph": "Paràgraf",
+        "line": "Línia",
+        "enter": "Envia Enter",
+        "shiftEnter": "Envia Maj+Enter"
+      },
       "linuxNoShortcuts": "A Linux, les combinacions de les dreceres de final no s'ocupen mentre es grava. Allà una gravació acaba quan es deixa anar una drecera d'inici mantinguda premuda, o quan es torna a prémer una drecera d'inici la combinació de la qual té una drecera de final.",
       "errors": {
         "save": "No s'han pogut desar les dreceres de final: {{error}}",

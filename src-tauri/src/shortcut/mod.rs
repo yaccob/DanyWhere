@@ -406,7 +406,9 @@ fn parse_keyboard_implementation(s: &str) -> KeyboardImplementation {
 /// paste is blocked. The Tauri backend registers hotkeys through Carbon,
 /// which needs no permission, and the transcript is left on the clipboard
 /// for the user to paste. Shortcuts the Tauri backend can't register (e.g.
-/// `fn`) are reset to their defaults.
+/// `fn`) are reset to their defaults. The factory end shortcuts that press a
+/// key lose those ends, as nothing can press it
+/// (`end_keys::drop_factory_key_presses`); a list of the user's own stays.
 ///
 /// Returns the IDs of bindings that were reset to their defaults.
 pub fn apply_no_accessibility_mode(settings: &mut settings::AppSettings) -> Vec<String> {
@@ -414,6 +416,7 @@ pub fn apply_no_accessibility_mode(settings: &mut settings::AppSettings) -> Vec<
     settings.paste_method = PasteMethod::None;
     settings.clipboard_handling = ClipboardHandling::CopyToClipboard;
     settings.keyboard_implementation = KeyboardImplementation::Tauri;
+    crate::end_keys::drop_factory_key_presses(&mut settings.end_keys);
 
     let defaults = settings::get_default_settings().bindings;
     let mut reset = Vec::new();
@@ -1593,6 +1596,121 @@ mod tests {
                 .clone();
             assert_eq!(settings.bindings["transcribe"].current_binding, default);
             assert_eq!(reset, vec!["transcribe".to_string()]);
+        }
+
+        /// The factory ends whose "Append" presses a key need Accessibility
+        /// to send it, with the input method too: without it they go, the
+        /// others stay in their order.
+        fn without_key_presses(ends: &[crate::end_keys::EndKey]) -> Vec<crate::end_keys::EndKey> {
+            ends.iter()
+                .filter(|end| {
+                    crate::append_text::for_value(&end.append_text)
+                        .keys
+                        .is_empty()
+                })
+                .cloned()
+                .collect()
+        }
+
+        #[cfg(target_os = "macos")]
+        fn ids(ends: &[crate::end_keys::EndKey]) -> Vec<&str> {
+            ends.iter().map(|end| end.id.as_str()).collect()
+        }
+
+        #[test]
+        fn drops_the_factory_ends_that_press_a_key() {
+            let mut settings = get_default_settings();
+            let factory = settings.end_keys.clone();
+            apply_no_accessibility_mode(&mut settings);
+            assert_eq!(settings.end_keys, without_key_presses(&factory));
+            #[cfg(target_os = "macos")]
+            assert_eq!(
+                ids(&settings.end_keys),
+                [
+                    "direct_space",
+                    "direct_no_space",
+                    "direct_paragraph",
+                    "direct_line",
+                    "post_space",
+                    "post_no_space",
+                    "post_paragraph",
+                    "post_line",
+                ]
+            );
+        }
+
+        #[test]
+        fn the_factory_ends_left_without_accessibility_suit_its_backend() {
+            let mut settings = get_default_settings();
+            apply_no_accessibility_mode(&mut settings);
+            for end in &settings.end_keys {
+                assert_eq!(
+                    super::super::validate_shortcut_for_implementation(
+                        &end.shortcut,
+                        KeyboardImplementation::Tauri,
+                    ),
+                    Ok(()),
+                    "{}",
+                    end.shortcut
+                );
+            }
+        }
+
+        /// The names don't make the list the user's: they are written in the
+        /// language of the first start, which may not be the one in use
+        /// now, and a typed name changes nothing an end does.
+        #[test]
+        fn drops_them_whatever_the_factory_ends_are_named() {
+            let mut settings = get_default_settings();
+            for end in settings.end_keys.iter_mut() {
+                end.name = format!("Renamed {}", end.id);
+            }
+            let named = settings.end_keys.clone();
+            apply_no_accessibility_mode(&mut settings);
+            assert_eq!(settings.end_keys, without_key_presses(&named));
+            #[cfg(target_os = "macos")]
+            assert_eq!(settings.end_keys.len(), 8);
+        }
+
+        #[test]
+        fn keeps_a_users_own_end_shortcuts_with_their_key_presses() {
+            let mut settings = get_default_settings();
+            settings.end_keys[0].append_text = "{Enter}".into();
+            let own = settings.end_keys.clone();
+            apply_no_accessibility_mode(&mut settings);
+            assert_eq!(settings.end_keys, own);
+        }
+
+        /// Onboarding's "Continue without Accessibility" writes the values
+        /// in use, which go to the defaults (`profile_layers::route_flat`)
+        /// and on to every profile that follows them.
+        #[test]
+        fn the_defaults_and_the_profiles_following_them_lose_them_too() {
+            let mut settings = get_default_settings();
+            crate::profiles::ensure_profiles(&mut settings);
+            crate::profiles::duplicate(
+                &mut settings,
+                crate::profiles::DEFAULT_PROFILE_ID,
+                "Work",
+                1_795_500_000_001,
+            )
+            .expect("duplicated");
+            let factory = settings.end_keys.clone();
+            apply_no_accessibility_mode(&mut settings);
+            crate::profile_layers::route_flat(&mut settings);
+            let expected = without_key_presses(&factory);
+            assert_eq!(settings.end_keys, expected);
+            assert_eq!(
+                settings
+                    .default_values
+                    .as_ref()
+                    .map(|values| &values.end_keys),
+                Some(&expected)
+            );
+            assert_eq!(settings.profiles.len(), 1);
+            assert_eq!(settings.profiles[0].values.end_keys, expected);
+            #[cfg(target_os = "macos")]
+            assert_eq!(expected.len(), 8);
         }
 
         #[test]

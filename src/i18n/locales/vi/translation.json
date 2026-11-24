@@ -496,6 +496,17 @@
         "title": "Khi giữ",
         "description": "Cách việc thả một phím tắt bắt đầu đang giữ kết thúc bản ghi."
       },
+      "factoryNames": {
+        "pattern": "{{mode}} · {{effect}}",
+        "direct": "Trực tiếp",
+        "postProcessed": "Xử lý hậu kỳ",
+        "space": "Dấu cách",
+        "noSpace": "Không dấu cách",
+        "paragraph": "Đoạn",
+        "line": "Dòng",
+        "enter": "Gửi Enter",
+        "shiftEnter": "Gửi Shift+Enter"
+      },
       "linuxNoShortcuts": "Trên Linux, tổ hợp phím của các phím tắt kết thúc không được chiếm trong khi ghi. Ở đó bản ghi kết thúc khi thả một phím tắt bắt đầu đang giữ, hoặc khi nhấn lại một phím tắt bắt đầu có cùng tổ hợp phím với một phím tắt kết thúc.",
       "errors": {
         "save": "Không thể lưu các phím tắt kết thúc: {{error}}",

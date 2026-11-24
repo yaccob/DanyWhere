@@ -496,6 +496,17 @@
         "title": "Lorsqu'il est maintenu",
         "description": "Comment le relâchement d'un raccourci de début maintenu termine l'enregistrement."
       },
+      "factoryNames": {
+        "pattern": "{{mode}} · {{effect}}",
+        "direct": "Direct",
+        "postProcessed": "Post-traité",
+        "space": "Espace",
+        "noSpace": "Sans espace",
+        "paragraph": "Paragraphe",
+        "line": "Ligne",
+        "enter": "Envoyer Entrée",
+        "shiftEnter": "Envoyer Maj+Entrée"
+      },
       "linuxNoShortcuts": "Sous Linux, les combinaisons des raccourcis de fin ne sont pas prises pendant l'enregistrement. Un enregistrement s'y termine quand on relâche un raccourci de début maintenu, ou quand on appuie à nouveau sur un raccourci de début dont un raccourci de fin a la combinaison.",
       "errors": {
         "save": "Impossible d'enregistrer les raccourcis de fin : {{error}}",

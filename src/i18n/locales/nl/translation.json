@@ -496,6 +496,17 @@
         "title": "Bij vasthouden",
         "description": "Hoe het loslaten van een vastgehouden startsneltoets de opname beëindigt."
       },
+      "factoryNames": {
+        "pattern": "{{mode}} · {{effect}}",
+        "direct": "Direct",
+        "postProcessed": "Nabewerkt",
+        "space": "Spatie",
+        "noSpace": "Zonder spatie",
+        "paragraph": "Alinea",
+        "line": "Regel",
+        "enter": "Enter sturen",
+        "shiftEnter": "Shift+Enter sturen"
+      },
       "linuxNoShortcuts": "Op Linux worden de toetsencombinaties van eindsneltoetsen tijdens een opname niet bezet. Een opname eindigt daar wanneer je een vastgehouden startsneltoets loslaat, of wanneer je opnieuw drukt op een startsneltoets waarvan een eindsneltoets de toetsencombinatie heeft.",
       "errors": {
         "save": "De eindsneltoetsen konden niet worden opgeslagen: {{error}}",

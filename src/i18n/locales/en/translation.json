@@ -496,6 +496,17 @@
         "title": "When Held",
         "description": "How releasing a held start shortcut ends the recording."
       },
+      "factoryNames": {
+        "pattern": "{{mode}} · {{effect}}",
+        "direct": "Direct",
+        "postProcessed": "Post-processed",
+        "space": "Space",
+        "noSpace": "No space",
+        "paragraph": "Paragraph",
+        "line": "Line",
+        "enter": "Send Enter",
+        "shiftEnter": "Send Shift+Enter"
+      },
       "linuxNoShortcuts": "On Linux, the combinations of end shortcuts aren't taken while recording. A recording ends there when a held start shortcut is released, or when a start shortcut is pressed again whose combination an end shortcut has.",
       "errors": {
         "save": "Couldn't save the end shortcuts: {{error}}",

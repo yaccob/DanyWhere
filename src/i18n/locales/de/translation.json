@@ -496,6 +496,17 @@
         "title": "Beim Halten",
         "description": "Wie das Loslassen einer gehaltenen Starttaste die Aufnahme beendet."
       },
+      "factoryNames": {
+        "pattern": "{{mode}} · {{effect}}",
+        "direct": "Direkt",
+        "postProcessed": "Nachbearbeitet",
+        "space": "Leerzeichen",
+        "noSpace": "ohne Leerzeichen",
+        "paragraph": "Absatz",
+        "line": "Zeile",
+        "enter": "Enter senden",
+        "shiftEnter": "Shift-Enter senden"
+      },
       "linuxNoShortcuts": "Unter Linux werden die Tastenkombinationen der Endtasten während einer Aufnahme nicht belegt. Eine Aufnahme endet dort, wenn man eine gehaltene Starttaste loslässt oder eine Starttaste erneut drückt, deren Tastenkombination eine Endtaste hat.",
       "errors": {
         "save": "Die Endtasten konnten nicht gespeichert werden: {{error}}",

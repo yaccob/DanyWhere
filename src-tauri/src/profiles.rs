@@ -156,9 +156,13 @@ pub struct ProfileValues {
     /// The shortcuts (`bindings`), entry by binding id: the start shortcuts
     /// apply only while this profile does (`shortcut::profile_sync`).
     pub bindings: HashMap<String, crate::settings::ShortcutBinding>,
-    /// The end shortcuts (`end_keys`), each with a stable id.
+    /// The end shortcuts (`end_keys`), each with a stable id. A stored
+    /// profile without them reads the ends of a store from before them,
+    /// which `end_keys::migrate` replaces with its own.
+    #[serde(default = "crate::end_keys::stored_before_end_keys")]
     pub end_keys: Vec<crate::end_keys::EndKey>,
     /// The hold end per start shortcut (`hold_ends`), one value as a whole.
+    #[serde(default = "crate::end_keys::stored_before_hold_ends")]
     pub hold_ends: HashMap<String, crate::end_keys::HoldEnd>,
     /// Check the words that resemble a word list's term with the
     /// post-processing provider (`word_list_check`).

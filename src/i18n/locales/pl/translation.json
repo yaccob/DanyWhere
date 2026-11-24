@@ -496,6 +496,17 @@
         "title": "Przy przytrzymaniu",
         "description": "Jak puszczenie przytrzymanego skrótu rozpoczynającego kończy nagranie."
       },
+      "factoryNames": {
+        "pattern": "{{mode}} · {{effect}}",
+        "direct": "Bezpośrednio",
+        "postProcessed": "Przetworzone",
+        "space": "Spacja",
+        "noSpace": "Bez spacji",
+        "paragraph": "Akapit",
+        "line": "Wiersz",
+        "enter": "Wyślij Enter",
+        "shiftEnter": "Wyślij Shift+Enter"
+      },
       "linuxNoShortcuts": "W Linuksie kombinacje klawiszy skrótów kończących nie są zajmowane podczas nagrywania. Nagranie kończy się tam po puszczeniu przytrzymanego skrótu rozpoczynającego albo po ponownym naciśnięciu skrótu rozpoczynającego, którego kombinację ma któryś skrót kończący.",
       "errors": {
         "save": "Nie udało się zapisać skrótów kończących: {{error}}",

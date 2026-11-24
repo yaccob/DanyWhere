@@ -496,6 +496,17 @@
         "title": "Saat Ditahan",
         "description": "Cara melepas pintasan mulai yang ditahan mengakhiri rekaman."
       },
+      "factoryNames": {
+        "pattern": "{{mode}} · {{effect}}",
+        "direct": "Langsung",
+        "postProcessed": "Diproses lanjut",
+        "space": "Spasi",
+        "noSpace": "Tanpa spasi",
+        "paragraph": "Paragraf",
+        "line": "Baris",
+        "enter": "Kirim Enter",
+        "shiftEnter": "Kirim Shift+Enter"
+      },
       "linuxNoShortcuts": "Di Linux, kombinasi tombol pintasan akhir tidak dipakai selama merekam. Di sana rekaman berakhir saat pintasan mulai yang ditahan dilepas, atau saat pintasan mulai yang kombinasinya juga dimiliki sebuah pintasan akhir ditekan lagi.",
       "errors": {
         "save": "Pintasan akhir tidak dapat disimpan: {{error}}",

@@ -496,6 +496,17 @@
         "title": "Basılı Tutulunca",
         "description": "Basılı tutulan bir başlatma kısayolunu bırakmanın kaydı nasıl bitirdiği."
       },
+      "factoryNames": {
+        "pattern": "{{mode}} · {{effect}}",
+        "direct": "Doğrudan",
+        "postProcessed": "Son işlemli",
+        "space": "Boşluk",
+        "noSpace": "Boşluksuz",
+        "paragraph": "Paragraf",
+        "line": "Satır",
+        "enter": "Enter gönder",
+        "shiftEnter": "Shift+Enter gönder"
+      },
       "linuxNoShortcuts": "Linux'ta bitirme kısayollarının tuş kombinasyonları kayıt sırasında kullanılmaz. Orada kayıt, basılı tutulan bir başlatma kısayolu bırakıldığında ya da tuş kombinasyonu bir bitirme kısayolunda da bulunan bir başlatma kısayoluna yeniden basıldığında biter.",
       "errors": {
         "save": "Bitirme kısayolları kaydedilemedi: {{error}}",

@@ -496,6 +496,17 @@
         "title": "Při podržení",
         "description": "Jak uvolnění podržené spouštěcí zkratky ukončí nahrávání."
       },
+      "factoryNames": {
+        "pattern": "{{mode}} · {{effect}}",
+        "direct": "Přímo",
+        "postProcessed": "Dodatečně zpracováno",
+        "space": "Mezera",
+        "noSpace": "Bez mezery",
+        "paragraph": "Odstavec",
+        "line": "Řádek",
+        "enter": "Odeslat Enter",
+        "shiftEnter": "Odeslat Shift+Enter"
+      },
       "linuxNoShortcuts": "V Linuxu se kombinace kláves ukončovacích zkratek během nahrávání neobsazují. Nahrávání tam skončí, když uvolníte podrženou spouštěcí zkratku, nebo když znovu stisknete spouštěcí zkratku, jejíž kombinaci kláves má některá ukončovací zkratka.",
       "errors": {
         "save": "Ukončovací zkratky se nepodařilo uložit: {{error}}",
