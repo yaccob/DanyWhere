@@ -55,12 +55,16 @@ const shown = (keys: string, os: OSType, t?: KeyNameT) =>
 // ---- macOS -------------------------------------------------------------
 
 check("macOS writes the modifier symbols together", () => {
-  assert.equal(shown("ctrl+option+d", "macos", deT), "⌃⌥D");
-  assert.equal(shown("ctrl+option+shift+d", "macos", deT), "⌃⌥⇧D");
+  assert.equal(shown("ctrl+option+d", "macos", deT), "⌥⌃D");
+  assert.equal(shown("ctrl+option+shift+d", "macos", deT), "⌥⌃⇧D");
   assert.equal(shown("command+k", "macos", enT), "⌘K");
 });
 
-check("macOS orders the modifiers as its menus do", () => {
+// DanyWhere (user, 2026-11-24): ⌥ before ⌃, so the first symbol already
+// tells an end with post-processing (⌥⌃↩); the rest as macOS's menus do.
+check("macOS puts ⌥ first, then ⌃⇧⌘ as its menus do", () => {
+  assert.equal(shown("ctrl+option+return", "macos", deT), "⌥⌃↩");
+  assert.equal(shown("command+shift+option+ctrl+k", "macos", deT), "⌥⌃⇧⌘K");
   assert.equal(shown("command+shift+k", "macos", deT), "⇧⌘K");
   assert.equal(shown("shift+ctrl+x", "macos", deT), "⌃⇧X");
 });
@@ -88,7 +92,7 @@ check("macOS writes Escape as on the key", () => {
 check("macOS shows a kept side in words", () => {
   assert.equal(shown("option_right", "macos", deT), "⌥ rechts");
   assert.equal(shown("option_right", "macos", enT), "Right ⌥");
-  assert.equal(shown("ctrl_left+option_left", "macos", deT), "⌃ links ⌥ links");
+  assert.equal(shown("ctrl_left+option_left", "macos", deT), "⌥ links ⌃ links");
   assert.equal(shown("ctrl_left+return", "macos", deT), "⌃ links ↩");
 });
 
@@ -105,6 +109,7 @@ check("Windows and Linux name the keys in the interface's language", () => {
 
 check("Windows and Linux order the modifiers Ctrl, Alt, Shift, Win", () => {
   assert.equal(shown("shift+ctrl+x", "windows", enT), "Ctrl+Shift+X");
+  assert.equal(shown("alt+ctrl+x", "linux", enT), "Ctrl+Alt+X");
   assert.equal(shown("super+shift+k", "linux", enT), "Shift+Super+K");
   assert.equal(shown("super+k", "windows", enT), "Win+K");
 });
@@ -196,8 +201,13 @@ check("the keycaps translate the modifiers off macOS", () => {
   ]);
 });
 
-check("the keycaps order the modifiers as the menus do", () => {
+check("the keycaps order the modifiers as the shortcut fields do", () => {
   assert.deepEqual(keycapLabels("shift+ctrl+x", "macos", deT), ["⌃", "⇧", "X"]);
+  assert.deepEqual(keycapLabels("ctrl+option+x", "macos", deT), [
+    "⌥",
+    "⌃",
+    "X",
+  ]);
 });
 
 check("a keycap label reads as the shortcut fields write it", () => {
