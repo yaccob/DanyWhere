@@ -18,7 +18,7 @@ A **Start Shortcut** only starts a recording. An end shortcut only ends one, and
 <Diagram
   name="how-a-recording-ends"
   caption="How a recording ends"
-  alt="The ways a recording ends. Pressing an end shortcut ends it with that end shortcut's values. Pressing a start shortcut again ends it like the end shortcut with the same combination, and does nothing if there is none. Letting go of a held start shortcut ends it as set under When Held. Esc cancels it. Each way decides what is appended, whether the text is post-processed and whether earlier dictations go along as context."
+  alt="The ways a recording ends. Tapping an end shortcut ends it with that end shortcut's values. Tapping a start shortcut again ends it like the end shortcut with the same combination, and does nothing if there is none. Letting go of a held start shortcut ends it as set under When Held. Esc cancels it. Each way decides what is appended, whether the text is post-processed and whether earlier dictations go along as context."
 />
 
 Every way to end decides the same three things: what comes after the text, whether the text is post-processed, and whether earlier dictations go along as context.
@@ -52,7 +52,7 @@ Letting go of a held start shortcut appends a space. With the **Second Start Sho
 </TabItem>
 <TabItem label="Windows">
 
-Windows starts with two end shortcuts that have the combinations of the two start shortcuts: <kbd>Ctrl+Space</kbd> ends without post-processing, <kbd>Ctrl+Shift+Space</kbd> with it. Neither appends anything, so you press the start shortcut again to end, and choose the second one when you want the text polished.
+Windows starts with two end shortcuts that have the combinations of the two start shortcuts: <kbd>Ctrl+Space</kbd> ends without post-processing, <kbd>Ctrl+Shift+Space</kbd> with it. Neither appends anything, so you tap the start shortcut again to end, and choose the second one when you want the text polished.
 
 Letting go of a held start shortcut works the same way: the **Start Shortcut** ends without post-processing, the **Second Start Shortcut** with it.
 
@@ -86,9 +86,9 @@ Each entry under **End Shortcuts** has these parts:
 
 ## The start shortcuts and how they end
 
-**Pressing a start shortcut again** during a recording ends it only through an end shortcut with exactly its combination. The list points out such an entry with a line under it. If no end shortcut has the combination, pressing the start shortcut does nothing while a recording runs.
+**Tapping a start shortcut again** during a recording ends it only through an end shortcut with exactly its combination. The list points out such an entry with a line under it. If no end shortcut has the combination, tapping the start shortcut does nothing while a recording runs.
 
-**When Held**, at the top of **End Shortcuts**, sets how letting go of a held start shortcut ends the recording. Each start shortcut has its own: **Append**, **Post-process** and **Send Context**, but no name and no combination. While **Shortcut Behavior** is **Toggle**, nothing is held, so **When Held** is hidden.
+**When Held**, at the top of **End Shortcuts**, sets how letting go of a held start shortcut ends the recording. Each start shortcut has its own: **Append**, **Post-process** and **Send Context**, but no name and no combination. Below it, **When Tapped** heads the end shortcuts. While **Shortcut Behavior** is **Tap**, nothing is held, so **When Held** is hidden and the end shortcuts need no heading of their own.
 
 The **Second Start Shortcut** is optional: a second combination that starts a recording, <kbd>⌃⇧ Space</kbd> on a Mac. DanyWhere takes it only while post-processing is switched on. It's made for holding: hold <kbd>⌃ Space</kbd> for the plain text, hold <kbd>⌃⇧ Space</kbd> for the polished one.
 
@@ -98,7 +98,7 @@ You'll find the end shortcuts under **Defaults › General › End Shortcuts**.
 
 <Screenshot
   name="end-shortcuts"
-  alt="The End Shortcuts group under Defaults › General. At the top, When Held has one block per start shortcut, with the Append field, a selection for the key press and the checkboxes Post-process and Send Context. Below it, each end shortcut is a row with its name, its key combination, the same field, selection and checkboxes, starting with the two that have the start shortcuts' combinations."
+  alt="The End Shortcuts group under Defaults › General. At the top, When Held has one block per start shortcut, with the Append field, a selection for the key press and the checkboxes Post-process and Send Context. Below it, under When Tapped, each end shortcut is a row with its name, its key combination, the same field, selection and checkboxes, starting with the two that have the start shortcuts' combinations."
   caption="The end shortcuts under Defaults › General."
 />
 
@@ -133,7 +133,7 @@ On a Mac, a new installation already has this: <kbd>⌃↩</kbd> sends the messa
 ## Limits
 
 :::caution[Linux]
-On Linux, DanyWhere can't take an end shortcut's own combination during a recording. A recording ends there by letting go of a held start shortcut, or by pressing a start shortcut again whose combination an end shortcut has. So for the recipe above, give the Enter key press to an end shortcut that has a start shortcut's combination, or to **When Held**. The settings won't let you remove the last way to end: keep an end shortcut with a start shortcut's combination, or choose **Hold**.
+On Linux, DanyWhere can't take an end shortcut's own combination during a recording. A recording ends there by letting go of a held start shortcut, or by tapping a start shortcut again whose combination an end shortcut has. So for the recipe above, give the Enter key press to an end shortcut that has a start shortcut's combination, or to **When Held**. The settings won't let you remove the last way to end: keep an end shortcut with a start shortcut's combination, or choose **Hold**.
 :::
 
 **On a Mac without Accessibility**, DanyWhere can't press keys. If you continue without the permission, a new installation leaves out the four end shortcuts that send Enter or Shift+Enter, and a key press chosen under **Append** isn't sent.
