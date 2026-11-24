@@ -162,9 +162,24 @@ pub fn apply_custom_words_with_replacements(
     custom_words: &[String],
     threshold: f64,
 ) -> (String, Vec<(String, String)>) {
+    let (text, replacements, _) = match_custom_words(text, custom_words, threshold, &|_| true);
+    (text, replacements)
+}
+
+/// The fuzzy match behind [`apply_custom_words_with_replacements`]: each
+/// match `accept`s is replaced; returns the text, what was replaced and
+/// every match found that changes more than the case (each once), replaced
+/// or not. A match it doesn't accept keeps its words as they were.
+fn match_custom_words(
+    text: &str,
+    custom_words: &[String],
+    threshold: f64,
+    accept: &dyn Fn(&WordListMatch) -> bool,
+) -> (String, Vec<(String, String)>, Vec<WordListMatch>) {
     let mut replacements: Vec<(String, String)> = Vec::new();
+    let mut found: Vec<WordListMatch> = Vec::new();
     if custom_words.is_empty() {
-        return (text.to_string(), replacements);
+        return (text.to_string(), replacements, found);
     }
 
     // Pre-compute normalized comparison keys to avoid repeated allocations.
@@ -229,7 +244,20 @@ pub fn apply_custom_words_with_replacements(
             } else {
                 spoken.clone()
             };
-            if original.to_lowercase() != corrected.to_lowercase()
+            let candidate = WordListMatch {
+                heard: original.clone(),
+                term: replacement.clone(),
+            };
+            let changes = original.to_lowercase() != corrected.to_lowercase();
+            if changes && !found.contains(&candidate) {
+                found.push(candidate.clone());
+            }
+            if !accept(&candidate) {
+                result.extend(ngram_words.iter().map(|word| word.to_string()));
+                i += n;
+                continue;
+            }
+            if changes
                 && !replacements
                     .iter()
                     .any(|(o, r)| o == &original && r == &corrected)
@@ -245,7 +273,51 @@ pub fn apply_custom_words_with_replacements(
         }
     }
 
-    (result.join(" "), replacements)
+    (result.join(" "), replacements, found)
+}
+
+/// DanyWhere: words of a transcription that resemble a word list's term
+/// without being it: `heard` as the transcription has it (without
+/// punctuation), `term` as the list writes it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WordListMatch {
+    pub heard: String,
+    pub term: String,
+}
+
+/// DanyWhere: what the fuzzy match of [`apply_custom_words`] would replace
+/// in `text`, each pair once, without replacing anything. A model without
+/// vocabulary hears names wrong, but the match alone also turns right
+/// words into terms ("Bild" into "Build"), so these are only candidates
+/// for a check that sees the sentence (`word_list_check`).
+pub fn word_list_candidates(text: &str, terms: &[String], threshold: f64) -> Vec<WordListMatch> {
+    let mut found = match_custom_words(text, terms, threshold, &|_| false).2;
+    // The match reads up to three words from the left, so at a loose
+    // threshold "von DanyWhere" or "Claude.md" match a term that is already
+    // there; only the same letters with other spacing or punctuation stay.
+    found.retain(|m| {
+        let heard = build_match_key(&m.heard);
+        let term = build_match_key(&m.term);
+        heard == term || !heard.contains(&term)
+    });
+    found
+}
+
+/// DanyWhere: `text` with only the `confirmed` candidates replaced by their
+/// terms (in the case pattern of what was heard), and what was replaced as
+/// [`apply_custom_words_with_replacements`] reports it.
+pub fn apply_word_list_matches(
+    text: &str,
+    terms: &[String],
+    threshold: f64,
+    confirmed: &[WordListMatch],
+) -> (String, Vec<(String, String)>) {
+    if confirmed.is_empty() {
+        return (text.to_string(), Vec::new());
+    }
+    let (text, replacements, _) =
+        match_custom_words(text, terms, threshold, &|m| confirmed.contains(m));
+    (text, replacements)
 }
 
 /// Preserves the case pattern of the original word when applying a replacement
@@ -523,6 +595,79 @@ mod tests {
         let language = OutputLanguageEvidence::UserSelected(language.to_string());
         let filtered = remove_filler_words(text, &language, custom_filler_words, true);
         normalize_transcription_output(&filtered)
+    }
+
+    fn pair(heard: &str, term: &str) -> WordListMatch {
+        WordListMatch {
+            heard: heard.to_string(),
+            term: term.to_string(),
+        }
+    }
+
+    #[test]
+    fn candidates_are_what_the_fuzzy_match_finds_and_nothing_is_replaced() {
+        let terms = vec!["DanyWhere".to_string(), "Build".to_string()];
+        let found = word_list_candidates("Ich teste Deniware und das Bild.", &terms, 0.18);
+        assert_eq!(
+            found,
+            vec![pair("Deniware", "DanyWhere"), pair("Bild", "Build")]
+        );
+    }
+
+    #[test]
+    fn a_term_heard_right_is_no_candidate() {
+        let terms = vec!["DanyWhere".to_string(), "GitHub".to_string()];
+        assert!(word_list_candidates("DanyWhere auf github.", &terms, 0.18).is_empty());
+    }
+
+    #[test]
+    fn a_term_already_standing_among_the_words_is_no_candidate() {
+        // At a loose threshold the match takes "von DanyWhere" as one
+        // candidate for "DanyWhere", and "Claude.md" for "Claude".
+        let terms = vec!["DanyWhere".to_string(), "Claude".to_string()];
+        let text = "Das kommt von DanyWhere und steht in Claude.md.";
+        assert!(word_list_candidates(text, &terms, 0.30).is_empty());
+    }
+
+    #[test]
+    fn a_term_heard_with_other_spacing_stays_a_candidate() {
+        let terms = vec!["claude-alert".to_string()];
+        let found = word_list_candidates("Starte Claude Alert neu.", &terms, 0.18);
+        assert_eq!(found, vec![pair("Claude Alert", "claude-alert")]);
+    }
+
+    #[test]
+    fn each_candidate_is_listed_once() {
+        let terms = vec!["Build".to_string()];
+        let found = word_list_candidates("Bild und Bild, Bild.", &terms, 0.18);
+        assert_eq!(found, vec![pair("Bild", "Build")]);
+    }
+
+    #[test]
+    fn only_confirmed_candidates_are_replaced() {
+        let terms = vec!["DanyWhere".to_string(), "Build".to_string()];
+        let (text, replaced) = apply_word_list_matches(
+            "Deniware zeigt das Bild, deniware!",
+            &terms,
+            0.18,
+            &[pair("Deniware", "DanyWhere"), pair("deniware", "DanyWhere")],
+        );
+        assert_eq!(text, "DanyWhere zeigt das Bild, DanyWhere!");
+        assert_eq!(
+            replaced,
+            vec![
+                ("Deniware".to_string(), "DanyWhere".to_string()),
+                ("deniware".to_string(), "DanyWhere".to_string()),
+            ]
+        );
+    }
+
+    #[test]
+    fn nothing_confirmed_leaves_the_text_as_heard() {
+        let terms = vec!["Build".to_string()];
+        let (text, replaced) = apply_word_list_matches("Schau dir das Bild an.", &terms, 0.18, &[]);
+        assert_eq!(text, "Schau dir das Bild an.");
+        assert!(replaced.is_empty());
     }
 
     #[test]
