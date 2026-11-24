@@ -1,5 +1,6 @@
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 use crate::apple_intelligence;
+use crate::audio_toolkit::WordListMatch;
 use crate::managers::audio::AudioRecordingManager;
 use crate::managers::transcription::TranscriptionManager;
 use crate::post_process_failure::{FailureReason, PostProcessFailure};
@@ -229,11 +230,12 @@ async fn post_process_within_time_limit(
     settings: &AppSettings,
     transcription: &str,
     context: Option<&crate::dictation_context::ContextBlock>,
+    misheard: &[WordListMatch],
 ) -> PostProcessReport {
     let limit = crate::llm_timeouts::post_process_timeout(settings);
     match tokio::time::timeout(
         limit,
-        post_process_transcription(settings, transcription, context),
+        post_process_transcription(settings, transcription, context, misheard),
     )
     .await
     {
@@ -256,14 +258,24 @@ fn failed(settings: &AppSettings, reason: FailureReason) -> PostProcessOutcome {
 
 /// DanyWhere: `context` (earlier dictations from the same window, see
 /// `dictation_context`) goes after the active prompts, in every path; the
-/// report also says whether the profile's effort was refused.
+/// report also says whether the profile's effort was refused. `misheard`
+/// are the dictation's possibly misheard words, a hint with the known terms
+/// (`word_list_check`).
 async fn post_process_transcription(
     settings: &AppSettings,
     transcription: &str,
     context: Option<&crate::dictation_context::ContextBlock>,
+    misheard: &[WordListMatch],
 ) -> PostProcessReport {
     let mut effort_refused = false;
-    let outcome = post_process_outcome(settings, transcription, context, &mut effort_refused).await;
+    let outcome = post_process_outcome(
+        settings,
+        transcription,
+        context,
+        misheard,
+        &mut effort_refused,
+    )
+    .await;
     let model = settings
         .active_post_process_provider()
         .and_then(|provider| settings.post_process_models.get(&provider.id))
@@ -282,6 +294,7 @@ async fn post_process_outcome(
     settings: &AppSettings,
     transcription: &str,
     context: Option<&crate::dictation_context::ContextBlock>,
+    misheard: &[WordListMatch],
     effort_refused: &mut bool,
 ) -> PostProcessOutcome {
     if is_blank_transcription(transcription) {
@@ -319,7 +332,7 @@ async fn post_process_outcome(
         return failed(settings, FailureReason::NoPrompt);
     }
     let prompt = crate::prompt_library::request_instructions(&prompts);
-    let prompt = crate::prompt_frame::with_known_terms(&prompt, settings);
+    let prompt = crate::prompt_frame::with_known_terms(&prompt, settings, misheard);
     log::info!(
         "Post-processing with {}",
         crate::prompt_library::request_names(&prompts).unwrap_or_default()
@@ -579,9 +592,13 @@ pub(crate) async fn process_transcription_output_with(
             ids,
         );
     }
-    process_transcription_with_settings(&settings, transcription, post_process, |instructions| {
-        crate::dictation_context::context_for(app, &settings, instructions, context)
-    })
+    process_transcription_with_settings(
+        &settings,
+        transcription,
+        post_process,
+        &context.misheard,
+        |instructions| crate::dictation_context::context_for(app, &settings, instructions, context),
+    )
     .await
 }
 
@@ -589,11 +606,13 @@ pub(crate) async fn process_transcription_output_with(
 /// given (a dictation's, `dictation_snapshot`) instead of read through the
 /// app. `context_for` builds the context block for the instructions it is
 /// given (`dictation_context::context_for`); it is asked only when the
-/// transcription is post-processed and has speech.
+/// transcription is post-processed and has speech. `misheard` go with the
+/// known terms as a hint (`word_list_check`).
 pub(crate) async fn process_transcription_with_settings(
     settings: &AppSettings,
     transcription: &str,
     post_process: bool,
+    misheard: &[WordListMatch],
     context_for: impl FnOnce(&str) -> Option<crate::dictation_context::ContextBlock>,
 ) -> ProcessedTranscription {
     let mut final_text = transcription.to_string();
@@ -622,7 +641,8 @@ pub(crate) async fn process_transcription_with_settings(
         };
         // A reply that's blank once cleaned is no better than none.
         let report =
-            post_process_within_time_limit(settings, &final_text, context_block.as_ref()).await;
+            post_process_within_time_limit(settings, &final_text, context_block.as_ref(), misheard)
+                .await;
         let outcome = match report.outcome {
             PostProcessOutcome::Done(text) => non_blank_post_processed_text(text).map_or_else(
                 || failed(settings, FailureReason::EmptyReply),
@@ -997,7 +1017,7 @@ mod tests {
             // Handy's fixed 60 s would run far past this.
             tokio::time::timeout(
                 Duration::from_secs(15),
-                post_process_within_time_limit(&settings, "hello", None),
+                post_process_within_time_limit(&settings, "hello", None, &[]),
             )
             .await
             .map(|report| report.outcome)
@@ -1017,8 +1037,13 @@ mod tests {
     }
 
     fn run_post_process(settings: &AppSettings, transcription: &str) -> PostProcessOutcome {
-        tauri::async_runtime::block_on(post_process_transcription(settings, transcription, None))
-            .outcome
+        tauri::async_runtime::block_on(post_process_transcription(
+            settings,
+            transcription,
+            None,
+            &[],
+        ))
+        .outcome
     }
 
     fn marker_block() -> crate::dictation_context::ContextBlock {
@@ -1086,6 +1111,7 @@ mod tests {
             &settings,
             "hello",
             Some(&marker_block()),
+            &[],
         ))
         .outcome;
         assert_eq!(outcome, PostProcessOutcome::Done("polished".to_string()));
@@ -1116,6 +1142,7 @@ mod tests {
             &settings,
             "hello",
             Some(&marker_block()),
+            &[],
         ))
         .outcome;
         assert_eq!(outcome, PostProcessOutcome::Done("polished".to_string()));
@@ -1137,6 +1164,7 @@ mod tests {
             &settings,
             "hello",
             Some(&marker_block()),
+            &[],
         ))
         .outcome;
         assert_eq!(outcome, PostProcessOutcome::Done("polished".to_string()));
@@ -1233,8 +1261,12 @@ mod tests {
     fn the_profiles_effort_goes_with_the_request() {
         let (url, bodies) = serve_in_turn(vec![("200 OK", POLISHED)]);
         let settings = settings_with_effort(&url, "high");
-        let report =
-            tauri::async_runtime::block_on(post_process_transcription(&settings, "hello", None));
+        let report = tauri::async_runtime::block_on(post_process_transcription(
+            &settings,
+            "hello",
+            None,
+            &[],
+        ));
         assert_eq!(
             report,
             PostProcessReport {
@@ -1268,8 +1300,12 @@ mod tests {
             ("200 OK", POLISHED),
         ]);
         let settings = settings_with_effort(&url, "xhigh");
-        let report =
-            tauri::async_runtime::block_on(post_process_transcription(&settings, "hello", None));
+        let report = tauri::async_runtime::block_on(post_process_transcription(
+            &settings,
+            "hello",
+            None,
+            &[],
+        ));
         assert_eq!(
             report,
             PostProcessReport {
@@ -1318,6 +1354,7 @@ mod tests {
             &settings,
             transcription,
             context,
+            &[],
         ))
         .outcome;
         assert_eq!(outcome, PostProcessOutcome::Done("polished".to_string()));
@@ -1659,6 +1696,7 @@ mod tests {
             settings,
             transcription,
             post_process,
+            &[],
             |instructions| {
                 asked.lock().unwrap().push(instructions.to_string());
                 block

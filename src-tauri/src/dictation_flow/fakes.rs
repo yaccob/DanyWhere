@@ -12,9 +12,10 @@ use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
 use super::ports::{
-    Deliver, History, Overlay, PostProcess, Recording, Report, Session, Transcribe,
+    CheckWordList, Deliver, History, Overlay, PostProcess, Recording, Report, Session, Transcribe,
 };
 use crate::actions::{ProcessedTranscription, TranscriptionOutcome};
+use crate::audio_toolkit::WordListMatch;
 use crate::delivery::DictationEnd;
 use crate::dictation_context::{CapturedWindow, ContextQuery, WordReplacement};
 use crate::dictation_key_inserts::ClipboardReason;
@@ -47,6 +48,8 @@ pub enum CancelAt {
     Recording,
     /// While it is transcribed.
     Transcribing,
+    /// While its word list check runs, which then never finishes.
+    WordListCheck,
     /// While it is post-processed, which then never finishes.
     PostProcessing,
     /// Right after post-processing finished.
@@ -66,6 +69,11 @@ pub struct Script {
     pub transcription: Result<String, String>,
     /// What the word list replaced in the transcript.
     pub word_replacements: Vec<WordReplacement>,
+    /// The speech model took the word lists as vocabulary.
+    pub takes_vocabulary: bool,
+    /// What the word list check answers: the heard words of the candidates
+    /// it confirms, or its error.
+    pub word_list_check: Result<Vec<&'static str>, String>,
     pub cancel_at: Option<CancelAt>,
     /// No newer dictation has started.
     pub owns_ui: bool,
@@ -109,6 +117,8 @@ impl Default for Script {
             }),
             transcription: Ok("hello".to_string()),
             word_replacements: Vec::new(),
+            takes_vocabulary: false,
+            word_list_check: Ok(Vec::new()),
             cancel_at: None,
             owns_ui: true,
             window: None,
@@ -139,6 +149,8 @@ pub enum Event {
         samples: usize,
         load_end_model: bool,
     },
+    /// The word list check was asked about these candidates.
+    CheckWordList(Vec<WordListMatch>),
     /// A post-processing request was considered; `with_window`: earlier
     /// dictations from this window may go along.
     PostProcess {
@@ -311,7 +323,7 @@ impl Transcribe for FakePorts {
                 language: None,
                 word_replacements: script.word_replacements.clone(),
                 model_id: Some(MODEL.to_string()),
-                takes_vocabulary: false,
+                takes_vocabulary: script.takes_vocabulary,
             }),
             Err(error) => Err(anyhow::anyhow!(error.clone())),
         }
@@ -345,6 +357,32 @@ impl PostProcess for FakePorts {
             .await;
             self.cancel_if(CancelAt::AfterPostProcessing);
             processed
+        }
+    }
+}
+
+impl CheckWordList for FakePorts {
+    /// Confirms the candidates whose heard words the script names.
+    fn check_word_list(
+        &self,
+        _settings: &AppSettings,
+        _text: &str,
+        candidates: &[WordListMatch],
+    ) -> impl std::future::Future<Output = Result<Vec<WordListMatch>, String>> + Send {
+        self.record(Event::CheckWordList(candidates.to_vec()));
+        let pend = self.cancel_if(CancelAt::WordListCheck);
+        let answer = self.script().word_list_check.clone().map(|heard| {
+            candidates
+                .iter()
+                .filter(|candidate| heard.contains(&candidate.heard.as_str()))
+                .cloned()
+                .collect()
+        });
+        async move {
+            if pend {
+                std::future::pending::<()>().await;
+            }
+            answer
         }
     }
 }
