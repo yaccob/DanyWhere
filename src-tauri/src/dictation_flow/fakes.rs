@@ -311,6 +311,7 @@ impl Transcribe for FakePorts {
                 language: None,
                 word_replacements: script.word_replacements.clone(),
                 model_id: Some(MODEL.to_string()),
+                takes_vocabulary: false,
             }),
             Err(error) => Err(anyhow::anyhow!(error.clone())),
         }

@@ -243,6 +243,7 @@ pub(crate) async fn finish_dictation<P: DictationPorts>(dictation: Dictation, po
                     language,
                     word_replacements,
                     model_id,
+                    takes_vocabulary: _,
                 }) => {
                     debug!(
                         "Transcription completed in {:?}: '{}'",

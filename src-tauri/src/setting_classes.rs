@@ -286,6 +286,8 @@ mod tests {
             "post_process_timeout_secs",
             "vad_enabled",
             "long_form_chunking",
+            // DanyWhere: the word list check (`word_list_check`), 2026-11-24.
+            "word_list_llm_check",
         ];
         let missing: Vec<&str> = expected
             .iter()
