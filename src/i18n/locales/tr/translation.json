@@ -390,6 +390,8 @@
     },
     "general": {
       "title": "Genel",
+      "startShortcuts": "Başlatma Kısayolları",
+      "otherShortcuts": "Diğer Kısayollar",
       "shortcut": {
         "title": "Handy Kısayolları",
         "description": "Sesle yazma kaydını başlatmak için klavye kısayollarını yapılandırın",
@@ -400,7 +402,7 @@
         "bindings": {
           "transcribe": {
             "name": "Başlatma Kısayolu",
-            "description": "Bir kayıt başlatır. Nasıl biteceğini bitirme kısayolları ve, basılı tutulduğunda, “Kısayol davranışı” belirler."
+            "description": "Bir kayıt başlatır. Nasıl biteceğini, basılı tutulduğunda da, bitirme kısayolları belirler."
           },
           "cancel": {
             "name": "İptal Kısayolu",

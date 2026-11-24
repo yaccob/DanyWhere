@@ -390,6 +390,8 @@
     },
     "general": {
       "title": "Allgemein",
+      "startShortcuts": "Starttasten",
+      "otherShortcuts": "Weitere Tastenkombinationen",
       "shortcut": {
         "title": "Handy-Tastenkürzel",
         "description": "Tastenkürzel für die Sprachaufnahme konfigurieren",
@@ -400,7 +402,7 @@
         "bindings": {
           "transcribe": {
             "name": "Starttaste",
-            "description": "Startet eine Aufnahme. Wie sie endet, legen die Endtasten fest und, wenn man sie hält, „Verhalten der Tastenkombination“."
+            "description": "Startet eine Aufnahme. Wie sie endet, legen die Endtasten fest, auch beim Halten."
           },
           "cancel": {
             "name": "Abbrechen-Tastenkürzel",

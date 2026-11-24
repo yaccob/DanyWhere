@@ -390,6 +390,8 @@
     },
     "general": {
       "title": "General",
+      "startShortcuts": "Atajos de inicio",
+      "otherShortcuts": "Otros atajos",
       "shortcut": {
         "title": "Atajos de Handy",
         "description": "Configura atajos de teclado para activar la grabación de voz a texto",
@@ -400,7 +402,7 @@
         "bindings": {
           "transcribe": {
             "name": "Atajo de inicio",
-            "description": "Inicia una grabación. Cómo termina lo deciden los atajos de fin y, al mantenerlo pulsado, «Comportamiento del atajo»."
+            "description": "Inicia una grabación. Cómo termina lo deciden los atajos de fin, también al mantenerlo pulsado."
           },
           "cancel": {
             "name": "Atajo de cancelar",

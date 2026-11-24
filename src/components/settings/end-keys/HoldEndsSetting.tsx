@@ -25,7 +25,8 @@ import { useDescribeEndKeyError } from "./describeEndKeyError";
  * "Append", post-processing and context, but without a name or a
  * combination of its own. One profile value as a whole (`hold_ends`), of
  * the page's scope (the defaults or a profile; outside one, the values in
- * use). Shown only where a start shortcut can be held.
+ * use). Shown only where a start shortcut can be held, first under "End
+ * Shortcuts" (user, 2026-11-24).
  */
 export const HoldEndsSetting: React.FC = () => {
   const { t } = useTranslation();

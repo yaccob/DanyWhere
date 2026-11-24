@@ -390,6 +390,8 @@
     },
     "general": {
       "title": "Général",
+      "startShortcuts": "Raccourcis de début",
+      "otherShortcuts": "Autres raccourcis",
       "shortcut": {
         "title": "Raccourcis Handy",
         "description": "Configurer les raccourcis clavier pour déclencher l'enregistrement de la reconnaissance vocale",
@@ -400,7 +402,7 @@
         "bindings": {
           "transcribe": {
             "name": "Raccourci de début",
-            "description": "Démarre un enregistrement. Sa fin dépend des raccourcis de fin et, s'il est maintenu, de « Comportement du raccourci »."
+            "description": "Démarre un enregistrement. Sa fin dépend des raccourcis de fin, y compris lorsqu'il est maintenu."
           },
           "cancel": {
             "name": "Raccourci d'Annulation",

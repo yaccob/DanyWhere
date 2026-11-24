@@ -1,4 +1,4 @@
-// DanyWhere: "When Held" under "Shortcut Behavior" (qa 2026-11-22_2202,
+// DanyWhere: "When Held" first under "End Shortcuts" (qa 2026-11-22_2202,
 // "Noch nicht geprüft"): shown only where a start shortcut can be held, one
 // line per start shortcut named by its combination, written as one value,
 // and in a profile its state line in words.
@@ -38,16 +38,20 @@ describe("When Held", () => {
   });
 
   for (const activation of ["push_to_talk", "hold_or_toggle"] as const) {
-    test(`shows under Shortcut Behavior with ${activation}`, async () => {
+    test(`shows first under End Shortcuts with ${activation}`, async () => {
       await renderGeneral({ defaults: { shortcut_activation: activation } });
 
+      // Since 2026-11-24 (user): releasing a held start shortcut is an end,
+      // so it opens the end shortcuts, right after the start shortcuts.
       const texts = visibleTexts();
-      const behavior = texts.indexOf("Shortcut Behavior");
+      const start = texts.indexOf("Start Shortcut");
+      const ends = texts.indexOf("End Shortcuts");
       const held = texts.indexOf("When Held");
-      const next = texts.indexOf("Paste Last Transcript");
-      expect(behavior).toBeGreaterThan(-1);
-      expect(held).toBeGreaterThan(behavior);
-      expect(next).toBeGreaterThan(held);
+      const list = texts.indexOf("Add End Shortcut");
+      expect(start).toBeGreaterThan(-1);
+      expect(ends).toBeGreaterThan(start);
+      expect(held).toBeGreaterThan(ends);
+      expect(list).toBeGreaterThan(held);
     });
   }
 

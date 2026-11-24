@@ -390,6 +390,8 @@
     },
     "general": {
       "title": "通用",
+      "startShortcuts": "开始快捷键",
+      "otherShortcuts": "其他快捷键",
       "shortcut": {
         "title": "Handy 快捷键",
         "description": "配置启动语音转文字录制的键盘快捷键",
@@ -400,7 +402,7 @@
         "bindings": {
           "transcribe": {
             "name": "开始快捷键",
-            "description": "开始录音。如何结束由结束快捷键决定，按住时由“快捷键行为”决定。"
+            "description": "开始录音。如何结束由结束快捷键决定，按住时也是如此。"
           },
           "cancel": {
             "name": "取消快捷键",

@@ -390,6 +390,8 @@
     },
     "general": {
       "title": "Chung",
+      "startShortcuts": "Phím tắt bắt đầu",
+      "otherShortcuts": "Phím tắt khác",
       "shortcut": {
         "title": "Phím tắt Handy",
         "description": "Cấu hình phím tắt để kích hoạt ghi âm chuyển đổi giọng nói thành văn bản",
@@ -400,7 +402,7 @@
         "bindings": {
           "transcribe": {
             "name": "Phím tắt bắt đầu",
-            "description": "Bắt đầu ghi âm. Cách kết thúc do các phím tắt kết thúc quyết định và, khi giữ, do “Hành vi phím tắt”."
+            "description": "Bắt đầu ghi âm. Cách kết thúc do các phím tắt kết thúc quyết định, kể cả khi giữ."
           },
           "cancel": {
             "name": "Phím tắt hủy",

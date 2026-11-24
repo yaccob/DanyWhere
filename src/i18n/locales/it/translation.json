@@ -390,6 +390,8 @@
     },
     "general": {
       "title": "Generale",
+      "startShortcuts": "Scorciatoie di avvio",
+      "otherShortcuts": "Altre scorciatoie",
       "shortcut": {
         "title": "Scorciatoie di Handy",
         "description": "Configura le scorciatoie per attivare la trascrizione vocale",
@@ -400,7 +402,7 @@
         "bindings": {
           "transcribe": {
             "name": "Scorciatoia di avvio",
-            "description": "Avvia una registrazione. Come termina lo decidono le scorciatoie di fine e, se la tieni premuta, «Comportamento della scorciatoia»."
+            "description": "Avvia una registrazione. Come termina lo decidono le scorciatoie di fine, anche tenendo premuto."
           },
           "cancel": {
             "name": "Scorciatoia Annulla",

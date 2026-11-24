@@ -390,6 +390,8 @@
     },
     "general": {
       "title": "Ogólne",
+      "startShortcuts": "Skróty rozpoczynające",
+      "otherShortcuts": "Inne skróty",
       "shortcut": {
         "title": "Skróty Handy",
         "description": "Skonfiguruj skróty klawiaturowe do uruchamiania nagrywania mowy",
@@ -400,7 +402,7 @@
         "bindings": {
           "transcribe": {
             "name": "Skrót rozpoczynający",
-            "description": "Rozpoczyna nagranie. O tym, jak się kończy, decydują skróty kończące, a przy przytrzymaniu „Zachowanie skrótu”."
+            "description": "Rozpoczyna nagranie. O tym, jak się kończy, decydują skróty kończące, także przy przytrzymaniu."
           },
           "cancel": {
             "name": "Skrót anulowania",

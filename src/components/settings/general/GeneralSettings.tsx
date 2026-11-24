@@ -33,12 +33,15 @@ export const GeneralSettings: React.FC = () => {
     (getSetting("chinese_script") ?? "as_transcribed") !== "as_transcribed";
   return (
     <div className="max-w-3xl w-full mx-auto space-y-6">
-      <SettingsGroup title={t("settings.general.title")}>
+      {/* DanyWhere: start and end shortcuts follow each other, the other
+          shortcuts come after them (user, 2026-11-24). */}
+      <SettingsGroup title={t("settings.general.startShortcuts")}>
+        <ScopedSetting field="shortcut_activation">
+          <ShortcutActivationSetting descriptionMode="tooltip" grouped={true} />
+        </ScopedSetting>
         <ScopedSetting field="bindings" entry="transcribe">
           <ShortcutInput shortcutId="transcribe" grouped={true} />
         </ScopedSetting>
-        {/* DanyWhere: the second start shortcut, under the first since start
-            and end shortcuts are apart (user, 2026-11-23). */}
         <ScopedSetting field="bindings" entry="transcribe_with_post_process">
           <ShortcutInput
             shortcutId="transcribe_with_post_process"
@@ -46,16 +49,29 @@ export const GeneralSettings: React.FC = () => {
             grouped={true}
           />
         </ScopedSetting>
-        <ScopedSetting field="shortcut_activation">
-          <ShortcutActivationSetting descriptionMode="tooltip" grouped={true} />
-        </ScopedSetting>
-        {/* DanyWhere: how releasing a held start shortcut ends the
-            recording, wherever it can be held (end_keys.rs). */}
-        {holdPossible(getSetting("shortcut_activation")) && (
-          <ScopedSetting field="hold_ends">
-            <HoldEndsSetting />
-          </ScopedSetting>
-        )}
+      </SettingsGroup>
+      {/* DanyWhere: how a recording ends and what follows (end_keys.rs).
+          Releasing a held start shortcut is an end too, so "When Held" opens
+          the end shortcuts, wherever a start shortcut can be held; Cancel,
+          which ends without a text, closes them. */}
+      <EndKeysSettings
+        before={
+          holdPossible(getSetting("shortcut_activation")) && (
+            <ScopedSetting field="hold_ends">
+              <HoldEndsSetting />
+            </ScopedSetting>
+          )
+        }
+        after={
+          // Cancel shortcut remains hidden on Linux because of dynamic shortcut instability.
+          !isLinux && (
+            <ScopedSetting field="bindings" entry="cancel">
+              <ShortcutInput shortcutId="cancel" grouped={true} />
+            </ScopedSetting>
+          )
+        }
+      />
+      <SettingsGroup title={t("settings.general.otherShortcuts")}>
         {/* DanyWhere: the two switches of the mode without Accessibility
             are in Application settings › Accessibility. */}
         {/* DanyWhere: without Accessibility, on macOS, the paste shortcut is
@@ -73,15 +89,7 @@ export const GeneralSettings: React.FC = () => {
         <ScopedSetting field="bindings" entry="toggle_profile_auto">
           <ShortcutInput shortcutId="toggle_profile_auto" grouped={true} />
         </ScopedSetting>
-        {/* Cancel shortcut remains hidden on Linux because of dynamic shortcut instability. */}
-        {!isLinux && (
-          <ScopedSetting field="bindings" entry="cancel">
-            <ShortcutInput shortcutId="cancel" grouped={true} />
-          </ScopedSetting>
-        )}
       </SettingsGroup>
-      {/* DanyWhere: how a recording ends and what follows (end_keys.rs). */}
-      <EndKeysSettings />
       <SettingsGroup title={t("settings.languages.title")}>
         <ScopedSetting field="spoken_languages">
           <PreferredLanguages descriptionMode="tooltip" grouped={true} />

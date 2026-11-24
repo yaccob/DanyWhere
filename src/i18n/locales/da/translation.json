@@ -390,6 +390,8 @@
     },
     "general": {
       "title": "Generelt",
+      "startShortcuts": "Startgenveje",
+      "otherShortcuts": "Andre genveje",
       "shortcut": {
         "title": "Handy-genveje",
         "description": "Konfigurer tastaturgenveje til at udløse tale-til-tekst-optagelse",
@@ -400,7 +402,7 @@
         "bindings": {
           "transcribe": {
             "name": "Startgenvej",
-            "description": "Starter en optagelse. Hvordan den slutter, bestemmer afslutningsgenvejene og, når den holdes nede, »Genvejens adfærd«."
+            "description": "Starter en optagelse. Hvordan den slutter, bestemmer afslutningsgenvejene, også når den holdes nede."
           },
           "cancel": {
             "name": "Annulleringsgenvej",

@@ -390,6 +390,8 @@
     },
     "general": {
       "title": "General",
+      "startShortcuts": "Start Shortcuts",
+      "otherShortcuts": "Other Shortcuts",
       "shortcut": {
         "title": "Handy Shortcuts",
         "description": "Configure keyboard shortcuts to trigger speech-to-text recording",
@@ -400,7 +402,7 @@
         "bindings": {
           "transcribe": {
             "name": "Start Shortcut",
-            "description": "Starts a recording. How it ends is up to the end shortcuts and, when held, to “Shortcut Behavior”."
+            "description": "Starts a recording. How it ends is up to the end shortcuts, also when held."
           },
           "cancel": {
             "name": "Cancel Shortcut",
