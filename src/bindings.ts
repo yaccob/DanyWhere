@@ -2786,7 +2786,7 @@ end_keys?: EndKey[];
 /**
  * The hold end per start shortcut (`hold_ends`), one value as a whole.
  */
-hold_ends?: Partial<{ [key in string]: HoldEnd }>;
+hold_ends?: Partial<{ [key in string]: HoldEnd }>; 
 /**
  * Check the words that resemble a word list's term with the
  * post-processing provider (`word_list_check`).
