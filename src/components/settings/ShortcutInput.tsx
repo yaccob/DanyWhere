@@ -91,8 +91,14 @@ export const ShortcutInput: React.FC<ShortcutInputProps> = ({
     `settings.general.shortcut.bindings.${shortcutId}.name`,
     binding.name,
   );
+  // DanyWhere: on macOS a shortcut's own text where it has one
+  // (`descriptionMacos`), as the second start shortcut does: macOS's factory
+  // ends differ from Windows' and Linux' (end_keys.rs, factory_end_keys_on).
+  const descriptionKey = `settings.general.shortcut.bindings.${shortcutId}.description`;
   const translatedDescription = t(
-    `settings.general.shortcut.bindings.${shortcutId}.description`,
+    osType === "macos"
+      ? [`${descriptionKey}Macos`, descriptionKey]
+      : descriptionKey,
     binding.description,
   );
 

@@ -408,7 +408,8 @@
           },
           "transcribe_with_post_process": {
             "name": "Druhá spouštěcí zkratka",
-            "description": "Volitelné: druhá kombinace kláves, která spouští nahrávání. V továrním nastavení ukončovací zkratka se stejnou kombinací kláves text dodatečně zpracuje. Obsazena jen, dokud je dodatečné zpracování zapnuté."
+            "description": "Volitelné: druhá kombinace kláves, která spouští nahrávání. V továrním nastavení ukončovací zkratka se stejnou kombinací kláves text dodatečně zpracuje. Obsazena jen, dokud je dodatečné zpracování zapnuté.",
+            "descriptionMacos": "Volitelné: druhá kombinace kláves, která spouští nahrávání. V továrním nastavení se text dodatečně zpracuje, když ji podržíte a uvolníte; její opětovné stisknutí ukončí nahrávání bez dodatečného zpracování, jako každá ukončovací zkratka bez ⌥. Obsazena jen, dokud je dodatečné zpracování zapnuté."
           },
           "paste_last_transcript": {
             "name": "Vložit poslední přepis",

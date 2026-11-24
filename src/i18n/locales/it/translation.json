@@ -408,7 +408,8 @@
           },
           "transcribe_with_post_process": {
             "name": "Seconda scorciatoia di avvio",
-            "description": "Facoltativo: una seconda combinazione che avvia una registrazione. Di fabbrica, una scorciatoia di fine con la stessa combinazione post-elabora il testo. Occupata solo finché la post-elaborazione è attiva."
+            "description": "Facoltativo: una seconda combinazione che avvia una registrazione. Di fabbrica, una scorciatoia di fine con la stessa combinazione post-elabora il testo. Occupata solo finché la post-elaborazione è attiva.",
+            "descriptionMacos": "Facoltativo: una seconda combinazione che avvia una registrazione. Di fabbrica, rilasciarla dopo averla tenuta premuta post-elabora il testo; premerla di nuovo termina senza post-elaborazione, come ogni scorciatoia di fine senza ⌥. Occupata solo finché la post-elaborazione è attiva."
           },
           "paste_last_transcript": {
             "name": "Incolla l'ultima trascrizione",

@@ -408,7 +408,8 @@
           },
           "transcribe_with_post_process": {
             "name": "Second Start Shortcut",
-            "description": "Optional: a second combination that starts a recording. Out of the box, an end shortcut with the same combination post-processes the text. Taken only while post-processing is on."
+            "description": "Optional: a second combination that starts a recording. Out of the box, an end shortcut with the same combination post-processes the text. Taken only while post-processing is on.",
+            "descriptionMacos": "Optional: a second combination that starts a recording. Out of the box, releasing it after holding it post-processes the text; pressing it again ends without post-processing, as every end shortcut without ⌥ does. Taken only while post-processing is on."
           },
           "paste_last_transcript": {
             "name": "Paste Last Transcript",

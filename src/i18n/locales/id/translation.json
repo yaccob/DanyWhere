@@ -408,7 +408,8 @@
           },
           "transcribe_with_post_process": {
             "name": "Pintasan Mulai Kedua",
-            "description": "Opsional: kombinasi kedua yang memulai rekaman. Pada setelan pabrik, pintasan akhir dengan kombinasi yang sama memproses lanjut teks. Hanya dipakai selama pemrosesan lanjut aktif."
+            "description": "Opsional: kombinasi kedua yang memulai rekaman. Pada setelan pabrik, pintasan akhir dengan kombinasi yang sama memproses lanjut teks. Hanya dipakai selama pemrosesan lanjut aktif.",
+            "descriptionMacos": "Opsional: kombinasi kedua yang memulai rekaman. Pada setelan pabrik, melepasnya setelah ditahan memproses lanjut teks; menekannya lagi mengakhiri tanpa pemrosesan lanjut, seperti setiap pintasan akhir tanpa ⌥. Hanya dipakai selama pemrosesan lanjut aktif."
           },
           "paste_last_transcript": {
             "name": "Tempel transkripsi terakhir",
