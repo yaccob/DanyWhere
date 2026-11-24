@@ -1,0 +1,103 @@
+---
+title: "Un dictado de principio a fin"
+description: "Qué pasa entre pulsar un atajo de inicio y que tu texto llegue donde lo quieres, y dónde puedes dirigir cada paso."
+sidebar:
+  order: 1
+---
+
+import Diagram from '@components/Diagram.astro';
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+Pulsas una combinación de teclas, dices lo que quieres escribir y terminas la grabación. Un momento después, el texto está en la app en la que trabajas: tal como lo dijiste o pulido por un modelo de lenguaje, seguido de un espacio o de un párrafo nuevo, o ya enviado. Este capítulo acompaña un dictado a lo largo de ese camino. Cuando conoces los pasos, sabes dónde cambiar algo si el resultado no es el que querías.
+
+<Diagram
+  name="dictation-flow"
+  caption="Un dictado de principio a fin"
+  alt="El camino de un dictado. Un atajo de inicio inicia la grabación. Termina cuando sueltas un atajo de inicio mantenido, pulsas un atajo de fin o vuelves a pulsar un atajo de inicio; Esc la cancela. El modelo de voz transcribe la grabación. Si el final lo pide, un modelo de lenguaje posprocesa el texto con los prompts activos y, con «Enviar contexto», con dictados anteriores de la misma ventana. Luego viene el texto de «Añadir al final», el texto se inserta y puede seguir una pulsación de tecla como Intro. El dictado se guarda en el historial y suena el sonido final."
+/>
+
+## Inicia la grabación
+
+Pulsa el **Atajo de inicio**: <kbd>⌃ Espacio</kbd> en un Mac, <kbd>Ctrl+Espacio</kbd> en Windows, <kbd>Ctrl+Alt+Espacio</kbd> en Linux. DanyWhere empieza a escuchar al instante. En Mac y en Windows, un pequeño overlay en la parte inferior de la pantalla muestra que está grabando y, si has activado la **Retroalimentación de audio**, también te lo dice un sonido breve.
+
+Puedes usar la combinación de dos maneras: mantenla pulsada mientras hablas y suéltala cuando termines, o tócala y habla todo lo que quieras. Es el ajuste de fábrica **Automático** de **Comportamiento del atajo**; **Mantener** y **Alternar** solo permiten una de las dos.
+
+## Termina como quieras el texto
+
+La forma en que terminas la grabación decide qué pasa con el texto. Hay tres maneras:
+
+- **Suelta** un atajo de inicio mantenido. La grabación termina como esté configurado en **Al mantener pulsado**.
+- **Pulsa un atajo de fin.** Cada uno indica qué va detrás del texto, si un modelo de lenguaje lo pule y si los dictados anteriores se envían como contexto. En un Mac, por ejemplo, <kbd>↩</kbd> termina la grabación y empieza un párrafo nuevo después del texto.
+- **Vuelve a pulsar el atajo de inicio.** Esto termina la grabación si un atajo de fin tiene la misma combinación. En un Mac, pulsar otra vez <kbd>⌃ Espacio</kbd> pone un espacio detrás del texto, listo para la siguiente frase.
+
+Para una app en la que no se puede insertar, termina con **Copiar la última transcripción**: <kbd>⌃⇧C</kbd> en un Mac, <kbd>Alt+Mayús+C</kbd> en Windows y Linux. Termina la grabación como si volvieras a pulsar el atajo de inicio, pero pone el texto en el portapapeles en lugar de insertarlo.
+
+¿Has cambiado de idea? <kbd>Esc</kbd> cancela la grabación en Mac y en Windows. No se transcribe, inserta ni guarda nada.
+
+Los atajos de fin son el corazón de DanyWhere, y [Atajos de inicio y de fin](../start-and-end-shortcuts/) los presenta todos.
+
+## Qué perfil se aplica
+
+Los ajustes que dan forma a un dictado se eligen cuando termina la grabación. Si **Elegir perfil según la aplicación** está activado y un perfil incluye la app que está en primer plano en ese momento, se aplica ese perfil. Si no, se aplica lo elegido en **En uso**, arriba en la barra lateral: la **Configuración básica** o un perfil. Un perfil sigue la configuración básica en todo ajuste que no tenga **Valor propio**, así que solo guarda lo que debe ser distinto, por ejemplo otro modelo de voz para tu terminal. Como la elección se hace al final, puedes empezar un dictado en cualquier sitio y cambiar a la app donde va el texto antes de terminarlo. Los perfiles tendrán su propio capítulo.
+
+## Transcripción
+
+En cuanto termina la grabación, el modelo de voz la convierte en texto. Esto ocurre en tu equipo; la grabación no sale de él. El overlay muestra **Transcribiendo...**.
+
+Los nombres y los términos técnicos salen bien más a menudo si están en una lista de palabras. Los modelos Whisper usan las listas mientras reconocen el habla y, con cualquier modelo, el posprocesamiento las recibe como términos conocidos.
+
+## Posprocesamiento
+
+Si el final que elegiste tiene marcado **Posprocesar**, un modelo de lenguaje trabaja el texto antes de que llegue. Recibe los prompts marcados como **Activo** en la página **Post proceso**, en su orden. DanyWhere los envuelve en un marco que le dice al modelo que tiene una transcripción que trabajar, no una pregunta que responder, y que el texto conserva su idioma. El overlay muestra **Procesando...**.
+
+El posprocesamiento solo se hace mientras el interruptor **Post procesamiento** está activado, en **Configuración básica › Avanzado** o en el perfil. Que el texto vaya a un proveedor en la nube o a un modelo en tu propio equipo depende del proveedor que elijas en la página **Post proceso**, y la página te dice cuál de los dos.
+
+Con **Enviar contexto**, los dictados anteriores de la misma ventana se envían también, para que el modelo sepa de qué estás hablando: de fábrica, hasta cinco de la última hora. El historial marca cada entrada que salió así.
+
+Si el posprocesamiento falla, por ejemplo porque no se puede contactar con el proveedor, igualmente recibes tus palabras. DanyWhere inserta la transcripción tal cual, y un aviso, **Pegado sin post proceso**, te dice por qué.
+
+## Añadir al final
+
+Después, detrás del texto va lo que el final tenga en **Añadir al final**: un espacio, un salto de línea o cualquier texto y, si quieres, una pulsación de tecla como Intro. El texto se añade llegue como llegue el dictado. La pulsación de tecla solo sigue cuando DanyWhere pega el texto por sí mismo. Así, un atajo de fin continúa tu frase y otro envía un mensaje de chat al momento.
+
+## Insertar
+
+Ahora el texto va donde está el cursor.
+
+<Tabs syncKey="os">
+<TabItem label="macOS">
+
+Con el permiso de **Accesibilidad**, DanyWhere pone el texto en el portapapeles, pulsa <kbd>⌘V</kbd> por ti y luego devuelve al portapapeles lo que había antes. Después sigue la pulsación de tecla de **Añadir al final**, si la hay.
+
+</TabItem>
+<TabItem label="Windows">
+
+DanyWhere pone el texto en el portapapeles, pulsa <kbd>Ctrl+V</kbd> por ti y luego devuelve al portapapeles lo que había antes. Después sigue la pulsación de tecla de **Añadir al final**, si la hay. El **Método de pegado**, en **Configuración básica › Avanzado**, ofrece otras formas, como escribir el texto directamente.
+
+</TabItem>
+<TabItem label="Linux">
+
+DanyWhere pega con <kbd>Shift+Insert</kbd>, que funciona tanto en terminales como en otras apps, y luego devuelve al portapapeles lo que había antes. Después sigue la pulsación de tecla de **Añadir al final**, si la hay. El **Método de pegado**, en **Configuración básica › Avanzado**, ofrece otras formas, incluido un script propio.
+
+</TabItem>
+</Tabs>
+
+:::tip[¿El texto no llegó a ningún sitio?]
+Si ningún campo de texto tenía el foco, no se pierde nada. Pon el cursor donde va el texto y pulsa **Pegar la última transcripción**: <kbd>⌃⇧V</kbd> en un Mac, <kbd>Alt+Mayús+V</kbd> en Windows y Linux.
+:::
+
+:::caution[En un Mac sin Accesibilidad]
+Donde el permiso de Accesibilidad está bloqueado, como en muchos Mac de empresa, DanyWhere no puede pegar. El texto espera en DanyWhere hasta que pulses **Pegar la última transcripción** (<kbd>⌃⇧V</kbd>) donde corresponda; **Copiar la última transcripción** (<kbd>⌃⇧C</kbd>) lo pone en el portapapeles. Las pulsaciones de tecla de **Añadir al final** no se envían. Esta parte cambiará pronto: DanyWhere tendrá un método de entrada propio que inserta el texto por ti.
+:::
+
+## Historial
+
+Cada dictado llega al **Historial**: la grabación, la transcripción y, si se posprocesó, el texto pulido como segunda versión encima. DanyWhere lo guarda antes de insertarlo, así que no se pierde nada si algo falla al pegar. Puedes editar una entrada o volver a posprocesarla más tarde; cada cambio añade una versión nueva encima y conserva las de abajo.
+
+## El sonido final
+
+Con la **Retroalimentación de audio** activada (de fábrica está desactivada), tres sonidos marcan el camino, cada uno más agudo que el anterior: uno cuando empieza la grabación, otro cuando termina y el más agudo cuando todo está listo, posprocesamiento incluido. Cuando un modelo de lenguaje tarda unos segundos y has mirado a otro sitio, ese último sonido te dice que el texto está listo. Encontrarás **Retroalimentación de audio** y **Sonido al terminar**, que apaga solo el último sonido, en **Configuración básica › General**.
+
+## Siguiente
+
+El final de una grabación es lo que más decide. [Atajos de inicio y de fin](../start-and-end-shortcuts/) muestra los atajos de fin de una instalación nueva, de qué se compone cada uno y cómo configurar los tuyos.
