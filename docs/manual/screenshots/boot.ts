@@ -1,7 +1,7 @@
 // The manual's screenshots: starts the real frontend in a plain browser.
 // `app.html?lang=de&theme=dark` mocks the backend as a fresh macOS
-// installation in that language and app theme, then loads `src/main.tsx`
-// as the app's window would.
+// installation in that language and app theme (`&scene=profiles`: with the
+// example profiles), then loads `src/main.tsx` as the app's window would.
 //
 // The pictures are drawn with open fonts that ship with the repository's
 // dependencies instead of the system's: the glyph outlines end up in the
@@ -16,15 +16,16 @@ import "@fontsource/jetbrains-mono/400.css";
 import "@fontsource/jetbrains-mono/500.css";
 import "@fontsource/jetbrains-mono/600.css";
 import "@fontsource/jetbrains-mono/700.css";
-import { answerAsFreshMac, type Theme } from "./example-data";
+import { answerAsFreshMac, type Scene, type Theme } from "./example-data";
 import { installTauriMocks } from "./mocks/tauri";
 
 const params = new URLSearchParams(window.location.search);
 const language = params.get("lang") ?? "en";
 const theme: Theme = params.get("theme") === "dark" ? "dark" : "light";
+const scene: Scene = params.get("scene") === "profiles" ? "profiles" : "fresh";
 
 installTauriMocks(language);
-answerAsFreshMac(language, theme);
+answerAsFreshMac(language, theme, scene);
 // The theme main.tsx applies before the settings arrive (`getStoredTheme`).
 try {
   localStorage.setItem("handy.theme", theme);
