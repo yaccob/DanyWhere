@@ -1,0 +1,28 @@
+@startuml
+' Which setting a dictation uses, in French. The structure is in
+' which-setting-applies.iuml; UI terms as in
+' src/i18n/locales/fr/translation.json.
+' "\n" breaks a line; no ";" in a text (it would end a step). A no-break
+' space goes inside « » and before : and ?.
+' The box "En cours d'utilisation" names the defaults "Réglages de base"
+' (tray.defaultSettings), the sidebar's area "Paramètres de base": quoted
+' here as that box shows it.
+!$yes = "oui"
+!$no = "non"
+!$ends = "Un enregistrement se termine"
+!$noteStart = "Un profil a déjà été choisi\nau début, pour que son\nmodèle vocal puisse se\ncharger. C'est la fin qui\ndécide : le texte va là où\nvous êtes à ce moment."
+!$qByApp = "« Choisir le profil selon\nl'application » activé, et\nl'application au premier plan\nattribuée à un profil ?"
+!$appProfile = "Le profil de cette\napplication"
+!$inUse = "Ce qu'affiche « En cours\nd'utilisation » : « Réglages\nde base » ou un profil"
+!$noteLinux = "Sous Linux, DanyWhere\nne voit pas l'application\nau premier plan : c'est\ntoujours ce qu'affiche\n« En cours d'utilisation »."
+!$qSetting = "Pour chaque réglage :\nqu'affiche le profil\nen dessous ?"
+!$aOwn = "« Valeur\npropre »"
+!$own = "La valeur propre\ndu profil"
+!$aCoupled = "« Valeur\nde base »"
+!$default = "La valeur de base"
+!$aDefaults = "aucun profil :\n« Réglages de base »"
+!$runs = "La dictée se poursuit\navec ces valeurs"
+!$noteRedo = "Si son texte va dans une\napplication avec un autre profil,\nDanyWhere refait ce que ce profil\nfait autrement : transcription,\npost-traitement ou seulement\n« Ajouter à la fin ». Seulement avec\n« Choisir le profil selon\nl'application » activé."
+!include style.iuml
+!include which-setting-applies.iuml
+@enduml

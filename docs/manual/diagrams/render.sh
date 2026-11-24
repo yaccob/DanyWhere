@@ -1,20 +1,25 @@
 #!/usr/bin/env bash
-# Renders the manual's diagrams with PlantUML.
+# Renders the manual's diagrams with PlantUML, or Graphviz.
 #
 # Every docs/manual/diagrams/<name>.<lang>.puml becomes
 # docs/manual/public/diagrams/<lang>/<name>.light.svg and .dark.svg; the
-# theme reaches the source as THEME (style.iuml picks its colours by it).
+# theme reaches the source as THEME (theme.iuml picks the colours by it).
+# PlantUML draws a source, unless it includes graphviz.iuml: such a source
+# is a Graphviz graph once PlantUML's preprocessor has filled in its texts
+# and colours, and Graphviz (dot) draws it.
 #
 #   render.sh           render all diagrams
 #   render.sh --check   render into a temporary folder and fail when a
 #                       committed SVG is missing, stale or has no source
 #
-# PlantUML: `plantuml` on PATH, or the command in $PLANTUML. SVG only.
+# PlantUML: `plantuml` on PATH, or the command in $PLANTUML. Graphviz, only
+# for Graphviz sources: `dot` on PATH, or the command in $DOT. SVG only.
 set -euo pipefail
 
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 public="$(cd "$here/.." && pwd)/public/diagrams"
 plantuml="${PLANTUML:-plantuml}"
+dot="${DOT:-dot}"
 themes=(light dark)
 
 check=false
@@ -39,29 +44,82 @@ if [ ${#sources[@]} -eq 0 ]; then
   exit 2
 fi
 
+# Which sources PlantUML draws and which are Graphviz graphs.
+drawn_by_plantuml=()
+graphs=()
+for src in "${sources[@]}"; do
+  if grep -q '^!include graphviz\.iuml' "$src"; then
+    graphs+=("$src")
+  else
+    drawn_by_plantuml+=("$src")
+  fi
+done
+if [ ${#graphs[@]} -gt 0 ] && ! command -v "$dot" >/dev/null 2>&1; then
+  echo "Graphviz not found: install it or set DOT" >&2
+  exit 2
+fi
+
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
 
-# The SVG names Arial, the font PlantUML measured the text in; browsers get
-# it with metric-compatible fallbacks, so the text keeps its width.
+# The SVG names Arial, the font PlantUML and Graphviz measured the text in;
+# browsers get it with metric-compatible fallbacks, so the text keeps its
+# width.
 font_stack="Arial, Helvetica, 'Liberation Sans', 'Arimo', sans-serif"
 
-# Renders every source in one PlantUML run per theme, then moves each SVG
-# to <dest>/<lang>/<name>.<theme>.svg.
+# Draws the Graphviz sources of one theme into $work/raw-<theme>.
+draw_graphs() {
+  local theme="$1" src base pre
+  mkdir -p "$work/pre-$theme"
+  # The preprocessor writes every file, but now and then exits with 200
+  # ("Some diagram description contains errors") after it, as it also tries
+  # to read a Graphviz graph as a PlantUML diagram (seen with PlantUML
+  # 1.2026.2). So its exit status is not used; the files are checked here
+  # and Graphviz checks the graphs.
+  "$plantuml" -preproc -charset UTF-8 -DTHEME="$theme" \
+    -o "$work/pre-$theme" "${graphs[@]}" || true
+  for src in "${graphs[@]}"; do
+    base="$(basename "$src" .puml)"
+    pre="$work/pre-$theme/$base.preproc"
+    if [ ! -f "$pre" ]; then
+      echo "PlantUML's preprocessor wrote nothing for $base ($theme)" >&2
+      exit 1
+    fi
+    awk '!/^@(start|end)uml/' "$pre" >"$pre.gv"
+    if grep -n '\$[A-Za-z_]' "$pre.gv" >&2; then
+      echo "Unresolved variables in $base ($theme), above" >&2
+      exit 1
+    fi
+    # Graphviz gives the size in points; as pixels, one unit of the
+    # drawing is one pixel, as in PlantUML's SVGs.
+    "$dot" -Tsvg "$pre.gv" |
+      sed -e 's/^<svg width="\([0-9.]*\)pt" height="\([0-9.]*\)pt"/<svg width="\1px" height="\2px"/' \
+        >"$work/raw-$theme/$base.svg"
+  done
+}
+
+# Renders every source per theme: PlantUML's diagrams in one PlantUML run,
+# the Graphviz graphs one by one. Each SVG goes to
+# <dest>/<lang>/<name>.<theme>.svg.
 render_into() {
   local dest="$1" theme src base name lang raw
   for theme in "${themes[@]}"; do
-    mkdir -p "$work/raw-$theme"
     echo "Rendering ${#sources[@]} diagram(s), $theme"
-    "$plantuml" -tsvg -charset UTF-8 -failfast2 -DTHEME="$theme" \
-      -o "$work/raw-$theme" "${sources[@]}"
+    mkdir -p "$work/raw-$theme"
+    if [ ${#drawn_by_plantuml[@]} -gt 0 ]; then
+      "$plantuml" -tsvg -charset UTF-8 -failfast2 -DTHEME="$theme" \
+        -o "$work/raw-$theme" "${drawn_by_plantuml[@]}"
+    fi
+    if [ ${#graphs[@]} -gt 0 ]; then
+      draw_graphs "$theme"
+    fi
     for src in "${sources[@]}"; do
       base="$(basename "$src" .puml)"
       name="${base%.*}"
       lang="${base##*.}"
       raw="$work/raw-$theme/$base.svg"
       if [ ! -f "$raw" ]; then
-        echo "PlantUML wrote no SVG for $base ($theme)" >&2
+        echo "No SVG for $base ($theme)" >&2
         exit 1
       fi
       mkdir -p "$dest/$lang"
@@ -69,6 +127,13 @@ render_into() {
         "$raw" >"$dest/$lang/$name.$theme.svg"
     done
   done
+}
+
+# Whether a committed SVG was drawn by PlantUML or Graphviz, so it needs a
+# source here; a hand-made one (such as the sample on the components page)
+# doesn't.
+is_rendered() {
+  grep -q -e '<?plantuml ' -e '<!-- Generated by graphviz ' "$1"
 }
 
 if ! $check; then
@@ -91,14 +156,18 @@ for fresh in "$work"/fresh/*/*.svg; do
 done
 for committed in "$public"/*/*.svg; do
   rel="${committed#"$public/"}"
-  if [ ! -f "$work/fresh/$rel" ]; then
+  if [ ! -f "$work/fresh/$rel" ] && is_rendered "$committed"; then
     echo "no source: $rel"
     failed=1
   fi
 done
 if [ "$failed" -ne 0 ]; then
+  versions="$("$plantuml" -version 2>/dev/null | head -n 1)"
+  if [ ${#graphs[@]} -gt 0 ]; then
+    versions="$versions; $("$dot" -V 2>&1)"
+  fi
   echo "Diagrams are out of date: run docs/manual/diagrams/render.sh" \
-    "($("$plantuml" -version 2>/dev/null | head -n 1))" >&2
+    "($versions)" >&2
   exit 1
 fi
 echo "All diagrams are up to date."

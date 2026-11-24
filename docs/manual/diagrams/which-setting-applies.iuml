@@ -1,0 +1,46 @@
+' Which profile a dictation uses, and where each of its values comes
+' from: the structure. The texts come from which-setting-applies.<lang>.puml,
+' which includes this file after style.iuml. Facts checked against the
+' code; see the comments for where.
+
+start
+' app_profiles.rs: begin_dictation chooses a profile when the recording
+' starts (its model loads, the pills name it); settle_dictation chooses
+' again when it ends, by the application in front then.
+:$ends;
+note right: $noteStart
+' profile_at_end and profile_for_dictation: only while
+' profile_auto_by_app is on and some profile has applications
+' (has_assignments); an application belongs to at most one profile
+' (set_apps). Otherwise active_profile_id: DEFAULT_PROFILE_ID for the
+' defaults, or a profile. The sidebar box "In Use" (ProfileSelector.tsx)
+' names the defaults with tray.defaultSettings.
+if ($qByApp) then ($yes)
+  :$appProfile;
+else ($no)
+  :$inUse;
+  ' window_capture::frontmost_app is None on Linux.
+  note right: $noteLinux
+endif
+' profile_layers.rs: a profile holds each value coupled (it equals the
+' default) or as its own; the state line under a setting says "Default"
+' or "Own value" (ScopedSetting.tsx, StateLine; the broken chain is
+' Link2Off). Lists (LIST_FIELDS: end_keys, word_lists, bindings, the
+' providers' entries) go entry by entry (merge_list): that is shown in
+' defaults-and-profiles, not here.
+switch ($qSetting)
+case ($aOwn)
+  :$own;
+case ($aCoupled)
+  :$default;
+case ($aDefaults)
+  :$default;
+endswitch
+' profile_redo.rs: before the text goes into an application (at the end
+' of the dictation, with "Paste Last Transcript" or the service), the
+' profile of that application is looked up again (target_for, only while
+' choosing by application is on) and the dictation redone from the first
+' step that differs (redo_from: transcription, post-processing, Append).
+:$runs;
+note right: $noteRedo
+stop

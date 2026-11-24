@@ -1,0 +1,26 @@
+@startuml
+' Which setting a dictation uses, in Spanish. The structure is in
+' which-setting-applies.iuml; UI terms as in
+' src/i18n/locales/es/translation.json.
+' "\n" breaks a line; no ";" in a text (it would end a step).
+' The box "En uso" names the defaults "Ajustes básicos" (tray.defaultSettings),
+' the sidebar's area "Configuración básica": quoted here as that box shows it.
+!$yes = "sí"
+!$no = "no"
+!$ends = "Termina una grabación"
+!$noteStart = "Ya al empezar se eligió un\nperfil, para que su modelo de\nvoz pudiera cargarse. Decide\nel final: el texto va adonde\nestés entonces."
+!$qByApp = "¿«Elegir perfil según la\naplicación» activado, y la\naplicación en primer plano\nasignada a un perfil?"
+!$appProfile = "El perfil de esa\naplicación"
+!$inUse = "Lo que muestra «En uso»:\n«Ajustes básicos» o un perfil"
+!$noteLinux = "En Linux, DanyWhere no\nve la aplicación en primer\nplano: allí vale siempre\nlo que muestra «En uso»."
+!$qSetting = "Para cada ajuste: ¿qué\nmuestra el perfil debajo?"
+!$aOwn = "«Valor\npropio»"
+!$own = "El valor propio\ndel perfil"
+!$aCoupled = "«Valor básico»"
+!$default = "El valor básico"
+!$aDefaults = "ningún perfil:\n«Ajustes básicos»"
+!$runs = "El dictado sigue con estos valores"
+!$noteRedo = "Si su texto va a una aplicación\ncon otro perfil, DanyWhere rehace\nlo que ese perfil hace distinto:\ntranscripción, posprocesamiento\no solo «Añadir al final». Solo con\n«Elegir perfil según la aplicación»\nactivado."
+!include style.iuml
+!include which-setting-applies.iuml
+@enduml

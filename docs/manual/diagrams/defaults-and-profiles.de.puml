@@ -1,0 +1,38 @@
+@startuml
+' The Defaults and two profiles as layers, in German. The structure is in
+' defaults-and-profiles.iuml (a Graphviz graph); UI terms as in
+' src/i18n/locales/de/translation.json. The texts go into an HTML label:
+' write & as &amp; and < as &lt;, and break a line with $br.
+!include graphviz.iuml
+' The columns: the post-processing switch, the end shortcuts, the rest.
+!$hPost = "Nachbearbeitung"
+!$hEnd = "Endtasten"
+!$hRest = "Alles andere"
+' The rows.
+!$chat = "Chat"
+!$terminal = "Terminal"
+!$profile = "Profil"
+!$defaults = "Grundeinstellungen"
+!$defaultsKind = "jeder Wert"
+' What a profile page says under a value and next to a list entry.
+!$tDefault = "Grundwert"
+!$tOwnValue = "eigener Wert"
+!$tOwn = "eigen"
+!$tAdded = "eigen, neu"
+!$tOff = "aus"
+' Values: the switch, and end shortcuts a new Mac installation brings,
+' plus one of the profile's own.
+!$on = "an"
+!$off = "aus"
+!$space = "Direkt · Leerzeichen"
+!$enter = "Direkt · Enter senden"
+!$paragraph = "Direkt · Absatz"
+!$reply = "Antworten"
+!$restList = "Sprachmodell," + $br + "Mikrofon," + $br + "Einfügemethode, …"
+!$caption = "Ein Profil baut auf den Grundeinstellungen auf: Seine eigenen Werte gelten," + $br + "alles andere kommt aus den Grundeinstellungen. Profile übernehmen nichts" + $br + "voneinander."
+' Outside the layers.
+!$appTitle = "Applikationseinstellungen"
+!$appList = "Anwendungssprache · Beim Start ausführen · Nach Updates suchen · …"
+!$appNote = "In keinem Profil: gleich für jedes Diktat."
+!include defaults-and-profiles.iuml
+@enduml
