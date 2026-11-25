@@ -20,7 +20,7 @@ Speech recognition runs offline, on your own computer, with a model you choose, 
 - **Works on managed Macs** where the Accessibility permission is blocked.
 - **Offline speech recognition** with a small set of models that are fast enough on a laptop, and word lists per topic.
 
-The [manual](https://yaccob.github.io/DanyWhere/) explains how it all works.
+Everything DanyWhere can do is listed in the manual under [What DanyWhere can do](https://yaccob.github.io/DanyWhere/features/); its chapters explain how it works.
 
 ## Install
 
@@ -38,7 +38,7 @@ You need a Mac with macOS 11 (Big Sur) or later, with Apple silicon or an Intel 
    Or install it with [Homebrew](https://brew.sh) instead of steps 1 and 2: `brew install --cask yaccob/tap/danywhere`
 
 3. Start DanyWhere and follow the setup: allow microphone access, then grant Accessibility, or choose "Continue without Accessibility" if your organization blocks it.
-4. Press Control+Space and speak. Hold the shortcut to record and release it to stop, or tap it to start and tap again to stop; either way a space follows the text. Once post-processing is switched on (Settings → Advanced → Transcription) and set up, the transcript is post-processed when you hold Control+Shift+Space instead and release it, or when you end a recording with Option+Control+Space instead of Control+Space.
+4. Start a dictation with Control+Space: hold it while you speak and release it to stop, or tap it to start and tap again to stop; either way a space follows the text. Once post-processing is switched on (Settings → Advanced → Transcription) and set up, the transcript is post-processed when you hold Control+Shift+Space instead and release it, or when you end a recording with Option+Control+Space instead of Control+Space.
 
 ### Windows
 
@@ -50,7 +50,7 @@ You need Windows 10 or 11 on an x64 or ARM64 PC. On x64, transcription can use t
    The installer asks for a normal or a portable installation. A portable installation keeps settings, models and history in a `Data` folder next to `danywhere.exe`.
 
 3. Start DanyWhere from the Start menu and follow the setup: allow microphone access and pick a model. Windows needs no Accessibility permission.
-4. Press Ctrl+Space and speak. Hold the shortcut to record and release it to stop, or tap it to start and tap again to stop. Once post-processing is switched on (Settings → Advanced → Transcription) and set up, Ctrl+Shift+Space does the same and post-processes the transcript.
+4. Start a dictation with Ctrl+Space: hold it while you speak and release it to stop, or tap it to start and tap again to stop. Once post-processing is switched on (Settings → Advanced → Transcription) and set up, Ctrl+Shift+Space does the same and post-processes the transcript.
 
 ### Linux
 
@@ -75,7 +75,7 @@ DanyWhere comes for x64 and ARM64 as a `.deb`, an `.rpm` and an AppImage:
 
 2. Install the tool DanyWhere pastes with: `xdotool` on X11, `wtype` or `dotool` on Wayland. Without one, pasting may not work, especially on Wayland. Handy's [Linux notes](https://github.com/cjpais/Handy#linux-notes) have the details, for example for Ubuntu 26.04.
 3. Start DanyWhere and follow the setup: allow microphone access and pick a model.
-4. Press Ctrl+Alt+Space and speak; Ctrl+Alt+Shift+Space does the same with post-processing. On Wayland, global shortcuts usually have to be set up in the desktop environment: bind them to `danywhere --toggle-transcription` and `danywhere --toggle-post-process` (see [Command line](#command-line)).
+4. Start a dictation with Ctrl+Alt+Space, held while you speak or tapped to start and to stop; Ctrl+Alt+Shift+Space does the same with post-processing. On Wayland, global shortcuts usually have to be set up in the desktop environment: bind them to `danywhere --toggle-transcription` and `danywhere --toggle-post-process` (see [Command line](#command-line)).
 
 On a Wayland desktop the AppImage runs as a Wayland app, like the deb and rpm, so its window follows your display scaling. If it misbehaves there, start it with `HANDY_GDK_BACKEND=x11 ./DanyWhere_0.5.0_amd64.AppImage` to run it through Xwayland instead.
 
