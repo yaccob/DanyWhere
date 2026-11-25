@@ -1,0 +1,70 @@
+---
+title: "Ce que fait DanyWhere"
+description: "Tout ce que fait DanyWhere en un coup d'œil, de la fin de chaque dictée à votre façon jusqu'à un historique qui garde chaque version."
+---
+
+Cette page résume ce que fait DanyWhere. Quand un chapitre explique une partie en détail, la section renvoie vers lui.
+
+## Terminer une dictée
+
+- **Décidez à la fin de ce que devient une dictée.** Un enregistrement commence par un raccourci de début et se termine par le raccourci de fin de votre choix. Chaque raccourci de fin a sa propre combinaison de touches et indique ce qui suit le texte, si un modèle de langage le post-traite et si les dictées précédentes sont envoyées comme contexte.
+- **Douze raccourcis de fin sur un Mac, dans une nouvelle installation,** selon une seule règle : ⌥ (Option) post-traite, ⇧ (Maj) choisit la petite variante, et ⌃ (Contrôle) avec ↩ (Retour) appuie sur une touche. <kbd>⌃ Espace</kbd> termine par une espace, <kbd>↩</kbd> par un nouveau paragraphe, et <kbd>⌃↩</kbd> appuie sur Entrée pour envoyer un message de chat. <kbd>⌥⌃ Espace</kbd>, <kbd>⌥↩</kbd> et <kbd>⌥⌃↩</kbd> font de même avec post-traitement.
+- **Sous Windows et Linux,** les combinaisons des deux raccourcis de début terminent l'enregistrement, la deuxième avec post-traitement.
+- **Maintenir ou appuyer brièvement.** Maintenez un raccourci de début pendant que vous parlez, ou appuyez brièvement pour commencer et de nouveau pour arrêter. **Lorsqu'il est maintenu** règle la façon dont le relâchement termine l'enregistrement.
+- **Du texte et une touche après la dictée.** Un raccourci de fin peut ajouter du texte, comme une espace ou un saut de ligne, puis appuyer sur une touche comme Entrée.
+
+[Raccourcis de début et de fin](../how-it-works/start-and-end-shortcuts/) explique tout cela.
+
+## Paramètres de base et profils
+
+- **Des paramètres de base, et des profils qui ne changent que ce qu'il faut.** Chaque réglage qui concerne une dictée a une valeur de base, du modèle vocal, des langues et du post-traitement jusqu'aux raccourcis, au microphone, aux sons et à la liste de mots. Un profil suit les paramètres de base et ne garde une valeur propre que là où vous en définissez une. Chaque réglage montre quelle valeur s'applique, et les paramètres de base montrent quels profils diffèrent.
+- **Les réglages de DanyWhere lui-même,** comme la langue de l'interface, le lancement avec l'ordinateur et les mises à jour, sont les mêmes pour tous les profils.
+- **Vous choisissez ce qu'utilisent les dictées** dans l'encadré **En cours d'utilisation**, en haut de la barre latérale, ou dans le menu de la barre système.
+- **Un profil par app.** Donnez à un profil les apps pour lesquelles il est fait, par exemple un profil pour votre terminal et un autre pour votre chat. C'est l'app au premier plan à la fin de l'enregistrement qui décide. Si le texte va plus tard dans une autre app, DanyWhere ne refait que ce que le profil de cette app fait autrement. Vous activez ou désactivez ce choix avec **Choisir le profil selon l'application**, aussi au clavier : <kbd>⌃⇧A</kbd> sur un Mac, <kbd>Alt+Maj+A</kbd> sous Windows. Sous Windows, vous saisissez les noms des programmes ; sous Linux, DanyWhere ne sait pas encore quelle app est au premier plan.
+- **Un profil à emporter.** Exportez un profil dans un fichier et importez-le ailleurs. Sa clé API est chiffrée avec un mot de passe de votre choix.
+
+[Paramètres de base et profils](../how-it-works/defaults-and-profiles/) montre comment les deux fonctionnent ensemble.
+
+## Post-traitement
+
+- **Un modèle de langage travaille sur votre texte au lieu d'y répondre.** DanyWhere indique lui-même au modèle qu'il reçoit une transcription à traiter, pas une question, que la langue reste la même et qu'il doit corriger les mots mal entendus quand le contexte montre clairement ce qui a été dit. Votre prompt dit seulement quoi faire du texte. **Effort de réflexion**, à côté du modèle, règle combien le modèle réfléchit avant de répondre.
+- **Plusieurs prompts d'un coup.** Les prompts forment une seule bibliothèque pour tous les profils. Chaque profil active ceux qu'il utilise et les met dans l'ordre. Ils partent vers le modèle en une seule requête et s'appliquent l'un après l'autre.
+- **Vos listes de mots comme termes connus.** Le post-traitement reçoit les listes de mots en vigueur. Il écrit donc un nom mal entendu tel qu'il figure sur la liste, avec tous les modèles vocaux.
+- **Les dictées précédentes comme contexte.** Avec **Envoyer le contexte**, un raccourci de fin envoie aussi vos dictées précédentes de la même fenêtre, pour que le modèle sache de quoi parle la conversation.
+- **Sur cet ordinateur ou dans le cloud, et vous savez lequel des deux.** À côté du fournisseur, les réglages indiquent si le post-traitement reste sur cet ordinateur ou part dans le cloud. Avec un modèle servi sur cet ordinateur, par exemple par Ollama ou LM Studio, DanyWhere le charge dès que vous commencez à parler, pour que son démarrage à froid ne rallonge pas l'attente.
+
+## Historique
+
+- **Chaque modification gardée comme version.** Chaque entrée est une pile de versions, le résultat en haut. Le post-traitement, vos propres modifications et une nouvelle transcription ajoutent une version au-dessus sans rien supprimer, et vous pouvez déplacer et supprimer des versions.
+- **Modifier et post-traiter plus tard.** Cliquez dans le texte pour le modifier. La baguette magique post-traite la version affichée, avec les prompts du profil ou avec un seul prompt de votre choix, même longtemps après la dictée. Chaque entrée nomme le modèle vocal qui l'a transcrite.
+- **Cherchez dans tout l'historique,** toutes les versions comprises, avec respect de la casse, mots entiers et expressions régulières, et filtrez par app, titre de fenêtre ou nom de fichier.
+- **Un long historique qui reste léger.** Les enregistrements sont stockés compressés, environ 12 fois plus petits que de l'audio non compressé. Une limite de stockage, 500 Mo par défaut, soit environ 54 heures de dictée, décide du nombre d'enregistrements conservés. Quand d'anciens enregistrements disparaissent, leurs transcriptions restent, et une étoile garde un enregistrement pour de bon.
+
+## Insérer et copier
+
+- **Insérer sans le presse-papiers sur un Mac.** DanyWhere a sa propre méthode de saisie. Ajoutez-la en partant de **Paramètres de l'application › Accessibilité › Insérer sans le presse-papiers** : une dictée va alors directement dans le champ de texte, sans passer par le presse-papiers.
+- **La dernière transcription, encore une fois.** **Coller la dernière transcription** place la transcription la plus récente là où se trouve maintenant le curseur, par exemple quand une dictée n'est arrivée nulle part parce qu'aucun champ de texte n'avait le focus : <kbd>⌃⇧V</kbd> sur un Mac, <kbd>Alt+Maj+V</kbd> sous Windows et Linux. **Copier la dernière transcription** la place dans le presse-papiers : <kbd>⌃⇧C</kbd>, ou <kbd>Alt+Maj+C</kbd>.
+- **L'overlay sur l'écran où vous travaillez,** celui de la fenêtre au premier plan, sur macOS et Windows.
+
+## Sur un Mac sans Accessibilité
+
+- **DanyWhere fonctionne là où cette autorisation est bloquée,** comme sur beaucoup de Mac gérés par une entreprise. Choisissez **Continuer sans l'accessibilité** pendant la configuration. Une fois la méthode de saisie de DanyWhere ajoutée, les raccourcis de fin insèrent le texte aussitôt. Sans elle, une dictée attend dans DanyWhere jusqu'à ce que vous l'insériez avec <kbd>⌃⇧V</kbd>.
+- **Sans l'autorisation, DanyWhere ne peut pas appuyer sur des touches.** Une nouvelle installation laisse de côté les quatre raccourcis de fin qui appuient sur une touche, et vous appuyez vous-même sur Entrée.
+- **Les titres de fenêtre, fournis par les apps elles-mêmes.** DanyWhere demande le titre de sa fenêtre au premier plan à chaque app qui sait le donner, comme les navigateurs, Terminal, Mail, Notes, TextEdit et Microsoft Office, une fois que vous l'avez autorisé pour cette app. Le contexte des dictées précédentes et le filtre par fenêtre de l'historique ont besoin de ce titre.
+- **Les raccourcis avec la touche fn** ne sont pas disponibles sans l'autorisation.
+
+## Modèles vocaux et listes de mots
+
+- **La reconnaissance vocale sur votre propre ordinateur,** avec une petite sélection de modèles assez rapides pour dicter sur un ordinateur portable : Parakeet Ultra (25 langues européennes), Whisper large-v3-turbo (100 langues), Canary 1B v2 (traduit vers l'anglais), Parakeet unified EN 0.6B (anglais, avec un aperçu en direct), Whisper small et Canary 180M flash.
+- **Un modèle pour vos langues dès le départ.** La configuration en recommande un pour les langues que vous parlez et le télécharge pendant que vous accordez les autorisations. Chaque fichier est vérifié avec sa somme de contrôle.
+- **Des listes de mots par sujet.** La **Liste de mots** des paramètres de base s'applique dans chaque profil, et un profil peut y ajouter ses propres **Mots supplémentaires**. Les listes supplémentaires nommées, par exemple une par projet, s'activent une à la fois dans les réglages, dans la barre système ou avec <kbd>⌃⇧L</kbd> (<kbd>Alt+Maj+L</kbd> sous Windows et Linux). Les modèles Whisper utilisent les listes de mots pendant la reconnaissance de la parole.
+- **Les noms vérifiés par le modèle de langage.** Canary et Parakeet n'utilisent pas eux-mêmes les listes de mots. Avec **Vérifier les noms avec le LLM, même sans post-traitement**, DanyWhere demande à votre fournisseur de post-traitement si un mot qui ressemble à une entrée de la liste désigne bien cette entrée, et ne remplace que ce que le fournisseur confirme.
+
+## Et aussi
+
+- **Un son quand tout est terminé,** post-traitement compris, pour que vous sachiez quand revenir à votre texte. Les trois sons sont de plus en plus aigus : au début, à l'arrêt, puis quand tout est fini.
+- **Les combinaisons de touches telles que votre système les écrit,** <kbd>⌥⌃ Espace</kbd> sur un Mac et <kbd>Ctrl+Maj+Espace</kbd> sous Windows. Dans une combinaison avec une touche principale, les touches de modification de gauche et de droite comptent de la même façon.
+- **Les nouveautés après une mise à jour,** en anglais ou en allemand.
+- **Ce manuel,** dans l'app sous **Manuel** et sur le web, en anglais, en allemand, en espagnol et en français.
+
+Tout cela repose sur les bases de la dictée : des raccourcis globaux que vous maintenez ou sur lesquels vous appuyez brièvement, la détection d'activité vocale, le choix du microphone et l'insertion dans n'importe quelle app sur les trois systèmes. Pour voir comment une dictée passe par chacune d'elles, lisez [Une dictée du début à la fin](../how-it-works/dictation-from-start-to-end/).

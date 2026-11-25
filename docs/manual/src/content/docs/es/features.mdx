@@ -1,0 +1,70 @@
+---
+title: "Lo que hace DanyWhere"
+description: "Todo lo que hace DanyWhere de un vistazo, desde terminar cada dictado como lo necesitas hasta un historial que conserva cada versión."
+---
+
+Esta página resume lo que hace DanyWhere. Donde un capítulo explica una parte a fondo, la sección enlaza con él.
+
+## Terminar un dictado
+
+- **Decide al final qué pasa con un dictado.** Una grabación empieza con un atajo de inicio y termina con el atajo de fin que elijas. Cada atajo de fin tiene su propia combinación de teclas y dice qué va detrás del texto, si un modelo de lenguaje lo posprocesa y si los dictados anteriores se envían como contexto.
+- **Doce atajos de fin en un Mac, en una instalación nueva,** con una sola regla: ⌥ (Opción) posprocesa, ⇧ (Mayúsculas) elige la variante pequeña y ⌃ (Control) junto con ↩ (Retorno) pulsa una tecla. <kbd>⌃ Espacio</kbd> termina con un espacio, <kbd>↩</kbd> con un párrafo nuevo y <kbd>⌃↩</kbd> pulsa Intro para enviar un mensaje de chat. <kbd>⌥⌃ Espacio</kbd>, <kbd>⌥↩</kbd> y <kbd>⌥⌃↩</kbd> hacen lo mismo con posprocesamiento.
+- **En Windows y Linux,** las combinaciones de los dos atajos de inicio terminan la grabación, la segunda con posprocesamiento.
+- **Mantener o tocar.** Mantén pulsado un atajo de inicio mientras hablas, o tócalo para empezar y vuelve a tocarlo para parar. **Al mantener pulsado** define cómo termina la grabación al soltarlo.
+- **Texto y una pulsación de tecla después del dictado.** Un atajo de fin puede añadir texto, como un espacio o un salto de línea, y luego pulsar una tecla como Intro.
+
+[Atajos de inicio y de fin](../how-it-works/start-and-end-shortcuts/) lo explica todo.
+
+## Configuración básica y perfiles
+
+- **Una configuración básica, y perfiles que solo cambian lo necesario.** Cada ajuste que afecta a un dictado tiene un valor básico, desde el modelo de voz, los idiomas y el posprocesamiento hasta los atajos, el micrófono, los sonidos y la lista de palabras. Un perfil sigue la configuración básica y solo tiene un valor propio donde tú lo pones. Cada ajuste muestra qué valor se aplica, y la configuración básica muestra qué perfiles difieren.
+- **Los ajustes de la propia app,** como el idioma de la interfaz, el inicio con el equipo y las actualizaciones, son iguales para todos los perfiles.
+- **Tú eliges lo que usan los dictados** en **En uso**, arriba en la barra lateral, o en la bandeja.
+- **Un perfil para cada app.** Da a cada perfil las apps para las que está pensado: por ejemplo, un perfil para tu terminal y otro para tu chat. Decide la app que está en primer plano cuando termina la grabación. Si más tarde el texto va a otra app, DanyWhere solo rehace lo que el perfil de esa app hace distinto. **Elegir perfil según la aplicación** activa y desactiva esto, también con <kbd>⌃⇧A</kbd> en un Mac y <kbd>Alt+Mayús+A</kbd> en Windows. En Windows escribes los nombres de los programas; en Linux, DanyWhere todavía no sabe qué app está en primer plano.
+- **Un perfil para llevar contigo.** Exporta un perfil a un archivo e impórtalo en otro equipo. Su clave API se cifra con una contraseña que eliges tú.
+
+[Configuración básica y perfiles](../how-it-works/defaults-and-profiles/) muestra cómo funcionan juntos.
+
+## Posprocesamiento
+
+- **Un modelo de lenguaje trabaja tu texto en lugar de contestarlo.** El propio DanyWhere le dice al modelo que recibe una transcripción que trabajar, no una pregunta, y que el idioma se mantiene. También le pide que corrija las palabras mal entendidas cuando el contexto deja claro qué se dijo. Tu prompt solo dice qué hacer con el texto. **Esfuerzo de razonamiento**, junto al modelo, define cuánto piensa el modelo.
+- **Varios prompts de una vez.** Los prompts forman una sola biblioteca para todos los perfiles. Cada perfil activa los que usa y los ordena. Van al modelo en una sola petición y se aplican uno tras otro.
+- **Tus listas de palabras como términos conocidos.** El posprocesamiento recibe las listas de palabras vigentes, así que escribe un nombre mal entendido tal como está en la lista, con cualquier modelo de voz.
+- **Dictados anteriores como contexto.** Con **Enviar contexto**, un atajo de fin envía también tus dictados anteriores de la misma ventana, para que el modelo sepa de qué va la conversación.
+- **En este equipo o en la nube, y ves dónde.** Junto al proveedor, la configuración indica si el posprocesamiento se queda en este equipo o va a la nube. Con un modelo que se sirve en este equipo, por ejemplo con Ollama o LM Studio, DanyWhere lo carga en cuanto empiezas a hablar, para que su arranque en frío no alargue la espera.
+
+## Historial
+
+- **Cada cambio se guarda como una versión.** Cada entrada es una pila de versiones con su resultado arriba. El posprocesamiento, tus propias ediciones y una nueva transcripción añaden una versión encima y no borran nada. Además, puedes mover y eliminar versiones.
+- **Editar y posprocesar más tarde.** Haz clic en el texto para editarlo. La varita mágica posprocesa la versión que ves, con los prompts del perfil o con un solo prompt cualquiera, también mucho después del dictado. Cada entrada nombra el modelo de voz que la transcribió.
+- **Busca en todo el historial,** con todas las versiones, distinguiendo mayúsculas y minúsculas, solo palabras completas o con expresiones regulares, y filtra por app, título de ventana o nombre de archivo.
+- **Un historial largo que ocupa poco.** Las grabaciones se guardan comprimidas, unas 12 veces más pequeñas que el audio sin comprimir. Un límite de almacenamiento, de fábrica 500 MB o unas 54 horas de dictado, decide cuántas grabaciones se conservan. Cuando se van las grabaciones antiguas, sus transcripciones se quedan, y una estrella conserva una grabación para siempre.
+
+## Insertar y copiar
+
+- **Insertar sin el portapapeles en un Mac.** DanyWhere tiene un método de entrada propio. Cuando añades su fuente de entrada, partiendo de **Configuración de la aplicación › Accesibilidad › Insertar sin el portapapeles**, un dictado va directamente al campo de texto, sin el portapapeles.
+- **La última transcripción, otra vez.** **Pegar la última transcripción** pone la transcripción más reciente donde está ahora el cursor, por ejemplo cuando un dictado no llegó a ningún sitio porque ningún campo de texto tenía el foco: <kbd>⌃⇧V</kbd> en un Mac, <kbd>Alt+Mayús+V</kbd> en Windows y Linux. **Copiar la última transcripción** la pone en el portapapeles: <kbd>⌃⇧C</kbd>, o <kbd>Alt+Mayús+C</kbd>.
+- **El overlay en la pantalla en la que trabajas,** la que tiene la ventana en primer plano, en macOS y Windows.
+
+## Sin Accesibilidad en un Mac
+
+- **DanyWhere funciona donde este permiso está bloqueado,** como en muchos Mac de empresa. Elige **Continuar sin accesibilidad** durante la configuración inicial. Con la fuente de entrada de DanyWhere añadida, los atajos de fin insertan el texto al momento. Sin ella, un dictado espera en DanyWhere hasta que lo insertes con <kbd>⌃⇧V</kbd>.
+- **Sin el permiso, DanyWhere no puede pulsar teclas.** Una instalación nueva omite los cuatro atajos de fin que pulsan una tecla, y tú mismo pulsas Intro.
+- **Títulos de ventana de las propias apps.** DanyWhere pregunta el título de su ventana en primer plano a cada app que puede dárselo, como los navegadores, Terminal, Mail, Notas, TextEdit y Microsoft Office, en cuanto se lo permites para esa app. El contexto de los dictados anteriores y el filtro por ventana del historial necesitan el título.
+- **Los atajos con la tecla fn** no están disponibles sin el permiso.
+
+## Modelos de voz y listas de palabras
+
+- **Reconocimiento de voz en tu propio equipo,** con una pequeña selección de modelos lo bastante rápidos para dictar en un portátil: Parakeet Ultra (25 idiomas europeos), Whisper large-v3-turbo (100 idiomas), Canary 1B v2 (traduce al inglés), Parakeet unified EN 0.6B (inglés, con vista previa en vivo), Whisper small y Canary 180M flash.
+- **Un modelo para tus idiomas desde el principio.** La configuración inicial recomienda uno para los idiomas que hablas y lo descarga mientras concedes los permisos. Cada archivo se comprueba con su suma de verificación.
+- **Listas de palabras por tema.** La **Lista de palabras** de la configuración básica se aplica en todos los perfiles, y un perfil puede añadir sus propias **Palabras adicionales**. De las listas adicionales con nombre, por ejemplo una por proyecto, activas una cada vez en la configuración, en la bandeja o con <kbd>⌃⇧L</kbd> (<kbd>Alt+Mayús+L</kbd> en Windows y Linux). Los modelos Whisper usan las listas de palabras mientras reconocen el habla.
+- **Nombres comprobados por el modelo de lenguaje.** Canary y Parakeet no usan las listas de palabras por sí mismos. Con **Comprobar nombres con el LLM, también sin post proceso**, DanyWhere pregunta a tu proveedor de posprocesamiento si una palabra que se parece a una entrada de la lista se refiere a ella, y solo sustituye lo que el proveedor confirma.
+
+## Más
+
+- **Un sonido cuando todo está listo,** posprocesamiento incluido, para que sepas cuándo volver a mirar. Los tres sonidos son cada vez más agudos: al empezar, al parar y cuando todo está listo.
+- **Combinaciones de teclas tal como las escribe tu sistema,** <kbd>⌥⌃ Espacio</kbd> en un Mac y <kbd>Ctrl+Mayús+Espacio</kbd> en Windows. En una combinación con una tecla principal, las teclas modificadoras izquierda y derecha cuentan igual.
+- **Las novedades tras una actualización,** en inglés o en alemán.
+- **Este manual,** en la app, en **Manual**, y en la web, en inglés, alemán, español y francés.
+
+Debajo de todo esto está lo básico del dictado: atajos globales que mantienes pulsados o tocas, detección de actividad de voz, la elección del micrófono y la inserción en cualquier app en los tres sistemas. Para ver cómo pasa un dictado por todo ello, lee [Un dictado de principio a fin](../how-it-works/dictation-from-start-to-end/).
