@@ -1,0 +1,70 @@
+---
+title: "Was DanyWhere kann"
+description: "Alles, was DanyWhere tut, auf einen Blick: von Diktaten, die jedes Mal so enden, wie du es gerade brauchst, bis zum Verlauf, der jede Fassung behält."
+---
+
+Diese Seite zeigt kurz, was DanyWhere kann. Wo ein Kapitel einen Teil ausführlich erklärt, verweist der Abschnitt darauf.
+
+## Ein Diktat beenden
+
+- **Erst am Ende entscheiden, was mit einem Diktat geschieht.** Eine Aufnahme beginnt mit einer Starttaste und endet mit einer Endtaste deiner Wahl. Jede Endtaste hat ihre eigene Tastenkombination und legt fest, was nach dem Text kommt, ob ein KI-Modell ihn nachbearbeitet und ob frühere Diktate als Kontext mitgehen.
+- **Zwölf Endtasten auf dem Mac, in einer neuen Installation,** nach einer Regel: ⌥ (Option) bearbeitet nach, ⇧ (Shift) wählt die kleinere Variante, und ⌃ (Control) mit ↩ (Return) drückt eine Taste. <kbd>⌃ Leertaste</kbd> beendet mit einem Leerzeichen, <kbd>↩</kbd> mit einem neuen Absatz, und <kbd>⌃↩</kbd> drückt Enter und schickt so eine Chatnachricht ab. <kbd>⌥⌃ Leertaste</kbd>, <kbd>⌥↩</kbd> und <kbd>⌥⌃↩</kbd> tun dasselbe mit Nachbearbeitung.
+- **Unter Windows und Linux** beenden die Tastenkombinationen der beiden Starttasten die Aufnahme, die zweite mit Nachbearbeitung.
+- **Halten oder antippen.** Halte eine Starttaste, während du sprichst, oder tipp sie zum Starten an und noch einmal zum Beenden. **Beim Halten** legt fest, wie das Loslassen die Aufnahme beendet.
+- **Text und ein Tastendruck nach dem Diktat.** Eine Endtaste kann Text anhängen, etwa ein Leerzeichen oder eine neue Zeile, und danach eine Taste wie Enter drücken.
+
+[Start- und Endtasten](../how-it-works/start-and-end-shortcuts/) erklärt das alles.
+
+## Grundeinstellungen und Profile
+
+- **Grundeinstellungen für alles, Profile nur für das, was anders ist.** Jede Einstellung, die ein Diktat betrifft, hat einen Grundwert, vom Sprachmodell, den Sprachen und der Nachbearbeitung bis zu den Tastenkombinationen, dem Mikrofon, den Tönen und der Wortliste. Ein Profil folgt den Grundeinstellungen und behält nur dort einen eigenen Wert, wo du einen setzt. Jede Einstellung zeigt, welcher Wert gilt, und die Grundeinstellungen zeigen, welche Profile abweichen.
+- **Einstellungen der App selbst,** etwa die Sprache der Oberfläche, der Start mit dem Computer und Updates, sind für jedes Profil gleich.
+- **Was Diktate verwenden, wählst du** im Kasten **In Verwendung** oben in der Seitenleiste oder im Tray.
+- **Ein Profil je App.** Gib einem Profil die Apps, für die es gedacht ist, zum Beispiel eines für dein Terminal und ein anderes für deinen Chat. Es entscheidet die App, die vorn ist, wenn die Aufnahme endet. Fügst du den Text später in eine andere App ein, macht DanyWhere nur neu, was deren Profil anders macht. **Profil nach Anwendung wählen** schaltet das aus und wieder ein, auch mit <kbd>⌃⇧A</kbd> auf dem Mac und <kbd>Alt+Umschalt+A</kbd> unter Windows. Unter Windows tippst du die Dateinamen der Programme ein; unter Linux kann DanyWhere noch nicht erkennen, welche App vorn ist.
+- **Ein Profil zum Mitnehmen.** Exportier ein Profil in eine Datei und importier es anderswo. Sein API-Schlüssel wird dabei mit einem Passwort verschlüsselt, das du wählst.
+
+[Grundeinstellungen und Profile](../how-it-works/defaults-and-profiles/) zeigt, wie beide zusammenspielen.
+
+## Nachbearbeitung
+
+- **Ein KI-Modell bearbeitet deinen Text, statt ihn zu beantworten.** DanyWhere sagt dem Modell selbst, dass es eine Transkription zum Bearbeiten bekommt und keine Frage, dass der Text in seiner Sprache bleibt und dass es falsch erkannte Wörter korrigiert, wo der Zusammenhang klar macht, was gesagt wurde. Dein Prompt sagt nur, was mit dem Text geschehen soll. **Denkaufwand** neben dem Modell legt fest, wie viel das Modell nachdenkt.
+- **Mehrere Prompts in einem Durchgang.** Die Prompts bilden eine Bibliothek für alle Profile. Jedes Profil schaltet die ein, die es verwendet, und bringt sie in eine Reihenfolge. Sie gehen in einer einzigen Anfrage an das Modell und wirken nacheinander.
+- **Deine Wortlisten als bekannte Begriffe.** Die Nachbearbeitung bekommt die Wortlisten, die gerade gelten, und schreibt einen falsch erkannten Namen so, wie er auf der Liste steht, bei jedem Sprachmodell.
+- **Frühere Diktate als Kontext.** Mit **Kontext senden** schickt eine Endtaste deine früheren Diktate aus demselben Fenster mit, damit das Modell weiß, worum es im Gespräch geht.
+- **Auf diesem Computer oder in der Cloud, und du siehst, wo.** Neben dem Anbieter sagen die Einstellungen, ob die Nachbearbeitung auf diesem Computer bleibt oder in die Cloud geht. Stellt ein Programm auf diesem Computer das Modell bereit, etwa Ollama oder LM Studio, lädt DanyWhere es, sobald du zu sprechen beginnst. So verlängert sein Kaltstart die Wartezeit nicht.
+
+## Verlauf
+
+- **Jede Bearbeitung als eigene Fassung.** Jeder Eintrag ist ein Stapel von Fassungen, mit dem Ergebnis obenauf. Nachbearbeitung, deine eigene Änderung und erneutes Transkribieren legen eine Fassung obendrauf und löschen nichts. Fassungen kannst du verschieben und löschen.
+- **Später bearbeiten und nachbearbeiten.** Klick in den Text, um ihn zu bearbeiten. Der Zauberstab bearbeitet die Fassung nach, die du siehst, mit den Prompts des Profils oder mit einem beliebigen einzelnen Prompt, auch lange nach dem Diktat. Jeder Eintrag nennt das Sprachmodell, das ihn transkribiert hat.
+- **Den ganzen Verlauf durchsuchen,** jede Fassung eingeschlossen. Die Suche beachtet auf Wunsch Groß- und Kleinschreibung, findet nur ganze Wörter oder nimmt reguläre Ausdrücke. Filtern kannst du nach App, Fenstertitel oder Dateiname.
+- **Ein langer Verlauf, der klein bleibt.** Aufnahmen werden komprimiert gespeichert, etwa 12-mal kleiner als unkomprimiertes Audio. Ein Speicherlimit, ab Werk 500 MB oder etwa 54 Stunden Diktat, legt fest, wie viele Aufnahmen bleiben. Werden alte Aufnahmen gelöscht, bleiben ihre Transkriptionen, und mit einem Stern behältst du eine Aufnahme für immer.
+
+## Einfügen und kopieren
+
+- **Einfügen ohne Zwischenablage, auf dem Mac.** DanyWhere hat eine eigene Eingabemethode. Sobald du ihre Eingabequelle hinzugefügt hast, kommt ein Diktat direkt ins Textfeld, ohne Zwischenablage. Der Weg dorthin beginnt unter **Applikationseinstellungen › Bedienungshilfen › Ohne Zwischenablage einfügen**.
+- **Die letzte Transkription noch einmal.** **Letzte Transkription einfügen** fügt die letzte Transkription dort ein, wo der Cursor jetzt steht, etwa wenn ein Diktat nirgends angekommen ist, weil kein Textfeld den Fokus hatte: <kbd>⌃⇧V</kbd> auf dem Mac, <kbd>Alt+Umschalt+V</kbd> unter Windows und Linux. **Letzte Transkription kopieren** legt sie in die Zwischenablage: <kbd>⌃⇧C</kbd> oder <kbd>Alt+Umschalt+C</kbd>.
+- **Das Overlay dort, wo du arbeitest:** auf dem Bildschirm mit dem Fenster, das vorn ist, auf dem Mac und unter Windows.
+
+## Ohne Bedienungshilfen auf dem Mac
+
+- **DanyWhere funktioniert auch, wo diese Berechtigung gesperrt ist,** wie auf vielen Firmen-Macs. Wähl beim Einrichten **Ohne Bedienungshilfen fortfahren**. Ist die Eingabequelle von DanyWhere hinzugefügt, fügen Endtasten den Text sofort ein. Ohne sie wartet ein Diktat in DanyWhere, bis du es mit <kbd>⌃⇧V</kbd> einfügst.
+- **Ohne die Berechtigung kann DanyWhere keine Tasten drücken.** Eine neue Installation lässt die vier Endtasten weg, die eine Taste drücken, und Enter drückst du selbst.
+- **Fenstertitel von den Apps selbst.** DanyWhere fragt jede App, die den Titel ihres vorderen Fensters nennen kann, etwa Browser, Terminal, Mail, Notizen, TextEdit und Microsoft Office, sobald du es für diese App erlaubst. Kontext aus früheren Diktaten und der Fensterfilter des Verlaufs brauchen den Titel.
+- **Tastenkombinationen mit der fn-Taste** gibt es ohne die Berechtigung nicht.
+
+## Sprachmodelle und Wortlisten
+
+- **Spracherkennung auf deinem eigenen Computer,** mit einer kleinen Auswahl an Modellen, die auf einem Laptop schnell genug zum Diktieren sind: Parakeet Ultra (25 europäische Sprachen), Whisper large-v3-turbo (100 Sprachen), Canary 1B v2 (übersetzt ins Englische), Parakeet unified EN 0.6B (Englisch, mit Live-Vorschau), Whisper small und Canary 180M flash.
+- **Von Anfang an ein Modell für deine Sprachen.** Die Einrichtung empfiehlt eines für die Sprachen, die du sprichst, und lädt es herunter, während du die Berechtigungen erteilst. Jede Datei wird anhand ihrer Prüfsumme geprüft.
+- **Wortlisten nach Thema.** Die **Wortliste** der Grundeinstellungen gilt in jedem Profil, und ein Profil kann eigene **Zusätzliche Wörter** hinzufügen. Von benannten zusätzlichen Listen, zum Beispiel einer je Projekt, schaltest du jeweils eine ein: in den Einstellungen, im Tray oder mit <kbd>⌃⇧L</kbd> (<kbd>Alt+Umschalt+L</kbd> unter Windows und Linux). Die Whisper-Modelle nutzen die Wortlisten schon beim Erkennen der Sprache.
+- **Namen, vom KI-Modell geprüft.** Canary und Parakeet nutzen die Wortlisten nicht selbst. Mit **Namen mit dem LLM prüfen, auch ohne Nachbearbeitung** fragt DanyWhere den Anbieter deiner Nachbearbeitung, ob ein Wort, das einem Listeneintrag ähnelt, diesen meint, und ersetzt nur, was der Anbieter bestätigt.
+
+## Außerdem
+
+- **Ein Ton, wenn alles fertig ist,** Nachbearbeitung eingeschlossen, damit du weißt, wann du wieder hinschauen kannst. Die drei Töne werden höher, vom Start über das Ende bis zu „fertig“.
+- **Tastenkombinationen so, wie dein System sie schreibt,** <kbd>⌥⌃ Leertaste</kbd> auf dem Mac und <kbd>Strg+Umschalt+Leertaste</kbd> unter Windows. In einer Tastenkombination mit einer Haupttaste zählen die linke und die rechte Sondertaste gleich.
+- **Neuerungen nach einem Update,** auf Englisch oder Deutsch.
+- **Dieses Handbuch,** in der App unter **Handbuch** und im Web, auf Englisch, Deutsch, Spanisch und Französisch.
+
+Unter alldem liegen die Grundlagen des Diktierens: globale Tastenkombinationen, die du hältst oder antippst, Sprachaktivitätserkennung, die Wahl des Mikrofons und Einfügen in jede App auf allen drei Systemen. Wie ein Diktat sie durchläuft, zeigt [Ein Diktat von Anfang bis Ende](../how-it-works/dictation-from-start-to-end/).

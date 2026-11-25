@@ -63,6 +63,16 @@ export default defineConfig({
         SiteTitle: "./src/components/SiteTitle.astro",
       },
       sidebar: [
+        // Everything DanyWhere does at a glance; first, before the chapters.
+        {
+          label: "What DanyWhere can do",
+          translations: {
+            de: "Was DanyWhere kann",
+            es: "Lo que hace DanyWhere",
+            fr: "Ce que fait DanyWhere",
+          },
+          slug: "features",
+        },
         {
           label: "How DanyWhere works",
           translations: {
