@@ -246,13 +246,12 @@ const SETUP_SCENES: Partial<
 
 /** What the sample comes back as, per language: the locale's sample
  * sentence (`settings.postProcessing.setup.sample.text`) as a prompt would
- * tidy it up. Spanish and French follow their locales' sentences once those
- * have them; check them against the locale before a shot in that language. */
+ * tidy it up; change it together with the locale's sentence. */
 const SAMPLE_RESULTS: Record<string, string> = {
   en: "I'll send you that tomorrow, okay?",
   de: "Ich schick dir das morgen, okay?",
   es: "Te lo mando mañana, ¿vale?",
-  fr: "Je vous envoie ça demain, d'accord ?",
+  fr: "Je t'envoie ça demain, d'accord ?",
 };
 
 /** The settings of a fresh macOS installation in `language`, onboarding
