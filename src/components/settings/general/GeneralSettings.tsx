@@ -5,10 +5,10 @@ import { MicrophoneSelector } from "../MicrophoneSelector";
 import { ChannelSelector } from "../ChannelSelector";
 import { ShortcutInput } from "../ShortcutInput";
 import { EndKeysSettings } from "../end-keys/EndKeysSettings";
-import { HoldEndsSetting } from "../end-keys/HoldEndsSetting";
+import { StartKeysSettings } from "../start-keys/StartKeysSettings";
+import { HoldKeysSettings } from "../start-keys/HoldKeysSettings";
 import { SettingsGroup } from "../../ui/SettingsGroup";
 import { OutputDeviceSelector } from "../OutputDeviceSelector";
-import { ShortcutActivationSetting } from "../ShortcutActivation";
 import { AudioFeedback } from "../AudioFeedback";
 import { DoneSound } from "../DoneSound";
 import { useSettings } from "../../../hooks/useSettings";
@@ -18,7 +18,6 @@ import { ModelSettingsCard } from "./ModelSettingsCard";
 import { PreferredLanguages } from "../PreferredLanguages";
 import { ChineseScriptSetting } from "../ChineseScript";
 import { isChinese } from "@/lib/utils/languageSuggestions";
-import { holdPossible } from "@/lib/endKeys";
 // DanyWhere (strand E2): each profile value with its chain and the
 // profiles that deviate from it.
 import { ScopedSetting } from "../profiles/scope/ScopedSetting";
@@ -33,37 +32,15 @@ export const GeneralSettings: React.FC = () => {
     (getSetting("chinese_script") ?? "as_transcribed") !== "as_transcribed";
   return (
     <div className="max-w-3xl w-full mx-auto space-y-6">
-      {/* DanyWhere: start and end shortcuts follow each other, the other
-          shortcuts come after them (user, 2026-11-24). */}
-      <SettingsGroup title={t("settings.general.startShortcuts")}>
-        <ScopedSetting field="shortcut_activation">
-          <ShortcutActivationSetting descriptionMode="tooltip" grouped={true} />
-        </ScopedSetting>
-        <ScopedSetting field="bindings" entry="transcribe">
-          <ShortcutInput shortcutId="transcribe" grouped={true} />
-        </ScopedSetting>
-        <ScopedSetting field="bindings" entry="transcribe_with_post_process">
-          <ShortcutInput
-            shortcutId="transcribe_with_post_process"
-            descriptionMode="tooltip"
-            grouped={true}
-          />
-        </ScopedSetting>
-      </SettingsGroup>
-      {/* DanyWhere: how a recording ends and what follows (end_keys.rs).
-          Releasing a held start shortcut is an end too, so "When Held" opens
-          the end shortcuts, wherever a start shortcut can be held, and
-          "When Tapped" heads the list after it; Cancel, which ends without a
-          text, closes them. */}
+      {/* DanyWhere: three lists, start, hold and end shortcuts, follow each
+          other, the other shortcuts come after them (user, 2026-11-24; qa
+          2026-11-26_1713, decision). What a combination does follows from
+          the lists it stands in. */}
+      <StartKeysSettings />
+      <HoldKeysSettings />
+      {/* DanyWhere: how a recording ends and what follows (end_keys.rs);
+          Cancel, which ends without a text, closes the end shortcuts. */}
       <EndKeysSettings
-        tapHeading={holdPossible(getSetting("shortcut_activation"))}
-        before={
-          holdPossible(getSetting("shortcut_activation")) && (
-            <ScopedSetting field="hold_ends">
-              <HoldEndsSetting />
-            </ScopedSetting>
-          )
-        }
         after={
           // Cancel shortcut remains hidden on Linux because of dynamic shortcut instability.
           !isLinux && (

@@ -74,10 +74,27 @@ describe("the bar after decoupling", () => {
   });
 
   test("names a shortcut by its name", async () => {
-    await renderBar({ field: "bindings", entry: "transcribe" });
+    await renderBar({ field: "bindings", entry: "paste_last_transcript" });
     expect(visibleText()).toContain(
-      "“Shortcuts: Start Shortcut” now applies only to “Neutest”.",
+      "“Shortcuts: Paste Last Transcript” now applies only to “Neutest”.",
     );
+  });
+
+  test("names a start shortcut by its keys and a hold shortcut after them", async () => {
+    await renderBar({ field: "start_keys", entry: "start" });
+    expect(visibleText()).toContain(
+      "“Start Shortcuts: ⌃ Space” now applies only to “Neutest”.",
+    );
+
+    await act(async () => {
+      useDecoupleBar
+        .getState()
+        .show({ profileId: NEUTEST, field: "hold_keys", entry: "hold_post" });
+    });
+    expect(visibleText()).toContain(
+      "“Hold Shortcuts: ⌃⇧ Space held” now applies only to “Neutest”.",
+    );
+    expect(rawTextIn()).toEqual([]);
   });
 
   test("Change the Default Instead moves an entry to the defaults", async () => {

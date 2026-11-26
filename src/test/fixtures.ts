@@ -6,11 +6,11 @@
 import type {
   AppSettings,
   EndKey,
-  HoldEnd,
   LLMPrompt,
   ModelInfo,
   Profile,
   ShortcutBinding,
+  StartKey,
   WordList,
 } from "@/bindings";
 
@@ -43,12 +43,14 @@ export const endKey = (
   ...extra,
 });
 
-export const holdEnd = (extra: Partial<HoldEnd> = {}): HoldEnd => ({
-  append_text: "",
-  post_process: false,
-  send_context: false,
-  ...extra,
+/** A start shortcut: only its combination (qa 2026-11-26_1810). */
+export const startKey = (id: string, shortcut: string): StartKey => ({
+  id,
+  shortcut,
 });
+
+/** A hold shortcut: the shape of an end shortcut (qa 2026-11-26_1810). */
+export const holdKey = endKey;
 
 export const wordList = (id: string, name: string): WordList => ({
   id,
@@ -92,35 +94,33 @@ export const modelInfo = (
 });
 
 /** The defaults' values as DanyWhere ships them, as far as the pages read
- * them: two start shortcuts, an end with each one's combination, nothing
- * own. */
+ * them: one start shortcut, two hold shortcuts, an end with each one's
+ * combination, nothing own. */
 export const defaultValues = (): Values => ({
   selected_model: "",
   selected_language: "auto",
   spoken_languages: [],
   translate_to_english: false,
   chinese_script: "as_transcribed",
-  shortcut_activation: "toggle",
   bindings: {
-    transcribe: binding("transcribe", "ctrl+space"),
-    transcribe_with_post_process: binding(
-      "transcribe_with_post_process",
-      "ctrl+shift+space",
-    ),
     paste_last_transcript: binding("paste_last_transcript", "ctrl+shift+v"),
     copy_last_transcript: binding("copy_last_transcript", "ctrl+shift+c"),
     cycle_word_list: binding("cycle_word_list", "ctrl+shift+l"),
     toggle_profile_auto: binding("toggle_profile_auto", "ctrl+shift+a"),
     cancel: binding("cancel", "escape"),
   },
+  // Out of the box (qa 2026-11-26_1810, question 6 a): ⌃ Space starts when
+  // tapped and records while held; ⌃⇧ Space records while held and
+  // post-processes.
+  start_keys: [startKey("start", "ctrl+space")],
+  hold_keys: [
+    endKey("hold_direct", "ctrl+space"),
+    endKey("hold_post", "ctrl+shift+space", { post_process: true }),
+  ],
   end_keys: [
     endKey("plain", "ctrl+space"),
     endKey("post_process", "ctrl+shift+space", { post_process: true }),
   ],
-  hold_ends: {
-    transcribe: holdEnd(),
-    transcribe_with_post_process: holdEnd({ post_process: true }),
-  },
   word_lists: [],
   active_word_list_id: null,
   custom_words: [],

@@ -84,7 +84,10 @@ describe("End Shortcuts under the defaults", () => {
     expect(rawTextIn()).toEqual([]);
   });
 
-  test("an end with a start shortcut's combination names that start shortcut", async () => {
+  // Out of the box ⌃ Space is a start and a hold shortcut, ⌃⇧ Space only a
+  // hold shortcut (qa 2026-11-26_1810): an end with one of their keys ends
+  // when it is tapped during a recording.
+  test("an end with a start or hold shortcut's combination says so", async () => {
     await renderEnds([
       PLAIN,
       endKey("post_process", "ctrl+shift+space", { post_process: true }),
@@ -92,13 +95,20 @@ describe("End Shortcuts under the defaults", () => {
     ]);
 
     const text = visibleText();
-    expect(text).toContain(
-      "Same combination as “Start Shortcut”: tapping it again during a recording ends this way.",
-    );
-    expect(text).toContain(
-      "Same combination as “Second Start Shortcut”: tapping it again during a recording ends this way.",
-    );
+    const START_HINT =
+      "Same combination as a start shortcut: tapping it again during a recording ends this way.";
+    const HOLD_HINT =
+      "Same combination as a hold shortcut: tapping it during a recording ends this way.";
+    expect(text.split(START_HINT).length - 1).toBe(1);
+    expect(text.split(HOLD_HINT).length - 1).toBe(1);
+    expect(text.indexOf(START_HINT)).toBeLessThan(text.indexOf(HOLD_HINT));
     expect(text.match(/Same combination as/g)?.length).toBe(2);
+  });
+
+  test("a side of a start shortcut's keys is another combination", async () => {
+    await renderEnds([endKey("plain", "ctrl_left+space"), SEND]);
+
+    expect(visibleText()).not.toContain("Same combination as");
   });
 
   test("the last end can't be deleted, and its button says why", async () => {
@@ -291,8 +301,13 @@ describe("refusals of the backend", () => {
   test("on Linux, a change that would leave no way to end says so", async () => {
     const notices = await refuse("end-key-cannot-end");
     expect(notices).toEqual([
-      "On Linux a recording could no longer be ended: keep an end shortcut with a start shortcut's combination, or choose “Hold”.",
+      "On Linux a recording could no longer be ended: keep an end shortcut with a start shortcut's combination.",
     ]);
+  });
+
+  test("a combination of another end shortcut names that end shortcut", async () => {
+    const notices = await refuse("conflict:end_key:end_1795307754299");
+    expect(notices).toEqual(["End shortcut Senden already uses this shortcut"]);
   });
 });
 

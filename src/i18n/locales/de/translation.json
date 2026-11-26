@@ -408,18 +408,9 @@
         "notFound": "Tastenkürzel nicht gefunden",
         "pressKeys": "Tasten drücken...",
         "bindings": {
-          "transcribe": {
-            "name": "Starttaste",
-            "description": "Startet eine Aufnahme. Wie sie endet, legen die Endtasten fest, auch beim Halten."
-          },
           "cancel": {
             "name": "Abbrechen-Tastenkürzel",
             "description": "Das Tastenkürzel zum Abbrechen der aktuellen Aufnahme."
-          },
-          "transcribe_with_post_process": {
-            "name": "Zweite Starttaste",
-            "description": "Optional: eine zweite Tastenkombination, die eine Aufnahme startet. Ab Werk bearbeitet eine Endtaste mit derselben Tastenkombination den Text nach. Nur belegt, solange die Nachbearbeitung eingeschaltet ist.",
-            "descriptionMacos": "Optional: eine zweite Tastenkombination, die eine Aufnahme startet. Ab Werk wird der Text nachbearbeitet, wenn man sie hält und loslässt; erneutes Antippen beendet ohne Nachbearbeitung, wie jede Endtaste ohne ⌥. Nur belegt, solange die Nachbearbeitung eingeschaltet ist."
           },
           "paste_last_transcript": {
             "name": "Letzte Transkription einfügen",
@@ -464,20 +455,6 @@
         "noMatch": "Keine Sprache passt zu „{{query}}“",
         "weak": "Noch kein Modell erkennt {{languages}} gut."
       },
-      "shortcutActivation": {
-        "title": "Verhalten der Tastenkombination",
-        "description": "Wähle aus, wie eine Starttaste eine Aufnahme startet und beendet.",
-        "options": {
-          "holdOrToggle": "Automatisch",
-          "pushToTalk": "Halten",
-          "toggle": "Antippen"
-        },
-        "descriptions": {
-          "hold_or_toggle": "Gedrückt halten zum Aufnehmen oder antippen zum Starten; dann beendet eine Endtaste",
-          "push_to_talk": "Nimmt auf, solange die Tastenkombination gedrückt bleibt",
-          "toggle": "Antippen startet die Aufnahme; erneutes Antippen stoppt nur, wenn eine Endtaste dieselbe Tastenkombination hat"
-        }
-      },
       "insertService": {
         "invalid": "Nimm ⌘ oder ⌃ mit einem Buchstaben, einer Ziffer oder einem Satzzeichen",
         "conflict": "„{{name}}“ verwendet dieses Kürzel schon"
@@ -495,12 +472,46 @@
         }
       }
     },
+    "startKeys": {
+      "description": "Antippen startet eine Aufnahme. Sie läuft, bis eine Endtaste sie beendet.",
+      "shortcutHint": "Antippen dieser Tastenkombination startet eine Aufnahme. Sie ist immer belegt.",
+      "alsoHold": "Auch Haltetaste",
+      "add": "Starttaste hinzufügen",
+      "addPressKeys": "Drück die Tastenkombination für die neue Starttaste",
+      "delete": "Starttaste {{shortcut}} löschen",
+      "lastOne": "Eine Start- oder Haltetaste muss bleiben, damit sich eine Aufnahme immer starten lässt.",
+      "refName": "Starttaste {{shortcut}}",
+      "errors": {
+        "save": "Die Starttasten konnten nicht gespeichert werden: {{error}}",
+        "needsShortcut": "Jede Starttaste braucht eine Tastenkombination.",
+        "shortcutTwice": "Zwei Starttasten können nicht dieselbe Tastenkombination haben.",
+        "last": "Die letzte Start- oder Haltetaste kann nicht weg: Eine Aufnahme muss sich immer starten lassen.",
+        "cannotEnd": "Unter Linux ließe sich eine Aufnahme, die {{shortcut}} startet, nicht beenden: Behalte eine Endtaste mit derselben Tastenkombination."
+      }
+    },
+    "holdKeys": {
+      "title": "Haltetasten",
+      "description": "Gedrückt halten nimmt auf. Das Loslassen beendet die Aufnahme so: was angehängt wird, ob der Text nachbearbeitet wird, ob frühere Diktate als Kontext mitgehen.",
+      "shortcutHint": "Gedrückt halten dieser Tastenkombination nimmt auf; das Loslassen beendet die Aufnahme so.",
+      "alsoStart": "Auch Starttaste: kurzes Antippen startet eine Aufnahme, die weiterläuft.",
+      "holdOnly": "Nur Haltetaste: kurzes Antippen tut nichts.",
+      "notTaken": "Nur belegt, solange die Nachbearbeitung eingeschaltet ist: Bis dahin bleibt ihre Tastenkombination bei der App im Vordergrund.",
+      "add": "Haltetaste hinzufügen",
+      "addPressKeys": "Drück die Tastenkombination für die neue Haltetaste",
+      "refName": "Haltetaste {{name}}",
+      "errors": {
+        "save": "Die Haltetasten konnten nicht gespeichert werden: {{error}}",
+        "needsShortcut": "Jede Haltetaste braucht eine Tastenkombination.",
+        "shortcutTwice": "Zwei Haltetasten können nicht dieselbe Tastenkombination haben."
+      }
+    },
     "endKeys": {
       "title": "Endtasten",
-      "description": "Wie eine Aufnahme endet und was folgt. Jede Endtaste hat eine eigene Tastenkombination, die nur während einer Aufnahme belegt ist, und legt fest, was angehängt wird, ob der Text nachbearbeitet wird und ob frühere Diktate als Kontext mitgehen. Eine Endtaste darf die Tastenkombination einer Starttaste haben: Erneutes Antippen dieser Starttaste beendet dann so.",
+      "description": "Wie eine Aufnahme endet und was folgt. Jede Endtaste hat eine eigene Tastenkombination, die nur während einer Aufnahme belegt ist, und legt fest, was angehängt wird, ob der Text nachbearbeitet wird und ob frühere Diktate als Kontext mitgehen. Eine Endtaste darf die Tastenkombination einer Start- oder Haltetaste haben: Antippen dieser Tastenkombination während einer Aufnahme beendet dann so.",
       "name": "Name",
       "shortcutHint": "Diese Tastenkombination beendet eine laufende Aufnahme auf diese Weise. Sie ist nur während einer Aufnahme belegt.",
-      "sameAsStart": "Dieselbe Tastenkombination wie „{{start}}“: Erneutes Antippen während einer Aufnahme beendet so.",
+      "sameAsStart": "Dieselbe Tastenkombination wie eine Starttaste: Erneutes Antippen während einer Aufnahme beendet so.",
+      "sameAsHold": "Dieselbe Tastenkombination wie eine Haltetaste: Antippen während einer Aufnahme beendet so.",
       "append": "Anhängen",
       "appendDescription": "Wird an ein Diktat angehängt, das so endet: der Text, dann der gewählte Tastendruck. Im Text ist \\s ein Leerzeichen, \\n ein Zeilenumbruch, \\t ein Tabulator und \\\\ ein Backslash; alles andere wird angehängt, wie es dasteht. Der Tastendruck wird nur gesendet, wenn der Text eingefügt wird.",
       "postProcess": "Nachbearbeiten",
@@ -512,14 +523,7 @@
       "delete": "{{name}} löschen",
       "lastOne": "Eine Endtaste muss bleiben, damit sich eine Aufnahme immer beenden lässt.",
       "held": "{{shortcut}} gehalten",
-      "holdEnds": {
-        "title": "Beim Halten",
-        "description": "Wie das Loslassen einer gehaltenen Starttaste die Aufnahme beendet."
-      },
-      "tapEnds": {
-        "title": "Beim Antippen",
-        "description": "Wie das Antippen einer Endtaste die Aufnahme beendet."
-      },
+      "refName": "Endtaste {{name}}",
       "factoryNames": {
         "pattern": "{{mode}} · {{effect}}",
         "direct": "Direkt",
@@ -531,13 +535,13 @@
         "enter": "Enter senden",
         "shiftEnter": "Shift-Enter senden"
       },
-      "linuxNoShortcuts": "Unter Linux werden die Tastenkombinationen der Endtasten während einer Aufnahme nicht belegt. Eine Aufnahme endet dort, wenn man eine gehaltene Starttaste loslässt oder eine Starttaste erneut antippt, deren Tastenkombination eine Endtaste hat.",
+      "linuxNoShortcuts": "Unter Linux werden die Tastenkombinationen der Endtasten während einer Aufnahme nicht belegt. Eine Aufnahme endet dort, wenn man eine Haltetaste loslässt oder eine Starttaste erneut antippt, deren Tastenkombination eine Endtaste hat.",
       "errors": {
         "save": "Die Endtasten konnten nicht gespeichert werden: {{error}}",
         "needsShortcut": "Jede Endtaste braucht eine Tastenkombination.",
         "shortcutTwice": "Zwei Endtasten können nicht dieselbe Tastenkombination haben.",
         "last": "Die letzte Endtaste kann nicht weg: Eine Aufnahme muss sich immer beenden lassen.",
-        "cannotEnd": "Unter Linux ließe sich eine Aufnahme nicht mehr beenden: Behalte eine Endtaste mit der Tastenkombination einer Starttaste oder wähle „Halten“."
+        "cannotEnd": "Unter Linux ließe sich eine Aufnahme nicht mehr beenden: Behalte eine Endtaste mit der Tastenkombination einer Starttaste."
       }
     },
     "inputMethod": {
@@ -1306,7 +1310,7 @@
       },
       "holdThreshold": {
         "title": "Halte-Schwellenwert",
-        "description": "Nur im Modus „Automatisch“: wie lange (in Millisekunden) die Tastenkombination gedrückt bleiben muss, damit sie als Halten statt als Antippen zählt. Verringern, wenn die Aufnahme nach kurzem Halten weiterläuft; erhöhen, wenn bewusstes Antippen als Halten gewertet wird."
+        "description": "Wie lange (in Millisekunden) eine Haltetaste gedrückt bleiben muss, damit das als Halten zählt. Bleibt sie kürzer gedrückt, zählt eine Tastenkombination, die auch Starttaste ist, als Antippen, und eine reine Haltetaste verwirft die Aufnahme. Verringern, wenn die Aufnahme nach kurzem Halten weiterläuft; erhöhen, wenn bewusstes Antippen als Halten gewertet wird."
       },
       "reliablePaste": {
         "title": "Zuverlässiges Einfügen (Beta)",
@@ -1382,7 +1386,6 @@
     "profileView": {
       "fields": {
         "shortcuts": "Tastenkombinationen",
-        "holdEnds": "Beim Halten",
         "selectedModel": "Sprachmodell",
         "providers": "Adresse und Format des Anbieters",
         "activePrompts": "Aktive Prompts",

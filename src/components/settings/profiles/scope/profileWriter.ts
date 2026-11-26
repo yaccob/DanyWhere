@@ -9,6 +9,7 @@ import { commands, type JsonValue } from "@/bindings";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { notify } from "@/stores/noticeStore";
 import { shortcutRefusalText } from "@/lib/shortcutRefusal";
+import { storeKeyRefLabel } from "../../end-keys/keyRefLabel";
 import {
   becomesOwn,
   patchScope,
@@ -130,9 +131,13 @@ export const writeEntry = (
   );
 
 /** DanyWhere: a refusal for a shortcut's combination as its sentence
- * (`shortcutRefusalText`); any other keeps the generic title. */
-export const describeShortcutRefusal: Describe = (error) =>
-  shortcutRefusalText(error, (key, options) => i18n.t(key, options));
+ * (`shortcutRefusalText`, a start, hold or end shortcut by its keys or
+ * name); any other keeps the generic title. */
+export const describeShortcutRefusal: Describe = (error) => {
+  const t = (key: string, options?: Record<string, unknown>) =>
+    i18n.t(key, options);
+  return shortcutRefusalText(error, t, storeKeyRefLabel(t));
+};
 
 /** Thrown by a scoped write whose refusal the notice already told, so the
  * caller rolls back without telling it again. */

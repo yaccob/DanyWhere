@@ -7,7 +7,8 @@ import type {
   PostProcessApiFormat,
   ChineseScript,
   TranscribeAcceleratorSetting,
-  ShortcutActivation,
+  StartKey,
+  EndKey,
   VadBackend,
   LanguageDetectionMode,
   RecordingStorageLimit,
@@ -113,8 +114,20 @@ const settingUpdaters: {
     commands.changeShowWhatsNewOnUpdateSetting(value as boolean),
   whats_new_last_seen_version: (value) =>
     commands.changeWhatsNewLastSeenVersionSetting(value as string),
-  shortcut_activation: (value) =>
-    commands.changeShortcutActivationSetting(value as ShortcutActivation),
+  // DanyWhere: the start and hold shortcuts of the values in use, each
+  // list as a whole (qa 2026-11-26_1810).
+  start_keys: async (value) => {
+    const result = await commands.changeStartKeysSetting(
+      (value as StartKey[] | undefined) ?? [],
+    );
+    if (result.status === "error") throw new Error(result.error);
+  },
+  hold_keys: async (value) => {
+    const result = await commands.changeHoldKeysSetting(
+      (value as EndKey[] | undefined) ?? [],
+    );
+    if (result.status === "error") throw new Error(result.error);
+  },
   hold_threshold_ms: (value) =>
     commands.changeHoldThresholdMsSetting(value as number),
   selected_microphone: (value) =>

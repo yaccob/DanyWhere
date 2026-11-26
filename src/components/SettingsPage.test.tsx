@@ -13,7 +13,7 @@ import { useSettingJump } from "./settings/profiles/scope/settingJumpStore";
 import {
   defaultValues,
   endKey,
-  holdEnd,
+  holdKey,
   settingsWith,
   type SettingsSpec,
 } from "@/test/fixtures";
@@ -22,21 +22,23 @@ import { isVisible, visibleText } from "@/test/visible";
 
 const WORK = "profile_1795300000001";
 const PENDE = endKey("end_1795307930035", "ctrl+alt+l", { name: "PEnde" });
+const PHALTEN = holdKey("hold_1795307930036", "ctrl+alt+h", {
+  name: "PHalten",
+});
 
 const spec: SettingsSpec = {
-  defaults: { shortcut_activation: "push_to_talk" },
   profiles: [
     {
       id: WORK,
       name: "Work",
-      own: ["hold_ends", "selected_channel"],
-      ownEntries: { end_keys: { own: [PENDE.id] } },
+      own: ["selected_channel"],
+      ownEntries: {
+        hold_keys: { own: [PHALTEN.id] },
+        end_keys: { own: [PENDE.id] },
+      },
       values: {
+        hold_keys: [...(defaultValues().hold_keys as unknown[]), PHALTEN],
         end_keys: [...(defaultValues().end_keys as unknown[]), PENDE],
-        hold_ends: {
-          transcribe: holdEnd({ post_process: true }),
-          transcribe_with_post_process: holdEnd({ post_process: true }),
-        },
         selected_channel: 1,
       },
     },
@@ -104,13 +106,10 @@ describe("Open in … under a default", () => {
     const buttons = screen
       .getAllByRole("button", { name: "Open in Work" })
       .filter(isVisible);
-    // When Held and End Shortcuts; the channel isn't shown on this device,
-    // and Private follows everywhere.
+    // Hold Shortcuts and End Shortcuts; the channel isn't shown on this
+    // device, and Private follows everywhere.
     expect(buttons.map((button) => visibleText(button.parentElement!))).toEqual(
-      [
-        "Work ⌃ Space held: Post-process · ⌃⇧ Space held: Post-process Open in Work",
-        "Work own: PEnde Open in Work",
-      ],
+      ["Work own: PHalten Open in Work", "Work own: PEnde Open in Work"],
     );
     expect(
       screen.queryByRole("button", { name: "Open in Private" }),
@@ -127,24 +126,21 @@ describe("Open in … under a default", () => {
     ]);
     const setting = await litSetting();
     expect(setting.textContent).toContain("Add End Shortcut");
-    expect(setting.textContent).not.toContain("When Held");
+    expect(setting.textContent).not.toContain("Add Hold Shortcut");
     expect(scrolledTo).toEqual([setting]);
     // The page is the profile's: its own end shortcut is there.
     expect(visibleText()).toContain("PEnde own");
   });
 
-  test("lights up When Held when that is the setting", async () => {
+  test("lights up the hold shortcuts when that is the setting", async () => {
     await openWindow({ kind: "defaults", page: "general" });
 
-    await press(
-      openInWorkBeside(
-        "⌃ Space held: Post-process · ⌃⇧ Space held: Post-process",
-      ),
-    );
+    await press(openInWorkBeside("own: PHalten"));
 
     const setting = await litSetting();
-    expect(setting.textContent).toContain("When Held");
+    expect(setting.textContent).toContain("Add Hold Shortcut");
     expect(setting.textContent).not.toContain("Add End Shortcut");
+    expect(visibleText()).toContain("PHalten own");
   });
 });
 

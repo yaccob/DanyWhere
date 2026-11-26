@@ -3,14 +3,15 @@
 // beim Ändern einer Starttaste lesbar zeigt, ist offen"). A recorded
 // combination goes to the scope; when the backend refuses it, the notice
 // says why in words, once, as it does for the end shortcuts, never with the
-// backend's code or a binding id.
+// backend's code or a binding id. Start shortcuts are a list of their own
+// since 2026-11-26 (start-keys/StartKeysSettings.test.tsx); the field is the
+// other shortcuts', here "Paste Last Transcript".
 import { describe, expect, test } from "bun:test";
-import { act, fireEvent, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { DEFAULTS_SCOPE, type Scope } from "@/lib/profileScope";
 import { ShortcutInput } from "./ShortcutInput";
 import { callsOf, err, mockCommand } from "@/test/bindings-mock";
 import { binding, settingsWith } from "@/test/fixtures";
-import i18n, { switchTestLanguage } from "@/test/i18n";
 import {
   press,
   pressKeys,
@@ -19,34 +20,35 @@ import {
   typeKeys,
 } from "@/test/render";
 import { setOsType } from "@/test/tauri-mock";
-import { rawTextIn } from "@/test/visible";
 
 const WORK = "profile_1795300000001";
 
-const renderStart = (scope: Scope = DEFAULTS_SCOPE) =>
-  renderPage(<ShortcutInput shortcutId="transcribe" />, {
+const PASTE = "paste_last_transcript";
+
+const renderPaste = (scope: Scope = DEFAULTS_SCOPE) =>
+  renderPage(<ShortcutInput shortcutId={PASTE} />, {
     settings: settingsWith({ profiles: [{ id: WORK, name: "Work" }] }),
     scope,
   });
 
-/** Records Ctrl+E for the start shortcut, whose combination its field
+/** Records Ctrl+E for the paste shortcut, whose combination its field
  * shows as `shown` (macOS writes it with symbols). */
-const recordCtrlE = async (shown = "⌃ Space") => {
+const recordCtrlE = async (shown = "⌃⇧V") => {
   await press(screen.getByText(shown));
   await pressKeys("ControlLeft", "KeyE");
 };
 
-describe("a start shortcut's field in a scope", () => {
+describe("a shortcut's field in a scope", () => {
   test("stores the recorded combination in the page's scope", async () => {
-    await renderStart();
+    await renderPaste();
     await recordCtrlE();
 
     expect(callsOf("setProfileEntry")).toEqual([
       [
         DEFAULTS_SCOPE,
         "bindings",
-        "transcribe",
-        binding("transcribe", "ctrl+space", { current_binding: "ctrl+e" }),
+        PASTE,
+        binding(PASTE, "ctrl+shift+v", { current_binding: "ctrl+e" }),
       ],
     ]);
     expect(raisedNotices()).toEqual([]);
@@ -54,19 +56,31 @@ describe("a start shortcut's field in a scope", () => {
 
   test("a combination another shortcut has names that shortcut, once", async () => {
     mockCommand("setProfileEntry", async () =>
-      err("conflict:paste_last_transcript"),
+      err("conflict:copy_last_transcript"),
     );
-    await renderStart();
+    await renderPaste();
     await recordCtrlE();
 
     expect(raisedNotices()).toEqual([
-      "Paste Last Transcript already uses this shortcut",
+      "Copy Last Transcript already uses this shortcut",
+    ]);
+  });
+
+  test("a combination a hold shortcut has names that hold shortcut", async () => {
+    mockCommand("setProfileEntry", async () =>
+      err("conflict:hold_key:hold_post"),
+    );
+    await renderPaste();
+    await recordCtrlE();
+
+    expect(raisedNotices()).toEqual([
+      "Hold shortcut ⌃⇧ Space held already uses this shortcut",
     ]);
   });
 
   test("in a profile too", async () => {
     mockCommand("setProfileEntry", async () => err("conflict:cancel"));
-    await renderStart({ kind: "profile", id: WORK });
+    await renderPaste({ kind: "profile", id: WORK });
     await recordCtrlE();
 
     expect(raisedNotices()).toEqual([
@@ -77,17 +91,17 @@ describe("a start shortcut's field in a scope", () => {
   test("on Linux, a combination after which no end would work says so", async () => {
     setOsType("linux");
     mockCommand("setProfileEntry", async () => err("end-key-cannot-end"));
-    await renderStart();
-    await recordCtrlE("Ctrl+Space");
+    await renderPaste();
+    await recordCtrlE("Ctrl+Shift+V");
 
     expect(raisedNotices()).toEqual([
-      "On Linux a recording could no longer be ended: keep an end shortcut with a start shortcut's combination, or choose “Hold”.",
+      "On Linux a recording could no longer be ended: keep an end shortcut with a start shortcut's combination.",
     ]);
   });
 
   test("another refusal keeps the backend's reason as the detail", async () => {
     mockCommand("setProfileEntry", async () => err("Invalid shortcut 'e'"));
-    await renderStart();
+    await renderPaste();
     await recordCtrlE();
 
     expect(raisedNotices()).toEqual([
@@ -100,84 +114,23 @@ describe("a start shortcut's field in a scope", () => {
 // own key events, one at a time, with the page rendering after each
 // (qa 2026-11-23_1747, point 2).
 describe("recording key by key, as without Accessibility", () => {
-  test("a start shortcut's field in a scope takes every key", async () => {
-    await renderPage(<ShortcutInput shortcutId="transcribe" />, {
+  test("a shortcut's field in a scope takes every key", async () => {
+    await renderPage(<ShortcutInput shortcutId={PASTE} />, {
       settings: settingsWith({ app: { keyboard_implementation: "tauri" } }),
       scope: DEFAULTS_SCOPE,
     });
-    await press(screen.getByText("⌃ Space"));
+    await press(screen.getByText("⌃⇧V"));
     await typeKeys("ControlLeft", "AltLeft", "KeyY");
 
     expect(callsOf("setProfileEntry")).toEqual([
       [
         DEFAULTS_SCOPE,
         "bindings",
-        "transcribe",
-        binding("transcribe", "ctrl+space", {
+        PASTE,
+        binding(PASTE, "ctrl+shift+v", {
           current_binding: "ctrl+option+y",
         }),
       ],
     ]);
-  });
-});
-
-// What the second start shortcut does out of the box differs by system
-// since macOS has twelve factory ends (end_keys.rs, `factory_end_keys_on`,
-// `factory_hold_ends_on`): there its second press is "Direct · No space",
-// without post-processing, and releasing it after holding post-processes.
-// Windows and Linux keep an end with its combination that post-processes.
-describe("the second start shortcut's description", () => {
-  const renderSecond = () =>
-    renderPage(<ShortcutInput shortcutId="transcribe_with_post_process" />, {
-      settings: settingsWith(),
-      scope: DEFAULTS_SCOPE,
-    });
-
-  /** The text of the info button's tooltip, as a press shows it, in the
-   * test's language. */
-  const description = async (): Promise<string | null> => {
-    const info = screen.getByRole("button", {
-      name: i18n.t("common.moreInformation"),
-    });
-    await act(async () => {
-      fireEvent.pointerDown(info);
-    });
-    return screen.getByRole("tooltip").textContent;
-  };
-
-  test("on macOS, says that holding post-processes and tapping again doesn't", async () => {
-    await renderSecond();
-
-    expect(await description()).toBe(
-      "Optional: a second combination that starts a recording. Out of the box, releasing it after holding it post-processes the text; tapping it again ends without post-processing, as every end shortcut without ⌥ does. Taken only while post-processing is on.",
-    );
-    expect(rawTextIn()).toEqual([]);
-  });
-
-  test("on macOS in German too", async () => {
-    await switchTestLanguage("de");
-    await renderSecond();
-
-    expect(await description()).toBe(
-      "Optional: eine zweite Tastenkombination, die eine Aufnahme startet. Ab Werk wird der Text nachbearbeitet, wenn man sie hält und loslässt; erneutes Antippen beendet ohne Nachbearbeitung, wie jede Endtaste ohne ⌥. Nur belegt, solange die Nachbearbeitung eingeschaltet ist.",
-    );
-  });
-
-  const ELSEWHERE =
-    "Optional: a second combination that starts a recording. Out of the box, an end shortcut with the same combination post-processes the text. Taken only while post-processing is on.";
-
-  test("on Windows, says that the end with its combination post-processes", async () => {
-    setOsType("windows");
-    await renderSecond();
-
-    expect(await description()).toBe(ELSEWHERE);
-    expect(rawTextIn()).toEqual([]);
-  });
-
-  test("on Linux too", async () => {
-    setOsType("linux");
-    await renderSecond();
-
-    expect(await description()).toBe(ELSEWHERE);
   });
 });
