@@ -476,6 +476,7 @@
       "description": "Ketuk untuk memulai rekaman. Rekaman berjalan sampai sebuah pintasan akhir mengakhirinya.",
       "shortcutHint": "Mengetuk kombinasi ini memulai rekaman. Kombinasi ini selalu dipakai.",
       "alsoHold": "Juga pintasan tahan",
+      "alsoInstruction": "Juga pintasan instruksi",
       "add": "Tambah Pintasan Mulai",
       "addPressKeys": "Tekan kombinasi untuk pintasan mulai yang baru",
       "delete": "Hapus pintasan mulai {{shortcut}}",
@@ -491,11 +492,11 @@
     },
     "holdKeys": {
       "title": "Pintasan Tahan",
-      "description": "Tahan untuk merekam. Melepasnya mengakhiri rekaman dengan cara ini: apa yang ditambahkan, apakah teks diproses lanjut, dan apakah dikte sebelumnya ikut dikirim sebagai konteks.",
+      "description": "Tahan untuk merekam. Melepasnya mengakhiri rekaman dengan cara ini: apa yang ditambahkan dan apakah dikte sebelumnya ikut dikirim sebagai konteks.",
       "shortcutHint": "Menahan kombinasi ini merekam; melepasnya mengakhiri rekaman dengan cara ini.",
       "alsoStart": "Juga pintasan mulai: ketukan singkat memulai rekaman yang terus berjalan.",
       "holdOnly": "Hanya pintasan tahan: ketukan singkat tidak melakukan apa pun.",
-      "notTaken": "Hanya dipakai selama pemrosesan lanjut aktif: sampai saat itu, kombinasinya tetap milik aplikasi di depan.",
+      "alsoInstruction": "Juga pintasan instruksi: selama rekaman, pintasan ini beralih ke instruksi.",
       "add": "Tambah Pintasan Tahan",
       "addPressKeys": "Tekan kombinasi untuk pintasan tahan yang baru",
       "refName": "Pintasan tahan {{name}}",
@@ -505,19 +506,34 @@
         "shortcutTwice": "Dua pintasan tahan tidak boleh memakai kombinasi yang sama."
       }
     },
+    "instructionKeys": {
+      "title": "Pintasan Instruksi",
+      "description": "Selama rekaman, pintasan instruksi beralih dari teks ke instruksi: apa yang Anda ucapkan sesudahnya tidak disisipkan, tetapi memberi tahu pascaproses apa yang harus dilakukan dengan teks, misalnya “terjemahkan ini ke bahasa Polandia”. Ketuk, lalu pintasan akhir mengirim dikte; tahan, lalu melepasnya mengirim dikte sesuai pengaturan di sini. Dikte seperti itu selalu diproses lanjut.",
+      "shortcutHint": "Selama rekaman, menekan kombinasi ini beralih dari teks ke instruksi. Kombinasi ini hanya dipakai selama merekam.",
+      "onlyWhileRecording": "Hanya dipakai selama rekaman.",
+      "sameAsStartOrHold": "Kombinasi yang sama dengan sebuah pintasan mulai atau pintasan tahan: tanpa rekaman, kombinasi ini memulai rekaman; selama rekaman, kombinasi ini beralih ke instruksi.",
+      "notTakenNever": "Pascaproses diatur ke “{{mode}}”: pintasan instruksi tidak dipakai. Pilih pengaturan lain untuk “{{setting}}” di Lanjutan.",
+      "notTakenNoProvider": "Belum ada penyedia pascaproses dengan model yang disiapkan: pintasan instruksi tidak dipakai sampai ada satu.",
+      "add": "Tambah Pintasan Instruksi",
+      "addPressKeys": "Tekan kombinasi untuk pintasan instruksi yang baru",
+      "refName": "Pintasan instruksi {{name}}",
+      "errors": {
+        "save": "Pintasan instruksi tidak dapat disimpan: {{error}}",
+        "needsShortcut": "Setiap pintasan instruksi memerlukan kombinasi tombol.",
+        "shortcutTwice": "Dua pintasan instruksi tidak boleh memakai kombinasi yang sama."
+      }
+    },
     "endKeys": {
       "title": "Pintasan Akhir",
-      "description": "Cara rekaman berakhir dan apa yang menyusul. Setiap pintasan akhir punya kombinasi tombolnya sendiri, yang hanya dipakai selama merekam, dan menentukan apa yang ditambahkan, apakah teks diproses lanjut, dan apakah dikte sebelumnya ikut dikirim sebagai konteks. Pintasan akhir boleh memakai kombinasi tombol sebuah pintasan mulai atau pintasan tahan: mengetuknya selama rekaman lalu mengakhiri rekaman dengan cara ini.",
+      "description": "Cara rekaman berakhir dan apa yang menyusul. Setiap pintasan akhir punya kombinasi tombolnya sendiri, yang hanya dipakai selama merekam, dan menentukan apa yang ditambahkan dan apakah dikte sebelumnya ikut dikirim sebagai konteks. Pintasan akhir boleh memakai kombinasi tombol sebuah pintasan mulai atau pintasan tahan: mengetuknya selama rekaman lalu mengakhiri rekaman dengan cara ini.",
       "name": "Nama",
       "shortcutHint": "Menekan kombinasi ini selama rekaman mengakhirinya dengan cara ini. Kombinasi ini hanya dipakai selama merekam.",
       "sameAsStart": "Kombinasi yang sama dengan sebuah pintasan mulai: mengetuknya lagi selama rekaman mengakhirinya dengan cara ini.",
       "sameAsHold": "Kombinasi yang sama dengan sebuah pintasan tahan: mengetuknya selama rekaman mengakhirinya dengan cara ini.",
       "append": "Tambahkan di akhir",
       "appendDescription": "Ditambahkan ke dikte yang berakhir dengan cara ini: teksnya, lalu tombol yang Anda pilih. Dalam teks, \\s adalah spasi, \\n baris baru, \\t tab, dan \\\\ garis miring terbalik; selebihnya ditambahkan seperti yang tertulis. Tombol hanya dikirim saat teks ditempelkan.",
-      "postProcess": "Proses lanjut",
       "sendContext": "Kirim Konteks",
-      "sendContextHint": "Hanya dengan pemrosesan lanjut: dikte sebelumnya dari jendela yang sama ikut dikirim sebagai konteks.",
-      "postProcessOff": "Pascaproses nonaktif: dikte yang diakhiri dengan cara ini tidak diproses lanjut. Aktifkan “Pascaproses” di Lanjutan.",
+      "sendContextHint": "Dikte sebelumnya dari jendela yang sama ikut dikirim sebagai konteks. Ini hanya berlaku jika dikte diproses lanjut.",
       "add": "Tambah Pintasan Akhir",
       "addPressKeys": "Tekan kombinasi untuk pintasan akhir yang baru",
       "delete": "Hapus {{name}}",
@@ -866,6 +882,7 @@
         "llmCheckTitle": "Periksa nama dengan LLM, juga tanpa pascaproses",
         "llmCheckDescription": "Hanya pada dikte dengan kata yang mirip entri daftar kata. Kalimatnya lalu dikirim ke {{provider}}.",
         "llmCheckNeedsProvider": "Memerlukan penyedia pascaproses dengan model.",
+        "llmCheckNever": "Tidak selama pascaproses diatur ke “{{mode}}”: saat itu tidak ada yang dikirim ke penyedia.",
         "llmCheckNotWith": "Tidak dengan {{provider}}: memerlukan penyedia pascaproses lain dengan model.",
         "setUpPostProcessing": "Siapkan pascaproses",
         "switchModel": "Beralih ke {{model}}",
@@ -1067,6 +1084,15 @@
         "statusDenied": "Tidak diizinkan – ubah di Pengaturan Sistem › Privasi & Keamanan › Otomatisasi",
         "statusNotRunning": "Tidak berjalan – jalankan untuk mengizinkan",
         "statusUnknown": "Tidak diketahui"
+      },
+      "mode": {
+        "title": "Pascaproses",
+        "description": "Kapan dikte dikirim ke penyedia pascaproses. Tidak pernah: tidak ada yang dikirim ke penyedia, dan pintasan instruksi tidak dipakai. Dengan pintasan instruksi: hanya dikte yang di dalamnya pintasan instruksi ditekan. Selalu: setiap dikte; pintasan instruksi menambahkan instruksi.",
+        "options": {
+          "never": "Tidak pernah",
+          "withInstructionKey": "Dengan pintasan instruksi",
+          "always": "Selalu"
+        }
       }
     },
     "history": {
@@ -1179,7 +1205,8 @@
       "promptMenu": {
         "button": "Pascaproses dengan satu prompt",
         "title": "Pascaproses dengan",
-        "active": "aktif"
+        "active": "aktif",
+        "withoutSpokenInstruction": "Tanpa instruksi lisan"
       },
       "retranscribeAgain": "Transkripsikan ulang dan pascaproses lagi, seperti sebelumnya"
     },
@@ -1279,10 +1306,6 @@
       "clamshellMicrophone": {
         "title": "Mikrofon Saat Laptop Ditutup",
         "description": "Mikrofon yang digunakan saat laptop ditutup"
-      },
-      "postProcessingToggle": {
-        "label": "Pascaproses",
-        "description": "Aktifkan penyempurnaan teks berbasis AI setelah transkripsi"
       },
       "muteWhileRecording": {
         "label": "Bisukan Saat Merekam",
@@ -1577,7 +1600,10 @@
     "notReady": "Belum siap",
     "wordList": "Daftar kata: {{name}}",
     "wordListGlobalOnly": "Tanpa daftar tambahan",
-    "cancel": "Batal"
+    "cancel": "Batal",
+    "instruction": "Instruksi",
+    "instructionLine": "Instruksi: {{text}}",
+    "textReady": "Teks ditranskripsi"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} mungkin memblokir 1 pintasan",

@@ -476,6 +476,7 @@
       "description": "Un appui bref démarre un enregistrement. Il continue jusqu'à ce qu'un raccourci de fin le termine.",
       "shortcutHint": "Un appui bref sur cette combinaison démarre un enregistrement. Elle est toujours prise.",
       "alsoHold": "Aussi raccourci de maintien",
+      "alsoInstruction": "Aussi raccourci d'instruction",
       "add": "Ajouter un raccourci de début",
       "addPressKeys": "Appuyez sur la combinaison du nouveau raccourci de début",
       "delete": "Supprimer le raccourci de début {{shortcut}}",
@@ -491,11 +492,11 @@
     },
     "holdKeys": {
       "title": "Raccourcis de maintien",
-      "description": "Maintenez pour enregistrer. Le relâchement termine l'enregistrement de cette façon : ce qui est ajouté, si le texte est post-traité, si les dictées précédentes sont envoyées comme contexte.",
+      "description": "Maintenez pour enregistrer. Le relâchement termine l'enregistrement de cette façon : ce qui est ajouté et si les dictées précédentes sont envoyées comme contexte.",
       "shortcutHint": "Maintenir cette combinaison enregistre ; la relâcher termine l'enregistrement de cette façon.",
       "alsoStart": "Aussi raccourci de début : un appui bref démarre un enregistrement qui continue.",
       "holdOnly": "Raccourci de maintien uniquement : un appui bref ne fait rien.",
-      "notTaken": "Pris uniquement tant que le post-traitement est activé : jusque-là, sa combinaison reste à l'application au premier plan.",
+      "alsoInstruction": "Aussi raccourci d'instruction : pendant un enregistrement, il passe à l'instruction.",
       "add": "Ajouter un raccourci de maintien",
       "addPressKeys": "Appuyez sur la combinaison du nouveau raccourci de maintien",
       "refName": "Raccourci de maintien {{name}}",
@@ -505,19 +506,34 @@
         "shortcutTwice": "Deux raccourcis de maintien ne peuvent pas partager une combinaison."
       }
     },
+    "instructionKeys": {
+      "title": "Raccourcis d'instruction",
+      "description": "Pendant un enregistrement, un raccourci d'instruction passe du texte à une instruction : ce que vous dites ensuite n'est pas inséré, mais indique au post-traitement quoi faire du texte, par exemple « traduis ceci en polonais ». Un appui bref, et un raccourci de fin envoie la dictée ; maintenez-le, et le relâchement envoie la dictée comme réglé ici. Une telle dictée est toujours post-traitée.",
+      "shortcutHint": "Pendant un enregistrement, appuyer sur cette combinaison passe du texte à l'instruction. Elle n'est prise que pendant l'enregistrement.",
+      "onlyWhileRecording": "Prise uniquement pendant un enregistrement.",
+      "sameAsStartOrHold": "Même combinaison qu'un raccourci de début ou de maintien : sans enregistrement, elle en démarre un ; pendant un enregistrement, elle passe à l'instruction.",
+      "notTakenNever": "Le post-traitement est réglé sur « {{mode}} » : les raccourcis d'instruction ne sont pas pris. Choisissez un autre réglage pour « {{setting}} » dans Avancé.",
+      "notTakenNoProvider": "Aucun fournisseur de post-traitement avec un modèle n'est configuré : les raccourcis d'instruction ne sont pas pris tant qu'il n'y en a pas.",
+      "add": "Ajouter un raccourci d'instruction",
+      "addPressKeys": "Appuyez sur la combinaison du nouveau raccourci d'instruction",
+      "refName": "Raccourci d'instruction {{name}}",
+      "errors": {
+        "save": "Impossible d'enregistrer les raccourcis d'instruction : {{error}}",
+        "needsShortcut": "Chaque raccourci d'instruction a besoin d'une combinaison de touches.",
+        "shortcutTwice": "Deux raccourcis d'instruction ne peuvent pas partager une combinaison."
+      }
+    },
     "endKeys": {
       "title": "Raccourcis de fin",
-      "description": "Comment un enregistrement se termine et ce qui suit. Chaque raccourci de fin a sa propre combinaison de touches, prise uniquement pendant l'enregistrement, et indique ce qui est ajouté, si le texte est post-traité et si les dictées précédentes sont envoyées comme contexte. Un raccourci de fin peut avoir la combinaison d'un raccourci de début ou de maintien : un appui bref sur celle-ci pendant un enregistrement termine alors de cette façon.",
+      "description": "Comment un enregistrement se termine et ce qui suit. Chaque raccourci de fin a sa propre combinaison de touches, prise uniquement pendant l'enregistrement, et indique ce qui est ajouté et si les dictées précédentes sont envoyées comme contexte. Un raccourci de fin peut avoir la combinaison d'un raccourci de début ou de maintien : un appui bref sur celle-ci pendant un enregistrement termine alors de cette façon.",
       "name": "Nom",
       "shortcutHint": "Appuyer sur cette combinaison pendant un enregistrement le termine de cette façon. Elle n'est prise que pendant l'enregistrement.",
       "sameAsStart": "Même combinaison qu'un raccourci de début : un nouvel appui bref pendant un enregistrement le termine de cette façon.",
       "sameAsHold": "Même combinaison qu'un raccourci de maintien : un appui bref pendant un enregistrement le termine de cette façon.",
       "append": "Ajouter à la fin",
       "appendDescription": "Ajouté à une dictée qui se termine de cette façon: le texte, puis la touche que vous choisissez. Dans le texte, \\s est une espace, \\n un saut de ligne, \\t une tabulation et \\\\ une barre oblique inverse ; tout le reste est ajouté tel qu'écrit. La touche n'est envoyée que lorsque le texte est collé.",
-      "postProcess": "Post-traiter",
       "sendContext": "Envoyer le contexte",
-      "sendContextHint": "Uniquement avec le post-traitement : les dictées précédentes de la même fenêtre sont envoyées comme contexte.",
-      "postProcessOff": "Le post-traitement est désactivé : une dictée terminée de cette façon n'est pas post-traitée. Activez « Post-traitement » dans Avancé.",
+      "sendContextHint": "Les dictées précédentes de la même fenêtre sont envoyées comme contexte. Cela ne compte que si la dictée est post-traitée.",
       "add": "Ajouter un raccourci de fin",
       "addPressKeys": "Appuyez sur la combinaison du nouveau raccourci de fin",
       "delete": "Supprimer {{name}}",
@@ -866,6 +882,7 @@
         "llmCheckTitle": "Vérifier les noms avec le LLM, même sans post-traitement",
         "llmCheckDescription": "Seulement dans les dictées contenant un mot qui ressemble à une entrée d'une liste de mots. La phrase est alors envoyée à {{provider}}.",
         "llmCheckNeedsProvider": "Nécessite un fournisseur de post-traitement avec un modèle.",
+        "llmCheckNever": "Pas tant que le post-traitement est réglé sur « {{mode}} » : rien n'est alors envoyé à un fournisseur.",
         "llmCheckNotWith": "Pas avec {{provider}} : nécessite un autre fournisseur de post-traitement avec un modèle.",
         "setUpPostProcessing": "Configurer le post-traitement",
         "switchModel": "Passer à {{model}}",
@@ -1067,6 +1084,15 @@
         "statusDenied": "Non autorisé – à modifier dans Réglages Système › Confidentialité et sécurité › Automatisation",
         "statusNotRunning": "Non lancée – lancez-la pour autoriser",
         "statusUnknown": "Inconnu"
+      },
+      "mode": {
+        "title": "Post-traitement",
+        "description": "Quand une dictée part chez le fournisseur de post-traitement. Jamais : rien n'est envoyé à un fournisseur, et les raccourcis d'instruction ne sont pas pris. Avec raccourci d'instruction : seulement une dictée pendant laquelle un raccourci d'instruction a été pressé. Toujours : chaque dictée ; un raccourci d'instruction ajoute une instruction.",
+        "options": {
+          "never": "Jamais",
+          "withInstructionKey": "Avec raccourci d'instruction",
+          "always": "Toujours"
+        }
       }
     },
     "history": {
@@ -1179,7 +1205,8 @@
       "promptMenu": {
         "button": "Post-traiter avec une instruction",
         "title": "Post-traiter avec",
-        "active": "active"
+        "active": "active",
+        "withoutSpokenInstruction": "Sans l'instruction orale"
       },
       "retranscribeAgain": "Re-transcrire et post-traiter à nouveau, comme avant"
     },
@@ -1279,10 +1306,6 @@
       "clamshellMicrophone": {
         "title": "Microphone en mode fermé",
         "description": "Microphone à utiliser lorsque le couvercle du portable est fermé"
-      },
-      "postProcessingToggle": {
-        "label": "Post-traitement",
-        "description": "Activer l'affinage du texte par IA après la transcription"
       },
       "muteWhileRecording": {
         "label": "Muet pendant l'enregistrement",
@@ -1577,7 +1600,10 @@
     "notReady": "Pas encore prêt",
     "wordList": "Liste de mots : {{name}}",
     "wordListGlobalOnly": "Aucune liste supplémentaire",
-    "cancel": "Annuler"
+    "cancel": "Annuler",
+    "instruction": "Instruction",
+    "instructionLine": "Instruction : {{text}}",
+    "textReady": "Texte transcrit"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} bloque peut-être 1 raccourci",

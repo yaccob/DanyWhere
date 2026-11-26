@@ -476,6 +476,7 @@
       "description": "Tryck kort för att starta en inspelning. Den pågår tills ett avslutningskortkommando avslutar den.",
       "shortcutHint": "Ett kort tryck på den här tangentkombinationen startar en inspelning. Den är alltid upptagen.",
       "alsoHold": "Även ett hållkortkommando",
+      "alsoInstruction": "Även ett instruktionskortkommando",
       "add": "Lägg till startkortkommando",
       "addPressKeys": "Tryck på tangentkombinationen för det nya startkortkommandot",
       "delete": "Ta bort startkortkommando {{shortcut}}",
@@ -491,11 +492,11 @@
     },
     "holdKeys": {
       "title": "Hållkortkommandon",
-      "description": "Håll nere för att spela in. När du släpper avslutas inspelningen på det här sättet: vad som läggs till, om texten efterbearbetas och om tidigare dikteringar skickas med som kontext.",
+      "description": "Håll nere för att spela in. När du släpper avslutas inspelningen på det här sättet: vad som läggs till och om tidigare dikteringar skickas med som kontext.",
       "shortcutHint": "Så länge du håller den här tangentkombinationen nere spelas det in; när du släpper den avslutas inspelningen på det här sättet.",
       "alsoStart": "Även ett startkortkommando: ett kort tryck startar en inspelning som fortsätter.",
       "holdOnly": "Bara hållkortkommando: ett kort tryck gör ingenting.",
-      "notTaken": "Bara upptaget så länge efterbearbetning är påslagen: tills dess stannar dess tangentkombination hos appen i förgrunden.",
+      "alsoInstruction": "Även ett instruktionskortkommando: under en inspelning växlar det till instruktionen.",
       "add": "Lägg till hållkortkommando",
       "addPressKeys": "Tryck på tangentkombinationen för det nya hållkortkommandot",
       "refName": "Hållkortkommando {{name}}",
@@ -505,19 +506,34 @@
         "shortcutTwice": "Två hållkortkommandon kan inte dela en tangentkombination."
       }
     },
+    "instructionKeys": {
+      "title": "Instruktionskortkommandon",
+      "description": "Under en inspelning växlar ett instruktionskortkommando från texten till en instruktion: det du säger sedan infogas inte utan talar om för efterbearbetningen vad den ska göra med texten, till exempel ”översätt det här till polska”. Tryck kort på det, så skickar ett avslutningskortkommando iväg dikteringen; håll det nere, så skickar släppet iväg dikteringen som det är inställt här. En sådan diktering efterbearbetas alltid.",
+      "shortcutHint": "Under en inspelning växlar ett tryck på den här tangentkombinationen från texten till instruktionen. Den är bara upptagen under en inspelning.",
+      "onlyWhileRecording": "Bara upptagen under en inspelning.",
+      "sameAsStartOrHold": "Samma tangentkombination som ett start- eller hållkortkommando: utan inspelning startar den en, under en inspelning växlar den till instruktionen.",
+      "notTakenNever": "Efterbearbetning är inställd på ”{{mode}}”: instruktionskortkommandon är inte upptagna. Välj en annan inställning för ”{{setting}}” under Avancerat.",
+      "notTakenNoProvider": "Ingen leverantör för efterbearbetning med en modell är inställd: instruktionskortkommandon är inte upptagna förrän en finns.",
+      "add": "Lägg till instruktionskortkommando",
+      "addPressKeys": "Tryck på tangentkombinationen för det nya instruktionskortkommandot",
+      "refName": "Instruktionskortkommando {{name}}",
+      "errors": {
+        "save": "Instruktionskortkommandona kunde inte sparas: {{error}}",
+        "needsShortcut": "Varje instruktionskortkommando behöver en tangentkombination.",
+        "shortcutTwice": "Två instruktionskortkommandon kan inte dela en tangentkombination."
+      }
+    },
     "endKeys": {
       "title": "Avslutningskortkommandon",
-      "description": "Hur en inspelning slutar och vad som följer. Varje avslutningskortkommando har en egen tangentkombination, som bara är upptagen under en inspelning, och bestämmer vad som läggs till, om texten efterbearbetas och om tidigare dikteringar skickas med som kontext. Ett avslutningskortkommando får ha ett start- eller hållkortkommandos tangentkombination: ett kort tryck på den under en inspelning avslutar då på det här sättet.",
+      "description": "Hur en inspelning slutar och vad som följer. Varje avslutningskortkommando har en egen tangentkombination, som bara är upptagen under en inspelning, och bestämmer vad som läggs till och om tidigare dikteringar skickas med som kontext. Ett avslutningskortkommando får ha ett start- eller hållkortkommandos tangentkombination: ett kort tryck på den under en inspelning avslutar då på det här sättet.",
       "name": "Namn",
       "shortcutHint": "Ett tryck på den här tangentkombinationen under en inspelning avslutar den på det här sättet. Den är bara upptagen under en inspelning.",
       "sameAsStart": "Samma tangentkombination som ett startkortkommando: ett nytt kort tryck under en inspelning avslutar på det här sättet.",
       "sameAsHold": "Samma tangentkombination som ett hållkortkommando: ett kort tryck under en inspelning avslutar på det här sättet.",
       "append": "Lägg till",
       "appendDescription": "Läggs till i en diktering som slutar på det här sättet: texten och sedan den tangenttryckning du väljer. I texten är \\s ett mellanslag, \\n en ny rad, \\t en tabb och \\\\ ett omvänt snedstreck; allt annat läggs till som det står. Tangenttryckningen skickas bara när texten klistras in.",
-      "postProcess": "Efterbearbeta",
       "sendContext": "Skicka kontext",
-      "sendContextHint": "Bara med efterbearbetning: tidigare dikteringar från samma fönster skickas med som kontext.",
-      "postProcessOff": "Efterbearbetning är avstängd: en diktering som avslutas på det här sättet efterbearbetas inte. Slå på ”Efterbearbetning” under Avancerat.",
+      "sendContextHint": "Tidigare dikteringar från samma fönster skickas med som kontext. Det gäller bara när dikteringen efterbearbetas.",
       "add": "Lägg till avslutningskortkommando",
       "addPressKeys": "Tryck på tangentkombinationen för det nya avslutningskortkommandot",
       "delete": "Ta bort {{name}}",
@@ -866,6 +882,7 @@
         "llmCheckTitle": "Kontrollera namn med LLM:en, även utan efterbearbetning",
         "llmCheckDescription": "Bara i dikteringar med ett ord som liknar en post i en ordlista. Meningen skickas då till {{provider}}.",
         "llmCheckNeedsProvider": "Kräver en leverantör för efterbearbetning med en modell.",
+        "llmCheckNever": "Inte så länge efterbearbetning är inställd på ”{{mode}}”: då skickas inget till en leverantör.",
         "llmCheckNotWith": "Inte med {{provider}}: kräver en annan leverantör för efterbearbetning med en modell.",
         "setUpPostProcessing": "Ställ in efterbearbetning",
         "switchModel": "Byt till {{model}}",
@@ -1067,6 +1084,15 @@
         "statusDenied": "Inte tillåten – ändra i Systeminställningar › Integritet och säkerhet › Automatisering",
         "statusNotRunning": "Körs inte – starta den för att tillåta",
         "statusUnknown": "Okänd"
+      },
+      "mode": {
+        "title": "Efterbearbetning",
+        "description": "När en diktering går till leverantören för efterbearbetning. Aldrig: inget skickas till en leverantör, och instruktionskortkommandon är inte upptagna. Med instruktionskortkommando: bara en diktering där ett instruktionskortkommando trycktes. Alltid: varje diktering; ett instruktionskortkommando lägger till en instruktion.",
+        "options": {
+          "never": "Aldrig",
+          "withInstructionKey": "Med instruktionskortkommando",
+          "always": "Alltid"
+        }
       }
     },
     "history": {
@@ -1179,7 +1205,8 @@
       "promptMenu": {
         "button": "Efterbearbeta med en prompt",
         "title": "Efterbearbeta med",
-        "active": "aktiv"
+        "active": "aktiv",
+        "withoutSpokenInstruction": "Utan den talade instruktionen"
       },
       "retranscribeAgain": "Transkribera igen och efterbearbeta igen, som tidigare"
     },
@@ -1279,10 +1306,6 @@
       "clamshellMicrophone": {
         "title": "Clamshell-mikrofon",
         "description": "Mikrofon som ska användas när bärbara datorns lock är stängt"
-      },
-      "postProcessingToggle": {
-        "label": "Efterbearbetning",
-        "description": "Aktivera AI-driven textförfining efter transkription"
       },
       "muteWhileRecording": {
         "label": "Ljudlös under inspelning",
@@ -1577,7 +1600,10 @@
     "notReady": "Inte klar än",
     "wordList": "Ordlista: {{name}}",
     "wordListGlobalOnly": "Ingen extra lista",
-    "cancel": "Avbryt"
+    "cancel": "Avbryt",
+    "instruction": "Instruktion",
+    "instructionLine": "Instruktion: {{text}}",
+    "textReady": "Text transkriberad"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} kanske blockerar 1 kortkommando",

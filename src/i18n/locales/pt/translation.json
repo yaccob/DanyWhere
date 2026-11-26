@@ -476,6 +476,7 @@
       "description": "Toque para iniciar uma gravação. Continua até que um atalho de fim a termine.",
       "shortcutHint": "Tocar nesta combinação inicia uma gravação. Está sempre ocupada.",
       "alsoHold": "Também atalho de segurar",
+      "alsoInstruction": "Também atalho de instrução",
       "add": "Adicionar atalho de início",
       "addPressKeys": "Prima a combinação para o novo atalho de início",
       "delete": "Eliminar o atalho de início {{shortcut}}",
@@ -491,11 +492,11 @@
     },
     "holdKeys": {
       "title": "Atalhos de Segurar",
-      "description": "Segure para gravar. Soltar termina a gravação desta forma: o que é acrescentado, se o texto é pós-processado, se os ditados anteriores são enviados como contexto.",
+      "description": "Segure para gravar. Soltar termina a gravação desta forma: o que é acrescentado e se os ditados anteriores são enviados como contexto.",
       "shortcutHint": "Segurar esta combinação grava; soltá-la termina a gravação desta forma.",
       "alsoStart": "Também atalho de início: um toque breve inicia uma gravação que continua.",
       "holdOnly": "Só atalho de segurar: um toque breve não faz nada.",
-      "notTaken": "Só fica ocupado enquanto o pós-processamento estiver ativado: até lá, a sua combinação fica com a aplicação em primeiro plano.",
+      "alsoInstruction": "Também atalho de instrução: durante uma gravação, muda para a instrução.",
       "add": "Adicionar atalho de segurar",
       "addPressKeys": "Prima a combinação para o novo atalho de segurar",
       "refName": "Atalho de segurar {{name}}",
@@ -505,19 +506,34 @@
         "shortcutTwice": "Dois atalhos de segurar não podem partilhar uma combinação."
       }
     },
+    "instructionKeys": {
+      "title": "Atalhos de Instrução",
+      "description": "Durante uma gravação, um atalho de instrução muda do texto para uma instrução: o que disser a seguir não é inserido, mas diz ao pós-processamento o que fazer com o texto, por exemplo “traduz isto para polaco”. Toque nele, e um atalho de fim envia o ditado; segure-o, e soltá-lo envia o ditado como definido aqui. Um ditado assim é sempre pós-processado.",
+      "shortcutHint": "Durante uma gravação, premir esta combinação muda do texto para a instrução. Só fica ocupada durante a gravação.",
+      "onlyWhileRecording": "Ocupada só durante uma gravação.",
+      "sameAsStartOrHold": "A mesma combinação que um atalho de início ou de segurar: sem gravação, inicia uma; durante uma gravação, muda para a instrução.",
+      "notTakenNever": "O pós-processamento está definido como “{{mode}}”: os atalhos de instrução não ficam ocupados. Escolha outra definição para “{{setting}}” em Avançado.",
+      "notTakenNoProvider": "Não há nenhum provedor de pós-processamento com um modelo configurado: os atalhos de instrução só ficam ocupados quando houver um.",
+      "add": "Adicionar atalho de instrução",
+      "addPressKeys": "Prima a combinação para o novo atalho de instrução",
+      "refName": "Atalho de instrução {{name}}",
+      "errors": {
+        "save": "Não foi possível guardar os atalhos de instrução: {{error}}",
+        "needsShortcut": "Cada atalho de instrução precisa de uma combinação de teclas.",
+        "shortcutTwice": "Dois atalhos de instrução não podem partilhar uma combinação."
+      }
+    },
     "endKeys": {
       "title": "Atalhos de fim",
-      "description": "Como uma gravação termina e o que se segue. Cada atalho de fim tem a sua própria combinação de teclas, ocupada só durante a gravação, e define o que é acrescentado, se o texto é pós-processado e se os ditados anteriores são enviados como contexto. Um atalho de fim pode ter a combinação de um atalho de início ou de segurar: tocar nela durante uma gravação termina então desta forma.",
+      "description": "Como uma gravação termina e o que se segue. Cada atalho de fim tem a sua própria combinação de teclas, ocupada só durante a gravação, e define o que é acrescentado e se os ditados anteriores são enviados como contexto. Um atalho de fim pode ter a combinação de um atalho de início ou de segurar: tocar nela durante uma gravação termina então desta forma.",
       "name": "Nome",
       "shortcutHint": "Premir esta combinação durante uma gravação termina-a desta forma. Só fica ocupada durante a gravação.",
       "sameAsStart": "A mesma combinação que um atalho de início: tocar nela de novo durante uma gravação termina-a desta forma.",
       "sameAsHold": "A mesma combinação que um atalho de segurar: tocar nela durante uma gravação termina-a desta forma.",
       "append": "Acrescentar",
       "appendDescription": "Acrescentado a um ditado que termina desta forma: o texto e depois a tecla que escolher. No texto, \\s é um espaço, \\n uma nova linha, \\t uma tabulação e \\\\ uma barra invertida; todo o resto é acrescentado como está escrito. A tecla só é enviada quando o texto é colado.",
-      "postProcess": "Pós-processar",
       "sendContext": "Enviar contexto",
-      "sendContextHint": "Só com pós-processamento: os ditados anteriores da mesma janela são enviados como contexto.",
-      "postProcessOff": "O pós-processamento está desligado: um ditado terminado desta forma não é pós-processado. Ative “Pós-Processamento” em Avançado.",
+      "sendContextHint": "Os ditados anteriores da mesma janela são enviados como contexto. Só conta quando o ditado é pós-processado.",
       "add": "Adicionar atalho de fim",
       "addPressKeys": "Prima a combinação para o novo atalho de fim",
       "delete": "Eliminar {{name}}",
@@ -866,6 +882,7 @@
         "llmCheckTitle": "Verificar nomes com o LLM, também sem pós-processamento",
         "llmCheckDescription": "Só em ditados com uma palavra parecida com uma entrada de uma lista de palavras. A frase vai então para {{provider}}.",
         "llmCheckNeedsProvider": "Precisa de um provedor de pós-processamento com um modelo.",
+        "llmCheckNever": "Não enquanto o pós-processamento estiver definido como “{{mode}}”: nesse caso, nada é enviado a um provedor.",
         "llmCheckNotWith": "Não com {{provider}}: precisa de outro provedor de pós-processamento com um modelo.",
         "setUpPostProcessing": "Configurar o pós-processamento",
         "switchModel": "Mudar para {{model}}",
@@ -1067,6 +1084,15 @@
         "statusDenied": "Não permitido – altere em Ajustes do Sistema › Privacidade e Segurança › Automação",
         "statusNotRunning": "Não está em execução – abra-o para permitir",
         "statusUnknown": "Desconhecido"
+      },
+      "mode": {
+        "title": "Pós-Processamento",
+        "description": "Quando um ditado vai para o provedor de pós-processamento. Nunca: nada é enviado a um provedor, e os atalhos de instrução não ficam ocupados. Com atalho de instrução: só um ditado em que foi premido um atalho de instrução. Sempre: cada ditado; um atalho de instrução acrescenta uma instrução.",
+        "options": {
+          "never": "Nunca",
+          "withInstructionKey": "Com atalho de instrução",
+          "always": "Sempre"
+        }
       }
     },
     "history": {
@@ -1179,7 +1205,8 @@
       "promptMenu": {
         "button": "Pós-processar com um prompt",
         "title": "Pós-processar com",
-        "active": "ativo"
+        "active": "ativo",
+        "withoutSpokenInstruction": "Sem a instrução falada"
       },
       "retranscribeAgain": "Re-transcrever e pós-processar de novo, como antes"
     },
@@ -1279,10 +1306,6 @@
       "clamshellMicrophone": {
         "title": "Microfone em Modo Fechado",
         "description": "Microfone a usar quando a tampa do laptop está fechada"
-      },
-      "postProcessingToggle": {
-        "label": "Pós-Processamento",
-        "description": "Habilitar refinamento de texto com IA após a transcrição"
       },
       "muteWhileRecording": {
         "label": "Silenciar Durante Gravação",
@@ -1577,7 +1600,10 @@
     "notReady": "Ainda não está pronto",
     "wordList": "Lista de palavras: {{name}}",
     "wordListGlobalOnly": "Sem lista adicional",
-    "cancel": "Cancelar"
+    "cancel": "Cancelar",
+    "instruction": "Instrução",
+    "instructionLine": "Instrução: {{text}}",
+    "textReady": "Texto transcrito"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} pode estar bloqueando 1 atalho",
