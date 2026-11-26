@@ -1202,6 +1202,7 @@
         },
         "signIn": {
           "waiting": "Warte auf den Browser …",
+          "title": "Anmeldung bei {{provider}}",
           "waitingHint": "Schließ es im Browser ab. Musstest du dich erst registrieren, drück „Seite erneut öffnen“.",
           "reopen": "Seite erneut öffnen",
           "cancel": "Abbrechen",

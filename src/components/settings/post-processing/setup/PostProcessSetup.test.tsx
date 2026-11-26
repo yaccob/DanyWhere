@@ -31,6 +31,7 @@ import {
 } from "@/test/postProcessSetupFixtures";
 import type { SetupStatus } from "@/bindings";
 import type { SetupAnswers } from "@/lib/postProcessSetup/questions";
+import { runFailureAction } from "@/lib/postProcessSetup/actions";
 
 const WORK = "profile_1795300000001";
 
@@ -506,6 +507,63 @@ describe("post-processing setup: after a failed sign-in", () => {
   });
 });
 
+// "Sign in again" from a notice starts a sign-in that the answers may not
+// lead to, e.g. ChatGPT chosen under All providers (D, M6): the page shows
+// its waiting all the same.
+describe("post-processing setup: a sign-in the answers don't lead to", () => {
+  const signInFromNotice = async () => {
+    await renderSetup(
+      notReady({ provider_id: "chatgpt", readiness: "sign_in" }),
+      {
+        texts_may_go: "free_services",
+        subscription: "none",
+      },
+    );
+    signInStarts();
+    await act(async () => {
+      runFailureAction({ kind: "sign_in_again", provider: "chatgpt" });
+    });
+    await settle();
+  };
+
+  test("waits with Open the page again and Cancel", async () => {
+    await signInFromNotice();
+
+    const text = visibleText();
+    expect(text).toContain("Sign-in with ChatGPT");
+    expect(text).toContain("Waiting for the browser …");
+    expect(
+      screen.getAllByRole("button", { name: "Open the page again" }),
+    ).toHaveLength(1);
+    expect(callsOf("startPostProcessSignIn")).toEqual([
+      ["chatgpt", BROWSER_PAGE, null],
+    ]);
+    await press(button("Cancel")!);
+    expect(callsOf("cancelPostProcessSignIn")).toEqual([[]]);
+    expect(visibleText()).not.toContain("Waiting for the browser …");
+    expect(rawTextIn()).toEqual([]);
+  });
+
+  test("a failed one says why and can start again", async () => {
+    await signInFromNotice();
+    await act(async () => {
+      emitEvent("postProcessSignInFinished", {
+        provider: "chatgpt",
+        ok: false,
+        error: "denied",
+        free_tier: null,
+      });
+    });
+    await settle();
+    expect(visibleText()).toContain("Access wasn't allowed.");
+    await press(button("Try again")!);
+    expect(callsOf("startPostProcessSignIn")).toEqual([
+      ["chatgpt", BROWSER_PAGE, null],
+      ["chatgpt", BROWSER_PAGE, null],
+    ]);
+  });
+});
+
 describe("post-processing setup: a guided key", () => {
   const toClaude = async () => {
     await renderSetup();
@@ -799,6 +857,31 @@ describe("post-processing setup: connected", () => {
     expect(radio(NONE).getAttribute("aria-checked")).toBe("true");
     await press(button("Keep the current setup")!);
     expect(visibleText()).toContain("Connected to OpenRouter");
+  });
+
+  // The answers describe the way in use, so keeping it takes back what was
+  // answered meanwhile (D, M6).
+  test("Keep the current setup takes back the answers given meanwhile", async () => {
+    await renderSetup(ready(), {
+      texts_may_go: "free_services",
+      subscription: "none",
+    });
+    await press(button("Answer the questions again")!);
+    await press(radio(NOT_KEPT));
+    expect(lastAnswers()?.answers?.texts_may_go).toBe("not_kept");
+
+    await press(button("Keep the current setup")!);
+    expect(lastAnswers()).toEqual({
+      answers: {
+        texts_may_go: "free_services",
+        subscription: "none",
+        next_step: null,
+      },
+      finished: true,
+      skipped: false,
+    });
+    await press(button("Answer the questions again")!);
+    expect(radio(FREE).getAttribute("aria-checked")).toBe("true");
   });
 });
 

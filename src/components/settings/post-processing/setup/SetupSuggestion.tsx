@@ -1,10 +1,13 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { commands } from "@/bindings";
+import { commands, type SignInProvider } from "@/bindings";
 import { Button } from "../../../ui/Button";
 import type { Machine, Way } from "@/lib/postProcessSetup/questions";
 import { memoryLabel } from "@/lib/postProcessSetup/labels";
-import { usePostProcessSetupStore } from "@/stores/postProcessSetupStore";
+import {
+  usePostProcessSetupStore,
+  type SignInState,
+} from "@/stores/postProcessSetupStore";
 import { CardLine, SetupCard } from "./SetupCard";
 import { SignInButton } from "./SignInButton";
 import { GuidedKey } from "./GuidedKey";
@@ -57,6 +60,48 @@ const OwnServer: React.FC<{
         <CardLine tone="quiet">{t(`${KEY}.local.ownServerHint`)}</CardLine>
       )}
     </div>
+  );
+};
+
+/** The provider whose sign-in the suggestion `way` offers, if any. */
+export const signInOfWay = (way: Way | null): SignInProvider | null => {
+  switch (way?.kind) {
+    case "openrouter_free":
+    case "openrouter_credit":
+      return "openrouter";
+    case "chatgpt_plan":
+      return "chatgpt";
+    default:
+      return null;
+  }
+};
+
+/**
+ * DanyWhere: a sign-in that the suggestion doesn't offer, started by a
+ * notice's "Sign in again" (sidecar qa 2026-11-26_2250, D, M6): its waiting
+ * with "Open the page again" and "Cancel", or why it failed and "Try
+ * again", for the way it was started for.
+ */
+export const PendingSignIn: React.FC<{ signIn: SignInState }> = ({
+  signIn,
+}) => {
+  const { t } = useTranslation();
+  const chatgpt = signIn.provider === "chatgpt";
+  return (
+    <SetupCard
+      title={t(`${KEY}.signIn.title`, {
+        provider: chatgpt ? "ChatGPT" : "OpenRouter",
+      })}
+    >
+      <SignInButton
+        provider={signIn.provider}
+        intent={signIn.intent}
+        label={t(
+          chatgpt ? `${KEY}.chatgpt.continue` : `${KEY}.openrouter.connect`,
+        )}
+        prominent={true}
+      />
+    </SetupCard>
   );
 };
 

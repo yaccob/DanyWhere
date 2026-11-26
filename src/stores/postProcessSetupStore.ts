@@ -72,6 +72,14 @@ interface PostProcessSetupState {
   /** The questions show although a way is set up or put off ("Answer the
    * questions again", a notice's "Set up" or "Change setup"). */
   editing: boolean;
+  /** While editing: the answers of the way in use and whether it was
+   * finished, which "Keep the current setup" brings back once an answer
+   * was given meanwhile (sidecar qa 2026-11-26_2250, D, M6). */
+  before: {
+    answers: SetupAnswers | null;
+    finished: boolean;
+    changed: boolean;
+  } | null;
   signIn: SignInState | null;
   sample: SampleState | null;
   /** "I've topped up", and OpenRouter still has the free tier. */
@@ -91,6 +99,8 @@ interface PostProcessSetupState {
   /** "Later". */
   putOff: (inert?: boolean) => Promise<void>;
   openQuestions: () => void;
+  /** "Keep the current setup": the questions close, and the answers of the
+   * way in use come back. */
   closeQuestions: () => void;
   startSignIn: (
     provider: SignInProvider,
@@ -125,6 +135,7 @@ export const usePostProcessSetupStore = create<PostProcessSetupState>()(
     answers: null,
     skipped: false,
     editing: false,
+    before: null,
     signIn: null,
     sample: null,
     notToppedUp: false,
@@ -159,7 +170,13 @@ export const usePostProcessSetupStore = create<PostProcessSetupState>()(
 
     answer: (next, machine, inert = false) => {
       const answers = sanitize(next, machine);
-      set({ answers, skipped: false, signIn: withoutFailed(get().signIn) });
+      const before = get().before;
+      set({
+        answers,
+        skipped: false,
+        signIn: withoutFailed(get().signIn),
+        before: before && { ...before, changed: true },
+      });
       if (!inert) void save(answers, false, false);
     },
 
@@ -167,18 +184,35 @@ export const usePostProcessSetupStore = create<PostProcessSetupState>()(
       set({
         skipped: true,
         editing: false,
+        before: null,
         signIn: withoutFailed(get().signIn),
       });
       if (!inert) await save(get().answers ?? EMPTY, false, true);
     },
 
-    openQuestions: () =>
+    openQuestions: () => {
+      const { editing, before, answers, status } = get();
       set({
         editing: true,
         skipped: false,
         signIn: withoutFailed(get().signIn),
-      }),
-    closeQuestions: () => set({ editing: false }),
+        before:
+          editing && before
+            ? before
+            : {
+                answers,
+                finished: status?.setup.finished ?? false,
+                changed: false,
+              },
+      });
+    },
+    closeQuestions: () => {
+      const before = get().before;
+      set({ editing: false, before: null });
+      if (!before?.changed) return;
+      set({ answers: before.answers });
+      void save(before.answers ?? EMPTY, before.finished, false);
+    },
 
     startSignIn: async (provider, intent = null) => {
       set({ signIn: { provider, intent, phase: "starting", error: null } });
@@ -208,7 +242,7 @@ export const usePostProcessSetupStore = create<PostProcessSetupState>()(
     },
 
     finishWay: async () => {
-      set({ editing: false, skipped: false, notToppedUp: false });
+      set({ editing: false, before: null, skipped: false, notToppedUp: false });
       await save(get().answers ?? EMPTY, true, false);
       await get().refresh();
       await get().runSample();

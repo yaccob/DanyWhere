@@ -19,7 +19,7 @@ import {
 import { CardLine } from "./SetupCard";
 import { ConnectedCard } from "./ConnectedCard";
 import { SetupQuestions } from "./SetupQuestions";
-import { SetupSuggestion } from "./SetupSuggestion";
+import { PendingSignIn, SetupSuggestion, signInOfWay } from "./SetupSuggestion";
 
 const KEY = "settings.postProcessing.setup";
 
@@ -154,6 +154,12 @@ export const PostProcessSetup: React.FC<PostProcessSetupProps> = ({
   }
 
   const way = suggest(answers, machine);
+  // A sign-in the suggestion doesn't offer, e.g. from a notice's "Sign in
+  // again", shows its waiting on its own (D, M6).
+  const pending =
+    store.signIn && signInOfWay(way) !== store.signIn.provider
+      ? store.signIn
+      : null;
   return (
     <div className="space-y-4 px-4 py-3 text-start">
       {/* Not a CardLine: its m-0 would cancel the gap of space-y-4 below
@@ -161,6 +167,7 @@ export const PostProcessSetup: React.FC<PostProcessSetupProps> = ({
       {!onboarding && (
         <p className="text-sm text-pretty text-ink-3">{t(`${KEY}.intro`)}</p>
       )}
+      {pending && <PendingSignIn signIn={pending} />}
       <SetupQuestions
         answers={answers}
         machine={machine}

@@ -1202,6 +1202,7 @@
         },
         "signIn": {
           "waiting": "Waiting for the browser …",
+          "title": "Sign-in with {{provider}}",
           "waitingHint": "Finish in the browser. If you had to sign up first, press “Open the page again”.",
           "reopen": "Open the page again",
           "cancel": "Cancel",

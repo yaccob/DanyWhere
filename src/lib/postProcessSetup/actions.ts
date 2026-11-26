@@ -51,15 +51,18 @@ export const runFailureAction = (action: FailureAction): void => {
       openLocation(POST_PROCESS_SETUP_PAGE);
       return;
     case "sign_in_again":
-      // For the way the answers chose (OpenRouter: free, or only with
+      // OpenRouter for the way the answers chose (free, or only with
       // credit), as kept in the settings before the setup's page has read
-      // them.
+      // them; ChatGPT has no such ways.
       void setup.startSignIn(
         action.provider,
-        signInIntentOf(
-          setup.answers ??
-            useSettingsStore.getState().settings?.post_process_setup?.answers,
-        ),
+        action.provider === "openrouter"
+          ? signInIntentOf(
+              setup.answers ??
+                useSettingsStore.getState().settings?.post_process_setup
+                  ?.answers,
+            )
+          : null,
       );
       openLocation(POST_PROCESS_SETUP_PAGE);
       return;
