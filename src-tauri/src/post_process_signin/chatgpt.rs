@@ -61,7 +61,7 @@ pub const USAGE_URL: &str = "https://chatgpt.com/settings/usage";
 /// A refresh is due when less than this is left of the access token.
 pub const REFRESH_MARGIN_SECS: i64 = 300;
 
-const USER_AGENT_VALUE: &str = "DanyWhere/1.0 (+https://github.com/yaccob/Handy)";
+const USER_AGENT_VALUE: &str = crate::llm_client::DANYWHERE_USER_AGENT;
 const FORM: &str = "application/x-www-form-urlencoded";
 /// Clock difference allowed for the ID token's expiry.
 const ID_TOKEN_LEEWAY_SECS: i64 = 60;
@@ -1687,5 +1687,15 @@ mod tests {
         assert_eq!(DEFAULT_MODEL, "gpt-6.2-sol");
         assert_eq!(DEFAULT_EFFORT, "low");
         assert_eq!(USAGE_URL, "https://chatgpt.com/settings/usage");
+    }
+
+    /// Review of 2026-11-27, N18: OpenAI admits open-source apps, so the
+    /// sign-in names DanyWhere's own repository.
+    #[test]
+    fn the_sign_in_names_danywheres_repository() {
+        assert_eq!(
+            USER_AGENT_VALUE,
+            "DanyWhere/1.0 (+https://github.com/yaccob/DanyWhere)"
+        );
     }
 }

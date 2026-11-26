@@ -417,20 +417,19 @@ impl AnthropicMessagesResponse {
     }
 }
 
+/// DanyWhere: the app's site, as its requests name it (`Referer`).
+pub const DANYWHERE_SITE: &str = "https://github.com/yaccob/DanyWhere";
+/// DanyWhere: the `User-Agent` of every request to a provider or a sign-in.
+pub const DANYWHERE_USER_AGENT: &str = "DanyWhere/1.0 (+https://github.com/yaccob/DanyWhere)";
+
 /// Build headers for API requests based on provider type
 fn build_headers(provider: &PostProcessProvider, api_key: &str) -> Result<HeaderMap, String> {
     let mut headers = HeaderMap::new();
 
     // Common headers
     headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
-    headers.insert(
-        REFERER,
-        HeaderValue::from_static("https://github.com/yaccob/Handy"),
-    );
-    headers.insert(
-        USER_AGENT,
-        HeaderValue::from_static("DanyWhere/1.0 (+https://github.com/yaccob/Handy)"),
-    );
+    headers.insert(REFERER, HeaderValue::from_static(DANYWHERE_SITE));
+    headers.insert(USER_AGENT, HeaderValue::from_static(DANYWHERE_USER_AGENT));
     headers.insert("X-Title", HeaderValue::from_static("DanyWhere"));
 
     // Provider-specific auth headers
@@ -2513,5 +2512,21 @@ mod tests {
             body["models"],
             serde_json::json!(["a/one:free", "b/two:free"])
         );
+    }
+
+    /// DanyWhere (review of 2026-11-27, N18): the requests name DanyWhere's
+    /// own repository, not Handy's.
+    #[test]
+    fn the_requests_name_danywheres_repository() {
+        let headers = build_headers(&provider("openrouter", "http://127.0.0.1:9"), "").unwrap();
+        assert_eq!(
+            headers.get(REFERER).and_then(|value| value.to_str().ok()),
+            Some("https://github.com/yaccob/DanyWhere")
+        );
+        assert_eq!(
+            headers.get(USER_AGENT).and_then(|value| value.to_str().ok()),
+            Some("DanyWhere/1.0 (+https://github.com/yaccob/DanyWhere)")
+        );
+        assert_eq!(headers.get("X-Title").unwrap(), "DanyWhere");
     }
 }

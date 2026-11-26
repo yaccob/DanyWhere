@@ -656,7 +656,7 @@ async fn ollama_tags(
         .map_err(|e| format!("Failed to fetch models (kind: builder): {e}"))?;
     let mut request = client.get(&url).header(
         reqwest::header::USER_AGENT,
-        "DanyWhere/1.0 (+https://github.com/yaccob/Handy)",
+        crate::llm_client::DANYWHERE_USER_AGENT,
     );
     if !api_key.is_empty() {
         request = request.bearer_auth(api_key);

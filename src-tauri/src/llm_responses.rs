@@ -57,7 +57,7 @@ pub const FORBIDDEN_FIELDS: &[&str] = &[
 ];
 
 /// The User-Agent sent when `extra_headers` bring none (as `llm_client`).
-const DEFAULT_USER_AGENT: &str = "DanyWhere/1.0 (+https://github.com/yaccob/Handy)";
+const DEFAULT_USER_AGENT: &str = crate::llm_client::DANYWHERE_USER_AGENT;
 
 /// One post-processing request.
 pub struct ResponsesRequest<'a> {
@@ -851,6 +851,15 @@ mod tests {
     fn the_prefixes_are_those_of_llm_client() {
         assert_eq!(STATUS_ERROR_PREFIX, "API request failed with status ");
         assert_eq!(TRUNCATED_ERROR_PREFIX, "Response was truncated");
+    }
+
+    /// Review of 2026-11-27, N18.
+    #[test]
+    fn the_plan_requests_name_danywheres_repository() {
+        assert_eq!(
+            DEFAULT_USER_AGENT,
+            "DanyWhere/1.0 (+https://github.com/yaccob/DanyWhere)"
+        );
     }
 
     // --- the request body ----------------------------------------------------
