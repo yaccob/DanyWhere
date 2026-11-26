@@ -16,6 +16,8 @@ const KNOWN_LISTS: Record<string, FieldKind> = {
   post_process_efforts: { kind: "map" },
   post_process_api_keys: { kind: "map" },
   bindings: { kind: "map" },
+  start_keys: { kind: "list", key: "id" },
+  hold_keys: { kind: "list", key: "id" },
   end_keys: { kind: "list", key: "id" },
 };
 

@@ -3,22 +3,20 @@
 //
 // DanyWhere: start and end shortcuts apart (qa 2026-11-22_2134). Every end
 // has a key combination; without an own name it is called by it. A start
-// shortcut ends a recording only through an end with its combination, and
-// when held, through its end for holding.
+// shortcut ends a recording only through an end with its combination; a
+// hold shortcut ends it when released (qa 2026-11-26_1810; its own checks:
+// startKeys.test.ts).
 import assert from "node:assert/strict";
-import type { EndKey, HoldEnd, ShortcutBinding } from "../bindings";
+import type { EndKey } from "../bindings";
 import {
   canRemove,
   endKeyErrorKey,
   endKeyName,
-  holdEndOf,
-  holdPossible,
   nameToStore,
   newEndKey,
   postProcessingOn,
+  postProcessingReachable,
   removeEndKey,
-  secondStartTaken,
-  startsSharing,
   updateEndKey,
 } from "./endKeys";
 import { formatKeyCombination } from "./utils/keyboard";
@@ -76,24 +74,6 @@ const factory = [
   end("post_process", "ctrl+shift+space", "", true),
 ];
 
-const binding = (id: string, keys: string): ShortcutBinding => ({
-  id,
-  name: id,
-  description: "",
-  default_binding: keys,
-  current_binding: keys,
-});
-
-const bindings: Partial<Record<string, ShortcutBinding>> = {
-  transcribe: binding("transcribe", "ctrl+space"),
-  transcribe_with_post_process: binding(
-    "transcribe_with_post_process",
-    "ctrl+shift+space",
-  ),
-  paste_last_transcript: binding("paste_last_transcript", "ctrl+shift+v"),
-  cancel: binding("cancel", "escape"),
-};
-
 const cases: Array<[string, () => void]> = [
   [
     "an end without an own name is called by its combination, in the interface's language",
@@ -132,20 +112,23 @@ const cases: Array<[string, () => void]> = [
   [
     "a blank name or one equal to the combination is stored as no own name",
     () => {
-      const plain = factory[0];
-      assert.equal(nameToStore("", plain, macEn), "");
-      assert.equal(nameToStore("   ", plain, macEn), "");
-      assert.equal(nameToStore(macEn("ctrl+space"), plain, macEn), "");
-      assert.equal(nameToStore(` ${macDe("ctrl+space")} `, plain, macDe), "");
-      assert.equal(nameToStore(" Senden ", plain, macEn), "Senden");
+      // What the name follows without one of its own: the combination.
+      const plainEn = macEn(factory[0].shortcut);
+      const plainDe = macDe(factory[0].shortcut);
+      assert.equal(nameToStore("", plainEn), "");
+      assert.equal(nameToStore("   ", plainEn), "");
+      assert.equal(nameToStore(macEn("ctrl+space"), plainEn), "");
+      assert.equal(nameToStore(` ${macDe("ctrl+space")} `, plainDe), "");
+      assert.equal(nameToStore(" Senden ", plainEn), "Senden");
       // Emptying an own name makes it follow the combination again.
-      const named = end("send", "ctrl+enter", "Senden");
-      assert.equal(nameToStore("", named, macEn), "");
+      assert.equal(nameToStore("", macEn("ctrl+enter")), "");
     },
   ],
   [
     "a new end has the captured combination, an id none has and no own name",
     () => {
+      // A hold shortcut has the same shape, with ids of its own.
+      assert.equal(newEndKey(factory, "ctrl+h", 1000, "hold").id, "hold_1000");
       const first = newEndKey(factory, "ctrl+enter", 1000);
       assert.deepEqual(first, {
         id: "end_1000",
@@ -179,79 +162,6 @@ const cases: Array<[string, () => void]> = [
       assert.equal(canRemove(factory), true);
       assert.equal(canRemove([factory[0]]), false);
       assert.equal(canRemove([]), false);
-    },
-  ],
-  [
-    "an end with a start shortcut's exact combination names that start shortcut",
-    () => {
-      assert.deepEqual(startsSharing(factory[0], bindings), ["transcribe"]);
-      assert.deepEqual(startsSharing(factory[1], bindings), [
-        "transcribe_with_post_process",
-      ]);
-      // Stored with other spacing or case, it is still the same.
-      assert.deepEqual(startsSharing(end("x", " Ctrl+Space "), bindings), [
-        "transcribe",
-      ]);
-      // A side is another combination; a covering one is no exact match.
-      assert.deepEqual(
-        startsSharing(end("x", "ctrl_left+space"), bindings),
-        [],
-      );
-      // Only start shortcuts count, not the others.
-      assert.deepEqual(startsSharing(end("x", "ctrl+shift+v"), bindings), []);
-      assert.deepEqual(startsSharing(end("x", "ctrl+enter"), bindings), []);
-      // Both start shortcuts on the same keys: both are named.
-      const same = {
-        ...bindings,
-        transcribe_with_post_process: binding(
-          "transcribe_with_post_process",
-          "ctrl+space",
-        ),
-      };
-      assert.deepEqual(startsSharing(factory[0], same), [
-        "transcribe",
-        "transcribe_with_post_process",
-      ]);
-      // A start shortcut without keys shares nothing with an end without.
-      const none = { transcribe: binding("transcribe", "") };
-      assert.deepEqual(startsSharing(end("x", ""), none), []);
-    },
-  ],
-  [
-    "a start shortcut without its own end for holding ends as out of the box",
-    () => {
-      const plain: HoldEnd = {
-        append_text: "",
-        post_process: false,
-        send_context: false,
-      };
-      assert.deepEqual(holdEndOf("transcribe", {}), plain);
-      assert.deepEqual(holdEndOf("transcribe_with_post_process", {}), {
-        ...plain,
-        post_process: true,
-      });
-      const own: HoldEnd = {
-        append_text: "\\n",
-        post_process: true,
-        send_context: true,
-      };
-      assert.deepEqual(holdEndOf("transcribe", { transcribe: own }), own);
-      // An entry for one start shortcut leaves the other's as it was.
-      assert.deepEqual(
-        holdEndOf("transcribe_with_post_process", { transcribe: own }),
-        { ...plain, post_process: true },
-      );
-    },
-  ],
-  [
-    "holding is possible unless the behaviour is Toggle",
-    () => {
-      assert.equal(holdPossible("toggle"), false);
-      assert.equal(holdPossible("push_to_talk"), true);
-      assert.equal(holdPossible("hold_or_toggle"), true);
-      // Nothing stored means the default, Auto.
-      assert.equal(holdPossible(undefined), true);
-      assert.equal(holdPossible(null), true);
     },
   ],
   [
@@ -289,9 +199,7 @@ const cases: Array<[string, () => void]> = [
         "settings.endKeys.addPressKeys",
         "settings.endKeys.lastOne",
         "settings.endKeys.linuxNoShortcuts",
-        "settings.endKeys.holdEnds.title",
-        "settings.endKeys.holdEnds.description",
-        "settings.profileView.fields.holdEnds",
+        "settings.endKeys.sameAsHold",
       ];
       for (const key of present) {
         assert.ok(!t(key).startsWith("MISSING"), `en ${key}`);
@@ -305,10 +213,18 @@ const cases: Array<[string, () => void]> = [
         tDe("settings.endKeys.held", { shortcut: "⌃ Leertaste" }),
         "⌃ Leertaste gehalten",
       );
-      assert.ok(
-        tDe("settings.endKeys.sameAsStart", { start: "Starttaste" }).includes(
-          "„Starttaste“",
-        ),
+      // Start shortcuts have no names: the hint says which kind it is.
+      assert.equal(
+        t("settings.endKeys.sameAsStart"),
+        "Same combination as a start shortcut: tapping it again during a recording ends this way.",
+      );
+      assert.equal(
+        tDe("settings.endKeys.sameAsStart"),
+        "Dieselbe Tastenkombination wie eine Starttaste: Erneutes Antippen während einer Aufnahme beendet so.",
+      );
+      assert.equal(
+        tDe("settings.endKeys.sameAsHold"),
+        "Dieselbe Tastenkombination wie eine Haltetaste: Antippen während einer Aufnahme beendet so.",
       );
       const gone = [
         "settings.endKeys.builtin",
@@ -321,6 +237,10 @@ const cases: Array<[string, () => void]> = [
         "settings.profileView.fields.defaultEnds",
         // The second start shortcut moved to General (user, 2026-11-23).
         "settings.postProcessing.hotkey",
+        // "When Held" and "When Tapped" gave way to the hold shortcuts.
+        "settings.endKeys.holdEnds",
+        "settings.endKeys.tapEnds",
+        "settings.profileView.fields.holdEnds",
       ];
       for (const key of gone) {
         assert.equal(lookup(en as Tree, key), undefined, `en ${key}`);
@@ -330,8 +250,9 @@ const cases: Array<[string, () => void]> = [
   ],
 ];
 
-// The second start shortcut is taken as `app_profiles::post_processing_reachable`
-// says (user, 2026-11-23, option a): "When Held" shows it only then.
+// A hold shortcut that post-processes is taken only while
+// `app_profiles::post_processing_reachable` says so (qa 2026-11-26_1713,
+// question 4 a); the page says so at it.
 const profile = (id: string, apps: string[], postProcess: boolean) => ({
   id,
   apps,
@@ -339,14 +260,14 @@ const profile = (id: string, apps: string[], postProcess: boolean) => ({
 });
 cases.push(
   [
-    "the second start shortcut is taken while the values in use post-process",
+    "post-processing is reachable while the values in use post-process",
     () => {
       assert.equal(
-        secondStartTaken({ post_process_enabled: true, profiles: [] }),
+        postProcessingReachable({ post_process_enabled: true, profiles: [] }),
         true,
       );
       assert.equal(
-        secondStartTaken({ post_process_enabled: false, profiles: [] }),
+        postProcessingReachable({ post_process_enabled: false, profiles: [] }),
         false,
       );
     },
@@ -360,19 +281,19 @@ cases.push(
         active_profile_id: "default",
         profiles: [profile("work", ["com.microsoft.VSCode"], true)],
       };
-      assert.equal(secondStartTaken(settings), true);
+      assert.equal(postProcessingReachable(settings), true);
       assert.equal(
-        secondStartTaken({ ...settings, profile_auto_by_app: false }),
+        postProcessingReachable({ ...settings, profile_auto_by_app: false }),
         false,
         "not chosen by application",
       );
       assert.equal(
-        secondStartTaken({ ...settings, active_profile_id: "work" }),
+        postProcessingReachable({ ...settings, active_profile_id: "work" }),
         false,
         "the profile in use counts through the flat values",
       );
       assert.equal(
-        secondStartTaken({
+        postProcessingReachable({
           ...settings,
           profiles: [profile("work", [], true)],
         }),
@@ -403,9 +324,12 @@ const SHORT_PRESS_KEYS = [
   "settings.endKeys.description",
   "settings.endKeys.sameAsStart",
   "settings.endKeys.linuxNoShortcuts",
-  "settings.general.shortcut.bindings.transcribe_with_post_process.descriptionMacos",
+  "settings.endKeys.sameAsHold",
   "settings.general.dictationKeyInserts.description",
-  "settings.general.shortcutActivation.descriptions.toggle",
+  "settings.startKeys.description",
+  "settings.startKeys.shortcutHint",
+  "settings.holdKeys.alsoStart",
+  "settings.holdKeys.holdOnly",
 ];
 const SHORT_PRESS_DE_ONLY = [
   "settings.general.dictationKeyInserts.label",
@@ -419,24 +343,14 @@ const SHORT_PRESS_DE_ONLY = [
 ];
 cases.push(
   [
-    "the two ways to end are When Held and When Tapped, the behavior that only taps is Tap",
+    "the hold threshold speaks of hold shortcuts, not of a mode Auto",
     () => {
-      assert.equal(t("settings.endKeys.holdEnds.title"), "When Held");
-      assert.equal(t("settings.endKeys.tapEnds.title"), "When Tapped");
-      assert.equal(tDe("settings.endKeys.holdEnds.title"), "Beim Halten");
-      assert.equal(tDe("settings.endKeys.tapEnds.title"), "Beim Antippen");
-      assert.equal(
-        tDe("settings.endKeys.tapEnds.description"),
-        "Wie das Antippen einer Endtaste die Aufnahme beendet.",
-      );
-      assert.equal(
-        t("settings.general.shortcutActivation.options.toggle"),
-        "Tap",
-      );
-      assert.equal(
-        tDe("settings.general.shortcutActivation.options.toggle"),
-        "Antippen",
-      );
+      const english = t("settings.debug.holdThreshold.description");
+      const german = tDe("settings.debug.holdThreshold.description");
+      assert.ok(!/Auto/.test(english), english);
+      assert.ok(!/Automatisch/.test(german), german);
+      assert.ok(/hold shortcut/.test(english), english);
+      assert.ok(/Haltetaste/.test(german), german);
     },
   ],
   [

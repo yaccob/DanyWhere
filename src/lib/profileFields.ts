@@ -50,20 +50,21 @@ export interface ProfileFieldInfo {
 const FIELDS = "settings.profileView.fields";
 
 export const PROFILE_FIELDS = {
-  // General: shortcuts, end shortcuts, languages, the model's settings,
-  // sound.
+  // General: shortcuts, start, hold and end shortcuts, languages, the
+  // model's settings, sound.
   bindings: {
     page: "general",
     label: `${FIELDS}.shortcuts`,
   },
-  shortcut_activation: {
+  // Lists entry by entry (qa 2026-11-26_1810): under the defaults a
+  // deviating profile names its own and switched-off entries.
+  start_keys: {
     page: "general",
-    label: "settings.general.shortcutActivation.title",
+    label: "settings.general.startShortcuts",
+    large: true,
   },
+  hold_keys: { page: "general", label: "settings.holdKeys.title", large: true },
   end_keys: { page: "general", label: "settings.endKeys.title", large: true },
-  // Under the defaults a deviating profile shows its ends for holding as
-  // text ("⌃ Space held: …"), as the old default ends did.
-  hold_ends: { page: "general", label: `${FIELDS}.holdEnds`, large: true },
   spoken_languages: {
     page: "general",
     label: "settings.general.preferredLanguages.title",

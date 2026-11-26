@@ -1,83 +1,147 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Trash2 } from "lucide-react";
-import type { EndKey, ShortcutBinding } from "@/bindings";
+import type { EndKey } from "@/bindings";
 import { Input } from "../../ui/Input";
-import { Button } from "../../ui/Button";
 import { AppendTextInput } from "../AppendText";
 import { EndKeyShortcut } from "./EndKeyShortcut";
+import { AddKeyButton } from "./AddKeyButton";
 import { formatKeyCombination } from "@/lib/utils/keyboard";
 import { useOsType } from "@/hooks/useOsType";
-import { useShortcutCapture } from "@/hooks/useShortcutCapture";
-import { usePressAway } from "@/hooks/usePressAway";
 import {
   canRemove,
-  endKeyName,
   nameToStore,
   newEndKey,
   removeEndKey,
-  startsSharing,
   updateEndKey,
   type FormatShortcut,
 } from "@/lib/endKeys";
+import { holdKeyDefaultName } from "@/lib/startKeys";
+
+/** The two lists of this shape: end shortcuts, and hold shortcuts, which
+ * end a recording when released (qa 2026-11-26_1810). */
+export type EndKeysKind = "end" | "hold";
+
+/** What differs between the two lists: their texts, the ids of new
+ * entries and how the backend registers an entry for its capture. */
+const KINDS: Record<
+  EndKeysKind,
+  {
+    add: string;
+    addPressKeys: string;
+    lastOne: string;
+    shortcutHint: string;
+    idPrefix: string;
+    capturePrefix: string;
+  }
+> = {
+  end: {
+    add: "settings.endKeys.add",
+    addPressKeys: "settings.endKeys.addPressKeys",
+    lastOne: "settings.endKeys.lastOne",
+    shortcutHint: "settings.endKeys.shortcutHint",
+    idPrefix: "end",
+    capturePrefix: "end_key",
+  },
+  hold: {
+    add: "settings.holdKeys.add",
+    addPressKeys: "settings.holdKeys.addPressKeys",
+    lastOne: "settings.startKeys.lastOne",
+    shortcutHint: "settings.holdKeys.shortcutHint",
+    idPrefix: "hold",
+    capturePrefix: "hold_key",
+  },
+};
 
 interface EndKeysEditorProps {
-  /** The end shortcuts, in their order. */
+  /** The entries, in their order. */
   value: EndKey[];
-  /** The shortcuts of the same scope, to tell an end that has a start
-   * shortcut's combination. */
-  bindings: Partial<Record<string, ShortcutBinding>>;
   /** The changed list. */
   onChange: (next: EndKey[]) => Promise<void> | void;
+  /** End shortcuts (the default) or hold shortcuts. */
+  kind?: EndKeysKind;
+  /** Whether an entry may go; by default while another stays. Hold
+   * shortcuts may go while a start or hold shortcut stays. */
+  removable?: boolean;
+  /** The grey lines under an entry: which other lists have its keys. */
+  hintsOf?: (entry: EndKey) => string[];
   disabled?: boolean;
-  /** Post-processing is off in the same scope: an end with "Post-process"
+  /** Post-processing is off in the same scope: an entry with "Post-process"
    * says that it doesn't (`postProcessingOn`). */
   postProcessingOff?: boolean;
+  /** No dictation can post-process at all (`postProcessingReachable`): a
+   * hold shortcut with "Post-process" says that it isn't taken (qa
+   * 2026-11-26_1713, question 4 a). */
+  postProcessingUnreachable?: boolean;
 }
 
 /**
- * DanyWhere: the list of end shortcuts (end_keys.rs, qa 2026-11-22_2134),
- * each with its name, its own key combination, its "Append" field, and
- * whether it post-processes and sends context. A controlled component: the
+ * DanyWhere: the list of end shortcuts (end_keys.rs, qa 2026-11-22_2134)
+ * or of hold shortcuts (qa 2026-11-26_1810), each with its name, its own
+ * key combination, its "Append" field, and whether it post-processes and
+ * sends context. Without a name of its own an end shortcut is called by its
+ * combination, a hold shortcut "<keys> held". A controlled component: the
  * list comes in and a changed one goes out, so it can edit the defaults or
  * a profile's own list alike.
  */
 export const EndKeysEditor: React.FC<EndKeysEditorProps> = ({
   value,
-  bindings,
   onChange,
+  kind = "end",
+  removable,
+  hintsOf,
   disabled = false,
   postProcessingOff = false,
+  postProcessingUnreachable = false,
 }) => {
   const { t } = useTranslation();
   const osType = useOsType();
+  const texts = KINDS[kind];
   const format = useCallback<FormatShortcut>(
     (keys) => formatKeyCombination(keys, osType, t),
     [osType, t],
   );
+  const followed = useCallback(
+    (entry: EndKey) =>
+      kind === "hold"
+        ? holdKeyDefaultName(entry, format, (shortcut) =>
+            t("settings.endKeys.held", { shortcut }),
+          )
+        : format(entry.shortcut),
+    [kind, format, t],
+  );
   const change = (id: string, part: Partial<EndKey>) =>
     onChange(updateEndKey(value, id, part));
-  const removable = canRemove(value);
+  const mayGo = removable ?? canRemove(value);
 
   return (
     <div className="flex flex-col divide-y divide-line">
-      {value.map((end) => (
+      {value.map((entry) => (
         <EndKeyRow
-          key={end.id}
-          end={end}
-          format={format}
-          sharedWith={startsSharing(end, bindings)}
-          removable={removable}
-          onChange={(part) => change(end.id, part)}
-          onDelete={() => onChange(removeEndKey(value, end.id))}
+          key={entry.id}
+          entry={entry}
+          kind={kind}
+          followed={followed(entry)}
+          hints={hintsOf?.(entry) ?? []}
+          removable={mayGo}
+          onChange={(part) => change(entry.id, part)}
+          onDelete={() => onChange(removeEndKey(value, entry.id))}
           disabled={disabled}
           postProcessingOff={postProcessingOff}
+          postProcessingUnreachable={postProcessingUnreachable}
         />
       ))}
       <div className="px-4 py-3">
-        <AddEndKey
-          value={value}
-          onAdd={(end) => onChange([...value, end])}
+        <AddKeyButton
+          captureId={(now) => `${texts.capturePrefix}:${texts.idPrefix}_${now}`}
+          label={t(texts.add)}
+          pressKeys={t(texts.addPressKeys)}
+          onAdd={(shortcut, now) =>
+            onChange([
+              ...value,
+              newEndKey(value, shortcut, now, texts.idPrefix),
+            ])
+          }
           disabled={disabled}
         />
       </div>
@@ -85,99 +149,48 @@ export const EndKeysEditor: React.FC<EndKeysEditorProps> = ({
   );
 };
 
-interface AddEndKeyProps {
-  value: EndKey[];
-  onAdd: (end: EndKey) => Promise<void> | void;
-  disabled: boolean;
-}
-
-/**
- * "Add End Shortcut": records a combination first and adds the end only
- * with it; Escape or a press elsewhere adds nothing.
- */
-const AddEndKey: React.FC<AddEndKeyProps> = ({ value, onAdd, disabled }) => {
-  const { t } = useTranslation();
-  const osType = useOsType();
-  // The new end's id is `end_<now>` (unless taken); `now` is kept so the
-  // capture's id stays the same while it runs.
-  const [now, setNow] = useState(() => Date.now());
-  // The capture must keep one callback while it runs: a new one would
-  // restart it and lose the keys pressed so far.
-  const latest = useRef({ value, onAdd, now });
-  latest.current = { value, onAdd, now };
-  const onCapture = useCallback(async (shortcut: string) => {
-    const { value: list, onAdd: add, now: at } = latest.current;
-    await add(newEndKey(list, shortcut, at));
-    setNow(Date.now());
-  }, []);
-  const { capturing, partial, start, cancel } = useShortcutCapture(
-    `end_key:end_${now}`,
-    osType,
-    { onCapture, escapeCancels: true },
-  );
-  const ref = useRef<HTMLDivElement | null>(null);
-  usePressAway(capturing, ref, cancel);
-
-  if (capturing) {
-    return (
-      <div
-        ref={ref}
-        className="inline-block px-2 py-1 text-sm font-semibold border border-logo-primary bg-logo-primary/20 rounded-md"
-      >
-        {partial
-          ? formatKeyCombination(partial, osType, t)
-          : t("settings.endKeys.addPressKeys")}
-      </div>
-    );
-  }
-  return (
-    <Button
-      variant="secondary"
-      size="sm"
-      disabled={disabled}
-      onClick={() => void start()}
-    >
-      {t("settings.endKeys.add")}
-    </Button>
-  );
-};
-
 interface EndKeyRowProps {
-  end: EndKey;
-  format: FormatShortcut;
-  /** The start shortcuts with the same combination. */
-  sharedWith: string[];
+  entry: EndKey;
+  kind: EndKeysKind;
+  /** The name it follows without one of its own. */
+  followed: string;
+  /** Grey lines under it, e.g. that a start shortcut has its keys. */
+  hints: string[];
   /** It isn't the last one, so it may go. */
   removable: boolean;
   onChange: (part: Partial<EndKey>) => Promise<void> | void;
   onDelete: () => Promise<void> | void;
   disabled: boolean;
   postProcessingOff: boolean;
+  postProcessingUnreachable: boolean;
 }
 
 const EndKeyRow: React.FC<EndKeyRowProps> = ({
-  end,
-  format,
-  sharedWith,
+  entry,
+  kind,
+  followed,
+  hints,
   removable,
   onChange,
   onDelete,
   disabled,
   postProcessingOff,
+  postProcessingUnreachable,
 }) => {
   const { t } = useTranslation();
-  const shownName = endKeyName(end, format);
-  // The field shows the own name or the combination's as plain text; it is
-  // stored when the field loses focus, as nothing when it is the
-  // combination's or blank, so the name follows the combination.
+  const texts = KINDS[kind];
+  const shownName = entry.name.trim() !== "" ? entry.name : followed;
+  // The field shows the own name or the one it follows as plain text; it
+  // is stored when the field loses focus, as nothing when it is the
+  // followed one or blank, so the name follows the combination.
   const [name, setName] = useState(shownName);
   useEffect(() => setName(shownName), [shownName]);
-  const nameId = `end-key-name-${end.id}`;
+  const nameId = `${kind}-key-name-${entry.id}`;
 
   const storeName = () => {
-    const next = nameToStore(name, end, format);
-    setName(next === "" ? format(end.shortcut) : next);
-    if (next !== end.name) void onChange({ name: next });
+    const next = nameToStore(name, followed);
+    setName(next === "" ? followed : next);
+    if (next !== entry.name) void onChange({ name: next });
   };
 
   return (
@@ -201,9 +214,10 @@ const EndKeyRow: React.FC<EndKeyRowProps> = ({
           />
         </div>
         <EndKeyShortcut
-          endId={end.id}
-          value={end.shortcut}
+          captureId={`${texts.capturePrefix}:${entry.id}`}
+          value={entry.shortcut}
           onChange={(shortcut) => onChange({ shortcut })}
+          hint={t(texts.shortcutHint)}
           disabled={disabled}
         />
         <button
@@ -214,24 +228,13 @@ const EndKeyRow: React.FC<EndKeyRowProps> = ({
           title={
             removable
               ? t("settings.endKeys.delete", { name: shownName })
-              : t("settings.endKeys.lastOne")
+              : t(texts.lastOne)
           }
           className="p-1 mb-1 rounded-md text-ink-3 hover:text-text hover:bg-logo-primary/10 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <Trash2 className="h-4 w-4" />
         </button>
       </div>
-      {sharedWith.length > 0 && (
-        <p className="text-xs text-ink-3">
-          {t("settings.endKeys.sameAsStart", {
-            start: sharedWith
-              .map((binding) =>
-                t(`settings.general.shortcut.bindings.${binding}.name`),
-              )
-              .join(", "),
-          })}
-        </p>
-      )}
       <div className="flex flex-col gap-1">
         <span
           className="text-xs text-ink-3"
@@ -240,7 +243,7 @@ const EndKeyRow: React.FC<EndKeyRowProps> = ({
           {t("settings.endKeys.append")}
         </span>
         <AppendTextInput
-          value={end.append_text}
+          value={entry.append_text}
           onChange={(append_text) => onChange({ append_text })}
           disabled={disabled}
         />
@@ -250,7 +253,7 @@ const EndKeyRow: React.FC<EndKeyRowProps> = ({
           <input
             type="checkbox"
             className="accent-logo-primary"
-            checked={end.post_process}
+            checked={entry.post_process}
             disabled={disabled}
             onChange={(event) =>
               void onChange({ post_process: event.target.checked })
@@ -265,8 +268,8 @@ const EndKeyRow: React.FC<EndKeyRowProps> = ({
           <input
             type="checkbox"
             className="accent-logo-primary"
-            checked={end.send_context}
-            disabled={disabled || !end.post_process}
+            checked={entry.send_context}
+            disabled={disabled || !entry.post_process}
             onChange={(event) =>
               void onChange({ send_context: event.target.checked })
             }
@@ -274,13 +277,26 @@ const EndKeyRow: React.FC<EndKeyRowProps> = ({
           {t("settings.endKeys.sendContext")}
         </label>
       </div>
-      {/* DanyWhere: with post-processing off no end post-processes (user,
-          2026-11-23, option a); the box keeps its value for when it is on. */}
-      {end.post_process && postProcessingOff && (
-        <p className="text-xs text-ink-3">
-          {t("settings.endKeys.postProcessOff")}
-        </p>
+      {/* DanyWhere: a hold shortcut that post-processes is taken only while
+          some dictation can post-process (qa 2026-11-26_1713, question
+          4 a); otherwise, with post-processing off for this scope, no end
+          post-processes (user, 2026-11-23, option a). Either way the box
+          keeps its value for when it counts. */}
+      {entry.post_process && postProcessingUnreachable ? (
+        <p className="text-xs text-ink-3">{t("settings.holdKeys.notTaken")}</p>
+      ) : (
+        entry.post_process &&
+        postProcessingOff && (
+          <p className="text-xs text-ink-3">
+            {t("settings.endKeys.postProcessOff")}
+          </p>
+        )
       )}
+      {hints.map((hint) => (
+        <p key={hint} className="text-xs text-ink-3">
+          {hint}
+        </p>
+      ))}
     </div>
   );
 };

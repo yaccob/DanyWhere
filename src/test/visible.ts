@@ -71,13 +71,16 @@ export const readableTexts = (root: Node = document.body): string[] => {
   return texts;
 };
 
-/** The binding ids of the shortcuts, which a page names, never shows. */
+/** The binding ids of the shortcuts, and the ids of the start and hold
+ * shortcuts out of the box, which a page names, never shows. */
 const BINDING_IDS = [
   "transcribe_with_post_process",
   "paste_last_transcript",
   "copy_last_transcript",
   "cycle_word_list",
   "toggle_profile_auto",
+  "hold_direct",
+  "hold_post",
 ];
 
 const PROBLEMS: { what: string; pattern: RegExp }[] = [
@@ -89,6 +92,12 @@ const PROBLEMS: { what: string; pattern: RegExp }[] = [
   },
   { what: "profile id", pattern: /\bprofile_\d+/ },
   { what: "end shortcut id", pattern: /\bend_\d{6,}/ },
+  { what: "start or hold shortcut id", pattern: /\b(?:start|hold)_\d{6,}/ },
+  {
+    what: "shortcut reference",
+    pattern: /\b(?:start|hold|end)_key(?::|\b)/,
+  },
+  { what: "list field", pattern: /\b(?:start|hold|end)_keys\b/ },
   { what: "word list id", pattern: /\bword_list_\d+/ },
   {
     what: "binding id",

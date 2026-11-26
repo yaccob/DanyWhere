@@ -1,18 +1,16 @@
 // DanyWhere: the order of the page General (user, 2026-11-24; sidecar qa
-// 2026-11-24_0141): start and end shortcuts follow each other. First the
-// start shortcuts with the behavior on top, then the end shortcuts, which
-// begin with "When Held" (releasing a held start shortcut is an end too) and
-// close with Cancel, then the other shortcuts. Above the list, "When Tapped"
-// says where "When Held" ends (user, 2026-11-24; sidecar qa
-// 2026-11-24_1716): holding and tapping are the two gestures, never
-// "pressing", which holding is too.
+// 2026-11-24_0141, and since 2026-11-26 qa 2026-11-26_1713, decision):
+// three lists, start, hold and end shortcuts, each a card of its own, the
+// end shortcuts closing with Cancel, then the other shortcuts. "Shortcut
+// Behavior", "Second Start Shortcut", "When Held" and "When Tapped" are
+// gone: what a combination does follows from the lists it stands in.
 import { describe, expect, test } from "bun:test";
-import { act, fireEvent, screen, within } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import { GeneralSettings } from "./GeneralSettings";
 import { DEFAULTS_SCOPE } from "@/lib/profileScope";
 import { settingsWith, type SettingsSpec } from "@/test/fixtures";
 import { switchTestLanguage } from "@/test/i18n";
-import { renderPage, settle } from "@/test/render";
+import { renderPage } from "@/test/render";
 import { setOsType } from "@/test/tauri-mock";
 import {
   rawTextIn,
@@ -27,11 +25,6 @@ const renderGeneral = (spec: SettingsSpec = {}) =>
     scope: DEFAULTS_SCOPE,
     acceptWrites: true,
   });
-
-// Both start shortcuts show, and both can be held.
-const holdBoth: SettingsSpec = {
-  defaults: { shortcut_activation: "push_to_talk", post_process_enabled: true },
-};
 
 /** The headings of the page's cards, top to bottom. */
 const cardTitles = (): string[] =>
@@ -55,14 +48,19 @@ const shownIn = (title: string, names: string[]): string[] => {
     .sort((a, b) => texts.indexOf(a) - texts.indexOf(b));
 };
 
+/** The values of the name fields in the card `title`. */
+const namesIn = (title: string): string[] =>
+  (within(card(title)).queryAllByLabelText("Name") as HTMLInputElement[]).map(
+    (field) => field.value,
+  );
+
+/** The rows to look for in a card; the start shortcuts' combinations are
+ * looked for only there, since the hold and end shortcuts show theirs too. */
+const START_ROWS = ["⌃ Space", "Also a hold shortcut", "Add Start Shortcut"];
 const ROWS = [
-  "Shortcut Behavior",
-  "Start Shortcut",
-  "Second Start Shortcut",
-  "When Held",
-  "⌃ Space held",
-  "⌃⇧ Space held",
-  "When Tapped",
+  "Also a hold shortcut",
+  "Add Start Shortcut",
+  "Add Hold Shortcut",
   "Add End Shortcut",
   "Cancel Shortcut",
   "Paste Last Transcript",
@@ -71,12 +69,17 @@ const ROWS = [
   "Choose Profile by Application",
 ];
 
-describe("General: start and end shortcuts together", () => {
-  test("the cards: start shortcuts, end shortcuts, other shortcuts, then the rest", async () => {
-    await renderGeneral(holdBoth);
+const ALSO_START =
+  "Also a start shortcut: a short tap starts a recording that keeps running.";
+const HOLD_ONLY = "Hold shortcut only: a short tap does nothing.";
 
-    expect(cardTitles().slice(0, 4)).toEqual([
+describe("General: start, hold and end shortcuts", () => {
+  test("the cards: start, hold, end and other shortcuts, then the rest", async () => {
+    await renderGeneral();
+
+    expect(cardTitles().slice(0, 5)).toEqual([
       "Start Shortcuts",
+      "Hold Shortcuts",
       "End Shortcuts",
       "Other Shortcuts",
       "Languages",
@@ -84,91 +87,64 @@ describe("General: start and end shortcuts together", () => {
     expect(rawTextIn()).toEqual([]);
   });
 
-  test("Start Shortcuts: the behavior first, then both start shortcuts, nothing else", async () => {
-    await renderGeneral(holdBoth);
+  test("nothing of the old model is left: no behavior, second start shortcut, When Held or When Tapped", async () => {
+    await renderGeneral({ defaults: { post_process_enabled: true } });
 
-    expect(shownIn("Start Shortcuts", ROWS)).toEqual([
+    const readable = readableTexts().join(" ");
+    for (const gone of [
       "Shortcut Behavior",
-      "Start Shortcut",
       "Second Start Shortcut",
-    ]);
+      "When Held",
+      "When Tapped",
+    ]) {
+      expect(readable).not.toContain(gone);
+    }
   });
 
-  test("End Shortcuts: When Held first, then When Tapped with the ends, Cancel last", async () => {
-    await renderGeneral(holdBoth);
+  test("Start Shortcuts: each combination with its hint, then Add Start Shortcut", async () => {
+    await renderGeneral();
 
-    expect(shownIn("End Shortcuts", ROWS)).toEqual([
-      "When Held",
+    const start = card("Start Shortcuts");
+    expect(visibleText(start)).toContain(
+      "Tap to start a recording. It runs until an end shortcut ends it.",
+    );
+    expect(shownIn("Start Shortcuts", START_ROWS)).toEqual([
+      "⌃ Space",
+      "Also a hold shortcut",
+      "Add Start Shortcut",
+    ]);
+    // A start shortcut has no name of its own.
+    expect(namesIn("Start Shortcuts")).toEqual([]);
+  });
+
+  test("Hold Shortcuts: each named after its keys, with whether it is a start shortcut too", async () => {
+    await renderGeneral();
+
+    expect(namesIn("Hold Shortcuts")).toEqual([
       "⌃ Space held",
       "⌃⇧ Space held",
-      "When Tapped",
-      "Add End Shortcut",
-      "Cancel Shortcut",
     ]);
+    const text = visibleText(card("Hold Shortcuts"));
+    expect(text).toContain(
+      "Hold to record. Releasing ends the recording this way",
+    );
+    expect(text.split(ALSO_START).length - 1).toBe(1);
+    expect(text.split(HOLD_ONLY).length - 1).toBe(1);
+    expect(text.indexOf(ALSO_START)).toBeLessThan(text.indexOf(HOLD_ONLY));
+    expect(shownIn("Hold Shortcuts", ROWS)).toEqual(["Add Hold Shortcut"]);
   });
 
-  test("When Tapped heads the list: no line between it and the first end", async () => {
-    await renderGeneral(holdBoth);
-
-    const heading = screen.getByRole("heading", {
-      level: 3,
-      name: "When Tapped",
-    });
-    const firstEnd = card("End Shortcuts").querySelector(
-      '[id^="end-key-name-"]',
-    );
-    if (!firstEnd) throw new Error("no end shortcut");
-    // The card's rows are the children of its list (`SettingsGroup`), with a
-    // line between each two; heading and list share one of them.
-    const rows = card("End Shortcuts").querySelector(
-      ":scope > div.border > div",
-    );
-    const rowOf = (element: Element) =>
-      Array.from(rows?.children ?? []).find((row) => row.contains(element));
-    expect(rowOf(heading)).toBeDefined();
-    expect(rowOf(heading)).toBe(rowOf(firstEnd));
-    expect(
-      heading.compareDocumentPosition(firstEnd) &
-        Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
-  });
-
-  test("End Shortcuts while the shortcuts are only tapped: the ends without a heading, Cancel last", async () => {
-    await renderGeneral({ defaults: { shortcut_activation: "toggle" } });
+  test("End Shortcuts: the ends, then Cancel last", async () => {
+    await renderGeneral();
 
     expect(shownIn("End Shortcuts", ROWS)).toEqual([
       "Add End Shortcut",
       "Cancel Shortcut",
     ]);
-  });
-
-  test("the behavior that allows only tapping is called Tap", async () => {
-    await renderGeneral({ defaults: { shortcut_activation: "toggle" } });
-
-    const texts = visibleTexts(card("Start Shortcuts"));
-    expect(texts).toContain("Tap");
-    expect(texts).not.toContain("Toggle");
-  });
-
-  test("in German: Beim Halten and Beim Antippen, and a short press is Antippen, never Druck", async () => {
-    await switchTestLanguage("de");
-    await renderGeneral(holdBoth);
-
-    const texts = visibleTexts(card("Endtasten"));
-    const held = texts.indexOf("Beim Halten");
-    const tapped = texts.indexOf("Beim Antippen");
-    expect(held).toBeGreaterThan(-1);
-    expect(tapped).toBeGreaterThan(held);
-    const readable = readableTexts().join(" ");
-    expect(readable).toContain("Erneutes Antippen während einer Aufnahme");
-    expect(readable).not.toMatch(
-      /erneute[rn]? Druck|zweiten Druck|erneut drück/,
-    );
-    expect(rawTextIn()).toEqual([]);
   });
 
   test("Other Shortcuts: paste, copy, word list, profile by application", async () => {
-    await renderGeneral(holdBoth);
+    await renderGeneral();
 
     expect(shownIn("Other Shortcuts", ROWS)).toEqual([
       "Paste Last Transcript",
@@ -180,35 +156,39 @@ describe("General: start and end shortcuts together", () => {
 
   test("on Linux: no Cancel, and the Linux hint opens End Shortcuts", async () => {
     setOsType("linux");
-    await renderGeneral(holdBoth);
+    await renderGeneral();
 
     const texts = visibleTexts(card("End Shortcuts"));
     expect(texts.indexOf("End Shortcuts")).toBe(0);
     const hint = texts.findIndex((text) => text.startsWith("On Linux,"));
     expect(hint).toBeGreaterThan(-1);
-    expect(hint).toBeLessThan(texts.indexOf("When Held"));
+    expect(hint).toBeLessThan(texts.indexOf("Add End Shortcut"));
     expect(visibleText()).not.toContain("Cancel Shortcut");
   });
 
-  test("Start Shortcut's information names the end shortcuts for holding too", async () => {
-    await renderGeneral(holdBoth);
+  test("in German: Starttasten, Haltetasten, Endtasten, with their hints, no raw keys", async () => {
+    await switchTestLanguage("de");
+    await renderGeneral();
 
-    let row: HTMLElement | null = screen.getByText("Start Shortcut");
-    const info = () =>
-      row
-        ? within(row).queryByRole("button", { name: "More information" })
-        : null;
-    while (row && !info()) row = row.parentElement;
-    const button = info();
-    if (!button) throw new Error("no information for Start Shortcut");
-    // The information shows on a press (`showOnPress`).
-    await act(async () => {
-      fireEvent.pointerDown(button);
-    });
-    await settle();
-
-    expect(screen.getByRole("tooltip").textContent).toBe(
-      "Starts a recording. How it ends is up to the end shortcuts, also when held.",
+    expect(cardTitles().slice(0, 3)).toEqual([
+      "Starttasten",
+      "Haltetasten",
+      "Endtasten",
+    ]);
+    expect(visibleText(card("Starttasten"))).toContain("Auch Haltetaste");
+    expect(namesIn("Haltetasten")).toEqual([
+      "⌃ Leertaste gehalten",
+      "⌃⇧ Leertaste gehalten",
+    ]);
+    const hold = visibleText(card("Haltetasten"));
+    expect(hold).toContain(
+      "Auch Starttaste: kurzes Antippen startet eine Aufnahme, die weiterläuft.",
     );
+    expect(hold).toContain("Nur Haltetaste: kurzes Antippen tut nichts.");
+    const readable = readableTexts().join(" ");
+    expect(readable).not.toContain("Verhalten der Tastenkombination");
+    expect(readable).not.toContain("Zweite Starttaste");
+    expect(readable).not.toContain("Beim Halten");
+    expect(rawTextIn()).toEqual([]);
   });
 });

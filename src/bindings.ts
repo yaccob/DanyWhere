@@ -21,14 +21,6 @@ async resetBinding(id: string) : Promise<Result<BindingResponse, string>> {
     else return { status: "error", error: e  as any };
 }
 },
-async changeShortcutActivationSetting(activation: ShortcutActivation) : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("change_shortcut_activation_setting", { activation }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
 async changeHoldThresholdMsSetting(ms: number) : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("change_hold_threshold_ms_setting", { ms }) };
@@ -744,11 +736,24 @@ async changeEndKeysSetting(endKeys: EndKey[]) : Promise<Result<null, string>> {
 }
 },
 /**
- * Stores the active profile's hold ends, by start shortcut.
+ * Stores the active profile's start shortcuts (the whole list, as the
+ * editor holds it).
  */
-async changeHoldEndsSetting(holdEnds: Partial<{ [key in string]: HoldEnd }>) : Promise<Result<null, string>> {
+async changeStartKeysSetting(startKeys: StartKey[]) : Promise<Result<null, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("change_hold_ends_setting", { holdEnds }) };
+    return { status: "ok", data: await TAURI_INVOKE("change_start_keys_setting", { startKeys }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Stores the active profile's hold shortcuts (the whole list, as the
+ * editor holds it).
+ */
+async changeHoldKeysSetting(holdKeys: EndKey[]) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_hold_keys_setting", { holdKeys }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -1788,13 +1793,9 @@ settings_schema_version?: number;
  */
 bindings?: Partial<{ [key in string]: ShortcutBinding }>; 
 /**
- * Replaces the pre-0.10 `push_to_talk` bool; stores missing this key are
- * migrated from it in `apply_settings_migrations`.
- */
-shortcut_activation?: ShortcutActivation; 
-/**
- * Hold-or-toggle only: a press held at least this long is push-to-talk,
- * anything shorter is a tap that locks recording on.
+ * A combination that is both a start and a hold shortcut: a press held at
+ * least this long is a hold, anything shorter a tap that locks recording
+ * on. A hold shortcut alone discards a shorter press.
  */
 hold_threshold_ms?: number; audio_feedback?: boolean; audio_feedback_volume?: number; sound_theme?: SoundTheme; 
 /**
@@ -1986,14 +1987,17 @@ profile_words?: string[];
  */
 profile_auto_by_app?: boolean; 
 /**
+ * DanyWhere: the active profile's start shortcuts (`start_keys`).
+ */
+start_keys?: StartKey[]; 
+/**
+ * DanyWhere: the active profile's hold shortcuts (`hold_keys`).
+ */
+hold_keys?: EndKey[]; 
+/**
  * DanyWhere: the active profile's end shortcuts (`end_keys`).
  */
 end_keys?: EndKey[]; 
-/**
- * DanyWhere: the active profile's hold end per start shortcut
- * (`end_keys`), by binding id.
- */
-hold_ends?: Partial<{ [key in string]: HoldEnd }>; 
 /**
  * DanyWhere: the height in pixels a History text box may grow to before
  * it scrolls, as dragged at its grip, for the newest entry and for the
@@ -2334,22 +2338,6 @@ export type HistoryVersion = { text: string;
  * What made it, oldest first; never empty.
  */
 steps: VersionStep[] }
-/**
- * How releasing a held start shortcut ends the recording.
- */
-export type HoldEnd = { 
-/**
- * What is appended, in the "Append" syntax (`append_text`).
- */
-append_text: string; 
-/**
- * Whether the text is post-processed (if the profile allows it).
- */
-post_process: boolean; 
-/**
- * Whether post-processing gets earlier dictations as context.
- */
-send_context: boolean }
 /**
  * Result of changing keyboard implementation
  */
@@ -2721,11 +2709,6 @@ context_max_entries: number;
  */
 context_char_budget: number; filler_word_removal_enabled: boolean; custom_filler_words: string[] | null; 
 /**
- * How the dictation shortcut's presses drive a recording. Read when a
- * key event comes, so from the profile in use.
- */
-shortcut_activation: ShortcutActivation; 
-/**
  * The feedback sounds, their volume and theme, the done sound.
  */
 audio_feedback: boolean; audio_feedback_volume: number; sound_theme: SoundTheme; done_sound: boolean; 
@@ -2778,15 +2761,20 @@ vad_enabled: boolean; long_form_chunking: boolean;
  */
 bindings: Partial<{ [key in string]: ShortcutBinding }>; 
 /**
+ * The start shortcuts (`start_keys`), each with a stable id.
+ */
+start_keys?: StartKey[]; 
+/**
+ * The hold shortcuts (`hold_keys`), each with a stable id, in the shape
+ * of an end shortcut.
+ */
+hold_keys?: EndKey[]; 
+/**
  * The end shortcuts (`end_keys`), each with a stable id. A stored
  * profile without them reads the ends of a store from before them,
  * which `end_keys::migrate` replaces with its own.
  */
 end_keys?: EndKey[]; 
-/**
- * The hold end per start shortcut (`hold_ends`), one value as a whole.
- */
-hold_ends?: Partial<{ [key in string]: HoldEnd }>; 
 /**
  * Check the words that resemble a word list's term with the
  * post-processing provider (`word_list_check`).
@@ -2935,26 +2923,21 @@ uncovered_bindings: string[];
  * warning banner appears and explains why recording refused.
  */
 recorder_blocked: boolean }
-/**
- * How the transcribe shortcut's key events drive a recording.
- */
-export type ShortcutActivation = 
-/**
- * Press to start, press again to stop.
- */
-"toggle" | 
-/**
- * Hold to record, release to stop.
- */
-"push_to_talk" | 
-/**
- * Hold to record and release to stop, or tap to keep recording until the
- * next press. Which one it was is decided by how long the key was held
- * (`hold_threshold_ms`).
- */
-"hold_or_toggle"
 export type ShortcutBinding = { id: string; name: string; description: string; default_binding: string; current_binding: string }
 export type SoundTheme = "marimba" | "pop" | "custom"
+/**
+ * One start shortcut: tapping its combination starts a recording.
+ */
+export type StartKey = { 
+/**
+ * Stable, so profiles can share the entry.
+ */
+id: string; 
+/**
+ * The key combination that starts a recording; every start shortcut has
+ * one.
+ */
+shortcut: string }
 /**
  * Phase of the streaming overlay card, emitted to drive its UI state.
  */

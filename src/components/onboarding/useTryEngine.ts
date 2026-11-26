@@ -2,9 +2,9 @@
 import { useEffect, useRef, useState } from "react";
 import { commands, events } from "@/bindings";
 import { useSettings } from "@/hooks/useSettings";
-import { useShortcutCapture } from "@/hooks/useShortcutCapture";
 import type { OSType } from "@/lib/utils/keyboard";
 import { useOnboardingStore } from "./onboardingStore";
+import { usePracticeShortcut } from "./usePracticeShortcut";
 import { isTooSlow } from "@/lib/models/catalog";
 
 type Mode = "hold" | "tap";
@@ -42,7 +42,6 @@ const WAIT_SHOWN_MS = 500;
 export const useTryEngine = ({ os }: { os: OSType }) => {
   const { getSetting } = useSettings();
   const { preview, lessons, setLessons } = useOnboardingStore();
-  const shortcut = getSetting("bindings")?.transcribe?.current_binding ?? "";
   const threshold = getSetting("hold_threshold_ms") ?? 300;
 
   const todo = WAYS.find((w) => !lessons[w]);
@@ -233,10 +232,12 @@ export const useTryEngine = ({ os }: { os: OSType }) => {
   }, [setLessons, threshold]);
 
   // Refocus the note after a shortcut change so the next take lands there.
-  const capture = useShortcutCapture("transcribe", os, {
+  // DanyWhere: holding practises the first hold shortcut, tapping the first
+  // start shortcut, out of the box both on the same keys (qa
+  // 2026-11-26_1810).
+  const { shortcut, capture } = usePracticeShortcut(os, {
     onDone: () => field.current?.focus({ preventScroll: true }),
-    inert: preview,
-    escapeCancels: true,
+    preview,
   });
 
   return {

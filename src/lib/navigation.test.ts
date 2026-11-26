@@ -623,7 +623,7 @@ const counted = navContext({
       values: { post_process_enabled: true },
       own: ["paste_method", "selected_model"],
       own_entries: {
-        bindings: { own: ["transcribe_with_post_process"], off: [] },
+        bindings: { own: ["copy_last_transcript"], off: [] },
         word_lists: { own: [], off: ["names"] },
       },
     },
