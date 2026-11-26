@@ -16,7 +16,7 @@ use super::openrouter::{self, KeyInfo, OpenRouterFlow};
 use super::session::SessionStore;
 use super::vault::{self, Vault};
 use super::{SignInCode, SignInFlow};
-use crate::post_process_failure::{FailureReason, PostProcessFailure};
+use crate::post_process_failure::{redact_secrets, FailureReason, PostProcessFailure};
 use crate::post_process_setup::{
     FailureDto, OpenRouterConnection, SecretText, SetupChoice, CHATGPT_PROVIDER_ID,
     OPENROUTER_PROVIDER_ID,
@@ -37,15 +37,33 @@ use tauri_specta::Event;
 /// 2026-11-26 needed 17 minutes).
 pub const SIGN_IN_TIMEOUT: Duration = Duration::from_secs(30 * 60);
 
-/// `error` of [`PostProcessSignInFinished`] when the user cancelled.
-pub const ERROR_CANCELLED: &str = "cancelled";
-/// … when no callback came within [`SIGN_IN_TIMEOUT`].
-pub const ERROR_TIMED_OUT: &str = "timed_out";
-/// … when the user refused in the browser (`error=` in the callback; for
-/// ChatGPT `access_denied`: plan usage not allowed).
-pub const ERROR_DENIED: &str = "denied";
-/// … when ChatGPT signed in but did not grant plan usage.
-pub const ERROR_NOT_ELIGIBLE: &str = "not_eligible";
+/// Why a sign-in failed, as [`PostProcessSignInFinished`] tells the
+/// frontend: a code, never the error's text (review of 2026-11-27, N5; the
+/// error itself goes to the log, without the account's id or a key).
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Type)]
+#[serde(rename_all = "snake_case")]
+pub enum SignInFailure {
+    /// The user cancelled.
+    Cancelled,
+    /// No callback came within [`SIGN_IN_TIMEOUT`].
+    TimedOut,
+    /// The user refused in the browser (`error=` in the callback; for
+    /// ChatGPT `access_denied`: plan usage not allowed).
+    Denied,
+    /// ChatGPT signed in but did not grant plan usage.
+    NotEligible,
+    /// OpenRouter lists no free model DanyWhere can use (none that takes
+    /// structured outputs), and the way needs one (N17).
+    NoFreeModel,
+    /// The provider could not be reached: no connection, or no answer in
+    /// time.
+    Unreachable,
+    /// The provider refused the exchange (an error answer).
+    Refused,
+    /// Anything else: an answer that can't be trusted, the listener, the
+    /// sign-in could not be stored.
+    Failed,
+}
 
 /// The provider a sign-in is for.
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Type)]
@@ -69,14 +87,12 @@ pub struct SignInStarted {
     pub auth_url: String,
 }
 
-/// How a sign-in ended. `error`: [`ERROR_CANCELLED`], [`ERROR_TIMED_OUT`],
-/// [`ERROR_DENIED`], [`ERROR_NOT_ELIGIBLE`], or the error's text (the
-/// `llm_client` forms, "sign-in-expired: …", …).
+/// How a sign-in ended; `error` says why it failed.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Type, tauri_specta::Event)]
 pub struct PostProcessSignInFinished {
     pub provider: SignInProvider,
     pub ok: bool,
-    pub error: Option<String>,
+    pub error: Option<SignInFailure>,
     /// OpenRouter after a sign-in: whether the account is on the free tier.
     pub free_tier: Option<bool>,
 }
@@ -266,7 +282,7 @@ impl SignIns {
                 let event = match pending.wait(timeout, &cancel) {
                     // Replaced by a newer sign-in, which reports for itself.
                     Err(SignInError::Cancelled) if !inner.is_current(id) => return,
-                    Err(error) => failed(provider, wait_error_text(provider, &error)),
+                    Err(error) => failed(provider, wait_failure(provider, &error)),
                     Ok(code) => tauri::async_runtime::block_on(complete(
                         flow,
                         code,
@@ -301,7 +317,7 @@ impl SignIns {
     }
 
     /// Stops waiting for the sign-in in progress; it ends as
-    /// [`ERROR_CANCELLED`].
+    /// [`SignInFailure::Cancelled`].
     pub fn cancel(&self) {
         if let Some(attempt) = self.inner.lock().as_ref() {
             log::info!("Cancelling the {:?} sign-in", attempt.provider);
@@ -315,7 +331,7 @@ impl SignIns {
     }
 }
 
-fn failed(provider: SignInProvider, error: String) -> PostProcessSignInFinished {
+fn failed(provider: SignInProvider, error: SignInFailure) -> PostProcessSignInFinished {
     PostProcessSignInFinished {
         provider,
         ok: false,
@@ -324,19 +340,61 @@ fn failed(provider: SignInProvider, error: String) -> PostProcessSignInFinished 
     }
 }
 
-/// The event's `error` for a wait that brought no code.
-fn wait_error_text(provider: SignInProvider, error: &SignInError) -> String {
+/// The event's `error` for a wait that brought no code; what the provider
+/// or the listener said goes to the log only, without secrets.
+fn wait_failure(provider: SignInProvider, error: &SignInError) -> SignInFailure {
     match error {
-        SignInError::Cancelled => ERROR_CANCELLED.to_string(),
-        SignInError::TimedOut => ERROR_TIMED_OUT.to_string(),
+        SignInError::Cancelled => SignInFailure::Cancelled,
+        SignInError::TimedOut => SignInFailure::TimedOut,
         SignInError::Denied(reason) => {
-            log::info!("The {provider:?} sign-in was refused in the browser: {reason}");
-            ERROR_DENIED.to_string()
+            log::info!(
+                "The {provider:?} sign-in was refused in the browser: {}",
+                redact_secrets(reason)
+            );
+            SignInFailure::Denied
         }
         other => {
-            log::warn!("The {provider:?} sign-in failed: {other}");
-            other.to_string()
+            log::warn!(
+                "The {provider:?} sign-in failed: {}",
+                redact_secrets(&other.to_string())
+            );
+            SignInFailure::Failed
         }
+    }
+}
+
+/// A failed exchange or store: the code for the event and the error for the
+/// log.
+#[derive(Debug)]
+struct Failed {
+    code: SignInFailure,
+    error: String,
+}
+
+impl Failed {
+    /// A failure known by its code.
+    fn code(code: SignInFailure) -> Self {
+        Failed {
+            code,
+            error: format!("{code:?}"),
+        }
+    }
+}
+
+impl From<String> for Failed {
+    /// An error of a request (in `llm_client`'s forms) or of storing: an
+    /// error answer is `Refused`, no connection or no answer in time is
+    /// `Unreachable`, the rest `Failed`.
+    fn from(error: String) -> Self {
+        let code = if crate::post_process_failure::error_status(&error).is_some() {
+            SignInFailure::Refused
+        } else {
+            match crate::post_process_failure::classify_llm_error(&error, true) {
+                FailureReason::Unreachable | FailureReason::Timeout => SignInFailure::Unreachable,
+                _ => SignInFailure::Failed,
+            }
+        };
+        Failed { code, error }
     }
 }
 
@@ -369,23 +427,31 @@ async fn complete(
                 free_tier,
             }
         }
-        Err(error) => {
-            log::warn!("The {provider:?} sign-in failed: {error}");
-            failed(provider, error)
+        Err(failure) => {
+            log::warn!(
+                "The {provider:?} sign-in failed ({:?}): {}",
+                failure.code,
+                redact_secrets(&failure.error)
+            );
+            failed(provider, failure.code)
         }
     }
 }
 
 /// OpenRouter: the key for the code, what it reaches; returns whether the
-/// account is on the free tier.
+/// account is on the free tier. Without a model to ask (no usable free
+/// model) nothing is stored.
 async fn complete_openrouter(
     code: &SignInCode,
     host: &dyn SignInHost,
     endpoints: &Endpoints,
-) -> Result<bool, String> {
+) -> Result<bool, Failed> {
     let client = token_client()?;
     let key = openrouter::exchange_code(&client, &endpoints.openrouter_base, code).await?;
     let state = openrouter_state(&client, &endpoints.openrouter_base, &key).await?;
+    if state.model.is_empty() {
+        return Err(Failed::code(SignInFailure::NoFreeModel));
+    }
     let free_tier = state.info.free_tier;
     host.store_openrouter(OpenRouterSignedIn { key, state })?;
     Ok(free_tier)
@@ -398,7 +464,7 @@ async fn complete_chatgpt(
     code: &SignInCode,
     host: &dyn SignInHost,
     endpoints: &Endpoints,
-) -> Result<(), String> {
+) -> Result<(), Failed> {
     let usable = |id: &&str| !id.is_empty() && *id != chatgpt::DYNAMIC_CLIENT;
     let registered_before = flow.client_id.as_deref().filter(usable).is_some();
     if let Some(issued) = code.client_id.as_deref().filter(usable) {
@@ -412,10 +478,14 @@ async fn complete_chatgpt(
     let session = chatgpt::exchange_code(&client, &endpoints.chatgpt_token_url, flow, code)
         .await
         .map_err(|error| match error {
-            ChatGptError::NotEligible => ERROR_NOT_ELIGIBLE.to_string(),
-            other => other.to_string(),
+            ChatGptError::NotEligible => Failed::code(SignInFailure::NotEligible),
+            ChatGptError::Http(text) => Failed::from(text),
+            other => Failed {
+                code: SignInFailure::Failed,
+                error: other.to_string(),
+            },
         })?;
-    host.store_chatgpt(session)
+    Ok(host.store_chatgpt(session)?)
 }
 
 /// The client for requests that carry a code or a token: no redirects, so a
@@ -1276,6 +1346,29 @@ mod tests {
             serde_json::to_value(SignInProvider::Chatgpt).unwrap(),
             json!("chatgpt")
         );
+        let codes = [
+            SignInFailure::Cancelled,
+            SignInFailure::TimedOut,
+            SignInFailure::Denied,
+            SignInFailure::NotEligible,
+            SignInFailure::NoFreeModel,
+            SignInFailure::Unreachable,
+            SignInFailure::Refused,
+            SignInFailure::Failed,
+        ];
+        assert_eq!(
+            serde_json::to_value(codes).unwrap(),
+            json!([
+                "cancelled",
+                "timed_out",
+                "denied",
+                "not_eligible",
+                "no_free_model",
+                "unreachable",
+                "refused",
+                "failed"
+            ])
+        );
     }
 
     #[tokio::test]
@@ -1411,7 +1504,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn a_refused_openrouter_exchange_ends_the_sign_in_with_its_error() {
+    async fn a_refused_openrouter_exchange_ends_the_sign_in_as_refused() {
         let (base, _seen) = serve(failing_handler("403 Forbidden")).await;
         let (host, mut events) = fake_host(None, false);
         let sign_ins = SignIns::default();
@@ -1429,11 +1522,7 @@ mod tests {
             .unwrap();
         let event = next_event(&mut events).await;
         assert!(!event.ok);
-        let error = event.error.expect("an error");
-        assert!(
-            error.starts_with(crate::llm_client::STATUS_ERROR_PREFIX),
-            "{error}"
-        );
+        assert_eq!(event.error, Some(SignInFailure::Refused));
         assert!(host.openrouter.lock().unwrap().is_none());
     }
 
@@ -1517,13 +1606,7 @@ mod tests {
         .unwrap();
         let event = next_event(&mut events).await;
         assert!(!event.ok);
-        assert!(
-            event
-                .error
-                .as_deref()
-                .is_some_and(|e| e.starts_with(crate::llm_client::STATUS_ERROR_PREFIX)),
-            "{event:?}"
-        );
+        assert_eq!(event.error, Some(SignInFailure::Refused), "{event:?}");
         assert_eq!(*host.saved_client_ids.lock().unwrap(), vec![ISSUED]);
         assert!(host.chatgpt.lock().unwrap().is_none());
     }
@@ -1587,7 +1670,7 @@ mod tests {
             .unwrap();
         let event = next_event(&mut events).await;
         assert!(!event.ok);
-        assert_eq!(event.error.as_deref(), Some(ERROR_NOT_ELIGIBLE));
+        assert_eq!(event.error, Some(SignInFailure::NotEligible));
         assert!(host.chatgpt.lock().unwrap().is_none());
     }
 
@@ -1610,8 +1693,114 @@ mod tests {
             .unwrap();
         let event = next_event(&mut events).await;
         assert!(!event.ok);
-        assert_eq!(event.error.as_deref(), Some(ERROR_DENIED));
+        assert_eq!(event.error, Some(SignInFailure::Denied));
         assert!(lines(&seen).is_empty(), "nothing was exchanged");
+    }
+
+    // --- review of 2026-11-27: codes, never the error's text (N5, N17) --------
+
+    /// The event's `error` as the frontend reads it.
+    fn error_code(event: &PostProcessSignInFinished) -> Value {
+        serde_json::to_value(event).unwrap()["error"].clone()
+    }
+
+    /// Starts an OpenRouter sign-in against `base`, answers the callback
+    /// with a code and returns how it ended.
+    async fn openrouter_sign_in_against(base: &str) -> (Arc<FakeHost>, PostProcessSignInFinished) {
+        let (host, mut events) = fake_host(None, false);
+        let sign_ins = SignIns::default();
+        let auth_url = sign_ins
+            .start(
+                SignInProvider::Openrouter,
+                page(),
+                host.clone(),
+                endpoints(base, base),
+                WAIT,
+            )
+            .unwrap();
+        play_browser(&auth_url, "callback_url", &[("code", "c")])
+            .await
+            .unwrap();
+        let event = next_event(&mut events).await;
+        (host, event)
+    }
+
+    #[tokio::test]
+    async fn a_refused_exchange_reports_its_code_and_nothing_of_the_answer() {
+        let answer = json!({
+            "error": {"message": "No auth credentials found", "code": 401,
+                      "metadata": {"user_id": "user_2abcSecretId"}},
+            "hint": "sk-or-v1-leaked-key-fragment"
+        })
+        .to_string();
+        let (base, _seen) =
+            serve(Arc::new(move |_| ("401 Unauthorized".to_string(), answer.clone()))).await;
+        let (host, event) = openrouter_sign_in_against(&base).await;
+        assert!(!event.ok);
+        assert_eq!(error_code(&event), json!("refused"));
+        let sent = serde_json::to_string(&event).unwrap();
+        assert!(!sent.contains("user_2abcSecretId"), "{sent}");
+        assert!(!sent.contains("sk-or-v1-leaked"), "{sent}");
+        assert!(host.openrouter.lock().unwrap().is_none());
+    }
+
+    #[tokio::test]
+    async fn an_unreachable_provider_reports_unreachable() {
+        // Nobody listens there.
+        let (_host, event) = openrouter_sign_in_against("http://127.0.0.1:9").await;
+        assert!(!event.ok);
+        assert_eq!(error_code(&event), json!("unreachable"));
+    }
+
+    #[tokio::test]
+    async fn a_chatgpt_answer_that_cannot_be_trusted_reports_failed() {
+        // The ID token carries no nonce of this attempt.
+        let nonce = Arc::new(Mutex::new("another-attempts-nonce".to_string()));
+        let (base, _seen) = serve(chatgpt_handler(nonce, PLAN_SCOPES)).await;
+        let (host, mut events) = fake_host(Some(ISSUED), false);
+        let sign_ins = SignIns::default();
+        let auth_url = sign_ins
+            .start(
+                SignInProvider::Chatgpt,
+                page(),
+                host.clone(),
+                endpoints(&base, &base),
+                WAIT,
+            )
+            .unwrap();
+        play_browser(&auth_url, "redirect_uri", &[("code", "c")])
+            .await
+            .unwrap();
+        let event = next_event(&mut events).await;
+        assert!(!event.ok);
+        assert_eq!(error_code(&event), json!("failed"));
+        assert!(host.chatgpt.lock().unwrap().is_none());
+    }
+
+    /// OpenRouter on the free tier whose model list has no free model that
+    /// takes structured outputs.
+    fn no_free_model_handler() -> Handler {
+        Arc::new(move |seen: &Seen| match seen.line.as_str() {
+            "POST /api/v1/auth/keys" => (
+                "200 OK".to_string(),
+                json!({"key": NEW_KEY, "user_id": "user_test"}).to_string(),
+            ),
+            "GET /api/v1/key" => ("200 OK".to_string(), key_info_body(true)),
+            "GET /api/v1/models" => ("200 OK".to_string(), json!({"data": []}).to_string()),
+            _ => ("404 Not Found".to_string(), "{}".to_string()),
+        })
+    }
+
+    #[tokio::test]
+    async fn without_a_usable_free_model_the_sign_in_fails_with_its_own_code() {
+        let (base, _seen) = serve(no_free_model_handler()).await;
+        let (host, event) = openrouter_sign_in_against(&base).await;
+        assert!(!event.ok, "{event:?}");
+        assert_eq!(error_code(&event), json!("no_free_model"));
+        assert!(
+            host.openrouter.lock().unwrap().is_none(),
+            "no key without a model stored"
+        );
     }
 
     // --- one sign-in at a time ---------------------------------------------------
@@ -1636,7 +1825,7 @@ mod tests {
             PostProcessSignInFinished {
                 provider: SignInProvider::Openrouter,
                 ok: false,
-                error: Some(ERROR_CANCELLED.to_string()),
+                error: Some(SignInFailure::Cancelled),
                 free_tier: None,
             }
         );
@@ -1660,7 +1849,7 @@ mod tests {
         let event = next_event(&mut events).await;
         assert_eq!(event.provider, SignInProvider::Chatgpt);
         assert!(!event.ok);
-        assert_eq!(event.error.as_deref(), Some(ERROR_TIMED_OUT));
+        assert_eq!(event.error, Some(SignInFailure::TimedOut));
         assert_eq!(sign_ins.in_progress(), None);
     }
 
