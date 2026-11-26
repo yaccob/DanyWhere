@@ -49,7 +49,7 @@ const ONLY_WHILE = "Taken only during a recording.";
 const NEVER =
   "Post-processing is set to “Never”: instruction shortcuts aren't taken. Choose another setting for Post Processing under Advanced.";
 const NOT_SET_UP =
-  "Post-processing isn't set up yet: after an instruction shortcut the text is inserted as heard, without the instruction, and a notice offers to set it up.";
+  "Nothing is set up for post-processing yet: after an instruction shortcut the text is inserted as heard, without the instruction, and a notice offers to set it up.";
 const SAME_AS_START_OR_HOLD =
   "Same combination as a start or hold shortcut: without a recording it starts one, during a recording it switches to the instruction.";
 
