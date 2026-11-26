@@ -1166,13 +1166,13 @@
           "anthropic": {
             "credits": "מקשרים ב-claude.ai את יתרת ה-API של המנוי. זה אפשרי אחרי שבעה ימים במנוי, ואין צורך להוסיף כרטיס.",
             "creditsLink": "איך זה עובד",
-            "key": "יוצרים מפתח ב-Claude Console.",
+            "key": "יוצרים מפתח ב-Claude Console, בארגון שקושר.",
             "keyLink": "פתיחת ה-Console"
           },
           "gemini": {
-            "credits": "ב-Google AI Studio בוחרים „Claim free API credits” ומגדירים חיוב. Google מבקשת אמצעי תשלום ותשלום מראש של 5 דולר לפחות.",
+            "credits": "ב-Google AI Studio בוחרים „Claim free API credits” בתפריט שבצד שמאל (או „Redeem” אם כבר יש חשבון חיוב) ומגדירים חיוב. חשבון חיוב חדש דורש אמצעי תשלום ותשלום מראש של 5 דולר לפחות.",
             "creditsLink": "פתיחת AI Studio",
-            "key": "יוצרים מפתח API.",
+            "key": "משתמשים במפתח ה-API של הפרויקט שהוגדר לו חיוב (כברירת מחדל „Default Gemini Project”), או יוצרים בו מפתח.",
             "keyLink": "מפתחות API"
           },
           "huggingface": {

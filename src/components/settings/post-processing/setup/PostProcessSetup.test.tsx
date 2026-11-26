@@ -434,6 +434,10 @@ describe("post-processing setup: a guided key", () => {
     expect(text).toContain("Suggestion: a key from Anthropic");
     expect(text).toContain("Link your plan's API credits in claude.ai.");
     expect(text).toContain("you don't need to add a card");
+    // A key of another organization has none of the plan's credits.
+    expect(text).toContain(
+      "Create a key in the Claude Console, in the organization you linked.",
+    );
     await press(button("Open the Console")!);
     expect(openedUrls()).toEqual(["https://platform.claude.com/settings/keys"]);
 

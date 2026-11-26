@@ -1166,13 +1166,13 @@
           "anthropic": {
             "credits": "Koppla ditt abonnemangs API-kredit i claude.ai. Det går efter sju dagar med abonnemanget, och du behöver inte lägga till något kort.",
             "creditsLink": "Så fungerar det",
-            "key": "Skapa en nyckel i Claude Console.",
+            "key": "Skapa en nyckel i Claude Console, i den organisation du har kopplat.",
             "keyLink": "Öppna Console"
           },
           "gemini": {
-            "credits": "Välj ”Claim free API credits” i Google AI Studio och ställ in faktureringen. Google kräver ett betalsätt och en förskottsbetalning på minst 5 $.",
+            "credits": "Välj ”Claim free API credits” i menyn till vänster i Google AI Studio (eller ”Redeem” om du redan har ett faktureringskonto) och ställ in faktureringen. Ett nytt faktureringskonto kräver ett betalsätt och en förskottsbetalning på minst 5 $.",
             "creditsLink": "Öppna AI Studio",
-            "key": "Skapa en API-nyckel.",
+            "key": "Använd API-nyckeln för projektet du har ställt in fakturering för (som standard ”Default Gemini Project”), eller skapa en där.",
             "keyLink": "API-nycklar"
           },
           "huggingface": {

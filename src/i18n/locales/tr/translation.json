@@ -1166,13 +1166,13 @@
           "anthropic": {
             "credits": "Aboneliğinizin API kredisini claude.ai üzerinde bağlayın. Bu, abonelikte yedi gün geçtikten sonra mümkündür ve bunun için kart eklemeniz gerekmez.",
             "creditsLink": "Nasıl yapılır",
-            "key": "Claude Console üzerinde bir anahtar oluşturun.",
+            "key": "Claude Console üzerinde, bağladığınız kuruluşta bir anahtar oluşturun.",
             "keyLink": "Console sayfasını aç"
           },
           "gemini": {
-            "credits": "Google AI Studio içinde “Claim free API credits” seçeneğini seçin ve faturalandırmayı ayarlayın. Google bir ödeme yöntemi ve en az 5 $ ön ödeme ister.",
+            "credits": "Google AI Studio içinde soldaki menüden “Claim free API credits” seçeneğini seçin (zaten bir faturalandırma hesabınız varsa “Redeem”) ve faturalandırmayı ayarlayın. Yeni bir faturalandırma hesabı için bir ödeme yöntemi ve en az 5 $ ön ödeme gerekir.",
             "creditsLink": "AI Studio sayfasını aç",
-            "key": "Bir API anahtarı oluşturun.",
+            "key": "Faturalandırmayı ayarladığınız projenin API anahtarını kullanın (varsayılan olarak “Default Gemini Project”) ya da orada bir anahtar oluşturun.",
             "keyLink": "API anahtarları"
           },
           "huggingface": {

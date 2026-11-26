@@ -1166,13 +1166,13 @@
           "anthropic": {
             "credits": "اربط رصيد API الخاص باشتراكك في claude.ai. يمكن ذلك بعد سبعة أيام في الاشتراك، ولا تحتاج إلى إضافة بطاقة.",
             "creditsLink": "كيف يتم ذلك",
-            "key": "أنشئ مفتاحًا في Claude Console.",
+            "key": "أنشئ مفتاحًا في Claude Console، داخل المؤسسة التي ربطتها.",
             "keyLink": "فتح Console"
           },
           "gemini": {
-            "credits": "في Google AI Studio، اختر «Claim free API credits» وأعدّ الفوترة. تطلب Google وسيلة دفع ودفعة مسبقة لا تقل عن 5 دولارات.",
+            "credits": "في Google AI Studio، اختر «Claim free API credits» في القائمة اليسرى (أو «Redeem» إن كان لديك حساب فوترة بالفعل) وأعدّ الفوترة. يحتاج حساب الفوترة الجديد إلى وسيلة دفع ودفعة مسبقة لا تقل عن 5 دولارات.",
             "creditsLink": "فتح AI Studio",
-            "key": "أنشئ مفتاح API.",
+            "key": "استخدم مفتاح API الخاص بالمشروع الذي أعددت له الفوترة (افتراضيًا «Default Gemini Project»)، أو أنشئ مفتاحًا هناك.",
             "keyLink": "مفاتيح API"
           },
           "huggingface": {

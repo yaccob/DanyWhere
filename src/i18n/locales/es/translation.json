@@ -1166,13 +1166,13 @@
           "anthropic": {
             "credits": "Vincula los créditos de API de tu suscripción en claude.ai. Se puede tras siete días de suscripción, y no necesitas añadir ninguna tarjeta.",
             "creditsLink": "Cómo funciona",
-            "key": "Crea una clave en la Claude Console.",
+            "key": "Crea una clave en la Claude Console, en la organización que vinculaste.",
             "keyLink": "Abrir la Console"
           },
           "gemini": {
-            "credits": "En Google AI Studio, elige «Claim free API credits» y configura la facturación. Google pide un método de pago y un prepago de al menos 5 dólares.",
+            "credits": "En Google AI Studio, elige «Claim free API credits» en el menú de la izquierda (o «Redeem» si ya tienes una cuenta de facturación) y configura la facturación. Una cuenta de facturación nueva necesita un método de pago y un prepago de al menos 5 dólares.",
             "creditsLink": "Abrir AI Studio",
-            "key": "Crea una clave API.",
+            "key": "Usa la clave API del proyecto para el que configuraste la facturación (por defecto «Default Gemini Project») o crea una allí.",
             "keyLink": "Claves API"
           },
           "huggingface": {

@@ -1166,13 +1166,13 @@
           "anthropic": {
             "credits": "Link your plan's API credits in claude.ai. That's possible after seven days in the plan, and you don't need to add a card.",
             "creditsLink": "How it works",
-            "key": "Create a key in the Claude Console.",
+            "key": "Create a key in the Claude Console, in the organization you linked.",
             "keyLink": "Open the Console"
           },
           "gemini": {
-            "credits": "In Google AI Studio, choose “Claim free API credits” and set up billing. Google asks for a payment method and a prepayment of at least $5.",
+            "credits": "In Google AI Studio, choose “Claim free API credits” in the menu on the left (or “Redeem” if you already have a billing account) and set up billing. A new billing account needs a payment method and a prepayment of at least $5.",
             "creditsLink": "Open AI Studio",
-            "key": "Create an API key.",
+            "key": "Use the API key of the project you set up billing for (by default “Default Gemini Project”), or create one there.",
             "keyLink": "API keys"
           },
           "huggingface": {

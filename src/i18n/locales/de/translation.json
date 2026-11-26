@@ -1166,13 +1166,13 @@
           "anthropic": {
             "credits": "Verknüpfe das API-Guthaben deines Abos in claude.ai. Das geht nach sieben Tagen im Abo, und eine Karte brauchst du dafür nicht.",
             "creditsLink": "So geht's",
-            "key": "Erstelle in der Claude Console einen Schlüssel.",
+            "key": "Erstelle in der Claude Console einen Schlüssel, in der Organisation, die du verknüpft hast.",
             "keyLink": "Console öffnen"
           },
           "gemini": {
-            "credits": "Wähle in Google AI Studio „Claim free API credits“ und richte die Abrechnung ein. Google verlangt ein Zahlungsmittel und eine Vorauszahlung von mindestens 5 $.",
+            "credits": "Wähle in Google AI Studio im Menü links „Claim free API credits“ (oder „Redeem“, wenn du schon ein Rechnungskonto hast) und richte die Abrechnung ein. Ein neues Rechnungskonto braucht ein Zahlungsmittel und eine Vorauszahlung von mindestens 5 $.",
             "creditsLink": "AI Studio öffnen",
-            "key": "Erstelle einen API-Schlüssel.",
+            "key": "Nimm den API-Schlüssel des Projekts, für das du die Abrechnung eingerichtet hast (standardmäßig „Default Gemini Project“), oder erstelle dort einen.",
             "keyLink": "API-Schlüssel"
           },
           "huggingface": {

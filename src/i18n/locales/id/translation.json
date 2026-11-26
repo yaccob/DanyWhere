@@ -1166,13 +1166,13 @@
           "anthropic": {
             "credits": "Tautkan kredit API langganan Anda di claude.ai. Itu bisa dilakukan setelah tujuh hari berlangganan, dan Anda tidak perlu menambahkan kartu.",
             "creditsLink": "Caranya",
-            "key": "Buat kunci di Claude Console.",
+            "key": "Buat kunci di Claude Console, di organisasi yang Anda tautkan.",
             "keyLink": "Buka Console"
           },
           "gemini": {
-            "credits": "Di Google AI Studio, pilih “Claim free API credits” dan siapkan penagihan. Google meminta metode pembayaran dan prabayar minimal $5.",
+            "credits": "Di Google AI Studio, pilih “Claim free API credits” di menu sebelah kiri (atau “Redeem” jika Anda sudah punya akun penagihan) dan siapkan penagihan. Akun penagihan baru memerlukan metode pembayaran dan prabayar minimal $5.",
             "creditsLink": "Buka AI Studio",
-            "key": "Buat kunci API.",
+            "key": "Gunakan kunci API dari proyek yang penagihannya sudah Anda siapkan (secara default “Default Gemini Project”), atau buat satu di sana.",
             "keyLink": "Kunci API"
           },
           "huggingface": {

@@ -1166,13 +1166,13 @@
           "anthropic": {
             "credits": "在 claude.ai 中連結你方案的 API 額度。開通方案滿 7 天後才能連結，而且不需要綁定信用卡。",
             "creditsLink": "查看做法",
-            "key": "在 Claude Console 中建立一組金鑰。",
+            "key": "在 Claude Console 中你已連結的組織裡建立一組金鑰。",
             "keyLink": "開啟 Console"
           },
           "gemini": {
-            "credits": "在 Google AI Studio 中選擇「Claim free API credits」，並設定帳單。Google 會要求提供付款方式，並預付至少 5 美元。",
+            "credits": "在 Google AI Studio 左側選單中選擇「Claim free API credits」（如果已有帳單帳戶，則選擇「Redeem」），並設定帳單。新的帳單帳戶需要提供付款方式，並預付至少 5 美元。",
             "creditsLink": "開啟 AI Studio",
-            "key": "建立一組 API 金鑰。",
+            "key": "使用你已設定帳單的專案（預設為「Default Gemini Project」）的 API 金鑰，或在該專案中建立一組。",
             "keyLink": "API 金鑰"
           },
           "huggingface": {

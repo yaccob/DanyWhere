@@ -1166,13 +1166,13 @@
           "anthropic": {
             "credits": "Vinculeu els crèdits d'API de la vostra subscripció a claude.ai. Es pot fer després de set dies de subscripció, i no cal afegir cap targeta.",
             "creditsLink": "Com funciona",
-            "key": "Creeu una clau a la Claude Console.",
+            "key": "Creeu una clau a la Claude Console, a l'organització que heu vinculat.",
             "keyLink": "Obre la Console"
           },
           "gemini": {
-            "credits": "A Google AI Studio, trieu «Claim free API credits» i configureu la facturació. Google demana un mètode de pagament i un pagament per avançat d'almenys 5 $.",
+            "credits": "A Google AI Studio, trieu «Claim free API credits» al menú de l'esquerra (o «Redeem» si ja teniu un compte de facturació) i configureu la facturació. Un compte de facturació nou necessita un mètode de pagament i un pagament per avançat d'almenys 5 $.",
             "creditsLink": "Obre AI Studio",
-            "key": "Creeu una clau de l'API.",
+            "key": "Feu servir la clau de l'API del projecte per al qual heu configurat la facturació (per defecte «Default Gemini Project») o creeu-n'hi una.",
             "keyLink": "Claus de l'API"
           },
           "huggingface": {

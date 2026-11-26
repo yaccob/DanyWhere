@@ -1166,13 +1166,13 @@
           "anthropic": {
             "credits": "claude.ai에서 플랜의 API 크레딧을 연결하세요. 플랜 가입 7일 후부터 가능하며, 카드를 등록할 필요는 없습니다.",
             "creditsLink": "방법 보기",
-            "key": "Claude Console에서 키를 만드세요.",
+            "key": "Claude Console에서 연결한 조직에 키를 만드세요.",
             "keyLink": "Console 열기"
           },
           "gemini": {
-            "credits": "Google AI Studio에서 ‘Claim free API credits’를 선택하고 결제를 설정하세요. Google은 결제 수단과 최소 5달러의 선결제를 요구합니다.",
+            "credits": "Google AI Studio 왼쪽 메뉴에서 ‘Claim free API credits’를 선택하고(이미 결제 계정이 있으면 ‘Redeem’) 결제를 설정하세요. 새 결제 계정에는 결제 수단과 최소 5달러의 선결제가 필요합니다.",
             "creditsLink": "AI Studio 열기",
-            "key": "API 키를 만드세요.",
+            "key": "결제를 설정한 프로젝트(기본값은 ‘Default Gemini Project’)의 API 키를 사용하거나 그 프로젝트에서 키를 만드세요.",
             "keyLink": "API 키"
           },
           "huggingface": {

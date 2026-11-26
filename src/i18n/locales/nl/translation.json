@@ -1166,13 +1166,13 @@
           "anthropic": {
             "credits": "Koppel het API-tegoed van je abonnement in claude.ai. Dat kan na zeven dagen abonnement, en je hoeft geen kaart toe te voegen.",
             "creditsLink": "Zo werkt het",
-            "key": "Maak een sleutel aan in de Claude Console.",
+            "key": "Maak een sleutel aan in de Claude Console, in de organisatie die je hebt gekoppeld.",
             "keyLink": "Console openen"
           },
           "gemini": {
-            "credits": "Kies in Google AI Studio „Claim free API credits” en stel de facturering in. Google vraagt om een betaalmethode en een vooruitbetaling van minstens $ 5.",
+            "credits": "Kies in Google AI Studio in het menu links „Claim free API credits” (of „Redeem” als je al een factureringsaccount hebt) en stel de facturering in. Een nieuw factureringsaccount vraagt om een betaalmethode en een vooruitbetaling van minstens $ 5.",
             "creditsLink": "AI Studio openen",
-            "key": "Maak een API-sleutel aan.",
+            "key": "Gebruik de API-sleutel van het project waarvoor je de facturering hebt ingesteld (standaard „Default Gemini Project”), of maak er daar een aan.",
             "keyLink": "API-sleutels"
           },
           "huggingface": {

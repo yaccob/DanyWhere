@@ -1166,13 +1166,13 @@
           "anthropic": {
             "credits": "Połącz środki API ze swojej subskrypcji w claude.ai. Można to zrobić po siedmiu dniach subskrypcji i nie potrzebujesz do tego karty.",
             "creditsLink": "Jak to działa",
-            "key": "Utwórz klucz w Claude Console.",
+            "key": "Utwórz klucz w Claude Console, w połączonej organizacji.",
             "keyLink": "Otwórz Console"
           },
           "gemini": {
-            "credits": "W Google AI Studio wybierz „Claim free API credits” i skonfiguruj płatności. Google prosi o metodę płatności i przedpłatę co najmniej 5 dolarów.",
+            "credits": "W Google AI Studio wybierz w menu po lewej „Claim free API credits” (albo „Redeem”, jeśli masz już konto rozliczeniowe) i skonfiguruj płatności. Nowe konto rozliczeniowe wymaga metody płatności i przedpłaty co najmniej 5 dolarów.",
             "creditsLink": "Otwórz AI Studio",
-            "key": "Utwórz klucz API.",
+            "key": "Użyj klucza API projektu, dla którego skonfigurowano płatności (domyślnie „Default Gemini Project”), albo utwórz w nim nowy klucz.",
             "keyLink": "Klucze API"
           },
           "huggingface": {

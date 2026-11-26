@@ -1166,13 +1166,13 @@
           "anthropic": {
             "credits": "Liên kết tín dụng API của gói đăng ký trong claude.ai. Việc này làm được sau bảy ngày dùng gói, và bạn không cần thêm thẻ.",
             "creditsLink": "Cách làm",
-            "key": "Tạo khóa trong Claude Console.",
+            "key": "Tạo khóa trong Claude Console, trong tổ chức bạn đã liên kết.",
             "keyLink": "Mở Console"
           },
           "gemini": {
-            "credits": "Trong Google AI Studio, chọn “Claim free API credits” và thiết lập thanh toán. Google yêu cầu phương thức thanh toán và khoản trả trước ít nhất $5.",
+            "credits": "Trong Google AI Studio, chọn “Claim free API credits” ở menu bên trái (hoặc “Redeem” nếu bạn đã có tài khoản thanh toán) và thiết lập thanh toán. Tài khoản thanh toán mới cần phương thức thanh toán và khoản trả trước ít nhất $5.",
             "creditsLink": "Mở AI Studio",
-            "key": "Tạo khóa API.",
+            "key": "Dùng khóa API của dự án bạn đã thiết lập thanh toán (mặc định là “Default Gemini Project”), hoặc tạo một khóa ở đó.",
             "keyLink": "Khóa API"
           },
           "huggingface": {

@@ -1166,13 +1166,13 @@
           "anthropic": {
             "credits": "Na claude.ai propojte API kredit, který patří k vašemu předplatnému. Jde to po sedmi dnech předplatného a platební kartu k tomu nepotřebujete.",
             "creditsLink": "Jak na to",
-            "key": "Vytvořte klíč v Claude Console.",
+            "key": "Vytvořte klíč v Claude Console, v organizaci, kterou jste propojili.",
             "keyLink": "Otevřít Console"
           },
           "gemini": {
-            "credits": "V Google AI Studio zvolte „Claim free API credits“ a nastavte fakturaci. Google chce platební metodu a zálohu nejméně 5 $.",
+            "credits": "V Google AI Studio zvolte v nabídce vlevo „Claim free API credits“ (nebo „Redeem“, pokud už fakturační účet máte) a nastavte fakturaci. Nový fakturační účet potřebuje platební metodu a zálohu nejméně 5 $.",
             "creditsLink": "Otevřít AI Studio",
-            "key": "Vytvořte API klíč.",
+            "key": "Použijte API klíč projektu, pro který jste nastavili fakturaci (ve výchozím stavu „Default Gemini Project“), nebo v něm nějaký vytvořte.",
             "keyLink": "API klíče"
           },
           "huggingface": {
