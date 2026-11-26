@@ -214,6 +214,10 @@ pub async fn check(
     let reasoning = ReasoningRequest {
         disable_by_default: matches!(provider.id.as_str(), "custom" | "openrouter"),
         effort: None,
+        extra_fields: crate::post_process_signin::commands::openrouter_request_fields(
+            settings,
+            &provider.id,
+        ),
     };
     let limit = crate::llm_timeouts::post_process_timeout(settings);
     info!(

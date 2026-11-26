@@ -119,7 +119,7 @@ pub const INTERNAL: &[&str] = &[
     // sign-ins it made and what OpenRouter said about its key. For the app
     // as a whole, never in a profile or its export.
     "post_process_setup",
-    "chatgpt_session",
+    "chatgpt_signed_in",
     "chatgpt_host_id",
     "openrouter_connection",
 ];

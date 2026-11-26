@@ -321,6 +321,23 @@ async fn post_process_transcription(
     }
 }
 
+/// DanyWhere: the reasons of a failed structured request that a second
+/// request without the schema would meet as well (lead, 2026-11-26): a
+/// limit, an ended sign-in, a plan that may not be used.
+fn ends_without_fallback(reason: &FailureReason) -> bool {
+    matches!(
+        reason,
+        FailureReason::PlanLimit
+            | FailureReason::FreeBusy
+            | FailureReason::FreeDailyLimit
+            | FailureReason::NoCredit
+            | FailureReason::KeyLimit
+            | FailureReason::RateLimited
+            | FailureReason::SignInExpired
+            | FailureReason::PlanNotEligible
+    )
+}
+
 /// Handy's post-processing. DanyWhere: sets `effort_refused` when the reply
 /// came without the profile's effort (`llm_client::Completion`).
 async fn post_process_outcome(
@@ -415,6 +432,11 @@ async fn post_process_outcome(
     let reasoning = crate::llm_client::ReasoningRequest {
         disable_by_default: matches!(provider.id.as_str(), "custom" | "openrouter"),
         effort: crate::post_process_effort::for_request(settings, &provider, &model),
+        // DanyWhere: what OpenRouter's sign-in says the request needs.
+        extra_fields: crate::post_process_signin::commands::openrouter_request_fields(
+            settings,
+            &provider.id,
+        ),
     };
     if let Some(effort) = &reasoning.effort {
         log::info!("Post-processing with effort '{effort}'");
@@ -538,6 +560,20 @@ async fn post_process_outcome(
                 return failed(settings, FailureReason::EmptyReply);
             }
             Err(e) => {
+                // DanyWhere (lead, 2026-11-26): a limit, an ended sign-in
+                // or a plan that may not be used fails the request without
+                // the schema too; only a schema not taken is worth one.
+                let reason =
+                    crate::post_process_failure::classify_llm_error(&e, !api_key.trim().is_empty());
+                if ends_without_fallback(&reason) {
+                    warn!(
+                        "Structured output failed for provider '{}' ({:?}): {}. Not asking again without it.",
+                        provider.id,
+                        reason,
+                        crate::post_process_failure::redact_secrets(&e)
+                    );
+                    return failed(settings, reason);
+                }
                 // DanyWhere: without the account's id (`redact_secrets`).
                 warn!(
                     "Structured output failed for provider '{}': {}. Falling back to legacy mode.",
@@ -1373,6 +1409,70 @@ mod tests {
         );
         let body = bodies.recv_timeout(Duration::from_secs(5)).unwrap();
         assert_eq!(body["reasoning_effort"], "high", "{body}");
+    }
+
+    // DanyWhere (lead, 2026-11-26): a structured request that fails for a
+    // limit is not sent once more without the schema; only a schema the
+    // provider doesn't take falls back to the single message.
+
+    const OUT_OF_QUOTA: &str = r#"{"error":{"message":"You exceeded your current quota, please check your plan and billing details.","type":"insufficient_quota","param":null,"code":"insufficient_quota"}}"#;
+    const TOKENS_PER_MINUTE: &str = r#"{"error":{"message":"Rate limit reached for model `openai/gpt-oss-120b` in organization `org_test` service tier `on_demand` on tokens per minute (TPM): Limit 8000, Used 5959, Requested 3039. Please try again in 22.5s.","type":"tokens","code":"rate_limit_exceeded"}}"#;
+    const PLAN_USED_UP: &str = r#"{"error":{"code":"subscription_sharing_usage_limit_exceeded","message":"You have reached your plan's usage limit."}}"#;
+    const SCHEMA_REFUSED: &str = r#"{"error":{"message":"Invalid parameter: 'response_format' of type 'json_schema' is not supported with this model.","type":"invalid_request_error","param":"response_format","code":null}}"#;
+
+    /// [`post_process_settings`] with structured output.
+    fn structured_settings(base_url: &str) -> AppSettings {
+        let mut settings = post_process_settings(base_url);
+        let id = settings.post_process_provider_id.clone();
+        if let Some(provider) = settings
+            .post_process_providers
+            .iter_mut()
+            .find(|provider| provider.id == id)
+        {
+            provider.supports_structured_output = true;
+        }
+        settings
+    }
+
+    #[test]
+    fn a_limit_on_the_structured_request_is_not_asked_again_without_the_schema() {
+        for (body, reason) in [
+            (OUT_OF_QUOTA, FailureReason::NoCredit),
+            (TOKENS_PER_MINUTE, FailureReason::RateLimited),
+            (PLAN_USED_UP, FailureReason::PlanLimit),
+        ] {
+            let (url, bodies) =
+                serve_in_turn(vec![("429 Too Many Requests", body), ("200 OK", POLISHED)]);
+            let settings = structured_settings(&url);
+            assert_eq!(
+                run_post_process(&settings, "hello"),
+                failed(&settings, reason),
+                "{body}"
+            );
+            let first = bodies.recv_timeout(Duration::from_secs(5)).unwrap();
+            assert!(first.get("response_format").is_some(), "{first}");
+            assert!(
+                bodies.recv_timeout(Duration::from_millis(300)).is_err(),
+                "a second request after {body}"
+            );
+        }
+    }
+
+    #[test]
+    fn a_schema_the_provider_does_not_take_falls_back_to_the_single_message() {
+        let (url, bodies) = serve_in_turn(vec![
+            ("400 Bad Request", SCHEMA_REFUSED),
+            ("200 OK", POLISHED),
+        ]);
+        let settings = structured_settings(&url);
+        assert_eq!(
+            run_post_process(&settings, "hello"),
+            PostProcessOutcome::Done("polished".to_string())
+        );
+        let first = bodies.recv_timeout(Duration::from_secs(5)).unwrap();
+        assert!(first.get("response_format").is_some(), "{first}");
+        let second = bodies.recv_timeout(Duration::from_secs(5)).unwrap();
+        assert!(second.get("response_format").is_none(), "{second}");
     }
 
     #[test]

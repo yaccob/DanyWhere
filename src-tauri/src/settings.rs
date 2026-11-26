@@ -791,11 +791,12 @@ pub struct AppSettings {
     /// app as a whole, not a profile value.
     #[serde(default)]
     pub post_process_setup: crate::post_process_setup::PostProcessSetupState,
-    /// DanyWhere: the sign-in with ChatGPT whose plan post-processes
-    /// (provider `chatgpt`); never in a profile or its export, its tokens
-    /// redacted in the debug output.
+    /// DanyWhere: whether a sign-in with ChatGPT, whose plan post-processes
+    /// (provider `chatgpt`), is stored. The session itself, its tokens and
+    /// account, stays out of the settings, which go to the webview: it is in
+    /// `post_process_signin.json` (`post_process_signin::vault`).
     #[serde(default)]
-    pub chatgpt_session: Option<crate::post_process_setup::ChatGptSessionStored>,
+    pub chatgpt_signed_in: bool,
     /// DanyWhere: this installation's id at ChatGPT's sign-in
     /// (`ext_agent_host_id`, made once), redacted in the debug output.
     #[serde(default)]
@@ -1063,7 +1064,7 @@ pub(crate) fn default_post_process_providers() -> Vec<PostProcessProvider> {
     providers.push(PostProcessProvider {
         id: "chatgpt".to_string(),
         label: "ChatGPT (subscription)".to_string(),
-        base_url: "https://api.openai.com/v1".to_string(),
+        base_url: crate::post_process_signin::chatgpt::API_BASE.to_string(),
         allow_base_url_edit: false,
         models_endpoint: Some("/models".to_string()),
         supports_structured_output: true,
@@ -1473,7 +1474,7 @@ pub fn get_default_settings() -> AppSettings {
         history_box_height_newest: None,
         history_box_height_other: None,
         post_process_setup: Default::default(),
-        chatgpt_session: None,
+        chatgpt_signed_in: false,
         chatgpt_host_id: None,
         openrouter_connection: None,
     }

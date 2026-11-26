@@ -49,7 +49,10 @@ pub const CALLBACK_PATH: &str = "/auth/callback";
 pub const AGENT_NAME: &str = "DanyWhere";
 pub const DEFAULT_MODEL: &str = "gpt-6.2-sol";
 pub const DEFAULT_EFFORT: &str = "low";
-/// Where the user sees and limits what DanyWhere uses of the plan.
+/// Where the user sees and limits what DanyWhere uses of the plan. The
+/// frontend links there itself ("Manage usage"); kept here beside the other
+/// addresses of the plan.
+#[allow(dead_code)]
 pub const USAGE_URL: &str = "https://chatgpt.com/settings/usage";
 /// A refresh is due when less than this is left of the access token.
 pub const REFRESH_MARGIN_SECS: i64 = 300;

@@ -13,12 +13,25 @@
 use super::chatgpt::{self, ChatGptError, ChatGptFlow, ChatGptSession};
 use super::loopback::{self, PendingSignIn, SignInError};
 use super::openrouter::{self, KeyInfo, OpenRouterFlow};
+use super::session::SessionStore;
+use super::vault::{self, Vault};
 use super::{SignInCode, SignInFlow};
+use crate::post_process_failure::{FailureReason, PostProcessFailure};
+use crate::post_process_setup::{
+    FailureDto, OpenRouterConnection, SecretText, SetupChoice, CHATGPT_PROVIDER_ID,
+    OPENROUTER_PROVIDER_ID,
+};
+use crate::profile_layers::{self, Scope};
+use crate::settings::AppSettings;
 use serde::{Deserialize, Serialize};
+use serde_json::{Map, Value};
 use specta::Type;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 use std::time::Duration;
+use tauri::{AppHandle, State};
+use tauri_plugin_opener::OpenerExt;
+use tauri_specta::Event;
 
 /// How long a sign-in waits for the callback (the newcomer in the trial of
 /// 2026-11-26 needed 17 minutes).
@@ -222,6 +235,10 @@ impl SignIns {
             },
         )?;
         let auth_url = pending.auth_url().to_string();
+        log::debug!(
+            "The {provider:?} sign-in calls back on {}",
+            pending.redirect_uri()
+        );
         host.open_url(&auth_url)
             .map_err(|error| format!("Cannot open the sign-in page in the browser: {error}"))?;
 
@@ -450,6 +467,383 @@ pub async fn openrouter_state(
         free_models,
         model,
     })
+}
+
+// ---- The app's side: the settings and the sign-in's file ----------------------
+
+/// After a ChatGPT sign-in: signed in, and ChatGPT's plan in the defaults
+/// with its model and effort `low`, usable at once
+/// (`post_process_setup::make_usable`).
+pub fn apply_chatgpt_sign_in(settings: &mut AppSettings) -> Result<(), String> {
+    let mut next = settings.clone();
+    next.chatgpt_signed_in = true;
+    crate::post_process_setup::apply_setup_choice(
+        &mut next,
+        &SetupChoice {
+            provider_id: CHATGPT_PROVIDER_ID.to_string(),
+            model: Some(chatgpt::DEFAULT_MODEL.to_string()),
+            api_key: None,
+            effort: Some(chatgpt::DEFAULT_EFFORT.to_string()),
+        },
+    )?;
+    *settings = next;
+    Ok(())
+}
+
+/// Stores a ChatGPT sign-in: the session and its client id in `vault`, the
+/// rest in `settings` ([`apply_chatgpt_sign_in`]); no token in the settings.
+pub fn store_chatgpt_sign_in(
+    vault: &Vault,
+    settings: &mut AppSettings,
+    session: &ChatGptSession,
+) -> Result<(), String> {
+    vault.update(|secrets| {
+        secrets.chatgpt_client_id = Some(session.client_id.clone());
+        secrets.chatgpt_session = Some(session.into());
+    })?;
+    apply_chatgpt_sign_in(settings)
+}
+
+/// ChatGPT's saved client id (from `vault`) and this installation's host
+/// id, made once and kept in `settings`; the flag says whether it was made
+/// now (the settings need saving).
+pub fn chatgpt_identity_from(
+    vault: &Vault,
+    settings: &mut AppSettings,
+) -> Result<(Option<String>, String, bool), String> {
+    let client_id = vault
+        .load()
+        .chatgpt_client_id
+        .filter(|id| !id.is_empty() && id != chatgpt::DYNAMIC_CLIENT);
+    if let Some(host_id) = settings
+        .chatgpt_host_id
+        .as_ref()
+        .filter(|host_id| !host_id.0.is_empty())
+    {
+        return Ok((client_id, host_id.0.clone(), false));
+    }
+    let host_id = chatgpt::new_host_id()?;
+    settings.chatgpt_host_id = Some(SecretText(host_id.clone()));
+    Ok((client_id, host_id, true))
+}
+
+/// The ChatGPT sign-in ended (dead refresh token, or signed out): the
+/// tokens go, the client id and the host id stay.
+pub fn end_chatgpt_sign_in(vault: &Vault, settings: &mut AppSettings) -> Result<(), String> {
+    vault.update(|secrets| secrets.chatgpt_session = None)?;
+    settings.chatgpt_signed_in = false;
+    Ok(())
+}
+
+fn connection_of(state: &OpenRouterState, now: i64) -> OpenRouterConnection {
+    OpenRouterConnection {
+        free_tier: state.info.free_tier,
+        limit_usd: state.info.limit_usd,
+        free_models: state.free_models.clone(),
+        checked_at: now,
+    }
+}
+
+/// After an OpenRouter sign-in at `now` (Unix seconds): the key, the model
+/// and OpenRouter in the defaults, what the key reaches in
+/// `openrouter_connection`, usable at once.
+pub fn apply_openrouter_sign_in(
+    settings: &mut AppSettings,
+    signed_in: &OpenRouterSignedIn,
+    now: i64,
+) -> Result<(), String> {
+    let mut next = settings.clone();
+    next.openrouter_connection = Some(connection_of(&signed_in.state, now));
+    crate::post_process_setup::apply_setup_choice(
+        &mut next,
+        &SetupChoice {
+            provider_id: OPENROUTER_PROVIDER_ID.to_string(),
+            model: Some(signed_in.state.model.clone()).filter(|model| !model.is_empty()),
+            api_key: Some(signed_in.key.clone()),
+            effort: None,
+        },
+    )?;
+    *settings = next;
+    Ok(())
+}
+
+/// After OpenRouter was asked again at `now`: the connection anew, and the
+/// defaults' OpenRouter model follows the tier (the first free model, or the
+/// paid one after topping up) unless the user chose another one.
+pub fn apply_openrouter_refresh(
+    settings: &mut AppSettings,
+    state: &OpenRouterState,
+    now: i64,
+) -> Result<OpenRouterConnection, String> {
+    let mut next = settings.clone();
+    let connection = connection_of(state, now);
+    let before = next.openrouter_connection.replace(connection.clone());
+    let current = crate::post_process_setup::with_defaults(&next)
+        .post_process_models
+        .get(OPENROUTER_PROVIDER_ID)
+        .map(|model| model.trim().to_string())
+        .unwrap_or_default();
+    // Ours: none yet, the paid one, or one of the free ones the sign-in chose.
+    let ours = current.is_empty()
+        || current == openrouter::PAID_MODEL
+        || before.is_some_and(|before| before.free_models.contains(&current))
+        || state.free_models.contains(&current);
+    if ours && !state.model.is_empty() && current != state.model {
+        profile_layers::set_entry(
+            &mut next,
+            &Scope::Defaults,
+            "post_process_models",
+            OPENROUTER_PROVIDER_ID,
+            Value::String(state.model.clone()),
+        )?;
+    }
+    *settings = next;
+    Ok(connection)
+}
+
+/// Forgets OpenRouter's sign-in: the defaults' key and the connection.
+pub fn end_openrouter_sign_in(settings: &mut AppSettings) -> Result<(), String> {
+    let mut next = settings.clone();
+    next.openrouter_connection = None;
+    profile_layers::set_entry(
+        &mut next,
+        &Scope::Defaults,
+        "post_process_api_keys",
+        OPENROUTER_PROVIDER_ID,
+        Value::String(String::new()),
+    )?;
+    *settings = next;
+    Ok(())
+}
+
+/// The fields an OpenRouter request gets from the sign-in's connection
+/// (`openrouter::request_extras`): the free models to fall back on, or the
+/// data policy with credit. Nothing for another provider or a key pasted
+/// in by hand.
+pub fn openrouter_request_fields(settings: &AppSettings, provider_id: &str) -> Map<String, Value> {
+    match &settings.openrouter_connection {
+        Some(connection) if provider_id == OPENROUTER_PROVIDER_ID => {
+            openrouter::request_extras(&connection.free_models, connection.free_tier)
+        }
+        _ => Map::new(),
+    }
+}
+
+fn unix_now() -> i64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|elapsed| elapsed.as_secs() as i64)
+        .unwrap_or(0)
+}
+
+/// The app as the sign-in's host: the browser through the opener, the
+/// settings and the sign-in's file, the event to the frontend.
+struct TauriHost {
+    app: AppHandle,
+}
+
+impl TauriHost {
+    /// Changes the settings with `change` and saves them, with the effects
+    /// a changed provider has (`profile_effects`).
+    fn change_settings(
+        &self,
+        change: impl FnOnce(&mut AppSettings) -> Result<(), String>,
+    ) -> Result<(), String> {
+        let mut settings = crate::settings::get_settings(&self.app);
+        let before = settings.clone();
+        change(&mut settings)?;
+        crate::settings::write_settings(&self.app, settings.clone());
+        crate::profile_effects::apply(&self.app, &before, &settings);
+        Ok(())
+    }
+}
+
+impl SignInHost for TauriHost {
+    fn open_url(&self, url: &str) -> Result<(), String> {
+        self.app
+            .opener()
+            .open_url(url, None::<String>)
+            .map_err(|error| error.to_string())
+    }
+
+    fn chatgpt_identity(&self) -> Result<(Option<String>, String), String> {
+        let vault = vault::for_app(&self.app)?;
+        let mut settings = crate::settings::get_settings(&self.app);
+        let (client_id, host_id, made) = chatgpt_identity_from(vault, &mut settings)?;
+        if made {
+            crate::settings::write_settings(&self.app, settings);
+        }
+        Ok((client_id, host_id))
+    }
+
+    fn save_chatgpt_client_id(&self, client_id: &str) -> Result<(), String> {
+        vault::for_app(&self.app)?
+            .update(|secrets| secrets.chatgpt_client_id = Some(client_id.to_string()))
+    }
+
+    fn store_chatgpt(&self, session: ChatGptSession) -> Result<(), String> {
+        let vault = vault::for_app(&self.app)?;
+        self.change_settings(|settings| store_chatgpt_sign_in(vault, settings, &session))
+    }
+
+    fn store_openrouter(&self, signed_in: OpenRouterSignedIn) -> Result<(), String> {
+        self.change_settings(|settings| apply_openrouter_sign_in(settings, &signed_in, unix_now()))
+    }
+
+    fn finished(&self, event: PostProcessSignInFinished) {
+        if let Err(error) = event.emit(&self.app) {
+            log::error!("Cannot tell the frontend how the sign-in ended: {error}");
+        }
+    }
+}
+
+/// The app's ChatGPT session for the requests through the plan
+/// (`session::install`): the sign-in's file, and on a dead refresh token
+/// the settings too.
+pub struct AppSessionStore {
+    app: AppHandle,
+}
+
+impl AppSessionStore {
+    pub fn new(app: AppHandle) -> Self {
+        AppSessionStore { app }
+    }
+}
+
+impl SessionStore for AppSessionStore {
+    fn load(&self) -> Option<ChatGptSession> {
+        vault::for_app(&self.app).ok()?.load().chatgpt()
+    }
+
+    fn save(&self, session: &ChatGptSession) -> Result<(), String> {
+        vault::for_app(&self.app)?.update(|secrets| secrets.chatgpt_session = Some(session.into()))
+    }
+
+    fn expire(&self) {
+        let ended = vault::for_app(&self.app).and_then(|vault| {
+            let mut settings = crate::settings::get_settings(&self.app);
+            end_chatgpt_sign_in(vault, &mut settings)?;
+            crate::settings::write_settings(&self.app, settings);
+            Ok(())
+        });
+        if let Err(error) = ended {
+            log::error!("Cannot end the expired ChatGPT sign-in: {error}");
+        }
+    }
+}
+
+fn host(app: &AppHandle) -> Arc<dyn SignInHost> {
+    Arc::new(TauriHost { app: app.clone() })
+}
+
+/// Starts signing in through the browser: binds the loopback listener and
+/// opens the provider's page in the browser. `page` holds the two short
+/// texts the browser shows after the callback, in the app's language.
+/// `post-process-sign-in-finished` says how it ended.
+#[tauri::command]
+#[specta::specta]
+pub fn start_post_process_sign_in(
+    app: AppHandle,
+    sign_ins: State<'_, SignIns>,
+    provider: SignInProvider,
+    page: CallbackPage,
+) -> Result<SignInStarted, String> {
+    let auth_url = sign_ins.start(
+        provider,
+        page,
+        host(&app),
+        Endpoints::real(),
+        SIGN_IN_TIMEOUT,
+    )?;
+    Ok(SignInStarted { auth_url })
+}
+
+/// Opens the page of the sign-in in progress in the browser again.
+#[tauri::command]
+#[specta::specta]
+pub fn reopen_post_process_sign_in(
+    app: AppHandle,
+    sign_ins: State<'_, SignIns>,
+) -> Result<(), String> {
+    sign_ins.reopen(host(&app).as_ref()).map(|_| ())
+}
+
+/// Stops waiting for the sign-in in progress.
+#[tauri::command]
+#[specta::specta]
+pub fn cancel_post_process_sign_in(sign_ins: State<'_, SignIns>) {
+    sign_ins.cancel();
+}
+
+/// Forgets the sign-in: ChatGPT's session (its client id and the host id
+/// stay for the next sign-in), or OpenRouter's key and connection.
+#[tauri::command]
+#[specta::specta]
+pub fn disconnect_post_process_sign_in(
+    app: AppHandle,
+    sign_ins: State<'_, SignIns>,
+    provider: SignInProvider,
+) -> Result<(), String> {
+    // A sign-in with the same provider still waiting would bring it back.
+    if sign_ins.in_progress() == Some(provider) {
+        sign_ins.cancel();
+    }
+    let host = TauriHost { app: app.clone() };
+    match provider {
+        SignInProvider::Chatgpt => {
+            let vault = vault::for_app(&app)?;
+            host.change_settings(|settings| end_chatgpt_sign_in(vault, settings))
+        }
+        SignInProvider::Openrouter => host.change_settings(end_openrouter_sign_in),
+    }
+}
+
+/// Reads OpenRouter's key info again (`/api/v1/key`), e.g. after topping
+/// up, and lets the model follow the tier.
+#[tauri::command]
+#[specta::specta]
+pub async fn refresh_openrouter_connection(
+    app: AppHandle,
+) -> Result<OpenRouterConnection, FailureDto> {
+    let settings = crate::settings::get_settings(&app);
+    let layer = crate::post_process_setup::with_defaults(&settings);
+    let provider = layer
+        .post_process_provider(crate::post_process_setup::OPENROUTER_PROVIDER_ID)
+        .cloned();
+    let failure = |reason: FailureReason| {
+        FailureDto::from_failure(&PostProcessFailure {
+            reason,
+            provider: provider
+                .as_ref()
+                .map(|provider| (provider.id.clone(), provider.label.clone())),
+            model: None,
+            seconds: None,
+        })
+    };
+    let key = layer
+        .post_process_api_keys
+        .get(crate::post_process_setup::OPENROUTER_PROVIDER_ID)
+        .map(|key| key.trim().to_string())
+        .unwrap_or_default();
+    if key.is_empty() {
+        return Err(failure(FailureReason::NoApiKey));
+    }
+    let client = token_client().map_err(|error| failure(FailureReason::other(&error)))?;
+    let state = openrouter_state(&client, openrouter::DEFAULT_BASE, &key)
+        .await
+        .map_err(|error| {
+            failure(crate::post_process_failure::classify_llm_error(
+                &error, true,
+            ))
+        })?;
+    let mut connection = None;
+    TauriHost { app: app.clone() }
+        .change_settings(|settings| {
+            connection = Some(apply_openrouter_refresh(settings, &state, unix_now())?);
+            Ok(())
+        })
+        .map_err(|error| failure(FailureReason::other(&error)))?;
+    connection.ok_or_else(|| failure(FailureReason::Unknown))
 }
 
 #[cfg(test)]
@@ -1296,5 +1690,266 @@ mod tests {
         assert!(error.contains("no browser"), "{error}");
         assert_eq!(sign_ins.in_progress(), None);
         no_more_events(&mut events).await;
+    }
+
+    // --- the app's side: settings and the sign-in's file ------------------------
+
+    use crate::post_process_setup::{post_process_ready, with_defaults, Readiness};
+    use crate::profile_layers::{self, Scope};
+    use crate::settings::{get_default_settings, PostProcessMode};
+
+    /// New-install settings whose defaults never post-process, with a
+    /// profile "Work" that follows them.
+    fn new_install() -> AppSettings {
+        let mut settings = get_default_settings();
+        crate::profiles::ensure_profiles(&mut settings);
+        let profile = crate::profiles::profile_for_test(&settings, "work", "Work", |_| {});
+        settings.profiles.push(profile);
+        profile_layers::set_value(
+            &mut settings,
+            &Scope::Defaults,
+            "post_process_mode",
+            serde_json::to_value(PostProcessMode::Never).unwrap(),
+        )
+        .unwrap();
+        settings
+    }
+
+    fn chatgpt_session() -> ChatGptSession {
+        ChatGptSession {
+            client_id: ISSUED.to_string(),
+            access_token: "chatgpt-access-secret-1".to_string(),
+            refresh_token: "chatgpt-refresh-secret-1".to_string(),
+            expires_at: now() + 3600,
+            email: Some("someone@example.com".to_string()),
+            plan: Some("plus".to_string()),
+            subject: "user-subject-secret".to_string(),
+            earliest_refresh_at: None,
+        }
+    }
+
+    fn signed_in_openrouter(free_tier: bool) -> OpenRouterSignedIn {
+        let free_models = vec![
+            "nvidia/nemotron-3.5-super-vl:free".to_string(),
+            "inclusionai/ling-3.2-flash:free".to_string(),
+        ];
+        OpenRouterSignedIn {
+            key: NEW_KEY.to_string(),
+            state: OpenRouterState {
+                info: KeyInfo {
+                    free_tier,
+                    limit_usd: Some(10.0),
+                    usage_usd: 0.0,
+                    label: None,
+                    limit_remaining_usd: Some(10.0),
+                    free_requests_remaining: Some(50),
+                },
+                model: openrouter_model(free_tier, &free_models),
+                free_models,
+            },
+        }
+    }
+
+    fn defaults_entry(settings: &AppSettings, field: &str, id: &str) -> Option<String> {
+        let layer = with_defaults(settings);
+        let map = match field {
+            "models" => &layer.post_process_models,
+            "efforts" => &layer.post_process_efforts,
+            _ => panic!("{field}"),
+        };
+        map.get(id).cloned()
+    }
+
+    fn defaults_key(settings: &AppSettings, id: &str) -> Option<String> {
+        with_defaults(settings)
+            .post_process_api_keys
+            .get(id)
+            .cloned()
+    }
+
+    #[test]
+    fn a_chatgpt_sign_in_sets_up_the_plan_in_the_defaults_and_makes_it_usable() {
+        let mut settings = new_install();
+        apply_chatgpt_sign_in(&mut settings).expect("applies");
+        let layer = with_defaults(&settings);
+        assert!(settings.chatgpt_signed_in);
+        assert_eq!(layer.post_process_provider_id, "chatgpt");
+        assert_eq!(
+            defaults_entry(&settings, "models", "chatgpt").as_deref(),
+            Some(chatgpt::DEFAULT_MODEL)
+        );
+        assert_eq!(
+            defaults_entry(&settings, "efforts", "chatgpt").as_deref(),
+            Some(chatgpt::DEFAULT_EFFORT)
+        );
+        assert_eq!(post_process_ready(&layer), Readiness::Ready);
+        assert_eq!(layer.post_process_mode, PostProcessMode::WithInstructionKey);
+        assert!(!crate::prompt_library::requested(&layer).is_empty());
+        // The profile that follows the defaults post-processes with it too.
+        assert_eq!(
+            settings.profiles[0].values.post_process_provider_id,
+            "chatgpt"
+        );
+    }
+
+    #[test]
+    fn after_a_chatgpt_sign_in_the_settings_hold_no_token() {
+        let dir = tempfile::tempdir().unwrap();
+        let vault = Vault::new(dir.path().join(vault::FILE_NAME));
+        let mut settings = new_install();
+        store_chatgpt_sign_in(&vault, &mut settings, &chatgpt_session()).expect("stores");
+        let sent = serde_json::to_string(&settings).unwrap();
+        for secret in [
+            "chatgpt-access-secret-1",
+            "chatgpt-refresh-secret-1",
+            "user-subject-secret",
+            "someone@example.com",
+            "access_token",
+            "refresh_token",
+        ] {
+            assert!(!sent.contains(secret), "{secret} in the settings");
+        }
+        let kept = vault.load();
+        assert_eq!(kept.chatgpt_client_id.as_deref(), Some(ISSUED));
+        let session = kept.chatgpt().expect("the session is in the file");
+        assert_eq!(session.refresh_token, "chatgpt-refresh-secret-1");
+        assert!(settings.chatgpt_signed_in);
+    }
+
+    #[test]
+    fn the_host_id_is_made_once_and_the_client_id_comes_from_the_file() {
+        let dir = tempfile::tempdir().unwrap();
+        let vault = Vault::new(dir.path().join(vault::FILE_NAME));
+        let mut settings = new_install();
+        let (client, host_id, made) = chatgpt_identity_from(&vault, &mut settings).unwrap();
+        assert_eq!(client, None);
+        assert!(made);
+        assert!(host_id.starts_with("urn:uuid:"), "{host_id}");
+        assert_eq!(
+            settings.chatgpt_host_id.as_ref().map(|id| id.0.clone()),
+            Some(host_id.clone())
+        );
+        vault
+            .update(|secrets| secrets.chatgpt_client_id = Some(ISSUED.to_string()))
+            .unwrap();
+        let (client, again, made) = chatgpt_identity_from(&vault, &mut settings).unwrap();
+        assert_eq!(client.as_deref(), Some(ISSUED));
+        assert_eq!(again, host_id);
+        assert!(!made);
+    }
+
+    #[test]
+    fn an_ended_chatgpt_sign_in_keeps_client_and_host_id() {
+        let dir = tempfile::tempdir().unwrap();
+        let vault = Vault::new(dir.path().join(vault::FILE_NAME));
+        let mut settings = new_install();
+        let (_, host_id, _) = chatgpt_identity_from(&vault, &mut settings).unwrap();
+        store_chatgpt_sign_in(&vault, &mut settings, &chatgpt_session()).unwrap();
+        end_chatgpt_sign_in(&vault, &mut settings).expect("ends");
+        assert!(!settings.chatgpt_signed_in);
+        let kept = vault.load();
+        assert!(kept.chatgpt().is_none(), "the tokens are gone");
+        assert_eq!(kept.chatgpt_client_id.as_deref(), Some(ISSUED));
+        assert_eq!(
+            settings.chatgpt_host_id.as_ref().map(|id| id.0.clone()),
+            Some(host_id)
+        );
+        assert_eq!(
+            post_process_ready(&with_defaults(&settings)),
+            Readiness::SignIn
+        );
+        let text = std::fs::read_to_string(vault.path()).unwrap();
+        assert!(!text.contains("chatgpt-refresh-secret-1"), "{text}");
+    }
+
+    #[test]
+    fn an_openrouter_sign_in_puts_key_model_and_connection_into_the_settings() {
+        let mut settings = new_install();
+        let signed_in = signed_in_openrouter(true);
+        apply_openrouter_sign_in(&mut settings, &signed_in, 1_795_300_000).expect("applies");
+        let layer = with_defaults(&settings);
+        assert_eq!(layer.post_process_provider_id, "openrouter");
+        assert_eq!(
+            defaults_key(&settings, "openrouter").as_deref(),
+            Some(NEW_KEY)
+        );
+        assert_eq!(
+            defaults_entry(&settings, "models", "openrouter").as_deref(),
+            Some("nvidia/nemotron-3.5-super-vl:free")
+        );
+        assert_eq!(
+            settings.openrouter_connection,
+            Some(OpenRouterConnection {
+                free_tier: true,
+                limit_usd: Some(10.0),
+                free_models: signed_in.state.free_models.clone(),
+                checked_at: 1_795_300_000,
+            })
+        );
+        assert_eq!(post_process_ready(&layer), Readiness::Ready);
+        assert_eq!(layer.post_process_mode, PostProcessMode::WithInstructionKey);
+    }
+
+    #[test]
+    fn after_topping_up_the_model_follows_the_tier_unless_chosen_by_hand() {
+        let mut settings = new_install();
+        apply_openrouter_sign_in(&mut settings, &signed_in_openrouter(true), 1).unwrap();
+        let paid = signed_in_openrouter(false).state;
+        let connection = apply_openrouter_refresh(&mut settings, &paid, 2).expect("refreshes");
+        assert!(!connection.free_tier);
+        assert_eq!(connection.checked_at, 2);
+        assert_eq!(settings.openrouter_connection, Some(connection));
+        assert_eq!(
+            defaults_entry(&settings, "models", "openrouter").as_deref(),
+            Some(openrouter::PAID_MODEL)
+        );
+        // A model chosen by hand stays.
+        profile_layers::set_entry(
+            &mut settings,
+            &Scope::Defaults,
+            "post_process_models",
+            "openrouter",
+            serde_json::json!("mistralai/some-model"),
+        )
+        .unwrap();
+        apply_openrouter_refresh(&mut settings, &signed_in_openrouter(true).state, 3).unwrap();
+        assert_eq!(
+            defaults_entry(&settings, "models", "openrouter").as_deref(),
+            Some("mistralai/some-model")
+        );
+    }
+
+    #[test]
+    fn an_ended_openrouter_sign_in_forgets_key_and_connection() {
+        let mut settings = new_install();
+        apply_openrouter_sign_in(&mut settings, &signed_in_openrouter(true), 1).unwrap();
+        end_openrouter_sign_in(&mut settings).expect("ends");
+        assert_eq!(defaults_key(&settings, "openrouter").as_deref(), Some(""));
+        assert_eq!(settings.openrouter_connection, None);
+        assert_eq!(
+            post_process_ready(&with_defaults(&settings)),
+            Readiness::Key
+        );
+    }
+
+    #[test]
+    fn an_openrouter_request_gets_the_fields_of_its_connection() {
+        let mut settings = new_install();
+        assert!(openrouter_request_fields(&settings, "openrouter").is_empty());
+        apply_openrouter_sign_in(&mut settings, &signed_in_openrouter(true), 1).unwrap();
+        let free = openrouter_request_fields(&settings, "openrouter");
+        assert_eq!(
+            Value::Object(free),
+            serde_json::json!({"models": [
+                "nvidia/nemotron-3.5-super-vl:free", "inclusionai/ling-3.2-flash:free"
+            ]})
+        );
+        assert!(openrouter_request_fields(&settings, "groq").is_empty());
+        apply_openrouter_refresh(&mut settings, &signed_in_openrouter(false).state, 2).unwrap();
+        let paid = openrouter_request_fields(&settings, "openrouter");
+        assert_eq!(
+            Value::Object(paid),
+            serde_json::json!({"provider": {"data_collection": "deny"}})
+        );
     }
 }

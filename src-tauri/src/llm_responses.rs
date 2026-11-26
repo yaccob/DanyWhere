@@ -99,6 +99,12 @@ pub fn request_body(request: &ResponsesRequest<'_>) -> Value {
             "strict": true,
         }});
     }
+    debug_assert!(
+        FORBIDDEN_FIELDS
+            .iter()
+            .all(|field| body.get(field).is_none()),
+        "a field the plan route refuses"
+    );
     body
 }
 

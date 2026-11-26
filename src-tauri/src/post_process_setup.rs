@@ -227,7 +227,7 @@ pub fn post_process_ready(settings: &AppSettings) -> Readiness {
         return Readiness::Model;
     }
     if provider.id == CHATGPT_PROVIDER_ID {
-        return if settings.chatgpt_session.is_some() {
+        return if settings.chatgpt_signed_in {
             Readiness::Ready
         } else {
             Readiness::SignIn
@@ -245,15 +245,20 @@ pub fn post_process_ready(settings: &AppSettings) -> Readiness {
 }
 
 /// The way post-processing is set up, as the setup names it.
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Type)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Type)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum SetupWay {
-    /// OpenRouter's free models, through its sign-in.
-    OpenrouterFree,
-    /// OpenRouter with credit, through its sign-in.
-    OpenrouterCredit,
-    /// ChatGPT's plan, through its sign-in.
-    ChatgptPlan,
+    /// OpenRouter through its sign-in: its free models, or with credit.
+    Openrouter {
+        free_tier: bool,
+        /// The key's credit limit in US dollars; `None`: unlimited.
+        limit_usd: Option<f64>,
+    },
+    /// ChatGPT's plan, through its sign-in: the account, as far as known.
+    ChatgptPlan {
+        plan: Option<String>,
+        email: Option<String>,
+    },
     /// A provider's API key, pasted in.
     GuidedKey { provider: String },
     /// A server of one's own (the provider `custom`, e.g. Ollama here).
@@ -262,21 +267,36 @@ pub enum SetupWay {
     OnDevice,
 }
 
-/// How `settings` post-process, when they can ([`post_process_ready`]).
-pub fn current_way(settings: &AppSettings) -> Option<SetupWay> {
+/// What the setup shows of the ChatGPT sign-in: never its tokens. It comes
+/// from the sign-in's own file (`post_process_signin::vault`), not from the
+/// settings.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct ChatGptAccount {
+    pub email: Option<String>,
+    pub plan: Option<String>,
+}
+
+/// How `settings` post-process, when they can ([`post_process_ready`]);
+/// `account` is the ChatGPT sign-in's.
+pub fn current_way(settings: &AppSettings, account: Option<&ChatGptAccount>) -> Option<SetupWay> {
     if post_process_ready(settings) != Readiness::Ready {
         return None;
     }
     let provider = settings.active_post_process_provider()?;
     Some(match provider.id.as_str() {
         OPENROUTER_PROVIDER_ID => match &settings.openrouter_connection {
-            Some(connection) if connection.free_tier => SetupWay::OpenrouterFree,
-            Some(_) => SetupWay::OpenrouterCredit,
+            Some(connection) => SetupWay::Openrouter {
+                free_tier: connection.free_tier,
+                limit_usd: connection.limit_usd,
+            },
             None => SetupWay::GuidedKey {
                 provider: provider.id.clone(),
             },
         },
-        CHATGPT_PROVIDER_ID => SetupWay::ChatgptPlan,
+        CHATGPT_PROVIDER_ID => SetupWay::ChatgptPlan {
+            plan: account.and_then(|account| account.plan.clone()),
+            email: account.and_then(|account| account.email.clone()),
+        },
         CUSTOM_PROVIDER_ID => SetupWay::OwnServer,
         APPLE_INTELLIGENCE_PROVIDER_ID => SetupWay::OnDevice,
         id => SetupWay::GuidedKey {
@@ -310,8 +330,13 @@ pub struct SetupStatus {
     pub setup: PostProcessSetupState,
 }
 
-/// The status of `settings`' defaults, with `memory_bytes`.
-pub fn status(settings: &AppSettings, memory_bytes: u64) -> SetupStatus {
+/// The status of `settings`' defaults, with `memory_bytes` and the ChatGPT
+/// sign-in's `account`.
+pub fn status(
+    settings: &AppSettings,
+    memory_bytes: u64,
+    account: Option<&ChatGptAccount>,
+) -> SetupStatus {
     let layer = with_defaults(settings);
     let provider = layer.active_post_process_provider();
     SetupStatus {
@@ -321,7 +346,7 @@ pub fn status(settings: &AppSettings, memory_bytes: u64) -> SetupStatus {
             .and_then(|provider| layer.post_process_models.get(&provider.id))
             .map(|model| model.trim().to_string())
             .filter(|model| !model.is_empty()),
-        way: current_way(&layer),
+        way: current_way(&layer, account),
         memory_bytes,
         setup: settings.post_process_setup.clone(),
     }
@@ -407,6 +432,50 @@ pub fn apply_choice(settings: &mut AppSettings, choice: &SetupChoice) -> Result<
             provider_id,
             serde_json::json!(effort),
         )?;
+    }
+    *settings = next;
+    Ok(())
+}
+
+/// Makes a finished setup usable (lead's decision, 2026-11-26): defaults
+/// that never post-process do so with the instruction shortcut, and with no
+/// prompt active the factory prompt (the one the sample runs) becomes
+/// active in the defaults.
+pub fn make_usable(settings: &mut AppSettings) -> Result<(), String> {
+    let layer = with_defaults(settings);
+    let mut next = settings.clone();
+    if layer.post_process_mode == settings::PostProcessMode::Never {
+        profile_layers::set_value(
+            &mut next,
+            &Scope::Defaults,
+            "post_process_mode",
+            serde_json::to_value(settings::PostProcessMode::WithInstructionKey)
+                .map_err(|error| error.to_string())?,
+        )?;
+    }
+    if crate::prompt_library::requested(&layer).is_empty() {
+        let mut prompts = layer.clone();
+        with_a_prompt(&mut prompts);
+        profile_layers::set_value(
+            &mut next,
+            &Scope::Defaults,
+            "post_process_prompt_order",
+            serde_json::to_value(&prompts.post_process_prompt_order)
+                .map_err(|error| error.to_string())?,
+        )?;
+    }
+    *settings = next;
+    Ok(())
+}
+
+/// [`apply_choice`], and when the defaults can post-process after it,
+/// [`make_usable`]: what "finishing" a way does. A choice that removes a
+/// key leaves the mode and the prompts alone.
+pub fn apply_setup_choice(settings: &mut AppSettings, choice: &SetupChoice) -> Result<(), String> {
+    let mut next = settings.clone();
+    apply_choice(&mut next, choice)?;
+    if post_process_ready(&with_defaults(&next)) == Readiness::Ready {
+        make_usable(&mut next)?;
     }
     *settings = next;
     Ok(())
@@ -763,9 +832,11 @@ pub async fn run_sample(settings: &AppSettings, text: &str) -> Result<SampleResu
 #[tauri::command]
 #[specta::specta]
 pub fn get_post_process_setup_status(app: AppHandle) -> SetupStatus {
+    let account = crate::post_process_signin::vault::chatgpt_account(&app);
     status(
         &settings::get_settings(&app),
         crate::system_memory::system_memory_bytes(),
+        account.as_ref(),
     )
 }
 
@@ -788,14 +859,14 @@ pub fn set_post_process_setup_answers(
     Ok(())
 }
 
-/// Puts a way's provider, model, key and effort into the defaults
-/// ([`apply_choice`]).
+/// Puts a way's provider, model, key and effort into the defaults and makes
+/// them usable ([`apply_setup_choice`]).
 #[tauri::command]
 #[specta::specta]
 pub fn apply_post_process_choice(app: AppHandle, choice: SetupChoice) -> Result<(), String> {
     let mut settings = settings::get_settings(&app);
     let before = settings.clone();
-    apply_choice(&mut settings, &choice)?;
+    apply_setup_choice(&mut settings, &choice)?;
     settings::write_settings(&app, settings.clone());
     crate::profile_effects::apply(&app, &before, &settings);
     Ok(())
@@ -913,7 +984,7 @@ mod tests {
             "sk-not-a-sign-in".to_string(),
         );
         assert_eq!(post_process_ready(&settings), Readiness::SignIn);
-        settings.chatgpt_session = Some(session());
+        settings.chatgpt_signed_in = true;
         assert_eq!(post_process_ready(&settings), Readiness::Ready);
     }
 
@@ -1117,7 +1188,7 @@ mod tests {
             settings.post_process_setup,
             PostProcessSetupState::default()
         );
-        assert!(settings.chatgpt_session.is_none());
+        assert!(!settings.chatgpt_signed_in);
         assert!(settings.chatgpt_host_id.is_none());
         assert!(settings.openrouter_connection.is_none());
     }
@@ -1155,28 +1226,25 @@ mod tests {
     #[test]
     fn the_sign_ins_stay_out_of_the_debug_output() {
         let mut settings = get_default_settings();
-        settings.chatgpt_session = Some(session());
         settings.chatgpt_host_id = Some(SecretText("urn:uuid:1795300000-host-secret".to_string()));
         let dump = format!("{settings:?}");
-        assert!(!dump.contains("chatgpt-access-secret"), "access token");
-        assert!(!dump.contains("chatgpt-refresh-secret"), "refresh token");
-        assert!(!dump.contains("someone@example.com"), "e-mail");
-        assert!(!dump.contains("user-subject-secret"), "subject");
         assert!(!dump.contains("host-secret"), "host id");
         assert!(dump.contains(REDACTED));
         // Stored in full.
         let stored = serde_json::to_value(&settings).unwrap();
-        assert_eq!(
-            stored["chatgpt_session"]["refresh_token"],
-            "chatgpt-refresh-secret"
-        );
         assert_eq!(stored["chatgpt_host_id"], "urn:uuid:1795300000-host-secret");
+        // The session as stored hides its secrets too.
+        let dump = format!("{:?}", session());
+        assert!(!dump.contains("chatgpt-access-secret"), "access token");
+        assert!(!dump.contains("chatgpt-refresh-secret"), "refresh token");
+        assert!(!dump.contains("someone@example.com"), "e-mail");
+        assert!(!dump.contains("user-subject-secret"), "subject");
     }
 
     #[test]
     fn the_setup_and_its_sign_ins_never_travel_with_a_profile() {
         let mut settings = get_default_settings();
-        settings.chatgpt_session = Some(session());
+        settings.chatgpt_signed_in = true;
         settings.chatgpt_host_id = Some(SecretText("urn:uuid:host-secret".to_string()));
         settings.openrouter_connection = Some(OpenRouterConnection {
             free_tier: true,
@@ -1197,7 +1265,7 @@ mod tests {
             "chatgpt-access-secret",
             "chatgpt-refresh-secret",
             "host-secret",
-            "chatgpt_session",
+            "chatgpt_signed_in",
             "openrouter_connection",
             "post_process_setup",
             "nemotron",
@@ -1207,7 +1275,7 @@ mod tests {
         let names = crate::profiles::value_names();
         for field in [
             "post_process_setup",
-            "chatgpt_session",
+            "chatgpt_signed_in",
             "chatgpt_host_id",
             "openrouter_connection",
         ] {
@@ -1230,7 +1298,7 @@ mod tests {
         let mut openrouter = ready("openrouter");
         // A key pasted in by hand, without the sign-in.
         assert_eq!(
-            current_way(&openrouter),
+            current_way(&openrouter, None),
             Some(SetupWay::GuidedKey {
                 provider: "openrouter".to_string()
             })
@@ -1241,27 +1309,57 @@ mod tests {
             free_models: Vec::new(),
             checked_at: 0,
         });
-        assert_eq!(current_way(&openrouter), Some(SetupWay::OpenrouterFree));
+        assert_eq!(
+            current_way(&openrouter, None),
+            Some(SetupWay::Openrouter {
+                free_tier: true,
+                limit_usd: Some(10.0)
+            })
+        );
         if let Some(connection) = openrouter.openrouter_connection.as_mut() {
             connection.free_tier = false;
+            connection.limit_usd = None;
         }
-        assert_eq!(current_way(&openrouter), Some(SetupWay::OpenrouterCredit));
+        assert_eq!(
+            current_way(&openrouter, None),
+            Some(SetupWay::Openrouter {
+                free_tier: false,
+                limit_usd: None
+            })
+        );
 
         let mut chatgpt = with_provider(CHATGPT_PROVIDER_ID, "gpt-6.2-sol");
-        chatgpt.chatgpt_session = Some(session());
-        assert_eq!(current_way(&chatgpt), Some(SetupWay::ChatgptPlan));
+        chatgpt.chatgpt_signed_in = true;
+        let account = ChatGptAccount {
+            email: Some("someone@example.com".to_string()),
+            plan: Some("plus".to_string()),
+        };
         assert_eq!(
-            current_way(&ready("groq")),
+            current_way(&chatgpt, Some(&account)),
+            Some(SetupWay::ChatgptPlan {
+                plan: Some("plus".to_string()),
+                email: Some("someone@example.com".to_string()),
+            })
+        );
+        assert_eq!(
+            current_way(&chatgpt, None),
+            Some(SetupWay::ChatgptPlan {
+                plan: None,
+                email: None
+            })
+        );
+        assert_eq!(
+            current_way(&ready("groq"), None),
             Some(SetupWay::GuidedKey {
                 provider: "groq".to_string()
             })
         );
         assert_eq!(
-            current_way(&with_provider("custom", "gemma4:12b")),
+            current_way(&with_provider("custom", "gemma4:12b"), None),
             Some(SetupWay::OwnServer)
         );
         // Not ready: no way.
-        assert_eq!(current_way(&with_provider("groq", "model")), None);
+        assert_eq!(current_way(&with_provider("groq", "model"), None), None);
     }
 
     #[test]
@@ -1276,7 +1374,7 @@ mod tests {
         settings.profiles.push(profile);
         settings.active_profile_id = "work".to_string();
         settings.post_process_provider_id = "custom".to_string();
-        let status = status(&settings, 17_179_869_184);
+        let status = status(&settings, 17_179_869_184, None);
         assert_eq!(status.readiness, Readiness::Ready);
         assert_eq!(status.provider_id.as_deref(), Some("groq"));
         assert_eq!(status.model.as_deref(), Some("model"));
@@ -1289,7 +1387,7 @@ mod tests {
         assert_eq!(status.memory_bytes, 17_179_869_184);
         assert!(status.setup.finished);
 
-        let fresh = super::status(&get_default_settings(), 0);
+        let fresh = super::status(&get_default_settings(), 0, None);
         assert_eq!(fresh.provider_id.as_deref(), Some("openai"));
         assert_eq!(fresh.model, None);
         assert_eq!(fresh.readiness, Readiness::Model);
@@ -1387,6 +1485,122 @@ mod tests {
             Some("gsk-kept")
         );
         assert!(!defaults.post_process_efforts.contains_key("groq"));
+    }
+
+    // ---- Finishing a way makes post-processing usable (lead, 2026-11-26) --
+
+    fn groq_with(key: &str) -> SetupChoice {
+        SetupChoice {
+            provider_id: "groq".to_string(),
+            model: Some("openai/gpt-oss-120b".to_string()),
+            api_key: Some(key.to_string()),
+            effort: None,
+        }
+    }
+
+    /// The defaults with `mode` and no prompt active (as a new install has).
+    fn defaults_with_mode(mode: PostProcessMode) -> AppSettings {
+        let mut settings = with_work_profile();
+        profile_layers::set_value(
+            &mut settings,
+            &Scope::Defaults,
+            "post_process_mode",
+            serde_json::to_value(mode).unwrap(),
+        )
+        .expect("the mode is set");
+        settings
+    }
+
+    fn active_prompts(settings: &AppSettings) -> Vec<String> {
+        let layer = with_defaults(settings);
+        crate::prompt_library::requested(&layer)
+            .iter()
+            .map(|prompt| prompt.id.clone())
+            .collect()
+    }
+
+    #[test]
+    fn finishing_a_way_makes_defaults_that_never_post_process_use_the_instruction_shortcut() {
+        let mut settings = defaults_with_mode(PostProcessMode::Never);
+        assert!(
+            active_prompts(&settings).is_empty(),
+            "a new install's defaults"
+        );
+        apply_setup_choice(&mut settings, &groq_with("gsk-new")).expect("applies");
+        let layer = with_defaults(&settings);
+        assert_eq!(layer.post_process_mode, PostProcessMode::WithInstructionKey);
+        assert_eq!(
+            active_prompts(&settings),
+            vec![FACTORY_PROMPT_ID.to_string()]
+        );
+        assert_eq!(post_process_ready(&layer), Readiness::Ready);
+        // The profile that follows the defaults too.
+        assert_eq!(
+            settings.profiles[0].values.post_process_mode,
+            PostProcessMode::WithInstructionKey
+        );
+    }
+
+    #[test]
+    fn finishing_a_way_keeps_a_mode_and_prompts_already_chosen() {
+        let mut settings = defaults_with_mode(PostProcessMode::Always);
+        // A prompt of the user's own besides the factory one.
+        settings.post_process_prompts.push(settings::LLMPrompt {
+            id: "prompt_1795300000001".to_string(),
+            name: "Mine".to_string(),
+            prompt: "Make it short.".to_string(),
+        });
+        let mut layer = with_defaults(&settings);
+        let mut order = crate::prompt_library::normalized(
+            &layer.post_process_prompt_order,
+            &layer.post_process_prompts,
+        );
+        let other = order
+            .iter()
+            .position(|entry| entry.id != FACTORY_PROMPT_ID)
+            .expect("the library has another prompt");
+        order[other].active = true;
+        let chosen = order[other].id.clone();
+        layer.post_process_prompt_order = order;
+        profile_layers::set_value(
+            &mut settings,
+            &Scope::Defaults,
+            "post_process_prompt_order",
+            serde_json::to_value(&layer.post_process_prompt_order).unwrap(),
+        )
+        .unwrap();
+        apply_setup_choice(&mut settings, &groq_with("gsk-new")).expect("applies");
+        assert_eq!(
+            with_defaults(&settings).post_process_mode,
+            PostProcessMode::Always
+        );
+        assert_eq!(active_prompts(&settings), vec![chosen]);
+    }
+
+    #[test]
+    fn a_choice_that_removes_the_key_leaves_mode_and_prompts_alone() {
+        let mut settings = defaults_with_mode(PostProcessMode::Never);
+        apply_setup_choice(&mut settings, &groq_with("")).expect("applies");
+        let layer = with_defaults(&settings);
+        assert_eq!(layer.post_process_mode, PostProcessMode::Never);
+        assert!(active_prompts(&settings).is_empty());
+        assert_eq!(post_process_ready(&layer), Readiness::Key);
+    }
+
+    #[test]
+    fn making_usable_twice_changes_nothing_more() {
+        let mut settings = defaults_with_mode(PostProcessMode::Never);
+        make_usable(&mut settings).unwrap();
+        let once = settings.clone();
+        make_usable(&mut settings).unwrap();
+        assert_eq!(
+            serde_json::to_value(&settings).unwrap(),
+            serde_json::to_value(&once).unwrap()
+        );
+        assert_eq!(
+            with_defaults(&settings).post_process_mode,
+            PostProcessMode::WithInstructionKey
+        );
     }
 
     #[test]

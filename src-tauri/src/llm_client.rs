@@ -111,6 +111,10 @@ pub struct ReasoningRequest {
     pub disable_by_default: bool,
     /// The effort chosen for the profile; `None` = the model's default.
     pub effort: Option<String>,
+    /// DanyWhere: more fields for a chat completion request's body, from the
+    /// provider's sign-in (OpenRouter's free models to fall back on, or its
+    /// data policy with credit; `post_process_signin::commands`).
+    pub extra_fields: serde_json::Map<String, Value>,
 }
 
 /// DanyWhere: an answer, and whether it came without the chosen effort.
@@ -301,6 +305,9 @@ struct ChatCompletionRequest {
     response_format: Option<ResponseFormat>,
     #[serde(flatten)]
     reasoning: ReasoningParams,
+    /// DanyWhere: [`ReasoningRequest::extra_fields`].
+    #[serde(flatten)]
+    extra: serde_json::Map<String, Value>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -614,6 +621,10 @@ pub async fn send_chat_completion(
     prompt: String,
     reasoning: &ReasoningRequest,
 ) -> Result<Completion, String> {
+    // DanyWhere: ChatGPT's plan, the one message as its input.
+    if provider.api_format == PostProcessApiFormat::Responses {
+        return send_responses(provider, model, None, &prompt, None, reasoning).await;
+    }
     if provider.api_format == PostProcessApiFormat::Anthropic {
         return send_anthropic_message(
             provider,
@@ -765,6 +776,18 @@ pub async fn send_chat_completion_with_schema(
     json_schema: Option<Value>,
     reasoning: &ReasoningRequest,
 ) -> Result<Completion, String> {
+    // DanyWhere: ChatGPT's plan, the system prompt as its instructions.
+    if provider.api_format == PostProcessApiFormat::Responses {
+        return send_responses(
+            provider,
+            model,
+            system_prompt.as_deref(),
+            &user_content,
+            json_schema.as_ref(),
+            reasoning,
+        )
+        .await;
+    }
     let base_url = provider.base_url.trim_end_matches('/');
     let url = format!("{}/chat/completions", base_url);
 
@@ -802,6 +825,7 @@ pub async fn send_chat_completion_with_schema(
         },
     });
 
+    let extra = &reasoning.extra_fields;
     let plan =
         reasoning_attempts(provider, model, reasoning).map(|reasoning| ChatCompletionRequest {
             model: model.to_string(),
@@ -809,6 +833,7 @@ pub async fn send_chat_completion_with_schema(
             stream: false,
             response_format: response_format.clone(),
             reasoning,
+            extra: extra.clone(),
         });
 
     let (response, used) = post_until_accepted(&client, &url, &plan, "Chat completion").await?;
@@ -849,6 +874,72 @@ pub async fn send_chat_completion_with_schema(
         content: choice.message.content,
         effort_ignored,
     })
+}
+
+/// DanyWhere: one post-processing request through ChatGPT's plan (the
+/// provider format `Responses`, `llm_responses`), with the session's access
+/// token, refreshed first when due (`post_process_signin::session`). The
+/// plan route takes no `system` message, so a system prompt goes as
+/// `instructions`. An effort the model refuses (400 on `reasoning.effort`)
+/// is dropped, as for the other formats, and not sent again while the app
+/// runs; the answer says it came without it.
+async fn send_responses(
+    provider: &PostProcessProvider,
+    model: &str,
+    instructions: Option<&str>,
+    input: &str,
+    json_schema: Option<&Value>,
+    reasoning: &ReasoningRequest,
+) -> Result<Completion, String> {
+    let session = crate::post_process_signin::session::current().await?;
+    let client = shared_client()?;
+    // `X-Title`, `Referer`, `User-Agent`; the bearer and the content type
+    // are `llm_responses`'.
+    let mut headers = build_headers(provider, "")?;
+    headers.remove(CONTENT_TYPE);
+    let effort = reasoning.effort.as_deref();
+    let rejection = effort.map(|level| effort_rejection_key(provider, model, level));
+    let skipped = rejection.as_deref().is_some_and(is_known_rejected);
+    let first = if skipped { None } else { effort };
+    let mut request = crate::llm_responses::ResponsesRequest {
+        model,
+        instructions,
+        input,
+        effort: first,
+        json_schema,
+        timeout: None,
+    };
+    debug!(
+        "Sending a request through ChatGPT's plan to {}",
+        sanitized_url_for_log(&provider.base_url)
+    );
+    let completion = |text: String, effort_ignored: bool| Completion {
+        content: (!text.is_empty()).then_some(text),
+        effort_ignored,
+    };
+    let bearer = session.access_token.as_str();
+    match crate::llm_responses::send(client, &provider.base_url, bearer, &headers, &request).await {
+        Ok(text) => Ok(completion(text, skipped)),
+        Err(error) if first.is_some() && refuses_effort(&error) => {
+            info!("ChatGPT's plan refused the effort for '{model}'; retrying without it");
+            request.effort = None;
+            let text =
+                crate::llm_responses::send(client, &provider.base_url, bearer, &headers, &request)
+                    .await?;
+            if let Some(key) = rejection {
+                remember_rejection(key);
+            }
+            Ok(completion(text, true))
+        }
+        Err(error) => Err(error),
+    }
+}
+
+/// DanyWhere: whether `error` is a 400 refusing `reasoning.effort`.
+fn refuses_effort(error: &str) -> bool {
+    error
+        .strip_prefix(STATUS_ERROR_PREFIX)
+        .is_some_and(|rest| rest.starts_with("400") && rest.contains("reasoning.effort"))
 }
 
 /// Send a single-prompt request to an Anthropic Messages API (`/messages`).
@@ -922,6 +1013,22 @@ pub async fn fetch_models(
     api_key: String,
     time_limit: Duration,
 ) -> Result<Vec<String>, String> {
+    // DanyWhere: ChatGPT's plan lists the account's models with the
+    // session's token (`chatgpt::list_models`).
+    if provider.api_format == PostProcessApiFormat::Responses {
+        let session = crate::post_process_signin::session::current().await?;
+        let client = reqwest::Client::builder()
+            .timeout(time_limit)
+            .connect_timeout(Duration::from_secs(10))
+            .build()
+            .map_err(|e| report_reqwest_error("Failed to build HTTP client", &e))?;
+        return crate::post_process_signin::chatgpt::list_models(
+            &client,
+            &provider.base_url,
+            &session,
+        )
+        .await;
+    }
     let base_url = provider.base_url.trim_end_matches('/');
     let url = format!("{}/models", base_url);
 
@@ -995,6 +1102,13 @@ pub async fn send_warmup(
     model: &str,
     time_limit: Duration,
 ) -> Result<(), String> {
+    // DanyWhere: through ChatGPT's plan a request would cost plan usage
+    // and load nothing; only the session is made fresh.
+    if provider.api_format == PostProcessApiFormat::Responses {
+        return crate::post_process_signin::session::current()
+            .await
+            .map(|_| ());
+    }
     let base_url = provider.base_url.trim_end_matches('/');
     let url = if provider.api_format == PostProcessApiFormat::Anthropic {
         format!("{}/messages", base_url)
@@ -1085,6 +1199,7 @@ mod tests {
             stream: false,
             response_format: None,
             reasoning,
+            extra: serde_json::Map::new(),
         };
         serde_json::to_value(&request).unwrap()
     }
@@ -1320,6 +1435,7 @@ mod tests {
             &ReasoningRequest {
                 disable_by_default: true,
                 effort: None,
+                ..Default::default()
             },
         )
         .await;
@@ -1502,6 +1618,7 @@ mod tests {
             &ReasoningRequest {
                 disable_by_default: true,
                 effort: None,
+                ..Default::default()
             },
         )
         .await;
@@ -1514,6 +1631,7 @@ mod tests {
         ReasoningRequest {
             disable_by_default: false,
             effort: Some(level.to_string()),
+            ..Default::default()
         }
     }
 
@@ -1563,6 +1681,7 @@ mod tests {
         let reasoning = ReasoningRequest {
             disable_by_default: true,
             effort: Some("low".to_string()),
+            ..Default::default()
         };
         let json = first_attempt(
             &provider("custom", "https://api.deepseek.com"),
@@ -1582,6 +1701,7 @@ mod tests {
             &ReasoningRequest {
                 disable_by_default: true,
                 effort: None,
+                ..Default::default()
             },
         );
         assert_eq!(
@@ -2037,5 +2157,361 @@ mod tests {
         )
         .await;
         assert!(reply.is_err());
+    }
+
+    // ---- DanyWhere: ChatGPT's plan over the Responses API (strand Z) -------
+
+    const PLAN_ACCESS: &str = "test-plan-access-token";
+
+    /// The plan session every test here sees: one that is not due, so no
+    /// refresh is asked for.
+    struct TestPlanStore;
+
+    impl crate::post_process_signin::session::SessionStore for TestPlanStore {
+        fn load(&self) -> Option<crate::post_process_signin::chatgpt::ChatGptSession> {
+            Some(crate::post_process_signin::chatgpt::ChatGptSession {
+                client_id: "app_client_test".to_string(),
+                access_token: PLAN_ACCESS.to_string(),
+                refresh_token: "test-plan-refresh".to_string(),
+                expires_at: i64::MAX / 2,
+                email: None,
+                plan: None,
+                subject: "user-test".to_string(),
+                earliest_refresh_at: None,
+            })
+        }
+        fn save(
+            &self,
+            _session: &crate::post_process_signin::chatgpt::ChatGptSession,
+        ) -> Result<(), String> {
+            Ok(())
+        }
+        fn expire(&self) {}
+    }
+
+    fn plan_session() {
+        static INSTALLED: std::sync::Once = std::sync::Once::new();
+        INSTALLED.call_once(|| {
+            crate::post_process_signin::session::install(
+                std::sync::Arc::new(TestPlanStore),
+                "http://127.0.0.1:9/never".to_string(),
+            )
+        });
+    }
+
+    fn plan_provider(base_url: &str) -> PostProcessProvider {
+        PostProcessProvider {
+            api_format: PostProcessApiFormat::Responses,
+            supports_structured_output: true,
+            ..provider("chatgpt", base_url)
+        }
+    }
+
+    /// One request as the plan's fake server saw it.
+    #[derive(Debug, Clone)]
+    struct PlanRequest {
+        line: String,
+        authorization: Option<String>,
+        body: Value,
+    }
+
+    /// Answers one request per entry (status, content type, body), in turn,
+    /// and keeps the requests.
+    async fn serve_plan(
+        replies: Vec<(&'static str, &'static str, &'static str)>,
+    ) -> (String, std::sync::Arc<Mutex<Vec<PlanRequest>>>) {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let seen = std::sync::Arc::new(Mutex::new(Vec::new()));
+        let kept = seen.clone();
+        tokio::spawn(async move {
+            for (status, content_type, body) in replies {
+                let Ok((mut stream, _)) = listener.accept().await else {
+                    return;
+                };
+                let mut request = Vec::new();
+                let mut buffer = [0_u8; 8192];
+                loop {
+                    let n = stream.read(&mut buffer).await.unwrap_or(0);
+                    if n == 0 {
+                        break;
+                    }
+                    request.extend_from_slice(&buffer[..n]);
+                    let text = String::from_utf8_lossy(&request).to_string();
+                    if let Some(end) = text.find("\r\n\r\n") {
+                        let head = &text[..end];
+                        let header = |name: &str| {
+                            head.lines().find_map(|line| {
+                                let (key, value) = line.split_once(':')?;
+                                key.trim()
+                                    .eq_ignore_ascii_case(name)
+                                    .then(|| value.trim().to_string())
+                            })
+                        };
+                        let length = header("content-length")
+                            .and_then(|v| v.parse::<usize>().ok())
+                            .unwrap_or(0);
+                        if request.len() >= end + 4 + length {
+                            let first = head.lines().next().unwrap_or("");
+                            let line = first.rsplit_once(' ').map_or(first, |(l, _)| l);
+                            kept.lock().unwrap().push(PlanRequest {
+                                line: line.to_string(),
+                                authorization: header("authorization"),
+                                body: serde_json::from_str(&text[end + 4..]).unwrap_or(Value::Null),
+                            });
+                            break;
+                        }
+                    }
+                }
+                let response = format!(
+                    "HTTP/1.1 {status}\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                    body.len()
+                );
+                let _ = stream.write_all(response.as_bytes()).await;
+            }
+        });
+        (format!("http://{address}"), seen)
+    }
+
+    const SSE: &str = "text/event-stream";
+    const PLAN_OK: &str = "event: response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"delta\":\"Clean\"}\n\ndata: {\"type\":\"response.output_text.delta\",\"delta\":\"ed\"}\n\ndata: {\"type\":\"response.completed\",\"response\":{\"output\":[]}}\n\n";
+    const PLAN_EMPTY: &str =
+        "data: {\"type\":\"response.completed\",\"response\":{\"output\":[]}}\n\n";
+    const PLAN_REFUSES_EFFORT: &str = r#"{"error": {"code": "unsupported_value", "message": "Unsupported value: 'xhigh' is not supported with the 'gpt-test' model.", "param": "reasoning.effort", "type": "invalid_request_error"}}"#;
+    const PLAN_LIMIT: &str = r#"{"error":{"code":"subscription_sharing_usage_limit_exceeded","message":"You have reached your plan's usage limit."}}"#;
+
+    fn plan_requests(seen: &std::sync::Arc<Mutex<Vec<PlanRequest>>>) -> Vec<PlanRequest> {
+        seen.lock().unwrap().clone()
+    }
+
+    #[tokio::test]
+    async fn the_plan_gets_the_structured_request_on_responses_with_the_sessions_token() {
+        plan_session();
+        let (base_url, seen) = serve_plan(vec![("200 OK", SSE, PLAN_OK)]).await;
+        let schema = serde_json::json!({"type": "object"});
+        let reply = send_chat_completion_with_schema(
+            &plan_provider(&base_url),
+            String::new(),
+            "gpt-6.2-sol",
+            "the transcript".to_string(),
+            Some("the frame".to_string()),
+            Some(schema.clone()),
+            &ReasoningRequest {
+                effort: Some("low".to_string()),
+                ..Default::default()
+            },
+        )
+        .await;
+        assert_eq!(
+            reply,
+            Ok(Completion {
+                content: Some("Cleaned".to_string()),
+                effort_ignored: false,
+            })
+        );
+        let requests = plan_requests(&seen);
+        assert_eq!(requests.len(), 1);
+        let request = &requests[0];
+        assert_eq!(request.line, "POST /responses");
+        assert_eq!(
+            request.authorization.as_deref(),
+            Some(format!("Bearer {PLAN_ACCESS}").as_str())
+        );
+        let body = &request.body;
+        assert_eq!(body["model"], "gpt-6.2-sol");
+        assert_eq!(body["instructions"], "the frame");
+        assert_eq!(body["input"][0]["role"], "user");
+        assert_eq!(body["input"][0]["content"], "the transcript");
+        assert_eq!(body["reasoning"]["effort"], "low");
+        assert_eq!(body["text"]["format"]["type"], "json_schema");
+        assert_eq!(body["text"]["format"]["schema"], schema);
+        assert_eq!(body["store"], false);
+        assert_eq!(body["stream"], true);
+        assert!(body.get("messages").is_none(), "{body}");
+    }
+
+    #[tokio::test]
+    async fn the_plan_gets_the_single_message_as_its_input() {
+        plan_session();
+        let (base_url, seen) = serve_plan(vec![("200 OK", SSE, PLAN_OK)]).await;
+        let reply = send_chat_completion(
+            &plan_provider(&base_url),
+            String::new(),
+            "gpt-6.2-sol",
+            "frame, prompt and transcript".to_string(),
+            &ReasoningRequest::default(),
+        )
+        .await;
+        assert_eq!(
+            reply.map(|completion| completion.content),
+            Ok(Some("Cleaned".to_string()))
+        );
+        let body = plan_requests(&seen)[0].body.clone();
+        assert_eq!(body["input"][0]["content"], "frame, prompt and transcript");
+        assert!(body.get("instructions").is_none(), "{body}");
+        assert!(body.get("reasoning").is_none(), "{body}");
+    }
+
+    #[tokio::test]
+    async fn an_empty_answer_of_the_plan_has_no_content() {
+        plan_session();
+        let (base_url, _seen) = serve_plan(vec![("200 OK", SSE, PLAN_EMPTY)]).await;
+        let reply = send_chat_completion(
+            &plan_provider(&base_url),
+            String::new(),
+            "gpt-6.2-sol",
+            "prompt".to_string(),
+            &ReasoningRequest::default(),
+        )
+        .await;
+        assert_eq!(
+            reply,
+            Ok(Completion {
+                content: None,
+                effort_ignored: false,
+            })
+        );
+    }
+
+    #[tokio::test]
+    async fn an_effort_the_plan_refuses_is_dropped_reported_and_not_sent_again() {
+        plan_session();
+        let (base_url, seen) = serve_plan(vec![
+            ("400 Bad Request", "application/json", PLAN_REFUSES_EFFORT),
+            ("200 OK", SSE, PLAN_OK),
+            ("200 OK", SSE, PLAN_OK),
+        ])
+        .await;
+        let provider = plan_provider(&base_url);
+        let reasoning = ReasoningRequest {
+            effort: Some("xhigh".to_string()),
+            ..Default::default()
+        };
+        let ask = || {
+            send_chat_completion(
+                &provider,
+                String::new(),
+                "gpt-test-refused-effort",
+                "prompt".to_string(),
+                &reasoning,
+            )
+        };
+        assert_eq!(
+            ask().await,
+            Ok(Completion {
+                content: Some("Cleaned".to_string()),
+                effort_ignored: true,
+            })
+        );
+        assert_eq!(
+            ask().await,
+            Ok(Completion {
+                content: Some("Cleaned".to_string()),
+                effort_ignored: true,
+            })
+        );
+        let requests = plan_requests(&seen);
+        assert_eq!(requests.len(), 3);
+        assert_eq!(requests[0].body["reasoning"]["effort"], "xhigh");
+        assert!(requests[1].body.get("reasoning").is_none());
+        assert!(requests[2].body.get("reasoning").is_none(), "not again");
+    }
+
+    #[tokio::test]
+    async fn a_plan_limit_keeps_the_status_form_and_its_reason() {
+        plan_session();
+        let (base_url, seen) = serve_plan(vec![(
+            "429 Too Many Requests",
+            "application/json",
+            PLAN_LIMIT,
+        )])
+        .await;
+        let error = send_chat_completion(
+            &plan_provider(&base_url),
+            String::new(),
+            "gpt-6.2-sol",
+            "prompt".to_string(),
+            &ReasoningRequest::default(),
+        )
+        .await
+        .expect_err("the limit");
+        assert!(error.starts_with(STATUS_ERROR_PREFIX), "{error}");
+        assert_eq!(
+            crate::post_process_failure::classify_llm_error(&error, true),
+            crate::post_process_failure::FailureReason::PlanLimit
+        );
+        assert_eq!(plan_requests(&seen).len(), 1);
+    }
+
+    #[tokio::test]
+    async fn the_plans_model_list_comes_from_the_account() {
+        plan_session();
+        let (base_url, seen) = serve_plan(vec![(
+            "200 OK",
+            "application/json",
+            r#"{"models":[{"slug":"gpt-6.2-sol","visibility":"list"},{"slug":"gpt-internal","visibility":"hide"},{"slug":"gpt-6.1-terra","visibility":"list"}]}"#,
+        )])
+        .await;
+        let models = fetch_models(
+            &plan_provider(&base_url),
+            String::new(),
+            Duration::from_secs(5),
+        )
+        .await;
+        assert_eq!(
+            models,
+            Ok(vec!["gpt-6.2-sol".to_string(), "gpt-6.1-terra".to_string()])
+        );
+        let request = &plan_requests(&seen)[0];
+        assert_eq!(request.line, "GET /models");
+        assert_eq!(
+            request.authorization.as_deref(),
+            Some(format!("Bearer {PLAN_ACCESS}").as_str())
+        );
+    }
+
+    #[tokio::test]
+    async fn warming_the_plan_up_sends_no_request() {
+        plan_session();
+        let (base_url, seen) = serve_plan(vec![("200 OK", SSE, PLAN_OK)]).await;
+        let reply = send_warmup(
+            &plan_provider(&base_url),
+            "",
+            "gpt-6.2-sol",
+            Duration::from_secs(5),
+        )
+        .await;
+        assert_eq!(reply, Ok(()));
+        assert!(plan_requests(&seen).is_empty());
+    }
+
+    #[tokio::test]
+    async fn openrouters_fields_from_the_sign_in_go_with_the_request() {
+        let (base_url, bodies) = serve_in_turn(vec![("200 OK", CHAT_OK)]).await;
+        let mut extra_fields = serde_json::Map::new();
+        extra_fields.insert(
+            "models".to_string(),
+            serde_json::json!(["a/one:free", "b/two:free"]),
+        );
+        let reply = send_chat_completion_with_schema(
+            &provider("openrouter", &base_url),
+            "sk-or-test".to_string(),
+            "a/one:free",
+            "content".to_string(),
+            None,
+            None,
+            &ReasoningRequest {
+                extra_fields,
+                ..Default::default()
+            },
+        )
+        .await;
+        assert!(reply.is_ok(), "{reply:?}");
+        let body = bodies.lock().unwrap()[0].clone();
+        assert_eq!(body["model"], "a/one:free");
+        assert_eq!(
+            body["models"],
+            serde_json::json!(["a/one:free", "b/two:free"])
+        );
     }
 }

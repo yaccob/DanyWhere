@@ -11,6 +11,8 @@ pub mod chatgpt;
 pub mod commands;
 pub mod loopback;
 pub mod openrouter;
+pub mod session;
+pub mod vault;
 
 /// One way to sign in through the browser. Implemented by OpenRouter and
 /// ChatGPT.
