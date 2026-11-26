@@ -776,6 +776,12 @@ async fn finish_with_instruction<P: DictationPorts>(
         } else {
             ports.transcribe(dictated.samples.clone(), true)
         };
+        // ✕ or Escape meanwhile: the instruction isn't transcribed any more.
+        if ports.cancelled() {
+            debug!("Transcription operation cancelled while the text was transcribed again");
+            end_cancelled(ports);
+            return;
+        }
         instruction::SplitTranscripts {
             text: instruction::TranscribedSection {
                 recording: dictated,
@@ -784,7 +790,9 @@ async fn finish_with_instruction<P: DictationPorts>(
             instruction: instruction::transcribe_instruction(ports, said, true),
         }
     } else {
-        let Some(transcripts) =
+        // `None` inside: cancelled once the text was there, before the
+        // instruction was transcribed.
+        let Some(Some(transcripts)) =
             complete_unless_cancelled(instruction::finish_split(ports, text, said, false), || {
                 ports.cancelled()
             })

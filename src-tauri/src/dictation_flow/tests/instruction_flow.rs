@@ -510,6 +510,86 @@ fn escape_while_it_ends_saves_and_pastes_nothing() {
     assert!(ports.entries().is_empty());
 }
 
+/// What a dictation cancelled after its recording stopped shows: the stop,
+/// then nothing more on screen.
+fn cancelled_after_the_stop() -> Vec<Event> {
+    let mut expected = stop_events(false);
+    expected.extend([
+        Event::StopRecording,
+        Event::Overlay(Overlay::Hide),
+        Event::Tray(TrayIconState::Idle),
+        Event::Finished,
+    ]);
+    expected
+}
+
+/// DanyWhere (review of 2026-11-26, finding 7): ✕ or Escape while the end
+/// waits for the text: the instruction isn't transcribed, nothing is saved
+/// or pasted.
+#[test]
+fn escape_while_the_end_waits_for_the_text_transcribes_no_instruction() {
+    let gate = Gate::default();
+    let ports = FakePorts::new(Script {
+        hold_text_section: Some(gate.clone()),
+        ..script(tone(SAMPLES), tone(SAID), POLISH)
+    });
+    let slot = slot();
+    assert!(press(&ports, slot, false));
+    assert!(ports.wait_for(&Event::TranscribeTextSection { samples: SAMPLES }, LONG));
+    ports.take_events();
+    let ending = {
+        let ports = ports.clone();
+        let snapshot = ended_without_post_processing(&no_server(), "", false);
+        std::thread::spawn(move || end(&ports, slot, snapshot))
+    };
+    assert!(ports.wait_for(&Event::StopRecording, LONG));
+    ports.cancel();
+    gate.open();
+    ending.join().expect("the end");
+
+    assert_eq!(ports.take_events(), cancelled_after_the_stop());
+    assert!(ports.entries().is_empty());
+}
+
+/// The same when the profile it ends with transcribes otherwise: a cancel
+/// while the text is transcribed again leaves the instruction alone.
+#[test]
+fn escape_while_the_text_is_transcribed_again_transcribes_no_instruction() {
+    let ports = FakePorts::new(Script {
+        cancel_at: Some(CancelAt::Transcribing),
+        ..script(tone(SAMPLES), tone(SAID), POLISH)
+    });
+    let slot = slot();
+    cut(&ports, slot);
+    ports.take_events();
+    let mut snapshot = ended_without_post_processing(&no_server(), "", false);
+    snapshot.transcribed_with_end_values = true;
+    end(&ports, slot, snapshot);
+
+    let events = ports.take_events();
+    assert!(
+        !events
+            .iter()
+            .any(|event| matches!(event, Event::TranscribeInstruction { .. })),
+        "{events:#?}"
+    );
+    assert_eq!(
+        after(
+            &events,
+            &Event::Transcribe {
+                samples: SAMPLES,
+                load_end_model: true,
+            }
+        ),
+        [
+            Event::Overlay(Overlay::Hide),
+            Event::Tray(TrayIconState::Idle),
+            Event::Finished,
+        ]
+    );
+    assert!(ports.entries().is_empty());
+}
+
 #[test]
 fn escape_while_it_is_post_processed_saves_and_pastes_nothing() {
     let ports = FakePorts::new(Script {
