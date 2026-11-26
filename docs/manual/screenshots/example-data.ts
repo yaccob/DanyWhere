@@ -2,7 +2,9 @@
 // installation on macOS, in the language of the shot, with post-processing
 // set up with a made-up provider, and nothing of a real user's: no models,
 // microphones, word lists, History or real keys. Only made-up or factory
-// values. The scene "profiles" adds two example profiles (`EXAMPLE_PROFILES`).
+// values. The scene "profiles" adds two example profiles (`EXAMPLE_PROFILES`);
+// the scenes "setup-questions" and "setup-connected" show the post-processing
+// setup (`SETUP_SCENES`).
 import type {
   AppendChoice,
   AppendComposed,
@@ -11,6 +13,8 @@ import type {
   ApplicationInfo,
   AppSettings,
   EndKey,
+  PostProcessSetupState,
+  SetupStatus,
   StartKey,
 } from "../../../src/bindings";
 import { settingsWith, type ProfileSpec } from "../../../src/test/fixtures";
@@ -18,9 +22,16 @@ import { answerCommand, ok } from "./mocks/bindings";
 
 export type Theme = "light" | "dark";
 
-/** What the window holds: a fresh installation, or the same with the two
- * example profiles (`app.html?scene=profiles`). */
-export type Scene = "fresh" | "profiles";
+/** What the window holds (`app.html?scene=…`): a fresh installation; the
+ * same with the two example profiles; or the post-processing setup, its
+ * questions answered the quick way or connected (`SETUP_SCENES`). */
+export const SCENES = [
+  "fresh",
+  "profiles",
+  "setup-questions",
+  "setup-connected",
+] as const;
+export type Scene = (typeof SCENES)[number];
 
 /** Applications a Mac might list for assigning to a profile
  * (`list_applications`), running ones first as the backend sorts them. */
@@ -170,20 +181,98 @@ const EXAMPLE_PROVIDER = {
   api_format: "openai",
 } as const;
 
+// ---- the post-processing setup (src/components/settings/post-processing/setup)
+
+/** OpenRouter as the provider list names it, for the card "Connected to
+ * OpenRouter" (`default_post_process_providers` in src-tauri/src/settings.rs). */
+const OPENROUTER_PROVIDER = {
+  id: "openrouter",
+  label: "OpenRouter",
+  base_url: "https://openrouter.ai/api/v1",
+  allow_base_url_edit: false,
+  models_endpoint: "/models",
+  supports_structured_output: true,
+  api_format: "openai",
+} as const;
+
+/** 16 GB, so no answer is greyed out for want of memory. */
+const EXAMPLE_MEMORY_BYTES = 16 * 1024 ** 3;
+
+/** The two setup scenes: the quick way's answers ("Also to free services",
+ * "None of these") with the suggestion "OpenRouter, free" under them; and
+ * the card after connecting OpenRouter for free, with its key's spending
+ * limit of 10 USD (sidecar qa 2026-11-26_2250, section 2) and the sample
+ * that "Try it" runs (`SAMPLE_RESULTS`). */
+const SETUP_SCENES: Partial<
+  Record<Scene, { kept: PostProcessSetupState; status: SetupStatus }>
+> = {
+  "setup-questions": {
+    kept: {
+      answers: {
+        texts_may_go: "free_services",
+        subscription: "none",
+        next_step: null,
+      },
+      finished: false,
+      skipped: false,
+    },
+    status: {
+      readiness: "provider",
+      provider_id: "",
+      model: "",
+      way: null,
+      memory_bytes: EXAMPLE_MEMORY_BYTES,
+    },
+  },
+  "setup-connected": {
+    kept: {
+      answers: {
+        texts_may_go: "free_services",
+        subscription: "none",
+        next_step: null,
+      },
+      finished: true,
+      skipped: false,
+    },
+    status: {
+      readiness: "ready",
+      provider_id: OPENROUTER_PROVIDER.id,
+      model: "",
+      way: { kind: "openrouter", free_tier: true, limit_usd: 10 },
+      memory_bytes: EXAMPLE_MEMORY_BYTES,
+    },
+  },
+};
+
+/** What the sample comes back as, per language: the locale's sample
+ * sentence (`settings.postProcessing.setup.sample.text`) as a prompt would
+ * tidy it up. Spanish and French follow their locales' sentences once those
+ * have them; check them against the locale before a shot in that language. */
+const SAMPLE_RESULTS: Record<string, string> = {
+  en: "I'll send you that tomorrow, okay?",
+  de: "Ich schick dir das morgen, okay?",
+  es: "Te lo mando mañana, ¿vale?",
+  fr: "Je vous envoie ça demain, d'accord ?",
+};
+
 /** The settings of a fresh macOS installation in `language`, onboarding
  * done, with the app theme `theme` and post-processing set up
- * (`EXAMPLE_PROVIDER`); in the scene "profiles" with `EXAMPLE_PROFILES`. */
+ * (`EXAMPLE_PROVIDER`); in the scene "profiles" with `EXAMPLE_PROFILES`;
+ * in a setup scene with its answers kept and OpenRouter in the list. */
 export const freshMacSettings = (
   language: string,
   theme: Theme,
   scene: Scene = "fresh",
-): AppSettings =>
-  settingsWith({
+): AppSettings => {
+  const setup = SETUP_SCENES[scene];
+  return settingsWith({
     ...(scene === "profiles" ? { profiles: EXAMPLE_PROFILES } : {}),
     defaults: {
       post_process_mode: "with_instruction_key",
       post_process_provider_id: EXAMPLE_PROVIDER.id,
-      post_process_providers: [EXAMPLE_PROVIDER],
+      post_process_providers: setup
+        ? [OPENROUTER_PROVIDER, EXAMPLE_PROVIDER]
+        : [EXAMPLE_PROVIDER],
       post_process_models: { [EXAMPLE_PROVIDER.id]: "example-model" },
       post_process_api_keys: { [EXAMPLE_PROVIDER.id]: "example-key" },
       start_keys: factoryStartKeys(),
@@ -197,8 +286,10 @@ export const freshMacSettings = (
       keyboard_implementation: "handy_keys",
       show_whats_new_on_update: false,
       update_checks_enabled: false,
+      ...(setup ? { post_process_setup: setup.kept } : {}),
     } as Partial<AppSettings>,
   });
+};
 
 // ---- the "Append" field (src-tauri/src/append_text.rs, macOS) ---------------
 
@@ -314,5 +405,16 @@ export const answerAsFreshMac = (
   }));
   if (scene === "profiles") {
     answerCommand("listApplications", async () => EXAMPLE_APPLICATIONS);
+  }
+  const setup = SETUP_SCENES[scene];
+  if (setup) {
+    answerCommand("getPostProcessSetupStatus", async () => setup.status);
+    answerCommand("runPostProcessSample", async () =>
+      ok({
+        output: SAMPLE_RESULTS[language] ?? SAMPLE_RESULTS.en,
+        model: "example-model:free",
+        millis: 1800,
+      }),
+    );
   }
 };
