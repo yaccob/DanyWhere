@@ -52,8 +52,8 @@ pub fn desired(settings_now: &AppSettings, recording: bool, service_available: b
 
 /// [`desired`] on Linux (`linux`) or elsewhere. During a recording, the end
 /// shortcuts and then the instruction shortcuts, while those are taken
-/// (`instruction_keys::taken`: the profile may post-process and has a
-/// provider with a model), last those again with each hold shortcut's
+/// (`instruction_keys::taken`: the profile may post-process, set up or
+/// not), last those again with each hold shortcut's
 /// modifiers, which are still down when one is pressed during a held
 /// recording (`instruction_keys::bindings_while_holding_on`); none on
 /// Linux.
