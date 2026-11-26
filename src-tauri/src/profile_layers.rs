@@ -2361,6 +2361,35 @@ mod tests {
     }
 
     #[test]
+    fn a_shortcut_may_not_take_an_instruction_keys_combination() {
+        // Review finding 8 (2026-11-26): another shortcut on ⇥ would take
+        // the instruction key's press during a recording.
+        let mut s = migrated();
+        s.default_values
+            .as_mut()
+            .expect("defaults")
+            .instruction_keys = vec![crate::end_keys::EndKey {
+            id: "tab".to_string(),
+            name: String::new(),
+            shortcut: "tab".to_string(),
+            append_text: String::new(),
+            send_context: true,
+        }];
+        let mut on_tab = defaults(&s).bindings["copy_last_transcript"].clone();
+        on_tab.current_binding = "tab".to_string();
+        assert_eq!(
+            set_entry(
+                &mut s,
+                &Scope::Defaults,
+                "bindings",
+                "copy_last_transcript",
+                json!(on_tab)
+            ),
+            Err("conflict:instruction_key:tab".to_string())
+        );
+    }
+
+    #[test]
     fn a_profile_adds_an_end_shortcut_of_its_own() {
         let mut s = migrated();
         let send = crate::end_keys::EndKey {

@@ -611,8 +611,9 @@ pub fn migrate(settings: &mut AppSettings, settings_value: &serde_json::Value) -
 ///   the six, the factory hold shortcuts of before the new ones
 ///   ([`to_variant_b`]); every end's box "Post-process" went when the store
 ///   was read;
-/// - an Append text with another system's key names gets `platform`'s
-///   (`append_text::localize`), on every read.
+/// - an Append text of an end, hold or instruction shortcut with another
+///   system's key names gets `platform`'s (`append_text::localize`), on
+///   every read.
 ///
 /// Returns whether anything changed, so a store with nothing to carry over
 /// is never written.
@@ -704,11 +705,13 @@ pub fn migrate_on(
         .end_keys
         .iter_mut()
         .chain(settings.hold_keys.iter_mut())
+        .chain(settings.instruction_keys.iter_mut())
         .chain(settings.default_values.iter_mut().flat_map(|values| {
             values
                 .end_keys
                 .iter_mut()
                 .chain(values.hold_keys.iter_mut())
+                .chain(values.instruction_keys.iter_mut())
         }))
         .chain(settings.profiles.iter_mut().flat_map(|profile| {
             profile
@@ -716,6 +719,7 @@ pub fn migrate_on(
                 .end_keys
                 .iter_mut()
                 .chain(profile.values.hold_keys.iter_mut())
+                .chain(profile.values.instruction_keys.iter_mut())
         }));
     for end in ends {
         changed |= localize_in_place(&mut end.append_text, platform);
@@ -983,6 +987,7 @@ pub fn prepare_import_on(file_text: &str, values: &mut ProfileValues, platform: 
         .end_keys
         .iter_mut()
         .chain(values.hold_keys.iter_mut())
+        .chain(values.instruction_keys.iter_mut())
     {
         end.append_text = crate::append_text::localize(&end.append_text, platform);
     }
@@ -1754,6 +1759,29 @@ mod tests {
         assert_eq!(s.hold_keys[1].append_text, "{Cmd+Enter}");
     }
 
+    #[test]
+    fn instruction_keys_take_this_systems_key_names_on_every_read() {
+        // Review finding 9 (2026-11-26): in the settings, the defaults and
+        // every profile.
+        let mut s = get_default_settings();
+        s.instruction_keys = vec![end("tab", "", "tab", "{Win+Enter}", true)];
+        let values = ProfileValues::from_settings(&s);
+        s.default_values = Some(values.clone());
+        s.profiles = vec![crate::profiles::Profile::new("work", "Arbeit", values)];
+        let stored = serde_json::to_value(&s).unwrap();
+        let mut s = read(&stored);
+        assert!(migrate_on(&mut s, &stored, KeyPlatform::Macos));
+        assert_eq!(s.instruction_keys[0].append_text, "{Cmd+Enter}");
+        assert_eq!(
+            s.default_values.as_ref().unwrap().instruction_keys[0].append_text,
+            "{Cmd+Enter}"
+        );
+        assert_eq!(
+            s.profiles[0].values.instruction_keys[0].append_text,
+            "{Cmd+Enter}"
+        );
+    }
+
     // ---- Import --------------------------------------------------------------
 
     #[test]
@@ -1812,6 +1840,28 @@ mod tests {
         assert_eq!(imported.bindings, values.bindings);
         assert_eq!(imported.start_keys, values.start_keys);
         assert_eq!(imported.hold_keys, values.hold_keys);
+    }
+
+    #[test]
+    fn an_imported_instruction_key_takes_this_systems_key_names() {
+        // Review finding 9 (2026-11-26): a profile from Windows whose ⇥,
+        // held, sends with Win+Enter and Ctrl+Enter, imported on the Mac.
+        // Ctrl is the Mac's name too, so only Win changes.
+        let values = ProfileValues {
+            instruction_keys: vec![end("tab", "", "tab", "{Win+Enter}{Ctrl+Enter}", true)],
+            ..Default::default()
+        };
+        let file = serde_saphyr::to_string(&serde_json::json!({
+            "version": 1,
+            "profile": { "id": "w", "name": "W", "values": values.clone() }
+        }))
+        .unwrap();
+        let mut imported = values.clone();
+        prepare_import_on(&file, &mut imported, KeyPlatform::Macos);
+        assert_eq!(
+            imported.instruction_keys[0].append_text,
+            "{Cmd+Enter}{Ctrl+Enter}"
+        );
     }
 
     // ---- Variant b (user, 2026-11-26): no "Post-process" box ------------------
