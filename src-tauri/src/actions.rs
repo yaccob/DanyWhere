@@ -80,9 +80,9 @@ pub trait ShortcutAction: Send + Sync {
     fn stop(&self, app: &AppHandle, binding_id: &str, shortcut_str: &str);
 }
 
-// Transcribe Action. DanyWhere: the same for both start shortcuts; what
-// follows the recording is decided by how it ends (`end_keys`).
-struct TranscribeAction;
+// DanyWhere: Handy's Transcribe Action is gone: the start and hold
+// shortcuts (`start_keys`) start through the transcription coordinator and
+// `dictation_start`, and end through [`stop_transcription`].
 
 /// Field name for structured output JSON schema
 const TRANSCRIPTION_FIELD: &str = "transcription";
@@ -684,27 +684,13 @@ pub(crate) async fn process_transcription_with_settings(
     }
 }
 
-impl ShortcutAction for TranscribeAction {
-    fn start(&self, app: &AppHandle, binding_id: &str, _shortcut_str: &str) {
-        // DanyWhere: decided and done through ports (`dictation_start`), so
-        // tests run it without the app.
-        crate::dictation_start::app_ports::start(app, binding_id);
-    }
-
-    fn stop(&self, app: &AppHandle, binding_id: &str, shortcut_str: &str) {
-        stop_transcription(
-            app,
-            binding_id,
-            shortcut_str,
-            &crate::end_keys::EndChoice::Start(binding_id.to_string()),
-        );
-    }
-}
-
 /// Stops the recording of `binding_id` and finishes the dictation as `end`
 /// says (DanyWhere, `end_keys`): its end shortcut's append text,
 /// post-processing (as far as the dictation's profile allows it) and
-/// context. The transcription coordinator calls this for every end.
+/// context. The transcription coordinator calls this for every end; it
+/// starts a recording through `dictation_start` (DanyWhere: the start and
+/// hold shortcuts aren't in [`ACTION_MAP`], their ids are their own,
+/// `start_keys`).
 pub fn stop_transcription(
     app: &AppHandle,
     binding_id: &str,
@@ -887,14 +873,6 @@ impl ShortcutAction for TestAction {
 // Static Action Map
 pub static ACTION_MAP: Lazy<HashMap<String, Arc<dyn ShortcutAction>>> = Lazy::new(|| {
     let mut map = HashMap::new();
-    map.insert(
-        "transcribe".to_string(),
-        Arc::new(TranscribeAction) as Arc<dyn ShortcutAction>,
-    );
-    map.insert(
-        "transcribe_with_post_process".to_string(),
-        Arc::new(TranscribeAction) as Arc<dyn ShortcutAction>,
-    );
     map.insert(
         "cancel".to_string(),
         Arc::new(CancelAction) as Arc<dyn ShortcutAction>,

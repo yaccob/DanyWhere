@@ -167,7 +167,10 @@ pub fn take(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::end_keys::START_BINDINGS;
+    use crate::start_keys::FACTORY_START_ID;
+
+    /// The factory start shortcut as registered (`start_keys`).
+    const START: &str = "start_key:start";
     use crate::profiles::{ensure_profiles, DEFAULT_PROFILE_ID};
 
     fn end_key(id: &str, append_text: &str, post_process: bool, send_context: bool) -> EndKey {
@@ -223,7 +226,7 @@ mod tests {
             stored,
             own_profile: own.map(|values| ("mail".to_string(), values)),
             end: &end,
-            binding_id: START_BINDINGS[0],
+            binding_id: START,
             transcribed_with_end_values: false,
             streaming: false,
             session: 1,
@@ -237,7 +240,7 @@ mod tests {
         let mail = snapshot(
             &stored,
             Some(mail_values(&stored)),
-            EndChoice::Start(START_BINDINGS[0].to_string()),
+            EndChoice::Start(FACTORY_START_ID.to_string()),
         );
         assert_eq!(mail.profile_id, "mail");
         assert_eq!(mail.values.selected_model, "whisper");
@@ -250,7 +253,7 @@ mod tests {
         let in_use = snapshot(
             &stored,
             None,
-            EndChoice::Start(START_BINDINGS[0].to_string()),
+            EndChoice::Start(FACTORY_START_ID.to_string()),
         );
         assert_eq!(in_use.profile_id, DEFAULT_PROFILE_ID);
         assert_eq!(in_use.values.selected_model, "parakeet");
@@ -285,22 +288,18 @@ mod tests {
     #[test]
     fn with_post_processing_off_in_use_no_end_post_processes() {
         // The defaults in use as they come: post-processing off. Neither
-        // the built-in end with post-processing, nor the second start
-        // shortcut pressed again (as `--toggle-post-process` does), nor
-        // holding it post-processes, and no context goes along.
+        // the built-in end with post-processing, nor the hold shortcut that
+        // post-processes, held or toggled (as `--toggle-post-process` does),
+        // post-processes, and no context goes along.
         let mut stored = with_mail_profile();
         assert!(!stored.post_process_enabled);
         for end in &mut stored.end_keys {
             end.send_context = true;
         }
-        stored.hold_ends.insert(
-            START_BINDINGS[1].to_string(),
-            crate::end_keys::HoldEnd {
-                append_text: String::new(),
-                post_process: true,
-                send_context: true,
-            },
-        );
+        for hold in &mut stored.hold_keys {
+            hold.post_process = true;
+            hold.send_context = true;
+        }
         let ended = |end: EndChoice, binding_id: &str| {
             build(SnapshotInputs {
                 stored: &stored,
@@ -316,15 +315,11 @@ mod tests {
         for (end, binding_id) in [
             (
                 EndChoice::Key(crate::end_keys::POST_PROCESS_ID.to_string()),
-                START_BINDINGS[0],
+                START,
             ),
             (
-                EndChoice::Start(START_BINDINGS[1].to_string()),
-                START_BINDINGS[1],
-            ),
-            (
-                EndChoice::Held(START_BINDINGS[1].to_string()),
-                START_BINDINGS[1],
+                EndChoice::Held(crate::start_keys::HOLD_POST_ID.to_string()),
+                "hold_key:hold_post",
             ),
         ] {
             let snapshot = ended(end.clone(), binding_id);
@@ -354,7 +349,7 @@ mod tests {
                     let end = if end_post_processes {
                         EndChoice::Key(POST_PROCESS_ID.to_string())
                     } else {
-                        EndChoice::Start(START_BINDINGS[0].to_string())
+                        EndChoice::Start(FACTORY_START_ID.to_string())
                     };
                     let made = snapshot(&stored, own.then_some(mail), end);
                     let case = format!(
@@ -415,13 +410,13 @@ mod tests {
     #[test]
     fn what_was_read_when_the_recording_ended_is_kept() {
         let stored = with_mail_profile();
-        let end = EndChoice::Start(START_BINDINGS[0].to_string());
+        let end = EndChoice::Start(FACTORY_START_ID.to_string());
         let read = |own: Option<ProfileValues>, streaming: bool| {
             build(SnapshotInputs {
                 stored: &stored,
                 own_profile: own.map(|values| ("mail".to_string(), values)),
                 end: &end,
-                binding_id: START_BINDINGS[0],
+                binding_id: START,
                 transcribed_with_end_values: true,
                 streaming,
                 session: 7,

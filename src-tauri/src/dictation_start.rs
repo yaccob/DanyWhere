@@ -141,8 +141,7 @@ pub fn plan_start(
         OverlayStyle::None => StartOverlay::Hidden,
     };
     // The end the recording is expected to take (`end_keys::expected_end`).
-    let expected_end =
-        crate::end_keys::expected_end(values, binding_id, settings.shortcut_activation);
+    let expected_end = crate::end_keys::expected_end(values, binding_id);
     let post_process = crate::app_profiles::effective_post_process(&expected_end, values);
     StartPlan {
         vad_policy,
@@ -442,10 +441,8 @@ fn give_cues_when_ready(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::end_keys::START_BINDINGS;
     use crate::input_method::testing::{inserted, FakeInputMethod, ImCall};
     use crate::managers::audio::{fake_microphone, AudioRecordingManager};
-    use crate::settings::ShortcutActivation;
     use handy_recorder::testing::{FakeError, FakeMic};
     use std::cell::Cell;
     use std::sync::Mutex;
@@ -457,6 +454,10 @@ mod tests {
     }
 
     const MODEL: &str = "parakeet-tdt-0.6b-v3";
+    /// The factory start shortcut and hold shortcuts (`start_keys`).
+    const START: &str = "start_key:start";
+    const HOLD_DIRECT: &str = "hold_key:hold_direct";
+    const HOLD_POST: &str = "hold_key:hold_post";
 
     // check_model
 
@@ -525,7 +526,6 @@ mod tests {
         settings.vad_enabled = true;
         settings.overlay_style = OverlayStyle::Live;
         settings.long_form_chunking = false;
-        settings.shortcut_activation = ShortcutActivation::Toggle;
         settings
     }
 
@@ -537,25 +537,19 @@ mod tests {
     #[test]
     fn vad_follows_the_setting_and_whether_the_model_streams() {
         let mut settings = settings();
+        assert_eq!(plan(&settings, START, false).vad_policy, VadPolicy::Offline);
         assert_eq!(
-            plan(&settings, START_BINDINGS[0], false).vad_policy,
-            VadPolicy::Offline
-        );
-        assert_eq!(
-            plan(&settings, START_BINDINGS[0], true).vad_policy,
+            plan(&settings, START, true).vad_policy,
             VadPolicy::Streaming
         );
         settings.vad_enabled = false;
-        assert_eq!(
-            plan(&settings, START_BINDINGS[0], true).vad_policy,
-            VadPolicy::Disabled
-        );
+        assert_eq!(plan(&settings, START, true).vad_policy, VadPolicy::Disabled);
     }
 
     #[test]
     fn a_streaming_model_decodes_while_recording() {
-        assert!(plan(&settings(), START_BINDINGS[0], true).live_decode);
-        assert!(!plan(&settings(), START_BINDINGS[0], false).live_decode);
+        assert!(plan(&settings(), START, true).live_decode);
+        assert!(!plan(&settings(), START, false).live_decode);
     }
 
     #[test]
@@ -563,62 +557,55 @@ mod tests {
         let mut settings = settings();
         settings.long_form_chunking = true;
         // Before it loads, a model counts as losing accuracy on long audio.
-        assert!(plan(&settings, START_BINDINGS[0], false).live_decode);
+        assert!(plan(&settings, START, false).live_decode);
     }
 
     #[test]
     fn the_live_overlay_needs_a_streaming_model() {
         let mut settings = settings();
         assert_eq!(
-            plan(&settings, START_BINDINGS[0], true).overlay,
+            plan(&settings, START, true).overlay,
             StartOverlay::Streaming
         );
         assert_eq!(
-            plan(&settings, START_BINDINGS[0], false).overlay,
+            plan(&settings, START, false).overlay,
             StartOverlay::Recording
         );
         settings.overlay_style = OverlayStyle::Minimal;
         assert_eq!(
-            plan(&settings, START_BINDINGS[0], true).overlay,
+            plan(&settings, START, true).overlay,
             StartOverlay::Recording
         );
         settings.overlay_style = OverlayStyle::None;
-        assert_eq!(
-            plan(&settings, START_BINDINGS[0], true).overlay,
-            StartOverlay::Hidden
-        );
+        assert_eq!(plan(&settings, START, true).overlay, StartOverlay::Hidden);
     }
 
     #[test]
     fn the_second_start_shortcut_is_expected_to_post_process() {
         let mut settings = settings();
         settings.post_process_enabled = true;
-        assert!(!plan(&settings, START_BINDINGS[0], false).post_process);
-        assert!(plan(&settings, START_BINDINGS[1], false).post_process);
+        assert!(!plan(&settings, START, false).post_process);
+        assert!(plan(&settings, HOLD_POST, false).post_process);
     }
 
     #[test]
     fn with_post_processing_off_no_start_expects_post_processing() {
-        // As the defaults come: the switch is off, so neither the second
-        // start shortcut nor a hold end with post-processing warms up a
+        // As the defaults come: the switch is off, so neither the hold
+        // shortcut that post-processes nor another one set to warms up a
         // model or shows the speech bubble.
-        let mut settings = settings();
+        let settings = settings();
         assert!(!settings.post_process_enabled);
         let mut values = ProfileValues::from_settings(&settings);
         for end in &mut values.end_keys {
             end.send_context = true;
         }
-        let pressed = plan_start(&settings, &values, START_BINDINGS[1], false);
+        let pressed = plan_start(&settings, &values, HOLD_POST, false);
         assert!(!pressed.post_process);
         assert!(!pressed.sends_context);
-        settings.shortcut_activation = ShortcutActivation::PushToTalk;
-        let held = values
-            .hold_ends
-            .get_mut(START_BINDINGS[0])
-            .expect("the first start shortcut has a hold end");
+        let held = &mut values.hold_keys[0];
         held.post_process = true;
         held.send_context = true;
-        let held = plan_start(&settings, &values, START_BINDINGS[0], false);
+        let held = plan_start(&settings, &values, HOLD_DIRECT, false);
         assert!(!held.post_process);
         assert!(!held.sends_context);
     }
@@ -627,14 +614,9 @@ mod tests {
     fn with_hold_the_hold_end_decides_post_processing() {
         let mut settings = settings();
         settings.post_process_enabled = true;
-        settings.shortcut_activation = ShortcutActivation::PushToTalk;
         let mut values = ProfileValues::from_settings(&settings);
-        values
-            .hold_ends
-            .get_mut(START_BINDINGS[0])
-            .expect("the first start shortcut has a hold end")
-            .post_process = true;
-        let plan = plan_start(&settings, &values, START_BINDINGS[0], false);
+        values.hold_keys[0].post_process = true;
+        let plan = plan_start(&settings, &values, HOLD_DIRECT, false);
         assert!(plan.post_process);
     }
 
@@ -645,7 +627,7 @@ mod tests {
         settings.post_process_enabled = true;
         let mut own = ProfileValues::from_settings(&settings);
         own.post_process_enabled = false;
-        let plan = plan_start(&settings, &own, START_BINDINGS[1], false);
+        let plan = plan_start(&settings, &own, HOLD_POST, false);
         assert!(!plan.post_process);
     }
 
@@ -654,14 +636,62 @@ mod tests {
         let mut settings = settings();
         settings.post_process_enabled = true;
         let mut values = ProfileValues::from_settings(&settings);
-        for end in &mut values.end_keys {
+        for end in values
+            .end_keys
+            .iter_mut()
+            .chain(values.hold_keys.iter_mut())
+        {
             end.send_context = true;
         }
-        let with_post_process = plan_start(&settings, &values, START_BINDINGS[1], false);
+        let with_post_process = plan_start(&settings, &values, HOLD_POST, false);
         assert!(with_post_process.sends_context);
         // Context goes only with post-processing.
-        let plain = plan_start(&settings, &values, START_BINDINGS[0], false);
+        let plain = plan_start(&settings, &values, START, false);
         assert!(!plain.sends_context);
+    }
+
+    /// A hold shortcut `id` on F13 with `post_process`, sending context.
+    fn hold_key(id: &str, post_process: bool) -> crate::end_keys::EndKey {
+        crate::end_keys::EndKey {
+            id: id.to_string(),
+            name: String::new(),
+            shortcut: "f13".to_string(),
+            append_text: String::new(),
+            post_process,
+            send_context: true,
+        }
+    }
+
+    #[test]
+    fn a_hold_shortcut_expects_its_own_end() {
+        let mut settings = settings();
+        settings.post_process_enabled = true;
+        let mut values = ProfileValues::from_settings(&settings);
+        values.hold_keys = vec![hold_key("plain", false), hold_key("post", true)];
+        values.start_keys.clear();
+        let post = plan_start(&settings, &values, "hold_key:post", false);
+        assert!(post.post_process);
+        assert!(post.sends_context);
+        assert!(!plan_start(&settings, &values, "hold_key:plain", false).post_process);
+    }
+
+    #[test]
+    fn a_start_shortcut_expects_the_end_with_its_combination() {
+        let mut settings = settings();
+        settings.post_process_enabled = true;
+        let mut values = ProfileValues::from_settings(&settings);
+        values.start_keys = vec![crate::start_keys::StartKey {
+            id: "s".to_string(),
+            shortcut: "f13".to_string(),
+        }];
+        values.hold_keys.clear();
+        values.end_keys = vec![crate::end_keys::EndKey {
+            send_context: false,
+            ..hold_key("e", true)
+        }];
+        let plan = plan_start(&settings, &values, "start_key:s", false);
+        assert!(plan.post_process);
+        assert!(!plan.sends_context);
     }
 
     // start_dictation, with the real AudioRecordingManager over a fake
@@ -821,7 +851,6 @@ mod tests {
             settings.vad_enabled = false;
             settings.overlay_style = OverlayStyle::Minimal;
             settings.long_form_chunking = false;
-            settings.shortcut_activation = ShortcutActivation::Toggle;
             let log = Log::default();
             Self {
                 rm: Arc::new(fake_microphone::manager(&mic, settings.clone())),
@@ -869,7 +898,7 @@ mod tests {
     #[test]
     fn a_dictation_records_gives_its_cues_in_order_and_stops_with_the_microphones_samples() {
         let bench = Bench::new(fake_microphone::mic());
-        let outcome = bench.start(START_BINDINGS[0]);
+        let outcome = bench.start(START);
         assert!(bench.mic.is_streaming(), "the microphone is open");
         assert!(bench.rm.is_recording());
         let speech = fake_microphone::speech(24_000);
@@ -898,7 +927,7 @@ mod tests {
             ]
         );
         assert_eq!(
-            fake_microphone::stop(&bench.rm, &bench.mic, START_BINDINGS[0]),
+            fake_microphone::stop(&bench.rm, &bench.mic, START),
             Some(speech)
         );
     }
@@ -908,7 +937,7 @@ mod tests {
         let mic = fake_microphone::mic();
         mic.fail_next_open(FakeError::PermissionDenied);
         let bench = Bench::new(mic);
-        let outcome = bench.start(START_BINDINGS[0]);
+        let outcome = bench.start(START);
         assert!(matches!(outcome, StartOutcome::RecordingFailed));
         assert!(!bench.rm.is_recording());
 
@@ -935,9 +964,9 @@ mod tests {
     #[test]
     fn a_stop_before_the_microphone_delivers_gives_no_cues() {
         let bench = Bench::new(fake_microphone::mic());
-        let outcome = bench.start(START_BINDINGS[0]);
+        let outcome = bench.start(START);
         assert_eq!(
-            fake_microphone::stop(&bench.rm, &bench.mic, START_BINDINGS[0]),
+            fake_microphone::stop(&bench.rm, &bench.mic, START),
             Some(Vec::new())
         );
         cues_given(outcome);
@@ -954,7 +983,7 @@ mod tests {
         let mut bench = Bench::new(fake_microphone::mic());
         bench.app.settings.selected_model = String::new();
         bench.app.loaded = None;
-        let outcome = bench.start(START_BINDINGS[0]);
+        let outcome = bench.start(START);
         assert!(matches!(outcome, StartOutcome::NoModel));
         assert!(!bench.mic.is_streaming());
         assert!(!bench.rm.is_recording());
@@ -975,7 +1004,7 @@ mod tests {
         bench.app.streams = true;
         bench.app.settings.overlay_style = OverlayStyle::Live;
         bench.app.settings.post_process_enabled = true;
-        let outcome = bench.start(START_BINDINGS[1]);
+        let outcome = bench.start(HOLD_POST);
         assert!(matches!(outcome, StartOutcome::Recording(_)));
         assert_eq!(
             bench.log()[..9],
@@ -991,10 +1020,10 @@ mod tests {
                 Did::TitleQueryPrimed,
             ]
         );
-        // The second start shortcut post-processes with the switch on: its
+        // The hold shortcut that post-processes does with the switch on: its
         // model warms up.
         assert!(bench.log().contains(&Did::WarmUp { post_process: true }));
-        fake_microphone::stop(&bench.rm, &bench.mic, START_BINDINGS[1]);
+        fake_microphone::stop(&bench.rm, &bench.mic, HOLD_POST);
     }
 
     // DanyWhere's input method (user's decision, 2026-11-23): a recording
@@ -1018,7 +1047,7 @@ mod tests {
             bench.app.input_method_added = true;
             bench.app.settings.paste_method = crate::settings::PasteMethod::CtrlV;
             bench.app.settings.accessibility_skipped = skipped;
-            let outcome = bench.start(START_BINDINGS[0]);
+            let outcome = bench.start(START);
             fake_microphone::play(&bench.mic, &fake_microphone::speech(24_000));
             cues_given(outcome);
             assert_eq!(
@@ -1054,7 +1083,7 @@ mod tests {
                 vec![ImCall::Begin, ImCall::End],
                 "skipped {skipped}"
             );
-            fake_microphone::stop(&bench.rm, &bench.mic, START_BINDINGS[0]);
+            fake_microphone::stop(&bench.rm, &bench.mic, START);
         }
     }
 
@@ -1069,7 +1098,7 @@ mod tests {
             bench.app.settings.paste_method,
             crate::settings::PasteMethod::None
         );
-        let outcome = bench.start(START_BINDINGS[0]);
+        let outcome = bench.start(START);
         fake_microphone::play(&bench.mic, &fake_microphone::speech(24_000));
         cues_given(outcome);
         assert_eq!(input_method_calls(&bench.log()), vec![ImCall::Begin]);
@@ -1080,7 +1109,7 @@ mod tests {
             input_method_calls(&bench.log()),
             vec![ImCall::Begin, ImCall::End]
         );
-        fake_microphone::stop(&bench.rm, &bench.mic, START_BINDINGS[0]);
+        fake_microphone::stop(&bench.rm, &bench.mic, START);
     }
 
     #[test]
@@ -1094,9 +1123,9 @@ mod tests {
             let mut bench = Bench::new(fake_microphone::mic());
             bench.app.input_method_added = added;
             bench.app.settings.paste_method = method;
-            let outcome = bench.start(START_BINDINGS[0]);
+            let outcome = bench.start(START);
             assert!(matches!(outcome, StartOutcome::Recording(_)));
-            fake_microphone::stop(&bench.rm, &bench.mic, START_BINDINGS[0]);
+            fake_microphone::stop(&bench.rm, &bench.mic, START);
             cues_given(outcome);
             assert_eq!(
                 input_method_calls(&bench.log()),
@@ -1118,10 +1147,7 @@ mod tests {
         bench.app.settings.paste_method = crate::settings::PasteMethod::CtrlV;
         bench.app.settings.selected_model = String::new();
         bench.app.loaded = None;
-        assert!(matches!(
-            bench.start(START_BINDINGS[0]),
-            StartOutcome::NoModel
-        ));
+        assert!(matches!(bench.start(START), StartOutcome::NoModel));
         assert_eq!(input_method_calls(&bench.log()), Vec::new());
         // The microphone doesn't start.
         let mic = fake_microphone::mic();
@@ -1129,10 +1155,7 @@ mod tests {
         let mut bench = Bench::new(mic);
         bench.app.input_method_added = true;
         bench.app.settings.paste_method = crate::settings::PasteMethod::CtrlV;
-        assert!(matches!(
-            bench.start(START_BINDINGS[0]),
-            StartOutcome::RecordingFailed
-        ));
+        assert!(matches!(bench.start(START), StartOutcome::RecordingFailed));
         assert_eq!(input_method_calls(&bench.log()), Vec::new());
     }
 }

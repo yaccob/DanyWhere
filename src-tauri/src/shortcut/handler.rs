@@ -10,7 +10,6 @@ use tauri::{AppHandle, Manager};
 use crate::actions::ACTION_MAP;
 use crate::managers::audio::AudioRecordingManager;
 use crate::settings::get_settings;
-use crate::transcription_coordinator::is_transcribe_binding;
 use crate::TranscriptionCoordinator;
 
 /// Handle a shortcut event from either implementation.
@@ -18,8 +17,8 @@ use crate::TranscriptionCoordinator;
 /// This function contains the shared logic for:
 /// - Looking up the action in ACTION_MAP
 /// - Handling the cancel binding (only fires when recording)
-/// - Routing transcribe bindings to the coordinator, which applies the
-///   configured activation mode (toggle / push-to-talk / hold-or-toggle)
+/// - Routing start and hold shortcuts to the coordinator, which decides
+///   per press from the lists the combination is in (`start_keys`)
 ///
 /// # Arguments
 /// * `app` - The Tauri app handle
@@ -44,17 +43,16 @@ pub fn handle_shortcut_event(
         return;
     }
 
-    let settings = get_settings(app);
-
-    // Transcribe bindings are handled by the coordinator.
-    if is_transcribe_binding(binding_id) {
+    // DanyWhere: start and hold shortcuts (`start_keys`) go to the
+    // coordinator, which finds what the combination is in the profile that
+    // applies now.
+    if crate::start_keys::is_dictation_binding(binding_id) {
         if let Some(coordinator) = app.try_state::<TranscriptionCoordinator>() {
             coordinator.send_input(
                 binding_id,
                 hotkey_string,
                 is_pressed,
-                settings.shortcut_activation,
-                std::time::Duration::from_millis(settings.hold_threshold_ms),
+                std::time::Duration::from_millis(get_settings(app).hold_threshold_ms),
             );
         } else {
             warn!("TranscriptionCoordinator is not initialized");

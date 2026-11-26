@@ -476,18 +476,29 @@ mod imp {
         let mut immune = 0usize;
         let mut wanted: Vec<(String, ShortcutBinding, bool)> = Vec::new();
         if eligible {
-            for (id, binding) in &settings.bindings {
+            // DanyWhere: the start and hold shortcuts (`start_keys`) too, as
+            // they are registered: a post-processing hold shortcut only
+            // while post-processing is reachable.
+            let dictation = crate::start_keys::bindings_to_register(
+                &settings.start_keys,
+                &settings.hold_keys,
+                crate::app_profiles::post_processing_reachable(&settings),
+            );
+            let all = settings
+                .bindings
+                .iter()
+                .map(|(id, binding)| (id.clone(), binding.clone()))
+                .chain(
+                    dictation
+                        .into_iter()
+                        .map(|binding| (binding.id.clone(), binding)),
+                );
+            for (id, binding) in all {
                 if id == "cancel" && !state.cancel_requested.load(Ordering::SeqCst) {
                     continue;
                 }
-                // DanyWhere: also the toggle of "Send Context".
-                if crate::settings::binding_needs_post_processing(id)
-                    && !settings.post_process_enabled
-                {
-                    continue;
-                }
 
-                match plan_fallback_binding(id, binding) {
+                match plan_fallback_binding(&id, &binding) {
                     ShadowPlan::Immune => immune += 1,
                     ShadowPlan::Uncovered => next.uncovered.push(id.clone()),
                     ShadowPlan::Shadow { shadow, degraded } => {

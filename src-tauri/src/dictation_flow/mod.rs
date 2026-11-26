@@ -940,7 +940,11 @@ mod tests {
     use crate::dictation_context::{CapturedWindow, WordReplacement};
     use crate::dictation_key_inserts::ClipboardReason;
     use crate::dictation_snapshot::{build, DictationSnapshot, SnapshotInputs};
-    use crate::end_keys::{EndChoice, EndKey, POST_PROCESS_ID, START_BINDINGS};
+    use crate::end_keys::{EndChoice, EndKey, POST_PROCESS_ID};
+    use crate::start_keys::FACTORY_START_ID;
+
+    /// The factory start shortcut as registered (`start_keys`).
+    const START: &str = "start_key:start";
     use crate::notices::{Notice, NoticeCode, NoticeSource};
     use crate::post_process_failure::{FailureReason, PostProcessFailure};
     use crate::profile_redo::{ForInsert, Working};
@@ -975,7 +979,7 @@ mod tests {
         snapshot_of(
             settings,
             None,
-            EndChoice::Start(START_BINDINGS[0].to_string()),
+            EndChoice::Start(FACTORY_START_ID.to_string()),
         )
     }
 
@@ -992,7 +996,7 @@ mod tests {
             stored: &stored,
             own_profile: own,
             end: &end,
-            binding_id: START_BINDINGS[0],
+            binding_id: START,
             transcribed_with_end_values: false,
             streaming: false,
             session: 1,
@@ -1151,7 +1155,7 @@ mod tests {
         tauri::async_runtime::block_on(finish_dictation(
             Dictation {
                 snapshot,
-                binding_id: START_BINDINGS[0].to_string(),
+                binding_id: START.to_string(),
                 stop_time: Instant::now(),
                 input_source,
             },
@@ -2616,7 +2620,7 @@ mod tests {
         let snapshot = snapshot_of(
             stored,
             Some(("mail".to_string(), mail.clone())),
-            EndChoice::Start(START_BINDINGS[0].to_string()),
+            EndChoice::Start(FACTORY_START_ID.to_string()),
         );
         let ports = FakePorts::new(Script::default());
         finish(&ports, snapshot);
@@ -2674,7 +2678,7 @@ mod tests {
             stored: &stored,
             own_profile: None,
             end: &post_processing(),
-            binding_id: START_BINDINGS[0],
+            binding_id: START,
             transcribed_with_end_values: true,
             streaming: true,
             session: 1,
@@ -2713,7 +2717,6 @@ mod tests {
     // once the profile is settled: snapshot, `stopped`, `finish_dictation`
     // on the async runtime.
 
-    use crate::settings::ShortcutActivation;
     use crate::transcription_coordinator::{
         EffectRunner, RecordingPhase, TranscriptionCoordinator,
     };
@@ -2765,9 +2768,17 @@ mod tests {
 
         fn recording_locked_changed(&mut self, _locked: bool) {}
 
-        fn keys_end(&mut self, binding_id: &str) -> Option<String> {
+        fn discard(&mut self, _binding_id: &str) {}
+
+        /// The combination's roles, as a start shortcut alone: these tests
+        /// press it as a toggle.
+        fn roles(&mut self, binding_id: &str) -> crate::start_keys::Roles {
             let values = ProfileValues::from_settings(&self.settings);
-            crate::end_keys::end_with_keys(&values, binding_id).map(|end| end.id.clone())
+            let reachable = crate::app_profiles::post_processing_reachable(&self.settings);
+            crate::start_keys::Roles {
+                hold: None,
+                ..crate::start_keys::roles_of(&values, binding_id, reachable)
+            }
         }
 
         /// Drops the recording's own hold, as the app does.
@@ -2788,13 +2799,7 @@ mod tests {
     }
 
     fn toggle_press(coordinator: &TranscriptionCoordinator) {
-        coordinator.send_input(
-            START_BINDINGS[0],
-            "ctrl+space",
-            true,
-            ShortcutActivation::Toggle,
-            Duration::ZERO,
-        );
+        coordinator.send_input(START, "ctrl+space", true, Duration::ZERO);
     }
 
     #[test]
@@ -2883,9 +2888,9 @@ mod tests {
     #[test]
     fn with_post_processing_off_no_shortcut_post_processes() {
         // Post-processing is set up but switched off: neither the end
-        // shortcut with post-processing nor the second start shortcut
-        // toggled from outside (`--toggle-post-process`) sends the text to
-        // the provider.
+        // shortcut with post-processing nor the hold shortcut that
+        // post-processes, toggled from outside (`--toggle-post-process`),
+        // sends the text to the provider.
         let (url, requests) = llm_server(vec![("200 OK", POLISHED), ("200 OK", POLISHED)]);
         let mut settings = with_end(
             post_process_settings(&url),
@@ -2894,6 +2899,18 @@ mod tests {
             false,
         );
         settings.post_process_enabled = false;
+        // The hold shortcut that post-processes, as `--toggle-post-process`
+        // ends (`start_keys::remote_toggle`), appends the same.
+        for hold in settings
+            .hold_keys
+            .iter_mut()
+            .filter(|hold| hold.post_process)
+        {
+            hold.append_text = " (sent)".to_string();
+        }
+        let (remote_binding, remote_end) =
+            crate::start_keys::remote_toggle(&ProfileValues::from_settings(&settings), true)
+                .expect("a hold shortcut that post-processes");
 
         let ports = FakePorts::new(Script::default());
         let coordinator = coordinator_with(&ports, settings.clone());
@@ -2904,10 +2921,14 @@ mod tests {
 
         let ports = FakePorts::new(Script::default());
         let coordinator = coordinator_with(&ports, settings);
-        coordinator.send_external_input(START_BINDINGS[1], "--toggle-post-process");
+        coordinator.send_external_input(
+            &remote_binding,
+            "--toggle-post-process",
+            remote_end.clone(),
+        );
         // Longer than the coordinator's debounce, so the second one counts.
         std::thread::sleep(Duration::from_millis(60));
-        coordinator.send_external_input(START_BINDINGS[1], "--toggle-post-process");
+        coordinator.send_external_input(&remote_binding, "--toggle-post-process", remote_end);
         assert!(ports.wait_finished(Duration::from_secs(10)));
         let toggled = ports.take_events();
 
