@@ -508,7 +508,10 @@ impl HistoryManager {
     /// Save a new history entry to the database.
     /// The recording should already have been written to the recordings directory.
     /// DanyWhere: `post_processed` is what the dictation's own
-    /// post-processing came back with, its prompt's name included.
+    /// post-processing came back with, its prompt's name included. The
+    /// dictation flow saves with [`Self::save_entry_with_instruction`];
+    /// tests save without one.
+    #[cfg(test)]
     pub fn save_entry(
         &self,
         file_name: String,
@@ -566,8 +569,12 @@ impl HistoryManager {
             made_with.model.as_deref(),
         );
         crate::history_versions::name_the_prompt(&mut versions, prompt_name.as_deref());
-        // DanyWhere: its ✨ step ran with the instruction.
-        if spoken_instruction.is_some() {
+        // DanyWhere: its ✨ step ran with the instruction; one heard as
+        // nothing went to no model.
+        if spoken_instruction
+            .as_deref()
+            .is_some_and(|text| !text.is_empty())
+        {
             crate::history_versions::mark_spoken_instruction(&mut versions);
         }
         let inserted = self.insert_entry(HistoryEntry {
@@ -2306,6 +2313,7 @@ mod tests {
                         text: text.into(),
                         prompt: Some("Fix it".into()),
                         prompt_name: Some("Dictation".into()),
+                        spoken_instruction: false,
                     }),
                     TranscribedWith::default(),
                     instruction,
@@ -2439,6 +2447,22 @@ mod tests {
         assert_eq!(open.entry(with.id).unwrap().versions, with.versions);
         assert!(!without.versions[1].steps[0].spoken_instruction);
         assert_eq!(open.entry(without.id).unwrap().versions, without.versions);
+    }
+
+    /// DanyWhere (strand Z1): an instruction heard as nothing went to no
+    /// model, so its post-processing ran with the profile's prompts alone.
+    #[test]
+    fn a_post_processing_with_an_instruction_heard_as_nothing_is_not_marked() {
+        let open = open_history(RecordingStorageLimit::Unlimited);
+        open.recording("a.opus", 1_000);
+        let saved = open.save_with(
+            "a.opus",
+            "dear sir",
+            Some("Dear Sir,"),
+            Some(instruction("  ", 1_600)),
+        );
+        assert_eq!(saved.spoken_instruction.as_deref(), Some(""));
+        assert!(!saved.versions[1].steps[0].spoken_instruction);
     }
 
     #[test]

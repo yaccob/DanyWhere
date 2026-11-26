@@ -121,7 +121,9 @@ pub fn retry_history_entry_transcription(jobs: State<'_, Arc<TranscriptionJobMan
 /// (`None`: the top); its result, like a new transcription's, goes on top
 /// (`history_versions`). `prompt_ids`: post-process with exactly those
 /// prompts of the library, in that order; `None`: the profile's active ones
-/// (`prompt_library`). Its progress and outcome arrive as
+/// (`prompt_library`). `use_spoken_instruction`: post-process with the
+/// entry's spoken instruction, if it has one; false for the wand's "Without
+/// the spoken instruction". Its progress and outcome arrive as
 /// `TranscriptionJob` events.
 #[tauri::command]
 #[specta::specta]
@@ -131,8 +133,9 @@ pub fn reprocess_history_entry(
     mode: ReprocessMode,
     version: Option<u32>,
     prompt_ids: Option<Vec<String>>,
+    use_spoken_instruction: bool,
 ) {
-    jobs.reprocess_with_prompts(id, mode, version, prompt_ids);
+    jobs.reprocess_with_prompts(id, mode, version, prompt_ids, use_spoken_instruction);
 }
 
 /// Stops the entry's background transcription: a queued one is dropped, a

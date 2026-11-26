@@ -53,6 +53,23 @@ impl AppPorts {
             cancel_generation: snapshot.cancel_generation,
         }
     }
+
+    /// DanyWhere: the ports of the dictation recording now, before its end
+    /// took a snapshot: at the cut for a spoken instruction
+    /// (`instruction::begin_instruction`). Its session and cancel
+    /// generation are the current ones, so a cancel or a newer dictation
+    /// after the cut counts.
+    pub fn for_recording(app: &AppHandle) -> Self {
+        let rm = Arc::clone(&app.state::<Arc<AudioRecordingManager>>());
+        Self {
+            app: app.clone(),
+            cancel_generation: rm.cancel_generation(),
+            rm,
+            tm: Arc::clone(&app.state::<Arc<TranscriptionManager>>()),
+            hm: Arc::clone(&app.state::<Arc<HistoryManager>>()),
+            session: crate::actions::current_recording_session(),
+        }
+    }
 }
 
 impl Transcribe for AppPorts {
@@ -61,6 +78,7 @@ impl Transcribe for AppPorts {
         Some(Recording {
             samples,
             input_silent: self.rm.last_input_silent(),
+            speech: self.rm.last_heard_speech(),
         })
     }
 
@@ -80,6 +98,7 @@ impl Transcribe for AppPorts {
         Some(Recording {
             samples: first.samples,
             input_silent: first.input_silent,
+            speech: first.speech,
         })
     }
 
@@ -104,10 +123,18 @@ impl PostProcess for AppPorts {
         &self,
         settings: &AppSettings,
         transcription: &str,
+        spoken_instruction: Option<&str>,
         post_process: bool,
         context: &ContextQuery,
     ) -> impl std::future::Future<Output = ProcessedTranscription> + Send {
-        super::post_process_dictation(&self.hm, settings, transcription, post_process, context)
+        super::post_process_dictation(
+            &self.hm,
+            settings,
+            transcription,
+            spoken_instruction,
+            post_process,
+            context,
+        )
     }
 }
 
@@ -210,6 +237,12 @@ impl Report for AppPorts {
                 streaming: false,
             } => utils::show_processing_overlay(&self.app),
             Overlay::Hide => utils::hide_recording_overlay(&self.app),
+            Overlay::Instruction { text_ready, heard } => {
+                crate::overlay::set_dictation_instruction(
+                    &self.app,
+                    Some(crate::overlay::DictationInstruction { text_ready, heard }),
+                )
+            }
             Overlay::AfterDictation(after) => {
                 crate::delivery::finish_overlay_after_dictation(&self.app, after)
             }

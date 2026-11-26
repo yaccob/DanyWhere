@@ -52,6 +52,16 @@ pub trait VoiceActivityDetector: Send + Sync {
         None
     }
 
+    /// DanyWhere: whether the detector itself heard a voice in the last
+    /// frame it was given, before smoothing: a frame kept only as pre-roll
+    /// or hangover was not voiced. `None`: it can't tell (no smoothing of
+    /// its own), so a kept frame counts as voiced. The spoken instruction
+    /// uses it to tell a section with speech from one that only holds the
+    /// hangover of the speech before the cut.
+    fn last_frame_voiced(&self) -> Option<bool> {
+        None
+    }
+
     fn reset(&mut self) {}
 }
 

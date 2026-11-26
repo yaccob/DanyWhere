@@ -241,6 +241,9 @@ fn cancel_operation(app: &AppHandle, notify_coordinator: bool) {
     let audio_manager = app.state::<Arc<AudioRecordingManager>>();
     let recording_was_active = audio_manager.is_recording();
     audio_manager.cancel_recording();
+    // DanyWhere: a spoken instruction the recording went on to goes with it
+    // (`dictation_flow::instruction`), its text's transcription too.
+    crate::dictation_flow::instruction::discard_pending();
 
     // Abandon any live streaming transcription, and stop a transcription
     // already in progress

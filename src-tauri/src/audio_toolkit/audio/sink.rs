@@ -74,6 +74,9 @@ pub struct CapturedAudio {
     /// Every sample received (pre-VAD) was exactly zero, e.g. a muted mic.
     /// False when no audio arrived at all.
     pub input_silent: bool,
+    /// DanyWhere: the detector heard a voice in it (in its last section,
+    /// after a cut): see [`SplitSection::heard_speech`].
+    pub heard_speech: bool,
     /// The detector the recording borrowed, for the next one.
     pub vad: CaptureVad,
 }
@@ -87,6 +90,11 @@ pub struct SplitSection {
     /// Every sample of the section (pre-VAD) was exactly zero; false when no
     /// audio arrived in it.
     pub input_silent: bool,
+    /// The detector heard a voice in one of the frames it kept in this
+    /// section: frames kept only as the hangover of speech before the cut
+    /// don't count (`VoiceActivityDetector::last_frame_voiced`). Without VAD,
+    /// any sound counts.
+    pub heard_speech: bool,
 }
 
 /// What a sink kept of the section it records into now.
@@ -98,6 +106,8 @@ struct Section {
     got_audio: bool,
     /// One of its chunks was not exact digital silence.
     heard_sound: bool,
+    /// DanyWhere: see [`SplitSection::heard_speech`].
+    heard_speech: bool,
 }
 
 impl Section {
@@ -144,6 +154,7 @@ impl RecordingSections {
         let first = std::mem::take(&mut sections.current);
         Some(SplitSection {
             input_silent: first.input_silent(),
+            heard_speech: first.heard_speech,
             samples: first.samples,
         })
     }
@@ -242,6 +253,7 @@ impl CaptureSink {
         let section = self.sections.finish();
         CapturedAudio {
             input_silent: section.input_silent(),
+            heard_speech: section.heard_speech,
             samples: section.samples,
             vad: self.vad,
         }
@@ -280,6 +292,8 @@ impl Sink for CaptureSink {
         let live = (!*split).then_some(&self.on_audio);
 
         if self.policy == VadPolicy::Disabled {
+            // DanyWhere: without a detector, any sound counts as speech.
+            current.heard_speech |= current.heard_sound;
             Self::emit(current, live, real);
             return;
         }
@@ -288,14 +302,25 @@ impl Sink for CaptureSink {
         // zero padding; at most one frame of silence reaches the recording.
         // DanyWhere: its state goes on across a cut, so the two sections
         // hold what one recording would.
-        match self
-            .vad
-            .detector
-            .push_frame(chunk.samples)
-            .unwrap_or(VadFrame::Speech(chunk.samples))
-        {
-            VadFrame::Speech(frame) => Self::emit(current, live, frame),
-            VadFrame::Noise => {}
+        let voiced = match self.vad.detector.push_frame(chunk.samples) {
+            Ok(VadFrame::Speech(frame)) => {
+                Self::emit(current, live, frame);
+                None
+            }
+            Ok(VadFrame::Noise) => Some(false),
+            // A frame the detector couldn't judge is kept, as speech.
+            Err(_) => {
+                Self::emit(current, live, chunk.samples);
+                Some(true)
+            }
+        };
+        // DanyWhere: whether a voice was heard in this section, not only the
+        // hangover of the speech before a cut (`SplitSection::heard_speech`).
+        if !current.heard_speech {
+            current.heard_speech = match voiced {
+                Some(voiced) => voiced,
+                None => self.vad.detector.last_frame_voiced().unwrap_or(true),
+            };
         }
     }
 }

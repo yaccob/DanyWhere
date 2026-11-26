@@ -1494,11 +1494,13 @@ async retryHistoryEntryTranscription(id: number) : Promise<void> {
  * (`None`: the top); its result, like a new transcription's, goes on top
  * (`history_versions`). `prompt_ids`: post-process with exactly those
  * prompts of the library, in that order; `None`: the profile's active ones
- * (`prompt_library`). Its progress and outcome arrive as
+ * (`prompt_library`). `use_spoken_instruction`: post-process with the
+ * entry's spoken instruction, if it has one; false for the wand's "Without
+ * the spoken instruction". Its progress and outcome arrive as
  * `TranscriptionJob` events.
  */
-async reprocessHistoryEntry(id: number, mode: ReprocessMode, version: number | null, promptIds: string[] | null) : Promise<void> {
-    await TAURI_INVOKE("reprocess_history_entry", { id, mode, version, promptIds });
+async reprocessHistoryEntry(id: number, mode: ReprocessMode, version: number | null, promptIds: string[] | null, useSpokenInstruction: boolean) : Promise<void> {
+    await TAURI_INVOKE("reprocess_history_entry", { id, mode, version, promptIds, useSpokenInstruction });
 },
 /**
  * Saves the user's `text`, an edit of version `base` of the entry:

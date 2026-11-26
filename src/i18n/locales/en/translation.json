@@ -1182,7 +1182,8 @@
       "promptMenu": {
         "button": "Post-process with one prompt",
         "title": "Post-process with",
-        "active": "active"
+        "active": "active",
+        "withoutSpokenInstruction": "Without the spoken instruction"
       },
       "retranscribeAgain": "Re-transcribe and post-process again, as before"
     },
@@ -1580,7 +1581,10 @@
     "notReady": "Not ready yet",
     "wordList": "Word list: {{name}}",
     "wordListGlobalOnly": "No additional list",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "instruction": "Instruction",
+    "instructionLine": "Instruction: {{text}}",
+    "textReady": "Text transcribed"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} may be blocking 1 shortcut",

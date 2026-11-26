@@ -538,6 +538,9 @@ pub struct RecordedSection {
     pub samples: Vec<f32>,
     /// The microphone sent only digital silence during the section.
     pub input_silent: bool,
+    /// The detector heard a voice in it, not only the hangover of speech
+    /// before (`audio_toolkit::SplitSection::heard_speech`).
+    pub speech: bool,
 }
 
 /// One recording session's first-sample notification. Waiting on this never
@@ -602,6 +605,9 @@ pub struct AudioRecordingManager {
     cached_device: Arc<Mutex<Option<(String, String)>>>,
     /// The last recording was all-zero samples, not just audio without speech.
     last_input_silent: Arc<AtomicBool>,
+    /// DanyWhere: the detector heard a voice in the last recording (its last
+    /// section, after a cut): `RecordedSection::speech`.
+    last_heard_speech: Arc<AtomicBool>,
     /// DanyWhere: what the open stream was opened with, so a recording whose
     /// profile has another microphone opens it again (`dictation_microphone`).
     opened_for: Arc<Mutex<Option<MicrophoneChoice>>>,
@@ -667,6 +673,7 @@ impl AudioRecordingManager {
             capture_generation: Arc::new(AtomicU64::new(0)),
             cached_device: Arc::new(Mutex::new(None)),
             last_input_silent: Arc::new(AtomicBool::new(false)),
+            last_heard_speech: Arc::new(AtomicBool::new(false)),
             opened_for: Arc::new(Mutex::new(None)),
             sections: Arc::new(Mutex::new(None)),
         };
@@ -1135,12 +1142,15 @@ impl AudioRecordingManager {
                 self.return_vad(captured.vad);
                 self.last_input_silent
                     .store(captured.input_silent, Ordering::Release);
+                self.last_heard_speech
+                    .store(captured.heard_speech, Ordering::Release);
                 captured.samples
             }
             Err(e) => {
                 // The recording and its detector are lost with the sink.
                 error!("Failed to stop recording: {e}");
                 self.last_input_silent.store(false, Ordering::Release);
+                self.last_heard_speech.store(false, Ordering::Release);
                 if e.kind() != ErrorKind::NotRecording {
                     microphone.failed.store(true, Ordering::Release);
                 }
@@ -1396,6 +1406,12 @@ impl AudioRecordingManager {
         self.last_input_silent.load(Ordering::Acquire)
     }
 
+    /// DanyWhere: whether the detector heard a voice in the last stopped
+    /// recording, its last section after a cut (`RecordedSection::speech`).
+    pub fn last_heard_speech(&self) -> bool {
+        self.last_heard_speech.load(Ordering::Acquire)
+    }
+
     pub fn was_cancelled_since(&self, generation: u64) -> bool {
         self.cancel_generation.load(Ordering::Acquire) != generation
     }
@@ -1439,6 +1455,7 @@ impl AudioRecordingManager {
                     None => {
                         error!("Recorder not available");
                         self.last_input_silent.store(false, Ordering::Release);
+                        self.last_heard_speech.store(false, Ordering::Release);
                         Vec::new()
                     }
                 };
@@ -1496,6 +1513,7 @@ impl AudioRecordingManager {
         Some(RecordedSection {
             samples: padded_if_short(first.samples),
             input_silent: first.input_silent,
+            speech: first.heard_speech,
         })
     }
 
