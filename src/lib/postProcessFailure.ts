@@ -84,6 +84,21 @@ const reasonSentence = (t: Translate, failure: Failure): string | null => {
       return t(`${KEY}.truncated`);
     case "unavailable":
       return withProvider("unavailable");
+    // DanyWhere: where a way of the setup ends (qa 2026-11-26_2250, 4.3).
+    case "free-busy":
+      return withProvider("freeBusy");
+    case "free-daily-limit":
+      return withProvider("freeDailyLimit");
+    case "key-limit":
+      return withProvider("keyLimit");
+    case "plan-limit":
+      return withProvider("planLimit");
+    case "plan-not-eligible":
+      return withProvider("planNotEligible");
+    case "sign-in-expired":
+      return withProvider("signInExpired");
+    case "rate-limited":
+      return withProvider("rateLimited");
     case "other": {
       const error = text(failure.error);
       return error === null ? null : t(`${KEY}.other`, { error });
@@ -110,3 +125,85 @@ export const withPostProcessFailureReason = (
  * either: it is a code, not a text. */
 export const isPostProcessFailureDetail = (detail?: string | null): boolean =>
   parse(detail) !== null;
+
+/** The sentence for a command's failure (`FailureDto`: a reason's name and
+ * a raw detail) at `provider`; the raw detail where the reason has none. */
+export const failureSentence = (
+  t: Translate,
+  failure: { reason: string; detail: string | null },
+  provider: { id: string; label: string },
+): string =>
+  reasonSentence(t, {
+    reason: failure.reason,
+    providerId: provider.id,
+    provider: provider.label,
+    error: failure.detail ?? failure.reason,
+  }) ?? t(`${KEY}.other`, { error: failure.detail ?? failure.reason });
+
+/**
+ * DanyWhere: the next step a failure's notice offers (qa 2026-11-26_1840,
+ * section 5: when a way ends, a targeted notice instead of all the
+ * questions; 2026-11-26_2250, 4.5).
+ * - `set_up`: the setup's questions (nothing set up yet)
+ * - `open`: a page of the provider's account, `label` names the button
+ * - `change_setup`: the questions again (the plan doesn't count any more)
+ * - `sign_in_again`: a new sign-in with the provider
+ */
+export type FailureAction =
+  | { kind: "set_up" }
+  | {
+      kind: "open";
+      label: "topUp" | "credit" | "changeLimit" | "manageUsage";
+      url: string;
+    }
+  | { kind: "change_setup" }
+  | { kind: "sign_in_again"; provider: "openrouter" | "chatgpt" };
+
+/** The pages a failure's next step may open, by provider id. */
+export interface FailurePages {
+  usage?: string;
+  credit?: string;
+  keys?: string;
+}
+
+/** The next step for the failure in `detail`, or none: the reason has no
+ * step, or the provider has no page for it. `pagesOf` gives a provider's
+ * pages (`lib/postProcessSetup/guides.ts`). */
+export const postProcessFailureAction = (
+  detail: string | null | undefined,
+  pagesOf: (providerId: string) => FailurePages,
+): FailureAction | null => {
+  const failure = parse(detail);
+  if (failure === null) return null;
+  const providerId = text(failure.providerId) ?? "";
+  const pages = pagesOf(providerId);
+  const open = (
+    label: "topUp" | "credit" | "changeLimit" | "manageUsage",
+    url: string | undefined,
+  ): FailureAction | null => (url ? { kind: "open", label, url } : null);
+  switch (failure.reason) {
+    case "no-provider":
+    case "no-model":
+    case "no-api-key":
+      return { kind: "set_up" };
+    case "no-credit":
+      return open(
+        providerId === "openrouter" ? "topUp" : "credit",
+        pages.credit,
+      );
+    case "free-daily-limit":
+      return open("topUp", pages.credit);
+    case "key-limit":
+      return open("changeLimit", pages.keys);
+    case "plan-limit":
+      return open("manageUsage", pages.usage);
+    case "plan-not-eligible":
+      return { kind: "change_setup" };
+    case "sign-in-expired":
+      return providerId === "openrouter" || providerId === "chatgpt"
+        ? { kind: "sign_in_again", provider: providerId }
+        : { kind: "set_up" };
+    default:
+      return null;
+  }
+};

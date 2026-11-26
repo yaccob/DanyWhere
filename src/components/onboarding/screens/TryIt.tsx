@@ -166,6 +166,10 @@ interface TryItProps {
   onArrive: () => void;
   onUnfinish: () => void;
   onDone: () => void;
+  /** DanyWhere: a screen comes between Try it and All set (setting up
+   * post-processing). Called once the glove has landed in the tray,
+   * instead of opening All set here and calling `onArrive`. */
+  onLanded?: () => void;
 }
 
 /** Screen 5: first real dictation into a note; one take (hold or tap) ends it. */
@@ -182,6 +186,7 @@ export const TryIt: React.FC<TryItProps> = ({
   onArrive,
   onUnfinish,
   onDone,
+  onLanded,
 }) => {
   const { t, i18n } = useTranslation();
   const e = useTryEngine({ os });
@@ -223,6 +228,10 @@ export const TryIt: React.FC<TryItProps> = ({
     setHow(by);
     setSwapped(true);
     if (prefersReducedMotion()) {
+      if (onLanded) {
+        onLanded();
+        return;
+      }
       setStage("set");
       onArrive();
       return;
@@ -251,12 +260,14 @@ export const TryIt: React.FC<TryItProps> = ({
   // Fly the glove into the tray icon: straight up on macOS, else a hop down.
   useLayoutEffect(() => {
     if (stage !== "fly") return;
-    onArrive();
+    // DanyWhere: with a screen before All set, the step changes on landing.
+    const land = () => (onLanded ? onLanded() : setStage("set"));
+    if (!onLanded) onArrive();
     const el = glove.current;
     const from = el?.getBoundingClientRect();
     const to = tray.current?.getBoundingClientRect();
     if (!el || !from || !to) {
-      setStage("set");
+      land();
       return;
     }
     const dx = to.left + to.width / 2 - (from.left + from.width / 2);
@@ -294,12 +305,12 @@ export const TryIt: React.FC<TryItProps> = ({
       ],
       { duration: FLIGHT_MS, fill: "both" },
     );
-    const land = setTimeout(() => {
+    const landing = setTimeout(() => {
       setCaught(true);
-      setStage("set");
+      land();
     }, FLIGHT_MS);
     return () => {
-      clearTimeout(land);
+      clearTimeout(landing);
       flight.cancel();
     };
   }, [stage]);

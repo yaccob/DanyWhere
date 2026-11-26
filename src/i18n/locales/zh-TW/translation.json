@@ -252,6 +252,12 @@
     "linux": {
       "tryIt": "沒有作用嗎？<guide>Linux 設定指南</guide>",
       "done": "在其他應用程式中沒有作用嗎？<guide>Linux 設定指南</guide>"
+    },
+    "postProcessSetup": {
+      "title": "潤飾你的文字",
+      "sub": "語言模型可以潤飾每次聽寫的內容：標點、語助詞、口述的指令、人名等。回答兩個簡短的問題，就能設定好。",
+      "later": "稍後",
+      "laterHint": "你稍後可以在「基本設定 › 後處理」中找到它。"
     }
   },
   "modelTable": {
@@ -1093,6 +1099,147 @@
           "withInstructionKey": "使用指令快捷鍵時",
           "always": "一律"
         }
+      },
+      "setup": {
+        "title": "潤飾你的文字",
+        "intro": "回答兩個簡短的問題，就能完成所有設定。你隨時都可以修改答案。",
+        "later": "稍後",
+        "knowMyWay": "熟悉的使用者：",
+        "allProviders": "所有供應商 …",
+        "notSetUp": "尚未設定後處理。",
+        "setUp": "設定",
+        "keepCurrent": "保留目前的設定",
+        "q1": {
+          "title": "1. 你的文字可以傳送到哪裡？",
+          "free_services": {
+            "label": "也可以傳給免費服務。",
+            "hint": "它們可能會保存你的文字，並用來改進自己的 AI。"
+          },
+          "not_kept": {
+            "label": "只傳給處理完就不保存的服務。",
+            "hint": "這需要透過方案使用，或花幾美元。"
+          },
+          "nowhere": {
+            "label": "哪裡都不傳。",
+            "hint": "文字會留在這台電腦上。"
+          }
+        },
+        "q2": {
+          "title": "2. 你已經有下列其中一種方案了嗎？",
+          "none": "都沒有"
+        },
+        "q3": {
+          "title": "3. 接下來要怎麼做？",
+          "credit": "不用方案，一次儲值 5 美元起",
+          "groq": "用 Groq 免費使用，複製一組金鑰即可",
+          "this_computer": "在這台電腦上（較慢，需要 16 GB 記憶體）",
+          "tooLittleMemoryMac": "在這台電腦上：需要 16 GB，這台 Mac 只有 {{memory}}。",
+          "tooLittleMemory": "在這台電腦上：需要 16 GB，這台電腦只有 {{memory}}。"
+        },
+        "openrouter": {
+          "freeTitle": "建議：OpenRouter 免費版",
+          "freeBody": "註冊一個 OpenRouter 帳號，按一下「Authorize」，就完成了。每天最多 50 次聽寫。",
+          "creditTitle": "建議：OpenRouter 儲值使用",
+          "creditBody": "註冊一個 OpenRouter 帳號，按一下「Authorize」，然後一次儲值 5 美元起。DanyWhere 會選擇不拿你的文字做訓練的模型。5 美元夠聽寫好幾千次，而且不會自動續約。",
+          "tipAccount": "用 Google 或 GitHub 登入：省去密碼和電子郵件驗證碼。",
+          "tipPayment": "第一次使用 OpenRouter？歡迎頁面會要求填寫付款方式。你可以選擇「I'll do this later」，免費模型不需要付款方式。之後回到這裡，按「重新開啟頁面」。",
+          "connect": "連結 OpenRouter"
+        },
+        "chatgpt": {
+          "title": "建議：你的 ChatGPT 方案",
+          "body": "透過你的 ChatGPT 方案使用：不需要金鑰，也沒有額外費用。在瀏覽器中登入 ChatGPT，並允許 DanyWhere 存取。",
+          "firstUse": "在此應用程式中符合資格的使用量會計入你的 ChatGPT 方案。你可以在 ChatGPT 設定中管理使用量。",
+          "dataNotDescribed": "OpenAI 沒有說明它如何處理由你的方案付費的請求。",
+          "continue": "使用 ChatGPT 繼續"
+        },
+        "guidedKey": {
+          "title": "建議：{{service}} 的金鑰",
+          "paste": "在這裡貼上金鑰",
+          "fieldLabel": "{{service}} 的金鑰",
+          "check": "檢查",
+          "checking": "正在檢查 …",
+          "works": "金鑰可以使用。"
+        },
+        "guides": {
+          "copyKey": "複製金鑰，貼到這裡。",
+          "copyToken": "複製權杖，貼到這裡。",
+          "anthropic": {
+            "credits": "在 claude.ai 中連結你方案的 API 額度。開通方案滿 7 天後才能連結，而且不需要綁定信用卡。",
+            "creditsLink": "查看做法",
+            "key": "在 Claude Console 中建立一組金鑰。",
+            "keyLink": "開啟 Console"
+          },
+          "gemini": {
+            "credits": "在 Google AI Studio 中選擇「Claim free API credits」，並設定帳單。Google 會要求提供付款方式，並預付至少 5 美元。",
+            "creditsLink": "開啟 AI Studio",
+            "key": "建立一組 API 金鑰。",
+            "keyLink": "API 金鑰"
+          },
+          "huggingface": {
+            "key": "建立一個具有「Make calls to Inference Providers」權限的存取權杖。",
+            "keyLink": "開啟權杖頁面"
+          },
+          "ollama_cloud": {
+            "key": "在你的 Ollama 帳號中建立一組金鑰。",
+            "keyLink": "開啟金鑰頁面"
+          },
+          "groq": {
+            "account": "登入 GroqCloud，例如使用「Continue with Google」。不需要信用卡。",
+            "accountLink": "開啟 GroqCloud",
+            "key": "選擇「Create API Key」。Groq 會請你按一下，確認你是真人。"
+          }
+        },
+        "local": {
+          "laterTitle": "在這台電腦上：將在之後的版本推出",
+          "laterBody": "DanyWhere 之後會提供一個在這台電腦上執行的模型。在那之前，可以使用你自己的伺服器，例如這台電腦上的 Ollama 或 LM Studio，或是你公司的伺服器。",
+          "unavailableTitle": "這台電腦無法使用",
+          "unavailableBodyMac": "要在這台電腦上執行模型需要 16 GB 記憶體，這台 Mac 只有 {{memory}}。可以使用你自己的伺服器，例如你公司的伺服器。",
+          "unavailableBody": "要在這台電腦上執行模型需要 16 GB 記憶體，這台電腦只有 {{memory}}。可以使用你自己的伺服器，例如你公司的伺服器。",
+          "ownServer": "設定自己的伺服器",
+          "ownServerHint": "在下方輸入它的位址和模型。"
+        },
+        "signIn": {
+          "waiting": "正在等待瀏覽器 …",
+          "waitingHint": "請在瀏覽器中完成。如果你得先註冊，請按「重新開啟頁面」。",
+          "reopen": "重新開啟頁面",
+          "cancel": "取消",
+          "failed": "登入沒有成功：{{error}}",
+          "timedOut": "登入已等候 30 分鐘，已經逾時。",
+          "denied": "未獲准存取。",
+          "notEligible": "這個 ChatGPT 帳號沒有 DanyWhere 可以使用的方案（Go、Plus、Pro 或 Business）。",
+          "tryAgain": "再試一次",
+          "browserSuccess": "完成。你可以關閉這個視窗，回到 DanyWhere。",
+          "browserFailure": "沒有成功。請回到 DanyWhere 再試一次。"
+        },
+        "connected": {
+          "title": "已連結到 {{provider}}",
+          "usingPlan": "正在使用 ChatGPT 方案",
+          "plan": "方案：{{plan}}",
+          "freeModels": "免費模型，每天最多 50 次聽寫",
+          "withCredit": "已儲值，使用不拿文字做訓練的模型",
+          "noCreditYet": "還沒有額度：在你儲值之前，DanyWhere 會使用免費模型。",
+          "notToppedUp": "OpenRouter 還沒有顯示額度。這可能需要一分鐘。",
+          "keyLimit": "金鑰的消費上限：{{limit}}",
+          "model": "模型：{{model}}",
+          "picksModel": "由 DanyWhere 選擇模型。",
+          "tryIt": "試試看",
+          "manageUsage": "管理使用量",
+          "credit": "額度",
+          "topUp": "儲值",
+          "toppedUp": "我已儲值",
+          "disconnect": "中斷連結",
+          "answerAgain": "重新回答問題",
+          "advanced": "進階"
+        },
+        "sample": {
+          "title": "試用",
+          "spoken": "口述：「{{text}}」",
+          "result": "結果：「{{text}}」",
+          "text": "嗯 那個 我明天傳給你 逗號 好嗎 問號",
+          "running": "正在試用 …",
+          "took": "用 {{model}} 花了 {{seconds}} 秒",
+          "failed": "試用沒有成功。"
+        }
       }
     },
     "history": {
@@ -1258,7 +1405,8 @@
           "model": "模型",
           "demo": "示範",
           "try": "試用",
-          "done": "設定完成"
+          "done": "設定完成",
+          "postProcessSetup": "潤飾你的文字"
         }
       },
       "onboardingRun": {
@@ -1559,7 +1707,23 @@
       "emptyReply": "{{provider}} 沒有傳回任何文字。",
       "truncated": "回覆在模型的輸出上限處被截斷。",
       "unavailable": "{{provider}} 在這台電腦上無法使用。",
-      "other": "錯誤：{{error}}"
+      "other": "錯誤：{{error}}",
+      "freeBusy": "{{provider}} 的免費模型目前忙碌中，請稍後再試。",
+      "freeDailyLimit": "{{provider}} 今天的免費聽寫次數已用完（每天 50 次）；明天再繼續，或一次儲值。",
+      "keyLimit": "{{provider}} 上這組金鑰的消費上限已達到，請前往修改。",
+      "planLimit": "你在 {{provider}} 的方案用量暫時已達上限。",
+      "planNotEligible": "你在 {{provider}} 的方案不包含在其他應用程式中使用。",
+      "signInExpired": "{{provider}} 的登入已過期，請重新登入。",
+      "rateLimited": "{{provider}} 限制了每分鐘可傳送的量，請稍等一下再聽寫。",
+      "actions": {
+        "setUp": "設定",
+        "topUp": "儲值",
+        "credit": "額度",
+        "changeLimit": "修改上限",
+        "manageUsage": "管理使用量",
+        "changeSetup": "變更設定",
+        "signInAgain": "重新登入"
+      }
     },
     "appMissedShortcutTitle": "已複製 – 請重新啟動該 App",
     "appMissedShortcut": "DanyWhere 設定聽寫快捷鍵時 {{app}} 已經開著，因此要重新啟動後才能辨識該快捷鍵。文字已在剪貼簿中。",

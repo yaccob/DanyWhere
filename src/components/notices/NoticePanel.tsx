@@ -4,6 +4,10 @@ import { X } from "lucide-react";
 import type { NoticeLevel } from "@/bindings";
 import { NoticeBadgeIcon } from "@/components/icons/NoticeBadgeIcon";
 import { noticeDisplay, separateDetail } from "@/lib/notices";
+import {
+  failureActionLabel,
+  runFailureAction,
+} from "@/lib/postProcessSetup/actions";
 import { type LocalNotice, useNoticeStore } from "@/stores/noticeStore";
 
 // Longer than a usual toast: a notice can carry a raw error worth reading.
@@ -135,13 +139,22 @@ export const NoticePanel: React.FC = () => {
     ...notices
       .filter((notice) => isShown(notice.source))
       .map((notice) => {
-        const { title, explanation } = noticeDisplay(notice.code);
+        const { title, explanation, action } = noticeDisplay(notice.code);
+        // DanyWhere: the next step for the notice's detail (a failed
+        // post-processing's reason), as on a notice from the frontend.
+        const next = action?.(notice.detail) ?? null;
         return {
           id: notice.source,
           level: notice.level,
           title: t(title),
           explanation: explanation?.(t, notice.detail),
           detail: separateDetail(notice.code, notice.detail),
+          action: next
+            ? {
+                label: failureActionLabel(t, next),
+                onClick: () => runFailureAction(next),
+              }
+            : undefined,
           onDismiss: () => dismiss(notice),
         };
       }),

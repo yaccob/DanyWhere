@@ -252,6 +252,12 @@
     "linux": {
       "tryIt": "Nefunguje to? <guide>Průvodce nastavením pro Linux</guide>",
       "done": "Nefunguje to v jiných aplikacích? <guide>Průvodce nastavením pro Linux</guide>"
+    },
+    "postProcessSetup": {
+      "title": "Vylepšete své texty",
+      "sub": "Jazykový model může každý diktát uhladit: interpunkci, výplňová slova, diktované příkazy, jména. Dvě krátké otázky a je to nastavené.",
+      "later": "Později",
+      "laterHint": "Později to najdete v části Základní nastavení › Následné zpracování."
     }
   },
   "modelTable": {
@@ -1093,6 +1099,147 @@
           "withInstructionKey": "Se zkratkou pro pokyn",
           "always": "Vždy"
         }
+      },
+      "setup": {
+        "title": "Vylepšete své texty",
+        "intro": "Dvě krátké otázky a vše je nastavené. Odpovědi můžete kdykoli změnit.",
+        "later": "Později",
+        "knowMyWay": "Vyznám se v tom:",
+        "allProviders": "Všichni poskytovatelé …",
+        "notSetUp": "Následné zpracování ještě není nastavené.",
+        "setUp": "Nastavit",
+        "keepCurrent": "Ponechat současné nastavení",
+        "q1": {
+          "title": "1. Kam se smějí vaše texty posílat?",
+          "free_services": {
+            "label": "I do bezplatných služeb.",
+            "hint": "Ty si je smějí ponechat a použít je ke zlepšování své AI."
+          },
+          "not_kept": {
+            "label": "Jen do služby, která je zpracuje a neponechá si je.",
+            "hint": "To jde přes předplatné, nebo to stojí pár dolarů."
+          },
+          "nowhere": {
+            "label": "Nikam.",
+            "hint": "Zůstanou na tomto počítači."
+          }
+        },
+        "q2": {
+          "title": "2. Máte už některé z těchto předplatných?",
+          "none": "Žádné z nich"
+        },
+        "q3": {
+          "title": "3. Jak dál?",
+          "credit": "Jednou dobít kredit od 5 $, bez předplatného",
+          "groq": "Zdarma u Groq, s klíčem ke zkopírování",
+          "this_computer": "Na tomto počítači (pomalejší, od 16 GB paměti)",
+          "tooLittleMemoryMac": "Na tomto počítači: potřebuje 16 GB, tento Mac má {{memory}}.",
+          "tooLittleMemory": "Na tomto počítači: potřebuje 16 GB, tento počítač má {{memory}}."
+        },
+        "openrouter": {
+          "freeTitle": "Návrh: OpenRouter, zdarma",
+          "freeBody": "Účet u OpenRouter, jedno kliknutí na „Authorize“ a hotovo. Až 50 diktátů denně.",
+          "creditTitle": "Návrh: OpenRouter s kreditem",
+          "creditBody": "Účet u OpenRouter, jedno kliknutí na „Authorize“ a pak jednou dobít kredit od 5 $. DanyWhere vybere model, který vaše texty nepoužívá k trénování. 5 $ stačí na tisíce diktátů a nic se samo neobnovuje.",
+          "tipAccount": "Zaregistrujte se přes Google nebo GitHub: ušetříte si heslo i kód z e-mailu.",
+          "tipPayment": "Na OpenRouter poprvé? Uvítání se zeptá na platební metodu. Můžete zvolit „I'll do this later“: bezplatné modely žádnou nepotřebují. Pak se sem vraťte a stiskněte „Otevřít stránku znovu“.",
+          "connect": "Připojit OpenRouter"
+        },
+        "chatgpt": {
+          "title": "Návrh: vaše předplatné ChatGPT",
+          "body": "Běží přes vaše předplatné ChatGPT: žádný klíč, žádné další náklady. Přihlaste se v prohlížeči do ChatGPT a povolte DanyWhere přístup.",
+          "firstUse": "Oprávněné využití v této aplikaci čerpá z vašeho předplatného ChatGPT. Využití spravujete v nastavení ChatGPT.",
+          "dataNotDescribed": "OpenAI nepopisuje, jak zachází s požadavky, které platí vaše předplatné.",
+          "continue": "Pokračovat s ChatGPT"
+        },
+        "guidedKey": {
+          "title": "Návrh: klíč od {{service}}",
+          "paste": "Sem vložte klíč",
+          "fieldLabel": "Klíč od {{service}}",
+          "check": "Ověřit",
+          "checking": "Ověřuji …",
+          "works": "Klíč funguje."
+        },
+        "guides": {
+          "copyKey": "Zkopírujte klíč a vložte ho sem.",
+          "copyToken": "Zkopírujte token a vložte ho sem.",
+          "anthropic": {
+            "credits": "Na claude.ai propojte API kredit, který patří k vašemu předplatnému. Jde to po sedmi dnech předplatného a platební kartu k tomu nepotřebujete.",
+            "creditsLink": "Jak na to",
+            "key": "Vytvořte klíč v Claude Console.",
+            "keyLink": "Otevřít Console"
+          },
+          "gemini": {
+            "credits": "V Google AI Studio zvolte „Claim free API credits“ a nastavte fakturaci. Google chce platební metodu a zálohu nejméně 5 $.",
+            "creditsLink": "Otevřít AI Studio",
+            "key": "Vytvořte API klíč.",
+            "keyLink": "API klíče"
+          },
+          "huggingface": {
+            "key": "Vytvořte přístupový token s oprávněním „Make calls to Inference Providers“.",
+            "keyLink": "Otevřít tokeny"
+          },
+          "ollama_cloud": {
+            "key": "Vytvořte klíč ve svém účtu Ollama.",
+            "keyLink": "Otevřít klíče"
+          },
+          "groq": {
+            "account": "Přihlaste se do GroqCloud, třeba přes „Continue with Google“. Kartu nepotřebujete.",
+            "accountLink": "Otevřít GroqCloud",
+            "key": "Zvolte „Create API Key“. Groq vás nechá jedním kliknutím potvrdit, že jste člověk."
+          }
+        },
+        "local": {
+          "laterTitle": "Na tomto počítači: přijde v některé z dalších verzí",
+          "laterBody": "DanyWhere později přinese model, který poběží na tomto počítači. Do té doby můžete použít vlastní server, třeba Ollama nebo LM Studio na tomto počítači, nebo server vaší firmy.",
+          "unavailableTitle": "Na tomto počítači to nejde",
+          "unavailableBodyMac": "Model na tomto počítači potřebuje 16 GB paměti; tento Mac má {{memory}}. Můžete použít vlastní server, třeba server vaší firmy.",
+          "unavailableBody": "Model na tomto počítači potřebuje 16 GB paměti; tento počítač má {{memory}}. Můžete použít vlastní server, třeba server vaší firmy.",
+          "ownServer": "Nastavit vlastní server",
+          "ownServerHint": "Níže zadejte jeho adresu a model."
+        },
+        "signIn": {
+          "waiting": "Čekám na prohlížeč …",
+          "waitingHint": "Dokončete to v prohlížeči. Pokud jste se nejdřív museli zaregistrovat, stiskněte „Otevřít stránku znovu“.",
+          "reopen": "Otevřít stránku znovu",
+          "cancel": "Zrušit",
+          "failed": "Přihlášení se nezdařilo: {{error}}",
+          "timedOut": "Přihlášení čekalo 30 minut a vypršelo.",
+          "denied": "Přístup nebyl povolen.",
+          "notEligible": "Tento účet ChatGPT nemá předplatné, které může DanyWhere použít (Go, Plus, Pro nebo Business).",
+          "tryAgain": "Zkusit znovu",
+          "browserSuccess": "Hotovo. Toto okno můžete zavřít a vrátit se do DanyWhere.",
+          "browserFailure": "Nepovedlo se. Vraťte se do DanyWhere a zkuste to znovu."
+        },
+        "connected": {
+          "title": "Připojeno: {{provider}}",
+          "usingPlan": "Běží přes vaše předplatné ChatGPT",
+          "plan": "Předplatné: {{plan}}",
+          "freeModels": "Bezplatné modely, až 50 diktátů denně",
+          "withCredit": "S kreditem, model bez trénování na vašich textech",
+          "noCreditYet": "Zatím žádný kredit: DanyWhere používá bezplatné modely, dokud nedobijete.",
+          "notToppedUp": "OpenRouter zatím žádný kredit neukazuje. Může to minutu trvat.",
+          "keyLimit": "Limit výdajů klíče: {{limit}}",
+          "model": "Model: {{model}}",
+          "picksModel": "Model vybírá DanyWhere.",
+          "tryIt": "Vyzkoušet",
+          "manageUsage": "Spravovat využití",
+          "credit": "Kredit",
+          "topUp": "Dobít",
+          "toppedUp": "Dobití hotovo",
+          "disconnect": "Odpojit",
+          "answerAgain": "Odpovědět na otázky znovu",
+          "advanced": "Pokročilé"
+        },
+        "sample": {
+          "title": "Zkouška",
+          "spoken": "Namluveno: „{{text}}“",
+          "result": "Výsledek: „{{text}}“",
+          "text": "ehm tak já ti to pošlu zítra čárka jo otazník",
+          "running": "Zkouším …",
+          "took": "{{seconds}} s, model {{model}}",
+          "failed": "Zkouška se nezdařila."
+        }
       }
     },
     "history": {
@@ -1258,7 +1405,8 @@
           "model": "Model",
           "demo": "Ukázka",
           "try": "Vyzkoušet",
-          "done": "Hotovo"
+          "done": "Hotovo",
+          "postProcessSetup": "Vylepšete své texty"
         }
       },
       "onboardingRun": {
@@ -1559,7 +1707,23 @@
       "emptyReply": "{{provider}}: odpověď neobsahuje žádný text.",
       "truncated": "Odpověď byla useknuta na výstupním limitu modelu.",
       "unavailable": "{{provider}}: na tomto počítači není k dispozici.",
-      "other": "Chyba: {{error}}"
+      "other": "Chyba: {{error}}",
+      "freeBusy": "{{provider}}: bezplatné modely jsou právě vytížené; zkuste to za chvíli znovu.",
+      "freeDailyLimit": "{{provider}}: bezplatné diktáty jsou pro dnešek vyčerpané (50 denně); pokračujte zítra, nebo jednou dobijte kredit.",
+      "keyLimit": "{{provider}}: limit výdajů klíče je dosažen; změňte ho tam.",
+      "planLimit": "{{provider}}: limit využití vašeho předplatného je zatím dosažen.",
+      "planNotEligible": "{{provider}}: vaše předplatné nezahrnuje použití v jiných aplikacích.",
+      "signInExpired": "{{provider}}: přihlášení vypršelo; přihlaste se znovu.",
+      "rateLimited": "{{provider}}: omezuje, kolik se smí poslat za minutu; chvíli počkejte a diktujte znovu.",
+      "actions": {
+        "setUp": "Nastavit",
+        "topUp": "Dobít",
+        "credit": "Kredit",
+        "changeLimit": "Změnit limit",
+        "manageUsage": "Spravovat využití",
+        "changeSetup": "Změnit nastavení",
+        "signInAgain": "Přihlásit se znovu"
+      }
     },
     "appMissedShortcutTitle": "Zkopírováno – nutný restart",
     "appMissedShortcut": "{{app}} už byla otevřená, když DanyWhere nastavil zkratku diktování, takže ji rozpozná až po restartu. Text je ve schránce.",
