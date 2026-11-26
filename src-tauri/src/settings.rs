@@ -1278,9 +1278,10 @@ pub fn get_default_settings() -> AppSettings {
         },
     );
 
-    // DanyWhere: this system's factory ends (on macOS the user's twelve of
-    // 2026-11-24, named in the new installation's language; elsewhere the
-    // two unnamed ones with the factory start and hold combinations).
+    // DanyWhere: this system's factory ends (on macOS the six of variant b,
+    // ↩ sending and ⌥↩ a paragraph, named in the new installation's
+    // language; elsewhere the two unnamed ones with the factory start and
+    // hold combinations).
     let app_language = default_app_language();
     let end_keys = crate::end_keys::factory_end_keys_on(
         crate::append_text::KeyPlatform::current(),
@@ -2357,6 +2358,23 @@ mod tests {
                 "{layer}"
             );
             assert_eq!(values.end_keys.len(), 6, "{layer}");
+            // The six of now (user, 2026-11-26, 22:35): ↩ sends, ⌥↩ doesn't.
+            assert_eq!(
+                values
+                    .end_keys
+                    .iter()
+                    .map(|end| (end.shortcut.as_str(), end.append_text.as_str()))
+                    .collect::<Vec<_>>(),
+                [
+                    ("ctrl+space", " "),
+                    ("ctrl+shift+space", ""),
+                    ("option+return", r"\n\n"),
+                    ("option+shift+return", r"\n"),
+                    ("return", "{Enter}"),
+                    ("shift+return", "{Shift+Enter}"),
+                ],
+                "{layer}"
+            );
             assert!(
                 values.end_keys.iter().all(|end| !end.name.contains('·')),
                 "{layer}: {:?}",

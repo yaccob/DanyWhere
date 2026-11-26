@@ -184,14 +184,29 @@ fn factory_end(id: &str, shortcut: &str, append_text: &str, name: &str) -> EndKe
 }
 
 /// macOS's factory ends of variant b, as (id, combination, Append): the six
-/// direct ones of the user's twelve of 2026-11-24, with their ids.
+/// direct ones of the user's twelve of 2026-11-24, with their ids, in their
+/// order. Since the user's decision of 2026-11-26, 22:35, ↩ and ⇧↩ send at
+/// once, without ⌥, and ⌥ keeps them from sending: ⌥↩ appends a paragraph,
+/// ⌥⇧↩ a line.
 const MACOS_SIX: [(&str, &str, &str); 6] = [
     ("direct_space", "ctrl+space", " "),
     ("direct_no_space", "ctrl+shift+space", ""),
-    ("direct_paragraph", "return", r"\n\n"),
-    ("direct_line", "shift+return", r"\n"),
-    ("direct_enter", "ctrl+return", "{Enter}"),
-    ("direct_shift_enter", "ctrl+shift+return", "{Shift+Enter}"),
+    ("direct_paragraph", "option+return", r"\n\n"),
+    ("direct_line", "option+shift+return", r"\n"),
+    ("direct_enter", "return", "{Enter}"),
+    ("direct_shift_enter", "shift+return", "{Shift+Enter}"),
+];
+
+/// The six direct ends of the twelve of 2026-11-24 as 0.5.0 shipped them,
+/// as (id, combination): ↩ appended a paragraph, ⌃↩ sent. Their Append is
+/// that of the end of the same id in [`MACOS_SIX`].
+const MACOS_OLD_DIRECT: [(&str, &str); 6] = [
+    ("direct_space", "ctrl+space"),
+    ("direct_no_space", "ctrl+shift+space"),
+    ("direct_paragraph", "return"),
+    ("direct_line", "shift+return"),
+    ("direct_enter", "ctrl+return"),
+    ("direct_shift_enter", "ctrl+shift+return"),
 ];
 
 /// The combinations the six had with ⌥ until variant b, which then
@@ -222,10 +237,13 @@ fn six_name(names: &FactoryEndNames, index: usize) -> &str {
 /// macOS (variant b, user, 2026-11-26; recommendation 2 i): the six ends
 /// without post-processing of the user's twelve of 2026-11-24 (qa note
 /// `2026-11-23_2135_endetasten-grundeinstellungen`): ⇧ picks the smaller
-/// variant, ⌃ on Enter presses a key instead of appending text; named only
-/// by what they do, all with "Send Context". The ⌥ variants went with the
-/// box "Post-process": an instruction shortcut says it now. ⌃Space is the
-/// factory start shortcut, so its second press ends with a space.
+/// variant; ↩ sends at once, as it does when typing (⇧↩ with Shift), and ⌥
+/// keeps it from sending, appending a paragraph (⌥⇧↩ a line) instead (user,
+/// 2026-11-26, 22:35; until then ↩ appended a paragraph and ⌃↩ sent). Named
+/// only by what they do, all with "Send Context". The post-processing ⌥
+/// variants of the twelve went with the box "Post-process": an instruction
+/// shortcut says it now. ⌃Space is the factory start shortcut, so its
+/// second press ends with a space.
 ///
 /// Windows and Linux keep the two ends with the factory start and hold
 /// combinations: Linux takes no end's own combination
@@ -252,18 +270,24 @@ pub fn factory_end_keys_on(platform: KeyPlatform, names: &FactoryEndNames) -> Ve
         .collect()
 }
 
-/// macOS's twelve factory ends from 2026-11-24 until variant b, without
-/// their names and their box "Post-process", which a read drops: the six,
-/// without context, then the same six with ⌥, with context.
+/// macOS's twelve factory ends from 2026-11-24 until variant b, as 0.5.0's
+/// stores hold them, without their names and their box "Post-process",
+/// which a read drops: the six direct ones, without context, then the same
+/// six with ⌥, with context.
 fn old_macos_twelve() -> Vec<EndKey> {
-    let direct = MACOS_SIX.iter().map(|(id, shortcut, append_text)| EndKey {
-        send_context: false,
-        ..factory_end(id, shortcut, append_text, "")
-    });
+    let append_texts = MACOS_SIX.iter().map(|(_, _, append_text)| *append_text);
+    let direct =
+        MACOS_OLD_DIRECT
+            .iter()
+            .zip(append_texts.clone())
+            .map(|((id, shortcut), append_text)| EndKey {
+                send_context: false,
+                ..factory_end(id, shortcut, append_text, "")
+            });
     let post = MACOS_OLD_POST
         .iter()
-        .zip(MACOS_SIX.iter())
-        .map(|((id, shortcut), (_, _, append_text))| factory_end(id, shortcut, append_text, ""));
+        .zip(append_texts)
+        .map(|((id, shortcut), append_text)| factory_end(id, shortcut, append_text, ""));
     direct.chain(post).collect()
 }
 
@@ -1881,13 +1905,13 @@ mod tests {
                 "ctrl+shift+space",
                 "",
             ),
-            ("direct_paragraph", "Absatz", "return", r"\n\n"),
-            ("direct_line", "Zeile", "shift+return", r"\n"),
-            ("direct_enter", "Enter senden", "ctrl+return", "{Enter}"),
+            ("direct_paragraph", "Absatz", "option+return", r"\n\n"),
+            ("direct_line", "Zeile", "option+shift+return", r"\n"),
+            ("direct_enter", "Enter senden", "return", "{Enter}"),
             (
                 "direct_shift_enter",
                 "Shift-Enter senden",
-                "ctrl+shift+return",
+                "shift+return",
                 "{Shift+Enter}",
             ),
         ]
@@ -1910,6 +1934,60 @@ mod tests {
                 "Send Shift+Enter"
             ]
         );
+    }
+
+    /// The user's decision of 2026-11-26, 22:35: ↩ and ⇧↩ send at once,
+    /// without ⌥; with ⌥ they append a paragraph or a line and send nothing.
+    #[test]
+    fn on_macos_return_sends_at_once_and_option_return_does_not() {
+        let ends = macos_ends_in("en");
+        let table: Vec<(&str, &str, &str)> = ends
+            .iter()
+            .map(|end| {
+                (
+                    end.shortcut.as_str(),
+                    end.name.as_str(),
+                    end.append_text.as_str(),
+                )
+            })
+            .collect();
+        assert_eq!(
+            table,
+            [
+                ("ctrl+space", "Space", " "),
+                ("ctrl+shift+space", "No space", ""),
+                ("option+return", "Paragraph", r"\n\n"),
+                ("option+shift+return", "Line", r"\n"),
+                ("return", "Send Enter", "{Enter}"),
+                ("shift+return", "Send Shift+Enter", "{Shift+Enter}"),
+            ]
+        );
+        for end in &ends {
+            let sends = !crate::append_text::for_value(&end.append_text)
+                .keys
+                .is_empty();
+            assert_eq!(
+                sends,
+                !end.shortcut.contains("option") && end.shortcut.contains("return"),
+                "{}: ↩ without ⌥ sends, with ⌥ it doesn't",
+                end.shortcut
+            );
+        }
+    }
+
+    /// What 0.5.0's stores hold stays what the step to variant b looks for,
+    /// whatever the factory ends are now.
+    #[test]
+    fn the_old_twelve_are_what_a_store_of_0_5_0_holds() {
+        let stored: Vec<EndKey> = serde_json::from_value(twelve_stored()).unwrap();
+        let unnamed: Vec<EndKey> = stored
+            .into_iter()
+            .map(|end| EndKey {
+                name: String::new(),
+                ..end
+            })
+            .collect();
+        assert_eq!(unnamed, old_macos_twelve());
     }
 
     #[test]

@@ -262,9 +262,10 @@ const MODIFIER_KINDS: Record<string, ModifierKind> = {
 };
 
 // Ctrl+Alt+Shift+Win off macOS, as the system's menus do. On macOS ⌥ comes
-// first, then ⌃⇧⌘ as the menus do (user, 2026-11-24): with ⌥ standing for
-// post-processing in the end shortcuts, the first symbol already tells it
-// (⌥⌃↩), and with ⌃ and ⌥ swapped on the keyboard it is the keys' order.
+// first, then ⌃⇧⌘ as the menus do (user, 2026-11-24): ⌥ then stood for
+// post-processing in the end shortcuts, so the first symbol told it (⌥⌃↩);
+// with ⌃ and ⌥ swapped on the keyboard it is the keys' order. Since
+// 2026-11-26 ⌥ marks the factory ends that don't send (⌥↩, ⌥⇧↩).
 const MAC_ORDER: ModifierKind[] = ["fn", "alt", "ctrl", "shift", "super"];
 const PC_ORDER: ModifierKind[] = ["ctrl", "alt", "shift", "super", "fn"];
 
