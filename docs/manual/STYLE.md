@@ -69,16 +69,16 @@ A chapter is as long as it needs to be and no longer; most land between 600 and 
 
 The factory shortcuts of a new installation, for reference (English names; since 2026-11-26):
 
-|                       | macOS                                     | Windows                      | Linux                                |
-| --------------------- | ----------------------------------------- | ---------------------------- | ------------------------------------ |
-| Start Shortcuts       | ⌃ Space                                   | Ctrl+Space                   | Ctrl+Alt+Space                       |
-| Hold Shortcuts        | ⌃ Space (a space), ⌃⇧ Space (nothing)     | Ctrl+Space, Ctrl+Shift+Space | Ctrl+Alt+Space, Ctrl+Alt+Shift+Space |
-| Instruction Shortcuts | ⇥ (a space)                               | Tab                          | (none, not on Linux)                 |
-| End Shortcuts         | six: ⌃ Space, ⌃⇧ Space, ↩, ⇧↩, ⌃↩, ⌃⇧↩    | Ctrl+Space, Ctrl+Shift+Space | Ctrl+Alt+Space, Ctrl+Alt+Shift+Space |
-| Post Processing       | With Instruction Shortcut                 | With Instruction Shortcut    | With Instruction Shortcut            |
-| Paste Last Transcript | ⌃⇧V                                       | Alt+Shift+V                  | Alt+Shift+V                          |
-| Copy Last Transcript  | ⌃⇧C                                       | Alt+Shift+C                  | Alt+Shift+C                          |
-| Cancel Shortcut       | Esc                                       | Esc                          | (none)                               |
+|                       | macOS                                      | Windows                      | Linux                                |
+| --------------------- | ------------------------------------------ | ---------------------------- | ------------------------------------ |
+| Start Shortcuts       | ⌃ Space                                    | Ctrl+Space                   | Ctrl+Alt+Space                       |
+| Hold Shortcuts        | ⌃ Space (a space), ⌃⇧ Space (nothing)      | Ctrl+Space, Ctrl+Shift+Space | Ctrl+Alt+Space, Ctrl+Alt+Shift+Space |
+| Instruction Shortcuts | ⇥ (a space)                                | Tab                          | (none, not on Linux)                 |
+| End Shortcuts         | six: ⌃ Space, ⌃⇧ Space, ↩, ⇧↩, ⌃↩, ⌃⇧↩ | Ctrl+Space, Ctrl+Shift+Space | Ctrl+Alt+Space, Ctrl+Alt+Shift+Space |
+| Post Processing       | With Instruction Shortcut                  | With Instruction Shortcut    | With Instruction Shortcut            |
+| Paste Last Transcript | ⌃⇧V                                        | Alt+Shift+V                  | Alt+Shift+V                          |
+| Copy Last Transcript  | ⌃⇧C                                        | Alt+Shift+C                  | Alt+Shift+C                          |
+| Cancel Shortcut       | Esc                                        | Esc                          | (none)                               |
 
 On a Mac, every hold, instruction and end shortcut of a new installation has **Send Context** ticked; on Windows only the instruction shortcut has, and on Linux none. The Mac's six end shortcuts are named by what they do (**Space**, **No space**, **Paragraph**, **Line**, **Send Enter**, **Send Shift+Enter**); the others have no name of their own.
 

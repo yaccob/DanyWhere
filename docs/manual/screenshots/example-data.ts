@@ -147,7 +147,12 @@ export const factoryEndKeys = (language: string): EndKey[] => {
     ["direct_paragraph", "return", "\\n\\n", names.paragraph],
     ["direct_line", "shift+return", "\\n", names.line],
     ["direct_enter", "ctrl+return", "{Enter}", names.enter],
-    ["direct_shift_enter", "ctrl+shift+return", "{Shift+Enter}", names.shiftEnter],
+    [
+      "direct_shift_enter",
+      "ctrl+shift+return",
+      "{Shift+Enter}",
+      names.shiftEnter,
+    ],
   ];
   return ends.map(([id, shortcut, append_text, name]) => ({
     id,
