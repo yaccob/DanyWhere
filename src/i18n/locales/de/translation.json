@@ -1717,6 +1717,9 @@
       "planLimit": "Das Nutzungslimit deines Abos beim Anbieter „{{provider}}“ ist vorerst erreicht.",
       "planNotEligible": "Dein Abo beim Anbieter „{{provider}}“ schließt die Nutzung in anderen Apps nicht ein.",
       "signInExpired": "Die Anmeldung beim Anbieter „{{provider}}“ ist abgelaufen; melde dich neu an.",
+      "noSignIn": "Beim Anbieter „{{provider}}“ bist du nicht angemeldet.",
+      "notSetUp": "Die Nachbearbeitung ist noch nicht eingerichtet.",
+      "notSetUpTitle": "Nachbearbeitung nicht eingerichtet",
       "rateLimited": "Der Anbieter „{{provider}}“ begrenzt, wie viel pro Minute gehen darf; warte kurz und diktiere noch einmal.",
       "actions": {
         "setUp": "Einrichten",

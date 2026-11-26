@@ -14,7 +14,7 @@ import { ContextGlyphIcon } from "@/components/icons/ContextGlyphIcon";
 import { NoticeBadgeIcon } from "@/components/icons/NoticeBadgeIcon";
 import { ProfileGlyphIcon } from "@/components/icons/ProfileGlyphIcon";
 import i18n, { syncLanguageFromSettings } from "@/i18n";
-import { noticeDisplay } from "@/lib/notices";
+import { noticeDisplay, noticeTitle as titleOfNotice } from "@/lib/notices";
 import {
   contextGlyph,
   instructionPill,
@@ -363,7 +363,7 @@ const RecordingOverlay: React.FC = () => {
 
   const shownNotice = notice && isNoticeState(state) ? notice : null;
   const noticeTitle = shownNotice
-    ? t(noticeDisplay(shownNotice.code).title)
+    ? t(titleOfNotice(shownNotice.code, shownNotice.detail))
     : "";
 
   // CSS can't animate to an intrinsic width, so a notice pill gets a measured one.

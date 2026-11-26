@@ -1717,6 +1717,9 @@
       "planLimit": "Your plan's usage limit with {{provider}} is reached for now.",
       "planNotEligible": "Your plan with {{provider}} doesn't include use in other apps.",
       "signInExpired": "The sign-in with {{provider}} has expired; sign in again.",
+      "noSignIn": "You aren't signed in with {{provider}}.",
+      "notSetUp": "Post-processing isn't set up yet.",
+      "notSetUpTitle": "Post-Processing Not Set Up",
       "rateLimited": "{{provider}} limits how much may be sent per minute; wait a moment and dictate again.",
       "actions": {
         "setUp": "Set up",

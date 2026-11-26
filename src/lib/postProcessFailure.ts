@@ -97,6 +97,12 @@ const reasonSentence = (t: Translate, failure: Failure): string | null => {
       return withProvider("planNotEligible");
     case "sign-in-expired":
       return withProvider("signInExpired");
+    // DanyWhere: ChatGPT without a session, and a setup never finished
+    // (qa 2026-11-26_2250, D, M2 and M7).
+    case "no-sign-in":
+      return withProvider("noSignIn");
+    case "not-set-up":
+      return t(`${KEY}.notSetUp`);
     case "rate-limited":
       return withProvider("rateLimited");
     case "other": {
@@ -119,6 +125,14 @@ export const withPostProcessFailureReason = (
   const reason = failure === null ? null : reasonSentence(t, failure);
   return reason === null ? base : `${base} ${reason}`;
 };
+
+/** The title a failure's notice has instead of its code's, if any: before
+ * the setup was ever finished, "Post-Processing Not Set Up" (qa
+ * 2026-11-26_2250, D, M7). A translation key. */
+export const postProcessFailureTitle = (
+  detail?: string | null,
+): string | null =>
+  parse(detail)?.reason === "not-set-up" ? `${KEY}.notSetUpTitle` : null;
 
 /** Whether `detail` is a failure's reason, which the explanation shows, so
  * it isn't shown again as it is. A reason this app doesn't know isn't shown
@@ -195,7 +209,12 @@ export const postProcessFailureAction = (
     case "no-provider":
     case "no-model":
     case "no-api-key":
+    case "not-set-up":
       return { kind: "set_up" };
+    case "no-sign-in":
+      return providerId === "chatgpt"
+        ? { kind: "sign_in_again", provider: "chatgpt" }
+        : { kind: "set_up" };
     case "no-credit":
       return open(
         providerId === "openrouter" ? "topUp" : "credit",

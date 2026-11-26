@@ -4,6 +4,7 @@ import type { NoticeCode } from "@/bindings";
 import {
   isPostProcessFailureDetail,
   postProcessFailureAction,
+  postProcessFailureTitle,
   withPostProcessFailureReason,
   type FailureAction,
 } from "./postProcessFailure";
@@ -11,6 +12,8 @@ import { providerPages } from "./postProcessSetup/guides";
 
 interface NoticeDisplay {
   title: string;
+  // DanyWhere: a title of its own for some details (see `noticeTitle`).
+  titleFor?: (detail?: string | null) => string | null;
   // Without one, the Live overlay shows the notice's detail instead.
   explanation?: (t: TFunction, detail?: string | null) => string;
   // The explanation already names the detail, so it isn't shown again.
@@ -68,6 +71,7 @@ const NOTICE_DISPLAY: Record<NoticeCode, NoticeDisplay> = {
   // such as a History job's raw error, shows as before.
   PostProcessFailed: {
     title: "errors.postProcessFailedTitle",
+    titleFor: postProcessFailureTitle,
     explanation: (t, detail) =>
       withPostProcessFailureReason(t, t("errors.postProcessFailed"), detail),
     detailInExplanation: isPostProcessFailureDetail,
@@ -78,6 +82,7 @@ const NOTICE_DISPLAY: Record<NoticeCode, NoticeDisplay> = {
   },
   FilePostProcessFailed: {
     title: "errors.filePostProcessFailedTitle",
+    titleFor: postProcessFailureTitle,
     explanation: (t, detail) =>
       withPostProcessFailureReason(
         t,
@@ -89,6 +94,7 @@ const NOTICE_DISPLAY: Record<NoticeCode, NoticeDisplay> = {
   },
   HistoryPostProcessFailed: {
     title: "errors.historyPostProcessFailedTitle",
+    titleFor: postProcessFailureTitle,
     explanation: (t, detail) =>
       withPostProcessFailureReason(
         t,
@@ -131,6 +137,14 @@ const NOTICE_DISPLAY: Record<NoticeCode, NoticeDisplay> = {
 };
 
 export const noticeDisplay = (code: NoticeCode) => NOTICE_DISPLAY[code];
+
+/** The translation key of a notice's title: its code's, or one of its own
+ * for the detail (DanyWhere: a post-processing that was never set up). The
+ * tray keeps the code's title, which Rust has. */
+export const noticeTitle = (code: NoticeCode, detail?: string | null) => {
+  const display = NOTICE_DISPLAY[code];
+  return display.titleFor?.(detail) ?? display.title;
+};
 
 /** The detail a notice shows under its explanation: none when the
  * explanation already names it. */

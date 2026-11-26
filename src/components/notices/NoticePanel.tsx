@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
 import type { NoticeLevel } from "@/bindings";
 import { NoticeBadgeIcon } from "@/components/icons/NoticeBadgeIcon";
-import { noticeDisplay, separateDetail } from "@/lib/notices";
+import { noticeDisplay, noticeTitle, separateDetail } from "@/lib/notices";
 import {
   failureActionLabel,
   runFailureAction,
@@ -139,14 +139,14 @@ export const NoticePanel: React.FC = () => {
     ...notices
       .filter((notice) => isShown(notice.source))
       .map((notice) => {
-        const { title, explanation, action } = noticeDisplay(notice.code);
+        const { explanation, action } = noticeDisplay(notice.code);
         // DanyWhere: the next step for the notice's detail (a failed
         // post-processing's reason), as on a notice from the frontend.
         const next = action?.(notice.detail) ?? null;
         return {
           id: notice.source,
           level: notice.level,
-          title: t(title),
+          title: t(noticeTitle(notice.code, notice.detail)),
           explanation: explanation?.(t, notice.detail),
           detail: separateDetail(notice.code, notice.detail),
           action: next
