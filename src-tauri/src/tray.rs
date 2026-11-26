@@ -1217,6 +1217,8 @@ mod tests {
                 None,
             ),
             window_context: Default::default(),
+            spoken_instruction: None,
+            spoken_instruction_file: None,
         }
     }
 

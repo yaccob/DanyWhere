@@ -2294,7 +2294,21 @@ versions: HistoryVersion[];
  * DanyWhere: the window it was dictated in and its context for
  * post-processing (`dictation_context`).
  */
-window_context: EntryWindowContext }
+window_context: EntryWindowContext; 
+/**
+ * DanyWhere: the instruction spoken for this dictation's
+ * post-processing (the instruction shortcut), as heard; `None` when it
+ * had none, empty when nothing was heard. It belongs to the entry, not
+ * to its text: it is searched, but never copied, pasted or sent along
+ * as context (`dictation_context`).
+ */
+spoken_instruction?: string | null; 
+/**
+ * DanyWhere: the file in the recordings folder that holds the
+ * instruction's audio, for playing it and transcribing it again; `None`
+ * without one, or once the storage limit removed it with the recording.
+ */
+spoken_instruction_file?: string | null }
 /**
  * What History is searched for. An empty field asks for nothing.
  */
@@ -3110,7 +3124,14 @@ prompt_name: string | null;
  * out of the column when `None`, so stacks stored without it read the
  * same.
  */
-model?: string | null }
+model?: string | null; 
+/**
+ * DanyWhere: for an AI step, whether it ran with the instruction
+ * spoken for the dictation (`HistoryEntry::spoken_instruction`); History
+ * names the step "… + spoken instruction". Left out of the column when
+ * false.
+ */
+spoken_instruction?: boolean }
 /**
  * What the settings show about window titles on this computer.
  */

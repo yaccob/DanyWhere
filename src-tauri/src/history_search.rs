@@ -70,7 +70,8 @@ impl InvalidField {
 /// The parts of an entry a search looks at.
 #[derive(Clone, Debug, Default)]
 pub struct Searched<'a> {
-    /// The texts of the entry's versions, the transcription first.
+    /// The texts of the entry's versions, the transcription first, and
+    /// (DanyWhere) its spoken instruction last, if it has one.
     pub texts: Vec<Cow<'a, str>>,
     pub app_id: Option<&'a str>,
     pub app_name: Option<&'a str>,
@@ -87,7 +88,9 @@ impl<'a> Searched<'a> {
             texts: entry
                 .versions
                 .iter()
-                .map(|version| Cow::Borrowed(version.text.as_str()))
+                .map(|version| version.text.as_str())
+                .chain(entry.spoken_instruction.as_deref())
+                .map(Cow::Borrowed)
                 .collect(),
             app_id: window.window_app_id.as_deref(),
             app_name: window.window_app_name.as_deref(),
@@ -266,9 +269,12 @@ pub(crate) fn text_ref<'a>(row: &'a Row<'_>, column: &str) -> rusqlite::Result<O
 
 /// What a search looks at in a row read with the entry's columns.
 fn searched_row<'a>(row: &'a Row<'_>) -> rusqlite::Result<Searched<'a>> {
+    // The same versions the entry read from this row has, and its spoken
+    // instruction.
+    let mut texts = crate::history_versions::StackColumns::from_row(row)?.texts();
+    texts.extend(text_ref(row, "spoken_instruction")?.map(Cow::Borrowed));
     Ok(Searched {
-        // The same versions the entry read from this row has.
-        texts: crate::history_versions::StackColumns::from_row(row)?.texts(),
+        texts,
         app_id: text_ref(row, "window_app_id")?,
         app_name: text_ref(row, "window_app_name")?,
         title: text_ref(row, "window_title")?,
@@ -838,6 +844,29 @@ mod tests {
             );
         }
         found
+    }
+
+    // DanyWhere: the spoken instruction is text of the entry too (F6).
+    #[test]
+    fn a_search_finds_the_text_of_the_spoken_instruction() {
+        let conn = database();
+        let id = insert(&conn, "Dzień dobry", None);
+        let other = insert(&conn, "hay", None);
+        set(&conn, id, "spoken_instruction", "translate it into Polish");
+        let ids = [id, other];
+        assert_eq!(found(&conn, "polish", &ids), vec![id]);
+        assert_eq!(found(&conn, "dzień", &ids), vec![id]);
+        assert!(found(&conn, "formal", &ids).is_empty());
+    }
+
+    #[test]
+    fn an_entry_matches_by_its_spoken_instruction() {
+        use crate::history_versions::{test_entry, HistoryVersion};
+        let mut entry = test_entry(vec![HistoryVersion::transcription("Dzień dobry")]);
+        entry.spoken_instruction = Some("translate it into Polish".into());
+        assert!(compiled(&query("polish")).matches_entry(&entry));
+        entry.spoken_instruction = None;
+        assert!(!compiled(&query("polish")).matches_entry(&entry));
     }
 
     #[test]

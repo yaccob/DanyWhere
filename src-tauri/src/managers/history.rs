@@ -47,7 +47,9 @@ static MIGRATIONS: &[M] = &[
 /// `history_versions`; the `window_*` to `word_replacements` columns the
 /// window a dictation was made in and its context, see `dictation_context`;
 /// `transcription_model` the id of the speech model of the latest
-/// transcription.
+/// transcription; `spoken_instruction` and `spoken_instruction_file` the
+/// instruction spoken for a dictation's post-processing and the file of its
+/// audio (see [`HistoryEntry::spoken_instruction`]).
 const ADDED_COLUMNS: &[&str] = &[
     "source_name",
     "language",
@@ -64,6 +66,8 @@ const ADDED_COLUMNS: &[&str] = &[
     "word_replacements",
     "versions",
     "transcription_model",
+    "spoken_instruction",
+    "spoken_instruction_file",
 ];
 
 /// Every column a [`HistoryEntry`] is read from.
@@ -71,7 +75,8 @@ const ENTRY_COLUMNS: &str = "id, file_name, timestamp, saved, title, transcripti
     post_processed_text, post_process_prompt, post_process_requested, source_name, language, \
     language_source, recording_removed, transcription_correction, post_processed_correction, \
     post_processed_from_correction, window_app_id, window_app_name, window_title, \
-    context_entry_ids, sent_as_context, word_replacements, versions, transcription_model";
+    context_entry_ids, sent_as_context, word_replacements, versions, transcription_model, \
+    spoken_instruction, spoken_instruction_file";
 
 #[derive(Clone, Debug, Serialize, Deserialize, Type)]
 pub struct PaginatedHistory {
@@ -123,6 +128,29 @@ pub struct HistoryEntry {
     /// DanyWhere: the window it was dictated in and its context for
     /// post-processing (`dictation_context`).
     pub window_context: crate::dictation_context::EntryWindowContext,
+    /// DanyWhere: the instruction spoken for this dictation's
+    /// post-processing (the instruction shortcut), as heard; `None` when it
+    /// had none, empty when nothing was heard. It belongs to the entry, not
+    /// to its text: it is searched, but never copied, pasted or sent along
+    /// as context (`dictation_context`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub spoken_instruction: Option<String>,
+    /// DanyWhere: the file in the recordings folder that holds the
+    /// instruction's audio, for playing it and transcribing it again; `None`
+    /// without one, or once the storage limit removed it with the recording.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub spoken_instruction_file: Option<String>,
+}
+
+/// DanyWhere: an instruction spoken for a dictation's post-processing, as
+/// the dictation hands it to History
+/// ([`HistoryManager::save_entry_with_instruction`]).
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct SpokenInstruction {
+    /// What was heard; empty when nothing was.
+    pub text: String,
+    /// Its audio (16 kHz mono, as a recording's); empty: none is kept.
+    pub samples: Vec<f32>,
 }
 
 /// One recording as the storage limit sees it.
@@ -225,6 +253,31 @@ fn split_language(language: Option<LanguageDecision>) -> (Option<String>, Option
     match language {
         Some(decision) => (decision.language, Some(decision.source)),
         None => (None, None),
+    }
+}
+
+/// DanyWhere: the file a spoken instruction's audio goes in, named after
+/// the recording of its dictation, in the same folder and format:
+/// `handy-1764180000.opus` → `handy-1764180000-instruction.opus`.
+pub fn spoken_instruction_file_name(recording: &str) -> String {
+    let stem = Path::new(recording)
+        .file_stem()
+        .and_then(|stem| stem.to_str())
+        .unwrap_or(recording);
+    crate::audio_toolkit::recording_file_name(&format!("{stem}-instruction"))
+}
+
+/// DanyWhere: deletes the recording file `file_name` in `recordings_dir`,
+/// if it is there; whether it is gone.
+fn remove_recording_file(recordings_dir: &Path, file_name: &str) -> bool {
+    let path = recordings_dir.join(file_name);
+    match fs::remove_file(&path) {
+        Ok(()) => true,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => true,
+        Err(e) => {
+            error!("Failed to delete recording {}: {}", file_name, e);
+            false
+        }
     }
 }
 
@@ -443,6 +496,8 @@ impl HistoryManager {
             recording_removed: row.get::<_, Option<String>>("recording_removed")?.is_some(),
             versions: crate::history_versions::StackColumns::from_row(row)?.versions(),
             window_context: crate::dictation_context::window_context_from_row(row)?,
+            spoken_instruction: row.get("spoken_instruction")?,
+            spoken_instruction_file: row.get("spoken_instruction_file")?,
         })
     }
 
@@ -462,6 +517,36 @@ impl HistoryManager {
         post_processed: Option<crate::history_versions::PostProcessed>,
         made_with: TranscribedWith,
     ) -> Result<HistoryEntry> {
+        self.save_entry_with_instruction(
+            file_name,
+            transcription_text,
+            post_process_requested,
+            post_processed,
+            made_with,
+            None,
+        )
+    }
+
+    /// DanyWhere: [`Self::save_entry`] for a dictation post-processed with a
+    /// spoken `instruction` (strand Z's dictation flow): its text goes into
+    /// the entry, its audio into a file of its own next to the recording,
+    /// named after it ([`spoken_instruction_file_name`]).
+    pub fn save_entry_with_instruction(
+        &self,
+        file_name: String,
+        transcription_text: String,
+        post_process_requested: bool,
+        post_processed: Option<crate::history_versions::PostProcessed>,
+        made_with: TranscribedWith,
+        instruction: Option<SpokenInstruction>,
+    ) -> Result<HistoryEntry> {
+        let (spoken_instruction, spoken_instruction_file) = match instruction {
+            Some(instruction) => (
+                Some(instruction.text.trim().to_string()),
+                self.write_spoken_instruction(&file_name, &instruction.samples),
+            ),
+            None => (None, None),
+        };
         let (language, language_source) = split_language(made_with.language);
         let timestamp = Utc::now().timestamp();
         let (post_processed_text, post_process_prompt, prompt_name) = match post_processed {
@@ -481,7 +566,11 @@ impl HistoryManager {
             made_with.model.as_deref(),
         );
         crate::history_versions::name_the_prompt(&mut versions, prompt_name.as_deref());
-        let entry = self.insert_entry(HistoryEntry {
+        // DanyWhere: its ✨ step ran with the instruction.
+        if spoken_instruction.is_some() {
+            crate::history_versions::mark_spoken_instruction(&mut versions);
+        }
+        let inserted = self.insert_entry(HistoryEntry {
             id: 0,
             file_name,
             timestamp,
@@ -498,7 +587,19 @@ impl HistoryManager {
             recording_removed: false,
             versions,
             window_context: Default::default(),
-        })?;
+            spoken_instruction,
+            spoken_instruction_file: spoken_instruction_file.clone(),
+        });
+        let entry = match inserted {
+            Ok(entry) => entry,
+            Err(e) => {
+                // No entry names it, so nothing would ever delete it.
+                if let Some(file) = &spoken_instruction_file {
+                    remove_recording_file(&self.recordings_dir, file);
+                }
+                return Err(e);
+            }
+        };
 
         self.cleanup_old_entries()?;
 
@@ -532,6 +633,8 @@ impl HistoryManager {
                 None,
             ),
             window_context: Default::default(),
+            spoken_instruction: None,
+            spoken_instruction_file: None,
         })?;
 
         // The file counts toward the storage limit, so older dictations may
@@ -541,6 +644,39 @@ impl HistoryManager {
         }
 
         Ok(entry)
+    }
+
+    /// DanyWhere: writes a spoken instruction's audio next to the recording
+    /// `recording` ([`spoken_instruction_file_name`]): aside first, checked
+    /// by decoding, then renamed, as a converted recording is. `None` when
+    /// there is no audio to keep or it can't be written; the instruction's
+    /// text is kept either way.
+    fn write_spoken_instruction(&self, recording: &str, samples: &[f32]) -> Option<String> {
+        if samples.is_empty() {
+            return None;
+        }
+        let file_name = spoken_instruction_file_name(recording);
+        let path = self.recordings_dir.join(&file_name);
+        let partial = self.recordings_dir.join(format!("{file_name}.partial"));
+        let written = crate::audio_toolkit::save_recording(&partial, samples).and_then(|()| {
+            let decoded = crate::audio_toolkit::read_opus_samples(&partial)?.len();
+            if decoded != samples.len() {
+                return Err(anyhow!(
+                    "decoded {} samples instead of {}",
+                    decoded,
+                    samples.len()
+                ));
+            }
+            Ok(fs::rename(&partial, &path)?)
+        });
+        match written {
+            Ok(()) => Some(file_name),
+            Err(e) => {
+                let _ = fs::remove_file(&partial);
+                warn!("Kept the spoken instruction without its audio: {}", e);
+                None
+            }
+        }
     }
 
     /// Insert `entry`, filling in its id and title, and announce it.
@@ -576,8 +712,10 @@ impl HistoryManager {
                 language,
                 language_source,
                 transcription_model,
-                versions
-            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
+                versions,
+                spoken_instruction,
+                spoken_instruction_file
+            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)",
             params![
                 &entry.file_name,
                 entry.timestamp,
@@ -593,6 +731,8 @@ impl HistoryManager {
                 &entry.transcription_model,
                 // DanyWhere: only what the other columns don't hold.
                 crate::history_versions::column_of_new_entry(entry)?,
+                &entry.spoken_instruction,
+                &entry.spoken_instruction_file,
             ],
         )?;
         Ok(conn.last_insert_rowid())
@@ -909,6 +1049,10 @@ impl HistoryManager {
                     // Continue with database deletion even if file deletion fails
                 }
             }
+            // DanyWhere: and the audio of its spoken instruction.
+            if let Some(instruction) = &entry.spoken_instruction_file {
+                remove_recording_file(&self.recordings_dir, instruction);
+            }
         }
 
         // Delete from database
@@ -926,13 +1070,14 @@ impl HistoryManager {
     }
 
     /// Every entry whose recording is still there, with its size. A missing
-    /// file counts as nothing.
+    /// file counts as nothing. DanyWhere: the audio of its spoken
+    /// instruction counts with it.
     fn stored_recordings_with_conn(
         conn: &Connection,
         recordings_dir: &Path,
     ) -> Result<Vec<StoredRecording>> {
         let mut stmt = conn.prepare(
-            "SELECT id, file_name, saved, source_name, timestamp
+            "SELECT id, file_name, saved, source_name, timestamp, spoken_instruction_file
              FROM transcription_history
              WHERE recording_removed IS NULL",
         )?;
@@ -944,28 +1089,39 @@ impl HistoryManager {
                     row.get::<_, bool>("saved")?,
                     row.get::<_, Option<String>>("source_name")?,
                     row.get::<_, i64>("timestamp")?,
+                    row.get::<_, Option<String>>("spoken_instruction_file")?,
                 ))
             })?
             .collect::<std::result::Result<Vec<_>, _>>()?;
 
+        let size = |file_name: &str| {
+            fs::metadata(recordings_dir.join(file_name))
+                .ok()
+                .filter(|metadata| metadata.is_file())
+                .map(|metadata| metadata.len())
+        };
         Ok(rows
             .into_iter()
-            .filter_map(|(id, file_name, saved, source_name, timestamp)| {
-                let metadata = fs::metadata(recordings_dir.join(&file_name)).ok()?;
-                metadata.is_file().then(|| StoredRecording {
-                    id,
-                    bytes: metadata.len(),
-                    saved,
-                    is_file: source_name.is_some(),
-                    timestamp,
-                })
-            })
+            .filter_map(
+                |(id, file_name, saved, source_name, timestamp, instruction)| {
+                    let bytes = size(&file_name)?;
+                    let instruction_bytes = instruction.as_deref().and_then(size).unwrap_or(0);
+                    Some(StoredRecording {
+                        id,
+                        bytes: bytes + instruction_bytes,
+                        saved,
+                        is_file: source_name.is_some(),
+                        timestamp,
+                    })
+                },
+            )
             .collect())
     }
 
     /// Delete the recordings of `ids` and mark them removed at `now`; the
     /// entries and their transcripts stay. A recording that can't be deleted
-    /// stays marked as present.
+    /// stays marked as present. DanyWhere: the audio of a spoken instruction
+    /// goes with its recording; the instruction's text stays.
     fn remove_recordings_with_conn(
         conn: &Connection,
         recordings_dir: &Path,
@@ -973,14 +1129,14 @@ impl HistoryManager {
         now: i64,
     ) -> Result<()> {
         for id in ids {
-            let file_name: Option<String> = conn
+            let files: Option<(String, Option<String>)> = conn
                 .query_row(
-                    "SELECT file_name FROM transcription_history WHERE id = ?1",
+                    "SELECT file_name, spoken_instruction_file FROM transcription_history WHERE id = ?1",
                     params![id],
-                    |row| row.get(0),
+                    |row| Ok((row.get(0)?, row.get(1)?)),
                 )
                 .optional()?;
-            let Some(file_name) = file_name else {
+            let Some((file_name, instruction)) = files else {
                 continue;
             };
             let path = recordings_dir.join(&file_name);
@@ -988,6 +1144,14 @@ impl HistoryManager {
                 if let Err(e) = fs::remove_file(&path) {
                     error!("Failed to delete recording {}: {}", file_name, e);
                     continue;
+                }
+            }
+            if let Some(instruction) = instruction {
+                if remove_recording_file(recordings_dir, &instruction) {
+                    conn.execute(
+                        "UPDATE transcription_history SET spoken_instruction_file = NULL WHERE id = ?1",
+                        params![id],
+                    )?;
                 }
             }
             conn.execute(
@@ -1138,7 +1302,9 @@ mod tests {
                 sent_as_context TEXT,
                 word_replacements TEXT,
                 versions TEXT,
-                transcription_model TEXT
+                transcription_model TEXT,
+                spoken_instruction TEXT,
+                spoken_instruction_file TEXT
             );",
         )
         .expect("create transcription_history table");
@@ -1692,6 +1858,8 @@ mod tests {
                 model,
             ),
             window_context: Default::default(),
+            spoken_instruction: None,
+            spoken_instruction_file: None,
         }
     }
 
@@ -2044,5 +2212,281 @@ mod tests {
         };
         assert_eq!(updated.transcription_text, "new words");
         assert_eq!(updated.transcription_model.as_deref(), Some("other-model"));
+    }
+
+    // ---- The spoken instruction (DanyWhere, F6 ii) -------------------------
+
+    /// The columns of [`ADDED_COLUMNS`] a database had before the spoken
+    /// instruction.
+    const COLUMNS_BEFORE_THE_INSTRUCTION: &[&str] = &[
+        "source_name",
+        "language",
+        "language_source",
+        "recording_removed",
+        "transcription_correction",
+        "post_processed_correction",
+        "post_processed_from_correction",
+        "window_app_id",
+        "window_app_name",
+        "window_title",
+        "context_entry_ids",
+        "sent_as_context",
+        "word_replacements",
+        "versions",
+        "transcription_model",
+    ];
+
+    #[test]
+    fn an_old_database_gets_the_instruction_columns_and_keeps_its_entries() {
+        let mut conn = Connection::open_in_memory().expect("open in-memory db");
+        Migrations::new(MIGRATIONS.to_vec())
+            .to_latest(&mut conn)
+            .expect("old migrations");
+        for column in COLUMNS_BEFORE_THE_INSTRUCTION {
+            conn.execute(
+                &format!("ALTER TABLE transcription_history ADD COLUMN {column} TEXT"),
+                [],
+            )
+            .expect("old column");
+        }
+        insert_entry(&conn, 100, "old words", Some("Old words."));
+
+        HistoryManager::apply_migrations(&mut conn).expect("migrate");
+
+        for column in ["spoken_instruction", "spoken_instruction_file"] {
+            assert!(
+                HistoryManager::has_column(&conn, column).expect("read table info"),
+                "{column}"
+            );
+        }
+        assert_eq!(user_version(&conn), MIGRATIONS.len() as i32);
+        let entry = entry_by_id(&conn, 1).expect("entry kept");
+        assert_eq!(entry.transcription_text, "old words");
+        assert_eq!(entry.post_processed_text.as_deref(), Some("Old words."));
+        assert_eq!(entry.versions.len(), 2);
+        assert_eq!(entry.spoken_instruction, None);
+        assert_eq!(entry.spoken_instruction_file, None);
+    }
+
+    #[test]
+    fn the_instruction_audio_is_named_after_the_recording() {
+        assert_eq!(
+            spoken_instruction_file_name("handy-1764180000.opus"),
+            "handy-1764180000-instruction.opus"
+        );
+        assert_eq!(
+            spoken_instruction_file_name("handy-1.wav"),
+            "handy-1-instruction.opus"
+        );
+    }
+
+    fn instruction(text: &str, samples: usize) -> SpokenInstruction {
+        SpokenInstruction {
+            text: text.to_string(),
+            samples: tone(samples),
+        }
+    }
+
+    impl OpenHistory {
+        /// Save a dictation of `text` (post-processed to `post_processed`)
+        /// with `instruction`, whose recording is `file_name`.
+        fn save_with(
+            &self,
+            file_name: &str,
+            text: &str,
+            post_processed: Option<&str>,
+            instruction: Option<SpokenInstruction>,
+        ) -> HistoryEntry {
+            self.history
+                .save_entry_with_instruction(
+                    file_name.into(),
+                    text.into(),
+                    post_processed.is_some(),
+                    post_processed.map(|text| crate::history_versions::PostProcessed {
+                        text: text.into(),
+                        prompt: Some("Fix it".into()),
+                        prompt_name: Some("Dictation".into()),
+                    }),
+                    TranscribedWith::default(),
+                    instruction,
+                )
+                .expect("save entry")
+        }
+
+        /// The files in the recordings folder, sorted.
+        fn files(&self) -> Vec<String> {
+            let mut files: Vec<String> = fs::read_dir(self.history.recordings_dir())
+                .expect("read recordings")
+                .map(|e| e.unwrap().file_name().to_string_lossy().into_owned())
+                .collect();
+            files.sort();
+            files
+        }
+    }
+
+    #[test]
+    fn saving_a_dictation_with_an_instruction_keeps_its_text_and_its_audio() {
+        let open = open_history(RecordingStorageLimit::Unlimited);
+        open.recording("handy-5.opus", 1_000);
+
+        let saved = open.save_with(
+            "handy-5.opus",
+            "Dzień dobry",
+            None,
+            Some(instruction("translate it into Polish", 8_000)),
+        );
+
+        assert_eq!(
+            saved.spoken_instruction.as_deref(),
+            Some("translate it into Polish")
+        );
+        assert_eq!(
+            saved.spoken_instruction_file.as_deref(),
+            Some("handy-5-instruction.opus")
+        );
+        let audio = open
+            .history
+            .recordings_dir()
+            .join("handy-5-instruction.opus");
+        let samples = crate::audio_toolkit::read_recording_samples(&audio).expect("read audio");
+        assert_eq!(samples.len(), 8_000);
+        let stored = open.entry(saved.id).expect("stored");
+        assert_eq!(stored.spoken_instruction, saved.spoken_instruction);
+        assert_eq!(
+            stored.spoken_instruction_file,
+            saved.spoken_instruction_file
+        );
+        let announced = open.take_announced();
+        let HistoryUpdatePayload::Added { entry } = &announced[0] else {
+            unreachable!()
+        };
+        assert_eq!(entry.spoken_instruction, saved.spoken_instruction);
+        // Nothing written aside is left.
+        assert_eq!(
+            open.files(),
+            vec![
+                "handy-5-instruction.opus".to_string(),
+                "handy-5.opus".to_string()
+            ]
+        );
+    }
+
+    #[test]
+    fn saving_a_dictation_without_an_instruction_keeps_none() {
+        let open = open_history(RecordingStorageLimit::Unlimited);
+        open.recording("handy-6.opus", 1_000);
+
+        let saved = open.save_with("handy-6.opus", "plain words", None, None);
+
+        assert_eq!(saved.spoken_instruction, None);
+        assert_eq!(saved.spoken_instruction_file, None);
+        let stored = open.entry(saved.id).expect("stored");
+        assert_eq!(stored.spoken_instruction, None);
+        assert_eq!(open.files(), vec!["handy-6.opus".to_string()]);
+    }
+
+    #[test]
+    fn an_instruction_heard_as_nothing_keeps_its_audio() {
+        let open = open_history(RecordingStorageLimit::Unlimited);
+        open.recording("handy-7.opus", 1_000);
+
+        let saved = open.save_with("handy-7.opus", "words", None, Some(instruction("", 4_000)));
+
+        assert_eq!(saved.spoken_instruction.as_deref(), Some(""));
+        assert_eq!(
+            saved.spoken_instruction_file.as_deref(),
+            Some("handy-7-instruction.opus")
+        );
+    }
+
+    #[test]
+    fn an_instruction_without_audio_keeps_only_its_text() {
+        let open = open_history(RecordingStorageLimit::Unlimited);
+        open.recording("handy-8.opus", 1_000);
+
+        let saved = open.save_with(
+            "handy-8.opus",
+            "words",
+            None,
+            Some(instruction("make it formal", 0)),
+        );
+
+        assert_eq!(saved.spoken_instruction.as_deref(), Some("make it formal"));
+        assert_eq!(saved.spoken_instruction_file, None);
+        assert_eq!(open.files(), vec!["handy-8.opus".to_string()]);
+    }
+
+    #[test]
+    fn a_post_processing_with_the_instruction_says_so_on_its_step() {
+        let open = open_history(RecordingStorageLimit::Unlimited);
+        open.recording("a.opus", 1_000);
+        open.recording("b.opus", 1_000);
+
+        let with = open.save_with(
+            "a.opus",
+            "dear sir",
+            Some("Dear Sir or Madam,"),
+            Some(instruction("make it formal", 1_600)),
+        );
+        let without = open.save_with("b.opus", "dear sir", Some("Dear Sir,"), None);
+
+        assert!(!with.versions[0].steps[0].spoken_instruction);
+        assert!(with.versions[1].steps[0].spoken_instruction);
+        assert_eq!(
+            with.versions[1].steps[0].prompt_name.as_deref(),
+            Some("Dictation")
+        );
+        assert_eq!(open.entry(with.id).unwrap().versions, with.versions);
+        assert!(!without.versions[1].steps[0].spoken_instruction);
+        assert_eq!(open.entry(without.id).unwrap().versions, without.versions);
+    }
+
+    #[test]
+    fn deleting_an_entry_deletes_its_instruction_audio() {
+        let open = open_history(RecordingStorageLimit::Unlimited);
+        open.recording("handy-9.opus", 1_000);
+        let saved = open.save_with(
+            "handy-9.opus",
+            "words",
+            None,
+            Some(instruction("translate it", 1_600)),
+        );
+        assert_eq!(open.files().len(), 2);
+
+        tauri::async_runtime::block_on(open.history.delete_entry(saved.id)).expect("delete");
+
+        assert!(open.files().is_empty(), "{:?}", open.files());
+        assert!(open.entry(saved.id).is_none());
+    }
+
+    #[test]
+    fn the_storage_limit_counts_and_removes_the_instruction_audio_with_the_recording() {
+        let conn = setup_conn();
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(dir.path().join("a.opus"), vec![0u8; 1_000]).unwrap();
+        std::fs::write(dir.path().join("a-instruction.opus"), vec![0u8; 300]).unwrap();
+        let a = insert_recording(&conn, 1, "a.opus", false, None);
+        conn.execute(
+            "UPDATE transcription_history
+             SET spoken_instruction = 'translate it', spoken_instruction_file = 'a-instruction.opus'
+             WHERE id = ?1",
+            params![a],
+        )
+        .unwrap();
+
+        let found = HistoryManager::stored_recordings_with_conn(&conn, dir.path())
+            .expect("list recordings");
+        assert_eq!(found.len(), 1);
+        assert_eq!(found[0].bytes, 1_300);
+
+        HistoryManager::remove_recordings_with_conn(&conn, dir.path(), &[a], 99)
+            .expect("remove recording");
+
+        assert!(!dir.path().join("a.opus").exists());
+        assert!(!dir.path().join("a-instruction.opus").exists());
+        let entry = entry_by_id(&conn, a).expect("entry kept");
+        assert!(entry.recording_removed);
+        assert_eq!(entry.spoken_instruction.as_deref(), Some("translate it"));
+        assert_eq!(entry.spoken_instruction_file, None);
     }
 }
