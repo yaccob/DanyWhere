@@ -4,8 +4,11 @@
 //! as `chatgpt`).
 //!
 //! The modules use only `std` and crates the app already has, and no
-//! `crate::` paths, so they can be tested in a crate of their own.
+//! `crate::` paths, so they can be tested in a crate of their own; only
+//! `commands`, which ties them to the app, uses the app's modules.
 
+pub mod chatgpt;
+pub mod commands;
 pub mod loopback;
 pub mod openrouter;
 

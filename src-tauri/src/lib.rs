@@ -38,6 +38,10 @@ mod key_sides;
 mod language_detection;
 mod languages;
 mod llm_client;
+// DanyWhere: the Responses API for ChatGPT's plan; `llm_client` dispatches
+// to it once the provider format exists (strand Z2).
+#[allow(dead_code)]
+mod llm_responses;
 mod llm_timeouts;
 mod managers;
 mod memory;
@@ -51,7 +55,11 @@ mod paste_tx;
 pub mod portable;
 mod post_process_effort;
 mod post_process_failure;
+// DanyWhere: the browser sign-in of OpenRouter and ChatGPT; its commands are
+// registered once the settings have their fields (strand Z2).
 mod post_process_mode;
+#[allow(dead_code)]
+mod post_process_signin;
 #[cfg(target_os = "linux")]
 mod primary_selection;
 mod profile_effects;

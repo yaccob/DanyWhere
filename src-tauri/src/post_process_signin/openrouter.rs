@@ -231,6 +231,17 @@ pub async fn key_info(client: &reqwest::Client, base: &str, key: &str) -> Result
     })
 }
 
+/// OpenRouter's model list as it comes (`GET {base}/api/v1/models`, no key
+/// needed), for [`choose_free_models`].
+pub async fn list_models(client: &reqwest::Client, base: &str) -> Result<Value, String> {
+    let response = client
+        .get(format!("{}/api/v1/models", base.trim_end_matches('/')))
+        .send()
+        .await
+        .map_err(|error| transport_error("Failed to read OpenRouter's model list", &error))?;
+    json_answer(response).await
+}
+
 /// Free models to try in order, from `GET /api/v1/models`: the preference
 /// list first, then the other `:free` models with a context of at least
 /// [`MIN_FREE_CONTEXT`], models with an expiry date last; only text models
