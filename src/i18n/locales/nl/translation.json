@@ -252,6 +252,12 @@
     "linux": {
       "tryIt": "Werkt het niet? <guide>Linux-installatiegids</guide>",
       "done": "Werkt het niet in andere apps? <guide>Linux-installatiegids</guide>"
+    },
+    "postProcessSetup": {
+      "title": "Laat je teksten verbeteren",
+      "sub": "Een taalmodel kan elk dictaat gladstrijken: leestekens, stopwoorden, gedicteerde opdrachten, namen. Twee korte vragen en het is ingesteld.",
+      "later": "Later",
+      "laterHint": "Je vindt het later via Basisinstellingen › Naverwerking."
     }
   },
   "modelTable": {
@@ -1093,6 +1099,147 @@
           "withInstructionKey": "Met instructiesneltoets",
           "always": "Altijd"
         }
+      },
+      "setup": {
+        "title": "Laat je teksten verbeteren",
+        "intro": "Twee korte vragen en alles is ingesteld. Je kunt je antwoorden altijd wijzigen.",
+        "later": "Later",
+        "knowMyWay": "Ik weet de weg:",
+        "allProviders": "Alle providers …",
+        "notSetUp": "De naverwerking is nog niet ingesteld.",
+        "setUp": "Instellen",
+        "keepCurrent": "Huidige instelling behouden",
+        "q1": {
+          "title": "1. Waar mogen je teksten naartoe?",
+          "free_services": {
+            "label": "Ook naar gratis diensten.",
+            "hint": "Die mogen ze bewaren en er hun AI mee verbeteren."
+          },
+          "not_kept": {
+            "label": "Alleen naar een dienst die ze verwerkt en niet bewaart.",
+            "hint": "Dat gaat via een abonnement of kost een paar dollar."
+          },
+          "nowhere": {
+            "label": "Nergens heen.",
+            "hint": "Ze blijven op deze computer."
+          }
+        },
+        "q2": {
+          "title": "2. Heb je al een van deze abonnementen?",
+          "none": "Geen van deze"
+        },
+        "q3": {
+          "title": "3. Hoe wil je verder?",
+          "credit": "Eenmalig tegoed aanvullen vanaf $ 5, zonder abonnement",
+          "groq": "Gratis bij Groq, met een sleutel om te kopiëren",
+          "this_computer": "Op deze computer (trager, vanaf 16 GB werkgeheugen)",
+          "tooLittleMemoryMac": "Op deze computer: heeft 16 GB nodig, deze Mac heeft {{memory}}.",
+          "tooLittleMemory": "Op deze computer: heeft 16 GB nodig, deze computer heeft {{memory}}."
+        },
+        "openrouter": {
+          "freeTitle": "Voorstel: OpenRouter, gratis",
+          "freeBody": "Een account bij OpenRouter, één klik op „Authorize”, klaar. Tot 50 dictaten per dag.",
+          "creditTitle": "Voorstel: OpenRouter met tegoed",
+          "creditBody": "Een account bij OpenRouter, één klik op „Authorize”, en dan eenmalig tegoed aanvullen vanaf $ 5. DanyWhere kiest een model dat je teksten niet gebruikt om te trainen. $ 5 is genoeg voor duizenden dictaten, en er wordt niets verlengd.",
+          "tipAccount": "Meld je aan met Google of GitHub: dat scheelt een wachtwoord en een code per e-mail.",
+          "tipPayment": "Nieuw bij OpenRouter? Het welkomstscherm vraagt om een betaalmethode. Je kunt „I'll do this later” kiezen: de gratis modellen hebben er geen nodig. Kom daarna hier terug en klik op „Pagina opnieuw openen”.",
+          "connect": "Verbinden met OpenRouter"
+        },
+        "chatgpt": {
+          "title": "Voorstel: je ChatGPT-abonnement",
+          "body": "Loopt via je ChatGPT-abonnement: geen sleutel, geen extra kosten. Meld je in de browser aan bij ChatGPT en geef DanyWhere toegang.",
+          "firstUse": "Toegestaan gebruik in deze app loopt via je ChatGPT-abonnement. Beheer het gebruik in je ChatGPT-instellingen.",
+          "dataNotDescribed": "OpenAI beschrijft niet hoe het omgaat met verzoeken die je abonnement betaalt.",
+          "continue": "Doorgaan met ChatGPT"
+        },
+        "guidedKey": {
+          "title": "Voorstel: een sleutel van {{service}}",
+          "paste": "Plak de sleutel hier",
+          "fieldLabel": "Sleutel van {{service}}",
+          "check": "Controleren",
+          "checking": "Bezig met controleren …",
+          "works": "De sleutel werkt."
+        },
+        "guides": {
+          "copyKey": "Kopieer de sleutel en plak hem hier.",
+          "copyToken": "Kopieer het token en plak het hier.",
+          "anthropic": {
+            "credits": "Koppel het API-tegoed van je abonnement in claude.ai. Dat kan na zeven dagen abonnement, en je hoeft geen kaart toe te voegen.",
+            "creditsLink": "Zo werkt het",
+            "key": "Maak een sleutel aan in de Claude Console.",
+            "keyLink": "Console openen"
+          },
+          "gemini": {
+            "credits": "Kies in Google AI Studio „Claim free API credits” en stel de facturering in. Google vraagt om een betaalmethode en een vooruitbetaling van minstens $ 5.",
+            "creditsLink": "AI Studio openen",
+            "key": "Maak een API-sleutel aan.",
+            "keyLink": "API-sleutels"
+          },
+          "huggingface": {
+            "key": "Maak een toegangstoken aan met de machtiging „Make calls to Inference Providers”.",
+            "keyLink": "Tokens openen"
+          },
+          "ollama_cloud": {
+            "key": "Maak een sleutel aan in je Ollama-account.",
+            "keyLink": "Sleutels openen"
+          },
+          "groq": {
+            "account": "Meld je aan bij GroqCloud, bijvoorbeeld met „Continue with Google”. Een kaart is niet nodig.",
+            "accountLink": "GroqCloud openen",
+            "key": "Kies „Create API Key”. Groq laat je met één klik bevestigen dat je een mens bent."
+          }
+        },
+        "local": {
+          "laterTitle": "Op deze computer: komt in een latere versie",
+          "laterBody": "DanyWhere krijgt later een model dat op deze computer draait. Tot die tijd werkt een eigen server, bijvoorbeeld Ollama of LM Studio op deze computer, of die van je bedrijf.",
+          "unavailableTitle": "Op deze computer kan dat niet",
+          "unavailableBodyMac": "Een model op deze computer heeft 16 GB werkgeheugen nodig; deze Mac heeft {{memory}}. Een eigen server werkt wel, bijvoorbeeld die van je bedrijf.",
+          "unavailableBody": "Een model op deze computer heeft 16 GB werkgeheugen nodig; deze computer heeft {{memory}}. Een eigen server werkt wel, bijvoorbeeld die van je bedrijf.",
+          "ownServer": "Eigen server instellen",
+          "ownServerHint": "Vul hieronder het adres en het model in."
+        },
+        "signIn": {
+          "waiting": "Wachten op de browser …",
+          "waitingHint": "Rond het af in de browser. Moest je je eerst registreren, klik dan op „Pagina opnieuw openen”.",
+          "reopen": "Pagina opnieuw openen",
+          "cancel": "Annuleren",
+          "failed": "Het aanmelden is niet gelukt: {{error}}",
+          "timedOut": "Het aanmelden heeft 30 minuten gewacht en is verlopen.",
+          "denied": "De toegang is niet toegestaan.",
+          "notEligible": "Dit ChatGPT-account heeft geen abonnement dat DanyWhere kan gebruiken (Go, Plus, Pro of Business).",
+          "tryAgain": "Opnieuw proberen",
+          "browserSuccess": "Klaar. Je kunt dit venster sluiten en teruggaan naar DanyWhere.",
+          "browserFailure": "Dat is niet gelukt. Ga terug naar DanyWhere en probeer het opnieuw."
+        },
+        "connected": {
+          "title": "Verbonden met {{provider}}",
+          "usingPlan": "Via je ChatGPT-abonnement",
+          "plan": "Abonnement: {{plan}}",
+          "freeModels": "Gratis modellen, tot 50 dictaten per dag",
+          "withCredit": "Met tegoed, een model zonder training",
+          "noCreditYet": "Nog geen tegoed: DanyWhere gebruikt de gratis modellen tot je aanvult.",
+          "notToppedUp": "OpenRouter toont nog geen tegoed. Dat kan een minuut duren.",
+          "keyLimit": "Bestedingslimiet van de sleutel: {{limit}}",
+          "model": "Model: {{model}}",
+          "picksModel": "DanyWhere kiest het model.",
+          "tryIt": "Uitproberen",
+          "manageUsage": "Gebruik beheren",
+          "credit": "Tegoed",
+          "topUp": "Aanvullen",
+          "toppedUp": "Ik heb aangevuld",
+          "disconnect": "Ontkoppelen",
+          "answerAgain": "Vragen opnieuw beantwoorden",
+          "advanced": "Geavanceerd"
+        },
+        "sample": {
+          "title": "Proef",
+          "spoken": "Gesproken: „{{text}}”",
+          "result": "Resultaat: „{{text}}”",
+          "text": "ehm dus ik stuur je dat morgen komma oké vraagteken",
+          "running": "Bezig met proberen …",
+          "took": "{{seconds}} s met {{model}}",
+          "failed": "De proef is niet gelukt."
+        }
       }
     },
     "history": {
@@ -1258,7 +1405,8 @@
           "model": "Model",
           "demo": "Demo",
           "try": "Proberen",
-          "done": "Klaar"
+          "done": "Klaar",
+          "postProcessSetup": "Laat je teksten verbeteren"
         }
       },
       "onboardingRun": {
@@ -1559,7 +1707,23 @@
       "emptyReply": "{{provider}} heeft geen tekst teruggestuurd.",
       "truncated": "Het antwoord is afgekapt bij de uitvoerlimiet van het model.",
       "unavailable": "{{provider}} is niet beschikbaar op deze computer.",
-      "other": "Fout: {{error}}"
+      "other": "Fout: {{error}}",
+      "freeBusy": "De gratis modellen bij {{provider}} zijn nu druk bezet; probeer het zo opnieuw.",
+      "freeDailyLimit": "De gratis dictaten bij {{provider}} zijn voor vandaag op (50 per dag); ga morgen verder of vul één keer aan.",
+      "keyLimit": "De bestedingslimiet van de sleutel bij {{provider}} is bereikt; wijzig hem daar.",
+      "planLimit": "De gebruikslimiet van je abonnement bij {{provider}} is voorlopig bereikt.",
+      "planNotEligible": "Je abonnement bij {{provider}} omvat geen gebruik in andere apps.",
+      "signInExpired": "De aanmelding bij {{provider}} is verlopen; meld je opnieuw aan.",
+      "rateLimited": "{{provider}} beperkt hoeveel er per minuut mag worden verstuurd; wacht even en dicteer opnieuw.",
+      "actions": {
+        "setUp": "Instellen",
+        "topUp": "Aanvullen",
+        "credit": "Tegoed",
+        "changeLimit": "Limiet wijzigen",
+        "manageUsage": "Gebruik beheren",
+        "changeSetup": "Instelling wijzigen",
+        "signInAgain": "Opnieuw aanmelden"
+      }
     },
     "appMissedShortcutTitle": "Gekopieerd – herstart de app",
     "appMissedShortcut": "{{app}} was al open toen DanyWhere de dicteersneltoets instelde, dus kent die pas na een herstart. De tekst staat op het klembord.",

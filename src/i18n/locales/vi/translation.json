@@ -252,6 +252,12 @@
     "linux": {
       "tryIt": "Không hoạt động? <guide>Hướng dẫn thiết lập Linux</guide>",
       "done": "Không hoạt động trong các ứng dụng khác? <guide>Hướng dẫn thiết lập Linux</guide>"
+    },
+    "postProcessSetup": {
+      "title": "Cải thiện văn bản của bạn",
+      "sub": "Mô hình ngôn ngữ có thể chuốt lại mọi bản đọc chính tả: dấu câu, từ đệm, lệnh đọc bằng lời, tên riêng. Chỉ hai câu hỏi ngắn là thiết lập xong.",
+      "later": "Để sau",
+      "laterHint": "Bạn có thể tìm thấy mục này sau trong Cài đặt cơ bản › Xử lý sau."
     }
   },
   "modelTable": {
@@ -1093,6 +1099,147 @@
           "withInstructionKey": "Khi có phím tắt hướng dẫn",
           "always": "Luôn luôn"
         }
+      },
+      "setup": {
+        "title": "Cải thiện văn bản của bạn",
+        "intro": "Hai câu hỏi ngắn là mọi thứ được thiết lập xong. Bạn có thể đổi câu trả lời bất cứ lúc nào.",
+        "later": "Để sau",
+        "knowMyWay": "Tôi đã rành việc này:",
+        "allProviders": "Tất cả nhà cung cấp …",
+        "notSetUp": "Xử lý sau chưa được thiết lập.",
+        "setUp": "Thiết lập",
+        "keepCurrent": "Giữ thiết lập hiện tại",
+        "q1": {
+          "title": "1. Văn bản của bạn được phép gửi đi đâu?",
+          "free_services": {
+            "label": "Cả đến các dịch vụ miễn phí.",
+            "hint": "Các dịch vụ này có thể giữ lại văn bản và dùng nó để cải thiện AI của họ."
+          },
+          "not_kept": {
+            "label": "Chỉ đến dịch vụ xử lý văn bản mà không giữ lại.",
+            "hint": "Cách này cần một gói đăng ký hoặc tốn vài đô la."
+          },
+          "nowhere": {
+            "label": "Không đi đâu cả.",
+            "hint": "Văn bản ở lại trên máy tính này."
+          }
+        },
+        "q2": {
+          "title": "2. Bạn đã có một trong các gói đăng ký này chưa?",
+          "none": "Không có gói nào"
+        },
+        "q3": {
+          "title": "3. Tiếp theo thế nào?",
+          "credit": "Nạp tiền một lần từ $5, không cần gói đăng ký",
+          "groq": "Miễn phí với Groq, kèm một khóa để sao chép",
+          "this_computer": "Trên máy tính này (chậm hơn, cần từ 16 GB bộ nhớ)",
+          "tooLittleMemoryMac": "Trên máy tính này: cần 16 GB, máy Mac này có {{memory}}.",
+          "tooLittleMemory": "Trên máy tính này: cần 16 GB, máy tính này có {{memory}}."
+        },
+        "openrouter": {
+          "freeTitle": "Gợi ý: OpenRouter, miễn phí",
+          "freeBody": "Một tài khoản OpenRouter, một lần nhấp vào “Authorize”, xong. Tối đa 50 lần đọc chính tả mỗi ngày.",
+          "creditTitle": "Gợi ý: OpenRouter, nạp tiền trước",
+          "creditBody": "Một tài khoản OpenRouter, một lần nhấp vào “Authorize”, rồi nạp tiền một lần từ $5. DanyWhere chọn một mô hình không dùng văn bản của bạn để huấn luyện. $5 đủ cho hàng nghìn lần đọc chính tả và không có gì tự gia hạn.",
+          "tipAccount": "Đăng ký bằng Google hoặc GitHub: bạn không cần mật khẩu và mã gửi qua email.",
+          "tipPayment": "Mới dùng OpenRouter? Trang chào mừng sẽ hỏi phương thức thanh toán. Bạn có thể chọn “I'll do this later”: các mô hình miễn phí không cần. Sau đó quay lại đây và nhấn “Mở lại trang”.",
+          "connect": "Kết nối OpenRouter"
+        },
+        "chatgpt": {
+          "title": "Gợi ý: gói đăng ký ChatGPT của bạn",
+          "body": "Chạy qua gói đăng ký ChatGPT của bạn: không cần khóa, không tốn thêm phí. Đăng nhập ChatGPT trong trình duyệt và cho phép DanyWhere truy cập.",
+          "firstUse": "Mức sử dụng hợp lệ trong ứng dụng này dùng gói đăng ký ChatGPT của bạn. Quản lý mức sử dụng trong phần cài đặt ChatGPT của bạn.",
+          "dataNotDescribed": "OpenAI không mô tả cách họ xử lý các yêu cầu do gói đăng ký của bạn chi trả.",
+          "continue": "Tiếp tục với ChatGPT"
+        },
+        "guidedKey": {
+          "title": "Gợi ý: khóa từ {{service}}",
+          "paste": "Dán khóa vào đây",
+          "fieldLabel": "Khóa từ {{service}}",
+          "check": "Kiểm tra",
+          "checking": "Đang kiểm tra …",
+          "works": "Khóa hoạt động."
+        },
+        "guides": {
+          "copyKey": "Sao chép khóa và dán vào đây.",
+          "copyToken": "Sao chép token và dán vào đây.",
+          "anthropic": {
+            "credits": "Liên kết tín dụng API của gói đăng ký trong claude.ai. Việc này làm được sau bảy ngày dùng gói, và bạn không cần thêm thẻ.",
+            "creditsLink": "Cách làm",
+            "key": "Tạo khóa trong Claude Console.",
+            "keyLink": "Mở Console"
+          },
+          "gemini": {
+            "credits": "Trong Google AI Studio, chọn “Claim free API credits” và thiết lập thanh toán. Google yêu cầu phương thức thanh toán và khoản trả trước ít nhất $5.",
+            "creditsLink": "Mở AI Studio",
+            "key": "Tạo khóa API.",
+            "keyLink": "Khóa API"
+          },
+          "huggingface": {
+            "key": "Tạo token truy cập có quyền “Make calls to Inference Providers”.",
+            "keyLink": "Mở trang token"
+          },
+          "ollama_cloud": {
+            "key": "Tạo khóa trong tài khoản Ollama của bạn.",
+            "keyLink": "Mở trang khóa"
+          },
+          "groq": {
+            "account": "Đăng nhập GroqCloud, ví dụ bằng “Continue with Google”. Không cần thẻ.",
+            "accountLink": "Mở GroqCloud",
+            "key": "Chọn “Create API Key”. Groq sẽ yêu cầu bạn nhấp một lần để xác nhận bạn là người thật."
+          }
+        },
+        "local": {
+          "laterTitle": "Trên máy tính này: sẽ có trong phiên bản sau",
+          "laterBody": "DanyWhere sẽ mang đến một mô hình chạy trên máy tính này. Trong lúc chờ, bạn có thể dùng máy chủ riêng, ví dụ Ollama hoặc LM Studio trên máy tính này, hoặc máy chủ của công ty bạn.",
+          "unavailableTitle": "Không thể dùng trên máy tính này",
+          "unavailableBodyMac": "Mô hình chạy trên máy tính này cần 16 GB bộ nhớ; máy Mac này có {{memory}}. Bạn có thể dùng máy chủ riêng, ví dụ máy chủ của công ty bạn.",
+          "unavailableBody": "Mô hình chạy trên máy tính này cần 16 GB bộ nhớ; máy tính này có {{memory}}. Bạn có thể dùng máy chủ riêng, ví dụ máy chủ của công ty bạn.",
+          "ownServer": "Thiết lập máy chủ riêng",
+          "ownServerHint": "Nhập địa chỉ và mô hình của máy chủ ở bên dưới."
+        },
+        "signIn": {
+          "waiting": "Đang chờ trình duyệt …",
+          "waitingHint": "Hoàn tất trong trình duyệt. Nếu bạn phải đăng ký trước, hãy nhấn “Mở lại trang”.",
+          "reopen": "Mở lại trang",
+          "cancel": "Hủy",
+          "failed": "Đăng nhập không thành công: {{error}}",
+          "timedOut": "Phiên đăng nhập đã chờ 30 phút và đã hết hạn.",
+          "denied": "Quyền truy cập không được cho phép.",
+          "notEligible": "Tài khoản ChatGPT này không có gói đăng ký nào mà DanyWhere dùng được (Go, Plus, Pro hoặc Business).",
+          "tryAgain": "Thử lại",
+          "browserSuccess": "Xong. Bạn có thể đóng cửa sổ này và quay lại DanyWhere.",
+          "browserFailure": "Không thành công. Hãy quay lại DanyWhere và thử lại."
+        },
+        "connected": {
+          "title": "Đã kết nối với {{provider}}",
+          "usingPlan": "Đang dùng gói đăng ký ChatGPT",
+          "plan": "Gói đăng ký: {{plan}}",
+          "freeModels": "Mô hình miễn phí, tối đa 50 lần đọc chính tả mỗi ngày",
+          "withCredit": "Dùng số dư, mô hình không huấn luyện bằng văn bản của bạn",
+          "noCreditYet": "Chưa có số dư: DanyWhere dùng các mô hình miễn phí cho đến khi bạn nạp tiền.",
+          "notToppedUp": "OpenRouter chưa hiển thị số dư. Có thể mất một phút.",
+          "keyLimit": "Hạn mức chi tiêu của khóa: {{limit}}",
+          "model": "Mô hình: {{model}}",
+          "picksModel": "DanyWhere chọn mô hình.",
+          "tryIt": "Dùng thử",
+          "manageUsage": "Quản lý mức sử dụng",
+          "credit": "Số dư",
+          "topUp": "Nạp tiền",
+          "toppedUp": "Tôi đã nạp tiền",
+          "disconnect": "Ngắt kết nối",
+          "answerAgain": "Trả lời lại các câu hỏi",
+          "advanced": "Nâng cao"
+        },
+        "sample": {
+          "title": "Thử mẫu",
+          "spoken": "Đã nói: “{{text}}”",
+          "result": "Kết quả: “{{text}}”",
+          "text": "ờ thì mai mình gửi cái đó cho bạn dấu phẩy được không dấu chấm hỏi",
+          "running": "Đang thử …",
+          "took": "{{seconds}} giây với {{model}}",
+          "failed": "Thử mẫu không thành công."
+        }
       }
     },
     "history": {
@@ -1258,7 +1405,8 @@
           "model": "Mô hình",
           "demo": "Demo",
           "try": "Thử xem",
-          "done": "Hoàn tất"
+          "done": "Hoàn tất",
+          "postProcessSetup": "Cải thiện văn bản của bạn"
         }
       },
       "onboardingRun": {
@@ -1559,7 +1707,23 @@
       "emptyReply": "{{provider}} không trả về văn bản nào.",
       "truncated": "Câu trả lời bị cắt ở giới hạn đầu ra của mô hình.",
       "unavailable": "{{provider}} không khả dụng trên máy tính này.",
-      "other": "Lỗi: {{error}}"
+      "other": "Lỗi: {{error}}",
+      "freeBusy": "Các mô hình miễn phí tại {{provider}} đang quá tải; hãy thử lại sau giây lát.",
+      "freeDailyLimit": "Lượt đọc chính tả miễn phí tại {{provider}} hôm nay đã hết (50 lượt mỗi ngày); hãy tiếp tục vào ngày mai, hoặc nạp tiền một lần.",
+      "keyLimit": "Đã đạt hạn mức chi tiêu của khóa tại {{provider}}; hãy thay đổi ở đó.",
+      "planLimit": "Gói đăng ký của bạn tại {{provider}} tạm thời đã đạt giới hạn sử dụng.",
+      "planNotEligible": "Gói đăng ký của bạn tại {{provider}} không bao gồm việc dùng trong ứng dụng khác.",
+      "signInExpired": "Phiên đăng nhập với {{provider}} đã hết hạn; hãy đăng nhập lại.",
+      "rateLimited": "{{provider}} giới hạn lượng dữ liệu được gửi mỗi phút; hãy chờ một chút rồi đọc lại.",
+      "actions": {
+        "setUp": "Thiết lập",
+        "topUp": "Nạp tiền",
+        "credit": "Số dư",
+        "changeLimit": "Đổi hạn mức",
+        "manageUsage": "Quản lý mức sử dụng",
+        "changeSetup": "Đổi thiết lập",
+        "signInAgain": "Đăng nhập lại"
+      }
     },
     "appMissedShortcutTitle": "Đã sao chép – cần khởi động lại",
     "appMissedShortcut": "{{app}} đã mở sẵn khi DanyWhere thiết lập phím tắt đọc chính tả, nên chỉ nhận ra phím tắt sau khi khởi động lại. Văn bản đang ở trong bảng nhớ tạm.",

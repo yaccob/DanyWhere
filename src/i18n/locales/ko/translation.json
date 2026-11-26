@@ -252,6 +252,12 @@
     "linux": {
       "tryIt": "작동하지 않나요? <guide>Linux 설정 가이드</guide>",
       "done": "다른 앱에서 작동하지 않나요? <guide>Linux 설정 가이드</guide>"
+    },
+    "postProcessSetup": {
+      "title": "텍스트 다듬기",
+      "sub": "언어 모델이 받아쓰기할 때마다 문장 부호, ‘음’ 같은 군더더기 말, 말로 한 명령, 이름을 다듬어 줍니다. 짧은 질문 두 개면 설정이 끝납니다.",
+      "later": "나중에",
+      "laterHint": "나중에 ‘기본 설정 › 후처리’에서 찾을 수 있습니다."
     }
   },
   "modelTable": {
@@ -1093,6 +1099,147 @@
           "withInstructionKey": "지시 단축키 사용 시",
           "always": "항상"
         }
+      },
+      "setup": {
+        "title": "텍스트 다듬기",
+        "intro": "짧은 질문 두 개에 답하면 모든 설정이 끝납니다. 답은 언제든지 바꿀 수 있습니다.",
+        "later": "나중에",
+        "knowMyWay": "잘 아는 분이라면:",
+        "allProviders": "모든 제공자 …",
+        "notSetUp": "후처리가 아직 설정되지 않았습니다.",
+        "setUp": "설정하기",
+        "keepCurrent": "현재 설정 유지",
+        "q1": {
+          "title": "1. 텍스트를 어디로 보내도 될까요?",
+          "free_services": {
+            "label": "무료 서비스로 보내도 됩니다.",
+            "hint": "그런 서비스는 텍스트를 보관하고 AI를 개선하는 데 쓸 수 있습니다."
+          },
+          "not_kept": {
+            "label": "처리만 하고 보관하지 않는 서비스로만 보냅니다.",
+            "hint": "이용 중인 플랜으로 처리하거나 몇 달러가 듭니다."
+          },
+          "nowhere": {
+            "label": "어디로도 보내지 않습니다.",
+            "hint": "텍스트가 이 컴퓨터에 그대로 남습니다."
+          }
+        },
+        "q2": {
+          "title": "2. 다음 중 이미 이용 중인 플랜이 있나요?",
+          "none": "해당 없음"
+        },
+        "q3": {
+          "title": "3. 어떻게 진행할까요?",
+          "credit": "플랜 없이 5달러부터 한 번만 충전",
+          "groq": "Groq에서 무료, 키를 복사해서 사용",
+          "this_computer": "이 컴퓨터에서 (더 느림, 메모리 16GB 이상)",
+          "tooLittleMemoryMac": "이 컴퓨터에서: 16GB가 필요하지만 이 Mac은 {{memory}}입니다.",
+          "tooLittleMemory": "이 컴퓨터에서: 16GB가 필요하지만 이 컴퓨터는 {{memory}}입니다."
+        },
+        "openrouter": {
+          "freeTitle": "추천: OpenRouter 무료",
+          "freeBody": "OpenRouter 계정을 만들고 ‘Authorize’를 한 번 누르면 끝입니다. 하루 최대 50번 받아쓰기할 수 있습니다.",
+          "creditTitle": "추천: 크레딧을 충전한 OpenRouter",
+          "creditBody": "OpenRouter 계정을 만들고 ‘Authorize’를 한 번 누른 다음, 5달러부터 한 번만 충전합니다. DanyWhere는 텍스트를 학습에 쓰지 않는 모델을 고릅니다. 5달러면 받아쓰기 수천 번에 충분하고, 자동으로 갱신되는 것은 없습니다.",
+          "tipAccount": "Google이나 GitHub로 가입하면 비밀번호와 이메일 인증 코드가 필요 없습니다.",
+          "tipPayment": "OpenRouter가 처음인가요? 첫 화면에서 결제 수단을 묻습니다. ‘I'll do this later’를 선택하면 됩니다. 무료 모델에는 결제 수단이 필요 없습니다. 그다음 여기로 돌아와 ‘페이지 다시 열기’를 누르세요.",
+          "connect": "OpenRouter 연결"
+        },
+        "chatgpt": {
+          "title": "추천: ChatGPT 플랜",
+          "body": "ChatGPT 플랜으로 이용합니다. 키도 추가 비용도 없습니다. 브라우저에서 ChatGPT에 로그인하고 DanyWhere를 허용하세요.",
+          "firstUse": "이 앱에서 해당되는 사용량은 ChatGPT 플랜으로 처리됩니다. 사용량은 ChatGPT 설정에서 관리할 수 있습니다.",
+          "dataNotDescribed": "플랜으로 결제되는 요청을 OpenAI가 어떻게 다루는지는 설명되어 있지 않습니다.",
+          "continue": "ChatGPT로 계속하기"
+        },
+        "guidedKey": {
+          "title": "추천: {{service}} 키",
+          "paste": "여기에 키를 붙여 넣으세요",
+          "fieldLabel": "{{service}} 키",
+          "check": "확인",
+          "checking": "확인 중 …",
+          "works": "키가 작동합니다."
+        },
+        "guides": {
+          "copyKey": "키를 복사해 여기에 붙여 넣으세요.",
+          "copyToken": "토큰을 복사해 여기에 붙여 넣으세요.",
+          "anthropic": {
+            "credits": "claude.ai에서 플랜의 API 크레딧을 연결하세요. 플랜 가입 7일 후부터 가능하며, 카드를 등록할 필요는 없습니다.",
+            "creditsLink": "방법 보기",
+            "key": "Claude Console에서 키를 만드세요.",
+            "keyLink": "Console 열기"
+          },
+          "gemini": {
+            "credits": "Google AI Studio에서 ‘Claim free API credits’를 선택하고 결제를 설정하세요. Google은 결제 수단과 최소 5달러의 선결제를 요구합니다.",
+            "creditsLink": "AI Studio 열기",
+            "key": "API 키를 만드세요.",
+            "keyLink": "API 키"
+          },
+          "huggingface": {
+            "key": "‘Make calls to Inference Providers’ 권한이 있는 액세스 토큰을 만드세요.",
+            "keyLink": "토큰 열기"
+          },
+          "ollama_cloud": {
+            "key": "Ollama 계정에서 키를 만드세요.",
+            "keyLink": "키 열기"
+          },
+          "groq": {
+            "account": "GroqCloud에 로그인하세요. 예를 들어 ‘Continue with Google’을 쓰면 됩니다. 카드는 필요 없습니다.",
+            "accountLink": "GroqCloud 열기",
+            "key": "‘Create API Key’를 선택하세요. Groq에서 클릭 한 번으로 사람임을 확인하게 합니다."
+          }
+        },
+        "local": {
+          "laterTitle": "이 컴퓨터에서: 이후 버전에서 제공",
+          "laterBody": "DanyWhere는 나중에 이 컴퓨터에서 실행되는 모델을 제공할 예정입니다. 그때까지는 직접 운영하는 서버를 쓸 수 있습니다. 예를 들어 이 컴퓨터의 Ollama나 LM Studio, 또는 회사 서버입니다.",
+          "unavailableTitle": "이 컴퓨터에서는 할 수 없습니다",
+          "unavailableBodyMac": "이 컴퓨터에서 모델을 실행하려면 메모리 16GB가 필요하지만 이 Mac은 {{memory}}입니다. 회사 서버처럼 직접 운영하는 서버는 쓸 수 있습니다.",
+          "unavailableBody": "이 컴퓨터에서 모델을 실행하려면 메모리 16GB가 필요하지만 이 컴퓨터는 {{memory}}입니다. 회사 서버처럼 직접 운영하는 서버는 쓸 수 있습니다.",
+          "ownServer": "직접 운영하는 서버 설정",
+          "ownServerHint": "아래에 주소와 모델을 입력하세요."
+        },
+        "signIn": {
+          "waiting": "브라우저를 기다리는 중 …",
+          "waitingHint": "브라우저에서 마무리하세요. 먼저 가입해야 했다면 ‘페이지 다시 열기’를 누르세요.",
+          "reopen": "페이지 다시 열기",
+          "cancel": "취소",
+          "failed": "로그인하지 못했습니다: {{error}}",
+          "timedOut": "로그인을 30분 동안 기다려 만료되었습니다.",
+          "denied": "접근이 허용되지 않았습니다.",
+          "notEligible": "이 ChatGPT 계정에는 DanyWhere가 쓸 수 있는 플랜(Go, Plus, Pro 또는 Business)이 없습니다.",
+          "tryAgain": "다시 시도",
+          "browserSuccess": "완료되었습니다. 이 창을 닫고 DanyWhere로 돌아가세요.",
+          "browserFailure": "잘 되지 않았습니다. DanyWhere로 돌아가 다시 시도하세요."
+        },
+        "connected": {
+          "title": "{{provider}}에 연결됨",
+          "usingPlan": "ChatGPT 플랜 사용 중",
+          "plan": "플랜: {{plan}}",
+          "freeModels": "무료 모델, 하루 최대 50번 받아쓰기",
+          "withCredit": "크레딧 사용, 학습에 쓰지 않는 모델",
+          "noCreditYet": "아직 크레딧이 없습니다. 충전할 때까지 DanyWhere가 무료 모델을 사용합니다.",
+          "notToppedUp": "OpenRouter에 아직 크레딧이 표시되지 않습니다. 1분 정도 걸릴 수 있습니다.",
+          "keyLimit": "키의 지출 한도: {{limit}}",
+          "model": "모델: {{model}}",
+          "picksModel": "모델은 DanyWhere가 고릅니다.",
+          "tryIt": "사용해 보기",
+          "manageUsage": "사용량 관리",
+          "credit": "크레딧",
+          "topUp": "충전",
+          "toppedUp": "충전했습니다",
+          "disconnect": "연결 해제",
+          "answerAgain": "질문에 다시 답하기",
+          "advanced": "고급"
+        },
+        "sample": {
+          "title": "테스트",
+          "spoken": "말한 내용: “{{text}}”",
+          "result": "결과: “{{text}}”",
+          "text": "음 그러니까 내일 그거 보내 줄게 쉼표 괜찮지 물음표",
+          "running": "테스트 중 …",
+          "took": "{{seconds}}초, {{model}}",
+          "failed": "테스트에 실패했습니다."
+        }
       }
     },
     "history": {
@@ -1258,7 +1405,8 @@
           "model": "모델",
           "demo": "데모",
           "try": "체험",
-          "done": "준비 완료"
+          "done": "준비 완료",
+          "postProcessSetup": "텍스트 다듬기"
         }
       },
       "onboardingRun": {
@@ -1559,7 +1707,23 @@
       "emptyReply": "{{provider}}: 응답에 텍스트가 없습니다.",
       "truncated": "응답이 모델의 출력 한도에서 잘렸습니다.",
       "unavailable": "{{provider}}: 이 컴퓨터에서는 사용할 수 없습니다.",
-      "other": "오류: {{error}}"
+      "other": "오류: {{error}}",
+      "freeBusy": "{{provider}}: 무료 모델이 지금 혼잡합니다. 잠시 후 다시 시도하세요.",
+      "freeDailyLimit": "{{provider}}: 오늘의 무료 받아쓰기를 모두 썼습니다(하루 50번). 내일 다시 이용하거나 한 번 충전하세요.",
+      "keyLimit": "{{provider}}: 키의 지출 한도에 도달했습니다. 해당 서비스에서 변경하세요.",
+      "planLimit": "{{provider}}: 플랜의 사용 한도에 일시적으로 도달했습니다.",
+      "planNotEligible": "{{provider}}: 현재 플랜에는 다른 앱에서의 사용이 포함되어 있지 않습니다.",
+      "signInExpired": "{{provider}}: 로그인이 만료되었습니다. 다시 로그인하세요.",
+      "rateLimited": "{{provider}}: 1분당 보낼 수 있는 양이 제한되어 있습니다. 잠시 기다린 후 다시 받아쓰기하세요.",
+      "actions": {
+        "setUp": "설정하기",
+        "topUp": "충전",
+        "credit": "크레딧",
+        "changeLimit": "한도 변경",
+        "manageUsage": "사용량 관리",
+        "changeSetup": "설정 변경",
+        "signInAgain": "다시 로그인"
+      }
     },
     "appMissedShortcutTitle": "복사됨 – 앱을 다시 시작하세요",
     "appMissedShortcut": "DanyWhere가 받아쓰기 단축키를 설정할 때 {{app}}이(가) 이미 열려 있어서, 다시 시작한 후에야 단축키를 인식합니다. 텍스트는 클립보드에 있습니다.",

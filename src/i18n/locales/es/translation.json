@@ -252,6 +252,12 @@
     "linux": {
       "tryIt": "¿No funciona? <guide>Guía de configuración para Linux</guide>",
       "done": "¿No funciona en otras apps? <guide>Guía de configuración para Linux</guide>"
+    },
+    "postProcessSetup": {
+      "title": "Mejorar tus textos",
+      "sub": "Un modelo de lenguaje puede pulir cada dictado: puntuación, muletillas, órdenes dictadas, nombres. Dos preguntas cortas y queda configurado.",
+      "later": "Más tarde",
+      "laterHint": "Lo encontrarás más tarde en Configuración básica › Post proceso."
     }
   },
   "modelTable": {
@@ -1093,6 +1099,147 @@
           "withInstructionKey": "Con atajo de instrucción",
           "always": "Siempre"
         }
+      },
+      "setup": {
+        "title": "Mejorar tus textos",
+        "intro": "Dos preguntas cortas y todo queda configurado. Puedes cambiar tus respuestas cuando quieras.",
+        "later": "Más tarde",
+        "knowMyWay": "Sé cómo funciona:",
+        "allProviders": "Todos los proveedores …",
+        "notSetUp": "El post proceso aún no está configurado.",
+        "setUp": "Configurar",
+        "keepCurrent": "Mantener la configuración actual",
+        "q1": {
+          "title": "1. ¿Adónde pueden ir tus textos?",
+          "free_services": {
+            "label": "También a servicios gratuitos.",
+            "hint": "Pueden guardarlos y usarlos para mejorar su IA."
+          },
+          "not_kept": {
+            "label": "Solo a un servicio que los procese y no los guarde.",
+            "hint": "Eso va con una suscripción o cuesta unos pocos dólares."
+          },
+          "nowhere": {
+            "label": "A ningún sitio.",
+            "hint": "Se quedan en este ordenador."
+          }
+        },
+        "q2": {
+          "title": "2. ¿Ya tienes alguna de estas suscripciones?",
+          "none": "Ninguna de estas"
+        },
+        "q3": {
+          "title": "3. ¿Cómo seguimos?",
+          "credit": "Recargar una vez desde 5 dólares, sin suscripción",
+          "groq": "Gratis con Groq, con una clave para copiar",
+          "this_computer": "En este ordenador (más lento, desde 16 GB de memoria)",
+          "tooLittleMemoryMac": "En este ordenador: necesita 16 GB, este Mac tiene {{memory}}.",
+          "tooLittleMemory": "En este ordenador: necesita 16 GB, este ordenador tiene {{memory}}."
+        },
+        "openrouter": {
+          "freeTitle": "Sugerencia: OpenRouter, gratis",
+          "freeBody": "Una cuenta en OpenRouter, un clic en «Authorize» y listo. Hasta 50 dictados al día.",
+          "creditTitle": "Sugerencia: OpenRouter con saldo",
+          "creditBody": "Una cuenta en OpenRouter, un clic en «Authorize» y luego una sola recarga desde 5 dólares. DanyWhere elige un modelo que no usa tus textos para entrenar. 5 dólares alcanzan para miles de dictados, y nada se renueva.",
+          "tipAccount": "Regístrate con Google o GitHub: así te ahorras una contraseña y un código por correo.",
+          "tipPayment": "¿Nuevo en OpenRouter? La bienvenida te pide un método de pago. Puedes elegir «I'll do this later»: los modelos gratuitos no lo necesitan. Luego vuelve aquí y pulsa «Abrir la página de nuevo».",
+          "connect": "Conectar OpenRouter"
+        },
+        "chatgpt": {
+          "title": "Sugerencia: tu suscripción a ChatGPT",
+          "body": "Funciona con tu suscripción a ChatGPT: sin clave y sin coste extra. Inicia sesión en ChatGPT en el navegador y permite el acceso a DanyWhere.",
+          "firstUse": "El uso elegible en esta aplicación usa tu suscripción a ChatGPT. Gestiona el uso en tu configuración de ChatGPT.",
+          "dataNotDescribed": "OpenAI no explica cómo trata las solicitudes que paga tu suscripción.",
+          "continue": "Continuar con ChatGPT"
+        },
+        "guidedKey": {
+          "title": "Sugerencia: una clave de {{service}}",
+          "paste": "Pega la clave aquí",
+          "fieldLabel": "Clave de {{service}}",
+          "check": "Comprobar",
+          "checking": "Comprobando …",
+          "works": "La clave funciona."
+        },
+        "guides": {
+          "copyKey": "Copia la clave y pégala aquí.",
+          "copyToken": "Copia el token y pégalo aquí.",
+          "anthropic": {
+            "credits": "Vincula los créditos de API de tu suscripción en claude.ai. Se puede tras siete días de suscripción, y no necesitas añadir ninguna tarjeta.",
+            "creditsLink": "Cómo funciona",
+            "key": "Crea una clave en la Claude Console.",
+            "keyLink": "Abrir la Console"
+          },
+          "gemini": {
+            "credits": "En Google AI Studio, elige «Claim free API credits» y configura la facturación. Google pide un método de pago y un prepago de al menos 5 dólares.",
+            "creditsLink": "Abrir AI Studio",
+            "key": "Crea una clave API.",
+            "keyLink": "Claves API"
+          },
+          "huggingface": {
+            "key": "Crea un token de acceso con el permiso «Make calls to Inference Providers».",
+            "keyLink": "Abrir tokens"
+          },
+          "ollama_cloud": {
+            "key": "Crea una clave en tu cuenta de Ollama.",
+            "keyLink": "Abrir claves"
+          },
+          "groq": {
+            "account": "Inicia sesión en GroqCloud, por ejemplo con «Continue with Google». No hace falta tarjeta.",
+            "accountLink": "Abrir GroqCloud",
+            "key": "Elige «Create API Key». Groq te pide confirmar con un clic que eres una persona."
+          }
+        },
+        "local": {
+          "laterTitle": "En este ordenador: llega en una versión posterior",
+          "laterBody": "DanyWhere traerá un modelo que funciona en este ordenador. Mientras tanto, sirve un servidor propio, por ejemplo Ollama o LM Studio en este ordenador, o el de tu empresa.",
+          "unavailableTitle": "No es posible en este ordenador",
+          "unavailableBodyMac": "Un modelo en este ordenador necesita 16 GB de memoria; este Mac tiene {{memory}}. Sirve un servidor propio, por ejemplo el de tu empresa.",
+          "unavailableBody": "Un modelo en este ordenador necesita 16 GB de memoria; este ordenador tiene {{memory}}. Sirve un servidor propio, por ejemplo el de tu empresa.",
+          "ownServer": "Configurar un servidor propio",
+          "ownServerHint": "Introduce abajo su dirección y su modelo."
+        },
+        "signIn": {
+          "waiting": "Esperando al navegador …",
+          "waitingHint": "Termina en el navegador. Si antes tuviste que registrarte, pulsa «Abrir la página de nuevo».",
+          "reopen": "Abrir la página de nuevo",
+          "cancel": "Cancelar",
+          "failed": "No se pudo iniciar sesión: {{error}}",
+          "timedOut": "El inicio de sesión esperó 30 minutos y ha caducado.",
+          "denied": "No se permitió el acceso.",
+          "notEligible": "Esta cuenta de ChatGPT no tiene una suscripción que DanyWhere pueda usar (Go, Plus, Pro o Business).",
+          "tryAgain": "Intentar de nuevo",
+          "browserSuccess": "Listo. Puedes cerrar esta ventana y volver a DanyWhere.",
+          "browserFailure": "No ha funcionado. Vuelve a DanyWhere e inténtalo de nuevo."
+        },
+        "connected": {
+          "title": "Conectado a {{provider}}",
+          "usingPlan": "Usando tu suscripción a ChatGPT",
+          "plan": "Suscripción: {{plan}}",
+          "freeModels": "Modelos gratuitos, hasta 50 dictados al día",
+          "withCredit": "Con saldo, un modelo que no entrena con tus textos",
+          "noCreditYet": "Aún no hay saldo: DanyWhere usa los modelos gratuitos hasta que recargues.",
+          "notToppedUp": "OpenRouter aún no muestra saldo. Puede tardar un minuto.",
+          "keyLimit": "Límite de gasto de la clave: {{limit}}",
+          "model": "Modelo: {{model}}",
+          "picksModel": "DanyWhere elige el modelo.",
+          "tryIt": "Probar",
+          "manageUsage": "Gestionar el uso",
+          "credit": "Saldo",
+          "topUp": "Recargar",
+          "toppedUp": "Ya he recargado",
+          "disconnect": "Desconectar",
+          "answerAgain": "Responder de nuevo a las preguntas",
+          "advanced": "Avanzado"
+        },
+        "sample": {
+          "title": "Prueba",
+          "spoken": "Dicho: «{{text}}»",
+          "result": "Resultado: «{{text}}»",
+          "text": "eh bueno te lo mando mañana coma vale signo de interrogación",
+          "running": "Probando …",
+          "took": "{{seconds}} s con {{model}}",
+          "failed": "La prueba no ha funcionado."
+        }
       }
     },
     "history": {
@@ -1258,7 +1405,8 @@
           "model": "Modelo",
           "demo": "Demostración",
           "try": "Pruébalo",
-          "done": "Todo listo"
+          "done": "Todo listo",
+          "postProcessSetup": "Mejorar tus textos"
         }
       },
       "onboardingRun": {
@@ -1559,7 +1707,23 @@
       "emptyReply": "{{provider}} no devolvió ningún texto.",
       "truncated": "La respuesta se cortó en el límite de salida del modelo.",
       "unavailable": "{{provider}} no está disponible en este ordenador.",
-      "other": "Error: {{error}}"
+      "other": "Error: {{error}}",
+      "freeBusy": "Los modelos gratuitos de {{provider}} están saturados ahora mismo; vuelve a intentarlo en un momento.",
+      "freeDailyLimit": "Los dictados gratuitos en {{provider}} se han agotado por hoy (50 al día); sigue mañana o recarga una vez.",
+      "keyLimit": "Se ha alcanzado el límite de gasto de la clave en {{provider}}; cámbialo allí.",
+      "planLimit": "Se ha alcanzado por ahora el límite de uso de tu suscripción a {{provider}}.",
+      "planNotEligible": "Tu suscripción a {{provider}} no incluye el uso en otras aplicaciones.",
+      "signInExpired": "La sesión con {{provider}} ha caducado; vuelve a iniciar sesión.",
+      "rateLimited": "{{provider}} limita cuánto se puede enviar por minuto; espera un momento y vuelve a dictar.",
+      "actions": {
+        "setUp": "Configurar",
+        "topUp": "Recargar",
+        "credit": "Saldo",
+        "changeLimit": "Cambiar el límite",
+        "manageUsage": "Gestionar el uso",
+        "changeSetup": "Cambiar la configuración",
+        "signInAgain": "Volver a iniciar sesión"
+      }
     },
     "appMissedShortcutTitle": "Copiado – reinicia la app",
     "appMissedShortcut": "{{app}} ya estaba abierta cuando DanyWhere configuró el atajo de dictado, así que solo lo reconocerá tras reiniciarla. El texto está en el portapapeles.",

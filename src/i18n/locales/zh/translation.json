@@ -252,6 +252,12 @@
     "linux": {
       "tryIt": "不起作用？<guide>Linux 设置指南</guide>",
       "done": "在其他应用中不起作用？<guide>Linux 设置指南</guide>"
+    },
+    "postProcessSetup": {
+      "title": "润色你的文字",
+      "sub": "语言模型可以润色每次听写的内容：标点、语气词、口述的指令、人名等。回答两个简短的问题，就能设置好。",
+      "later": "稍后",
+      "laterHint": "你稍后可以在“基本设置 › 后处理”中找到它。"
     }
   },
   "modelTable": {
@@ -1093,6 +1099,147 @@
           "withInstructionKey": "使用指令快捷键时",
           "always": "始终"
         }
+      },
+      "setup": {
+        "title": "润色你的文字",
+        "intro": "回答两个简短的问题，就能完成全部设置。你随时可以修改答案。",
+        "later": "稍后",
+        "knowMyWay": "熟悉的用户：",
+        "allProviders": "所有提供商 …",
+        "notSetUp": "尚未设置后处理。",
+        "setUp": "设置",
+        "keepCurrent": "保留当前设置",
+        "q1": {
+          "title": "1. 你的文字可以发送到哪里？",
+          "free_services": {
+            "label": "也可以发给免费服务。",
+            "hint": "它们可能会保存你的文字，并用来改进自己的 AI。"
+          },
+          "not_kept": {
+            "label": "只发给处理完就不保存的服务。",
+            "hint": "这需要通过套餐使用，或者花几美元。"
+          },
+          "nowhere": {
+            "label": "哪里都不发。",
+            "hint": "文字会留在此电脑上。"
+          }
+        },
+        "q2": {
+          "title": "2. 你已经开通了以下某个套餐吗？",
+          "none": "都没有"
+        },
+        "q3": {
+          "title": "3. 接下来怎么做？",
+          "credit": "不开套餐，一次性充值 5 美元起",
+          "groq": "用 Groq 免费使用，复制一个密钥即可",
+          "this_computer": "在此电脑上（较慢，需要 16 GB 内存）",
+          "tooLittleMemoryMac": "在此电脑上：需要 16 GB，此 Mac 只有 {{memory}}。",
+          "tooLittleMemory": "在此电脑上：需要 16 GB，此电脑只有 {{memory}}。"
+        },
+        "openrouter": {
+          "freeTitle": "建议：OpenRouter 免费版",
+          "freeBody": "注册一个 OpenRouter 账号，点一下“Authorize”，就完成了。每天最多 50 次听写。",
+          "creditTitle": "建议：OpenRouter 充值使用",
+          "creditBody": "注册一个 OpenRouter 账号，点一下“Authorize”，然后一次性充值 5 美元起。DanyWhere 会选择不拿你的文字做训练的模型。5 美元够听写几千次，而且不会自动续费。",
+          "tipAccount": "用 Google 或 GitHub 登录：省去密码和邮件验证码。",
+          "tipPayment": "第一次用 OpenRouter？欢迎页面会要求填写付款方式。你可以选择“I'll do this later”，免费模型不需要付款方式。之后回到这里，点“重新打开页面”。",
+          "connect": "连接 OpenRouter"
+        },
+        "chatgpt": {
+          "title": "建议：你的 ChatGPT 套餐",
+          "body": "通过你的 ChatGPT 套餐使用：不需要密钥，也没有额外费用。在浏览器中登录 ChatGPT，并允许 DanyWhere 访问。",
+          "firstUse": "此应用中符合条件的使用会计入你的 ChatGPT 套餐。你可以在 ChatGPT 设置中管理用量。",
+          "dataNotDescribed": "OpenAI 没有说明它如何处理由你的套餐付费的请求。",
+          "continue": "使用 ChatGPT 继续"
+        },
+        "guidedKey": {
+          "title": "建议：{{service}} 的密钥",
+          "paste": "在此粘贴密钥",
+          "fieldLabel": "{{service}} 的密钥",
+          "check": "检查",
+          "checking": "正在检查 …",
+          "works": "密钥可用。"
+        },
+        "guides": {
+          "copyKey": "复制密钥，粘贴到这里。",
+          "copyToken": "复制令牌，粘贴到这里。",
+          "anthropic": {
+            "credits": "在 claude.ai 中关联你套餐的 API 额度。开通套餐满 7 天后才能关联，而且不需要绑定银行卡。",
+            "creditsLink": "查看方法",
+            "key": "在 Claude Console 中创建一个密钥。",
+            "keyLink": "打开 Console"
+          },
+          "gemini": {
+            "credits": "在 Google AI Studio 中选择“Claim free API credits”，并设置结算。Google 会要求提供付款方式，并预付至少 5 美元。",
+            "creditsLink": "打开 AI Studio",
+            "key": "创建一个 API 密钥。",
+            "keyLink": "API 密钥"
+          },
+          "huggingface": {
+            "key": "创建一个带有“Make calls to Inference Providers”权限的访问令牌。",
+            "keyLink": "打开令牌页面"
+          },
+          "ollama_cloud": {
+            "key": "在你的 Ollama 账号中创建一个密钥。",
+            "keyLink": "打开密钥页面"
+          },
+          "groq": {
+            "account": "登录 GroqCloud，例如使用“Continue with Google”。不需要银行卡。",
+            "accountLink": "打开 GroqCloud",
+            "key": "选择“Create API Key”。Groq 会让你点一下，确认你是真人。"
+          }
+        },
+        "local": {
+          "laterTitle": "在此电脑上：将在以后的版本中提供",
+          "laterBody": "DanyWhere 以后会带来一个在此电脑上运行的模型。在那之前，可以使用你自己的服务器，例如此电脑上的 Ollama 或 LM Studio，或者你公司的服务器。",
+          "unavailableTitle": "此电脑无法使用",
+          "unavailableBodyMac": "在此电脑上运行模型需要 16 GB 内存，此 Mac 只有 {{memory}}。可以使用你自己的服务器，例如你公司的服务器。",
+          "unavailableBody": "在此电脑上运行模型需要 16 GB 内存，此电脑只有 {{memory}}。可以使用你自己的服务器，例如你公司的服务器。",
+          "ownServer": "设置自己的服务器",
+          "ownServerHint": "在下方填写它的地址和模型。"
+        },
+        "signIn": {
+          "waiting": "正在等待浏览器 …",
+          "waitingHint": "请在浏览器中完成。如果你需要先注册，请点“重新打开页面”。",
+          "reopen": "重新打开页面",
+          "cancel": "取消",
+          "failed": "登录没有成功：{{error}}",
+          "timedOut": "登录已等待 30 分钟，已过期。",
+          "denied": "访问未获允许。",
+          "notEligible": "此 ChatGPT 账号没有 DanyWhere 可以使用的套餐（Go、Plus、Pro 或 Business）。",
+          "tryAgain": "再试一次",
+          "browserSuccess": "完成。你可以关闭此窗口，回到 DanyWhere。",
+          "browserFailure": "没有成功。请回到 DanyWhere 再试一次。"
+        },
+        "connected": {
+          "title": "已连接到 {{provider}}",
+          "usingPlan": "正在使用 ChatGPT 套餐",
+          "plan": "套餐：{{plan}}",
+          "freeModels": "免费模型，每天最多 50 次听写",
+          "withCredit": "已充值，使用不拿文字做训练的模型",
+          "noCreditYet": "还没有额度：在你充值之前，DanyWhere 会使用免费模型。",
+          "notToppedUp": "OpenRouter 还没有显示额度。这可能需要一分钟。",
+          "keyLimit": "密钥的消费上限：{{limit}}",
+          "model": "模型：{{model}}",
+          "picksModel": "由 DanyWhere 选择模型。",
+          "tryIt": "试一试",
+          "manageUsage": "管理用量",
+          "credit": "额度",
+          "topUp": "充值",
+          "toppedUp": "我已充值",
+          "disconnect": "断开连接",
+          "answerAgain": "重新回答问题",
+          "advanced": "高级"
+        },
+        "sample": {
+          "title": "试用",
+          "spoken": "口述：“{{text}}”",
+          "result": "结果：“{{text}}”",
+          "text": "嗯 那个 我明天发给你 逗号 好吗 问号",
+          "running": "正在试用 …",
+          "took": "用 {{model}} 耗时 {{seconds}} 秒",
+          "failed": "试用没有成功。"
+        }
       }
     },
     "history": {
@@ -1258,7 +1405,8 @@
           "model": "模型",
           "demo": "演示",
           "try": "试一试",
-          "done": "完成"
+          "done": "完成",
+          "postProcessSetup": "润色你的文字"
         }
       },
       "onboardingRun": {
@@ -1559,7 +1707,23 @@
       "emptyReply": "{{provider}} 没有返回任何文本。",
       "truncated": "回复在模型的输出上限处被截断。",
       "unavailable": "{{provider}} 在此电脑上不可用。",
-      "other": "错误：{{error}}"
+      "other": "错误：{{error}}",
+      "freeBusy": "{{provider}} 的免费模型目前繁忙，请稍后再试。",
+      "freeDailyLimit": "{{provider}} 今天的免费听写次数已用完（每天 50 次）；明天再继续，或一次性充值。",
+      "keyLimit": "{{provider}} 上该密钥的消费上限已达到，请前往修改。",
+      "planLimit": "你在 {{provider}} 的套餐用量暂时已达上限。",
+      "planNotEligible": "你在 {{provider}} 的套餐不包括在其他应用中使用。",
+      "signInExpired": "{{provider}} 的登录已过期，请重新登录。",
+      "rateLimited": "{{provider}} 限制了每分钟可发送的量，请稍等片刻再听写。",
+      "actions": {
+        "setUp": "设置",
+        "topUp": "充值",
+        "credit": "额度",
+        "changeLimit": "修改上限",
+        "manageUsage": "管理用量",
+        "changeSetup": "更改设置",
+        "signInAgain": "重新登录"
+      }
     },
     "appMissedShortcutTitle": "已复制 – 请重启该应用",
     "appMissedShortcut": "DanyWhere 设置听写快捷键时 {{app}} 已经打开，因此要重启后才能识别该快捷键。文本已在剪贴板中。",
