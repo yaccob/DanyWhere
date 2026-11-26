@@ -408,18 +408,9 @@
         "notFound": "未找到快捷鍵",
         "pressKeys": "請按鍵...",
         "bindings": {
-          "transcribe": {
-            "name": "開始快捷鍵",
-            "description": "開始錄音。如何結束由結束快捷鍵決定，按住時也是如此。"
-          },
           "cancel": {
             "name": "取消快捷鍵",
             "description": "用於取消目前錄製的鍵盤快捷鍵"
-          },
-          "transcribe_with_post_process": {
-            "name": "第二開始快捷鍵",
-            "description": "可選：第二個用於開始錄音的按鍵組合。原廠設定下，具有相同按鍵組合的結束快捷鍵會對文字進行後處理。只在後處理開啟時佔用。",
-            "descriptionMacos": "可選：第二個用於開始錄音的按鍵組合。原廠設定下，按住後放開會對文字進行後處理；再次輕按則不經後處理就結束，與所有不含 ⌥ 的結束快捷鍵相同。只在後處理開啟時佔用。"
           },
           "paste_last_transcript": {
             "name": "貼上最近的轉錄",
@@ -464,20 +455,6 @@
         "noMatch": "找不到符合「{{query}}」的語言",
         "weak": "目前還沒有模型能把{{languages}}辨識得很準。"
       },
-      "shortcutActivation": {
-        "title": "快捷鍵行為",
-        "description": "選擇開始快捷鍵如何開始和結束錄音。",
-        "options": {
-          "holdOrToggle": "自動",
-          "pushToTalk": "按住",
-          "toggle": "輕按"
-        },
-        "descriptions": {
-          "hold_or_toggle": "按住錄音，或輕按開始；之後由結束快捷鍵停止",
-          "push_to_talk": "按住快捷鍵期間錄音",
-          "toggle": "輕按開始錄音；只有當某個結束快捷鍵使用相同的按鍵組合時，再次輕按才會停止"
-        }
-      },
       "insertService": {
         "invalid": "請使用 ⌘ 或 ⌃ 加一個字母、數字或標點",
         "conflict": "「{{name}}」已在使用此快速鍵"
@@ -495,12 +472,46 @@
         }
       }
     },
+    "startKeys": {
+      "description": "輕按開始錄音。錄音會一直持續，直到用結束快捷鍵結束。",
+      "shortcutHint": "輕按此按鍵組合會開始錄音。始終佔用。",
+      "alsoHold": "也是按住快捷鍵",
+      "add": "新增開始快捷鍵",
+      "addPressKeys": "按下新開始快捷鍵的按鍵組合",
+      "delete": "刪除開始快捷鍵 {{shortcut}}",
+      "lastOne": "必須保留一個開始快捷鍵或按住快捷鍵，才能隨時開始錄音。",
+      "refName": "開始快捷鍵 {{shortcut}}",
+      "errors": {
+        "save": "無法儲存開始快捷鍵：{{error}}",
+        "needsShortcut": "每個開始快捷鍵都需要按鍵組合。",
+        "shortcutTwice": "兩個開始快捷鍵不能使用同一個按鍵組合。",
+        "last": "無法刪除最後一個開始快捷鍵或按住快捷鍵：錄音必須隨時都能開始。",
+        "cannotEnd": "在 Linux 上，由 {{shortcut}} 開始的錄音將無法結束：請保留一個使用相同按鍵組合的結束快捷鍵。"
+      }
+    },
+    "holdKeys": {
+      "title": "按住快捷鍵",
+      "description": "按住時錄音。放開會以這種方式結束錄音：附加什麼、是否對文字進行後處理，以及是否將先前的聽寫作為上下文一併傳送。",
+      "shortcutHint": "按住此按鍵組合時錄音；放開會以這種方式結束錄音。",
+      "alsoStart": "也是開始快捷鍵：短暫輕按會開始錄音，錄音會持續進行。",
+      "holdOnly": "僅為按住快捷鍵：短暫輕按不會有任何作用。",
+      "notTaken": "只在後處理開啟時佔用：在此之前，其按鍵組合仍歸前景應用程式使用。",
+      "add": "新增按住快捷鍵",
+      "addPressKeys": "按下新按住快捷鍵的按鍵組合",
+      "refName": "按住快捷鍵 {{name}}",
+      "errors": {
+        "save": "無法儲存按住快捷鍵：{{error}}",
+        "needsShortcut": "每個按住快捷鍵都需要按鍵組合。",
+        "shortcutTwice": "兩個按住快捷鍵不能使用同一個按鍵組合。"
+      }
+    },
     "endKeys": {
       "title": "結束快捷鍵",
-      "description": "錄音如何結束以及之後發生什麼。每個結束快捷鍵都有自己的按鍵組合，只在錄音時佔用，並決定附加什麼、是否對文字進行後處理，以及是否將先前的聽寫作為上下文一併傳送。結束快捷鍵可以使用某個開始快捷鍵的按鍵組合：這時再次輕按該開始快捷鍵就會以這種方式結束。",
+      "description": "錄音如何結束以及之後發生什麼。每個結束快捷鍵都有自己的按鍵組合，只在錄音時佔用，並決定附加什麼、是否對文字進行後處理，以及是否將先前的聽寫作為上下文一併傳送。結束快捷鍵可以使用某個開始快捷鍵或按住快捷鍵的按鍵組合：這時在錄音中輕按它就會以這種方式結束。",
       "name": "名稱",
       "shortcutHint": "錄音時按下此按鍵組合會以這種方式結束錄音。只在錄音時佔用。",
-      "sameAsStart": "與「{{start}}」的按鍵組合相同：錄音時再次輕按會以這種方式結束。",
+      "sameAsStart": "與某個開始快捷鍵的按鍵組合相同：錄音時再次輕按會以這種方式結束。",
+      "sameAsHold": "與某個按住快捷鍵的按鍵組合相同：錄音時輕按會以這種方式結束。",
       "append": "結尾附加",
       "appendDescription": "附加到以這種方式結束的聽寫：先是文字，然後是你選擇的按鍵。文字中 \\s 代表空格，\\n 代表換行，\\t 代表定位字元，\\\\ 代表反斜線；其他內容依原樣附加。只有在貼上文字時才會送出按鍵。",
       "postProcess": "後處理",
@@ -512,14 +523,7 @@
       "delete": "刪除 {{name}}",
       "lastOne": "必須保留一個結束快捷鍵，才能隨時結束錄音。",
       "held": "按住 {{shortcut}}",
-      "holdEnds": {
-        "title": "按住時",
-        "description": "放開按住的開始快捷鍵時如何結束錄音。"
-      },
-      "tapEnds": {
-        "title": "輕按時",
-        "description": "輕按結束快捷鍵時如何結束錄音。"
-      },
+      "refName": "結束快捷鍵 {{name}}",
       "factoryNames": {
         "pattern": "{{mode}} · {{effect}}",
         "direct": "直接",
@@ -531,13 +535,13 @@
         "enter": "傳送 Enter",
         "shiftEnter": "傳送 Shift+Enter"
       },
-      "linuxNoShortcuts": "在 Linux 上，錄音時不會佔用結束快捷鍵的按鍵組合。在那裡，放開按住的開始快捷鍵，或再次輕按某個與結束快捷鍵按鍵組合相同的開始快捷鍵時，錄音才會結束。",
+      "linuxNoShortcuts": "在 Linux 上，錄音時不會佔用結束快捷鍵的按鍵組合。在那裡，放開按住快捷鍵，或再次輕按某個與結束快捷鍵按鍵組合相同的開始快捷鍵時，錄音才會結束。",
       "errors": {
         "save": "無法儲存結束快捷鍵：{{error}}",
         "needsShortcut": "每個結束快捷鍵都需要按鍵組合。",
         "shortcutTwice": "兩個結束快捷鍵不能使用同一個快捷鍵。",
         "last": "無法刪除最後一個結束快捷鍵：錄音必須隨時都能結束。",
-        "cannotEnd": "在 Linux 上將無法再結束錄音：請保留一個使用開始快捷鍵按鍵組合的結束快捷鍵，或選擇「按住」。"
+        "cannotEnd": "在 Linux 上將無法再結束錄音：請保留一個使用開始快捷鍵按鍵組合的結束快捷鍵。"
       }
     },
     "inputMethod": {
@@ -1090,6 +1094,11 @@
       "postProcessOff": "設定中已關閉後處理",
       "postProcessNotSetUp": "請先在「後處理」中選擇提供者、模型和提示詞",
       "recordingRemoved": "為維持在儲存上限內，已刪除錄音",
+      "spokenInstruction": {
+        "label": "語音指令：",
+        "nothingHeard": "未辨識到內容",
+        "audio": "語音指令的音訊"
+      },
       "cancelTranscription": "取消轉錄",
       "transcribing": "轉錄中...",
       "postProcessing": "後處理中...",
@@ -1160,6 +1169,7 @@
           "ai": "已後處理",
           "aiPrompt": "已用「{{prompt}}」後處理",
           "user": "由你編輯",
+          "withSpokenInstruction": "{{step}} + 語音指令",
           "withTime": "{{step}}，{{time}}"
         },
         "saveError": "無法儲存你的文字。請再試一次。",
@@ -1300,7 +1310,7 @@
       },
       "holdThreshold": {
         "title": "長按判定時長",
-        "description": "僅適用於「自動」模式：快捷鍵需要按住多久（毫秒）才算作按住而不是輕按。如果短暫按住後錄音仍持續，請調低；如果刻意的輕按被視為按住，請調高。"
+        "description": "按住快捷鍵需要按住多久（毫秒）才算作按住。按住時間較短時，同時也是開始快捷鍵的按鍵組合算作輕按，而僅為按住快捷鍵的則會捨棄錄音。如果短暫按住後錄音仍持續，請調低；如果刻意的輕按被視為按住，請調高。"
       },
       "reliablePaste": {
         "title": "可靠貼上（Beta）",
@@ -1376,7 +1386,6 @@
     "profileView": {
       "fields": {
         "shortcuts": "快捷鍵",
-        "holdEnds": "按住時",
         "selectedModel": "語音模型",
         "providers": "供應商位址與格式",
         "activePrompts": "啟用的提示詞",

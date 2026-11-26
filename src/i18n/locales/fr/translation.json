@@ -408,18 +408,9 @@
         "notFound": "Raccourci non trouvé",
         "pressKeys": "Appuyez sur les touches...",
         "bindings": {
-          "transcribe": {
-            "name": "Raccourci de début",
-            "description": "Démarre un enregistrement. Sa fin dépend des raccourcis de fin, y compris lorsqu'il est maintenu."
-          },
           "cancel": {
             "name": "Raccourci d'Annulation",
             "description": "Le raccourci clavier pour annuler l'enregistrement en cours."
-          },
-          "transcribe_with_post_process": {
-            "name": "Deuxième raccourci de début",
-            "description": "Facultatif : une deuxième combinaison qui démarre un enregistrement. Dans le réglage d'usine, un raccourci de fin avec la même combinaison post-traite le texte. Pris uniquement tant que le post-traitement est activé.",
-            "descriptionMacos": "Facultatif : une deuxième combinaison qui démarre un enregistrement. Dans le réglage d'usine, le relâcher après l'avoir maintenu post-traite le texte ; un nouvel appui bref termine sans post-traitement, comme tout raccourci de fin sans ⌥. Pris uniquement tant que le post-traitement est activé."
           },
           "paste_last_transcript": {
             "name": "Coller la dernière transcription",
@@ -464,20 +455,6 @@
         "noMatch": "Aucune langue ne correspond à « {{query}} »",
         "weak": "Aucun modèle ne reconnaît bien {{languages}} pour l'instant."
       },
-      "shortcutActivation": {
-        "title": "Comportement du raccourci",
-        "description": "Choisissez comment un raccourci de début démarre et termine un enregistrement.",
-        "options": {
-          "holdOrToggle": "Auto",
-          "pushToTalk": "Maintenir",
-          "toggle": "Appui bref"
-        },
-        "descriptions": {
-          "hold_or_toggle": "Maintenez pour enregistrer, ou appuyez brièvement pour démarrer ; un raccourci de fin l'arrête ensuite",
-          "push_to_talk": "Enregistre tant que le raccourci est maintenu",
-          "toggle": "Appuyez brièvement pour démarrer l'enregistrement ; un nouvel appui bref ne l'arrête que si un raccourci de fin a la même combinaison"
-        }
-      },
       "insertService": {
         "invalid": "Utilisez ⌘ ou ⌃ avec une lettre, un chiffre ou un signe de ponctuation",
         "conflict": "« {{name}} » utilise déjà ce raccourci"
@@ -495,12 +472,46 @@
         }
       }
     },
+    "startKeys": {
+      "description": "Un appui bref démarre un enregistrement. Il continue jusqu'à ce qu'un raccourci de fin le termine.",
+      "shortcutHint": "Un appui bref sur cette combinaison démarre un enregistrement. Elle est toujours prise.",
+      "alsoHold": "Aussi raccourci de maintien",
+      "add": "Ajouter un raccourci de début",
+      "addPressKeys": "Appuyez sur la combinaison du nouveau raccourci de début",
+      "delete": "Supprimer le raccourci de début {{shortcut}}",
+      "lastOne": "Un raccourci de début ou de maintien doit rester, pour qu'un enregistrement puisse toujours être démarré.",
+      "refName": "Raccourci de début {{shortcut}}",
+      "errors": {
+        "save": "Impossible d'enregistrer les raccourcis de début : {{error}}",
+        "needsShortcut": "Chaque raccourci de début a besoin d'une combinaison de touches.",
+        "shortcutTwice": "Deux raccourcis de début ne peuvent pas partager une combinaison.",
+        "last": "Le dernier raccourci de début ou de maintien ne peut pas être supprimé : un enregistrement doit toujours pouvoir être démarré.",
+        "cannotEnd": "Sous Linux, un enregistrement démarré par {{shortcut}} ne pourrait pas être terminé : gardez un raccourci de fin avec la même combinaison."
+      }
+    },
+    "holdKeys": {
+      "title": "Raccourcis de maintien",
+      "description": "Maintenez pour enregistrer. Le relâchement termine l'enregistrement de cette façon : ce qui est ajouté, si le texte est post-traité, si les dictées précédentes sont envoyées comme contexte.",
+      "shortcutHint": "Maintenir cette combinaison enregistre ; la relâcher termine l'enregistrement de cette façon.",
+      "alsoStart": "Aussi raccourci de début : un appui bref démarre un enregistrement qui continue.",
+      "holdOnly": "Raccourci de maintien uniquement : un appui bref ne fait rien.",
+      "notTaken": "Pris uniquement tant que le post-traitement est activé : jusque-là, sa combinaison reste à l'application au premier plan.",
+      "add": "Ajouter un raccourci de maintien",
+      "addPressKeys": "Appuyez sur la combinaison du nouveau raccourci de maintien",
+      "refName": "Raccourci de maintien {{name}}",
+      "errors": {
+        "save": "Impossible d'enregistrer les raccourcis de maintien : {{error}}",
+        "needsShortcut": "Chaque raccourci de maintien a besoin d'une combinaison de touches.",
+        "shortcutTwice": "Deux raccourcis de maintien ne peuvent pas partager une combinaison."
+      }
+    },
     "endKeys": {
       "title": "Raccourcis de fin",
-      "description": "Comment un enregistrement se termine et ce qui suit. Chaque raccourci de fin a sa propre combinaison de touches, prise uniquement pendant l'enregistrement, et indique ce qui est ajouté, si le texte est post-traité et si les dictées précédentes sont envoyées comme contexte. Un raccourci de fin peut avoir la combinaison d'un raccourci de début : un nouvel appui bref sur ce raccourci de début termine alors de cette façon.",
+      "description": "Comment un enregistrement se termine et ce qui suit. Chaque raccourci de fin a sa propre combinaison de touches, prise uniquement pendant l'enregistrement, et indique ce qui est ajouté, si le texte est post-traité et si les dictées précédentes sont envoyées comme contexte. Un raccourci de fin peut avoir la combinaison d'un raccourci de début ou de maintien : un appui bref sur celle-ci pendant un enregistrement termine alors de cette façon.",
       "name": "Nom",
       "shortcutHint": "Appuyer sur cette combinaison pendant un enregistrement le termine de cette façon. Elle n'est prise que pendant l'enregistrement.",
-      "sameAsStart": "Même combinaison que « {{start}} » : un nouvel appui bref pendant un enregistrement le termine de cette façon.",
+      "sameAsStart": "Même combinaison qu'un raccourci de début : un nouvel appui bref pendant un enregistrement le termine de cette façon.",
+      "sameAsHold": "Même combinaison qu'un raccourci de maintien : un appui bref pendant un enregistrement le termine de cette façon.",
       "append": "Ajouter à la fin",
       "appendDescription": "Ajouté à une dictée qui se termine de cette façon: le texte, puis la touche que vous choisissez. Dans le texte, \\s est une espace, \\n un saut de ligne, \\t une tabulation et \\\\ une barre oblique inverse ; tout le reste est ajouté tel qu'écrit. La touche n'est envoyée que lorsque le texte est collé.",
       "postProcess": "Post-traiter",
@@ -512,14 +523,7 @@
       "delete": "Supprimer {{name}}",
       "lastOne": "Un raccourci de fin doit rester, pour qu'un enregistrement puisse toujours être terminé.",
       "held": "{{shortcut}} maintenu",
-      "holdEnds": {
-        "title": "Lorsqu'il est maintenu",
-        "description": "Comment le relâchement d'un raccourci de début maintenu termine l'enregistrement."
-      },
-      "tapEnds": {
-        "title": "Lors d'un appui bref",
-        "description": "Comment un appui bref sur un raccourci de fin termine l'enregistrement."
-      },
+      "refName": "Raccourci de fin {{name}}",
       "factoryNames": {
         "pattern": "{{mode}} · {{effect}}",
         "direct": "Direct",
@@ -531,13 +535,13 @@
         "enter": "Envoyer Entrée",
         "shiftEnter": "Envoyer Maj+Entrée"
       },
-      "linuxNoShortcuts": "Sous Linux, les combinaisons des raccourcis de fin ne sont pas prises pendant l'enregistrement. Un enregistrement s'y termine quand on relâche un raccourci de début maintenu, ou par un nouvel appui bref sur un raccourci de début dont un raccourci de fin a la combinaison.",
+      "linuxNoShortcuts": "Sous Linux, les combinaisons des raccourcis de fin ne sont pas prises pendant l'enregistrement. Un enregistrement s'y termine quand on relâche un raccourci de maintien, ou par un nouvel appui bref sur un raccourci de début dont un raccourci de fin a la combinaison.",
       "errors": {
         "save": "Impossible d'enregistrer les raccourcis de fin : {{error}}",
         "needsShortcut": "Chaque raccourci de fin a besoin d'une combinaison de touches.",
         "shortcutTwice": "Deux raccourcis de fin ne peuvent pas partager un raccourci.",
         "last": "Le dernier raccourci de fin ne peut pas être supprimé : un enregistrement doit toujours pouvoir être terminé.",
-        "cannotEnd": "Sous Linux, un enregistrement ne pourrait plus être terminé : gardez un raccourci de fin avec la combinaison d'un raccourci de début, ou choisissez « Maintenir »."
+        "cannotEnd": "Sous Linux, un enregistrement ne pourrait plus être terminé : gardez un raccourci de fin avec la combinaison d'un raccourci de début."
       }
     },
     "inputMethod": {
@@ -1090,6 +1094,11 @@
       "postProcessOff": "Le post-traitement est désactivé dans les paramètres",
       "postProcessNotSetUp": "Choisissez d'abord un fournisseur, un modèle et un prompt dans Post-traitement",
       "recordingRemoved": "Enregistrement supprimé pour respecter la limite d'espace",
+      "spokenInstruction": {
+        "label": "Instruction orale :",
+        "nothingHeard": "rien entendu",
+        "audio": "Audio de l'instruction orale"
+      },
       "cancelTranscription": "Annuler la transcription",
       "transcribing": "Transcription en cours...",
       "postProcessing": "Post-traitement en cours...",
@@ -1160,6 +1169,7 @@
           "ai": "Post-traité",
           "aiPrompt": "Post-traité avec « {{prompt}} »",
           "user": "Modifié par vous",
+          "withSpokenInstruction": "{{step}} + instruction orale",
           "withTime": "{{step}}, {{time}}"
         },
         "saveError": "Impossible d'enregistrer votre texte. Veuillez réessayer.",
@@ -1300,7 +1310,7 @@
       },
       "holdThreshold": {
         "title": "Seuil de maintien",
-        "description": "Mode Auto uniquement : durée (en millisecondes) pendant laquelle le raccourci doit rester enfoncé pour compter comme un maintien plutôt qu'un appui bref. Diminuez si l'enregistrement reste actif après un maintien court ; augmentez si des appuis brefs volontaires sont traités comme un maintien."
+        "description": "Durée (en millisecondes) pendant laquelle un raccourci de maintien doit rester enfoncé pour compter comme un maintien. En dessous, une combinaison qui est aussi un raccourci de début compte comme un appui bref, et un raccourci uniquement de maintien abandonne l'enregistrement. Diminuez si l'enregistrement reste actif après un maintien court ; augmentez si des appuis brefs volontaires sont traités comme un maintien."
       },
       "reliablePaste": {
         "title": "Collage fiable (Beta)",
@@ -1376,7 +1386,6 @@
     "profileView": {
       "fields": {
         "shortcuts": "Raccourcis",
-        "holdEnds": "Lorsqu'il est maintenu",
         "selectedModel": "Modèle vocal",
         "providers": "Adresse et format du fournisseur",
         "activePrompts": "Instructions actives",
