@@ -40,7 +40,8 @@
     "openChapter": "開啟使用手冊：{{chapter}}",
     "chapters": {
       "startAndEndShortcuts": "開始與結束快捷鍵",
-      "defaultsAndProfiles": "基本設定與設定檔"
+      "defaultsAndProfiles": "基本設定與設定檔",
+      "postProcessingSetup": "設定後處理"
     },
     "unavailable": "此 DanyWhere 版本不含使用手冊。"
   },

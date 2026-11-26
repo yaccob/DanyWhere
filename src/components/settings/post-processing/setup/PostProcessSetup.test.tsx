@@ -10,6 +10,7 @@ import { beforeEach, describe, expect, test } from "bun:test";
 import { act, fireEvent, screen } from "@testing-library/react";
 import { PostProcessingSettings } from "../PostProcessingSettings";
 import { DEFAULTS_SCOPE } from "@/lib/profileScope";
+import { OpenManualProvider } from "@/hooks/useOpenManual";
 import { callsOf, emitEvent, mockCommand, ok } from "@/test/bindings-mock";
 import { switchTestLanguage } from "@/test/i18n";
 import { press, renderPage, setBackendSettings, settle } from "@/test/render";
@@ -694,5 +695,24 @@ describe("post-processing setup: the page around it", () => {
     });
     expect(visibleText()).toContain(Q1);
     expect(isVisible(screen.getByText(Q1))).toBe(true);
+  });
+
+  test("a “?” next to Improve Your Texts opens the manual's chapter", async () => {
+    answerStatus(notReady());
+    const opened: (string | undefined)[] = [];
+    await renderPage(
+      <OpenManualProvider value={(page) => opened.push(page)}>
+        <PostProcessingSettings />
+      </OpenManualProvider>,
+      { settings: setupSettings(null), scope: DEFAULTS_SCOPE },
+    );
+    const help = screen.getByRole("button", {
+      name: "Open the manual: Setting Up Post-Processing",
+    });
+    const title = screen.getByRole("heading", { name: TITLE });
+    expect(title.parentElement?.contains(help)).toBe(true);
+    await press(help);
+    expect(opened).toEqual(["how-it-works/post-processing/"]);
+    expect(rawTextIn()).toEqual([]);
   });
 });

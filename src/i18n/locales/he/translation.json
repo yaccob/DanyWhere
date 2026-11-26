@@ -40,7 +40,8 @@
     "openChapter": "פתיחת המדריך: {{chapter}}",
     "chapters": {
       "startAndEndShortcuts": "קיצורי התחלה וסיום",
-      "defaultsAndProfiles": "הגדרות בסיס ופרופילים"
+      "defaultsAndProfiles": "הגדרות בסיס ופרופילים",
+      "postProcessingSetup": "הגדרת העיבוד המשלים"
     },
     "unavailable": "גרסה זו של DanyWhere אינה כוללת את המדריך."
   },

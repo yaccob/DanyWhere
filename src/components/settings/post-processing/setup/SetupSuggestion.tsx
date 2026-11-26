@@ -98,7 +98,9 @@ export const SetupSuggestion: React.FC<SetupSuggestionProps> = ({
                 : `${KEY}.openrouter.creditBody`,
             )}
           </CardLine>
-          <ul className="m-0 list-disc space-y-1 ps-5 text-sm text-ink-3">
+          {/* Without m-0, so the card's space-y-2 leaves a gap above the
+              button (Tailwind 4 puts space-y in :where()). */}
+          <ul className="list-disc space-y-1 ps-5 text-sm text-ink-3">
             <li className="text-pretty">{t(`${KEY}.openrouter.tipAccount`)}</li>
             <li className="text-pretty">{t(`${KEY}.openrouter.tipPayment`)}</li>
           </ul>

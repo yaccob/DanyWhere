@@ -40,7 +40,8 @@
     "openChapter": "Открыть руководство: {{chapter}}",
     "chapters": {
       "startAndEndShortcuts": "Клавиши запуска и завершения",
-      "defaultsAndProfiles": "Основные настройки и профили"
+      "defaultsAndProfiles": "Основные настройки и профили",
+      "postProcessingSetup": "Настройка постобработки"
     },
     "unavailable": "В этой сборке DanyWhere нет руководства."
   },

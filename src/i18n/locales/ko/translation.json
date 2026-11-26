@@ -40,7 +40,8 @@
     "openChapter": "설명서 열기: {{chapter}}",
     "chapters": {
       "startAndEndShortcuts": "시작 및 종료 단축키",
-      "defaultsAndProfiles": "기본 설정 및 프로필"
+      "defaultsAndProfiles": "기본 설정 및 프로필",
+      "postProcessingSetup": "후처리 설정하기"
     },
     "unavailable": "이 DanyWhere 빌드에는 설명서가 포함되어 있지 않습니다."
   },

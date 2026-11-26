@@ -40,7 +40,8 @@
     "openChapter": "Apri il manuale: {{chapter}}",
     "chapters": {
       "startAndEndShortcuts": "Scorciatoie di avvio e di fine",
-      "defaultsAndProfiles": "Impostazioni di base e profili"
+      "defaultsAndProfiles": "Impostazioni di base e profili",
+      "postProcessingSetup": "Configurare la post-elaborazione"
     },
     "unavailable": "Questa build di DanyWhere non include il manuale."
   },

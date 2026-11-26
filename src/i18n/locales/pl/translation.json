@@ -40,7 +40,8 @@
     "openChapter": "Otwórz instrukcję: {{chapter}}",
     "chapters": {
       "startAndEndShortcuts": "Skróty rozpoczynające i kończące",
-      "defaultsAndProfiles": "Ustawienia podstawowe i profile"
+      "defaultsAndProfiles": "Ustawienia podstawowe i profile",
+      "postProcessingSetup": "Konfiguracja postprocesu"
     },
     "unavailable": "Ta wersja DanyWhere nie zawiera instrukcji."
   },

@@ -40,7 +40,8 @@
     "openChapter": "Open the manual: {{chapter}}",
     "chapters": {
       "startAndEndShortcuts": "Start and End Shortcuts",
-      "defaultsAndProfiles": "Defaults and Profiles"
+      "defaultsAndProfiles": "Defaults and Profiles",
+      "postProcessingSetup": "Setting Up Post-Processing"
     },
     "unavailable": "This build of DanyWhere has no manual."
   },

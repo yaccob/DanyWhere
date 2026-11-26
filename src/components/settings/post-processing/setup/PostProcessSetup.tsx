@@ -151,7 +151,11 @@ export const PostProcessSetup: React.FC<PostProcessSetupProps> = ({
   const way = suggest(answers, machine);
   return (
     <div className="space-y-4 px-4 py-3 text-start">
-      {!onboarding && <CardLine tone="quiet">{t(`${KEY}.intro`)}</CardLine>}
+      {/* Not a CardLine: its m-0 would cancel the gap of space-y-4 below
+          it (Tailwind 4 puts space-y in :where()). */}
+      {!onboarding && (
+        <p className="text-sm text-pretty text-ink-3">{t(`${KEY}.intro`)}</p>
+      )}
       <SetupQuestions
         answers={answers}
         machine={machine}

@@ -40,7 +40,8 @@
     "openChapter": "Öppna handboken: {{chapter}}",
     "chapters": {
       "startAndEndShortcuts": "Start- och avslutningskortkommandon",
-      "defaultsAndProfiles": "Grundinställningar och profiler"
+      "defaultsAndProfiles": "Grundinställningar och profiler",
+      "postProcessingSetup": "Ställa in efterbearbetning"
     },
     "unavailable": "Den här versionen av DanyWhere har ingen handbok."
   },

@@ -40,7 +40,8 @@
     "openChapter": "Handleiding openen: {{chapter}}",
     "chapters": {
       "startAndEndShortcuts": "Start- en eindsneltoetsen",
-      "defaultsAndProfiles": "Basisinstellingen en profielen"
+      "defaultsAndProfiles": "Basisinstellingen en profielen",
+      "postProcessingSetup": "Naverwerking instellen"
     },
     "unavailable": "Deze build van DanyWhere bevat geen handleiding."
   },

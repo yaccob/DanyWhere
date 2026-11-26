@@ -40,7 +40,8 @@
     "openChapter": "Mở hướng dẫn sử dụng: {{chapter}}",
     "chapters": {
       "startAndEndShortcuts": "Phím tắt bắt đầu và kết thúc",
-      "defaultsAndProfiles": "Cài đặt cơ bản và hồ sơ"
+      "defaultsAndProfiles": "Cài đặt cơ bản và hồ sơ",
+      "postProcessingSetup": "Thiết lập xử lý sau"
     },
     "unavailable": "Bản dựng DanyWhere này không có hướng dẫn sử dụng."
   },

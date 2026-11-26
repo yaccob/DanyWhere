@@ -40,7 +40,8 @@
     "openChapter": "Buka panduan: {{chapter}}",
     "chapters": {
       "startAndEndShortcuts": "Pintasan Mulai dan Akhir",
-      "defaultsAndProfiles": "Pengaturan Dasar dan Profil"
+      "defaultsAndProfiles": "Pengaturan Dasar dan Profil",
+      "postProcessingSetup": "Menyiapkan Pascaproses"
     },
     "unavailable": "Build DanyWhere ini tidak menyertakan panduan."
   },

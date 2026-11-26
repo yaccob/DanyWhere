@@ -40,7 +40,8 @@
     "openChapter": "Відкрити посібник: {{chapter}}",
     "chapters": {
       "startAndEndShortcuts": "Клавіші запуску та завершення",
-      "defaultsAndProfiles": "Основні налаштування та профілі"
+      "defaultsAndProfiles": "Основні налаштування та профілі",
+      "postProcessingSetup": "Налаштування постобробки"
     },
     "unavailable": "У цій збірці DanyWhere немає посібника."
   },

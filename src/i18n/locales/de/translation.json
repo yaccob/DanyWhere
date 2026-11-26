@@ -40,7 +40,8 @@
     "openChapter": "Handbuch öffnen: {{chapter}}",
     "chapters": {
       "startAndEndShortcuts": "Start- und Endtasten",
-      "defaultsAndProfiles": "Grundeinstellungen und Profile"
+      "defaultsAndProfiles": "Grundeinstellungen und Profile",
+      "postProcessingSetup": "Nachbearbeitung einrichten"
     },
     "unavailable": "Dieser Build von DanyWhere enthält kein Handbuch."
   },

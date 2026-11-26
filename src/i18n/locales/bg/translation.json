@@ -40,7 +40,8 @@
     "openChapter": "Отваряне на ръководството: {{chapter}}",
     "chapters": {
       "startAndEndShortcuts": "Клавиши за старт и край",
-      "defaultsAndProfiles": "Основни настройки и профили"
+      "defaultsAndProfiles": "Основни настройки и профили",
+      "postProcessingSetup": "Настройване на постобработката"
     },
     "unavailable": "Тази версия на DanyWhere няма ръководство."
   },

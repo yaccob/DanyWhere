@@ -40,7 +40,8 @@
     "openChapter": "マニュアルを開く: {{chapter}}",
     "chapters": {
       "startAndEndShortcuts": "開始・終了ショートカット",
-      "defaultsAndProfiles": "基本設定とプロファイル"
+      "defaultsAndProfiles": "基本設定とプロファイル",
+      "postProcessingSetup": "後処理の設定"
     },
     "unavailable": "このビルドの DanyWhere にはマニュアルが含まれていません。"
   },

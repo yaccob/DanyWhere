@@ -40,7 +40,8 @@
     "openChapter": "Åbn brugervejledningen: {{chapter}}",
     "chapters": {
       "startAndEndShortcuts": "Start- og afslutningsgenveje",
-      "defaultsAndProfiles": "Grundindstillinger og profiler"
+      "defaultsAndProfiles": "Grundindstillinger og profiler",
+      "postProcessingSetup": "Opsætning af efterbehandling"
     },
     "unavailable": "Denne udgave af DanyWhere har ingen brugervejledning."
   },

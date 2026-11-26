@@ -40,7 +40,8 @@
     "openChapter": "Otevřít příručku: {{chapter}}",
     "chapters": {
       "startAndEndShortcuts": "Spouštěcí a ukončovací zkratky",
-      "defaultsAndProfiles": "Základní nastavení a profily"
+      "defaultsAndProfiles": "Základní nastavení a profily",
+      "postProcessingSetup": "Nastavení následného zpracování"
     },
     "unavailable": "Toto sestavení DanyWhere neobsahuje příručku."
   },

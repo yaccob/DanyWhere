@@ -40,7 +40,8 @@
     "openChapter": "मैनुअल खोलें: {{chapter}}",
     "chapters": {
       "startAndEndShortcuts": "प्रारंभ और समाप्ति शॉर्टकट",
-      "defaultsAndProfiles": "मूल सेटिंग और प्रोफ़ाइल"
+      "defaultsAndProfiles": "मूल सेटिंग और प्रोफ़ाइल",
+      "postProcessingSetup": "पोस्ट-प्रोसेसिंग सेट करना"
     },
     "unavailable": "DanyWhere के इस बिल्ड में मैनुअल शामिल नहीं है।"
   },

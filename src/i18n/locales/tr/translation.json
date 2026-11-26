@@ -40,7 +40,8 @@
     "openChapter": "Kılavuzu aç: {{chapter}}",
     "chapters": {
       "startAndEndShortcuts": "Başlatma ve Bitirme Kısayolları",
-      "defaultsAndProfiles": "Temel Ayarlar ve Profiller"
+      "defaultsAndProfiles": "Temel Ayarlar ve Profiller",
+      "postProcessingSetup": "Son İşlemi Ayarlama"
     },
     "unavailable": "DanyWhere'in bu sürümünde kılavuz bulunmuyor."
   },

@@ -28,6 +28,8 @@ import { useSettingsScope } from "../profiles/scope/SettingsScope";
 // DanyWhere: setting it up with questions anyone can answer (sidecar qa
 // 2026-11-26_2250, 4.5).
 import { PostProcessSetup } from "./setup/PostProcessSetup";
+import { ManualHelpButton } from "../../ui/ManualHelpButton";
+import { MANUAL_PAGES } from "@/lib/manual";
 
 const PostProcessingSettingsApiComponent: React.FC = () => {
   const { t } = useTranslation();
@@ -273,7 +275,15 @@ export const PostProcessingSettings: React.FC = () => {
   return (
     <div className="max-w-3xl w-full mx-auto space-y-6">
       {inDefaults && (
-        <SettingsGroup title={t("settings.postProcessing.setup.title")}>
+        <SettingsGroup
+          title={t("settings.postProcessing.setup.title")}
+          titleAction={
+            <ManualHelpButton
+              page={MANUAL_PAGES.postProcessingSetup}
+              chapter={t("manual.chapters.postProcessingSetup")}
+            />
+          }
+        >
           <PostProcessSetup
             place="settings"
             providersOpen={providersOpen}

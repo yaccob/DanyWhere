@@ -40,7 +40,8 @@
     "openChapter": "Obre el manual: {{chapter}}",
     "chapters": {
       "startAndEndShortcuts": "Dreceres d'inici i de final",
-      "defaultsAndProfiles": "Configuració bàsica i perfils"
+      "defaultsAndProfiles": "Configuració bàsica i perfils",
+      "postProcessingSetup": "Configurar el postprocessament"
     },
     "unavailable": "Aquesta compilació de DanyWhere no inclou el manual."
   },
