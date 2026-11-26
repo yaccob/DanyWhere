@@ -388,6 +388,120 @@ async changePostProcessEffortSetting(providerId: string, effort: string | null) 
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * What the setup's page and the onboarding screen show: the defaults'
+ * readiness, provider, model and way, this computer's memory, the answers.
+ */
+async getPostProcessSetupStatus() : Promise<SetupStatus> {
+    return await TAURI_INVOKE("get_post_process_setup_status");
+},
+/**
+ * Stores the setup's answers and whether it was finished or put off.
+ */
+async setPostProcessSetupAnswers(answers: SetupAnswers | null, finished: boolean, skipped: boolean) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("set_post_process_setup_answers", { answers, finished, skipped }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Puts a way's provider, model, key and effort into the defaults and makes
+ * them usable ([`apply_setup_choice`]).
+ */
+async applyPostProcessChoice(choice: SetupChoice) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("apply_post_process_choice", { choice }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Checks a pasted key ([`check_key`]); stores nothing.
+ */
+async checkPostProcessKey(providerId: string, apiKey: string) : Promise<Result<KeyCheck, FailureDto>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("check_post_process_key", { providerId, apiKey }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Post-processes a sample text with the defaults ([`run_sample`]).
+ */
+async runPostProcessSample(text: string) : Promise<Result<SampleResult, FailureDto>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("run_post_process_sample", { text }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Starts signing in through the browser: binds the loopback listener and
+ * opens the provider's page in the browser. `page` holds the two short
+ * texts the browser shows after the callback, in the app's language.
+ * `post-process-sign-in-finished` says how it ended.
+ */
+async startPostProcessSignIn(provider: SignInProvider, page: CallbackPage) : Promise<Result<SignInStarted, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("start_post_process_sign_in", { provider, page }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Opens the page of the sign-in in progress in the browser again.
+ */
+async reopenPostProcessSignIn() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("reopen_post_process_sign_in") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Stops waiting for the sign-in in progress.
+ */
+async cancelPostProcessSignIn() : Promise<void> {
+    await TAURI_INVOKE("cancel_post_process_sign_in");
+},
+/**
+ * Forgets the sign-in: ChatGPT's session (its client id and the host id
+ * stay for the next sign-in), or OpenRouter's key and connection.
+ */
+async disconnectPostProcessSignIn(provider: SignInProvider) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("disconnect_post_process_sign_in", { provider }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Reads OpenRouter's key info again (`/api/v1/key`), e.g. after topping
+ * up, and lets the model follow the tier.
+ */
+async refreshOpenrouterConnection() : Promise<Result<OpenRouterConnection, FailureDto>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("refresh_openrouter_connection") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * The computer's physical memory in bytes, as the post-processing setup
+ * shows it (`get_post_process_setup_status` has it too).
+ */
+async getSystemMemoryBytes() : Promise<number> {
+    return await TAURI_INVOKE("get_system_memory_bytes");
+},
 async addPostProcessPrompt(name: string, prompt: string) : Promise<Result<LLMPrompt, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("add_post_process_prompt", { name, prompt }) };
@@ -1769,6 +1883,7 @@ async openThemeFile() : Promise<Result<null, string>> {
 export const events = __makeEvents__<{
 historyUpdatePayload: HistoryUpdatePayload,
 noticesChanged: NoticesChanged,
+postProcessSignInFinished: PostProcessSignInFinished,
 recordingStateEvent: RecordingStateEvent,
 streamPhaseEvent: StreamPhaseEvent,
 streamTextEvent: StreamTextEvent,
@@ -1777,6 +1892,7 @@ transcriptionJob: TranscriptionJob
 }>({
 historyUpdatePayload: "history-update-payload",
 noticesChanged: "notices-changed",
+postProcessSignInFinished: "post-process-sign-in-finished",
 recordingStateEvent: "recording-state-event",
 streamPhaseEvent: "stream-phase-event",
 streamTextEvent: "stream-text-event",
@@ -2033,7 +2149,31 @@ instruction_keys?: EndKey[];
  * it scrolls, as dragged at its grip, for the newest entry and for the
  * others; `None` = the default lines (`history_box`).
  */
-history_box_height_newest?: number | null; history_box_height_other?: number | null }
+history_box_height_newest?: number | null; history_box_height_other?: number | null; 
+/**
+ * DanyWhere: the answers of the post-processing setup's questions and
+ * whether it was finished or put off (`post_process_setup`). For the
+ * app as a whole, not a profile value.
+ */
+post_process_setup?: PostProcessSetupState; 
+/**
+ * DanyWhere: whether a sign-in with ChatGPT, whose plan post-processes
+ * (provider `chatgpt`), is stored. The session itself, its tokens and
+ * account, stays out of the settings, which go to the webview: it is in
+ * `post_process_signin.json` (`post_process_signin::vault`).
+ */
+chatgpt_signed_in?: boolean; 
+/**
+ * DanyWhere: this installation's id at ChatGPT's sign-in
+ * (`ext_agent_host_id`, made once), redacted in the debug output.
+ */
+chatgpt_host_id?: SecretText | null; 
+/**
+ * DanyWhere: what OpenRouter said about the key from its sign-in (free
+ * tier, limit, the free models to try); the key itself is the
+ * provider's API key (`post_process_api_keys["openrouter"]`).
+ */
+openrouter_connection?: OpenRouterConnection | null }
 /**
  * The stored value as the field's two controls show it.
  */
@@ -2133,6 +2273,11 @@ export type AutomationStatus = "allowed" |
 "not_running" | "unknown"
 export type AvailableAccelerators = { transcribe: string[]; gpu_devices: GpuDeviceOption[] }
 export type BindingResponse = { success: boolean; binding: ShortcutBinding | null; error: string | null }
+/**
+ * The two short texts the browser shows after the callback, in the app's
+ * language.
+ */
+export type CallbackPage = { success: string; failure: string }
 /**
  * Script applied to Mandarin and Cantonese output. Traditional carries its region
  * (Taiwan vs Hong Kong forms, e.g. 裡/裏) rather than guessing it.
@@ -2262,6 +2407,12 @@ sent_as_context_at: number | null;
  * What the word list replaced in its transcription.
  */
 word_replacements: WordReplacement[] }
+/**
+ * A failure as the setup's commands return it: the reason's name
+ * (`post_process_failure`) and the notice's detail, a JSON object that
+ * `src/lib/postProcessFailure.ts` reads.
+ */
+export type FailureDto = { reason: string; detail: string | null }
 /**
  * How a field of [`ProfileValues`] couples, for the interface.
  */
@@ -2471,6 +2622,14 @@ added: boolean;
 connected: boolean }
 export type JsonValue = null | boolean | number | string | JsonValue[] | Partial<{ [key in string]: JsonValue }>
 /**
+ * What a checked key reaches.
+ */
+export type KeyCheck = { models: string[]; 
+/**
+ * The model the setup suggests, from [`recommended_model`].
+ */
+recommended: string | null }
+/**
  * What to do when the file's key differs from the key stored here for the
  * same provider.
  */
@@ -2596,6 +2755,22 @@ sha256: string | null } } |
  */
 "Local"
 export type ModelUnloadTimeout = "never" | "immediately" | "min_2" | "min_5" | "min_10" | "min_15" | "hour_1" | "sec_15"
+/**
+ * Question 3, without a subscription: what to do next.
+ */
+export type NextStep = 
+/**
+ * Top up OpenRouter once.
+ */
+"credit" | 
+/**
+ * Groq's free plan with a key.
+ */
+"groq" | 
+/**
+ * A language model on this computer.
+ */
+"this_computer"
 export type Notice = { code: NoticeCode; level: NoticeLevel; source: NoticeSource; 
 /**
  * What only Rust knows, such as a model name or a raw error.
@@ -2663,6 +2838,26 @@ notices: Notice[];
  * `None` when a notice was cleared (DanyWhere: or updated in place).
  */
 raised: Notice | null }
+/**
+ * What OpenRouter said about the key of its sign-in (`GET /api/v1/key`).
+ */
+export type OpenRouterConnection = { 
+/**
+ * No credit was ever bought: only the free models.
+ */
+free_tier: boolean; 
+/**
+ * The key's credit limit in US dollars; `None`: unlimited.
+ */
+limit_usd?: number | null; 
+/**
+ * The free models to try, in order (the request's `models`).
+ */
+free_models?: string[]; 
+/**
+ * When it was asked, in seconds since the Unix epoch.
+ */
+checked_at: number }
 export type OverlayPosition = "top" | "bottom"
 /**
  * Which recording overlay to display. `Minimal` and `Live` share one base
@@ -2699,7 +2894,13 @@ export type PostProcessApiFormat =
 /**
  * Anthropic Messages (`/messages`)
  */
-"anthropic"
+"anthropic" | 
+/**
+ * DanyWhere: OpenAI Responses (`/responses`, streamed), the way ChatGPT's
+ * plan is used (`post_process_setup`, sidecar note
+ * `2026-11-26_2250_nachbearbeitung-einstieg-umsetzung`, section 4.2).
+ */
+"responses"
 /**
  * DanyWhere: when a profile's dictations are post-processed (user,
  * 2026-11-26, variant b of the sidecar note
@@ -2722,6 +2923,21 @@ export type PostProcessMode =
  */
 "always"
 export type PostProcessProvider = { id: string; label: string; base_url: string; allow_base_url_edit?: boolean; models_endpoint?: string | null; supports_structured_output?: boolean; api_format?: PostProcessApiFormat }
+/**
+ * The setup's state: the answers, whether it was finished, whether the
+ * user put it off ("Later").
+ */
+export type PostProcessSetupState = { answers: SetupAnswers | null; finished: boolean; skipped: boolean }
+/**
+ * How a sign-in ended. `error`: [`ERROR_CANCELLED`], [`ERROR_TIMED_OUT`],
+ * [`ERROR_DENIED`], [`ERROR_NOT_ELIGIBLE`], or the error's text (the
+ * `llm_client` forms, "sign-in-expired: …", …).
+ */
+export type PostProcessSignInFinished = { provider: SignInProvider; ok: boolean; error: string | null; 
+/**
+ * OpenRouter after a sign-in: whether the account is on the free tier.
+ */
+free_tier: boolean | null }
 export type Profile = { id: string; 
 /**
  * Empty only in a store from before the defaults, where it was the
@@ -2872,6 +3088,26 @@ id: string;
  */
 active: boolean }
 /**
+ * Whether post-processing can run, or what it lacks.
+ */
+export type Readiness = "ready" | 
+/**
+ * No provider is selected (or it doesn't exist).
+ */
+"provider" | 
+/**
+ * The provider has no model.
+ */
+"model" | 
+/**
+ * The provider needs an API key and has none.
+ */
+"key" | 
+/**
+ * The provider needs a sign-in (ChatGPT) and has none.
+ */
+"sign_in"
+/**
  * Recording phase events for windows that follow along (onboarding's Try it).
  */
 export type RecordingPhase = 
@@ -2946,6 +3182,10 @@ export type RetiredModel = { id: string; name: string; size_mb: number; replacem
  */
 export type SameWindow = { app_id: string; title: string }
 /**
+ * A sample's result.
+ */
+export type SampleResult = { output: string; model: string; millis: number }
+/**
  * What saving an edited version does.
  */
 export type SaveVersionMode = 
@@ -2970,6 +3210,11 @@ export type Scope =
  */
 { kind: "profile"; id: string }
 export type SecretMap = Partial<{ [key in string]: string }>
+/**
+ * A text that stays out of the debug output (this installation's id at
+ * ChatGPT's sign-in). Stored as a plain string.
+ */
+export type SecretText = string
 export type SecureInputStatus = { 
 /**
  * Secure input is currently enabled (live check)
@@ -3002,7 +3247,87 @@ uncovered_bindings: string[];
  * warning banner appears and explains why recording refused.
  */
 recorder_blocked: boolean }
+/**
+ * The answers so far, in the names of `questions.ts` (snake_case there too).
+ */
+export type SetupAnswers = { texts_may_go: TextsMayGo | null; subscription: Subscription | null; next_step: NextStep | null }
+/**
+ * What a way sets in the defaults.
+ */
+export type SetupChoice = { provider_id: string; 
+/**
+ * `None` or empty: the provider's factory model, if it has one.
+ */
+model: string | null; 
+/**
+ * `None`: the key stays as it is.
+ */
+api_key: string | null; 
+/**
+ * `None`: the effort stays as it is.
+ */
+effort: string | null }
+/**
+ * What the setup's page shows.
+ */
+export type SetupStatus = { 
+/**
+ * Of the defaults.
+ */
+readiness: Readiness; 
+/**
+ * The defaults' provider, if it exists.
+ */
+provider_id: string | null; 
+/**
+ * Its model, if one is chosen.
+ */
+model: string | null; 
+/**
+ * How it is set up, once it is ready.
+ */
+way: SetupWay | null; 
+/**
+ * This computer's memory (`system_memory`), for the local model.
+ */
+memory_bytes: number; 
+/**
+ * The answers and whether the setup was finished or put off.
+ */
+setup: PostProcessSetupState }
+/**
+ * The way post-processing is set up, as the setup names it.
+ */
+export type SetupWay = 
+/**
+ * OpenRouter through its sign-in: its free models, or with credit.
+ */
+{ kind: "openrouter"; free_tier: boolean; limit_usd: number | null } | 
+/**
+ * ChatGPT's plan, through its sign-in: the account, as far as known.
+ */
+{ kind: "chatgpt_plan"; plan: string | null; email: string | null } | 
+/**
+ * A provider's API key, pasted in.
+ */
+{ kind: "guided_key"; provider: string } | 
+/**
+ * A server of one's own (the provider `custom`, e.g. Ollama here).
+ */
+{ kind: "own_server" } | 
+/**
+ * Apple Intelligence on this Mac.
+ */
+{ kind: "on_device" }
 export type ShortcutBinding = { id: string; name: string; description: string; default_binding: string; current_binding: string }
+/**
+ * The provider a sign-in is for.
+ */
+export type SignInProvider = "openrouter" | "chatgpt"
+/**
+ * A started sign-in: the page the browser was sent to.
+ */
+export type SignInStarted = { auth_url: string }
 export type SoundTheme = "marimba" | "pop" | "custom"
 /**
  * One start shortcut: only a key combination; a start shortcut has no
@@ -3045,6 +3370,26 @@ export type StreamTextEvent = { committed: string; tentative: string }
  * Semantic kind of "working" phase, used to localize the spinner label.
  */
 export type StreamWorkKind = "transcribing" | "polishing"
+/**
+ * Question 2: the subscription the user already has.
+ */
+export type Subscription = "chatgpt" | "claude" | "google" | "huggingface" | "ollama" | "none"
+/**
+ * Question 1: where the texts may go.
+ */
+export type TextsMayGo = 
+/**
+ * Also to free services, which may keep or learn from them.
+ */
+"free_services" | 
+/**
+ * Only to a service that doesn't keep them.
+ */
+"not_kept" | 
+/**
+ * Nowhere: only this computer.
+ */
+"nowhere"
 /**
  * UI appearance mode. `System` follows the OS `prefers-color-scheme`; `Light`
  * and `Dark` force one of the two palettes Handy already ships.
