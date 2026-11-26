@@ -408,18 +408,9 @@
         "notFound": "No s'ha trobat la drecera",
         "pressKeys": "Premeu les tecles...",
         "bindings": {
-          "transcribe": {
-            "name": "Drecera d'inici",
-            "description": "Inicia una gravació. Com acaba ho decideixen les dreceres de final, també quan es manté premuda."
-          },
           "cancel": {
             "name": "Drecera de cancel·lació",
             "description": "La drecera de teclat per cancel·lar l'enregistrament actual."
-          },
-          "transcribe_with_post_process": {
-            "name": "Segona drecera d'inici",
-            "description": "Opcional: una segona combinació de tecles que inicia una gravació. De fàbrica, una drecera de final amb la mateixa combinació posprocessa el text. Només s'ocupa mentre el posprocessament està activat.",
-            "descriptionMacos": "Opcional: una segona combinació de tecles que inicia una gravació. De fàbrica, deixar-la anar després de mantenir-la premuda posprocessa el text; tornar-la a tocar acaba sense posprocessament, com totes les dreceres de final sense ⌥. Només s'ocupa mentre el posprocessament està activat."
           },
           "paste_last_transcript": {
             "name": "Enganxa l'última transcripció",
@@ -464,20 +455,6 @@
         "noMatch": "Cap llengua coincideix amb «{{query}}»",
         "weak": "Cap model reconeix bé {{languages}} encara."
       },
-      "shortcutActivation": {
-        "title": "Comportament de la drecera",
-        "description": "Trieu com una drecera d'inici inicia i acaba l'enregistrament.",
-        "options": {
-          "holdOrToggle": "Automàtic",
-          "pushToTalk": "Mantén premuda",
-          "toggle": "Toca"
-        },
-        "descriptions": {
-          "hold_or_toggle": "Manteniu-la premuda per enregistrar, o toqueu-la per iniciar; després una drecera de final l'atura",
-          "push_to_talk": "Enregistreu mentre manteniu premuda la drecera",
-          "toggle": "Toqueu-la per iniciar l'enregistrament; tornar-la a tocar només l'atura si una drecera de final té la mateixa combinació"
-        }
-      },
       "insertService": {
         "invalid": "Feu servir ⌘ o ⌃ amb una lletra, un dígit o un signe de puntuació",
         "conflict": "«{{name}}» ja fa servir aquesta drecera"
@@ -495,12 +472,46 @@
         }
       }
     },
+    "startKeys": {
+      "description": "Toca per iniciar una gravació. Continua fins que una drecera de final l'acaba.",
+      "shortcutHint": "Tocar aquesta combinació inicia una gravació. S'ocupa sempre.",
+      "alsoHold": "També drecera de pulsació llarga",
+      "add": "Afegeix una drecera d'inici",
+      "addPressKeys": "Prem la combinació per a la nova drecera d'inici",
+      "delete": "Suprimeix la drecera d'inici {{shortcut}}",
+      "lastOne": "Ha de quedar una drecera d'inici o de pulsació llarga, perquè una gravació sempre es pugui iniciar.",
+      "refName": "Drecera d'inici {{shortcut}}",
+      "errors": {
+        "save": "No s'han pogut desar les dreceres d'inici: {{error}}",
+        "needsShortcut": "Cada drecera d'inici necessita una combinació de tecles.",
+        "shortcutTwice": "Dues dreceres d'inici no poden compartir una combinació.",
+        "last": "L'última drecera d'inici o de pulsació llarga no es pot treure: una gravació sempre s'ha de poder iniciar.",
+        "cannotEnd": "A Linux no es podria acabar una gravació iniciada amb {{shortcut}}: conserva una drecera de final amb la mateixa combinació."
+      }
+    },
+    "holdKeys": {
+      "title": "Dreceres de pulsació llarga",
+      "description": "Mantén premut per gravar. En deixar anar, la gravació acaba d'aquesta manera: què s'afegeix, si el text es posprocessa, si els dictats anteriors s'envien com a context.",
+      "shortcutHint": "Mantenir premuda aquesta combinació grava; deixar-la anar acaba la gravació d'aquesta manera.",
+      "alsoStart": "També drecera d'inici: un toc breu inicia una gravació que continua.",
+      "holdOnly": "Només drecera de pulsació llarga: un toc breu no fa res.",
+      "notTaken": "Només s'ocupa mentre el posprocessament està activat: fins llavors, la seva combinació queda per a l'aplicació en primer pla.",
+      "add": "Afegeix una drecera de pulsació llarga",
+      "addPressKeys": "Prem la combinació per a la nova drecera de pulsació llarga",
+      "refName": "Drecera de pulsació llarga {{name}}",
+      "errors": {
+        "save": "No s'han pogut desar les dreceres de pulsació llarga: {{error}}",
+        "needsShortcut": "Cada drecera de pulsació llarga necessita una combinació de tecles.",
+        "shortcutTwice": "Dues dreceres de pulsació llarga no poden compartir una combinació."
+      }
+    },
     "endKeys": {
       "title": "Dreceres de final",
-      "description": "Com acaba una gravació i què ve després. Cada drecera de final té una combinació de tecles pròpia, que només s'ocupa mentre es grava, i diu què s'afegeix, si el text es posprocessa i si els dictats anteriors s'envien com a context. Una drecera de final pot tenir la combinació d'una drecera d'inici: llavors, tornar a tocar aquesta drecera d'inici acaba d'aquesta manera.",
+      "description": "Com acaba una gravació i què ve després. Cada drecera de final té una combinació de tecles pròpia, que només s'ocupa mentre es grava, i diu què s'afegeix, si el text es posprocessa i si els dictats anteriors s'envien com a context. Una drecera de final pot tenir la combinació d'una drecera d'inici o de pulsació llarga: llavors, tocar-la durant una gravació acaba d'aquesta manera.",
       "name": "Nom",
       "shortcutHint": "Prémer aquesta combinació durant una gravació l'acaba d'aquesta manera. Només s'ocupa mentre es grava.",
-      "sameAsStart": "La mateixa combinació que «{{start}}»: tornar-la a tocar durant una gravació l'acaba d'aquesta manera.",
+      "sameAsStart": "La mateixa combinació que una drecera d'inici: tornar-la a tocar durant una gravació l'acaba d'aquesta manera.",
+      "sameAsHold": "La mateixa combinació que una drecera de pulsació llarga: tocar-la durant una gravació l'acaba d'aquesta manera.",
       "append": "Afegeix al final",
       "appendDescription": "S'afegeix a un dictat que acaba d'aquesta manera: el text i després la pulsació de tecla que triïs. Al text, \\s és un espai, \\n un salt de línia, \\t una tabulació i \\\\ una barra inversa; la resta s'afegeix tal com està escrit. La pulsació de tecla només s'envia quan s'enganxa el text.",
       "postProcess": "Posprocessa",
@@ -512,14 +523,7 @@
       "delete": "Suprimeix {{name}}",
       "lastOne": "Ha de quedar una drecera de final, perquè una gravació sempre es pugui acabar.",
       "held": "{{shortcut}} mantinguda premuda",
-      "holdEnds": {
-        "title": "Quan es manté premuda",
-        "description": "Com acaba la gravació en deixar anar una drecera d'inici mantinguda premuda."
-      },
-      "tapEnds": {
-        "title": "Quan es toca",
-        "description": "Com acaba la gravació en tocar una drecera de final."
-      },
+      "refName": "Drecera de final {{name}}",
       "factoryNames": {
         "pattern": "{{mode}} · {{effect}}",
         "direct": "Directe",
@@ -531,13 +535,13 @@
         "enter": "Envia Enter",
         "shiftEnter": "Envia Maj+Enter"
       },
-      "linuxNoShortcuts": "A Linux, les combinacions de les dreceres de final no s'ocupen mentre es grava. Allà una gravació acaba quan es deixa anar una drecera d'inici mantinguda premuda, o quan es torna a tocar una drecera d'inici la combinació de la qual té una drecera de final.",
+      "linuxNoShortcuts": "A Linux, les combinacions de les dreceres de final no s'ocupen mentre es grava. Allà una gravació acaba quan es deixa anar una drecera de pulsació llarga, o quan es torna a tocar una drecera d'inici la combinació de la qual té una drecera de final.",
       "errors": {
         "save": "No s'han pogut desar les dreceres de final: {{error}}",
         "needsShortcut": "Cada drecera de final necessita una combinació de tecles.",
         "shortcutTwice": "Dues dreceres de final no poden compartir una drecera.",
         "last": "L'última drecera de final no es pot treure: una gravació sempre s'ha de poder acabar.",
-        "cannotEnd": "A Linux ja no es podria acabar una gravació: conserva una drecera de final amb la combinació d'una drecera d'inici, o tria «Mantén premuda»."
+        "cannotEnd": "A Linux ja no es podria acabar una gravació: conserva una drecera de final amb la combinació d'una drecera d'inici."
       }
     },
     "inputMethod": {
@@ -1090,6 +1094,11 @@
       "postProcessOff": "El postprocessament està desactivat a la configuració",
       "postProcessNotSetUp": "Primer trieu un proveïdor, un model i una indicació a Postprocessament",
       "recordingRemoved": "Enregistrament eliminat per no superar el límit d'espai",
+      "spokenInstruction": {
+        "label": "Instrucció parlada:",
+        "nothingHeard": "no s'ha entès res",
+        "audio": "Àudio de la instrucció parlada"
+      },
       "cancelTranscription": "Cancel·la la transcripció",
       "transcribing": "S'està transcrivint...",
       "postProcessing": "S'està postprocessant...",
@@ -1160,6 +1169,7 @@
           "ai": "Postprocessat",
           "aiPrompt": "Postprocessat amb «{{prompt}}»",
           "user": "Editat per vós",
+          "withSpokenInstruction": "{{step}} + instrucció parlada",
           "withTime": "{{step}}, {{time}}"
         },
         "saveError": "No s'ha pogut desar el vostre text. Torneu-ho a provar.",
@@ -1300,7 +1310,7 @@
       },
       "holdThreshold": {
         "title": "Llindar de pulsació llarga",
-        "description": "Només en mode automàtic: temps (en mil·lisegons) que cal mantenir premuda la drecera perquè es consideri una pulsació llarga en lloc d'un toc. Reduïu-lo si les pulsacions llargues curtes deixen l'enregistrament actiu; augmenteu-lo si els tocs intencionats es tracten com a pulsacions llargues."
+        "description": "Temps (en mil·lisegons) que cal mantenir premuda una drecera de pulsació llarga perquè es consideri una pulsació llarga. Si es manté menys, una combinació que també és drecera d'inici compta com un toc, i una drecera només de pulsació llarga descarta la gravació. Reduïu-lo si les pulsacions llargues curtes deixen l'enregistrament actiu; augmenteu-lo si els tocs intencionats es tracten com a pulsacions llargues."
       },
       "reliablePaste": {
         "title": "Enganxament fiable (beta)",
@@ -1376,7 +1386,6 @@
     "profileView": {
       "fields": {
         "shortcuts": "Dreceres",
-        "holdEnds": "Quan es manté premuda",
         "selectedModel": "Model de veu",
         "providers": "Adreça i format del proveïdor",
         "activePrompts": "Indicacions actives",

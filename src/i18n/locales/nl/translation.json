@@ -408,18 +408,9 @@
         "notFound": "Sneltoets niet gevonden",
         "pressKeys": "Druk op toetsen...",
         "bindings": {
-          "transcribe": {
-            "name": "Startsneltoets",
-            "description": "Start een opname. Hoe die eindigt, bepalen de eindsneltoetsen, ook bij vasthouden."
-          },
           "cancel": {
             "name": "Sneltoets voor annuleren",
             "description": "De sneltoets om de huidige opname te annuleren."
-          },
-          "transcribe_with_post_process": {
-            "name": "Tweede startsneltoets",
-            "description": "Optioneel: een tweede toetsencombinatie die een opname start. In de fabrieksinstelling bewerkt een eindsneltoets met dezelfde toetsencombinatie de tekst na. Alleen bezet zolang nabewerking aan staat.",
-            "descriptionMacos": "Optioneel: een tweede toetsencombinatie die een opname start. In de fabrieksinstelling bewerkt loslaten na vasthouden de tekst na; opnieuw tikken beëindigt zonder nabewerking, zoals elke eindsneltoets zonder ⌥. Alleen bezet zolang nabewerking aan staat."
           },
           "paste_last_transcript": {
             "name": "Laatste transcriptie plakken",
@@ -464,20 +455,6 @@
         "noMatch": "Geen taal gevonden voor „{{query}}”",
         "weak": "Geen enkel model herkent {{languages}} al goed."
       },
-      "shortcutActivation": {
-        "title": "Gedrag van sneltoets",
-        "description": "Kies hoe een startsneltoets een opname start en beëindigt.",
-        "options": {
-          "holdOrToggle": "Automatisch",
-          "pushToTalk": "Vasthouden",
-          "toggle": "Tikken"
-        },
-        "descriptions": {
-          "hold_or_toggle": "Houd ingedrukt om op te nemen, of tik om te starten; daarna stopt een eindsneltoets de opname",
-          "push_to_talk": "Neemt op zolang je de sneltoets ingedrukt houdt",
-          "toggle": "Tik om de opname te starten; opnieuw tikken stopt die alleen als een eindsneltoets dezelfde toetsencombinatie heeft"
-        }
-      },
       "insertService": {
         "invalid": "Gebruik ⌘ of ⌃ met een letter, cijfer of leesteken",
         "conflict": "'{{name}}' gebruikt deze sneltoets al"
@@ -495,12 +472,46 @@
         }
       }
     },
+    "startKeys": {
+      "description": "Tikken start een opname. Die loopt door tot een eindsneltoets haar beëindigt.",
+      "shortcutHint": "Tikken op deze toetsencombinatie start een opname. Ze is altijd bezet.",
+      "alsoHold": "Ook vasthoudsneltoets",
+      "add": "Startsneltoets toevoegen",
+      "addPressKeys": "Druk op de toetsencombinatie voor de nieuwe startsneltoets",
+      "delete": "Startsneltoets {{shortcut}} verwijderen",
+      "lastOne": "Er moet één start- of vasthoudsneltoets blijven, zodat een opname altijd te starten is.",
+      "refName": "Startsneltoets {{shortcut}}",
+      "errors": {
+        "save": "De startsneltoetsen konden niet worden opgeslagen: {{error}}",
+        "needsShortcut": "Elke startsneltoets heeft een toetsencombinatie nodig.",
+        "shortcutTwice": "Twee startsneltoetsen kunnen geen toetsencombinatie delen.",
+        "last": "De laatste start- of vasthoudsneltoets kan niet weg: een opname moet altijd te starten zijn.",
+        "cannotEnd": "Op Linux zou een opname die {{shortcut}} start niet te beëindigen zijn: houd een eindsneltoets met dezelfde toetsencombinatie."
+      }
+    },
+    "holdKeys": {
+      "title": "Vasthoudsneltoetsen",
+      "description": "Houd ingedrukt om op te nemen. Loslaten beëindigt de opname op deze manier: wat er wordt toegevoegd, of de tekst wordt nabewerkt, of eerdere dictaten als context worden meegestuurd.",
+      "shortcutHint": "Deze toetsencombinatie vasthouden neemt op; loslaten beëindigt de opname op deze manier.",
+      "alsoStart": "Ook startsneltoets: kort tikken start een opname die blijft doorlopen.",
+      "holdOnly": "Alleen vasthoudsneltoets: kort tikken doet niets.",
+      "notTaken": "Alleen bezet zolang nabewerking aan staat: tot dan blijft de toetsencombinatie bij de app op de voorgrond.",
+      "add": "Vasthoudsneltoets toevoegen",
+      "addPressKeys": "Druk op de toetsencombinatie voor de nieuwe vasthoudsneltoets",
+      "refName": "Vasthoudsneltoets {{name}}",
+      "errors": {
+        "save": "De vasthoudsneltoetsen konden niet worden opgeslagen: {{error}}",
+        "needsShortcut": "Elke vasthoudsneltoets heeft een toetsencombinatie nodig.",
+        "shortcutTwice": "Twee vasthoudsneltoetsen kunnen geen toetsencombinatie delen."
+      }
+    },
     "endKeys": {
       "title": "Eindsneltoetsen",
-      "description": "Hoe een opname eindigt en wat er volgt. Elke eindsneltoets heeft een eigen toetsencombinatie, die alleen tijdens een opname bezet is, en bepaalt wat er wordt toegevoegd, of de tekst wordt nabewerkt en of eerdere dictaten als context worden meegestuurd. Een eindsneltoets mag de toetsencombinatie van een startsneltoets hebben: opnieuw op die startsneltoets tikken beëindigt de opname dan op deze manier.",
+      "description": "Hoe een opname eindigt en wat er volgt. Elke eindsneltoets heeft een eigen toetsencombinatie, die alleen tijdens een opname bezet is, en bepaalt wat er wordt toegevoegd, of de tekst wordt nabewerkt en of eerdere dictaten als context worden meegestuurd. Een eindsneltoets mag de toetsencombinatie van een start- of vasthoudsneltoets hebben: tikken op die toetsencombinatie tijdens een opname beëindigt de opname dan op deze manier.",
       "name": "Naam",
       "shortcutHint": "Op deze toetsencombinatie drukken tijdens een opname beëindigt die op deze manier. Ze is alleen bezet tijdens een opname.",
-      "sameAsStart": "Dezelfde toetsencombinatie als „{{start}}”: opnieuw tikken tijdens een opname beëindigt die op deze manier.",
+      "sameAsStart": "Dezelfde toetsencombinatie als een startsneltoets: opnieuw tikken tijdens een opname beëindigt die op deze manier.",
+      "sameAsHold": "Dezelfde toetsencombinatie als een vasthoudsneltoets: tikken tijdens een opname beëindigt die op deze manier.",
       "append": "Toevoegen",
       "appendDescription": "Wordt toegevoegd aan een dictaat dat zo eindigt: de tekst en daarna de toetsaanslag die je kiest. In de tekst is \\s een spatie, \\n een nieuwe regel, \\t een tab en \\\\ een backslash; al het andere wordt toegevoegd zoals het er staat. De toetsaanslag wordt alleen verstuurd als de tekst wordt geplakt.",
       "postProcess": "Nabewerken",
@@ -512,14 +523,7 @@
       "delete": "{{name}} verwijderen",
       "lastOne": "Er moet één eindsneltoets blijven, zodat een opname altijd te beëindigen is.",
       "held": "{{shortcut}} vastgehouden",
-      "holdEnds": {
-        "title": "Bij vasthouden",
-        "description": "Hoe het loslaten van een vastgehouden startsneltoets de opname beëindigt."
-      },
-      "tapEnds": {
-        "title": "Bij tikken",
-        "description": "Hoe het tikken op een eindsneltoets de opname beëindigt."
-      },
+      "refName": "Eindsneltoets {{name}}",
       "factoryNames": {
         "pattern": "{{mode}} · {{effect}}",
         "direct": "Direct",
@@ -531,13 +535,13 @@
         "enter": "Enter sturen",
         "shiftEnter": "Shift+Enter sturen"
       },
-      "linuxNoShortcuts": "Op Linux worden de toetsencombinaties van eindsneltoetsen tijdens een opname niet bezet. Een opname eindigt daar wanneer je een vastgehouden startsneltoets loslaat, of wanneer je opnieuw tikt op een startsneltoets waarvan een eindsneltoets de toetsencombinatie heeft.",
+      "linuxNoShortcuts": "Op Linux worden de toetsencombinaties van eindsneltoetsen tijdens een opname niet bezet. Een opname eindigt daar wanneer je een vasthoudsneltoets loslaat, of wanneer je opnieuw tikt op een startsneltoets waarvan een eindsneltoets de toetsencombinatie heeft.",
       "errors": {
         "save": "De eindsneltoetsen konden niet worden opgeslagen: {{error}}",
         "needsShortcut": "Elke eindsneltoets heeft een toetsencombinatie nodig.",
         "shortcutTwice": "Twee eindsneltoetsen kunnen geen sneltoets delen.",
         "last": "De laatste eindsneltoets kan niet weg: een opname moet altijd te beëindigen zijn.",
-        "cannotEnd": "Op Linux zou een opname niet meer te beëindigen zijn: houd een eindsneltoets met de toetsencombinatie van een startsneltoets, of kies „Vasthouden”."
+        "cannotEnd": "Op Linux zou een opname niet meer te beëindigen zijn: houd een eindsneltoets met de toetsencombinatie van een startsneltoets."
       }
     },
     "inputMethod": {
@@ -1090,6 +1094,11 @@
       "postProcessOff": "Naverwerking staat uit in de instellingen",
       "postProcessNotSetUp": "Kies eerst een aanbieder, een model en een prompt onder Naverwerking",
       "recordingRemoved": "Opname verwijderd om binnen de opslaglimiet te blijven",
+      "spokenInstruction": {
+        "label": "Gesproken instructie:",
+        "nothingHeard": "niets verstaan",
+        "audio": "Audio van de gesproken instructie"
+      },
       "cancelTranscription": "Transcriptie annuleren",
       "transcribing": "Transcriberen...",
       "postProcessing": "Naverwerken...",
@@ -1160,6 +1169,7 @@
           "ai": "Naverwerkt",
           "aiPrompt": "Naverwerkt met ‘{{prompt}}’",
           "user": "Door jou bewerkt",
+          "withSpokenInstruction": "{{step}} + gesproken instructie",
           "withTime": "{{step}}, {{time}}"
         },
         "saveError": "Kan je tekst niet opslaan. Probeer het opnieuw.",
@@ -1300,7 +1310,7 @@
       },
       "holdThreshold": {
         "title": "Vasthouddrempel",
-        "description": "Alleen in de modus Automatisch: hoe lang (in milliseconden) de sneltoets ingedrukt moet blijven om als vasthouden te tellen in plaats van als tik. Verlaag dit als de opname na kort vasthouden blijft doorlopen; verhoog het als bewuste tikken als vasthouden worden gezien."
+        "description": "Hoe lang (in milliseconden) een vasthoudsneltoets ingedrukt moet blijven om als vasthouden te tellen. Korter ingedrukt telt een toetsencombinatie die ook startsneltoets is als tik, en gooit een toetsencombinatie die alleen vasthoudsneltoets is de opname weg. Verlaag dit als de opname na kort vasthouden blijft doorlopen; verhoog het als bewuste tikken als vasthouden worden gezien."
       },
       "reliablePaste": {
         "title": "Betrouwbaar plakken (Beta)",
@@ -1376,7 +1386,6 @@
     "profileView": {
       "fields": {
         "shortcuts": "Sneltoetsen",
-        "holdEnds": "Bij vasthouden",
         "selectedModel": "Spraakmodel",
         "providers": "Adres en formaat van de aanbieder",
         "activePrompts": "Actieve prompts",

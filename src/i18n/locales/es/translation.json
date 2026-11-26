@@ -408,18 +408,9 @@
         "notFound": "Atajo no encontrado",
         "pressKeys": "Presiona teclas...",
         "bindings": {
-          "transcribe": {
-            "name": "Atajo de inicio",
-            "description": "Inicia una grabación. Cómo termina lo deciden los atajos de fin, también al mantenerlo pulsado."
-          },
           "cancel": {
             "name": "Atajo de cancelar",
             "description": "El atajo de teclado para cancelar la grabación actual."
-          },
-          "transcribe_with_post_process": {
-            "name": "Segundo atajo de inicio",
-            "description": "Opcional: una segunda combinación que inicia una grabación. De fábrica, un atajo de fin con la misma combinación posprocesa el texto. Solo se ocupa mientras el posprocesamiento está activado.",
-            "descriptionMacos": "Opcional: una segunda combinación que inicia una grabación. De fábrica, soltarla tras mantenerla pulsada posprocesa el texto; volver a tocarla termina sin posprocesamiento, como todo atajo de fin sin ⌥. Solo se ocupa mientras el posprocesamiento está activado."
           },
           "paste_last_transcript": {
             "name": "Pegar la última transcripción",
@@ -464,20 +455,6 @@
         "noMatch": "Ningún idioma coincide con «{{query}}»",
         "weak": "Ningún modelo reconoce bien {{languages}} todavía."
       },
-      "shortcutActivation": {
-        "title": "Comportamiento del atajo",
-        "description": "Elige cómo un atajo de inicio inicia y termina una grabación.",
-        "options": {
-          "holdOrToggle": "Automático",
-          "pushToTalk": "Mantener",
-          "toggle": "Tocar"
-        },
-        "descriptions": {
-          "hold_or_toggle": "Mantén pulsado para grabar, o toca para empezar; después un atajo de fin detiene la grabación",
-          "push_to_talk": "Graba mientras mantienes pulsado el atajo",
-          "toggle": "Toca para empezar a grabar; volver a tocar solo detiene la grabación si un atajo de fin tiene la misma combinación"
-        }
-      },
       "insertService": {
         "invalid": "Usa ⌘ o ⌃ con una letra, un número o un signo de puntuación",
         "conflict": "«{{name}}» ya usa este atajo"
@@ -495,12 +472,46 @@
         }
       }
     },
+    "startKeys": {
+      "description": "Toca para iniciar una grabación. Sigue hasta que un atajo de fin la termina.",
+      "shortcutHint": "Tocar esta combinación inicia una grabación. Siempre está ocupada.",
+      "alsoHold": "También atajo de mantener",
+      "add": "Añadir atajo de inicio",
+      "addPressKeys": "Pulsa la combinación para el nuevo atajo de inicio",
+      "delete": "Eliminar el atajo de inicio {{shortcut}}",
+      "lastOne": "Debe quedar un atajo de inicio o de mantener, para que una grabación siempre se pueda iniciar.",
+      "refName": "Atajo de inicio {{shortcut}}",
+      "errors": {
+        "save": "No se pudieron guardar los atajos de inicio: {{error}}",
+        "needsShortcut": "Cada atajo de inicio necesita una combinación de teclas.",
+        "shortcutTwice": "Dos atajos de inicio no pueden compartir una combinación.",
+        "last": "El último atajo de inicio o de mantener no se puede quitar: siempre debe ser posible iniciar una grabación.",
+        "cannotEnd": "En Linux no se podría terminar una grabación que inicia {{shortcut}}: conserva un atajo de fin con la misma combinación."
+      }
+    },
+    "holdKeys": {
+      "title": "Atajos de mantener",
+      "description": "Mantén pulsado para grabar. Al soltar, la grabación termina de esta manera: qué se añade, si el texto se posprocesa, si los dictados anteriores se envían como contexto.",
+      "shortcutHint": "Mantener pulsada esta combinación graba; soltarla termina la grabación de esta manera.",
+      "alsoStart": "También atajo de inicio: un toque breve inicia una grabación que sigue en marcha.",
+      "holdOnly": "Solo atajo de mantener: un toque breve no hace nada.",
+      "notTaken": "Solo se ocupa mientras el posprocesamiento está activado: hasta entonces, su combinación queda para la aplicación en primer plano.",
+      "add": "Añadir atajo de mantener",
+      "addPressKeys": "Pulsa la combinación para el nuevo atajo de mantener",
+      "refName": "Atajo de mantener {{name}}",
+      "errors": {
+        "save": "No se pudieron guardar los atajos de mantener: {{error}}",
+        "needsShortcut": "Cada atajo de mantener necesita una combinación de teclas.",
+        "shortcutTwice": "Dos atajos de mantener no pueden compartir una combinación."
+      }
+    },
     "endKeys": {
       "title": "Atajos de fin",
-      "description": "Cómo termina una grabación y qué sigue. Cada atajo de fin tiene su propia combinación de teclas, que solo se ocupa mientras se graba, e indica qué se añade, si el texto se posprocesa y si los dictados anteriores se envían como contexto. Un atajo de fin puede tener la combinación de un atajo de inicio: volver a tocar ese atajo de inicio termina entonces de esta manera.",
+      "description": "Cómo termina una grabación y qué sigue. Cada atajo de fin tiene su propia combinación de teclas, que solo se ocupa mientras se graba, e indica qué se añade, si el texto se posprocesa y si los dictados anteriores se envían como contexto. Un atajo de fin puede tener la combinación de un atajo de inicio o de mantener: tocarla durante una grabación termina entonces de esta manera.",
       "name": "Nombre",
       "shortcutHint": "Pulsar esta combinación durante una grabación la termina de esta manera. Solo se ocupa mientras se graba.",
-      "sameAsStart": "La misma combinación que «{{start}}»: volver a tocarla durante una grabación la termina de esta manera.",
+      "sameAsStart": "La misma combinación que un atajo de inicio: volver a tocarla durante una grabación la termina de esta manera.",
+      "sameAsHold": "La misma combinación que un atajo de mantener: tocarla durante una grabación la termina de esta manera.",
       "append": "Añadir al final",
       "appendDescription": "Se añade a un dictado que termina de esta manera: el texto y luego la pulsación de tecla que elijas. En el texto, \\s es un espacio, \\n un salto de línea, \\t una tabulación y \\\\ una barra invertida; todo lo demás se añade tal como está escrito. La pulsación de tecla solo se envía cuando se pega el texto.",
       "postProcess": "Posprocesar",
@@ -512,14 +523,7 @@
       "delete": "Eliminar {{name}}",
       "lastOne": "Debe quedar un atajo de fin, para que una grabación siempre se pueda terminar.",
       "held": "{{shortcut}} mantenido",
-      "holdEnds": {
-        "title": "Al mantener pulsado",
-        "description": "Cómo termina la grabación al soltar un atajo de inicio mantenido."
-      },
-      "tapEnds": {
-        "title": "Al tocar",
-        "description": "Cómo termina la grabación al tocar un atajo de fin."
-      },
+      "refName": "Atajo de fin {{name}}",
       "factoryNames": {
         "pattern": "{{mode}} · {{effect}}",
         "direct": "Directo",
@@ -531,13 +535,13 @@
         "enter": "Enviar Enter",
         "shiftEnter": "Enviar Mayús+Enter"
       },
-      "linuxNoShortcuts": "En Linux, las combinaciones de los atajos de fin no se ocupan mientras se graba. Allí una grabación termina al soltar un atajo de inicio mantenido, o al volver a tocar un atajo de inicio cuya combinación tiene un atajo de fin.",
+      "linuxNoShortcuts": "En Linux, las combinaciones de los atajos de fin no se ocupan mientras se graba. Allí una grabación termina al soltar un atajo de mantener, o al volver a tocar un atajo de inicio cuya combinación tiene un atajo de fin.",
       "errors": {
         "save": "No se pudieron guardar los atajos de fin: {{error}}",
         "needsShortcut": "Cada atajo de fin necesita una combinación de teclas.",
         "shortcutTwice": "Dos atajos de fin no pueden compartir un atajo.",
         "last": "El último atajo de fin no se puede quitar: siempre debe ser posible terminar una grabación.",
-        "cannotEnd": "En Linux ya no se podría terminar una grabación: conserva un atajo de fin con la combinación de un atajo de inicio o elige «Mantener»."
+        "cannotEnd": "En Linux ya no se podría terminar una grabación: conserva un atajo de fin con la combinación de un atajo de inicio."
       }
     },
     "inputMethod": {
@@ -1090,6 +1094,11 @@
       "postProcessOff": "El post proceso está desactivado en la configuración",
       "postProcessNotSetUp": "Primero elige un proveedor, un modelo y un prompt en Post proceso",
       "recordingRemoved": "Grabación eliminada para no superar el límite de espacio",
+      "spokenInstruction": {
+        "label": "Instrucción hablada:",
+        "nothingHeard": "no se entendió nada",
+        "audio": "Audio de la instrucción hablada"
+      },
       "cancelTranscription": "Cancelar transcripción",
       "transcribing": "Transcribiendo...",
       "postProcessing": "Post procesando...",
@@ -1160,6 +1169,7 @@
           "ai": "Post procesado",
           "aiPrompt": "Post procesado con «{{prompt}}»",
           "user": "Editado por ti",
+          "withSpokenInstruction": "{{step}} + instrucción hablada",
           "withTime": "{{step}}, {{time}}"
         },
         "saveError": "No se pudo guardar tu texto. Inténtalo de nuevo.",
@@ -1300,7 +1310,7 @@
       },
       "holdThreshold": {
         "title": "Umbral de pulsación",
-        "description": "Solo en el modo Automático: cuánto tiempo (en milisegundos) debe mantenerse pulsado el atajo para contar como mantener en lugar de un toque. Redúcelo si la grabación sigue activa tras mantenerlo pulsado poco tiempo; auméntalo si los toques deliberados se interpretan como mantener."
+        "description": "Cuánto tiempo (en milisegundos) debe mantenerse pulsado un atajo de mantener para contar como mantener. Si se mantiene menos, una combinación que también es atajo de inicio cuenta como un toque, y un atajo que solo es de mantener descarta la grabación. Redúcelo si la grabación sigue activa tras mantenerlo pulsado poco tiempo; auméntalo si los toques deliberados se interpretan como mantener."
       },
       "reliablePaste": {
         "title": "Pegado fiable (Beta)",
@@ -1376,7 +1386,6 @@
     "profileView": {
       "fields": {
         "shortcuts": "Atajos",
-        "holdEnds": "Al mantener pulsado",
         "selectedModel": "Modelo de voz",
         "providers": "Dirección y formato del proveedor",
         "activePrompts": "Instrucciones activas",

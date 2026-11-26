@@ -408,18 +408,9 @@
         "notFound": "Nie znaleziono skrótu",
         "pressKeys": "Naciśnij klawisze...",
         "bindings": {
-          "transcribe": {
-            "name": "Skrót rozpoczynający",
-            "description": "Rozpoczyna nagranie. O tym, jak się kończy, decydują skróty kończące, także przy przytrzymaniu."
-          },
           "cancel": {
             "name": "Skrót anulowania",
             "description": "Skrót klawiaturowy do anulowania bieżącego nagrywania."
-          },
-          "transcribe_with_post_process": {
-            "name": "Drugi skrót rozpoczynający",
-            "description": "Opcjonalnie: druga kombinacja klawiszy, która rozpoczyna nagranie. Fabrycznie skrót kończący z tą samą kombinacją przetwarza tekst. Zajęta tylko wtedy, gdy przetwarzanie jest włączone.",
-            "descriptionMacos": "Opcjonalnie: druga kombinacja klawiszy, która rozpoczyna nagranie. Fabrycznie puszczenie jej po przytrzymaniu przetwarza tekst, a ponowne dotknięcie kończy nagranie bez przetwarzania, jak każdy skrót kończący bez ⌥. Zajęta tylko wtedy, gdy przetwarzanie jest włączone."
           },
           "paste_last_transcript": {
             "name": "Wklej ostatnią transkrypcję",
@@ -464,20 +455,6 @@
         "noMatch": "Żaden język nie pasuje do „{{query}}”",
         "weak": "Żaden model nie rozpoznaje jeszcze dobrze: {{languages}}."
       },
-      "shortcutActivation": {
-        "title": "Zachowanie skrótu",
-        "description": "Wybierz, jak skrót rozpoczynający rozpoczyna i kończy nagranie.",
-        "options": {
-          "holdOrToggle": "Automatycznie",
-          "pushToTalk": "Przytrzymaj",
-          "toggle": "Dotknij"
-        },
-        "descriptions": {
-          "hold_or_toggle": "Przytrzymaj, aby nagrywać, lub dotknij, aby rozpocząć; potem nagranie zatrzymuje skrót kończący",
-          "push_to_talk": "Nagrywa, dopóki trzymasz skrót",
-          "toggle": "Dotknij, aby rozpocząć nagrywanie; ponowne dotknięcie zatrzymuje je tylko wtedy, gdy skrót kończący ma tę samą kombinację"
-        }
-      },
       "insertService": {
         "invalid": "Użyj ⌘ lub ⌃ z literą, cyfrą lub znakiem interpunkcyjnym",
         "conflict": "„{{name}}” już używa tego skrótu"
@@ -495,12 +472,46 @@
         }
       }
     },
+    "startKeys": {
+      "description": "Dotknij, aby rozpocząć nagranie. Trwa ono, dopóki nie zakończy go skrót kończący.",
+      "shortcutHint": "Dotknięcie tej kombinacji rozpoczyna nagranie. Jest ona zawsze zajęta.",
+      "alsoHold": "Także skrót przytrzymywany",
+      "add": "Dodaj skrót rozpoczynający",
+      "addPressKeys": "Naciśnij kombinację dla nowego skrótu rozpoczynającego",
+      "delete": "Usuń skrót rozpoczynający {{shortcut}}",
+      "lastOne": "Jeden skrót rozpoczynający lub przytrzymywany musi zostać, aby nagranie zawsze dało się rozpocząć.",
+      "refName": "Skrót rozpoczynający {{shortcut}}",
+      "errors": {
+        "save": "Nie udało się zapisać skrótów rozpoczynających: {{error}}",
+        "needsShortcut": "Każdy skrót rozpoczynający potrzebuje kombinacji klawiszy.",
+        "shortcutTwice": "Dwa skróty rozpoczynające nie mogą mieć tej samej kombinacji.",
+        "last": "Ostatniego skrótu rozpoczynającego lub przytrzymywanego nie można usunąć: nagranie zawsze musi dać się rozpocząć.",
+        "cannotEnd": "W Linuksie nagrania rozpoczętego przez {{shortcut}} nie dałoby się zakończyć: zachowaj skrót kończący z tą samą kombinacją."
+      }
+    },
+    "holdKeys": {
+      "title": "Skróty przytrzymywane",
+      "description": "Przytrzymaj, aby nagrywać. Puszczenie kończy nagranie w ten sposób: co zostanie dołączone, czy tekst zostanie przetworzony i czy wcześniejsze dyktowania zostaną wysłane jako kontekst.",
+      "shortcutHint": "Przytrzymanie tej kombinacji nagrywa; jej puszczenie kończy nagranie w ten sposób.",
+      "alsoStart": "Także skrót rozpoczynający: krótkie dotknięcie rozpoczyna nagranie, które trwa dalej.",
+      "holdOnly": "Tylko skrót przytrzymywany: krótkie dotknięcie nic nie robi.",
+      "notTaken": "Zajęty tylko wtedy, gdy przetwarzanie jest włączone: do tego czasu jego kombinacja pozostaje przy aplikacji na pierwszym planie.",
+      "add": "Dodaj skrót przytrzymywany",
+      "addPressKeys": "Naciśnij kombinację dla nowego skrótu przytrzymywanego",
+      "refName": "Skrót przytrzymywany {{name}}",
+      "errors": {
+        "save": "Nie udało się zapisać skrótów przytrzymywanych: {{error}}",
+        "needsShortcut": "Każdy skrót przytrzymywany potrzebuje kombinacji klawiszy.",
+        "shortcutTwice": "Dwa skróty przytrzymywane nie mogą mieć tej samej kombinacji."
+      }
+    },
     "endKeys": {
       "title": "Skróty kończące",
-      "description": "Jak kończy się nagranie i co dalej. Każdy skrót kończący ma własną kombinację klawiszy, zajętą tylko podczas nagrywania, i określa, co zostanie dołączone, czy tekst zostanie przetworzony i czy wcześniejsze dyktowania zostaną wysłane jako kontekst. Skrót kończący może mieć kombinację klawiszy skrótu rozpoczynającego: ponowne dotknięcie tego skrótu rozpoczynającego kończy wtedy nagranie w ten sposób.",
+      "description": "Jak kończy się nagranie i co dalej. Każdy skrót kończący ma własną kombinację klawiszy, zajętą tylko podczas nagrywania, i określa, co zostanie dołączone, czy tekst zostanie przetworzony i czy wcześniejsze dyktowania zostaną wysłane jako kontekst. Skrót kończący może mieć kombinację klawiszy skrótu rozpoczynającego lub przytrzymywanego: dotknięcie jej podczas nagrywania kończy wtedy nagranie w ten sposób.",
       "name": "Nazwa",
       "shortcutHint": "Naciśnięcie tej kombinacji podczas nagrywania kończy nagranie w ten sposób. Jest zajęta tylko podczas nagrywania.",
-      "sameAsStart": "Ta sama kombinacja co „{{start}}”: ponowne dotknięcie podczas nagrywania kończy nagranie w ten sposób.",
+      "sameAsStart": "Ta sama kombinacja co skrót rozpoczynający: ponowne dotknięcie podczas nagrywania kończy nagranie w ten sposób.",
+      "sameAsHold": "Ta sama kombinacja co skrót przytrzymywany: dotknięcie jej podczas nagrywania kończy nagranie w ten sposób.",
       "append": "Dołącz",
       "appendDescription": "Dołączane do dyktowania, które kończy się w ten sposób: tekst, a potem wybrane naciśnięcie klawisza. W tekście \\s to spacja, \\n nowy wiersz, \\t tabulator, a \\\\ ukośnik wsteczny; wszystko inne jest dołączane tak, jak zostało wpisane. Naciśnięcie klawisza jest wysyłane tylko wtedy, gdy tekst jest wklejany.",
       "postProcess": "Przetwórz",
@@ -512,14 +523,7 @@
       "delete": "Usuń {{name}}",
       "lastOne": "Jeden skrót kończący musi zostać, aby nagranie zawsze dało się zakończyć.",
       "held": "{{shortcut}} przytrzymany",
-      "holdEnds": {
-        "title": "Przy przytrzymaniu",
-        "description": "Jak puszczenie przytrzymanego skrótu rozpoczynającego kończy nagranie."
-      },
-      "tapEnds": {
-        "title": "Przy dotknięciu",
-        "description": "Jak dotknięcie skrótu kończącego kończy nagranie."
-      },
+      "refName": "Skrót kończący {{name}}",
       "factoryNames": {
         "pattern": "{{mode}} · {{effect}}",
         "direct": "Bezpośrednio",
@@ -531,13 +535,13 @@
         "enter": "Wyślij Enter",
         "shiftEnter": "Wyślij Shift+Enter"
       },
-      "linuxNoShortcuts": "W Linuksie kombinacje klawiszy skrótów kończących nie są zajmowane podczas nagrywania. Nagranie kończy się tam po puszczeniu przytrzymanego skrótu rozpoczynającego albo po ponownym dotknięciu skrótu rozpoczynającego, którego kombinację ma któryś skrót kończący.",
+      "linuxNoShortcuts": "W Linuksie kombinacje klawiszy skrótów kończących nie są zajmowane podczas nagrywania. Nagranie kończy się tam po puszczeniu skrótu przytrzymywanego albo po ponownym dotknięciu skrótu rozpoczynającego, którego kombinację ma któryś skrót kończący.",
       "errors": {
         "save": "Nie udało się zapisać skrótów kończących: {{error}}",
         "needsShortcut": "Każdy skrót kończący potrzebuje kombinacji klawiszy.",
         "shortcutTwice": "Dwa skróty kończące nie mogą mieć tego samego skrótu.",
         "last": "Ostatniego skrótu kończącego nie można usunąć: nagranie zawsze musi dać się zakończyć.",
-        "cannotEnd": "W Linuksie nagrania nie dałoby się już zakończyć: zachowaj skrót kończący z kombinacją skrótu rozpoczynającego albo wybierz „Przytrzymaj”."
+        "cannotEnd": "W Linuksie nagrania nie dałoby się już zakończyć: zachowaj skrót kończący z kombinacją skrótu rozpoczynającego."
       }
     },
     "inputMethod": {
@@ -1090,6 +1094,11 @@
       "postProcessOff": "Postproces jest wyłączony w ustawieniach",
       "postProcessNotSetUp": "Najpierw wybierz dostawcę, model i prompt w sekcji Postproces",
       "recordingRemoved": "Nagranie usunięte, aby zmieścić się w limicie miejsca",
+      "spokenInstruction": {
+        "label": "Instrukcja głosowa:",
+        "nothingHeard": "nic nie usłyszano",
+        "audio": "Dźwięk instrukcji głosowej"
+      },
       "cancelTranscription": "Anuluj transkrypcję",
       "transcribing": "Transkrybuję...",
       "postProcessing": "Trwa postproces...",
@@ -1160,6 +1169,7 @@
           "ai": "Po postprocesie",
           "aiPrompt": "Po postprocesie z „{{prompt}}”",
           "user": "Edytowane przez ciebie",
+          "withSpokenInstruction": "{{step}} + instrukcja głosowa",
           "withTime": "{{step}}, {{time}}"
         },
         "saveError": "Nie udało się zapisać twojego tekstu. Spróbuj ponownie.",
@@ -1300,7 +1310,7 @@
       },
       "holdThreshold": {
         "title": "Próg przytrzymania",
-        "description": "Tylko w trybie automatycznym: jak długo (w milisekundach) skrót musi być przytrzymany, aby liczył się jako przytrzymanie, a nie dotknięcie. Zmniejsz, jeśli po krótkim przytrzymaniu nagrywanie pozostaje włączone; zwiększ, jeśli celowe dotknięcia są traktowane jako przytrzymanie."
+        "description": "Jak długo (w milisekundach) skrót przytrzymywany musi być przytrzymany, aby liczyło się to jako przytrzymanie. Przy krótszym przytrzymaniu kombinacja, która jest też skrótem rozpoczynającym, liczy się jako dotknięcie, a skrót tylko przytrzymywany odrzuca nagranie. Zmniejsz, jeśli po krótkim przytrzymaniu nagrywanie pozostaje włączone; zwiększ, jeśli celowe dotknięcia są traktowane jako przytrzymanie."
       },
       "reliablePaste": {
         "title": "Niezawodne wklejanie (Beta)",
@@ -1376,7 +1386,6 @@
     "profileView": {
       "fields": {
         "shortcuts": "Skróty klawiszowe",
-        "holdEnds": "Przy przytrzymaniu",
         "selectedModel": "Model mowy",
         "providers": "Adres i format dostawcy",
         "activePrompts": "Aktywne polecenia",

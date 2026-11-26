@@ -408,18 +408,9 @@
         "notFound": "Không tìm thấy phím tắt",
         "pressKeys": "Nhấn phím...",
         "bindings": {
-          "transcribe": {
-            "name": "Phím tắt bắt đầu",
-            "description": "Bắt đầu ghi âm. Cách kết thúc do các phím tắt kết thúc quyết định, kể cả khi giữ."
-          },
           "cancel": {
             "name": "Phím tắt hủy",
             "description": "Phím tắt để hủy bản ghi hiện tại."
-          },
-          "transcribe_with_post_process": {
-            "name": "Phím tắt bắt đầu thứ hai",
-            "description": "Tùy chọn: tổ hợp phím thứ hai để bắt đầu ghi âm. Theo cài đặt gốc, phím tắt kết thúc có cùng tổ hợp phím sẽ xử lý hậu kỳ văn bản. Chỉ được chiếm khi xử lý hậu kỳ đang bật.",
-            "descriptionMacos": "Tùy chọn: tổ hợp phím thứ hai để bắt đầu ghi âm. Theo cài đặt gốc, giữ rồi thả tổ hợp này sẽ xử lý hậu kỳ văn bản; nhấn nhanh lại sẽ kết thúc mà không xử lý hậu kỳ, như mọi phím tắt kết thúc không có ⌥. Chỉ được chiếm khi xử lý hậu kỳ đang bật."
           },
           "paste_last_transcript": {
             "name": "Dán bản chép gần nhất",
@@ -464,20 +455,6 @@
         "noMatch": "Không có ngôn ngữ nào khớp với “{{query}}”",
         "weak": "Chưa có mô hình nào nhận dạng tốt {{languages}}."
       },
-      "shortcutActivation": {
-        "title": "Hành vi phím tắt",
-        "description": "Chọn cách một phím tắt bắt đầu khởi động và kết thúc ghi âm.",
-        "options": {
-          "holdOrToggle": "Tự động",
-          "pushToTalk": "Giữ",
-          "toggle": "Nhấn nhanh"
-        },
-        "descriptions": {
-          "hold_or_toggle": "Giữ để ghi âm, hoặc nhấn nhanh để bắt đầu; sau đó một phím tắt kết thúc sẽ dừng",
-          "push_to_talk": "Ghi âm trong lúc bạn giữ phím tắt",
-          "toggle": "Nhấn nhanh để bắt đầu ghi âm; nhấn nhanh lại chỉ dừng nếu một phím tắt kết thúc có cùng tổ hợp phím"
-        }
-      },
       "insertService": {
         "invalid": "Dùng ⌘ hoặc ⌃ với một chữ cái, chữ số hoặc dấu câu",
         "conflict": "{{name}} đã dùng phím tắt này"
@@ -495,12 +472,46 @@
         }
       }
     },
+    "startKeys": {
+      "description": "Nhấn nhanh để bắt đầu ghi âm. Bản ghi chạy cho đến khi một phím tắt kết thúc dừng nó lại.",
+      "shortcutHint": "Nhấn nhanh tổ hợp phím này sẽ bắt đầu ghi âm. Tổ hợp luôn được chiếm.",
+      "alsoHold": "Cũng là phím tắt giữ",
+      "add": "Thêm phím tắt bắt đầu",
+      "addPressKeys": "Nhấn tổ hợp phím cho phím tắt bắt đầu mới",
+      "delete": "Xóa phím tắt bắt đầu {{shortcut}}",
+      "lastOne": "Phải còn lại một phím tắt bắt đầu hoặc phím tắt giữ để luôn có thể bắt đầu ghi âm.",
+      "refName": "Phím tắt bắt đầu {{shortcut}}",
+      "errors": {
+        "save": "Không thể lưu các phím tắt bắt đầu: {{error}}",
+        "needsShortcut": "Mỗi phím tắt bắt đầu cần có tổ hợp phím.",
+        "shortcutTwice": "Hai phím tắt bắt đầu không thể dùng chung một tổ hợp phím.",
+        "last": "Không thể bỏ phím tắt bắt đầu hoặc phím tắt giữ cuối cùng: phải luôn có thể bắt đầu ghi âm.",
+        "cannotEnd": "Trên Linux sẽ không thể kết thúc bản ghi do {{shortcut}} bắt đầu: hãy giữ lại một phím tắt kết thúc có cùng tổ hợp phím."
+      }
+    },
+    "holdKeys": {
+      "title": "Phím tắt giữ",
+      "description": "Giữ để ghi âm. Khi thả ra, bản ghi kết thúc theo cách này: thêm gì, có xử lý hậu kỳ văn bản không, có gửi các lần đọc chính tả trước làm ngữ cảnh không.",
+      "shortcutHint": "Giữ tổ hợp phím này sẽ ghi âm; thả ra sẽ kết thúc bản ghi theo cách này.",
+      "alsoStart": "Cũng là phím tắt bắt đầu: nhấn nhanh sẽ bắt đầu một bản ghi tiếp tục chạy.",
+      "holdOnly": "Chỉ là phím tắt giữ: nhấn nhanh không làm gì cả.",
+      "notTaken": "Chỉ được chiếm khi xử lý hậu kỳ đang bật: cho đến lúc đó, tổ hợp phím của nó vẫn thuộc về ứng dụng phía trước.",
+      "add": "Thêm phím tắt giữ",
+      "addPressKeys": "Nhấn tổ hợp phím cho phím tắt giữ mới",
+      "refName": "Phím tắt giữ {{name}}",
+      "errors": {
+        "save": "Không thể lưu các phím tắt giữ: {{error}}",
+        "needsShortcut": "Mỗi phím tắt giữ cần có tổ hợp phím.",
+        "shortcutTwice": "Hai phím tắt giữ không thể dùng chung một tổ hợp phím."
+      }
+    },
     "endKeys": {
       "title": "Phím tắt kết thúc",
-      "description": "Cách một bản ghi kết thúc và điều gì tiếp theo. Mỗi phím tắt kết thúc có tổ hợp phím riêng, chỉ được chiếm trong khi ghi, và quyết định thêm gì, có xử lý hậu kỳ văn bản không, và có gửi các lần đọc chính tả trước làm ngữ cảnh không. Một phím tắt kết thúc có thể dùng tổ hợp phím của một phím tắt bắt đầu: khi đó nhấn nhanh lại phím tắt bắt đầu đó sẽ kết thúc theo cách này.",
+      "description": "Cách một bản ghi kết thúc và điều gì tiếp theo. Mỗi phím tắt kết thúc có tổ hợp phím riêng, chỉ được chiếm trong khi ghi, và quyết định thêm gì, có xử lý hậu kỳ văn bản không, và có gửi các lần đọc chính tả trước làm ngữ cảnh không. Một phím tắt kết thúc có thể dùng tổ hợp phím của một phím tắt bắt đầu hoặc phím tắt giữ: khi đó nhấn nhanh tổ hợp này trong khi ghi sẽ kết thúc theo cách này.",
       "name": "Tên",
       "shortcutHint": "Nhấn tổ hợp phím này trong khi ghi sẽ kết thúc bản ghi theo cách này. Tổ hợp chỉ được chiếm trong khi ghi.",
-      "sameAsStart": "Cùng tổ hợp phím với “{{start}}”: nhấn nhanh lại trong khi ghi sẽ kết thúc theo cách này.",
+      "sameAsStart": "Cùng tổ hợp phím với một phím tắt bắt đầu: nhấn nhanh lại trong khi ghi sẽ kết thúc theo cách này.",
+      "sameAsHold": "Cùng tổ hợp phím với một phím tắt giữ: nhấn nhanh trong khi ghi sẽ kết thúc theo cách này.",
       "append": "Thêm vào cuối",
       "appendDescription": "Được thêm vào lần đọc chính tả kết thúc theo cách này: văn bản, rồi đến phím bạn chọn. Trong văn bản, \\s là dấu cách, \\n là xuống dòng, \\t là tab và \\\\ là dấu gạch chéo ngược; mọi thứ khác được thêm đúng như đã viết. Phím chỉ được gửi khi văn bản được dán.",
       "postProcess": "Xử lý hậu kỳ",
@@ -512,14 +523,7 @@
       "delete": "Xóa {{name}}",
       "lastOne": "Phải còn lại một phím tắt kết thúc để bản ghi luôn có thể kết thúc.",
       "held": "{{shortcut}} khi giữ",
-      "holdEnds": {
-        "title": "Khi giữ",
-        "description": "Cách việc thả một phím tắt bắt đầu đang giữ kết thúc bản ghi."
-      },
-      "tapEnds": {
-        "title": "Khi nhấn nhanh",
-        "description": "Cách việc nhấn nhanh một phím tắt kết thúc làm dừng bản ghi."
-      },
+      "refName": "Phím tắt kết thúc {{name}}",
       "factoryNames": {
         "pattern": "{{mode}} · {{effect}}",
         "direct": "Trực tiếp",
@@ -531,13 +535,13 @@
         "enter": "Gửi Enter",
         "shiftEnter": "Gửi Shift+Enter"
       },
-      "linuxNoShortcuts": "Trên Linux, tổ hợp phím của các phím tắt kết thúc không được chiếm trong khi ghi. Ở đó bản ghi kết thúc khi thả một phím tắt bắt đầu đang giữ, hoặc khi nhấn nhanh lại một phím tắt bắt đầu có cùng tổ hợp phím với một phím tắt kết thúc.",
+      "linuxNoShortcuts": "Trên Linux, tổ hợp phím của các phím tắt kết thúc không được chiếm trong khi ghi. Ở đó bản ghi kết thúc khi thả một phím tắt giữ, hoặc khi nhấn nhanh lại một phím tắt bắt đầu có cùng tổ hợp phím với một phím tắt kết thúc.",
       "errors": {
         "save": "Không thể lưu các phím tắt kết thúc: {{error}}",
         "needsShortcut": "Mỗi phím tắt kết thúc cần có tổ hợp phím.",
         "shortcutTwice": "Hai phím tắt kết thúc không thể dùng chung một phím tắt.",
         "last": "Không thể bỏ phím tắt kết thúc cuối cùng: bản ghi phải luôn có thể kết thúc.",
-        "cannotEnd": "Trên Linux sẽ không thể kết thúc bản ghi nữa: hãy giữ lại một phím tắt kết thúc có tổ hợp phím của một phím tắt bắt đầu, hoặc chọn “Giữ”."
+        "cannotEnd": "Trên Linux sẽ không thể kết thúc bản ghi nữa: hãy giữ lại một phím tắt kết thúc có tổ hợp phím của một phím tắt bắt đầu."
       }
     },
     "inputMethod": {
@@ -1090,6 +1094,11 @@
       "postProcessOff": "Xử lý sau đang tắt trong cài đặt",
       "postProcessNotSetUp": "Hãy chọn nhà cung cấp, mô hình và lời nhắc trong mục Xử lý sau trước",
       "recordingRemoved": "Đã xóa bản ghi âm để không vượt giới hạn dung lượng",
+      "spokenInstruction": {
+        "label": "Hướng dẫn bằng giọng nói:",
+        "nothingHeard": "không nhận dạng được gì",
+        "audio": "Âm thanh của hướng dẫn bằng giọng nói"
+      },
       "cancelTranscription": "Hủy phiên âm",
       "transcribing": "Đang phiên âm...",
       "postProcessing": "Đang xử lý sau...",
@@ -1160,6 +1169,7 @@
           "ai": "Đã xử lý sau",
           "aiPrompt": "Đã xử lý sau với “{{prompt}}”",
           "user": "Do bạn chỉnh sửa",
+          "withSpokenInstruction": "{{step}} + hướng dẫn bằng giọng nói",
           "withTime": "{{step}}, {{time}}"
         },
         "saveError": "Không thể lưu văn bản của bạn. Vui lòng thử lại.",
@@ -1300,7 +1310,7 @@
       },
       "holdThreshold": {
         "title": "Ngưỡng giữ phím",
-        "description": "Chỉ áp dụng cho chế độ Tự động: phím tắt phải được giữ trong bao lâu (mili giây) để được tính là giữ thay vì nhấn nhanh. Giảm xuống nếu bản ghi vẫn tiếp tục sau khi giữ ngắn; tăng lên nếu các lần nhấn nhanh có chủ ý bị coi là giữ phím."
+        "description": "Một phím tắt giữ phải được giữ trong bao lâu (mili giây) để được tính là giữ. Nếu giữ ngắn hơn, tổ hợp phím đồng thời là phím tắt bắt đầu được tính là nhấn nhanh, còn phím tắt chỉ để giữ sẽ hủy bản ghi. Giảm xuống nếu bản ghi vẫn tiếp tục sau khi giữ ngắn; tăng lên nếu các lần nhấn nhanh có chủ ý bị coi là giữ phím."
       },
       "reliablePaste": {
         "title": "Dán đáng tin cậy (Beta)",
@@ -1376,7 +1386,6 @@
     "profileView": {
       "fields": {
         "shortcuts": "Phím tắt",
-        "holdEnds": "Khi giữ",
         "selectedModel": "Mô hình giọng nói",
         "providers": "Địa chỉ và định dạng của nhà cung cấp",
         "activePrompts": "Prompt đang bật",

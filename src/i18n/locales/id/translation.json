@@ -408,18 +408,9 @@
         "notFound": "Pintasan tidak ditemukan",
         "pressKeys": "Tekan tombol...",
         "bindings": {
-          "transcribe": {
-            "name": "Pintasan Mulai",
-            "description": "Memulai rekaman. Cara berakhirnya ditentukan oleh pintasan akhir, juga saat ditahan."
-          },
           "cancel": {
             "name": "Pintasan Batal",
             "description": "Pintasan keyboard untuk membatalkan perekaman saat ini."
-          },
-          "transcribe_with_post_process": {
-            "name": "Pintasan Mulai Kedua",
-            "description": "Opsional: kombinasi kedua yang memulai rekaman. Pada setelan pabrik, pintasan akhir dengan kombinasi yang sama memproses lanjut teks. Hanya dipakai selama pemrosesan lanjut aktif.",
-            "descriptionMacos": "Opsional: kombinasi kedua yang memulai rekaman. Pada setelan pabrik, melepasnya setelah ditahan memproses lanjut teks; mengetuknya lagi mengakhiri tanpa pemrosesan lanjut, seperti setiap pintasan akhir tanpa ⌥. Hanya dipakai selama pemrosesan lanjut aktif."
           },
           "paste_last_transcript": {
             "name": "Tempel transkripsi terakhir",
@@ -464,20 +455,6 @@
         "noMatch": "Tidak ada bahasa yang cocok dengan “{{query}}”",
         "weak": "Belum ada model yang mengenali {{languages}} dengan baik."
       },
-      "shortcutActivation": {
-        "title": "Perilaku Pintasan",
-        "description": "Pilih cara pintasan mulai memulai dan mengakhiri rekaman.",
-        "options": {
-          "holdOrToggle": "Otomatis",
-          "pushToTalk": "Tahan",
-          "toggle": "Ketuk"
-        },
-        "descriptions": {
-          "hold_or_toggle": "Tahan untuk merekam, atau ketuk untuk mulai; lalu pintasan akhir menghentikannya",
-          "push_to_talk": "Merekam selama Anda menahan pintasan",
-          "toggle": "Ketuk untuk mulai merekam; ketukan berikutnya hanya menghentikannya jika sebuah pintasan akhir memiliki kombinasi yang sama"
-        }
-      },
       "insertService": {
         "invalid": "Gunakan ⌘ atau ⌃ dengan huruf, angka, atau tanda baca",
         "conflict": "{{name}} sudah memakai pintasan ini"
@@ -495,12 +472,46 @@
         }
       }
     },
+    "startKeys": {
+      "description": "Ketuk untuk memulai rekaman. Rekaman berjalan sampai sebuah pintasan akhir mengakhirinya.",
+      "shortcutHint": "Mengetuk kombinasi ini memulai rekaman. Kombinasi ini selalu dipakai.",
+      "alsoHold": "Juga pintasan tahan",
+      "add": "Tambah Pintasan Mulai",
+      "addPressKeys": "Tekan kombinasi untuk pintasan mulai yang baru",
+      "delete": "Hapus pintasan mulai {{shortcut}}",
+      "lastOne": "Satu pintasan mulai atau pintasan tahan harus tetap ada, agar rekaman selalu bisa dimulai.",
+      "refName": "Pintasan mulai {{shortcut}}",
+      "errors": {
+        "save": "Pintasan mulai tidak dapat disimpan: {{error}}",
+        "needsShortcut": "Setiap pintasan mulai memerlukan kombinasi tombol.",
+        "shortcutTwice": "Dua pintasan mulai tidak boleh memakai kombinasi yang sama.",
+        "last": "Pintasan mulai atau pintasan tahan terakhir tidak bisa dihapus: rekaman harus selalu bisa dimulai.",
+        "cannotEnd": "Di Linux rekaman yang dimulai oleh {{shortcut}} tidak akan bisa diakhiri: pertahankan satu pintasan akhir dengan kombinasi yang sama."
+      }
+    },
+    "holdKeys": {
+      "title": "Pintasan Tahan",
+      "description": "Tahan untuk merekam. Melepasnya mengakhiri rekaman dengan cara ini: apa yang ditambahkan, apakah teks diproses lanjut, dan apakah dikte sebelumnya ikut dikirim sebagai konteks.",
+      "shortcutHint": "Menahan kombinasi ini merekam; melepasnya mengakhiri rekaman dengan cara ini.",
+      "alsoStart": "Juga pintasan mulai: ketukan singkat memulai rekaman yang terus berjalan.",
+      "holdOnly": "Hanya pintasan tahan: ketukan singkat tidak melakukan apa pun.",
+      "notTaken": "Hanya dipakai selama pemrosesan lanjut aktif: sampai saat itu, kombinasinya tetap milik aplikasi di depan.",
+      "add": "Tambah Pintasan Tahan",
+      "addPressKeys": "Tekan kombinasi untuk pintasan tahan yang baru",
+      "refName": "Pintasan tahan {{name}}",
+      "errors": {
+        "save": "Pintasan tahan tidak dapat disimpan: {{error}}",
+        "needsShortcut": "Setiap pintasan tahan memerlukan kombinasi tombol.",
+        "shortcutTwice": "Dua pintasan tahan tidak boleh memakai kombinasi yang sama."
+      }
+    },
     "endKeys": {
       "title": "Pintasan Akhir",
-      "description": "Cara rekaman berakhir dan apa yang menyusul. Setiap pintasan akhir punya kombinasi tombolnya sendiri, yang hanya dipakai selama merekam, dan menentukan apa yang ditambahkan, apakah teks diproses lanjut, dan apakah dikte sebelumnya ikut dikirim sebagai konteks. Pintasan akhir boleh memakai kombinasi tombol sebuah pintasan mulai: mengetuk pintasan mulai itu lagi lalu mengakhiri rekaman dengan cara ini.",
+      "description": "Cara rekaman berakhir dan apa yang menyusul. Setiap pintasan akhir punya kombinasi tombolnya sendiri, yang hanya dipakai selama merekam, dan menentukan apa yang ditambahkan, apakah teks diproses lanjut, dan apakah dikte sebelumnya ikut dikirim sebagai konteks. Pintasan akhir boleh memakai kombinasi tombol sebuah pintasan mulai atau pintasan tahan: mengetuknya selama rekaman lalu mengakhiri rekaman dengan cara ini.",
       "name": "Nama",
       "shortcutHint": "Menekan kombinasi ini selama rekaman mengakhirinya dengan cara ini. Kombinasi ini hanya dipakai selama merekam.",
-      "sameAsStart": "Kombinasi yang sama dengan “{{start}}”: mengetuknya lagi selama rekaman mengakhirinya dengan cara ini.",
+      "sameAsStart": "Kombinasi yang sama dengan sebuah pintasan mulai: mengetuknya lagi selama rekaman mengakhirinya dengan cara ini.",
+      "sameAsHold": "Kombinasi yang sama dengan sebuah pintasan tahan: mengetuknya selama rekaman mengakhirinya dengan cara ini.",
       "append": "Tambahkan di akhir",
       "appendDescription": "Ditambahkan ke dikte yang berakhir dengan cara ini: teksnya, lalu tombol yang Anda pilih. Dalam teks, \\s adalah spasi, \\n baris baru, \\t tab, dan \\\\ garis miring terbalik; selebihnya ditambahkan seperti yang tertulis. Tombol hanya dikirim saat teks ditempelkan.",
       "postProcess": "Proses lanjut",
@@ -512,14 +523,7 @@
       "delete": "Hapus {{name}}",
       "lastOne": "Satu pintasan akhir harus tetap ada, agar rekaman selalu bisa diakhiri.",
       "held": "{{shortcut}} ditahan",
-      "holdEnds": {
-        "title": "Saat Ditahan",
-        "description": "Cara melepas pintasan mulai yang ditahan mengakhiri rekaman."
-      },
-      "tapEnds": {
-        "title": "Saat Diketuk",
-        "description": "Cara mengetuk pintasan akhir mengakhiri rekaman."
-      },
+      "refName": "Pintasan akhir {{name}}",
       "factoryNames": {
         "pattern": "{{mode}} · {{effect}}",
         "direct": "Langsung",
@@ -531,13 +535,13 @@
         "enter": "Kirim Enter",
         "shiftEnter": "Kirim Shift+Enter"
       },
-      "linuxNoShortcuts": "Di Linux, kombinasi tombol pintasan akhir tidak dipakai selama merekam. Di sana rekaman berakhir saat pintasan mulai yang ditahan dilepas, atau saat pintasan mulai yang kombinasinya juga dimiliki sebuah pintasan akhir diketuk lagi.",
+      "linuxNoShortcuts": "Di Linux, kombinasi tombol pintasan akhir tidak dipakai selama merekam. Di sana rekaman berakhir saat pintasan tahan dilepas, atau saat pintasan mulai yang kombinasinya juga dimiliki sebuah pintasan akhir diketuk lagi.",
       "errors": {
         "save": "Pintasan akhir tidak dapat disimpan: {{error}}",
         "needsShortcut": "Setiap pintasan akhir memerlukan kombinasi tombol.",
         "shortcutTwice": "Dua pintasan akhir tidak boleh memakai pintasan yang sama.",
         "last": "Pintasan akhir terakhir tidak bisa dihapus: rekaman harus selalu bisa diakhiri.",
-        "cannotEnd": "Di Linux rekaman tidak akan bisa diakhiri lagi: pertahankan satu pintasan akhir dengan kombinasi sebuah pintasan mulai, atau pilih “Tahan”."
+        "cannotEnd": "Di Linux rekaman tidak akan bisa diakhiri lagi: pertahankan satu pintasan akhir dengan kombinasi sebuah pintasan mulai."
       }
     },
     "inputMethod": {
@@ -1090,6 +1094,11 @@
       "postProcessOff": "Pascaproses dinonaktifkan di pengaturan",
       "postProcessNotSetUp": "Pilih penyedia, model, dan prompt di Pascaproses terlebih dahulu",
       "recordingRemoved": "Rekaman dihapus agar tetap dalam batas penyimpanan",
+      "spokenInstruction": {
+        "label": "Instruksi lisan:",
+        "nothingHeard": "tidak ada yang terdengar",
+        "audio": "Audio instruksi lisan"
+      },
       "cancelTranscription": "Batalkan transkripsi",
       "transcribing": "Mentranskripsikan...",
       "postProcessing": "Menjalankan pascaproses...",
@@ -1160,6 +1169,7 @@
           "ai": "Dipascaproses",
           "aiPrompt": "Dipascaproses dengan “{{prompt}}”",
           "user": "Diedit oleh Anda",
+          "withSpokenInstruction": "{{step}} + instruksi lisan",
           "withTime": "{{step}}, {{time}}"
         },
         "saveError": "Gagal menyimpan teks Anda. Silakan coba lagi.",
@@ -1300,7 +1310,7 @@
       },
       "holdThreshold": {
         "title": "Ambang Waktu Tahan",
-        "description": "Hanya mode Otomatis: berapa lama (dalam milidetik) pintasan harus ditahan agar dianggap ditahan, bukan diketuk. Turunkan jika penahanan singkat membuat perekaman tetap aktif; naikkan jika ketukan yang disengaja dianggap sebagai penahanan."
+        "description": "Berapa lama (dalam milidetik) pintasan tahan harus ditahan agar dianggap ditahan. Jika ditahan lebih singkat, kombinasi yang juga pintasan mulai dianggap ketukan, dan pintasan yang hanya pintasan tahan membuang rekamannya. Turunkan jika penahanan singkat membuat perekaman tetap aktif; naikkan jika ketukan yang disengaja dianggap sebagai penahanan."
       },
       "reliablePaste": {
         "title": "Tempel Lebih Andal (Beta)",
@@ -1376,7 +1386,6 @@
     "profileView": {
       "fields": {
         "shortcuts": "Pintasan",
-        "holdEnds": "Saat ditahan",
         "selectedModel": "Model suara",
         "providers": "Alamat dan format penyedia",
         "activePrompts": "Prompt aktif",
