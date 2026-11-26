@@ -43,6 +43,13 @@ pub fn handle_shortcut_event(
         return;
     }
 
+    // DanyWhere: an instruction shortcut (`instruction_keys`), registered
+    // only while a recording runs and post-processing can run.
+    if let Some(instruction_id) = crate::instruction_keys::instruction_id_of(binding_id) {
+        log::debug!("Instruction shortcut '{instruction_id}' (pressed: {is_pressed})");
+        return;
+    }
+
     // DanyWhere: start and hold shortcuts (`start_keys`) go to the
     // coordinator, which finds what the combination is in the profile that
     // applies now.

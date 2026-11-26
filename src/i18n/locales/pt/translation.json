@@ -525,9 +525,6 @@
       "held": "{{shortcut}} mantido premido",
       "refName": "Atalho de fim {{name}}",
       "factoryNames": {
-        "pattern": "{{mode}} · {{effect}}",
-        "direct": "Direto",
-        "postProcessed": "Pós-processado",
         "space": "Espaço",
         "noSpace": "Sem espaço",
         "paragraph": "Parágrafo",

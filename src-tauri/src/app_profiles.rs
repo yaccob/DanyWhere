@@ -73,17 +73,18 @@ pub fn manual_mode(settings: &AppSettings) -> bool {
     !settings.profile_auto_by_app && has_assignments(settings)
 }
 
-/// Whether some dictation can post-process: the active profile does, or,
-/// while choosing by application is on, a profile with applications does.
-/// The post-processing shortcuts are registered only then.
+/// Whether some dictation can post-process: the active profile may (its
+/// mode isn't "never", `settings::PostProcessMode`), or, while choosing by
+/// application is on, a profile with applications may. Recordings capture
+/// their window as context only then (`dictation_context::capture_wanted`).
 pub fn post_processing_reachable(settings: &AppSettings) -> bool {
     // The flat fields hold the active profile's latest values.
-    settings.post_process_enabled
+    settings.post_process_mode.allows()
         || (settings.profile_auto_by_app
             && settings.profiles.iter().any(|profile| {
                 profile.id != settings.active_profile_id
                     && !profile.apps.is_empty()
-                    && profile.values.post_process_enabled
+                    && profile.values.post_process_mode.allows()
             }))
 }
 
@@ -249,25 +250,6 @@ pub fn with_values(settings: &AppSettings, values: Option<&ProfileValues>) -> Ap
         values.apply_to(&mut settings);
     }
     settings
-}
-
-/// Whether a dictation that ends (or is expected to end) with `end`
-/// post-processes, with `values`, those of its profile: its own or the one
-/// in use. Only while that profile's switch "Post Processing" is on: with it
-/// off no text goes to a language model, whatever the end says, and the
-/// context it would send stays home too (user, 2026-11-23, option a). Until
-/// then the profile in use let its end decide alone, so the built-in end
-/// with post-processing failed in the defaults as they come, and a redo
-/// for another profile, which asked the switch, took the entry for one
-/// that wasn't post-processed.
-///
-/// The one rule for what a dictation expects at its start
-/// (`dictation_start::plan_start`), what it does when it ends
-/// (`dictation_snapshot`) and what a redo for another profile counts and
-/// does (`profile_redo`). History's own actions (✨, "Post-process with")
-/// don't ask it.
-pub fn effective_post_process(end: &crate::end_keys::EndKey, values: &ProfileValues) -> bool {
-    end.post_process && values.post_process_enabled
 }
 
 /// The applications to offer: the running ones first, then the installed
@@ -615,14 +597,14 @@ mod tests {
     fn with_mail_profile() -> AppSettings {
         let mut settings = AppSettings {
             selected_model: "parakeet".to_string(),
-            post_process_enabled: false,
+            post_process_mode: crate::settings::PostProcessMode::Never,
             custom_words: strings(&["Sayuri"]),
             ..Default::default()
         };
         ensure_profiles(&mut settings);
         let mut mail = crate::profiles::profile_for_test(&settings, "mail", "Mail", |values| {
             values.selected_model = "whisper".to_string();
-            values.post_process_enabled = true;
+            values.post_process_mode = crate::settings::PostProcessMode::WithInstructionKey;
             values.profile_words = strings(&["Grüezi"]);
         });
         mail.apps = strings(&["com.apple.mail"]);
@@ -705,7 +687,7 @@ mod tests {
     #[test]
     fn post_processing_is_reachable_through_an_app_profile() {
         let mut settings = with_mail_profile();
-        assert!(!settings.post_process_enabled);
+        assert!(!settings.post_process_mode.allows());
         assert!(post_processing_reachable(&settings));
         toggle_auto(&mut settings);
         assert!(!post_processing_reachable(&settings));
@@ -721,7 +703,10 @@ mod tests {
         assert_eq!(profile.id, "mail");
         let effective = with_values(&settings, Some(&profile.values));
         assert_eq!(effective.selected_model, "whisper");
-        assert!(effective.post_process_enabled);
+        assert_eq!(
+            effective.post_process_mode,
+            crate::settings::PostProcessMode::WithInstructionKey
+        );
         assert_eq!(effective.profile_words, strings(&["Grüezi"]));
         // Global values stay, and the active profile isn't switched.
         assert_eq!(effective.custom_words, strings(&["Sayuri"]));
@@ -802,26 +787,28 @@ mod tests {
         assert_eq!(dictation_values(), None);
     }
 
+    /// Variant b (user, 2026-11-26): the mode of a dictation's profile and
+    /// whether an instruction key was pressed decide; no end does.
     #[test]
-    fn a_dictation_post_processes_only_with_its_profiles_switch_on() {
-        let settings = with_mail_profile();
-        let mut posting = crate::end_keys::EndKey {
-            post_process: true,
-            ..Default::default()
-        };
-        // An application's profile, and the defaults in use.
-        let mut mail = crate::profiles::values_of(&settings, "mail").expect("mail");
-        let mut in_use = ProfileValues::from_settings(&settings);
-        for values in [&mut mail, &mut in_use] {
-            values.post_process_enabled = true;
-            assert!(effective_post_process(&posting, values));
-            values.post_process_enabled = false;
-            assert!(!effective_post_process(&posting, values));
+    fn the_mode_says_when_a_dictation_post_processes() {
+        use crate::settings::PostProcessMode::*;
+        for (mode, without, with, allows) in [
+            (Never, false, false, false),
+            (WithInstructionKey, false, true, true),
+            (Always, true, true, true),
+        ] {
+            assert_eq!(mode.post_processes(false), without, "{mode:?}");
+            assert_eq!(mode.post_processes(true), with, "{mode:?}");
+            assert_eq!(mode.allows(), allows, "{mode:?}");
         }
-        // An end without post-processing never does.
-        posting.post_process = false;
-        in_use.post_process_enabled = true;
-        assert!(!effective_post_process(&posting, &in_use));
+        assert_eq!(
+            crate::settings::PostProcessMode::default(),
+            WithInstructionKey
+        );
+        assert_eq!(
+            serde_json::to_value([Never, WithInstructionKey, Always]).unwrap(),
+            serde_json::json!(["never", "with_instruction_key", "always"])
+        );
     }
 
     fn shown(name: &str, mode: ProfileMode) -> Option<OverlayProfile> {

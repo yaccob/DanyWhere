@@ -75,12 +75,11 @@ impl ServiceKind {
     }
 
     /// Whether this is an "end dictation" service and, if so, whether it
-    /// stands for the first post-processing hold shortcut (else the first
-    /// start shortcut, `start_keys::service_binding`). Ending a recording
-    /// through the service does what that key would: the post-process
-    /// service ends with the hold shortcut's values. DanyWhere, 2026-11-26:
-    /// only so far that the mode without Accessibility (parked) still ends
-    /// as before.
+    /// post-processes: it stands for the first hold shortcut with a
+    /// combination of its own (else the first start shortcut,
+    /// `start_keys::service_binding`), and ends as after an instruction
+    /// shortcut without an instruction (variant b, 2026-11-26). Only so far
+    /// that the mode without Accessibility (parked) still ends as before.
     pub fn post_processes(self) -> Option<bool> {
         match self {
             ServiceKind::InsertLastDictation => None,
@@ -98,7 +97,6 @@ pub fn service_bindings(
 ) -> Vec<(ServiceKind, Option<crate::settings::ShortcutBinding>)> {
     let frontmost = crate::app_profiles::frontmost_if_choosing(settings);
     let (_, values) = crate::app_profiles::profile_now(settings, frontmost.as_deref());
-    let reachable = crate::app_profiles::post_processing_reachable(settings);
     [
         ServiceKind::EndDictation,
         ServiceKind::EndDictationWithPostProcess,
@@ -108,7 +106,7 @@ pub fn service_bindings(
         let post_process = kind == ServiceKind::EndDictationWithPostProcess;
         (
             kind,
-            crate::start_keys::service_binding(&values, reachable, post_process),
+            crate::start_keys::service_binding(&values, post_process),
         )
     })
     .collect()
@@ -1866,8 +1864,7 @@ mod tests {
 
     #[test]
     fn the_end_services_stand_for_the_first_start_and_post_processing_hold_shortcut() {
-        let mut settings = crate::settings::get_default_settings();
-        settings.post_process_enabled = true;
+        let settings = crate::settings::get_default_settings();
         let services = service_bindings(&settings);
         let ids: Vec<(ServiceKind, Option<String>)> = services
             .into_iter()
@@ -1882,7 +1879,34 @@ mod tests {
                 ),
                 (
                     ServiceKind::EndDictationWithPostProcess,
-                    Some("hold_key:hold_post".to_string())
+                    Some("hold_key:hold_no_space".to_string())
+                ),
+            ]
+        );
+    }
+
+    /// Variant b (user, 2026-11-26): the post-processing service keeps the
+    /// second factory combination, the first hold shortcut with one of its
+    /// own, whatever the profile's mode (later for NoAX).
+    #[test]
+    fn the_post_processing_service_stands_for_the_first_hold_shortcut_of_its_own() {
+        let mut settings = crate::settings::get_default_settings();
+        settings.post_process_mode = crate::settings::PostProcessMode::Never;
+        let services = service_bindings(&settings);
+        let ids: Vec<(ServiceKind, Option<String>)> = services
+            .into_iter()
+            .map(|(kind, binding)| (kind, binding.map(|b| b.id)))
+            .collect();
+        assert_eq!(
+            ids,
+            vec![
+                (
+                    ServiceKind::EndDictation,
+                    Some("start_key:start".to_string())
+                ),
+                (
+                    ServiceKind::EndDictationWithPostProcess,
+                    Some(format!("hold_key:{}", crate::start_keys::HOLD_NO_SPACE_ID))
                 ),
             ]
         );

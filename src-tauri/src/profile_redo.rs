@@ -158,25 +158,24 @@ pub fn redo_from(
     redo_from_with_instruction(base, made_with, target, made_end, target_end, false)
 }
 
-/// DanyWhere: [`redo_from`] for a dictation that went on to a spoken
-/// instruction (`spoken_instruction`): it post-processed whatever its end
-/// said, and does so in the target too, with the instruction
-/// (`dictation_snapshot::wants_post_processing`).
+/// DanyWhere: [`redo_from`] for a dictation during whose recording an
+/// instruction key was pressed (`instruction_key`, with or without a spoken
+/// instruction): it post-processes in the target as there, by the
+/// target's mode (`dictation_snapshot::wants_post_processing`).
 pub fn redo_from_with_instruction(
     base: &AppSettings,
     made_with: &ProfileValues,
     target: &ProfileValues,
     made_end: &EndKey,
     target_end: &EndKey,
-    spoken_instruction: bool,
+    instruction_key: bool,
 ) -> RedoFrom {
     if transcription_differs(base, made_with, target) {
         return RedoFrom::Transcription;
     }
-    // As the dictation decided, and as it would decide in the target
-    // (`app_profiles::effective_post_process`).
-    let made_post_processed = post_processes_in(made_end, made_with, spoken_instruction);
-    let target_post_processes = post_processes_in(target_end, target, spoken_instruction);
+    // As the dictation decided, and as it would decide in the target.
+    let made_post_processed = post_processes_in(made_with, instruction_key);
+    let target_post_processes = post_processes_in(target, instruction_key);
     if made_post_processed != target_post_processes
         || (made_post_processed
             && post_processing_differs(
@@ -195,13 +194,20 @@ pub fn redo_from_with_instruction(
     RedoFrom::Nothing
 }
 
-/// DanyWhere: whether a dictation ending with `end` in the profile with
-/// `values` post-processes there; with a spoken instruction always.
-pub fn post_processes_in(end: &EndKey, values: &ProfileValues, spoken_instruction: bool) -> bool {
-    crate::dictation_snapshot::wants_post_processing(
-        spoken_instruction,
-        crate::app_profiles::effective_post_process(end, values),
-    )
+/// DanyWhere: whether a dictation post-processes in the profile with
+/// `values`, after an instruction key (`instruction_key`) or without one
+/// (`dictation_snapshot::wants_post_processing`; variant b: the end
+/// doesn't say it).
+pub fn post_processes_in(values: &ProfileValues, instruction_key: bool) -> bool {
+    crate::dictation_snapshot::wants_post_processing(values, instruction_key)
+}
+
+/// DanyWhere: whether an instruction key was pressed during the recording
+/// of `entry`: it has a spoken instruction, or the dictation remembered
+/// says so (remote control's post-processing toggle has none).
+fn instruction_key_of(entry: &HistoryEntry) -> bool {
+    entry.spoken_instruction.is_some()
+        || made_with(entry.id).is_some_and(|made| made.instruction_key)
 }
 
 /// DanyWhere: the spoken instruction a redo of `entry` takes along: it
@@ -306,6 +312,8 @@ pub struct MadeWith {
     pub values: ProfileValues,
     /// The end shortcut it ended with (`end_keys`).
     pub end: EndKey,
+    /// Whether an instruction key was pressed during its recording.
+    pub instruction_key: bool,
 }
 
 /// The last dictation. Only that one is inserted again ("Paste Last
@@ -379,18 +387,19 @@ pub fn for_insert(
         });
     };
     let target_end = end_in(&target_values, &made.end);
-    // DanyWhere: a dictation with a spoken instruction post-processes
-    // wherever it goes, with the instruction.
-    let spoken_instruction = entry.spoken_instruction.is_some();
+    // DanyWhere: after an instruction key a dictation post-processes
+    // wherever it goes, with its spoken instruction, unless the target never
+    // post-processes.
+    let instruction_key = entry.spoken_instruction.is_some() || made.instruction_key;
     let from = redo_from_with_instruction(
         &settings,
         &made.values,
         &target_values,
         &made.end,
         &target_end,
-        spoken_instruction,
+        instruction_key,
     );
-    let target_post_processes = post_processes_in(&target_end, &target_values, spoken_instruction);
+    let target_post_processes = post_processes_in(&target_values, instruction_key);
     let plan = plan(from, entry, target_post_processes);
     if plan != RedoPlan::Keep {
         info!(
@@ -469,6 +478,7 @@ fn run(
         profile_id: target_id.to_string(),
         values: target.clone(),
         end: target_end.clone(),
+        instruction_key: instruction_key_of(entry),
     };
     match plan {
         RedoPlan::Keep => (None, None),
@@ -494,8 +504,7 @@ fn run(
         }
         RedoPlan::Transcribe => {
             show(Working::Transcribing);
-            let post_process =
-                post_processes_in(target_end, target, entry.spoken_instruction.is_some());
+            let post_process = post_processes_in(target, instruction_key_of(entry));
             let with_context = post_process && target_end.send_context;
             match crate::app_profiles::with_values_here(target.clone(), || {
                 transcribe_again(app, entry, post_process, with_context, show)
@@ -674,7 +683,7 @@ mod tests {
     fn settings_with_mail() -> AppSettings {
         let mut settings = AppSettings {
             selected_model: "parakeet".to_string(),
-            post_process_enabled: true,
+            post_process_mode: crate::settings::PostProcessMode::WithInstructionKey,
             post_process_provider_id: "anthropic".to_string(),
             post_process_prompts: vec![
                 LLMPrompt {
@@ -722,10 +731,10 @@ mod tests {
         ProfileValues::from_settings(settings)
     }
 
-    /// The end a dictation ended with: with post-processing (`requested`)
-    /// or without, appending a space.
-    fn end_with(requested: bool) -> EndKey {
-        crate::end_keys::builtin(" ", false)[usize::from(requested)].clone()
+    /// The end a dictation ended with, appending a space: the second
+    /// built-in one (`second`) or the first.
+    fn end_with(second: bool) -> EndKey {
+        crate::end_keys::builtin(" ", false)[usize::from(second)].clone()
     }
 
     fn redo(change: impl FnOnce(&mut ProfileValues), requested: bool) -> RedoFrom {
@@ -751,7 +760,8 @@ mod tests {
         redo_all(library, change, |_| {}, requested)
     }
 
-    /// [`redo`] with all three changes.
+    /// [`redo`] with all three changes; `requested`: an instruction key was
+    /// pressed during the dictation, which then post-processed.
     fn redo_all(
         library: impl FnOnce(&mut AppSettings),
         change: impl FnOnce(&mut ProfileValues),
@@ -766,10 +776,48 @@ mod tests {
         let made_end = end_with(requested);
         let mut target_end = made_end.clone();
         change_end(&mut target_end);
-        redo_from(&settings, &made, &target, &made_end, &target_end)
+        redo_from_with_instruction(&settings, &made, &target, &made_end, &target_end, requested)
     }
 
     // DanyWhere (strand Z1): a dictation with a spoken instruction.
+
+    /// Variant b (user, 2026-11-26): the profile's mode decides, with the
+    /// instruction key of the dictation; the end and the old switch don't.
+    #[test]
+    fn whether_a_redo_post_processes_follows_the_profiles_mode() {
+        use crate::settings::PostProcessMode::*;
+        let settings = settings_with_mail();
+        let mut values = default_values(&settings);
+        for (mode, without, with) in [
+            (Never, false, false),
+            (WithInstructionKey, false, true),
+            (Always, true, true),
+        ] {
+            values.post_process_mode = mode;
+            assert_eq!(post_processes_in(&values, false), without, "{mode:?}");
+            assert_eq!(post_processes_in(&values, true), with, "{mode:?}");
+        }
+    }
+
+    #[test]
+    fn a_redo_into_a_profile_that_never_post_processes_undoes_it() {
+        use crate::settings::PostProcessMode::*;
+        let settings = settings_with_mail();
+        let mut made = default_values(&settings);
+        made.post_process_mode = WithInstructionKey;
+        let mut target = made.clone();
+        target.post_process_mode = Never;
+        let end = end_with(false);
+        assert_eq!(
+            redo_from_with_instruction(&settings, &made, &target, &end, &end, true),
+            RedoFrom::PostProcessing
+        );
+        assert_eq!(
+            redo_from_with_instruction(&settings, &made, &target, &end, &end, false),
+            RedoFrom::Nothing,
+            "without the instruction key neither post-processes"
+        );
+    }
 
     #[test]
     fn a_dictation_with_an_instruction_post_processes_again_whatever_its_end_says() {
@@ -791,16 +839,6 @@ mod tests {
             RedoFrom::Nothing,
             "the same profile redoes nothing"
         );
-    }
-
-    #[test]
-    fn with_an_instruction_the_target_post_processes_whatever_its_end_says() {
-        let settings = settings_with_mail();
-        let mut values = default_values(&settings);
-        values.post_process_enabled = false;
-        assert!(post_processes_in(&end_with(false), &values, true));
-        assert!(!post_processes_in(&end_with(false), &values, false));
-        assert!(!post_processes_in(&end_with(true), &values, false));
     }
 
     #[test]
@@ -1008,13 +1046,27 @@ mod tests {
     #[test]
     fn switching_post_processing_on_or_off_post_processes_again() {
         assert_eq!(
-            redo(|t| t.post_process_enabled = false, true),
+            redo(
+                |t| t.post_process_mode = crate::settings::PostProcessMode::Never,
+                true
+            ),
             RedoFrom::PostProcessing
         );
-        // The shortcut didn't ask for it: neither post-processes.
+        // No instruction key was pressed: neither post-processes.
         assert_eq!(
-            redo(|t| t.post_process_enabled = false, false),
+            redo(
+                |t| t.post_process_mode = crate::settings::PostProcessMode::Never,
+                false
+            ),
             RedoFrom::Nothing
+        );
+        // A target that always post-processes does it without one.
+        assert_eq!(
+            redo(
+                |t| t.post_process_mode = crate::settings::PostProcessMode::Always,
+                false
+            ),
+            RedoFrom::PostProcessing
         );
     }
 
@@ -1069,14 +1121,6 @@ mod tests {
     }
 
     #[test]
-    fn an_end_shortcut_that_post_processes_only_in_the_target_post_processes_again() {
-        assert_eq!(
-            redo_ending(|_| {}, |e| e.post_process = true, false),
-            RedoFrom::PostProcessing
-        );
-    }
-
-    #[test]
     fn the_target_takes_its_end_shortcut_of_the_same_id_or_keeps_the_one_ended_with() {
         let settings = settings_with_mail();
         let mut target = default_values(&settings);
@@ -1096,11 +1140,11 @@ mod tests {
     fn a_dictation_ended_by_holding_takes_the_targets_hold_shortcut() {
         let settings = settings_with_mail();
         let made = default_values(&settings);
-        let hold = crate::start_keys::HOLD_DIRECT_ID;
+        let hold = crate::start_keys::HOLD_SPACE_ID;
         let made_end = crate::end_keys::resolve(
             &made,
             &crate::end_keys::EndChoice::Held(hold.to_string()),
-            "hold_key:hold_direct",
+            "hold_key:hold_space",
         );
         assert_eq!(made_end.id, format!("hold:{hold}"));
         let mut target = default_values(&settings);
@@ -1110,14 +1154,14 @@ mod tests {
             .find(|key| key.id == hold)
             .expect("the factory hold shortcut");
         there.append_text = "{Tab}".to_string();
-        there.post_process = true;
+        there.send_context = true;
         let there = end_in(&target, &made_end);
         assert_eq!(there.append_text, "{Tab}");
-        assert!(there.post_process);
+        assert!(there.send_context);
     }
 
     /// An entry from before hold shortcuts (`held:<start binding>`) ends as
-    /// the target's first hold shortcut without, or with, post-processing.
+    /// the target's first, or second, hold shortcut.
     #[test]
     fn an_older_entry_ended_by_holding_takes_the_targets_hold_shortcut_alike() {
         let settings = settings_with_mail();
@@ -1128,11 +1172,11 @@ mod tests {
         };
         assert_eq!(
             end_in(&target, &old("held:transcribe")).id,
-            "hold:hold_direct"
+            "hold:hold_space"
         );
         assert_eq!(
             end_in(&target, &old("held:transcribe_with_post_process")).id,
-            "hold:hold_post"
+            "hold:hold_no_space"
         );
         // Anything else: the end it ended with.
         assert_eq!(end_in(&target, &old("held:gone")).id, "held:gone");
@@ -1321,6 +1365,7 @@ mod tests {
             profile_id: "mail".to_string(),
             values: default_values(&settings),
             end: end_with(true),
+            instruction_key: false,
         };
         remember(made(41));
         remember(made(42));

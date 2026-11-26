@@ -888,8 +888,7 @@ mod tests {
     #[cfg(target_os = "macos")]
     #[test]
     fn every_default_dictation_shortcut_can_insert() {
-        let mut settings = crate::settings::get_default_settings();
-        settings.post_process_enabled = true;
+        let settings = crate::settings::get_default_settings();
         let services: Vec<ShortcutBinding> = crate::insert_service::service_bindings(&settings)
             .into_iter()
             .filter_map(|(_, binding)| binding)

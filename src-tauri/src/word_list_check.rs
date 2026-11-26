@@ -61,10 +61,12 @@ pub fn candidates(
 
 /// Whether a dictation with `settings` gets the check: the switch is on,
 /// the dictation is not post-processed (`post_process`; post-processing
-/// gets the candidates as a hint instead), and post-processing has a
-/// provider and a model to ask. Not with Apple Intelligence for now.
+/// gets the candidates as a hint instead), its profile may post-process
+/// (not "never", where nothing goes to a provider; variant b, 2026-11-26),
+/// and post-processing has a provider and a model to ask. Not with Apple
+/// Intelligence for now.
 pub fn wanted(settings: &AppSettings, post_process: bool) -> bool {
-    if !settings.word_list_llm_check || post_process {
+    if !settings.word_list_llm_check || post_process || !settings.post_process_mode.allows() {
         return false;
     }
     let Some(provider) = settings.active_post_process_provider() else {
@@ -397,6 +399,17 @@ mod tests {
         let mut no_provider = settings.clone();
         no_provider.post_process_provider_id = "gone".to_string();
         assert!(!wanted(&no_provider, false));
+    }
+
+    #[test]
+    fn a_profile_that_never_post_processes_gets_no_check() {
+        // Nothing of its dictations goes to a provider (variant b,
+        // user, 2026-11-26).
+        let mut never = check_settings("http://localhost", true);
+        never.post_process_mode = crate::settings::PostProcessMode::Never;
+        assert!(!wanted(&never, false));
+        never.post_process_mode = crate::settings::PostProcessMode::WithInstructionKey;
+        assert!(wanted(&never, false));
     }
 
     #[test]

@@ -525,9 +525,6 @@
       "held": "{{shortcut}} khi giữ",
       "refName": "Phím tắt kết thúc {{name}}",
       "factoryNames": {
-        "pattern": "{{mode}} · {{effect}}",
-        "direct": "Trực tiếp",
-        "postProcessed": "Xử lý hậu kỳ",
         "space": "Dấu cách",
         "noSpace": "Không dấu cách",
         "paragraph": "Đoạn",

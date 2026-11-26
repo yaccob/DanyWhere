@@ -525,9 +525,6 @@
       "held": "{{shortcut}} בלחיצה ארוכה",
       "refName": "קיצור סיום {{name}}",
       "factoryNames": {
-        "pattern": "{{mode}} · {{effect}}",
-        "direct": "ישיר",
-        "postProcessed": "עם עיבוד נוסף",
         "space": "רווח",
         "noSpace": "ללא רווח",
         "paragraph": "פסקה",

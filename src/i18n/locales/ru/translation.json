@@ -525,9 +525,6 @@
       "held": "{{shortcut}} при удержании",
       "refName": "Клавиша завершения {{name}}",
       "factoryNames": {
-        "pattern": "{{mode}} · {{effect}}",
-        "direct": "Сразу",
-        "postProcessed": "С постобработкой",
         "space": "Пробел",
         "noSpace": "Без пробела",
         "paragraph": "Абзац",

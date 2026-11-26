@@ -525,9 +525,6 @@
       "held": "{{shortcut}} tenuta premuta",
       "refName": "Scorciatoia di fine {{name}}",
       "factoryNames": {
-        "pattern": "{{mode}} · {{effect}}",
-        "direct": "Diretto",
-        "postProcessed": "Post-elaborato",
         "space": "Spazio",
         "noSpace": "Senza spazio",
         "paragraph": "Paragrafo",

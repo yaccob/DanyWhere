@@ -45,14 +45,18 @@ pub struct DictationSnapshot {
     /// That profile's values.
     pub values: ProfileValues,
     /// The end it takes in that profile (`end_keys::resolve`): its "Append"
-    /// text, whether it post-processes and whether it sends context.
+    /// text and whether it sends context.
     pub end: EndKey,
-    /// Whether it post-processes: the end asks for it and the switch of the
-    /// profile it ends with is on (`app_profiles::effective_post_process`).
+    /// Whether it post-processes ([`wants_post_processing`]): after an
+    /// instruction key, or always, by the mode of the profile it ends with.
     pub post_process: bool,
     /// Whether earlier dictations go along as context: only when it
     /// post-processes.
     pub with_context: bool,
+    /// Whether an instruction key was pressed during its recording (with or
+    /// without a spoken instruction): a redo elsewhere post-processes by
+    /// the same rule (`profile_redo`).
+    pub instruction_key: bool,
     /// The recording is transcribed in one go with the end profile's values
     /// (`app_profiles::EndChange::transcription_differs`).
     pub transcribed_with_end_values: bool,
@@ -77,35 +81,44 @@ impl DictationSnapshot {
             profile_id: self.profile_id.clone(),
             values: self.values.clone(),
             end: self.end.clone(),
+            instruction_key: self.instruction_key,
         }
     }
 
     /// DanyWhere: the snapshot of a dictation whose recording went on to a
-    /// spoken instruction (`dictation_flow::instruction`): it post-processes
-    /// whatever its end says ([`wants_post_processing`]), with context as
-    /// its end says; `use_streaming_overlay` is what the overlay showed at
-    /// the cut, since the live stream ended there.
+    /// spoken instruction (`dictation_flow::instruction`): an instruction key
+    /// was pressed, so it post-processes unless its profile never does
+    /// ([`wants_post_processing`]), with context as its end says;
+    /// `use_streaming_overlay` is what the overlay showed at the cut, since
+    /// the live stream ended there.
     pub fn with_spoken_instruction(self, use_streaming_overlay: bool) -> Self {
-        let post_process = wants_post_processing(true, self.post_process);
+        let post_process = wants_post_processing(&self.values, true);
         Self {
             with_context: sends_context(post_process, &self.end),
             post_process,
+            instruction_key: true,
             use_streaming_overlay,
             ..self
         }
     }
 }
 
-/// DanyWhere: whether a dictation post-processes: always when the
-/// instruction key was pressed in it (`spoken_instruction`: an instruction
-/// is never lost, F2 i, and one heard as nothing still asks for the
-/// profile's prompts), otherwise as `otherwise` says: today its end
-/// shortcut, with the switch of its profile
-/// (`app_profiles::effective_post_process`). Strand Z2 replaces
-/// `otherwise` by "the profile is set to always" (user, 2026-11-26: the
-/// end shortcuts lose their "Post-process" box); this is the one place.
-pub fn wants_post_processing(spoken_instruction: bool, otherwise: bool) -> bool {
-    spoken_instruction || otherwise
+/// DanyWhere: whether a dictation with `values`, those of the profile it
+/// ends with, post-processes (variant b, user, 2026-11-26): when an
+/// instruction key was pressed in it (`instruction_key`: an instruction is
+/// never lost, F2 i, and one heard as nothing still asks for the profile's
+/// prompts), or always, by the profile's mode (`settings::PostProcessMode`);
+/// never with "never": then no text goes to a language model, and the
+/// context it would send stays home too (user, 2026-11-23, option a). The
+/// end shortcuts lost their box "Post-process".
+///
+/// The one rule for what a dictation expects at its start
+/// (`dictation_start::plan_start`, no instruction key yet), what it does
+/// when it ends (here) and what a redo for another profile counts and does
+/// (`profile_redo`). History's own actions (✨, "Post-process with") don't
+/// ask it.
+pub fn wants_post_processing(values: &ProfileValues, instruction_key: bool) -> bool {
+    values.post_process_mode.post_processes(instruction_key)
 }
 
 /// DanyWhere: whether earlier dictations go along as context: only when it
@@ -138,9 +151,9 @@ pub fn build(inputs: SnapshotInputs<'_>) -> DictationSnapshot {
     let own_values = inputs.own_profile.as_ref().map(|(_, values)| values);
     let settings = crate::app_profiles::with_values(inputs.stored, own_values);
     // The end shortcut it ended with, in the profile it ends with: its
-    // append text, whether it post-processes and whether earlier dictations
-    // go along. That profile's switch decides with it whether to
-    // post-process (`app_profiles::effective_post_process`).
+    // append text and whether earlier dictations go along. That profile's
+    // mode decides with the instruction key whether to post-process
+    // ([`wants_post_processing`]).
     let (profile_id, values) = match &inputs.own_profile {
         Some((id, values)) => (id.clone(), values.clone()),
         None => (
@@ -149,10 +162,8 @@ pub fn build(inputs: SnapshotInputs<'_>) -> DictationSnapshot {
         ),
     };
     let end = crate::end_keys::resolve(&values, inputs.end, inputs.binding_id);
-    let post_process = wants_post_processing(
-        false,
-        crate::app_profiles::effective_post_process(&end, &values),
-    );
+    let instruction_key = inputs.end.after_instruction_key();
+    let post_process = wants_post_processing(&values, instruction_key);
     DictationSnapshot {
         use_streaming_overlay: should_use_streaming_overlay(
             settings.overlay_style,
@@ -162,6 +173,7 @@ pub fn build(inputs: SnapshotInputs<'_>) -> DictationSnapshot {
         profile_id,
         values,
         with_context: sends_context(post_process, &end),
+        instruction_key,
         post_process,
         end,
         transcribed_with_end_values: inputs.transcribed_with_end_values,
@@ -209,38 +221,35 @@ mod tests {
     const START: &str = "start_key:start";
     use crate::profiles::{ensure_profiles, DEFAULT_PROFILE_ID};
 
-    fn end_key(id: &str, append_text: &str, post_process: bool, send_context: bool) -> EndKey {
+    fn end_key(id: &str, append_text: &str, send_context: bool) -> EndKey {
         EndKey {
             id: id.to_string(),
             name: String::new(),
             shortcut: format!("ctrl+option+{}", &id[..1]),
             append_text: append_text.to_string(),
-            post_process,
             send_context,
         }
     }
 
-    /// The defaults in use (Parakeet, no post-processing, the small
+    /// The defaults in use (Parakeet, never post-processing, the small
     /// overlay, the two built-in ends of `end_keys::with_builtin_ends`) and
-    /// "mail" (Whisper, post-processing on, the live overlay) with two ends
-    /// of its own: "send" appends a line break, post-processes and sends
-    /// context; "quote" sends context without post-processing.
+    /// "mail" (Whisper, post-processing with an instruction key, the live
+    /// overlay) with two ends of its own: "send" appends a line break,
+    /// "quote" a quote mark; both send context.
     fn with_mail_profile() -> AppSettings {
         let mut settings = AppSettings {
             selected_model: "parakeet".to_string(),
-            post_process_enabled: false,
+            post_process_mode: crate::settings::PostProcessMode::Never,
             overlay_style: OverlayStyle::Minimal,
             ..crate::end_keys::with_builtin_ends(AppSettings::default())
         };
         ensure_profiles(&mut settings);
         let mut mail = crate::profiles::profile_for_test(&settings, "mail", "Mail", |values| {
             values.selected_model = "whisper".to_string();
-            values.post_process_enabled = true;
+            values.post_process_mode = crate::settings::PostProcessMode::WithInstructionKey;
             values.overlay_style = OverlayStyle::Live;
-            values.end_keys.push(end_key("send", "\n", true, true));
-            values
-                .end_keys
-                .push(end_key("quote", " (quoted)", false, true));
+            values.end_keys.push(end_key("send", "\n", true));
+            values.end_keys.push(end_key("quote", " (quoted)", true));
         });
         mail.apps = vec!["com.apple.mail".to_string()];
         settings.profiles.push(mail);
@@ -297,12 +306,12 @@ mod tests {
     }
 
     #[test]
-    fn the_end_shortcut_brings_its_append_text_post_processing_and_context() {
+    fn the_end_shortcut_brings_its_append_text_and_context() {
         let stored = with_mail_profile();
         let sent = snapshot(
             &stored,
             Some(mail_values(&stored)),
-            EndChoice::Key("send".to_string()),
+            EndChoice::Key("send".to_string()).with_instruction_key(),
         );
         assert_eq!(sent.end.id, "send");
         assert_eq!(sent.end.append_text, "\n");
@@ -314,98 +323,65 @@ mod tests {
     fn a_profile_of_its_own_with_post_processing_off_does_not_post_process() {
         let stored = with_mail_profile();
         let mut mail = mail_values(&stored);
-        mail.post_process_enabled = false;
-        let sent = snapshot(&stored, Some(mail), EndChoice::Key("send".to_string()));
+        mail.post_process_mode = crate::settings::PostProcessMode::Never;
+        let sent = snapshot(
+            &stored,
+            Some(mail),
+            EndChoice::Key("send".to_string()).with_instruction_key(),
+        );
         assert_eq!(sent.end.id, "send");
         assert!(!sent.post_process);
         assert!(!sent.with_context);
     }
 
     #[test]
-    fn with_post_processing_off_in_use_no_end_post_processes() {
-        // The defaults in use as they come: post-processing off. Neither
-        // the built-in end with post-processing, nor the hold shortcut that
-        // post-processes, held or toggled (as `--toggle-post-process` does),
-        // post-processes, and no context goes along.
-        let mut stored = with_mail_profile();
-        assert!(!stored.post_process_enabled);
-        for end in &mut stored.end_keys {
-            end.send_context = true;
-        }
-        for hold in &mut stored.hold_keys {
-            hold.post_process = true;
-            hold.send_context = true;
-        }
-        let ended = |end: EndChoice, binding_id: &str| {
-            build(SnapshotInputs {
-                stored: &stored,
-                own_profile: None,
-                end: &end,
-                binding_id,
-                transcribed_with_end_values: false,
-                streaming: false,
-                session: 1,
-                cancel_generation: 0,
-            })
-        };
-        for (end, binding_id) in [
-            (
-                EndChoice::Key(crate::end_keys::POST_PROCESS_ID.to_string()),
-                START,
-            ),
-            (
-                EndChoice::Held(crate::start_keys::HOLD_POST_ID.to_string()),
-                "hold_key:hold_post",
-            ),
-        ] {
-            let snapshot = ended(end.clone(), binding_id);
-            assert!(snapshot.end.post_process, "{end:?}: its end asks for it");
-            assert!(!snapshot.post_process, "{end:?}");
-            assert!(!snapshot.with_context, "{end:?}");
-        }
-    }
-
-    #[test]
     fn the_dictation_and_its_redo_agree_whether_it_was_post_processed() {
-        // Every combination of the switch, an end with or without
-        // post-processing, and the profile in use or one of its own: the
-        // redo for another profile counts the entry as post-processed
-        // exactly when the dictation post-processed it. So it redoes the
-        // post-processing for a target that post-processes only when the
-        // dictation didn't, and for one that doesn't only when it did.
-        use crate::end_keys::POST_PROCESS_ID;
-        use crate::profile_redo::{redo_from, RedoFrom};
-        for switch in [true, false] {
-            for end_post_processes in [true, false] {
+        // Every mode, with an instruction key or without, and the profile in
+        // use or one of its own: the redo for another profile counts the
+        // entry as post-processed exactly when the dictation post-processed
+        // it. So it redoes the post-processing for a target that
+        // post-processes only when the dictation didn't, and for one that
+        // doesn't only when it did.
+        use crate::profile_redo::{redo_from_with_instruction, RedoFrom};
+        use crate::settings::PostProcessMode::*;
+        for mode in [Never, WithInstructionKey, Always] {
+            for instruction_key in [true, false] {
                 for own in [false, true] {
                     let mut stored = with_mail_profile();
-                    stored.post_process_enabled = switch;
+                    stored.post_process_mode = mode;
                     let mut mail = mail_values(&stored);
-                    mail.post_process_enabled = switch;
-                    let end = if end_post_processes {
-                        EndChoice::Key(POST_PROCESS_ID.to_string())
+                    mail.post_process_mode = mode;
+                    let start = EndChoice::Start(FACTORY_START_ID.to_string());
+                    let end = if instruction_key {
+                        start.with_instruction_key()
                     } else {
-                        EndChoice::Start(FACTORY_START_ID.to_string())
+                        start
                     };
                     let made = snapshot(&stored, own.then_some(mail), end);
-                    let case = format!(
-                        "switch {switch}, end post-processes {end_post_processes}, own profile {own}"
+                    let case =
+                        format!("{mode:?}, instruction key {instruction_key}, own profile {own}");
+                    assert_eq!(
+                        made.post_process,
+                        mode.post_processes(instruction_key),
+                        "{case}"
                     );
-                    assert_eq!(made.end.post_process, end_post_processes, "{case}");
-                    assert_eq!(made.post_process, switch && end_post_processes, "{case}");
+                    assert_eq!(made.instruction_key, instruction_key, "{case}");
 
-                    // A target like the dictation's profile that post-processes
-                    // with the same end, and one that doesn't.
+                    // A target like the dictation's profile that always
+                    // post-processes, and one that never does.
                     let mut posting = made.values.clone();
-                    posting.post_process_enabled = true;
-                    let posting_end = EndKey {
-                        post_process: true,
-                        ..made.end.clone()
-                    };
+                    posting.post_process_mode = Always;
                     let mut plain = made.values.clone();
-                    plain.post_process_enabled = false;
-                    let redo_into = |target: &ProfileValues, target_end: &EndKey| {
-                        redo_from(&stored, &made.values, target, &made.end, target_end)
+                    plain.post_process_mode = Never;
+                    let redo_into = |target: &ProfileValues| {
+                        redo_from_with_instruction(
+                            &stored,
+                            &made.values,
+                            target,
+                            &made.end,
+                            &made.end,
+                            made.instruction_key,
+                        )
                     };
                     let expected = |redone: bool| {
                         if redone {
@@ -415,12 +391,12 @@ mod tests {
                         }
                     };
                     assert_eq!(
-                        redo_into(&posting, &posting_end),
+                        redo_into(&posting),
                         expected(!made.post_process),
                         "{case}: into a profile that post-processes"
                     );
                     assert_eq!(
-                        redo_into(&plain, &made.end),
+                        redo_into(&plain),
                         expected(made.post_process),
                         "{case}: into a profile that doesn't"
                     );
@@ -485,15 +461,20 @@ mod tests {
         assert_eq!(made.end.id, "send");
     }
 
-    // DanyWhere: a dictation with a spoken instruction always post-processes
-    // (strand Z1; F2 i).
+    // DanyWhere: a dictation with a spoken instruction post-processes unless
+    // its profile never does (strand Z1; F2 i; variant b).
 
     #[test]
-    fn the_instruction_key_post_processes_whatever_else_says() {
-        assert!(wants_post_processing(true, false));
-        assert!(wants_post_processing(true, true));
-        assert!(wants_post_processing(false, true));
-        assert!(!wants_post_processing(false, false));
+    fn the_instruction_key_post_processes_unless_never() {
+        use crate::settings::PostProcessMode::*;
+        let values = |mode| ProfileValues {
+            post_process_mode: mode,
+            ..ProfileValues::default()
+        };
+        assert!(wants_post_processing(&values(WithInstructionKey), true));
+        assert!(!wants_post_processing(&values(WithInstructionKey), false));
+        assert!(wants_post_processing(&values(Always), false));
+        assert!(!wants_post_processing(&values(Never), true));
     }
 
     #[test]
@@ -526,13 +507,116 @@ mod tests {
         let stored = with_mail_profile();
         let plain = snapshot(
             &stored,
-            None,
+            Some(mail_values(&stored)),
             EndChoice::Start(FACTORY_START_ID.to_string()),
         )
         .with_spoken_instruction(false);
-        assert!(plain.post_process, "even with the profile's switch off");
+        assert!(plain.post_process, "whatever its end says");
         assert!(!plain.with_context);
         assert!(!plain.use_streaming_overlay);
+    }
+
+    // ---- Variant b (user, 2026-11-26): the profile's mode decides --------
+
+    /// The defaults in use with `mode`, an instruction key ⇥ and the two
+    /// built-in ends ("plain" without context, "post_process" with it).
+    fn in_mode(mode: crate::settings::PostProcessMode) -> AppSettings {
+        let mut settings = crate::end_keys::with_builtin_ends(AppSettings::default());
+        settings.post_process_mode = mode;
+        settings.instruction_keys = vec![EndKey {
+            id: "tab".to_string(),
+            shortcut: "tab".to_string(),
+            append_text: " ".to_string(),
+            send_context: true,
+            ..Default::default()
+        }];
+        for end in &mut settings.end_keys {
+            end.send_context = end.id == crate::end_keys::POST_PROCESS_ID;
+        }
+        settings
+    }
+
+    fn ended(settings: &AppSettings, end: EndChoice) -> DictationSnapshot {
+        snapshot(settings, None, end)
+    }
+
+    fn after_instruction_key(id: &str) -> EndChoice {
+        EndChoice::AfterInstructionKey(Box::new(EndChoice::Key(id.to_string())))
+    }
+
+    #[test]
+    fn with_the_instruction_key_mode_only_an_instruction_key_post_processes() {
+        use crate::end_keys::{PLAIN_ID, POST_PROCESS_ID};
+        let settings = in_mode(crate::settings::PostProcessMode::WithInstructionKey);
+        for id in [PLAIN_ID, POST_PROCESS_ID] {
+            let direct = ended(&settings, EndChoice::Key(id.to_string()));
+            assert!(!direct.post_process, "{id}");
+            assert!(!direct.with_context, "{id}");
+            assert!(!direct.instruction_key, "{id}");
+        }
+        let after = ended(&settings, after_instruction_key(POST_PROCESS_ID));
+        assert!(after.post_process);
+        assert!(after.with_context, "as its end says");
+        assert!(after.instruction_key);
+        assert_eq!(after.end.id, POST_PROCESS_ID);
+        let plain = ended(&settings, after_instruction_key(PLAIN_ID));
+        assert!(plain.post_process);
+        assert!(!plain.with_context, "as its end says");
+    }
+
+    #[test]
+    fn a_held_instruction_key_ends_post_processed_with_its_own_values() {
+        let settings = in_mode(crate::settings::PostProcessMode::WithInstructionKey);
+        let held = ended(&settings, EndChoice::Instruction("tab".to_string()));
+        assert!(held.post_process);
+        assert!(held.with_context);
+        assert_eq!(held.end.id, "instruction:tab");
+        assert_eq!(held.end.append_text, " ");
+    }
+
+    #[test]
+    fn always_post_processes_every_dictation() {
+        let settings = in_mode(crate::settings::PostProcessMode::Always);
+        let direct = ended(
+            &settings,
+            EndChoice::Key(crate::end_keys::POST_PROCESS_ID.to_string()),
+        );
+        assert!(direct.post_process);
+        assert!(direct.with_context);
+        assert!(!direct.instruction_key);
+    }
+
+    #[test]
+    fn never_post_processes_nothing_not_even_after_an_instruction_key() {
+        let settings = in_mode(crate::settings::PostProcessMode::Never);
+        for end in [
+            after_instruction_key(crate::end_keys::POST_PROCESS_ID),
+            EndChoice::Instruction("tab".to_string()),
+        ] {
+            let snapshot = ended(&settings, end.clone());
+            assert!(!snapshot.post_process, "{end:?}");
+            assert!(!snapshot.with_context, "{end:?}");
+        }
+        let instructed = ended(
+            &settings,
+            EndChoice::Key(crate::end_keys::POST_PROCESS_ID.to_string()),
+        )
+        .with_spoken_instruction(false);
+        assert!(!instructed.post_process, "no text goes to a provider");
+        assert!(!instructed.with_context);
+    }
+
+    #[test]
+    fn a_spoken_instruction_counts_as_an_instruction_key() {
+        let settings = in_mode(crate::settings::PostProcessMode::WithInstructionKey);
+        let instructed = ended(
+            &settings,
+            EndChoice::Key(crate::end_keys::PLAIN_ID.to_string()),
+        )
+        .with_spoken_instruction(false);
+        assert!(instructed.post_process);
+        assert!(instructed.instruction_key);
+        assert!(instructed.made_with(7).instruction_key, "a redo knows it");
     }
 
     #[test]

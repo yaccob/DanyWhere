@@ -525,11 +525,8 @@
       "held": "{{shortcut}} gehalten",
       "refName": "Endtaste {{name}}",
       "factoryNames": {
-        "pattern": "{{mode}} · {{effect}}",
-        "direct": "Direkt",
-        "postProcessed": "Nachbearbeitet",
         "space": "Leerzeichen",
-        "noSpace": "ohne Leerzeichen",
+        "noSpace": "Ohne Leerzeichen",
         "paragraph": "Absatz",
         "line": "Zeile",
         "enter": "Enter senden",

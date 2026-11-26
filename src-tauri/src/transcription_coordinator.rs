@@ -1201,6 +1201,7 @@ mod tests {
             start: (mode != ShortcutActivation::PushToTalk).then(|| binding_id.to_string()),
             hold: (mode != ShortcutActivation::Toggle).then(|| binding_id.to_string()),
             end,
+            instruction: None,
         }
     }
 
@@ -2969,6 +2970,7 @@ mod tests {
             start: start.map(str::to_string),
             hold: hold.map(str::to_string),
             end: end.map(str::to_string),
+            instruction: None,
         }
     }
 

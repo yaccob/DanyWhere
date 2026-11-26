@@ -118,8 +118,7 @@ pub(crate) fn unregister_all(
 /// recording, `register_cancel_shortcut`) and those `registers_binding`
 /// leaves out, with the value stored in `settings`, else the default; then
 /// the start and hold shortcuts of `settings`, each combination once
-/// (`start_keys::bindings_to_register`; a hold shortcut that post-processes
-/// only while post-processing is reachable). `service_available` is
+/// (`start_keys::bindings_to_register`). `service_available` is
 /// `delivery::INSERT_SERVICE_AVAILABLE`.
 pub(crate) fn start_bindings(
     settings: &AppSettings,
@@ -140,7 +139,6 @@ pub(crate) fn start_bindings(
     bindings.extend(crate::start_keys::bindings_to_register(
         &settings.start_keys,
         &settings.hold_keys,
-        crate::app_profiles::post_processing_reachable(settings),
     ));
     bindings
 }
@@ -437,7 +435,7 @@ mod tests {
     fn the_start_bindings_leave_out_what_registers_binding_leaves_out() {
         // No profile with applications post-processes either.
         let mut settings = get_default_settings();
-        settings.post_process_enabled = false;
+        settings.post_process_mode = crate::settings::PostProcessMode::Never;
         assert!(!crate::app_profiles::post_processing_reachable(&settings));
         let start = start_bindings(&settings, true);
         for id in settings.bindings.keys() {
@@ -449,8 +447,8 @@ mod tests {
                 "{id} in the start bindings"
             );
         }
-        // The hold shortcut that post-processes isn't taken either.
-        assert!(!start.iter().any(|b| b.id == "hold_key:hold_post"));
+        // Every hold shortcut is taken, whatever the mode (variant b).
+        assert!(start.iter().any(|b| b.id == "hold_key:hold_no_space"));
         assert!(start.iter().any(|b| b.id == "start_key:start"));
     }
 
@@ -470,11 +468,8 @@ mod tests {
             .get_mut("cycle_word_list")
             .unwrap()
             .current_binding = "ctrl+shift+k".to_string();
-        let start = crate::start_keys::bindings_to_register(
-            &settings.start_keys,
-            &settings.hold_keys,
-            true,
-        );
+        let start =
+            crate::start_keys::bindings_to_register(&settings.start_keys, &settings.hold_keys);
         let mut bindings = vec![
             settings.bindings["cycle_word_list"].clone(),
             settings.bindings["copy_last_transcript"].clone(),

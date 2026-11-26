@@ -525,9 +525,6 @@
       "held": "{{shortcut}} vastgehouden",
       "refName": "Eindsneltoets {{name}}",
       "factoryNames": {
-        "pattern": "{{mode}} · {{effect}}",
-        "direct": "Direct",
-        "postProcessed": "Nabewerkt",
         "space": "Spatie",
         "noSpace": "Zonder spatie",
         "paragraph": "Alinea",

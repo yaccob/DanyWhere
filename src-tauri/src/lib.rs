@@ -33,6 +33,7 @@ mod history_box;
 mod input;
 mod input_method;
 mod insert_service;
+mod instruction_keys;
 mod key_sides;
 mod language_detection;
 mod languages;
@@ -50,6 +51,7 @@ mod paste_tx;
 pub mod portable;
 mod post_process_effort;
 mod post_process_failure;
+mod post_process_mode;
 #[cfg(target_os = "linux")]
 mod primary_selection;
 mod profile_effects;
@@ -811,7 +813,7 @@ pub fn run(cli_args: CliArgs) {
             shortcut::change_clipboard_handling_setting,
             shortcut::change_auto_submit_setting,
             shortcut::change_auto_submit_key_setting,
-            shortcut::change_post_process_enabled_setting,
+            post_process_mode::change_post_process_mode_setting,
             shortcut::change_experimental_enabled_setting,
             shortcut::change_post_process_base_url_setting,
             shortcut::change_post_process_api_format_setting,
@@ -858,6 +860,7 @@ pub fn run(cli_args: CliArgs) {
             end_keys::change_end_keys_setting,
             start_keys::change_start_keys_setting,
             start_keys::change_hold_keys_setting,
+            instruction_keys::change_instruction_keys_setting,
             shortcut::suspend_all_bindings,
             shortcut::resume_all_bindings,
             shortcut::change_mute_while_recording_setting,

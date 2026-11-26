@@ -525,9 +525,6 @@
       "held": "{{shortcut}} عند الضغط المطوّل",
       "refName": "اختصار الإنهاء {{name}}",
       "factoryNames": {
-        "pattern": "{{mode}} · {{effect}}",
-        "direct": "مباشر",
-        "postProcessed": "بمعالجة لاحقة",
         "space": "مسافة",
         "noSpace": "بلا مسافة",
         "paragraph": "فقرة",

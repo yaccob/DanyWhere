@@ -525,9 +525,6 @@
       "held": "{{shortcut}} przytrzymany",
       "refName": "Skrót kończący {{name}}",
       "factoryNames": {
-        "pattern": "{{mode}} · {{effect}}",
-        "direct": "Bezpośrednio",
-        "postProcessed": "Przetworzone",
         "space": "Spacja",
         "noSpace": "Bez spacji",
         "paragraph": "Akapit",

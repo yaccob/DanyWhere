@@ -94,7 +94,8 @@ pub struct ProfileValues {
     pub profile_words: Vec<String>,
     pub word_lists: Vec<WordList>,
     pub active_word_list_id: Option<String>,
-    pub post_process_enabled: bool,
+    /// When dictations post-process (`settings::PostProcessMode`).
+    pub post_process_mode: crate::settings::PostProcessMode,
     pub post_process_provider_id: String,
     pub post_process_models: HashMap<String, String>,
     /// The effort per provider (`post_process_effort`).
@@ -159,8 +160,14 @@ pub struct ProfileValues {
     pub end_keys: Vec<crate::end_keys::EndKey>,
     /// The start shortcuts (`start_keys`), each with a stable id.
     pub start_keys: Vec<crate::start_keys::StartKey>,
-    /// The hold shortcuts (`start_keys`), each with a stable id.
+    /// The hold shortcuts (the module `start_keys`, which has them
+    /// with the start shortcuts), each with a stable id.
     pub hold_keys: Vec<crate::end_keys::EndKey>,
+    /// The instruction shortcuts (`instruction_keys`), each with a stable
+    /// id, in the form of an end shortcut; a stored profile without them
+    /// gets the factory ones.
+    #[serde(default = "crate::instruction_keys::default_instruction_keys")]
+    pub instruction_keys: Vec<crate::end_keys::EndKey>,
     /// Check the words that resemble a word list's term with the
     /// post-processing provider (`word_list_check`).
     pub word_list_llm_check: bool,
@@ -187,7 +194,7 @@ impl ProfileValues {
             profile_words: settings.profile_words.clone(),
             word_lists: settings.word_lists.clone(),
             active_word_list_id: settings.active_word_list_id.clone(),
-            post_process_enabled: settings.post_process_enabled,
+            post_process_mode: settings.post_process_mode,
             post_process_provider_id: settings.post_process_provider_id.clone(),
             post_process_models: settings.post_process_models.clone(),
             post_process_efforts: settings.post_process_efforts.clone(),
@@ -226,6 +233,7 @@ impl ProfileValues {
             end_keys: settings.end_keys.clone(),
             start_keys: settings.start_keys.clone(),
             hold_keys: settings.hold_keys.clone(),
+            instruction_keys: settings.instruction_keys.clone(),
             word_list_llm_check: settings.word_list_llm_check,
         }
     }
@@ -243,7 +251,7 @@ impl ProfileValues {
         settings.profile_words = self.profile_words.clone();
         settings.word_lists = self.word_lists.clone();
         settings.active_word_list_id = self.active_word_list_id.clone();
-        settings.post_process_enabled = self.post_process_enabled;
+        settings.post_process_mode = self.post_process_mode;
         settings.post_process_provider_id = self.post_process_provider_id.clone();
         settings.post_process_models = self.post_process_models.clone();
         settings.post_process_efforts = self.post_process_efforts.clone();
@@ -283,6 +291,7 @@ impl ProfileValues {
         settings.vad_enabled = self.vad_enabled;
         settings.long_form_chunking = self.long_form_chunking;
         settings.word_list_llm_check = self.word_list_llm_check;
+        settings.instruction_keys = self.instruction_keys.clone();
     }
 }
 
@@ -874,7 +883,7 @@ mod tests {
             selected_model: "parakeet".to_string(),
             selected_language: "de".to_string(),
             spoken_languages: strings(&["de", "en"]),
-            post_process_enabled: true,
+            post_process_mode: crate::settings::PostProcessMode::WithInstructionKey,
             post_process_provider_id: "anthropic".to_string(),
             post_process_prompts: vec![
                 prompt("p1", "Diktat (DE/EN)", "Clean it up."),
@@ -901,7 +910,7 @@ mod tests {
             profile_words: strings(&["Kubernetes"]),
             word_lists: vec![list("med", &["Aspirin"])],
             active_word_list_id: Some("med".to_string()),
-            post_process_enabled: false,
+            post_process_mode: crate::settings::PostProcessMode::Always,
             post_process_provider_id: "openai".to_string(),
             post_process_models: HashMap::from([("openai".to_string(), "gpt-x".to_string())]),
             post_process_efforts: HashMap::from([("openai".to_string(), "high".to_string())]),
@@ -954,6 +963,11 @@ mod tests {
             }],
             hold_keys: Vec::new(),
             word_list_llm_check: true,
+            instruction_keys: vec![crate::end_keys::EndKey {
+                id: "instruct".to_string(),
+                shortcut: "f19".to_string(),
+                ..Default::default()
+            }],
         }
     }
 
