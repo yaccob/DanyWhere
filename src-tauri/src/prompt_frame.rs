@@ -191,21 +191,22 @@ pub fn tagged_transcript(transcript: &str) -> String {
 /// The frame, the prompt's instructions, the context block and the spoken
 /// instruction's block, if any: the system prompt, or the start of the one
 /// message. The context, earlier dictations, can't fake a spoken
-/// instruction.
+/// instruction. DanyWhere: blank `instructions` (no active prompt, only a
+/// spoken instruction) leave out the heading too.
 pub fn framed_instructions(
     instructions: &str,
     context: Option<&str>,
     spoken_instruction: Option<&str>,
 ) -> String {
     let context = context.map(defuse_spoken_instruction);
+    let instructions = instructions.trim();
+    let framed = if instructions.is_empty() {
+        FRAME_TEXT.to_string()
+    } else {
+        format!("{FRAME_TEXT}\n\n{INSTRUCTIONS_HEADING}\n{instructions}")
+    };
     with_spoken_instruction(
-        &crate::dictation_context::prompt_with_context(
-            &format!(
-                "{FRAME_TEXT}\n\n{INSTRUCTIONS_HEADING}\n{}",
-                instructions.trim()
-            ),
-            context.as_deref(),
-        ),
+        &crate::dictation_context::prompt_with_context(&framed, context.as_deref()),
         spoken_instruction,
     )
 }
@@ -367,8 +368,13 @@ fn defused_instruction(instruction: &str) -> String {
 /// right before the transcript: there the probe found the transcript kept
 /// as material (a sentence in it that sounds like an instruction was
 /// translated 3 of 3 times; after the prompts it was dropped 3 of 3 times).
+/// Blank `instructions` (no active prompt) give the block alone.
 pub fn with_spoken_instruction(instructions: &str, instruction: Option<&str>) -> String {
     match spoken_instruction_text(instruction) {
+        Some(instruction) if instructions.trim().is_empty() => format!(
+            "<{SPOKEN_INSTRUCTION_TAG}>\n{SPOKEN_INSTRUCTION_TEXT}\n{}\n</{SPOKEN_INSTRUCTION_TAG}>",
+            defused_instruction(instruction)
+        ),
         Some(instruction) => format!(
             "{}\n\n<{SPOKEN_INSTRUCTION_TAG}>\n{SPOKEN_INSTRUCTION_TEXT}\n{}\n</{SPOKEN_INSTRUCTION_TAG}>",
             instructions.trim_end(),

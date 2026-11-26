@@ -363,17 +363,19 @@ async fn post_process_outcome(
 
     // DanyWhere: the profile's active prompts from the shared library, all
     // in one request (`prompt_library`), instead of Handy's selected prompt.
+    // DanyWhere: without one a spoken instruction works alone, from the
+    // fixed frame and its block (F4 i, F5 i; review of 2026-11-26, finding 2).
     let prompts = crate::prompt_library::requested(settings);
-    if prompts.is_empty() {
+    if prompts.is_empty() && spoken_instruction.is_none() {
         debug!("Post-processing skipped because no prompt with a text is active");
         return failed(settings, FailureReason::NoPrompt);
     }
     let prompt = crate::prompt_library::request_instructions(&prompts);
     let prompt = crate::prompt_frame::with_known_terms(&prompt, settings, misheard);
-    log::info!(
-        "Post-processing with {}",
-        crate::prompt_library::request_names(&prompts).unwrap_or_default()
-    );
+    match crate::prompt_library::request_names(&prompts) {
+        Some(names) => log::info!("Post-processing with {names}"),
+        None => log::info!("Post-processing without an active prompt"),
+    }
     if spoken_instruction.is_some() {
         log::info!("Post-processing with a spoken instruction");
     }
@@ -2116,6 +2118,107 @@ mod tests {
             run_post_process_with(&settings, "  ", Some(" \n ")),
             PostProcessOutcome::Skipped
         );
+    }
+
+    // DanyWhere (review of 2026-11-26, finding 2): in a profile without an
+    // active prompt a spoken instruction works alone, from the fixed frame
+    // and its block (F4 i, F5 i); without one it stays "no prompt".
+
+    /// [`post_process_settings`] at `base_url` with no prompt active, sent
+    /// in one message or with a system prompt.
+    fn without_an_active_prompt(base_url: &str, structured: bool) -> AppSettings {
+        let mut settings = settings_with_library(
+            base_url,
+            &LIBRARY,
+            &[("a", false), ("b", false), ("c", false)],
+        );
+        for provider in settings.post_process_providers.iter_mut() {
+            provider.supports_structured_output = structured;
+        }
+        settings
+    }
+
+    /// The messages of the one request a profile without an active prompt
+    /// makes for `transcription` with the spoken instruction [`SAID`].
+    fn instructed_messages(structured: bool, transcription: &str) -> Vec<(String, String)> {
+        let (url, request) = serve_once_capturing(if structured {
+            POLISHED_STRUCTURED
+        } else {
+            POLISHED
+        });
+        let settings = without_an_active_prompt(&url, structured);
+        assert_eq!(
+            run_post_process_with(&settings, transcription, Some(SAID)),
+            PostProcessOutcome::Done("polished".to_string())
+        );
+        messages_in(&request.recv_timeout(Duration::from_secs(5)).unwrap())
+    }
+
+    #[test]
+    fn without_an_active_prompt_a_spoken_instruction_goes_alone_in_one_message() {
+        use crate::prompt_frame::FRAME_TEXT;
+        assert_eq!(
+            instructed_messages(false, "hello"),
+            vec![message(
+                "user",
+                &format!(
+                    "{FRAME_TEXT}\n\n{}\n\n<transcript>\nhello\n</transcript>",
+                    said_block()
+                )
+            )]
+        );
+    }
+
+    #[test]
+    fn without_an_active_prompt_a_spoken_instruction_ends_the_system_prompt_alone() {
+        use crate::prompt_frame::FRAME_TEXT;
+        assert_eq!(
+            instructed_messages(true, "hello"),
+            vec![
+                message("system", &format!("{FRAME_TEXT}\n\n{}", said_block())),
+                message("user", "<transcript>\nhello\n</transcript>"),
+            ]
+        );
+    }
+
+    #[test]
+    fn without_an_active_prompt_a_spoken_instruction_works_on_an_empty_dictation() {
+        use crate::prompt_frame::FRAME_TEXT;
+        assert_eq!(
+            instructed_messages(false, ""),
+            vec![message(
+                "user",
+                &format!(
+                    "{FRAME_TEXT}\n\n{}\n\n<transcript>\n\n</transcript>",
+                    said_block()
+                )
+            )]
+        );
+    }
+
+    #[test]
+    fn without_an_active_prompt_and_without_an_instruction_there_is_still_no_prompt() {
+        let settings = without_an_active_prompt(NOWHERE, false);
+        for instruction in [None, Some(" ")] {
+            assert_eq!(
+                run_post_process_with(&settings, "hello", instruction),
+                failed(&settings, FailureReason::NoPrompt),
+                "{instruction:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn without_an_active_prompt_history_keeps_the_instruction_alone() {
+        let url = serve_once(POLISHED);
+        let settings = without_an_active_prompt(&url, false);
+        let (processed, asked) =
+            process_with_instruction(&settings, "hello", Some(SAID), true, None);
+        assert_eq!(processed.final_text, "polished");
+        assert_eq!(processed.post_process_failure, None);
+        assert_eq!(processed.post_process_prompt, Some(said_block()));
+        assert_eq!(processed.post_process_prompt_name, None);
+        assert_eq!(asked, vec![String::new()], "the context for no prompts");
     }
 
     #[test]
