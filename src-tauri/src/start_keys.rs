@@ -520,8 +520,12 @@ pub fn check_combination(
 }
 
 /// Checks another shortcut's combination (`bindings`) against the start
-/// and hold shortcuts of `values`, which are always taken:
-/// `conflict:start_key:<id>` or `conflict:hold_key:<id>`.
+/// and hold shortcuts of `values`, which are always taken, and its
+/// instruction shortcuts, taken during a recording, where the other
+/// shortcut would take their press (review finding 8, 2026-11-26):
+/// `conflict:start_key:<id>`, `conflict:hold_key:<id>` or
+/// `conflict:instruction_key:<id>`, also for a combination that overlaps
+/// one only partly. End shortcuts aren't checked here (yet).
 pub fn check_binding_against_keys(shortcut: &str, values: &ProfileValues) -> Result<(), String> {
     let shortcut = shortcut.trim();
     let starts = values
@@ -532,7 +536,11 @@ pub fn check_binding_against_keys(shortcut: &str, values: &ProfileValues) -> Res
         .hold_keys
         .iter()
         .map(|key| (KeyList::Hold, key.id.as_str(), key.shortcut.as_str()));
-    for (list, id, keys) in starts.chain(holds) {
+    let instructions = values
+        .instruction_keys
+        .iter()
+        .map(|key| (KeyList::Instruction, key.id.as_str(), key.shortcut.as_str()));
+    for (list, id, keys) in starts.chain(holds).chain(instructions) {
         if crate::key_sides::same_press(keys, shortcut) {
             return Err(format!("conflict:{}{id}", list.prefix()));
         }
@@ -1355,6 +1363,24 @@ mod tests {
             Err("conflict:hold_key:h2".to_string())
         );
         assert_eq!(check_binding_against_keys("return", &v), Ok(()));
+    }
+
+    #[test]
+    fn another_shortcut_may_not_take_an_instruction_keys_combination() {
+        // Review finding 8 (2026-11-26): "Cycle Word List" on ⇥ would
+        // swallow the instruction key, or the other way round.
+        let mut v = usual();
+        v.instruction_keys = vec![key("tab", "tab"), key("send", "ctrl+return")];
+        assert_eq!(
+            check_binding_against_keys("tab", &v),
+            Err("conflict:instruction_key:tab".to_string())
+        );
+        assert_eq!(
+            check_binding_against_keys("ctrl_left+return", &v),
+            Err("conflict:instruction_key:send".to_string()),
+            "overlapping it only partly too"
+        );
+        assert_eq!(check_binding_against_keys("shift+tab", &v), Ok(()));
     }
 
     // ---- There is always a way to start ------------------------------------
