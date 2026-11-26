@@ -33,6 +33,10 @@ pub const AUTHORIZE: &str = "https://auth.openai.com/api/accounts/authorize";
 pub const TOKEN: &str = "https://auth.openai.com/api/accounts/oauth/token";
 /// The issuer the ID token must name.
 pub const ISSUER: &str = "https://auth.openai.com";
+/// OpenAI's discovery document; its `revocation_endpoint` ends a renewable
+/// session ("Accounts and sessions", "End the renewable session"; on
+/// 2026-11-27 it named `https://auth.openai.com/api/accounts/oauth/revoke`).
+pub const DISCOVERY: &str = "https://auth.openai.com/.well-known/openid-configuration";
 /// The `resource` of the authorization, the exchange and every refresh.
 pub const RESOURCE: &str = "https://api.openai.com/v1";
 /// Where the model list and the Responses API live.
@@ -337,6 +341,81 @@ pub async fn refresh(
     renewed.expires_at = now + tokens.expires_in;
     renewed.earliest_refresh_at = tokens.earliest_refresh_at;
     Ok(renewed)
+}
+
+/// Ends `session`'s renewable session at OpenAI when signing out
+/// ("Accounts and sessions", "End the renewable session", read 2026-11-27):
+/// a form-encoded `POST` with `token=<refresh token>`,
+/// `token_type_hint=refresh_token` and the issued `client_id` to the
+/// `revocation_endpoint` of the discovery document at `discovery_url`. An
+/// empty 200 is success, also for a token already invalid. The endpoint must
+/// be on the discovery document's origin, so the refresh token goes nowhere
+/// else; use a client without redirects. Errors keep `llm_client`'s form.
+pub async fn revoke(
+    client: &reqwest::Client,
+    discovery_url: &str,
+    session: &ChatGptSession,
+) -> Result<(), String> {
+    let endpoint = revocation_endpoint(client, discovery_url).await?;
+    let (status, text) = post_form(
+        client,
+        &endpoint,
+        &[
+            ("token", &session.refresh_token),
+            ("token_type_hint", "refresh_token"),
+            ("client_id", &session.client_id),
+        ],
+    )
+    .await
+    .map_err(|error| error.to_string())?;
+    if status.is_success() {
+        Ok(())
+    } else {
+        Err(status_error(status, &text))
+    }
+}
+
+/// The `revocation_endpoint` of the discovery document at `discovery_url`,
+/// if it is on the same origin.
+async fn revocation_endpoint(
+    client: &reqwest::Client,
+    discovery_url: &str,
+) -> Result<String, String> {
+    let response = client
+        .get(discovery_url)
+        .header(ACCEPT, "application/json")
+        .header(USER_AGENT, USER_AGENT_VALUE)
+        .send()
+        .await
+        .map_err(|e| transport_error("OpenAI's discovery document request failed", &e))?;
+    let status = response.status();
+    let text = response
+        .text()
+        .await
+        .map_err(|e| transport_error("Failed to read OpenAI's discovery document", &e))?;
+    if !status.is_success() {
+        return Err(status_error(status, &text));
+    }
+    let document: Value = serde_json::from_str(&text)
+        .map_err(|_| "OpenAI's discovery document is no JSON".to_string())?;
+    let endpoint = document
+        .get("revocation_endpoint")
+        .and_then(Value::as_str)
+        .filter(|endpoint| !endpoint.is_empty())
+        .ok_or_else(|| "OpenAI's discovery document names no revocation_endpoint".to_string())?;
+    let same_origin = match (
+        reqwest::Url::parse(discovery_url),
+        reqwest::Url::parse(endpoint),
+    ) {
+        (Ok(discovery), Ok(target)) => discovery.origin() == target.origin(),
+        _ => false,
+    };
+    if !same_origin {
+        return Err(format!(
+            "The revocation endpoint {endpoint} is not on the discovery document's origin"
+        ));
+    }
+    Ok(endpoint.to_string())
 }
 
 /// Refresh when less than five minutes are left; while the token still
@@ -816,8 +895,16 @@ mod tests {
 
     /// Answers one request per entry, in turn, and keeps what it got.
     async fn serve(replies: Vec<(&'static str, String)>) -> (String, Arc<Mutex<Vec<Seen>>>) {
+        serve_with(|_| replies).await
+    }
+
+    /// [`serve`] with the replies `make` gives for the server's own URL.
+    async fn serve_with(
+        make: impl FnOnce(&str) -> Vec<(&'static str, String)>,
+    ) -> (String, Arc<Mutex<Vec<Seen>>>) {
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let address = listener.local_addr().unwrap();
+        let replies = make(&format!("http://{address}"));
         let seen = Arc::new(Mutex::new(Vec::new()));
         let kept = seen.clone();
         tokio::spawn(async move {
@@ -1473,10 +1560,130 @@ mod tests {
         );
     }
 
+    // --- signing out ----------------------------------------------------------
+
+    fn discovery(revocation_endpoint: &str) -> String {
+        json!({
+            "issuer": "https://auth.openai.com",
+            "token_endpoint": "https://auth.openai.com/api/accounts/oauth/token",
+            "revocation_endpoint": revocation_endpoint,
+            "revocation_endpoint_auth_methods_supported": ["client_secret_basic", "client_secret_post", "none"],
+        })
+        .to_string()
+    }
+
+    #[tokio::test]
+    async fn revoking_posts_the_refresh_token_to_the_discovered_endpoint() {
+        let (base, seen) = serve_with(|base| {
+            vec![
+                (
+                    "200 OK",
+                    discovery(&format!("{base}/api/accounts/oauth/revoke")),
+                ),
+                ("200 OK", String::new()),
+            ]
+        })
+        .await;
+        let result = revoke(
+            &client(),
+            &format!("{base}/.well-known/openid-configuration"),
+            &session(),
+        )
+        .await;
+        assert_eq!(result, Ok(()));
+        let seen = seen.lock().unwrap().clone();
+        assert_eq!(seen.len(), 2);
+        assert!(
+            seen[0]
+                .head
+                .starts_with("GET /.well-known/openid-configuration HTTP/1.1"),
+            "{}",
+            seen[0].head
+        );
+        assert!(
+            seen[1]
+                .head
+                .starts_with("POST /api/accounts/oauth/revoke HTTP/1.1"),
+            "{}",
+            seen[1].head
+        );
+        assert_eq!(seen[1].header("content-type").as_deref(), Some(FORM));
+        let fields = form(&seen[1].body);
+        assert_eq!(get(&fields, "token"), Some("refresh-old"));
+        assert_eq!(get(&fields, "token_type_hint"), Some("refresh_token"));
+        assert_eq!(get(&fields, "client_id"), Some(ISSUED));
+        assert_eq!(keys(&fields), vec!["client_id", "token", "token_type_hint"]);
+        // No bearer: the refresh token goes only in the form.
+        assert_eq!(seen[1].header("authorization"), None);
+    }
+
+    #[tokio::test]
+    async fn a_refused_revocation_is_an_error_in_llm_clients_form() {
+        let (base, _) = serve_with(|base| {
+            vec![
+                (
+                    "200 OK",
+                    discovery(&format!("{base}/api/accounts/oauth/revoke")),
+                ),
+                ("503 Service Unavailable", "busy".to_string()),
+            ]
+        })
+        .await;
+        let result = revoke(
+            &client(),
+            &format!("{base}/.well-known/openid-configuration"),
+            &session(),
+        )
+        .await;
+        assert_eq!(
+            result,
+            Err("API request failed with status 503 Service Unavailable: busy".to_string())
+        );
+    }
+
+    #[tokio::test]
+    async fn the_refresh_token_never_goes_to_another_origin() {
+        let (base, seen) = serve(vec![(
+            "200 OK",
+            discovery("https://elsewhere.invalid/api/accounts/oauth/revoke"),
+        )])
+        .await;
+        let result = revoke(
+            &client(),
+            &format!("{base}/.well-known/openid-configuration"),
+            &session(),
+        )
+        .await;
+        let error = result.expect_err("refused");
+        assert!(!error.contains("refresh-old"), "{error}");
+        assert_eq!(seen.lock().unwrap().len(), 1, "only the discovery");
+    }
+
+    #[tokio::test]
+    async fn a_discovery_without_a_revocation_endpoint_is_an_error() {
+        let (base, seen) = serve(vec![(
+            "200 OK",
+            json!({"issuer": "https://auth.openai.com"}).to_string(),
+        )])
+        .await;
+        let result = revoke(
+            &client(),
+            &format!("{base}/.well-known/openid-configuration"),
+            &session(),
+        )
+        .await;
+        assert!(result.is_err(), "{result:?}");
+        assert_eq!(seen.lock().unwrap().len(), 1);
+    }
+
     #[test]
     fn the_documented_endpoints_and_defaults() {
         assert_eq!(AUTHORIZE, "https://auth.openai.com/api/accounts/authorize");
         assert_eq!(TOKEN, "https://auth.openai.com/api/accounts/oauth/token");
+        assert_eq!(
+            DISCOVERY,
+            "https://auth.openai.com/.well-known/openid-configuration"
+        );
         assert_eq!(DEFAULT_MODEL, "gpt-6.2-sol");
         assert_eq!(DEFAULT_EFFORT, "low");
         assert_eq!(USAGE_URL, "https://chatgpt.com/settings/usage");
