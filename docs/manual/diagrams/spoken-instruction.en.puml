@@ -1,0 +1,25 @@
+@startuml
+' A dictation with a spoken instruction, in English. The structure is in
+' spoken-instruction.iuml; UI terms as in
+' src/i18n/locales/en/translation.json.
+' "\n" breaks a line; no ";" in a text (it would end a step).
+!$yes = "yes"
+!$no = "no"
+!$start = "A start or hold shortcut:\nthe recording runs"
+!$text = "You speak the text"
+!$switch = "An instruction shortcut, e.g. ⇥:\nthe overlay shows “Instruction”"
+!$noteCancel = "Esc cancels everything,\ntext and instruction"
+!$transcribeText = "The speech model\ntranscribes the text,\nthen the overlay\nshows a check mark"
+!$speak = "You speak the\ninstruction, e.g.\n“translate this\ninto Polish”"
+!$qHow = "Tapped\nor held?"
+!$aTapped = "tapped"
+!$aHeld = "held"
+!$endKey = "An end\nshortcut\nsends it off"
+!$release = "Letting go\nsends it off"
+!$transcribeInstruction = "The speech model transcribes the instruction"
+!$post = "Post-processing: the profile's active\nprompts, then the instruction"
+!$noteEmpty = "Nothing said after the key:\nthe prompts alone. No text\nbefore it: the instruction alone."
+!$deliver = "The end's “Append”, inserted,\nsaved in “History” with the instruction"
+!include style.iuml
+!include spoken-instruction.iuml
+@enduml

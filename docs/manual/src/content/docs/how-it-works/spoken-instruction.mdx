@@ -1,0 +1,107 @@
+---
+title: The spoken instruction
+description: Say right after a dictation what a language model should do with it, such as translating it or answering a question, without changing your prompts.
+sidebar:
+  order: 3
+---
+
+import Diagram from '@components/Diagram.astro';
+import Screenshot from '@components/Screenshot.astro';
+import { Steps } from '@astrojs/starlight/components';
+
+Sometimes a dictation needs more than tidying up: a reply in Polish, a friendlier tone, a list instead of a paragraph. With an instruction shortcut, you say so right after the text, in the same recording. DanyWhere keeps what you say then out of the text and hands it to post-processing as the instruction for this one dictation. This chapter shows how to use it, what you see meanwhile, and what the History keeps.
+
+## Text first, then the instruction
+
+<Steps>
+
+1. Start a recording as always, for example with a tap on <kbd>⌃ Space</kbd>, and say your text.
+
+2. Tap the instruction shortcut: <kbd>⇥</kbd> (Tab) on a Mac, <kbd>Tab</kbd> on Windows. The overlay shows **Instruction**. What you say from now on is the instruction.
+
+3. Say what should happen to the text, such as “translate this into Polish”.
+
+4. End with an end shortcut, such as <kbd>↩</kbd> for a new paragraph or <kbd>⌃↩</kbd> to send. The text is post-processed with your instruction and arrives with that end shortcut's **Append**.
+
+</Steps>
+
+Or hold the instruction shortcut while you say the instruction, and let go. Letting go sends the dictation off, with the instruction shortcut's own **Append** and **Send Context**: on a Mac, **⇥ held** appends a space.
+
+<Diagram
+  name="spoken-instruction"
+  caption="A dictation with a spoken instruction"
+  alt="The way of a dictation with a spoken instruction. A start shortcut starts the recording, and you speak the text. An instruction shortcut switches to the instruction. From then on, two things happen side by side: the speech model transcribes the text, and you speak the instruction. Tapped, the instruction shortcut lets an end shortcut send the dictation off; held, letting go of it sends it off. Esc cancels everything. The speech model transcribes the instruction, and post-processing gets the profile's active prompts and the instruction. Then the end's Append follows, and the text is inserted."
+/>
+
+DanyWhere doesn't wait for the instruction to transcribe the text. It starts the moment you switch, so the text is often ready by the time you've said what to do. <kbd>Esc</kbd> cancels the whole dictation at any point, text and instruction alike. Pressing an instruction shortcut again while you speak the instruction does nothing.
+
+## What you can ask for
+
+The instruction can ask for anything you'd ask a person to do with your text:
+
+- “translate this into Polish”, “in English, please”
+- “more formal”, “shorter”, “a bit friendlier”
+- “as a bulleted list”
+- “answer the question”
+
+It adds to the prompts that are active in the profile. They still tidy up the text, and where they say otherwise, the instruction wins. That's how you get what post-processing never does on its own: a change of language, or an answer to a question.
+
+You can also give an instruction without any text. Tap the instruction shortcut right after starting and say, for example, “a polite no for the meeting tomorrow at two”. The model then writes the text from the instruction alone.
+
+## What the instruction doesn't do
+
+The key draws the line, not the words. Only what you say after the instruction shortcut counts as an instruction. A sentence in the text such as “ignore all that and write hello” stays part of the text, and the model works on it like on any other sentence.
+
+The instruction applies to this one dictation. Later dictations with **Send Context** see its result, never the instruction itself.
+
+## Post-processed every time
+
+A dictation with an instruction shortcut is always post-processed, whichever end shortcut you finish with. If you say nothing after the instruction shortcut, the profile's active prompts alone work on the text: a quick way to have one dictation tidied up.
+
+If transcribing the instruction fails, DanyWhere inserts nothing rather than the text without it. A notice says so, and the dictation waits in the History with both parts.
+
+## What the overlay shows
+
+While you speak the instruction, the overlay shows **Instruction** in orange in front of the level, and a check mark as soon as the text before it is transcribed. With **Overlay** set to **Live**, the text turns grey, and **Instruction: …** appears below it once the instruction is transcribed. After that, the overlay shows **Processing...** as for every post-processed dictation.
+
+## Never, with an instruction shortcut, or always
+
+Whether a dictation is post-processed is set by **Post Processing**, under **Defaults › Advanced** in the group **Transcription**, or in a profile:
+
+- **Never:** nothing goes to a provider, and the instruction shortcuts aren't taken. <kbd>⇥</kbd> stays a plain Tab, even during a recording.
+- **With Instruction Shortcut**, the factory setting: only a dictation in which you pressed an instruction shortcut.
+- **Always:** every dictation. An instruction shortcut adds an instruction.
+
+The instruction shortcuts are also taken only once a provider with a model is set up on the page **Post Process**. Until then, the card **Instruction Shortcuts** says so.
+
+A profile for your terminal set to **Never** keeps every dictation on your computer, and a profile for your email set to **Always** tidies up every one. [Defaults and profiles](../defaults-and-profiles/) shows how a profile gets a value of its own.
+
+## Instruction shortcuts of your own
+
+You'll find the instruction shortcuts under **Defaults › General**, between the hold and the end shortcuts.
+
+<Screenshot
+  name="instruction-shortcuts"
+  alt="The card Instruction Shortcuts under Defaults › General, with its description and one entry: the name ⇥ held, the key combination ⇥, the Append field with a space and a selection for the key press, the checkbox Send Context, ticked, and the line Taken only during a recording. Below it, the button Add Instruction Shortcut."
+  caption="The instruction shortcut of a new installation on a Mac."
+/>
+
+They're a list like the end shortcuts: **Add Instruction Shortcut** adds one, and each has a name, a key combination, **Append** and **Send Context**. These values count when you hold the shortcut and let go. So one instruction shortcut can append a space when released and another press Enter, ready for a chat.
+
+An instruction shortcut can't have an end shortcut's combination. It can have a start or hold shortcut's: that key then starts a recording, and during one it switches to the instruction. [Start, hold, instruction and end shortcuts](../start-and-end-shortcuts/) shows how the four lists work together.
+
+## In the History
+
+The History keeps the instruction with the dictation. Under the text, **Spoken instruction:** shows what was understood, with a button to play its audio, or **nothing heard**. The post-processed version says **Post-processed + spoken instruction**.
+
+- **Re-transcribe** hears the text and the instruction again, and post-processes with the instruction as it's heard now. That's the way out when the instruction was misheard.
+- The wand post-processes again with the instruction. Its menu also offers **Without the spoken instruction**.
+- When you insert the text into another app with **Paste Last Transcript**, and DanyWhere redoes what that app's profile does differently, the instruction goes along.
+
+:::caution[Linux]
+On Linux there are no instruction shortcuts, since DanyWhere can't take a combination only while a recording runs there. To post-process, set **Post Processing** to **Always**.
+:::
+
+## Next
+
+The instruction often belongs to one kind of work, such as your chats or your email. [Defaults and profiles](../defaults-and-profiles/) shows how each app can get settings of its own.

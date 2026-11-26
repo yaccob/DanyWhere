@@ -1,6 +1,6 @@
 ---
-title: "Atajos de inicio y de fin"
-description: "Empieza cada dictado igual y decide al final qué pasa con él, desde un espacio detrás del texto hasta un mensaje pulido que se envía al momento."
+title: "Atajos de inicio, de mantener, de instrucción y de fin"
+description: "Cuatro listas de combinaciones de teclas deciden cómo empieza y termina un dictado y qué va detrás del texto, desde un espacio hasta un mensaje traducido que se envía al momento."
 sidebar:
   order: 2
 ---
@@ -9,102 +9,121 @@ import Diagram from '@components/Diagram.astro';
 import Screenshot from '@components/Screenshot.astro';
 import { Tabs, TabItem, Steps } from '@astrojs/starlight/components';
 
-Con DanyWhere no tienes que decidir antes de hablar qué pasará con tus palabras. Empiezas cada dictado igual y eliges al final: las teclas con las que paras dicen también si sigue un espacio o un párrafo nuevo, si un modelo de lenguaje pule el texto y si un mensaje de chat se envía al momento. Este capítulo muestra los atajos de fin de una instalación nueva, de qué se compone cada uno y cómo configurar los tuyos.
+Con DanyWhere no tienes que decidir antes de hablar qué pasará con tus palabras. Empiezas cada dictado igual y eliges al final: las teclas con las que paras dicen también si sigue un espacio o un párrafo nuevo y si un mensaje de chat se envía al momento. Con una tecla más, pulsada antes del final, le dices a un modelo de lenguaje qué hacer con el texto. Este capítulo muestra las cuatro listas de combinaciones de teclas que hay detrás, qué trae una instalación nueva y cómo configurar las tuyas.
 
-## Los atajos de inicio inician, los de fin terminan
+## Cuatro listas del mismo tipo
 
-Un **Atajo de inicio** solo inicia una grabación. Un atajo de fin solo la termina, y DanyWhere ocupa su combinación solo mientras se graba, igual que <kbd>Esc</kbd>. Por eso <kbd>↩</kbd> puede terminar un dictado sin estorbarte: el resto del tiempo, la tecla hace lo de siempre.
+En **Configuración básica › General** hay cuatro listas, una tras otra:
+
+- Los **Atajos de inicio** inician una grabación al tocarlos. Sigue hasta que un atajo de fin la termina.
+- Los **Atajos de mantener** graban mientras los mantienes pulsados. Al soltarlos, la grabación termina como dice la entrada.
+- Los **Atajos de instrucción** cambian una grabación en curso del texto a una instrucción: lo que dices después le dice al posprocesamiento qué hacer con el texto, por ejemplo «tradúcelo al polaco». [La instrucción hablada](../spoken-instruction/) los explica.
+- Los **Atajos de fin** terminan una grabación en curso como dice la entrada.
+
+Un atajo de inicio es solo una combinación de teclas. Los atajos de mantener, de instrucción y de fin tienen las mismas partes, descritas más abajo: un nombre, una combinación de teclas, **Añadir al final** y **Enviar contexto**.
+
+DanyWhere ocupa los atajos de inicio y de mantener todo el tiempo. Los de instrucción y de fin solo los ocupa mientras se graba, igual que <kbd>Esc</kbd>. Por eso <kbd>↩</kbd> puede terminar un dictado y <kbd>⇥</kbd> cambiar a la instrucción sin estorbarte: el resto del tiempo, las teclas hacen lo de siempre.
+
+## Qué hace una combinación
+
+Lo que hace una combinación de teclas se deduce de las listas en las que está. La misma combinación puede estar en varias listas; dentro de una lista, dos entradas no pueden compartirla.
+
+| La combinación es … | Sin grabación | Durante una grabación |
+|---|---|---|
+| un atajo de inicio | Un toque inicia una grabación que sigue en marcha. | Termina la grabación como el atajo de fin con la misma combinación, y no hace nada si no hay ninguno. |
+| un atajo de mantener | Mantenerlo graba; al soltarlo, la grabación termina con los valores de esta entrada. Un toque breve no hace nada. | Como un atajo de inicio. |
+| un atajo de inicio y de mantener | Un toque breve inicia una grabación que sigue en marcha; mantenerlo graba hasta que lo sueltas. | Como un atajo de inicio. |
+| un atajo de instrucción | Nada: la tecla va a la app. | Cambia a la instrucción. |
+| un atajo de fin | Nada: la tecla va a la app. | Termina la grabación con los valores de esta entrada. |
+
+Un atajo de instrucción puede tener la combinación de un atajo de inicio o de mantener: sin grabación, la tecla inicia una; durante una grabación, cambia a la instrucción. No puede tener la de un atajo de fin, porque los dos solo se ocupan durante una grabación.
 
 <Diagram
   name="how-a-recording-ends"
   caption="Cómo termina una grabación"
-  alt="Las formas en que termina una grabación. Un atajo de fin, al tocarlo, la termina con sus propios valores. Un atajo de inicio, tocado de nuevo, la termina como el atajo de fin que tiene la misma combinación, y no hace nada si no hay ninguno. Soltar un atajo de inicio mantenido la termina según lo configurado en «Al mantener pulsado». Esc la cancela. Cada forma decide qué se añade, si el texto se posprocesa y si los dictados anteriores se envían como contexto."
+  alt="Las formas en que termina una grabación. Un atajo de fin, al tocarlo, la termina con sus propios valores. Un atajo de inicio o de mantener, al tocarlo, la termina como el atajo de fin con la misma combinación, si existe. Soltar un atajo de mantener la termina con los valores de ese atajo. Un atajo de instrucción cambia a la instrucción: si se toca, un atajo de fin termina luego la grabación; si se mantiene, al soltarlo la termina con los valores del atajo de instrucción. Esc la cancela. Después, el texto se posprocesa si se pulsó un atajo de instrucción o Post procesamiento está en Siempre, con los dictados anteriores como contexto si el final lo pide, y sigue lo que diga Añadir al final."
 />
 
-Cada forma de terminar una grabación decide las mismas tres cosas: qué va detrás del texto, si el texto se posprocesa y si los dictados anteriores se envían como contexto.
+## Tocar, mantener o las dos cosas
 
-## Los atajos de fin de una instalación nueva
+DanyWhere distingue un toque de mantener por cuánto tiempo pulsas las teclas. Una combinación que es atajo de inicio y de mantener hace las dos cosas. En un Mac, toca <kbd>⌃ Espacio</kbd>, habla todo lo que quieras y vuelve a tocarlo; o mantenlo pulsado mientras hablas y suéltalo cuando termines.
+
+Un toque breve en un atajo de mantener que no es también atajo de inicio descarta la grabación: no se transcribe, inserta ni guarda nada. Así, una tecla pulsada por error no tiene efecto. Las listas dicen bajo cada entrada qué hace: **También atajo de mantener** bajo un atajo de inicio, y bajo un atajo de mantener **También atajo de inicio: un toque breve inicia una grabación que sigue en marcha.** o **Solo atajo de mantener: un toque breve no hace nada.**
+
+Los atajos de instrucción también conocen las dos formas. Si tocas uno, un atajo de fin envía el dictado. Si lo mantienes mientras dices la instrucción, al soltarlo se envía.
+
+## De qué se componen los atajos de mantener, de instrucción y de fin
+
+Cada entrada tiene estas partes:
+
+- **Nombre:** cómo la muestra la lista. Un atajo de fin sin nombre propio muestra su combinación de teclas. Un atajo de mantener o de instrucción muestra su combinación con «mantenido», por ejemplo **⌃ Espacio mantenido**, porque sus valores dicen qué pasa al soltarlo.
+- **La combinación de teclas.** Cada entrada necesita una.
+- **Añadir al final:** lo que va detrás del texto. En el campo de texto, `\s` es un espacio, `\n` un salto de línea y `\t` una tabulación; todo lo demás se añade tal como está escrito. Al lado puedes elegir una pulsación de tecla, como Intro, que se envía después de pegar el texto. Una línea debajo dice con palabras qué se añadirá.
+- **Enviar contexto:** los dictados anteriores de la misma ventana se envían también, para que el modelo sepa de qué estás hablando. Solo cuenta cuando el dictado se posprocesa.
+
+Si un dictado se posprocesa no lo decide la entrada. Lo decide **Post procesamiento** en **Configuración básica › Avanzado**, de fábrica en **Con atajo de instrucción**: entonces un dictado se posprocesa cuando pulsas un atajo de instrucción durante la grabación. [La instrucción hablada](../spoken-instruction/) muestra las tres opciones.
+
+## Los atajos de una instalación nueva
 
 <Tabs syncKey="os">
 <TabItem label="macOS">
 
-En un Mac, doce atajos de fin siguen una sola regla, de modo que las propias teclas te dicen qué hace cada uno:
+En un Mac, la misma combinación inicia y mantiene, y los atajos de fin siguen una sola regla:
 
-- <kbd>⌥</kbd> (Opción) posprocesa el texto.
 - <kbd>⇧</kbd> (Mayúsculas) elige la variante pequeña: sin espacio en lugar de un espacio, una línea en lugar de un párrafo.
 - <kbd>⌃</kbd> (Control) junto con <kbd>↩</kbd> (Retorno) pulsa una tecla en lugar de añadir texto.
 
-| Combinación | Nombre | Qué va detrás del texto |
-|---|---|---|
-| <kbd>⌃ Espacio</kbd> | **Directo · Espacio** | un espacio |
-| <kbd>⌃⇧ Espacio</kbd> | **Directo · Sin espacio** | nada |
-| <kbd>↩</kbd> | **Directo · Párrafo** | dos saltos de línea |
-| <kbd>⇧↩</kbd> | **Directo · Línea** | un salto de línea |
-| <kbd>⌃↩</kbd> | **Directo · Enviar Enter** | una pulsación de Intro |
-| <kbd>⌃⇧↩</kbd> | **Directo · Enviar Mayús+Enter** | una pulsación de Mayús+Intro |
+| Lista | Combinación | Nombre | Qué va detrás del texto |
+|---|---|---|---|
+| **Atajos de inicio** | <kbd>⌃ Espacio</kbd> | | |
+| **Atajos de mantener** | <kbd>⌃ Espacio</kbd> | **⌃ Espacio mantenido** | un espacio |
+| | <kbd>⌃⇧ Espacio</kbd> | **⌃⇧ Espacio mantenido** | nada |
+| **Atajos de instrucción** | <kbd>⇥</kbd> (Tab) | **⇥ mantenido** | un espacio |
+| **Atajos de fin** | <kbd>⌃ Espacio</kbd> | **Espacio** | un espacio |
+| | <kbd>⌃⇧ Espacio</kbd> | **Sin espacio** | nada |
+| | <kbd>↩</kbd> | **Párrafo** | dos saltos de línea |
+| | <kbd>⇧↩</kbd> | **Línea** | un salto de línea |
+| | <kbd>⌃↩</kbd> | **Enviar Enter** | una pulsación de Intro |
+| | <kbd>⌃⇧↩</kbd> | **Enviar Mayús+Enter** | una pulsación de Mayús+Intro |
 
-Los mismos seis con <kbd>⌥</kbd> delante, de <kbd>⌥⌃ Espacio</kbd> a <kbd>⌥⌃⇧↩</kbd>, se llaman **Posprocesado · Espacio**, etc. Posprocesan el texto y envían como contexto los dictados anteriores de la misma ventana.
+Todos tienen marcado **Enviar contexto**, así que un dictado posprocesado ve lo que escribiste antes en la misma ventana.
 
-En la práctica: para un texto largo, toca <kbd>⌃ Espacio</kbd> para empezar y otra vez para terminar; cada trozo recibe su espacio, listo para el siguiente. En un correo, termina con <kbd>↩</kbd> y el siguiente párrafo está listo. En un chat, <kbd>⌃↩</kbd> envía el mensaje, y <kbd>⌥⌃↩</kbd> lo pule antes.
-
-Al soltar un atajo de inicio mantenido se añade un espacio. Si es el **Segundo atajo de inicio**, además se posprocesa el texto.
+En la práctica: para un texto largo, toca <kbd>⌃ Espacio</kbd> para empezar y otra vez para terminar; cada trozo recibe su espacio, listo para el siguiente. O mantenlo pulsado mientras hablas. En un correo, termina con <kbd>↩</kbd> y el siguiente párrafo está listo. En un chat, <kbd>⌃↩</kbd> envía el mensaje; si antes tocas <kbd>⇥</kbd> y dices «un poco más amable», el mensaje se pule primero.
 
 </TabItem>
 <TabItem label="Windows">
 
-Windows empieza con dos atajos de fin que tienen las combinaciones de los dos atajos de inicio: <kbd>Ctrl+Espacio</kbd> termina sin posprocesamiento y <kbd>Ctrl+Mayús+Espacio</kbd>, con él. Ninguno añade nada. Así que, para terminar, vuelves a tocar el atajo de inicio, y eliges el segundo cuando quieres el texto pulido.
-
-Al soltar un atajo de inicio mantenido pasa lo mismo: el **Atajo de inicio** termina sin posprocesamiento y el **Segundo atajo de inicio**, con él.
+Windows empieza con <kbd>Ctrl+Espacio</kbd> como atajo de inicio y de mantener, <kbd>Ctrl+Mayús+Espacio</kbd> como segundo atajo de mantener y <kbd>Tab</kbd> como atajo de instrucción. Dos atajos de fin tienen las combinaciones de los dos atajos de mantener. Ninguno añade nada. Así que, para terminar, vuelves a tocar <kbd>Ctrl+Espacio</kbd>, o lo mantienes y lo sueltas.
 
 Para todo lo demás, añade tus propios atajos de fin, como se explica más abajo.
 
 </TabItem>
 <TabItem label="Linux">
 
-Linux empieza como Windows, con dos atajos de fin que tienen las combinaciones de los dos atajos de inicio: <kbd>Ctrl+Alt+Espacio</kbd> termina sin posprocesamiento y <kbd>Ctrl+Alt+Mayús+Espacio</kbd>, con él. Ninguno añade nada.
+Linux empieza con <kbd>Ctrl+Alt+Espacio</kbd> como atajo de inicio y de mantener y <kbd>Ctrl+Alt+Mayús+Espacio</kbd> como segundo atajo de mantener. Dos atajos de fin tienen esas combinaciones. Ninguno añade nada.
 
-Al soltar un atajo de inicio mantenido pasa lo mismo: el **Atajo de inicio** termina sin posprocesamiento y el **Segundo atajo de inicio**, con él.
-
-En Linux, una grabación solo termina a través de un atajo de inicio. Consulta los límites al final de este capítulo.
+Linux no tiene atajos de instrucción, y una grabación solo termina a través de un atajo de inicio o de mantener. Consulta los límites al final de este capítulo.
 
 </TabItem>
 </Tabs>
 
 :::note
-Estos son los ajustes de fábrica de una instalación nueva. Si ya usabas DanyWhere, una actualización deja tus atajos de fin como estaban. Los nombres se escriben una sola vez, en el idioma de tu sistema en el primer inicio, y puedes cambiarlos como quieras.
+Estos son los ajustes de fábrica de una instalación nueva. Si ya usabas DanyWhere, una actualización conserva tus propios atajos de fin; los doce con los que empezaba un Mac pasan a ser los seis de arriba. Los nombres se escriben una sola vez, en el idioma de tu sistema en el primer inicio, y puedes cambiarlos como quieras.
 :::
 
-## De qué se compone un atajo de fin
+## Añadir o cambiar un atajo
 
-Cada entrada de **Atajos de fin** tiene estas partes:
-
-- **Nombre:** cómo la muestra la lista. Mientras no escribas un nombre, muestra la combinación de teclas.
-- **La combinación de teclas** que termina la grabación de esta manera. Cada atajo de fin necesita una, y dos no pueden compartirla.
-- **Añadir al final:** lo que va detrás del texto. En el campo de texto, `\s` es un espacio, `\n` un salto de línea y `\t` una tabulación; todo lo demás se añade tal como está escrito. Al lado puedes elegir una pulsación de tecla, como Intro, que se envía después de pegar el texto. Una línea debajo dice con palabras qué se añadirá.
-- **Posprocesar:** un modelo de lenguaje pule el texto antes de que llegue, con los prompts activos en el perfil. Solo funciona mientras **Post procesamiento** está activado en **Configuración básica › Avanzado**; si no, la entrada lo indica.
-- **Enviar contexto:** solo con posprocesamiento. Los dictados anteriores de la misma ventana se envían también, para que el modelo sepa de qué estás hablando.
-
-## Los atajos de inicio y cómo terminan
-
-**Si vuelves a tocar un atajo de inicio** durante una grabación, solo la termina a través de un atajo de fin con exactamente su combinación. La lista lo señala con una línea bajo esa entrada. Si ningún atajo de fin tiene esa combinación, el atajo de inicio no hace nada mientras se graba.
-
-**Al mantener pulsado**, al principio de **Atajos de fin**, define cómo termina la grabación al soltar un atajo de inicio mantenido. Cada atajo de inicio tiene el suyo, con **Añadir al final**, **Posprocesar** y **Enviar contexto**, pero sin nombre ni combinación. Debajo, **Al tocar** encabeza los atajos de fin. Si **Comportamiento del atajo** está en **Tocar**, no se mantiene nada pulsado: **Al mantener pulsado** queda oculto y los atajos de fin no necesitan encabezado propio.
-
-El **Segundo atajo de inicio** es opcional: una segunda combinación que inicia una grabación, <kbd>⌃⇧ Espacio</kbd> en un Mac. DanyWhere solo la ocupa mientras el posprocesamiento está activado. Está pensado para mantenerlo pulsado: mantén <kbd>⌃ Espacio</kbd> para el texto tal cual y <kbd>⌃⇧ Espacio</kbd> para el pulido.
-
-## Añadir o cambiar un atajo de fin
-
-Encontrarás los atajos de fin en **Configuración básica › General › Atajos de fin**.
+Encontrarás las cuatro listas en **Configuración básica › General**.
 
 <Screenshot
   name="end-shortcuts"
-  alt="El grupo Atajos de fin en Configuración básica › General. Arriba, Al mantener pulsado tiene un bloque por atajo de inicio, con el campo Añadir al final, una selección para la pulsación de tecla y las casillas Posprocesar y Enviar contexto. Debajo, bajo Al tocar, cada atajo de fin es una fila con su nombre, su combinación de teclas y los mismos campos, empezando por los dos que tienen las combinaciones de los atajos de inicio."
+  alt="El grupo Atajos de fin en Configuración básica › General. Cada atajo de fin es un bloque con su nombre, su combinación de teclas, el campo Añadir al final con una selección para la pulsación de tecla, una línea que dice qué se añade y la casilla Enviar contexto marcada. Primero vienen Espacio, con la combinación del atajo de inicio, Sin espacio, con la de un atajo de mantener, y Párrafo."
   caption="Los atajos de fin en Configuración básica › General."
 />
 
-Para añadir uno, haz clic en **Añadir atajo de fin** y pulsa la combinación que quieras; luego configura lo que hace. Para cambiar una combinación, haz clic en ella y pulsa la nueva. El icono de la papelera, al lado, elimina una entrada. Siempre queda un atajo de fin, para que una grabación siempre se pueda terminar.
+Cada lista tiene su botón: **Añadir atajo de inicio**, **Añadir atajo de mantener**, **Añadir atajo de instrucción** y **Añadir atajo de fin**. Haz clic en él y pulsa la combinación que quieras; luego configura lo que hace la entrada. Para cambiar una combinación, haz clic en ella y pulsa la nueva. El icono de la papelera, al lado, elimina una entrada. Siempre queda un atajo de inicio o de mantener, para que una grabación siempre se pueda iniciar, y un atajo de fin, para que siempre se pueda terminar. Los atajos de instrucción pueden faltar del todo.
 
-Un perfil puede diferir de la configuración básica. En la página **General** del propio perfil, cambia un atajo de fin, añade uno o elimina uno, y solo esa entrada pasa a ser propia del perfil. Todas las demás siguen la configuración básica, incluidos los cambios que hagas después en ella. [Configuración básica y perfiles](../defaults-and-profiles/) muestra cómo funciona esto en cada ajuste.
+Un perfil puede diferir de la configuración básica. En la página **General** del propio perfil, cambia una entrada de cualquiera de las cuatro listas, añade una o elimina una, y solo esa entrada pasa a ser propia del perfil. Todas las demás siguen la configuración básica, incluidos los cambios que hagas después en ella. [Configuración básica y perfiles](../defaults-and-profiles/) muestra cómo funciona esto en cada ajuste.
 
 ## Receta: enviar un mensaje de chat al momento
 
@@ -118,24 +137,28 @@ En un chat, normalmente quieres decir tu mensaje y que se envíe, sin echar mano
 
 3. En **Añadir al final**, deja vacío el campo de texto y elige **Intro** como pulsación de tecla (<kbd>↩</kbd> en un Mac).
 
-4. Si el modelo debe pulir el mensaje antes, marca **Posprocesar**, y también **Enviar contexto** si debe ver lo que se dijo antes.
+4. Marca **Enviar contexto** si un mensaje pulido debe ver lo que se dijo antes.
 
 5. Dale un nombre que reconozcas, como `Enviar`.
 
-6. Pruébalo: en un chat, empieza un dictado, di tu mensaje y termina con la nueva combinación. El texto aparece y se envía.
+6. Pruébalo: en un chat, empieza un dictado, di tu mensaje y termina con la nueva combinación. El texto aparece y se envía. Para que se pula antes, toca el atajo de instrucción antes de terminar y di qué hacer, o nada.
 
 </Steps>
 
 :::tip
-En un Mac, una instalación nueva ya lo trae: <kbd>⌃↩</kbd> envía el mensaje, <kbd>⌥⌃↩</kbd> lo pule antes.
+En un Mac, una instalación nueva ya lo trae: <kbd>⌃↩</kbd> envía el mensaje. Si antes tocas <kbd>⇥</kbd>, el mensaje se pule primero.
 :::
 
 ## Límites
 
 :::caution[Linux]
-En Linux, DanyWhere no puede ocupar la combinación propia de un atajo de fin durante una grabación. Allí una grabación termina al soltar un atajo de inicio mantenido o al volver a tocar un atajo de inicio cuya combinación tiene un atajo de fin. Por eso, para la receta de arriba, da la pulsación de Intro a un atajo de fin que tenga la combinación de un atajo de inicio, o ponla en **Al mantener pulsado**. La configuración no te deja quitar la última forma de terminar: conserva un atajo de fin con la combinación de un atajo de inicio o elige **Mantener**.
+En Linux, DanyWhere no puede ocupar una combinación solo mientras se graba. Por eso no ocupa la combinación propia de ningún atajo de fin y no tiene atajos de instrucción. Allí una grabación termina al soltar un atajo de mantener o al volver a tocar un atajo de inicio cuya combinación tiene un atajo de fin; la configuración no te deja quitar el último atajo de fin así. Para la receta de arriba, da la pulsación de Intro a un atajo de fin con la combinación de un atajo de inicio, o a un atajo de mantener. Para posprocesar en Linux, pon **Post procesamiento** en **Siempre**, si quieres en un perfil propio.
 :::
 
-**En un Mac sin Accesibilidad**, DanyWhere no puede pulsar teclas. Si continúas sin el permiso, una instalación nueva omite los cuatro atajos de fin que envían Intro o Mayús+Intro, y no se envía la pulsación de tecla elegida en **Añadir al final**.
+**En un Mac sin Accesibilidad**, DanyWhere no puede pulsar teclas. Si continúas sin el permiso, una instalación nueva omite los dos atajos de fin que envían Intro o Mayús+Intro, y no se envía la pulsación de tecla elegida en **Añadir al final**.
 
-**macOS usa <kbd>⌃ Espacio</kbd> y <kbd>⌥⌃ Espacio</kbd>** para cambiar de fuente de entrada. Si cambias así de distribución de teclado, desactiva esas funciones rápidas en Ajustes del Sistema, en Teclado › Funciones rápidas de teclado › Fuentes de entrada, o asigna a DanyWhere otras combinaciones.
+**macOS usa <kbd>⌃ Espacio</kbd>** para cambiar de fuente de entrada en cuanto tienes más de una. Si cambias así de distribución de teclado, desactiva esa función rápida en Ajustes del Sistema, en Teclado › Funciones rápidas de teclado › Fuentes de entrada, o asigna a DanyWhere otras combinaciones.
+
+## Siguiente
+
+El atajo de instrucción convierte un dictado en un encargo. [La instrucción hablada](../spoken-instruction/) muestra qué puedes pedir y qué guarda el historial.

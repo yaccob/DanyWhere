@@ -13,7 +13,8 @@ Speech recognition runs offline, on your own computer, with a model you choose, 
 
 ## What sets it apart
 
-- **End each dictation the way you need it.** The keys that stop a recording also decide what follows the text: a space, a new paragraph, Enter to send a message, or a polish by a language model first. On a Mac, twelve such end shortcuts come ready.
+- **End each dictation the way you need it.** The keys that stop a recording also decide what follows the text: a space, a new paragraph, or Enter to send a message. On a Mac, six such end shortcuts come ready.
+- **Say what should happen to the text, right after it.** Press ⇥ during a recording and say "translate this into Polish" or "answer the question": a language model applies it to this one dictation, on top of your prompts.
 - **Post-processing that works on your text instead of answering it,** by a language model of your choice, in the cloud or on your own computer, with your prompts, your word lists and, if you like, your earlier dictations as context.
 - **Defaults, and profiles that change only what they need,** one per app if you like: dictate one way into your terminal and another into your chat.
 - **A History that keeps every version** of a dictation, searchable, with its recordings stored small.
@@ -38,7 +39,7 @@ You need a Mac with macOS 11 (Big Sur) or later, with Apple silicon or an Intel 
    Or install it with [Homebrew](https://brew.sh) instead of steps 1 and 2: `brew install --cask yaccob/tap/danywhere`
 
 3. Start DanyWhere and follow the setup: allow microphone access, then grant Accessibility, or choose "Continue without Accessibility" if your organization blocks it.
-4. Start a dictation with Control+Space: hold it while you speak and release it to stop, or tap it to start and tap again to stop; either way a space follows the text. Once post-processing is switched on (Settings → Advanced → Transcription) and set up, the transcript is post-processed when you hold Control+Shift+Space instead and release it, or when you end a recording with Option+Control+Space instead of Control+Space.
+4. Start a dictation with Control+Space: hold it while you speak and release it to stop, or tap it to start and tap again to stop; either way a space follows the text. Once a post-processing provider is set up (Settings → Post Process), press Tab during a recording to have the transcript post-processed, and say what should happen to it, such as "translate this into Polish", before you end.
 
 ### Windows
 
@@ -50,7 +51,7 @@ You need Windows 10 or 11 on an x64 or ARM64 PC. On x64, transcription can use t
    The installer asks for a normal or a portable installation. A portable installation keeps settings, models and history in a `Data` folder next to `danywhere.exe`.
 
 3. Start DanyWhere from the Start menu and follow the setup: allow microphone access and pick a model. Windows needs no Accessibility permission.
-4. Start a dictation with Ctrl+Space: hold it while you speak and release it to stop, or tap it to start and tap again to stop. Once post-processing is switched on (Settings → Advanced → Transcription) and set up, Ctrl+Shift+Space does the same and post-processes the transcript.
+4. Start a dictation with Ctrl+Space: hold it while you speak and release it to stop, or tap it to start and tap again to stop. Once a post-processing provider is set up (Settings → Post Process), press Tab during a recording to have the transcript post-processed, and say what should happen to it before you end.
 
 ### Linux
 
@@ -75,7 +76,7 @@ DanyWhere comes for x64 and ARM64 as a `.deb`, an `.rpm` and an AppImage:
 
 2. Install the tool DanyWhere pastes with: `xdotool` on X11, `wtype` or `dotool` on Wayland. Without one, pasting may not work, especially on Wayland. Handy's [Linux notes](https://github.com/cjpais/Handy#linux-notes) have the details, for example for Ubuntu 26.04.
 3. Start DanyWhere and follow the setup: allow microphone access and pick a model.
-4. Start a dictation with Ctrl+Alt+Space, held while you speak or tapped to start and to stop; Ctrl+Alt+Shift+Space does the same with post-processing. On Wayland, global shortcuts usually have to be set up in the desktop environment: bind them to `danywhere --toggle-transcription` and `danywhere --toggle-post-process` (see [Command line](#command-line)).
+4. Start a dictation with Ctrl+Alt+Space, held while you speak or tapped to start and to stop. Linux has no instruction shortcut: to have a dictation post-processed, start and end it with `danywhere --toggle-post-process` (see [Command line](#command-line)), or set Post Processing to Always (Settings → Advanced → Transcription). On Wayland, global shortcuts usually have to be set up in the desktop environment: bind them to `danywhere --toggle-transcription` and `danywhere --toggle-post-process` (see [Command line](#command-line)).
 
 On a Wayland desktop the AppImage runs as a Wayland app, like the deb and rpm, so its window follows your display scaling. If it misbehaves there, start it with `HANDY_GDK_BACKEND=x11 ./DanyWhere_0.5.0_amd64.AppImage` to run it through Xwayland instead.
 

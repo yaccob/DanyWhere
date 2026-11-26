@@ -2,7 +2,7 @@
 title: "Grundeinstellungen und Profile"
 description: "Ins Terminal anders diktieren als in den Chat und eine Einstellung trotzdem an einer Stelle für alle ändern."
 sidebar:
-  order: 3
+  order: 4
 ---
 
 import Diagram from '@components/Diagram.astro';
@@ -32,7 +32,7 @@ Ein Profil liegt über den Grundeinstellungen. Seine Seiten sehen genauso aus wi
 
 <Screenshot
   name="profile-own-values"
-  alt="Die Gruppe Transkription auf der Seite Erweitert des Profils Terminal. Unter jeder Einstellung steht eine Zustandszeile. Drei Einstellungen zeigen eine ganze Kette und das graue Wort Grundwert: Sie folgen den Grundeinstellungen. Nachbearbeitung, ausgeschaltet, zeigt eine gebrochene Kette, eigener Wert in Petrol, Grundwert: an und einen Knopf Zurücksetzen."
+  alt="Die Gruppe Transkription auf der Seite Erweitert des Profils Terminal. Unter jeder Einstellung steht eine Zustandszeile. Drei Einstellungen zeigen eine ganze Kette und das graue Wort Grundwert: Sie folgen den Grundeinstellungen. Nachbearbeitung, auf Nie, zeigt eine gebrochene Kette, eigener Wert in Petrol, Grundwert: Mit Anweisungstaste und einen Knopf Zurücksetzen."
   caption="In einem Profil sagt jede Einstellung, ob sie den Grundeinstellungen folgt."
 />
 
@@ -41,7 +41,7 @@ Ein Profil liegt über den Grundeinstellungen. Seine Seiten sehen genauso aus wi
 **Seite auf Grundeinstellungen** oben auf einer Seite setzt all ihre eigenen Werte zurück. Die erste Seite des Profils, **Profil**, listet unter **Eigene Werte** alles auf, was es anders hat: Ein Klick auf eine Zeile öffnet diese Einstellung, der runde Pfeil setzt nur sie zurück, und **Ganzes Profil auf Grundeinstellungen** setzt alle zurück; Name und Apps des Profils bleiben. Bevor DanyWhere mehr als einen Wert zurücksetzt, fragt es nach und nennt sie. In der Seitenleiste zählt eine Zahl neben einem Profil und seinen Seiten deren eigene Werte.
 
 :::tip[Einen Wert festhalten, der gerade gleich ist]
-Willst du einen Wert behalten, den auch die Grundeinstellungen haben, etwa eine ausgeschaltete Nachbearbeitung für dein Terminal, klick auf die ganze Kette. Der Wert wird zum eigenen Wert des Profils, ohne sich zu ändern, und er bleibt, wenn du den Grundwert später änderst. Ein Klick auf die gebrochene Kette lässt ihn wieder folgen.
+Willst du einen Wert behalten, den auch die Grundeinstellungen haben, etwa **Nie** unter **Nachbearbeitung** für dein Terminal, klick auf die ganze Kette. Der Wert wird zum eigenen Wert des Profils, ohne sich zu ändern, und er bleibt, wenn du den Grundwert später änderst. Ein Klick auf die gebrochene Kette lässt ihn wieder folgen.
 :::
 
 ## Von den Grundeinstellungen aus gesehen
@@ -50,7 +50,7 @@ Du kannst auch andersherum arbeiten, eine Einstellung nach der anderen. Auf den 
 
 <Screenshot
   name="defaults-with-profiles"
-  alt="Die Einstellung Nachbearbeitung auf der Seite Erweitert der Grundeinstellungen, eingeschaltet. Darunter das Profil Terminal mit einer gebrochenen Kette, seinem eigenen Schalter, ausgeschaltet, und einem runden Pfeil zum Zurücksetzen. Darunter eine graue Zeile mit einer ganzen Kette: Chat folgt, daneben ein Menü + Profil."
+  alt="Die Einstellung Nachbearbeitung auf der Seite Erweitert der Grundeinstellungen, auf Mit Anweisungstaste. Darunter das Profil Terminal mit einer gebrochenen Kette, seiner eigenen Auswahl, Nie, und einem runden Pfeil zum Zurücksetzen. Darunter eine graue Zeile mit einer ganzen Kette: Chat folgt, daneben ein Menü + Profil."
   caption="Unter den Grundeinstellungen zeigt jede Einstellung die Profile, die abweichen."
 />
 
@@ -58,7 +58,7 @@ Die Seiten unter **Grundeinstellungen** zeigen und ändern immer die Grundeinste
 
 ## Listen, Eintrag für Eintrag
 
-Manche Einstellungen sind Listen: die **Endtasten** und die anderen Tastenkombinationen, die Wortlisten unter **Zusätzliche Listen** und die Anbieter der Nachbearbeitung mit ihren Modellen. Ein Profil weicht von so einer Liste Eintrag für Eintrag ab: Es ändert einen Eintrag, fügt einen hinzu oder schaltet einen Eintrag der Grundeinstellungen aus. Die Zustandszeile markiert jeden davon mit **eigen** oder **aus**, mit einem eigenen Knopf zum Zurücksetzen. Alle anderen Einträge folgen weiter den Grundeinstellungen, auch solche, die du dort später hinzufügst. Auf dem Mac könnte ein Profil für deine Chats so mit <kbd>↩</kbd> abschicken: Es ändert nur **Direkt · Absatz**, sodass diese Endtaste Enter drückt, statt einen neuen Absatz zu beginnen.
+Manche Einstellungen sind Listen: die Start-, Halte-, Anweisungs- und Endtasten und die anderen Tastenkombinationen, die Wortlisten unter **Zusätzliche Listen** und die Anbieter der Nachbearbeitung mit ihren Modellen. Ein Profil weicht von so einer Liste Eintrag für Eintrag ab: Es ändert einen Eintrag, fügt einen hinzu oder schaltet einen Eintrag der Grundeinstellungen aus. Die Zustandszeile markiert jeden davon mit **eigen** oder **aus**, mit einem eigenen Knopf zum Zurücksetzen. Alle anderen Einträge folgen weiter den Grundeinstellungen, auch solche, die du dort später hinzufügst. Auf dem Mac könnte ein Profil für deine Chats so mit <kbd>↩</kbd> abschicken: Es ändert nur **Absatz**, sodass diese Endtaste Enter drückt, statt einen neuen Absatz zu beginnen.
 
 Wörter und Prompts funktionieren ein wenig anders. Die **Wortliste** der Grundeinstellungen gilt in jedem Profil. Ein Profil kann sie als Ganzes ersetzen, meist stellt es ihr aber **Zusätzliche Wörter** voran, die nur es selbst verwendet. Die Prompts gehören allen Profilen; welche davon **Aktiv** sind und in welcher Reihenfolge, gehört zum Profil.
 
@@ -133,9 +133,9 @@ Hat der Anbieter der Nachbearbeitung im Profil einen API-Schlüssel, fragt der E
 
 3. Prüf, dass **Profil nach Anwendung wählen** eingeschaltet ist.
 
-4. Öffne **Profileinstellungen › Terminal › Erweitert** und such **Nachbearbeitung**. Ist sie eingeschaltet, schalte sie aus. Ist sie schon aus, wie ab Werk, klick auf die Kette darunter, damit das Terminal ohne Nachbearbeitung bleibt, auch wenn du sie in den Grundeinstellungen einschaltest. Die Zeile darunter sagt jetzt **eigener Wert**.
+4. Öffne **Profileinstellungen › Terminal › Erweitert**, such **Nachbearbeitung** und wähl **Nie**. Dann geht nichts, was du ins Terminal diktierst, an einen Anbieter, und <kbd>⇥</kbd> bleibt dort Tab, auch während einer Aufnahme. Die Zeile unter der Einstellung sagt jetzt **eigener Wert**.
 
-5. Auf dem Mac öffnest du **Profileinstellungen › Terminal › Allgemein**, scrollst zu **Endtasten** und leerst das Feld **Anhängen** von **Direkt · Absatz**. Dann beendet <kbd>↩</kbd> ein Diktat im Terminal ohne Zeilenumbruch.
+5. Auf dem Mac öffnest du **Profileinstellungen › Terminal › Allgemein**, scrollst zu **Endtasten** und leerst das Feld **Anhängen** von **Absatz**. Dann beendet <kbd>↩</kbd> ein Diktat im Terminal ohne Zeilenumbruch.
 
 6. Probier es aus: Starte im Terminal ein Diktat, sag einen Befehl und beende mit <kbd>↩</kbd>. Das Overlay nennt **Terminal**, und der Befehl steht da, wie du ihn gesagt hast, und wartet darauf, dass du ihn ausführst.
 
@@ -143,4 +143,4 @@ Hat der Anbieter der Nachbearbeitung im Profil einen API-Schlüssel, fragt der E
 
 ## Weiter
 
-Am häufigsten ändern Profile die Endtasten. [Start- und Endtasten](../start-and-end-shortcuts/) zeigt, woraus jede besteht und wie du eigene einrichtest.
+Am häufigsten ändern Profile die Endtasten. [Start-, Halte-, Anweisungs- und Endtasten](../start-and-end-shortcuts/) zeigt, woraus jede besteht und wie du eigene einrichtest.

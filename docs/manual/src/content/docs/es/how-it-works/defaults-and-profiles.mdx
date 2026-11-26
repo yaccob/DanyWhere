@@ -2,7 +2,7 @@
 title: "Configuración básica y perfiles"
 description: "Dicta de una manera en la terminal y de otra en el chat, y aun así cambia un ajuste en un solo sitio para todos."
 sidebar:
-  order: 3
+  order: 4
 ---
 
 import Diagram from '@components/Diagram.astro';
@@ -32,7 +32,7 @@ Abre un perfil en **Configuración de perfiles**, en la barra lateral, por ejemp
 
 <Screenshot
   name="profile-own-values"
-  alt="El grupo Transcripción en la página Avanzado del perfil Terminal. Debajo de cada ajuste hay una línea de estado. Tres ajustes muestran una cadena entera y la palabra gris Valor básico: siguen la configuración básica. Post procesamiento, desactivado, muestra una cadena rota, Valor propio en azul petróleo, Valor básico: activado y un botón Restablecer."
+  alt="El grupo Transcripción en la página Avanzado del perfil Terminal. Debajo de cada ajuste hay una línea de estado. Tres ajustes muestran una cadena entera y la palabra gris Valor básico: siguen la configuración básica. Post procesamiento, en Nunca, muestra una cadena rota, Valor propio en azul petróleo, Valor básico: Con atajo de instrucción y un botón Restablecer."
   caption="Dentro de un perfil, cada ajuste dice si sigue la configuración básica."
 />
 
@@ -41,7 +41,7 @@ Si cambias un ajuste que sigue el valor básico, pasa a ser un valor propio del 
 **Página a ajustes básicos**, arriba de una página, restablece todos sus valores propios. La primera página del perfil, **Perfil**, reúne en **Valores propios** todo lo que tiene distinto: un clic en una fila abre ese ajuste, la flecha circular restablece solo ese, y **Todo el perfil a ajustes básicos** los restablece todos, manteniendo el nombre y las apps del perfil. Antes de restablecer más de un valor, DanyWhere pregunta y los nombra. En la barra lateral, un número junto a un perfil y a sus páginas cuenta sus valores propios.
 
 :::tip[Conservar un valor que ahora coincide]
-Para conservar un valor que también tiene la configuración básica, como el posprocesamiento desactivado en tu terminal, haz clic en la cadena entera. El valor pasa a ser propio del perfil sin cambiar, y se mantiene cuando cambies el valor básico más adelante. Un clic en la cadena rota hace que vuelva a seguirlo.
+Para conservar un valor que también tiene la configuración básica, como **Nunca** en **Post procesamiento** para tu terminal, haz clic en la cadena entera. El valor pasa a ser propio del perfil sin cambiar, y se mantiene cuando cambies el valor básico más adelante. Un clic en la cadena rota hace que vuelva a seguirlo.
 :::
 
 ## Visto desde la configuración básica
@@ -50,7 +50,7 @@ También puedes trabajar al revés, ajuste por ajuste. En las páginas de **Conf
 
 <Screenshot
   name="defaults-with-profiles"
-  alt="El ajuste Post procesamiento en la página Avanzado de la configuración básica, activado. Debajo, el perfil Terminal con una cadena rota, su propio interruptor, desactivado, y una flecha circular para restablecerlo. Más abajo, una línea gris con una cadena entera dice Chat sigue, y al lado hay un menú + Perfil."
+  alt="El ajuste Post procesamiento en la página Avanzado de la configuración básica, en Con atajo de instrucción. Debajo, el perfil Terminal con una cadena rota, su propia selección, Nunca, y una flecha circular para restablecerlo. Más abajo, una línea gris con una cadena entera dice Chat sigue, y al lado hay un menú + Perfil."
   caption="En la configuración básica, cada ajuste muestra los perfiles que difieren."
 />
 
@@ -58,7 +58,7 @@ Las páginas de **Configuración básica** siempre muestran y cambian la configu
 
 ## Listas, entrada por entrada
 
-Algunos ajustes son listas: los **Atajos de fin** y los demás atajos, las listas de palabras de **Listas adicionales** y los proveedores de posprocesamiento con sus modelos. Un perfil difiere de una lista así entrada por entrada: cambia una entrada, añade una o desactiva una entrada de la configuración básica. La línea de estado marca cada una como **propio** o **desactivado**, con su propio botón para restablecerla. Todas las demás entradas siguen la configuración básica, también las que añadas allí más tarde. En un Mac, un perfil para tus chats podría enviar así con <kbd>↩</kbd>: solo cambia **Directo · Párrafo**, para que ese atajo de fin pulse Enter en lugar de empezar un párrafo nuevo.
+Algunos ajustes son listas: los atajos de inicio, de mantener, de instrucción y de fin y los demás atajos, las listas de palabras de **Listas adicionales** y los proveedores de posprocesamiento con sus modelos. Un perfil difiere de una lista así entrada por entrada: cambia una entrada, añade una o desactiva una entrada de la configuración básica. La línea de estado marca cada una como **propio** o **desactivado**, con su propio botón para restablecerla. Todas las demás entradas siguen la configuración básica, también las que añadas allí más tarde. En un Mac, un perfil para tus chats podría enviar así con <kbd>↩</kbd>: solo cambia **Párrafo**, para que ese atajo de fin pulse Enter en lugar de empezar un párrafo nuevo.
 
 Las palabras y los prompts funcionan un poco distinto. La **Lista de palabras** de la configuración básica se aplica en todos los perfiles. Un perfil puede sustituirla entera, pero lo normal es que le anteponga **Palabras adicionales**, que solo usa él. Los prompts son de todos los perfiles; cuáles tienen marcada la casilla **Activo**, y en qué orden, es cosa del perfil.
 
@@ -133,9 +133,9 @@ Si el proveedor de posprocesamiento del perfil tiene una clave API, la exportaci
 
 3. Comprueba que **Elegir perfil según la aplicación** está activado.
 
-4. Abre **Configuración de perfiles › Terminal › Avanzado** y busca **Post procesamiento**. Si está activado, desactívalo. Si ya está desactivado, como viene de fábrica, haz clic en la cadena de debajo, para que la terminal siga sin posprocesamiento aunque lo actives en la configuración básica. La línea de debajo dice ahora **Valor propio**.
+4. Abre **Configuración de perfiles › Terminal › Avanzado**, busca **Post procesamiento** y elige **Nunca**. Así nada de lo que dictas en la terminal va a un proveedor, y <kbd>⇥</kbd> sigue siendo Tab allí, incluso durante una grabación. La línea bajo el ajuste dice ahora **Valor propio**.
 
-5. En un Mac, abre **Configuración de perfiles › Terminal › General**, baja hasta **Atajos de fin** y vacía el campo **Añadir al final** de **Directo · Párrafo**. Así <kbd>↩</kbd> termina un dictado en la terminal sin salto de línea.
+5. En un Mac, abre **Configuración de perfiles › Terminal › General**, baja hasta **Atajos de fin** y vacía el campo **Añadir al final** de **Párrafo**. Así <kbd>↩</kbd> termina un dictado en la terminal sin salto de línea.
 
 6. Pruébalo: en la terminal, empieza un dictado, di un comando y termínalo con <kbd>↩</kbd>. El overlay nombra **Terminal**, y el comando aparece tal como lo dijiste, esperando a que lo ejecutes.
 
@@ -143,4 +143,4 @@ Si el proveedor de posprocesamiento del perfil tiene una clave API, la exportaci
 
 ## Siguiente
 
-Lo que más cambian los perfiles son los atajos de fin. [Atajos de inicio y de fin](../start-and-end-shortcuts/) muestra de qué se compone cada uno y cómo crear los tuyos.
+Lo que más cambian los perfiles son los atajos de fin. [Atajos de inicio, de mantener, de instrucción y de fin](../start-and-end-shortcuts/) muestra de qué se compone cada uno y cómo crear los tuyos.

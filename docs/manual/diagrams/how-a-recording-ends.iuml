@@ -6,34 +6,47 @@ start
 ' "Copy Last Transcript" during a recording: coordinator.finish_recording
 ' ends it as its start shortcut would (EndChoice::Start), and the text
 ' goes on the clipboard (dictation_key_inserts.rs, copy_last_transcript).
-' Linux: no end shortcut's own combination and no cancel shortcut while
-' recording (shortcut/profile_sync.rs, END_KEYS_WHILE_RECORDING;
+' Linux: no combination taken only while recording, so no end shortcut's
+' own one, no instruction shortcuts and no cancel shortcut
+' (shortcut/profile_sync.rs; instruction_keys::taken;
 ' shortcut/mod.rs, reconcile_cancel_shortcut).
 :$runs;
 note left: $noteCopy
 note right: $noteLinux
-' transcription_coordinator.rs, CoordinatorState::on_input and
-' on_end_key; end_keys.rs, resolve.
+' transcription_coordinator.rs, CoordinatorState::on_input: the roles of
+' a press resolved from the lists of the profile that applies now.
 switch ($qWhat)
 case ($aEndKey)
-  ' Registered only while recording; ends it held or locked (on_end_key).
+  ' Registered only while recording (end_keys.rs, resolve).
   :$endKey;
 case ($aStartAgain)
-  ' A start shortcut's press during a recording, its own or the other,
-  ' is a press of the end with its combination, else nothing
-  ' (EndChoice::Key via keys_end).
+  ' A start or hold shortcut's press during a recording is a press of the
+  ' end with its combination, else nothing (EndChoice::Key via keys_end).
   :$startAgain;
 case ($aReleased)
-  ' Push-to-talk: every release; hold-or-toggle: a hold of at least
-  ' hold_threshold_ms (300 ms); toggle: never (finish_hold).
+  ' The release after the threshold ends with the hold shortcut's values
+  ' (EndChoice::Held); a short press of a hold-only shortcut discards the
+  ' recording (Effect::Discard).
   :$held;
+  note right: $noteShort
+case ($aInstruction)
+  ' The stage "Recording: instruction" (dictation_flow::instruction):
+  ' tapped, an end shortcut sends; held, the release sends with the
+  ' instruction shortcut's values (instruction_keys::instruction_end).
+  :$instruction;
+  if ($qInstrHow) then ($aTapped)
+    :$instrTapped;
+  else ($aHeld)
+    :$instrHeld;
+  endif
 case ($aCancel)
   :$cancelled; <<stop>>
   stop
 endswitch
-' post_process = end.post_process && the profile's post_process_enabled
-' (app_profiles::effective_post_process); with_context = post_process &&
-' end.send_context (dictation_snapshot.rs, build).
+' Post-processed when an instruction shortcut was pressed or the profile's
+' mode is "always" (settings::PostProcessMode::post_processes; with
+' "never" no instruction shortcut is taken); context only then and when
+' the end's "Send Context" is on (dictation_snapshot.rs, build).
 if ($qPost) then ($yes)
   :$post;
   if ($qContext) then ($yes)

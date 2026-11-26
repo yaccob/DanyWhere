@@ -2,7 +2,7 @@
 title: Defaults and profiles
 description: Dictate one way into your terminal and another into your chat, and still change a setting in one place for all of them.
 sidebar:
-  order: 3
+  order: 4
 ---
 
 import Diagram from '@components/Diagram.astro';
@@ -32,7 +32,7 @@ Open a profile under **Profile Settings** in the sidebar, for example **Profile 
 
 <Screenshot
   name="profile-own-values"
-  alt="The group Transcription on the page Advanced of the profile Terminal. Under each setting is a state line. Three settings show a whole chain and the grey word Default: they follow the Defaults. Post Processing, switched off, shows a broken chain, Own value in petrol, Default: on, and a Reset button."
+  alt="The group Transcription on the page Advanced of the profile Terminal. Under each setting is a state line. Three settings show a whole chain and the grey word Default: they follow the Defaults. Post Processing, set to Never, shows a broken chain, Own value in petrol, Default: With Instruction Shortcut, and a Reset button."
   caption="Inside a profile, every setting says whether it follows the Defaults."
 />
 
@@ -41,7 +41,7 @@ Change a setting that follows the default, and it becomes the profile's own valu
 **Page to Defaults** at the top of a page resets all its own values. The profile's first page, **Profile**, lists everything it holds of its own under **Own Values**: a click on a row opens that setting, the round arrow resets just that one, and **Whole Profile to Defaults** resets them all, keeping the profile's name and apps. Before resetting more than one value, DanyWhere asks and names them. In the sidebar, a number next to a profile and its pages counts their own values.
 
 :::tip[Keep a value that happens to be the same]
-To keep a value that the Defaults have too, such as post-processing switched off for your terminal, click the whole chain. The value becomes the profile's own without changing, and it stays when you change the default later. A click on the broken chain lets it follow again.
+To keep a value that the Defaults have too, such as **Never** under **Post Processing** for your terminal, click the whole chain. The value becomes the profile's own without changing, and it stays when you change the default later. A click on the broken chain lets it follow again.
 :::
 
 ## Seen from the Defaults
@@ -50,7 +50,7 @@ You can also work the other way round, one setting at a time. On the pages under
 
 <Screenshot
   name="defaults-with-profiles"
-  alt="The setting Post Processing on the page Advanced of the Defaults, switched on. Under it, the profile Terminal with a broken chain, its own switch, off, and a round arrow to reset it. Below that, a grey line with a whole chain says Chat follows, and a menu + Profile sits next to it."
+  alt="The setting Post Processing on the page Advanced of the Defaults, set to With Instruction Shortcut. Under it, the profile Terminal with a broken chain, its own choice, Never, and a round arrow to reset it. Below that, a grey line with a whole chain says Chat follows, and a menu + Profile sits next to it."
   caption="Under the Defaults, each setting shows the profiles that differ."
 />
 
@@ -58,7 +58,7 @@ The pages under **Defaults** always show and change the Defaults, whichever prof
 
 ## Lists, entry by entry
 
-Some settings are lists: the **End Shortcuts** and the other shortcuts, the **Additional Lists** of words, and the post-processing providers with their models. A profile differs from such a list entry by entry: it changes an entry, adds one, or switches off one of the Defaults' entries. The state line marks each of them **own** or **off**, with a reset of its own. All other entries keep following the Defaults, including entries you add there later. On a Mac, a profile for your chats could send with <kbd>↩</kbd> this way: it changes only **Direct · Paragraph**, so that it presses Enter instead of starting a new paragraph.
+Some settings are lists: the start, hold, instruction and end shortcuts and the other shortcuts, the **Additional Lists** of words, and the post-processing providers with their models. A profile differs from such a list entry by entry: it changes an entry, adds one, or switches off one of the Defaults' entries. The state line marks each of them **own** or **off**, with a reset of its own. All other entries keep following the Defaults, including entries you add there later. On a Mac, a profile for your chats could send with <kbd>↩</kbd> this way: it changes only **Paragraph**, so that it presses Enter instead of starting a new paragraph.
 
 Words and prompts work a little differently. The **Word List** of the Defaults applies in every profile; a profile can replace it as a whole, but usually it adds **Additional Words** in front of it, which only it uses. The prompts belong to all profiles, and which of them are **Active**, in what order, belongs to the profile.
 
@@ -133,9 +133,9 @@ If the profile's post-processing provider has an API key, the export asks for a 
 
 3. Check that **Choose Profile by Application** is on.
 
-4. Open **Profile Settings › Terminal › Advanced** and find **Post Processing**. If it's on, switch it off. If it's already off, as it is out of the box, click the chain under it, so the terminal stays without post-processing even after you switch it on in the Defaults. The line under it now says **Own value**.
+4. Open **Profile Settings › Terminal › Advanced**, find **Post Processing** and choose **Never**. Nothing you dictate into the terminal then goes to a provider, and <kbd>⇥</kbd> stays Tab there, even during a recording. The line under the setting now says **Own value**.
 
-5. On a Mac, open **Profile Settings › Terminal › General**, scroll to **End Shortcuts** and empty the **Append** field of **Direct · Paragraph**. <kbd>↩</kbd> then ends a dictation in the terminal without a line break.
+5. On a Mac, open **Profile Settings › Terminal › General**, scroll to **End Shortcuts** and empty the **Append** field of **Paragraph**. <kbd>↩</kbd> then ends a dictation in the terminal without a line break.
 
 6. Try it: in the terminal, start a dictation, say a command and end it with <kbd>↩</kbd>. The overlay names **Terminal**, and the command appears as you said it, waiting for you to run it.
 
@@ -143,4 +143,4 @@ If the profile's post-processing provider has an API key, the export asks for a 
 
 ## Next
 
-The end shortcuts are what profiles change most often. [Start and end shortcuts](../start-and-end-shortcuts/) shows what each one is made of and how to add your own.
+The end shortcuts are what profiles change most often. [Start, hold, instruction and end shortcuts](../start-and-end-shortcuts/) shows what each one is made of and how to add your own.

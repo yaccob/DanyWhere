@@ -1,0 +1,40 @@
+' A dictation with a spoken instruction: the structure. The texts come from
+' spoken-instruction.<lang>.puml, which includes this file after
+' style.iuml. Facts checked against the code; see the comments for where.
+
+start
+:$start;
+:$text;
+' The instruction shortcut cuts the recording without a gap or a sound
+' (AudioRecordingManager::split_recording) and switches the coordinator to
+' "Recording: instruction" (dictation_flow::instruction::begin_instruction).
+' Esc discards both sections (cancel_current_operation).
+:$switch;
+note right: $noteCancel
+fork
+  ' The text is transcribed on a blocking thread from the cut on
+  ' (dictation_flow::instruction::split_dictation); its check mark in the
+  ' overlay (overlay::DictationInstruction, text_ready).
+  :$transcribeText;
+fork again
+  :$speak;
+  ' Tapped: an end shortcut sends; held: the release sends with the
+  ' instruction shortcut's values (instruction_keys::instruction_end).
+  if ($qHow) then ($aTapped)
+    :$endKey;
+  else ($aHeld)
+    :$release;
+  endif
+end fork
+' The instruction section is transcribed only if the VAD heard speech in
+' it (heard_speech); finish_split waits for the text first.
+:$transcribeInstruction;
+' The block <spoken_instruction> after the active prompts, last before
+' the transcript (prompt_frame.rs); an empty dictation with an instruction
+' is post-processed too.
+:$post;
+note right: $noteEmpty
+' The end's "Append", then delivery and History as for every dictation
+' (dictation_flow/mod.rs; history: spoken_instruction and its audio).
+:$deliver;
+stop

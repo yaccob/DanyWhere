@@ -1,0 +1,26 @@
+@startuml
+' A dictation with a spoken instruction, in French. The structure is in
+' spoken-instruction.iuml; UI terms as in
+' src/i18n/locales/fr/translation.json.
+' "\n" breaks a line; no ";" in a text (it would end a step). A no-break
+' space goes inside « » and before : and ?.
+!$yes = "oui"
+!$no = "non"
+!$start = "Un raccourci de début ou de maintien :\nl'enregistrement tourne"
+!$text = "Vous dites le texte"
+!$switch = "Un raccourci d'instruction, p. ex. ⇥ :\nl'overlay affiche « Instruction »"
+!$noteCancel = "Échap annule tout,\ntexte et instruction"
+!$transcribeText = "Le modèle vocal\ntranscrit le texte,\npuis l'overlay\naffiche une coche"
+!$speak = "Vous dites\nl'instruction, p. ex.\n« traduis ceci\nen polonais »"
+!$qHow = "Appui bref\nou maintenu ?"
+!$aTapped = "bref"
+!$aHeld = "maintenu"
+!$endKey = "Un raccourci\nde fin\nl'envoie"
+!$release = "Le relâcher\nl'envoie"
+!$transcribeInstruction = "Le modèle vocal transcrit l'instruction"
+!$post = "Post-traitement : les prompts actifs\ndu profil, puis l'instruction"
+!$noteEmpty = "Rien dit après le raccourci :\nles prompts seuls. Pas de texte\navant : l'instruction seule."
+!$deliver = "« Ajouter à la fin » de la fin, inséré,\nenregistré dans l'« Historique »\navec l'instruction"
+!include style.iuml
+!include spoken-instruction.iuml
+@enduml
