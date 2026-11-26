@@ -476,6 +476,7 @@
       "description": "Tryk kort for at starte en optagelse. Den kører, indtil en afslutningsgenvej afslutter den.",
       "shortcutHint": "Et kort tryk på denne tastekombination starter en optagelse. Den er altid optaget.",
       "alsoHold": "Også en holdegenvej",
+      "alsoInstruction": "Også en instruktionsgenvej",
       "add": "Tilføj startgenvej",
       "addPressKeys": "Tryk på tastekombinationen til den nye startgenvej",
       "delete": "Slet startgenvej {{shortcut}}",
@@ -491,11 +492,11 @@
     },
     "holdKeys": {
       "title": "Holdegenveje",
-      "description": "Hold nede for at optage. Når du slipper, afsluttes optagelsen på denne måde: hvad der tilføjes, om teksten efterbehandles, og om tidligere dikteringer sendes med som kontekst.",
+      "description": "Hold nede for at optage. Når du slipper, afsluttes optagelsen på denne måde: hvad der tilføjes, og om tidligere dikteringer sendes med som kontekst.",
       "shortcutHint": "Når du holder denne tastekombination nede, optages der; når du slipper den, afsluttes optagelsen på denne måde.",
       "alsoStart": "Også en startgenvej: et kort tryk starter en optagelse, der kører videre.",
       "holdOnly": "Kun holdegenvej: et kort tryk gør ingenting.",
-      "notTaken": "Kun optaget, så længe efterbehandling er slået til: indtil da forbliver dens tastekombination hos appen i forgrunden.",
+      "alsoInstruction": "Også en instruktionsgenvej: under en optagelse skifter den til instruktionen.",
       "add": "Tilføj holdegenvej",
       "addPressKeys": "Tryk på tastekombinationen til den nye holdegenvej",
       "refName": "Holdegenvej {{name}}",
@@ -505,19 +506,34 @@
         "shortcutTwice": "To holdegenveje kan ikke dele en tastekombination."
       }
     },
+    "instructionKeys": {
+      "title": "Instruktionsgenveje",
+      "description": "Under en optagelse skifter en instruktionsgenvej fra teksten til en instruktion: det, du siger derefter, indsættes ikke, men fortæller efterbehandlingen, hvad den skal gøre med teksten, fx »oversæt det til polsk«. Tryk kort på den, så sender en afslutningsgenvej dikteringen af; hold den nede, så sender det at slippe den dikteringen af som indstillet her. En sådan diktering efterbehandles altid.",
+      "shortcutHint": "Under en optagelse skifter et tryk på denne tastekombination fra teksten til instruktionen. Den er kun optaget under en optagelse.",
+      "onlyWhileRecording": "Kun optaget under en optagelse.",
+      "sameAsStartOrHold": "Samme tastekombination som en start- eller holdegenvej: uden optagelse starter den en, under en optagelse skifter den til instruktionen.",
+      "notTakenNever": "Efterbehandling er sat til »{{mode}}«: instruktionsgenveje er ikke optaget. Vælg en anden indstilling for »{{setting}}« under Avanceret.",
+      "notTakenNoProvider": "Ingen udbyder til efterbehandling med en model er sat op: instruktionsgenveje er ikke optaget, før der er en.",
+      "add": "Tilføj instruktionsgenvej",
+      "addPressKeys": "Tryk på tastekombinationen til den nye instruktionsgenvej",
+      "refName": "Instruktionsgenvej {{name}}",
+      "errors": {
+        "save": "Instruktionsgenvejene kunne ikke gemmes: {{error}}",
+        "needsShortcut": "Hver instruktionsgenvej skal have en tastekombination.",
+        "shortcutTwice": "To instruktionsgenveje kan ikke dele en tastekombination."
+      }
+    },
     "endKeys": {
       "title": "Afslutningsgenveje",
-      "description": "Hvordan en optagelse slutter, og hvad der følger. Hver afslutningsgenvej har sin egen tastekombination, som kun er optaget under en optagelse, og bestemmer, hvad der tilføjes, om teksten efterbehandles, og om tidligere dikteringer sendes med som kontekst. En afslutningsgenvej må have en start- eller holdegenvejs tastekombination: et kort tryk på den under en optagelse afslutter så på denne måde.",
+      "description": "Hvordan en optagelse slutter, og hvad der følger. Hver afslutningsgenvej har sin egen tastekombination, som kun er optaget under en optagelse, og bestemmer, hvad der tilføjes, og om tidligere dikteringer sendes med som kontekst. En afslutningsgenvej må have en start- eller holdegenvejs tastekombination: et kort tryk på den under en optagelse afslutter så på denne måde.",
       "name": "Navn",
       "shortcutHint": "Et tryk på denne tastekombination under en optagelse afslutter den på denne måde. Den er kun optaget under en optagelse.",
       "sameAsStart": "Samme tastekombination som en startgenvej: et nyt kort tryk under en optagelse afslutter på denne måde.",
       "sameAsHold": "Samme tastekombination som en holdegenvej: et kort tryk under en optagelse afslutter på denne måde.",
       "append": "Tilføj",
       "appendDescription": "Tilføjes til en diktering, der slutter på denne måde: teksten og derefter det tastetryk, du vælger. I teksten er \\s et mellemrum, \\n en ny linje, \\t en tabulator og \\\\ en omvendt skråstreg; alt andet tilføjes, som det står. Tastetrykket sendes kun, når teksten indsættes.",
-      "postProcess": "Efterbehandl",
       "sendContext": "Send kontekst",
-      "sendContextHint": "Kun med efterbehandling: tidligere dikteringer fra samme vindue sendes med som kontekst.",
-      "postProcessOff": "Efterbehandling er slået fra: en diktering, der afsluttes på denne måde, efterbehandles ikke. Slå »Efterbehandling« til under Avanceret.",
+      "sendContextHint": "Tidligere dikteringer fra samme vindue sendes med som kontekst. Det gælder kun, når dikteringen efterbehandles.",
       "add": "Tilføj afslutningsgenvej",
       "addPressKeys": "Tryk på tastekombinationen til den nye afslutningsgenvej",
       "delete": "Slet {{name}}",
@@ -869,6 +885,7 @@
         "llmCheckTitle": "Kontrollér navne med LLM'en, også uden efterbehandling",
         "llmCheckDescription": "Kun i dikteringer med et ord, der ligner et punkt på en ordliste. Sætningen sendes så til {{provider}}.",
         "llmCheckNeedsProvider": "Kræver en udbyder til efterbehandling med en model.",
+        "llmCheckNever": "Ikke så længe efterbehandling er sat til »{{mode}}«: så sendes intet til en udbyder.",
         "llmCheckNotWith": "Ikke med {{provider}}: kræver en anden udbyder til efterbehandling med en model.",
         "setUpPostProcessing": "Konfigurer efterbehandling",
         "switchModel": "Skift til {{model}}",
@@ -1070,6 +1087,15 @@
         "statusDenied": "Ikke tilladt – ændr det i Systemindstillinger › Anonymitet og sikkerhed › Automatisering",
         "statusNotRunning": "Kører ikke – start den for at tillade",
         "statusUnknown": "Ukendt"
+      },
+      "mode": {
+        "title": "Efterbehandling",
+        "description": "Hvornår en diktering sendes til udbyderen af efterbehandling. Aldrig: intet sendes til en udbyder, og instruktionsgenveje er ikke optaget. Med instruktionsgenvej: kun en diktering, hvor der blev trykket på en instruktionsgenvej. Altid: hver diktering; en instruktionsgenvej tilføjer en instruktion.",
+        "options": {
+          "never": "Aldrig",
+          "withInstructionKey": "Med instruktionsgenvej",
+          "always": "Altid"
+        }
       }
     },
     "history": {
@@ -1182,7 +1208,8 @@
       "promptMenu": {
         "button": "Efterbehandl med én prompt",
         "title": "Efterbehandl med",
-        "active": "aktiv"
+        "active": "aktiv",
+        "withoutSpokenInstruction": "Uden den talte instruktion"
       },
       "retranscribeAgain": "Transskribér igen og efterbehandl igen som før"
     },
@@ -1282,10 +1309,6 @@
       "clamshellMicrophone": {
         "title": "Clamshell-mikrofon",
         "description": "Mikrofon, der skal bruges, når den bærbares låg er lukket"
-      },
-      "postProcessingToggle": {
-        "label": "Efterbehandling",
-        "description": "Aktivér AI-drevet tekstforbedring efter transskription"
       },
       "muteWhileRecording": {
         "label": "Mute under optagelse",
@@ -1580,7 +1603,10 @@
     "notReady": "Ikke klar endnu",
     "wordList": "Ordliste: {{name}}",
     "wordListGlobalOnly": "Ingen ekstra liste",
-    "cancel": "Annuller"
+    "cancel": "Annuller",
+    "instruction": "Instruktion",
+    "instructionLine": "Instruktion: {{text}}",
+    "textReady": "Tekst transskriberet"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} blokerer muligvis 1 genvej",

@@ -476,6 +476,7 @@
       "description": "Tikken start een opname. Die loopt door tot een eindsneltoets haar beëindigt.",
       "shortcutHint": "Tikken op deze toetsencombinatie start een opname. Ze is altijd bezet.",
       "alsoHold": "Ook vasthoudsneltoets",
+      "alsoInstruction": "Ook instructiesneltoets",
       "add": "Startsneltoets toevoegen",
       "addPressKeys": "Druk op de toetsencombinatie voor de nieuwe startsneltoets",
       "delete": "Startsneltoets {{shortcut}} verwijderen",
@@ -491,11 +492,11 @@
     },
     "holdKeys": {
       "title": "Vasthoudsneltoetsen",
-      "description": "Houd ingedrukt om op te nemen. Loslaten beëindigt de opname op deze manier: wat er wordt toegevoegd, of de tekst wordt nabewerkt, of eerdere dictaten als context worden meegestuurd.",
+      "description": "Houd ingedrukt om op te nemen. Loslaten beëindigt de opname op deze manier: wat er wordt toegevoegd en of eerdere dictaten als context worden meegestuurd.",
       "shortcutHint": "Deze toetsencombinatie vasthouden neemt op; loslaten beëindigt de opname op deze manier.",
       "alsoStart": "Ook startsneltoets: kort tikken start een opname die blijft doorlopen.",
       "holdOnly": "Alleen vasthoudsneltoets: kort tikken doet niets.",
-      "notTaken": "Alleen bezet zolang nabewerking aan staat: tot dan blijft de toetsencombinatie bij de app op de voorgrond.",
+      "alsoInstruction": "Ook instructiesneltoets: tijdens een opname schakelt die naar de instructie.",
       "add": "Vasthoudsneltoets toevoegen",
       "addPressKeys": "Druk op de toetsencombinatie voor de nieuwe vasthoudsneltoets",
       "refName": "Vasthoudsneltoets {{name}}",
@@ -505,19 +506,34 @@
         "shortcutTwice": "Twee vasthoudsneltoetsen kunnen geen toetsencombinatie delen."
       }
     },
+    "instructionKeys": {
+      "title": "Instructiesneltoetsen",
+      "description": "Tijdens een opname schakelt een instructiesneltoets van de tekst naar een instructie: wat je daarna zegt, wordt niet ingevoegd, maar vertelt de naverwerking wat ze met de tekst moet doen, bijvoorbeeld „vertaal dit naar het Pools”. Tik erop, en een eindsneltoets verstuurt het dictaat; houd hem ingedrukt, en loslaten verstuurt het dictaat zoals hier ingesteld. Zo'n dictaat wordt altijd nabewerkt.",
+      "shortcutHint": "Tijdens een opname schakelt deze toetsencombinatie van de tekst naar de instructie. Ze is alleen bezet tijdens een opname.",
+      "onlyWhileRecording": "Alleen bezet tijdens een opname.",
+      "sameAsStartOrHold": "Dezelfde toetsencombinatie als een start- of vasthoudsneltoets: zonder opname start ze er een, tijdens een opname schakelt ze naar de instructie.",
+      "notTakenNever": "Naverwerking staat op „{{mode}}”: instructiesneltoetsen zijn niet bezet. Kies onder Geavanceerd een andere instelling bij „{{setting}}”.",
+      "notTakenNoProvider": "Er is geen aanbieder voor naverwerking met een model ingesteld: instructiesneltoetsen zijn pas bezet als er een is.",
+      "add": "Instructiesneltoets toevoegen",
+      "addPressKeys": "Druk op de toetsencombinatie voor de nieuwe instructiesneltoets",
+      "refName": "Instructiesneltoets {{name}}",
+      "errors": {
+        "save": "De instructiesneltoetsen konden niet worden opgeslagen: {{error}}",
+        "needsShortcut": "Elke instructiesneltoets heeft een toetsencombinatie nodig.",
+        "shortcutTwice": "Twee instructiesneltoetsen kunnen geen toetsencombinatie delen."
+      }
+    },
     "endKeys": {
       "title": "Eindsneltoetsen",
-      "description": "Hoe een opname eindigt en wat er volgt. Elke eindsneltoets heeft een eigen toetsencombinatie, die alleen tijdens een opname bezet is, en bepaalt wat er wordt toegevoegd, of de tekst wordt nabewerkt en of eerdere dictaten als context worden meegestuurd. Een eindsneltoets mag de toetsencombinatie van een start- of vasthoudsneltoets hebben: tikken op die toetsencombinatie tijdens een opname beëindigt de opname dan op deze manier.",
+      "description": "Hoe een opname eindigt en wat er volgt. Elke eindsneltoets heeft een eigen toetsencombinatie, die alleen tijdens een opname bezet is, en bepaalt wat er wordt toegevoegd en of eerdere dictaten als context worden meegestuurd. Een eindsneltoets mag de toetsencombinatie van een start- of vasthoudsneltoets hebben: tikken op die toetsencombinatie tijdens een opname beëindigt de opname dan op deze manier.",
       "name": "Naam",
       "shortcutHint": "Op deze toetsencombinatie drukken tijdens een opname beëindigt die op deze manier. Ze is alleen bezet tijdens een opname.",
       "sameAsStart": "Dezelfde toetsencombinatie als een startsneltoets: opnieuw tikken tijdens een opname beëindigt die op deze manier.",
       "sameAsHold": "Dezelfde toetsencombinatie als een vasthoudsneltoets: tikken tijdens een opname beëindigt die op deze manier.",
       "append": "Toevoegen",
       "appendDescription": "Wordt toegevoegd aan een dictaat dat zo eindigt: de tekst en daarna de toetsaanslag die je kiest. In de tekst is \\s een spatie, \\n een nieuwe regel, \\t een tab en \\\\ een backslash; al het andere wordt toegevoegd zoals het er staat. De toetsaanslag wordt alleen verstuurd als de tekst wordt geplakt.",
-      "postProcess": "Nabewerken",
       "sendContext": "Context meesturen",
-      "sendContextHint": "Alleen met nabewerking: eerdere dictaten uit hetzelfde venster worden als context meegestuurd.",
-      "postProcessOff": "Naverwerking staat uit: een dictaat dat zo eindigt, wordt niet nabewerkt. Zet „Naverwerking” aan onder Geavanceerd.",
+      "sendContextHint": "Eerdere dictaten uit hetzelfde venster worden als context meegestuurd. Dat telt alleen als het dictaat wordt nabewerkt.",
       "add": "Eindsneltoets toevoegen",
       "addPressKeys": "Druk op de toetsencombinatie voor de nieuwe eindsneltoets",
       "delete": "{{name}} verwijderen",
@@ -869,6 +885,7 @@
         "llmCheckTitle": "Namen controleren met de LLM, ook zonder naverwerking",
         "llmCheckDescription": "Alleen in dictaten met een woord dat op een item van een woordenlijst lijkt. De zin gaat dan naar {{provider}}.",
         "llmCheckNeedsProvider": "Vereist een aanbieder voor naverwerking met een model.",
+        "llmCheckNever": "Niet zolang naverwerking op „{{mode}}” staat: dan gaat er niets naar een aanbieder.",
         "llmCheckNotWith": "Niet met {{provider}}: vereist een andere aanbieder voor naverwerking met een model.",
         "setUpPostProcessing": "Naverwerking instellen",
         "switchModel": "Overschakelen naar {{model}}",
@@ -1070,6 +1087,15 @@
         "statusDenied": "Niet toegestaan – wijzig dit in Systeeminstellingen › Privacy en beveiliging › Automatisering",
         "statusNotRunning": "Niet actief – start de app om toe te staan",
         "statusUnknown": "Onbekend"
+      },
+      "mode": {
+        "title": "Naverwerking",
+        "description": "Wanneer een dictaat naar de aanbieder voor naverwerking gaat. Nooit: er gaat niets naar een aanbieder en instructiesneltoetsen zijn niet bezet. Met instructiesneltoets: alleen een dictaat waarin een instructiesneltoets is ingedrukt. Altijd: elk dictaat; een instructiesneltoets voegt een instructie toe.",
+        "options": {
+          "never": "Nooit",
+          "withInstructionKey": "Met instructiesneltoets",
+          "always": "Altijd"
+        }
       }
     },
     "history": {
@@ -1182,7 +1208,8 @@
       "promptMenu": {
         "button": "Nabewerken met één prompt",
         "title": "Nabewerken met",
-        "active": "actief"
+        "active": "actief",
+        "withoutSpokenInstruction": "Zonder de gesproken instructie"
       },
       "retranscribeAgain": "Opnieuw transcriberen en opnieuw naverwerken, zoals eerder"
     },
@@ -1282,10 +1309,6 @@
       "clamshellMicrophone": {
         "title": "Clamshell-microfoon",
         "description": "Microfoon die gebruikt moet worden wanneer het laptopscherm gesloten is"
-      },
-      "postProcessingToggle": {
-        "label": "Naverwerking",
-        "description": "Schakel AI-gestuurde tekstverfijning in na transcriptie"
       },
       "muteWhileRecording": {
         "label": "Dempen tijdens opname",
@@ -1580,7 +1603,10 @@
     "notReady": "Nog niet klaar",
     "wordList": "Woordenlijst: {{name}}",
     "wordListGlobalOnly": "Geen extra lijst",
-    "cancel": "Annuleren"
+    "cancel": "Annuleren",
+    "instruction": "Instructie",
+    "instructionLine": "Instructie: {{text}}",
+    "textReady": "Tekst getranscribeerd"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} blokkeert mogelijk 1 sneltoets",

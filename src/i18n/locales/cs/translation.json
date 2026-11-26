@@ -476,6 +476,7 @@
       "description": "Klepnutím spustíte nahrávání. Běží, dokud ho neukončí ukončovací zkratka.",
       "shortcutHint": "Klepnutí na tuto kombinaci kláves spustí nahrávání. Je obsazena vždy.",
       "alsoHold": "Také zkratka pro podržení",
+      "alsoInstruction": "Také zkratka pro pokyn",
       "add": "Přidat spouštěcí zkratku",
       "addPressKeys": "Stiskněte kombinaci kláves pro novou spouštěcí zkratku",
       "delete": "Smazat spouštěcí zkratku {{shortcut}}",
@@ -491,11 +492,11 @@
     },
     "holdKeys": {
       "title": "Zkratky pro podržení",
-      "description": "Podržením nahráváte. Uvolnění ukončí nahrávání tímto způsobem: co se připojí, zda se text dodatečně zpracuje a zda se předchozí diktáty pošlou jako kontext.",
+      "description": "Podržením nahráváte. Uvolnění ukončí nahrávání tímto způsobem: co se připojí a zda se předchozí diktáty pošlou jako kontext.",
       "shortcutHint": "Podržení této kombinace kláves nahrává; její uvolnění ukončí nahrávání tímto způsobem.",
       "alsoStart": "Také spouštěcí zkratka: krátké klepnutí spustí nahrávání, které pokračuje.",
       "holdOnly": "Jen zkratka pro podržení: krátké klepnutí nic neudělá.",
-      "notTaken": "Obsazena jen, dokud je dodatečné zpracování zapnuté: do té doby zůstává její kombinace kláves u aplikace v popředí.",
+      "alsoInstruction": "Také zkratka pro pokyn: během nahrávání přepne na pokyn.",
       "add": "Přidat zkratku pro podržení",
       "addPressKeys": "Stiskněte kombinaci kláves pro novou zkratku pro podržení",
       "refName": "Zkratka pro podržení {{name}}",
@@ -505,19 +506,34 @@
         "shortcutTwice": "Dvě zkratky pro podržení nemohou mít stejnou kombinaci kláves."
       }
     },
+    "instructionKeys": {
+      "title": "Zkratky pro pokyn",
+      "description": "Během nahrávání přepne zkratka pro pokyn z textu na pokyn: co řeknete potom, se nevloží, ale řekne následnému zpracování, co má s textem udělat, třeba „přelož to do polštiny“. Klepněte na ni a diktát odešle ukončovací zkratka; podržte ji a diktát odešle její uvolnění, jak je nastaveno zde. Takový diktát se vždy následně zpracuje.",
+      "shortcutHint": "Během nahrávání stisknutí této kombinace kláves přepne z textu na pokyn. Je obsazena jen během nahrávání.",
+      "onlyWhileRecording": "Obsazena jen během nahrávání.",
+      "sameAsStartOrHold": "Stejná kombinace kláves jako spouštěcí zkratka nebo zkratka pro podržení: bez nahrávání ho spustí, během nahrávání přepne na pokyn.",
+      "notTakenNever": "Následné zpracování je nastaveno na „{{mode}}“: zkratky pro pokyn nejsou obsazené. Zvolte v sekci Pokročilé jiné nastavení pro „{{setting}}“.",
+      "notTakenNoProvider": "Není nastaven žádný poskytovatel následného zpracování s modelem: zkratky pro pokyn nebudou obsazené, dokud nějaký nebude nastaven.",
+      "add": "Přidat zkratku pro pokyn",
+      "addPressKeys": "Stiskněte kombinaci kláves pro novou zkratku pro pokyn",
+      "refName": "Zkratka pro pokyn {{name}}",
+      "errors": {
+        "save": "Zkratky pro pokyn se nepodařilo uložit: {{error}}",
+        "needsShortcut": "Každá zkratka pro pokyn potřebuje kombinaci kláves.",
+        "shortcutTwice": "Dvě zkratky pro pokyn nemohou mít stejnou kombinaci kláves."
+      }
+    },
     "endKeys": {
       "title": "Ukončovací zkratky",
-      "description": "Jak nahrávání skončí a co následuje. Každá ukončovací zkratka má vlastní kombinaci kláves, obsazenou jen během nahrávání, a určuje, co se připojí, zda se text dodatečně zpracuje a zda se předchozí diktáty pošlou jako kontext. Ukončovací zkratka smí mít kombinaci kláves spouštěcí zkratky nebo zkratky pro podržení: klepnutí na ni během nahrávání ho pak ukončí tímto způsobem.",
+      "description": "Jak nahrávání skončí a co následuje. Každá ukončovací zkratka má vlastní kombinaci kláves, obsazenou jen během nahrávání, a určuje, co se připojí a zda se předchozí diktáty pošlou jako kontext. Ukončovací zkratka smí mít kombinaci kláves spouštěcí zkratky nebo zkratky pro podržení: klepnutí na ni během nahrávání ho pak ukončí tímto způsobem.",
       "name": "Název",
       "shortcutHint": "Stisknutí této kombinace kláves během nahrávání ho ukončí tímto způsobem. Je obsazena jen během nahrávání.",
       "sameAsStart": "Stejná kombinace kláves jako spouštěcí zkratka: opětovné klepnutí na ni během nahrávání ho ukončí tímto způsobem.",
       "sameAsHold": "Stejná kombinace kláves jako zkratka pro podržení: klepnutí na ni během nahrávání ho ukončí tímto způsobem.",
       "append": "Připojit",
       "appendDescription": "Připojí se k diktátu, který skončí tímto způsobem: text a potom zvolený stisk klávesy. V textu je \\s mezera, \\n nový řádek, \\t tabulátor a \\\\ zpětné lomítko; vše ostatní se připojí tak, jak je napsáno. Stisk klávesy se odešle, jen když se text vkládá.",
-      "postProcess": "Dodatečně zpracovat",
       "sendContext": "Posílat kontext",
-      "sendContextHint": "Jen s dodatečným zpracováním: předchozí diktáty ze stejného okna se pošlou jako kontext.",
-      "postProcessOff": "Následné zpracování je vypnuté: diktát ukončený tímto způsobem se dodatečně nezpracuje. Zapněte „Následné zpracování“ v sekci Pokročilé.",
+      "sendContextHint": "Předchozí diktáty ze stejného okna se pošlou jako kontext. Uplatní se to jen tehdy, když se diktát následně zpracuje.",
       "add": "Přidat ukončovací zkratku",
       "addPressKeys": "Stiskněte kombinaci kláves pro novou ukončovací zkratku",
       "delete": "Smazat {{name}}",
@@ -869,6 +885,7 @@
         "llmCheckTitle": "Kontrolovat jména pomocí LLM, i bez následného zpracování",
         "llmCheckDescription": "Jen v diktátech se slovem, které se podobá položce seznamu slov. Věta pak putuje k {{provider}}.",
         "llmCheckNeedsProvider": "Vyžaduje poskytovatele následného zpracování s modelem.",
+        "llmCheckNever": "Ne, dokud je následné zpracování nastaveno na „{{mode}}“: pak se nic neposílá žádnému poskytovateli.",
         "llmCheckNotWith": "Ne s {{provider}}: vyžaduje jiného poskytovatele následného zpracování s modelem.",
         "setUpPostProcessing": "Nastavit následné zpracování",
         "switchModel": "Přepnout na {{model}}",
@@ -1070,6 +1087,15 @@
         "statusDenied": "Nepovoleno – změň v Nastavení systému › Soukromí a zabezpečení › Automatizace",
         "statusNotRunning": "Neběží – spusť ji pro povolení",
         "statusUnknown": "Neznámé"
+      },
+      "mode": {
+        "title": "Následné zpracování",
+        "description": "Kdy diktát jde k poskytovateli následného zpracování. Nikdy: nic se neposílá žádnému poskytovateli a zkratky pro pokyn nejsou obsazené. Se zkratkou pro pokyn: jen diktát, ve kterém byla stisknuta zkratka pro pokyn. Vždy: každý diktát; zkratka pro pokyn přidá pokyn.",
+        "options": {
+          "never": "Nikdy",
+          "withInstructionKey": "Se zkratkou pro pokyn",
+          "always": "Vždy"
+        }
       }
     },
     "history": {
@@ -1182,7 +1208,8 @@
       "promptMenu": {
         "button": "Následně zpracovat jedním pokynem",
         "title": "Následně zpracovat pomocí",
-        "active": "aktivní"
+        "active": "aktivní",
+        "withoutSpokenInstruction": "Bez mluveného pokynu"
       },
       "retranscribeAgain": "Přepsat znovu a znovu zpracovat, jako předtím"
     },
@@ -1282,10 +1309,6 @@
       "clamshellMicrophone": {
         "title": "Mikrofon při zavřeném víku",
         "description": "Mikrofon, který se použije při zavřeném víku notebooku"
-      },
-      "postProcessingToggle": {
-        "label": "Následné zpracování",
-        "description": "Povolit AI vylepšení textu po přepisu"
       },
       "muteWhileRecording": {
         "label": "Ztlumit při nahrávání",
@@ -1580,7 +1603,10 @@
     "notReady": "Ještě není hotovo",
     "wordList": "Seznam slov: {{name}}",
     "wordListGlobalOnly": "Žádný doplňkový seznam",
-    "cancel": "Zrušit"
+    "cancel": "Zrušit",
+    "instruction": "Pokyn",
+    "instructionLine": "Pokyn: {{text}}",
+    "textReady": "Text přepsán"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} může blokovat 1 zkratku",

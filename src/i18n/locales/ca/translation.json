@@ -476,6 +476,7 @@
       "description": "Toca per iniciar una gravació. Continua fins que una drecera de final l'acaba.",
       "shortcutHint": "Tocar aquesta combinació inicia una gravació. S'ocupa sempre.",
       "alsoHold": "També drecera de pulsació llarga",
+      "alsoInstruction": "També drecera d'instrucció",
       "add": "Afegeix una drecera d'inici",
       "addPressKeys": "Prem la combinació per a la nova drecera d'inici",
       "delete": "Suprimeix la drecera d'inici {{shortcut}}",
@@ -491,11 +492,11 @@
     },
     "holdKeys": {
       "title": "Dreceres de pulsació llarga",
-      "description": "Mantén premut per gravar. En deixar anar, la gravació acaba d'aquesta manera: què s'afegeix, si el text es posprocessa, si els dictats anteriors s'envien com a context.",
+      "description": "Mantén premut per gravar. En deixar anar, la gravació acaba d'aquesta manera: què s'afegeix i si els dictats anteriors s'envien com a context.",
       "shortcutHint": "Mantenir premuda aquesta combinació grava; deixar-la anar acaba la gravació d'aquesta manera.",
       "alsoStart": "També drecera d'inici: un toc breu inicia una gravació que continua.",
       "holdOnly": "Només drecera de pulsació llarga: un toc breu no fa res.",
-      "notTaken": "Només s'ocupa mentre el posprocessament està activat: fins llavors, la seva combinació queda per a l'aplicació en primer pla.",
+      "alsoInstruction": "També drecera d'instrucció: durant una gravació canvia a la instrucció.",
       "add": "Afegeix una drecera de pulsació llarga",
       "addPressKeys": "Prem la combinació per a la nova drecera de pulsació llarga",
       "refName": "Drecera de pulsació llarga {{name}}",
@@ -505,19 +506,34 @@
         "shortcutTwice": "Dues dreceres de pulsació llarga no poden compartir una combinació."
       }
     },
+    "instructionKeys": {
+      "title": "Dreceres d'instrucció",
+      "description": "Durant una gravació, una drecera d'instrucció canvia del text a una instrucció: el que dius després no s'insereix, sinó que diu al posprocessament què ha de fer amb el text, per exemple «tradueix això al polonès». Toca-la, i una drecera de final envia el dictat; mantén-la premuda, i en deixar-la anar s'envia el dictat tal com s'ha configurat aquí. Un dictat així sempre es posprocessa.",
+      "shortcutHint": "Durant una gravació, prémer aquesta combinació canvia del text a la instrucció. Només s'ocupa mentre es grava.",
+      "onlyWhileRecording": "Només s'ocupa durant una gravació.",
+      "sameAsStartOrHold": "La mateixa combinació que una drecera d'inici o de pulsació llarga: sense gravació n'inicia una, durant una gravació canvia a la instrucció.",
+      "notTakenNever": "El posprocessament està configurat a «{{mode}}»: les dreceres d'instrucció no s'ocupen. Tria una altra opció per a «{{setting}}» a Avançat.",
+      "notTakenNoProvider": "No hi ha cap proveïdor de postprocessament amb un model configurat: les dreceres d'instrucció no s'ocupen fins que n'hi hagi un.",
+      "add": "Afegeix una drecera d'instrucció",
+      "addPressKeys": "Prem la combinació per a la nova drecera d'instrucció",
+      "refName": "Drecera d'instrucció {{name}}",
+      "errors": {
+        "save": "No s'han pogut desar les dreceres d'instrucció: {{error}}",
+        "needsShortcut": "Cada drecera d'instrucció necessita una combinació de tecles.",
+        "shortcutTwice": "Dues dreceres d'instrucció no poden compartir una combinació."
+      }
+    },
     "endKeys": {
       "title": "Dreceres de final",
-      "description": "Com acaba una gravació i què ve després. Cada drecera de final té una combinació de tecles pròpia, que només s'ocupa mentre es grava, i diu què s'afegeix, si el text es posprocessa i si els dictats anteriors s'envien com a context. Una drecera de final pot tenir la combinació d'una drecera d'inici o de pulsació llarga: llavors, tocar-la durant una gravació acaba d'aquesta manera.",
+      "description": "Com acaba una gravació i què ve després. Cada drecera de final té una combinació de tecles pròpia, que només s'ocupa mentre es grava, i diu què s'afegeix i si els dictats anteriors s'envien com a context. Una drecera de final pot tenir la combinació d'una drecera d'inici o de pulsació llarga: llavors, tocar-la durant una gravació acaba d'aquesta manera.",
       "name": "Nom",
       "shortcutHint": "Prémer aquesta combinació durant una gravació l'acaba d'aquesta manera. Només s'ocupa mentre es grava.",
       "sameAsStart": "La mateixa combinació que una drecera d'inici: tornar-la a tocar durant una gravació l'acaba d'aquesta manera.",
       "sameAsHold": "La mateixa combinació que una drecera de pulsació llarga: tocar-la durant una gravació l'acaba d'aquesta manera.",
       "append": "Afegeix al final",
       "appendDescription": "S'afegeix a un dictat que acaba d'aquesta manera: el text i després la pulsació de tecla que triïs. Al text, \\s és un espai, \\n un salt de línia, \\t una tabulació i \\\\ una barra inversa; la resta s'afegeix tal com està escrit. La pulsació de tecla només s'envia quan s'enganxa el text.",
-      "postProcess": "Posprocessa",
       "sendContext": "Envia el context",
-      "sendContextHint": "Només amb posprocessament: els dictats anteriors de la mateixa finestra s'envien com a context.",
-      "postProcessOff": "El postprocessament està desactivat: un dictat acabat d'aquesta manera no es posprocessa. Activeu «Postprocessament» a Avançat.",
+      "sendContextHint": "Els dictats anteriors de la mateixa finestra s'envien com a context. Només compta quan el dictat es posprocessa.",
       "add": "Afegeix una drecera de final",
       "addPressKeys": "Prem la combinació per a la nova drecera de final",
       "delete": "Suprimeix {{name}}",
@@ -869,6 +885,7 @@
         "llmCheckTitle": "Comprova els noms amb l'LLM, també sense postprocessament",
         "llmCheckDescription": "Només en dictats amb una paraula que s'assembla a una entrada d'una llista de paraules. Aleshores la frase va a {{provider}}.",
         "llmCheckNeedsProvider": "Cal un proveïdor de postprocessament amb un model.",
+        "llmCheckNever": "No mentre el posprocessament estigui configurat a «{{mode}}»: llavors no s'envia res a cap proveïdor.",
         "llmCheckNotWith": "No amb {{provider}}: cal un altre proveïdor de postprocessament amb un model.",
         "setUpPostProcessing": "Configura el postprocessament",
         "switchModel": "Canvia a {{model}}",
@@ -1070,6 +1087,15 @@
         "statusDenied": "No permès – canvia-ho a Configuració del Sistema › Privacitat i seguretat › Automatització",
         "statusNotRunning": "No s'està executant – obre-la per permetre-ho",
         "statusUnknown": "Desconegut"
+      },
+      "mode": {
+        "title": "Postprocessament",
+        "description": "Quan un dictat s'envia al proveïdor de postprocessament. Mai: no s'envia res a cap proveïdor i les dreceres d'instrucció no s'ocupen. Amb drecera d'instrucció: només un dictat en què s'ha premut una drecera d'instrucció. Sempre: cada dictat; una drecera d'instrucció hi afegeix una instrucció.",
+        "options": {
+          "never": "Mai",
+          "withInstructionKey": "Amb drecera d'instrucció",
+          "always": "Sempre"
+        }
       }
     },
     "history": {
@@ -1182,7 +1208,8 @@
       "promptMenu": {
         "button": "Postprocessa amb una indicació",
         "title": "Postprocessa amb",
-        "active": "activa"
+        "active": "activa",
+        "withoutSpokenInstruction": "Sense la instrucció parlada"
       },
       "retranscribeAgain": "Torneu a transcriure i a postprocessar, com abans"
     },
@@ -1282,10 +1309,6 @@
       "clamshellMicrophone": {
         "title": "Micròfon amb la tapa tancada",
         "description": "Micròfon que s'utilitzarà quan la tapa del portàtil estigui tancada"
-      },
-      "postProcessingToggle": {
-        "label": "Postprocessament",
-        "description": "Activa la millora del text amb IA després de la transcripció"
       },
       "muteWhileRecording": {
         "label": "Silencia durant l'enregistrament",
@@ -1580,7 +1603,10 @@
     "notReady": "Encara no està a punt",
     "wordList": "Llista de paraules: {{name}}",
     "wordListGlobalOnly": "Cap llista addicional",
-    "cancel": "Cancel·la"
+    "cancel": "Cancel·la",
+    "instruction": "Instrucció",
+    "instructionLine": "Instrucció: {{text}}",
+    "textReady": "Text transcrit"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} pot estar blocant 1 drecera",

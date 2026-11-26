@@ -476,6 +476,7 @@
       "description": "轻按开始录音。录音会一直持续，直到用结束快捷键结束。",
       "shortcutHint": "轻按此按键组合会开始录音。始终占用。",
       "alsoHold": "也是按住快捷键",
+      "alsoInstruction": "也是指令快捷键",
       "add": "添加开始快捷键",
       "addPressKeys": "按下新开始快捷键的按键组合",
       "delete": "删除开始快捷键 {{shortcut}}",
@@ -491,11 +492,11 @@
     },
     "holdKeys": {
       "title": "按住快捷键",
-      "description": "按住时录音。松开会以这种方式结束录音：追加什么、是否对文本进行后处理，以及是否将之前的听写作为上下文一并发送。",
+      "description": "按住时录音。松开会以这种方式结束录音：追加什么，以及是否将之前的听写作为上下文一并发送。",
       "shortcutHint": "按住此按键组合时录音；松开会以这种方式结束录音。",
       "alsoStart": "也是开始快捷键：短暂轻按会开始录音，录音会持续进行。",
       "holdOnly": "仅为按住快捷键：短暂轻按不会有任何作用。",
-      "notTaken": "仅在后处理开启时占用：在此之前，其按键组合仍归前台应用使用。",
+      "alsoInstruction": "也是指令快捷键：录音时会切换到指令。",
       "add": "添加按住快捷键",
       "addPressKeys": "按下新按住快捷键的按键组合",
       "refName": "按住快捷键 {{name}}",
@@ -505,19 +506,34 @@
         "shortcutTwice": "两个按住快捷键不能使用同一个按键组合。"
       }
     },
+    "instructionKeys": {
+      "title": "指令快捷键",
+      "description": "录音时，指令快捷键会从文本切换到指令：之后说的话不会插入，而是告诉后处理该如何处理文本，例如“把这段翻译成波兰语”。轻按它，由结束快捷键发送听写；按住它，松开时按这里的设置发送听写。这样的听写总会进行后处理。",
+      "shortcutHint": "录音时按下此按键组合会从文本切换到指令。仅在录音时占用。",
+      "onlyWhileRecording": "仅在录音时占用。",
+      "sameAsStartOrHold": "与某个开始快捷键或按住快捷键的按键组合相同：未录音时会开始录音，录音时会切换到指令。",
+      "notTakenNever": "后处理设为“{{mode}}”：指令快捷键不占用。请在“高级”中为“{{setting}}”选择其他设置。",
+      "notTakenNoProvider": "尚未设置带模型的后处理提供商：在设置之前，指令快捷键不占用。",
+      "add": "添加指令快捷键",
+      "addPressKeys": "按下新指令快捷键的按键组合",
+      "refName": "指令快捷键 {{name}}",
+      "errors": {
+        "save": "无法保存指令快捷键：{{error}}",
+        "needsShortcut": "每个指令快捷键都需要按键组合。",
+        "shortcutTwice": "两个指令快捷键不能使用同一个按键组合。"
+      }
+    },
     "endKeys": {
       "title": "结束快捷键",
-      "description": "录音如何结束以及之后发生什么。每个结束快捷键都有自己的按键组合，仅在录音时占用，并决定追加什么、是否对文本进行后处理，以及是否将之前的听写作为上下文一并发送。结束快捷键可以使用某个开始快捷键或按住快捷键的按键组合：这时在录音中轻按它就会以这种方式结束。",
+      "description": "录音如何结束以及之后发生什么。每个结束快捷键都有自己的按键组合，仅在录音时占用，并决定追加什么，以及是否将之前的听写作为上下文一并发送。结束快捷键可以使用某个开始快捷键或按住快捷键的按键组合：这时在录音中轻按它就会以这种方式结束。",
       "name": "名称",
       "shortcutHint": "录音时按下此按键组合会以这种方式结束录音。仅在录音时占用。",
       "sameAsStart": "与某个开始快捷键的按键组合相同：录音时再次轻按会以这种方式结束。",
       "sameAsHold": "与某个按住快捷键的按键组合相同：录音时轻按会以这种方式结束。",
       "append": "末尾追加",
       "appendDescription": "追加到以这种方式结束的听写：先是文本，然后是你选择的按键。文本中 \\s 表示空格，\\n 表示换行，\\t 表示制表符，\\\\ 表示反斜杠；其他内容按原样追加。仅在粘贴文本时才发送按键。",
-      "postProcess": "后处理",
       "sendContext": "发送上下文",
-      "sendContextHint": "仅在后处理时：同一窗口中之前的听写会作为上下文一并发送。",
-      "postProcessOff": "后处理已关闭：以这种方式结束的听写不会进行后处理。请在“高级”中打开“后处理”。",
+      "sendContextHint": "同一窗口中之前的听写会作为上下文一并发送。仅在听写进行后处理时才起作用。",
       "add": "添加结束快捷键",
       "addPressKeys": "按下新结束快捷键的按键组合",
       "delete": "删除 {{name}}",
@@ -869,6 +885,7 @@
         "llmCheckTitle": "不进行后处理时也用 LLM 核对名称",
         "llmCheckDescription": "仅限包含与词汇列表条目相似的词的听写。此时该句会发送到 {{provider}}。",
         "llmCheckNeedsProvider": "需要一个已设置模型的后处理提供商。",
+        "llmCheckNever": "后处理设为“{{mode}}”时不可用：此时不会向任何提供商发送内容。",
         "llmCheckNotWith": "不适用于 {{provider}}：需要另一个已设置模型的后处理提供商。",
         "setUpPostProcessing": "设置后处理",
         "switchModel": "切换到 {{model}}",
@@ -1070,6 +1087,15 @@
         "statusDenied": "未允许 – 请在 系统设置 › 隐私与安全性 › 自动化 中更改",
         "statusNotRunning": "未运行 – 请启动它以允许",
         "statusUnknown": "未知"
+      },
+      "mode": {
+        "title": "后处理",
+        "description": "听写何时发送给后处理提供商。从不：不向任何提供商发送内容，且指令快捷键不占用。使用指令快捷键时：仅限按过指令快捷键的听写。始终：每次听写；指令快捷键会添加一条指令。",
+        "options": {
+          "never": "从不",
+          "withInstructionKey": "使用指令快捷键时",
+          "always": "始终"
+        }
       }
     },
     "history": {
@@ -1182,7 +1208,8 @@
       "promptMenu": {
         "button": "用一个提示词进行后处理",
         "title": "后处理使用",
-        "active": "启用"
+        "active": "启用",
+        "withoutSpokenInstruction": "不含语音指令"
       },
       "retranscribeAgain": "重新转录，并像之前一样再次进行后处理"
     },
@@ -1282,10 +1309,6 @@
       "clamshellMicrophone": {
         "title": "合盖麦克风",
         "description": "笔记本电脑盖子关闭时使用的麦克风"
-      },
-      "postProcessingToggle": {
-        "label": "后处理",
-        "description": "启用转录后的 AI 文本优化"
       },
       "muteWhileRecording": {
         "label": "录制时静音",
@@ -1580,7 +1603,10 @@
     "notReady": "尚未就绪",
     "wordList": "词汇列表：{{name}}",
     "wordListGlobalOnly": "无附加列表",
-    "cancel": "取消"
+    "cancel": "取消",
+    "instruction": "指令",
+    "instructionLine": "指令：{{text}}",
+    "textReady": "文本已转录"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} 可能正在阻止 1 个快捷键",
