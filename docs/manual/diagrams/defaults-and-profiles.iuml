@@ -13,7 +13,7 @@
 ' adds its own. The profile pages say "Default" under a coupled value and
 ' "Own value" under an own one, and mark list entries "own" or "off",
 ' struck through (ScopedSetting.tsx, StateLine). The post-processing
-' switch (post_process_enabled) is a profile value like any other.
+' choice (post_process_mode) is a profile value like any other.
 ' setting_classes.rs (APP_SETTINGS): app_language, autostart_enabled and
 ' update_checks_enabled are application settings, in no profile.
 '

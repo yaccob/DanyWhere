@@ -1,6 +1,6 @@
 ---
-title: "Raccourcis de début et de fin"
-description: "Commencez chaque dictée de la même façon et décidez à la fin de ce qu'elle devient, d'une espace après le texte à un message peaufiné envoyé aussitôt."
+title: "Raccourcis de début, de maintien, d'instruction et de fin"
+description: "Quatre listes de combinaisons de touches décident comment une dictée commence et se termine et ce qui suit le texte, d'une espace à un message traduit qui part aussitôt."
 sidebar:
   order: 2
 ---
@@ -9,102 +9,121 @@ import Diagram from '@components/Diagram.astro';
 import Screenshot from '@components/Screenshot.astro';
 import { Tabs, TabItem, Steps } from '@astrojs/starlight/components';
 
-Avec DanyWhere, vous n'avez pas à décider avant de parler ce que deviendront vos mots. Vous commencez chaque dictée de la même façon et vous choisissez à la fin : les touches avec lesquelles vous arrêtez indiquent aussi si une espace ou un nouveau paragraphe suit, si un modèle de langage peaufine le texte et si un message de chat part aussitôt. Ce chapitre présente les raccourcis de fin d'une nouvelle installation, ce qui compose chacun d'eux et comment créer les vôtres.
+Avec DanyWhere, vous n'avez pas à décider avant de parler ce que deviendront vos mots. Vous commencez chaque dictée de la même façon et vous choisissez à la fin : les touches avec lesquelles vous arrêtez indiquent aussi si une espace ou un nouveau paragraphe suit et si un message de chat part aussitôt. Une touche de plus, pressée avant la fin, vous permet de dire à un modèle de langage quoi faire du texte. Ce chapitre présente les quatre listes de combinaisons de touches derrière tout cela, ce qu'apporte une nouvelle installation et comment créer les vôtres.
 
-## Les raccourcis de début démarrent, les raccourcis de fin terminent
+## Quatre listes du même genre
 
-Un **Raccourci de début** ne fait que démarrer un enregistrement. Un raccourci de fin ne fait que le terminer, et DanyWhere ne prend sa combinaison que pendant un enregistrement, comme pour <kbd>Esc</kbd>. C'est pourquoi <kbd>↩</kbd> peut terminer une dictée sans vous gêner : le reste du temps, la touche fait ce qu'elle fait toujours.
+Sous **Paramètres de base › Général**, quatre listes se suivent :
+
+- Les **Raccourcis de début** démarrent un enregistrement par un appui bref. Il continue jusqu'à ce qu'un raccourci de fin le termine.
+- Les **Raccourcis de maintien** enregistrent tant que vous les maintenez. Le relâchement termine l'enregistrement comme l'entrée l'indique.
+- Les **Raccourcis d'instruction** font passer un enregistrement en cours du texte à une instruction : ce que vous dites ensuite indique au post-traitement quoi faire du texte, par exemple « traduis ceci en polonais ». [L'instruction orale](../spoken-instruction/) les explique.
+- Les **Raccourcis de fin** terminent un enregistrement en cours comme l'entrée l'indique.
+
+Un raccourci de début n'est qu'une combinaison de touches. Les raccourcis de maintien, d'instruction et de fin ont les mêmes éléments, décrits plus bas : un nom, une combinaison de touches, **Ajouter à la fin** et **Envoyer le contexte**.
+
+DanyWhere prend les raccourcis de début et de maintien en permanence. Les raccourcis d'instruction et de fin, il ne les prend que pendant un enregistrement, comme pour <kbd>Esc</kbd>. C'est pourquoi <kbd>↩</kbd> peut terminer une dictée et <kbd>⇥</kbd> passer à l'instruction sans vous gêner : le reste du temps, les touches font ce qu'elles font toujours.
+
+## Ce que fait une combinaison
+
+Ce que fait une combinaison de touches découle des listes où elle figure. La même combinaison peut figurer dans plusieurs listes ; dans une même liste, deux entrées ne peuvent pas la partager.
+
+| La combinaison est … | Sans enregistrement | Pendant un enregistrement |
+|---|---|---|
+| un raccourci de début | Un appui bref démarre un enregistrement qui continue. | Elle termine l'enregistrement comme le raccourci de fin de même combinaison, et ne fait rien s'il n'y en a aucun. |
+| un raccourci de maintien | La maintenir enregistre ; le relâchement termine l'enregistrement avec les valeurs de cette entrée. Un appui bref ne fait rien. | Comme pour un raccourci de début. |
+| un raccourci de début et de maintien | Un appui bref démarre un enregistrement qui continue ; la maintenir enregistre jusqu'à ce que vous relâchiez. | Comme pour un raccourci de début. |
+| un raccourci d'instruction | Rien : la touche va à l'app. | Elle passe à l'instruction. |
+| un raccourci de fin | Rien : la touche va à l'app. | Elle termine l'enregistrement avec les valeurs de cette entrée. |
+
+Un raccourci d'instruction peut avoir la combinaison d'un raccourci de début ou de maintien : sans enregistrement, la touche en démarre un ; pendant un enregistrement, elle passe à l'instruction. Il ne peut pas avoir celle d'un raccourci de fin, car tous deux ne sont pris que pendant un enregistrement.
 
 <Diagram
   name="how-a-recording-ends"
   caption="Comment se termine un enregistrement"
-  alt="Les façons dont un enregistrement se termine. Un appui bref sur un raccourci de fin le termine avec ses propres valeurs. Un nouvel appui bref sur un raccourci de début le termine comme le raccourci de fin qui a la même combinaison, et ne fait rien s'il n'y en a aucun. Relâcher un raccourci de début maintenu le termine comme réglé sous « Lorsqu'il est maintenu ». Esc l'annule. Chaque façon décide de ce qui est ajouté, du post-traitement du texte et de l'envoi des dictées précédentes comme contexte."
+  alt="Les façons dont un enregistrement se termine. Un appui bref sur un raccourci de fin le termine avec ses propres valeurs. Un appui bref sur un raccourci de début ou de maintien le termine comme le raccourci de fin de même combinaison, s'il existe. Relâcher un raccourci de maintien le termine avec les valeurs de ce raccourci. Un raccourci d'instruction passe à l'instruction : après un appui bref, un raccourci de fin termine l'enregistrement ; maintenu, son relâchement le termine avec les valeurs du raccourci d'instruction. Esc l'annule. Ensuite, le texte est post-traité si un raccourci d'instruction a été pressé ou si Post-traitement est sur Toujours, avec les dictées précédentes comme contexte si la fin le demande, et ce qu'indique Ajouter à la fin suit."
 />
 
-Chaque façon de terminer un enregistrement décide des trois mêmes choses : ce qui suit le texte, si le texte est post-traité et si les dictées précédentes sont envoyées comme contexte.
+## Appui bref, maintien, ou les deux
 
-## Les raccourcis de fin d'une nouvelle installation
+DanyWhere distingue un appui bref d'un maintien à la durée pendant laquelle vous appuyez sur les touches. Une combinaison qui est à la fois raccourci de début et de maintien fait les deux. Sur un Mac, appuyez brièvement sur <kbd>⌃ Espace</kbd>, parlez aussi longtemps que vous voulez, puis appuyez à nouveau ; ou maintenez-la pendant que vous parlez et relâchez-la quand vous avez fini.
+
+Un appui bref sur un raccourci de maintien qui n'est pas aussi raccourci de début abandonne l'enregistrement : rien n'est transcrit, inséré ni gardé. Une touche pressée par erreur reste ainsi sans effet. Les listes indiquent sous chaque entrée ce qu'elle fait : **Aussi raccourci de maintien** sous un raccourci de début, et sous un raccourci de maintien **Aussi raccourci de début : un appui bref démarre un enregistrement qui continue.** ou **Raccourci de maintien uniquement : un appui bref ne fait rien.**
+
+Les raccourcis d'instruction connaissent aussi les deux façons. Après un appui bref, un raccourci de fin envoie la dictée. Si vous le maintenez pendant que vous dites l'instruction, son relâchement l'envoie.
+
+## Ce qui compose les raccourcis de maintien, d'instruction et de fin
+
+Chaque entrée comporte ces éléments :
+
+- **Nom** : ce que la liste affiche. Un raccourci de fin sans nom propre affiche sa combinaison de touches. Un raccourci de maintien ou d'instruction affiche sa combinaison suivie de « maintenu », par exemple **⌃ Espace maintenu**, car ses valeurs disent ce qui se passe au relâchement.
+- **La combinaison de touches.** Chaque entrée en a besoin d'une.
+- **Ajouter à la fin** : ce qui suit le texte. Dans le champ de texte, `\s` est une espace, `\n` un saut de ligne et `\t` une tabulation ; tout le reste est ajouté tel qu'écrit. À côté, vous pouvez choisir une touche, comme Entrée, envoyée après le collage du texte. Une ligne en dessous dit en mots ce qui sera ajouté.
+- **Envoyer le contexte** : les dictées précédentes de la même fenêtre sont envoyées aussi, pour que le modèle sache de quoi il est question. Cela ne compte que si la dictée est post-traitée.
+
+Ce n'est pas l'entrée qui décide si une dictée est post-traitée. C'est **Post-traitement** sous **Paramètres de base › Avancé**, réglé d'usine sur **Avec raccourci d'instruction** : une dictée est alors post-traitée quand vous pressez un raccourci d'instruction pendant l'enregistrement. [L'instruction orale](../spoken-instruction/) présente les trois choix.
+
+## Les raccourcis d'une nouvelle installation
 
 <Tabs syncKey="os">
 <TabItem label="macOS">
 
-Sur un Mac, douze raccourcis de fin suivent une seule règle, si bien que les touches vous disent déjà ce que fait chacun :
+Sur un Mac, la même combinaison démarre et maintient, et les raccourcis de fin suivent une seule règle :
 
-- <kbd>⌥</kbd> (Option) post-traite le texte.
 - <kbd>⇧</kbd> (Maj) choisit la petite variante : pas d'espace au lieu d'une espace, une ligne au lieu d'un paragraphe.
 - <kbd>⌃</kbd> (Contrôle) avec <kbd>↩</kbd> (Retour) appuie sur une touche au lieu d'ajouter du texte.
 
-| Combinaison | Nom | Ce qui suit le texte |
-|---|---|---|
-| <kbd>⌃ Espace</kbd> | **Direct · Espace** | une espace |
-| <kbd>⌃⇧ Espace</kbd> | **Direct · Sans espace** | rien |
-| <kbd>↩</kbd> | **Direct · Paragraphe** | deux sauts de ligne |
-| <kbd>⇧↩</kbd> | **Direct · Ligne** | un saut de ligne |
-| <kbd>⌃↩</kbd> | **Direct · Envoyer Entrée** | un appui sur Entrée |
-| <kbd>⌃⇧↩</kbd> | **Direct · Envoyer Maj+Entrée** | un appui sur Maj+Entrée |
+| Liste | Combinaison | Nom | Ce qui suit le texte |
+|---|---|---|---|
+| **Raccourcis de début** | <kbd>⌃ Espace</kbd> | | |
+| **Raccourcis de maintien** | <kbd>⌃ Espace</kbd> | **⌃ Espace maintenu** | une espace |
+| | <kbd>⌃⇧ Espace</kbd> | **⌃⇧ Espace maintenu** | rien |
+| **Raccourcis d'instruction** | <kbd>⇥</kbd> (Tab) | **⇥ maintenu** | une espace |
+| **Raccourcis de fin** | <kbd>⌃ Espace</kbd> | **Espace** | une espace |
+| | <kbd>⌃⇧ Espace</kbd> | **Sans espace** | rien |
+| | <kbd>↩</kbd> | **Paragraphe** | deux sauts de ligne |
+| | <kbd>⇧↩</kbd> | **Ligne** | un saut de ligne |
+| | <kbd>⌃↩</kbd> | **Envoyer Entrée** | un appui sur Entrée |
+| | <kbd>⌃⇧↩</kbd> | **Envoyer Maj+Entrée** | un appui sur Maj+Entrée |
 
-Les six mêmes avec <kbd>⌥</kbd> devant, de <kbd>⌥⌃ Espace</kbd> à <kbd>⌥⌃⇧↩</kbd>, s'appellent **Post-traité · Espace**, etc. Ils post-traitent le texte et envoient comme contexte les dictées précédentes de la même fenêtre.
+Tous ont **Envoyer le contexte** coché, si bien qu'une dictée post-traitée voit ce que vous avez écrit avant dans la même fenêtre.
 
-En pratique : pour un long texte, appuyez brièvement sur <kbd>⌃ Espace</kbd> pour commencer et à nouveau pour terminer ; chaque morceau reçoit son espace, prêt pour le suivant. Dans un e-mail, terminez avec <kbd>↩</kbd> et le paragraphe suivant est prêt. Dans un chat, <kbd>⌃↩</kbd> envoie le message, et <kbd>⌥⌃↩</kbd> le peaufine d'abord.
-
-Quand vous relâchez un raccourci de début maintenu, une espace est ajoutée. Si c'est le **Deuxième raccourci de début**, le texte est en plus post-traité.
+En pratique : pour un long texte, appuyez brièvement sur <kbd>⌃ Espace</kbd> pour commencer et à nouveau pour terminer ; chaque morceau reçoit son espace, prêt pour le suivant. Ou maintenez-la pendant que vous parlez. Dans un e-mail, terminez avec <kbd>↩</kbd> et le paragraphe suivant est prêt. Dans un chat, <kbd>⌃↩</kbd> envoie le message ; appuyez avant brièvement sur <kbd>⇥</kbd> et dites « un peu plus aimable », et le message est d'abord peaufiné.
 
 </TabItem>
 <TabItem label="Windows">
 
-Windows commence avec deux raccourcis de fin qui ont les combinaisons des deux raccourcis de début : <kbd>Ctrl+Espace</kbd> termine sans post-traitement, <kbd>Ctrl+Maj+Espace</kbd> avec. Aucun des deux n'ajoute quoi que ce soit. Pour terminer, vous appuyez donc à nouveau brièvement sur le raccourci de début, et vous prenez le deuxième quand vous voulez un texte peaufiné.
-
-Relâcher un raccourci de début maintenu fonctionne de la même façon : le **Raccourci de début** termine sans post-traitement, le **Deuxième raccourci de début** avec.
+Windows commence avec <kbd>Ctrl+Espace</kbd> comme raccourci de début et de maintien, <kbd>Ctrl+Maj+Espace</kbd> comme deuxième raccourci de maintien et <kbd>Tab</kbd> comme raccourci d'instruction. Deux raccourcis de fin ont les combinaisons des deux raccourcis de maintien. Aucun n'ajoute rien. Pour terminer, vous appuyez donc à nouveau brièvement sur <kbd>Ctrl+Espace</kbd>, ou vous la maintenez et la relâchez.
 
 Pour tout le reste, ajoutez vos propres raccourcis de fin, comme expliqué plus bas.
 
 </TabItem>
 <TabItem label="Linux">
 
-Linux commence comme Windows, avec deux raccourcis de fin qui ont les combinaisons des deux raccourcis de début : <kbd>Ctrl+Alt+Espace</kbd> termine sans post-traitement, <kbd>Ctrl+Alt+Maj+Espace</kbd> avec. Aucun des deux n'ajoute quoi que ce soit.
+Linux commence avec <kbd>Ctrl+Alt+Espace</kbd> comme raccourci de début et de maintien et <kbd>Ctrl+Alt+Maj+Espace</kbd> comme deuxième raccourci de maintien. Deux raccourcis de fin ont ces combinaisons. Aucun n'ajoute rien.
 
-Relâcher un raccourci de début maintenu fonctionne de la même façon : le **Raccourci de début** termine sans post-traitement, le **Deuxième raccourci de début** avec.
-
-Sous Linux, un enregistrement ne se termine que par un raccourci de début. Voyez les limites à la fin de ce chapitre.
+Linux n'a pas de raccourcis d'instruction, et un enregistrement ne s'y termine que par un raccourci de début ou de maintien. Voyez les limites à la fin de ce chapitre.
 
 </TabItem>
 </Tabs>
 
 :::note
-Ce sont les réglages d'usine d'une nouvelle installation. Si vous utilisiez déjà DanyWhere, une mise à jour laisse vos raccourcis de fin tels quels. Les noms sont écrits une seule fois, dans la langue de votre système au premier démarrage, et vous pouvez les renommer à votre guise.
+Ce sont les réglages d'usine d'une nouvelle installation. Si vous utilisiez déjà DanyWhere, une mise à jour garde vos propres raccourcis de fin ; les douze avec lesquels un Mac commençait deviennent les six ci-dessus. Les noms sont écrits une seule fois, dans la langue de votre système au premier démarrage, et vous pouvez les renommer comme vous voulez.
 :::
 
-## Ce qui compose un raccourci de fin
+## Ajouter ou modifier un raccourci
 
-Chaque entrée sous **Raccourcis de fin** comporte ces éléments :
-
-- **Nom** : ce que la liste affiche. Tant que vous n'avez pas saisi de nom, elle affiche la combinaison de touches.
-- **La combinaison de touches** qui termine l'enregistrement de cette façon. Chaque raccourci de fin en a besoin d'une, et deux ne peuvent pas partager la même.
-- **Ajouter à la fin** : ce qui suit le texte. Dans le champ de texte, `\s` est une espace, `\n` un saut de ligne et `\t` une tabulation ; tout le reste est ajouté tel qu'écrit. À côté, vous pouvez choisir une touche, comme Entrée, envoyée après le collage du texte. Une ligne en dessous dit en mots ce qui sera ajouté.
-- **Post-traiter** : un modèle de langage peaufine le texte avant qu'il n'arrive, avec les prompts actifs dans le profil. Cela ne fonctionne que si **Post-traitement** est activé sous **Paramètres de base › Avancé** ; sinon, l'entrée le signale.
-- **Envoyer le contexte** : seulement avec le post-traitement. Les dictées précédentes de la même fenêtre sont envoyées aussi, pour que le modèle sache de quoi il est question.
-
-## Les raccourcis de début et leur façon de terminer
-
-**Si vous appuyez à nouveau brièvement sur un raccourci de début** pendant un enregistrement, il ne le termine que par un raccourci de fin ayant exactement sa combinaison. La liste le signale par une ligne sous cette entrée. Si aucun raccourci de fin n'a cette combinaison, le raccourci de début ne fait rien pendant un enregistrement.
-
-**Lorsqu'il est maintenu**, en tête des **Raccourcis de fin**, règle la façon dont le relâchement d'un raccourci de début maintenu termine l'enregistrement. Chaque raccourci de début a le sien, avec **Ajouter à la fin**, **Post-traiter** et **Envoyer le contexte**, mais sans nom ni combinaison. En dessous, **Lors d'un appui bref** coiffe les raccourcis de fin. Si **Comportement du raccourci** est sur **Appui bref**, rien n'est maintenu : **Lorsqu'il est maintenu** est masqué, et les raccourcis de fin n'ont pas besoin de titre propre.
-
-Le **Deuxième raccourci de début** est facultatif : une deuxième combinaison qui démarre un enregistrement, <kbd>⌃⇧ Espace</kbd> sur un Mac. DanyWhere ne la prend que si le post-traitement est activé. Il est fait pour être maintenu : maintenez <kbd>⌃ Espace</kbd> pour le texte tel que vous l'avez dit, <kbd>⌃⇧ Espace</kbd> pour le texte peaufiné.
-
-## Ajouter ou modifier un raccourci de fin
-
-Vous trouverez les raccourcis de fin sous **Paramètres de base › Général › Raccourcis de fin**.
+Vous trouverez les quatre listes sous **Paramètres de base › Général**.
 
 <Screenshot
   name="end-shortcuts"
-  alt="Le groupe Raccourcis de fin sous Paramètres de base › Général. En haut, Lorsqu'il est maintenu a un bloc par raccourci de début, avec le champ Ajouter à la fin, un choix de touche et les cases Post-traiter et Envoyer le contexte. En dessous, sous Lors d'un appui bref, chaque raccourci de fin est une ligne avec son nom, sa combinaison de touches et les mêmes champs, en commençant par les deux qui ont les combinaisons des raccourcis de début."
+  alt="Le groupe Raccourcis de fin sous Paramètres de base › Général. Chaque raccourci de fin est un bloc avec son nom, sa combinaison de touches, le champ Ajouter à la fin avec un choix de touche et la case Envoyer le contexte, en commençant par Espace et Sans espace, qui ont les combinaisons des raccourcis de maintien."
   caption="Les raccourcis de fin sous Paramètres de base › Général."
 />
 
-Pour en ajouter un, cliquez sur **Ajouter un raccourci de fin** et appuyez sur la combinaison voulue ; réglez ensuite ce qu'il fait. Pour changer une combinaison, cliquez dessus et appuyez sur la nouvelle. L'icône de corbeille, à côté, supprime une entrée. Il reste toujours un raccourci de fin, pour qu'un enregistrement puisse toujours être terminé.
+Chaque liste a son bouton : **Ajouter un raccourci de début**, **Ajouter un raccourci de maintien**, **Ajouter un raccourci d'instruction** et **Ajouter un raccourci de fin**. Cliquez dessus et appuyez sur la combinaison voulue ; réglez ensuite ce que fait l'entrée. Pour changer une combinaison, cliquez dessus et appuyez sur la nouvelle. L'icône de corbeille, à côté, supprime une entrée. Il reste toujours un raccourci de début ou de maintien, pour qu'un enregistrement puisse toujours être démarré, et un raccourci de fin, pour qu'il puisse toujours être terminé. Les raccourcis d'instruction peuvent manquer entièrement.
 
-Un profil peut différer des paramètres de base. Sur la page **Général** du profil, modifiez un raccourci de fin, ajoutez-en un ou supprimez-en un : seule cette entrée devient propre au profil. Toutes les autres continuent de suivre les paramètres de base, y compris les modifications que vous y ferez plus tard. [Paramètres de base et profils](../defaults-and-profiles/) montre comment cela fonctionne pour chaque réglage.
+Un profil peut différer des paramètres de base. Sur la page **Général** du profil, modifiez une entrée de l'une des quatre listes, ajoutez-en une ou supprimez-en une : seule cette entrée devient propre au profil. Toutes les autres continuent de suivre les paramètres de base, y compris les modifications que vous y ferez plus tard. [Paramètres de base et profils](../defaults-and-profiles/) montre comment cela fonctionne pour chaque réglage.
 
 ## Recette : envoyer un message de chat aussitôt
 
@@ -118,24 +137,28 @@ Dans un chat, vous voulez en général dire votre message et qu'il parte, sans t
 
 3. Sous **Ajouter à la fin**, laissez le champ de texte vide et choisissez **Entrée** comme touche (<kbd>↩</kbd> sur un Mac).
 
-4. Si le modèle doit d'abord peaufiner le message, cochez **Post-traiter**, et **Envoyer le contexte** s'il doit voir ce qui a été dit avant.
+4. Cochez **Envoyer le contexte** si un message peaufiné doit voir ce qui a été dit avant.
 
 5. Donnez-lui un nom que vous reconnaîtrez, par exemple `Envoyer`.
 
-6. Essayez : dans un chat, commencez une dictée, dites votre message et terminez avec la nouvelle combinaison. Le texte apparaît et part.
+6. Essayez : dans un chat, commencez une dictée, dites votre message et terminez avec la nouvelle combinaison. Le texte apparaît et part. Pour qu'il soit d'abord peaufiné, appuyez brièvement sur le raccourci d'instruction avant de terminer, et dites quoi faire, ou rien du tout.
 
 </Steps>
 
 :::tip
-Sur un Mac, une nouvelle installation le propose déjà : <kbd>⌃↩</kbd> envoie le message, <kbd>⌥⌃↩</kbd> le peaufine d'abord.
+Sur un Mac, une nouvelle installation le propose déjà : <kbd>⌃↩</kbd> envoie le message. Appuyez avant brièvement sur <kbd>⇥</kbd>, et il est d'abord peaufiné.
 :::
 
 ## Limites
 
 :::caution[Linux]
-Sous Linux, DanyWhere ne peut pas prendre la combinaison propre d'un raccourci de fin pendant un enregistrement. Un enregistrement s'y termine quand vous relâchez un raccourci de début maintenu, ou quand vous appuyez à nouveau brièvement sur un raccourci de début dont un raccourci de fin a la combinaison. Pour la recette ci-dessus, confiez donc l'appui sur Entrée à un raccourci de fin qui a la combinaison d'un raccourci de début, ou réglez-le sous **Lorsqu'il est maintenu**. Les réglages ne vous laissent pas supprimer la dernière façon de terminer : gardez un raccourci de fin avec la combinaison d'un raccourci de début, ou choisissez **Maintenir**.
+Sous Linux, DanyWhere ne peut pas prendre une combinaison seulement pendant un enregistrement. Il ne prend donc la combinaison propre d'aucun raccourci de fin et n'a pas de raccourcis d'instruction. Un enregistrement s'y termine quand vous relâchez un raccourci de maintien, ou quand vous appuyez à nouveau brièvement sur un raccourci de début dont un raccourci de fin a la combinaison ; les réglages ne vous laissent pas supprimer le dernier raccourci de fin de ce genre. Pour la recette ci-dessus, confiez donc l'appui sur Entrée à un raccourci de fin qui a la combinaison d'un raccourci de début, ou à un raccourci de maintien. Pour post-traiter sous Linux, réglez **Post-traitement** sur **Toujours**, si vous voulez dans un profil à part.
 :::
 
-**Sur un Mac sans Accessibilité**, DanyWhere ne peut pas appuyer sur des touches. Si vous continuez sans l'autorisation, une nouvelle installation laisse de côté les quatre raccourcis de fin qui envoient Entrée ou Maj+Entrée, et la touche choisie sous **Ajouter à la fin** n'est pas envoyée.
+**Sur un Mac sans Accessibilité**, DanyWhere ne peut pas appuyer sur des touches. Si vous continuez sans l'autorisation, une nouvelle installation laisse de côté les deux raccourcis de fin qui envoient Entrée ou Maj+Entrée, et la touche choisie sous **Ajouter à la fin** n'est pas envoyée.
 
-**macOS utilise lui-même <kbd>⌃ Espace</kbd> et <kbd>⌥⌃ Espace</kbd>** pour changer de source de saisie. Si vous changez ainsi de disposition de clavier, désactivez ces raccourcis dans Réglages Système, sous Clavier › Raccourcis clavier › Sources de saisie, ou donnez d'autres combinaisons à DanyWhere.
+**macOS utilise lui-même <kbd>⌃ Espace</kbd>** pour changer de source de saisie dès que vous en avez plus d'une. Si vous changez ainsi de disposition de clavier, désactivez ce raccourci dans Réglages Système, sous Clavier › Raccourcis clavier › Sources de saisie, ou donnez d'autres combinaisons à DanyWhere.
+
+## Ensuite
+
+Le raccourci d'instruction fait d'une dictée une demande. [L'instruction orale](../spoken-instruction/) montre ce que vous pouvez demander et ce que garde l'historique.

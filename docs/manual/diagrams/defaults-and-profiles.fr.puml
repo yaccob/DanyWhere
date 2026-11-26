@@ -7,7 +7,7 @@
 ' The defaults are named as the sidebar's area names them ("Paramètres de
 ' base", sidebar.areas.defaults), where their pages are.
 !include graphviz.iuml
-' The columns: the post-processing switch, the end shortcuts, the rest.
+' The columns: the post-processing choice, the end shortcuts, the rest.
 !$hPost = "Post-traitement"
 !$hEnd = "Raccourcis de fin"
 !$hRest = "Tout le reste"
@@ -23,13 +23,13 @@
 !$tOwn = "propre"
 !$tAdded = "propre, nouveau"
 !$tOff = "désactivée"
-' Values: the switch, and end shortcuts a new Mac installation brings,
-' plus one of the profile's own.
-!$on = "activé"
-!$off = "désactivé"
-!$space = "Direct · Espace"
-!$enter = "Direct · Envoyer Entrée"
-!$paragraph = "Direct · Paragraphe"
+' Values: the post-processing choice, and end shortcuts a new Mac
+' installation brings, plus one of the profile's own.
+!$on = "Avec raccourci" + $br + "d'instruction"
+!$off = "Jamais"
+!$space = "Espace"
+!$enter = "Envoyer Entrée"
+!$paragraph = "Paragraphe"
 !$reply = "Répondre"
 !$restList = "Modèle vocal," + $br + "Microphone," + $br + "Méthode de collage, …"
 !$caption = "Un profil s'appuie sur les paramètres de base : ses valeurs propres comptent," + $br + "tout le reste vient des paramètres de base. Un profil ne reprend rien" + $br + "d'un autre."
