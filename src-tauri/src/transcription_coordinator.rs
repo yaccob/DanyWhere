@@ -199,13 +199,38 @@ fn classify_busy_input(
     }
 }
 
-/// Pipeline lifecycle. DanyWhere: the spoken instruction (strand Z) adds a
-/// recording stage of its own here.
+/// Pipeline lifecycle.
 #[derive(Debug, PartialEq, Eq)]
 enum Stage {
     Idle,
     Recording(String), // binding_id
+    /// DanyWhere: "Recording: instruction" (user, 2026-11-26; sidecar note
+    /// `2026-11-26_1720_nachbearbeitung-gesprochene-anweisung`): the
+    /// recording of the binding went on to a spoken instruction with an
+    /// instruction key ([`CoordinatorState::instruction`]). The microphone
+    /// records the instruction now (`dictation_flow::instruction`); it ends
+    /// as a recording ends, and its press's release can end it too.
+    Instruction(String),
     Processing,
+}
+
+/// DanyWhere: the instruction key's press that switched the recording to
+/// its instruction.
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct InstructionPress {
+    /// The instruction key's id (`instruction_keys`).
+    id: String,
+    pressed_at: Instant,
+    /// Tapped (released before `threshold`): an end shortcut sends the
+    /// dictation; its next release means nothing.
+    locked: bool,
+    /// The start or hold shortcut binding it came as, when it has exactly
+    /// that one's combination (`start_keys::Roles::instruction`); `None`
+    /// for its own binding (`instruction_key:<id>`).
+    via: Option<String>,
+    /// Held at least this long, its release sends the dictation with the
+    /// instruction key's values.
+    threshold: Duration,
 }
 
 /// A keyboard/signal edge for a start or hold shortcut.
@@ -279,6 +304,13 @@ enum Effect {
     /// DanyWhere: the recording of `binding_id` is dropped, as a cancel
     /// would drop it (a hold shortcut alone released before the threshold).
     Discard { binding_id: String },
+    /// DanyWhere: the recording of `binding_id` goes on to a spoken
+    /// instruction with instruction key `instruction_id`: it is cut, and
+    /// the microphone records the instruction (`dictation_flow::instruction`).
+    BeginInstruction {
+        binding_id: String,
+        instruction_id: String,
+    },
 }
 
 /// Commands processed sequentially by the coordinator thread.
@@ -302,6 +334,14 @@ enum Command {
     /// DanyWhere: an end shortcut (`end_keys`) was pressed.
     EndKey {
         end_id: String,
+    },
+    /// DanyWhere: an instruction key's edge (`instruction_keys`), stamped
+    /// when it was observed, as a key's edge is.
+    InstructionKey {
+        instruction_id: String,
+        is_pressed: bool,
+        hold_threshold: Duration,
+        received_at: Instant,
     },
 }
 
@@ -352,12 +392,21 @@ fn classify_ptt_event(
 ///
 /// During a recording a press of a start or hold shortcut ends it only as
 /// the end shortcut with exactly its combination (`Roles::end`).
+///
+/// DanyWhere: an instruction key pressed during a recording (its own
+/// binding, or a start or hold shortcut with exactly its combination,
+/// `Roles::instruction`) goes on to `Stage::Instruction` once; tapped, an
+/// end shortcut sends the dictation, held, its release does
+/// (`EndChoice::Instruction`); the release of the key that holds the
+/// recording sends it as its end; Escape drops everything.
 struct CoordinatorState {
     stage: Stage,
     hold: Option<Hold>,
     last_press: Option<Instant>,
     pending_release: Option<PendingRelease>,
     pending_press: Option<PendingPress>,
+    /// DanyWhere: the instruction key's press during `Stage::Instruction`.
+    instruction: Option<InstructionPress>,
 }
 
 impl CoordinatorState {
@@ -368,6 +417,117 @@ impl CoordinatorState {
             last_press: None,
             pending_release: None,
             pending_press: None,
+            instruction: None,
+        }
+    }
+
+    /// DanyWhere: the binding of the recording, while it records its text
+    /// or its instruction.
+    fn recording_binding(&self) -> Option<&str> {
+        match &self.stage {
+            Stage::Recording(id) | Stage::Instruction(id) => Some(id.as_str()),
+            Stage::Idle | Stage::Processing => None,
+        }
+    }
+
+    /// DanyWhere: an edge of instruction key `instruction_id`, registered as
+    /// its own binding (`instruction_key:<id>`, only during a recording).
+    /// A press during a recording goes on to the instruction; once only,
+    /// another press means nothing. Its release from `threshold` on sends
+    /// the dictation with the instruction key's values; a shorter one locks
+    /// the instruction until an end shortcut sends it. Nothing while idle
+    /// or transcribing.
+    fn on_instruction_key(
+        &mut self,
+        instruction_id: &str,
+        is_pressed: bool,
+        now: Instant,
+        threshold: Duration,
+    ) -> Option<Effect> {
+        if is_pressed {
+            self.begin_instruction(instruction_id, None, now, threshold)
+        } else {
+            self.instruction_released(instruction_id, None, now)
+        }
+    }
+
+    /// DanyWhere: an instruction key was pressed (as its own binding, or as
+    /// start or hold shortcut binding `via`): from a recording of its text
+    /// on to its instruction; nothing in any other stage.
+    fn begin_instruction(
+        &mut self,
+        instruction_id: &str,
+        via: Option<String>,
+        now: Instant,
+        threshold: Duration,
+    ) -> Option<Effect> {
+        let Stage::Recording(binding_id) = &self.stage else {
+            debug!("Instruction key '{instruction_id}' ignored: no recording of a text");
+            return None;
+        };
+        let binding_id = binding_id.clone();
+        self.stage = Stage::Instruction(binding_id.clone());
+        self.instruction = Some(InstructionPress {
+            id: instruction_id.to_string(),
+            pressed_at: now,
+            locked: false,
+            via,
+            threshold,
+        });
+        Some(Effect::BeginInstruction {
+            binding_id,
+            instruction_id: instruction_id.to_string(),
+        })
+    }
+
+    /// DanyWhere: the key that switched to the instruction (`via`, see
+    /// [`InstructionPress::via`]) came up: held long enough, the dictation
+    /// is sent with its values ([`EndChoice::Instruction`]); a tap locks
+    /// the instruction. A release of another key, or after the lock, means
+    /// nothing.
+    fn instruction_released(
+        &mut self,
+        instruction_id: &str,
+        via: Option<&str>,
+        now: Instant,
+    ) -> Option<Effect> {
+        let Stage::Instruction(binding_id) = &self.stage else {
+            return None;
+        };
+        let binding_id = binding_id.clone();
+        let press = self
+            .instruction
+            .as_mut()
+            .filter(|press| press.id == instruction_id && press.via.as_deref() == via)?;
+        if press.locked {
+            return None;
+        }
+        let held = now.saturating_duration_since(press.pressed_at);
+        if held < press.threshold {
+            debug!("Instruction key '{instruction_id}' tapped ({held:?}): an end shortcut sends");
+            press.locked = true;
+            return None;
+        }
+        // A key-up still in its grace window belongs to this recording.
+        self.pending_release = None;
+        Some(self.begin_processing_with(
+            binding_id,
+            "instruction-key".to_string(),
+            EndChoice::Instruction(instruction_id.to_string()),
+        ))
+    }
+
+    /// DanyWhere: whether the recording was cut for its instruction
+    /// (`dictation_flow::instruction::begin_instruction`). Not cut, it stays
+    /// a recording of its text, as before the press.
+    fn on_instruction_result(&mut self, began: bool) {
+        if began {
+            return;
+        }
+        if let Stage::Instruction(binding_id) = &self.stage {
+            debug!("The recording of '{binding_id}' was not cut; it records its text on");
+            self.stage = Stage::Recording(binding_id.clone());
+            self.instruction = None;
         }
     }
 
@@ -385,14 +545,14 @@ impl CoordinatorState {
 
     /// A recording is running and outlives its key (a tap, or toggle mode).
     fn is_recording_locked(&self) -> bool {
-        matches!(self.stage, Stage::Recording(_)) && self.hold.as_ref().is_some_and(|h| h.locked)
+        self.recording_binding().is_some() && self.hold.as_ref().is_some_and(|h| h.locked)
     }
 
     /// Whether the press of the current session (recording, or remembered
     /// for the drain) can end on its release: it isn't a tap.
     fn session_holds(&self) -> bool {
         let mode = match &self.stage {
-            Stage::Recording(_) => self.hold.as_ref().map(|h| h.press.mode),
+            Stage::Recording(_) | Stage::Instruction(_) => self.hold.as_ref().map(|h| h.press.mode),
             Stage::Processing => self.pending_press.as_ref().map(|p| p.press.mode),
             Stage::Idle => None,
         };
@@ -405,7 +565,7 @@ impl CoordinatorState {
             .as_ref()
             .map(|pending| pending.binding_id.as_str());
         let held_binding = match &self.stage {
-            Stage::Recording(id) => Some(id.as_str()),
+            Stage::Recording(id) | Stage::Instruction(id) => Some(id.as_str()),
             Stage::Processing => self.pending_press.as_ref().map(|p| p.binding_id.as_str()),
             Stage::Idle => None,
         };
@@ -545,7 +705,33 @@ impl CoordinatorState {
                 // its combination, if any; the recording stays owned by the
                 // binding that started it. Remote control always ends, so
                 // its toggles stay paired.
-                Stage::Recording(id) => {
+                // DanyWhere: an instruction key with exactly this
+                // combination (`start_keys::Roles::instruction`) goes on to
+                // the instruction; the key's release can send it then.
+                Stage::Recording(_)
+                    if input.external.is_none() && input.roles.instruction.is_some() =>
+                {
+                    let instruction_id = input.roles.instruction.unwrap_or_default();
+                    return self.begin_instruction(
+                        &instruction_id,
+                        Some(input.binding_id),
+                        now,
+                        input.hold_threshold,
+                    );
+                }
+                // DanyWhere: during the instruction the key still held means
+                // nothing, nor does an instruction key's second press.
+                Stage::Instruction(id)
+                    if input.external.is_none()
+                        && ((id == &input.binding_id && !self.is_locked())
+                            || input.roles.instruction.is_some()) =>
+                {
+                    debug!(
+                        "Ignoring press for '{}' during the instruction",
+                        input.binding_id
+                    );
+                }
+                Stage::Recording(id) | Stage::Instruction(id) => {
                     let end = match (input.roles.end, input.external) {
                         (_, Some(end)) => end,
                         (Some(end_id), None) => EndChoice::Key(end_id),
@@ -564,9 +750,16 @@ impl CoordinatorState {
                 }
                 Stage::Processing => {}
             }
-        } else if hold_to_talk
-            && matches!(&self.stage, Stage::Recording(id) if id == &input.binding_id)
+        } else if let Some(instruction_id) = self
+            .instruction
+            .as_ref()
+            .filter(|press| press.via.as_deref() == Some(input.binding_id.as_str()))
+            .map(|press| press.id.clone())
         {
+            // DanyWhere: the release of the start or hold shortcut binding
+            // the instruction key came as.
+            return self.instruction_released(&instruction_id, Some(&input.binding_id), now);
+        } else if hold_to_talk && self.recording_binding() == Some(input.binding_id.as_str()) {
             // A release that was not deferred (one is already pending for this
             // binding): resolve it immediately rather than dropping it.
             return self.finish_hold(
@@ -585,12 +778,13 @@ impl CoordinatorState {
     fn on_grace_expired(&mut self) -> Option<Effect> {
         let pending = self.pending_release.take()?;
         match &self.stage {
-            Stage::Recording(id) if *id == pending.binding_id => self.finish_hold(
-                pending.binding_id,
-                pending.hotkey_string,
-                pending.released_at,
-                pending.hold_threshold,
-            ),
+            Stage::Recording(id) | Stage::Instruction(id) if *id == pending.binding_id => self
+                .finish_hold(
+                    pending.binding_id,
+                    pending.hotkey_string,
+                    pending.released_at,
+                    pending.hold_threshold,
+                ),
             Stage::Processing => {
                 self.finish_pending_hold(&pending);
                 None
@@ -676,10 +870,12 @@ impl CoordinatorState {
         self.pending_press = None;
         // Don't reset during processing — wait for the pipeline to finish.
         if !matches!(self.stage, Stage::Processing)
-            && (recording_was_active || matches!(self.stage, Stage::Recording(_)))
+            && (recording_was_active || self.recording_binding().is_some())
         {
             self.stage = Stage::Idle;
             self.hold = None;
+            // DanyWhere: the instruction goes with it.
+            self.instruction = None;
         }
     }
 
@@ -696,10 +892,7 @@ impl CoordinatorState {
     /// recording ends with `end` (`start_keys::service_end`), or without
     /// one as a press of its own key would (`start_keys::end_as_press`).
     fn on_finish_as(&mut self, end: Option<EndChoice>) -> Option<Effect> {
-        let Stage::Recording(binding_id) = &self.stage else {
-            return None;
-        };
-        let binding_id = binding_id.clone();
+        let binding_id = self.recording_binding()?.to_string();
         // A key-up still in its grace window belongs to this recording.
         self.pending_release = None;
         let end = end
@@ -729,10 +922,7 @@ impl CoordinatorState {
     /// recording however it was started, held or locked, with that end.
     /// Nothing while idle or transcribing.
     fn on_end_key(&mut self, end_id: &str) -> Option<Effect> {
-        let Stage::Recording(binding_id) = &self.stage else {
-            return None;
-        };
-        let binding_id = binding_id.clone();
+        let binding_id = self.recording_binding()?.to_string();
         // A key-up still in its grace window belongs to this recording.
         self.pending_release = None;
         Some(self.begin_processing_with(
@@ -799,6 +989,7 @@ impl CoordinatorState {
     ) -> Effect {
         self.stage = Stage::Processing;
         self.hold = None;
+        self.instruction = None;
         Effect::Stop {
             binding_id,
             hotkey_string,
@@ -812,6 +1003,7 @@ impl CoordinatorState {
         self.stage = Stage::Idle;
         self.hold = None;
         self.pending_release = None;
+        self.instruction = None;
         Effect::Discard { binding_id }
     }
 }
@@ -892,7 +1084,7 @@ impl TranscriptionCoordinator {
                                 recording_was_active || matches!(state.stage, Stage::Processing);
                             // DanyWhere: a recording dropped before its
                             // stop; a stopped one is the dictation's.
-                            let dropped = matches!(state.stage, Stage::Recording(_));
+                            let dropped = state.recording_binding().is_some();
                             state.on_cancel(recording_was_active);
                             if busy {
                                 runner.phase(RecordingPhase::Cancelled);
@@ -921,6 +1113,21 @@ impl TranscriptionCoordinator {
                             Some(effect) => run_effect(&mut runner, &mut state, effect),
                             None => debug!("End shortcut '{end_id}' without a recording"),
                         },
+                        Command::InstructionKey {
+                            instruction_id,
+                            is_pressed,
+                            hold_threshold,
+                            received_at,
+                        } => {
+                            if let Some(effect) = state.on_instruction_key(
+                                &instruction_id,
+                                is_pressed,
+                                received_at,
+                                hold_threshold,
+                            ) {
+                                run_effect(&mut runner, &mut state, effect);
+                            }
+                        }
                     }
                     if !was_locked && state.is_recording_locked() {
                         runner.phase(RecordingPhase::Locked);
@@ -1032,6 +1239,26 @@ impl TranscriptionCoordinator {
         }
     }
 
+    /// DanyWhere: an edge of instruction key `instruction_id`
+    /// (`instruction_keys`, registered only during a recording);
+    /// `hold_threshold` decides between a tap and a hold.
+    pub fn send_instruction_key(
+        &self,
+        instruction_id: &str,
+        is_pressed: bool,
+        hold_threshold: Duration,
+    ) {
+        let command = Command::InstructionKey {
+            instruction_id: instruction_id.to_string(),
+            is_pressed,
+            hold_threshold,
+            received_at: Instant::now(),
+        };
+        if self.tx.send(command).is_err() {
+            warn!("Transcription coordinator channel closed");
+        }
+    }
+
     /// DanyWhere: [`TranscriptionCoordinator::finish_recording`] for an "end
     /// dictation" service: ends the recording with `end`
     /// (`start_keys::service_end`), or as a press of its own key without one
@@ -1066,6 +1293,11 @@ pub(crate) trait EffectRunner: Send + 'static {
     /// (`delivery::take_recording_hold`). A stopped recording's dictation
     /// ends its hold itself (`dictation_flow`).
     fn recording_cancelled(&mut self) {}
+    /// The recording of `binding_id` goes on to a spoken instruction with
+    /// instruction key `instruction_id`; whether it was cut (STUB).
+    fn begin_instruction(&mut self, _binding_id: &str, _instruction_id: &str) -> bool {
+        false
+    }
 }
 
 /// DanyWhere: the app as the coordinator's executor.
@@ -1141,6 +1373,13 @@ fn run_effect(runner: &mut impl EffectRunner, state: &mut CoordinatorState, effe
             runner.discard(&binding_id);
             runner.phase(RecordingPhase::Cancelled);
             runner.recording_cancelled();
+        }
+        Effect::BeginInstruction {
+            binding_id,
+            instruction_id,
+        } => {
+            let began = runner.begin_instruction(&binding_id, &instruction_id);
+            state.on_instruction_result(began);
         }
     }
 }
@@ -1468,7 +1707,7 @@ mod tests {
             match effect {
                 Some(Effect::Start { .. }) => starts += 1,
                 Some(Effect::Stop { .. }) => stops += 1,
-                Some(Effect::Discard { .. }) | None => {}
+                Some(Effect::Discard { .. } | Effect::BeginInstruction { .. }) | None => {}
             }
         }
 
@@ -2655,10 +2894,17 @@ mod tests {
     #[derive(Debug, PartialEq)]
     enum Did {
         Start(String),
-        Stop { binding: String, end: EndChoice },
+        Stop {
+            binding: String,
+            end: EndChoice,
+        },
         Phase(RecordingPhase),
         LockedChanged(bool),
         Discard(String),
+        BeginInstruction {
+            binding: String,
+            instruction: String,
+        },
     }
 
     /// An executor that reports what it was asked to do.
@@ -2670,6 +2916,8 @@ mod tests {
         mode: Arc<std::sync::Mutex<ShortcutActivation>>,
         /// Whether each start begins recording; `true` once these run out.
         start_results: VecDeque<bool>,
+        /// Whether a recording is cut for its instruction.
+        cuts: bool,
     }
 
     impl EffectRunner for FakeEffects {
@@ -2695,6 +2943,14 @@ mod tests {
 
         fn discard(&mut self, binding_id: &str) {
             let _ = self.did.send(Did::Discard(binding_id.to_string()));
+        }
+
+        fn begin_instruction(&mut self, binding_id: &str, instruction_id: &str) -> bool {
+            let _ = self.did.send(Did::BeginInstruction {
+                binding: binding_id.to_string(),
+                instruction: instruction_id.to_string(),
+            });
+            self.cuts
         }
 
         fn roles(&mut self, binding_id: &str) -> crate::start_keys::Roles {
@@ -2723,6 +2979,12 @@ mod tests {
     }
 
     fn running(keys_ends: &[(&str, &str)], start_results: &[bool]) -> Running {
+        running_cutting(keys_ends, start_results, true)
+    }
+
+    /// [`running`] whose recordings are cut for an instruction, or not
+    /// (`cuts`).
+    fn running_cutting(keys_ends: &[(&str, &str)], start_results: &[bool], cuts: bool) -> Running {
         let (tx, did) = mpsc::channel();
         let mode = Arc::new(std::sync::Mutex::new(ShortcutActivation::Toggle));
         let coordinator = TranscriptionCoordinator::with_runner(FakeEffects {
@@ -2733,6 +2995,7 @@ mod tests {
                 .collect(),
             mode: Arc::clone(&mode),
             start_results: start_results.iter().copied().collect(),
+            cuts,
         });
         Running {
             coordinator,
@@ -2794,6 +3057,73 @@ mod tests {
             did.push(Did::LockedChanged(false));
         }
         did
+    }
+
+    // DanyWhere: the instruction key through the thread (variant b).
+
+    fn began_instruction() -> Did {
+        Did::BeginInstruction {
+            binding: TRANSCRIBE.into(),
+            instruction: "tab".into(),
+        }
+    }
+
+    #[test]
+    fn the_thread_goes_on_to_the_instruction_and_a_held_release_sends_it() {
+        let run = running(&[], &[]);
+        run.toggle_press();
+        assert_eq!(run.next(4), locked_start());
+        run.coordinator
+            .send_instruction_key("tab", true, Duration::ZERO);
+        assert_eq!(run.next(1), vec![began_instruction()]);
+        run.coordinator
+            .send_instruction_key("tab", false, Duration::ZERO);
+        assert_eq!(
+            run.next(3),
+            stopped(EndChoice::Instruction("tab".into()), true)
+        );
+    }
+
+    #[test]
+    fn the_thread_sends_a_tapped_instruction_with_an_end_shortcut() {
+        let run = running(&[], &[]);
+        run.toggle_press();
+        assert_eq!(run.next(4), locked_start());
+        // A threshold no release reaches, however slow the machine.
+        let threshold = Duration::from_secs(2);
+        run.coordinator.send_instruction_key("tab", true, threshold);
+        run.coordinator
+            .send_instruction_key("tab", false, threshold);
+        run.coordinator.send_instruction_key("tab", true, threshold);
+        assert_eq!(run.next(1), vec![began_instruction()], "once only");
+        run.coordinator.finish_with_end_key("send");
+        assert_eq!(run.next(3), stopped(EndChoice::Key("send".into()), true));
+    }
+
+    #[test]
+    fn the_thread_records_the_text_on_when_the_recording_was_not_cut() {
+        let run = running_cutting(&[], &[], false);
+        run.toggle_press();
+        assert_eq!(run.next(4), locked_start());
+        run.coordinator
+            .send_instruction_key("tab", true, Duration::ZERO);
+        assert_eq!(run.next(1), vec![began_instruction()]);
+        // Its release sends nothing: the recording records its text.
+        run.coordinator
+            .send_instruction_key("tab", false, Duration::ZERO);
+        assert!(run.next(0).is_empty());
+        run.coordinator.finish_with_end_key("send");
+        assert_eq!(run.next(3), stopped(EndChoice::Key("send".into()), true));
+    }
+
+    #[test]
+    fn the_thread_ignores_an_instruction_key_without_a_recording() {
+        let run = running(&[], &[]);
+        run.coordinator
+            .send_instruction_key("tab", true, Duration::ZERO);
+        run.coordinator
+            .send_instruction_key("tab", false, Duration::ZERO);
+        assert!(run.next(0).is_empty());
     }
 
     #[test]
@@ -3260,5 +3590,251 @@ mod tests {
             .on_input(press(START, Roles::default()), Instant::now())
             .is_none());
         assert_eq!(state.stage, Stage::Idle);
+    }
+
+    // ---------------------------------------------------------------------
+    // DanyWhere: the spoken instruction (variant b, user, 2026-11-26). An
+    // instruction key pressed during a recording switches it to the stage
+    // "Recording: instruction"; tapped it locks and an end shortcut sends
+    // it, held its release sends it with its own values. A second press
+    // does nothing, Escape drops everything, remote control ends it.
+    // ---------------------------------------------------------------------
+
+    const TAB: &str = "tab";
+
+    fn instruction(instruction_id: &str) -> EndChoice {
+        EndChoice::Instruction(instruction_id.to_string())
+    }
+
+    /// The instruction key's edge at `at`.
+    fn instruction_key(
+        state: &mut CoordinatorState,
+        is_pressed: bool,
+        at: Instant,
+    ) -> Option<Effect> {
+        state.on_instruction_key(TAB, is_pressed, at, THRESHOLD)
+    }
+
+    fn is_begin_instruction(effect: Option<Effect>, binding: &str) -> bool {
+        effect
+            == Some(Effect::BeginInstruction {
+                binding_id: binding.to_string(),
+                instruction_id: TAB.to_string(),
+            })
+    }
+
+    /// A tapped recording of [`START`] that went on to the instruction at
+    /// `t0 + 1 s`, the cut made.
+    fn instructing(state: &mut CoordinatorState, t0: Instant) {
+        tapped_start(state, t0);
+        assert!(is_begin_instruction(
+            instruction_key(state, true, t0 + ms(1000)),
+            START
+        ));
+        state.on_instruction_result(true);
+        assert_eq!(state.stage, Stage::Instruction(START.to_string()));
+    }
+
+    #[test]
+    fn an_instruction_key_during_a_recording_goes_on_to_the_instruction() {
+        let mut state = CoordinatorState::new();
+        instructing(&mut state, Instant::now());
+        assert!(
+            state.is_recording_locked(),
+            "the tapped recording stays locked"
+        );
+    }
+
+    #[test]
+    fn an_instruction_key_does_nothing_without_a_recording() {
+        let t0 = Instant::now();
+        let mut idle = CoordinatorState::new();
+        assert!(instruction_key(&mut idle, true, t0).is_none());
+        assert!(instruction_key(&mut idle, false, t0 + ms(800)).is_none());
+        assert_eq!(idle.stage, Stage::Idle);
+        let mut busy = CoordinatorState::new();
+        processing(&mut busy, t0);
+        assert!(instruction_key(&mut busy, true, t0 + ms(2000)).is_none());
+        assert!(instruction_key(&mut busy, false, t0 + ms(2800)).is_none());
+        assert_eq!(busy.stage, Stage::Processing);
+    }
+
+    #[test]
+    fn a_second_press_during_the_instruction_does_nothing() {
+        let mut state = CoordinatorState::new();
+        let t0 = Instant::now();
+        instructing(&mut state, t0);
+        assert!(instruction_key(&mut state, true, t0 + ms(1050)).is_none());
+        assert_eq!(state.stage, Stage::Instruction(START.to_string()));
+    }
+
+    #[test]
+    fn a_tapped_instruction_key_locks_and_an_end_shortcut_sends() {
+        let mut state = CoordinatorState::new();
+        let t0 = Instant::now();
+        instructing(&mut state, t0);
+        assert!(instruction_key(&mut state, false, t0 + ms(1100)).is_none());
+        assert_eq!(state.stage, Stage::Instruction(START.to_string()));
+        // Pressed and released again much later: still locked.
+        assert!(instruction_key(&mut state, true, t0 + ms(3000)).is_none());
+        assert!(instruction_key(&mut state, false, t0 + ms(4000)).is_none());
+        assert_end(state.on_end_key("send"), START, key("send"));
+        assert_eq!(state.stage, Stage::Processing);
+    }
+
+    #[test]
+    fn releasing_a_held_instruction_key_sends_with_its_own_values() {
+        let mut state = CoordinatorState::new();
+        let t0 = Instant::now();
+        instructing(&mut state, t0);
+        assert_end(
+            instruction_key(&mut state, false, t0 + ms(1000) + THRESHOLD),
+            START,
+            instruction(TAB),
+        );
+        assert_eq!(state.stage, Stage::Processing);
+    }
+
+    #[test]
+    fn a_start_or_hold_key_during_the_instruction_ends_only_as_the_end_of_its_combination() {
+        let mut state = CoordinatorState::new();
+        let t0 = Instant::now();
+        instructing(&mut state, t0);
+        assert!(state
+            .on_input(press(HOLD, only_hold()), t0 + ms(2000))
+            .is_none());
+        assert_eq!(state.stage, Stage::Instruction(START.to_string()));
+        assert_end(
+            state.on_input(
+                press(START, roles(Some("start"), None, Some("space"))),
+                t0 + ms(3000),
+            ),
+            START,
+            key("space"),
+        );
+    }
+
+    #[test]
+    fn releasing_the_hold_key_that_holds_the_recording_sends_as_its_end() {
+        let mut state = CoordinatorState::new();
+        let t0 = Instant::now();
+        assert!(is_start(state.on_input(press(HOLD, only_hold()), t0)));
+        assert!(is_begin_instruction(
+            instruction_key(&mut state, true, t0 + ms(500)),
+            HOLD
+        ));
+        state.on_instruction_result(true);
+        assert!(state.on_input(release(HOLD), t0 + ms(900)).is_none());
+        assert_end(state.on_grace_expired(), HOLD, held("hold_post"));
+        assert_eq!(state.stage, Stage::Processing);
+        // The instruction key's release afterwards belongs to nothing.
+        assert!(instruction_key(&mut state, false, t0 + ms(1500)).is_none());
+    }
+
+    #[test]
+    fn a_short_release_of_the_starting_key_during_the_instruction_follows_its_rule() {
+        let t0 = Instant::now();
+        // Start and hold shortcut: a short press locks, the instruction goes on.
+        let mut auto = CoordinatorState::new();
+        let both = roles(Some("start"), Some("hold_post"), None);
+        assert!(is_start(auto.on_input(press(START, both), t0)));
+        assert!(is_begin_instruction(
+            instruction_key(&mut auto, true, t0 + ms(50)),
+            START
+        ));
+        auto.on_instruction_result(true);
+        assert!(auto.on_input(release(START), t0 + ms(100)).is_none());
+        assert!(auto.on_grace_expired().is_none());
+        assert_eq!(auto.stage, Stage::Instruction(START.to_string()));
+        assert!(auto.is_recording_locked());
+        // A hold shortcut alone: a short press discards everything.
+        let mut hold = CoordinatorState::new();
+        assert!(is_start(hold.on_input(press(HOLD, only_hold()), t0)));
+        assert!(is_begin_instruction(
+            instruction_key(&mut hold, true, t0 + ms(50)),
+            HOLD
+        ));
+        hold.on_instruction_result(true);
+        assert!(hold.on_input(release(HOLD), t0 + ms(100)).is_none());
+        assert_eq!(
+            hold.on_grace_expired(),
+            Some(Effect::Discard {
+                binding_id: HOLD.to_string()
+            })
+        );
+        assert_eq!(hold.stage, Stage::Idle);
+        assert!(instruction_key(&mut hold, false, t0 + ms(900)).is_none());
+    }
+
+    #[test]
+    fn escape_drops_the_text_and_the_instruction() {
+        let mut state = CoordinatorState::new();
+        let t0 = Instant::now();
+        instructing(&mut state, t0);
+        state.on_cancel(true);
+        assert_eq!(state.stage, Stage::Idle);
+        assert!(!state.is_recording_locked());
+        assert!(instruction_key(&mut state, false, t0 + ms(2000)).is_none());
+        assert!(state.on_end_key("send").is_none());
+    }
+
+    #[test]
+    fn remote_control_and_the_services_end_the_instruction() {
+        let t0 = Instant::now();
+        let start = EndChoice::Start("start".to_string());
+        let mut remote_state = CoordinatorState::new();
+        instructing(&mut remote_state, t0);
+        assert_end(
+            remote_state.on_input(remote(START, start.clone()), t0 + ms(2000)),
+            START,
+            start,
+        );
+        let mut service = CoordinatorState::new();
+        instructing(&mut service, t0);
+        assert_stop(service.on_finish_as(None), START, "start");
+    }
+
+    #[test]
+    fn a_cut_that_was_not_made_leaves_the_recording_as_it_was() {
+        let mut state = CoordinatorState::new();
+        let t0 = Instant::now();
+        tapped_start(&mut state, t0);
+        assert!(is_begin_instruction(
+            instruction_key(&mut state, true, t0 + ms(1000)),
+            START
+        ));
+        state.on_instruction_result(false);
+        assert_eq!(state.stage, Stage::Recording(START.to_string()));
+        assert!(instruction_key(&mut state, false, t0 + ms(2000)).is_none());
+        assert_end(state.on_end_key("send"), START, key("send"));
+    }
+
+    #[test]
+    fn an_instruction_key_on_a_start_shortcuts_combination_goes_on_to_the_instruction() {
+        // ⇧⌃Space is a hold shortcut and the instruction key: idle it holds,
+        // during the recording of ⌃Space it instructs.
+        let mut state = CoordinatorState::new();
+        let t0 = Instant::now();
+        tapped_start(&mut state, t0);
+        let instructs = Roles {
+            instruction: Some(TAB.to_string()),
+            ..only_hold()
+        };
+        assert!(is_begin_instruction(
+            state.on_input(press(HOLD, instructs.clone()), t0 + ms(1000)),
+            START
+        ));
+        state.on_instruction_result(true);
+        assert_eq!(state.stage, Stage::Instruction(START.to_string()));
+        // Its own release, held, sends with the instruction key's values.
+        assert_end(
+            state.on_input(release(HOLD), t0 + ms(1000) + THRESHOLD),
+            START,
+            instruction(TAB),
+        );
+        // Idle, the same combination starts a recording as before.
+        let mut idle = CoordinatorState::new();
+        assert!(is_start(idle.on_input(press(HOLD, instructs), t0)));
+        assert_eq!(idle.stage, Stage::Recording(HOLD.to_string()));
     }
 }
