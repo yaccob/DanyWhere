@@ -1522,6 +1522,7 @@
       "noPrompt": "활성 프롬프트가 없습니다.",
       "noApiKey": "{{provider}}: API 키가 필요하지만 입력되지 않았습니다.",
       "keyRefused": "{{provider}}: API 키가 거부되었습니다.",
+      "noCredit": "{{provider}}: 크레딧이 모두 소진되었습니다. 해당 서비스에서 충전하세요.",
       "modelNotFound": "{{provider}}: ‘{{model}}’ 모델이 없습니다.",
       "unreachable": "{{provider}}: 연결할 수 없습니다.",
       "timeout": "{{provider}}: 제한 시간({{seconds}}초) 안에 응답이 없었습니다.",

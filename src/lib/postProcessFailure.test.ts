@@ -95,6 +95,11 @@ const REASONS: [string, Record<string, unknown>, string][] = [
     "OpenAI refused the API key.",
   ],
   [
+    "a used-up credit",
+    { reason: "no-credit", ...OPENAI },
+    "Your credit with OpenAI has run out; top it up there.",
+  ],
+  [
     "a model the provider doesn't have",
     { reason: "model-not-found", ...CUSTOM },
     "Custom doesn't have the model “gemma4-12b-qat”.",
@@ -190,6 +195,21 @@ check("German: a refused key", () =>
       detail({ reason: "key-refused", ...OPENAI }),
     ),
     "BASE Der Anbieter „OpenAI“ hat den API-Schlüssel abgelehnt.",
+  ),
+);
+check("German: the user's case of 2026-11-26, a used-up credit", () =>
+  assert.equal(
+    withPostProcessFailureReason(
+      de,
+      de("errors.postProcessFailed"),
+      detail({
+        reason: "no-credit",
+        providerId: "anthropic",
+        provider: "Anthropic",
+        model: "claude-fable-5-2",
+      }),
+    ),
+    "Die Nachbearbeitung wurde nicht abgeschlossen, daher wurde das Transkript unverändert eingefügt. Das Guthaben beim Anbieter „Anthropic“ ist aufgebraucht; lade es dort auf.",
   ),
 );
 check("German: no answer in time", () =>

@@ -1522,6 +1522,7 @@
       "noPrompt": "אין הנחיה פעילה.",
       "noApiKey": "{{provider}}: נדרש מפתח API, אך לא הוזן מפתח.",
       "keyRefused": "{{provider}}: מפתח ה-API נדחה.",
+      "noCredit": "{{provider}}: היתרה שלך נגמרה; יש לטעון אותה שם.",
       "modelNotFound": "{{provider}}: המודל „{{model}}” לא נמצא.",
       "unreachable": "{{provider}}: אין חיבור.",
       "timeout": "{{provider}}: אין תשובה בתוך מגבלת הזמן ({{seconds}} ש׳).",

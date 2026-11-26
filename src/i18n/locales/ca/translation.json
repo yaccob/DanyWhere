@@ -1522,6 +1522,7 @@
       "noPrompt": "No hi ha cap indicació activa.",
       "noApiKey": "{{provider}} necessita una clau de l'API i no n'hi ha cap.",
       "keyRefused": "{{provider}} ha rebutjat la clau de l'API.",
+      "noCredit": "El crèdit a {{provider}} s'ha esgotat; recarrega'l allà.",
       "modelNotFound": "{{provider}} no té el model «{{model}}».",
       "unreachable": "No s'ha pogut connectar amb {{provider}}.",
       "timeout": "{{provider}} no ha respost dins del temps límit ({{seconds}} s).",

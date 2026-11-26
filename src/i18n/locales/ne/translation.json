@@ -1522,6 +1522,7 @@
       "noPrompt": "कुनै प्रम्प्ट सक्रिय छैन।",
       "noApiKey": "{{provider}}: API कुञ्जी चाहिन्छ, तर कुनै कुञ्जी राखिएको छैन।",
       "keyRefused": "{{provider}}: API कुञ्जी अस्वीकार गरियो।",
+      "noCredit": "{{provider}}: तपाईंको क्रेडिट सकियो; त्यहीँ रिचार्ज गर्नुहोस्।",
       "modelNotFound": "{{provider}}: मोडेल “{{model}}” भेटिएन।",
       "unreachable": "{{provider}}: जडान हुन सकेन।",
       "timeout": "{{provider}}: समय सीमा ({{seconds}} से.) भित्र जवाब आएन।",

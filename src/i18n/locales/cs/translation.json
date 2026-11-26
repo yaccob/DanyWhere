@@ -1522,6 +1522,7 @@
       "noPrompt": "Žádný pokyn není aktivní.",
       "noApiKey": "{{provider}}: je potřeba API klíč, ale žádný není zadán.",
       "keyRefused": "{{provider}}: API klíč byl odmítnut.",
+      "noCredit": "{{provider}}: kredit je vyčerpán; dobijte ho tam.",
       "modelNotFound": "{{provider}}: model „{{model}}“ není k dispozici.",
       "unreachable": "{{provider}}: nelze se připojit.",
       "timeout": "{{provider}}: žádná odpověď v časovém limitu ({{seconds}} s).",
