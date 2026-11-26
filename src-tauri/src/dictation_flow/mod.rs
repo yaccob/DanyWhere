@@ -43,8 +43,9 @@ pub(crate) mod app_ports;
 #[cfg(test)]
 pub(crate) mod fakes;
 // DanyWhere: the spoken instruction (its cut, its state, its building
-// blocks). `begin_instruction` and `key_of_pending` wait for strand Z2's
-// coordinator, which calls them with the instruction shortcut.
+// blocks); the coordinator cuts with `begin_instruction` when an
+// instruction shortcut is pressed (strand Z2). Some blocks serve only the
+// tests so far (`split_dictation`, `key_of_pending`, `is_ready`).
 #[allow(dead_code)]
 pub(crate) mod instruction;
 pub mod ports;
@@ -3099,10 +3100,10 @@ mod tests {
         /// press it as a toggle.
         fn roles(&mut self, binding_id: &str) -> crate::start_keys::Roles {
             let values = ProfileValues::from_settings(&self.settings);
-            let reachable = crate::app_profiles::post_processing_reachable(&self.settings);
+            let taken = crate::instruction_keys::taken_here(&self.settings);
             crate::start_keys::Roles {
                 hold: None,
-                ..crate::start_keys::roles_of(&values, binding_id, reachable)
+                ..crate::start_keys::roles_of(&values, binding_id, taken)
             }
         }
 

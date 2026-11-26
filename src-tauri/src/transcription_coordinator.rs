@@ -1332,6 +1332,21 @@ impl EffectRunner for AppEffects {
     fn recording_cancelled(&mut self) {
         drop(crate::delivery::take_recording_hold());
     }
+
+    /// DanyWhere: cuts the recording for its instruction (strand Z1,
+    /// `dictation_flow::instruction`), only while the dictation's profile
+    /// takes instruction keys (not "never", a provider with a model, not on
+    /// Linux): a press that came through just before a change cuts nothing.
+    fn begin_instruction(&mut self, binding_id: &str, instruction_id: &str) -> bool {
+        let settings = crate::app_profiles::dictation_settings(&self.0);
+        if !crate::instruction_keys::taken_here(&settings) {
+            debug!(
+                "Instruction key '{instruction_id}': the dictation's profile takes none; no cut"
+            );
+            return false;
+        }
+        crate::dictation_flow::instruction::begin_instruction(&self.0, binding_id, instruction_id)
+    }
 }
 
 /// DanyWhere: tells `dictation_key_inserts` when a locked recording begins
@@ -3309,7 +3324,8 @@ mod tests {
         roles(Some("start"), None, None)
     }
 
-    /// The post-processing hold shortcut alone.
+    /// The second factory hold shortcut alone (its id from before variant
+    /// b).
     fn only_hold() -> Roles {
         roles(None, Some("hold_post"), None)
     }

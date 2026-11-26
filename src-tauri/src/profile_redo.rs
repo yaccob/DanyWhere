@@ -15,9 +15,11 @@
 //! - only post-processing: the transcription is post-processed again;
 //! - only the "Append" field: the text stays, the target's "Append" applies.
 //!
-//! Post-processing, context and "Append" come from the end shortcut the
-//! dictation ended with (`end_keys`); in the target profile the end shortcut
-//! with the same id applies ([`end_in`]).
+//! Context and "Append" come from the end shortcut the dictation ended with
+//! (`end_keys`); in the target profile the end shortcut with the same id
+//! applies ([`end_in`]). Whether it post-processes follows the target's mode
+//! and whether an instruction key was pressed during the recording
+//! (variant b, 2026-11-26; [`post_processes_in`]).
 //!
 //! Only while choosing the profile by application is on; otherwise
 //! everything stays as before. "Copy Last Transcript" has no target, so it

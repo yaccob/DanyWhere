@@ -304,9 +304,13 @@ async changeAutoSubmitKeySetting(key: string) : Promise<Result<null, string>> {
     else return { status: "error", error: e  as any };
 }
 },
-async changePostProcessEnabledSetting(enabled: boolean) : Promise<Result<null, string>> {
+/**
+ * Stores the active profile's mode of post-processing. The instruction
+ * shortcuts follow it (`instruction_keys::taken`).
+ */
+async changePostProcessModeSetting(mode: PostProcessMode) : Promise<Result<null, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("change_post_process_enabled_setting", { enabled }) };
+    return { status: "ok", data: await TAURI_INVOKE("change_post_process_mode_setting", { mode }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -753,6 +757,18 @@ async changeStartKeysSetting(startKeys: StartKey[]) : Promise<Result<null, strin
 async changeHoldKeysSetting(holdKeys: EndKey[]) : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("change_hold_keys_setting", { holdKeys }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Stores the active profile's instruction shortcuts (the whole list, as
+ * the editor holds it). A running recording takes the new ones at once.
+ */
+async changeInstructionKeysSetting(instructionKeys: EndKey[]) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_instruction_keys_setting", { instructionKeys }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -1881,7 +1897,13 @@ dictation_context?: DictationContextSettings; model_unload_timeout?: ModelUnload
 /**
  * Migrated from `recording_retention_period` in `apply_settings_migrations`.
  */
-recording_storage_limit?: RecordingStorageLimit; paste_method?: PasteMethod; clipboard_handling?: ClipboardHandling; auto_submit?: boolean; auto_submit_key?: AutoSubmitKey; post_process_enabled?: boolean; post_process_provider_id?: string; post_process_providers?: PostProcessProvider[]; post_process_api_keys?: SecretMap; post_process_models?: Partial<{ [key in string]: string }>; 
+recording_storage_limit?: RecordingStorageLimit; paste_method?: PasteMethod; clipboard_handling?: ClipboardHandling; auto_submit?: boolean; auto_submit_key?: AutoSubmitKey; 
+/**
+ * DanyWhere: when dictations post-process ([`PostProcessMode`]); until
+ * 2026-11-26 the switch `post_process_enabled` (`post_process_mode`
+ * carries it over).
+ */
+post_process_mode?: PostProcessMode; post_process_provider_id?: string; post_process_providers?: PostProcessProvider[]; post_process_api_keys?: SecretMap; post_process_models?: Partial<{ [key in string]: string }>; 
 /**
  * DanyWhere: the effort per provider (`post_process_effort`); none
  * stored = the model's default.
@@ -1997,9 +2019,15 @@ end_keys?: EndKey[];
  */
 start_keys: StartKey[]; 
 /**
- * DanyWhere: the active profile's hold shortcuts (`start_keys`).
+ * DanyWhere: the active profile's hold shortcuts (the module
+ * `start_keys`, which has them with the start shortcuts).
  */
 hold_keys: EndKey[]; 
+/**
+ * DanyWhere: the active profile's instruction shortcuts
+ * (`instruction_keys`); a store from before them gets the factory ones.
+ */
+instruction_keys?: EndKey[]; 
 /**
  * DanyWhere: the height in pixels a History text box may grow to before
  * it scrolls, as dragged at its grip, for the newest entry and for the
@@ -2208,11 +2236,8 @@ shortcut: string;
  */
 append_text: string; 
 /**
- * Whether the text is post-processed (if the profile allows it).
- */
-post_process: boolean; 
-/**
- * Whether post-processing gets earlier dictations as context.
+ * Whether post-processing, when it runs, gets earlier dictations as
+ * context. (A stored box "Post-process" of before variant b is ignored.)
  */
 send_context: boolean }
 /**
@@ -2668,6 +2693,27 @@ export type PostProcessApiFormat =
  * Anthropic Messages (`/messages`)
  */
 "anthropic"
+/**
+ * DanyWhere: when a profile's dictations are post-processed (user,
+ * 2026-11-26, variant b of the sidecar note
+ * `2026-11-26_1841_nachbearbeitung-nur-ueber-anweisungstaste`). The end
+ * and hold shortcuts no longer say it; an instruction key
+ * (`instruction_keys`) does, unless the profile says never or always.
+ */
+export type PostProcessMode = 
+/**
+ * Never: no instruction key is taken and nothing goes to a provider.
+ */
+"never" | 
+/**
+ * When an instruction key was pressed during the recording (out of
+ * the box).
+ */
+"with_instruction_key" | 
+/**
+ * Every dictation; an instruction key adds its instruction.
+ */
+"always"
 export type PostProcessProvider = { id: string; label: string; base_url: string; allow_base_url_edit?: boolean; models_endpoint?: string | null; supports_structured_output?: boolean; api_format?: PostProcessApiFormat }
 export type Profile = { id: string; 
 /**
@@ -2702,7 +2748,11 @@ export type ProfileField = { name: string; kind: FieldKind }
  * New fields go at the end; `setting_classes` checks that every setting is
  * a profile value or classified otherwise.
  */
-export type ProfileValues = { selected_model: string; selected_language: string; spoken_languages: string[]; language_detection: LanguageDetectionMode; language_detection_window_secs: number; translate_to_english: boolean; chinese_script: ChineseScript; profile_words: string[]; word_lists: WordList[]; active_word_list_id: string | null; post_process_enabled: boolean; post_process_provider_id: string; post_process_models: Partial<{ [key in string]: string }>; 
+export type ProfileValues = { selected_model: string; selected_language: string; spoken_languages: string[]; language_detection: LanguageDetectionMode; language_detection_window_secs: number; translate_to_english: boolean; chinese_script: ChineseScript; profile_words: string[]; word_lists: WordList[]; active_word_list_id: string | null; 
+/**
+ * When dictations post-process (`settings::PostProcessMode`).
+ */
+post_process_mode: PostProcessMode; post_process_provider_id: string; post_process_models: Partial<{ [key in string]: string }>; 
 /**
  * The effort per provider (`post_process_effort`).
  */
@@ -2787,9 +2837,16 @@ end_keys?: EndKey[];
  */
 start_keys: StartKey[]; 
 /**
- * The hold shortcuts (`start_keys`), each with a stable id.
+ * The hold shortcuts (the module `start_keys`, which has them
+ * with the start shortcuts), each with a stable id.
  */
 hold_keys: EndKey[]; 
+/**
+ * The instruction shortcuts (`instruction_keys`), each with a stable
+ * id, in the form of an end shortcut; a stored profile without them
+ * gets the factory ones.
+ */
+instruction_keys?: EndKey[]; 
 /**
  * Check the words that resemble a word list's term with the
  * post-processing provider (`word_list_check`).
