@@ -859,9 +859,11 @@ mod tests {
         }
         let never = with_instruction_key(Never);
         assert!(!desired_on(&never, true, true, false).contains_key("instruction_key:tab"));
+        // DanyWhere: also before post-processing is set up (the setup,
+        // `instruction_keys::taken`): its notice then offers the setup.
         let mut no_model = with_instruction_key(WithInstructionKey);
         no_model.post_process_models.clear();
-        assert!(!desired_on(&no_model, true, true, false).contains_key("instruction_key:tab"));
+        assert!(desired_on(&no_model, true, true, false).contains_key("instruction_key:tab"));
     }
 
     #[test]

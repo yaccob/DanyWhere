@@ -52,6 +52,7 @@ pub mod portable;
 mod post_process_effort;
 mod post_process_failure;
 mod post_process_mode;
+mod post_process_setup;
 #[cfg(target_os = "linux")]
 mod primary_selection;
 mod profile_effects;
@@ -71,6 +72,7 @@ mod signal_handle;
 mod sound_queue;
 mod start_keys;
 mod system_languages;
+mod system_memory;
 mod theme_file;
 #[cfg(target_os = "macos")]
 mod title_query;
@@ -823,6 +825,12 @@ pub fn run(cli_args: CliArgs) {
             shortcut::fetch_post_process_models,
             post_process_effort::get_post_process_effort_options,
             post_process_effort::change_post_process_effort_setting,
+            post_process_setup::get_post_process_setup_status,
+            post_process_setup::set_post_process_setup_answers,
+            post_process_setup::apply_post_process_choice,
+            post_process_setup::check_post_process_key,
+            post_process_setup::run_post_process_sample,
+            system_memory::get_system_memory_bytes,
             shortcut::add_post_process_prompt,
             shortcut::update_post_process_prompt,
             shortcut::delete_post_process_prompt,

@@ -883,6 +883,10 @@ mod tests {
         target
             .post_process_models
             .insert("openai".to_string(), "model".to_string());
+        // The provider needs a key (`post_process_setup`).
+        target
+            .post_process_api_keys
+            .insert("openai".to_string(), "sk-test".to_string());
         let mut made_end = end_with(false);
         made_end.send_context = true;
         let target_end = end_in(&target, &made_end);

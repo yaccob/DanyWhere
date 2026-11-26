@@ -115,6 +115,13 @@ pub const INTERNAL: &[&str] = &[
     "input_method_guide_seen",
     "history_box_height_newest",
     "history_box_height_other",
+    // The post-processing setup (`post_process_setup`): its answers, the
+    // sign-ins it made and what OpenRouter said about its key. For the app
+    // as a whole, never in a profile or its export.
+    "post_process_setup",
+    "chatgpt_session",
+    "chatgpt_host_id",
+    "openrouter_connection",
 ];
 
 /// Fields only a migration reads: the storage limit replaced the first two,
