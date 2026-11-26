@@ -296,6 +296,11 @@ export const describeStep = (step: VersionStep): StepDescription => {
   };
 };
 
+/** Whether a step is a post-processing that ran with the instruction
+ * spoken for the dictation: its line then says "… + spoken instruction". */
+export const ranWithSpokenInstruction = (step: VersionStep): boolean =>
+  step.by === "ai" && step.spoken_instruction === true;
+
 /** The name a speech model shows under, from the app's model list; one
  * the list no longer has (deleted, or a custom model gone) by its id. */
 export const modelName = <M extends { id: string; name: string }>(

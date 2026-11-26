@@ -123,6 +123,70 @@ fn post_process_failure_notice(failure: &PostProcessFailure, transcribed: bool) 
     failure.notice(code, NoticeSource::File)
 }
 
+/// DanyWhere: which part of an entry a transcription hears.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Part {
+    /// The recording: the dictation's text.
+    Text,
+    /// The audio of its spoken instruction.
+    Instruction,
+}
+
+/// DanyWhere: what transcribing an entry again heard.
+struct HeardAgain {
+    text: Transcription,
+    /// The spoken instruction, heard again from its own audio; `None` when
+    /// the entry has none, or its audio is gone or can't be read (the text
+    /// the entry has then stays).
+    instruction: Option<String>,
+}
+
+/// DanyWhere: hears `entry` again with `transcribe`, as "Transcribe Again"
+/// does: its recording, then the audio of its spoken instruction when it
+/// has one, with the same model and settings (F6 ii). `None`: cancelled.
+fn hear_again(
+    entry: &HistoryEntry,
+    recordings_dir: &Path,
+    transcribe: &mut dyn FnMut(Vec<f32>, Part) -> Result<Option<Transcription>>,
+) -> Result<Option<HeardAgain>> {
+    let samples = HistoryManager::recording_samples_in(entry, recordings_dir)
+        .map_err(|e| anyhow!("Failed to load audio: {}", e))?;
+    if samples.is_empty() {
+        return Err(anyhow!("Recording has no audio samples"));
+    }
+    let Some(text) = transcribe(samples, Part::Text)? else {
+        return Ok(None);
+    };
+    let instruction = match instruction_samples(entry, recordings_dir) {
+        Some(samples) => match transcribe(samples, Part::Instruction)? {
+            Some(heard) => Some(heard.text.trim().to_string()),
+            None => return Ok(None),
+        },
+        None => None,
+    };
+    Ok(Some(HeardAgain { text, instruction }))
+}
+
+/// DanyWhere: the samples of the entry's spoken instruction, when its audio
+/// is there and has any; else `None`, and the instruction keeps its text.
+fn instruction_samples(entry: &HistoryEntry, recordings_dir: &Path) -> Option<Vec<f32>> {
+    let file = entry.spoken_instruction_file.as_deref()?;
+    if entry.recording_removed {
+        return None;
+    }
+    match crate::audio_toolkit::read_recording_samples(recordings_dir.join(file)) {
+        Ok(samples) if !samples.is_empty() => Some(samples),
+        Ok(_) => None,
+        Err(e) => {
+            warn!(
+                "Kept the spoken instruction of history entry {} as it was: {}",
+                entry.id, e
+            );
+            None
+        }
+    }
+}
+
 struct Running {
     entry_id: i64,
     cancelled: Arc<AtomicBool>,
@@ -462,25 +526,33 @@ impl TranscriptionJobManager {
         let post_process = work.mode.post_processes(entry.post_process_requested);
 
         let tm = Arc::clone(&self.app.state::<Arc<TranscriptionManager>>());
-        let samples = HistoryManager::recording_samples_in(&entry, hm.recordings_dir())
-            .map_err(|e| anyhow!("Failed to load audio: {}", e))?;
-        if samples.is_empty() {
-            return Err(anyhow!("Recording has no audio samples"));
-        }
-
         let control = Control {
             manager: self,
             entry_id: entry.id,
             cancelled,
             percent: Cell::new(0),
         };
-        let Some(Transcription {
-            text,
-            language,
-            word_replacements,
-            model_id,
-            ..
-        }) = tm.transcribe_in_chunks(samples, &control)?
+        // DanyWhere: the text, and the spoken instruction from its own audio
+        // when the entry has one (F6 ii); the instruction's chunks report no
+        // progress, the text's already went to 100 %.
+        let Some(HeardAgain {
+            text:
+                Transcription {
+                    text,
+                    language,
+                    word_replacements,
+                    model_id,
+                    ..
+                },
+            instruction,
+        }) = hear_again(
+            &entry,
+            hm.recordings_dir(),
+            &mut |samples, part| match part {
+                Part::Text => tm.transcribe_in_chunks(samples, &control),
+                Part::Instruction => tm.transcribe_in_chunks(samples, &Quiet(&control)),
+            },
+        )?
         else {
             return Ok(JobEnd::Cancelled);
         };
@@ -502,6 +574,10 @@ impl TranscriptionJobManager {
         if !with_context {
             context_query.window = None;
         }
+        // Strand Z: post-process with the spoken instruction (`instruction`,
+        // else the entry's `spoken_instruction` when its audio is gone) once
+        // `actions::process_transcription_with_settings` takes it (strand P),
+        // and set `NewTranscription::instruction_applied` below.
         let processed = tauri::async_runtime::block_on(process_transcription_output_with(
             &self.app,
             &text,
@@ -529,6 +605,8 @@ impl TranscriptionJobManager {
                 }),
                 post_process_requested: post_process,
                 model: model_id,
+                spoken_instruction: instruction,
+                instruction_applied: false,
             },
         )?;
         if let Err(e) = hm.record_entry_context(
@@ -694,6 +772,19 @@ impl ChunkControl for Control<'_> {
     }
 }
 
+/// DanyWhere: the chunks of a spoken instruction heard again: they wait for
+/// dictation and stop on a cancel as the text's do, but report no progress,
+/// which the text's run already brought to 100 %.
+struct Quiet<'a>(&'a Control<'a>);
+
+impl ChunkControl for Quiet<'_> {
+    fn proceed(&self) -> bool {
+        self.0.proceed()
+    }
+
+    fn progress(&self, _done: usize, _total: usize) {}
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -830,6 +921,7 @@ mod tests {
             at: Some(2),
             prompt_name: None,
             model: None,
+            spoken_instruction: false,
         });
         let edited = entry_with_hint(vec![edited]);
         assert!(post_process_input(&edited, None).unwrap().1.is_empty());
@@ -901,6 +993,107 @@ mod tests {
             serde_json::to_string(&Transcribe).unwrap(),
             "\"transcribe\""
         );
+    }
+
+    // ---- Hearing an entry again, its spoken instruction too (F6 ii) ------
+
+    fn tone(n: usize) -> Vec<f32> {
+        (0..n).map(|i| 0.4 * (i as f32 * 0.05).sin()).collect()
+    }
+
+    /// What a fake speech model hears in `len` samples of `part`.
+    fn heard(len: usize, part: Part) -> Transcription {
+        Transcription {
+            text: format!("{part:?} of {len}"),
+            language: None,
+            word_replacements: Vec::new(),
+            model_id: Some("fake-model".into()),
+            takes_vocabulary: false,
+        }
+    }
+
+    /// An entry whose recording `handy-1.opus` has 16 000 samples, with an
+    /// instruction whose audio is `instruction` (its file and samples; no
+    /// samples: the file isn't there).
+    fn entry_with_audio(dir: &Path, instruction: Option<(&str, usize)>) -> HistoryEntry {
+        crate::audio_toolkit::save_opus_file(dir.join("handy-1.opus"), &tone(16_000)).unwrap();
+        let mut entry = test_entry(vec![HistoryVersion::transcription("old words")]);
+        if let Some((file, samples)) = instruction {
+            if samples > 0 {
+                crate::audio_toolkit::save_opus_file(dir.join(file), &tone(samples)).unwrap();
+            }
+            entry.spoken_instruction = Some("old instruction".into());
+            entry.spoken_instruction_file = Some(file.into());
+        }
+        entry
+    }
+
+    /// Hears `entry` again with the fake model; the parts it was asked to
+    /// hear, with their lengths.
+    fn hear(
+        entry: &HistoryEntry,
+        dir: &Path,
+        cancel_at: Option<Part>,
+    ) -> (Option<HeardAgain>, Vec<(Part, usize)>) {
+        let mut calls = Vec::new();
+        let heard_again = hear_again(entry, dir, &mut |samples, part| {
+            calls.push((part, samples.len()));
+            Ok((cancel_at != Some(part)).then(|| heard(samples.len(), part)))
+        })
+        .expect("hear again");
+        (heard_again, calls)
+    }
+
+    #[test]
+    fn transcribing_again_hears_the_text_and_the_spoken_instruction() {
+        let dir = tempfile::tempdir().unwrap();
+        let entry = entry_with_audio(dir.path(), Some(("handy-1-instruction.opus", 4_000)));
+
+        let (again, calls) = hear(&entry, dir.path(), None);
+
+        assert_eq!(
+            calls,
+            vec![(Part::Text, 16_000), (Part::Instruction, 4_000)]
+        );
+        let again = again.expect("not cancelled");
+        assert_eq!(again.text.text, "Text of 16000");
+        assert_eq!(again.instruction.as_deref(), Some("Instruction of 4000"));
+    }
+
+    #[test]
+    fn without_a_spoken_instruction_only_the_text_is_heard() {
+        let dir = tempfile::tempdir().unwrap();
+        let entry = entry_with_audio(dir.path(), None);
+
+        let (again, calls) = hear(&entry, dir.path(), None);
+
+        assert_eq!(calls, vec![(Part::Text, 16_000)]);
+        assert_eq!(again.expect("not cancelled").instruction, None);
+    }
+
+    #[test]
+    fn an_instruction_whose_audio_is_gone_keeps_its_text() {
+        let dir = tempfile::tempdir().unwrap();
+        let entry = entry_with_audio(dir.path(), Some(("handy-1-instruction.opus", 0)));
+
+        let (again, calls) = hear(&entry, dir.path(), None);
+
+        assert_eq!(calls, vec![(Part::Text, 16_000)]);
+        assert_eq!(again.expect("not cancelled").instruction, None);
+    }
+
+    #[test]
+    fn a_cancel_while_the_instruction_is_heard_cancels_the_job() {
+        let dir = tempfile::tempdir().unwrap();
+        let entry = entry_with_audio(dir.path(), Some(("handy-1-instruction.opus", 4_000)));
+
+        let (again, calls) = hear(&entry, dir.path(), Some(Part::Instruction));
+
+        assert_eq!(
+            calls,
+            vec![(Part::Text, 16_000), (Part::Instruction, 4_000)]
+        );
+        assert!(again.is_none());
     }
 
     #[test]

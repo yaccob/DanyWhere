@@ -81,6 +81,7 @@ import {
 import { Highlighted, HistorySearchBar } from "./HistorySearchBar";
 // DanyWhere: the text in a box that scrolls and can be resized.
 import { HistoryTextBox } from "./HistoryTextBox";
+import { SpokenInstructionLine } from "./SpokenInstructionLine";
 // DanyWhere: the star's tooltip says it keeps the recording.
 import { keepRecordingTooltip } from "./keepRecording";
 // DanyWhere: the versions of an entry: what shows, the track, ✨.
@@ -1187,6 +1188,17 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
             onMove={moveVersionTo}
             onDelete={deleteVersionAt}
             disabled={saving}
+          />
+        )}
+        {/* DanyWhere: the instruction spoken for its post-processing, with
+            its audio (F6). */}
+        {!retrying && editing === null && (
+          <SpokenInstructionLine
+            instruction={entry.spoken_instruction}
+            audioFile={entry.spoken_instruction_file}
+            recordingRemoved={entry.recording_removed}
+            highlight={highlight}
+            getAudioUrl={getAudioUrl}
           />
         )}
         {/* DanyWhere: its context, and whether it went out as context. */}

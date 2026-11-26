@@ -1102,12 +1102,14 @@ mod tests {
                 at: None,
                 prompt_name: None,
                 model: None,
+                spoken_instruction: false,
             },
             crate::history_versions::VersionStep {
                 by: VersionAuthor::User,
                 at: Some(1),
                 prompt_name: None,
                 model: None,
+                spoken_instruction: false,
             },
         ];
         assert!(!redoable(&[edited]));

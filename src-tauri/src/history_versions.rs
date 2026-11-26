@@ -77,6 +77,19 @@ pub struct VersionStep {
     /// same.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub model: Option<String>,
+    /// DanyWhere: for an AI step, whether it ran with the instruction
+    /// spoken for the dictation (`HistoryEntry::spoken_instruction`); History
+    /// names the step "… + spoken instruction". Left out of the column when
+    /// false.
+    // `default` last: specta reads the attributes in order, and only
+    // `default` makes the field optional in `bindings.ts`, as it is.
+    #[serde(skip_serializing_if = "is_false", default)]
+    pub spoken_instruction: bool,
+}
+
+/// For serde: a flag that is off is left out.
+fn is_false(flag: &bool) -> bool {
+    !*flag
 }
 
 /// One version of an entry's text.
@@ -138,6 +151,7 @@ impl VersionStep {
             at,
             prompt_name: None,
             model: None,
+            spoken_instruction: false,
         }
     }
 }
@@ -365,6 +379,18 @@ pub(crate) fn name_the_prompt(versions: &mut [HistoryVersion], prompt_name: Opti
         .filter(|step| step.by == VersionAuthor::Ai)
     {
         step.prompt_name = Some(name.to_string());
+    }
+}
+
+/// DanyWhere: marks the ✨ steps of a new entry's `versions`, made by its own
+/// post-processing, as run with the instruction spoken for the dictation.
+pub(crate) fn mark_spoken_instruction(versions: &mut [HistoryVersion]) {
+    for step in versions
+        .iter_mut()
+        .flat_map(|version| version.steps.iter_mut())
+        .filter(|step| step.by == VersionAuthor::Ai)
+    {
+        step.spoken_instruction = true;
     }
 }
 
@@ -707,6 +733,7 @@ pub(crate) fn store_post_processing_with_conn(
         at: Some(at),
         prompt_name: result.prompt_name,
         model: None,
+        spoken_instruction: false,
     };
     let applied = apply_post_processing(&entry.versions, target, &result.text, step);
     let unchanged = applied.is_none();
@@ -736,6 +763,13 @@ pub(crate) struct NewTranscription {
     pub post_process_requested: bool,
     /// The id of the speech model that made it.
     pub model: Option<String>,
+    /// DanyWhere: the entry's spoken instruction, heard again from its audio
+    /// ("Transcribe Again", F6 ii); `None` keeps the one the entry has.
+    pub spoken_instruction: Option<String>,
+    /// DanyWhere: its post-processing ran with the entry's spoken
+    /// instruction, so its ✨ step says so. Strand Z sets it once
+    /// post-processing takes the instruction.
+    pub instruction_applied: bool,
 }
 
 /// Puts a new transcription on top of the entry's stack at `at` (Unix
@@ -743,7 +777,7 @@ pub(crate) struct NewTranscription {
 /// stay, except the empty transcription of an entry not transcribed yet (a
 /// file, a dictation whose transcription failed). A text equal to the top's
 /// adds nothing. The entry's language and speech model become the new
-/// transcription's.
+/// transcription's, and its spoken instruction the one heard again, if any.
 /// Errors: `blank` for an empty transcription, or the database's.
 pub(crate) fn add_transcription_with_conn(
     conn: &Connection,
@@ -775,6 +809,7 @@ pub(crate) fn add_transcription_with_conn(
             at: Some(at),
             prompt_name: post_processed.prompt_name.clone(),
             model: None,
+            spoken_instruction: new.instruction_applied,
         };
         if let Some(applied) = apply_post_processing(
             &versions,
@@ -810,6 +845,13 @@ pub(crate) fn add_transcription_with_conn(
             id
         ],
     )?;
+    // DanyWhere: the spoken instruction, heard again (F6 ii).
+    if let Some(instruction) = &new.spoken_instruction {
+        transaction.execute(
+            "UPDATE transcription_history SET spoken_instruction = ?1 WHERE id = ?2",
+            params![instruction.trim(), id],
+        )?;
+    }
     transaction.commit()?;
     HistoryManager::entry_with_conn(conn, id)
 }
@@ -934,6 +976,8 @@ pub(crate) fn test_entry(versions: Vec<HistoryVersion>) -> HistoryEntry {
         recording_removed: false,
         versions,
         window_context: Default::default(),
+        spoken_instruction: None,
+        spoken_instruction_file: None,
     }
 }
 
@@ -958,6 +1002,7 @@ mod tests {
             at: Some(at),
             prompt_name: None,
             model: None,
+            spoken_instruction: false,
         }
     }
 
@@ -1232,6 +1277,7 @@ mod tests {
                     at: Some(1_700_000_000_123),
                     prompt_name: Some("E-Mail".to_string()),
                     model: None,
+                    spoken_instruction: false,
                 },
             ),
         ])
@@ -2056,6 +2102,7 @@ mod tests {
                 at: Some(77),
                 prompt_name: Some("Grammar".into()),
                 model: None,
+                spoken_instruction: false,
             }]
         );
         assert_eq!(e.post_processed_text.as_deref(), Some("Clean words."));
@@ -2140,11 +2187,104 @@ mod tests {
             }),
             post_process_requested: post_processed.is_some(),
             model: None,
+            spoken_instruction: None,
+            instruction_applied: false,
         }
     }
 
     /// A time after the entries' (made at second 1).
     const LATER: i64 = 1_800_000_000_000;
+
+    // ---- The spoken instruction (DanyWhere, F6 ii) ----------------------
+
+    fn set_instruction(conn: &Connection, id: i64, text: &str) {
+        conn.execute(
+            "UPDATE transcription_history SET spoken_instruction = ?1 WHERE id = ?2",
+            params![text, id],
+        )
+        .expect("set the instruction");
+    }
+
+    #[test]
+    fn transcribing_again_stores_the_instruction_heard_again() {
+        let conn = database();
+        let id = insert(&conn, "raw", None);
+        set_instruction(&conn, id, "translate it into Polsh");
+
+        let e = add_transcription_with_conn(
+            &conn,
+            id,
+            NewTranscription {
+                spoken_instruction: Some("translate it into Polish".into()),
+                ..new_transcription("new words", None)
+            },
+            LATER,
+        )
+        .expect("transcribe again");
+
+        assert_eq!(
+            e.spoken_instruction.as_deref(),
+            Some("translate it into Polish")
+        );
+        assert_eq!(
+            get(&conn, id).spoken_instruction.as_deref(),
+            Some("translate it into Polish")
+        );
+    }
+
+    #[test]
+    fn transcribing_again_without_hearing_the_instruction_keeps_it() {
+        let conn = database();
+        let id = insert(&conn, "raw", None);
+        set_instruction(&conn, id, "make it formal");
+
+        let e = add_transcription_with_conn(&conn, id, new_transcription("new", None), LATER)
+            .expect("transcribe again");
+
+        assert_eq!(e.spoken_instruction.as_deref(), Some("make it formal"));
+    }
+
+    #[test]
+    fn a_post_processing_with_the_instruction_says_so_on_its_step() {
+        let conn = database();
+        let id = insert(&conn, "raw", None);
+        set_instruction(&conn, id, "translate it into Polish");
+
+        let e = add_transcription_with_conn(
+            &conn,
+            id,
+            NewTranscription {
+                instruction_applied: true,
+                ..new_transcription("new words", Some("Nowe słowa."))
+            },
+            LATER,
+        )
+        .expect("transcribe again");
+
+        let top = e.versions.last().expect("a top version");
+        assert_eq!(top.text, "Nowe słowa.");
+        assert!(top.steps[0].spoken_instruction);
+        // The transcription under it ran without one.
+        assert!(!e.versions[e.versions.len() - 2].steps[0].spoken_instruction);
+        assert_eq!(get(&conn, id).versions, e.versions);
+    }
+
+    #[test]
+    fn a_step_with_the_instruction_keeps_the_flag_in_the_column() {
+        let mut with = step(Ai, 5);
+        with.spoken_instruction = true;
+        let json = stored_json(&[
+            HistoryVersion::transcription("raw"),
+            HistoryVersion::made_of("Clean.", with.clone()),
+        ])
+        .unwrap();
+        assert!(json.contains(r#""spoken_instruction":true"#), "{json}");
+        let read = stored("raw", &json).versions();
+        assert_eq!(read[1].steps, vec![with]);
+        // Without one the column reads as before.
+        let plain = stored_json(&[HistoryVersion::made_of("Clean.", step(Ai, 5))]).unwrap();
+        assert!(!plain.contains("spoken_instruction"), "{plain}");
+    }
 
     #[test]
     fn transcribing_again_puts_the_new_transcription_on_top() {
