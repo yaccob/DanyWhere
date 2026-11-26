@@ -1144,6 +1144,7 @@
           "creditBody": "An account with OpenRouter, one click on “Authorize”, then top up once from $5. DanyWhere picks a model that doesn't use your texts for training. $5 is enough for thousands of dictations, and nothing renews.",
           "tipAccount": "Sign up with Google or GitHub: that saves a password and a code by email.",
           "tipPayment": "New at OpenRouter? Its welcome asks for a payment method. You can choose “I'll do this later”: the free models need none. Then come back here and press “Open the page again”.",
+          "tipPaymentCredit": "New at OpenRouter? Its welcome asks for a payment method, which topping up needs anyway. Then come back here and press “Open the page again”. Until the account has credit, DanyWhere sends nothing.",
           "connect": "Connect OpenRouter"
         },
         "chatgpt": {
@@ -1218,7 +1219,7 @@
           "plan": "Plan: {{plan}}",
           "freeModels": "Free models, up to 50 dictations a day",
           "withCredit": "With credit, a model without training",
-          "noCreditYet": "No credit yet: DanyWhere uses the free models until you top up.",
+          "noCreditYet": "No credit yet: DanyWhere sends nothing until you top up.",
           "notToppedUp": "OpenRouter doesn't show any credit yet. It can take a minute.",
           "keyLimit": "Spending limit of the key: {{limit}}",
           "model": "Model: {{model}}",

@@ -1,7 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import type { SetupStatus } from "@/bindings";
+import type { SetupStatus, SignInIntent } from "@/bindings";
 import { Button } from "../../../ui/Button";
 import { DoneMark } from "../../../shared/DoneMark";
 import { failureSentence } from "@/lib/postProcessFailure";
@@ -64,8 +64,9 @@ interface ConnectedCardProps {
   status: SetupStatus;
   /** The provider's name as the provider list has it. */
   providerLabel: string;
-  /** The answer "how should it go on", to nudge a top-up it chose. */
-  wantsCredit: boolean;
+  /** The way the answers chose for OpenRouter (`signInIntentOf`): its free
+   * models also on an account with credit, or only with credit. */
+  intent: SignInIntent | null;
   inert?: boolean;
   /** Settings: today's provider, model and effort, under "Advanced". */
   advanced?: { open: boolean; onToggle: () => void };
@@ -80,7 +81,7 @@ interface ConnectedCardProps {
 export const ConnectedCard: React.FC<ConnectedCardProps> = ({
   status,
   providerLabel,
-  wantsCredit,
+  intent,
   inert = false,
   advanced,
 }) => {
@@ -99,7 +100,11 @@ export const ConnectedCard: React.FC<ConnectedCardProps> = ({
   );
   const name = way?.kind === "chatgpt_plan" ? "ChatGPT" : providerLabel;
   const awaitsTopUp =
-    way?.kind === "openrouter" && way.free_tier && wantsCredit;
+    way?.kind === "openrouter" && way.free_tier && intent === "credit";
+  // The free way keeps to the free models, also once the account has
+  // credit (D, M1).
+  const freeModels =
+    way?.kind === "openrouter" && (way.free_tier || intent === "free");
 
   const lines: React.ReactNode[] = [];
   let manage: { label: string; url: string } | null = null;
@@ -114,7 +119,7 @@ export const ConnectedCard: React.FC<ConnectedCardProps> = ({
       awaitsTopUp
         ? t(`${KEY}.connected.noCreditYet`)
         : t(
-            way.free_tier
+            freeModels
               ? `${KEY}.connected.freeModels`
               : `${KEY}.connected.withCredit`,
           ),

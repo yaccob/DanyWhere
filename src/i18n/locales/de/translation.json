@@ -1144,6 +1144,7 @@
           "creditBody": "Ein Konto bei OpenRouter, ein Klick auf „Authorize“, dann einmal ab 5 $ aufladen. DanyWhere wählt ein Modell, das deine Texte nicht zum Training nutzt. 5 $ reichen für Tausende Diktate, und es verlängert sich nichts.",
           "tipAccount": "Melde dich mit Google oder GitHub an: Das erspart Passwort und Bestätigungscode.",
           "tipPayment": "Neu bei OpenRouter? Die Begrüßung fragt nach einer Zahlungsart. Du kannst „I'll do this later“ wählen, die Gratismodelle brauchen keine. Komm danach hierher zurück und drück „Seite erneut öffnen“.",
+          "tipPaymentCredit": "Neu bei OpenRouter? Die Begrüßung fragt nach einer Zahlungsart, die du zum Aufladen ohnehin brauchst. Komm danach hierher zurück und drück „Seite erneut öffnen“. Solange das Konto kein Guthaben hat, sendet DanyWhere nichts.",
           "connect": "Mit OpenRouter verbinden"
         },
         "chatgpt": {
@@ -1218,7 +1219,7 @@
           "plan": "Abo: {{plan}}",
           "freeModels": "Gratismodelle, bis zu 50 Diktate am Tag",
           "withCredit": "Mit Guthaben, ein Modell ohne Training",
-          "noCreditYet": "Noch kein Guthaben: DanyWhere nimmt die Gratismodelle, bis du auflädst.",
+          "noCreditYet": "Noch kein Guthaben: DanyWhere sendet nichts, bis du auflädst.",
           "notToppedUp": "OpenRouter zeigt noch kein Guthaben. Das kann eine Minute dauern.",
           "keyLimit": "Ausgabenlimit des Schlüssels: {{limit}}",
           "model": "Modell: {{model}}",

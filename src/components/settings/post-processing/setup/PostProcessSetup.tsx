@@ -11,7 +11,10 @@ import {
   type SetupAnswers,
 } from "@/lib/postProcessSetup/questions";
 import { useSettingsStore } from "@/stores/settingsStore";
-import { usePostProcessSetupStore } from "@/stores/postProcessSetupStore";
+import {
+  signInIntentOf,
+  usePostProcessSetupStore,
+} from "@/stores/postProcessSetupStore";
 import { CardLine } from "./SetupCard";
 import { ConnectedCard } from "./ConnectedCard";
 import { SetupQuestions } from "./SetupQuestions";
@@ -93,7 +96,7 @@ export const PostProcessSetup: React.FC<PostProcessSetupProps> = ({
         <ConnectedCard
           status={status}
           providerLabel={labelOf(status.provider_id ?? "")}
-          wantsCredit={answers.next_step === "credit"}
+          intent={signInIntentOf(answers)}
           inert={inert}
           advanced={
             onToggleProviders

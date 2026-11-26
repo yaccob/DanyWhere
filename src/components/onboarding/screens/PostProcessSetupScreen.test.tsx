@@ -125,7 +125,7 @@ describe("onboarding: Improve your texts", () => {
     signInStarts();
     await press(connect);
     expect(callsOf("startPostProcessSignIn")).toEqual([
-      ["openrouter", BROWSER_PAGE],
+      ["openrouter", BROWSER_PAGE, "free"],
     ]);
     expect(visibleText()).toContain("Waiting for the browser …");
   });

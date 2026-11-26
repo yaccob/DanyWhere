@@ -7,7 +7,11 @@ import type { NavLocation } from "../navigation";
 import type { Translate } from "../displayNames";
 import type { FailureAction } from "../postProcessFailure";
 import { openLocation } from "@/stores/navigationRequestStore";
-import { usePostProcessSetupStore } from "@/stores/postProcessSetupStore";
+import {
+  signInIntentOf,
+  usePostProcessSetupStore,
+} from "@/stores/postProcessSetupStore";
+import { useSettingsStore } from "@/stores/settingsStore";
 
 /** Where the setup is: the defaults' page "Post Process". */
 export const POST_PROCESS_SETUP_PAGE: NavLocation = {
@@ -47,7 +51,16 @@ export const runFailureAction = (action: FailureAction): void => {
       openLocation(POST_PROCESS_SETUP_PAGE);
       return;
     case "sign_in_again":
-      void setup.startSignIn(action.provider);
+      // For the way the answers chose (OpenRouter: free, or only with
+      // credit), as kept in the settings before the setup's page has read
+      // them.
+      void setup.startSignIn(
+        action.provider,
+        signInIntentOf(
+          setup.answers ??
+            useSettingsStore.getState().settings?.post_process_setup?.answers,
+        ),
+      );
       openLocation(POST_PROCESS_SETUP_PAGE);
       return;
   }

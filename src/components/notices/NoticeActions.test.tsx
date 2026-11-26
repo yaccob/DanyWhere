@@ -16,6 +16,7 @@ import { rawTextIn, visibleText } from "@/test/visible";
 import {
   BROWSER_PAGE,
   openedUrls,
+  setupSettings,
   signInStarts,
 } from "@/test/postProcessSetupFixtures";
 import { NoticePanel } from "./NoticePanel";
@@ -125,11 +126,32 @@ describe("a post-processing notice with its next step", () => {
     );
     await press(button("Sign in again")!);
     expect(callsOf("startPostProcessSignIn")).toEqual([
-      ["chatgpt", BROWSER_PAGE],
+      ["chatgpt", BROWSER_PAGE, null],
     ]);
     expect(useNavigationRequest.getState().requested).toEqual(
       POST_PROCESS_PAGE,
     );
+  });
+
+  // The answers say which way the new sign-in is for (sidecar qa
+  // 2026-11-26_2250, D, H1).
+  test("sign-in-expired at OpenRouter: Sign in again keeps to the way with credit", async () => {
+    signInStarts();
+    await renderPage(<NoticePanel />, {
+      settings: setupSettings({
+        texts_may_go: "not_kept",
+        subscription: "none",
+        next_step: "credit",
+      }),
+    });
+    await act(async () => {
+      const shown = failedWith("sign-in-expired", OPENROUTER);
+      useNoticeStore.setState({ notices: [shown], toasts: [shown.source] });
+    });
+    await press(button("Sign in again")!);
+    expect(callsOf("startPostProcessSignIn")).toEqual([
+      ["openrouter", BROWSER_PAGE, "credit"],
+    ]);
   });
 
   test("free-busy and rate-limited: a sentence, no action", async () => {

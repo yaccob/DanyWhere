@@ -102,10 +102,19 @@ export const SetupSuggestion: React.FC<SetupSuggestionProps> = ({
               button (Tailwind 4 puts space-y in :where()). */}
           <ul className="list-disc space-y-1 ps-5 text-sm text-ink-3">
             <li className="text-pretty">{t(`${KEY}.openrouter.tipAccount`)}</li>
-            <li className="text-pretty">{t(`${KEY}.openrouter.tipPayment`)}</li>
+            {/* With credit no free model is used, not even before the
+                top-up (sidecar qa 2026-11-26_2250, D, H1). */}
+            <li className="text-pretty">
+              {t(
+                free
+                  ? `${KEY}.openrouter.tipPayment`
+                  : `${KEY}.openrouter.tipPaymentCredit`,
+              )}
+            </li>
           </ul>
           <SignInButton
             provider="openrouter"
+            intent={free ? "free" : "credit"}
             label={t(`${KEY}.openrouter.connect`)}
             prominent={prominent}
             inert={inert}

@@ -11,11 +11,13 @@ import {
   type SampleResult,
   type SetupAnswers,
   type SetupStatus,
+  type SignInIntent,
   type SignInProvider,
 } from "@/bindings";
 import i18n from "@/i18n";
 import {
   sanitize,
+  suggest,
   type Machine,
   type SetupAnswers as GivenAnswers,
 } from "@/lib/postProcessSetup/questions";
@@ -35,6 +37,8 @@ const callbackPage = () => ({
 
 export interface SignInState {
   provider: SignInProvider;
+  /** The way it is for (`signInIntentOf`), kept for "Try again". */
+  intent: SignInIntent | null;
   /** Starting: the backend opens the browser; waiting: for its callback;
    * failed: `error` says why. */
   phase: "starting" | "waiting" | "failed";
@@ -78,7 +82,10 @@ interface PostProcessSetupState {
   putOff: (inert?: boolean) => Promise<void>;
   openQuestions: () => void;
   closeQuestions: () => void;
-  startSignIn: (provider: SignInProvider) => Promise<void>;
+  startSignIn: (
+    provider: SignInProvider,
+    intent?: SignInIntent | null,
+  ) => Promise<void>;
   reopenSignIn: () => Promise<void>;
   cancelSignIn: () => Promise<void>;
   /** A way is set up: keeps it as finished, reloads, tries the sample. */
@@ -154,11 +161,12 @@ export const usePostProcessSetupStore = create<PostProcessSetupState>()(
     openQuestions: () => set({ editing: true, skipped: false }),
     closeQuestions: () => set({ editing: false }),
 
-    startSignIn: async (provider) => {
-      set({ signIn: { provider, phase: "starting", error: null } });
+    startSignIn: async (provider, intent = null) => {
+      set({ signIn: { provider, intent, phase: "starting", error: null } });
       const started = await commands.startPostProcessSignIn(
         provider,
         callbackPage(),
+        intent,
       );
       const now = get().signIn;
       // Cancelled or finished meanwhile.
@@ -166,8 +174,8 @@ export const usePostProcessSetupStore = create<PostProcessSetupState>()(
       set({
         signIn:
           started.status === "ok"
-            ? { provider, phase: "waiting", error: null }
-            : { provider, phase: "failed", error: started.error },
+            ? { provider, intent, phase: "waiting", error: null }
+            : { provider, intent, phase: "failed", error: started.error },
       });
     },
 
@@ -253,7 +261,33 @@ const signInFinished = async ({
     usePostProcessSetupStore.setState({ signIn: null });
   } else {
     usePostProcessSetupStore.setState({
-      signIn: { provider, phase: "failed", error },
+      signIn: { ...signIn, phase: "failed", error },
     });
+  }
+};
+
+/** Any machine: the ways through a sign-in don't depend on its memory. */
+const ANY_MACHINE: Machine = {
+  memoryBytes: Number.MAX_SAFE_INTEGER,
+  platform: "macos",
+};
+
+/**
+ * The way of the setup a sign-in is for, from the answers (sidecar qa
+ * 2026-11-26_2250, D, H1 and M1): OpenRouter's free models, or OpenRouter
+ * only with credit, which then sends nothing until the account has credit.
+ * Null when the answers lead elsewhere, e.g. to ChatGPT, or OpenRouter was
+ * chosen under "All providers …".
+ */
+export const signInIntentOf = (
+  answers: GivenAnswers | null | undefined,
+): SignInIntent | null => {
+  switch (answers ? suggest(answers, ANY_MACHINE)?.kind : undefined) {
+    case "openrouter_free":
+      return "free";
+    case "openrouter_credit":
+      return "credit";
+    default:
+      return null;
   }
 };

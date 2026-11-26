@@ -127,7 +127,7 @@ describe("post-processing setup: the questions", () => {
     await press(button(CONNECT_OPENROUTER)!);
     // With the texts the browser shows after the callback.
     expect(callsOf("startPostProcessSignIn")).toEqual([
-      ["openrouter", BROWSER_PAGE],
+      ["openrouter", BROWSER_PAGE, "free"],
     ]);
     expect(rawTextIn()).toEqual([]);
   });
@@ -160,6 +160,29 @@ describe("post-processing setup: the questions", () => {
       subscription: "none",
       next_step: "credit",
     });
+    expect(rawTextIn()).toEqual([]);
+  });
+
+  // The answer "doesn't keep them" holds before the top-up too (sidecar qa
+  // 2026-11-26_2250, D, H1): the sign-in says it is for credit, the free
+  // models never come into it, and nothing goes out until there is credit.
+  test("the way with credit: no free models before the top-up, and the sign-in says so", async () => {
+    await renderSetup();
+    await press(radio(NOT_KEPT));
+    await press(radio(NONE));
+    await press(radio(/^Top up once/));
+
+    const text = visibleText();
+    expect(text).not.toContain("“I'll do this later”");
+    expect(text).not.toContain("free models");
+    expect(text).toContain(
+      "Until the account has credit, DanyWhere sends nothing.",
+    );
+    signInStarts();
+    await press(button(CONNECT_OPENROUTER)!);
+    expect(callsOf("startPostProcessSignIn")).toEqual([
+      ["openrouter", BROWSER_PAGE, "credit"],
+    ]);
     expect(rawTextIn()).toEqual([]);
   });
 
@@ -361,8 +384,8 @@ describe("post-processing setup: signing in through the browser", () => {
     );
     await press(button("Try again")!);
     expect(callsOf("startPostProcessSignIn")).toEqual([
-      ["openrouter", BROWSER_PAGE],
-      ["openrouter", BROWSER_PAGE],
+      ["openrouter", BROWSER_PAGE, "free"],
+      ["openrouter", BROWSER_PAGE, "free"],
     ]);
   });
 
@@ -380,7 +403,7 @@ describe("post-processing setup: signing in through the browser", () => {
     signInStarts();
     await press(button(CONTINUE_CHATGPT)!);
     expect(callsOf("startPostProcessSignIn")).toEqual([
-      ["chatgpt", BROWSER_PAGE],
+      ["chatgpt", BROWSER_PAGE, null],
     ]);
   });
 
@@ -571,13 +594,36 @@ describe("post-processing setup: connected", () => {
       next_step: "credit",
     });
     expect(visibleText()).toContain(
-      "No credit yet: DanyWhere uses the free models until you top up.",
+      "No credit yet: DanyWhere sends nothing until you top up.",
     );
+    expect(visibleText()).not.toContain("free models");
     await press(button("Top up")!);
     expect(openedUrls()).toEqual(["https://openrouter.ai/settings/credits"]);
     await press(button("I've topped up")!);
     expect(callsOf("refreshOpenrouterConnection")).toEqual([[]]);
     expect(visibleText()).toContain("OpenRouter doesn't show any credit yet.");
+  });
+
+  // The free way keeps to the free models on an account that has credit
+  // (D, M1); the way with credit names its model once there is credit.
+  test("the free way on an account with credit still says free models", async () => {
+    await renderSetup(
+      ready({ way: { kind: "openrouter", free_tier: false, limit_usd: 10 } }),
+      { texts_may_go: "free_services", subscription: "none" },
+    );
+    const text = visibleText();
+    expect(text).toContain("Free models, up to 50 dictations a day");
+    expect(text).not.toContain("With credit");
+  });
+
+  test("the way with credit, topped up: a model without training", async () => {
+    await renderSetup(
+      ready({ way: { kind: "openrouter", free_tier: false, limit_usd: 10 } }),
+      { texts_may_go: "not_kept", subscription: "none", next_step: "credit" },
+    );
+    const text = visibleText();
+    expect(text).toContain("With credit, a model without training");
+    expect(text).not.toContain("Free models");
   });
 
   test("ChatGPT: Using ChatGPT plan, and Manage usage", async () => {
@@ -661,7 +707,7 @@ describe("post-processing setup in German", () => {
     signInStarts();
     await press(button("Mit ChatGPT fortfahren")!);
     expect(callsOf("startPostProcessSignIn")).toEqual([
-      ["chatgpt", BROWSER_PAGE_DE],
+      ["chatgpt", BROWSER_PAGE_DE, null],
     ]);
   });
 
