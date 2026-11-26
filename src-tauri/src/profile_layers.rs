@@ -2427,7 +2427,13 @@ mod tests {
         .is_err());
     }
 
+    /// Not on Linux: there every start shortcut needs an end shortcut of
+    /// its combination (`start_keys::still_starts`), so the factory layer,
+    /// two start shortcuts and two ends, never comes down to one end; its
+    /// first removal is refused as `start-key-cannot-end`, tested in
+    /// `start_keys` (CI on Linux, 2026-11-27).
     #[test]
+    #[cfg(not(target_os = "linux"))]
     fn the_last_end_shortcut_of_a_layer_cannot_go() {
         let mut s = migrated();
         let arbeit = profile_scope("arbeit");
