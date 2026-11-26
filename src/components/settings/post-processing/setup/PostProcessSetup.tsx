@@ -1,6 +1,5 @@
 import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import type { AppSettings, PostProcessSetupSettings } from "@/bindings";
 import { Button } from "../../../ui/Button";
 import { useSettings } from "@/hooks/useSettings";
 import { useOsType } from "@/hooks/useOsType";
@@ -54,11 +53,7 @@ export const PostProcessSetup: React.FC<PostProcessSetupProps> = ({
   const { t } = useTranslation();
   const os = useOsType();
   const { settings } = useSettings();
-  const kept = useSettingsStore(
-    (s) =>
-      (s.settings as (AppSettings & PostProcessSetupSettings) | null)
-        ?.post_process_setup,
-  );
+  const kept = useSettingsStore((s) => s.settings?.post_process_setup);
   const settingsLoaded = useSettingsStore((s) => s.settings !== null);
   const store = usePostProcessSetupStore();
   const { hydrate, listen, loadStatus } = store;
@@ -97,7 +92,7 @@ export const PostProcessSetup: React.FC<PostProcessSetupProps> = ({
       <div className="px-4 py-3">
         <ConnectedCard
           status={status}
-          providerLabel={labelOf(status.provider_id)}
+          providerLabel={labelOf(status.provider_id ?? "")}
           wantsCredit={answers.next_step === "credit"}
           inert={inert}
           advanced={

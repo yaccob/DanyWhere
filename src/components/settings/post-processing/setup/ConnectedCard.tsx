@@ -12,8 +12,8 @@ import { CardLine, SetupCard } from "./SetupCard";
 
 const KEY = "settings.postProcessing.setup";
 
-/** Providers that need nothing to disconnect: no key, no sign-in. */
-const NOTHING_TO_DISCONNECT = ["custom", "apple_intelligence"];
+/** Ways that need nothing to disconnect: no key, no sign-in. */
+const NOTHING_TO_DISCONNECT = ["own_server", "on_device"];
 
 /** The sample sentence and what the provider made of it. */
 const SampleRun: React.FC<{ providerLabel: string }> = ({ providerLabel }) => {
@@ -95,7 +95,7 @@ export const ConnectedCard: React.FC<ConnectedCardProps> = ({
   );
   const way = status.way;
   const pages = providerPages(
-    way?.kind === "chatgpt_plan" ? "chatgpt" : status.provider_id,
+    way?.kind === "chatgpt_plan" ? "chatgpt" : (status.provider_id ?? ""),
   );
   const name = way?.kind === "chatgpt_plan" ? "ChatGPT" : providerLabel;
   const awaitsTopUp =
@@ -139,9 +139,7 @@ export const ConnectedCard: React.FC<ConnectedCardProps> = ({
     if (pages.usage)
       manage = { label: t(`${KEY}.connected.manageUsage`), url: pages.usage };
   }
-  const canDisconnect =
-    way?.kind !== "custom" &&
-    !NOTHING_TO_DISCONNECT.includes(status.provider_id);
+  const canDisconnect = !NOTHING_TO_DISCONNECT.includes(way?.kind ?? "");
 
   return (
     <div className="space-y-3">

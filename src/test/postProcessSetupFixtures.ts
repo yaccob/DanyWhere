@@ -8,6 +8,7 @@ import type {
   SetupAnswers,
   SetupStatus,
 } from "@/bindings";
+import type { SetupAnswers as GivenAnswers } from "@/lib/postProcessSetup/questions";
 import { callsOf, mockCommand, ok } from "./bindings-mock";
 import { ipcCalls } from "./tauri-mock";
 import { settingsWith, type SettingsSpec } from "./fixtures";
@@ -18,9 +19,10 @@ export const GiB = 1024 ** 3;
 export const notReady = (status: Partial<SetupStatus> = {}): SetupStatus => ({
   readiness: "key",
   provider_id: "openai",
-  model: "",
+  model: null,
   way: null,
   memory_bytes: 32 * GiB,
+  setup: { answers: null, finished: false, skipped: false },
   ...status,
 });
 
@@ -31,6 +33,7 @@ export const ready = (status: Partial<SetupStatus> = {}): SetupStatus => ({
   model: "nvidia/nemotron-3.5-super-vl:free",
   way: { kind: "openrouter", free_tier: true, limit_usd: 10 },
   memory_bytes: 32 * GiB,
+  setup: { answers: null, finished: true, skipped: false },
   ...status,
 });
 
@@ -84,9 +87,10 @@ export const PROVIDERS: PostProcessProvider[] = [
   },
 ];
 
-/** Settings with the providers above, and the setup's answers as kept. */
+/** Settings with the providers above, and the setup's answers as kept:
+ * every field, `null` where unanswered, as the backend writes them. */
 export const setupSettings = (
-  answers: SetupAnswers | null = null,
+  answers: GivenAnswers | null = null,
   spec: SettingsSpec = {},
   kept: { finished?: boolean; skipped?: boolean } = {},
 ): AppSettings =>
@@ -96,11 +100,16 @@ export const setupSettings = (
     app: {
       ...spec.app,
       post_process_setup: {
-        answers,
+        answers: answers && {
+          texts_may_go: null,
+          subscription: null,
+          next_step: null,
+          ...answers,
+        },
         finished: kept.finished ?? false,
         skipped: kept.skipped ?? false,
       },
-    } as Partial<AppSettings>,
+    },
   });
 
 /** The answers of the last `set_post_process_setup_answers`, with its two

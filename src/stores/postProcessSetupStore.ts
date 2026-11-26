@@ -14,7 +14,11 @@ import {
   type SignInProvider,
 } from "@/bindings";
 import i18n from "@/i18n";
-import { sanitize, type Machine } from "@/lib/postProcessSetup/questions";
+import {
+  sanitize,
+  type Machine,
+  type SetupAnswers as GivenAnswers,
+} from "@/lib/postProcessSetup/questions";
 import { useSettingsStore } from "./settingsStore";
 
 const TEXTS = "settings.postProcessing.setup";
@@ -69,7 +73,7 @@ interface PostProcessSetupState {
   refresh: () => Promise<void>;
   listen: () => Promise<void>;
   /** A new answer: drops what no longer applies and keeps the answers. */
-  answer: (next: SetupAnswers, machine: Machine, inert?: boolean) => void;
+  answer: (next: GivenAnswers, machine: Machine, inert?: boolean) => void;
   /** "Later". */
   putOff: (inert?: boolean) => Promise<void>;
   openQuestions: () => void;
@@ -211,9 +215,18 @@ export const usePostProcessSetupStore = create<PostProcessSetupState>()(
       } else if (way?.kind === "openrouter") {
         await commands.disconnectPostProcessSignIn("openrouter");
       } else {
-        // An empty key removes the key; the rest stays.
+        // A pasted key: an empty key removes it; the rest stays. A server
+        // of one's own and Apple Intelligence have nothing to disconnect.
+        const provider =
+          way?.kind === "guided_key" ? way.provider : status.provider_id;
+        if (
+          !provider ||
+          way?.kind === "own_server" ||
+          way?.kind === "on_device"
+        )
+          return;
         await commands.applyPostProcessChoice({
-          provider_id: status.provider_id,
+          provider_id: provider,
           model: null,
           api_key: "",
           effort: null,

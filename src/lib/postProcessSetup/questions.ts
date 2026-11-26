@@ -9,25 +9,23 @@
 // No provider is preferred: subscriptions are listed alphabetically, and the
 // local model comes last in every choice and only from 16 GiB of memory.
 
-/** Answer to question 1. */
-export type TextsMayGo = "free_services" | "not_kept" | "nowhere";
-/** Answer to question 2; each id stands for the plans that include use in other apps. */
-export type Subscription =
-  | "chatgpt"
-  | "claude"
-  | "google"
-  | "huggingface"
-  | "ollama"
-  | "none";
-/** Answer to question 3. */
-export type NextStep = "credit" | "groq" | "this_computer";
+import type {
+  NextStep,
+  SetupAnswers as KeptAnswers,
+  Subscription,
+  TextsMayGo,
+} from "@/bindings";
 
-/** The answers as the settings store keeps them (serde's snake_case names). */
-export interface SetupAnswers {
-  texts_may_go?: TextsMayGo | null;
-  subscription?: Subscription | null;
-  next_step?: NextStep | null;
-}
+// The answers' ids are the backend's (`post_process_setup.rs`), so a new one
+// there fails here until the questions know it.
+/** `TextsMayGo`: answer to question 1. `Subscription`: answer to question 2;
+ * each id stands for the plans that include use in other apps. `NextStep`:
+ * answer to question 3. */
+export type { NextStep, Subscription, TextsMayGo };
+
+/** The answers as given so far: a field may be missing or `null` while its
+ * question is unanswered. */
+export type SetupAnswers = Partial<KeptAnswers>;
 
 export interface Machine {
   memoryBytes: number;
@@ -101,12 +99,6 @@ const GUIDED_KEY: Record<
   ollama: "ollama_cloud",
 };
 
-interface Answered {
-  texts_may_go: TextsMayGo | null;
-  subscription: Subscription | null;
-  next_step: NextStep | null;
-}
-
 function oneOf<T extends string>(
   value: unknown,
   allowed: readonly T[],
@@ -121,7 +113,7 @@ function localModelFits(m: Machine): boolean {
   return m.memoryBytes >= LOCAL_MODEL_MIN_BYTES;
 }
 
-function clean(a: SetupAnswers, m?: Machine): Answered {
+function clean(a: SetupAnswers, m?: Machine): KeptAnswers {
   const textsMayGo = oneOf(a.texts_may_go, TEXTS_MAY_GO);
   const subscription =
     textsMayGo === "free_services" || textsMayGo === "not_kept"
@@ -143,7 +135,7 @@ function clean(a: SetupAnswers, m?: Machine): Answered {
  * unknown values. Every field comes back, `null` where unanswered. With `m`,
  * "this computer" is dropped where the local model doesn't fit.
  */
-export function sanitize(a: SetupAnswers, m?: Machine): SetupAnswers {
+export function sanitize(a: SetupAnswers, m?: Machine): KeptAnswers {
   return clean(a, m);
 }
 

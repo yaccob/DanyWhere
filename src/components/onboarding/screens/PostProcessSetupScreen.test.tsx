@@ -66,7 +66,7 @@ afterEach(() => {
 
 describe("onboarding: Improve your texts", () => {
   test("comes after Try it and before All set", () => {
-    const at = STEP_ORDER.indexOf("postProcessSetup" as OnboardingStep);
+    const at = STEP_ORDER.indexOf("postProcessSetup");
     expect(at).toBeGreaterThan(-1);
     expect(STEP_ORDER[at - 1]).toBe("try");
     expect(STEP_ORDER[at + 1]).toBe("done");

@@ -28,7 +28,8 @@ import {
   setupSettings,
   signInStarts,
 } from "@/test/postProcessSetupFixtures";
-import type { SetupAnswers, SetupStatus } from "@/bindings";
+import type { SetupStatus } from "@/bindings";
+import type { SetupAnswers } from "@/lib/postProcessSetup/questions";
 
 const WORK = "profile_1795300000001";
 
@@ -448,7 +449,7 @@ describe("post-processing setup: a guided key", () => {
       status = ready({
         provider_id: "anthropic",
         model: "claude-haiku-5-5",
-        way: { kind: "key" },
+        way: { kind: "guided_key", provider: "anthropic" },
       });
       return ok(null);
     });
@@ -597,7 +598,7 @@ describe("post-processing setup: connected", () => {
       ready({
         provider_id: "anthropic",
         model: "claude-haiku-5-5",
-        way: { kind: "key" },
+        way: { kind: "guided_key", provider: "anthropic" },
       }),
     );
     expect(visibleText()).toContain("Connected to Anthropic");
@@ -605,6 +606,19 @@ describe("post-processing setup: connected", () => {
     expect(callsOf("applyPostProcessChoice")).toEqual([
       [{ provider_id: "anthropic", model: null, api_key: "", effort: null }],
     ]);
+  });
+
+  test("a server of one's own has nothing to disconnect", async () => {
+    await renderSetup(
+      ready({
+        provider_id: "custom",
+        model: "llama3.2",
+        way: { kind: "own_server" },
+      }),
+    );
+    expect(visibleText()).toContain("Model: llama3.2");
+    expect(button("Try it")).not.toBeNull();
+    expect(button("Disconnect")).toBeNull();
   });
 
   test("Answer the questions again brings them back with the answers kept", async () => {
