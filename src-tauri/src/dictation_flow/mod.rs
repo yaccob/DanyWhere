@@ -178,6 +178,7 @@ pub(crate) async fn post_process_dictation(
     process_transcription_with_settings(
         settings,
         transcription,
+        None,
         post_process,
         &context.misheard,
         |instructions| {
