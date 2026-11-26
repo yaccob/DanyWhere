@@ -6,6 +6,7 @@ import {
   OVERLAY_WINDOW,
   PILL,
   contextGlyph,
+  instructionPill,
   labelPill,
   profileGlyph,
   profileNoticeLayout,
@@ -284,6 +285,35 @@ const cases: Array<[string, () => void]> = [
         OVERLAY_WINDOW.live,
         rustConst("OVERLAY_STREAM_WIDTH"),
       );
+    },
+  ],
+  // DanyWhere: the pill while it records a spoken instruction (strand Z1):
+  // its glyph and "Instruction" before the waveform, the check mark after.
+  [
+    "the instruction pill grows by its label and the check mark",
+    () => {
+      const none = { named: false, glyph: false, context: false };
+      // 20 row padding, 44 sides, 68 waveform; 19 glyph, 6 after the
+      // label, 18 check mark.
+      assert.strictEqual(instructionPill(60, 0, none).width, 235);
+      assert.strictEqual(instructionPill(80, 0, none).width, 255);
+    },
+  ],
+  [
+    "the instruction pill keeps the profile after the waveform",
+    () => {
+      const named = { named: true, glyph: false, context: false };
+      assert.strictEqual(instructionPill(60, 50, named).width, 235 + 14 + 50);
+      const long = instructionPill(60, 400, named);
+      assert.ok(fits(long.width, OVERLAY_WINDOW.session), `${long.width}`);
+    },
+  ],
+  [
+    "the instruction pill is never narrower than the recording pill",
+    () => {
+      const none = { named: false, glyph: false, context: false };
+      assert.ok(instructionPill(0, 0, none).width >= PILL.rest);
+      assert.ok(instructionPill(0, 0, none, true).width >= PILL.live);
     },
   ],
   [

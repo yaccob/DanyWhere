@@ -17,6 +17,7 @@ import i18n, { syncLanguageFromSettings } from "@/i18n";
 import { noticeDisplay } from "@/lib/notices";
 import {
   contextGlyph,
+  instructionPill,
   profileGlyph,
   profileNoticeLayout,
   recordingPill,
@@ -48,6 +49,15 @@ type OverlayState =
 
 const isNoticeState = (state: OverlayState) =>
   state === "notice" || state === "live_notice";
+
+/** DanyWhere: the dictation went on to a spoken instruction
+ * (`overlay::DictationInstruction`). */
+interface DictationInstruction {
+  /** The text before it is transcribed: the check mark. */
+  textReady: boolean;
+  /** The instruction as heard, once it is: Live's line under the text. */
+  heard: string | null;
+}
 
 // Number of reactive bars in the waveform (the simple, smoothed style shared by
 // every overlay form). Mic levels arrive as 16 FFT buckets; we take the first N.
@@ -122,6 +132,13 @@ const RecordingOverlay: React.FC = () => {
     sends: boolean;
   } | null>(null);
   const [dictationContext, setDictationContext] = useState(false);
+  // DanyWhere: the dictation records a spoken instruction now; null: its
+  // text, as before (`dictation_flow/instruction.rs`).
+  const [instruction, setInstruction] = useState<DictationInstruction | null>(
+    null,
+  );
+  const [instructionLabelWidth, setInstructionLabelWidth] = useState(0);
+  const instructionProbeRef = useRef<HTMLSpanElement>(null);
   // DanyWhere: measured widths of the profile's name and the working label,
   // since a pill that shows a profile is as wide as its content.
   const [profileNameWidth, setProfileNameWidth] = useState(0);
@@ -174,6 +191,11 @@ const RecordingOverlay: React.FC = () => {
         (event) => setDictationContext(event.payload),
       );
 
+      const unlistenInstruction = await listen<DictationInstruction | null>(
+        "overlay-dictation-instruction",
+        (event) => setInstruction(event.payload),
+      );
+
       const unlistenInsertKeys = await listen<{ keys: string | null }>(
         "overlay-ready",
         (event) => setInsertKeys(event.payload.keys),
@@ -188,6 +210,8 @@ const RecordingOverlay: React.FC = () => {
         // them would overwrite that event and leave the overlay stuck arming.
         if (overlayState === "recording" || overlayState === "streaming") {
           setCaptureReady(false);
+          // A new recording starts with its text.
+          setInstruction(null);
           smoothedLevelsRef.current = Array(16).fill(0);
           setLevels(Array(WAVE_BARS).fill(0));
           setStreamText({ committed: "", tentative: "" });
@@ -226,6 +250,7 @@ const RecordingOverlay: React.FC = () => {
         fadeTimerRef.current = setTimeout(() => {
           setNotice(null);
           setStreamText({ committed: "", tentative: "" });
+          setInstruction(null);
         }, OVERLAY_FADE_MS);
       });
 
@@ -290,6 +315,7 @@ const RecordingOverlay: React.FC = () => {
         unlistenDictationProfile();
         unlistenContext();
         unlistenDictationContext();
+        unlistenInstruction();
         unlistenInsertKeys();
         unlistenShow();
         unlistenHide();
@@ -381,6 +407,15 @@ const RecordingOverlay: React.FC = () => {
       setWorkLabelWidth(Math.ceil(label.getBoundingClientRect().width));
   }, [probedName, segmentShown, workLabel, isVisible, state]);
 
+  // DanyWhere: the instruction's label, measured for the pill's width.
+  const instructionLabel = t("overlay.instruction");
+  const recordsInstruction = instruction !== null;
+  useLayoutEffect(() => {
+    const label = instructionProbeRef.current;
+    if (label)
+      setInstructionLabelWidth(Math.ceil(label.getBoundingClientRect().width));
+  }, [instructionLabel, recordsInstruction, isVisible]);
+
   if (!isVisible && !shownNotice) return null;
 
   // Re-pin when the user is within ~a line of the bottom; unpin otherwise.
@@ -460,6 +495,12 @@ const RecordingOverlay: React.FC = () => {
         )}
       </span>
     );
+  // DanyWhere: the instruction's label, measured for the pill's width.
+  const instructionProbe = instruction && (
+    <span ref={instructionProbeRef} className="sprobe" aria-hidden="true">
+      {instructionLabel}
+    </span>
+  );
   // The full name and working label, measured for the pill's width.
   const profileProbes = (probedName !== undefined || segmentShown) && (
     <>
@@ -497,6 +538,57 @@ const RecordingOverlay: React.FC = () => {
       <div className="sbase-r">
         {showTimer && <span className="stimer">{fmtTime(elapsed)}</span>}
         {showCancel && cancelBtn}
+      </div>
+    </div>
+  );
+
+  // DanyWhere: the row while the recording takes a spoken instruction: the
+  // dot (left); the instruction's glyph and label, the waveform, the
+  // profile and the check mark once the text is transcribed (center); timer
+  // and cancel (right). As sketched in the sidecar's qa note
+  // 2026-11-26_1720_nachbearbeitung-gesprochene-anweisung.
+  const instructionRow = (
+    showTimer: boolean,
+    textReady: boolean,
+    nameMax: number,
+  ) => (
+    <div className="sbase sinstr">
+      <div className="sbase-l">
+        <span className={`sdot ${captureReady ? "ready" : "arming"}`} />
+      </div>
+      <div className="scenter">
+        <svg className="sinstr-glyph" viewBox="0 0 16 16" aria-hidden="true">
+          <path
+            d="M3 2.5h10A1.5 1.5 0 0 1 14.5 4v6A1.5 1.5 0 0 1 13 11.5H7l-3.5 3v-3H3A1.5 1.5 0 0 1 1.5 10V4A1.5 1.5 0 0 1 3 2.5Z"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.4"
+            strokeLinejoin="round"
+          />
+        </svg>
+        <span className="sinstr-label">{instructionLabel}</span>
+        {waveform}
+        {profileSegment(nameMax)}
+        <svg
+          className={`sready ${textReady ? "on" : ""}`}
+          viewBox="0 0 16 16"
+          role="img"
+          aria-label={t("overlay.textReady")}
+          aria-hidden={!textReady}
+        >
+          <path
+            d="M3.5 8.5l3 3 6-7"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </div>
+      <div className="sbase-r">
+        {showTimer && <span className="stimer">{fmtTime(elapsed)}</span>}
+        {cancelBtn}
       </div>
     </div>
   );
@@ -556,19 +648,36 @@ const RecordingOverlay: React.FC = () => {
     // transcript stays put under a working spinner instead of collapsing and
     // squishing the text mid-stream. Only fall back to the small working pill
     // when there was no text to preserve.
+    // DanyWhere: the instruction as heard, under the text gone grey; it is
+    // transcribed only at the end, so the line comes with post-processing.
+    const instructionLine =
+      !liveNotice && instruction?.heard
+        ? t("overlay.instructionLine", { text: instruction.heard })
+        : null;
     const open = liveNotice
       ? hasText || !!noticeText
-      : hasText || loadingNotice || (loadNoticeShown && !working);
+      : hasText ||
+        loadingNotice ||
+        (loadNoticeShown && !working) ||
+        instructionLine !== null;
     const collapsed = working && !hasText;
     // DanyWhere: the pill grows with the dictation's profile; the open panel
     // keeps its width.
+    const liveInstruction = !liveNotice && !working && recordsInstruction;
     const liveLayout = working
       ? workingPill(workLabelWidth, profileNameWidth, segmentParts, true)
-      : recordingPill(profileNameWidth, segmentParts, true);
+      : liveInstruction
+        ? instructionPill(
+            instructionLabelWidth,
+            profileNameWidth,
+            segmentParts,
+            true,
+          )
+        : recordingPill(profileNameWidth, segmentParts, true);
     const liveStyle =
       liveNotice && !open
         ? { width: noticeWidth }
-        : segmentShown && !liveNotice && !open
+        : (segmentShown || liveInstruction) && !liveNotice && !open
           ? { width: liveLayout.width }
           : undefined;
 
@@ -576,6 +685,7 @@ const RecordingOverlay: React.FC = () => {
       <div dir={direction} className={`ov-stage ${position}`}>
         {noticeProbe}
         {profileProbes}
+        {instructionProbe}
         <div
           key={session}
           className={`scard ${open ? "open" : ""} ${collapsed ? "working" : ""} ${
@@ -591,7 +701,11 @@ const RecordingOverlay: React.FC = () => {
                 ref={capRef}
                 onScroll={handleStreamScroll}
               >
-                <p>
+                <p
+                  className={
+                    recordsInstruction && !liveNotice ? "dimmed" : undefined
+                  }
+                >
                   {loadingNotice && (
                     <span className="sloading">
                       {t("overlay.loadingModel")}
@@ -604,8 +718,12 @@ const RecordingOverlay: React.FC = () => {
                   <span className="tentative">{streamText.tentative}</span>
                   {/* Drop the blinking caret once finalizing — it's no longer
                       capturing, and a static spinner conveys the work. */}
-                  {!working && !loadingNotice && !liveNotice && (
-                    <span className="scaret" />
+                  {!working &&
+                    !loadingNotice &&
+                    !liveNotice &&
+                    !recordsInstruction && <span className="scaret" />}
+                  {instructionLine && (
+                    <span className="sinstr-line">{instructionLine}</span>
                   )}
                 </p>
               </div>
@@ -615,7 +733,13 @@ const RecordingOverlay: React.FC = () => {
             ? noticeRow
             : working
               ? workingRow(workLabel, true, liveLayout.nameMax)
-              : listeningRow(open, true, liveLayout.nameMax)}
+              : instruction
+                ? instructionRow(
+                    open,
+                    instruction.textReady,
+                    liveLayout.nameMax,
+                  )
+                : listeningRow(open, true, liveLayout.nameMax)}
         </div>
       </div>
     );
@@ -701,10 +825,14 @@ const RecordingOverlay: React.FC = () => {
   // spinner + label (transcribing / processing). Never both. The pill animates its
   // width between them; the cancel button is in both rows so it stays put.
   const working = state === "transcribing" || state === "processing";
-  // DanyWhere: the pill grows with the dictation's profile and bubble.
+  // DanyWhere: the pill grows with the dictation's profile and bubble, and
+  // with the instruction's label while it records one.
+  const compactInstruction = !working && recordsInstruction;
   const compactLayout = working
     ? workingPill(workLabelWidth, profileNameWidth, segmentParts)
-    : recordingPill(profileNameWidth, segmentParts);
+    : compactInstruction
+      ? instructionPill(instructionLabelWidth, profileNameWidth, segmentParts)
+      : recordingPill(profileNameWidth, segmentParts);
 
   return (
     <div
@@ -713,12 +841,13 @@ const RecordingOverlay: React.FC = () => {
     >
       {noticeProbe}
       {profileProbes}
+      {instructionProbe}
       <div
         className={`scard compact ${working && isVisible ? "cworking" : ""} ${noticeClass}`}
         style={
           shownNotice
             ? { width: noticeWidth }
-            : segmentShown
+            : segmentShown || compactInstruction
               ? { width: compactLayout.width }
               : undefined
         }
@@ -728,7 +857,13 @@ const RecordingOverlay: React.FC = () => {
           ? noticeRow
           : working
             ? workingRow(workLabel, true, compactLayout.nameMax)
-            : listeningRow(false, true, compactLayout.nameMax)}
+            : instruction
+              ? instructionRow(
+                  false,
+                  instruction.textReady,
+                  compactLayout.nameMax,
+                )
+              : listeningRow(false, true, compactLayout.nameMax)}
       </div>
     </div>
   );

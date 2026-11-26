@@ -191,3 +191,39 @@ export function workingPill(
   const content = live ? PILL.open : OVERLAY_WINDOW.session - BORDER;
   return layout(chrome, s.named ? nameWidth : 0, content - chrome, PILL.work);
 }
+
+// DanyWhere: the spoken instruction's pill, mirrored from `RecordingOverlay.css`.
+const INSTRUCTION_GLYPH = 19; // .sinstr-glyph: 14px and 5px after it
+const INSTRUCTION_LABEL_GAP = 6; // .sinstr-label: 6px after it
+const TEXT_READY = 18; // .sready: 4px before it and 14px
+
+/**
+ * DanyWhere: the recording pill while it records a spoken instruction
+ * (`RecordingOverlay.tsx`): its glyph and "Instruction" before the
+ * waveform, the segment after it, and a check mark once the text is
+ * transcribed; the Live pill keeps its own room for the timer.
+ */
+export function instructionPill(
+  labelWidth: number,
+  nameWidth: number,
+  s: DictationSegment,
+  live = false,
+): PillLayout {
+  const min = live ? PILL.live : PILL.rest;
+  const segmented = s.named || s.context;
+  const chrome =
+    (live ? PILL.live : ROW_PAD + SIDES + WAVE) +
+    INSTRUCTION_GLYPH +
+    labelWidth +
+    INSTRUCTION_LABEL_GAP +
+    TEXT_READY +
+    (segmented ? segmentChrome(s) : 0);
+  const content =
+    (live ? OVERLAY_WINDOW.live : OVERLAY_WINDOW.session) - BORDER;
+  return layout(
+    chrome,
+    s.named ? nameWidth : 0,
+    Math.min(RECORDING_NAME_MAX, content - chrome),
+    min,
+  );
+}
