@@ -1522,6 +1522,7 @@
       "noPrompt": "कोई प्रॉम्प्ट सक्रिय नहीं है।",
       "noApiKey": "{{provider}}: API कुंजी ज़रूरी है, लेकिन कोई कुंजी सेट नहीं है।",
       "keyRefused": "{{provider}}: API कुंजी अस्वीकार कर दी गई।",
+      "noCredit": "{{provider}}: आपका क्रेडिट समाप्त हो गया है; उसे वहीं रिचार्ज करें।",
       "modelNotFound": "{{provider}}: मॉडल “{{model}}” नहीं मिला।",
       "unreachable": "{{provider}}: कनेक्ट नहीं हो सका।",
       "timeout": "{{provider}}: समय सीमा ({{seconds}} से.) में कोई जवाब नहीं मिला।",

@@ -1522,6 +1522,7 @@
       "noPrompt": "Tidak ada prompt yang aktif.",
       "noApiKey": "{{provider}} memerlukan kunci API, tetapi belum diisi.",
       "keyRefused": "{{provider}} menolak kunci API.",
+      "noCredit": "Kredit Anda di {{provider}} sudah habis; isi ulang di sana.",
       "modelNotFound": "{{provider}} tidak memiliki model “{{model}}”.",
       "unreachable": "{{provider}} tidak dapat dihubungi.",
       "timeout": "{{provider}} tidak menjawab dalam batas waktu ({{seconds}} dtk).",

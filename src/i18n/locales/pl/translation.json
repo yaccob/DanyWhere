@@ -1522,6 +1522,7 @@
       "noPrompt": "Żadne polecenie nie jest aktywne.",
       "noApiKey": "{{provider}}: wymagany jest klucz API, a żaden nie jest ustawiony.",
       "keyRefused": "{{provider}}: klucz API został odrzucony.",
+      "noCredit": "{{provider}}: środki na koncie się wyczerpały; doładuj je tam.",
       "modelNotFound": "{{provider}}: brak modelu „{{model}}”.",
       "unreachable": "{{provider}}: brak połączenia.",
       "timeout": "{{provider}}: brak odpowiedzi w limicie czasu ({{seconds}} s).",

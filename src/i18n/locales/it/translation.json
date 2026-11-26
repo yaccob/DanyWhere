@@ -1522,6 +1522,7 @@
       "noPrompt": "Nessuna istruzione è attiva.",
       "noApiKey": "{{provider}} richiede una chiave API, ma non ne è stata inserita nessuna.",
       "keyRefused": "{{provider}} ha rifiutato la chiave API.",
+      "noCredit": "Il credito su {{provider}} è esaurito; ricaricalo lì.",
       "modelNotFound": "{{provider}} non ha il modello «{{model}}».",
       "unreachable": "Impossibile raggiungere {{provider}}.",
       "timeout": "{{provider}} non ha risposto entro il tempo limite ({{seconds}} s).",

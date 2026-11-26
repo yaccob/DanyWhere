@@ -1522,6 +1522,7 @@
       "noPrompt": "لا يوجد موجِّه نشط.",
       "noApiKey": "{{provider}}: يلزم مفتاح API، ولم يُدخَل أي مفتاح.",
       "keyRefused": "{{provider}}: رُفض مفتاح API.",
+      "noCredit": "{{provider}}: نفد رصيدك؛ اشحنه هناك.",
       "modelNotFound": "{{provider}}: النموذج «{{model}}» غير موجود.",
       "unreachable": "{{provider}}: تعذّر الاتصال.",
       "timeout": "{{provider}}: لا رد ضمن المهلة المحددة ({{seconds}} ث).",

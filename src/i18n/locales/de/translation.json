@@ -1522,6 +1522,7 @@
       "noPrompt": "Es ist kein Prompt aktiv.",
       "noApiKey": "Der Anbieter „{{provider}}“ braucht einen API-Schlüssel, es ist aber keiner eingetragen.",
       "keyRefused": "Der Anbieter „{{provider}}“ hat den API-Schlüssel abgelehnt.",
+      "noCredit": "Das Guthaben beim Anbieter „{{provider}}“ ist aufgebraucht; lade es dort auf.",
       "modelNotFound": "Der Anbieter „{{provider}}“ kennt das Modell „{{model}}“ nicht.",
       "unreachable": "Der Anbieter „{{provider}}“ ist nicht erreichbar.",
       "timeout": "Der Anbieter „{{provider}}“ hat nicht innerhalb der Zeitgrenze geantwortet ({{seconds}} s).",

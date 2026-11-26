@@ -1369,6 +1369,52 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn a_used_up_credit_is_named_from_the_answer() {
+        use crate::post_process_failure::FailureReason;
+        // Anthropic's own format, the answer word for word as DanyWhere's
+        // log showed it on 2026-11-26.
+        let base_url = serve_one_response(
+            "400 Bad Request",
+            r#"{"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011ChRweqaxNgJyv6HyXKRtY"}"#,
+        )
+        .await;
+        let error = send_chat_completion(
+            &anthropic_format_provider(&base_url),
+            "key".to_string(),
+            "claude-fable-5-2",
+            "raw text".to_string(),
+            &ReasoningRequest::default(),
+        )
+        .await
+        .unwrap_err();
+        assert_eq!(
+            crate::post_process_failure::classify_llm_error(&error, true),
+            FailureReason::NoCredit,
+            "{error}"
+        );
+        // OpenAI and the providers that answer as it does.
+        assert_eq!(
+            reason_for_answer(
+                "429 Too Many Requests",
+                r#"{"error":{"message":"You exceeded your current quota, please check your plan and billing details.","type":"insufficient_quota","param":null,"code":"insufficient_quota"}}"#,
+                "key",
+            )
+            .await,
+            FailureReason::NoCredit
+        );
+        // OpenRouter.
+        assert_eq!(
+            reason_for_answer(
+                "402 Payment Required",
+                r#"{"error":{"message":"Insufficient credits. Add more using https://openrouter.ai/settings/credits","code":402}}"#,
+                "key",
+            )
+            .await,
+            FailureReason::NoCredit
+        );
+    }
+
+    #[tokio::test]
     async fn a_provider_nothing_listens_at_is_unreachable() {
         // A port that was taken and given back: nothing listens there now.
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();

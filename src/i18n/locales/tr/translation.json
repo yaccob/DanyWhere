@@ -1522,6 +1522,7 @@
       "noPrompt": "Etkin istem yok.",
       "noApiKey": "{{provider}}: API anahtarı gerekiyor, ancak girilmedi.",
       "keyRefused": "{{provider}}: API anahtarı reddedildi.",
+      "noCredit": "{{provider}}: krediniz tükendi; oradan yükleyin.",
       "modelNotFound": "{{provider}}: “{{model}}” modeli bulunamadı.",
       "unreachable": "{{provider}}: bağlantı kurulamadı.",
       "timeout": "{{provider}}: süre sınırı içinde yanıt gelmedi ({{seconds}} sn).",

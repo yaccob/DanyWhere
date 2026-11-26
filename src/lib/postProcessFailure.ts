@@ -64,6 +64,8 @@ const reasonSentence = (t: Translate, failure: Failure): string | null => {
       return withProvider("noApiKey");
     case "key-refused":
       return withProvider("keyRefused");
+    case "no-credit":
+      return withProvider("noCredit");
     case "model-not-found":
       return model === null ? null : withProvider("modelNotFound", { model });
     case "unreachable":
