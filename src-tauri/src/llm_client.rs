@@ -628,10 +628,34 @@ pub async fn send_chat_completion(
     send_chat_completion_with_schema(provider, api_key, model, prompt, None, None, reasoning).await
 }
 
+/// DanyWhere: the longest wait a rate limit's `retry-after` may ask for
+/// before the one retry (sidecar note
+/// `2026-11-26_2250_nachbearbeitung-einstieg-umsetzung`, section 2: Groq's
+/// free plan allows 8000 tokens a minute; a longer wait becomes the notice
+/// "rate-limited").
+const MAX_RATE_LIMIT_WAIT: Duration = Duration::from_secs(15);
+
+/// DanyWhere: the wait a 429's `retry-after` asks for, in seconds (a date is
+/// not read).
+fn retry_after(headers: &HeaderMap) -> Option<Duration> {
+    let value = headers
+        .get(reqwest::header::RETRY_AFTER)?
+        .to_str()
+        .ok()?
+        .trim();
+    let seconds: f64 = value.parse().ok()?;
+    (seconds.is_finite() && seconds >= 0.0).then(|| Duration::from_secs_f64(seconds))
+}
+
 /// DanyWhere: sends the plan's bodies in turn until one is not refused with
 /// 400/422, the answer endpoints give to fields they don't take. When a later
 /// body gets through, the keys of the refused ones are remembered, so the
 /// next request skips them. Returns the response and which body it answers.
+///
+/// DanyWhere (2026-11-26): a rate limit (`post_process_failure`'s
+/// `rate-limited`) whose `retry-after` is at most [`MAX_RATE_LIMIT_WAIT`] is
+/// waited for and sent once more; any other 429 (no credit, ChatGPT's plan
+/// limit, OpenRouter's busy free model or its limits) is not.
 async fn post_until_accepted<B: Serialize>(
     client: &ProviderClient,
     url: &str,
@@ -639,6 +663,7 @@ async fn post_until_accepted<B: Serialize>(
     what: &str,
 ) -> Result<(reqwest::Response, usize), String> {
     let mut used = 0;
+    let mut rate_limit_retried = false;
     loop {
         let Some((body, _)) = plan.attempts.get(used) else {
             return Err("No request to send".to_string());
@@ -663,12 +688,38 @@ async fn post_until_accepted<B: Serialize>(
             sanitized_url(response.url())
         );
 
+        // DanyWhere: one retry after a short rate limit.
+        if status.as_u16() == 429 && !rate_limit_retried {
+            if let Some(wait) =
+                retry_after(response.headers()).filter(|wait| *wait <= MAX_RATE_LIMIT_WAIT)
+            {
+                let error_text = response.text().await.unwrap_or_else(|e| {
+                    report_reqwest_error("Failed to read API error response", &e)
+                });
+                let error = format!("{}{}: {}", STATUS_ERROR_PREFIX, status, error_text);
+                if crate::post_process_failure::classify_llm_error(&error, true)
+                    != crate::post_process_failure::FailureReason::RateLimited
+                {
+                    return Err(error);
+                }
+                info!(
+                    "{} was rate limited (status {}); retrying once in {:?}",
+                    what, status, wait
+                );
+                tokio::time::sleep(wait).await;
+                rate_limit_retried = true;
+                continue;
+            }
+        }
+
         // A 400/422 on a request carrying reasoning fields is almost always
         // the endpoint rejecting those fields — retry without them.
         if matches!(status.as_u16(), 400 | 422) && used + 1 < plan.attempts.len() {
             let error_text = response.text().await.unwrap_or_else(|e| {
                 report_reqwest_error("Failed to read reasoning rejection response", &e)
             });
+            // DanyWhere: without the account's id (OpenRouter puts it there).
+            let error_text = crate::post_process_failure::redact_secrets(&error_text);
             info!(
                 "Endpoint rejected the request's reasoning fields (status {}): {}. Retrying without them",
                 status, error_text
@@ -1849,6 +1900,129 @@ mod tests {
         assert_eq!(bodies.len(), 1);
         assert_eq!(bodies[0]["model"], "local-model");
         assert_eq!(bodies[0]["max_tokens"], 1);
+    }
+
+    // ---- DanyWhere: one retry after a short rate limit (2026-11-26) --------
+    //
+    // Groq's free plan allows 8000 tokens a minute (sidecar note
+    // `2026-11-26_1955_nachbearbeitung-versuche`, section 4) and sends
+    // `retry-after` with its 429 (console.groq.com/docs/rate-limits).
+
+    /// A status line with a `retry-after` header after it, for
+    /// [`serve_in_turn`], which writes the status into its response's first
+    /// line.
+    const RATE_LIMITED_NOW: &str = "429 Too Many Requests\r\nretry-after: 0";
+    const RATE_LIMITED_1S: &str = "429 Too Many Requests\r\nretry-after: 1";
+    const RATE_LIMITED_LONG: &str = "429 Too Many Requests\r\nretry-after: 30";
+    const TPM: &str = r#"{"error":{"message":"Rate limit reached for model `openai/gpt-oss-120b` in organization `org_test` service tier `on_demand` on tokens per minute (TPM): Limit 8000, Used 5959, Requested 3039. Please try again in 0.5s.","type":"tokens","code":"rate_limit_exceeded"}}"#;
+    const FREE_BUSY: &str = r#"{"error":{"message":"Provider returned error","code":429,"metadata":{"raw":"google/gemma-4-26b-a4b-it:free is temporarily rate-limited upstream. Please retry shortly, or add your own provider key to use your own limits: https://openrouter.ai/workspaces/default/byok","provider_name":"Google AI Studio","is_byok":false,"provider_error_code":"429","limit_source":"upstream_provider_shared_pool"}}}"#;
+    const QUOTA: &str = r#"{"error":{"message":"You exceeded your current quota, please check your plan and billing details.","type":"insufficient_quota","param":null,"code":"insufficient_quota"}}"#;
+
+    async fn plain_request(base_url: &str) -> Result<Completion, String> {
+        send_chat_completion(
+            &provider("custom", base_url),
+            "key".to_string(),
+            "model",
+            "raw".to_string(),
+            &ReasoningRequest::default(),
+        )
+        .await
+    }
+
+    #[tokio::test]
+    async fn a_short_rate_limit_is_waited_for_and_tried_once_more() {
+        let (base_url, bodies) =
+            serve_in_turn(vec![(RATE_LIMITED_1S, TPM), ("200 OK", CHAT_OK)]).await;
+        let started = std::time::Instant::now();
+        let reply = plain_request(&base_url).await;
+        assert_eq!(
+            reply,
+            Ok(Completion {
+                content: Some("Cleaned".to_string()),
+                effort_ignored: false,
+            })
+        );
+        assert!(started.elapsed() >= Duration::from_millis(900), "waited");
+        assert_eq!(bodies.lock().unwrap().len(), 2);
+    }
+
+    #[tokio::test]
+    async fn a_rate_limit_is_retried_only_once() {
+        let (base_url, bodies) = serve_in_turn(vec![
+            (RATE_LIMITED_NOW, TPM),
+            (RATE_LIMITED_NOW, TPM),
+            ("200 OK", CHAT_OK),
+        ])
+        .await;
+        let reply = plain_request(&base_url).await;
+        let error = reply.expect_err("the second 429 is the answer");
+        assert!(error.starts_with(STATUS_ERROR_PREFIX), "{error}");
+        assert!(error.contains("tokens per minute"), "{error}");
+        assert_eq!(bodies.lock().unwrap().len(), 2);
+    }
+
+    #[tokio::test]
+    async fn a_long_or_missing_retry_after_is_not_waited_for() {
+        for status in [RATE_LIMITED_LONG, "429 Too Many Requests"] {
+            let (base_url, bodies) = serve_in_turn(vec![(status, TPM), ("200 OK", CHAT_OK)]).await;
+            let reply = plain_request(&base_url).await;
+            assert!(reply.is_err(), "{status}");
+            assert_eq!(bodies.lock().unwrap().len(), 1, "{status}");
+        }
+    }
+
+    #[tokio::test]
+    async fn a_busy_free_model_or_a_used_up_quota_is_not_retried() {
+        // OpenRouter's busy free model sends no retry-after (strand L); even
+        // with one it isn't retried, and neither is a quota that is gone.
+        for body in [FREE_BUSY, QUOTA] {
+            let (base_url, bodies) =
+                serve_in_turn(vec![(RATE_LIMITED_NOW, body), ("200 OK", CHAT_OK)]).await;
+            let reply = plain_request(&base_url).await;
+            let error = reply.expect_err("not retried");
+            assert!(error.starts_with(STATUS_ERROR_PREFIX), "{error}");
+            assert_eq!(bodies.lock().unwrap().len(), 1, "{body}");
+        }
+    }
+
+    #[tokio::test]
+    async fn an_anthropic_rate_limit_is_retried_too() {
+        let anthropic_429 = r#"{"type":"error","error":{"type":"rate_limit_error","message":"This request would exceed the rate limit for your organization of 50 requests per minute."}}"#;
+        let (base_url, bodies) = serve_in_turn(vec![
+            (RATE_LIMITED_NOW, anthropic_429),
+            ("200 OK", MESSAGES_OK),
+        ])
+        .await;
+        let reply = send_chat_completion(
+            &anthropic_format_provider(&base_url),
+            "key".to_string(),
+            "claude-haiku-5-5",
+            "raw".to_string(),
+            &ReasoningRequest::default(),
+        )
+        .await;
+        assert_eq!(
+            reply.map(|completion| completion.content),
+            Ok(Some("Cleaned".to_string()))
+        );
+        assert_eq!(bodies.lock().unwrap().len(), 2);
+    }
+
+    #[test]
+    fn retry_after_is_read_in_seconds() {
+        let header = |value: &str| {
+            let mut headers = HeaderMap::new();
+            headers.insert("retry-after", HeaderValue::from_str(value).unwrap());
+            headers
+        };
+        assert_eq!(retry_after(&header("8")), Some(Duration::from_secs(8)));
+        assert_eq!(
+            retry_after(&header("7.5")),
+            Some(Duration::from_millis(7500))
+        );
+        assert_eq!(retry_after(&header("Wed, 21 Oct 2026 07:28:00 GMT")), None);
+        assert_eq!(retry_after(&header("-1")), None);
+        assert_eq!(retry_after(&HeaderMap::new()), None);
     }
 
     #[tokio::test]

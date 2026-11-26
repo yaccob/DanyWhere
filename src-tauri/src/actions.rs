@@ -361,6 +361,17 @@ async fn post_process_outcome(
         return failed(settings, FailureReason::NoModel);
     }
 
+    // DanyWhere: and its access, a key or the sign-in (`post_process_setup`):
+    // without it the dictation doesn't leave the computer, and the notice
+    // says what is missing.
+    if let Some(reason) = crate::post_process_setup::post_process_ready(settings).failure_reason() {
+        debug!(
+            "Post-processing skipped because provider '{}' is not set up ({reason:?})",
+            provider.id
+        );
+        return failed(settings, reason);
+    }
+
     // DanyWhere: the profile's active prompts from the shared library, all
     // in one request (`prompt_library`), instead of Handy's selected prompt.
     // DanyWhere: without one a spoken instruction works alone, from the
@@ -527,9 +538,11 @@ async fn post_process_outcome(
                 return failed(settings, FailureReason::EmptyReply);
             }
             Err(e) => {
+                // DanyWhere: without the account's id (`redact_secrets`).
                 warn!(
                     "Structured output failed for provider '{}': {}. Falling back to legacy mode.",
-                    provider.id, e
+                    provider.id,
+                    crate::post_process_failure::redact_secrets(&e)
                 );
                 // Fall through to legacy mode below
             }
@@ -578,7 +591,7 @@ async fn post_process_outcome(
             error!(
                 "LLM post-processing failed for provider '{}': {}. Falling back to original transcription.",
                 provider.id,
-                e
+                crate::post_process_failure::redact_secrets(&e)
             );
             // DanyWhere: the notice names why (`post_process_failure`).
             failed(
@@ -695,11 +708,16 @@ pub(crate) async fn process_transcription_with_settings(
                 crate::prompt_library::request_names(&prompts),
             )
         };
-        let context_block = if is_blank_transcription(&final_text) && spoken_instruction.is_none() {
-            None
-        } else {
-            context_for(&instructions)
-        };
+        // DanyWhere: nor before post-processing is set up, when nothing is
+        // sent (`post_process_setup`).
+        let set_up = crate::post_process_setup::post_process_ready(settings)
+            == crate::post_process_setup::Readiness::Ready;
+        let context_block =
+            if !set_up || (is_blank_transcription(&final_text) && spoken_instruction.is_none()) {
+                None
+            } else {
+                context_for(&instructions)
+            };
         // A reply that's blank once cleaned is no better than none.
         let report = post_process_within_time_limit(
             settings,
@@ -1010,7 +1028,11 @@ mod tests {
         let provider_id = provider.id.clone();
         settings
             .post_process_models
-            .insert(provider_id, "model".to_string());
+            .insert(provider_id.clone(), "model".to_string());
+        // DanyWhere: the provider needs a key (`post_process_setup`).
+        settings
+            .post_process_api_keys
+            .insert(provider_id, "sk-test".to_string());
         // DanyWhere: the first prompt of the library is the active one.
         settings.post_process_prompt_order =
             crate::prompt_library::default_order(&settings.post_process_prompts);
@@ -1737,7 +1759,11 @@ mod tests {
     fn a_refusal_says_whether_the_key_was_missing_or_refused() {
         let refusal =
             r#"{"error":{"message":"Incorrect API key provided","code":"invalid_api_key"}}"#;
-        let settings = post_process_settings(&serve_once_with("401 Unauthorized", refusal));
+        // A server of one's own needs no key until it refuses without one.
+        let settings = on_own_server(post_process_settings(&serve_once_with(
+            "401 Unauthorized",
+            refusal,
+        )));
         assert_eq!(
             run_post_process(&settings, "hello"),
             failed(&settings, FailureReason::NoApiKey)
@@ -1752,6 +1778,83 @@ mod tests {
             run_post_process(&settings, "hello"),
             failed(&settings, FailureReason::KeyRefused)
         );
+    }
+
+    /// `settings` (from [`post_process_settings`]) post-processing with the
+    /// custom provider at the same address, with the same model, no key.
+    fn on_own_server(mut settings: AppSettings) -> AppSettings {
+        let from = settings
+            .active_post_process_provider()
+            .cloned()
+            .expect("a provider");
+        let custom = settings
+            .post_process_provider_mut("custom")
+            .expect("the custom provider");
+        custom.base_url = from.base_url;
+        custom.supports_structured_output = false;
+        settings.post_process_provider_id = "custom".to_string();
+        settings
+            .post_process_models
+            .insert("custom".to_string(), "model".to_string());
+        settings
+    }
+
+    /// DanyWhere: the post-processing setup (sidecar note
+    /// `2026-11-26_2250_nachbearbeitung-einstieg-umsetzung`, section 2): a
+    /// provider that needs a key isn't asked without one, so the dictation
+    /// doesn't leave the computer; the notice says the key is missing.
+    #[test]
+    fn a_provider_without_its_key_is_not_asked() {
+        let (url, request) = serve_once_capturing(POLISHED);
+        let mut settings = post_process_settings(&url);
+        let provider_id = settings.post_process_provider_id.clone();
+        settings
+            .post_process_api_keys
+            .insert(provider_id, "  ".to_string());
+        assert_eq!(
+            run_post_process(&settings, "hello"),
+            failed(&settings, FailureReason::NoApiKey)
+        );
+        assert!(
+            request.recv_timeout(Duration::from_millis(300)).is_err(),
+            "nothing left the computer"
+        );
+    }
+
+    /// Without the setup no context is gathered either, and the text goes
+    /// out as it was heard, without the spoken instruction.
+    #[test]
+    fn without_the_setup_the_text_goes_out_as_heard() {
+        let mut settings = post_process_settings(NOWHERE);
+        settings.post_process_provider_id = "gone".to_string();
+        let (processed, asked) = process_with_instruction(
+            &settings,
+            "hello",
+            Some("translate it into Polish"),
+            true,
+            Some(marker_block()),
+        );
+        assert_eq!(processed.final_text, "hello");
+        assert_eq!(processed.post_processed_text, None);
+        assert_eq!(
+            processed.post_process_failure,
+            Some(PostProcessFailure::new(
+                &settings,
+                FailureReason::NoProvider
+            ))
+        );
+        assert!(asked.is_empty(), "no context gathered: {asked:?}");
+        assert!(processed.context_entry_ids.is_empty());
+
+        let mut no_key = post_process_settings(NOWHERE);
+        no_key.post_process_api_keys.clear();
+        let (processed, asked) = process_with(&no_key, "hello", true, Some(marker_block()));
+        assert_eq!(processed.final_text, "hello");
+        assert_eq!(
+            processed.post_process_failure.map(|failure| failure.reason),
+            Some(FailureReason::NoApiKey)
+        );
+        assert!(asked.is_empty(), "no context gathered: {asked:?}");
     }
 
     #[test]
@@ -2431,6 +2534,10 @@ mod tests {
             settings
                 .post_process_models
                 .insert(provider_id.clone(), model.clone());
+            // DanyWhere: a provider that needs a key is asked only with one.
+            settings
+                .post_process_api_keys
+                .insert(provider_id.clone(), "sk-probe".to_string());
             if let Some(effort) = &effort {
                 settings
                     .post_process_efforts
