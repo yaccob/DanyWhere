@@ -62,7 +62,7 @@ fn press(ports: &FakePorts, slot: &'static InstructionSlot, streaming: bool) -> 
         slot,
         Cut {
             session: 1,
-            binding_id: START_BINDINGS[0],
+            binding_id: START,
             key_id: KEY,
             values: None,
             use_streaming_overlay: streaming,
@@ -84,7 +84,7 @@ fn cut(ports: &FakePorts, slot: &'static InstructionSlot) {
 /// finishes it the instruction's way.
 fn end(ports: &FakePorts, slot: &'static InstructionSlot, snapshot: DictationSnapshot) {
     let pending = slot
-        .take(snapshot.session, START_BINDINGS[0])
+        .take(snapshot.session, START)
         .expect("the cut waits for the end");
     let snapshot = snapshot.with_spoken_instruction(pending.use_streaming_overlay());
     let held = crate::delivery::begin_input_source(&snapshot.settings, &ports.input_method());
@@ -92,7 +92,7 @@ fn end(ports: &FakePorts, slot: &'static InstructionSlot, snapshot: DictationSna
     tauri::async_runtime::block_on(finish_dictation(
         Dictation {
             snapshot,
-            binding_id: START_BINDINGS[0].to_string(),
+            binding_id: START.to_string(),
             stop_time: Instant::now(),
             input_source: held,
             instruction: Some(pending.into_part()),
@@ -205,7 +205,7 @@ fn a_dictation_with_a_spoken_instruction_from_the_cut_to_the_paste() {
     ]);
     expected.extend(polished_and_pasted(&values, " (sent)", SAMPLES + SAID));
     assert_eq!(ports.take_events(), expected);
-    assert!(slot.take(1, START_BINDINGS[0]).is_none(), "the end took it");
+    assert!(slot.take(1, START).is_none(), "the end took it");
 
     // The request carries the instruction in its block, the text as the
     // transcript.
@@ -424,7 +424,7 @@ fn escape_after_the_cut_throws_the_instruction_away() {
             Event::TranscribeTextSection { samples: SAMPLES },
         ]
     );
-    assert!(slot.take(1, START_BINDINGS[0]).is_none());
+    assert!(slot.take(1, START).is_none());
     assert!(!slot.discard(), "nothing waits any more");
     assert!(ports.entries().is_empty());
 }
@@ -493,7 +493,7 @@ fn the_instruction_key_cuts_once_and_only_a_running_recording() {
     let slot = slot();
     assert!(!press(&ports, slot, false), "nothing to cut");
     assert_eq!(ports.take_events(), [Event::SplitRecording]);
-    assert!(slot.take(1, START_BINDINGS[0]).is_none());
+    assert!(slot.take(1, START).is_none());
 
     let ports = FakePorts::new(script(tone(SAMPLES), tone(SAID), POLISH));
     cut(&ports, slot);
@@ -514,12 +514,12 @@ fn the_end_of_another_recording_leaves_no_instruction_behind() {
     cut(&ports, slot);
     assert!(slot.take(1, "another_binding").is_none());
     assert!(
-        slot.take(1, START_BINDINGS[0]).is_none(),
+        slot.take(1, START).is_none(),
         "a stale instruction is thrown away"
     );
     let ports = FakePorts::new(script(tone(SAMPLES), tone(SAID), POLISH));
     cut(&ports, slot);
-    assert!(slot.take(2, START_BINDINGS[0]).is_none(), "another session");
+    assert!(slot.take(2, START).is_none(), "another session");
     assert!(!slot.holds(1));
 }
 

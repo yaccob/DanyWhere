@@ -527,7 +527,7 @@ mod tests {
         let plain = snapshot(
             &stored,
             None,
-            EndChoice::Start(START_BINDINGS[0].to_string()),
+            EndChoice::Start(FACTORY_START_ID.to_string()),
         )
         .with_spoken_instruction(false);
         assert!(plain.post_process, "even with the profile's switch off");
