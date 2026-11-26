@@ -519,7 +519,7 @@
       "onlyWhileRecording": "Chỉ được chiếm trong khi ghi.",
       "sameAsStartOrHold": "Cùng tổ hợp phím với một phím tắt bắt đầu hoặc phím tắt giữ: khi không ghi, tổ hợp này bắt đầu ghi; trong khi ghi, nó chuyển sang hướng dẫn.",
       "notTakenNever": "Xử lý sau đang đặt là “{{mode}}”: các phím tắt hướng dẫn không được chiếm. Hãy chọn cài đặt khác cho “{{setting}}” trong mục Nâng cao.",
-      "notTakenNoProvider": "Chưa thiết lập nhà cung cấp xử lý sau có mô hình: các phím tắt hướng dẫn không được chiếm cho đến khi có một nhà cung cấp.",
+      "notSetUp": "Xử lý sau chưa được thiết lập: sau phím tắt hướng dẫn, văn bản được chèn đúng như đã nghe, không kèm hướng dẫn, và một thông báo đề nghị thiết lập.",
       "add": "Thêm phím tắt hướng dẫn",
       "addPressKeys": "Nhấn tổ hợp phím cho phím tắt hướng dẫn mới",
       "refName": "Phím tắt hướng dẫn {{name}}",

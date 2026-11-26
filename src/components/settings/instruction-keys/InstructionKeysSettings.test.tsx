@@ -48,8 +48,8 @@ const DESCRIPTION =
 const ONLY_WHILE = "Taken only during a recording.";
 const NEVER =
   "Post-processing is set to “Never”: instruction shortcuts aren't taken. Choose another setting for Post Processing under Advanced.";
-const NO_PROVIDER =
-  "No post-processing provider with a model is set up: instruction shortcuts aren't taken until one is.";
+const NOT_SET_UP =
+  "Post-processing isn't set up yet: after an instruction shortcut the text is inserted as heard, without the instruction, and a notice offers to set it up.";
 const SAME_AS_START_OR_HOLD =
   "Same combination as a start or hold shortcut: without a recording it starts one, during a recording it switches to the instruction.";
 
@@ -233,9 +233,10 @@ describe("Instruction Shortcuts: adding and deleting", () => {
   });
 });
 
-// Instruction shortcuts are taken only while the scope may post-process and
-// a provider is set up (qa 2026-11-26_1810, "Regeln"); the card says why
-// they aren't, for the scope shown.
+// Instruction shortcuts are taken while the scope may post-process, set up
+// or not (qa 2026-11-26_2250: the setup's notice offers to set it up); the
+// card says why they aren't, or what happens without a provider, for the
+// scope shown.
 describe("Instruction Shortcuts that aren't taken", () => {
   test("with post-processing set to Never, the card says so", async () => {
     await renderGeneral({
@@ -244,16 +245,18 @@ describe("Instruction Shortcuts that aren't taken", () => {
 
     const text = visibleText(card());
     expect(text).toContain(NEVER);
-    expect(text).not.toContain(NO_PROVIDER);
+    expect(text).not.toContain(NOT_SET_UP);
     expect(rawTextIn()).toEqual([]);
   });
 
-  test("without a provider with a model, the card says so", async () => {
+  test("without a provider with a model they are taken, and the card says what happens", async () => {
     await renderGeneral();
 
     const text = visibleText(card());
-    expect(text).toContain(NO_PROVIDER);
+    expect(text).toContain(NOT_SET_UP);
     expect(text).not.toContain(NEVER);
+    expect(text).not.toContain("aren't taken");
+    expect(rawTextIn()).toEqual([]);
   });
 
   test("with a provider, with an instruction shortcut or always, nothing of it", async () => {
@@ -262,7 +265,7 @@ describe("Instruction Shortcuts that aren't taken", () => {
 
       const text = visibleText(card());
       expect(text).not.toContain(NEVER);
-      expect(text).not.toContain(NO_PROVIDER);
+      expect(text).not.toContain(NOT_SET_UP);
       cleanup();
     }
   });
@@ -418,7 +421,7 @@ describe("Instruction Shortcuts in German", () => {
     cleanup();
     await renderGeneral();
     expect(visibleText(card("Anweisungstasten"))).toContain(
-      "Kein Anbieter mit Modell für die Nachbearbeitung eingerichtet: Anweisungstasten sind erst belegt, wenn einer eingerichtet ist.",
+      "Die Nachbearbeitung ist noch nicht eingerichtet: Nach einer Anweisungstaste wird der Text so eingefügt, wie er gehört wurde, ohne die Anweisung, und ein Hinweis bietet an, sie einzurichten.",
     );
   });
 

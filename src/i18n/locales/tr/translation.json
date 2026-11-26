@@ -519,7 +519,7 @@
       "onlyWhileRecording": "Yalnızca kayıt sırasında kullanılır.",
       "sameAsStartOrHold": "Bir başlatma veya basılı tutma kısayoluyla aynı kombinasyon: kayıt yokken bir kayıt başlatır, kayıt sırasında talimata geçer.",
       "notTakenNever": "Son işlem “{{mode}}” olarak ayarlı: talimat kısayolları kullanılmaz. Gelişmiş altında “{{setting}}” için başka bir ayar seçin.",
-      "notTakenNoProvider": "Modeli seçilmiş bir son işlem sağlayıcısı ayarlanmadı: biri ayarlanana kadar talimat kısayolları kullanılmaz.",
+      "notSetUp": "Son işlem henüz ayarlanmadı: bir talimat kısayolundan sonra metin duyulduğu gibi, talimat olmadan eklenir ve bir bildirim son işlemi ayarlamayı önerir.",
       "add": "Talimat Kısayolu Ekle",
       "addPressKeys": "Yeni talimat kısayolu için tuş kombinasyonuna basın",
       "refName": "Talimat kısayolu {{name}}",

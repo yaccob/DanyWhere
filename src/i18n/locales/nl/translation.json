@@ -519,7 +519,7 @@
       "onlyWhileRecording": "Alleen bezet tijdens een opname.",
       "sameAsStartOrHold": "Dezelfde toetsencombinatie als een start- of vasthoudsneltoets: zonder opname start ze er een, tijdens een opname schakelt ze naar de instructie.",
       "notTakenNever": "Naverwerking staat op „{{mode}}”: instructiesneltoetsen zijn niet bezet. Kies onder Geavanceerd een andere instelling bij „{{setting}}”.",
-      "notTakenNoProvider": "Er is geen aanbieder voor naverwerking met een model ingesteld: instructiesneltoetsen zijn pas bezet als er een is.",
+      "notSetUp": "De naverwerking is nog niet ingesteld: na een instructiesneltoets wordt de tekst ingevoegd zoals hij gehoord is, zonder de instructie, en een melding biedt aan om haar in te stellen.",
       "add": "Instructiesneltoets toevoegen",
       "addPressKeys": "Druk op de toetsencombinatie voor de nieuwe instructiesneltoets",
       "refName": "Instructiesneltoets {{name}}",

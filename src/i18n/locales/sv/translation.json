@@ -519,7 +519,7 @@
       "onlyWhileRecording": "Bara upptagen under en inspelning.",
       "sameAsStartOrHold": "Samma tangentkombination som ett start- eller hållkortkommando: utan inspelning startar den en, under en inspelning växlar den till instruktionen.",
       "notTakenNever": "Efterbearbetning är inställd på ”{{mode}}”: instruktionskortkommandon är inte upptagna. Välj en annan inställning för ”{{setting}}” under Avancerat.",
-      "notTakenNoProvider": "Ingen leverantör för efterbearbetning med en modell är inställd: instruktionskortkommandon är inte upptagna förrän en finns.",
+      "notSetUp": "Efterbearbetningen är inte inställd än: efter ett instruktionskortkommando infogas texten som den hördes, utan instruktionen, och ett meddelande erbjuder att ställa in den.",
       "add": "Lägg till instruktionskortkommando",
       "addPressKeys": "Tryck på tangentkombinationen för det nya instruktionskortkommandot",
       "refName": "Instruktionskortkommando {{name}}",

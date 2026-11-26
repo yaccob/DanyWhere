@@ -519,7 +519,7 @@
       "onlyWhileRecording": "Occupata solo durante una registrazione.",
       "sameAsStartOrHold": "Stessa combinazione di una scorciatoia di avvio o da tenere premuta: senza registrazione ne avvia una, durante una registrazione passa all'istruzione.",
       "notTakenNever": "La post-elaborazione è impostata su «{{mode}}»: le scorciatoie di istruzione non sono occupate. Scegli un'altra impostazione per «{{setting}}» in Avanzate.",
-      "notTakenNoProvider": "Nessun provider di post-elaborazione con un modello è configurato: le scorciatoie di istruzione non sono occupate finché non ce n'è uno.",
+      "notSetUp": "La post-elaborazione non è ancora configurata: dopo una scorciatoia di istruzione il testo viene inserito così come è stato sentito, senza l'istruzione, e un avviso propone di configurarla.",
       "add": "Aggiungi scorciatoia di istruzione",
       "addPressKeys": "Premi la combinazione per la nuova scorciatoia di istruzione",
       "refName": "Scorciatoia di istruzione {{name}}",

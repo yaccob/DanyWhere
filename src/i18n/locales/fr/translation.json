@@ -519,7 +519,7 @@
       "onlyWhileRecording": "Prise uniquement pendant un enregistrement.",
       "sameAsStartOrHold": "Même combinaison qu'un raccourci de début ou de maintien : sans enregistrement, elle en démarre un ; pendant un enregistrement, elle passe à l'instruction.",
       "notTakenNever": "Le post-traitement est réglé sur « {{mode}} » : les raccourcis d'instruction ne sont pas pris. Choisissez un autre réglage pour « {{setting}} » dans Avancé.",
-      "notTakenNoProvider": "Aucun fournisseur de post-traitement avec un modèle n'est configuré : les raccourcis d'instruction ne sont pas pris tant qu'il n'y en a pas.",
+      "notSetUp": "Le post-traitement n'est pas encore configuré : après un raccourci d'instruction, le texte est inséré tel qu'il a été entendu, sans l'instruction, et une notification propose de le configurer.",
       "add": "Ajouter un raccourci d'instruction",
       "addPressKeys": "Appuyez sur la combinaison du nouveau raccourci d'instruction",
       "refName": "Raccourci d'instruction {{name}}",

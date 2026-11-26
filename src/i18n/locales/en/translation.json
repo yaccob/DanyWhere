@@ -519,7 +519,7 @@
       "onlyWhileRecording": "Taken only during a recording.",
       "sameAsStartOrHold": "Same combination as a start or hold shortcut: without a recording it starts one, during a recording it switches to the instruction.",
       "notTakenNever": "Post-processing is set to “{{mode}}”: instruction shortcuts aren't taken. Choose another setting for {{setting}} under Advanced.",
-      "notTakenNoProvider": "No post-processing provider with a model is set up: instruction shortcuts aren't taken until one is.",
+      "notSetUp": "Post-processing isn't set up yet: after an instruction shortcut the text is inserted as heard, without the instruction, and a notice offers to set it up.",
       "add": "Add Instruction Shortcut",
       "addPressKeys": "Press the combination for the new instruction shortcut",
       "refName": "Instruction shortcut {{name}}",

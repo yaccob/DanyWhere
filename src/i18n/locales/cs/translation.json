@@ -519,7 +519,7 @@
       "onlyWhileRecording": "Obsazena jen během nahrávání.",
       "sameAsStartOrHold": "Stejná kombinace kláves jako spouštěcí zkratka nebo zkratka pro podržení: bez nahrávání ho spustí, během nahrávání přepne na pokyn.",
       "notTakenNever": "Následné zpracování je nastaveno na „{{mode}}“: zkratky pro pokyn nejsou obsazené. Zvolte v sekci Pokročilé jiné nastavení pro „{{setting}}“.",
-      "notTakenNoProvider": "Není nastaven žádný poskytovatel následného zpracování s modelem: zkratky pro pokyn nebudou obsazené, dokud nějaký nebude nastaven.",
+      "notSetUp": "Následné zpracování ještě není nastavené: po zkratce pro pokyn se text vloží tak, jak zazněl, bez pokynu, a oznámení nabídne jeho nastavení.",
       "add": "Přidat zkratku pro pokyn",
       "addPressKeys": "Stiskněte kombinaci kláves pro novou zkratku pro pokyn",
       "refName": "Zkratka pro pokyn {{name}}",

@@ -519,7 +519,7 @@
       "onlyWhileRecording": "Solo se ocupa durante una grabación.",
       "sameAsStartOrHold": "La misma combinación que un atajo de inicio o de mantener: sin grabación inicia una, durante una grabación cambia a la instrucción.",
       "notTakenNever": "El posprocesamiento está en «{{mode}}»: los atajos de instrucción no se ocupan. Elige otra opción para «{{setting}}» en Avanzado.",
-      "notTakenNoProvider": "No hay ningún proveedor de posprocesamiento con un modelo configurado: los atajos de instrucción no se ocupan hasta que haya uno.",
+      "notSetUp": "El posprocesamiento aún no está configurado: tras un atajo de instrucción, el texto se inserta tal como se oyó, sin la instrucción, y un aviso ofrece configurarlo.",
       "add": "Añadir atajo de instrucción",
       "addPressKeys": "Pulsa la combinación para el nuevo atajo de instrucción",
       "refName": "Atajo de instrucción {{name}}",

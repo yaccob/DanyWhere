@@ -519,7 +519,7 @@
       "onlyWhileRecording": "Zajęta tylko podczas nagrywania.",
       "sameAsStartOrHold": "Ta sama kombinacja co skrót rozpoczynający lub przytrzymywany: bez nagrania rozpoczyna nagranie, podczas nagrywania przełącza na instrukcję.",
       "notTakenNever": "Postprocess jest ustawiony na „{{mode}}”: skróty instrukcji nie są zajęte. Wybierz inne ustawienie dla „{{setting}}” w sekcji Zaawansowane.",
-      "notTakenNoProvider": "Nie skonfigurowano dostawcy postprocesu z modelem: skróty instrukcji nie są zajęte, dopóki go nie będzie.",
+      "notSetUp": "Postproces nie jest jeszcze skonfigurowany: po skrócie instrukcji tekst zostaje wstawiony tak, jak go usłyszano, bez instrukcji, a powiadomienie proponuje konfigurację.",
       "add": "Dodaj skrót instrukcji",
       "addPressKeys": "Naciśnij kombinację dla nowego skrótu instrukcji",
       "refName": "Skrót instrukcji {{name}}",

@@ -519,7 +519,7 @@
       "onlyWhileRecording": "Ocupada só durante uma gravação.",
       "sameAsStartOrHold": "A mesma combinação que um atalho de início ou de segurar: sem gravação, inicia uma; durante uma gravação, muda para a instrução.",
       "notTakenNever": "O pós-processamento está definido como “{{mode}}”: os atalhos de instrução não ficam ocupados. Escolha outra definição para “{{setting}}” em Avançado.",
-      "notTakenNoProvider": "Não há nenhum provedor de pós-processamento com um modelo configurado: os atalhos de instrução só ficam ocupados quando houver um.",
+      "notSetUp": "O pós-processamento ainda não está configurado: depois de um atalho de instrução, o texto é inserido como foi ouvido, sem a instrução, e um aviso oferece configurá-lo.",
       "add": "Adicionar atalho de instrução",
       "addPressKeys": "Prima a combinação para o novo atalho de instrução",
       "refName": "Atalho de instrução {{name}}",

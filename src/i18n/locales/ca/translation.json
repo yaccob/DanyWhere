@@ -519,7 +519,7 @@
       "onlyWhileRecording": "Només s'ocupa durant una gravació.",
       "sameAsStartOrHold": "La mateixa combinació que una drecera d'inici o de pulsació llarga: sense gravació n'inicia una, durant una gravació canvia a la instrucció.",
       "notTakenNever": "El posprocessament està configurat a «{{mode}}»: les dreceres d'instrucció no s'ocupen. Tria una altra opció per a «{{setting}}» a Avançat.",
-      "notTakenNoProvider": "No hi ha cap proveïdor de postprocessament amb un model configurat: les dreceres d'instrucció no s'ocupen fins que n'hi hagi un.",
+      "notSetUp": "El postprocessament encara no està configurat: després d'una drecera d'instrucció, el text s'insereix tal com s'ha sentit, sense la instrucció, i un avís us ofereix configurar-lo.",
       "add": "Afegeix una drecera d'instrucció",
       "addPressKeys": "Prem la combinació per a la nova drecera d'instrucció",
       "refName": "Drecera d'instrucció {{name}}",

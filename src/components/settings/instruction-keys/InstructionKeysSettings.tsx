@@ -9,20 +9,21 @@ import { EndKeysEditor } from "../end-keys/EndKeysEditor";
 import { useKeyListSave } from "../end-keys/useKeyListSave";
 import { chosenProviderWithModel } from "../history/postProcessEntry";
 
-/** Why the instruction shortcuts of a scope aren't taken, if they aren't:
- * its post-processing mode is "never", or no provider with a model is set
- * up there (qa 2026-11-26_1810, "Regeln"). */
-export type InstructionKeysNotTaken = "never" | "noProvider" | null;
+/** What the card says above the list of a scope: its post-processing mode
+ * is "never", so the instruction shortcuts aren't taken; or no provider
+ * with a model is set up there, so they are taken, but a dictation with an
+ * instruction is inserted as heard and its notice offers the setup (qa
+ * 2026-11-26_1810, "Regeln"; 2026-11-26_2250: taken before the setup too). */
+export type InstructionKeysNote = "never" | "notSetUp" | null;
 
-/** Whether the instruction shortcuts of a scope with these settings are
- * taken during a recording, and if not, why. */
-export const instructionKeysNotTaken = (
+/** The note of a scope with these settings, if it has one. */
+export const instructionKeysNote = (
   settings: Parameters<typeof chosenProviderWithModel>[0] & {
     post_process_mode?: string | null;
   },
-): InstructionKeysNotTaken => {
+): InstructionKeysNote => {
   if (settings?.post_process_mode === "never") return "never";
-  return chosenProviderWithModel(settings) ? null : "noProvider";
+  return chosenProviderWithModel(settings) ? null : "notSetUp";
 };
 
 /**
@@ -37,8 +38,9 @@ export const instructionKeysNotTaken = (
  * that follow the keys ("⇥ held", since the name stands for the end when it
  * is released); the list may be empty. Under each entry: taken only during
  * a recording, and with a start or hold shortcut's keys, what those do
- * outside one. Above the list, when the scope's mode is "never" or it has
- * no provider, that the shortcuts aren't taken. General hides the card on
+ * outside one. Above the list, when the scope's mode is "never", that the
+ * shortcuts aren't taken, and without a provider, what happens to a
+ * dictation with an instruction until one is set up. General hides the card on
  * Linux, where instruction shortcuts aren't taken (`profile_sync.rs`).
  */
 export const InstructionKeysSettings: React.FC = () => {
@@ -47,7 +49,7 @@ export const InstructionKeysSettings: React.FC = () => {
   const startKeys = getSetting("start_keys") ?? [];
   const holdKeys = getSetting("hold_keys") ?? [];
   const instructionKeys = getSetting("instruction_keys") ?? [];
-  const notTaken = instructionKeysNotTaken(settings ?? {});
+  const note = instructionKeysNote(settings ?? {});
   const { busy, save } = useKeyListSave<EndKey>(
     "instruction_keys",
     commands.changeInstructionKeysSetting,
@@ -59,7 +61,7 @@ export const InstructionKeysSettings: React.FC = () => {
       title={t("settings.instructionKeys.title")}
       description={t("settings.instructionKeys.description")}
     >
-      {notTaken === "never" && (
+      {note === "never" && (
         <p className="px-4 py-2 text-xs text-ink-3">
           {t("settings.instructionKeys.notTakenNever", {
             mode: t("settings.postProcessing.mode.options.never"),
@@ -67,9 +69,9 @@ export const InstructionKeysSettings: React.FC = () => {
           })}
         </p>
       )}
-      {notTaken === "noProvider" && (
+      {note === "notSetUp" && (
         <p className="px-4 py-2 text-xs text-ink-3">
-          {t("settings.instructionKeys.notTakenNoProvider")}
+          {t("settings.instructionKeys.notSetUp")}
         </p>
       )}
       <ScopedSetting field="instruction_keys">

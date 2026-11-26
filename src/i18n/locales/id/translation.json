@@ -519,7 +519,7 @@
       "onlyWhileRecording": "Hanya dipakai selama rekaman.",
       "sameAsStartOrHold": "Kombinasi yang sama dengan sebuah pintasan mulai atau pintasan tahan: tanpa rekaman, kombinasi ini memulai rekaman; selama rekaman, kombinasi ini beralih ke instruksi.",
       "notTakenNever": "Pascaproses diatur ke “{{mode}}”: pintasan instruksi tidak dipakai. Pilih pengaturan lain untuk “{{setting}}” di Lanjutan.",
-      "notTakenNoProvider": "Belum ada penyedia pascaproses dengan model yang disiapkan: pintasan instruksi tidak dipakai sampai ada satu.",
+      "notSetUp": "Pascaproses belum disiapkan: setelah pintasan instruksi, teks disisipkan seperti yang terdengar, tanpa instruksi, dan sebuah pemberitahuan menawarkan untuk menyiapkannya.",
       "add": "Tambah Pintasan Instruksi",
       "addPressKeys": "Tekan kombinasi untuk pintasan instruksi yang baru",
       "refName": "Pintasan instruksi {{name}}",

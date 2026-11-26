@@ -519,7 +519,7 @@
       "onlyWhileRecording": "Nur während einer Aufnahme belegt.",
       "sameAsStartOrHold": "Dieselbe Tastenkombination wie eine Start- oder Haltetaste: Ohne Aufnahme startet sie eine, während einer Aufnahme schaltet sie zur Anweisung.",
       "notTakenNever": "Die Nachbearbeitung steht auf „{{mode}}“: Anweisungstasten sind nicht belegt. Wähle unter Erweitert bei „{{setting}}“ eine andere Einstellung.",
-      "notTakenNoProvider": "Kein Anbieter mit Modell für die Nachbearbeitung eingerichtet: Anweisungstasten sind erst belegt, wenn einer eingerichtet ist.",
+      "notSetUp": "Die Nachbearbeitung ist noch nicht eingerichtet: Nach einer Anweisungstaste wird der Text so eingefügt, wie er gehört wurde, ohne die Anweisung, und ein Hinweis bietet an, sie einzurichten.",
       "add": "Anweisungstaste hinzufügen",
       "addPressKeys": "Drück die Tastenkombination für die neue Anweisungstaste",
       "refName": "Anweisungstaste {{name}}",
