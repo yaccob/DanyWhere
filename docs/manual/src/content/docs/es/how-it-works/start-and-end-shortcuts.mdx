@@ -71,7 +71,8 @@ Si un dictado se posprocesa no lo decide la entrada. Lo decide **Post procesamie
 En un Mac, la misma combinación inicia y mantiene, y los atajos de fin siguen una sola regla:
 
 - <kbd>⇧</kbd> (Mayúsculas) elige la variante pequeña: sin espacio en lugar de un espacio, una línea en lugar de un párrafo.
-- <kbd>⌃</kbd> (Control) junto con <kbd>↩</kbd> (Retorno) pulsa una tecla en lugar de añadir texto.
+- <kbd>↩</kbd> (Retorno) envía, como al escribir: pulsa Intro después del texto.
+- <kbd>⌥</kbd> (Opción) impide que <kbd>↩</kbd> envíe: en su lugar añade un párrafo o una línea.
 
 | Lista | Combinación | Nombre | Qué va detrás del texto |
 |---|---|---|---|
@@ -81,14 +82,14 @@ En un Mac, la misma combinación inicia y mantiene, y los atajos de fin siguen u
 | **Atajos de instrucción** | <kbd>⇥</kbd> (Tab) | **⇥ mantenido** | un espacio |
 | **Atajos de fin** | <kbd>⌃ Espacio</kbd> | **Espacio** | un espacio |
 | | <kbd>⌃⇧ Espacio</kbd> | **Sin espacio** | nada |
-| | <kbd>↩</kbd> | **Párrafo** | dos saltos de línea |
-| | <kbd>⇧↩</kbd> | **Línea** | un salto de línea |
-| | <kbd>⌃↩</kbd> | **Enviar Enter** | una pulsación de Intro |
-| | <kbd>⌃⇧↩</kbd> | **Enviar Mayús+Enter** | una pulsación de Mayús+Intro |
+| | <kbd>⌥↩</kbd> | **Párrafo** | dos saltos de línea |
+| | <kbd>⌥⇧↩</kbd> | **Línea** | un salto de línea |
+| | <kbd>↩</kbd> | **Enviar Enter** | una pulsación de Intro |
+| | <kbd>⇧↩</kbd> | **Enviar Mayús+Enter** | una pulsación de Mayús+Intro |
 
 Todos tienen marcado **Enviar contexto**, así que un dictado posprocesado ve lo que escribiste antes en la misma ventana.
 
-En la práctica: para un texto largo, toca <kbd>⌃ Espacio</kbd> para empezar y otra vez para terminar; cada trozo recibe su espacio, listo para el siguiente. O mantenlo pulsado mientras hablas. En un correo, termina con <kbd>↩</kbd> y el siguiente párrafo está listo. En un chat, <kbd>⌃↩</kbd> envía el mensaje; si antes tocas <kbd>⇥</kbd> y dices «un poco más amable», el mensaje se pule primero.
+En la práctica: para un texto largo, toca <kbd>⌃ Espacio</kbd> para empezar y otra vez para terminar; cada trozo recibe su espacio, listo para el siguiente. O mantenlo pulsado mientras hablas. En un correo, termina con <kbd>⌥↩</kbd> y el siguiente párrafo está listo. En un chat, <kbd>↩</kbd> envía el mensaje, como si lo hubieras escrito; si antes tocas <kbd>⇥</kbd> y dices «un poco más amable», el mensaje se pule primero.
 
 </TabItem>
 <TabItem label="Windows">
@@ -146,7 +147,7 @@ En un chat, normalmente quieres decir tu mensaje y que se envíe, sin echar mano
 </Steps>
 
 :::tip
-En un Mac, una instalación nueva ya lo trae: <kbd>⌃↩</kbd> envía el mensaje. Si antes tocas <kbd>⇥</kbd>, el mensaje se pule primero.
+En un Mac, una instalación nueva ya lo trae: <kbd>↩</kbd> envía el mensaje. Si antes tocas <kbd>⇥</kbd>, el mensaje se pule primero.
 :::
 
 ## Límites
@@ -155,7 +156,7 @@ En un Mac, una instalación nueva ya lo trae: <kbd>⌃↩</kbd> envía el mensaj
 En Linux, DanyWhere no puede ocupar una combinación solo mientras se graba. Por eso no ocupa la combinación propia de ningún atajo de fin y no tiene atajos de instrucción. Allí una grabación termina al soltar un atajo de mantener o al volver a tocar un atajo de inicio cuya combinación tiene un atajo de fin; la configuración no te deja quitar el último atajo de fin así. Para la receta de arriba, da la pulsación de Intro a un atajo de fin con la combinación de un atajo de inicio, o a un atajo de mantener. Para posprocesar en Linux, pon **Post procesamiento** en **Siempre**, si quieres en un perfil propio.
 :::
 
-**En un Mac sin Accesibilidad**, DanyWhere no puede pulsar teclas. Si continúas sin el permiso, una instalación nueva omite los dos atajos de fin que envían Intro o Mayús+Intro, y no se envía la pulsación de tecla elegida en **Añadir al final**.
+**En un Mac sin Accesibilidad**, DanyWhere no puede pulsar teclas. Si continúas sin el permiso, una instalación nueva omite los dos atajos de fin que envían Intro o Mayús+Intro, así que allí <kbd>↩</kbd> no termina nada; <kbd>⌥↩</kbd> y <kbd>⌥⇧↩</kbd> siguen terminando con un párrafo o una línea. No se envía la pulsación de tecla elegida en **Añadir al final**.
 
 **macOS usa <kbd>⌃ Espacio</kbd>** para cambiar de fuente de entrada en cuanto tienes más de una. Si cambias así de distribución de teclado, desactiva esa función rápida en Ajustes del Sistema, en Teclado › Funciones rápidas de teclado › Fuentes de entrada, o asigna a DanyWhere otras combinaciones.
 

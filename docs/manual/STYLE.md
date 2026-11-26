@@ -43,7 +43,7 @@ German imperatives use the short form ("drück", "wähl", "schalte … ein"), an
 2. **An opening paragraph that says what the reader gets out of the chapter**, in terms of their own work. No heading above it. It answers "why read this?" in three or four sentences.
 3. **Then the how,** in sections with `##` headings. Use `###` sparingly, and nothing deeper.
 4. **One idea per paragraph.** A paragraph is two to five sentences.
-5. **Examples from real use:** a chat message sent with ⌃↩, an email written paragraph by paragraph, a terminal with its own profile. Prefer one good example to three abstract rules.
+5. **Examples from real use:** a chat message sent with ↩, an email written paragraph by paragraph, a terminal with its own profile. Prefer one good example to three abstract rules.
 6. **End with where to go next**, as a link to the chapter that naturally follows.
 
 A chapter is as long as it needs to be and no longer; most land between 600 and 1200 words. If a chapter grows beyond that, it is probably two chapters.
@@ -74,13 +74,13 @@ The factory shortcuts of a new installation, for reference (English names; since
 | Start Shortcuts       | ⌃ Space                                    | Ctrl+Space                   | Ctrl+Alt+Space                       |
 | Hold Shortcuts        | ⌃ Space (a space), ⌃⇧ Space (nothing)      | Ctrl+Space, Ctrl+Shift+Space | Ctrl+Alt+Space, Ctrl+Alt+Shift+Space |
 | Instruction Shortcuts | ⇥ (a space)                                | Tab                          | (none, not on Linux)                 |
-| End Shortcuts         | six: ⌃ Space, ⌃⇧ Space, ↩, ⇧↩, ⌃↩, ⌃⇧↩ | Ctrl+Space, Ctrl+Shift+Space | Ctrl+Alt+Space, Ctrl+Alt+Shift+Space |
+| End Shortcuts         | six: ⌃ Space, ⌃⇧ Space, ⌥↩, ⌥⇧↩, ↩, ⇧↩ | Ctrl+Space, Ctrl+Shift+Space | Ctrl+Alt+Space, Ctrl+Alt+Shift+Space |
 | Post Processing       | With Instruction Shortcut                  | With Instruction Shortcut    | With Instruction Shortcut            |
 | Paste Last Transcript | ⌃⇧V                                        | Alt+Shift+V                  | Alt+Shift+V                          |
 | Copy Last Transcript  | ⌃⇧C                                        | Alt+Shift+C                  | Alt+Shift+C                          |
 | Cancel Shortcut       | Esc                                        | Esc                          | (none)                               |
 
-On a Mac, every hold, instruction and end shortcut of a new installation has **Send Context** ticked; on Windows only the instruction shortcut has, and on Linux none. The Mac's six end shortcuts are named by what they do (**Space**, **No space**, **Paragraph**, **Line**, **Send Enter**, **Send Shift+Enter**); the others have no name of their own.
+On a Mac, every hold, instruction and end shortcut of a new installation has **Send Context** ticked; on Windows only the instruction shortcut has, and on Linux none. The Mac's six end shortcuts are named by what they do (**Space**, **No space**, **Paragraph**, **Line**, **Send Enter**, **Send Shift+Enter**); the others have no name of their own. On the Mac, ↩ and ⇧↩ send at once (**Send Enter**, **Send Shift+Enter**), and ⌥ keeps them from sending: ⌥↩ is **Paragraph**, ⌥⇧↩ **Line** (since 2026-11-26).
 
 ## Components: when to use which
 

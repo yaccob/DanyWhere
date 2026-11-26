@@ -71,7 +71,8 @@ Ce n'est pas l'entrée qui décide si une dictée est post-traitée. C'est **Pos
 Sur un Mac, la même combinaison démarre et maintient, et les raccourcis de fin suivent une seule règle :
 
 - <kbd>⇧</kbd> (Maj) choisit la petite variante : pas d'espace au lieu d'une espace, une ligne au lieu d'un paragraphe.
-- <kbd>⌃</kbd> (Contrôle) avec <kbd>↩</kbd> (Retour) appuie sur une touche au lieu d'ajouter du texte.
+- <kbd>↩</kbd> (Retour) envoie, comme quand vous tapez : il appuie sur Entrée après le texte.
+- <kbd>⌥</kbd> (Option) empêche <kbd>↩</kbd> d'envoyer : il ajoute à la place un paragraphe ou une ligne.
 
 | Liste | Combinaison | Nom | Ce qui suit le texte |
 |---|---|---|---|
@@ -81,14 +82,14 @@ Sur un Mac, la même combinaison démarre et maintient, et les raccourcis de fin
 | **Raccourcis d'instruction** | <kbd>⇥</kbd> (Tab) | **⇥ maintenu** | une espace |
 | **Raccourcis de fin** | <kbd>⌃ Espace</kbd> | **Espace** | une espace |
 | | <kbd>⌃⇧ Espace</kbd> | **Sans espace** | rien |
-| | <kbd>↩</kbd> | **Paragraphe** | deux sauts de ligne |
-| | <kbd>⇧↩</kbd> | **Ligne** | un saut de ligne |
-| | <kbd>⌃↩</kbd> | **Envoyer Entrée** | un appui sur Entrée |
-| | <kbd>⌃⇧↩</kbd> | **Envoyer Maj+Entrée** | un appui sur Maj+Entrée |
+| | <kbd>⌥↩</kbd> | **Paragraphe** | deux sauts de ligne |
+| | <kbd>⌥⇧↩</kbd> | **Ligne** | un saut de ligne |
+| | <kbd>↩</kbd> | **Envoyer Entrée** | un appui sur Entrée |
+| | <kbd>⇧↩</kbd> | **Envoyer Maj+Entrée** | un appui sur Maj+Entrée |
 
 Tous ont **Envoyer le contexte** coché, si bien qu'une dictée post-traitée voit ce que vous avez écrit avant dans la même fenêtre.
 
-En pratique : pour un long texte, appuyez brièvement sur <kbd>⌃ Espace</kbd> pour commencer et à nouveau pour terminer ; chaque morceau reçoit son espace, prêt pour le suivant. Ou maintenez-la pendant que vous parlez. Dans un e-mail, terminez avec <kbd>↩</kbd> et le paragraphe suivant est prêt. Dans un chat, <kbd>⌃↩</kbd> envoie le message ; appuyez avant brièvement sur <kbd>⇥</kbd> et dites « un peu plus aimable », et le message est d'abord peaufiné.
+En pratique : pour un long texte, appuyez brièvement sur <kbd>⌃ Espace</kbd> pour commencer et à nouveau pour terminer ; chaque morceau reçoit son espace, prêt pour le suivant. Ou maintenez-la pendant que vous parlez. Dans un e-mail, terminez avec <kbd>⌥↩</kbd> et le paragraphe suivant est prêt. Dans un chat, <kbd>↩</kbd> envoie le message, comme si vous l'aviez tapé ; appuyez avant brièvement sur <kbd>⇥</kbd> et dites « un peu plus aimable », et le message est d'abord peaufiné.
 
 </TabItem>
 <TabItem label="Windows">
@@ -146,7 +147,7 @@ Dans un chat, vous voulez en général dire votre message et qu'il parte, sans t
 </Steps>
 
 :::tip
-Sur un Mac, une nouvelle installation le propose déjà : <kbd>⌃↩</kbd> envoie le message. Appuyez avant brièvement sur <kbd>⇥</kbd>, et il est d'abord peaufiné.
+Sur un Mac, une nouvelle installation le propose déjà : <kbd>↩</kbd> envoie le message. Appuyez avant brièvement sur <kbd>⇥</kbd>, et il est d'abord peaufiné.
 :::
 
 ## Limites
@@ -155,7 +156,7 @@ Sur un Mac, une nouvelle installation le propose déjà : <kbd>⌃↩</kbd> env
 Sous Linux, DanyWhere ne peut pas prendre une combinaison seulement pendant un enregistrement. Il ne prend donc la combinaison propre d'aucun raccourci de fin et n'a pas de raccourcis d'instruction. Un enregistrement s'y termine quand vous relâchez un raccourci de maintien, ou quand vous appuyez à nouveau brièvement sur un raccourci de début dont un raccourci de fin a la combinaison ; les réglages ne vous laissent pas supprimer le dernier raccourci de fin de ce genre. Pour la recette ci-dessus, confiez donc l'appui sur Entrée à un raccourci de fin qui a la combinaison d'un raccourci de début, ou à un raccourci de maintien. Pour post-traiter sous Linux, réglez **Post-traitement** sur **Toujours**, si vous voulez dans un profil à part.
 :::
 
-**Sur un Mac sans Accessibilité**, DanyWhere ne peut pas appuyer sur des touches. Si vous continuez sans l'autorisation, une nouvelle installation laisse de côté les deux raccourcis de fin qui envoient Entrée ou Maj+Entrée, et la touche choisie sous **Ajouter à la fin** n'est pas envoyée.
+**Sur un Mac sans Accessibilité**, DanyWhere ne peut pas appuyer sur des touches. Si vous continuez sans l'autorisation, une nouvelle installation laisse de côté les deux raccourcis de fin qui envoient Entrée ou Maj+Entrée, si bien que <kbd>↩</kbd> n'y termine rien ; <kbd>⌥↩</kbd> et <kbd>⌥⇧↩</kbd> terminent toujours par un paragraphe ou une ligne. La touche choisie sous **Ajouter à la fin** n'est pas envoyée.
 
 **macOS utilise lui-même <kbd>⌃ Espace</kbd>** pour changer de source de saisie dès que vous en avez plus d'une. Si vous changez ainsi de disposition de clavier, désactivez ce raccourci dans Réglages Système, sous Clavier › Raccourcis clavier › Sources de saisie, ou donnez d'autres combinaisons à DanyWhere.
 
