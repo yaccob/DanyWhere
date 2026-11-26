@@ -585,6 +585,23 @@ describe("post-processing setup: a guided key", () => {
     expect(rawTextIn()).toEqual([]);
   });
 
+  test("a check that times out says how long it waited", async () => {
+    await toClaude();
+    mockCommand("checkPostProcessKey", async () =>
+      failed("timeout", {
+        providerId: "anthropic",
+        provider: "Anthropic",
+        seconds: 30,
+      }),
+    );
+    await typeInto(screen.getByLabelText("Key from Anthropic"), "sk-ant-slow");
+    await press(button("Check")!);
+    expect(visibleText()).toContain(
+      "Anthropic didn't answer within the time limit (30 s).",
+    );
+    expect(visibleText()).not.toContain("{");
+  });
+
   test("a refused key says why and keeps nothing", async () => {
     await toClaude();
     mockCommand("checkPostProcessKey", async () => failed("key-refused"));
@@ -646,6 +663,36 @@ describe("post-processing setup: connected", () => {
     const text = visibleText();
     expect(text).toContain("The sample didn't work.");
     expect(text).toContain("The free models at OpenRouter are busy right now");
+  });
+
+  // The reason's own values come in the failure's detail (D, M4).
+  test("a sample that fails with a status says it, not the raw detail", async () => {
+    mockCommand("runPostProcessSample", async () =>
+      failed("status", {
+        providerId: "openrouter",
+        provider: "OpenRouter",
+        status: 503,
+      }),
+    );
+    await renderSetup(ready());
+    await press(button("Try it")!);
+    const text = visibleText();
+    expect(text).toContain("OpenRouter answered with HTTP status 503.");
+    expect(text).not.toContain("{");
+  });
+
+  test("a sample that fails otherwise shows the error, not the raw detail", async () => {
+    mockCommand("runPostProcessSample", async () =>
+      failed("other", {
+        providerId: "openrouter",
+        provider: "OpenRouter",
+        error: "connection reset",
+      }),
+    );
+    await renderSetup(ready());
+    await press(button("Try it")!);
+    expect(visibleText()).toContain("Error: connection reset");
+    expect(visibleText()).not.toContain("{");
   });
 
   test("OpenRouter with credit, not topped up yet: Top up and I've topped up", async () => {

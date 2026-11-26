@@ -127,18 +127,28 @@ export const isPostProcessFailureDetail = (detail?: string | null): boolean =>
   parse(detail) !== null;
 
 /** The sentence for a command's failure (`FailureDto`: a reason's name and
- * a raw detail) at `provider`; the raw detail where the reason has none. */
+ * the notice's detail, the JSON object with the reason's values) at
+ * `provider`, whose name the caller shows elsewhere too. Where the reason
+ * has no sentence, its error, or a detail that isn't JSON as it is; never
+ * the JSON itself (sidecar qa 2026-11-26_2250, D, M4). */
 export const failureSentence = (
   t: Translate,
   failure: { reason: string; detail: string | null },
   provider: { id: string; label: string },
-): string =>
-  reasonSentence(t, {
-    reason: failure.reason,
-    providerId: provider.id,
-    provider: provider.label,
-    error: failure.detail ?? failure.reason,
-  }) ?? t(`${KEY}.other`, { error: failure.detail ?? failure.reason });
+): string => {
+  const values = parse(failure.detail);
+  const raw = values === null ? failure.detail : null;
+  const error = text(values?.error) ?? raw ?? failure.reason;
+  return (
+    reasonSentence(t, {
+      ...values,
+      reason: values?.reason ?? failure.reason,
+      providerId: provider.id || values?.providerId,
+      provider: provider.label || values?.provider,
+      error,
+    }) ?? t(`${KEY}.other`, { error })
+  );
+};
 
 /**
  * DanyWhere: the next step a failure's notice offers (qa 2026-11-26_1840,

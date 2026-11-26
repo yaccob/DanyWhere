@@ -126,10 +126,16 @@ export const lastAnswers = (): {
     : null;
 };
 
-/** A command's failure as the backend sends it (`FailureDto`). */
-export const failed = (reason: string, detail: string | null = null) => ({
+/** A command's failure as the backend sends it (`FailureDto`): the reason
+ * and, as its detail, the notice's JSON object with the reason and `fields`
+ * (`providerId`, `provider`, `status`, `seconds`, `error` …), as
+ * `PostProcessFailure::notice_detail` writes it. */
+export const failed = (
+  reason: string,
+  fields: Record<string, string | number> = {},
+) => ({
   status: "error" as const,
-  error: { reason, detail },
+  error: { reason, detail: JSON.stringify({ reason, ...fields }) },
 });
 
 /** The pages a click opened in the browser, in order. */
