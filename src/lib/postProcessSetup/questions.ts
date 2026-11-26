@@ -7,7 +7,7 @@
 // 3. "How should it go on?" (only after "not kept" and no subscription)
 //
 // No provider is preferred: subscriptions are listed alphabetically, and the
-// local model comes last in every choice and only from 16 GiB of memory.
+// local model comes last in every choice and only on a computer with 16 GB.
 
 import type {
   NextStep,
@@ -51,8 +51,11 @@ export type Way =
   /** "Nowhere" on a computer with too little memory for the local model. */
   | { kind: "nowhere_unavailable" };
 
-/** The local model is offered from this much memory. */
-export const LOCAL_MODEL_MIN_BYTES = 16 * 1024 ** 3;
+/** The local model is offered from this much memory as the system reports
+ * it: a computer with 16 GB. macOS reports the memory built in; Linux
+ * (`MemTotal`) and Windows (`GlobalMemoryStatusEx`) report what's left after
+ * the firmware and graphics take theirs, about 15.3 to 15.8 GiB there. */
+export const LOCAL_MODEL_MIN_BYTES = 15 * 1024 ** 3;
 
 /** Whether the local model is built yet (stage 2 of the setup). */
 const LOCAL_MODEL_BUILT = false;

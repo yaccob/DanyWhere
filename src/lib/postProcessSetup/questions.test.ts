@@ -26,10 +26,21 @@ const machine = (
 ): Machine => ({ memoryBytes, platform });
 const MAC_16 = machine(16 * GIB);
 const MAC_8 = machine(8 * GIB);
-const JUST_UNDER_16 = machine(16 * GIB - 1);
+const JUST_UNDER_15 = machine(15 * GIB - 1);
 const LINUX_32 = machine(32 * GIB, "linux");
 const WINDOWS_8 = machine(8 * GIB, "windows");
-const MACHINES = [MAC_8, MAC_16, JUST_UNDER_16, LINUX_32, WINDOWS_8];
+// 16 GB as Linux (`MemTotal`) and Windows (`GlobalMemoryStatusEx`) report it.
+const LINUX_16 = machine(Math.round(15.3 * GIB), "linux");
+const WINDOWS_16 = machine(Math.round(15.8 * GIB), "windows");
+const MACHINES = [
+  MAC_8,
+  MAC_16,
+  JUST_UNDER_15,
+  LINUX_32,
+  WINDOWS_8,
+  LINUX_16,
+  WINDOWS_16,
+];
 const describe = (m: Machine) =>
   `${m.platform} with ${(m.memoryBytes / GIB).toFixed(2)} GiB`;
 
@@ -132,13 +143,13 @@ const LOCAL_ROWS: Array<[string, SetupAnswers, Machine, Way | null]> = [
     null,
   ],
   [
-    "not kept, no subscription, this computer, 1 byte under 16 GiB: no suggestion",
+    "not kept, no subscription, this computer, 1 byte under 15 GiB: no suggestion",
     {
       texts_may_go: "not_kept",
       subscription: "none",
       next_step: "this_computer",
     },
-    JUST_UNDER_16,
+    JUST_UNDER_15,
     null,
   ],
   [
@@ -154,6 +165,18 @@ const LOCAL_ROWS: Array<[string, SetupAnswers, Machine, Way | null]> = [
     { kind: "local_model", available: false },
   ],
   [
+    "nowhere, 16 GB on Linux (15.3 GiB reported): the local model (not built yet)",
+    { texts_may_go: "nowhere" },
+    LINUX_16,
+    { kind: "local_model", available: false },
+  ],
+  [
+    "nowhere, 16 GB on Windows (15.8 GiB reported): the local model (not built yet)",
+    { texts_may_go: "nowhere" },
+    WINDOWS_16,
+    { kind: "local_model", available: false },
+  ],
+  [
     "nowhere, 8 GiB: not possible on this computer",
     { texts_may_go: "nowhere" },
     MAC_8,
@@ -166,9 +189,9 @@ const LOCAL_ROWS: Array<[string, SetupAnswers, Machine, Way | null]> = [
     { kind: "nowhere_unavailable" },
   ],
   [
-    "nowhere, 1 byte under 16 GiB: not possible on this computer",
+    "nowhere, 1 byte under 15 GiB: not possible on this computer",
     { texts_may_go: "nowhere" },
-    JUST_UNDER_16,
+    JUST_UNDER_15,
     { kind: "nowhere_unavailable" },
   ],
 ];
@@ -597,17 +620,25 @@ const optionCases: Case[] = [
       ]),
   ],
   [
-    "next steps 1 byte under 16 GiB: this computer greyed out for memory",
+    "next steps 1 byte under 15 GiB: this computer greyed out for memory",
     () =>
-      assert.deepStrictEqual(nextStepOptions(JUST_UNDER_16)[2], {
+      assert.deepStrictEqual(nextStepOptions(JUST_UNDER_15)[2], {
         id: "this_computer",
         disabled: true,
         reason: "memory",
       }),
   ],
   [
-    "the local model needs 16 GiB",
-    () => assert.strictEqual(LOCAL_MODEL_MIN_BYTES, 17_179_869_184),
+    "next steps on a 16 GB Linux machine (15.3 GiB reported): this computer can be chosen",
+    () =>
+      assert.deepStrictEqual(nextStepOptions(LINUX_16)[2], {
+        id: "this_computer",
+        disabled: false,
+      }),
+  ],
+  [
+    "the local model needs 15 GiB as reported (a computer with 16 GB)",
+    () => assert.strictEqual(LOCAL_MODEL_MIN_BYTES, 16_106_127_360),
   ],
 ];
 
