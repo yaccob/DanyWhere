@@ -1760,7 +1760,116 @@ async openThemeFile() : Promise<Result<null, string>> {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+// ==== BEGIN hand-written (strand U, post-processing setup): commands; ZF replaces this file with the generated one ====
+/**
+ * DanyWhere: where the post-processing setup stands: whether it is ready
+ * or what is missing, the provider and model in use, the way it was set up
+ * and this computer's memory (for the question about this computer).
+ */
+async getPostProcessSetupStatus() : Promise<SetupStatus> {
+    return await TAURI_INVOKE("get_post_process_setup_status");
+},
+/**
+ * Keeps the setup's answers (`None` forgets them), and whether it was
+ * finished or put off with "Later".
+ */
+async setPostProcessSetupAnswers(answers: SetupAnswers | null, finished: boolean, skipped: boolean) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("set_post_process_setup_answers", { answers, finished, skipped }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
 }
+},
+/**
+ * Writes a way's provider, model, key and effort into the defaults. A
+ * field that is `None` stays as it is; an empty key removes the key.
+ */
+async applyPostProcessChoice(choice: SetupChoice) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("apply_post_process_choice", { choice }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Asks the provider for its models with `api_key`, without keeping the
+ * key: the models and the one DanyWhere recommends, or why it failed.
+ */
+async checkPostProcessKey(providerId: string, apiKey: string) : Promise<Result<KeyCheck, FailureDto>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("check_post_process_key", { providerId, apiKey }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Post-processes `text` with the defaults, as a dictation would be.
+ */
+async runPostProcessSample(text: string) : Promise<Result<SampleResult, FailureDto>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("run_post_process_sample", { text }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Starts signing in through the browser: binds the loopback listener and
+ * opens the provider's page in the browser. `post-process-sign-in-finished`
+ * says how it ended.
+ */
+async startPostProcessSignIn(provider: SignInProvider) : Promise<Result<SignInStarted, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("start_post_process_sign_in", { provider }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Opens the page of the sign-in in progress in the browser again.
+ */
+async reopenPostProcessSignIn() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("reopen_post_process_sign_in") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Stops waiting for the sign-in in progress.
+ */
+async cancelPostProcessSignIn() : Promise<void> {
+    await TAURI_INVOKE("cancel_post_process_sign_in");
+},
+/**
+ * Forgets the sign-in (ChatGPT's session, OpenRouter's key).
+ */
+async disconnectPostProcessSignIn(provider: SignInProvider) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("disconnect_post_process_sign_in", { provider }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Reads OpenRouter's key info again (`/api/v1/key`), e.g. after topping up.
+ */
+async refreshOpenrouterConnection() : Promise<Result<OpenRouterConnection, FailureDto>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("refresh_openrouter_connection") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+}
+// ==== END hand-written (strand U): commands ====
 }
 
 /** user-defined events **/
@@ -1769,6 +1878,8 @@ async openThemeFile() : Promise<Result<null, string>> {
 export const events = __makeEvents__<{
 historyUpdatePayload: HistoryUpdatePayload,
 noticesChanged: NoticesChanged,
+// ==== BEGIN/END hand-written (strand U): event type ====
+postProcessSignInFinished: PostProcessSignInFinished,
 recordingStateEvent: RecordingStateEvent,
 streamPhaseEvent: StreamPhaseEvent,
 streamTextEvent: StreamTextEvent,
@@ -1777,6 +1888,8 @@ transcriptionJob: TranscriptionJob
 }>({
 historyUpdatePayload: "history-update-payload",
 noticesChanged: "notices-changed",
+// ==== BEGIN/END hand-written (strand U): event name ====
+postProcessSignInFinished: "post-process-sign-in-finished",
 recordingStateEvent: "recording-state-event",
 streamPhaseEvent: "stream-phase-event",
 streamTextEvent: "stream-text-event",
@@ -3206,6 +3319,45 @@ export type WordList = { id: string; name: string; words?: string[] }
  * `apply_custom_words_with_replacements`).
  */
 export type WordReplacement = { original: string; replacement: string }
+// ==== BEGIN hand-written (strand U, post-processing setup): types ====
+/**
+ * Whether post-processing can run, or what is missing for it.
+ */
+export type Readiness = "ready" | "provider" | "model" | "key" | "sign_in"
+/**
+ * How the provider in use was set up, as far as the setup's card shows it.
+ */
+export type SetupWay = { kind: "chatgpt_plan"; plan: string | null; email: string | null } | { kind: "openrouter"; free_tier: boolean; limit_usd: number | null } | { kind: "key" } | { kind: "custom" }
+export type SetupStatus = { readiness: Readiness; provider_id: string; model: string; way: SetupWay | null; memory_bytes: number }
+export type TextsMayGo = "free_services" | "not_kept" | "nowhere"
+export type Subscription = "chatgpt" | "claude" | "google" | "huggingface" | "ollama" | "none"
+export type NextStep = "credit" | "groq" | "this_computer"
+export type SetupAnswers = { texts_may_go?: TextsMayGo | null; subscription?: Subscription | null; next_step?: NextStep | null }
+/**
+ * The setup's answers in the settings (global, not in profiles).
+ */
+export type PostProcessSetupState = { answers?: SetupAnswers | null; finished?: boolean; skipped?: boolean }
+/**
+ * The setup's fields of `AppSettings` (merged into it in the generated file).
+ */
+export type PostProcessSetupSettings = { post_process_setup?: PostProcessSetupState; openrouter_connection?: OpenRouterConnection | null }
+export type SetupChoice = { provider_id: string; model: string | null; api_key: string | null; effort: string | null }
+export type KeyCheck = { models: string[]; recommended: string | null }
+export type SampleResult = { output: string; model: string; millis: number }
+/**
+ * A failure's reason by its name (`post_process_failure.rs`), and what
+ * only Rust knows about it.
+ */
+export type FailureDto = { reason: string; detail: string | null }
+export type SignInProvider = "openrouter" | "chatgpt"
+export type SignInStarted = { auth_url: string }
+export type OpenRouterConnection = { free_tier: boolean; limit_usd: number | null; free_models: string[]; checked_at: number }
+/**
+ * How a sign-in ended. `error`: "cancelled", "timed_out", "denied",
+ * "not_eligible", or a raw error.
+ */
+export type PostProcessSignInFinished = { provider: SignInProvider; ok: boolean; error: string | null; free_tier: boolean | null }
+// ==== END hand-written (strand U): types ====
 
 /** tauri-specta globals **/
 
