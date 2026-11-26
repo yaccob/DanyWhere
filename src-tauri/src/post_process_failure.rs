@@ -18,7 +18,7 @@
 //! | `no-api-key`      | refused (401/403) and no API key is set                     |           |
 //! | `key-refused`     | refused (401/403) with the API key set                      |           |
 //! | `no-credit`       | the account has no credit left (402, Anthropic's "credit balance is too low", OpenAI's `insufficient_quota`, "insufficient balance") | |
-//! | `free-daily-limit`| OpenRouter's free models: the day's requests are used up (`free-models-per-day`) | |
+//! | `free-daily-limit`| OpenRouter's free models: the day's requests are used up (`free-models-per-day`, or a 429 on the free tier while the key info says none is left, `openrouter_tier::refine_failure`) | |
 //! | `key-limit`       | OpenRouter: the key's own credit limit is used up (`limit_source` `openrouter_key_limit`) | |
 //! | `free-busy`       | OpenRouter: the free model is busy at its provider (429 "rate-limited upstream" of a `:free` model, `upstream_provider_shared_pool`) | |
 //! | `plan-limit`      | ChatGPT: the plan's usage limit is reached (`subscription_sharing_usage_limit_exceeded`) | |
@@ -242,6 +242,51 @@ pub fn classify_llm_error(error: &str, api_key_set: bool) -> FailureReason {
         return FailureReason::Timeout;
     }
     FailureReason::other(error)
+}
+
+/// The status of an error answer in `llm_client`'s form
+/// (`llm_client::STATUS_ERROR_PREFIX`), e.g. 429.
+pub fn error_status(error: &str) -> Option<u16> {
+    let answer = error.strip_prefix(crate::llm_client::STATUS_ERROR_PREFIX)?;
+    let digits: String = answer.chars().take_while(char::is_ascii_digit).collect();
+    digits.parse().ok()
+}
+
+/// DanyWhere (2026-11-27): whether a failed OpenRouter request may have met
+/// the free models' daily limit though its answer doesn't say so: a 429
+/// whose reason [`classify_llm_error`] ranks after that limit (OpenRouter's
+/// "Rate limit exceeded" without `free-models-per-day`, a busy free model).
+/// The key info then tells (`free_requests_remaining`, strand L).
+pub fn may_be_free_daily_limit(error: &str, reason: &FailureReason) -> bool {
+    error_status(error) == Some(429) && ranks_after_free_daily_limit(reason)
+}
+
+/// `reason` once OpenRouter's key info said how many free requests are
+/// left today: none makes it [`FailureReason::FreeDailyLimit`], unless the
+/// answer named a reason ranked before that limit (no credit first, then
+/// ChatGPT's plan).
+pub fn with_free_requests_left(reason: FailureReason, remaining: Option<u32>) -> FailureReason {
+    if remaining == Some(0) && ranks_after_free_daily_limit(&reason) {
+        FailureReason::FreeDailyLimit
+    } else {
+        reason
+    }
+}
+
+/// The reasons [`classify_llm_error`] gives an error answer after the free
+/// models' daily limit: the key's own limit, a busy free model, a missing
+/// model, a refused key, a rate limit, another status.
+fn ranks_after_free_daily_limit(reason: &FailureReason) -> bool {
+    matches!(
+        reason,
+        FailureReason::KeyLimit
+            | FailureReason::FreeBusy
+            | FailureReason::ModelNotFound
+            | FailureReason::KeyRefused
+            | FailureReason::NoApiKey
+            | FailureReason::RateLimited
+            | FailureReason::Status(_)
+    )
 }
 
 impl FailureReason {
@@ -626,6 +671,73 @@ mod tests {
             r#""user_id":"user_2xYz","limit_source""#,
         );
         assert_eq!(classify_llm_error(&busy, true), FailureReason::FreeBusy);
+    }
+
+    #[test]
+    fn the_status_of_an_error_answer_is_read() {
+        assert_eq!(error_status(OPENROUTER_RATE_429), Some(429));
+        assert_eq!(error_status(OPENROUTER_402), Some(402));
+        assert_eq!(error_status(SERVER_500), Some(500));
+        assert_eq!(error_status(REFUSED), None);
+        assert_eq!(error_status(TRUNCATED), None);
+    }
+
+    #[test]
+    fn a_429_may_be_the_daily_limit_unless_its_answer_names_a_reason_before_it() {
+        for error in [OPENROUTER_RATE_429, OPENROUTER_FREE_BUSY] {
+            assert!(
+                may_be_free_daily_limit(error, &classify_llm_error(error, true)),
+                "{error}"
+            );
+        }
+        // No credit comes first, the plan's limit too, and the day's limit
+        // is already named; another status is no daily limit.
+        for error in [
+            OPENAI_NO_CREDIT,
+            CHATGPT_PLAN_LIMIT,
+            OPENROUTER_FREE_DAILY,
+            SERVER_500,
+            OPENROUTER_FREE_DAILY_402,
+        ] {
+            assert!(
+                !may_be_free_daily_limit(error, &classify_llm_error(error, true)),
+                "{error}"
+            );
+        }
+    }
+
+    #[test]
+    fn no_free_request_left_makes_a_429_the_daily_limit_after_no_credit() {
+        for reason in [
+            FailureReason::RateLimited,
+            FailureReason::FreeBusy,
+            FailureReason::KeyLimit,
+        ] {
+            assert_eq!(
+                with_free_requests_left(reason.clone(), Some(0)),
+                FailureReason::FreeDailyLimit,
+                "{reason:?}"
+            );
+            // Requests left, or nothing said about them: as it was.
+            for remaining in [Some(1), Some(950), None] {
+                assert_eq!(
+                    with_free_requests_left(reason.clone(), remaining),
+                    reason,
+                    "{reason:?} {remaining:?}"
+                );
+            }
+        }
+        for first in [
+            FailureReason::NoCredit,
+            FailureReason::PlanLimit,
+            FailureReason::SignInExpired,
+        ] {
+            assert_eq!(
+                with_free_requests_left(first.clone(), Some(0)),
+                first,
+                "{first:?}"
+            );
+        }
     }
 
     #[test]

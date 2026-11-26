@@ -5,12 +5,14 @@
 //!
 //! The modules use only `std` and crates the app already has, and no
 //! `crate::` paths, so they can be tested in a crate of their own; only
-//! `commands`, which ties them to the app, uses the app's modules.
+//! `commands` and `openrouter_tier` (OpenRouter's tier asked again by
+//! itself), which tie them to the app, use the app's modules.
 
 pub mod chatgpt;
 pub mod commands;
 pub mod loopback;
 pub mod openrouter;
+pub mod openrouter_tier;
 pub mod session;
 pub mod vault;
 

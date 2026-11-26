@@ -442,6 +442,12 @@ async fn post_process_outcome(
         log::info!("Post-processing with effort '{effort}'");
     }
 
+    // DanyWhere: once this request is over, however it ends, OpenRouter's
+    // tier is asked again in the background when the key is on the free
+    // tier (`openrouter_tier`); the dictation doesn't wait for it.
+    let _tier_check =
+        crate::post_process_signin::openrouter_tier::AfterRequest::new(settings, &provider.id);
+
     if provider.supports_structured_output {
         debug!("Using structured outputs for provider '{}'", provider.id);
 
@@ -565,6 +571,12 @@ async fn post_process_outcome(
                 // the schema too; only a schema not taken is worth one.
                 let reason =
                     crate::post_process_failure::classify_llm_error(&e, !api_key.trim().is_empty());
+                // DanyWhere: a 429 on OpenRouter's free tier may be the
+                // day's limit (`openrouter_tier::refine_failure`).
+                let reason = crate::post_process_signin::openrouter_tier::refine_failure(
+                    settings, &provider, &e, reason,
+                )
+                .await;
                 if ends_without_fallback(&reason) {
                     warn!(
                         "Structured output failed for provider '{}' ({:?}): {}. Not asking again without it.",
@@ -629,11 +641,14 @@ async fn post_process_outcome(
                 provider.id,
                 crate::post_process_failure::redact_secrets(&e)
             );
-            // DanyWhere: the notice names why (`post_process_failure`).
-            failed(
-                settings,
-                crate::post_process_failure::classify_llm_error(&e, api_key_set),
+            // DanyWhere: the notice names why (`post_process_failure`), a
+            // 429 on OpenRouter's free tier after asking its key info.
+            let reason = crate::post_process_failure::classify_llm_error(&e, api_key_set);
+            let reason = crate::post_process_signin::openrouter_tier::refine_failure(
+                settings, &provider, &e, reason,
             )
+            .await;
+            failed(settings, reason)
         }
     }
 }
@@ -1456,6 +1471,74 @@ mod tests {
                 "a second request after {body}"
             );
         }
+    }
+
+    /// DanyWhere: settings that post-process through OpenRouter at
+    /// `site` (a fake server: requests to `{site}/api/v1/…`), connected
+    /// through the sign-in on the free tier, with the single message.
+    fn openrouter_free_settings(site: &str) -> AppSettings {
+        let mut settings = post_process_settings(site);
+        settings.post_process_provider_id = "openrouter".to_string();
+        let provider = settings
+            .post_process_providers
+            .iter_mut()
+            .find(|provider| provider.id == "openrouter")
+            .expect("OpenRouter is a provider");
+        provider.base_url = format!("{site}/api/v1");
+        provider.supports_structured_output = false;
+        settings.post_process_models.insert(
+            "openrouter".to_string(),
+            "nvidia/nemotron-3.5-super-vl:free".to_string(),
+        );
+        settings
+            .post_process_api_keys
+            .insert("openrouter".to_string(), "sk-or-v1-test".to_string());
+        settings.openrouter_connection = Some(crate::post_process_setup::OpenRouterConnection {
+            free_tier: true,
+            limit_usd: Some(10.0),
+            free_models: vec!["nvidia/nemotron-3.5-super-vl:free".to_string()],
+            checked_at: 1_795_300_000,
+        });
+        settings
+    }
+
+    /// OpenRouter's own rate limit, which doesn't say which limit.
+    const OPENROUTER_RATE_429: &str = r#"{"error":{"code":429,"message":"Rate limit exceeded","metadata":{"error_type":"rate_limit_exceeded"}}}"#;
+    /// A free model busy at its provider (2026-11-26).
+    const OPENROUTER_BUSY_429: &str = r#"{"error":{"message":"Provider returned error","code":429,"metadata":{"raw":"nvidia/nemotron-3.5-super-vl:free is temporarily rate-limited upstream.","provider_name":"Nvidia","limit_source":"upstream_provider_shared_pool"}}}"#;
+    /// `GET /api/v1/key` with no free request left today, and with some.
+    const KEY_NONE_LEFT: &str = r#"{"data":{"label":"sk-or-v1-abc...xyz","limit":10,"limit_remaining":10,"usage":0,"is_free_tier":true,"free_model_daily_requests":{"used":50,"limit":50,"remaining":0}}}"#;
+    const KEY_SOME_LEFT: &str = r#"{"data":{"label":"sk-or-v1-abc...xyz","limit":10,"limit_remaining":10,"usage":0,"is_free_tier":true,"free_model_daily_requests":{"used":43,"limit":50,"remaining":7}}}"#;
+
+    #[test]
+    fn a_free_openrouter_429_with_no_free_request_left_is_the_days_limit() {
+        let (url, bodies) = serve_in_turn(vec![
+            ("429 Too Many Requests", OPENROUTER_RATE_429),
+            ("200 OK", KEY_NONE_LEFT),
+        ]);
+        let settings = openrouter_free_settings(&url);
+        assert_eq!(
+            run_post_process(&settings, "hello"),
+            failed(&settings, FailureReason::FreeDailyLimit)
+        );
+        let chat = bodies.recv_timeout(Duration::from_secs(5)).unwrap();
+        assert!(chat.get("messages").is_some(), "{chat}");
+        // The key info: a GET without a body.
+        let key = bodies.recv_timeout(Duration::from_secs(5)).unwrap();
+        assert_eq!(key, serde_json::Value::Null);
+    }
+
+    #[test]
+    fn a_free_openrouter_429_with_free_requests_left_keeps_its_reason() {
+        let (url, _) = serve_in_turn(vec![
+            ("429 Too Many Requests", OPENROUTER_BUSY_429),
+            ("200 OK", KEY_SOME_LEFT),
+        ]);
+        let settings = openrouter_free_settings(&url);
+        assert_eq!(
+            run_post_process(&settings, "hello"),
+            failed(&settings, FailureReason::FreeBusy)
+        );
     }
 
     #[test]

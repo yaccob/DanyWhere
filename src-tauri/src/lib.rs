@@ -1291,6 +1291,9 @@ pub fn run(cli_args: CliArgs) {
                 )),
                 post_process_signin::chatgpt::TOKEN.to_string(),
             );
+            // DanyWhere: OpenRouter's tier asked again by itself, in a thread
+            // of its own, first shortly after the start.
+            post_process_signin::openrouter_tier::start(app_handle.clone());
 
             initialize_core_logic(&app_handle);
 
