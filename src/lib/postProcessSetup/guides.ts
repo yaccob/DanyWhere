@@ -34,7 +34,7 @@ export const GUIDES: Record<GuidedKeyProvider, Guide> = {
         text: `${KEY}.anthropic.credits`,
         link: {
           label: `${KEY}.anthropic.creditsLink`,
-          url: "https://support.claude.com/en/articles/17154008-api-credits-for-max-and-team-plans",
+          url: "https://support.claude.com/en/articles/17154008-monthly-api-credits-for-max-ultra-and-team-plans",
         },
       },
       {
@@ -80,7 +80,9 @@ export const GUIDES: Record<GuidedKeyProvider, Guide> = {
         text: `${KEY}.huggingface.key`,
         link: {
           label: `${KEY}.huggingface.keyLink`,
-          url: "https://huggingface.co/settings/tokens",
+          // A new fine-grained token with the permission already set
+          // (huggingface.co/docs/inference-providers, "Authentication").
+          url: "https://huggingface.co/settings/tokens/new?ownUserPermissions=inference.serverless.write&tokenType=fineGrained",
         },
       },
       { text: `${KEY}.copyToken` },
@@ -134,7 +136,7 @@ export interface ProviderPages {
   usage?: string;
   /** Where credit is topped up. */
   credit?: string;
-  /** Where its keys and their limits are. */
+  /** Where its keys are, and at OpenRouter their limits. */
   keys?: string;
 }
 
@@ -149,8 +151,11 @@ export const PROVIDER_PAGES: Record<string, ProviderPages> = {
     credit: "https://platform.claude.com/settings/billing",
     keys: "https://platform.claude.com/settings/keys",
   },
+  // Requests and costs, and the credits with their expiry
+  // (aistudio.google.com/docs/google-ai-plans).
   gemini: {
-    usage: "https://aistudio.google.com/",
+    usage: "https://aistudio.google.com/usage",
+    credit: "https://aistudio.google.com/billing",
     keys: "https://aistudio.google.com/apikey",
   },
   huggingface: {
@@ -162,8 +167,9 @@ export const PROVIDER_PAGES: Record<string, ProviderPages> = {
     usage: "https://ollama.com/settings",
     keys: "https://ollama.com/settings/keys",
   },
+  // "Dashboard, Usage" (console.groq.com/docs/billing-faqs).
   groq: {
-    usage: "https://console.groq.com/",
+    usage: "https://console.groq.com/dashboard/usage",
     keys: "https://console.groq.com/keys",
   },
 };

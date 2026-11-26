@@ -23,6 +23,8 @@ import { NoticePanel } from "./NoticePanel";
 const OPENROUTER = { providerId: "openrouter", provider: "OpenRouter" };
 const CHATGPT = { providerId: "chatgpt", provider: "ChatGPT" };
 const OPENAI = { providerId: "openai", provider: "OpenAI" };
+const ANTHROPIC = { providerId: "anthropic", provider: "Anthropic" };
+const GEMINI = { providerId: "gemini", provider: "Google Gemini" };
 
 const failedWith = (reason: string, provider: object): Notice => ({
   code: "PostProcessFailed",
@@ -79,6 +81,21 @@ describe("a post-processing notice with its next step", () => {
     await press(button("Change limit")!);
     expect(openedUrls()).toEqual(["https://openrouter.ai/settings/keys"]);
   });
+
+  // Only OpenRouter limits a key's spending; elsewhere limits are the
+  // organization's or the project's, on the usage page (sidecar qa
+  // 2026-11-26_2250, "Prüfung der Adressen").
+  for (const [provider, url] of [
+    [ANTHROPIC, "https://platform.claude.com/settings/spend-limits"],
+    [GEMINI, "https://aistudio.google.com/usage"],
+  ] as const) {
+    test(`key-limit at ${provider.provider}: Manage usage opens its usage page`, async () => {
+      await showToast(failedWith("key-limit", provider));
+      expect(button("Change limit")).toBeNull();
+      await press(button("Manage usage")!);
+      expect(openedUrls()).toEqual([url]);
+    });
+  }
 
   test("plan-limit: Manage usage opens ChatGPT's usage", async () => {
     await showToast(failedWith("plan-limit", CHATGPT));

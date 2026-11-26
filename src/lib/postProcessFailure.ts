@@ -194,7 +194,11 @@ export const postProcessFailureAction = (
     case "free-daily-limit":
       return open("topUp", pages.credit);
     case "key-limit":
-      return open("changeLimit", pages.keys);
+      // Only OpenRouter limits a key's spending; elsewhere the limit is the
+      // organization's or the project's, on its usage page.
+      return providerId === "openrouter"
+        ? open("changeLimit", pages.keys)
+        : open("manageUsage", pages.usage);
     case "plan-limit":
       return open("manageUsage", pages.usage);
     case "plan-not-eligible":
