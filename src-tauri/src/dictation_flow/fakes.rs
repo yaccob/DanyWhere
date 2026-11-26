@@ -153,6 +153,7 @@ impl Default for Script {
             recording: Some(Recording {
                 samples: samples(),
                 input_silent: false,
+                speech: true,
             }),
             transcription: Ok("hello".to_string()),
             word_replacements: Vec::new(),
@@ -208,6 +209,9 @@ pub enum Event {
     },
     /// The word list check was asked about these candidates.
     CheckWordList(Vec<WordListMatch>),
+    /// DanyWhere: the next post-processing request goes with this spoken
+    /// instruction (recorded only when it has one).
+    SpokenInstruction(String),
     /// A post-processing request was considered; `with_window`: earlier
     /// dictations from this window may go along.
     PostProcess {
@@ -352,6 +356,11 @@ impl FakePorts {
         }
     }
 
+    /// DanyWhere: Escape, now: the dictation is cancelled from here on.
+    pub fn cancel(&self) {
+        self.0.cancelled.store(true, Ordering::SeqCst);
+    }
+
     /// The next dictation goes as `script` says, with the same History.
     pub fn set_script(&self, script: Script) {
         *self.0.script.lock().unwrap() = script;
@@ -460,9 +469,13 @@ impl PostProcess for FakePorts {
         &self,
         settings: &AppSettings,
         transcription: &str,
+        spoken_instruction: Option<&str>,
         post_process: bool,
         context: &ContextQuery,
     ) -> impl std::future::Future<Output = ProcessedTranscription> + Send {
+        if let Some(instruction) = spoken_instruction {
+            self.record(Event::SpokenInstruction(instruction.to_string()));
+        }
         self.record(Event::PostProcess {
             post_process,
             with_window: context.window.is_some(),
@@ -476,6 +489,7 @@ impl PostProcess for FakePorts {
                 &self.0.history,
                 settings,
                 transcription,
+                spoken_instruction,
                 post_process,
                 context,
             )

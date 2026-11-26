@@ -1178,7 +1178,8 @@
       "promptMenu": {
         "button": "Mit einem Prompt nachbearbeiten",
         "title": "Nachbearbeiten mit",
-        "active": "aktiv"
+        "active": "aktiv",
+        "withoutSpokenInstruction": "Ohne die gesprochene Anweisung"
       },
       "retranscribeAgain": "Erneut transkribieren und wie zuvor nachbearbeiten"
     },
@@ -1577,7 +1578,10 @@
     "notReady": "Noch nicht fertig",
     "wordList": "Wortliste: {{name}}",
     "wordListGlobalOnly": "Keine zusätzliche Liste",
-    "cancel": "Abbrechen"
+    "cancel": "Abbrechen",
+    "instruction": "Anweisung",
+    "instructionLine": "Anweisung: {{text}}",
+    "textReady": "Text transkribiert"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} blockiert möglicherweise 1 Tastenkürzel",

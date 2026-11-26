@@ -609,27 +609,22 @@ pub struct ProcessedTranscription {
     pub context_entry_ids: Vec<i64>,
 }
 
-/// DanyWhere: `context` says which earlier dictations may go along as
-/// context for post-processing (`dictation_context`).
-pub(crate) async fn process_transcription_output(
-    app: &AppHandle,
-    transcription: &str,
-    post_process: bool,
-    context: &crate::dictation_context::ContextQuery,
-) -> ProcessedTranscription {
-    process_transcription_output_with(app, transcription, post_process, context, None).await
-}
-
-/// DanyWhere: [`process_transcription_output`]; with `prompt_ids` it
-/// post-processes with exactly those prompts of the library, in that order,
+/// DanyWhere: the transcription after post-processing with the settings of
+/// the dictation's profile, if `post_process` asks for it; `context` says
+/// which earlier dictations may go along as context (`dictation_context`).
+/// With `prompt_ids` it post-processes with exactly those prompts of the
+/// library, in that order,
 /// instead of the profile's active ones (History's wand menu,
-/// `prompt_library::with_only`).
+/// `prompt_library::with_only`). `spoken_instruction`: the entry's spoken
+/// instruction, for History's wand, "Transcribe Again" and a redo for
+/// another application's profile (`process_transcription_with_settings`).
 pub(crate) async fn process_transcription_output_with(
     app: &AppHandle,
     transcription: &str,
     post_process: bool,
     context: &crate::dictation_context::ContextQuery,
     prompt_ids: Option<&[String]>,
+    spoken_instruction: Option<&str>,
 ) -> ProcessedTranscription {
     // DanyWhere: with the values of the dictation's own profile, if any.
     let mut settings = crate::app_profiles::dictation_settings(app);
@@ -643,7 +638,7 @@ pub(crate) async fn process_transcription_output_with(
     process_transcription_with_settings(
         &settings,
         transcription,
-        None,
+        spoken_instruction,
         post_process,
         &context.misheard,
         |instructions| crate::dictation_context::context_for(app, &settings, instructions, context),
@@ -794,6 +789,11 @@ pub fn stop_transcription(
         let stop_time = Instant::now();
         debug!("TranscribeAction::stop called for binding: {}", binding_id);
 
+        // DanyWhere: the spoken instruction this recording went on to, if
+        // any (`dictation_flow::instruction`): the recording stopped now is
+        // its section, and the dictation post-processes with it.
+        let instruction = crate::dictation_flow::instruction::take_pending(binding_id);
+
         let tm = Arc::clone(&app.state::<Arc<TranscriptionManager>>());
 
         // DanyWhere: the dictation's profile is chosen again now, by the
@@ -820,6 +820,10 @@ pub fn stop_transcription(
         // generation.
         let snapshot =
             crate::dictation_snapshot::take(app, end, binding_id, transcribed_with_end_values);
+        let snapshot = match &instruction {
+            Some(pending) => snapshot.with_spoken_instruction(pending.use_streaming_overlay()),
+            None => snapshot,
+        };
 
         // DanyWhere: the rest of the dictation goes through its ports
         // (`dictation_flow`): what shows and sounds now that the recording
@@ -837,6 +841,7 @@ pub fn stop_transcription(
                 // DanyWhere: the hold on DanyWhere's input source the
                 // recording's start took, if any (`dictation_start`).
                 input_source: crate::delivery::take_recording_hold(),
+                instruction: instruction.map(|pending| pending.into_part()),
             },
             ports,
         ));

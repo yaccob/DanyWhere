@@ -145,7 +145,9 @@ pub fn end_in(target: &ProfileValues, made_end: &EndKey) -> EndKey {
 
 /// The first step to redo when a dictation made with `made_with`, ended
 /// with `made_end`, goes into an application whose profile has `target`,
-/// where it ends with `target_end` ([`end_in`]).
+/// where it ends with `target_end` ([`end_in`]). The app redoes through
+/// [`redo_from_with_instruction`], which knows the dictation's.
+#[cfg(test)]
 pub fn redo_from(
     base: &AppSettings,
     made_with: &ProfileValues,
@@ -153,13 +155,28 @@ pub fn redo_from(
     made_end: &EndKey,
     target_end: &EndKey,
 ) -> RedoFrom {
+    redo_from_with_instruction(base, made_with, target, made_end, target_end, false)
+}
+
+/// DanyWhere: [`redo_from`] for a dictation that went on to a spoken
+/// instruction (`spoken_instruction`): it post-processed whatever its end
+/// said, and does so in the target too, with the instruction
+/// (`dictation_snapshot::wants_post_processing`).
+pub fn redo_from_with_instruction(
+    base: &AppSettings,
+    made_with: &ProfileValues,
+    target: &ProfileValues,
+    made_end: &EndKey,
+    target_end: &EndKey,
+    spoken_instruction: bool,
+) -> RedoFrom {
     if transcription_differs(base, made_with, target) {
         return RedoFrom::Transcription;
     }
     // As the dictation decided, and as it would decide in the target
     // (`app_profiles::effective_post_process`).
-    let made_post_processed = crate::app_profiles::effective_post_process(made_end, made_with);
-    let target_post_processes = crate::app_profiles::effective_post_process(target_end, target);
+    let made_post_processed = post_processes_in(made_end, made_with, spoken_instruction);
+    let target_post_processes = post_processes_in(target_end, target, spoken_instruction);
     if made_post_processed != target_post_processes
         || (made_post_processed
             && post_processing_differs(
@@ -176,6 +193,21 @@ pub fn redo_from(
         return RedoFrom::Append;
     }
     RedoFrom::Nothing
+}
+
+/// DanyWhere: whether a dictation ending with `end` in the profile with
+/// `values` post-processes there; with a spoken instruction always.
+pub fn post_processes_in(end: &EndKey, values: &ProfileValues, spoken_instruction: bool) -> bool {
+    crate::dictation_snapshot::wants_post_processing(
+        spoken_instruction,
+        crate::app_profiles::effective_post_process(end, values),
+    )
+}
+
+/// DanyWhere: the spoken instruction a redo of `entry` takes along: it
+/// belongs to the dictation, not to its profile.
+fn instruction_of(entry: &HistoryEntry) -> Option<&str> {
+    entry.spoken_instruction.as_deref()
 }
 
 /// The values of profile `id`, or of the defaults (`profiles::values_of`).
@@ -347,15 +379,18 @@ pub fn for_insert(
         });
     };
     let target_end = end_in(&target_values, &made.end);
-    let from = redo_from(
+    // DanyWhere: a dictation with a spoken instruction post-processes
+    // wherever it goes, with the instruction.
+    let spoken_instruction = entry.spoken_instruction.is_some();
+    let from = redo_from_with_instruction(
         &settings,
         &made.values,
         &target_values,
         &made.end,
         &target_end,
+        spoken_instruction,
     );
-    let target_post_processes =
-        crate::app_profiles::effective_post_process(&target_end, &target_values);
+    let target_post_processes = post_processes_in(&target_end, &target_values, spoken_instruction);
     let plan = plan(from, entry, target_post_processes);
     if plan != RedoPlan::Keep {
         info!(
@@ -459,7 +494,8 @@ fn run(
         }
         RedoPlan::Transcribe => {
             show(Working::Transcribing);
-            let post_process = crate::app_profiles::effective_post_process(target_end, target);
+            let post_process =
+                post_processes_in(target_end, target, entry.spoken_instruction.is_some());
             let with_context = post_process && target_end.send_context;
             match crate::app_profiles::with_values_here(target.clone(), || {
                 transcribe_again(app, entry, post_process, with_context, show)
@@ -499,12 +535,17 @@ fn post_process_again(
     if !with_context {
         query.window = None;
     }
-    let processed = tauri::async_runtime::block_on(crate::actions::process_transcription_output(
-        app,
-        transcription,
-        true,
-        &query,
-    ));
+    // DanyWhere: the dictation's spoken instruction goes along.
+    let instruction = instruction_of(entry);
+    let processed =
+        tauri::async_runtime::block_on(crate::actions::process_transcription_output_with(
+            app,
+            transcription,
+            true,
+            &query,
+            None,
+            instruction,
+        ));
     let Some(text) = processed.post_processed_text else {
         return Err(processed
             .post_process_failure
@@ -518,6 +559,7 @@ fn post_process_again(
             text: text.clone(),
             prompt: processed.post_process_prompt,
             prompt_name: processed.post_process_prompt_name,
+            spoken_instruction: instruction.is_some_and(|text| !text.trim().is_empty()),
         },
     )
     .map_err(|e| {
@@ -573,12 +615,16 @@ fn transcribe_again(
     if !with_context {
         query.window = None;
     }
-    let processed = tauri::async_runtime::block_on(crate::actions::process_transcription_output(
-        app,
-        &transcription.text,
-        post_process,
-        &query,
-    ));
+    // DanyWhere: the dictation's spoken instruction goes along.
+    let processed =
+        tauri::async_runtime::block_on(crate::actions::process_transcription_output_with(
+            app,
+            &transcription.text,
+            post_process,
+            &query,
+            None,
+            instruction_of(entry),
+        ));
     hm.update_transcription(
         entry.id,
         transcription.text,
@@ -721,6 +767,48 @@ mod tests {
         let mut target_end = made_end.clone();
         change_end(&mut target_end);
         redo_from(&settings, &made, &target, &made_end, &target_end)
+    }
+
+    // DanyWhere (strand Z1): a dictation with a spoken instruction.
+
+    #[test]
+    fn a_dictation_with_an_instruction_post_processes_again_whatever_its_end_says() {
+        let settings = settings_with_mail();
+        let made = default_values(&settings);
+        let mut target = made.clone();
+        formal(&mut target);
+        let end = end_with(false);
+        assert_eq!(
+            redo_from(&settings, &made, &target, &end, &end),
+            RedoFrom::Nothing
+        );
+        assert_eq!(
+            redo_from_with_instruction(&settings, &made, &target, &end, &end, true),
+            RedoFrom::PostProcessing
+        );
+        assert_eq!(
+            redo_from_with_instruction(&settings, &made, &made.clone(), &end, &end, true),
+            RedoFrom::Nothing,
+            "the same profile redoes nothing"
+        );
+    }
+
+    #[test]
+    fn with_an_instruction_the_target_post_processes_whatever_its_end_says() {
+        let settings = settings_with_mail();
+        let mut values = default_values(&settings);
+        values.post_process_enabled = false;
+        assert!(post_processes_in(&end_with(false), &values, true));
+        assert!(!post_processes_in(&end_with(false), &values, false));
+        assert!(!post_processes_in(&end_with(true), &values, false));
+    }
+
+    #[test]
+    fn a_redo_takes_the_entrys_instruction_along() {
+        let mut e = entry(vec![transcription("a")]);
+        assert_eq!(instruction_of(&e), None);
+        e.spoken_instruction = Some("translate it into Polish".to_string());
+        assert_eq!(instruction_of(&e), Some("translate it into Polish"));
     }
 
     #[test]

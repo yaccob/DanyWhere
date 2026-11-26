@@ -704,6 +704,10 @@ pub(crate) struct PostProcessed {
     pub prompt: Option<String>,
     /// The prompt's name, for the ✨ step.
     pub prompt_name: Option<String>,
+    /// DanyWhere: it ran with the entry's spoken instruction, so its ✨
+    /// step says so (History's wand, a redo for another application's
+    /// profile).
+    pub spoken_instruction: bool,
 }
 
 /// What storing a post-processing did.
@@ -733,7 +737,7 @@ pub(crate) fn store_post_processing_with_conn(
         at: Some(at),
         prompt_name: result.prompt_name,
         model: None,
-        spoken_instruction: false,
+        spoken_instruction: result.spoken_instruction,
     };
     let applied = apply_post_processing(&entry.versions, target, &result.text, step);
     let unchanged = applied.is_none();
@@ -786,7 +790,9 @@ pub(crate) fn add_transcription_with_conn(
     at: i64,
 ) -> Result<HistoryEntry> {
     let text = new.text.trim();
-    if text.is_empty() {
+    // DanyWhere: an entry made of a spoken instruction alone (F5 i) has no
+    // text; its post-processing still goes on top.
+    if text.is_empty() && new.post_processed.is_none() {
         return Err(VersionError::Blank.into());
     }
     let entry = HistoryManager::entry_with_conn(conn, id)?;
@@ -796,7 +802,7 @@ pub(crate) fn add_transcription_with_conn(
         .filter(|version| !version.text.trim().is_empty())
         .cloned()
         .collect();
-    if versions.last().is_none_or(|top| top.text.trim() != text) {
+    if !text.is_empty() && versions.last().is_none_or(|top| top.text.trim() != text) {
         versions.push(HistoryVersion::transcribed_by(
             text,
             Some(at),
@@ -2086,6 +2092,7 @@ mod tests {
                 text: "Clean words.".into(),
                 prompt: Some("Fix the grammar".into()),
                 prompt_name: Some("Grammar".into()),
+                spoken_instruction: false,
             },
             77,
         )
@@ -2184,6 +2191,7 @@ mod tests {
                 text: text.into(),
                 prompt: Some("Fix it again".into()),
                 prompt_name: Some("Again".into()),
+                spoken_instruction: false,
             }),
             post_process_requested: post_processed.is_some(),
             model: None,
@@ -2267,6 +2275,78 @@ mod tests {
         // The transcription under it ran without one.
         assert!(!e.versions[e.versions.len() - 2].steps[0].spoken_instruction);
         assert_eq!(get(&conn, id).versions, e.versions);
+    }
+
+    /// DanyWhere (strand Z1): the wand, or a redo, with the entry's spoken
+    /// instruction.
+    #[test]
+    fn a_post_processing_from_history_with_the_instruction_says_so_on_its_step() {
+        let conn = database();
+        let id = insert(&conn, "raw words", None);
+        set_instruction(&conn, id, "translate it into Polish");
+        let with = store_post_processing_with_conn(
+            &conn,
+            id,
+            PostProcessTarget::OnTop,
+            PostProcessed {
+                text: "Surowe słowa.".into(),
+                spoken_instruction: true,
+                ..Default::default()
+            },
+            80,
+        )
+        .expect("store");
+        assert!(with.entry.versions[1].steps[0].spoken_instruction);
+        let without = store_post_processing_with_conn(
+            &conn,
+            id,
+            PostProcessTarget::OnTop,
+            PostProcessed {
+                text: "Raw words.".into(),
+                ..Default::default()
+            },
+            81,
+        )
+        .expect("store");
+        assert!(!without.entry.versions[2].steps[0].spoken_instruction);
+        assert_eq!(get(&conn, id).versions, without.entry.versions);
+    }
+
+    /// DanyWhere (strand Z1): an entry made of an instruction alone (F5 i)
+    /// has no text to transcribe again; its post-processing goes on top.
+    #[test]
+    fn transcribing_again_without_text_puts_its_post_processing_on_top() {
+        let conn = database();
+        let id = insert(&conn, "", Some("A polite no."));
+        set_instruction(&conn, id, "write a polite no");
+        let before = get(&conn, id).versions;
+
+        let e = add_transcription_with_conn(
+            &conn,
+            id,
+            NewTranscription {
+                instruction_applied: true,
+                ..new_transcription("", Some("A polite no, again."))
+            },
+            LATER,
+        )
+        .expect("transcribe again");
+
+        let top = e.versions.last().expect("a top version");
+        assert_eq!(top.text, "A polite no, again.");
+        assert!(top.steps[0].spoken_instruction);
+        assert!(
+            e.versions[..e.versions.len() - 1]
+                .iter()
+                .any(|version| version.text == "A polite no."),
+            "the version before stays: {:?} from {:?}",
+            e.versions,
+            before
+        );
+        // Without a post-processing there is nothing to add.
+        assert!(
+            add_transcription_with_conn(&conn, id, new_transcription("", None), LATER).is_err()
+        );
     }
 
     #[test]

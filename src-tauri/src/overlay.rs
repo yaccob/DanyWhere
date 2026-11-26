@@ -942,6 +942,33 @@ pub fn set_dictation_context(app_handle: &AppHandle, sends: bool) {
     }
 }
 
+/// DanyWhere: the dictation in progress went on to a spoken instruction
+/// (`dictation_flow::instruction`), as the overlay shows it.
+#[derive(Debug, Clone, PartialEq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DictationInstruction {
+    /// The text before the instruction is transcribed: a check mark.
+    pub text_ready: bool,
+    /// The instruction as heard, once it is: the live overlay's line
+    /// "Instruction: …".
+    pub heard: Option<String>,
+}
+
+/// DanyWhere: shows that the dictation in progress records a spoken
+/// instruction: its pill says "Instruction" (`RecordingOverlay.tsx`). A new
+/// recording, and hiding the overlay, end it in the overlay itself.
+pub fn set_dictation_instruction(
+    app_handle: &AppHandle,
+    instruction: Option<DictationInstruction>,
+) {
+    if !crate::overlay_look::enabled(OVERLAY_ENABLED.load(Ordering::Relaxed)) {
+        return;
+    }
+    if let Some(overlay_window) = app_handle.get_webview_window("recording_overlay") {
+        let _ = overlay_window.emit("overlay-dictation-instruction", instruction);
+    }
+}
+
 /// Shows `state` for `duration`, then hides the overlay unless something else
 /// has shown it in the meantime.
 fn show_timed_state(app_handle: &AppHandle, state: &'static str, duration: std::time::Duration) {

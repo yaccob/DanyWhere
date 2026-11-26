@@ -34,6 +34,11 @@ pub struct Recording {
     /// The microphone sent only digital silence (muted, or the wrong
     /// default device).
     pub input_silent: bool,
+    /// DanyWhere: the voice activity detection heard speech in it, not only
+    /// the hangover of speech before a cut (`RecordedSection::speech`). A
+    /// spoken instruction without speech isn't transcribed: Whisper makes a
+    /// sentence up from silence, and the model would follow it.
+    pub speech: bool,
 }
 
 /// The recording and its transcription.
@@ -75,11 +80,14 @@ pub trait Transcribe {
 pub trait PostProcess {
     /// The transcription after post-processing with `settings`, if
     /// `post_process` asks for it, with earlier dictations as `context`
-    /// says (`actions::process_transcription_with_settings`).
+    /// says (`actions::process_transcription_with_settings`). DanyWhere:
+    /// `spoken_instruction` is what the speaker said after the instruction
+    /// key, for this one dictation; with one, it is always post-processed.
     fn post_process(
         &self,
         settings: &AppSettings,
         transcription: &str,
+        spoken_instruction: Option<&str>,
         post_process: bool,
         context: &ContextQuery,
     ) -> impl Future<Output = ProcessedTranscription> + Send;
@@ -174,6 +182,15 @@ pub enum Overlay {
         streaming: bool,
     },
     Hide,
+    /// DanyWhere: the recording went on to a spoken instruction
+    /// (`instruction::begin_instruction`): the pill says "Instruction" while
+    /// the waveform goes on; `text_ready`: the text's transcription has
+    /// finished (a check mark); `heard`: the instruction as heard, once it
+    /// is (the line under the live overlay's text).
+    Instruction {
+        text_ready: bool,
+        heard: Option<String>,
+    },
     /// After a dictation: where the text waits when it was not pasted, and
     /// for how long; `None`: nothing (`delivery::overlay_after_dictation`).
     AfterDictation(Option<(DictationNotice, Duration)>),

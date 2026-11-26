@@ -79,6 +79,39 @@ impl DictationSnapshot {
             end: self.end.clone(),
         }
     }
+
+    /// DanyWhere: the snapshot of a dictation whose recording went on to a
+    /// spoken instruction (`dictation_flow::instruction`): it post-processes
+    /// whatever its end says ([`wants_post_processing`]), with context as
+    /// its end says; `use_streaming_overlay` is what the overlay showed at
+    /// the cut, since the live stream ended there.
+    pub fn with_spoken_instruction(self, use_streaming_overlay: bool) -> Self {
+        let post_process = wants_post_processing(true, self.post_process);
+        Self {
+            with_context: sends_context(post_process, &self.end),
+            post_process,
+            use_streaming_overlay,
+            ..self
+        }
+    }
+}
+
+/// DanyWhere: whether a dictation post-processes: always when the
+/// instruction key was pressed in it (`spoken_instruction`: an instruction
+/// is never lost, F2 i, and one heard as nothing still asks for the
+/// profile's prompts), otherwise as `otherwise` says: today its end
+/// shortcut, with the switch of its profile
+/// (`app_profiles::effective_post_process`). Strand Z2 replaces
+/// `otherwise` by "the profile is set to always" (user, 2026-11-26: the
+/// end shortcuts lose their "Post-process" box); this is the one place.
+pub fn wants_post_processing(spoken_instruction: bool, otherwise: bool) -> bool {
+    spoken_instruction || otherwise
+}
+
+/// DanyWhere: whether earlier dictations go along as context: only when it
+/// post-processes, and as its end says.
+fn sends_context(post_process: bool, end: &EndKey) -> bool {
+    post_process && end.send_context
 }
 
 /// What a snapshot is built from, as read when the recording ends.
@@ -116,7 +149,10 @@ pub fn build(inputs: SnapshotInputs<'_>) -> DictationSnapshot {
         ),
     };
     let end = crate::end_keys::resolve(&values, inputs.end, inputs.binding_id);
-    let post_process = crate::app_profiles::effective_post_process(&end, &values);
+    let post_process = wants_post_processing(
+        false,
+        crate::app_profiles::effective_post_process(&end, &values),
+    );
     DictationSnapshot {
         use_streaming_overlay: should_use_streaming_overlay(
             settings.overlay_style,
@@ -125,7 +161,7 @@ pub fn build(inputs: SnapshotInputs<'_>) -> DictationSnapshot {
         settings,
         profile_id,
         values,
-        with_context: post_process && end.send_context,
+        with_context: sends_context(post_process, &end),
         post_process,
         end,
         transcribed_with_end_values: inputs.transcribed_with_end_values,
@@ -135,7 +171,7 @@ pub fn build(inputs: SnapshotInputs<'_>) -> DictationSnapshot {
 }
 
 /// Whether the overlay of `style` shows a stream's working states.
-fn should_use_streaming_overlay(style: OverlayStyle, is_streaming: bool) -> bool {
+pub(crate) fn should_use_streaming_overlay(style: OverlayStyle, is_streaming: bool) -> bool {
     style == OverlayStyle::Live && is_streaming
 }
 
@@ -452,6 +488,56 @@ mod tests {
         assert_eq!(made.profile_id, "mail");
         assert_eq!(made.values, mail_values(&stored));
         assert_eq!(made.end.id, "send");
+    }
+
+    // DanyWhere: a dictation with a spoken instruction always post-processes
+    // (strand Z1; F2 i).
+
+    #[test]
+    fn the_instruction_key_post_processes_whatever_else_says() {
+        assert!(wants_post_processing(true, false));
+        assert!(wants_post_processing(true, true));
+        assert!(wants_post_processing(false, true));
+        assert!(!wants_post_processing(false, false));
+    }
+
+    #[test]
+    fn with_a_spoken_instruction_an_end_without_post_processing_post_processes() {
+        let stored = with_mail_profile();
+        // "quote" doesn't post-process but asks for context.
+        let quoted = snapshot(
+            &stored,
+            Some(mail_values(&stored)),
+            EndChoice::Key("quote".to_string()),
+        );
+        assert!(!quoted.post_process);
+        assert!(!quoted.with_context);
+        let instructed = quoted.with_spoken_instruction(true);
+        assert!(instructed.post_process);
+        assert!(
+            instructed.with_context,
+            "as the end says, now that it post-processes"
+        );
+        assert!(
+            instructed.use_streaming_overlay,
+            "the live overlay as at the cut"
+        );
+        assert_eq!(instructed.end.id, "quote");
+        assert_eq!(instructed.end.append_text, " (quoted)");
+    }
+
+    #[test]
+    fn with_a_spoken_instruction_an_end_without_context_sends_none() {
+        let stored = with_mail_profile();
+        let plain = snapshot(
+            &stored,
+            None,
+            EndChoice::Start(START_BINDINGS[0].to_string()),
+        )
+        .with_spoken_instruction(false);
+        assert!(plain.post_process, "even with the profile's switch off");
+        assert!(!plain.with_context);
+        assert!(!plain.use_streaming_overlay);
     }
 
     #[test]
