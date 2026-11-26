@@ -136,23 +136,18 @@ const factoryNames = (language: string): FactoryNames => {
 
 /** macOS's six factory end shortcuts, named in `language` by what they do,
  * all with "Send Context": `MACOS_SIX` and `factory_end_keys_on` in
- * `src-tauri/src/end_keys.rs` (user, 2026-11-26, variant b). Keep the two in
- * step. */
+ * `src-tauri/src/end_keys.rs` (user, 2026-11-26, variant b; ↩ sends and ⌥↩
+ * appends a paragraph since 22:35 that day). Keep the two in step. */
 export const factoryEndKeys = (language: string): EndKey[] => {
   const names = factoryNames(language);
   // (id, combination, Append, name)
   const ends: [string, string, string, string][] = [
     ["direct_space", "ctrl+space", " ", names.space],
     ["direct_no_space", "ctrl+shift+space", "", names.noSpace],
-    ["direct_paragraph", "return", "\\n\\n", names.paragraph],
-    ["direct_line", "shift+return", "\\n", names.line],
-    ["direct_enter", "ctrl+return", "{Enter}", names.enter],
-    [
-      "direct_shift_enter",
-      "ctrl+shift+return",
-      "{Shift+Enter}",
-      names.shiftEnter,
-    ],
+    ["direct_paragraph", "option+return", "\\n\\n", names.paragraph],
+    ["direct_line", "option+shift+return", "\\n", names.line],
+    ["direct_enter", "return", "{Enter}", names.enter],
+    ["direct_shift_enter", "shift+return", "{Shift+Enter}", names.shiftEnter],
   ];
   return ends.map(([id, shortcut, append_text, name]) => ({
     id,

@@ -1610,15 +1610,33 @@ mod tests {
             apply_no_accessibility_mode(&mut settings);
             assert_eq!(settings.end_keys, without_key_presses(&factory));
             #[cfg(target_os = "macos")]
-            assert_eq!(
-                ids(&settings.end_keys),
-                [
-                    "direct_space",
-                    "direct_no_space",
-                    "direct_paragraph",
-                    "direct_line",
-                ]
-            );
+            {
+                assert_eq!(
+                    ids(&settings.end_keys),
+                    [
+                        "direct_space",
+                        "direct_no_space",
+                        "direct_paragraph",
+                        "direct_line",
+                    ]
+                );
+                // ↩ and ⇧↩ send (user, 2026-11-26), so without Accessibility
+                // they go and plain ↩ ends nothing; ⌥↩ and ⌥⇧↩ stay.
+                let shortcuts: Vec<&str> = settings
+                    .end_keys
+                    .iter()
+                    .map(|end| end.shortcut.as_str())
+                    .collect();
+                assert_eq!(
+                    shortcuts,
+                    [
+                        "ctrl+space",
+                        "ctrl+shift+space",
+                        "option+return",
+                        "option+shift+return",
+                    ]
+                );
+            }
         }
 
         #[test]

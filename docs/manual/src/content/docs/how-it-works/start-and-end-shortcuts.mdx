@@ -71,7 +71,8 @@ Whether a dictation is post-processed is not up to the entry. It's up to **Post 
 On a Mac, one combination starts and holds, and the end shortcuts follow one rule:
 
 - <kbd>⇧</kbd> (Shift) picks the smaller variant: no space instead of a space, a line instead of a paragraph.
-- <kbd>⌃</kbd> (Control) together with <kbd>↩</kbd> (Return) presses a key instead of appending text.
+- <kbd>↩</kbd> (Return) sends, as it does when you type: it presses Enter after the text.
+- <kbd>⌥</kbd> (Option) keeps <kbd>↩</kbd> from sending: it appends a paragraph or a line instead.
 
 | List | Combination | Name | What follows the text |
 |---|---|---|---|
@@ -81,14 +82,14 @@ On a Mac, one combination starts and holds, and the end shortcuts follow one rul
 | **Instruction Shortcuts** | <kbd>⇥</kbd> (Tab) | **⇥ held** | a space |
 | **End Shortcuts** | <kbd>⌃ Space</kbd> | **Space** | a space |
 | | <kbd>⌃⇧ Space</kbd> | **No space** | nothing |
-| | <kbd>↩</kbd> | **Paragraph** | two line breaks |
-| | <kbd>⇧↩</kbd> | **Line** | one line break |
-| | <kbd>⌃↩</kbd> | **Send Enter** | a press of Enter |
-| | <kbd>⌃⇧↩</kbd> | **Send Shift+Enter** | a press of Shift+Enter |
+| | <kbd>⌥↩</kbd> | **Paragraph** | two line breaks |
+| | <kbd>⌥⇧↩</kbd> | **Line** | one line break |
+| | <kbd>↩</kbd> | **Send Enter** | a press of Enter |
+| | <kbd>⇧↩</kbd> | **Send Shift+Enter** | a press of Shift+Enter |
 
 All of them have **Send Context** ticked, so a post-processed dictation sees what you wrote before in the same window.
 
-In practice: for a longer text, tap <kbd>⌃ Space</kbd> to start and again to end; each piece gets its space, ready for the next. Or hold it while you speak. In an email, end with <kbd>↩</kbd> and the next paragraph is ready. In a chat, <kbd>⌃↩</kbd> sends the message; tap <kbd>⇥</kbd> before it and say “a bit friendlier”, and the message is polished first.
+In practice: for a longer text, tap <kbd>⌃ Space</kbd> to start and again to end; each piece gets its space, ready for the next. Or hold it while you speak. In an email, end with <kbd>⌥↩</kbd> and the next paragraph is ready. In a chat, <kbd>↩</kbd> sends the message, as it would if you had typed it; tap <kbd>⇥</kbd> before it and say “a bit friendlier”, and the message is polished first.
 
 </TabItem>
 <TabItem label="Windows">
@@ -146,7 +147,7 @@ In a chat, you usually want to say your message and have it sent, without reachi
 </Steps>
 
 :::tip
-On a Mac, a new installation already has this: <kbd>⌃↩</kbd> sends the message. Tap <kbd>⇥</kbd> before it, and the message is polished first.
+On a Mac, a new installation already has this: <kbd>↩</kbd> sends the message. Tap <kbd>⇥</kbd> before it, and the message is polished first.
 :::
 
 ## Limits
@@ -155,7 +156,7 @@ On a Mac, a new installation already has this: <kbd>⌃↩</kbd> sends the messa
 On Linux, DanyWhere can't take a combination only while a recording runs. So it takes no end shortcut's own combination and has no instruction shortcuts. A recording ends there when you let go of a hold shortcut, or tap a start shortcut again whose combination an end shortcut has; the settings won't let you remove the last such end shortcut. For the recipe above, give the Enter key press to an end shortcut with a start shortcut's combination, or to a hold shortcut. To post-process on Linux, set **Post Processing** to **Always**, in a profile of its own if you like.
 :::
 
-**On a Mac without Accessibility**, DanyWhere can't press keys. If you continue without the permission, a new installation leaves out the two end shortcuts that send Enter or Shift+Enter, and a key press chosen under **Append** isn't sent.
+**On a Mac without Accessibility**, DanyWhere can't press keys. If you continue without the permission, a new installation leaves out the two end shortcuts that send Enter or Shift+Enter, so <kbd>↩</kbd> ends nothing there; <kbd>⌥↩</kbd> and <kbd>⌥⇧↩</kbd> still end with a paragraph or a line. A key press chosen under **Append** isn't sent.
 
 **macOS uses <kbd>⌃ Space</kbd> itself** to switch input sources once you have more than one. If you switch keyboard layouts that way, turn the shortcut off in System Settings, under Keyboard › Keyboard Shortcuts › Input Sources, or give DanyWhere other combinations.
 
