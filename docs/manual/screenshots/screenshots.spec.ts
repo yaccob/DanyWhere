@@ -85,12 +85,17 @@ interface Shot {
 }
 
 const SHOTS: Shot[] = [
-  // "When Held" opens the group, so two ends keep the picture about as tall
-  // as four were without it: the ends of the two start shortcuts, right
-  // under how each ends when held.
-  { name: "end-shortcuts", groupTitleKey: "settings.endKeys.title", rows: 2 },
+  // The first three of the six factory ends: the two with the hold
+  // shortcuts' combinations, then the one that starts a paragraph.
+  { name: "end-shortcuts", groupTitleKey: "settings.endKeys.title", rows: 3 },
+  // The card Instruction Shortcuts with its one factory entry, ⇥ (the
+  // chapter "The spoken instruction").
+  {
+    name: "instruction-shortcuts",
+    groupTitleKey: "settings.instructionKeys.title",
+  },
   // A profile's page: values that follow the defaults and one of its own
-  // (Terminal doesn't post-process).
+  // (Terminal never post-processes).
   {
     name: "profile-own-values",
     scene: "profiles",
@@ -108,7 +113,7 @@ const SHOTS: Shot[] = [
     scene: "profiles",
     path: [{ key: "sidebar.advanced" }],
     groupTitleKey: "settings.advanced.groups.transcription",
-    settingTitleKey: "settings.debug.postProcessingToggle.label",
+    settingTitleKey: "settings.postProcessing.mode.title",
   },
   // The overview of the profile settings: the profiles with their
   // applications, choosing by application.
@@ -359,15 +364,16 @@ const prepareShot = (
         cut = bottom;
       }
       if (shown !== null) {
-        // A row of the list: the element around one end's name field whose
-        // parent holds the others too.
-        const names = group.querySelectorAll('[id^="end-key-name-"]');
+        // A row of the list: the element around one entry's name field
+        // (`<kind>-key-name-<id>`: an end, hold or instruction shortcut)
+        // whose parent holds the others too.
+        const NAME_FIELD = '[id*="-key-name-"]';
+        const names = group.querySelectorAll(NAME_FIELD);
         const rowOf = (field: Element) => {
           let row = field;
           while (
             row.parentElement &&
-            row.parentElement.querySelectorAll('[id^="end-key-name-"]')
-              .length === 1
+            row.parentElement.querySelectorAll(NAME_FIELD).length === 1
           ) {
             row = row.parentElement;
           }

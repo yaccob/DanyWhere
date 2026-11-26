@@ -11,6 +11,7 @@ import type {
   ApplicationInfo,
   AppSettings,
   EndKey,
+  StartKey,
 } from "../../../src/bindings";
 import { settingsWith, type ProfileSpec } from "../../../src/test/fixtures";
 import { answerCommand, ok } from "./mocks/bindings";
@@ -32,13 +33,56 @@ export const EXAMPLE_APPLICATIONS: ApplicationInfo[] = [
   { id: "com.apple.TextEdit", name: "TextEdit", running: false },
 ];
 
+/** macOS's factory start shortcut: ⌃ Space (`factory_start_keys_on` in
+ * `src-tauri/src/start_keys.rs`). */
+const factoryStartKeys = (): StartKey[] => [
+  { id: "start", shortcut: "ctrl+space" },
+];
+
+/** The id of the factory hold shortcut ⌃ Space (`HOLD_SPACE_ID` in
+ * `src-tauri/src/start_keys.rs`). */
+const HOLD_SPACE_ID = "hold_space";
+
+/** macOS's factory hold shortcuts, unnamed, so they show "⌃ Space held":
+ * ⌃ Space appends a space, ⌃⇧ Space nothing, both with "Send Context"
+ * (`factory_hold_keys_on` in `src-tauri/src/start_keys.rs`). */
+const factoryHoldKeys = (): EndKey[] => [
+  {
+    id: HOLD_SPACE_ID,
+    name: "",
+    shortcut: "ctrl+space",
+    append_text: " ",
+    send_context: true,
+  },
+  {
+    id: "hold_no_space",
+    name: "",
+    shortcut: "ctrl+shift+space",
+    append_text: "",
+    send_context: true,
+  },
+];
+
+/** macOS's factory instruction shortcut ⇥, unnamed ("⇥ held"), appending a
+ * space, with "Send Context" (`factory_instruction_keys_on` in
+ * `src-tauri/src/instruction_keys.rs`). */
+const factoryInstructionKeys = (): EndKey[] => [
+  {
+    id: "instruction_tab",
+    name: "",
+    shortcut: "tab",
+    append_text: " ",
+    send_context: true,
+  },
+];
+
 /** Two profiles, each with one value of its own; everything else follows
  * the defaults:
  *
- * - "Terminal" (iTerm2, Terminal) doesn't post-process, so a command is
- *   typed as spoken;
- * - "Chat" (Slack, Signal) appends Enter when the held start shortcut is
- *   released, so the message goes out ("When Held").
+ * - "Terminal" (iTerm2, Terminal) never post-processes ("Post Processing":
+ *   "Never"), so a command is typed as spoken and ⇥ stays Tab;
+ * - "Chat" (Slack, Signal) appends Enter when the hold shortcut ⌃ Space is
+ *   released, so the message goes out: its own version of that one entry.
  *
  * Choosing the profile by application is on; the defaults are in use. */
 export const EXAMPLE_PROFILES: ProfileSpec[] = [
@@ -46,28 +90,19 @@ export const EXAMPLE_PROFILES: ProfileSpec[] = [
     id: "profile_1795300000001",
     name: "Terminal",
     apps: ["com.googlecode.iterm2", "com.apple.Terminal"],
-    values: { post_process_enabled: false },
-    own: ["post_process_enabled"],
+    values: { post_process_mode: "never" },
+    own: ["post_process_mode"],
   },
   {
     id: "profile_1795300000002",
     name: "Chat",
     apps: ["com.tinyspeck.slackmacgap", "org.whispersystems.signal-desktop"],
     values: {
-      hold_ends: {
-        transcribe: {
-          append_text: "{Enter}",
-          post_process: false,
-          send_context: false,
-        },
-        transcribe_with_post_process: {
-          append_text: " ",
-          post_process: true,
-          send_context: true,
-        },
-      },
+      hold_keys: factoryHoldKeys().map((hold) =>
+        hold.id === HOLD_SPACE_ID ? { ...hold, append_text: "{Enter}" } : hold,
+      ),
     },
-    own: ["hold_ends"],
+    ownEntries: { hold_keys: { own: [HOLD_SPACE_ID] } },
   },
 ];
 
@@ -86,15 +121,7 @@ const localeOf = (language: string): Record<string, unknown> => {
 };
 
 type FactoryNames = Record<
-  | "pattern"
-  | "direct"
-  | "postProcessed"
-  | "space"
-  | "noSpace"
-  | "paragraph"
-  | "line"
-  | "enter"
-  | "shiftEnter",
+  "space" | "noSpace" | "paragraph" | "line" | "enter" | "shiftEnter",
   string
 >;
 
@@ -107,55 +134,32 @@ const factoryNames = (language: string): FactoryNames => {
   return { ...(of(localeOf("en")) as FactoryNames), ...of(localeOf(language)) };
 };
 
-/** macOS's twelve factory end shortcuts, named in `language`: the list of
- * `factory_end_keys_on` in `src-tauri/src/end_keys.rs` (user, 2026-11-24).
- * Keep the two in step. */
+/** macOS's six factory end shortcuts, named in `language` by what they do,
+ * all with "Send Context": `MACOS_SIX` and `factory_end_keys_on` in
+ * `src-tauri/src/end_keys.rs` (user, 2026-11-26, variant b). Keep the two in
+ * step. */
 export const factoryEndKeys = (language: string): EndKey[] => {
   const names = factoryNames(language);
-  const name = (postProcess: boolean, effect: string) =>
-    names.pattern
-      .replace("{{mode}}", postProcess ? names.postProcessed : names.direct)
-      .replace("{{effect}}", effect);
-  // (id, combination, Append, post-processing, what it does)
-  const ends: [string, string, string, boolean, string][] = [
-    ["direct_space", "ctrl+space", " ", false, names.space],
-    ["direct_no_space", "ctrl+shift+space", "", false, names.noSpace],
-    ["direct_paragraph", "return", "\\n\\n", false, names.paragraph],
-    ["direct_line", "shift+return", "\\n", false, names.line],
-    ["direct_enter", "ctrl+return", "{Enter}", false, names.enter],
-    [
-      "direct_shift_enter",
-      "ctrl+shift+return",
-      "{Shift+Enter}",
-      false,
-      names.shiftEnter,
-    ],
-    ["post_space", "ctrl+option+space", " ", true, names.space],
-    ["post_no_space", "ctrl+option+shift+space", "", true, names.noSpace],
-    ["post_paragraph", "option+return", "\\n\\n", true, names.paragraph],
-    ["post_line", "option+shift+return", "\\n", true, names.line],
-    ["post_enter", "ctrl+option+return", "{Enter}", true, names.enter],
-    [
-      "post_shift_enter",
-      "ctrl+option+shift+return",
-      "{Shift+Enter}",
-      true,
-      names.shiftEnter,
-    ],
+  // (id, combination, Append, name)
+  const ends: [string, string, string, string][] = [
+    ["direct_space", "ctrl+space", " ", names.space],
+    ["direct_no_space", "ctrl+shift+space", "", names.noSpace],
+    ["direct_paragraph", "return", "\\n\\n", names.paragraph],
+    ["direct_line", "shift+return", "\\n", names.line],
+    ["direct_enter", "ctrl+return", "{Enter}", names.enter],
+    ["direct_shift_enter", "ctrl+shift+return", "{Shift+Enter}", names.shiftEnter],
   ];
-  return ends.map(([id, shortcut, append_text, post_process, effect]) => ({
+  return ends.map(([id, shortcut, append_text, name]) => ({
     id,
-    name: name(post_process, effect),
+    name,
     shortcut,
     append_text,
-    post_process,
-    // "Send Context" exactly where it post-processes.
-    send_context: post_process,
+    send_context: true,
   }));
 };
 
 /** Post-processing set up with a made-up provider and model, so the pages
- * show the post-processing ends as working (the manual explains them). */
+ * show the instruction shortcuts as taken (the manual explains them). */
 const EXAMPLE_PROVIDER = {
   id: "custom",
   label: "Custom",
@@ -177,25 +181,15 @@ export const freshMacSettings = (
   settingsWith({
     ...(scene === "profiles" ? { profiles: EXAMPLE_PROFILES } : {}),
     defaults: {
-      post_process_enabled: true,
+      post_process_mode: "with_instruction_key",
       post_process_provider_id: EXAMPLE_PROVIDER.id,
       post_process_providers: [EXAMPLE_PROVIDER],
       post_process_models: { [EXAMPLE_PROVIDER.id]: "example-model" },
       post_process_api_keys: { [EXAMPLE_PROVIDER.id]: "example-key" },
-      shortcut_activation: "hold_or_toggle",
+      start_keys: factoryStartKeys(),
+      hold_keys: factoryHoldKeys(),
+      instruction_keys: factoryInstructionKeys(),
       end_keys: factoryEndKeys(language),
-      hold_ends: {
-        transcribe: {
-          append_text: " ",
-          post_process: false,
-          send_context: false,
-        },
-        transcribe_with_post_process: {
-          append_text: " ",
-          post_process: true,
-          send_context: true,
-        },
-      },
     },
     app: {
       app_language: language,
@@ -284,6 +278,9 @@ const LIST_FIELDS = {
   post_process_efforts: { kind: "map" },
   post_process_api_keys: { kind: "map" },
   bindings: { kind: "map" },
+  start_keys: { kind: "list", key: "id" },
+  hold_keys: { kind: "list", key: "id" },
+  instruction_keys: { kind: "list", key: "id" },
   end_keys: { kind: "list", key: "id" },
 } as const;
 
