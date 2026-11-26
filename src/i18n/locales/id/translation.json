@@ -1568,7 +1568,9 @@
     "postProcessEffortRefusedTitle": "Upaya Ditolak",
     "postProcessEffortRefused": "{{model}} menolak upaya yang dipilih, jadi teks datang dengan bawaan model. Pilih upaya lain, atau “Bawaan model”, di samping model pascaproses.",
     "fileTranscriptionFailedTitle": "Transkripsi File Gagal",
-    "transcriptionFailedTitle": "Transkripsi Gagal"
+    "transcriptionFailedTitle": "Transkripsi Gagal",
+    "instructionTranscriptionFailedTitle": "Instruksi Gagal – Teks Siap",
+    "instructionTranscriptionFailed": "Instruksi lisan tidak dapat ditranskripsi, jadi tidak ada yang disisipkan. Teks sebelumnya sudah siap: Tempel transkripsi terakhir menyisipkannya, Salin transkripsi terakhir menaruhnya di papan klip."
   },
   "notices": {
     "errorOne": "{{n}} kesalahan",

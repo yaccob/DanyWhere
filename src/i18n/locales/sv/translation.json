@@ -1568,7 +1568,9 @@
     "postProcessEffortRefusedTitle": "Ansträngning avvisad",
     "postProcessEffortRefused": "{{model}} avvisade den valda ansträngningen, så texten kom med modellens standard. Välj en annan ansträngning, eller ”Modellens standard”, bredvid modellen för efterbearbetning.",
     "fileTranscriptionFailedTitle": "Transkriptionen av filen misslyckades",
-    "transcriptionFailedTitle": "Transkriptionen misslyckades"
+    "transcriptionFailedTitle": "Transkriptionen misslyckades",
+    "instructionTranscriptionFailedTitle": "Instruktion misslyckad – text klar",
+    "instructionTranscriptionFailed": "Den talade instruktionen kunde inte transkriberas, så inget infogades. Texten före den är klar: Klistra in senaste transkriptionen infogar den, Kopiera senaste transkriptionen lägger den i urklipp."
   },
   "notices": {
     "errorOne": "{{n}} fel",

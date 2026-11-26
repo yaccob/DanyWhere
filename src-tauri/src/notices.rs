@@ -68,6 +68,11 @@ pub enum NoticeCode {
     /// the text came at its default (`post_process_effort`). Detail: the
     /// model.
     PostProcessEffortRefused,
+    /// DanyWhere: a dictation's spoken instruction couldn't be transcribed,
+    /// so nothing was inserted; the text before it is the last transcript,
+    /// which "Paste Last Transcript" and "Copy Last Transcript" reach
+    /// (`dictation_flow`). Detail: the raw error.
+    InstructionTranscriptionFailed,
 }
 
 impl NoticeCode {
@@ -83,7 +88,8 @@ impl NoticeCode {
             | Self::ModelLoadFailed
             | Self::NoModelSelected
             | Self::FileTranscriptionFailed
-            | Self::HistoryPostProcessFailed => NoticeLevel::Error,
+            | Self::HistoryPostProcessFailed
+            | Self::InstructionTranscriptionFailed => NoticeLevel::Error,
             Self::PostProcessFailed
             | Self::FilePostProcessFailed
             | Self::AppMissedShortcut
@@ -111,6 +117,7 @@ impl NoticeCode {
             Self::AppMissedShortcut => &strings.app_missed_shortcut_title,
             Self::OutdatedPrompts => &strings.outdated_prompts_title,
             Self::PostProcessEffortRefused => &strings.post_process_effort_refused_title,
+            Self::InstructionTranscriptionFailed => &strings.instruction_transcription_failed_title,
         }
     }
 }

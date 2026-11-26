@@ -1568,7 +1568,9 @@
     "postProcessEffortRefusedTitle": "Mức suy nghĩ bị từ chối",
     "postProcessEffortRefused": "{{model}} đã từ chối mức suy nghĩ đã chọn, nên văn bản đến với mặc định của mô hình. Hãy chọn mức khác, hoặc “Mặc định của mô hình”, bên cạnh mô hình xử lý sau.",
     "fileTranscriptionFailedTitle": "Phiên âm tệp thất bại",
-    "transcriptionFailedTitle": "Phiên âm thất bại"
+    "transcriptionFailedTitle": "Phiên âm thất bại",
+    "instructionTranscriptionFailedTitle": "Lỗi hướng dẫn – văn bản sẵn sàng",
+    "instructionTranscriptionFailed": "Không thể phiên âm hướng dẫn bằng giọng nói nên chưa có gì được chèn. Văn bản trước đó đã sẵn sàng: Dán bản chép gần nhất sẽ chèn nó, Sao chép bản chép gần nhất sẽ đưa nó vào bảng nhớ tạm."
   },
   "notices": {
     "errorOne": "{{n}} lỗi",

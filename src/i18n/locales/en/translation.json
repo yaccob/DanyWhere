@@ -1568,7 +1568,9 @@
     "postProcessEffortRefusedTitle": "Effort Not Accepted",
     "postProcessEffortRefused": "{{model}} refused the chosen effort, so the text came at the model's default. Choose another effort, or Model Default, next to the post-processing model.",
     "fileTranscriptionFailedTitle": "File Transcription Failed",
-    "transcriptionFailedTitle": "Transcription Failed"
+    "transcriptionFailedTitle": "Transcription Failed",
+    "instructionTranscriptionFailedTitle": "Instruction Failed – Text Ready",
+    "instructionTranscriptionFailed": "The spoken instruction couldn't be transcribed, so nothing was inserted. The text before it is ready: Paste Last Transcript inserts it, Copy Last Transcript puts it on the clipboard."
   },
   "notices": {
     "errorOne": "{{n}} error",

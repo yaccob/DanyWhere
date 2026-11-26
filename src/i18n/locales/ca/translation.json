@@ -1568,7 +1568,9 @@
     "postProcessEffortRefusedTitle": "Esforç rebutjat",
     "postProcessEffortRefused": "{{model}} ha rebutjat l'esforç triat, així que el text ha arribat amb el valor per defecte del model. Trieu un altre esforç, o «Per defecte del model», al costat del model de postprocessament.",
     "fileTranscriptionFailedTitle": "La transcripció del fitxer ha fallat",
-    "transcriptionFailedTitle": "La transcripció ha fallat"
+    "transcriptionFailedTitle": "La transcripció ha fallat",
+    "instructionTranscriptionFailedTitle": "Instrucció fallida – text a punt",
+    "instructionTranscriptionFailed": "No s'ha pogut transcriure la instrucció parlada, així que no s'ha inserit res. El text d'abans és a punt: «Enganxa l'última transcripció» l'insereix i «Copia l'última transcripció» el posa al porta-retalls."
   },
   "notices": {
     "errorOne": "{{n}} error",

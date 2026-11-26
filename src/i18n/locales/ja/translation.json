@@ -1568,7 +1568,9 @@
     "postProcessEffortRefusedTitle": "思考レベルが拒否されました",
     "postProcessEffortRefused": "{{model}} が選択した思考レベルを拒否したため、テキストはモデルの既定で届きました。後処理モデルの横で別のレベルか「モデルの既定」を選んでください。",
     "fileTranscriptionFailedTitle": "ファイルの文字起こしに失敗しました",
-    "transcriptionFailedTitle": "文字起こしに失敗しました"
+    "transcriptionFailedTitle": "文字起こしに失敗しました",
+    "instructionTranscriptionFailedTitle": "指示に失敗 – テキストは準備済み",
+    "instructionTranscriptionFailed": "音声指示を文字起こしできなかったため、何も挿入されませんでした。その前のテキストは準備できています。「最後の文字起こしを貼り付け」で挿入、「最後の文字起こしをコピー」でクリップボードに入れられます。"
   },
   "notices": {
     "errorOne": "エラー {{n}} 件",

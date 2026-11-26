@@ -1568,7 +1568,9 @@
     "postProcessEffortRefusedTitle": "המאמץ נדחה",
     "postProcessEffortRefused": "{{model}} דחה את המאמץ שנבחר, ולכן הטקסט הגיע בברירת המחדל של המודל. בחר מאמץ אחר, או „ברירת המחדל של המודל”, ליד מודל העיבוד המשלים.",
     "fileTranscriptionFailedTitle": "תמלול הקובץ נכשל",
-    "transcriptionFailedTitle": "התמלול נכשל"
+    "transcriptionFailedTitle": "התמלול נכשל",
+    "instructionTranscriptionFailedTitle": "ההוראה נכשלה – הטקסט מוכן",
+    "instructionTranscriptionFailed": "לא ניתן היה לתמלל את ההוראה הקולית, ולכן לא הוכנס דבר. הטקסט שלפניה מוכן: „הדבק את התמלול האחרון” מכניס אותו, „העתק את התמלול האחרון” מעתיק אותו ללוח."
   },
   "notices": {
     "errorOne": "{{n}} שגיאה",

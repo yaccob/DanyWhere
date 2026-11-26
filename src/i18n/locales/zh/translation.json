@@ -1568,7 +1568,9 @@
     "postProcessEffortRefusedTitle": "思考程度被拒绝",
     "postProcessEffortRefused": "{{model}} 拒绝了所选的思考程度，因此文本以模型默认值返回。请在后处理模型旁边选择其他程度或“模型默认”。",
     "fileTranscriptionFailedTitle": "文件转录失败",
-    "transcriptionFailedTitle": "转录失败"
+    "transcriptionFailedTitle": "转录失败",
+    "instructionTranscriptionFailedTitle": "指令失败 – 文本已就绪",
+    "instructionTranscriptionFailed": "无法转录语音指令，因此没有插入任何内容。指令之前的文本已就绪：“粘贴最近的转录”可将其插入，“复制最近的转录”可将其放入剪贴板。"
   },
   "notices": {
     "errorOne": "{{n}} 个错误",

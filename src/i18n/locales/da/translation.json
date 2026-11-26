@@ -1568,7 +1568,9 @@
     "postProcessEffortRefusedTitle": "Indsats afvist",
     "postProcessEffortRefused": "{{model}} afviste den valgte indsats, så teksten kom med modellens standard. Vælg en anden indsats, eller „Modellens standard“, ved siden af modellen til efterbehandling.",
     "fileTranscriptionFailedTitle": "Transskription af fil mislykkedes",
-    "transcriptionFailedTitle": "Transskription mislykkedes"
+    "transcriptionFailedTitle": "Transskription mislykkedes",
+    "instructionTranscriptionFailedTitle": "Instruktion mislykkedes – tekst klar",
+    "instructionTranscriptionFailed": "Den talte instruktion kunne ikke transskriberes, så intet blev indsat. Teksten før den er klar: Indsæt seneste transskription indsætter den, Kopiér seneste transskription lægger den i udklipsholderen."
   },
   "notices": {
     "errorOne": "{{n}} fejl",

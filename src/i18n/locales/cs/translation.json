@@ -1568,7 +1568,9 @@
     "postProcessEffortRefusedTitle": "Úsilí odmítnuto",
     "postProcessEffortRefused": "{{model}} odmítl zvolené úsilí, proto text přišel s výchozím nastavením modelu. Zvolte jiné úsilí nebo „Výchozí modelu“ vedle modelu následného zpracování.",
     "fileTranscriptionFailedTitle": "Přepis souboru selhal",
-    "transcriptionFailedTitle": "Přepis selhal"
+    "transcriptionFailedTitle": "Přepis selhal",
+    "instructionTranscriptionFailedTitle": "Pokyn selhal – text je připraven",
+    "instructionTranscriptionFailed": "Mluvený pokyn se nepodařilo přepsat, proto se nic nevložilo. Text před ním je připraven: „Vložit poslední přepis“ ho vloží, „Zkopírovat poslední přepis“ ho uloží do schránky."
   },
   "notices": {
     "errorOne": "{{n}} chyba",

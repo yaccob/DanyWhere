@@ -1568,7 +1568,9 @@
     "postProcessEffortRefusedTitle": "思考程度遭拒",
     "postProcessEffortRefused": "{{model}} 拒絕了所選的思考程度，因此文字以模型預設值傳回。請在後處理模型旁邊選擇其他程度或「模型預設」。",
     "fileTranscriptionFailedTitle": "檔案轉錄失敗",
-    "transcriptionFailedTitle": "轉錄失敗"
+    "transcriptionFailedTitle": "轉錄失敗",
+    "instructionTranscriptionFailedTitle": "指令失敗 – 文字已就緒",
+    "instructionTranscriptionFailed": "無法轉錄語音指令，因此沒有插入任何內容。指令之前的文字已就緒：「貼上最近的轉錄」可將其插入，「複製最近的轉錄」可將其放入剪貼簿。"
   },
   "notices": {
     "errorOne": "{{n}} 個錯誤",

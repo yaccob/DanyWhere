@@ -1568,7 +1568,9 @@
     "postProcessEffortRefusedTitle": "Inspanning geweigerd",
     "postProcessEffortRefused": "{{model}} weigerde de gekozen inspanning, dus kwam de tekst met de standaard van het model. Kies naast het naverwerkingsmodel een andere inspanning of ‘Standaard van het model’.",
     "fileTranscriptionFailedTitle": "Transcriptie van bestand mislukt",
-    "transcriptionFailedTitle": "Transcriptie mislukt"
+    "transcriptionFailedTitle": "Transcriptie mislukt",
+    "instructionTranscriptionFailedTitle": "Instructie mislukt – tekst klaar",
+    "instructionTranscriptionFailed": "De gesproken instructie kon niet worden getranscribeerd, dus er is niets ingevoegd. De tekst ervoor staat klaar: Laatste transcriptie plakken voegt hem in, Laatste transcriptie kopiëren zet hem op het klembord."
   },
   "notices": {
     "errorOne": "{{n}} fout",

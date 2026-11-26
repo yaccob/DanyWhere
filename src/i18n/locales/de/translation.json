@@ -1568,7 +1568,9 @@
     "postProcessEffortRefusedTitle": "Denkaufwand abgelehnt",
     "postProcessEffortRefused": "{{model}} hat den gewählten Denkaufwand abgelehnt, darum kam der Text mit dem Standard des Modells. Wähle neben dem Modell der Nachbearbeitung einen anderen Denkaufwand oder „Standard des Modells“.",
     "fileTranscriptionFailedTitle": "Dateitranskription fehlgeschlagen",
-    "transcriptionFailedTitle": "Transkription fehlgeschlagen"
+    "transcriptionFailedTitle": "Transkription fehlgeschlagen",
+    "instructionTranscriptionFailedTitle": "Anweisung gescheitert – Text bereit",
+    "instructionTranscriptionFailed": "Die gesprochene Anweisung ließ sich nicht transkribieren, darum wurde nichts eingefügt. Der Text davor liegt bereit: „Letzte Transkription einfügen“ fügt ihn ein, „Letzte Transkription kopieren“ legt ihn in die Zwischenablage."
   },
   "notices": {
     "errorOne": "{{n}} Fehler",

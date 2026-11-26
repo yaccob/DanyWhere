@@ -734,8 +734,12 @@ fn an_end_profile_with_another_model_transcribes_the_text_again() {
     assert_eq!(ports.entries()[0].transcription_text, "hello");
 }
 
+/// DanyWhere (user, 2026-11-26 22:15): a failed instruction pastes nothing
+/// and leaves the clipboard alone, but its text is the last transcript:
+/// "Paste Last Transcript" and "Copy Last Transcript" deliver it
+/// (`delivery::latest_entry_and_text`), and the notice says so.
 #[test]
-fn a_failed_instruction_keeps_the_dictation_in_history_and_pastes_nothing() {
+fn a_failed_instruction_keeps_its_text_ready_for_paste_last_and_pastes_nothing() {
     let ports = FakePorts::new(Script {
         instruction: Err("the model failed".to_string()),
         ..script(tone(SAMPLES), tone(SAID), POLISH)
@@ -757,10 +761,11 @@ fn a_failed_instruction_keeps_the_dictation_in_history_and_pastes_nothing() {
             load_end_model: false,
         },
         Event::ReleaseModel,
-        Event::Raise(
-            notice(NoticeCode::TranscriptionFailed).with_detail("the model failed".to_string()),
-        ),
         Event::HistoryAdded(1),
+        Event::Raise(
+            notice(NoticeCode::InstructionTranscriptionFailed)
+                .with_detail("the model failed".to_string()),
+        ),
         Event::Tray(TrayIconState::Idle),
         Event::Complete(TranscriptionOutcome::Failed, SAMPLES + SAID),
         Event::Finished,
@@ -772,6 +777,82 @@ fn a_failed_instruction_keeps_the_dictation_in_history_and_pastes_nothing() {
     assert!(entry.post_process_requested);
     assert_eq!(entry.spoken_instruction.as_deref(), Some(""));
     assert!(entry.spoken_instruction_file.is_some());
+    // What "Paste Last Transcript" and "Copy Last Transcript" deliver.
+    let (last, text) = crate::delivery::latest_entry_and_text_in(ports.history())
+        .expect("the text is the last transcript");
+    assert_eq!((last.id, text.as_str()), (entry.id, "hello"));
+}
+
+/// A failed instruction with no text before it, or with a text that failed
+/// itself, leaves nothing to paste: the notice says only that the
+/// transcription failed, and "Paste Last Transcript" finds nothing.
+#[test]
+fn a_failed_instruction_without_a_text_leaves_nothing_to_paste() {
+    let failing =
+        |text: Recording, transcription: Result<&str, &str>, instruction: Result<&str, &str>| {
+            Script {
+                transcription: transcription.map(str::to_string).map_err(str::to_string),
+                instruction: instruction.map(str::to_string).map_err(str::to_string),
+                ..script(text, tone(SAID), POLISH)
+            }
+        };
+    let cases = [
+        (
+            "nothing said before the instruction",
+            failing(tone(0), Ok("hello"), Err("the model failed")),
+            "the model failed",
+        ),
+        (
+            "the text heard as nothing",
+            failing(tone(SAMPLES), Ok(" "), Err("the model failed")),
+            "the model failed",
+        ),
+        (
+            "the text's transcription failed",
+            failing(tone(SAMPLES), Err("the text failed"), Ok(POLISH)),
+            "the text failed",
+        ),
+    ];
+    for (case, script, detail) in cases {
+        let ports = FakePorts::new(script);
+        let slot = slot();
+        cut(&ports, slot);
+        ports.take_events();
+        end(
+            &ports,
+            slot,
+            ended_without_post_processing(&no_server(), "", false),
+        );
+
+        let events = ports.take_events();
+        let raised: Vec<_> = events
+            .iter()
+            .filter(|event| matches!(event, Event::Raise(_) | Event::RaiseWithoutOverlay(_)))
+            .collect();
+        assert_eq!(
+            raised,
+            [&Event::Raise(
+                notice(NoticeCode::TranscriptionFailed).with_detail(detail.to_string())
+            )],
+            "{case}"
+        );
+        assert!(
+            !events.iter().any(|event| matches!(
+                event,
+                Event::Paste { .. }
+                    | Event::LeftOnClipboard(_)
+                    | Event::PutOnClipboard(_)
+                    | Event::InputMethod(_)
+                    | Event::ServiceInserted(_)
+            )),
+            "{case}: {events:#?}"
+        );
+        assert_eq!(ports.entries().len(), 1, "{case}: kept to transcribe again");
+        assert!(
+            crate::delivery::latest_entry_and_text_in(ports.history()).is_none(),
+            "{case}: nothing to paste"
+        );
+    }
 }
 
 #[test]

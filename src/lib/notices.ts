@@ -110,6 +110,12 @@ const NOTICE_DISPLAY: Record<NoticeCode, NoticeDisplay> = {
       t("errors.postProcessEffortRefused", { model: detail ?? "" }),
     detailInExplanation: true,
   },
+  // DanyWhere: the detail is the raw error; the text before the instruction
+  // waits for Paste Last Transcript (src-tauri/src/dictation_flow/mod.rs).
+  InstructionTranscriptionFailed: {
+    title: "errors.instructionTranscriptionFailedTitle",
+    explanation: (t) => t("errors.instructionTranscriptionFailed"),
+  },
 };
 
 export const noticeDisplay = (code: NoticeCode) => NOTICE_DISPLAY[code];
