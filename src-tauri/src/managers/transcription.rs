@@ -1031,7 +1031,8 @@ impl TranscriptionManager {
     /// (`dictation_flow::instruction`): its live decode ended at the cut.
     /// Keeps the model loaded even when it unloads right after use: the
     /// instruction is transcribed with it next, and the dictation's end
-    /// unloads it.
+    /// unloads it once both sections are dealt with, the instruction heard
+    /// or not (`dictation_flow::ports::Transcribe::release_model`).
     pub fn transcribe_text_section(&self, samples: Vec<f32>) -> Result<Transcription> {
         let started = Instant::now();
         let live = self.finalize_live(samples.len())?;

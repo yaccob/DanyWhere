@@ -33,8 +33,9 @@
 //!   the values of that key: Z2 resolves them as an end (`EndChoice`, id
 //!   `instruction:<key id>`; [`key_of_pending`] says which key it was) and
 //!   the snapshot takes them as from any end. With the instruction the
-//!   dictation always post-processes
-//!   (`dictation_snapshot::wants_post_processing`).
+//!   dictation post-processes unless the profile it ends with never does
+//!   (`dictation_snapshot::wants_post_processing`); then nothing goes to a
+//!   provider, and History keeps the instruction as text.
 //! - **Escape** (`utils::cancel_current_operation`) and a **new start**
 //!   (`dictation_start`) throw it away ([`discard_pending`]): the text's
 //!   transcription goes nowhere, and the audio manager drops the second
@@ -257,16 +258,22 @@ pub fn transcribe_instruction<P: Transcribe>(
 /// Both sections of a dictation with a spoken instruction, transcribed:
 /// waits for the text's transcription, then transcribes `instruction`, the
 /// section `stop_recording` gave ([`transcribe_instruction`]). The model is
-/// one, so the instruction never runs beside the text.
-pub async fn finish_split<P: Transcribe>(
+/// one, so the instruction never runs beside the text. `None`: the
+/// dictation was cancelled (✕ or Escape) while it waited for the text; the
+/// instruction isn't transcribed then.
+pub async fn finish_split<P: Transcribe + Session>(
     ports: &P,
     text: TextTranscription,
     instruction: Recording,
     load_end_model: bool,
-) -> SplitTranscripts {
+) -> Option<SplitTranscripts> {
     let text = text.wait().await;
+    if ports.cancelled() {
+        debug!("Cancelled while the text was transcribed; the instruction isn't");
+        return None;
+    }
     let instruction = transcribe_instruction(ports, instruction, load_end_model);
-    SplitTranscripts { text, instruction }
+    Some(SplitTranscripts { text, instruction })
 }
 
 // ---- The instruction of the dictation in progress ------------------------
@@ -663,6 +670,7 @@ mod tests {
             let ports = ports.clone();
             std::thread::spawn(move || {
                 tauri::async_runtime::block_on(finish_split(&ports, text, recording(8_000), true))
+                    .expect("not cancelled")
             })
         };
         assert!(
@@ -691,6 +699,38 @@ mod tests {
         );
     }
 
+    /// DanyWhere (review of 2026-11-26, finding 7): ✕ or Escape while the
+    /// end waits for the text: the instruction isn't transcribed any more.
+    #[test]
+    fn a_cancel_while_the_text_is_transcribed_transcribes_no_instruction() {
+        let gate = Gate::default();
+        let ports = held(&gate);
+        let text = split_in_time(&ports, || {});
+        assert!(ports.wait_for(&Event::TranscribeTextSection { samples: SAMPLES }, LONG));
+        let finishing = {
+            let ports = ports.clone();
+            std::thread::spawn(move || {
+                let _ = tauri::async_runtime::block_on(finish_split(
+                    &ports,
+                    text,
+                    recording(8_000),
+                    false,
+                ));
+            })
+        };
+        ports.cancel();
+        gate.open();
+        finishing.join().expect("finishing");
+        assert_eq!(
+            ports.take_events(),
+            [
+                Event::SplitRecording,
+                Event::TranscribeTextSection { samples: SAMPLES },
+            ],
+            "no instruction transcribed after the cancel"
+        );
+    }
+
     #[test]
     fn the_instruction_keeps_the_language_it_was_heard_in() {
         // Language "automatic": a German text, an English instruction.
@@ -702,7 +742,8 @@ mod tests {
         });
         let text = split_dictation(&ports, BINDING, None, || {}).expect("a cut");
         let done =
-            tauri::async_runtime::block_on(finish_split(&ports, text, recording(8_000), false));
+            tauri::async_runtime::block_on(finish_split(&ports, text, recording(8_000), false))
+                .expect("not cancelled");
         assert_eq!(
             done.text.transcription.expect("the text").language,
             detected("de")
@@ -724,7 +765,8 @@ mod tests {
             ..Default::default()
         });
         let text = split_dictation(&ports, BINDING, None, || {}).expect("a cut");
-        let done = tauri::async_runtime::block_on(finish_split(&ports, text, recording(0), false));
+        let done = tauri::async_runtime::block_on(finish_split(&ports, text, recording(0), false))
+            .expect("not cancelled");
         assert_eq!(done.text.transcription.expect("the text").text, "hello");
         assert_eq!(done.instruction.transcription.expect("no error").text, "");
         assert_eq!(
@@ -810,6 +852,7 @@ mod tests {
         ) -> anyhow::Result<Transcription> {
             anyhow::bail!("not here")
         }
+        fn release_model(&self) {}
     }
 
     #[test]

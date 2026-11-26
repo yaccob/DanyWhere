@@ -116,6 +116,10 @@ impl Transcribe for AppPorts {
         }
         self.tm.transcribe_batch(samples)
     }
+
+    fn release_model(&self) {
+        self.tm.maybe_unload_immediately("spoken instruction");
+    }
 }
 
 impl PostProcess for AppPorts {

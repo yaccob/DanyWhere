@@ -461,7 +461,7 @@ async fn finish_transcribed<P: DictationPorts>(
     // with the post-processing provider when the user
     // wants it, else a hint for post-processing
     // (`word_list_check`). A dictation with a spoken instruction
-    // post-processes, so the hint goes along.
+    // post-processes unless its profile never does, so the hint goes along.
     let candidates =
         crate::word_list_check::candidates(&snapshot.settings, &transcription, takes_vocabulary);
     let transcription = if !candidates.is_empty()
@@ -704,9 +704,10 @@ fn fail_transcription<P: DictationPorts>(
 /// now is the instruction's section; the text before the cut has been
 /// transcribed in the background since. The instruction is transcribed
 /// after the text (the model is one), unless no speech was heard in it;
-/// then the dictation is post-processed with both, whatever its end said
-/// (the snapshot, `DictationSnapshot::with_spoken_instruction`), saved with
-/// the instruction and its audio, and pasted with its end's "Append" text.
+/// then the dictation is post-processed with both, whatever its end said,
+/// unless the profile it ends with never post-processes (the snapshot,
+/// `DictationSnapshot::with_spoken_instruction`), saved with the
+/// instruction and its audio, and pasted with its end's "Append" text.
 /// An empty text with an instruction is post-processed too (F5 i); with
 /// neither, it ends as an empty dictation. When the profile it ends with
 /// transcribes otherwise, the text is transcribed again with its values.
@@ -775,6 +776,12 @@ async fn finish_with_instruction<P: DictationPorts>(
         } else {
             ports.transcribe(dictated.samples.clone(), true)
         };
+        // ✕ or Escape meanwhile: the instruction isn't transcribed any more.
+        if ports.cancelled() {
+            debug!("Transcription operation cancelled while the text was transcribed again");
+            end_cancelled(ports);
+            return;
+        }
         instruction::SplitTranscripts {
             text: instruction::TranscribedSection {
                 recording: dictated,
@@ -783,7 +790,9 @@ async fn finish_with_instruction<P: DictationPorts>(
             instruction: instruction::transcribe_instruction(ports, said, true),
         }
     } else {
-        let Some(transcripts) =
+        // `None` inside: cancelled once the text was there, before the
+        // instruction was transcribed.
+        let Some(Some(transcripts)) =
             complete_unless_cancelled(instruction::finish_split(ports, text, said, false), || {
                 ports.cancelled()
             })
@@ -795,6 +804,10 @@ async fn finish_with_instruction<P: DictationPorts>(
         };
         transcripts
     };
+    // DanyWhere: done with the model, whether the instruction needed it or
+    // not: it unloads now if it unloads right after use, before the
+    // post-processing, as after a dictation without a cut.
+    ports.release_model();
 
     let wav_saved = recording_saved(saving).await;
     if ports.cancelled() {

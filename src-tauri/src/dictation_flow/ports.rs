@@ -74,6 +74,12 @@ pub trait Transcribe {
         samples: Vec<f32>,
         load_end_model: bool,
     ) -> anyhow::Result<Transcription>;
+    /// DanyWhere: the dictation is done with the speech model (both sections
+    /// of a cut recording are transcribed, or one wasn't needed): unloads it
+    /// if it unloads right after use, as [`transcribe`](Self::transcribe)
+    /// does after a dictation without a cut
+    /// (`TranscriptionManager::maybe_unload_immediately`).
+    fn release_model(&self);
 }
 
 /// Post-processing.
@@ -82,7 +88,9 @@ pub trait PostProcess {
     /// `post_process` asks for it, with earlier dictations as `context`
     /// says (`actions::process_transcription_with_settings`). DanyWhere:
     /// `spoken_instruction` is what the speaker said after the instruction
-    /// key, for this one dictation; with one, it is always post-processed.
+    /// key, for this one dictation; it goes along only when `post_process`
+    /// asks for post-processing (`dictation_snapshot::wants_post_processing`:
+    /// never in a profile set to "never").
     fn post_process(
         &self,
         settings: &AppSettings,

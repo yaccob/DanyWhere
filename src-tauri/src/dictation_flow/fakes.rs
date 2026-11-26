@@ -207,6 +207,8 @@ pub enum Event {
         samples: usize,
         load_end_model: bool,
     },
+    /// The dictation is done with the speech model, which may unload now.
+    ReleaseModel,
     /// The word list check was asked about these candidates.
     CheckWordList(Vec<WordListMatch>),
     /// DanyWhere: the next post-processing request goes with this spoken
@@ -461,6 +463,10 @@ impl Transcribe for FakePorts {
             }),
             Err(error) => Err(anyhow::anyhow!(error.clone())),
         }
+    }
+
+    fn release_model(&self) {
+        self.record(Event::ReleaseModel);
     }
 }
 

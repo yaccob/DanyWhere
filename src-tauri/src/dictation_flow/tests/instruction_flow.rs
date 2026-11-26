@@ -192,6 +192,7 @@ fn a_dictation_with_a_spoken_instruction_from_the_cut_to_the_paste() {
             samples: SAID,
             load_end_model: false,
         },
+        Event::ReleaseModel,
         instruction_overlay(true, Some(POLISH)),
         Event::Overlay(Overlay::Working {
             working: Working::PostProcessing,
@@ -237,6 +238,60 @@ fn a_dictation_with_a_spoken_instruction_from_the_cut_to_the_paste() {
     assert_eq!(ai_steps_with_instruction(entry), [true]);
 }
 
+/// DanyWhere (review of 2026-11-26, finding 1): the dictation was cut for an
+/// instruction in a profile that post-processes, but the profile it ends
+/// with never does (the user switched to its application meanwhile).
+/// Nothing goes to a provider: the text is pasted as heard, and History
+/// keeps the instruction as text.
+#[test]
+fn an_instruction_in_a_dictation_that_ends_in_a_profile_set_to_never_sends_nothing() {
+    let (url, requests) = llm_server(vec![("200 OK", POLISHED)]);
+    let ports = FakePorts::new(script(tone(SAMPLES), tone(SAID), POLISH));
+    let slot = slot();
+    cut(&ports, slot);
+    ports.take_events();
+    let mut settings = with_end(post_process_settings(&url), PLAIN, " (sent)", true);
+    settings.post_process_mode = crate::settings::PostProcessMode::Never;
+    let snapshot = snapshot_of(settings, None, EndChoice::Key(PLAIN.to_string()));
+    let values = snapshot.values.clone();
+    end(&ports, slot, snapshot);
+
+    let events = ports.take_events();
+    assert!(
+        events.contains(&Event::PostProcess {
+            post_process: false,
+            with_window: false,
+        }),
+        "{events:#?}"
+    );
+    assert!(
+        !events.contains(&Event::Overlay(Overlay::Working {
+            working: Working::PostProcessing,
+            streaming: false,
+        })),
+        "{events:#?}"
+    );
+    assert!(
+        events.contains(&paste("hello", &values, " (sent)")),
+        "the text as heard, with its end's append text: {events:#?}"
+    );
+    assert!(events.contains(&Event::Complete(
+        TranscriptionOutcome::Typed,
+        SAMPLES + SAID
+    )));
+    assert!(
+        requests.recv_timeout(Duration::from_millis(500)).is_err(),
+        "no request left the computer"
+    );
+    let entry = &ports.entries()[0];
+    assert_eq!(entry.transcription_text, "hello");
+    assert_eq!(entry.post_processed_text, None);
+    assert!(!entry.post_process_requested);
+    assert_eq!(entry.spoken_instruction.as_deref(), Some(POLISH));
+    assert!(entry.spoken_instruction_file.is_some());
+    assert_eq!(ai_steps_with_instruction(entry), Vec::<bool>::new());
+}
+
 #[test]
 fn an_instruction_heard_as_nothing_post_processes_with_the_prompts_alone() {
     let (url, requests) = llm_server(vec![("200 OK", POLISHED)]);
@@ -255,6 +310,7 @@ fn an_instruction_heard_as_nothing_post_processes_with_the_prompts_alone() {
             samples: SAID,
             load_end_model: false,
         },
+        Event::ReleaseModel,
         Event::Overlay(Overlay::Working {
             working: Working::PostProcessing,
             streaming: false,
@@ -312,6 +368,52 @@ fn an_instruction_section_without_speech_is_not_transcribed() {
     );
 }
 
+/// DanyWhere (review of 2026-11-26, finding 4): with "unload the model
+/// right after use" the end frees the model once both sections are dealt
+/// with, before post-processing, as a dictation without a cut does; also
+/// when no speech was heard in the instruction (⌃ Space, dictate, ⇥, say
+/// nothing, ↩) and when the text is transcribed again for the end profile.
+#[test]
+fn the_model_is_released_once_both_sections_are_dealt_with() {
+    let silent = Recording {
+        speech: false,
+        ..tone(SAID)
+    };
+    for (instruction, end_values) in [(tone(SAID), false), (silent, false), (tone(SAID), true)] {
+        let case = format!("speech {}, end values {end_values}", instruction.speech);
+        let transcribed = instruction.speech;
+        let (url, _requests) = llm_server(vec![("200 OK", POLISHED)]);
+        let ports = FakePorts::new(script(tone(SAMPLES), instruction, POLISH));
+        let slot = slot();
+        cut(&ports, slot);
+        ports.take_events();
+        let mut snapshot = ended_without_post_processing(&url, "", false);
+        snapshot.transcribed_with_end_values = end_values;
+        end(&ports, slot, snapshot);
+
+        let events = ports.take_events();
+        let first = |found: &dyn Fn(&Event) -> bool| events.iter().position(found);
+        let released = first(&|event| *event == Event::ReleaseModel)
+            .unwrap_or_else(|| panic!("{case}: the model is released: {events:#?}"));
+        let post_processed = first(&|event| matches!(event, Event::PostProcess { .. }))
+            .unwrap_or_else(|| panic!("{case}: post-processed: {events:#?}"));
+        assert!(released < post_processed, "{case}: {events:#?}");
+        let heard = first(&|event| matches!(event, Event::TranscribeInstruction { .. }));
+        assert_eq!(heard.is_some(), transcribed, "{case}: {events:#?}");
+        if let Some(heard) = heard {
+            assert!(heard < released, "{case}: {events:#?}");
+        }
+        assert_eq!(
+            events
+                .iter()
+                .filter(|event| **event == Event::ReleaseModel)
+                .count(),
+            1,
+            "{case}"
+        );
+    }
+}
+
 #[test]
 fn an_instruction_without_a_dictation_post_processes_the_instruction_alone() {
     // The instruction key right after the start (F5 i).
@@ -340,6 +442,7 @@ fn an_instruction_without_a_dictation_post_processes_the_instruction_alone() {
             samples: SAID,
             load_end_model: false,
         },
+        Event::ReleaseModel,
         instruction_overlay(true, Some("write a polite no")),
         Event::Overlay(Overlay::Working {
             working: Working::PostProcessing,
@@ -453,6 +556,86 @@ fn escape_while_it_ends_saves_and_pastes_nothing() {
         Event::Finished,
     ]);
     assert_eq!(ports.take_events(), expected);
+    assert!(ports.entries().is_empty());
+}
+
+/// What a dictation cancelled after its recording stopped shows: the stop,
+/// then nothing more on screen.
+fn cancelled_after_the_stop() -> Vec<Event> {
+    let mut expected = stop_events(false);
+    expected.extend([
+        Event::StopRecording,
+        Event::Overlay(Overlay::Hide),
+        Event::Tray(TrayIconState::Idle),
+        Event::Finished,
+    ]);
+    expected
+}
+
+/// DanyWhere (review of 2026-11-26, finding 7): ✕ or Escape while the end
+/// waits for the text: the instruction isn't transcribed, nothing is saved
+/// or pasted.
+#[test]
+fn escape_while_the_end_waits_for_the_text_transcribes_no_instruction() {
+    let gate = Gate::default();
+    let ports = FakePorts::new(Script {
+        hold_text_section: Some(gate.clone()),
+        ..script(tone(SAMPLES), tone(SAID), POLISH)
+    });
+    let slot = slot();
+    assert!(press(&ports, slot, false));
+    assert!(ports.wait_for(&Event::TranscribeTextSection { samples: SAMPLES }, LONG));
+    ports.take_events();
+    let ending = {
+        let ports = ports.clone();
+        let snapshot = ended_without_post_processing(&no_server(), "", false);
+        std::thread::spawn(move || end(&ports, slot, snapshot))
+    };
+    assert!(ports.wait_for(&Event::StopRecording, LONG));
+    ports.cancel();
+    gate.open();
+    ending.join().expect("the end");
+
+    assert_eq!(ports.take_events(), cancelled_after_the_stop());
+    assert!(ports.entries().is_empty());
+}
+
+/// The same when the profile it ends with transcribes otherwise: a cancel
+/// while the text is transcribed again leaves the instruction alone.
+#[test]
+fn escape_while_the_text_is_transcribed_again_transcribes_no_instruction() {
+    let ports = FakePorts::new(Script {
+        cancel_at: Some(CancelAt::Transcribing),
+        ..script(tone(SAMPLES), tone(SAID), POLISH)
+    });
+    let slot = slot();
+    cut(&ports, slot);
+    ports.take_events();
+    let mut snapshot = ended_without_post_processing(&no_server(), "", false);
+    snapshot.transcribed_with_end_values = true;
+    end(&ports, slot, snapshot);
+
+    let events = ports.take_events();
+    assert!(
+        !events
+            .iter()
+            .any(|event| matches!(event, Event::TranscribeInstruction { .. })),
+        "{events:#?}"
+    );
+    assert_eq!(
+        after(
+            &events,
+            &Event::Transcribe {
+                samples: SAMPLES,
+                load_end_model: true,
+            }
+        ),
+        [
+            Event::Overlay(Overlay::Hide),
+            Event::Tray(TrayIconState::Idle),
+            Event::Finished,
+        ]
+    );
     assert!(ports.entries().is_empty());
 }
 
@@ -573,6 +756,7 @@ fn a_failed_instruction_keeps_the_dictation_in_history_and_pastes_nothing() {
             samples: SAID,
             load_end_model: false,
         },
+        Event::ReleaseModel,
         Event::Raise(
             notice(NoticeCode::TranscriptionFailed).with_detail("the model failed".to_string()),
         ),
