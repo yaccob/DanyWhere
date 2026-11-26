@@ -655,9 +655,13 @@ pub(crate) async fn process_transcription_output_with(
 ///
 /// `spoken_instruction`: what the speaker said with the instruction key, for
 /// this one dictation (qa note 2026-11-26_1720); `None`, empty or blank: no
-/// instruction, as before. With one, the dictation is always post-processed,
-/// whatever `post_process` says (F2 i: an instruction is never lost), also
-/// when it has no speech (F5 i: the instruction alone), and History's
+/// instruction, as before. Whether it post-processes is the caller's
+/// decision (`post_process`, from `dictation_snapshot::wants_post_processing`
+/// for a dictation and its redo): an instruction asks for it there unless the
+/// profile never post-processes (F2 i), and this doesn't overrule it. With
+/// "never" in `settings` nothing goes to a provider, whatever the caller
+/// asks (variant b, 2026-11-26). With an instruction a dictation without
+/// speech is post-processed too (F5 i: the instruction alone), and History's
 /// `post_process_prompt` carries the instruction's block after the prompts.
 /// The context is built for the prompts alone.
 pub(crate) async fn process_transcription_with_settings(
@@ -669,7 +673,7 @@ pub(crate) async fn process_transcription_with_settings(
     context_for: impl FnOnce(&str) -> Option<crate::dictation_context::ContextBlock>,
 ) -> ProcessedTranscription {
     let spoken_instruction = crate::prompt_frame::spoken_instruction_text(spoken_instruction);
-    let post_process = post_process || spoken_instruction.is_some();
+    let post_process = post_process && settings.post_process_mode.allows();
     let mut final_text = transcription.to_string();
     let mut post_processed_text: Option<String> = None;
     let mut post_process_prompt: Option<String> = None;
@@ -2164,19 +2168,62 @@ mod tests {
         assert!(request.contains("LEGACY-MARKER"), "{request}");
     }
 
-    // A spoken instruction is never lost (F2 i): it post-processes even when
-    // the end asked for none.
+    // Whether a dictation post-processes is its caller's decision
+    // (`dictation_snapshot::wants_post_processing`, variant b): an end
+    // without post-processing after an instruction key asks for it there, so
+    // the instruction is never lost (F2 i); in a profile set to "never" the
+    // caller doesn't ask, and the instruction goes nowhere either (review of
+    // 2026-11-26, finding 1).
     #[test]
-    fn a_spoken_instruction_post_processes_even_when_the_end_asked_for_none() {
-        let url = serve_once(POLISHED);
+    fn a_spoken_instruction_post_processes_only_when_the_caller_asks() {
+        let (url, request) = serve_once_capturing(POLISHED);
         let settings = post_process_settings(&url);
-        let (processed, _) = process_with_instruction(&settings, "hello", Some(SAID), false, None);
+        let (processed, _) = process_with_instruction(&settings, "hello", Some(SAID), true, None);
         assert_eq!(processed.final_text, "polished");
-        let settings = post_process_settings(NOWHERE);
+        let request = request.recv_timeout(Duration::from_secs(5)).unwrap();
+        assert!(request.contains("<spoken_instruction>"), "{request}");
+
+        let (url, request) = serve_once_capturing(POLISHED);
+        let settings = post_process_settings(&url);
         let (processed, asked) =
-            process_with_instruction(&settings, "hello", Some(" "), false, Some(marker_block()));
+            process_with_instruction(&settings, "hello", Some(SAID), false, Some(marker_block()));
         assert_eq!(processed.final_text, "hello");
-        assert!(asked.is_empty());
+        assert_eq!(processed.post_processed_text, None);
+        assert_eq!(processed.post_process_prompt, None);
+        assert_eq!(processed.post_process_failure, None);
+        assert!(asked.is_empty(), "no context either");
+        assert!(processed.context_entry_ids.is_empty());
+        assert!(
+            request.recv_timeout(Duration::from_millis(500)).is_err(),
+            "no request left the computer"
+        );
+    }
+
+    // "Never" in the settings a post-processing runs with: nothing goes to a
+    // provider, whatever the caller asks, with a spoken instruction or
+    // without (user, 2026-11-26: variant b; 2026-11-23, option a).
+    #[test]
+    fn with_never_in_its_settings_nothing_goes_to_a_provider() {
+        for instruction in [Some(SAID), None] {
+            let (url, request) = serve_once_capturing(POLISHED);
+            let mut settings = post_process_settings(&url);
+            settings.post_process_mode = crate::settings::PostProcessMode::Never;
+            let (processed, asked) = process_with_instruction(
+                &settings,
+                "hello",
+                instruction,
+                true,
+                Some(marker_block()),
+            );
+            assert_eq!(processed.final_text, "hello", "{instruction:?}");
+            assert_eq!(processed.post_processed_text, None, "{instruction:?}");
+            assert_eq!(processed.post_process_failure, None, "{instruction:?}");
+            assert!(asked.is_empty(), "{instruction:?}: no context either");
+            assert!(
+                request.recv_timeout(Duration::from_millis(500)).is_err(),
+                "{instruction:?}: no request left the computer"
+            );
+        }
     }
 
     /// `messages` with the spoken instruction's block moved from its place

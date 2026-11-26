@@ -33,8 +33,9 @@
 //!   the values of that key: Z2 resolves them as an end (`EndChoice`, id
 //!   `instruction:<key id>`; [`key_of_pending`] says which key it was) and
 //!   the snapshot takes them as from any end. With the instruction the
-//!   dictation always post-processes
-//!   (`dictation_snapshot::wants_post_processing`).
+//!   dictation post-processes unless the profile it ends with never does
+//!   (`dictation_snapshot::wants_post_processing`); then nothing goes to a
+//!   provider, and History keeps the instruction as text.
 //! - **Escape** (`utils::cancel_current_operation`) and a **new start**
 //!   (`dictation_start`) throw it away ([`discard_pending`]): the text's
 //!   transcription goes nowhere, and the audio manager drops the second

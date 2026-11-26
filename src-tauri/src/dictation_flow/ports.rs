@@ -82,7 +82,9 @@ pub trait PostProcess {
     /// `post_process` asks for it, with earlier dictations as `context`
     /// says (`actions::process_transcription_with_settings`). DanyWhere:
     /// `spoken_instruction` is what the speaker said after the instruction
-    /// key, for this one dictation; with one, it is always post-processed.
+    /// key, for this one dictation; it goes along only when `post_process`
+    /// asks for post-processing (`dictation_snapshot::wants_post_processing`:
+    /// never in a profile set to "never").
     fn post_process(
         &self,
         settings: &AppSettings,

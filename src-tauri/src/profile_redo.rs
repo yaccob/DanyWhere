@@ -506,8 +506,8 @@ fn run(
         }
         RedoPlan::Transcribe => {
             show(Working::Transcribing);
-            let post_process = post_processes_in(target, instruction_key_of(entry));
-            let with_context = post_process && target_end.send_context;
+            let (post_process, with_context) =
+                post_processing_after_transcribing_again(target, entry, target_end);
             match crate::app_profiles::with_values_here(target.clone(), || {
                 transcribe_again(app, entry, post_process, with_context, show)
             }) {
@@ -525,6 +525,21 @@ fn run(
             }
         }
     }
+}
+
+/// DanyWhere: whether a redo that transcribes `entry` again for the profile
+/// with `target`, where it ends with `target_end`, post-processes the new
+/// transcript: as the dictation decides there ([`post_processes_in`]), so
+/// never in a profile set to "never", spoken instruction or not; and
+/// whether earlier dictations go along as context (only then, and as the
+/// end says).
+fn post_processing_after_transcribing_again(
+    target: &ProfileValues,
+    entry: &HistoryEntry,
+    target_end: &EndKey,
+) -> (bool, bool) {
+    let post_process = post_processes_in(target, instruction_key_of(entry));
+    (post_process, post_process && target_end.send_context)
 }
 
 /// Post-processes `transcription` with this thread's profile values, with
@@ -840,6 +855,73 @@ mod tests {
             redo_from_with_instruction(&settings, &made, &made.clone(), &end, &end, true),
             RedoFrom::Nothing,
             "the same profile redoes nothing"
+        );
+    }
+
+    /// DanyWhere (review of 2026-11-26, finding 1): an entry with a spoken
+    /// instruction, inserted into an application whose profile has another
+    /// model and never post-processes: it is transcribed again, and nothing
+    /// goes to a provider, its instruction neither. The redo's decisions,
+    /// then the post-processing `transcribe_again` asks for with them.
+    #[test]
+    fn transcribing_again_for_a_profile_set_to_never_sends_nothing() {
+        use crate::dictation_flow::fakes::{llm_server, POLISHED};
+        let (url, requests) = llm_server(vec![("200 OK", POLISHED)]);
+        let settings = settings_with_mail();
+        let made = default_values(&settings);
+        let mut target = made.clone();
+        target.selected_model = "whisper".to_string();
+        target.post_process_mode = crate::settings::PostProcessMode::Never;
+        target.post_process_provider_id = "openai".to_string();
+        let provider = target
+            .post_process_providers
+            .iter_mut()
+            .find(|provider| provider.id == "openai")
+            .expect("the provider exists");
+        provider.base_url = url;
+        provider.supports_structured_output = false;
+        target
+            .post_process_models
+            .insert("openai".to_string(), "model".to_string());
+        let mut made_end = end_with(false);
+        made_end.send_context = true;
+        let target_end = end_in(&target, &made_end);
+        let mut e = entry(vec![transcription("hallo")]);
+        e.spoken_instruction = Some("translate it into Polish".to_string());
+
+        let instruction_key = instruction_key_of(&e);
+        let from = redo_from_with_instruction(
+            &settings,
+            &made,
+            &target,
+            &made_end,
+            &target_end,
+            instruction_key,
+        );
+        assert_eq!(
+            plan(from, &e, post_processes_in(&target, instruction_key)),
+            RedoPlan::Transcribe
+        );
+        let (post_process, with_context) =
+            post_processing_after_transcribing_again(&target, &e, &target_end);
+        assert!(!with_context, "no context without post-processing");
+        let processed =
+            tauri::async_runtime::block_on(crate::actions::process_transcription_with_settings(
+                &applied(&settings, &target),
+                "hallo",
+                instruction_of(&e),
+                post_process,
+                &[],
+                |_| None,
+            ));
+        assert_eq!(processed.final_text, "hallo");
+        assert_eq!(processed.post_processed_text, None);
+        assert_eq!(processed.post_process_failure, None);
+        assert!(
+            requests
+                .recv_timeout(std::time::Duration::from_millis(500))
+                .is_err(),
+            "no request left the computer"
         );
     }
 

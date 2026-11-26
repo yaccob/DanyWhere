@@ -461,7 +461,7 @@ async fn finish_transcribed<P: DictationPorts>(
     // with the post-processing provider when the user
     // wants it, else a hint for post-processing
     // (`word_list_check`). A dictation with a spoken instruction
-    // post-processes, so the hint goes along.
+    // post-processes unless its profile never does, so the hint goes along.
     let candidates =
         crate::word_list_check::candidates(&snapshot.settings, &transcription, takes_vocabulary);
     let transcription = if !candidates.is_empty()
@@ -704,9 +704,10 @@ fn fail_transcription<P: DictationPorts>(
 /// now is the instruction's section; the text before the cut has been
 /// transcribed in the background since. The instruction is transcribed
 /// after the text (the model is one), unless no speech was heard in it;
-/// then the dictation is post-processed with both, whatever its end said
-/// (the snapshot, `DictationSnapshot::with_spoken_instruction`), saved with
-/// the instruction and its audio, and pasted with its end's "Append" text.
+/// then the dictation is post-processed with both, whatever its end said,
+/// unless the profile it ends with never post-processes (the snapshot,
+/// `DictationSnapshot::with_spoken_instruction`), saved with the
+/// instruction and its audio, and pasted with its end's "Append" text.
 /// An empty text with an instruction is post-processed too (F5 i); with
 /// neither, it ends as an empty dictation. When the profile it ends with
 /// transcribes otherwise, the text is transcribed again with its values.

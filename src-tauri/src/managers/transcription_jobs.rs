@@ -26,6 +26,7 @@ use crate::managers::transcription::{
 };
 use crate::notices::{self, Notice, NoticeCode, NoticeSource};
 use crate::post_process_failure::PostProcessFailure;
+use crate::settings::PostProcessMode;
 
 /// How often a waiting chunk checks whether dictation has finished.
 const DICTATION_POLL: Duration = Duration::from_millis(200);
@@ -197,10 +198,29 @@ fn instruction_for(
 }
 
 /// DanyWhere: whether a job of `mode` on an entry post-processed before as
-/// `requested` post-processes: with a spoken `instruction` always, as the
-/// dictation did (`dictation_snapshot::wants_post_processing`).
-fn job_post_processes(mode: ReprocessMode, requested: bool, instruction: Option<&str>) -> bool {
+/// `requested` asks for post-processing: with a spoken `instruction` always,
+/// as the dictation did (`dictation_snapshot::wants_post_processing`). An
+/// entry keeps this as its mark, so a later job post-processes it too.
+fn job_wants_post_processing(
+    mode: ReprocessMode,
+    requested: bool,
+    instruction: Option<&str>,
+) -> bool {
     mode.post_processes(requested) || instruction.is_some()
+}
+
+/// DanyWhere: whether the job post-processes, in the profile in use with
+/// `profile_mode`: as it asks ([`job_wants_post_processing`]), unless that
+/// profile never post-processes; then nothing goes to a provider, as
+/// History's page offers neither the wand nor post-processing with
+/// "Re-transcribe" then (`postProcessEntry.ts`, `postProcessAvailability`).
+fn job_post_processes(
+    profile_mode: PostProcessMode,
+    mode: ReprocessMode,
+    requested: bool,
+    instruction: Option<&str>,
+) -> bool {
+    profile_mode.allows() && job_wants_post_processing(mode, requested, instruction)
 }
 
 /// DanyWhere: a transcription heard again as `text` has nothing to work on:
@@ -571,8 +591,22 @@ impl TranscriptionJobManager {
         let entry = tauri::async_runtime::block_on(hm.get_entry_by_id(entry_id))?
             .ok_or_else(|| anyhow!("History entry {} not found", entry_id))?;
         let prompts = work.prompt_ids.as_deref();
+        // DanyWhere: the mode of the profile in use, which the job runs with
+        // (`app_profiles::dictation_settings`): with "never" nothing goes to
+        // a provider.
+        let profile_mode = crate::app_profiles::dictation_settings(&self.app).post_process_mode;
         if !work.mode.transcribes() {
             let instruction = instruction_for(&entry, None, work.use_instruction);
+            if !job_post_processes(
+                profile_mode,
+                work.mode,
+                entry.post_process_requested,
+                instruction.as_deref(),
+            ) {
+                return Err(anyhow!(
+                    "Post-processing is set to \"Never\" in the profile in use"
+                ));
+            }
             return self.post_process_again(
                 &hm,
                 &entry,
@@ -624,7 +658,13 @@ impl TranscriptionJobManager {
         if cancelled.load(Ordering::Acquire) {
             return Ok(JobEnd::Cancelled);
         }
+        let wanted = job_wants_post_processing(
+            work.mode,
+            entry.post_process_requested,
+            instruction.as_deref(),
+        );
         let post_process = job_post_processes(
+            profile_mode,
             work.mode,
             entry.post_process_requested,
             instruction.as_deref(),
@@ -672,7 +712,9 @@ impl TranscriptionJobManager {
                     prompt_name: processed.post_process_prompt_name,
                     spoken_instruction: instruction_applied,
                 }),
-                post_process_requested: post_process,
+                // DanyWhere: the mark keeps what the job asked for, also
+                // where "never" kept it from post-processing.
+                post_process_requested: wanted,
                 model: model_id,
                 spoken_instruction: heard_again,
                 instruction_applied,
@@ -1222,17 +1264,50 @@ mod tests {
 
     #[test]
     fn with_an_instruction_transcribing_again_always_post_processes() {
+        let mode = PostProcessMode::WithInstructionKey;
         assert!(job_post_processes(
+            mode,
             Transcribe,
             false,
             Some("make it formal")
         ));
         assert!(
-            job_post_processes(Transcribe, false, Some("")),
+            job_post_processes(mode, Transcribe, false, Some("")),
             "heard as nothing"
         );
-        assert!(!job_post_processes(Transcribe, false, None));
-        assert!(job_post_processes(Transcribe, true, None));
+        assert!(!job_post_processes(mode, Transcribe, false, None));
+        assert!(job_post_processes(mode, Transcribe, true, None));
+    }
+
+    /// DanyWhere (review of 2026-11-26, finding 1): with "never" in the
+    /// profile in use no job of History sends anything to a provider, as
+    /// History's page offers neither the wand nor post-processing with
+    /// "Re-transcribe" then (`postProcessEntry.ts`). The entry keeps its
+    /// mark, so a job in a profile that post-processes does it again.
+    #[test]
+    fn with_never_in_the_profile_in_use_no_job_post_processes() {
+        for mode in [Transcribe, TranscribeAndPostProcess, PostProcess] {
+            for requested in [false, true] {
+                for instruction in [None, Some(""), Some("make it formal")] {
+                    let case = format!("{mode:?}, requested {requested}, {instruction:?}");
+                    assert!(
+                        !job_post_processes(PostProcessMode::Never, mode, requested, instruction),
+                        "{case}"
+                    );
+                    for allowed in [PostProcessMode::WithInstructionKey, PostProcessMode::Always] {
+                        assert_eq!(
+                            job_post_processes(allowed, mode, requested, instruction),
+                            job_wants_post_processing(mode, requested, instruction),
+                            "{case}, {allowed:?}"
+                        );
+                    }
+                }
+            }
+        }
+        assert!(
+            job_wants_post_processing(Transcribe, true, None),
+            "the mark"
+        );
     }
 
     #[test]

@@ -237,6 +237,60 @@ fn a_dictation_with_a_spoken_instruction_from_the_cut_to_the_paste() {
     assert_eq!(ai_steps_with_instruction(entry), [true]);
 }
 
+/// DanyWhere (review of 2026-11-26, finding 1): the dictation was cut for an
+/// instruction in a profile that post-processes, but the profile it ends
+/// with never does (the user switched to its application meanwhile).
+/// Nothing goes to a provider: the text is pasted as heard, and History
+/// keeps the instruction as text.
+#[test]
+fn an_instruction_in_a_dictation_that_ends_in_a_profile_set_to_never_sends_nothing() {
+    let (url, requests) = llm_server(vec![("200 OK", POLISHED)]);
+    let ports = FakePorts::new(script(tone(SAMPLES), tone(SAID), POLISH));
+    let slot = slot();
+    cut(&ports, slot);
+    ports.take_events();
+    let mut settings = with_end(post_process_settings(&url), PLAIN, " (sent)", true);
+    settings.post_process_mode = crate::settings::PostProcessMode::Never;
+    let snapshot = snapshot_of(settings, None, EndChoice::Key(PLAIN.to_string()));
+    let values = snapshot.values.clone();
+    end(&ports, slot, snapshot);
+
+    let events = ports.take_events();
+    assert!(
+        events.contains(&Event::PostProcess {
+            post_process: false,
+            with_window: false,
+        }),
+        "{events:#?}"
+    );
+    assert!(
+        !events.contains(&Event::Overlay(Overlay::Working {
+            working: Working::PostProcessing,
+            streaming: false,
+        })),
+        "{events:#?}"
+    );
+    assert!(
+        events.contains(&paste("hello", &values, " (sent)")),
+        "the text as heard, with its end's append text: {events:#?}"
+    );
+    assert!(events.contains(&Event::Complete(
+        TranscriptionOutcome::Typed,
+        SAMPLES + SAID
+    )));
+    assert!(
+        requests.recv_timeout(Duration::from_millis(500)).is_err(),
+        "no request left the computer"
+    );
+    let entry = &ports.entries()[0];
+    assert_eq!(entry.transcription_text, "hello");
+    assert_eq!(entry.post_processed_text, None);
+    assert!(!entry.post_process_requested);
+    assert_eq!(entry.spoken_instruction.as_deref(), Some(POLISH));
+    assert!(entry.spoken_instruction_file.is_some());
+    assert_eq!(ai_steps_with_instruction(entry), Vec::<bool>::new());
+}
+
 #[test]
 fn an_instruction_heard_as_nothing_post_processes_with_the_prompts_alone() {
     let (url, requests) = llm_server(vec![("200 OK", POLISHED)]);
