@@ -1,460 +1,388 @@
 {
- "data": [
-  {
-   "id": "inclusionai/ling-3.2-flash:free",
-   "context_length": 1048576,
-   "pricing": {
-    "prompt": "0",
-    "completion": "0"
-   },
-   "architecture": {
-    "input_modalities": [
-     "text",
-     "image"
-    ],
-    "output_modalities": [
-     "text"
-    ]
-   },
-   "supported_parameters": [
-    "frequency_penalty",
-    "include_reasoning",
-    "max_tokens",
-    "presence_penalty",
-    "reasoning",
-    "response_format",
-    "seed",
-    "stop",
-    "structured_outputs",
-    "temperature",
-    "tool_choice",
-    "tools",
-    "top_k",
-    "top_p"
-   ],
-   "expiration_date": null
-  },
-  {
-   "id": "baidu/ernie-5.5-flash-preview:free",
-   "context_length": 1024000,
-   "pricing": {
-    "prompt": "0",
-    "completion": "0"
-   },
-   "architecture": {
-    "input_modalities": [
-     "text"
-    ],
-    "output_modalities": [
-     "text"
-    ]
-   },
-   "supported_parameters": [
-    "include_reasoning",
-    "max_tokens",
-    "reasoning",
-    "reasoning_effort",
-    "response_format",
-    "structured_outputs",
-    "temperature",
-    "tool_choice",
-    "tools",
-    "top_p"
-   ],
-   "expiration_date": null
-  },
-  {
-   "id": "liquid/lfm-3-1.7b:free",
-   "context_length": 262144,
-   "pricing": {
-    "prompt": "0",
-    "completion": "0"
-   },
-   "architecture": {
-    "input_modalities": [
-     "text"
-    ],
-    "output_modalities": [
-     "text"
-    ]
-   },
-   "supported_parameters": [
-    "frequency_penalty",
-    "include_reasoning",
-    "logprobs",
-    "max_completion_tokens",
-    "max_tokens",
-    "min_p",
-    "presence_penalty",
-    "reasoning",
-    "repetition_penalty",
-    "response_format",
-    "seed",
-    "stop",
-    "structured_outputs",
-    "temperature",
-    "tool_choice",
-    "tools",
-    "top_k",
-    "top_logprobs",
-    "top_p"
-   ],
-   "expiration_date": null
-  },
-  {
-   "id": "particle-ai/particle-1:free",
-   "context_length": 1048576,
-   "pricing": {
-    "prompt": "0",
-    "completion": "0"
-   },
-   "architecture": {
-    "input_modalities": [
-     "text",
-     "image"
-    ],
-    "output_modalities": [
-     "text"
-    ]
-   },
-   "supported_parameters": [
-    "frequency_penalty",
-    "include_reasoning",
-    "logprobs",
-    "max_tokens",
-    "min_p",
-    "presence_penalty",
-    "reasoning",
-    "reasoning_effort",
-    "repetition_penalty",
-    "response_format",
-    "seed",
-    "stop",
-    "structured_outputs",
-    "temperature",
-    "tool_choice",
-    "tools",
-    "top_k",
-    "top_logprobs",
-    "top_p"
-   ],
-   "expiration_date": null
-  },
-  {
-   "id": "recursive/flint-v1.0:free",
-   "context_length": 262144,
-   "pricing": {
-    "prompt": "0",
-    "completion": "0"
-   },
-   "architecture": {
-    "input_modalities": [
-     "text"
-    ],
-    "output_modalities": [
-     "text"
-    ]
-   },
-   "supported_parameters": [
-    "include_reasoning",
-    "logprobs",
-    "max_tokens",
-    "reasoning",
-    "response_format",
-    "seed",
-    "stop",
-    "temperature",
-    "tools",
-    "top_logprobs",
-    "top_p"
-   ],
-   "expiration_date": null
-  },
-  {
-   "id": "nvidia/nemotron-3.5-super-vl:free",
-   "context_length": 1000000,
-   "pricing": {
-    "prompt": "0",
-    "completion": "0"
-   },
-   "architecture": {
-    "input_modalities": [
-     "text",
-     "image",
-     "video"
-    ],
-    "output_modalities": [
-     "text"
-    ]
-   },
-   "supported_parameters": [
-    "include_reasoning",
-    "max_tokens",
-    "reasoning",
-    "response_format",
-    "seed",
-    "structured_outputs",
-    "temperature",
-    "tool_choice",
-    "tools",
-    "top_p"
-   ],
-   "expiration_date": null
-  },
-  {
-   "id": "anthropic/claude-haiku-5.5",
-   "context_length": 1000000,
-   "pricing": {
-    "prompt": "0.0000001",
-    "completion": "0.0000005"
-   },
-   "architecture": {
-    "input_modalities": [
-     "text",
-     "image",
-     "file"
-    ],
-    "output_modalities": [
-     "text"
-    ]
-   },
-   "supported_parameters": [
-    "include_reasoning",
-    "max_completion_tokens",
-    "max_tokens",
-    "reasoning",
-    "reasoning_effort",
-    "response_format",
-    "stop",
-    "structured_outputs",
-    "tool_choice",
-    "tools",
-    "verbosity"
-   ],
-   "expiration_date": null
-  },
-  {
-   "id": "nvidia/nemotron-3.5-lightning:free",
-   "context_length": 1000000,
-   "pricing": {
-    "prompt": "0",
-    "completion": "0"
-   },
-   "architecture": {
-    "input_modalities": [
-     "text"
-    ],
-    "output_modalities": [
-     "text"
-    ]
-   },
-   "supported_parameters": [
-    "include_reasoning",
-    "max_tokens",
-    "reasoning",
-    "seed",
-    "temperature",
-    "tool_choice",
-    "tools",
-    "top_p"
-   ],
-   "expiration_date": null
-  },
-  {
-   "id": "nvidia/nemotron-3-ultra-550b-a55b:free",
-   "context_length": 1000000,
-   "pricing": {
-    "prompt": "0",
-    "completion": "0"
-   },
-   "architecture": {
-    "input_modalities": [
-     "text"
-    ],
-    "output_modalities": [
-     "text"
-    ]
-   },
-   "supported_parameters": [
-    "include_reasoning",
-    "max_tokens",
-    "reasoning",
-    "reasoning_effort",
-    "seed",
-    "temperature",
-    "tool_choice",
-    "tools",
-    "top_p"
-   ],
-   "expiration_date": null
-  },
-  {
-   "id": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
-   "context_length": 256000,
-   "pricing": {
-    "prompt": "0",
-    "completion": "0"
-   },
-   "architecture": {
-    "input_modalities": [
-     "text",
-     "audio",
-     "image",
-     "video"
-    ],
-    "output_modalities": [
-     "text"
-    ]
-   },
-   "supported_parameters": [
-    "include_reasoning",
-    "max_tokens",
-    "reasoning",
-    "seed",
-    "temperature",
-    "tool_choice",
-    "tools",
-    "top_p"
-   ],
-   "expiration_date": null
-  },
-  {
-   "id": "google/gemma-4-26b-a4b-it:free",
-   "context_length": 262144,
-   "pricing": {
-    "prompt": "0",
-    "completion": "0"
-   },
-   "architecture": {
-    "input_modalities": [
-     "image",
-     "text",
-     "video"
-    ],
-    "output_modalities": [
-     "text"
-    ]
-   },
-   "supported_parameters": [
-    "include_reasoning",
-    "max_tokens",
-    "reasoning",
-    "response_format",
-    "seed",
-    "temperature",
-    "tool_choice",
-    "tools",
-    "top_p"
-   ],
-   "expiration_date": null
-  },
-  {
-   "id": "google/gemma-4-31b-it:free",
-   "context_length": 262144,
-   "pricing": {
-    "prompt": "0",
-    "completion": "0"
-   },
-   "architecture": {
-    "input_modalities": [
-     "image",
-     "text",
-     "video"
-    ],
-    "output_modalities": [
-     "text"
-    ]
-   },
-   "supported_parameters": [
-    "include_reasoning",
-    "max_tokens",
-    "reasoning",
-    "response_format",
-    "seed",
-    "temperature",
-    "tool_choice",
-    "tools",
-    "top_p"
-   ],
-   "expiration_date": null
-  },
-  {
-   "id": "openai/gpt-4o-mini",
-   "context_length": 128000,
-   "pricing": {
-    "prompt": "0.00000015",
-    "completion": "0.0000006"
-   },
-   "architecture": {
-    "input_modalities": [
-     "text",
-     "image",
-     "file"
-    ],
-    "output_modalities": [
-     "text"
-    ]
-   },
-   "supported_parameters": [
-    "frequency_penalty",
-    "logit_bias",
-    "logprobs",
-    "max_completion_tokens",
-    "max_tokens",
-    "prediction",
-    "presence_penalty",
-    "response_format",
-    "seed",
-    "stop",
-    "structured_outputs",
-    "temperature",
-    "tool_choice",
-    "tools",
-    "top_logprobs",
-    "top_p",
-    "web_search_options"
-   ],
-   "expiration_date": null
-  },
-  {
-   "id": "openrouter/free",
-   "context_length": 200000,
-   "pricing": {
-    "prompt": "0",
-    "completion": "0"
-   },
-   "architecture": {
-    "input_modalities": [
-     "text",
-     "image"
-    ],
-    "output_modalities": [
-     "text"
-    ]
-   },
-   "supported_parameters": [
-    "frequency_penalty",
-    "include_reasoning",
-    "logprobs",
-    "max_completion_tokens",
-    "max_tokens",
-    "min_p",
-    "presence_penalty",
-    "reasoning",
-    "reasoning_effort",
-    "repetition_penalty",
-    "response_format",
-    "seed",
-    "stop",
-    "structured_outputs",
-    "temperature",
-    "tool_choice",
-    "tools",
-    "top_k",
-    "top_logprobs",
-    "top_p"
-   ],
-   "expiration_date": null
-  }
- ]
+  "data": [
+    {
+      "id": "inclusionai/ling-3.2-flash:free",
+      "context_length": 1048576,
+      "pricing": {
+        "prompt": "0",
+        "completion": "0"
+      },
+      "architecture": {
+        "input_modalities": ["text", "image"],
+        "output_modalities": ["text"]
+      },
+      "supported_parameters": [
+        "frequency_penalty",
+        "include_reasoning",
+        "max_tokens",
+        "presence_penalty",
+        "reasoning",
+        "response_format",
+        "seed",
+        "stop",
+        "structured_outputs",
+        "temperature",
+        "tool_choice",
+        "tools",
+        "top_k",
+        "top_p"
+      ],
+      "expiration_date": null
+    },
+    {
+      "id": "baidu/ernie-5.5-flash-preview:free",
+      "context_length": 1024000,
+      "pricing": {
+        "prompt": "0",
+        "completion": "0"
+      },
+      "architecture": {
+        "input_modalities": ["text"],
+        "output_modalities": ["text"]
+      },
+      "supported_parameters": [
+        "include_reasoning",
+        "max_tokens",
+        "reasoning",
+        "reasoning_effort",
+        "response_format",
+        "structured_outputs",
+        "temperature",
+        "tool_choice",
+        "tools",
+        "top_p"
+      ],
+      "expiration_date": null
+    },
+    {
+      "id": "liquid/lfm-3-1.7b:free",
+      "context_length": 262144,
+      "pricing": {
+        "prompt": "0",
+        "completion": "0"
+      },
+      "architecture": {
+        "input_modalities": ["text"],
+        "output_modalities": ["text"]
+      },
+      "supported_parameters": [
+        "frequency_penalty",
+        "include_reasoning",
+        "logprobs",
+        "max_completion_tokens",
+        "max_tokens",
+        "min_p",
+        "presence_penalty",
+        "reasoning",
+        "repetition_penalty",
+        "response_format",
+        "seed",
+        "stop",
+        "structured_outputs",
+        "temperature",
+        "tool_choice",
+        "tools",
+        "top_k",
+        "top_logprobs",
+        "top_p"
+      ],
+      "expiration_date": null
+    },
+    {
+      "id": "particle-ai/particle-1:free",
+      "context_length": 1048576,
+      "pricing": {
+        "prompt": "0",
+        "completion": "0"
+      },
+      "architecture": {
+        "input_modalities": ["text", "image"],
+        "output_modalities": ["text"]
+      },
+      "supported_parameters": [
+        "frequency_penalty",
+        "include_reasoning",
+        "logprobs",
+        "max_tokens",
+        "min_p",
+        "presence_penalty",
+        "reasoning",
+        "reasoning_effort",
+        "repetition_penalty",
+        "response_format",
+        "seed",
+        "stop",
+        "structured_outputs",
+        "temperature",
+        "tool_choice",
+        "tools",
+        "top_k",
+        "top_logprobs",
+        "top_p"
+      ],
+      "expiration_date": null
+    },
+    {
+      "id": "recursive/flint-v1.0:free",
+      "context_length": 262144,
+      "pricing": {
+        "prompt": "0",
+        "completion": "0"
+      },
+      "architecture": {
+        "input_modalities": ["text"],
+        "output_modalities": ["text"]
+      },
+      "supported_parameters": [
+        "include_reasoning",
+        "logprobs",
+        "max_tokens",
+        "reasoning",
+        "response_format",
+        "seed",
+        "stop",
+        "temperature",
+        "tools",
+        "top_logprobs",
+        "top_p"
+      ],
+      "expiration_date": null
+    },
+    {
+      "id": "nvidia/nemotron-3.5-super-vl:free",
+      "context_length": 1000000,
+      "pricing": {
+        "prompt": "0",
+        "completion": "0"
+      },
+      "architecture": {
+        "input_modalities": ["text", "image", "video"],
+        "output_modalities": ["text"]
+      },
+      "supported_parameters": [
+        "include_reasoning",
+        "max_tokens",
+        "reasoning",
+        "response_format",
+        "seed",
+        "structured_outputs",
+        "temperature",
+        "tool_choice",
+        "tools",
+        "top_p"
+      ],
+      "expiration_date": null
+    },
+    {
+      "id": "anthropic/claude-haiku-5.5",
+      "context_length": 1000000,
+      "pricing": {
+        "prompt": "0.0000001",
+        "completion": "0.0000005"
+      },
+      "architecture": {
+        "input_modalities": ["text", "image", "file"],
+        "output_modalities": ["text"]
+      },
+      "supported_parameters": [
+        "include_reasoning",
+        "max_completion_tokens",
+        "max_tokens",
+        "reasoning",
+        "reasoning_effort",
+        "response_format",
+        "stop",
+        "structured_outputs",
+        "tool_choice",
+        "tools",
+        "verbosity"
+      ],
+      "expiration_date": null
+    },
+    {
+      "id": "nvidia/nemotron-3.5-lightning:free",
+      "context_length": 1000000,
+      "pricing": {
+        "prompt": "0",
+        "completion": "0"
+      },
+      "architecture": {
+        "input_modalities": ["text"],
+        "output_modalities": ["text"]
+      },
+      "supported_parameters": [
+        "include_reasoning",
+        "max_tokens",
+        "reasoning",
+        "seed",
+        "temperature",
+        "tool_choice",
+        "tools",
+        "top_p"
+      ],
+      "expiration_date": null
+    },
+    {
+      "id": "nvidia/nemotron-3-ultra-550b-a55b:free",
+      "context_length": 1000000,
+      "pricing": {
+        "prompt": "0",
+        "completion": "0"
+      },
+      "architecture": {
+        "input_modalities": ["text"],
+        "output_modalities": ["text"]
+      },
+      "supported_parameters": [
+        "include_reasoning",
+        "max_tokens",
+        "reasoning",
+        "reasoning_effort",
+        "seed",
+        "temperature",
+        "tool_choice",
+        "tools",
+        "top_p"
+      ],
+      "expiration_date": null
+    },
+    {
+      "id": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+      "context_length": 256000,
+      "pricing": {
+        "prompt": "0",
+        "completion": "0"
+      },
+      "architecture": {
+        "input_modalities": ["text", "audio", "image", "video"],
+        "output_modalities": ["text"]
+      },
+      "supported_parameters": [
+        "include_reasoning",
+        "max_tokens",
+        "reasoning",
+        "seed",
+        "temperature",
+        "tool_choice",
+        "tools",
+        "top_p"
+      ],
+      "expiration_date": null
+    },
+    {
+      "id": "google/gemma-4-26b-a4b-it:free",
+      "context_length": 262144,
+      "pricing": {
+        "prompt": "0",
+        "completion": "0"
+      },
+      "architecture": {
+        "input_modalities": ["image", "text", "video"],
+        "output_modalities": ["text"]
+      },
+      "supported_parameters": [
+        "include_reasoning",
+        "max_tokens",
+        "reasoning",
+        "response_format",
+        "seed",
+        "temperature",
+        "tool_choice",
+        "tools",
+        "top_p"
+      ],
+      "expiration_date": null
+    },
+    {
+      "id": "google/gemma-4-31b-it:free",
+      "context_length": 262144,
+      "pricing": {
+        "prompt": "0",
+        "completion": "0"
+      },
+      "architecture": {
+        "input_modalities": ["image", "text", "video"],
+        "output_modalities": ["text"]
+      },
+      "supported_parameters": [
+        "include_reasoning",
+        "max_tokens",
+        "reasoning",
+        "response_format",
+        "seed",
+        "temperature",
+        "tool_choice",
+        "tools",
+        "top_p"
+      ],
+      "expiration_date": null
+    },
+    {
+      "id": "openai/gpt-4o-mini",
+      "context_length": 128000,
+      "pricing": {
+        "prompt": "0.00000015",
+        "completion": "0.0000006"
+      },
+      "architecture": {
+        "input_modalities": ["text", "image", "file"],
+        "output_modalities": ["text"]
+      },
+      "supported_parameters": [
+        "frequency_penalty",
+        "logit_bias",
+        "logprobs",
+        "max_completion_tokens",
+        "max_tokens",
+        "prediction",
+        "presence_penalty",
+        "response_format",
+        "seed",
+        "stop",
+        "structured_outputs",
+        "temperature",
+        "tool_choice",
+        "tools",
+        "top_logprobs",
+        "top_p",
+        "web_search_options"
+      ],
+      "expiration_date": null
+    },
+    {
+      "id": "openrouter/free",
+      "context_length": 200000,
+      "pricing": {
+        "prompt": "0",
+        "completion": "0"
+      },
+      "architecture": {
+        "input_modalities": ["text", "image"],
+        "output_modalities": ["text"]
+      },
+      "supported_parameters": [
+        "frequency_penalty",
+        "include_reasoning",
+        "logprobs",
+        "max_completion_tokens",
+        "max_tokens",
+        "min_p",
+        "presence_penalty",
+        "reasoning",
+        "reasoning_effort",
+        "repetition_penalty",
+        "response_format",
+        "seed",
+        "stop",
+        "structured_outputs",
+        "temperature",
+        "tool_choice",
+        "tools",
+        "top_k",
+        "top_logprobs",
+        "top_p"
+      ],
+      "expiration_date": null
+    }
+  ]
 }
