@@ -1551,6 +1551,7 @@
       "noPrompt": "No prompt is active.",
       "noApiKey": "{{provider}} needs an API key, and none is set.",
       "keyRefused": "{{provider}} refused the API key.",
+      "noCredit": "Your credit with {{provider}} has run out; top it up there.",
       "modelNotFound": "{{provider}} doesn't have the model “{{model}}”.",
       "unreachable": "{{provider}} couldn't be reached.",
       "timeout": "{{provider}} didn't answer within the time limit ({{seconds}} s).",

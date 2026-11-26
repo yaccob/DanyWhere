@@ -1551,6 +1551,7 @@
       "noPrompt": "沒有啟用的提示詞。",
       "noApiKey": "{{provider}} 需要 API 金鑰，但尚未填寫。",
       "keyRefused": "{{provider}} 拒絕了 API 金鑰。",
+      "noCredit": "{{provider}} 的額度已用完，請前往儲值。",
       "modelNotFound": "{{provider}} 沒有模型「{{model}}」。",
       "unreachable": "無法連線到 {{provider}}。",
       "timeout": "{{provider}} 未在時間限制（{{seconds}} 秒）內回應。",

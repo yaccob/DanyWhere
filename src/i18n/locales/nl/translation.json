@@ -1551,6 +1551,7 @@
       "noPrompt": "Er is geen prompt actief.",
       "noApiKey": "{{provider}} heeft een API-sleutel nodig, maar er is er geen ingevuld.",
       "keyRefused": "{{provider}} heeft de API-sleutel geweigerd.",
+      "noCredit": "Je tegoed bij {{provider}} is op; vul het daar aan.",
       "modelNotFound": "{{provider}} heeft het model „{{model}}” niet.",
       "unreachable": "{{provider}} is niet bereikbaar.",
       "timeout": "{{provider}} heeft niet binnen de tijdslimiet geantwoord ({{seconds}} s).",

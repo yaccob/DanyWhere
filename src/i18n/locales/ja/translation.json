@@ -1551,6 +1551,7 @@
       "noPrompt": "有効なプロンプトがありません。",
       "noApiKey": "{{provider}} には API キーが必要ですが、設定されていません。",
       "keyRefused": "{{provider}} が API キーを拒否しました。",
+      "noCredit": "{{provider}} のクレジットを使い切りました。そちらでチャージしてください。",
       "modelNotFound": "{{provider}} にモデル「{{model}}」がありません。",
       "unreachable": "{{provider}} に接続できませんでした。",
       "timeout": "{{provider}} が制限時間（{{seconds}} 秒）内に応答しませんでした。",

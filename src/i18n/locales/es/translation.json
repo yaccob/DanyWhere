@@ -1551,6 +1551,7 @@
       "noPrompt": "No hay ninguna instrucción activa.",
       "noApiKey": "{{provider}} necesita una clave API y no hay ninguna configurada.",
       "keyRefused": "{{provider}} rechazó la clave API.",
+      "noCredit": "Tu saldo en {{provider}} se ha agotado; recárgalo allí.",
       "modelNotFound": "{{provider}} no tiene el modelo «{{model}}».",
       "unreachable": "No se pudo conectar con {{provider}}.",
       "timeout": "{{provider}} no respondió dentro del tiempo límite ({{seconds}} s).",

@@ -1551,6 +1551,7 @@
       "noPrompt": "Ingen prompt er aktiv.",
       "noApiKey": "{{provider}} kræver en API-nøgle, men der er ikke angivet nogen.",
       "keyRefused": "{{provider}} afviste API-nøglen.",
+      "noCredit": "Din kredit hos {{provider}} er brugt op; fyld den op der.",
       "modelNotFound": "{{provider}} har ikke modellen »{{model}}«.",
       "unreachable": "{{provider}} kunne ikke nås.",
       "timeout": "{{provider}} svarede ikke inden for tidsgrænsen ({{seconds}} s).",

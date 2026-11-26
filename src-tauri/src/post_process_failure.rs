@@ -17,6 +17,7 @@
 //! | `no-prompt`       | no active prompt has a text                                 |           |
 //! | `no-api-key`      | refused (401/403) and no API key is set                     |           |
 //! | `key-refused`     | refused (401/403) with the API key set                      |           |
+//! | `no-credit`       | the account has no credit left (402, Anthropic's "credit balance is too low", OpenAI's `insufficient_quota`, "insufficient balance") | |
 //! | `model-not-found` | the provider doesn't have the model (404 naming the model, `model_not_found`, "model … not found / does not exist") | |
 //! | `unreachable`     | no connection: refused, unknown host, TLS                   |           |
 //! | `timeout`         | no answer within the time limit                             | `seconds` |
@@ -42,6 +43,8 @@ pub enum FailureReason {
     NoPrompt,
     NoApiKey,
     KeyRefused,
+    /// The provider's account has no credit left.
+    NoCredit,
     ModelNotFound,
     Unreachable,
     /// The time limit from the settings comes with the failure
@@ -109,6 +112,7 @@ impl PostProcessFailure {
             FailureReason::NoPrompt => "no-prompt",
             FailureReason::NoApiKey => "no-api-key",
             FailureReason::KeyRefused => "key-refused",
+            FailureReason::NoCredit => "no-credit",
             FailureReason::ModelNotFound => "model-not-found",
             FailureReason::Unreachable => "unreachable",
             FailureReason::Timeout => "timeout",
@@ -162,6 +166,9 @@ pub fn classify_llm_error(error: &str, api_key_set: bool) -> FailureReason {
         let digits: String = answer.chars().take_while(char::is_ascii_digit).collect();
         if let Ok(status) = digits.parse::<u16>() {
             let body = answer.split_once(": ").map_or("", |(_, body)| body);
+            if says_no_credit(status, body) {
+                return FailureReason::NoCredit;
+            }
             if names_a_missing_model(status, body) {
                 return FailureReason::ModelNotFound;
             }
@@ -200,6 +207,21 @@ impl FailureReason {
         short.push('…');
         Self::Other(short)
     }
+}
+
+/// Whether an error answer says the account has no credit left (user,
+/// 2026-11-26, after Anthropic's answer showed only as "HTTP status 400"):
+/// every 402 Payment Required (OpenRouter, DeepSeek), Anthropic's 400
+/// "credit balance is too low", OpenAI's `insufficient_quota` (a 429, unlike
+/// its rate limits) and "insufficient balance" (z.ai). Checked before the
+/// other reasons, since topping up is what helps.
+fn says_no_credit(status: u16, body: &str) -> bool {
+    let body = body.to_ascii_lowercase();
+    status == 402
+        || body.contains("credit balance is too low")
+        || body.contains("insufficient_quota")
+        || body.contains("insufficient credits")
+        || body.contains("insufficient balance")
 }
 
 /// Whether an error answer says the provider doesn't have the model:
@@ -248,7 +270,13 @@ mod tests {
     const FORBIDDEN_403: &str = "API request failed with status 403 Forbidden: forbidden";
     const SERVER_500: &str =
         "API request failed with status 500 Internal Server Error: something broke";
-    const RATE_429: &str = r#"API request failed with status 429 Too Many Requests: {"error":{"message":"You exceeded your current quota","code":"insufficient_quota"}}"#;
+    const RATE_429: &str = r#"API request failed with status 429 Too Many Requests: {"error":{"message":"Rate limit reached for gpt-5 in organization org-x on tokens per min (TPM): Limit 30000, Used 30000, Requested 900. Please try again in 1.8s.","type":"tokens","param":null,"code":"rate_limit_exceeded"}}"#;
+    const ANTHROPIC_RATE_429: &str = r#"API request failed with status 429 Too Many Requests: {"type":"error","error":{"type":"rate_limit_error","message":"This request would exceed the rate limit for your organization of 50 requests per minute."}}"#;
+    /// The answer DanyWhere's log showed on 2026-11-26, word for word.
+    const ANTHROPIC_NO_CREDIT: &str = r#"API request failed with status 400 Bad Request: {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011ChRweqaxNgJyv6HyXKRtY"}"#;
+    const OPENAI_NO_CREDIT: &str = r#"API request failed with status 429 Too Many Requests: {"error":{"message":"You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.","type":"insufficient_quota","param":null,"code":"insufficient_quota"}}"#;
+    const OPENROUTER_402: &str = r#"API request failed with status 402 Payment Required: {"error":{"message":"Insufficient credits. Add more using https://openrouter.ai/settings/credits","code":402}}"#;
+    const ZAI_NO_BALANCE: &str = r#"API request failed with status 429 Too Many Requests: {"error":{"code":"1113","message":"Insufficient balance or no resource package. Please recharge."}}"#;
     const REFUSED: &str = "HTTP request failed (kind: request, connect, url: http://127.0.0.1:9/chat/completions): caused by: error sending request -> client error (Connect) -> tcp connect error -> Connection refused (os error 61)";
     const UNKNOWN_HOST: &str = "HTTP request failed (kind: request, connect, url: https://no-such-host.invalid/v1/chat/completions): caused by: error sending request -> client error (Connect) -> dns error -> failed to lookup address information: nodename nor servname provided, or not known";
     const TIMED_OUT: &str = "HTTP request failed (kind: request, timeout, url: http://127.0.0.1:9/chat/completions): caused by: operation timed out";
@@ -299,9 +327,45 @@ mod tests {
             classify_llm_error(SERVER_500, true),
             FailureReason::Status(500)
         );
+        // A rate limit is a status: waiting helps, topping up doesn't.
         assert_eq!(
             classify_llm_error(RATE_429, true),
             FailureReason::Status(429)
+        );
+        assert_eq!(
+            classify_llm_error(ANTHROPIC_RATE_429, true),
+            FailureReason::Status(429)
+        );
+    }
+
+    #[test]
+    fn a_used_up_credit_is_named_as_such() {
+        // Anthropic's 400 (user, 2026-11-26: "keine Ahnung warum"), OpenAI's
+        // 429 `insufficient_quota`, OpenRouter's 402, z.ai's 429.
+        for error in [
+            ANTHROPIC_NO_CREDIT,
+            OPENAI_NO_CREDIT,
+            OPENROUTER_402,
+            ZAI_NO_BALANCE,
+        ] {
+            assert_eq!(
+                classify_llm_error(error, true),
+                FailureReason::NoCredit,
+                "{error}"
+            );
+        }
+        // Every 402 Payment Required, whatever its body says.
+        assert_eq!(
+            classify_llm_error(
+                "API request failed with status 402 Payment Required: payment required",
+                true
+            ),
+            FailureReason::NoCredit
+        );
+        // The provider took the key to look at the account: not a missing key.
+        assert_eq!(
+            classify_llm_error(ANTHROPIC_NO_CREDIT, false),
+            FailureReason::NoCredit
         );
     }
 
@@ -405,6 +469,7 @@ mod tests {
             (FailureReason::NoPrompt, "no-prompt"),
             (FailureReason::NoApiKey, "no-api-key"),
             (FailureReason::KeyRefused, "key-refused"),
+            (FailureReason::NoCredit, "no-credit"),
             (FailureReason::Unreachable, "unreachable"),
             (FailureReason::EmptyReply, "empty-reply"),
             (FailureReason::Truncated, "truncated"),

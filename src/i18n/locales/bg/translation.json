@@ -1551,6 +1551,7 @@
       "noPrompt": "Няма активна подсказка.",
       "noApiKey": "{{provider}}: нужен е API ключ, но не е въведен.",
       "keyRefused": "{{provider}}: API ключът е отхвърлен.",
+      "noCredit": "{{provider}}: кредитът ви е изчерпан; заредете го там.",
       "modelNotFound": "{{provider}}: моделът „{{model}}“ не е намерен.",
       "unreachable": "{{provider}}: няма връзка.",
       "timeout": "{{provider}}: няма отговор в рамките на времевия лимит ({{seconds}} s).",

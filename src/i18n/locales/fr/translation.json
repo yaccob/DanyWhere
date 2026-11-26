@@ -1551,6 +1551,7 @@
       "noPrompt": "Aucune instruction n'est active.",
       "noApiKey": "{{provider}} a besoin d'une clé API, et aucune n'est saisie.",
       "keyRefused": "{{provider}} a refusé la clé API.",
+      "noCredit": "Votre crédit chez {{provider}} est épuisé ; rechargez-le là-bas.",
       "modelNotFound": "{{provider}} ne propose pas le modèle « {{model}} ».",
       "unreachable": "{{provider}} est injoignable.",
       "timeout": "{{provider}} n'a pas répondu dans le délai imparti ({{seconds}} s).",

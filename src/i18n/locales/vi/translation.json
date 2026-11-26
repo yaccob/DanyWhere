@@ -1551,6 +1551,7 @@
       "noPrompt": "Không có prompt nào bật.",
       "noApiKey": "{{provider}} cần khóa API nhưng chưa nhập khóa nào.",
       "keyRefused": "{{provider}} đã từ chối khóa API.",
+      "noCredit": "Số dư tại {{provider}} đã hết; hãy nạp thêm ở đó.",
       "modelNotFound": "{{provider}} không có mô hình “{{model}}”.",
       "unreachable": "Không kết nối được tới {{provider}}.",
       "timeout": "{{provider}} không trả lời trong giới hạn thời gian ({{seconds}} giây).",

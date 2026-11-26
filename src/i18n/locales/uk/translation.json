@@ -1551,6 +1551,7 @@
       "noPrompt": "Немає активного промпту.",
       "noApiKey": "{{provider}}: потрібен API-ключ, але його не задано.",
       "keyRefused": "{{provider}}: API-ключ відхилено.",
+      "noCredit": "{{provider}}: баланс вичерпано; поповніть його там.",
       "modelNotFound": "{{provider}}: модель «{{model}}» не знайдено.",
       "unreachable": "{{provider}}: немає з'єднання.",
       "timeout": "{{provider}}: немає відповіді в межах ліміту часу ({{seconds}} с).",
