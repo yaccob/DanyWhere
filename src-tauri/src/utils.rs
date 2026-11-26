@@ -219,6 +219,19 @@ unsafe fn process_integrity_level(
 /// Centralized cancellation function that can be called from anywhere in the app.
 /// Handles cancelling both recording and transcription operations and updates UI state.
 pub fn cancel_current_operation(app: &AppHandle) {
+    cancel_operation(app, true);
+}
+
+/// DanyWhere: drops the running recording as a cancel does, for the
+/// transcription coordinator itself (a hold shortcut alone released before
+/// the hold threshold, `start_keys`): it already went idle, so it is not
+/// told again.
+pub fn discard_current_recording(app: &AppHandle) {
+    cancel_operation(app, false);
+}
+
+/// The cancel; `notify_coordinator` tells the transcription coordinator.
+fn cancel_operation(app: &AppHandle, notify_coordinator: bool) {
     info!("Initiating operation cancellation...");
 
     // Unregister the cancel shortcut asynchronously
@@ -228,6 +241,9 @@ pub fn cancel_current_operation(app: &AppHandle) {
     let audio_manager = app.state::<Arc<AudioRecordingManager>>();
     let recording_was_active = audio_manager.is_recording();
     audio_manager.cancel_recording();
+    // DanyWhere: a spoken instruction the recording went on to goes with it
+    // (`dictation_flow::instruction`), its text's transcription too.
+    crate::dictation_flow::instruction::discard_pending();
 
     // Abandon any live streaming transcription, and stop a transcription
     // already in progress
@@ -248,7 +264,10 @@ pub fn cancel_current_operation(app: &AppHandle) {
     tm.maybe_unload_immediately("cancellation");
 
     // Notify coordinator so it can keep lifecycle state coherent.
-    if let Some(coordinator) = app.try_state::<TranscriptionCoordinator>() {
+    if let (true, Some(coordinator)) = (
+        notify_coordinator,
+        app.try_state::<TranscriptionCoordinator>(),
+    ) {
         coordinator.notify_cancel(recording_was_active);
     }
 

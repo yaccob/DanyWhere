@@ -81,6 +81,7 @@ import {
 import { Highlighted, HistorySearchBar } from "./HistorySearchBar";
 // DanyWhere: the text in a box that scrolls and can be resized.
 import { HistoryTextBox } from "./HistoryTextBox";
+import { SpokenInstructionLine } from "./SpokenInstructionLine";
 // DanyWhere: the star's tooltip says it keeps the recording.
 import { keepRecordingTooltip } from "./keepRecording";
 // DanyWhere: the versions of an entry: what shows, the track, ✨.
@@ -653,8 +654,14 @@ export const HistorySettings: React.FC = () => {
                 postProcess={postProcess}
                 // DanyWhere: with the profile's active prompts, or the one
                 // chosen in the wand's menu (`prompt_library`).
-                reprocess={(id, mode, version, promptIds) =>
-                  commands.reprocessHistoryEntry(id, mode, version, promptIds)
+                reprocess={(id, mode, version, promptIds, useInstruction) =>
+                  commands.reprocessHistoryEntry(
+                    id,
+                    mode,
+                    version,
+                    promptIds,
+                    useInstruction,
+                  )
                 }
                 promptItems={promptItems}
                 promptMenuUsable={promptMenuUsable}
@@ -738,12 +745,14 @@ interface HistoryEntryProps {
   postProcess: PostProcessAvailability;
   // DanyWhere: `version` is the version a post-processing starts from
   // (null: the top); `promptIds` the prompts to run instead of the active
-  // ones (null), from the wand's menu.
+  // ones (null), from the wand's menu; `useInstruction` false: without the
+  // entry's spoken instruction (the wand's menu).
   reprocess: (
     id: number,
     mode: ReprocessMode,
     version: number | null,
     promptIds: string[] | null,
+    useInstruction: boolean,
   ) => Promise<void>;
   // DanyWhere (H6): the wand's menu.
   promptItems: PromptMenuItem[];
@@ -944,21 +953,30 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
 
   // DanyWhere: ✨ post-processes the current version, the one shown; the
   // result goes on top, where the entry then shows it. Every version stays.
+  // With the entry's spoken instruction, if it has one, as it was dictated.
   const runPostProcess = () => {
-    void reprocess(entry.id, "post_process", shown, null);
+    void reprocess(entry.id, "post_process", shown, null, true);
     show(null);
   };
+
+  // DanyWhere (strand Z1): the same without the spoken instruction.
+  const runWithoutInstruction = () => {
+    void reprocess(entry.id, "post_process", shown, null, false);
+    show(null);
+  };
+  const hasSpokenInstruction =
+    (entry.spoken_instruction ?? "").trim().length > 0;
 
   // DanyWhere (H6): one prompt of the library, chosen by name, on the
   // version shown; its result goes on top too.
   const runPrompt = (promptId: string) => {
-    void reprocess(entry.id, "post_process", shown, [promptId]);
+    void reprocess(entry.id, "post_process", shown, [promptId], true);
     show(null);
   };
 
   // DanyWhere: the new transcription goes on top; every version stays.
   const runRetranscribe = (mode: ReprocessMode) => {
-    void reprocess(entry.id, mode, null, null);
+    void reprocess(entry.id, mode, null, null, true);
     show(null);
   };
 
@@ -1060,6 +1078,9 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
                   onRunPrompt={runPrompt}
                   menuUsable={promptMenuUsable}
                   disabled={editing !== null || saving}
+                  onRunWithoutInstruction={
+                    hasSpokenInstruction ? runWithoutInstruction : undefined
+                  }
                 />
               )}
               {!entry.recording_removed && (
@@ -1187,6 +1208,17 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
             onMove={moveVersionTo}
             onDelete={deleteVersionAt}
             disabled={saving}
+          />
+        )}
+        {/* DanyWhere: the instruction spoken for its post-processing, with
+            its audio (F6). */}
+        {!retrying && editing === null && (
+          <SpokenInstructionLine
+            instruction={entry.spoken_instruction}
+            audioFile={entry.spoken_instruction_file}
+            recordingRemoved={entry.recording_removed}
+            highlight={highlight}
+            getAudioUrl={getAudioUrl}
           />
         )}
         {/* DanyWhere: its context, and whether it went out as context. */}

@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect, useRef } from "react";
+import React, { useEffect, useLayoutEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, type ChineseScript } from "@/bindings";
 import { useSettings } from "@/hooks/useSettings";
@@ -104,16 +104,9 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
     selectModel,
   ]);
 
-  // Demo and Try it teach hold and tap, which only hold_or_toggle supports;
-  // settings migrated from push_to_talk may still be Toggle or PushToTalk.
-  const activationSet = useRef(false);
-  const activation = settings?.shortcut_activation;
-  useEffect(() => {
-    if (preview || !activation || activationSet.current) return;
-    activationSet.current = true;
-    if (activation !== "hold_or_toggle")
-      updateSetting("shortcut_activation", "hold_or_toggle");
-  }, [preview, activation]);
+  // DanyWhere: Demo and Try it teach holding with the first hold shortcut
+  // and tapping with the first start shortcut, which out of the box are the
+  // same keys (qa 2026-11-26_1810); there is no behavior to set any more.
 
   // Before first paint so a preview never shows the saved step.
   useLayoutEffect(() => {

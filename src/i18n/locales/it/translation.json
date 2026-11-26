@@ -408,18 +408,9 @@
         "notFound": "Scorciatoia non trovata",
         "pressKeys": "Premi i tasti...",
         "bindings": {
-          "transcribe": {
-            "name": "Scorciatoia di avvio",
-            "description": "Avvia una registrazione. Come termina lo decidono le scorciatoie di fine, anche tenendo premuto."
-          },
           "cancel": {
             "name": "Scorciatoia Annulla",
             "description": "La scorciatoia da tastiera per annullare la registrazione in corso."
-          },
-          "transcribe_with_post_process": {
-            "name": "Seconda scorciatoia di avvio",
-            "description": "Facoltativo: una seconda combinazione che avvia una registrazione. Di fabbrica, una scorciatoia di fine con la stessa combinazione post-elabora il testo. Occupata solo finché la post-elaborazione è attiva.",
-            "descriptionMacos": "Facoltativo: una seconda combinazione che avvia una registrazione. Di fabbrica, rilasciarla dopo averla tenuta premuta post-elabora il testo; toccarla di nuovo termina senza post-elaborazione, come ogni scorciatoia di fine senza ⌥. Occupata solo finché la post-elaborazione è attiva."
           },
           "paste_last_transcript": {
             "name": "Incolla l'ultima trascrizione",
@@ -464,20 +455,6 @@
         "noMatch": "Nessuna lingua corrisponde a «{{query}}»",
         "weak": "Nessun modello riconosce ancora bene {{languages}}."
       },
-      "shortcutActivation": {
-        "title": "Comportamento della scorciatoia",
-        "description": "Scegli come una scorciatoia di avvio avvia e termina una registrazione.",
-        "options": {
-          "holdOrToggle": "Automatico",
-          "pushToTalk": "Tieni premuto",
-          "toggle": "Tocca"
-        },
-        "descriptions": {
-          "hold_or_toggle": "Tieni premuto per registrare, o tocca per avviare; poi una scorciatoia di fine ferma la registrazione",
-          "push_to_talk": "Registra finché tieni premuta la scorciatoia",
-          "toggle": "Tocca per avviare la registrazione; toccare di nuovo la ferma solo se una scorciatoia di fine ha la stessa combinazione"
-        }
-      },
       "insertService": {
         "invalid": "Usa ⌘ o ⌃ con una lettera, una cifra o un segno di punteggiatura",
         "conflict": "«{{name}}» usa già questa scorciatoia"
@@ -495,35 +472,75 @@
         }
       }
     },
+    "startKeys": {
+      "description": "Tocca per avviare una registrazione. Continua finché una scorciatoia di fine non la termina.",
+      "shortcutHint": "Toccare questa combinazione avvia una registrazione. È sempre occupata.",
+      "alsoHold": "Anche scorciatoia da tenere premuta",
+      "alsoInstruction": "Anche scorciatoia di istruzione",
+      "add": "Aggiungi scorciatoia di avvio",
+      "addPressKeys": "Premi la combinazione per la nuova scorciatoia di avvio",
+      "delete": "Elimina la scorciatoia di avvio {{shortcut}}",
+      "lastOne": "Deve restare una scorciatoia di avvio o da tenere premuta, così una registrazione si può sempre avviare.",
+      "refName": "Scorciatoia di avvio {{shortcut}}",
+      "errors": {
+        "save": "Impossibile salvare le scorciatoie di avvio: {{error}}",
+        "needsShortcut": "Ogni scorciatoia di avvio ha bisogno di una combinazione di tasti.",
+        "shortcutTwice": "Due scorciatoie di avvio non possono condividere una combinazione.",
+        "last": "L'ultima scorciatoia di avvio o da tenere premuta non può essere rimossa: deve essere sempre possibile avviare una registrazione.",
+        "cannotEnd": "Su Linux una registrazione avviata da {{shortcut}} non si potrebbe terminare: tieni una scorciatoia di fine con la stessa combinazione."
+      }
+    },
+    "holdKeys": {
+      "title": "Scorciatoie da tenere premute",
+      "description": "Tieni premuto per registrare. Il rilascio termina la registrazione in questo modo: cosa viene aggiunto e se le dettature precedenti vengono inviate come contesto.",
+      "shortcutHint": "Tenere premuta questa combinazione registra; rilasciarla termina la registrazione in questo modo.",
+      "alsoStart": "Anche scorciatoia di avvio: un tocco breve avvia una registrazione che continua.",
+      "holdOnly": "Solo scorciatoia da tenere premuta: un tocco breve non fa nulla.",
+      "alsoInstruction": "Anche scorciatoia di istruzione: durante una registrazione passa all'istruzione.",
+      "add": "Aggiungi scorciatoia da tenere premuta",
+      "addPressKeys": "Premi la combinazione per la nuova scorciatoia da tenere premuta",
+      "refName": "Scorciatoia da tenere premuta {{name}}",
+      "errors": {
+        "save": "Impossibile salvare le scorciatoie da tenere premute: {{error}}",
+        "needsShortcut": "Ogni scorciatoia da tenere premuta ha bisogno di una combinazione di tasti.",
+        "shortcutTwice": "Due scorciatoie da tenere premute non possono condividere una combinazione."
+      }
+    },
+    "instructionKeys": {
+      "title": "Scorciatoie di istruzione",
+      "description": "Durante una registrazione, una scorciatoia di istruzione passa dal testo a un'istruzione: ciò che dici dopo non viene inserito, ma dice alla post-elaborazione cosa fare con il testo, per esempio «traducilo in polacco». Toccala, e una scorciatoia di fine invia la dettatura; tienila premuta, e il rilascio invia la dettatura come impostato qui. Una dettatura così viene sempre post-elaborata.",
+      "shortcutHint": "Durante una registrazione, premere questa combinazione passa dal testo all'istruzione. È occupata solo durante la registrazione.",
+      "onlyWhileRecording": "Occupata solo durante una registrazione.",
+      "sameAsStartOrHold": "Stessa combinazione di una scorciatoia di avvio o da tenere premuta: senza registrazione ne avvia una, durante una registrazione passa all'istruzione.",
+      "notTakenNever": "La post-elaborazione è impostata su «{{mode}}»: le scorciatoie di istruzione non sono occupate. Scegli un'altra impostazione per «{{setting}}» in Avanzate.",
+      "notTakenNoProvider": "Nessun provider di post-elaborazione con un modello è configurato: le scorciatoie di istruzione non sono occupate finché non ce n'è uno.",
+      "add": "Aggiungi scorciatoia di istruzione",
+      "addPressKeys": "Premi la combinazione per la nuova scorciatoia di istruzione",
+      "refName": "Scorciatoia di istruzione {{name}}",
+      "errors": {
+        "save": "Impossibile salvare le scorciatoie di istruzione: {{error}}",
+        "needsShortcut": "Ogni scorciatoia di istruzione ha bisogno di una combinazione di tasti.",
+        "shortcutTwice": "Due scorciatoie di istruzione non possono condividere una combinazione."
+      }
+    },
     "endKeys": {
       "title": "Scorciatoie di fine",
-      "description": "Come termina una registrazione e cosa segue. Ogni scorciatoia di fine ha una propria combinazione di tasti, occupata solo durante la registrazione, e stabilisce cosa viene aggiunto, se il testo viene post-elaborato e se le dettature precedenti vengono inviate come contesto. Una scorciatoia di fine può avere la combinazione di una scorciatoia di avvio: toccare di nuovo quella scorciatoia di avvio termina allora in questo modo.",
+      "description": "Come termina una registrazione e cosa segue. Ogni scorciatoia di fine ha una propria combinazione di tasti, occupata solo durante la registrazione, e stabilisce cosa viene aggiunto e se le dettature precedenti vengono inviate come contesto. Una scorciatoia di fine può avere la combinazione di una scorciatoia di avvio o da tenere premuta: toccarla durante una registrazione termina allora in questo modo.",
       "name": "Nome",
       "shortcutHint": "Premere questa combinazione durante una registrazione la termina in questo modo. È occupata solo durante la registrazione.",
-      "sameAsStart": "Stessa combinazione di «{{start}}»: toccarla di nuovo durante una registrazione la termina in questo modo.",
+      "sameAsStart": "Stessa combinazione di una scorciatoia di avvio: toccarla di nuovo durante una registrazione la termina in questo modo.",
+      "sameAsHold": "Stessa combinazione di una scorciatoia da tenere premuta: toccarla durante una registrazione la termina in questo modo.",
       "append": "Aggiungi alla fine",
       "appendDescription": "Aggiunto a una dettatura che termina in questo modo: il testo, poi il tasto che scegli. Nel testo \\s è uno spazio, \\n un a capo, \\t una tabulazione e \\\\ una barra rovesciata; tutto il resto viene aggiunto così com'è scritto. Il tasto viene inviato solo quando il testo viene incollato.",
-      "postProcess": "Post-elabora",
       "sendContext": "Invia contesto",
-      "sendContextHint": "Solo con la post-elaborazione: le dettature precedenti della stessa finestra vengono inviate come contesto.",
-      "postProcessOff": "La post-elaborazione è disattivata: una dettatura terminata in questo modo non viene post-elaborata. Attiva «Post-Elaborazione» in Avanzate.",
+      "sendContextHint": "Le dettature precedenti della stessa finestra vengono inviate come contesto. Conta solo quando la dettatura viene post-elaborata.",
       "add": "Aggiungi scorciatoia di fine",
       "addPressKeys": "Premi la combinazione per la nuova scorciatoia di fine",
       "delete": "Elimina {{name}}",
       "lastOne": "Deve restare una scorciatoia di fine, così una registrazione si può sempre terminare.",
       "held": "{{shortcut}} tenuta premuta",
-      "holdEnds": {
-        "title": "Tenendo premuto",
-        "description": "Come il rilascio di una scorciatoia di avvio tenuta premuta termina la registrazione."
-      },
-      "tapEnds": {
-        "title": "Toccando",
-        "description": "Come il tocco di una scorciatoia di fine termina la registrazione."
-      },
+      "refName": "Scorciatoia di fine {{name}}",
       "factoryNames": {
-        "pattern": "{{mode}} · {{effect}}",
-        "direct": "Diretto",
-        "postProcessed": "Post-elaborato",
         "space": "Spazio",
         "noSpace": "Senza spazio",
         "paragraph": "Paragrafo",
@@ -531,13 +548,13 @@
         "enter": "Invia Invio",
         "shiftEnter": "Invia Maiusc+Invio"
       },
-      "linuxNoShortcuts": "Su Linux le combinazioni delle scorciatoie di fine non vengono occupate durante la registrazione. Lì una registrazione termina quando si rilascia una scorciatoia di avvio tenuta premuta, o quando si tocca di nuovo una scorciatoia di avvio la cui combinazione appartiene anche a una scorciatoia di fine.",
+      "linuxNoShortcuts": "Su Linux le combinazioni delle scorciatoie di fine non vengono occupate durante la registrazione. Lì una registrazione termina quando si rilascia una scorciatoia da tenere premuta, o quando si tocca di nuovo una scorciatoia di avvio la cui combinazione appartiene anche a una scorciatoia di fine.",
       "errors": {
         "save": "Impossibile salvare le scorciatoie di fine: {{error}}",
         "needsShortcut": "Ogni scorciatoia di fine ha bisogno di una combinazione di tasti.",
         "shortcutTwice": "Due scorciatoie di fine non possono condividere una scorciatoia.",
         "last": "L'ultima scorciatoia di fine non può essere rimossa: deve essere sempre possibile terminare una registrazione.",
-        "cannotEnd": "Su Linux non sarebbe più possibile terminare una registrazione: tieni una scorciatoia di fine con la combinazione di una scorciatoia di avvio, oppure scegli «Tieni premuto»."
+        "cannotEnd": "Su Linux non sarebbe più possibile terminare una registrazione: tieni una scorciatoia di fine con la combinazione di una scorciatoia di avvio."
       }
     },
     "inputMethod": {
@@ -865,6 +882,7 @@
         "llmCheckTitle": "Verifica i nomi con l'LLM, anche senza post-elaborazione",
         "llmCheckDescription": "Solo nelle dettature con una parola simile a una voce di un elenco di parole. La frase va allora a {{provider}}.",
         "llmCheckNeedsProvider": "Richiede un provider di post-elaborazione con un modello.",
+        "llmCheckNever": "Non finché la post-elaborazione è impostata su «{{mode}}»: allora nulla va a un provider.",
         "llmCheckNotWith": "Non con {{provider}}: richiede un altro provider di post-elaborazione con un modello.",
         "setUpPostProcessing": "Configura la post-elaborazione",
         "switchModel": "Passa a {{model}}",
@@ -1066,6 +1084,15 @@
         "statusDenied": "Non consentito – modificalo in Impostazioni di Sistema › Privacy e sicurezza › Automazione",
         "statusNotRunning": "Non in esecuzione – aprila per consentire",
         "statusUnknown": "Sconosciuto"
+      },
+      "mode": {
+        "title": "Post-Elaborazione",
+        "description": "Quando una dettatura va al provider di post-elaborazione. Mai: nulla va a un provider e le scorciatoie di istruzione non sono occupate. Con scorciatoia di istruzione: solo una dettatura in cui è stata premuta una scorciatoia di istruzione. Sempre: ogni dettatura; una scorciatoia di istruzione aggiunge un'istruzione.",
+        "options": {
+          "never": "Mai",
+          "withInstructionKey": "Con scorciatoia di istruzione",
+          "always": "Sempre"
+        }
       }
     },
     "history": {
@@ -1090,6 +1117,11 @@
       "postProcessOff": "La post-elaborazione è disattivata nelle impostazioni",
       "postProcessNotSetUp": "Scegli prima un provider, un modello e un prompt in Post-elaborazione",
       "recordingRemoved": "Registrazione eliminata per restare entro il limite di spazio",
+      "spokenInstruction": {
+        "label": "Istruzione vocale:",
+        "nothingHeard": "nulla di comprensibile",
+        "audio": "Audio dell'istruzione vocale"
+      },
       "cancelTranscription": "Annulla trascrizione",
       "transcribing": "Trascrizione in corso...",
       "postProcessing": "Post-elaborazione in corso...",
@@ -1160,6 +1192,7 @@
           "ai": "Post-elaborato",
           "aiPrompt": "Post-elaborato con «{{prompt}}»",
           "user": "Modificato da te",
+          "withSpokenInstruction": "{{step}} + istruzione vocale",
           "withTime": "{{step}}, {{time}}"
         },
         "saveError": "Impossibile salvare il tuo testo. Riprova.",
@@ -1172,7 +1205,8 @@
       "promptMenu": {
         "button": "Post-elabora con un'istruzione",
         "title": "Post-elabora con",
-        "active": "attiva"
+        "active": "attiva",
+        "withoutSpokenInstruction": "Senza l'istruzione vocale"
       },
       "retranscribeAgain": "Ri-trascrivere e post-elaborare di nuovo, come prima"
     },
@@ -1273,10 +1307,6 @@
         "title": "Microfono con coperchio chiuso",
         "description": "Microfono da usare quando il portatile è chiuso"
       },
-      "postProcessingToggle": {
-        "label": "Post-Elaborazione",
-        "description": "Abilita il miglioramento della trascrizione con IA"
-      },
       "muteWhileRecording": {
         "label": "Silenzia durante la registrazione",
         "description": "Silenzia l'audio di sistema durante la registrazione"
@@ -1300,7 +1330,7 @@
       },
       "holdThreshold": {
         "title": "Soglia di pressione prolungata",
-        "description": "Solo in modalità Automatico: per quanto tempo (in millisecondi) la scorciatoia deve restare premuta per contare come pressione prolungata invece di un tocco. Riduci se la registrazione resta attiva dopo averla tenuta premuta brevemente; aumenta se i tocchi intenzionali vengono interpretati come pressioni prolungate."
+        "description": "Per quanto tempo (in millisecondi) una scorciatoia da tenere premuta deve restare premuta per contare come pressione prolungata. Se premuta più brevemente, una combinazione che è anche scorciatoia di avvio conta come un tocco, e una scorciatoia solo da tenere premuta scarta la registrazione. Riduci se la registrazione resta attiva dopo averla tenuta premuta brevemente; aumenta se i tocchi intenzionali vengono interpretati come pressioni prolungate."
       },
       "reliablePaste": {
         "title": "Incolla affidabile (Beta)",
@@ -1376,7 +1406,6 @@
     "profileView": {
       "fields": {
         "shortcuts": "Scorciatoie",
-        "holdEnds": "Tenendo premuto",
         "selectedModel": "Modello vocale",
         "providers": "Indirizzo e formato del fornitore",
         "activePrompts": "Istruzioni attive",
@@ -1540,7 +1569,9 @@
     "postProcessEffortRefusedTitle": "Sforzo rifiutato",
     "postProcessEffortRefused": "{{model}} ha rifiutato lo sforzo scelto, quindi il testo è arrivato con l'impostazione predefinita del modello. Scegli un altro sforzo, o «Predefinito del modello», accanto al modello di post-elaborazione.",
     "fileTranscriptionFailedTitle": "Trascrizione del file non riuscita",
-    "transcriptionFailedTitle": "Trascrizione non riuscita"
+    "transcriptionFailedTitle": "Trascrizione non riuscita",
+    "instructionTranscriptionFailedTitle": "Istruzione non riuscita – testo pronto",
+    "instructionTranscriptionFailed": "Non è stato possibile trascrivere l'istruzione vocale, quindi non è stato inserito nulla. Il testo che la precede è pronto: «Incolla l'ultima trascrizione» lo inserisce, «Copia l'ultima trascrizione» lo mette negli appunti."
   },
   "notices": {
     "errorOne": "{{n}} errore",
@@ -1572,7 +1603,10 @@
     "notReady": "Non ancora pronto",
     "wordList": "Elenco di parole: {{name}}",
     "wordListGlobalOnly": "Nessun elenco aggiuntivo",
-    "cancel": "Annulla"
+    "cancel": "Annulla",
+    "instruction": "Istruzione",
+    "instructionLine": "Istruzione: {{text}}",
+    "textReady": "Testo trascritto"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} potrebbe bloccare 1 scorciatoia",

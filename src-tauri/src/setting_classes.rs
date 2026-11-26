@@ -85,8 +85,8 @@ pub const APP_SETTINGS: &[(&str, AppPage)] = &[
 
 /// Fields that concern a dictation but stay the same for every profile
 /// until other work makes them profile values. Since strand D the shortcuts
-/// (`bindings`, a map by id) and the end shortcuts (`end_keys`,
-/// `hold_ends`) are profile values.
+/// (`bindings`, a map by id) and the end shortcuts (`end_keys`) are profile
+/// values, since 2026-11-26 the start and hold shortcuts too.
 pub const GLOBAL: &[&str] = &[];
 
 /// Fields shared by all profiles, which choose from them.
@@ -262,7 +262,8 @@ mod tests {
     fn what_concerns_a_dictation_is_a_profile_value() {
         let values = profile_value_names();
         let expected = [
-            "shortcut_activation",
+            "start_keys",
+            "hold_keys",
             "audio_feedback",
             "audio_feedback_volume",
             "sound_theme",

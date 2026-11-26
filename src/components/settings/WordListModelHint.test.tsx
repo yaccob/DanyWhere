@@ -55,6 +55,8 @@ const SWITCH = "Check Names with the LLM, Also Without Post-Processing";
 const SWITCH_ABOUT =
   "Only in dictations with a word that resembles a word list entry. The sentence then goes to OpenAI.";
 const NEEDS_PROVIDER = "Needs a post-processing provider with a model.";
+const NOT_WHILE_NEVER =
+  "Not while post-processing is set to “Never”: then nothing goes to a provider.";
 const NOT_WITH_APPLE =
   "Not with Apple Intelligence: needs another post-processing provider with a model.";
 const SET_UP = "Set Up Post-Processing";
@@ -165,18 +167,40 @@ describe("the line under the word lists' heading", () => {
     expect(rawTextIn()).toEqual([]);
   });
 
-  test("neither the post-processing switch nor a prompt makes a provider ready", async () => {
+  test("neither an instruction shortcut nor a prompt makes a provider ready", async () => {
     await openAdvanced({
       defaults: {
         selected_model: CANARY.id,
         ...READY,
-        post_process_enabled: false,
+        post_process_mode: "with_instruction_key",
         post_process_prompt_order: [],
       },
     });
 
     expect(visibleText()).toContain(LINE_WITH_LLM);
     expect(llmSwitch()?.disabled).toBe(false);
+  });
+
+  // With post-processing set to "never" nothing goes to a provider, the
+  // check neither (sidecar qa 2026-11-26_1841, "Kleinere Folgen"): the line
+  // says the lists have no effect, the switch why it can't run, and Set Up
+  // Post-Processing leads out of "never".
+  test("with post-processing Never: no effect, the switch says why, set-up offered", async () => {
+    await openAdvanced({
+      defaults: {
+        selected_model: CANARY.id,
+        ...READY,
+        post_process_mode: "never",
+      },
+    });
+
+    const text = visibleText();
+    expect(text).toContain(LINE_NO_EFFECT);
+    expect(llmSwitch()?.disabled).toBe(true);
+    expect(text).toContain(NOT_WHILE_NEVER);
+    expect(text).not.toContain(SWITCH_ABOUT);
+    expect(button(SET_UP)).not.toBeNull();
+    expect(rawTextIn()).toEqual([]);
   });
 
   test("Apple Intelligence: the switch says why it can't", async () => {
@@ -320,30 +344,30 @@ describe("Switch to Whisper Large v3 Turbo", () => {
 });
 
 describe("Set Up Post-Processing", () => {
-  test("turns post-processing on and opens its page of the defaults", async () => {
+  test("turns Never into With Instruction Shortcut and opens its page of the defaults", async () => {
     await openAdvanced({
       defaults: {
         selected_model: CANARY.id,
         ...NOT_READY,
-        post_process_enabled: false,
+        post_process_mode: "never",
       },
     });
 
     await pressShown(button(SET_UP));
 
     expect(callsOf("setProfileValue")).toEqual([
-      [{ kind: "defaults" }, "post_process_enabled", true],
+      [{ kind: "defaults" }, "post_process_mode", "with_instruction_key"],
     ]);
     expect(navigated).toEqual([{ kind: "defaults", page: "postprocessing" }]);
   });
 
-  test("opens the profile's page, post-processing already on", async () => {
+  test("opens the profile's page, post-processing already allowed", async () => {
     await openAdvanced(
       {
         defaults: {
           selected_model: CANARY.id,
           ...NOT_READY,
-          post_process_enabled: true,
+          post_process_mode: "always",
         },
         profiles: [{ id: WORK, name: "Work" }],
       },

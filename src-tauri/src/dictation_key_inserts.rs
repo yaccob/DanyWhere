@@ -27,7 +27,6 @@
 //! shortcut that can't be a service's key equivalent at all (⌥ without ⌘ or
 //! ⌃, which types a character) is never released either.
 
-use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use log::{info, warn};
@@ -36,28 +35,25 @@ use tauri::{AppHandle, Manager};
 use crate::settings::ShortcutBinding;
 use crate::tray::TrayIconState;
 
-/// The dictation shortcuts, each with an "end dictation" service.
-const DICTATION_BINDINGS: [&str; 2] = ["transcribe", "transcribe_with_post_process"];
-
-/// The dictation shortcuts to release and take back. Those that need
-/// post-processing are registered only while it is on (`shortcut`), so
-/// otherwise they are left alone: taking them back would register them. A
-/// shortcut that can't be its service's key equivalent stays DanyWhere's:
+/// The dictation shortcuts to release and take back: the keys the two "end
+/// dictation" services stand for (`services`, from
+/// `insert_service::service_bindings`: the first start shortcut and the
+/// first hold shortcut with a combination of its own, as registered, so one that isn't
+/// registered is left alone: taking it back would register it), each once.
+/// A shortcut that can't be its service's key equivalent stays DanyWhere's:
 /// released, its press would reach no service (⌥Space on the company Mac,
-/// 2026-11-13).
-pub fn bindings_to_release(
-    post_process_enabled: bool,
-    bindings: &HashMap<String, ShortcutBinding>,
-) -> Vec<&'static str> {
-    DICTATION_BINDINGS
-        .into_iter()
-        .filter(|id| post_process_enabled || !crate::settings::binding_needs_post_processing(id))
-        .filter(|id| {
-            bindings.get(*id).is_some_and(|binding| {
-                crate::insert_service::dictation_key_equivalent(&binding.current_binding).is_ok()
-            })
-        })
-        .collect()
+/// 2026-11-13). DanyWhere, 2026-11-26: only so far that it ends as before;
+/// the mode without Accessibility is parked.
+pub fn bindings_to_release(services: &[ShortcutBinding]) -> Vec<ShortcutBinding> {
+    let mut released: Vec<ShortcutBinding> = Vec::new();
+    for binding in services {
+        let can_insert =
+            crate::insert_service::dictation_key_equivalent(&binding.current_binding).is_ok();
+        if can_insert && !released.iter().any(|other| other.id == binding.id) {
+            released.push(binding.clone());
+        }
+    }
+    released
 }
 
 /// The app in front while a locked recording runs.
@@ -283,8 +279,8 @@ fn waits_for_service(settings: &crate::settings::AppSettings) -> bool {
 /// Whether the shortcuts should be released, as last requested.
 static RELEASE_REQUESTED: AtomicBool = AtomicBool::new(false);
 
-/// Whether they are released; the lock also serializes reconciliation.
-static RELEASED: std::sync::Mutex<bool> = std::sync::Mutex::new(false);
+/// Those released, if they are; the lock also serializes reconciliation.
+static RELEASED: std::sync::Mutex<Option<Vec<ShortcutBinding>>> = std::sync::Mutex::new(None);
 
 /// Whether a locked recording runs, as the coordinator last reported.
 static RECORDING_LOCKED: AtomicBool = AtomicBool::new(false);
@@ -299,15 +295,14 @@ const FRONT_APP_POLL: std::time::Duration = std::time::Duration::from_millis(300
 
 /// The dictation shortcuts released right now, which the shortcuts that
 /// follow the profile leave alone meanwhile (`shortcut::profile_sync`).
-pub fn released_bindings() -> Vec<&'static str> {
-    if *RELEASED
+pub fn released_bindings() -> Vec<String> {
+    RELEASED
         .lock()
         .unwrap_or_else(std::sync::PoisonError::into_inner)
-    {
-        DICTATION_BINDINGS.to_vec()
-    } else {
-        Vec::new()
-    }
+        .iter()
+        .flatten()
+        .map(|binding| binding.id.clone())
+        .collect()
 }
 
 /// The transcription coordinator reports that a locked recording began
@@ -432,26 +427,35 @@ fn reconcile_release(app: &AppHandle) {
         .lock()
         .unwrap_or_else(std::sync::PoisonError::into_inner);
     let wanted = RELEASE_REQUESTED.load(Ordering::SeqCst);
-    if wanted == *released {
+    if wanted == released.is_some() {
         return;
     }
-    let settings = crate::settings::get_settings(app);
-    for id in bindings_to_release(settings.post_process_enabled, &settings.bindings) {
-        let Some(binding) = settings.bindings.get(id).cloned() else {
-            continue;
-        };
+    let bindings = match released.take() {
+        Some(released) => released,
+        None => {
+            let settings = crate::settings::get_settings(app);
+            let services: Vec<ShortcutBinding> = crate::insert_service::service_bindings(&settings)
+                .into_iter()
+                .filter_map(|(_, binding)| binding)
+                .collect();
+            bindings_to_release(&services)
+        }
+    };
+    for binding in &bindings {
         let result = if wanted {
-            crate::shortcut::unregister_shortcut(app, binding)
+            crate::shortcut::unregister_shortcut(app, binding.clone())
         } else {
-            crate::shortcut::register_shortcut(app, binding)
+            crate::shortcut::register_shortcut(app, binding.clone())
         };
         // Taking back a shortcut that is registered already (e.g. after the
         // user changed it meanwhile) fails harmlessly.
         if let Err(err) = result {
-            warn!("Dictation shortcut '{id}': {err}");
+            warn!("Dictation shortcut '{}': {err}", binding.id);
         }
     }
-    *released = wanted;
+    if wanted {
+        *released = Some(bindings);
+    }
     if wanted {
         info!("Released the dictation shortcuts: their next press ends the dictation in the app.");
     } else {
@@ -588,6 +592,7 @@ pub fn change_dictation_key_inserts_setting(app: AppHandle, enabled: bool) -> Re
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::collections::HashMap;
 
     fn bindings(pairs: &[(&str, &str)]) -> HashMap<String, ShortcutBinding> {
         pairs
@@ -607,11 +612,14 @@ mod tests {
             .collect()
     }
 
-    fn control_bindings() -> HashMap<String, ShortcutBinding> {
-        bindings(&[
-            ("transcribe", "ctrl+space"),
-            ("transcribe_with_post_process", "ctrl+shift+space"),
-        ])
+    /// The service bindings of `pairs`, in order.
+    fn services(pairs: &[(&str, &str)]) -> Vec<ShortcutBinding> {
+        let all = bindings(pairs);
+        pairs.iter().map(|(id, _)| all[*id].clone()).collect()
+    }
+
+    fn ids(bindings: &[ShortcutBinding]) -> Vec<&str> {
+        bindings.iter().map(|b| b.id.as_str()).collect()
     }
 
     const OWN_PID: i32 = 4242;
@@ -746,14 +754,11 @@ mod tests {
     fn a_shortcut_with_only_option_is_never_released() {
         // ⌥Space types a character, so it can't call a service (the user's
         // test on the company Mac, 2026-11-13); released, it would end nothing.
-        let bindings = bindings(&[
-            ("transcribe", "option+space"),
-            ("transcribe_with_post_process", "ctrl+shift+space"),
+        let bindings = services(&[
+            ("start_key:start", "option+space"),
+            ("hold_key:hold_post", "ctrl+shift+space"),
         ]);
-        assert_eq!(
-            bindings_to_release(true, &bindings),
-            vec!["transcribe_with_post_process"]
-        );
+        assert_eq!(ids(&bindings_to_release(&bindings)), ["hold_key:hold_post"]);
     }
 
     #[test]
@@ -841,23 +846,12 @@ mod tests {
     }
 
     #[test]
-    fn both_dictation_shortcuts_are_released_and_no_context_shortcut() {
-        // The context shortcut and its service are gone (2026-11-15); the
-        // post-process shortcut's service follows "Send Context".
-        assert!(!DICTATION_BINDINGS.contains(&crate::send_context::RETIRED_BINDING));
-        assert!(DICTATION_BINDINGS.contains(&"transcribe"));
-        assert!(DICTATION_BINDINGS.contains(&"transcribe_with_post_process"));
-    }
-
-    #[test]
-    fn the_post_processing_shortcuts_are_left_alone_while_post_processing_is_off() {
-        // They aren't registered then; taking them back would register them.
-        let bindings = control_bindings();
-        assert_eq!(bindings_to_release(false, &bindings), vec!["transcribe"]);
-        assert_eq!(
-            bindings_to_release(true, &bindings).len(),
-            DICTATION_BINDINGS.len()
-        );
+    fn a_binding_both_services_stand_for_is_released_once() {
+        let bindings = services(&[
+            ("start_key:start", "ctrl+space"),
+            ("start_key:start", "ctrl+space"),
+        ]);
+        assert_eq!(ids(&bindings_to_release(&bindings)), ["start_key:start"]);
     }
 
     #[cfg(target_os = "macos")]
@@ -873,14 +867,14 @@ mod tests {
                 binding.default_binding
             );
         }
-        assert_eq!(
-            settings.bindings["transcribe"].default_binding,
-            "ctrl+space"
-        );
-        assert_eq!(
-            settings.bindings["transcribe_with_post_process"].default_binding,
-            "ctrl+shift+space"
-        );
+        // The start and hold shortcuts (`start_keys`) too.
+        let keys: Vec<&str> = settings
+            .start_keys
+            .iter()
+            .map(|key| key.shortcut.as_str())
+            .chain(settings.hold_keys.iter().map(|key| key.shortcut.as_str()))
+            .collect();
+        assert_eq!(keys, ["ctrl+space", "ctrl+space", "ctrl+shift+space"]);
         assert_eq!(
             settings.bindings["paste_last_transcript"].default_binding,
             "ctrl+shift+v"
@@ -895,10 +889,12 @@ mod tests {
     #[test]
     fn every_default_dictation_shortcut_can_insert() {
         let settings = crate::settings::get_default_settings();
-        assert_eq!(
-            bindings_to_release(true, &settings.bindings).len(),
-            DICTATION_BINDINGS.len()
-        );
+        let services: Vec<ShortcutBinding> = crate::insert_service::service_bindings(&settings)
+            .into_iter()
+            .filter_map(|(_, binding)| binding)
+            .collect();
+        assert_eq!(services.len(), 2);
+        assert_eq!(bindings_to_release(&services).len(), 2);
     }
 
     #[test]

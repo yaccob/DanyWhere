@@ -1026,6 +1026,19 @@ impl TranscriptionManager {
         self.complete(started, samples, live)
     }
 
+    /// DanyWhere: [`transcribe_recording`](Self::transcribe_recording) for
+    /// the text section of a recording cut for a spoken instruction
+    /// (`dictation_flow::instruction`): its live decode ended at the cut.
+    /// Keeps the model loaded even when it unloads right after use: the
+    /// instruction is transcribed with it next, and the dictation's end
+    /// unloads it once both sections are dealt with, the instruction heard
+    /// or not (`dictation_flow::ports::Transcribe::release_model`).
+    pub fn transcribe_text_section(&self, samples: Vec<f32>) -> Result<Transcription> {
+        let started = Instant::now();
+        let live = self.finalize_live(samples.len())?;
+        self.complete_with(started, samples, live, false)
+    }
+
     /// The final text of one transcription, from its live result or else a
     /// batch run of `audio`. Every transcription finishes here.
     fn complete(
@@ -1033,6 +1046,18 @@ impl TranscriptionManager {
         started: Instant,
         audio: Vec<f32>,
         live: Option<RunOutcome>,
+    ) -> Result<Transcription> {
+        self.complete_with(started, audio, live, true)
+    }
+
+    /// [`complete`](Self::complete); `unload`: unload the model afterwards
+    /// if it unloads right after use.
+    fn complete_with(
+        &self,
+        started: Instant,
+        audio: Vec<f32>,
+        live: Option<RunOutcome>,
+        unload: bool,
     ) -> Result<Transcription> {
         #[cfg(debug_assertions)]
         if std::env::var("HANDY_FORCE_TRANSCRIPTION_FAILURE").is_ok() {
@@ -1045,7 +1070,9 @@ impl TranscriptionManager {
         debug!("Audio vector length: {}", audio_len);
         if audio.is_empty() {
             debug!("Empty audio vector");
-            self.maybe_unload_immediately("empty audio");
+            if unload {
+                self.maybe_unload_immediately("empty audio");
+            }
             return Ok(Transcription {
                 text: String::new(),
                 language: None,
@@ -1093,7 +1120,9 @@ impl TranscriptionManager {
             );
         }
 
-        self.maybe_unload_immediately("transcription");
+        if unload {
+            self.maybe_unload_immediately("transcription");
+        }
 
         Ok(Transcription {
             text: final_result,
@@ -1710,11 +1739,12 @@ fn echoes_vocabulary(text: &str, vocabulary: &[String]) -> bool {
     };
     let said = words(text);
     // Walk the text once, finding the custom words in the order of the list.
-    let (mut at, mut found, mut covered) = (0, 0, 0);
+    let (mut at, mut found, mut covered, mut terms) = (0, 0, 0, 0);
     for term in vocabulary.iter().map(|term| words(term)) {
         if term.is_empty() {
             continue;
         }
+        terms += 1;
         if let Some(offset) = said[at..].windows(term.len()).position(|w| w == term) {
             at += offset + term.len();
             found += 1;
@@ -1722,8 +1752,11 @@ fn echoes_vocabulary(text: &str, vocabulary: &[String]) -> bool {
         }
     }
     // A sentence that uses a few custom words is speech. Three or more of
-    // them in list order, with next to nothing else, is the list.
-    found >= 3 && covered * 4 >= said.len() * 3
+    // them in list order, with next to nothing else, is the list. DanyWhere:
+    // so is a list of two read back whole (2026-11-26, "DanyWhere, BeThLi"
+    // from a second of the start sound); one word alone can be said.
+    let needed = terms.clamp(2, 3);
+    found >= needed && covered * 4 >= said.len() * 3
 }
 
 struct TranscribeCppRunPlan {
@@ -2643,6 +2676,34 @@ mod tests {
             assert!(!echoes_vocabulary(speech, &words), "{speech}");
         }
         assert!(!echoes_vocabulary("Handy Qwen VRAM", &[]));
+    }
+
+    /// DanyWhere: a list of two custom words read back whole is the list
+    /// too (2026-11-26: Dev's text section before a spoken instruction, a
+    /// second of the start sound, came back as "DanyWhere, BeThLi", its two
+    /// custom words, and went to History and the provider as the dictation).
+    #[test]
+    fn a_short_list_read_back_whole_is_not_a_transcript() {
+        let two = ["DanyWhere", "BeThLi"].map(String::from);
+        for echo in [
+            "DanyWhere, BeThLi",
+            "DanyWhere, BeThLi.",
+            "danywhere bethli",
+        ] {
+            assert!(echoes_vocabulary(echo, &two), "{echo}");
+        }
+        for speech in [
+            "DanyWhere",
+            "BeThLi",
+            // Not the order of the list.
+            "BeThLi, DanyWhere",
+            "Ich habe DanyWhere und BeThLi heute weiterentwickelt.",
+        ] {
+            assert!(!echoes_vocabulary(speech, &two), "{speech}");
+        }
+        // One custom word alone is something someone can say.
+        let one = ["DanyWhere"].map(String::from);
+        assert!(!echoes_vocabulary("DanyWhere", &one));
     }
 }
 

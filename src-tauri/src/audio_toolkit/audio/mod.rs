@@ -20,7 +20,8 @@ pub use recording::{
     write_playback_wav, RECORDING_EXTENSION,
 };
 pub use sink::{
-    AudioFrameCallback, CaptureSink, CaptureVad, CapturedAudio, LevelCallback, VadPolicy,
+    AudioFrameCallback, CaptureSink, CaptureVad, CapturedAudio, LevelCallback, RecordingSections,
+    SplitSection, VadPolicy,
 };
 pub use utils::{read_wav_samples, save_wav_file, verify_wav_file};
 pub use visualizer::AudioVisualiser;

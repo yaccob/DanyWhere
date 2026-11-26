@@ -7,13 +7,25 @@ Cette page résume ce que fait DanyWhere. Quand un chapitre explique une partie 
 
 ## Terminer une dictée
 
-- **Décidez à la fin de ce que devient une dictée.** Un enregistrement commence par un raccourci de début et se termine par le raccourci de fin de votre choix. Chaque raccourci de fin a sa propre combinaison de touches et indique ce qui suit le texte, si un modèle de langage le post-traite et si les dictées précédentes sont envoyées comme contexte.
-- **Douze raccourcis de fin sur un Mac, dans une nouvelle installation,** selon une seule règle : ⌥ (Option) post-traite, ⇧ (Maj) choisit la petite variante, et ⌃ (Contrôle) avec ↩ (Retour) appuie sur une touche. <kbd>⌃ Espace</kbd> termine par une espace, <kbd>↩</kbd> par un nouveau paragraphe, et <kbd>⌃↩</kbd> appuie sur Entrée pour envoyer un message de chat. <kbd>⌥⌃ Espace</kbd>, <kbd>⌥↩</kbd> et <kbd>⌥⌃↩</kbd> font de même avec post-traitement.
-- **Sous Windows et Linux,** les combinaisons des deux raccourcis de début terminent l'enregistrement, la deuxième avec post-traitement.
-- **Maintenir ou appuyer brièvement.** Maintenez un raccourci de début pendant que vous parlez, ou appuyez brièvement pour commencer et de nouveau pour arrêter. **Lorsqu'il est maintenu** règle la façon dont le relâchement termine l'enregistrement.
+- **Décidez à la fin de ce que devient une dictée.** Un enregistrement commence par un raccourci de début et se termine par le raccourci de fin de votre choix. Chaque raccourci de fin a sa propre combinaison de touches et indique ce qui suit le texte et si les dictées précédentes sont envoyées comme contexte.
+- **Quatre listes du même genre :** raccourcis de début, de maintien, d'instruction et de fin, autant de chacun que vous voulez. Ce que fait une combinaison découle des listes où elle figure ; la même combinaison peut ainsi démarrer par un appui bref et enregistrer quand on la maintient.
+- **Six raccourcis de fin sur un Mac, dans une nouvelle installation,** selon une seule règle : ⇧ (Maj) choisit la petite variante, ↩ (Retour) envoie, et ⌥ (Option) l'en empêche. <kbd>⌃ Espace</kbd> termine par une espace, <kbd>↩</kbd> appuie sur Entrée pour envoyer un message de chat, et <kbd>⌥↩</kbd> termine par un nouveau paragraphe.
+- **Sous Windows et Linux,** les combinaisons des deux raccourcis de maintien terminent l'enregistrement.
+- **Maintenir ou appuyer brièvement.** Maintenez un raccourci de maintien pendant que vous parlez, ou appuyez brièvement sur un raccourci de début pour commencer et de nouveau pour arrêter. Un appui bref sur une touche qui ne fait que maintenir ne fait rien.
 - **Du texte et une touche après la dictée.** Un raccourci de fin peut ajouter du texte, comme une espace ou un saut de ligne, puis appuyer sur une touche comme Entrée.
 
-[Raccourcis de début et de fin](../how-it-works/start-and-end-shortcuts/) explique tout cela.
+[Raccourcis de début, de maintien, d'instruction et de fin](../how-it-works/start-and-end-shortcuts/) explique tout cela.
+
+## L'instruction orale
+
+- **Dites juste après le texte ce qu'il doit devenir.** Pendant un enregistrement, un raccourci d'instruction (<kbd>⇥</kbd> sur un Mac, <kbd>Tab</kbd> sous Windows) passe du texte à une instruction, comme « traduis ceci en polonais » ou « réponds à la question ». Le modèle de langage l'applique en plus des prompts du profil, pour cette seule dictée.
+- **Appui bref ou maintien.** Appuyez brièvement sur le raccourci d'instruction et terminez avec n'importe quel raccourci de fin, ou maintenez-le pendant que vous parlez et relâchez-le.
+- **Sans attendre.** Le texte est transcrit pendant que vous dites encore l'instruction.
+- **Une instruction sans texte** écrit quelque chose de zéro, par exemple une réponse polie.
+- **Le texte reste du texte.** Seul ce que vous dites après la touche compte comme instruction, et les dictées suivantes reçoivent le résultat comme contexte, jamais l'instruction.
+- **Gardée dans l'historique** avec son audio : **Re-transcrire** réécoute les deux parties, et la baguette magique travaille avec ou sans l'instruction.
+
+[L'instruction orale](../how-it-works/spoken-instruction/) montre comment vous en servir.
 
 ## Paramètres de base et profils
 
@@ -27,10 +39,11 @@ Cette page résume ce que fait DanyWhere. Quand un chapitre explique une partie 
 
 ## Post-traitement
 
+- **Jamais, avec raccourci d'instruction, ou toujours.** Chaque profil indique quand ses dictées sont post-traitées : jamais, pour que rien ne quitte votre ordinateur ; seulement après un raccourci d'instruction, comme dans une nouvelle installation ; ou à chaque fois.
 - **Un modèle de langage travaille sur votre texte au lieu d'y répondre.** DanyWhere indique lui-même au modèle qu'il reçoit une transcription à traiter, pas une question, que la langue reste la même et qu'il doit corriger les mots mal entendus quand le contexte montre clairement ce qui a été dit. Votre prompt dit seulement quoi faire du texte. **Effort de réflexion**, à côté du modèle, règle combien le modèle réfléchit avant de répondre.
 - **Plusieurs prompts d'un coup.** Les prompts forment une seule bibliothèque pour tous les profils. Chaque profil active ceux qu'il utilise et les met dans l'ordre. Ils partent vers le modèle en une seule requête et s'appliquent l'un après l'autre.
 - **Vos listes de mots comme termes connus.** Le post-traitement reçoit les listes de mots en vigueur. Il écrit donc un nom mal entendu tel qu'il figure sur la liste, avec tous les modèles vocaux.
-- **Les dictées précédentes comme contexte.** Avec **Envoyer le contexte**, un raccourci de fin envoie aussi vos dictées précédentes de la même fenêtre, pour que le modèle sache de quoi parle la conversation.
+- **Les dictées précédentes comme contexte.** Avec **Envoyer le contexte**, un raccourci de fin, de maintien ou d'instruction envoie aussi vos dictées précédentes de la même fenêtre, pour que le modèle sache de quoi parle la conversation.
 - **Sur cet ordinateur ou dans le cloud, et vous savez lequel des deux.** À côté du fournisseur, les réglages indiquent si le post-traitement reste sur cet ordinateur ou part dans le cloud. Avec un modèle servi sur cet ordinateur, par exemple par Ollama ou LM Studio, DanyWhere le charge dès que vous commencez à parler, pour que son démarrage à froid ne rallonge pas l'attente.
 
 ## Historique
@@ -49,7 +62,7 @@ Cette page résume ce que fait DanyWhere. Quand un chapitre explique une partie 
 ## Sur un Mac sans Accessibilité
 
 - **DanyWhere fonctionne là où cette autorisation est bloquée,** comme sur beaucoup de Mac gérés par une entreprise. Choisissez **Continuer sans l'accessibilité** pendant la configuration. Une fois la méthode de saisie de DanyWhere ajoutée, les raccourcis de fin insèrent le texte aussitôt. Sans elle, une dictée attend dans DanyWhere jusqu'à ce que vous l'insériez avec <kbd>⌃⇧V</kbd>.
-- **Sans l'autorisation, DanyWhere ne peut pas appuyer sur des touches.** Une nouvelle installation laisse de côté les quatre raccourcis de fin qui appuient sur une touche, et vous appuyez vous-même sur Entrée.
+- **Sans l'autorisation, DanyWhere ne peut pas appuyer sur des touches.** Une nouvelle installation laisse de côté les deux raccourcis de fin qui appuient sur une touche, et vous appuyez vous-même sur Entrée.
 - **Les titres de fenêtre, fournis par les apps elles-mêmes.** DanyWhere demande le titre de sa fenêtre au premier plan à chaque app qui sait le donner, comme les navigateurs, Terminal, Mail, Notes, TextEdit et Microsoft Office, une fois que vous l'avez autorisé pour cette app. Le contexte des dictées précédentes et le filtre par fenêtre de l'historique ont besoin de ce titre.
 - **Les raccourcis avec la touche fn** ne sont pas disponibles sans l'autorisation.
 
@@ -63,7 +76,7 @@ Cette page résume ce que fait DanyWhere. Quand un chapitre explique une partie 
 ## Et aussi
 
 - **Un son quand tout est terminé,** post-traitement compris, pour que vous sachiez quand revenir à votre texte. Les trois sons sont de plus en plus aigus : au début, à l'arrêt, puis quand tout est fini.
-- **Les combinaisons de touches telles que votre système les écrit,** <kbd>⌥⌃ Espace</kbd> sur un Mac et <kbd>Ctrl+Maj+Espace</kbd> sous Windows. Dans une combinaison avec une touche principale, les touches de modification de gauche et de droite comptent de la même façon.
+- **Les combinaisons de touches telles que votre système les écrit,** <kbd>⌃⇧ Espace</kbd> sur un Mac et <kbd>Ctrl+Maj+Espace</kbd> sous Windows. Dans une combinaison avec une touche principale, les touches de modification de gauche et de droite comptent de la même façon.
 - **Les nouveautés après une mise à jour,** en anglais ou en allemand.
 - **Ce manuel,** dans l'app sous **Manuel** et sur le web, en anglais, en allemand, en espagnol et en français.
 

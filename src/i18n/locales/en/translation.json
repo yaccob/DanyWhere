@@ -408,18 +408,9 @@
         "notFound": "Shortcut not found",
         "pressKeys": "Press keys...",
         "bindings": {
-          "transcribe": {
-            "name": "Start Shortcut",
-            "description": "Starts a recording. How it ends is up to the end shortcuts, also when held."
-          },
           "cancel": {
             "name": "Cancel Shortcut",
             "description": "The keyboard shortcut to cancel the current recording."
-          },
-          "transcribe_with_post_process": {
-            "name": "Second Start Shortcut",
-            "description": "Optional: a second combination that starts a recording. Out of the box, an end shortcut with the same combination post-processes the text. Taken only while post-processing is on.",
-            "descriptionMacos": "Optional: a second combination that starts a recording. Out of the box, releasing it after holding it post-processes the text; tapping it again ends without post-processing, as every end shortcut without ⌥ does. Taken only while post-processing is on."
           },
           "paste_last_transcript": {
             "name": "Paste Last Transcript",
@@ -464,20 +455,6 @@
         "noMatch": "No language matches “{{query}}”",
         "weak": "No model recognizes {{languages}} well yet."
       },
-      "shortcutActivation": {
-        "title": "Shortcut Behavior",
-        "description": "Choose how a start shortcut starts and ends a recording.",
-        "options": {
-          "holdOrToggle": "Auto",
-          "pushToTalk": "Hold",
-          "toggle": "Tap"
-        },
-        "descriptions": {
-          "hold_or_toggle": "Hold to record, or tap to start; then an end shortcut stops it",
-          "push_to_talk": "Records while you hold the shortcut",
-          "toggle": "Tap to start recording; tapping again stops it only if an end shortcut has the same combination"
-        }
-      },
       "insertService": {
         "invalid": "Use ⌘ or ⌃ with a letter, digit or punctuation key",
         "conflict": "{{name}} already uses this shortcut"
@@ -495,35 +472,75 @@
         }
       }
     },
+    "startKeys": {
+      "description": "Tap to start a recording. It runs until an end shortcut ends it.",
+      "shortcutHint": "Tapping this combination starts a recording. It is always taken.",
+      "alsoHold": "Also a hold shortcut",
+      "alsoInstruction": "Also an instruction shortcut",
+      "add": "Add Start Shortcut",
+      "addPressKeys": "Press the combination for the new start shortcut",
+      "delete": "Delete start shortcut {{shortcut}}",
+      "lastOne": "One start or hold shortcut must stay, so that a recording can always be started.",
+      "refName": "Start shortcut {{shortcut}}",
+      "errors": {
+        "save": "Couldn't save the start shortcuts: {{error}}",
+        "needsShortcut": "Every start shortcut needs a key combination.",
+        "shortcutTwice": "Two start shortcuts can't share a combination.",
+        "last": "The last start or hold shortcut can't go: a recording must always be possible to start.",
+        "cannotEnd": "On Linux a recording that {{shortcut}} starts couldn't be ended: keep an end shortcut with the same combination."
+      }
+    },
+    "holdKeys": {
+      "title": "Hold Shortcuts",
+      "description": "Hold to record. Releasing ends the recording this way: what is appended and whether earlier dictations go along as context.",
+      "shortcutHint": "Holding this combination records; releasing it ends the recording this way.",
+      "alsoStart": "Also a start shortcut: a short tap starts a recording that keeps running.",
+      "holdOnly": "Hold shortcut only: a short tap does nothing.",
+      "alsoInstruction": "Also an instruction shortcut: during a recording it switches to the instruction.",
+      "add": "Add Hold Shortcut",
+      "addPressKeys": "Press the combination for the new hold shortcut",
+      "refName": "Hold shortcut {{name}}",
+      "errors": {
+        "save": "Couldn't save the hold shortcuts: {{error}}",
+        "needsShortcut": "Every hold shortcut needs a key combination.",
+        "shortcutTwice": "Two hold shortcuts can't share a combination."
+      }
+    },
+    "instructionKeys": {
+      "title": "Instruction Shortcuts",
+      "description": "During a recording, an instruction shortcut switches from the text to an instruction: what you say next isn't inserted but tells post-processing what to do with the text, such as “translate this into Polish”. Tap it, and an end shortcut sends the dictation off; hold it, and releasing it sends the dictation off as set here. Such a dictation is always post-processed.",
+      "shortcutHint": "During a recording, pressing this combination switches from the text to the instruction. It is taken only while recording.",
+      "onlyWhileRecording": "Taken only during a recording.",
+      "sameAsStartOrHold": "Same combination as a start or hold shortcut: without a recording it starts one, during a recording it switches to the instruction.",
+      "notTakenNever": "Post-processing is set to “{{mode}}”: instruction shortcuts aren't taken. Choose another setting for {{setting}} under Advanced.",
+      "notTakenNoProvider": "No post-processing provider with a model is set up: instruction shortcuts aren't taken until one is.",
+      "add": "Add Instruction Shortcut",
+      "addPressKeys": "Press the combination for the new instruction shortcut",
+      "refName": "Instruction shortcut {{name}}",
+      "errors": {
+        "save": "Couldn't save the instruction shortcuts: {{error}}",
+        "needsShortcut": "Every instruction shortcut needs a key combination.",
+        "shortcutTwice": "Two instruction shortcuts can't share a combination."
+      }
+    },
     "endKeys": {
       "title": "End Shortcuts",
-      "description": "How a recording ends and what follows. Each end shortcut has a key combination of its own, taken only while recording, and says what is appended, whether the text is post-processed and whether earlier dictations go along as context. An end shortcut may have a start shortcut's combination: tapping that start shortcut again then ends this way.",
+      "description": "How a recording ends and what follows. Each end shortcut has a key combination of its own, taken only while recording, and says what is appended and whether earlier dictations go along as context. An end shortcut may have the combination of a start or hold shortcut: tapping it during a recording then ends this way.",
       "name": "Name",
       "shortcutHint": "Pressing this combination during a recording ends it this way. It is taken only while recording.",
-      "sameAsStart": "Same combination as “{{start}}”: tapping it again during a recording ends this way.",
+      "sameAsStart": "Same combination as a start shortcut: tapping it again during a recording ends this way.",
+      "sameAsHold": "Same combination as a hold shortcut: tapping it during a recording ends this way.",
       "append": "Append",
       "appendDescription": "Appended to a dictation that ends this way: the text, then the key press you choose. In the text, \\s is a space, \\n a new line, \\t a tab and \\\\ a backslash; everything else is appended as written. The key press is sent only when the text is pasted.",
-      "postProcess": "Post-process",
       "sendContext": "Send Context",
-      "sendContextHint": "Only with post-processing: earlier dictations from the same window go along as context.",
-      "postProcessOff": "Post-processing is off: a dictation ended this way isn't post-processed. Turn on “Post Processing” under Advanced.",
+      "sendContextHint": "Earlier dictations from the same window go along as context. It counts only when the dictation is post-processed.",
       "add": "Add End Shortcut",
       "addPressKeys": "Press the combination for the new end shortcut",
       "delete": "Delete {{name}}",
       "lastOne": "One end shortcut must stay, so that a recording can always be ended.",
       "held": "{{shortcut}} held",
-      "holdEnds": {
-        "title": "When Held",
-        "description": "How releasing a held start shortcut ends the recording."
-      },
-      "tapEnds": {
-        "title": "When Tapped",
-        "description": "How tapping an end shortcut ends the recording."
-      },
+      "refName": "End shortcut {{name}}",
       "factoryNames": {
-        "pattern": "{{mode}} · {{effect}}",
-        "direct": "Direct",
-        "postProcessed": "Post-processed",
         "space": "Space",
         "noSpace": "No space",
         "paragraph": "Paragraph",
@@ -531,13 +548,13 @@
         "enter": "Send Enter",
         "shiftEnter": "Send Shift+Enter"
       },
-      "linuxNoShortcuts": "On Linux, the combinations of end shortcuts aren't taken while recording. A recording ends there when a held start shortcut is released, or when a start shortcut is tapped again whose combination an end shortcut has.",
+      "linuxNoShortcuts": "On Linux, the combinations of end shortcuts aren't taken while recording. A recording ends there when a hold shortcut is released, or when a start shortcut is tapped again whose combination an end shortcut has.",
       "errors": {
         "save": "Couldn't save the end shortcuts: {{error}}",
         "needsShortcut": "Every end shortcut needs a key combination.",
         "shortcutTwice": "Two end shortcuts can't share a shortcut.",
         "last": "The last end shortcut can't go: a recording must always be possible to end.",
-        "cannotEnd": "On Linux a recording could no longer be ended: keep an end shortcut with a start shortcut's combination, or choose “Hold”."
+        "cannotEnd": "On Linux a recording could no longer be ended: keep an end shortcut with a start shortcut's combination."
       }
     },
     "inputMethod": {
@@ -865,6 +882,7 @@
         "llmCheckTitle": "Check Names with the LLM, Also Without Post-Processing",
         "llmCheckDescription": "Only in dictations with a word that resembles a word list entry. The sentence then goes to {{provider}}.",
         "llmCheckNeedsProvider": "Needs a post-processing provider with a model.",
+        "llmCheckNever": "Not while post-processing is set to “{{mode}}”: then nothing goes to a provider.",
         "llmCheckNotWith": "Not with {{provider}}: needs another post-processing provider with a model.",
         "setUpPostProcessing": "Set Up Post-Processing",
         "switchModel": "Switch to {{model}}",
@@ -1066,6 +1084,15 @@
         "statusDenied": "Not allowed – change it in System Settings › Privacy & Security › Automation",
         "statusNotRunning": "Not running – start it to allow",
         "statusUnknown": "Unknown"
+      },
+      "mode": {
+        "title": "Post Processing",
+        "description": "When a dictation goes to the post-processing provider. Never: nothing goes to a provider, and instruction shortcuts aren't taken. With Instruction Shortcut: only a dictation in which an instruction shortcut was pressed. Always: every dictation; an instruction shortcut adds an instruction.",
+        "options": {
+          "never": "Never",
+          "withInstructionKey": "With Instruction Shortcut",
+          "always": "Always"
+        }
       }
     },
     "history": {
@@ -1090,6 +1117,11 @@
       "postProcessOff": "Post Process is turned off in the settings",
       "postProcessNotSetUp": "Choose a provider, a model and a prompt under Post Process first",
       "recordingRemoved": "Recording deleted to stay within the storage limit",
+      "spokenInstruction": {
+        "label": "Spoken instruction:",
+        "nothingHeard": "nothing heard",
+        "audio": "Audio of the spoken instruction"
+      },
       "cancelTranscription": "Cancel transcription",
       "transcribing": "Transcribing...",
       "postProcessing": "Post-processing...",
@@ -1160,6 +1192,7 @@
           "ai": "Post-processed",
           "aiPrompt": "Post-processed with “{{prompt}}”",
           "user": "Edited by you",
+          "withSpokenInstruction": "{{step}} + spoken instruction",
           "withTime": "{{step}}, {{time}}"
         },
         "saveError": "Failed to save your text. Please try again.",
@@ -1172,7 +1205,8 @@
       "promptMenu": {
         "button": "Post-process with one prompt",
         "title": "Post-process with",
-        "active": "active"
+        "active": "active",
+        "withoutSpokenInstruction": "Without the spoken instruction"
       },
       "retranscribeAgain": "Re-transcribe and post-process again, as before"
     },
@@ -1273,10 +1307,6 @@
         "title": "Clamshell Microphone",
         "description": "Microphone to use when laptop lid is closed"
       },
-      "postProcessingToggle": {
-        "label": "Post Processing",
-        "description": "Enable AI-powered text refinement after transcription"
-      },
       "muteWhileRecording": {
         "label": "Mute While Recording",
         "description": "Mute system audio during recording"
@@ -1300,7 +1330,7 @@
       },
       "holdThreshold": {
         "title": "Hold Threshold",
-        "description": "Auto mode only: how long (in milliseconds) the shortcut must be held before it counts as a hold instead of a tap. Lower if short holds keep leaving recording on; raise if deliberate taps get treated as holds."
+        "description": "How long (in milliseconds) a hold shortcut must be held to count as holding. Held for less, a combination that is also a start shortcut counts as a tap, and a hold shortcut alone throws the recording away. Lower if short holds keep leaving recording on; raise if deliberate taps get treated as holds."
       },
       "reliablePaste": {
         "title": "Reliable Paste (Beta)",
@@ -1376,7 +1406,6 @@
     "profileView": {
       "fields": {
         "shortcuts": "Shortcuts",
-        "holdEnds": "When Held",
         "selectedModel": "Speech Model",
         "providers": "Provider Address and Format",
         "activePrompts": "Active Prompts",
@@ -1540,7 +1569,9 @@
     "postProcessEffortRefusedTitle": "Effort Not Accepted",
     "postProcessEffortRefused": "{{model}} refused the chosen effort, so the text came at the model's default. Choose another effort, or Model Default, next to the post-processing model.",
     "fileTranscriptionFailedTitle": "File Transcription Failed",
-    "transcriptionFailedTitle": "Transcription Failed"
+    "transcriptionFailedTitle": "Transcription Failed",
+    "instructionTranscriptionFailedTitle": "Instruction Failed – Text Ready",
+    "instructionTranscriptionFailed": "The spoken instruction couldn't be transcribed, so nothing was inserted. The text before it is ready: Paste Last Transcript inserts it, Copy Last Transcript puts it on the clipboard."
   },
   "notices": {
     "errorOne": "{{n}} error",
@@ -1572,7 +1603,10 @@
     "notReady": "Not ready yet",
     "wordList": "Word list: {{name}}",
     "wordListGlobalOnly": "No additional list",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "instruction": "Instruction",
+    "instructionLine": "Instruction: {{text}}",
+    "textReady": "Text transcribed"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} may be blocking 1 shortcut",

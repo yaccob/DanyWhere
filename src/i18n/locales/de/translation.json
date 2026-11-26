@@ -408,18 +408,9 @@
         "notFound": "Tastenkürzel nicht gefunden",
         "pressKeys": "Tasten drücken...",
         "bindings": {
-          "transcribe": {
-            "name": "Starttaste",
-            "description": "Startet eine Aufnahme. Wie sie endet, legen die Endtasten fest, auch beim Halten."
-          },
           "cancel": {
             "name": "Abbrechen-Tastenkürzel",
             "description": "Das Tastenkürzel zum Abbrechen der aktuellen Aufnahme."
-          },
-          "transcribe_with_post_process": {
-            "name": "Zweite Starttaste",
-            "description": "Optional: eine zweite Tastenkombination, die eine Aufnahme startet. Ab Werk bearbeitet eine Endtaste mit derselben Tastenkombination den Text nach. Nur belegt, solange die Nachbearbeitung eingeschaltet ist.",
-            "descriptionMacos": "Optional: eine zweite Tastenkombination, die eine Aufnahme startet. Ab Werk wird der Text nachbearbeitet, wenn man sie hält und loslässt; erneutes Antippen beendet ohne Nachbearbeitung, wie jede Endtaste ohne ⌥. Nur belegt, solange die Nachbearbeitung eingeschaltet ist."
           },
           "paste_last_transcript": {
             "name": "Letzte Transkription einfügen",
@@ -464,20 +455,6 @@
         "noMatch": "Keine Sprache passt zu „{{query}}“",
         "weak": "Noch kein Modell erkennt {{languages}} gut."
       },
-      "shortcutActivation": {
-        "title": "Verhalten der Tastenkombination",
-        "description": "Wähle aus, wie eine Starttaste eine Aufnahme startet und beendet.",
-        "options": {
-          "holdOrToggle": "Automatisch",
-          "pushToTalk": "Halten",
-          "toggle": "Antippen"
-        },
-        "descriptions": {
-          "hold_or_toggle": "Gedrückt halten zum Aufnehmen oder antippen zum Starten; dann beendet eine Endtaste",
-          "push_to_talk": "Nimmt auf, solange die Tastenkombination gedrückt bleibt",
-          "toggle": "Antippen startet die Aufnahme; erneutes Antippen stoppt nur, wenn eine Endtaste dieselbe Tastenkombination hat"
-        }
-      },
       "insertService": {
         "invalid": "Nimm ⌘ oder ⌃ mit einem Buchstaben, einer Ziffer oder einem Satzzeichen",
         "conflict": "„{{name}}“ verwendet dieses Kürzel schon"
@@ -495,49 +472,89 @@
         }
       }
     },
+    "startKeys": {
+      "description": "Antippen startet eine Aufnahme. Sie läuft, bis eine Endtaste sie beendet.",
+      "shortcutHint": "Antippen dieser Tastenkombination startet eine Aufnahme. Sie ist immer belegt.",
+      "alsoHold": "Auch Haltetaste",
+      "alsoInstruction": "Auch Anweisungstaste",
+      "add": "Starttaste hinzufügen",
+      "addPressKeys": "Drück die Tastenkombination für die neue Starttaste",
+      "delete": "Starttaste {{shortcut}} löschen",
+      "lastOne": "Eine Start- oder Haltetaste muss bleiben, damit sich eine Aufnahme immer starten lässt.",
+      "refName": "Starttaste {{shortcut}}",
+      "errors": {
+        "save": "Die Starttasten konnten nicht gespeichert werden: {{error}}",
+        "needsShortcut": "Jede Starttaste braucht eine Tastenkombination.",
+        "shortcutTwice": "Zwei Starttasten können nicht dieselbe Tastenkombination haben.",
+        "last": "Die letzte Start- oder Haltetaste kann nicht weg: Eine Aufnahme muss sich immer starten lassen.",
+        "cannotEnd": "Unter Linux ließe sich eine Aufnahme, die {{shortcut}} startet, nicht beenden: Behalte eine Endtaste mit derselben Tastenkombination."
+      }
+    },
+    "holdKeys": {
+      "title": "Haltetasten",
+      "description": "Gedrückt halten nimmt auf. Das Loslassen beendet die Aufnahme so: was angehängt wird und ob frühere Diktate als Kontext mitgehen.",
+      "shortcutHint": "Gedrückt halten dieser Tastenkombination nimmt auf; das Loslassen beendet die Aufnahme so.",
+      "alsoStart": "Auch Starttaste: kurzes Antippen startet eine Aufnahme, die weiterläuft.",
+      "holdOnly": "Nur Haltetaste: kurzes Antippen tut nichts.",
+      "alsoInstruction": "Auch Anweisungstaste: Während einer Aufnahme schaltet sie zur Anweisung.",
+      "add": "Haltetaste hinzufügen",
+      "addPressKeys": "Drück die Tastenkombination für die neue Haltetaste",
+      "refName": "Haltetaste {{name}}",
+      "errors": {
+        "save": "Die Haltetasten konnten nicht gespeichert werden: {{error}}",
+        "needsShortcut": "Jede Haltetaste braucht eine Tastenkombination.",
+        "shortcutTwice": "Zwei Haltetasten können nicht dieselbe Tastenkombination haben."
+      }
+    },
+    "instructionKeys": {
+      "title": "Anweisungstasten",
+      "description": "Während einer Aufnahme schaltet eine Anweisungstaste vom Text zur Anweisung: Was du danach sprichst, wird nicht eingefügt, sondern sagt der Nachbearbeitung, was sie mit dem Text tun soll, etwa „übersetze das ins Polnische“. Antippen: Eine Endtaste schickt das Diktat ab. Halten: Das Loslassen schickt es ab, so wie hier eingestellt. Nachbearbeitet wird dann immer.",
+      "shortcutHint": "Während einer Aufnahme schaltet diese Tastenkombination vom Text zur Anweisung. Sie ist nur während einer Aufnahme belegt.",
+      "onlyWhileRecording": "Nur während einer Aufnahme belegt.",
+      "sameAsStartOrHold": "Dieselbe Tastenkombination wie eine Start- oder Haltetaste: Ohne Aufnahme startet sie eine, während einer Aufnahme schaltet sie zur Anweisung.",
+      "notTakenNever": "Die Nachbearbeitung steht auf „{{mode}}“: Anweisungstasten sind nicht belegt. Wähle unter Erweitert bei „{{setting}}“ eine andere Einstellung.",
+      "notTakenNoProvider": "Kein Anbieter mit Modell für die Nachbearbeitung eingerichtet: Anweisungstasten sind erst belegt, wenn einer eingerichtet ist.",
+      "add": "Anweisungstaste hinzufügen",
+      "addPressKeys": "Drück die Tastenkombination für die neue Anweisungstaste",
+      "refName": "Anweisungstaste {{name}}",
+      "errors": {
+        "save": "Die Anweisungstasten konnten nicht gespeichert werden: {{error}}",
+        "needsShortcut": "Jede Anweisungstaste braucht eine Tastenkombination.",
+        "shortcutTwice": "Zwei Anweisungstasten können nicht dieselbe Tastenkombination haben."
+      }
+    },
     "endKeys": {
       "title": "Endtasten",
-      "description": "Wie eine Aufnahme endet und was folgt. Jede Endtaste hat eine eigene Tastenkombination, die nur während einer Aufnahme belegt ist, und legt fest, was angehängt wird, ob der Text nachbearbeitet wird und ob frühere Diktate als Kontext mitgehen. Eine Endtaste darf die Tastenkombination einer Starttaste haben: Erneutes Antippen dieser Starttaste beendet dann so.",
+      "description": "Wie eine Aufnahme endet und was folgt. Jede Endtaste hat eine eigene Tastenkombination, die nur während einer Aufnahme belegt ist, und legt fest, was angehängt wird und ob frühere Diktate als Kontext mitgehen. Eine Endtaste darf die Tastenkombination einer Start- oder Haltetaste haben: Antippen dieser Tastenkombination während einer Aufnahme beendet dann so.",
       "name": "Name",
       "shortcutHint": "Diese Tastenkombination beendet eine laufende Aufnahme auf diese Weise. Sie ist nur während einer Aufnahme belegt.",
-      "sameAsStart": "Dieselbe Tastenkombination wie „{{start}}“: Erneutes Antippen während einer Aufnahme beendet so.",
+      "sameAsStart": "Dieselbe Tastenkombination wie eine Starttaste: Erneutes Antippen während einer Aufnahme beendet so.",
+      "sameAsHold": "Dieselbe Tastenkombination wie eine Haltetaste: Antippen während einer Aufnahme beendet so.",
       "append": "Anhängen",
       "appendDescription": "Wird an ein Diktat angehängt, das so endet: der Text, dann der gewählte Tastendruck. Im Text ist \\s ein Leerzeichen, \\n ein Zeilenumbruch, \\t ein Tabulator und \\\\ ein Backslash; alles andere wird angehängt, wie es dasteht. Der Tastendruck wird nur gesendet, wenn der Text eingefügt wird.",
-      "postProcess": "Nachbearbeiten",
       "sendContext": "Kontext senden",
-      "sendContextHint": "Nur mit Nachbearbeitung: Frühere Diktate aus demselben Fenster gehen als Kontext mit.",
-      "postProcessOff": "Die Nachbearbeitung ist aus: Ein so beendetes Diktat wird nicht nachbearbeitet. Schalte „Nachbearbeitung“ unter Erweitert ein.",
+      "sendContextHint": "Frühere Diktate aus demselben Fenster gehen als Kontext mit. Das wirkt nur, wenn das Diktat nachbearbeitet wird.",
       "add": "Endtaste hinzufügen",
       "addPressKeys": "Drück die Tastenkombination für die neue Endtaste",
       "delete": "{{name}} löschen",
       "lastOne": "Eine Endtaste muss bleiben, damit sich eine Aufnahme immer beenden lässt.",
       "held": "{{shortcut}} gehalten",
-      "holdEnds": {
-        "title": "Beim Halten",
-        "description": "Wie das Loslassen einer gehaltenen Starttaste die Aufnahme beendet."
-      },
-      "tapEnds": {
-        "title": "Beim Antippen",
-        "description": "Wie das Antippen einer Endtaste die Aufnahme beendet."
-      },
+      "refName": "Endtaste {{name}}",
       "factoryNames": {
-        "pattern": "{{mode}} · {{effect}}",
-        "direct": "Direkt",
-        "postProcessed": "Nachbearbeitet",
         "space": "Leerzeichen",
-        "noSpace": "ohne Leerzeichen",
+        "noSpace": "Ohne Leerzeichen",
         "paragraph": "Absatz",
         "line": "Zeile",
         "enter": "Enter senden",
         "shiftEnter": "Shift-Enter senden"
       },
-      "linuxNoShortcuts": "Unter Linux werden die Tastenkombinationen der Endtasten während einer Aufnahme nicht belegt. Eine Aufnahme endet dort, wenn man eine gehaltene Starttaste loslässt oder eine Starttaste erneut antippt, deren Tastenkombination eine Endtaste hat.",
+      "linuxNoShortcuts": "Unter Linux werden die Tastenkombinationen der Endtasten während einer Aufnahme nicht belegt. Eine Aufnahme endet dort, wenn man eine Haltetaste loslässt oder eine Starttaste erneut antippt, deren Tastenkombination eine Endtaste hat.",
       "errors": {
         "save": "Die Endtasten konnten nicht gespeichert werden: {{error}}",
         "needsShortcut": "Jede Endtaste braucht eine Tastenkombination.",
         "shortcutTwice": "Zwei Endtasten können nicht dieselbe Tastenkombination haben.",
         "last": "Die letzte Endtaste kann nicht weg: Eine Aufnahme muss sich immer beenden lassen.",
-        "cannotEnd": "Unter Linux ließe sich eine Aufnahme nicht mehr beenden: Behalte eine Endtaste mit der Tastenkombination einer Starttaste oder wähle „Halten“."
+        "cannotEnd": "Unter Linux ließe sich eine Aufnahme nicht mehr beenden: Behalte eine Endtaste mit der Tastenkombination einer Starttaste."
       }
     },
     "inputMethod": {
@@ -865,6 +882,7 @@
         "llmCheckTitle": "Namen mit dem LLM prüfen, auch ohne Nachbearbeitung",
         "llmCheckDescription": "Nur bei Diktaten mit einem Wort, das einem Eintrag einer Wortliste ähnelt. Der Satz geht dann an {{provider}}.",
         "llmCheckNeedsProvider": "Braucht einen Anbieter für die Nachbearbeitung mit einem Modell.",
+        "llmCheckNever": "Nicht, solange die Nachbearbeitung auf „{{mode}}“ steht: Dann geht nichts an einen Anbieter.",
         "llmCheckNotWith": "Nicht mit {{provider}}: braucht einen anderen Anbieter für die Nachbearbeitung mit einem Modell.",
         "setUpPostProcessing": "Nachbearbeitung einrichten",
         "switchModel": "Zu {{model}} wechseln",
@@ -1066,6 +1084,15 @@
         "statusDenied": "Nicht erlaubt – ändern unter Systemeinstellungen › Datenschutz & Sicherheit › Automation",
         "statusNotRunning": "Läuft nicht – zum Erlauben starten",
         "statusUnknown": "Unbekannt"
+      },
+      "mode": {
+        "title": "Nachbearbeitung",
+        "description": "Wann ein Diktat an den Anbieter der Nachbearbeitung geht. Nie: Nichts geht an einen Anbieter, Anweisungstasten sind nicht belegt. Mit Anweisungstaste: nur ein Diktat, in dem eine Anweisungstaste gedrückt wurde. Immer: jedes Diktat; eine Anweisungstaste fügt eine Anweisung hinzu.",
+        "options": {
+          "never": "Nie",
+          "withInstructionKey": "Mit Anweisungstaste",
+          "always": "Immer"
+        }
       }
     },
     "history": {
@@ -1090,6 +1117,11 @@
       "postProcessOff": "Die Nachbearbeitung ist in den Einstellungen ausgeschaltet",
       "postProcessNotSetUp": "Wähle zuerst unter Nachbearbeitung einen Anbieter, ein Modell und einen Prompt",
       "recordingRemoved": "Aufnahme gelöscht, um im Speicherlimit zu bleiben",
+      "spokenInstruction": {
+        "label": "Gesprochene Anweisung:",
+        "nothingHeard": "nichts verstanden",
+        "audio": "Ton der gesprochenen Anweisung"
+      },
       "cancelTranscription": "Transkription abbrechen",
       "transcribing": "Transkribiere...",
       "postProcessing": "Wird nachbearbeitet...",
@@ -1160,6 +1192,7 @@
           "ai": "Nachbearbeitet",
           "aiPrompt": "Nachbearbeitet mit „{{prompt}}“",
           "user": "Von dir bearbeitet",
+          "withSpokenInstruction": "{{step}} + gesprochene Anweisung",
           "withTime": "{{step}}, {{time}}"
         },
         "saveError": "Dein Text konnte nicht gespeichert werden. Bitte versuche es noch einmal.",
@@ -1172,7 +1205,8 @@
       "promptMenu": {
         "button": "Mit einem Prompt nachbearbeiten",
         "title": "Nachbearbeiten mit",
-        "active": "aktiv"
+        "active": "aktiv",
+        "withoutSpokenInstruction": "Ohne die gesprochene Anweisung"
       },
       "retranscribeAgain": "Erneut transkribieren und wie zuvor nachbearbeiten"
     },
@@ -1273,10 +1307,6 @@
         "title": "Clamshell-Mikrofon",
         "description": "Mikrofon bei geschlossenem Laptop-Deckel"
       },
-      "postProcessingToggle": {
-        "label": "Nachbearbeitung",
-        "description": "KI-gestützte Textverfeinerung nach der Transkription aktivieren"
-      },
       "muteWhileRecording": {
         "label": "Während Aufnahme stummschalten",
         "description": "Systemaudio während der Aufnahme stummschalten"
@@ -1300,7 +1330,7 @@
       },
       "holdThreshold": {
         "title": "Halte-Schwellenwert",
-        "description": "Nur im Modus „Automatisch“: wie lange (in Millisekunden) die Tastenkombination gedrückt bleiben muss, damit sie als Halten statt als Antippen zählt. Verringern, wenn die Aufnahme nach kurzem Halten weiterläuft; erhöhen, wenn bewusstes Antippen als Halten gewertet wird."
+        "description": "Wie lange (in Millisekunden) eine Haltetaste gedrückt bleiben muss, damit das als Halten zählt. Bleibt sie kürzer gedrückt, zählt eine Tastenkombination, die auch Starttaste ist, als Antippen, und eine reine Haltetaste verwirft die Aufnahme. Verringern, wenn die Aufnahme nach kurzem Halten weiterläuft; erhöhen, wenn bewusstes Antippen als Halten gewertet wird."
       },
       "reliablePaste": {
         "title": "Zuverlässiges Einfügen (Beta)",
@@ -1376,7 +1406,6 @@
     "profileView": {
       "fields": {
         "shortcuts": "Tastenkombinationen",
-        "holdEnds": "Beim Halten",
         "selectedModel": "Sprachmodell",
         "providers": "Adresse und Format des Anbieters",
         "activePrompts": "Aktive Prompts",
@@ -1540,7 +1569,9 @@
     "postProcessEffortRefusedTitle": "Denkaufwand abgelehnt",
     "postProcessEffortRefused": "{{model}} hat den gewählten Denkaufwand abgelehnt, darum kam der Text mit dem Standard des Modells. Wähle neben dem Modell der Nachbearbeitung einen anderen Denkaufwand oder „Standard des Modells“.",
     "fileTranscriptionFailedTitle": "Dateitranskription fehlgeschlagen",
-    "transcriptionFailedTitle": "Transkription fehlgeschlagen"
+    "transcriptionFailedTitle": "Transkription fehlgeschlagen",
+    "instructionTranscriptionFailedTitle": "Anweisung gescheitert – Text bereit",
+    "instructionTranscriptionFailed": "Die gesprochene Anweisung ließ sich nicht transkribieren, darum wurde nichts eingefügt. Der Text davor liegt bereit: „Letzte Transkription einfügen“ fügt ihn ein, „Letzte Transkription kopieren“ legt ihn in die Zwischenablage."
   },
   "notices": {
     "errorOne": "{{n}} Fehler",
@@ -1572,7 +1603,10 @@
     "notReady": "Noch nicht fertig",
     "wordList": "Wortliste: {{name}}",
     "wordListGlobalOnly": "Keine zusätzliche Liste",
-    "cancel": "Abbrechen"
+    "cancel": "Abbrechen",
+    "instruction": "Anweisung",
+    "instructionLine": "Anweisung: {{text}}",
+    "textReady": "Text transkribiert"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} blockiert möglicherweise 1 Tastenkürzel",

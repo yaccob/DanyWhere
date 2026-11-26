@@ -11,12 +11,12 @@ import { ProfileOverview } from "./ProfileOverview";
 import { OpenProfilePageProvider } from "./scope/SettingsScope";
 import { callsOf } from "@/test/bindings-mock";
 import {
-  binding,
   defaultValues,
   endKey,
-  holdEnd,
+  holdKey,
   prompt,
   settingsWith,
+  startKey,
   wordList,
 } from "@/test/fixtures";
 import { press, renderPage } from "@/test/render";
@@ -29,12 +29,11 @@ const PENDE = endKey("end_1795307930035", "ctrl+alt+l", { name: "PEnde" });
 const GLISTE = wordList("word_list_1795306966443", "GListe");
 const PLISTE = wordList("word_list_1795307006713", "PListe");
 
-const bindings = {
-  ...(defaultValues().bindings as Record<string, unknown>),
-  transcribe: binding("transcribe", "ctrl+space", {
-    current_binding: "ctrl+alt+e",
-  }),
-};
+const OWN_START = startKey("start_1795307900001", "ctrl+alt+e");
+const POLIEREN = holdKey("hold_post", "ctrl+shift+space", {
+  name: "Polieren",
+  send_context: true,
+});
 
 const settings = settingsWith({
   defaults: { word_lists: [GLISTE] },
@@ -48,9 +47,10 @@ const settings = settingsWith({
     {
       id: WORK,
       name: "Pruefkopie",
-      own: ["post_process_prompt_order", "hold_ends", "selected_microphone"],
+      own: ["post_process_prompt_order", "selected_microphone"],
       ownEntries: {
-        bindings: { own: ["transcribe"] },
+        start_keys: { own: [OWN_START.id] },
+        hold_keys: { own: [POLIEREN.id] },
         end_keys: { own: [PENDE.id] },
         word_lists: { own: [PLISTE.id], off: [GLISTE.id] },
       },
@@ -59,12 +59,9 @@ const settings = settingsWith({
           { id: "prompt_1", active: true },
           { id: "prompt_2", active: false },
         ],
-        hold_ends: {
-          transcribe: holdEnd({ post_process: true, send_context: true }),
-          transcribe_with_post_process: holdEnd({ post_process: true }),
-        },
         selected_microphone: "MacBook Pro Microphone",
-        bindings,
+        start_keys: [...(defaultValues().start_keys as unknown[]), OWN_START],
+        hold_keys: [(defaultValues().hold_keys as unknown[])[0], POLIEREN],
         end_keys: [...(defaultValues().end_keys as unknown[]), PENDE],
         word_lists: [PLISTE],
       },
@@ -101,9 +98,9 @@ describe("the page Profile", () => {
     const text = visibleText();
     for (const expected of [
       "Post Process Active Prompts: Diktat (DE/EN)",
-      "General When Held: ⌥⌃E held: Post-process, Send Context · ⌃⇧ Space held: Post-process",
+      "General Start Shortcuts: ⌥⌃E",
+      "General Hold Shortcuts: Polieren",
       "General Microphone: MacBook Pro Microphone",
-      "General Shortcuts: Start Shortcut: ⌥⌃E",
       "General End Shortcuts: PEnde",
       "Advanced Additional Lists: PListe",
       "Advanced Additional Lists: GListe (off)",
@@ -149,12 +146,19 @@ describe("the page Profile", () => {
     await press(
       screen.getByRole("button", { name: "Reset End Shortcuts: PEnde" }),
     );
-    await press(screen.getByRole("button", { name: "Reset When Held" }));
+    await press(
+      screen.getByRole("button", { name: "Reset Hold Shortcuts: Polieren" }),
+    );
+    await press(
+      screen.getByRole("button", { name: "Reset Start Shortcuts: ⌥⌃E" }),
+    );
 
     expect(callsOf("resetProfileEntry")).toEqual([
       [WORK, "end_keys", PENDE.id],
+      [WORK, "hold_keys", POLIEREN.id],
+      [WORK, "start_keys", OWN_START.id],
     ]);
-    expect(callsOf("resetProfileValues")).toEqual([[WORK, ["hold_ends"]]]);
+    expect(callsOf("resetProfileValues")).toEqual([]);
   });
 
   test("the whole profile's reset asks first, naming the values", async () => {
@@ -168,9 +172,9 @@ describe("the page Profile", () => {
     expect(text).toContain("Reset “Pruefkopie” completely to the defaults?");
     for (const name of [
       "Active Prompts",
-      "When Held",
+      "Start Shortcuts: ⌥⌃E",
+      "Hold Shortcuts: Polieren",
       "Microphone",
-      "Shortcuts: Start Shortcut",
       "End Shortcuts: PEnde",
       "Additional Lists: PListe",
       "Additional Lists: GListe",

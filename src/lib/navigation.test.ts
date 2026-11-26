@@ -44,17 +44,19 @@ const check = (name: string, body: () => void) => {
   }
 };
 
+// DanyWhere: whether a scope may post-process is its mode, which isn't
+// "never" (qa 2026-11-26_1810, "Schnittstelle Phase 2").
 const settings = {
   profiles: [
-    { id: "default", values: { post_process_enabled: true } },
-    { id: "work", values: { post_process_enabled: true } },
-    { id: "private", values: { post_process_enabled: false } },
+    { id: "default", values: { post_process_mode: "with_instruction_key" } },
+    { id: "work", values: { post_process_mode: "always" } },
+    { id: "private", values: { post_process_mode: "never" } },
   ],
-  post_process_enabled: true,
+  post_process_mode: "with_instruction_key",
   debug_mode: false,
-};
+} as const;
 const ctx: NavContext = navContext(settings);
-const noPostProcess = navContext({ ...settings, post_process_enabled: false });
+const noPostProcess = navContext({ ...settings, post_process_mode: "never" });
 const debug = navContext({ ...settings, debug_mode: true });
 const noProfiles = navContext({ ...settings, profiles: [] });
 
@@ -99,13 +101,13 @@ check("post-processing and debug mode come from the settings", () => {
 // edit the defaults, so their Post Process page follows the defaults' value.
 const workInUse = navContext({
   ...settings,
-  post_process_enabled: false,
-  default_values: { post_process_enabled: true },
+  post_process_mode: "never",
+  default_values: { post_process_mode: "with_instruction_key" },
 });
 const defaultsOff = navContext({
   ...settings,
-  post_process_enabled: true,
-  default_values: { post_process_enabled: false },
+  post_process_mode: "always",
+  default_values: { post_process_mode: "never" },
 });
 check("a profile without post-processing in use keeps the defaults' page", () =>
   assert.equal(workInUse.postProcessEnabled, true),
@@ -620,14 +622,14 @@ const counted = navContext({
   profiles: [
     {
       id: "work",
-      values: { post_process_enabled: true },
+      values: { post_process_mode: "always" },
       own: ["paste_method", "selected_model"],
       own_entries: {
-        bindings: { own: ["transcribe_with_post_process"], off: [] },
+        bindings: { own: ["copy_last_transcript"], off: [] },
         word_lists: { own: [], off: ["names"] },
       },
     },
-    { id: "private", values: { post_process_enabled: false }, own: [] },
+    { id: "private", values: { post_process_mode: "never" }, own: [] },
   ],
 });
 check("a profile counts its own values, entries included", () => {

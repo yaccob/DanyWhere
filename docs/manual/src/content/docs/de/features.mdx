@@ -7,13 +7,25 @@ Diese Seite zeigt kurz, was DanyWhere kann. Wo ein Kapitel einen Teil ausführli
 
 ## Ein Diktat beenden
 
-- **Erst am Ende entscheiden, was mit einem Diktat geschieht.** Eine Aufnahme beginnt mit einer Starttaste und endet mit einer Endtaste deiner Wahl. Jede Endtaste hat ihre eigene Tastenkombination und legt fest, was nach dem Text kommt, ob ein KI-Modell ihn nachbearbeitet und ob frühere Diktate als Kontext mitgehen.
-- **Zwölf Endtasten auf dem Mac, in einer neuen Installation,** nach einer Regel: ⌥ (Option) bearbeitet nach, ⇧ (Shift) wählt die kleinere Variante, und ⌃ (Control) mit ↩ (Return) drückt eine Taste. <kbd>⌃ Leertaste</kbd> beendet mit einem Leerzeichen, <kbd>↩</kbd> mit einem neuen Absatz, und <kbd>⌃↩</kbd> drückt Enter und schickt so eine Chatnachricht ab. <kbd>⌥⌃ Leertaste</kbd>, <kbd>⌥↩</kbd> und <kbd>⌥⌃↩</kbd> tun dasselbe mit Nachbearbeitung.
-- **Unter Windows und Linux** beenden die Tastenkombinationen der beiden Starttasten die Aufnahme, die zweite mit Nachbearbeitung.
-- **Halten oder antippen.** Halte eine Starttaste, während du sprichst, oder tipp sie zum Starten an und noch einmal zum Beenden. **Beim Halten** legt fest, wie das Loslassen die Aufnahme beendet.
+- **Erst am Ende entscheiden, was mit einem Diktat geschieht.** Eine Aufnahme beginnt mit einer Starttaste und endet mit einer Endtaste deiner Wahl. Jede Endtaste hat ihre eigene Tastenkombination und legt fest, was nach dem Text kommt und ob frühere Diktate als Kontext mitgehen.
+- **Vier Listen derselben Art:** Start-, Halte-, Anweisungs- und Endtasten, von jeder so viele, wie du willst. Was eine Tastenkombination tut, folgt aus den Listen, in denen sie steht; so kann dieselbe Tastenkombination angetippt starten und gehalten aufnehmen.
+- **Sechs Endtasten auf dem Mac, in einer neuen Installation,** nach einer Regel: ⇧ (Shift) wählt die kleinere Variante, ↩ (Return) schickt ab, und ⌥ (Option) hält es davon ab. <kbd>⌃ Leertaste</kbd> beendet mit einem Leerzeichen, <kbd>↩</kbd> drückt Enter und schickt so eine Chatnachricht ab, und <kbd>⌥↩</kbd> beendet mit einem neuen Absatz.
+- **Unter Windows und Linux** beenden die Tastenkombinationen der beiden Haltetasten die Aufnahme.
+- **Halten oder antippen.** Halte eine Haltetaste, während du sprichst, oder tipp eine Starttaste zum Starten an und noch einmal zum Beenden. Kurzes Antippen einer Taste, die nur hält, tut nichts.
 - **Text und ein Tastendruck nach dem Diktat.** Eine Endtaste kann Text anhängen, etwa ein Leerzeichen oder eine neue Zeile, und danach eine Taste wie Enter drücken.
 
-[Start- und Endtasten](../how-it-works/start-and-end-shortcuts/) erklärt das alles.
+[Start-, Halte-, Anweisungs- und Endtasten](../how-it-works/start-and-end-shortcuts/) erklärt das alles.
+
+## Die gesprochene Anweisung
+
+- **Gleich nach dem Text sagen, was damit geschehen soll.** Während einer Aufnahme schaltet eine Anweisungstaste (<kbd>⇥</kbd> auf dem Mac, <kbd>Tab</kbd> unter Windows) vom Text zur Anweisung, etwa „übersetze das ins Polnische“ oder „beantworte die Frage“. Das KI-Modell wendet sie zusätzlich zu den Prompts des Profils an, für dieses eine Diktat.
+- **Antippen oder halten.** Tipp die Anweisungstaste an und beende mit einer beliebigen Endtaste, oder halte sie, während du sprichst, und lass los.
+- **Kein Warten.** Der Text wird transkribiert, während du noch die Anweisung sagst.
+- **Eine Anweisung ohne Text** schreibt etwas Neues, etwa eine höfliche Antwort.
+- **Der Text bleibt Text.** Nur was du nach der Taste sagst, zählt als Anweisung, und spätere Diktate bekommen das Ergebnis als Kontext, nie die Anweisung.
+- **Im Verlauf behalten,** mit ihrem Ton: **Erneut transkribieren** hört beide Teile neu, und der Zauberstab arbeitet mit oder ohne die Anweisung.
+
+[Die gesprochene Anweisung](../how-it-works/spoken-instruction/) zeigt, wie du sie benutzt.
 
 ## Grundeinstellungen und Profile
 
@@ -27,10 +39,11 @@ Diese Seite zeigt kurz, was DanyWhere kann. Wo ein Kapitel einen Teil ausführli
 
 ## Nachbearbeitung
 
+- **Nie, mit Anweisungstaste oder immer.** Jedes Profil legt fest, wann seine Diktate nachbearbeitet werden: nie, sodass nichts deinen Computer verlässt; nur nach einer Anweisungstaste, wie in einer neuen Installation; oder jedes Mal.
 - **Ein KI-Modell bearbeitet deinen Text, statt ihn zu beantworten.** DanyWhere sagt dem Modell selbst, dass es eine Transkription zum Bearbeiten bekommt und keine Frage, dass der Text in seiner Sprache bleibt und dass es falsch erkannte Wörter korrigiert, wo der Zusammenhang klar macht, was gesagt wurde. Dein Prompt sagt nur, was mit dem Text geschehen soll. **Denkaufwand** neben dem Modell legt fest, wie viel das Modell nachdenkt.
 - **Mehrere Prompts in einem Durchgang.** Die Prompts bilden eine Bibliothek für alle Profile. Jedes Profil schaltet die ein, die es verwendet, und bringt sie in eine Reihenfolge. Sie gehen in einer einzigen Anfrage an das Modell und wirken nacheinander.
 - **Deine Wortlisten als bekannte Begriffe.** Die Nachbearbeitung bekommt die Wortlisten, die gerade gelten, und schreibt einen falsch erkannten Namen so, wie er auf der Liste steht, bei jedem Sprachmodell.
-- **Frühere Diktate als Kontext.** Mit **Kontext senden** schickt eine Endtaste deine früheren Diktate aus demselben Fenster mit, damit das Modell weiß, worum es im Gespräch geht.
+- **Frühere Diktate als Kontext.** Mit **Kontext senden** schickt eine End-, Halte- oder Anweisungstaste deine früheren Diktate aus demselben Fenster mit, damit das Modell weiß, worum es im Gespräch geht.
 - **Auf diesem Computer oder in der Cloud, und du siehst, wo.** Neben dem Anbieter sagen die Einstellungen, ob die Nachbearbeitung auf diesem Computer bleibt oder in die Cloud geht. Stellt ein Programm auf diesem Computer das Modell bereit, etwa Ollama oder LM Studio, lädt DanyWhere es, sobald du zu sprechen beginnst. So verlängert sein Kaltstart die Wartezeit nicht.
 
 ## Verlauf
@@ -49,7 +62,7 @@ Diese Seite zeigt kurz, was DanyWhere kann. Wo ein Kapitel einen Teil ausführli
 ## Ohne Bedienungshilfen auf dem Mac
 
 - **DanyWhere funktioniert auch, wo diese Berechtigung gesperrt ist,** wie auf vielen Firmen-Macs. Wähl beim Einrichten **Ohne Bedienungshilfen fortfahren**. Ist die Eingabequelle von DanyWhere hinzugefügt, fügen Endtasten den Text sofort ein. Ohne sie wartet ein Diktat in DanyWhere, bis du es mit <kbd>⌃⇧V</kbd> einfügst.
-- **Ohne die Berechtigung kann DanyWhere keine Tasten drücken.** Eine neue Installation lässt die vier Endtasten weg, die eine Taste drücken, und Enter drückst du selbst.
+- **Ohne die Berechtigung kann DanyWhere keine Tasten drücken.** Eine neue Installation lässt die zwei Endtasten weg, die eine Taste drücken, und Enter drückst du selbst.
 - **Fenstertitel von den Apps selbst.** DanyWhere fragt jede App, die den Titel ihres vorderen Fensters nennen kann, etwa Browser, Terminal, Mail, Notizen, TextEdit und Microsoft Office, sobald du es für diese App erlaubst. Kontext aus früheren Diktaten und der Fensterfilter des Verlaufs brauchen den Titel.
 - **Tastenkombinationen mit der fn-Taste** gibt es ohne die Berechtigung nicht.
 
@@ -63,7 +76,7 @@ Diese Seite zeigt kurz, was DanyWhere kann. Wo ein Kapitel einen Teil ausführli
 ## Außerdem
 
 - **Ein Ton, wenn alles fertig ist,** Nachbearbeitung eingeschlossen, damit du weißt, wann du wieder hinschauen kannst. Die drei Töne werden höher, vom Start über das Ende bis zu „fertig“.
-- **Tastenkombinationen so, wie dein System sie schreibt,** <kbd>⌥⌃ Leertaste</kbd> auf dem Mac und <kbd>Strg+Umschalt+Leertaste</kbd> unter Windows. In einer Tastenkombination mit einer Haupttaste zählen die linke und die rechte Sondertaste gleich.
+- **Tastenkombinationen so, wie dein System sie schreibt,** <kbd>⌃⇧ Leertaste</kbd> auf dem Mac und <kbd>Strg+Umschalt+Leertaste</kbd> unter Windows. In einer Tastenkombination mit einer Haupttaste zählen die linke und die rechte Sondertaste gleich.
 - **Neuerungen nach einem Update,** auf Englisch oder Deutsch.
 - **Dieses Handbuch,** in der App unter **Handbuch** und im Web, auf Englisch, Deutsch, Spanisch und Französisch.
 

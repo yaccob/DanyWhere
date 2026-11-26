@@ -191,12 +191,12 @@ pub struct ProviderKey {
     pub key: String,
 }
 
-/// The API key that travels with `profile`: its provider's, while
-/// post-processing is on and the profile has a key for that provider.
+/// The API key that travels with `profile`: its provider's, while it may
+/// post-process (its mode isn't "never") and has a key for that provider.
 /// `profile` is as [`profile_for_export`] gives it (the active one with the
 /// flat values).
 pub fn key_to_export(profile: &Profile) -> Option<ProviderKey> {
-    if !profile.values.post_process_enabled {
+    if !profile.values.post_process_mode.allows() {
         return None;
     }
     let provider_id = &profile.values.post_process_provider_id;
@@ -381,6 +381,9 @@ pub fn prepare_import_values(file_text: &str, values: &mut ProfileValues, settin
     let order = std::mem::take(&mut values.post_process_prompt_order);
     profiles::fill_missing_values(values, stored, &profiles::default_values(settings));
     values.post_process_prompt_order = order;
+    // DanyWhere: a file from before the mode of post-processing takes its
+    // switch's (variant b, 2026-11-26).
+    crate::post_process_mode::prepare_import(stored, values);
 }
 
 /// `wanted`, or `wanted (2)`, `wanted (3)`, … whichever is not in `taken`.
@@ -651,7 +654,7 @@ mod tests {
         let mut s = AppSettings {
             selected_model: "parakeet".to_string(),
             selected_language: "de".to_string(),
-            post_process_enabled: true,
+            post_process_mode: crate::settings::PostProcessMode::WithInstructionKey,
             post_process_provider_id: "anthropic".to_string(),
             post_process_prompts: vec![LLMPrompt {
                 id: "p1".to_string(),
@@ -669,7 +672,7 @@ mod tests {
             .insert("openai".to_string(), OPENAI_KEY.to_string());
         ensure_profiles(&mut s);
         let mut profile = crate::profiles::profile_for_test(&s, "work", "Work", |work| {
-            work.post_process_enabled = false;
+            work.post_process_mode = crate::settings::PostProcessMode::Never;
             work.post_process_provider_id = "openai".to_string();
         });
         profile.apps = vec!["com.apple.mail".to_string()];
@@ -694,6 +697,21 @@ mod tests {
         );
         // Post-processing off: no key, although one is stored for OpenAI.
         assert_eq!(key_to_export(&s.profiles[0]), None);
+    }
+
+    #[test]
+    fn no_key_travels_from_a_profile_that_never_post_processes() {
+        let s = settings();
+        let mut defaults = default_profile(&s);
+        defaults.values.post_process_mode = crate::settings::PostProcessMode::Never;
+        assert_eq!(key_to_export(&defaults), None);
+        defaults.values.post_process_mode = crate::settings::PostProcessMode::Always;
+        assert!(key_to_export(&defaults).is_some());
+        defaults.values.post_process_mode = crate::settings::PostProcessMode::WithInstructionKey;
+        assert!(
+            key_to_export(&defaults).is_some(),
+            "with an instruction key"
+        );
     }
 
     #[test]
@@ -834,15 +852,22 @@ mod tests {
             name: "Senden".to_string(),
             shortcut: "ctrl+enter".to_string(),
             append_text: "{Enter}".to_string(),
-            post_process: true,
             send_context: true,
         });
-        s.bindings.get_mut("transcribe").unwrap().current_binding = "f13".to_string();
+        s.bindings
+            .get_mut("copy_last_transcript")
+            .unwrap()
+            .current_binding = "f13".to_string();
+        s.start_keys[0].shortcut = "f14".to_string();
         let yaml = export(&s, "default", Some("geheim")).expect("export");
         let (profile, _) = read_import(&yaml, None).expect("import");
         assert_eq!(profile.values.end_keys, s.end_keys);
-        assert_eq!(profile.values.bindings["transcribe"].current_binding, "f13");
-        assert_eq!(profile.values.hold_ends, s.hold_ends);
+        assert_eq!(
+            profile.values.bindings["copy_last_transcript"].current_binding,
+            "f13"
+        );
+        assert_eq!(profile.values.start_keys, s.start_keys);
+        assert_eq!(profile.values.hold_keys, s.hold_keys);
     }
 
     /// A profile written on any system, with any system's name of the
@@ -876,14 +901,14 @@ mod tests {
     }
 
     /// `yaml` as a file from before the end shortcuts: the profile's values
-    /// without them, its hold ends and its shortcuts, with `fields`
-    /// instead.
+    /// without them, its start and hold shortcuts and its shortcuts, with
+    /// `fields` instead.
     fn older_file(yaml: &str, fields: serde_json::Value) -> String {
         let mut file: serde_json::Value = serde_saphyr::from_str(yaml).expect("reads");
         let values = file["profile"]["values"]
             .as_object_mut()
             .expect("the values");
-        for gone in ["end_keys", "hold_ends", "bindings"] {
+        for gone in ["end_keys", "bindings", "start_keys", "hold_keys"] {
             values.remove(gone);
         }
         for (key, value) in fields.as_object().expect("fields") {
@@ -904,10 +929,6 @@ mod tests {
         assert_eq!(
             profile.values.end_keys,
             crate::end_keys::builtin(r"\n\n", true)
-        );
-        assert_eq!(
-            profile.values.hold_ends,
-            crate::end_keys::builtin_holds(r"\n\n", true)
         );
         // The shortcuts come from the installation it is imported into.
         assert!(profile.values.bindings.is_empty());
@@ -1058,7 +1079,7 @@ mod tests {
         assert_eq!(
             profile.own,
             [
-                "post_process_enabled",
+                "post_process_mode",
                 "post_process_provider_id",
                 "selected_language"
             ]
@@ -1192,7 +1213,7 @@ mod tests {
         s.profiles[0].values = crate::profiles::testing::values_with(
             &s.profiles[0].values,
             serde_json::json!({
-                "post_process_enabled": true,
+                "post_process_mode": "with_instruction_key",
                 "post_process_api_keys": { "openai": "sk-work-own" },
             }),
         );

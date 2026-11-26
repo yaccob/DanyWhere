@@ -6,7 +6,8 @@
 !pragma useVerticalIf on
 
 start
-' Only the start shortcuts of the profile that applies now are taken
+' Only the start and hold shortcuts of the profile that applies now are
+' taken
 ' (shortcut/profile_sync.rs); the profile is chosen again when the
 ' recording ends (app_profiles::settle_dictation).
 :$press;
@@ -26,15 +27,17 @@ endif
 ' (managers/transcription.rs, vocabulary_for_model).
 :$transcribe;
 note right: $noteWords
-' post_process = the end's "Post-process" and the profile's switch;
-' context only with post-processing (dictation_snapshot.rs, build).
+' post_process = an instruction shortcut pressed, or the profile's mode
+' "always" (settings::PostProcessMode); context only with post-processing
+' (dictation_snapshot.rs, build).
 if ($qPost) then ($yes)
   if ($qContext) then ($yes)
     :$context;
   else ($no)
   endif
-  ' The active prompts in one request, the word lists as known terms
-  ' (actions.rs, process_transcription_with_settings; prompt_frame.rs).
+  ' The active prompts in one request, the spoken instruction after them,
+  ' the word lists as known terms (actions.rs,
+  ' process_transcription_with_settings; prompt_frame.rs).
   :$edit;
   note right: $noteFailed
 else ($no)

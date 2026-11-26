@@ -146,6 +146,44 @@ pub enum OverlayStyle {
     Live,
 }
 
+/// DanyWhere: when a profile's dictations are post-processed (user,
+/// 2026-11-26, variant b of the sidecar note
+/// `2026-11-26_1841_nachbearbeitung-nur-ueber-anweisungstaste`). The end
+/// and hold shortcuts no longer say it; an instruction key
+/// (`instruction_keys`) does, unless the profile says never or always.
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Type, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum PostProcessMode {
+    /// Never: no instruction key is taken and nothing goes to a provider.
+    Never,
+    /// When an instruction key was pressed during the recording (out of
+    /// the box).
+    #[default]
+    WithInstructionKey,
+    /// Every dictation; an instruction key adds its instruction.
+    Always,
+}
+
+impl PostProcessMode {
+    /// Whether anything of a dictation may go to a provider: not `Never`.
+    /// The one question for what only makes sense where post-processing
+    /// can run (the word list check, context capture, warming a model up,
+    /// the key that travels with an export).
+    pub fn allows(self) -> bool {
+        self != Self::Never
+    }
+
+    /// Whether a dictation post-processes: after an instruction key
+    /// (`instruction_key`) unless `Never`, and always with `Always`.
+    pub fn post_processes(self, instruction_key: bool) -> bool {
+        match self {
+            Self::Never => false,
+            Self::WithInstructionKey => instruction_key,
+            Self::Always => true,
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Type, Default)]
 #[serde(rename_all = "snake_case")]
 pub enum ModelUnloadTimeout {
@@ -169,21 +207,6 @@ pub enum PasteMethod {
     ShiftInsert,
     CtrlShiftV,
     ExternalScript,
-}
-
-/// How the transcribe shortcut's key events drive a recording.
-#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Type, Default)]
-#[serde(rename_all = "snake_case")]
-pub enum ShortcutActivation {
-    /// Press to start, press again to stop.
-    Toggle,
-    /// Hold to record, release to stop.
-    PushToTalk,
-    /// Hold to record and release to stop, or tap to keep recording until the
-    /// next press. Which one it was is decided by how long the key was held
-    /// (`hold_threshold_ms`).
-    #[default]
-    HoldOrToggle,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Type, Default)]
@@ -474,12 +497,10 @@ pub struct AppSettings {
     /// default bindings for any missing keys before the settings are used.
     #[serde(default)]
     pub bindings: HashMap<String, ShortcutBinding>,
-    /// Replaces the pre-0.10 `push_to_talk` bool; stores missing this key are
-    /// migrated from it in `apply_settings_migrations`.
-    #[serde(default)]
-    pub shortcut_activation: ShortcutActivation,
-    /// Hold-or-toggle only: a press held at least this long is push-to-talk,
-    /// anything shorter is a tap that locks recording on.
+    /// DanyWhere: for a combination that is a start and a hold shortcut
+    /// (`start_keys`), a press held at least this long holds; a shorter one
+    /// is a tap that locks recording on. For a hold shortcut alone, a
+    /// shorter press discards the recording.
     #[serde(default = "default_hold_threshold_ms")]
     pub hold_threshold_ms: u64,
     #[serde(default)]
@@ -599,8 +620,11 @@ pub struct AppSettings {
     pub auto_submit: bool,
     #[serde(default)]
     pub auto_submit_key: AutoSubmitKey,
-    #[serde(default = "default_post_process_enabled")]
-    pub post_process_enabled: bool,
+    /// DanyWhere: when dictations post-process ([`PostProcessMode`]); until
+    /// 2026-11-26 the switch `post_process_enabled` (`post_process_mode`
+    /// carries it over).
+    #[serde(default)]
+    pub post_process_mode: PostProcessMode,
     #[serde(default = "default_post_process_provider_id")]
     pub post_process_provider_id: String,
     #[serde(default = "default_post_process_providers")]
@@ -742,10 +766,15 @@ pub struct AppSettings {
     /// DanyWhere: the active profile's end shortcuts (`end_keys`).
     #[serde(default = "crate::end_keys::stored_before_end_keys")]
     pub end_keys: Vec<crate::end_keys::EndKey>,
-    /// DanyWhere: the active profile's hold end per start shortcut
-    /// (`end_keys`), by binding id.
-    #[serde(default = "crate::end_keys::stored_before_hold_ends")]
-    pub hold_ends: HashMap<String, crate::end_keys::HoldEnd>,
+    /// DanyWhere: the active profile's start shortcuts (`start_keys`).
+    pub start_keys: Vec<crate::start_keys::StartKey>,
+    /// DanyWhere: the active profile's hold shortcuts (the module
+    /// `start_keys`, which has them with the start shortcuts).
+    pub hold_keys: Vec<crate::end_keys::EndKey>,
+    /// DanyWhere: the active profile's instruction shortcuts
+    /// (`instruction_keys`); a store from before them gets the factory ones.
+    #[serde(default = "crate::instruction_keys::default_instruction_keys")]
+    pub instruction_keys: Vec<crate::end_keys::EndKey>,
     /// DanyWhere: the height in pixels a History text box may grow to before
     /// it scrolls, as dragged at its grip, for the newest entry and for the
     /// others; `None` = the default lines (`history_box`).
@@ -901,10 +930,6 @@ fn default_done_sound() -> bool {
 
 fn default_theme() -> Theme {
     Theme::System
-}
-
-fn default_post_process_enabled() -> bool {
-    false
 }
 
 fn default_app_language() -> String {
@@ -1167,51 +1192,11 @@ fn ensure_post_process_defaults_everywhere(settings: &mut AppSettings) -> bool {
 pub const SETTINGS_STORE_PATH: &str = "settings_store.json";
 
 pub fn get_default_settings() -> AppSettings {
-    // DanyWhere: ⌃ instead of ⌥ on macOS (user, 2026-11-13). Without
-    // Accessibility a dictation shortcut's second press inserts through a
-    // service, and a service shortcut with ⌥ but no ⌃ or ⌘ never fires (⌥
-    // types a character); the others follow so all shortcuts stay alike.
-    // ⌃Space is also macOS's "select the previous input source", see ROADMAP.
-    #[cfg(target_os = "windows")]
-    let default_shortcut = "ctrl+space";
-    #[cfg(target_os = "macos")]
-    let default_shortcut = "ctrl+space";
-    #[cfg(target_os = "linux")]
-    let default_shortcut = "ctrl+alt+space";
-    #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
-    let default_shortcut = "alt+space";
-
+    // DanyWhere: the start and hold shortcuts are lists of their own
+    // (`start_keys`, 2026-11-26), no bindings; ⌃ instead of ⌥ on macOS
+    // there (user, 2026-11-13), and the others follow so all shortcuts stay
+    // alike.
     let mut bindings = HashMap::new();
-    bindings.insert(
-        "transcribe".to_string(),
-        ShortcutBinding {
-            id: "transcribe".to_string(),
-            name: "Transcribe".to_string(),
-            description: "Converts your speech into text.".to_string(),
-            default_binding: default_shortcut.to_string(),
-            current_binding: default_shortcut.to_string(),
-        },
-    );
-    #[cfg(target_os = "windows")]
-    let default_post_process_shortcut = "ctrl+shift+space";
-    #[cfg(target_os = "macos")]
-    let default_post_process_shortcut = "ctrl+shift+space";
-    #[cfg(target_os = "linux")]
-    let default_post_process_shortcut = "ctrl+alt+shift+space";
-    #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
-    let default_post_process_shortcut = "alt+shift+space";
-
-    bindings.insert(
-        "transcribe_with_post_process".to_string(),
-        ShortcutBinding {
-            id: "transcribe_with_post_process".to_string(),
-            name: "Transcribe with Post-Processing".to_string(),
-            description: "Converts your speech into text and applies AI post-processing."
-                .to_string(),
-            default_binding: default_post_process_shortcut.to_string(),
-            current_binding: default_post_process_shortcut.to_string(),
-        },
-    );
     #[cfg(target_os = "macos")]
     let default_paste_last_shortcut = "ctrl+shift+v";
     #[cfg(not(target_os = "macos"))]
@@ -1293,19 +1278,18 @@ pub fn get_default_settings() -> AppSettings {
         },
     );
 
-    // DanyWhere: this system's factory ends (on macOS the user's twelve of
-    // 2026-11-24, named in the new installation's language; elsewhere the
-    // two unnamed ones with the start shortcuts' combinations).
+    // DanyWhere: this system's factory ends (on macOS the six of variant b,
+    // ↩ sending and ⌥↩ a paragraph, named in the new installation's
+    // language; elsewhere the two unnamed ones with the factory start and
+    // hold combinations).
     let app_language = default_app_language();
     let end_keys = crate::end_keys::factory_end_keys_on(
-        &bindings,
         crate::append_text::KeyPlatform::current(),
         &crate::end_keys::FactoryEndNames::for_locale(&app_language),
     );
     AppSettings {
         settings_schema_version: default_settings_schema_version(),
         bindings,
-        shortcut_activation: ShortcutActivation::default(),
         hold_threshold_ms: default_hold_threshold_ms(),
         audio_feedback: false,
         audio_feedback_volume: default_audio_feedback_volume(),
@@ -1347,7 +1331,7 @@ pub fn get_default_settings() -> AppSettings {
         clipboard_handling: ClipboardHandling::default(),
         auto_submit: default_auto_submit(),
         auto_submit_key: AutoSubmitKey::default(),
-        post_process_enabled: default_post_process_enabled(),
+        post_process_mode: PostProcessMode::default(),
         post_process_provider_id: default_post_process_provider_id(),
         post_process_providers: default_post_process_providers(),
         post_process_api_keys: default_post_process_api_keys(),
@@ -1394,7 +1378,9 @@ pub fn get_default_settings() -> AppSettings {
         profile_words: Vec::new(),
         profile_auto_by_app: default_profile_auto_by_app(),
         end_keys,
-        hold_ends: crate::end_keys::default_hold_ends(),
+        start_keys: crate::start_keys::default_start_keys(),
+        hold_keys: crate::start_keys::default_hold_keys(),
+        instruction_keys: crate::instruction_keys::default_instruction_keys(),
         history_box_height_newest: None,
         history_box_height_other: None,
     }
@@ -1448,27 +1434,15 @@ pub fn load_or_create_app_settings(app: &AppHandle) -> AppSettings {
     settings
 }
 
-/// DanyWhere: the shortcut that post-processes, which is registered only
-/// while post-processing is switched on.
-pub fn binding_needs_post_processing(id: &str) -> bool {
-    id == "transcribe_with_post_process"
-}
-
 /// DanyWhere: whether DanyWhere registers the shortcut `id` as its own.
-/// Not the post-processing ones while post-processing is off, and not
+/// Not the profile toggle while no application is assigned, and not
 /// "Paste Last Transcript" while it is the shortcut of the "Insert Last
 /// Dictation" service (`insert_service::paste_last_is_service_shortcut`).
 /// `service_available` is `delivery::INSERT_SERVICE_AVAILABLE`, passed in
 /// so tests cover every platform. The cancel shortcut is registered only
-/// while recording, by its callers' own rule.
+/// while recording, by its callers' own rule; the start and hold shortcuts
+/// by theirs (`start_keys::bindings_to_register`).
 pub fn registers_binding(id: &str, settings: &AppSettings, service_available: bool) -> bool {
-    // DanyWhere: also while a profile with applications post-processes, and
-    // the profile toggle only while applications are assigned.
-    if binding_needs_post_processing(id)
-        && !crate::app_profiles::post_processing_reachable(settings)
-    {
-        return false;
-    }
     if id == crate::app_profiles::TOGGLE_BINDING && !crate::app_profiles::has_assignments(settings)
     {
         return false;
@@ -1610,20 +1584,9 @@ fn apply_settings_migrations(
         updated = true;
     }
 
-    // One-time shortcut activation migration (only while the new key is
-    // absent): the retired `push_to_talk` bool maps onto the two legacy modes so
-    // upgrading users keep exactly the behavior they had. Only fresh installs
-    // get the hold-or-toggle default.
-    if settings_value.get("shortcut_activation").is_none() {
-        if let Some(push_to_talk) = settings_value.get("push_to_talk").and_then(|v| v.as_bool()) {
-            settings.shortcut_activation = if push_to_talk {
-                ShortcutActivation::PushToTalk
-            } else {
-                ShortcutActivation::Toggle
-            };
-            updated = true;
-        }
-    }
+    // DanyWhere: Handy's `push_to_talk` and its successor
+    // `shortcut_activation` are read once by the step to start and hold
+    // shortcuts (`start_keys::OldActivation`, from `end_keys::migrate`).
 
     // One-time storage limit migration (only while the new key is absent):
     // the count and age options gave way to a size limit for recordings.
@@ -1752,6 +1715,13 @@ fn apply_settings_migrations(
         updated = true;
     }
 
+    // DanyWhere: the switch "Post Processing" becomes the mode
+    // (`post_process_mode`, 2026-11-26), first in the flat values, which
+    // the filling below gives the layers that lack it.
+    if crate::post_process_mode::migrate_flat(settings, settings_value) {
+        updated = true;
+    }
+
     // DanyWhere: a stored profile without a profile value gets the flat
     // value it had (contract V5), after the migrations of the flat values
     // above and before those of a profile's own below, which win.
@@ -1760,6 +1730,11 @@ fn apply_settings_migrations(
     }
     // DanyWhere: the same for the defaults (`profile_layers`).
     if crate::profile_layers::fill_missing_defaults_from_flat(settings, settings_value) {
+        updated = true;
+    }
+    // DanyWhere: the defaults' and every profile's own switch, before the
+    // end shortcuts' steps, which read whether post-processing was reachable.
+    if crate::post_process_mode::migrate_layers(settings, settings_value) {
         updated = true;
     }
 
@@ -1937,18 +1912,24 @@ mod tests {
         settings_without_accessibility, with_choice, with_system_trusted, STATES,
     };
 
+    /// DanyWhere: the start shortcuts are a list of their own since
+    /// 2026-11-26 (`start_keys`), no bindings.
     #[test]
-    fn the_post_processing_shortcut_needs_post_processing() {
-        assert!(binding_needs_post_processing(
-            "transcribe_with_post_process"
-        ));
-        // DanyWhere: the switch "Send Context" went into the end shortcuts.
-        assert!(!binding_needs_post_processing(
-            crate::send_context::RETIRED_TOGGLE_BINDING
-        ));
-        assert!(!binding_needs_post_processing("transcribe_with_context"));
-        assert!(!binding_needs_post_processing("transcribe"));
-        assert!(!binding_needs_post_processing("paste_last_transcript"));
+    fn the_start_shortcuts_are_no_bindings_any_more() {
+        let settings = get_default_settings();
+        for legacy in crate::start_keys::LEGACY_START_BINDINGS {
+            assert!(!settings.bindings.contains_key(legacy), "{legacy}");
+        }
+        assert!(!settings.start_keys.is_empty());
+    }
+
+    /// The start and hold shortcuts registered with `settings`.
+    fn registered_keys(settings: &AppSettings) -> Vec<String> {
+        crate::shortcut::backend::start_bindings(settings, true)
+            .into_iter()
+            .map(|binding| binding.id)
+            .filter(|id| crate::start_keys::is_dictation_binding(id))
+            .collect()
     }
 
     fn with_paste_last(mut settings: AppSettings, keys: &str) -> AppSettings {
@@ -1966,7 +1947,6 @@ mod tests {
         assert!(!registers_binding("paste_last_transcript", &settings, true));
         // The others stay DanyWhere's, the copy shortcut included.
         assert!(registers_binding("copy_last_transcript", &settings, true));
-        assert!(registers_binding("transcribe", &settings, true));
         assert!(registers_binding("cycle_word_list", &settings, true));
     }
 
@@ -1997,14 +1977,14 @@ mod tests {
         }
     }
 
-    /// DanyWhere: the defaults (in use, post-processing off) and "mail"
-    /// (post-processing on) assigned to Mail.
+    /// DanyWhere: the defaults (in use, never post-processing) and "mail"
+    /// (post-processing with an instruction key) assigned to Mail.
     fn with_mail_profile() -> AppSettings {
         let mut settings = get_default_settings();
-        settings.post_process_enabled = false;
+        settings.post_process_mode = PostProcessMode::Never;
         crate::profiles::ensure_profiles(&mut settings);
         let mut mail = crate::profiles::profile_for_test(&settings, "mail", "Mail", |values| {
-            values.post_process_enabled = true;
+            values.post_process_mode = PostProcessMode::WithInstructionKey;
         });
         mail.apps = vec!["com.apple.mail".to_string()];
         settings.profiles.push(mail);
@@ -2020,37 +2000,26 @@ mod tests {
         assert!(!registers_binding(toggle, &settings, true));
     }
 
+    /// Variant b (user, 2026-11-26): no hold shortcut post-processes of its
+    /// own, so both are taken whatever the mode.
     #[test]
-    fn an_app_profile_with_post_processing_keeps_its_shortcuts_registered() {
-        let mut settings = with_mail_profile();
-        assert!(registers_binding(
-            "transcribe_with_post_process",
-            &settings,
-            true
-        ));
-        crate::app_profiles::toggle_auto(&mut settings);
-        assert!(!registers_binding(
-            "transcribe_with_post_process",
-            &settings,
-            true
-        ));
-    }
-
-    #[test]
-    fn the_post_processing_shortcuts_are_registered_only_while_it_is_on() {
+    fn the_start_and_hold_shortcuts_are_registered_whatever_the_mode() {
         let mut settings = get_default_settings();
-        settings.post_process_enabled = false;
-        assert!(!registers_binding(
-            "transcribe_with_post_process",
-            &settings,
-            true
-        ));
-        settings.post_process_enabled = true;
-        assert!(registers_binding(
-            "transcribe_with_post_process",
-            &settings,
-            true
-        ));
+        for mode in [
+            PostProcessMode::Never,
+            PostProcessMode::WithInstructionKey,
+            PostProcessMode::Always,
+        ] {
+            settings.post_process_mode = mode;
+            assert_eq!(
+                registered_keys(&settings),
+                ["start_key:start", "hold_key:hold_no_space"],
+                "{mode:?}"
+            );
+        }
+        let mut with_mail = with_mail_profile();
+        crate::app_profiles::toggle_auto(&mut with_mail);
+        assert!(registered_keys(&with_mail).contains(&"hold_key:hold_no_space".to_string()));
     }
 
     #[test]
@@ -2079,9 +2048,9 @@ mod tests {
     fn stored_binding_returns_the_requested_binding() {
         let settings = get_default_settings();
 
-        let result = get_stored_binding(&settings, "transcribe");
+        let result = get_stored_binding(&settings, "cycle_word_list");
 
-        assert_eq!(result.unwrap().id, "transcribe");
+        assert_eq!(result.unwrap().id, "cycle_word_list");
     }
 
     #[test]
@@ -2122,10 +2091,8 @@ mod tests {
     fn empty_store_parses_with_defaults() {
         let settings: AppSettings = serde_json::from_value(serde_json::json!({}))
             .expect("all AppSettings fields need serde defaults");
-        assert_eq!(
-            settings.shortcut_activation,
-            ShortcutActivation::HoldOrToggle
-        );
+        assert_eq!(settings.start_keys, crate::start_keys::default_start_keys());
+        assert_eq!(settings.hold_keys, crate::start_keys::default_hold_keys());
         assert_eq!(settings.hold_threshold_ms, default_hold_threshold_ms());
         assert!(!settings.audio_feedback);
         assert!(settings.filler_word_removal_enabled);
@@ -2293,10 +2260,145 @@ mod tests {
             settings.transcribe_accelerator,
             TranscribeAcceleratorSetting::Auto
         );
-        // The retired push_to_talk bool (false in this fixture) becomes the
-        // matching legacy mode rather than the new hold-or-toggle default.
-        assert_eq!(settings.shortcut_activation, ShortcutActivation::Toggle);
+        // The retired push_to_talk bool (false in this fixture) is Handy's
+        // "Toggle": start shortcuts only, the first with its own f13
+        // (DanyWhere, `start_keys`, 2026-11-26).
+        assert_eq!(settings.start_keys[0].shortcut, "f13");
+        assert!(settings.hold_keys.is_empty());
+        assert!(!settings.bindings.contains_key("transcribe"));
         assert_eq!(settings.transcribe_gpu_device, None);
+    }
+
+    /// A store of DanyWhere 0.5.0 on macOS as it came: the twelve ends,
+    /// "Automatic" with the two start shortcuts and their hold ends, the
+    /// switch "Post Processing" on in the defaults and off in a profile
+    /// "work" of its own.
+    #[cfg(target_os = "macos")]
+    fn store_of_0_5_0() -> serde_json::Value {
+        let binding = |id: &str, keys: &str| {
+            serde_json::json!({ "id": id, "name": "", "description": "",
+                "default_binding": keys, "current_binding": keys })
+        };
+        let mut values = serde_json::to_value(crate::profiles::ProfileValues::default()).unwrap();
+        {
+            let map = values.as_object_mut().unwrap();
+            for field in [
+                "post_process_mode",
+                "instruction_keys",
+                "start_keys",
+                "hold_keys",
+            ] {
+                map.remove(field);
+            }
+            map.insert("post_process_enabled".into(), serde_json::json!(true));
+            map.insert("end_keys".into(), crate::end_keys::twelve_stored());
+            map.insert(
+                "shortcut_activation".into(),
+                serde_json::json!("hold_or_toggle"),
+            );
+            map.insert(
+                "hold_ends".into(),
+                serde_json::json!({
+                    "transcribe": { "append_text": " ", "post_process": false, "send_context": false },
+                    "transcribe_with_post_process": { "append_text": " ", "post_process": true, "send_context": true }
+                }),
+            );
+            let bindings = map["bindings"].as_object_mut().unwrap();
+            bindings.insert("transcribe".into(), binding("transcribe", "ctrl+space"));
+            bindings.insert(
+                "transcribe_with_post_process".into(),
+                binding("transcribe_with_post_process", "ctrl+shift+space"),
+            );
+        }
+        let mut work = values.clone();
+        work["post_process_enabled"] = serde_json::json!(false);
+        let mut stored = serde_json::to_value(get_default_settings()).unwrap();
+        let map = stored.as_object_mut().unwrap();
+        if let serde_json::Value::Object(flat) = values.clone() {
+            map.extend(flat);
+        }
+        for field in [
+            "post_process_mode",
+            "instruction_keys",
+            "start_keys",
+            "hold_keys",
+        ] {
+            map.remove(field);
+        }
+        map.insert("default_values".into(), values);
+        map.insert("active_profile_id".into(), serde_json::json!("default"));
+        map.insert(
+            "profiles".into(),
+            serde_json::json!([{
+                "id": "work", "name": "Arbeit", "apps": [], "values": work,
+                "own": ["post_process_enabled"], "own_entries": {}
+            }]),
+        );
+        stored
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn a_store_of_0_5_0_takes_variant_b_in_every_layer() {
+        let stored = store_of_0_5_0();
+        let mut settings: AppSettings = serde_json::from_value(stored.clone()).unwrap();
+        assert!(apply_settings_migrations(&mut settings, &stored));
+        let mac = crate::append_text::KeyPlatform::Macos;
+        let defaults = settings.default_values.clone().unwrap();
+        for (layer, values) in [
+            (
+                "flat",
+                crate::profiles::ProfileValues::from_settings(&settings),
+            ),
+            ("defaults", defaults),
+        ] {
+            assert_eq!(
+                values.post_process_mode,
+                PostProcessMode::WithInstructionKey,
+                "{layer}"
+            );
+            assert_eq!(values.end_keys.len(), 6, "{layer}");
+            // The six of now (user, 2026-11-26, 22:35): ↩ sends, ⌥↩ doesn't.
+            assert_eq!(
+                values
+                    .end_keys
+                    .iter()
+                    .map(|end| (end.shortcut.as_str(), end.append_text.as_str()))
+                    .collect::<Vec<_>>(),
+                [
+                    ("ctrl+space", " "),
+                    ("ctrl+shift+space", ""),
+                    ("option+return", r"\n\n"),
+                    ("option+shift+return", r"\n"),
+                    ("return", "{Enter}"),
+                    ("shift+return", "{Shift+Enter}"),
+                ],
+                "{layer}"
+            );
+            assert!(
+                values.end_keys.iter().all(|end| !end.name.contains('·')),
+                "{layer}: {:?}",
+                values.end_keys
+            );
+            assert_eq!(
+                values.hold_keys,
+                crate::start_keys::factory_hold_keys_on(mac),
+                "{layer}"
+            );
+            assert_eq!(
+                values.instruction_keys,
+                crate::instruction_keys::factory_instruction_keys_on(mac),
+                "{layer}"
+            );
+        }
+        let work = &settings.profiles[0];
+        assert_eq!(work.values.post_process_mode, PostProcessMode::Never);
+        assert!(work.own.contains("post_process_mode"), "{:?}", work.own);
+        assert_eq!(work.values.end_keys.len(), 6);
+        // A second read writes nothing.
+        let written = serde_json::to_value(&settings).unwrap();
+        let mut again: AppSettings = serde_json::from_value(written.clone()).unwrap();
+        assert!(!apply_settings_migrations(&mut again, &written));
     }
 
     #[test]
@@ -2311,7 +2413,7 @@ mod tests {
         // An enum variant this build doesn't know, e.g. written by a newer
         // version before a downgrade.
         map.insert("sound_theme".into(), serde_json::json!("theremin"));
-        stored["bindings"]["transcribe"]["current_binding"] = serde_json::json!("f13");
+        stored["bindings"]["cycle_word_list"]["current_binding"] = serde_json::json!("f13");
 
         // Precondition: this is exactly the whole-store parse failure from
         // #1619 that used to reset everything to defaults.
@@ -2320,7 +2422,7 @@ mod tests {
         let salvaged = salvage_settings(&stored);
         assert_eq!(salvaged.selected_model, "parakeet-tdt-0.6b-v3");
         assert!(salvaged.onboarding_completed);
-        assert_eq!(salvaged.bindings["transcribe"].current_binding, "f13");
+        assert_eq!(salvaged.bindings["cycle_word_list"].current_binding, "f13");
         assert_eq!(salvaged.sound_theme, default_sound_theme());
     }
 
@@ -2344,14 +2446,8 @@ mod tests {
     #[test]
     fn default_shortcuts_do_not_conflict_with_ibus_input_method_switch() {
         let defaults = get_default_settings();
-        assert_eq!(
-            defaults.bindings["transcribe"].current_binding,
-            "ctrl+alt+space"
-        );
-        assert_eq!(
-            defaults.bindings["transcribe_with_post_process"].current_binding,
-            "ctrl+alt+shift+space",
-        );
+        assert_eq!(defaults.start_keys[0].shortcut, "ctrl+alt+space");
+        assert_eq!(defaults.hold_keys[1].shortcut, "ctrl+alt+shift+space");
     }
 
     #[test]
@@ -2372,8 +2468,8 @@ mod tests {
         assert_eq!(salvaged.selected_model, "whisper-small");
         let defaults = get_default_settings();
         assert_eq!(
-            salvaged.bindings["transcribe"].current_binding,
-            defaults.bindings["transcribe"].current_binding
+            salvaged.bindings["cycle_word_list"].current_binding,
+            defaults.bindings["cycle_word_list"].current_binding
         );
     }
 
@@ -2477,18 +2573,17 @@ mod tests {
     #[test]
     fn reading_the_store_takes_the_sides_off_key_combinations() {
         let mut settings = get_default_settings();
-        settings
-            .bindings
-            .get_mut("transcribe")
-            .unwrap()
-            .current_binding = "ctrl_left+space".to_string();
+        settings.start_keys[0].shortcut = "ctrl_left+space".to_string();
+        settings.hold_keys[0].shortcut = "ctrl_left+space".to_string();
         settings
             .bindings
             .get_mut("copy_last_transcript")
             .unwrap()
             .current_binding = "option_right".to_string();
-        // The ends with the start shortcuts' combinations, as 0.2.5's got them.
-        settings.end_keys = crate::end_keys::builtin_for(&settings.bindings, "", false);
+        // The ends with the start and hold combinations, as 0.2.5's got them.
+        let (_, post) =
+            crate::start_keys::factory_combinations_on(crate::append_text::KeyPlatform::current());
+        settings.end_keys = crate::end_keys::builtin_for_keys(("ctrl_left+space", post), "", false);
         crate::profiles::ensure_profiles(&mut settings);
         let work = crate::profiles::profile_for_test(&settings, "work", "Work", |_| {});
         settings.profiles.push(work);
@@ -2501,11 +2596,17 @@ mod tests {
             &defaults.bindings,
             &settings.profiles[0].values.bindings,
         ] {
-            assert_eq!(bindings["transcribe"].current_binding, "ctrl+space");
             assert_eq!(
                 bindings["copy_last_transcript"].current_binding,
                 "option_right"
             );
+        }
+        for starts in [
+            &settings.start_keys,
+            &defaults.start_keys,
+            &settings.profiles[0].values.start_keys,
+        ] {
+            assert_eq!(starts[0].shortcut, "ctrl+space");
         }
         for ends in [
             &settings.end_keys,
@@ -2781,57 +2882,52 @@ mod tests {
         assert!(unasked.spoken_languages.is_empty());
     }
 
+    /// DanyWhere: Handy's `push_to_talk` and its successor
+    /// `shortcut_activation` become start and hold shortcuts once
+    /// (`start_keys::OldActivation`, 2026-11-26): "Hold" holds only,
+    /// "Toggle" starts only, "Auto" does both.
+    fn migrated_from(raw: serde_json::Value) -> AppSettings {
+        let mut settings = get_default_settings();
+        assert!(apply_settings_migrations(&mut settings, &raw));
+        settings
+    }
+
     #[test]
     fn shortcut_activation_migration_maps_push_to_talk_true() {
-        let mut settings = get_default_settings();
-        let raw = serde_json::json!({
+        let settings = migrated_from(serde_json::json!({
             "selected_model": "",
             "push_to_talk": true
-        });
-
-        assert!(apply_settings_migrations(&mut settings, &raw));
-        assert_eq!(settings.shortcut_activation, ShortcutActivation::PushToTalk);
+        }));
+        assert!(settings.start_keys.is_empty());
+        assert!(!settings.hold_keys.is_empty());
     }
 
     #[test]
     fn shortcut_activation_migration_maps_push_to_talk_false() {
-        let mut settings = get_default_settings();
-        let raw = serde_json::json!({
+        let settings = migrated_from(serde_json::json!({
             "selected_model": "",
             "push_to_talk": false
-        });
-
-        assert!(apply_settings_migrations(&mut settings, &raw));
-        assert_eq!(settings.shortcut_activation, ShortcutActivation::Toggle);
+        }));
+        assert!(!settings.start_keys.is_empty());
+        assert!(settings.hold_keys.is_empty());
     }
 
     #[test]
     fn shortcut_activation_migration_respects_explicit_new_key() {
-        let mut settings = get_default_settings();
-        settings.shortcut_activation = ShortcutActivation::HoldOrToggle;
-        let raw = serde_json::json!({
+        let settings = migrated_from(serde_json::json!({
             "selected_model": "",
             "push_to_talk": true,
             "shortcut_activation": "hold_or_toggle"
-        });
-
-        apply_settings_migrations(&mut settings, &raw);
-        assert_eq!(
-            settings.shortcut_activation,
-            ShortcutActivation::HoldOrToggle
-        );
+        }));
+        assert!(!settings.start_keys.is_empty());
+        assert!(!settings.hold_keys.is_empty());
     }
 
     #[test]
     fn shortcut_activation_defaults_to_hold_or_toggle_without_legacy_key() {
-        let mut settings = get_default_settings();
-        let raw = serde_json::json!({ "selected_model": "" });
-
-        apply_settings_migrations(&mut settings, &raw);
-        assert_eq!(
-            settings.shortcut_activation,
-            ShortcutActivation::HoldOrToggle
-        );
+        let settings = migrated_from(serde_json::json!({ "selected_model": "" }));
+        assert!(!settings.start_keys.is_empty());
+        assert!(!settings.hold_keys.is_empty());
     }
 
     #[test]
@@ -2910,9 +3006,12 @@ mod tests {
             "transcribe_gpu_device": settings.transcribe_gpu_device,
             // DanyWhere: the prompt library is there already.
             "post_process_prompt_order": [],
-            // DanyWhere: and the end shortcuts with their hold ends.
+            // DanyWhere: and the end, start and hold shortcuts and the
+            // mode of post-processing.
             "end_keys": settings.end_keys,
-            "hold_ends": settings.hold_ends
+            "start_keys": settings.start_keys,
+            "hold_keys": settings.hold_keys,
+            "post_process_mode": settings.post_process_mode
         });
 
         assert!(!apply_settings_migrations(&mut settings, &raw));

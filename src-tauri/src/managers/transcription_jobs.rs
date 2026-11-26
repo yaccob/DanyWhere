@@ -26,6 +26,7 @@ use crate::managers::transcription::{
 };
 use crate::notices::{self, Notice, NoticeCode, NoticeSource};
 use crate::post_process_failure::PostProcessFailure;
+use crate::settings::PostProcessMode;
 
 /// How often a waiting chunk checks whether dictation has finished.
 const DICTATION_POLL: Duration = Duration::from_millis(200);
@@ -123,6 +124,131 @@ fn post_process_failure_notice(failure: &PostProcessFailure, transcribed: bool) 
     failure.notice(code, NoticeSource::File)
 }
 
+/// DanyWhere: which part of an entry a transcription hears.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Part {
+    /// The recording: the dictation's text.
+    Text,
+    /// The audio of its spoken instruction.
+    Instruction,
+}
+
+/// DanyWhere: what transcribing an entry again heard.
+struct HeardAgain {
+    text: Transcription,
+    /// The spoken instruction, heard again from its own audio; `None` when
+    /// the entry has none, or its audio is gone or can't be read (the text
+    /// the entry has then stays).
+    instruction: Option<String>,
+}
+
+/// DanyWhere: hears `entry` again with `transcribe`, as "Transcribe Again"
+/// does: its recording, then the audio of its spoken instruction when it
+/// has one, with the same model and settings (F6 ii). `None`: cancelled.
+fn hear_again(
+    entry: &HistoryEntry,
+    recordings_dir: &Path,
+    transcribe: &mut dyn FnMut(Vec<f32>, Part) -> Result<Option<Transcription>>,
+) -> Result<Option<HeardAgain>> {
+    let samples = HistoryManager::recording_samples_in(entry, recordings_dir)
+        .map_err(|e| anyhow!("Failed to load audio: {}", e))?;
+    let instruction_audio = instruction_samples(entry, recordings_dir);
+    // DanyWhere: an entry made of a spoken instruction alone (F5 i) has an
+    // empty recording; only its instruction is heard.
+    let text = if samples.is_empty() {
+        if instruction_audio.is_none() {
+            return Err(anyhow!("Recording has no audio samples"));
+        }
+        Transcription {
+            text: String::new(),
+            language: None,
+            word_replacements: Vec::new(),
+            model_id: None,
+            takes_vocabulary: false,
+        }
+    } else {
+        let Some(text) = transcribe(samples, Part::Text)? else {
+            return Ok(None);
+        };
+        text
+    };
+    let instruction = match instruction_audio {
+        Some(samples) => match transcribe(samples, Part::Instruction)? {
+            Some(heard) => Some(heard.text.trim().to_string()),
+            None => return Ok(None),
+        },
+        None => None,
+    };
+    Ok(Some(HeardAgain { text, instruction }))
+}
+
+/// DanyWhere: the spoken instruction a job post-processes `entry` with: the
+/// one `heard` again from its audio, else the one the entry keeps; none for
+/// the wand's "Without the spoken instruction" (`use_instruction` false) or
+/// an entry without one.
+fn instruction_for(
+    entry: &HistoryEntry,
+    heard: Option<String>,
+    use_instruction: bool,
+) -> Option<String> {
+    if !use_instruction {
+        return None;
+    }
+    heard.or_else(|| entry.spoken_instruction.clone())
+}
+
+/// DanyWhere: whether a job of `mode` on an entry post-processed before as
+/// `requested` asks for post-processing: with a spoken `instruction` always,
+/// as the dictation did (`dictation_snapshot::wants_post_processing`). An
+/// entry keeps this as its mark, so a later job post-processes it too.
+fn job_wants_post_processing(
+    mode: ReprocessMode,
+    requested: bool,
+    instruction: Option<&str>,
+) -> bool {
+    mode.post_processes(requested) || instruction.is_some()
+}
+
+/// DanyWhere: whether the job post-processes, in the profile in use with
+/// `profile_mode`: as it asks ([`job_wants_post_processing`]), unless that
+/// profile never post-processes; then nothing goes to a provider, as
+/// History's page offers neither the wand nor post-processing with
+/// "Re-transcribe" then (`postProcessEntry.ts`, `postProcessAvailability`).
+fn job_post_processes(
+    profile_mode: PostProcessMode,
+    mode: ReprocessMode,
+    requested: bool,
+    instruction: Option<&str>,
+) -> bool {
+    profile_mode.allows() && job_wants_post_processing(mode, requested, instruction)
+}
+
+/// DanyWhere: a transcription heard again as `text` has nothing to work on:
+/// no words, and no spoken instruction that could work alone (F5 i).
+fn nothing_to_work_on(text: &str, instruction: Option<&str>) -> bool {
+    text.trim().is_empty() && instruction.is_none_or(|instruction| instruction.trim().is_empty())
+}
+
+/// DanyWhere: the samples of the entry's spoken instruction, when its audio
+/// is there and has any; else `None`, and the instruction keeps its text.
+fn instruction_samples(entry: &HistoryEntry, recordings_dir: &Path) -> Option<Vec<f32>> {
+    let file = entry.spoken_instruction_file.as_deref()?;
+    if entry.recording_removed {
+        return None;
+    }
+    match crate::audio_toolkit::read_recording_samples(recordings_dir.join(file)) {
+        Ok(samples) if !samples.is_empty() => Some(samples),
+        Ok(_) => None,
+        Err(e) => {
+            warn!(
+                "Kept the spoken instruction of history entry {} as it was: {}",
+                entry.id, e
+            );
+            None
+        }
+    }
+}
+
 struct Running {
     entry_id: i64,
     cancelled: Arc<AtomicBool>,
@@ -137,6 +263,10 @@ struct Work {
     /// DanyWhere: the prompts of the library its post-processing runs, in
     /// this order; `None`: the profile's active ones (`prompt_library`).
     prompt_ids: Option<Vec<String>>,
+    /// DanyWhere: its post-processing runs with the entry's spoken
+    /// instruction, if it has one; false: the wand's "Without the spoken
+    /// instruction".
+    use_instruction: bool,
 }
 
 impl Work {
@@ -145,6 +275,7 @@ impl Work {
         mode: ReprocessMode::Transcribe,
         version: None,
         prompt_ids: None,
+        use_instruction: true,
     };
 }
 
@@ -287,18 +418,21 @@ impl TranscriptionJobManager {
     /// any file. `version`: the version a post-processing starts from
     /// (`None`: the top); its result goes on top.
     pub fn reprocess(&self, entry_id: i64, mode: ReprocessMode, version: Option<u32>) {
-        self.reprocess_with_prompts(entry_id, mode, version, None);
+        self.reprocess_with_prompts(entry_id, mode, version, None, true);
     }
 
     /// DanyWhere: [`Self::reprocess`]; with `prompt_ids` its post-processing
     /// runs exactly those prompts of the library, in that order, instead of
     /// the profile's active ones (History's wand menu, `prompt_library`).
+    /// `use_instruction`: with the entry's spoken instruction, if it has
+    /// one; false for the wand's "Without the spoken instruction".
     pub fn reprocess_with_prompts(
         &self,
         entry_id: i64,
         mode: ReprocessMode,
         version: Option<u32>,
         prompt_ids: Option<Vec<String>>,
+        use_instruction: bool,
     ) {
         self.queue(
             entry_id,
@@ -306,6 +440,7 @@ impl TranscriptionJobManager {
                 mode,
                 version,
                 prompt_ids,
+                use_instruction,
             }),
         );
     }
@@ -456,40 +591,84 @@ impl TranscriptionJobManager {
         let entry = tauri::async_runtime::block_on(hm.get_entry_by_id(entry_id))?
             .ok_or_else(|| anyhow!("History entry {} not found", entry_id))?;
         let prompts = work.prompt_ids.as_deref();
+        // DanyWhere: the mode of the profile in use, which the job runs with
+        // (`app_profiles::dictation_settings`): with "never" nothing goes to
+        // a provider.
+        let profile_mode = crate::app_profiles::dictation_settings(&self.app).post_process_mode;
         if !work.mode.transcribes() {
-            return self.post_process_again(&hm, &entry, work.version, cancelled, prompts);
+            let instruction = instruction_for(&entry, None, work.use_instruction);
+            if !job_post_processes(
+                profile_mode,
+                work.mode,
+                entry.post_process_requested,
+                instruction.as_deref(),
+            ) {
+                return Err(anyhow!(
+                    "Post-processing is set to \"Never\" in the profile in use"
+                ));
+            }
+            return self.post_process_again(
+                &hm,
+                &entry,
+                work.version,
+                cancelled,
+                prompts,
+                instruction.as_deref(),
+            );
         }
-        let post_process = work.mode.post_processes(entry.post_process_requested);
 
         let tm = Arc::clone(&self.app.state::<Arc<TranscriptionManager>>());
-        let samples = HistoryManager::recording_samples_in(&entry, hm.recordings_dir())
-            .map_err(|e| anyhow!("Failed to load audio: {}", e))?;
-        if samples.is_empty() {
-            return Err(anyhow!("Recording has no audio samples"));
-        }
-
         let control = Control {
             manager: self,
             entry_id: entry.id,
             cancelled,
             percent: Cell::new(0),
         };
-        let Some(Transcription {
-            text,
-            language,
-            word_replacements,
-            model_id,
-            ..
-        }) = tm.transcribe_in_chunks(samples, &control)?
+        // DanyWhere: the text, and the spoken instruction from its own audio
+        // when the entry has one (F6 ii); the instruction's chunks report no
+        // progress, the text's already went to 100 %.
+        let Some(HeardAgain {
+            text:
+                Transcription {
+                    text,
+                    language,
+                    word_replacements,
+                    model_id,
+                    ..
+                },
+            instruction,
+        }) = hear_again(
+            &entry,
+            hm.recordings_dir(),
+            &mut |samples, part| match part {
+                Part::Text => tm.transcribe_in_chunks(samples, &control),
+                Part::Instruction => tm.transcribe_in_chunks(samples, &Quiet(&control)),
+            },
+        )?
         else {
             return Ok(JobEnd::Cancelled);
         };
-        if text.is_empty() {
+        // DanyWhere: post-processed with the spoken instruction heard again
+        // (else the one the entry keeps), as the dictation was.
+        let heard_again = instruction.clone();
+        let instruction = instruction_for(&entry, instruction, work.use_instruction);
+        if nothing_to_work_on(&text, instruction.as_deref()) {
             return Err(anyhow!("Recording contains no speech"));
         }
         if cancelled.load(Ordering::Acquire) {
             return Ok(JobEnd::Cancelled);
         }
+        let wanted = job_wants_post_processing(
+            work.mode,
+            entry.post_process_requested,
+            instruction.as_deref(),
+        );
+        let post_process = job_post_processes(
+            profile_mode,
+            work.mode,
+            entry.post_process_requested,
+            instruction.as_deref(),
+        );
 
         if post_process {
             self.emit(entry.id, TranscriptionJobStatus::PostProcessing);
@@ -508,7 +687,12 @@ impl TranscriptionJobManager {
             post_process,
             &context_query,
             prompts,
+            instruction.as_deref(),
         ));
+        let instruction_applied = processed.post_processed_text.is_some()
+            && instruction
+                .as_deref()
+                .is_some_and(|instruction| !instruction.trim().is_empty());
         // Post-processing can take a while; a cancel during it still wins.
         if cancelled.load(Ordering::Acquire) {
             return Ok(JobEnd::Cancelled);
@@ -526,9 +710,14 @@ impl TranscriptionJobManager {
                     text,
                     prompt: processed.post_process_prompt,
                     prompt_name: processed.post_process_prompt_name,
+                    spoken_instruction: instruction_applied,
                 }),
-                post_process_requested: post_process,
+                // DanyWhere: the mark keeps what the job asked for, also
+                // where "never" kept it from post-processing.
+                post_process_requested: wanted,
                 model: model_id,
+                spoken_instruction: heard_again,
+                instruction_applied,
             },
         )?;
         if let Err(e) = hm.record_entry_context(
@@ -557,6 +746,7 @@ impl TranscriptionJobManager {
         version: Option<u32>,
         cancelled: &AtomicBool,
         prompts: Option<&[String]>,
+        instruction: Option<&str>,
     ) -> Result<JobEnd> {
         let (transcript, replacements) = post_process_input(entry, version)?;
         if transcript.trim().is_empty() {
@@ -576,6 +766,7 @@ impl TranscriptionJobManager {
             true,
             &context_query,
             prompts,
+            instruction,
         ));
         if cancelled.load(Ordering::Acquire) {
             return Ok(JobEnd::Cancelled);
@@ -600,6 +791,9 @@ impl TranscriptionJobManager {
                         text,
                         prompt: processed.post_process_prompt,
                         prompt_name: processed.post_process_prompt_name,
+                        // DanyWhere: the wand with the entry's instruction.
+                        spoken_instruction: instruction
+                            .is_some_and(|instruction| !instruction.trim().is_empty()),
                     },
                 )?;
                 (None, stored.unchanged)
@@ -694,6 +888,19 @@ impl ChunkControl for Control<'_> {
     }
 }
 
+/// DanyWhere: the chunks of a spoken instruction heard again: they wait for
+/// dictation and stop on a cancel as the text's do, but report no progress,
+/// which the text's run already brought to 100 %.
+struct Quiet<'a>(&'a Control<'a>);
+
+impl ChunkControl for Quiet<'_> {
+    fn proceed(&self) -> bool {
+        self.0.proceed()
+    }
+
+    fn progress(&self, _done: usize, _total: usize) {}
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -705,6 +912,7 @@ mod tests {
             mode,
             version,
             prompt_ids: None,
+            use_instruction: true,
         })
     }
 
@@ -717,6 +925,7 @@ mod tests {
             mode: PostProcess,
             version: Some(1),
             prompt_ids: Some(vec!["b".to_string(), "a".to_string()]),
+            use_instruction: true,
         };
         assert!(jobs.push(1, Some(chosen.clone())));
         assert!(jobs.push(2, work(PostProcess, None)));
@@ -830,6 +1039,7 @@ mod tests {
             at: Some(2),
             prompt_name: None,
             model: None,
+            spoken_instruction: false,
         });
         let edited = entry_with_hint(vec![edited]);
         assert!(post_process_input(&edited, None).unwrap().1.is_empty());
@@ -901,6 +1111,235 @@ mod tests {
             serde_json::to_string(&Transcribe).unwrap(),
             "\"transcribe\""
         );
+    }
+
+    // ---- Hearing an entry again, its spoken instruction too (F6 ii) ------
+
+    fn tone(n: usize) -> Vec<f32> {
+        (0..n).map(|i| 0.4 * (i as f32 * 0.05).sin()).collect()
+    }
+
+    /// What a fake speech model hears in `len` samples of `part`.
+    fn heard(len: usize, part: Part) -> Transcription {
+        Transcription {
+            text: format!("{part:?} of {len}"),
+            language: None,
+            word_replacements: Vec::new(),
+            model_id: Some("fake-model".into()),
+            takes_vocabulary: false,
+        }
+    }
+
+    /// An entry whose recording `handy-1.opus` has 16 000 samples, with an
+    /// instruction whose audio is `instruction` (its file and samples; no
+    /// samples: the file isn't there).
+    fn entry_with_audio(dir: &Path, instruction: Option<(&str, usize)>) -> HistoryEntry {
+        crate::audio_toolkit::save_opus_file(dir.join("handy-1.opus"), &tone(16_000)).unwrap();
+        let mut entry = test_entry(vec![HistoryVersion::transcription("old words")]);
+        if let Some((file, samples)) = instruction {
+            if samples > 0 {
+                crate::audio_toolkit::save_opus_file(dir.join(file), &tone(samples)).unwrap();
+            }
+            entry.spoken_instruction = Some("old instruction".into());
+            entry.spoken_instruction_file = Some(file.into());
+        }
+        entry
+    }
+
+    /// Hears `entry` again with the fake model; the parts it was asked to
+    /// hear, with their lengths.
+    fn hear(
+        entry: &HistoryEntry,
+        dir: &Path,
+        cancel_at: Option<Part>,
+    ) -> (Option<HeardAgain>, Vec<(Part, usize)>) {
+        let mut calls = Vec::new();
+        let heard_again = hear_again(entry, dir, &mut |samples, part| {
+            calls.push((part, samples.len()));
+            Ok((cancel_at != Some(part)).then(|| heard(samples.len(), part)))
+        })
+        .expect("hear again");
+        (heard_again, calls)
+    }
+
+    #[test]
+    fn transcribing_again_hears_the_text_and_the_spoken_instruction() {
+        let dir = tempfile::tempdir().unwrap();
+        let entry = entry_with_audio(dir.path(), Some(("handy-1-instruction.opus", 4_000)));
+
+        let (again, calls) = hear(&entry, dir.path(), None);
+
+        assert_eq!(
+            calls,
+            vec![(Part::Text, 16_000), (Part::Instruction, 4_000)]
+        );
+        let again = again.expect("not cancelled");
+        assert_eq!(again.text.text, "Text of 16000");
+        assert_eq!(again.instruction.as_deref(), Some("Instruction of 4000"));
+    }
+
+    #[test]
+    fn without_a_spoken_instruction_only_the_text_is_heard() {
+        let dir = tempfile::tempdir().unwrap();
+        let entry = entry_with_audio(dir.path(), None);
+
+        let (again, calls) = hear(&entry, dir.path(), None);
+
+        assert_eq!(calls, vec![(Part::Text, 16_000)]);
+        assert_eq!(again.expect("not cancelled").instruction, None);
+    }
+
+    #[test]
+    fn an_instruction_whose_audio_is_gone_keeps_its_text() {
+        let dir = tempfile::tempdir().unwrap();
+        let entry = entry_with_audio(dir.path(), Some(("handy-1-instruction.opus", 0)));
+
+        let (again, calls) = hear(&entry, dir.path(), None);
+
+        assert_eq!(calls, vec![(Part::Text, 16_000)]);
+        assert_eq!(again.expect("not cancelled").instruction, None);
+    }
+
+    #[test]
+    fn a_cancel_while_the_instruction_is_heard_cancels_the_job() {
+        let dir = tempfile::tempdir().unwrap();
+        let entry = entry_with_audio(dir.path(), Some(("handy-1-instruction.opus", 4_000)));
+
+        let (again, calls) = hear(&entry, dir.path(), Some(Part::Instruction));
+
+        assert_eq!(
+            calls,
+            vec![(Part::Text, 16_000), (Part::Instruction, 4_000)]
+        );
+        assert!(again.is_none());
+    }
+
+    // ---- Post-processing with the spoken instruction (strand Z1) ---------
+
+    fn with_instruction(text: Option<&str>) -> HistoryEntry {
+        let mut entry = test_entry(vec![HistoryVersion::transcription("words")]);
+        entry.spoken_instruction = text.map(str::to_string);
+        entry
+    }
+
+    #[test]
+    fn transcribing_again_post_processes_with_the_instruction_heard_again() {
+        let entry = with_instruction(Some("translate it into Polsh"));
+        assert_eq!(
+            instruction_for(&entry, Some("translate it into Polish".into()), true).as_deref(),
+            Some("translate it into Polish")
+        );
+    }
+
+    #[test]
+    fn an_instruction_whose_audio_is_gone_post_processes_with_its_text() {
+        let entry = with_instruction(Some("make it formal"));
+        assert_eq!(
+            instruction_for(&entry, None, true).as_deref(),
+            Some("make it formal")
+        );
+    }
+
+    #[test]
+    fn the_wand_without_the_instruction_leaves_it_out() {
+        let entry = with_instruction(Some("make it formal"));
+        assert_eq!(instruction_for(&entry, None, false), None);
+        assert_eq!(instruction_for(&entry, Some("again".into()), false), None);
+        assert_eq!(instruction_for(&with_instruction(None), None, true), None);
+    }
+
+    #[test]
+    fn a_job_keeps_whether_it_uses_the_instruction() {
+        let mut jobs = Jobs::default();
+        let without = Work {
+            use_instruction: false,
+            ..work(PostProcess, Some(1)).unwrap()
+        };
+        jobs.push(7, Some(without.clone()));
+        assert_eq!(jobs.next(), Some((7, without)));
+        // A file has none anyway; an entry transcribed again uses its own.
+        jobs.push(8, None);
+        assert!(jobs.next().is_some_and(|(_, work)| work.use_instruction));
+    }
+
+    #[test]
+    fn with_an_instruction_transcribing_again_always_post_processes() {
+        let mode = PostProcessMode::WithInstructionKey;
+        assert!(job_post_processes(
+            mode,
+            Transcribe,
+            false,
+            Some("make it formal")
+        ));
+        assert!(
+            job_post_processes(mode, Transcribe, false, Some("")),
+            "heard as nothing"
+        );
+        assert!(!job_post_processes(mode, Transcribe, false, None));
+        assert!(job_post_processes(mode, Transcribe, true, None));
+    }
+
+    /// DanyWhere (review of 2026-11-26, finding 1): with "never" in the
+    /// profile in use no job of History sends anything to a provider, as
+    /// History's page offers neither the wand nor post-processing with
+    /// "Re-transcribe" then (`postProcessEntry.ts`). The entry keeps its
+    /// mark, so a job in a profile that post-processes does it again.
+    #[test]
+    fn with_never_in_the_profile_in_use_no_job_post_processes() {
+        for mode in [Transcribe, TranscribeAndPostProcess, PostProcess] {
+            for requested in [false, true] {
+                for instruction in [None, Some(""), Some("make it formal")] {
+                    let case = format!("{mode:?}, requested {requested}, {instruction:?}");
+                    assert!(
+                        !job_post_processes(PostProcessMode::Never, mode, requested, instruction),
+                        "{case}"
+                    );
+                    for allowed in [PostProcessMode::WithInstructionKey, PostProcessMode::Always] {
+                        assert_eq!(
+                            job_post_processes(allowed, mode, requested, instruction),
+                            job_wants_post_processing(mode, requested, instruction),
+                            "{case}, {allowed:?}"
+                        );
+                    }
+                }
+            }
+        }
+        assert!(
+            job_wants_post_processing(Transcribe, true, None),
+            "the mark"
+        );
+    }
+
+    #[test]
+    fn an_instruction_alone_is_something_to_work_on() {
+        assert!(!nothing_to_work_on("", Some("write a polite no")));
+        assert!(nothing_to_work_on("", Some("  ")));
+        assert!(nothing_to_work_on("", None));
+        assert!(!nothing_to_work_on("words", None));
+    }
+
+    #[test]
+    fn an_entry_made_of_an_instruction_alone_is_heard_again() {
+        // Its recording is empty (F5 i): only the instruction is heard.
+        let dir = tempfile::tempdir().unwrap();
+        let mut entry = entry_with_audio(dir.path(), Some(("handy-1-instruction.opus", 4_000)));
+        crate::audio_toolkit::save_opus_file(dir.path().join("handy-1.opus"), &[]).unwrap();
+        entry.versions = vec![HistoryVersion::transcription("")];
+
+        let (again, calls) = hear(&entry, dir.path(), None);
+
+        assert_eq!(calls, vec![(Part::Instruction, 4_000)]);
+        let again = again.expect("not cancelled");
+        assert_eq!(again.text.text, "");
+        assert_eq!(again.instruction.as_deref(), Some("Instruction of 4000"));
+    }
+
+    #[test]
+    fn an_empty_recording_without_an_instruction_still_fails() {
+        let dir = tempfile::tempdir().unwrap();
+        let entry = entry_with_audio(dir.path(), None);
+        crate::audio_toolkit::save_opus_file(dir.path().join("handy-1.opus"), &[]).unwrap();
+        assert!(hear_again(&entry, dir.path(), &mut |_, _| unreachable!()).is_err());
     }
 
     #[test]

@@ -7,9 +7,8 @@ import React, {
 } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { commands } from "@/bindings";
-import { useSettings } from "@/hooks/useSettings";
-import { useShortcutCapture } from "@/hooks/useShortcutCapture";
 import { type OSType, spaceDoesNotClick } from "@/lib/utils/keyboard";
+import { usePracticeShortcut } from "../usePracticeShortcut";
 import { prefersReducedMotion } from "@/lib/utils/motion";
 import { cjkSubsetFont } from "@/lib/utils/cjkFont";
 import { Button } from "../../ui/Button";
@@ -385,10 +384,7 @@ export const Demo: React.FC<DemoProps> = ({
   onContinue,
 }) => {
   const { t } = useTranslation();
-  const { getSetting } = useSettings();
   const { languages, script, preview } = useOnboardingStore();
-  const binding = getSetting("bindings")?.transcribe;
-  const shortcut = binding?.current_binding ?? "";
   const [still] = useState(prefersReducedMotion);
 
   const [chapter, setChapter] = useState<Mode>("hold");
@@ -490,11 +486,12 @@ export const Demo: React.FC<DemoProps> = ({
     if (!preview) commands.initializeShortcuts().catch(console.error);
   }, [preview]);
 
-  // The loop stops while new keys go in, and starts over after.
-  const capture = useShortcutCapture("transcribe", os, {
+  // The loop stops while new keys go in, and starts over after. DanyWhere:
+  // the keys are the first start shortcut's, which out of the box the
+  // first hold shortcut has too (qa 2026-11-26_1810).
+  const { shortcut, capture } = usePracticeShortcut(os, {
     onDone: () => play("hold"),
-    inert: preview,
-    escapeCancels: true,
+    preview,
   });
 
   const startCapture = () => {

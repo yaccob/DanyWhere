@@ -42,6 +42,12 @@ pub(crate) mod app_ports;
 // `fakes::llm_server` too (`word_list_check`).
 #[cfg(test)]
 pub(crate) mod fakes;
+// DanyWhere: the spoken instruction (its cut, its state, its building
+// blocks); the coordinator cuts with `begin_instruction` when an
+// instruction shortcut is pressed (strand Z2). Some blocks serve only the
+// tests so far (`split_dictation`, `key_of_pending`, `is_ready`).
+#[allow(dead_code)]
+pub(crate) mod instruction;
 pub mod ports;
 
 use ports::{Deliver, DictationPorts, Overlay, Recording, Report, Session};
@@ -57,6 +63,10 @@ pub struct Dictation {
     /// The hold on DanyWhere's input source its recording's start took
     /// (`delivery::begin_input_source`), if it took one.
     pub input_source: Option<crate::delivery::InputSourceHold>,
+    /// DanyWhere: the spoken instruction its recording went on to
+    /// (`instruction::begin_instruction`); `None`: dictated as before. The
+    /// recording stopped now is then the instruction's section.
+    pub instruction: Option<instruction::InstructionPart>,
 }
 
 /// What the user sees and hears right when the recording of `snapshot`'s
@@ -172,12 +182,14 @@ pub(crate) async fn post_process_dictation(
     history: &HistoryManager,
     settings: &AppSettings,
     transcription: &str,
+    spoken_instruction: Option<&str>,
     post_process: bool,
     context: &ContextQuery,
 ) -> ProcessedTranscription {
     process_transcription_with_settings(
         settings,
         transcription,
+        spoken_instruction,
         post_process,
         &context.misheard,
         |instructions| {
@@ -224,15 +236,16 @@ fn apply_word_list_check(
 /// it, saves it to History and hands it to the paste thread, with what its
 /// snapshot holds. DanyWhere: after a speech model without vocabulary, the
 /// words that resemble a word list's term are checked before
-/// post-processing (`word_list_check`).
+/// post-processing (`word_list_check`). A dictation whose recording went on
+/// to a spoken instruction takes its own way ([`finish_with_instruction`]).
 pub(crate) async fn finish_dictation<P: DictationPorts>(dictation: Dictation, ports: P) {
     let Dictation {
         snapshot,
         binding_id,
         stop_time,
         input_source: start_hold,
+        instruction,
     } = dictation;
-    let use_streaming_overlay = snapshot.use_streaming_overlay;
 
     let _guard = Finished(&ports);
     // Dropped before `_guard`, or handed to the paste thread.
@@ -245,12 +258,19 @@ pub(crate) async fn finish_dictation<P: DictationPorts>(dictation: Dictation, po
         binding_id
     );
 
+    // DanyWhere: the recording stopped now is the instruction's section.
+    if let Some(part) = instruction {
+        finish_with_instruction(&ports, snapshot, &binding_id, stop_time, input_source, part).await;
+        return;
+    }
+
     let stop_recording_time = Instant::now();
     if let Some(Recording {
         samples,
         // Read now: by the time transcribing ends, another take may
         // have replaced it.
         input_silent,
+        ..
     }) = ports.stop_recording(&binding_id)
     {
         debug!(
@@ -276,20 +296,7 @@ pub(crate) async fn finish_dictation<P: DictationPorts>(dictation: Dictation, po
             // Save the recording (Opus) and check it by decoding it,
             // concurrently with transcription
             let sample_count = samples.len();
-            let file_name = crate::audio_toolkit::recording_file_name(&format!(
-                "handy-{}",
-                chrono::Utc::now().timestamp()
-            ));
-            let wav_path = ports.history().recordings_dir().join(&file_name);
-            let samples_for_wav = samples.clone();
-            let wav_handle = tauri::async_runtime::spawn_blocking(move || {
-                crate::audio_toolkit::save_recording(&wav_path, &samples_for_wav)
-                    .map_err(|e| (false, e))
-                    .and_then(|()| {
-                        crate::audio_toolkit::verify_recording(&wav_path, sample_count)
-                            .map_err(|e| (true, e))
-                    })
-            });
+            let (file_name, saving) = save_recording_in_background(&ports, samples.clone());
 
             // Transcribe concurrently with WAV save: the live decode's
             // result when it has one (all audio was already fed to it),
@@ -302,21 +309,7 @@ pub(crate) async fn finish_dictation<P: DictationPorts>(dictation: Dictation, po
                 ports.transcribe(samples, snapshot.transcribed_with_end_values);
 
             // Await the saved and verified recording
-            let wav_saved = match wav_handle.await {
-                Ok(Ok(())) => true,
-                Ok(Err((true, e))) => {
-                    error!("Recording verification failed: {}", e);
-                    false
-                }
-                Ok(Err((false, e))) => {
-                    error!("Failed to save recording: {}", e);
-                    false
-                }
-                Err(e) => {
-                    error!("Recording save task panicked: {}", e);
-                    false
-                }
-            };
+            let wav_saved = recording_saved(saving).await;
 
             if ports.cancelled() {
                 debug!("Transcription operation cancelled before output handling");
@@ -325,221 +318,41 @@ pub(crate) async fn finish_dictation<P: DictationPorts>(dictation: Dictation, po
             }
 
             match transcription_result {
-                Ok(Transcription {
-                    text: transcription,
-                    language,
-                    mut word_replacements,
-                    model_id,
-                    takes_vocabulary,
-                }) => {
+                Ok(transcription) => {
                     debug!(
                         "Transcription completed in {:?}: '{}'",
                         transcription_time.elapsed(),
-                        utils::redact_text(&transcription)
+                        utils::redact_text(&transcription.text)
                     );
-
-                    // DanyWhere: words that resemble a word list's term,
-                    // after a model that didn't take the lists: checked
-                    // with the post-processing provider when the user
-                    // wants it, else a hint for post-processing
-                    // (`word_list_check`).
-                    let candidates = crate::word_list_check::candidates(
-                        &snapshot.settings,
-                        &transcription,
-                        takes_vocabulary,
-                    );
-                    let transcription = if !candidates.is_empty()
-                        && crate::word_list_check::wanted(&snapshot.settings, snapshot.post_process)
-                    {
-                        ports.overlay(Overlay::Working {
-                            working: Working::PostProcessing,
-                            streaming: use_streaming_overlay,
-                        });
-                        let Some(checked) = complete_unless_cancelled(
-                            ports.check_word_list(&snapshot.settings, &transcription, &candidates),
-                            || ports.cancelled(),
-                        )
-                        .await
-                        else {
-                            debug!("Transcription operation cancelled during the word list check");
-                            end_cancelled(&ports);
-                            return;
-                        };
-                        let (text, replaced) =
-                            apply_word_list_check(&snapshot.settings, transcription, checked);
-                        for replacement in replaced {
-                            if !word_replacements.contains(&replacement) {
-                                word_replacements.push(replacement);
-                            }
-                        }
-                        text
-                    } else {
-                        transcription
-                    };
-
-                    if snapshot.post_process {
-                        ports.overlay(Overlay::Working {
-                            working: Working::PostProcessing,
-                            streaming: use_streaming_overlay,
-                        });
-                    }
-                    // DanyWhere: the window this dictation started
-                    // in, and what the word list replaced in it.
-                    let window = ports.take_window();
-                    let context_query = ContextQuery::for_new_dictation(
-                        // Only "Send Context" sends context; every
-                        // dictation keeps its window.
-                        if snapshot.with_context {
-                            window.clone()
-                        } else {
-                            None
-                        },
-                        word_replacements.clone(),
-                    )
-                    .with_misheard(candidates);
-                    // DanyWhere: with the snapshot's settings; a
-                    // change made meanwhile applies from the next
-                    // dictation on.
-                    let Some(processed) = complete_unless_cancelled(
-                        ports.post_process(
-                            &snapshot.settings,
-                            &transcription,
-                            snapshot.post_process,
-                            &context_query,
-                        ),
-                        || ports.cancelled(),
-                    )
-                    .await
-                    else {
-                        debug!("Transcription operation cancelled during output handling");
-                        end_cancelled(&ports);
-                        return;
-                    };
-
-                    if ports.cancelled() {
-                        debug!("Transcription operation cancelled before paste");
-                        end_cancelled(&ports);
-                        return;
-                    }
-
-                    // Save to history if WAV was saved
-                    let mut saved_entry_id: Option<i64> = None;
-                    if wav_saved {
-                        match ports.history().save_entry(
+                    finish_transcribed(
+                        &ports,
+                        snapshot,
+                        input_source,
+                        Transcribed {
                             file_name,
+                            wav_saved,
                             transcription,
-                            snapshot.post_process,
-                            // DanyWhere: with its prompt's name, for the
-                            // ✨ step (as a redo stores it).
-                            processed.post_processed_text.clone().map(|text| {
-                                crate::history_versions::PostProcessed {
-                                    text,
-                                    prompt: processed.post_process_prompt.clone(),
-                                    prompt_name: processed.post_process_prompt_name.clone(),
-                                }
-                            }),
-                            crate::managers::history::TranscribedWith {
-                                language,
-                                model: model_id,
-                            },
-                        ) {
-                            // DanyWhere: its window and context, and
-                            // what it was made with.
-                            Ok(entry) => {
-                                saved_entry_id = Some(entry.id);
-                                ports.remember(snapshot.made_with(entry.id));
-                                if let Err(err) = ports.history().record_entry_context(
-                                    entry.id,
-                                    window.as_ref(),
-                                    &word_replacements,
-                                    snapshot
-                                        .with_context
-                                        .then_some(processed.context_entry_ids.as_slice()),
-                                ) {
-                                    warn!("Failed to store the dictation's window: {}", err);
-                                }
-                            }
-                            Err(err) => error!("Failed to save history entry: {}", err),
-                        }
-                    }
-
-                    // The user's hook only changes what gets pasted;
-                    // history above keeps the text as produced.
-                    let Some(final_text) =
-                        complete_unless_cancelled(ports.apply_hook(processed.final_text), || {
-                            ports.cancelled()
-                        })
-                        .await
-                    else {
-                        debug!("Transcription operation cancelled during hook");
-                        end_cancelled(&ports);
-                        return;
-                    };
-
-                    if final_text.is_empty() {
-                        finish_without_text(&ports, input_silent, sample_count, stop_time);
-                    } else {
-                        let delivery = Delivery {
-                            // DanyWhere: this dictation's session, taken
-                            // when its recording ended (the snapshot): the
-                            // next session starts only after this task.
-                            snapshot,
-                            text: final_text,
-                            entry_id: saved_entry_id,
-                            post_process_failure: processed.post_process_failure.clone(),
-                            effort_refused_by: processed.post_process_effort_refused_by.clone(),
+                            instruction: None,
+                            input_silent,
                             sample_count,
                             stop_time,
-                            paste_time: Instant::now(),
-                            input_source,
-                        };
-                        // DanyWhere: the dictation profile's values from
-                        // the snapshot, for the paste (the profile ends
-                        // when this task returns) and for the paste
-                        // thread's sounds and notices, which read them
-                        // on that thread (`app_profiles::keep_values_here`).
-                        let values_here = delivery.snapshot.values.clone();
-                        let paste_ports = ports.clone();
-                        // Off the main thread: paste sleeps between steps, and a
-                        // paste into Handy's own windows needs the main thread free.
-                        if let Err(e) = ports.spawn_paste(
-                            values_here,
-                            Box::new(move || deliver_dictation(&paste_ports, delivery)),
-                        ) {
-                            error!("Failed to start the paste thread: {:?}", e);
-                            ports.overlay(Overlay::Hide);
-                            ports.tray(TrayIconState::Idle);
-                            ports.complete(TranscriptionOutcome::Failed, sample_count, stop_time);
-                        }
-                    }
+                        },
+                    )
+                    .await;
                 }
-                Err(err) => {
-                    if ports.cancelled() {
-                        debug!("Transcription operation cancelled after transcription error");
-                        end_cancelled(&ports);
-                        return;
-                    }
-
-                    error!("Transcription failed: {}", err);
-                    ports.raise(
-                        Notice::new(NoticeCode::TranscriptionFailed, NoticeSource::Dictation)
-                            .with_detail(err.to_string()),
-                    );
-                    // Save entry with empty text so user can retry
-                    if wav_saved {
-                        if let Err(save_err) = ports.history().save_entry(
-                            file_name,
-                            String::new(),
-                            snapshot.post_process,
-                            None,
-                            Default::default(),
-                        ) {
-                            error!("Failed to save failed history entry: {}", save_err);
-                        }
-                    }
-                    ports.tray(TrayIconState::Idle);
-                    ports.complete(TranscriptionOutcome::Failed, sample_count, stop_time);
-                }
+                Err(err) => fail_transcription(
+                    &ports,
+                    &snapshot,
+                    TranscriptionFailure {
+                        file_name,
+                        wav_saved,
+                        text: String::new(),
+                        instruction: None,
+                        sample_count,
+                        stop_time,
+                    },
+                    err,
+                ),
             }
         }
     } else {
@@ -550,6 +363,540 @@ pub(crate) async fn finish_dictation<P: DictationPorts>(dictation: Dictation, po
         if !ports.cancelled() {
             ports.complete(TranscriptionOutcome::Empty, 0, stop_time);
         }
+    }
+}
+
+/// Saving and checking a recording in the background: `Err((true, _))`
+/// when it was saved but reads back otherwise.
+type RecordingSave = tauri::async_runtime::JoinHandle<Result<(), (bool, anyhow::Error)>>;
+
+/// Starts saving a dictation's recording `samples` next to History and
+/// checking it by decoding it, in the background; its file name.
+fn save_recording_in_background<P: ports::History>(
+    ports: &P,
+    samples: Vec<f32>,
+) -> (String, RecordingSave) {
+    let sample_count = samples.len();
+    let file_name = crate::audio_toolkit::recording_file_name(&format!(
+        "handy-{}",
+        chrono::Utc::now().timestamp()
+    ));
+    let wav_path = ports.history().recordings_dir().join(&file_name);
+    let saving = tauri::async_runtime::spawn_blocking(move || {
+        crate::audio_toolkit::save_recording(&wav_path, &samples)
+            .map_err(|e| (false, e))
+            .and_then(|()| {
+                crate::audio_toolkit::verify_recording(&wav_path, sample_count)
+                    .map_err(|e| (true, e))
+            })
+    });
+    (file_name, saving)
+}
+
+/// Whether the recording [`save_recording_in_background`] saves was saved
+/// and checked.
+async fn recording_saved(saving: RecordingSave) -> bool {
+    match saving.await {
+        Ok(Ok(())) => true,
+        Ok(Err((true, e))) => {
+            error!("Recording verification failed: {}", e);
+            false
+        }
+        Ok(Err((false, e))) => {
+            error!("Failed to save recording: {}", e);
+            false
+        }
+        Err(e) => {
+            error!("Recording save task panicked: {}", e);
+            false
+        }
+    }
+}
+
+/// A dictation's transcription, with what the rest of its end needs.
+struct Transcribed {
+    /// Its recording, next to History.
+    file_name: String,
+    /// The recording was saved and checked; only then is it kept in History.
+    wav_saved: bool,
+    transcription: Transcription,
+    /// DanyWhere: the spoken instruction as heard, with its audio for
+    /// History; `None`: dictated without the instruction key.
+    instruction: Option<crate::managers::history::SpokenInstruction>,
+    /// The microphone sent only digital silence.
+    input_silent: bool,
+    sample_count: usize,
+    stop_time: Instant,
+}
+
+/// The rest of a dictation's end once it is transcribed: the word list
+/// check, post-processing (with its spoken instruction, if any), History,
+/// the user's hook and the paste thread.
+async fn finish_transcribed<P: DictationPorts>(
+    ports: &P,
+    snapshot: DictationSnapshot,
+    input_source: DictationInputSource,
+    transcribed: Transcribed,
+) {
+    let Transcribed {
+        file_name,
+        wav_saved,
+        transcription:
+            Transcription {
+                text: transcription,
+                language,
+                mut word_replacements,
+                model_id,
+                takes_vocabulary,
+            },
+        instruction,
+        input_silent,
+        sample_count,
+        stop_time,
+    } = transcribed;
+    let use_streaming_overlay = snapshot.use_streaming_overlay;
+
+    // DanyWhere: words that resemble a word list's term,
+    // after a model that didn't take the lists: checked
+    // with the post-processing provider when the user
+    // wants it, else a hint for post-processing
+    // (`word_list_check`). A dictation with a spoken instruction
+    // post-processes unless its profile never does, so the hint goes along.
+    let candidates =
+        crate::word_list_check::candidates(&snapshot.settings, &transcription, takes_vocabulary);
+    let transcription = if !candidates.is_empty()
+        && crate::word_list_check::wanted(&snapshot.settings, snapshot.post_process)
+    {
+        ports.overlay(Overlay::Working {
+            working: Working::PostProcessing,
+            streaming: use_streaming_overlay,
+        });
+        let Some(checked) = complete_unless_cancelled(
+            ports.check_word_list(&snapshot.settings, &transcription, &candidates),
+            || ports.cancelled(),
+        )
+        .await
+        else {
+            debug!("Transcription operation cancelled during the word list check");
+            end_cancelled(ports);
+            return;
+        };
+        let (text, replaced) = apply_word_list_check(&snapshot.settings, transcription, checked);
+        for replacement in replaced {
+            if !word_replacements.contains(&replacement) {
+                word_replacements.push(replacement);
+            }
+        }
+        text
+    } else {
+        transcription
+    };
+
+    // DanyWhere: what the speaker said after the instruction key; heard as
+    // nothing, the profile's prompts alone run.
+    let spoken_instruction = instruction
+        .as_ref()
+        .map(|instruction| instruction.text.as_str())
+        .filter(|text| !text.is_empty());
+    if let Some(heard) = spoken_instruction {
+        // The live overlay's line "Instruction: …".
+        ports.overlay(Overlay::Instruction {
+            text_ready: true,
+            heard: Some(heard.to_string()),
+        });
+    }
+    if snapshot.post_process {
+        ports.overlay(Overlay::Working {
+            working: Working::PostProcessing,
+            streaming: use_streaming_overlay,
+        });
+    }
+    // DanyWhere: the window this dictation started
+    // in, and what the word list replaced in it.
+    let window = ports.take_window();
+    let context_query = ContextQuery::for_new_dictation(
+        // Only "Send Context" sends context; every
+        // dictation keeps its window.
+        if snapshot.with_context {
+            window.clone()
+        } else {
+            None
+        },
+        word_replacements.clone(),
+    )
+    .with_misheard(candidates);
+    // DanyWhere: with the snapshot's settings; a
+    // change made meanwhile applies from the next
+    // dictation on.
+    let Some(processed) = complete_unless_cancelled(
+        ports.post_process(
+            &snapshot.settings,
+            &transcription,
+            spoken_instruction,
+            snapshot.post_process,
+            &context_query,
+        ),
+        || ports.cancelled(),
+    )
+    .await
+    else {
+        debug!("Transcription operation cancelled during output handling");
+        end_cancelled(ports);
+        return;
+    };
+
+    if ports.cancelled() {
+        debug!("Transcription operation cancelled before paste");
+        end_cancelled(ports);
+        return;
+    }
+
+    // Save to history if WAV was saved
+    let mut saved_entry_id: Option<i64> = None;
+    if wav_saved {
+        // DanyWhere: with the spoken instruction's text and audio, if
+        // any (`HistoryManager::save_entry_with_instruction`).
+        match ports.history().save_entry_with_instruction(
+            file_name,
+            transcription,
+            snapshot.post_process,
+            // DanyWhere: with its prompt's name, for the
+            // ✨ step (as a redo stores it).
+            processed.post_processed_text.clone().map(|text| {
+                crate::history_versions::PostProcessed {
+                    text,
+                    prompt: processed.post_process_prompt.clone(),
+                    prompt_name: processed.post_process_prompt_name.clone(),
+                    spoken_instruction: spoken_instruction.is_some(),
+                }
+            }),
+            crate::managers::history::TranscribedWith {
+                language,
+                model: model_id,
+            },
+            instruction,
+        ) {
+            // DanyWhere: its window and context, and
+            // what it was made with.
+            Ok(entry) => {
+                saved_entry_id = Some(entry.id);
+                ports.remember(snapshot.made_with(entry.id));
+                if let Err(err) = ports.history().record_entry_context(
+                    entry.id,
+                    window.as_ref(),
+                    &word_replacements,
+                    snapshot
+                        .with_context
+                        .then_some(processed.context_entry_ids.as_slice()),
+                ) {
+                    warn!("Failed to store the dictation's window: {}", err);
+                }
+            }
+            Err(err) => error!("Failed to save history entry: {}", err),
+        }
+    }
+
+    // The user's hook only changes what gets pasted;
+    // history above keeps the text as produced.
+    let Some(final_text) =
+        complete_unless_cancelled(ports.apply_hook(processed.final_text), || ports.cancelled())
+            .await
+    else {
+        debug!("Transcription operation cancelled during hook");
+        end_cancelled(ports);
+        return;
+    };
+
+    if final_text.is_empty() {
+        finish_without_text(ports, input_silent, sample_count, stop_time);
+    } else {
+        let delivery = Delivery {
+            // DanyWhere: this dictation's session, taken
+            // when its recording ended (the snapshot): the
+            // next session starts only after this task.
+            snapshot,
+            text: final_text,
+            entry_id: saved_entry_id,
+            post_process_failure: processed.post_process_failure.clone(),
+            effort_refused_by: processed.post_process_effort_refused_by.clone(),
+            sample_count,
+            stop_time,
+            paste_time: Instant::now(),
+            input_source,
+        };
+        // DanyWhere: the dictation profile's values from
+        // the snapshot, for the paste (the profile ends
+        // when this task returns) and for the paste
+        // thread's sounds and notices, which read them
+        // on that thread (`app_profiles::keep_values_here`).
+        let values_here = delivery.snapshot.values.clone();
+        let paste_ports = ports.clone();
+        // Off the main thread: paste sleeps between steps, and a
+        // paste into Handy's own windows needs the main thread free.
+        if let Err(e) = ports.spawn_paste(
+            values_here,
+            Box::new(move || deliver_dictation(&paste_ports, delivery)),
+        ) {
+            error!("Failed to start the paste thread: {:?}", e);
+            ports.overlay(Overlay::Hide);
+            ports.tray(TrayIconState::Idle);
+            ports.complete(TranscriptionOutcome::Failed, sample_count, stop_time);
+        }
+    }
+}
+
+/// What a dictation whose transcription failed keeps in History.
+struct TranscriptionFailure {
+    file_name: String,
+    wav_saved: bool,
+    /// What was transcribed anyway: the text before a spoken instruction
+    /// whose own transcription failed.
+    text: String,
+    /// DanyWhere: its spoken instruction, as far as it was heard, and its
+    /// audio, so "Transcribe Again" hears both.
+    instruction: Option<crate::managers::history::SpokenInstruction>,
+    sample_count: usize,
+    stop_time: Instant,
+}
+
+/// Ends a dictation whose transcription failed with `err`: an entry the user
+/// can transcribe again, and a notice; nothing is pasted, and the clipboard
+/// stays as it was. DanyWhere: when only its spoken instruction failed, the
+/// text before it is saved as the entry's transcript, so it is the last
+/// transcript that "Paste Last Transcript" and "Copy Last Transcript" reach
+/// (`delivery::latest_entry_and_text`), and the notice says so (user,
+/// 2026-11-26).
+fn fail_transcription<P: DictationPorts>(
+    ports: &P,
+    snapshot: &DictationSnapshot,
+    failure: TranscriptionFailure,
+    err: anyhow::Error,
+) {
+    if ports.cancelled() {
+        debug!("Transcription operation cancelled after transcription error");
+        end_cancelled(ports);
+        return;
+    }
+
+    error!("Transcription failed: {}", err);
+    // Save the entry, with what was transcribed anyway, so the user can
+    // retry. DanyWhere: saved before the notice, which says whether a text
+    // was kept.
+    let text_kept = !failure.text.trim().is_empty();
+    let saved = failure.wav_saved
+        && match ports.history().save_entry_with_instruction(
+            failure.file_name,
+            failure.text,
+            snapshot.post_process,
+            None,
+            Default::default(),
+            failure.instruction,
+        ) {
+            Ok(_) => true,
+            Err(save_err) => {
+                error!("Failed to save failed history entry: {}", save_err);
+                false
+            }
+        };
+    let code = if saved && text_kept {
+        log::info!("The text before the failed instruction waits for Paste Last Transcript.");
+        NoticeCode::InstructionTranscriptionFailed
+    } else {
+        NoticeCode::TranscriptionFailed
+    };
+    ports.raise(Notice::new(code, NoticeSource::Dictation).with_detail(err.to_string()));
+    ports.tray(TrayIconState::Idle);
+    ports.complete(
+        TranscriptionOutcome::Failed,
+        failure.sample_count,
+        failure.stop_time,
+    );
+}
+
+/// DanyWhere: the end of a dictation whose recording went on to a spoken
+/// instruction (`instruction::begin_instruction`): the recording stopped
+/// now is the instruction's section; the text before the cut has been
+/// transcribed in the background since. The instruction is transcribed
+/// after the text (the model is one), unless no speech was heard in it;
+/// then the dictation is post-processed with both, whatever its end said,
+/// unless the profile it ends with never post-processes (the snapshot,
+/// `DictationSnapshot::with_spoken_instruction`), saved with the
+/// instruction and its audio, and pasted with its end's "Append" text.
+/// An empty text with an instruction is post-processed too (F5 i); with
+/// neither, it ends as an empty dictation. When the profile it ends with
+/// transcribes otherwise, the text is transcribed again with its values.
+async fn finish_with_instruction<P: DictationPorts>(
+    ports: &P,
+    snapshot: DictationSnapshot,
+    binding_id: &str,
+    stop_time: Instant,
+    input_source: DictationInputSource,
+    part: instruction::InstructionPart,
+) {
+    let instruction::InstructionPart { key_id, text } = part;
+    log::info!("The dictation ends with its spoken instruction (key {key_id})");
+    let Some(said) = ports.stop_recording(binding_id) else {
+        debug!("No instruction retrieved from recording stop");
+        text.discard();
+        ports.cancel_stream();
+        end_cancelled(ports);
+        if !ports.cancelled() {
+            ports.complete(TranscriptionOutcome::Empty, 0, stop_time);
+        }
+        return;
+    };
+    if ports.cancelled() {
+        debug!("Transcription operation cancelled after recording stop");
+        text.discard();
+        ports.cancel_stream();
+        end_cancelled(ports);
+        return;
+    }
+
+    let dictated = text.recording().clone();
+    let input_silent = dictated.input_silent && said.input_silent;
+    let sample_count = dictated.samples.len() + said.samples.len();
+    let instruction_heard = said.speech && !said.samples.is_empty();
+    if dictated.samples.is_empty() && !instruction_heard {
+        debug!("Neither the dictation nor its spoken instruction has speech");
+        text.discard();
+        finish_without_text(ports, input_silent, 0, stop_time);
+        return;
+    }
+
+    // The text's recording, empty when nothing was said before the cut,
+    // so the entry can be transcribed again.
+    let (file_name, saving) = save_recording_in_background(ports, dictated.samples.clone());
+
+    let transcripts = if snapshot.transcribed_with_end_values {
+        // DanyWhere: the profile it ends with transcribes otherwise: the
+        // text again with its values, once the model is free.
+        if complete_unless_cancelled(text.wait(), || ports.cancelled())
+            .await
+            .is_none()
+        {
+            debug!("Transcription operation cancelled while the text was transcribed");
+            end_cancelled(ports);
+            return;
+        }
+        let transcription = if dictated.samples.is_empty() {
+            Ok(Transcription {
+                text: String::new(),
+                language: None,
+                word_replacements: Vec::new(),
+                model_id: None,
+                takes_vocabulary: false,
+            })
+        } else {
+            ports.transcribe(dictated.samples.clone(), true)
+        };
+        // ✕ or Escape meanwhile: the instruction isn't transcribed any more.
+        if ports.cancelled() {
+            debug!("Transcription operation cancelled while the text was transcribed again");
+            end_cancelled(ports);
+            return;
+        }
+        instruction::SplitTranscripts {
+            text: instruction::TranscribedSection {
+                recording: dictated,
+                transcription,
+            },
+            instruction: instruction::transcribe_instruction(ports, said, true),
+        }
+    } else {
+        // `None` inside: cancelled once the text was there, before the
+        // instruction was transcribed.
+        let Some(Some(transcripts)) =
+            complete_unless_cancelled(instruction::finish_split(ports, text, said, false), || {
+                ports.cancelled()
+            })
+            .await
+        else {
+            debug!("Transcription operation cancelled while the text was transcribed");
+            end_cancelled(ports);
+            return;
+        };
+        transcripts
+    };
+    // DanyWhere: done with the model, whether the instruction needed it or
+    // not: it unloads now if it unloads right after use, before the
+    // post-processing, as after a dictation without a cut.
+    ports.release_model();
+
+    let wav_saved = recording_saved(saving).await;
+    if ports.cancelled() {
+        debug!("Transcription operation cancelled before output handling");
+        end_cancelled(ports);
+        return;
+    }
+
+    let instruction::SplitTranscripts {
+        text: dictation,
+        instruction: said,
+    } = transcripts;
+    // Its audio for History only when speech was heard in it: without the
+    // detection, "Transcribe Again" would make a sentence up from it.
+    let instruction_audio = if said.recording.speech {
+        said.recording.samples
+    } else {
+        Vec::new()
+    };
+    let heard = said
+        .transcription
+        .map(|heard| heard.text.trim().to_string());
+    let spoken = |text: String| crate::managers::history::SpokenInstruction {
+        text,
+        samples: instruction_audio.clone(),
+    };
+    match (dictation.transcription, heard) {
+        (Ok(transcription), Ok(heard)) => {
+            debug!(
+                "The dictation and its spoken instruction were transcribed: '{}' / '{}'",
+                utils::redact_text(&transcription.text),
+                utils::redact_text(&heard)
+            );
+            finish_transcribed(
+                ports,
+                snapshot,
+                input_source,
+                Transcribed {
+                    file_name,
+                    wav_saved,
+                    transcription,
+                    instruction: Some(spoken(heard)),
+                    input_silent,
+                    sample_count,
+                    stop_time,
+                },
+            )
+            .await;
+        }
+        (Ok(transcription), Err(err)) => fail_transcription(
+            ports,
+            &snapshot,
+            TranscriptionFailure {
+                file_name,
+                wav_saved,
+                text: transcription.text,
+                instruction: Some(spoken(String::new())),
+                sample_count,
+                stop_time,
+            },
+            err,
+        ),
+        (Err(err), heard) => fail_transcription(
+            ports,
+            &snapshot,
+            TranscriptionFailure {
+                file_name,
+                wav_saved,
+                text: String::new(),
+                instruction: Some(spoken(heard.unwrap_or_default())),
+                sample_count,
+                stop_time,
+            },
+            err,
+        ),
     }
 }
 
@@ -940,7 +1287,11 @@ mod tests {
     use crate::dictation_context::{CapturedWindow, WordReplacement};
     use crate::dictation_key_inserts::ClipboardReason;
     use crate::dictation_snapshot::{build, DictationSnapshot, SnapshotInputs};
-    use crate::end_keys::{EndChoice, EndKey, POST_PROCESS_ID, START_BINDINGS};
+    use crate::end_keys::{EndChoice, EndKey, POST_PROCESS_ID};
+    use crate::start_keys::FACTORY_START_ID;
+
+    /// The factory start shortcut as registered (`start_keys`).
+    const START: &str = "start_key:start";
     use crate::notices::{Notice, NoticeCode, NoticeSource};
     use crate::post_process_failure::{FailureReason, PostProcessFailure};
     use crate::profile_redo::{ForInsert, Working};
@@ -975,7 +1326,7 @@ mod tests {
         snapshot_of(
             settings,
             None,
-            EndChoice::Start(START_BINDINGS[0].to_string()),
+            EndChoice::Start(FACTORY_START_ID.to_string()),
         )
     }
 
@@ -992,7 +1343,7 @@ mod tests {
             stored: &stored,
             own_profile: own,
             end: &end,
-            binding_id: START_BINDINGS[0],
+            binding_id: START,
             transcribed_with_end_values: false,
             streaming: false,
             session: 1,
@@ -1000,9 +1351,10 @@ mod tests {
         })
     }
 
-    /// Ended with the post-processing end shortcut.
+    /// Ended with the end shortcut `post_process` after an instruction key,
+    /// so the dictation post-processes (variant b, 2026-11-26).
     fn post_processing() -> EndChoice {
-        EndChoice::Key(POST_PROCESS_ID.to_string())
+        EndChoice::Key(POST_PROCESS_ID.to_string()).with_instruction_key()
     }
 
     /// `settings` with end shortcut `id` appending `append_text` and
@@ -1024,10 +1376,10 @@ mod tests {
     }
 
     /// Settings that post-process with the library's first prompt at
-    /// `base_url`, without structured output; the switch is on.
+    /// `base_url`, without structured output, after an instruction key.
     fn post_process_settings(base_url: &str) -> AppSettings {
         let mut settings = get_default_settings();
-        settings.post_process_enabled = true;
+        settings.post_process_mode = crate::settings::PostProcessMode::WithInstructionKey;
         let provider = settings
             .post_process_providers
             .iter_mut()
@@ -1151,9 +1503,10 @@ mod tests {
         tauri::async_runtime::block_on(finish_dictation(
             Dictation {
                 snapshot,
-                binding_id: START_BINDINGS[0].to_string(),
+                binding_id: START.to_string(),
                 stop_time: Instant::now(),
                 input_source,
+                instruction: None,
             },
             ports.clone(),
         ));
@@ -1502,13 +1855,13 @@ mod tests {
 
     #[test]
     fn with_post_processing_off_the_post_processing_end_delivers_the_transcript() {
-        // As the defaults come: the switch is off and post-processing isn't
-        // set up. The built-in end with post-processing (with context)
-        // gives the transcript with its "Append" text, no notice, and an
-        // entry that wasn't post-processed.
-        let factory = with_end(get_default_settings(), POST_PROCESS_ID, " (sent)", true);
-        assert!(!factory.post_process_enabled);
-        // Set up, with the switch off: nothing goes to the provider.
+        // A profile that never post-processes, as it comes otherwise: even
+        // after an instruction key the end (with context) gives the
+        // transcript with its "Append" text, no notice, and an entry that
+        // wasn't post-processed.
+        let mut factory = with_end(get_default_settings(), POST_PROCESS_ID, " (sent)", true);
+        factory.post_process_mode = crate::settings::PostProcessMode::Never;
+        // Set up, never post-processing: nothing goes to the provider.
         let (url, requests) = llm_server(vec![("200 OK", POLISHED)]);
         let mut set_up = with_end(
             post_process_settings(&url),
@@ -1516,7 +1869,7 @@ mod tests {
             " (sent)",
             true,
         );
-        set_up.post_process_enabled = false;
+        set_up.post_process_mode = crate::settings::PostProcessMode::Never;
         for (case, settings) in [("factory", factory), ("set up", set_up)] {
             let snapshot = snapshot_of(settings, None, post_processing());
             let values = snapshot.values.clone();
@@ -1965,6 +2318,7 @@ mod tests {
             Some(Recording {
                 samples: Vec::new(),
                 input_silent: false,
+                speech: false,
             }),
         ] {
             let ports = FakePorts::new(Script {
@@ -1994,6 +2348,7 @@ mod tests {
             recording: Some(Recording {
                 samples: vec![0.0; SAMPLES],
                 input_silent: true,
+                speech: false,
             }),
             transcription: Ok(String::new()),
             ..Script::default()
@@ -2014,6 +2369,7 @@ mod tests {
             recording: Some(Recording {
                 samples: Vec::new(),
                 input_silent: true,
+                speech: false,
             }),
             ..Script::default()
         });
@@ -2044,11 +2400,11 @@ mod tests {
                     samples: SAMPLES,
                     load_end_model: false,
                 },
+                Event::HistoryAdded(1),
                 Event::Raise(
                     notice(NoticeCode::TranscriptionFailed)
                         .with_detail("the model crashed".to_string())
                 ),
-                Event::HistoryAdded(1),
                 Event::Tray(TrayIconState::Idle),
                 Event::Complete(TranscriptionOutcome::Failed, SAMPLES),
                 Event::Finished,
@@ -2616,7 +2972,7 @@ mod tests {
         let snapshot = snapshot_of(
             stored,
             Some(("mail".to_string(), mail.clone())),
-            EndChoice::Start(START_BINDINGS[0].to_string()),
+            EndChoice::Start(FACTORY_START_ID.to_string()),
         );
         let ports = FakePorts::new(Script::default());
         finish(&ports, snapshot);
@@ -2674,7 +3030,7 @@ mod tests {
             stored: &stored,
             own_profile: None,
             end: &post_processing(),
-            binding_id: START_BINDINGS[0],
+            binding_id: START,
             transcribed_with_end_values: true,
             streaming: true,
             session: 1,
@@ -2713,7 +3069,6 @@ mod tests {
     // once the profile is settled: snapshot, `stopped`, `finish_dictation`
     // on the async runtime.
 
-    use crate::settings::ShortcutActivation;
     use crate::transcription_coordinator::{
         EffectRunner, RecordingPhase, TranscriptionCoordinator,
     };
@@ -2756,6 +3111,7 @@ mod tests {
                     stop_time: Instant::now(),
                     // As `actions::stop_transcription` takes it.
                     input_source: self.hold.take(),
+                    instruction: None,
                 },
                 self.ports.clone(),
             ));
@@ -2765,9 +3121,17 @@ mod tests {
 
         fn recording_locked_changed(&mut self, _locked: bool) {}
 
-        fn keys_end(&mut self, binding_id: &str) -> Option<String> {
+        fn discard(&mut self, _binding_id: &str) {}
+
+        /// The combination's roles, as a start shortcut alone: these tests
+        /// press it as a toggle.
+        fn roles(&mut self, binding_id: &str) -> crate::start_keys::Roles {
             let values = ProfileValues::from_settings(&self.settings);
-            crate::end_keys::end_with_keys(&values, binding_id).map(|end| end.id.clone())
+            let taken = crate::instruction_keys::taken_here(&self.settings);
+            crate::start_keys::Roles {
+                hold: None,
+                ..crate::start_keys::roles_of(&values, binding_id, taken)
+            }
         }
 
         /// Drops the recording's own hold, as the app does.
@@ -2788,13 +3152,7 @@ mod tests {
     }
 
     fn toggle_press(coordinator: &TranscriptionCoordinator) {
-        coordinator.send_input(
-            START_BINDINGS[0],
-            "ctrl+space",
-            true,
-            ShortcutActivation::Toggle,
-            Duration::ZERO,
-        );
+        coordinator.send_input(START, "ctrl+space", true, Duration::ZERO);
     }
 
     #[test]
@@ -2846,15 +3204,16 @@ mod tests {
     }
 
     #[test]
-    fn the_post_processing_end_shortcut_post_processes_a_plain_start() {
+    fn a_profile_that_always_post_processes_post_processes_an_end_shortcuts_dictation() {
         let (url, requests) = llm_server(vec![("200 OK", POLISHED)]);
         let ports = FakePorts::new(Script::default());
-        let settings = with_end(
+        let mut settings = with_end(
             post_process_settings(&url),
             POST_PROCESS_ID,
             " (sent)",
             false,
         );
+        settings.post_process_mode = crate::settings::PostProcessMode::Always;
         let coordinator = coordinator_with(&ports, settings);
         toggle_press(&coordinator);
         coordinator.finish_with_end_key(POST_PROCESS_ID);
@@ -2881,19 +3240,31 @@ mod tests {
     }
 
     #[test]
-    fn with_post_processing_off_no_shortcut_post_processes() {
-        // Post-processing is set up but switched off: neither the end
-        // shortcut with post-processing nor the second start shortcut
-        // toggled from outside (`--toggle-post-process`) sends the text to
-        // the provider.
+    fn never_post_processing_no_shortcut_post_processes() {
+        // Post-processing is set up but the profile never post-processes:
+        // neither an end shortcut nor the toggle from outside
+        // (`--toggle-post-process`, as after an instruction key) sends the
+        // text to the provider.
         let (url, requests) = llm_server(vec![("200 OK", POLISHED), ("200 OK", POLISHED)]);
         let mut settings = with_end(
-            post_process_settings(&url),
-            POST_PROCESS_ID,
+            with_end(
+                post_process_settings(&url),
+                POST_PROCESS_ID,
+                " (sent)",
+                false,
+            ),
+            crate::end_keys::PLAIN_ID,
             " (sent)",
             false,
         );
-        settings.post_process_enabled = false;
+        settings.post_process_mode = crate::settings::PostProcessMode::Never;
+        // `--toggle-post-process` ends as a press of the first start
+        // shortcut (`start_keys::remote_toggle`): the end with its
+        // combination, which appends the same.
+        let (remote_binding, remote_end) =
+            crate::start_keys::remote_toggle(&ProfileValues::from_settings(&settings), true)
+                .expect("a start shortcut");
+        assert!(remote_end.after_instruction_key());
 
         let ports = FakePorts::new(Script::default());
         let coordinator = coordinator_with(&ports, settings.clone());
@@ -2904,10 +3275,14 @@ mod tests {
 
         let ports = FakePorts::new(Script::default());
         let coordinator = coordinator_with(&ports, settings);
-        coordinator.send_external_input(START_BINDINGS[1], "--toggle-post-process");
+        coordinator.send_external_input(
+            &remote_binding,
+            "--toggle-post-process",
+            remote_end.clone(),
+        );
         // Longer than the coordinator's debounce, so the second one counts.
         std::thread::sleep(Duration::from_millis(60));
-        coordinator.send_external_input(START_BINDINGS[1], "--toggle-post-process");
+        coordinator.send_external_input(&remote_binding, "--toggle-post-process", remote_end);
         assert!(ports.wait_finished(Duration::from_secs(10)));
         let toggled = ports.take_events();
 
@@ -3399,6 +3774,7 @@ mod tests {
             recording: Some(Recording {
                 samples: vec![0.0; SAMPLES],
                 input_silent: true,
+                speech: false,
             }),
             transcription: Ok(String::new()),
             ..Script::default()
@@ -3436,6 +3812,7 @@ mod tests {
                     recording: Some(Recording {
                         samples: Vec::new(),
                         input_silent: false,
+                        speech: false,
                     }),
                     ..Script::default()
                 },
@@ -3670,4 +4047,8 @@ mod tests {
             ]
         );
     }
+
+    // DanyWhere: a dictation with a spoken instruction, as a whole
+    // (`tests/instruction_flow.rs`).
+    mod instruction_flow;
 }

@@ -96,14 +96,50 @@ check("every name is an English string without placeholders", () => {
   }
 });
 
-check("the second start shortcut is on General, under the first", () => {
-  assert.equal(
-    pageOfValue("bindings", "transcribe_with_post_process"),
-    "general",
-  );
-  assert.equal(pageOfValue("bindings", "transcribe"), "general");
-  assert.equal(pageOfValue("bindings"), "general");
-});
+check(
+  "start, hold and end shortcuts are on General, the old model is gone",
+  () => {
+    assert.equal(pageOfValue("start_keys"), "general");
+    assert.equal(pageOfValue("hold_keys"), "general");
+    assert.equal(pageOfValue("end_keys"), "general");
+    assert.equal(pageOfValue("bindings", "paste_last_transcript"), "general");
+    assert.equal(pageOfValue("bindings"), "general");
+    // The lists are large: under the defaults a deviating profile shows a
+    // summary with "Open in …".
+    assert.equal(fieldInfo("start_keys")?.large, true);
+    assert.equal(fieldInfo("hold_keys")?.large, true);
+    assert.equal(lookup(fieldInfo("start_keys")!.label), "Start Shortcuts");
+    assert.equal(lookup(fieldInfo("hold_keys")!.label), "Hold Shortcuts");
+    assert.equal(fieldInfo("shortcut_activation"), null);
+    assert.equal(fieldInfo("hold_ends"), null);
+  },
+);
+
+// The fourth list of the same shape, and the post-processing mode per
+// profile that replaces the switch (qa 2026-11-26_1810, "Schnittstelle
+// Phase 2").
+check(
+  "instruction shortcuts are on General, the post-processing mode on Advanced",
+  () => {
+    assert.equal(pageOfValue("instruction_keys"), "general");
+    assert.equal(fieldInfo("instruction_keys")?.large, true);
+    assert.equal(
+      lookup(fieldInfo("instruction_keys")!.label),
+      "Instruction Shortcuts",
+    );
+    assert.equal(pageOfValue("post_process_mode"), "advanced");
+    // The name the switch had (docs/manual/STYLE.md, glossary).
+    assert.equal(
+      lookup(fieldInfo("post_process_mode")!.label),
+      "Post Processing",
+    );
+    assert.equal(
+      lookup("settings.postProcessing.mode.options.withInstructionKey"),
+      "With Instruction Shortcut",
+    );
+    assert.equal(fieldInfo("post_process_enabled"), null);
+  },
+);
 
 check("fields by page", () => {
   assert.equal(pageOfValue("selected_model"), "models");
@@ -127,8 +163,8 @@ check("page reset: whole fields, and entries placed apart one by one", () => {
   const own = [
     { field: "paste_method" },
     { field: "selected_model" },
-    { field: "bindings", entry: "transcribe" },
-    { field: "bindings", entry: "transcribe_with_post_process" },
+    { field: "bindings", entry: "paste_last_transcript" },
+    { field: "bindings", entry: "copy_last_transcript" },
     { field: "word_lists", entry: "a" },
     { field: "word_lists", entry: "b", off: true },
   ];

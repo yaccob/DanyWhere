@@ -4,7 +4,7 @@
 ' src/i18n/locales/de/translation.json. The texts go into an HTML label:
 ' write & as &amp; and < as &lt;, and break a line with $br.
 !include graphviz.iuml
-' The columns: the post-processing switch, the end shortcuts, the rest.
+' The columns: the post-processing choice, the end shortcuts, the rest.
 !$hPost = "Nachbearbeitung"
 !$hEnd = "Endtasten"
 !$hRest = "Alles andere"
@@ -20,13 +20,13 @@
 !$tOwn = "eigen"
 !$tAdded = "eigen, neu"
 !$tOff = "aus"
-' Values: the switch, and end shortcuts a new Mac installation brings,
-' plus one of the profile's own.
-!$on = "an"
-!$off = "aus"
-!$space = "Direkt · Leerzeichen"
-!$enter = "Direkt · Enter senden"
-!$paragraph = "Direkt · Absatz"
+' Values: the post-processing choice, and end shortcuts a new Mac
+' installation brings, plus one of the profile's own.
+!$on = "Mit Anweisungstaste"
+!$off = "Nie"
+!$space = "Leerzeichen"
+!$enter = "Enter senden"
+!$paragraph = "Absatz"
 !$reply = "Antworten"
 !$restList = "Sprachmodell," + $br + "Mikrofon," + $br + "Einfügemethode, …"
 !$caption = "Ein Profil baut auf den Grundeinstellungen auf: Seine eigenen Werte gelten," + $br + "alles andere kommt aus den Grundeinstellungen. Profile übernehmen nichts" + $br + "voneinander."

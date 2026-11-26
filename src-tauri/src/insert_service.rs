@@ -74,16 +74,42 @@ impl ServiceKind {
             .find(|kind| kind.message() == message)
     }
 
-    /// The dictation shortcut whose service this is, if any. Ending a
-    /// recording through the service does what a press of that shortcut
-    /// would: the post-process service adds post-processing.
-    pub fn binding_id(self) -> Option<&'static str> {
+    /// Whether this is an "end dictation" service and, if so, whether it
+    /// post-processes: it stands for the first hold shortcut with a
+    /// combination of its own (else the first start shortcut,
+    /// `start_keys::service_binding`), and ends as after an instruction
+    /// shortcut without an instruction (variant b, 2026-11-26). Only so far
+    /// that the mode without Accessibility (parked) still ends as before.
+    pub fn post_processes(self) -> Option<bool> {
         match self {
             ServiceKind::InsertLastDictation => None,
-            ServiceKind::EndDictation => Some("transcribe"),
-            ServiceKind::EndDictationWithPostProcess => Some("transcribe_with_post_process"),
+            ServiceKind::EndDictation => Some(false),
+            ServiceKind::EndDictationWithPostProcess => Some(true),
         }
     }
+}
+
+/// The two "end dictation" services with the binding each stands for in
+/// the profile that applies in `settings` (`start_keys::service_binding`),
+/// if any.
+pub fn service_bindings(
+    settings: &crate::settings::AppSettings,
+) -> Vec<(ServiceKind, Option<crate::settings::ShortcutBinding>)> {
+    let frontmost = crate::app_profiles::frontmost_if_choosing(settings);
+    let (_, values) = crate::app_profiles::profile_now(settings, frontmost.as_deref());
+    [
+        ServiceKind::EndDictation,
+        ServiceKind::EndDictationWithPostProcess,
+    ]
+    .into_iter()
+    .map(|kind| {
+        let post_process = kind == ServiceKind::EndDictationWithPostProcess;
+        (
+            kind,
+            crate::start_keys::service_binding(&values, post_process),
+        )
+    })
+    .collect()
 }
 
 /// What the service hands back to the app that called it.
@@ -455,27 +481,24 @@ fn function_key_character(key: &str) -> Option<char> {
 }
 
 /// The key equivalents the two "end dictation" services should have: the
-/// dictation shortcuts' own when `enabled` (the setting "Dictation shortcut
+/// combinations of the keys they stand for (`services`, from
+/// [`service_bindings`]) when `enabled` (the setting "Dictation shortcut
 /// also inserts"), else none. A shortcut that can't be a key equivalent, or
-/// isn't set, leaves its service without one.
+/// isn't there, leaves its service without one.
 pub fn dictation_service_shortcuts(
-    bindings: &std::collections::HashMap<String, crate::settings::ShortcutBinding>,
+    services: &[(ServiceKind, Option<crate::settings::ShortcutBinding>)],
     enabled: bool,
 ) -> Vec<(ServiceKind, Option<String>)> {
-    [
-        ServiceKind::EndDictation,
-        ServiceKind::EndDictationWithPostProcess,
-    ]
-    .into_iter()
-    .map(|kind| {
-        let key_equivalent = kind
-            .binding_id()
-            .filter(|_| enabled)
-            .and_then(|id| bindings.get(id))
-            .and_then(|binding| dictation_key_equivalent(&binding.current_binding).ok());
-        (kind, key_equivalent)
-    })
-    .collect()
+    services
+        .iter()
+        .map(|(kind, binding)| {
+            let key_equivalent = binding
+                .as_ref()
+                .filter(|_| enabled)
+                .and_then(|binding| dictation_key_equivalent(&binding.current_binding).ok());
+            (*kind, key_equivalent)
+        })
+        .collect()
 }
 
 /// The id of "Paste Last Transcript".
@@ -785,15 +808,16 @@ fn answer_call(app: &tauri::AppHandle, pump: impl FnMut()) -> Option<String> {
 }
 
 /// Answers a call made during a dictation, as `plan` says: ends the
-/// recording if needed (as a press of the shortcut `finish_as` would, see
-/// `ServiceKind::binding_id`), then waits for its text and returns it. `pump` lets
-/// the main thread's other work run for a moment between two checks; the
-/// service is answered on the main thread, which the dictation may need.
+/// recording if needed (with `finish_as`, as the key the service stands for
+/// would, `start_keys::service_end`), then waits for its text and returns
+/// it. `pump` lets the main thread's other work run for a moment between
+/// two checks; the service is answered on the main thread, which the
+/// dictation may need.
 #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 fn answer_waiting_call(
     app: &tauri::AppHandle,
     plan: CallPlan,
-    finish_as: Option<&'static str>,
+    finish_as: Option<crate::end_keys::EndChoice>,
     mut pump: impl FnMut(),
 ) -> Option<String> {
     use tauri::Manager;
@@ -803,13 +827,12 @@ fn answer_waiting_call(
         return None;
     }
     if plan == CallPlan::StopAndWait {
+        log::info!(
+            "Insert Last Dictation: ending the recording ({finish_as:?}) and waiting for its text."
+        );
         if let Some(coordinator) = app.try_state::<crate::TranscriptionCoordinator>() {
             coordinator.finish_recording_as(finish_as);
         }
-        log::info!(
-            "Insert Last Dictation: ending the recording (service of {}) and waiting for its text.",
-            finish_as.unwrap_or("no shortcut")
-        );
     } else {
         log::info!("Insert Last Dictation: waiting for the dictation's text.");
     }
@@ -864,22 +887,28 @@ fn answer_service(app: &tauri::AppHandle, kind: ServiceKind, pump: impl FnMut())
         crate::delivery::dictation_target(&settings, crate::delivery::INSERT_SERVICE_AVAILABLE)
             == crate::delivery::DictationTarget::InsertService;
     let phase = crate::tray::dictation_phase(app);
-    let Some(binding_id) = kind.binding_id() else {
+    let Some(post_process) = kind.post_processes() else {
         return match plan_call(waits_for_service, phase) {
             CallPlan::AnswerNow => answer_call(app, pump),
             plan => answer_waiting_call(app, plan, None, pump),
         };
     };
+    let frontmost = crate::app_profiles::frontmost_if_choosing(&settings);
+    let (_, values) = crate::app_profiles::profile_now(&settings, frontmost.as_deref());
+    let end = crate::start_keys::service_end(&values, post_process);
     match plan_end_call(
         waits_for_service,
         phase,
         settings.dictation_service_when_idle,
     ) {
-        EndCallPlan::StopAndWait => {
-            answer_waiting_call(app, CallPlan::StopAndWait, Some(binding_id), pump)
-        }
-        EndCallPlan::Wait => answer_waiting_call(app, CallPlan::Wait, Some(binding_id), pump),
+        EndCallPlan::StopAndWait => answer_waiting_call(app, CallPlan::StopAndWait, end, pump),
+        EndCallPlan::Wait => answer_waiting_call(app, CallPlan::Wait, end, pump),
         EndCallPlan::StartRecording => {
+            let Some(binding_id) = crate::start_keys::service_start_binding(&values, post_process)
+            else {
+                log::info!("{kind:?}: called while nothing records, but no key to start with.");
+                return None;
+            };
             log::info!("{kind:?}: called while nothing records; starting a recording.");
             start_recording_when_ready(app, binding_id);
             None
@@ -900,7 +929,7 @@ const START_WHEN_READY: std::time::Duration = std::time::Duration::from_secs(15)
 /// coordinator if DanyWhere is still starting, and gives up with a log line
 /// after [`START_WHEN_READY`].
 #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
-fn start_recording_when_ready(app: &tauri::AppHandle, binding_id: &'static str) {
+fn start_recording_when_ready(app: &tauri::AppHandle, binding_id: String) {
     use tauri::Manager;
 
     let app = app.clone();
@@ -910,7 +939,7 @@ fn start_recording_when_ready(app: &tauri::AppHandle, binding_id: &'static str) 
             let started = std::time::Instant::now();
             loop {
                 if let Some(coordinator) = app.try_state::<crate::TranscriptionCoordinator>() {
-                    coordinator.start_locked_recording(binding_id);
+                    coordinator.start_locked_recording(&binding_id);
                     log::info!(
                         "Started a recording for '{binding_id}' through its service after {:?}.",
                         started.elapsed()
@@ -1148,7 +1177,9 @@ mod macos {
         let enabled = dictation_services_take_shortcuts(&settings);
         let mut wrote_shortcut = false;
         let mut has_shortcuts = false;
-        for (kind, wanted) in dictation_service_shortcuts(&settings.bindings, enabled) {
+        for (kind, wanted) in
+            dictation_service_shortcuts(&super::service_bindings(&settings), enabled)
+        {
             let Some(key) = status_key_for(app, kind) else {
                 continue;
             };
@@ -1823,12 +1854,79 @@ mod tests {
 
     #[test]
     fn each_end_service_belongs_to_its_dictation_shortcut() {
-        assert_eq!(ServiceKind::EndDictation.binding_id(), Some("transcribe"));
+        assert_eq!(ServiceKind::EndDictation.post_processes(), Some(false));
         assert_eq!(
-            ServiceKind::EndDictationWithPostProcess.binding_id(),
-            Some("transcribe_with_post_process")
+            ServiceKind::EndDictationWithPostProcess.post_processes(),
+            Some(true)
         );
-        assert_eq!(ServiceKind::InsertLastDictation.binding_id(), None);
+        assert_eq!(ServiceKind::InsertLastDictation.post_processes(), None);
+    }
+
+    #[test]
+    fn the_end_services_stand_for_the_first_start_and_post_processing_hold_shortcut() {
+        let settings = crate::settings::get_default_settings();
+        let services = service_bindings(&settings);
+        let ids: Vec<(ServiceKind, Option<String>)> = services
+            .into_iter()
+            .map(|(kind, binding)| (kind, binding.map(|b| b.id)))
+            .collect();
+        assert_eq!(
+            ids,
+            vec![
+                (
+                    ServiceKind::EndDictation,
+                    Some("start_key:start".to_string())
+                ),
+                (
+                    ServiceKind::EndDictationWithPostProcess,
+                    Some("hold_key:hold_no_space".to_string())
+                ),
+            ]
+        );
+    }
+
+    /// Variant b (user, 2026-11-26): the post-processing service keeps the
+    /// second factory combination, the first hold shortcut with one of its
+    /// own, whatever the profile's mode (later for NoAX).
+    #[test]
+    fn the_post_processing_service_stands_for_the_first_hold_shortcut_of_its_own() {
+        let mut settings = crate::settings::get_default_settings();
+        settings.post_process_mode = crate::settings::PostProcessMode::Never;
+        let services = service_bindings(&settings);
+        let ids: Vec<(ServiceKind, Option<String>)> = services
+            .into_iter()
+            .map(|(kind, binding)| (kind, binding.map(|b| b.id)))
+            .collect();
+        assert_eq!(
+            ids,
+            vec![
+                (
+                    ServiceKind::EndDictation,
+                    Some("start_key:start".to_string())
+                ),
+                (
+                    ServiceKind::EndDictationWithPostProcess,
+                    Some(format!("hold_key:{}", crate::start_keys::HOLD_NO_SPACE_ID))
+                ),
+            ]
+        );
+    }
+
+    /// The two end services standing for `plain` and `post`.
+    fn services(
+        plain: &str,
+        post: &str,
+    ) -> Vec<(ServiceKind, Option<crate::settings::ShortcutBinding>)> {
+        vec![
+            (
+                ServiceKind::EndDictation,
+                Some(binding("start_key:start", plain).1),
+            ),
+            (
+                ServiceKind::EndDictationWithPostProcess,
+                Some(binding("hold_key:hold_post", post).1),
+            ),
+        ]
     }
 
     #[test]
@@ -1956,13 +2054,7 @@ mod tests {
 
     #[test]
     fn the_dictation_services_take_the_dictation_shortcuts() {
-        // A context shortcut left in old settings gives no service a shortcut.
-        let bindings = std::collections::HashMap::from([
-            binding("transcribe", "ctrl+space"),
-            binding("transcribe_with_post_process", "ctrl+shift+space"),
-            binding("transcribe_with_context", "ctrl+shift+command+space"),
-            binding("paste_last_transcript", "ctrl+shift+v"),
-        ]);
+        let bindings = services("ctrl+space", "ctrl+shift+space");
         assert_eq!(
             dictation_service_shortcuts(&bindings, true),
             vec![
@@ -1978,10 +2070,7 @@ mod tests {
     #[test]
     fn option_only_dictation_shortcuts_give_their_services_none() {
         // The defaults up to 0.1.5: the press never reached the service.
-        let bindings = std::collections::HashMap::from([
-            binding("transcribe", "option+space"),
-            binding("transcribe_with_post_process", "option+shift+space"),
-        ]);
+        let bindings = services("option+space", "option+shift+space");
         assert_eq!(
             dictation_service_shortcuts(&bindings, true),
             vec![
@@ -1993,10 +2082,7 @@ mod tests {
 
     #[test]
     fn the_dictation_services_have_no_shortcut_when_the_option_is_off() {
-        let bindings = std::collections::HashMap::from([
-            binding("transcribe", "option+space"),
-            binding("transcribe_with_post_process", "option+shift+space"),
-        ]);
+        let bindings = services("ctrl+space", "ctrl+shift+space");
         assert_eq!(
             dictation_service_shortcuts(&bindings, false),
             vec![
@@ -2008,10 +2094,7 @@ mod tests {
 
     #[test]
     fn a_shortcut_that_cant_be_a_key_equivalent_leaves_its_service_without_one() {
-        let bindings = std::collections::HashMap::from([
-            binding("transcribe", "ctrl+backspace"),
-            binding("transcribe_with_post_process", "ctrl+shift+space"),
-        ]);
+        let bindings = services("ctrl+backspace", "ctrl+shift+space");
         assert_eq!(
             dictation_service_shortcuts(&bindings, true),
             vec![

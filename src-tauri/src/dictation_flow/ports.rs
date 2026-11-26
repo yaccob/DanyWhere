@@ -34,6 +34,11 @@ pub struct Recording {
     /// The microphone sent only digital silence (muted, or the wrong
     /// default device).
     pub input_silent: bool,
+    /// DanyWhere: the voice activity detection heard speech in it, not only
+    /// the hangover of speech before a cut (`RecordedSection::speech`). A
+    /// spoken instruction without speech isn't transcribed: Whisper makes a
+    /// sentence up from silence, and the model would follow it.
+    pub speech: bool,
 }
 
 /// The recording and its transcription.
@@ -48,17 +53,49 @@ pub trait Transcribe {
     /// otherwise a batch run. `load_end_model`: first load the model of the
     /// profile the dictation ends with (`app_profiles::settle_dictation`).
     fn transcribe(&self, samples: Vec<f32>, load_end_model: bool) -> anyhow::Result<Transcription>;
+    /// DanyWhere: cuts the recording of `binding_id` in two while the
+    /// microphone runs, for a spoken instruction
+    /// (`AudioRecordingManager::split_recording`): hands over the text
+    /// section; `stop_recording` later gives the instruction. No sound, no
+    /// change to the mute. `None`: no recording of `binding_id` to cut.
+    fn split_recording(&self, binding_id: &str) -> Option<Recording>;
+    /// DanyWhere: transcribes the text section of a cut recording as
+    /// [`transcribe`](Self::transcribe) does (the live decode's result when
+    /// it has one, which ended at the cut), but keeps the model loaded: the
+    /// instruction is transcribed with it afterwards.
+    fn transcribe_text_section(&self, samples: Vec<f32>) -> anyhow::Result<Transcription>;
+    /// DanyWhere: transcribes a spoken instruction in a batch run of its
+    /// own, never from a live decode: the dictation's model, language
+    /// setting, word lists and filler words; a language set to automatic is
+    /// detected from the instruction itself. `load_end_model` as for
+    /// [`transcribe`](Self::transcribe).
+    fn transcribe_instruction(
+        &self,
+        samples: Vec<f32>,
+        load_end_model: bool,
+    ) -> anyhow::Result<Transcription>;
+    /// DanyWhere: the dictation is done with the speech model (both sections
+    /// of a cut recording are transcribed, or one wasn't needed): unloads it
+    /// if it unloads right after use, as [`transcribe`](Self::transcribe)
+    /// does after a dictation without a cut
+    /// (`TranscriptionManager::maybe_unload_immediately`).
+    fn release_model(&self);
 }
 
 /// Post-processing.
 pub trait PostProcess {
     /// The transcription after post-processing with `settings`, if
     /// `post_process` asks for it, with earlier dictations as `context`
-    /// says (`actions::process_transcription_with_settings`).
+    /// says (`actions::process_transcription_with_settings`). DanyWhere:
+    /// `spoken_instruction` is what the speaker said after the instruction
+    /// key, for this one dictation; it goes along only when `post_process`
+    /// asks for post-processing (`dictation_snapshot::wants_post_processing`:
+    /// never in a profile set to "never").
     fn post_process(
         &self,
         settings: &AppSettings,
         transcription: &str,
+        spoken_instruction: Option<&str>,
         post_process: bool,
         context: &ContextQuery,
     ) -> impl Future<Output = ProcessedTranscription> + Send;
@@ -153,6 +190,15 @@ pub enum Overlay {
         streaming: bool,
     },
     Hide,
+    /// DanyWhere: the recording went on to a spoken instruction
+    /// (`instruction::begin_instruction`): the pill says "Instruction" while
+    /// the waveform goes on; `text_ready`: the text's transcription has
+    /// finished (a check mark); `heard`: the instruction as heard, once it
+    /// is (the line under the live overlay's text).
+    Instruction {
+        text_ready: bool,
+        heard: Option<String>,
+    },
     /// After a dictation: where the text waits when it was not pasted, and
     /// for how long; `None`: nothing (`delivery::overlay_after_dictation`).
     AfterDictation(Option<(DictationNotice, Duration)>),

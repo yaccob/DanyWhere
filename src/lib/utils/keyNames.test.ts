@@ -61,7 +61,8 @@ check("macOS writes the modifier symbols together", () => {
 });
 
 // DanyWhere (user, 2026-11-24): ⌥ before ⌃, so the first symbol already
-// tells an end with post-processing (⌥⌃↩); the rest as macOS's menus do.
+// told an end with post-processing (⌥⌃↩), and since 2026-11-26 one that
+// doesn't send (⌥↩); the rest as macOS's menus do.
 check("macOS puts ⌥ first, then ⌃⇧⌘ as its menus do", () => {
   assert.equal(shown("ctrl+option+return", "macos", deT), "⌥⌃↩");
   assert.equal(shown("command+shift+option+ctrl+k", "macos", deT), "⌥⌃⇧⌘K");

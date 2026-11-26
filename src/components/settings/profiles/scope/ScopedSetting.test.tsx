@@ -34,7 +34,9 @@ const CHAIN_COUPLE = "Own value. Click to follow the defaults again.";
 
 const bindingsWith = (keys: string) => ({
   ...(defaultValues().bindings as Record<string, unknown>),
-  transcribe: binding("transcribe", "ctrl+space", { current_binding: keys }),
+  paste_last_transcript: binding("paste_last_transcript", "ctrl+shift+v", {
+    current_binding: keys,
+  }),
 });
 
 const render = (
@@ -61,28 +63,28 @@ describe("the state line in a profile", () => {
 
   test("an own shortcut names the default's combination, not a count", async () => {
     await render(
-      <ScopedSetting field="bindings" entry="transcribe">
-        <ShortcutInput shortcutId="transcribe" />
+      <ScopedSetting field="bindings" entry="paste_last_transcript">
+        <ShortcutInput shortcutId="paste_last_transcript" />
       </ScopedSetting>,
       [
         {
           id: WORK,
           name: "Work",
           values: { bindings: bindingsWith("ctrl+alt+e") },
-          ownEntries: { bindings: { own: ["transcribe"] } },
+          ownEntries: { bindings: { own: ["paste_last_transcript"] } },
         },
       ],
       IN_WORK,
     );
 
-    expect(visibleText()).toContain("Own value · Default: ⌃ Space Reset");
+    expect(visibleText()).toContain("Own value · Default: ⌃⇧V Reset");
     expect(rawTextIn()).toEqual([]);
 
     await press(screen.getByRole("button", { name: CHAIN_COUPLE }));
     await press(screen.getByRole("button", { name: "Reset" }));
     expect(callsOf("resetProfileEntry")).toEqual([
-      [WORK, "bindings", "transcribe"],
-      [WORK, "bindings", "transcribe"],
+      [WORK, "bindings", "paste_last_transcript"],
+      [WORK, "bindings", "paste_last_transcript"],
     ]);
   });
 

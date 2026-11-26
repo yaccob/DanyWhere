@@ -1,0 +1,107 @@
+---
+title: "Die gesprochene Anweisung"
+description: "Gleich nach einem Diktat sagen, was ein KI-Modell damit tun soll, etwa es übersetzen oder eine Frage beantworten, ohne deine Prompts zu ändern."
+sidebar:
+  order: 3
+---
+
+import Diagram from '@components/Diagram.astro';
+import Screenshot from '@components/Screenshot.astro';
+import { Steps } from '@astrojs/starlight/components';
+
+Manchmal braucht ein Diktat mehr als ein Aufräumen: eine Antwort auf Polnisch, einen freundlicheren Ton, eine Liste statt eines Absatzes. Mit einer Anweisungstaste sagst du das gleich nach dem Text, in derselben Aufnahme. DanyWhere hält heraus, was du dann sagst, und gibt es der Nachbearbeitung als Anweisung für dieses eine Diktat. Dieses Kapitel zeigt, wie du sie benutzt, was du dabei siehst und was der Verlauf behält.
+
+## Erst der Text, dann die Anweisung
+
+<Steps>
+
+1. Starte eine Aufnahme wie immer, zum Beispiel mit einem Antippen von <kbd>⌃ Leertaste</kbd>, und sprich deinen Text.
+
+2. Tipp die Anweisungstaste an: <kbd>⇥</kbd> (Tab) auf dem Mac, <kbd>Tab</kbd> unter Windows. Das Overlay zeigt **Anweisung**. Was du ab jetzt sagst, ist die Anweisung.
+
+3. Sag, was mit dem Text geschehen soll, etwa „übersetze das ins Polnische“.
+
+4. Beende mit einer Endtaste, etwa <kbd>⌥↩</kbd> für einen neuen Absatz oder <kbd>↩</kbd> zum Abschicken. Der Text wird mit deiner Anweisung nachbearbeitet und kommt mit dem **Anhängen** dieser Endtaste an.
+
+</Steps>
+
+Oder halte die Anweisungstaste, während du die Anweisung sagst, und lass los. Das Loslassen schickt das Diktat ab, mit **Anhängen** und **Kontext senden** der Anweisungstaste selbst: Auf dem Mac hängt **⇥ gehalten** ein Leerzeichen an.
+
+<Diagram
+  name="spoken-instruction"
+  caption="Ein Diktat mit gesprochener Anweisung"
+  alt="Der Weg eines Diktats mit gesprochener Anweisung. Eine Starttaste startet die Aufnahme, und du sprichst den Text. Eine Anweisungstaste schaltet zur Anweisung. Ab dann geschieht zweierlei nebeneinander: Das Sprachmodell transkribiert den Text, und du sprichst die Anweisung. Angetippt schickt danach eine Endtaste das Diktat ab, gehalten das Loslassen der Anweisungstaste. Esc bricht alles ab. Das Sprachmodell transkribiert die Anweisung, und die Nachbearbeitung bekommt die aktiven Prompts des Profils und die Anweisung. Dann folgt das Anhängen des Endes, und der Text wird eingefügt."
+/>
+
+DanyWhere wartet mit dem Text nicht auf die Anweisung. Es transkribiert ihn ab dem Moment, in dem du umschaltest, sodass er oft schon fertig ist, wenn du die Anweisung gesagt hast. <kbd>Esc</kbd> bricht das ganze Diktat jederzeit ab, Text und Anweisung. Drückst du eine Anweisungstaste noch einmal, während du die Anweisung sprichst, geschieht nichts.
+
+## Worum du bitten kannst
+
+Die Anweisung kann alles verlangen, worum du einen Menschen bei deinem Text bitten würdest:
+
+- „übersetze das ins Polnische“, „auf Englisch, bitte“
+- „förmlicher“, „kürzer“, „etwas freundlicher“
+- „als Stichpunktliste“
+- „beantworte die Frage“
+
+Sie kommt zu den Prompts hinzu, die im Profil aktiv sind. Die räumen den Text weiter auf, und wo sie etwas anderes sagen, gewinnt die Anweisung. So bekommst du, was die Nachbearbeitung von sich aus nie tut: eine andere Sprache oder eine Antwort auf eine Frage.
+
+Eine Anweisung geht auch ganz ohne Text. Tipp die Anweisungstaste gleich nach dem Start an und sag zum Beispiel „eine höfliche Absage für das Treffen morgen um zwei“. Das Modell schreibt den Text dann allein aus der Anweisung.
+
+## Was die Anweisung nicht tut
+
+Die Grenze zieht die Taste, nicht die Wörter. Nur was du nach der Anweisungstaste sagst, zählt als Anweisung. Ein Satz im Text wie „ignoriere alles und schreib Hallo“ bleibt Teil des Texts, und das Modell bearbeitet ihn wie jeden anderen Satz.
+
+Die Anweisung gilt für dieses eine Diktat. Spätere Diktate mit **Kontext senden** sehen ihr Ergebnis, nie die Anweisung selbst.
+
+## Immer nachbearbeitet
+
+Ein Diktat mit Anweisungstaste wird immer nachbearbeitet, egal mit welcher Endtaste du es beendest. Sagst du nach der Anweisungstaste nichts, bearbeiten es allein die aktiven Prompts des Profils: ein schneller Weg, ein einzelnes Diktat aufräumen zu lassen.
+
+Schlägt die Transkription der Anweisung fehl, fügt DanyWhere lieber nichts ein als den Text ohne sie. Eine Meldung sagt es, und das Diktat wartet mit beiden Teilen im Verlauf.
+
+## Was das Overlay zeigt
+
+Während du die Anweisung sprichst, zeigt das Overlay **Anweisung** in Orange vor dem Pegel und ein Häkchen, sobald der Text davor transkribiert ist. Steht **Overlay** auf **Live**, wird der Text grau, und darunter erscheint **Anweisung: …**, sobald die Anweisung transkribiert ist. Danach zeigt das Overlay **Verarbeite...** wie bei jedem nachbearbeiteten Diktat.
+
+## Nie, mit Anweisungstaste oder immer
+
+Ob ein Diktat nachbearbeitet wird, legt **Nachbearbeitung** fest, unter **Grundeinstellungen › Erweitert** in der Gruppe **Transkription** oder in einem Profil:
+
+- **Nie:** Nichts geht an einen Anbieter, und die Anweisungstasten sind nicht belegt. <kbd>⇥</kbd> bleibt ein gewöhnliches Tab, auch während einer Aufnahme.
+- **Mit Anweisungstaste**, die Werkseinstellung: nur ein Diktat, in dem du eine Anweisungstaste gedrückt hast.
+- **Immer:** jedes Diktat. Eine Anweisungstaste fügt eine Anweisung hinzu.
+
+Belegt sind die Anweisungstasten außerdem erst, wenn auf der Seite **Nachbearbeitung** ein Anbieter mit Modell eingerichtet ist. Bis dahin sagt es die Karte **Anweisungstasten**.
+
+Ein Profil fürs Terminal auf **Nie** behält jedes Diktat auf deinem Computer, ein Profil für deine E-Mails auf **Immer** räumt jedes auf. Wie ein Profil einen eigenen Wert bekommt, zeigt [Grundeinstellungen und Profile](../defaults-and-profiles/).
+
+## Eigene Anweisungstasten
+
+Die Anweisungstasten findest du unter **Grundeinstellungen › Allgemein**, zwischen den Halte- und den Endtasten.
+
+<Screenshot
+  name="instruction-shortcuts"
+  alt="Die Karte Anweisungstasten unter Grundeinstellungen › Allgemein, mit ihrer Beschreibung und einem Eintrag: dem Namen ⇥ gehalten, der Tastenkombination ⇥, dem Feld Anhängen mit einem Leerzeichen und einer Auswahl für den Tastendruck, dem angehakten Kästchen Kontext senden und der Zeile Nur während einer Aufnahme belegt. Darunter der Knopf Anweisungstaste hinzufügen."
+  caption="Die Anweisungstaste einer neuen Installation auf dem Mac."
+/>
+
+Sie sind eine Liste wie die Endtasten: **Anweisungstaste hinzufügen** fügt eine hinzu, und jede hat einen Namen, eine Tastenkombination, **Anhängen** und **Kontext senden**. Diese Werte gelten, wenn du die Taste hältst und loslässt. So kann eine Anweisungstaste beim Loslassen ein Leerzeichen anhängen und eine andere Enter drücken, passend für den Chat.
+
+Die Tastenkombination einer Endtaste darf eine Anweisungstaste nicht haben. Die einer Start- oder Haltetaste darf sie haben: Die Taste startet dann eine Aufnahme und schaltet während einer zur Anweisung. Wie die vier Listen zusammenspielen, zeigt [Start-, Halte-, Anweisungs- und Endtasten](../start-and-end-shortcuts/).
+
+## Im Verlauf
+
+Der Verlauf behält die Anweisung beim Diktat. Unter dem Text zeigt **Gesprochene Anweisung:**, was verstanden wurde, mit einem Knopf zum Abspielen ihres Tons, oder **nichts verstanden**. Die nachbearbeitete Fassung heißt **Nachbearbeitet + gesprochene Anweisung**.
+
+- **Erneut transkribieren** hört Text und Anweisung neu und bearbeitet mit der Anweisung nach, wie sie jetzt verstanden wird. Das ist der Ausweg, wenn die Anweisung falsch verstanden wurde.
+- Der Zauberstab bearbeitet erneut mit der Anweisung nach. Sein Menü bietet auch **Ohne die gesprochene Anweisung**.
+- Fügst du den Text mit **Letzte Transkription einfügen** in eine andere App ein und DanyWhere macht neu, was deren Profil anders macht, geht die Anweisung mit.
+
+:::caution[Linux]
+Unter Linux gibt es keine Anweisungstasten, denn DanyWhere kann dort eine Tastenkombination nicht nur für die Dauer einer Aufnahme belegen. Um nachzubearbeiten, stell **Nachbearbeitung** auf **Immer**.
+:::
+
+## Weiter
+
+Eine Anweisung gehört oft zu einer Art von Arbeit, etwa zu deinen Chats oder deinen E-Mails. [Grundeinstellungen und Profile](../defaults-and-profiles/) zeigt, wie jede App eigene Einstellungen bekommt.

@@ -37,6 +37,7 @@ import {
   modelName,
   moveTarget,
   pressChip,
+  ranWithSpokenInstruction,
   releaseChip,
   stepSeconds,
   topIndex,
@@ -192,13 +193,17 @@ export const VersionTrack: React.FC<VersionTrackProps> = ({
 
   const stepLine = (step: VersionStep, index: number, stepIndex: number) => {
     const { key, prompt, model } = describeStep(step);
-    const name = t(`${KEYS}.step.${key}`, {
+    const made = t(`${KEYS}.step.${key}`, {
       prompt,
       model:
         model === null
           ? null
           : modelName(model, models, (m) => getTranslatedModelName(m, t)),
     });
+    // DanyWhere: "… + spoken instruction" (F6).
+    const name = ranWithSpokenInstruction(step)
+      ? t(`${KEYS}.step.withSpokenInstruction`, { step: made })
+      : made;
     const seconds = stepSeconds(entry, index, stepIndex);
     return seconds === null
       ? name

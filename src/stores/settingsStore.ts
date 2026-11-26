@@ -5,9 +5,11 @@ import type {
   AppSettings as Settings,
   AudioDevice,
   PostProcessApiFormat,
+  PostProcessMode,
   ChineseScript,
   TranscribeAcceleratorSetting,
-  ShortcutActivation,
+  StartKey,
+  EndKey,
   VadBackend,
   LanguageDetectionMode,
   RecordingStorageLimit,
@@ -113,8 +115,20 @@ const settingUpdaters: {
     commands.changeShowWhatsNewOnUpdateSetting(value as boolean),
   whats_new_last_seen_version: (value) =>
     commands.changeWhatsNewLastSeenVersionSetting(value as string),
-  shortcut_activation: (value) =>
-    commands.changeShortcutActivationSetting(value as ShortcutActivation),
+  // DanyWhere: the start and hold shortcuts of the values in use, each
+  // list as a whole (qa 2026-11-26_1810).
+  start_keys: async (value) => {
+    const result = await commands.changeStartKeysSetting(
+      (value as StartKey[] | undefined) ?? [],
+    );
+    if (result.status === "error") throw new Error(result.error);
+  },
+  hold_keys: async (value) => {
+    const result = await commands.changeHoldKeysSetting(
+      (value as EndKey[] | undefined) ?? [],
+    );
+    if (result.status === "error") throw new Error(result.error);
+  },
   hold_threshold_ms: (value) =>
     commands.changeHoldThresholdMsSetting(value as number),
   selected_microphone: (value) =>
@@ -202,8 +216,10 @@ const settingUpdaters: {
     commands.changeHistoryBoxHeightSetting("newest", value ?? null),
   history_box_height_other: (value) =>
     commands.changeHistoryBoxHeightSetting("other", value ?? null),
-  post_process_enabled: (value) =>
-    commands.changePostProcessEnabledSetting(value as boolean),
+  // DanyWhere: when a dictation is post-processed (never, with an
+  // instruction shortcut, always), in place of Handy's switch.
+  post_process_mode: (value) =>
+    commands.changePostProcessModeSetting(value as PostProcessMode),
   post_process_selected_prompt_id: (value) =>
     commands.setPostProcessSelectedPrompt(value as string),
   // DanyWhere: which prompts of the library the active profile runs, and

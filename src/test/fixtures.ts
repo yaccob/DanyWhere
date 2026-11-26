@@ -6,11 +6,11 @@
 import type {
   AppSettings,
   EndKey,
-  HoldEnd,
   LLMPrompt,
   ModelInfo,
   Profile,
   ShortcutBinding,
+  StartKey,
   WordList,
 } from "@/bindings";
 
@@ -38,17 +38,22 @@ export const endKey = (
   name: "",
   shortcut,
   append_text: "",
-  post_process: false,
   send_context: false,
   ...extra,
 });
 
-export const holdEnd = (extra: Partial<HoldEnd> = {}): HoldEnd => ({
-  append_text: "",
-  post_process: false,
-  send_context: false,
-  ...extra,
+/** A start shortcut: only its combination (qa 2026-11-26_1810). */
+export const startKey = (id: string, shortcut: string): StartKey => ({
+  id,
+  shortcut,
 });
+
+/** A hold shortcut: the shape of an end shortcut (qa 2026-11-26_1810). */
+export const holdKey = endKey;
+
+/** An instruction shortcut: the shape of an end shortcut too (qa
+ * 2026-11-26_1810, "Schnittstelle Phase 2"). */
+export const instructionKey = endKey;
 
 export const wordList = (id: string, name: string): WordList => ({
   id,
@@ -92,40 +97,41 @@ export const modelInfo = (
 });
 
 /** The defaults' values as DanyWhere ships them, as far as the pages read
- * them: two start shortcuts, an end with each one's combination, nothing
- * own. */
+ * them: one start shortcut, two hold shortcuts, the instruction shortcut ⇥,
+ * an end with each hold shortcut's combination, post-processing with an
+ * instruction shortcut but no provider set up, nothing own. */
 export const defaultValues = (): Values => ({
   selected_model: "",
   selected_language: "auto",
   spoken_languages: [],
   translate_to_english: false,
   chinese_script: "as_transcribed",
-  shortcut_activation: "toggle",
   bindings: {
-    transcribe: binding("transcribe", "ctrl+space"),
-    transcribe_with_post_process: binding(
-      "transcribe_with_post_process",
-      "ctrl+shift+space",
-    ),
     paste_last_transcript: binding("paste_last_transcript", "ctrl+shift+v"),
     copy_last_transcript: binding("copy_last_transcript", "ctrl+shift+c"),
     cycle_word_list: binding("cycle_word_list", "ctrl+shift+l"),
     toggle_profile_auto: binding("toggle_profile_auto", "ctrl+shift+a"),
     cancel: binding("cancel", "escape"),
   },
+  // Out of the box (qa 2026-11-26_1810, question 6 a and "Schnittstelle
+  // Phase 2"): ⌃ Space starts when tapped and records while held; ⌃⇧ Space
+  // records while held; ⇥ switches to the spoken instruction during a
+  // recording. Whether a dictation is post-processed no key says any more.
+  start_keys: [startKey("start", "ctrl+space")],
+  hold_keys: [
+    endKey("hold_direct", "ctrl+space"),
+    endKey("hold_post", "ctrl+shift+space"),
+  ],
+  instruction_keys: [instructionKey("instruction_tab", "tab")],
   end_keys: [
     endKey("plain", "ctrl+space"),
-    endKey("post_process", "ctrl+shift+space", { post_process: true }),
+    endKey("post_process", "ctrl+shift+space"),
   ],
-  hold_ends: {
-    transcribe: holdEnd(),
-    transcribe_with_post_process: holdEnd({ post_process: true }),
-  },
   word_lists: [],
   active_word_list_id: null,
   custom_words: [],
   profile_words: [],
-  post_process_enabled: false,
+  post_process_mode: "with_instruction_key",
   post_process_provider_id: "openai",
   post_process_providers: [],
   post_process_models: {},

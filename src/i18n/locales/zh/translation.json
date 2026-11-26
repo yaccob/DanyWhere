@@ -408,18 +408,9 @@
         "notFound": "未找到快捷键",
         "pressKeys": "请按键...",
         "bindings": {
-          "transcribe": {
-            "name": "开始快捷键",
-            "description": "开始录音。如何结束由结束快捷键决定，按住时也是如此。"
-          },
           "cancel": {
             "name": "取消快捷键",
             "description": "用于取消当前录制的键盘快捷键。"
-          },
-          "transcribe_with_post_process": {
-            "name": "第二开始快捷键",
-            "description": "可选：第二个用于开始录音的按键组合。出厂设置下，具有相同按键组合的结束快捷键会对文本进行后处理。仅在后处理开启时占用。",
-            "descriptionMacos": "可选：第二个用于开始录音的按键组合。出厂设置下，按住后松开会对文本进行后处理；再次轻按则不经后处理直接结束，与所有不含 ⌥ 的结束快捷键相同。仅在后处理开启时占用。"
           },
           "paste_last_transcript": {
             "name": "粘贴最近的转录",
@@ -464,20 +455,6 @@
         "noMatch": "没有与“{{query}}”匹配的语言",
         "weak": "目前还没有模型能很好地识别{{languages}}。"
       },
-      "shortcutActivation": {
-        "title": "快捷键行为",
-        "description": "选择开始快捷键如何开始和结束录音。",
-        "options": {
-          "holdOrToggle": "自动",
-          "pushToTalk": "按住",
-          "toggle": "轻按"
-        },
-        "descriptions": {
-          "hold_or_toggle": "按住录音，或轻按开始；之后由结束快捷键停止",
-          "push_to_talk": "按住快捷键期间录音",
-          "toggle": "轻按开始录音；只有当某个结束快捷键使用相同的按键组合时，再次轻按才会停止"
-        }
-      },
       "insertService": {
         "invalid": "请使用 ⌘ 或 ⌃ 加一个字母、数字或标点",
         "conflict": "“{{name}}”已在使用此快捷键"
@@ -495,35 +472,75 @@
         }
       }
     },
+    "startKeys": {
+      "description": "轻按开始录音。录音会一直持续，直到用结束快捷键结束。",
+      "shortcutHint": "轻按此按键组合会开始录音。始终占用。",
+      "alsoHold": "也是按住快捷键",
+      "alsoInstruction": "也是指令快捷键",
+      "add": "添加开始快捷键",
+      "addPressKeys": "按下新开始快捷键的按键组合",
+      "delete": "删除开始快捷键 {{shortcut}}",
+      "lastOne": "必须保留一个开始快捷键或按住快捷键，以便始终能够开始录音。",
+      "refName": "开始快捷键 {{shortcut}}",
+      "errors": {
+        "save": "无法保存开始快捷键：{{error}}",
+        "needsShortcut": "每个开始快捷键都需要按键组合。",
+        "shortcutTwice": "两个开始快捷键不能使用同一个按键组合。",
+        "last": "无法删除最后一个开始快捷键或按住快捷键：录音必须始终能够开始。",
+        "cannotEnd": "在 Linux 上，由 {{shortcut}} 开始的录音将无法结束：请保留一个使用相同按键组合的结束快捷键。"
+      }
+    },
+    "holdKeys": {
+      "title": "按住快捷键",
+      "description": "按住时录音。松开会以这种方式结束录音：追加什么，以及是否将之前的听写作为上下文一并发送。",
+      "shortcutHint": "按住此按键组合时录音；松开会以这种方式结束录音。",
+      "alsoStart": "也是开始快捷键：短暂轻按会开始录音，录音会持续进行。",
+      "holdOnly": "仅为按住快捷键：短暂轻按不会有任何作用。",
+      "alsoInstruction": "也是指令快捷键：录音时会切换到指令。",
+      "add": "添加按住快捷键",
+      "addPressKeys": "按下新按住快捷键的按键组合",
+      "refName": "按住快捷键 {{name}}",
+      "errors": {
+        "save": "无法保存按住快捷键：{{error}}",
+        "needsShortcut": "每个按住快捷键都需要按键组合。",
+        "shortcutTwice": "两个按住快捷键不能使用同一个按键组合。"
+      }
+    },
+    "instructionKeys": {
+      "title": "指令快捷键",
+      "description": "录音时，指令快捷键会从文本切换到指令：之后说的话不会插入，而是告诉后处理该如何处理文本，例如“把这段翻译成波兰语”。轻按它，由结束快捷键发送听写；按住它，松开时按这里的设置发送听写。这样的听写总会进行后处理。",
+      "shortcutHint": "录音时按下此按键组合会从文本切换到指令。仅在录音时占用。",
+      "onlyWhileRecording": "仅在录音时占用。",
+      "sameAsStartOrHold": "与某个开始快捷键或按住快捷键的按键组合相同：未录音时会开始录音，录音时会切换到指令。",
+      "notTakenNever": "后处理设为“{{mode}}”：指令快捷键不占用。请在“高级”中为“{{setting}}”选择其他设置。",
+      "notTakenNoProvider": "尚未设置带模型的后处理提供商：在设置之前，指令快捷键不占用。",
+      "add": "添加指令快捷键",
+      "addPressKeys": "按下新指令快捷键的按键组合",
+      "refName": "指令快捷键 {{name}}",
+      "errors": {
+        "save": "无法保存指令快捷键：{{error}}",
+        "needsShortcut": "每个指令快捷键都需要按键组合。",
+        "shortcutTwice": "两个指令快捷键不能使用同一个按键组合。"
+      }
+    },
     "endKeys": {
       "title": "结束快捷键",
-      "description": "录音如何结束以及之后发生什么。每个结束快捷键都有自己的按键组合，仅在录音时占用，并决定追加什么、是否对文本进行后处理，以及是否将之前的听写作为上下文一并发送。结束快捷键可以使用某个开始快捷键的按键组合：这时再次轻按该开始快捷键就会以这种方式结束。",
+      "description": "录音如何结束以及之后发生什么。每个结束快捷键都有自己的按键组合，仅在录音时占用，并决定追加什么，以及是否将之前的听写作为上下文一并发送。结束快捷键可以使用某个开始快捷键或按住快捷键的按键组合：这时在录音中轻按它就会以这种方式结束。",
       "name": "名称",
       "shortcutHint": "录音时按下此按键组合会以这种方式结束录音。仅在录音时占用。",
-      "sameAsStart": "与“{{start}}”的按键组合相同：录音时再次轻按会以这种方式结束。",
+      "sameAsStart": "与某个开始快捷键的按键组合相同：录音时再次轻按会以这种方式结束。",
+      "sameAsHold": "与某个按住快捷键的按键组合相同：录音时轻按会以这种方式结束。",
       "append": "末尾追加",
       "appendDescription": "追加到以这种方式结束的听写：先是文本，然后是你选择的按键。文本中 \\s 表示空格，\\n 表示换行，\\t 表示制表符，\\\\ 表示反斜杠；其他内容按原样追加。仅在粘贴文本时才发送按键。",
-      "postProcess": "后处理",
       "sendContext": "发送上下文",
-      "sendContextHint": "仅在后处理时：同一窗口中之前的听写会作为上下文一并发送。",
-      "postProcessOff": "后处理已关闭：以这种方式结束的听写不会进行后处理。请在“高级”中打开“后处理”。",
+      "sendContextHint": "同一窗口中之前的听写会作为上下文一并发送。仅在听写进行后处理时才起作用。",
       "add": "添加结束快捷键",
       "addPressKeys": "按下新结束快捷键的按键组合",
       "delete": "删除 {{name}}",
       "lastOne": "必须保留一个结束快捷键，以便始终能够结束录音。",
       "held": "按住 {{shortcut}}",
-      "holdEnds": {
-        "title": "按住时",
-        "description": "松开按住的开始快捷键时如何结束录音。"
-      },
-      "tapEnds": {
-        "title": "轻按时",
-        "description": "轻按结束快捷键时如何结束录音。"
-      },
+      "refName": "结束快捷键 {{name}}",
       "factoryNames": {
-        "pattern": "{{mode}} · {{effect}}",
-        "direct": "直接",
-        "postProcessed": "后处理",
         "space": "空格",
         "noSpace": "无空格",
         "paragraph": "段落",
@@ -531,13 +548,13 @@
         "enter": "发送 Enter",
         "shiftEnter": "发送 Shift+Enter"
       },
-      "linuxNoShortcuts": "在 Linux 上，录音时不会占用结束快捷键的按键组合。在那里，松开按住的开始快捷键，或再次轻按某个与结束快捷键按键组合相同的开始快捷键时，录音才会结束。",
+      "linuxNoShortcuts": "在 Linux 上，录音时不会占用结束快捷键的按键组合。在那里，松开按住快捷键，或再次轻按某个与结束快捷键按键组合相同的开始快捷键时，录音才会结束。",
       "errors": {
         "save": "无法保存结束快捷键：{{error}}",
         "needsShortcut": "每个结束快捷键都需要按键组合。",
         "shortcutTwice": "两个结束快捷键不能使用同一个快捷键。",
         "last": "无法删除最后一个结束快捷键：录音必须始终能够结束。",
-        "cannotEnd": "在 Linux 上将无法再结束录音：请保留一个使用开始快捷键按键组合的结束快捷键，或选择“按住”。"
+        "cannotEnd": "在 Linux 上将无法再结束录音：请保留一个使用开始快捷键按键组合的结束快捷键。"
       }
     },
     "inputMethod": {
@@ -865,6 +882,7 @@
         "llmCheckTitle": "不进行后处理时也用 LLM 核对名称",
         "llmCheckDescription": "仅限包含与词汇列表条目相似的词的听写。此时该句会发送到 {{provider}}。",
         "llmCheckNeedsProvider": "需要一个已设置模型的后处理提供商。",
+        "llmCheckNever": "后处理设为“{{mode}}”时不可用：此时不会向任何提供商发送内容。",
         "llmCheckNotWith": "不适用于 {{provider}}：需要另一个已设置模型的后处理提供商。",
         "setUpPostProcessing": "设置后处理",
         "switchModel": "切换到 {{model}}",
@@ -1066,6 +1084,15 @@
         "statusDenied": "未允许 – 请在 系统设置 › 隐私与安全性 › 自动化 中更改",
         "statusNotRunning": "未运行 – 请启动它以允许",
         "statusUnknown": "未知"
+      },
+      "mode": {
+        "title": "后处理",
+        "description": "听写何时发送给后处理提供商。从不：不向任何提供商发送内容，且指令快捷键不占用。使用指令快捷键时：仅限按过指令快捷键的听写。始终：每次听写；指令快捷键会添加一条指令。",
+        "options": {
+          "never": "从不",
+          "withInstructionKey": "使用指令快捷键时",
+          "always": "始终"
+        }
       }
     },
     "history": {
@@ -1090,6 +1117,11 @@
       "postProcessOff": "设置中已关闭后处理",
       "postProcessNotSetUp": "请先在“后处理”中选择提供商、模型和提示词",
       "recordingRemoved": "为保持在存储上限内，已删除录音",
+      "spokenInstruction": {
+        "label": "语音指令：",
+        "nothingHeard": "未识别到内容",
+        "audio": "语音指令的音频"
+      },
       "cancelTranscription": "取消转录",
       "transcribing": "转录中...",
       "postProcessing": "后处理中...",
@@ -1160,6 +1192,7 @@
           "ai": "已后处理",
           "aiPrompt": "已用“{{prompt}}”后处理",
           "user": "由你编辑",
+          "withSpokenInstruction": "{{step}} + 语音指令",
           "withTime": "{{step}}，{{time}}"
         },
         "saveError": "无法保存你的文本。请重试。",
@@ -1172,7 +1205,8 @@
       "promptMenu": {
         "button": "用一个提示词进行后处理",
         "title": "后处理使用",
-        "active": "启用"
+        "active": "启用",
+        "withoutSpokenInstruction": "不含语音指令"
       },
       "retranscribeAgain": "重新转录，并像之前一样再次进行后处理"
     },
@@ -1273,10 +1307,6 @@
         "title": "合盖麦克风",
         "description": "笔记本电脑盖子关闭时使用的麦克风"
       },
-      "postProcessingToggle": {
-        "label": "后处理",
-        "description": "启用转录后的 AI 文本优化"
-      },
       "muteWhileRecording": {
         "label": "录制时静音",
         "description": "录制期间静音系统音频"
@@ -1300,7 +1330,7 @@
       },
       "holdThreshold": {
         "title": "长按判定时长",
-        "description": "仅适用于“自动”模式：快捷键需要按住多长时间（毫秒）才算作按住而不是轻按。如果短暂按住后录音仍持续，请调低；如果有意的轻按被当作按住，请调高。"
+        "description": "按住快捷键需要按住多长时间（毫秒）才算作按住。按住时间更短时，同时也是开始快捷键的按键组合算作轻按，而仅为按住快捷键的则会丢弃录音。如果短暂按住后录音仍持续，请调低；如果有意的轻按被当作按住，请调高。"
       },
       "reliablePaste": {
         "title": "可靠粘贴（Beta）",
@@ -1376,7 +1406,6 @@
     "profileView": {
       "fields": {
         "shortcuts": "快捷键",
-        "holdEnds": "按住时",
         "selectedModel": "语音模型",
         "providers": "提供商地址和格式",
         "activePrompts": "启用的提示词",
@@ -1540,7 +1569,9 @@
     "postProcessEffortRefusedTitle": "思考程度被拒绝",
     "postProcessEffortRefused": "{{model}} 拒绝了所选的思考程度，因此文本以模型默认值返回。请在后处理模型旁边选择其他程度或“模型默认”。",
     "fileTranscriptionFailedTitle": "文件转录失败",
-    "transcriptionFailedTitle": "转录失败"
+    "transcriptionFailedTitle": "转录失败",
+    "instructionTranscriptionFailedTitle": "指令失败 – 文本已就绪",
+    "instructionTranscriptionFailed": "无法转录语音指令，因此没有插入任何内容。指令之前的文本已就绪：“粘贴最近的转录”可将其插入，“复制最近的转录”可将其放入剪贴板。"
   },
   "notices": {
     "errorOne": "{{n}} 个错误",
@@ -1572,7 +1603,10 @@
     "notReady": "尚未就绪",
     "wordList": "词汇列表：{{name}}",
     "wordListGlobalOnly": "无附加列表",
-    "cancel": "取消"
+    "cancel": "取消",
+    "instruction": "指令",
+    "instructionLine": "指令：{{text}}",
+    "textReady": "文本已转录"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} 可能正在阻止 1 个快捷键",

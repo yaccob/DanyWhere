@@ -116,8 +116,10 @@ pub(crate) fn unregister_all(
 /// The shortcuts a backend registers when it starts or is switched to, by
 /// id: every default binding but the cancel shortcut (registered only while
 /// recording, `register_cancel_shortcut`) and those `registers_binding`
-/// leaves out, with the value stored in `settings`, else the default.
-/// `service_available` is `delivery::INSERT_SERVICE_AVAILABLE`.
+/// leaves out, with the value stored in `settings`, else the default; then
+/// the start and hold shortcuts of `settings`, each combination once
+/// (`start_keys::bindings_to_register`). `service_available` is
+/// `delivery::INSERT_SERVICE_AVAILABLE`.
 pub(crate) fn start_bindings(
     settings: &AppSettings,
     service_available: bool,
@@ -127,17 +129,24 @@ pub(crate) fn start_bindings(
         .into_iter()
         .collect();
     defaults.sort_by(|(a, _), (b, _)| a.cmp(b));
-    defaults
+    let mut bindings: Vec<ShortcutBinding> = defaults
         .into_iter()
         .filter(|(id, _)| {
             id != "cancel" && settings::registers_binding(id, settings, service_available)
         })
         .map(|(id, default)| settings.bindings.get(&id).cloned().unwrap_or(default))
-        .collect()
+        .collect();
+    bindings.extend(crate::start_keys::bindings_to_register(
+        &settings.start_keys,
+        &settings.hold_keys,
+    ));
+    bindings
 }
 
 /// Resets each of `bindings` that `backend` can't register to its default
-/// key combination, in `bindings` and in `settings`. Returns the ids reset.
+/// key combination, in `bindings` and in `settings`; a start or hold
+/// shortcut to the factory one with its id, where there is one the backend
+/// takes (`start_keys::reset_to_factory`). Returns the ids reset.
 pub(crate) fn reset_invalid(
     backend: &dyn ShortcutBackend,
     bindings: &mut [ShortcutBinding],
@@ -146,6 +155,26 @@ pub(crate) fn reset_invalid(
     let defaults = settings::get_default_settings().bindings;
     let mut reset = Vec::new();
     for binding in bindings.iter_mut() {
+        if crate::start_keys::is_dictation_binding(&binding.id) {
+            if backend.validate(&binding.current_binding).is_err() {
+                if let Some(keys) =
+                    crate::start_keys::reset_to_factory(settings, &binding.id, |keys| {
+                        backend.validate(keys).is_ok()
+                    })
+                {
+                    log::info!(
+                        "Shortcut '{}' ({}) is invalid for {:?}; back to {keys}.",
+                        binding.id,
+                        binding.current_binding,
+                        backend.implementation()
+                    );
+                    binding.current_binding = keys.clone();
+                    binding.default_binding = keys;
+                    reset.push(binding.id.clone());
+                }
+            }
+            continue;
+        }
         let Some(default) = defaults.get(&binding.id) else {
             continue;
         };
@@ -379,30 +408,34 @@ mod tests {
         let mut settings = get_default_settings();
         settings
             .bindings
-            .get_mut("transcribe")
+            .get_mut("copy_last_transcript")
             .unwrap()
             .current_binding = "f13".to_string();
+        settings.start_keys[0].shortcut = "f14".to_string();
         settings.bindings.remove("cycle_word_list");
         let start = start_bindings(&settings, true);
         let found = |id: &str| start.iter().find(|b| b.id == id).cloned();
         assert!(found("cancel").is_none());
-        assert_eq!(found("transcribe").unwrap().current_binding, "f13");
+        assert_eq!(
+            found("copy_last_transcript").unwrap().current_binding,
+            "f13"
+        );
+        // DanyWhere: the start shortcuts too (`start_keys`).
+        assert_eq!(found("start_key:start").unwrap().current_binding, "f14");
         // Missing from the store: the default.
         assert_eq!(
             found("cycle_word_list").unwrap().current_binding,
             get_default_settings().bindings["cycle_word_list"].current_binding
         );
-        // Sorted by id, so the order is the same on every start.
-        let mut sorted = ids(&start);
-        sorted.sort();
-        assert_eq!(ids(&start), sorted);
+        // The same order on every start.
+        assert_eq!(ids(&start), ids(&start_bindings(&settings, true)));
     }
 
     #[test]
     fn the_start_bindings_leave_out_what_registers_binding_leaves_out() {
         // No profile with applications post-processes either.
         let mut settings = get_default_settings();
-        settings.post_process_enabled = false;
+        settings.post_process_mode = crate::settings::PostProcessMode::Never;
         assert!(!crate::app_profiles::post_processing_reachable(&settings));
         let start = start_bindings(&settings, true);
         for id in settings.bindings.keys() {
@@ -414,8 +447,9 @@ mod tests {
                 "{id} in the start bindings"
             );
         }
-        assert!(!start.iter().any(|b| b.id == "transcribe_with_post_process"));
-        assert!(start.iter().any(|b| b.id == "transcribe"));
+        // Every hold shortcut is taken, whatever the mode (variant b).
+        assert!(start.iter().any(|b| b.id == "hold_key:hold_no_space"));
+        assert!(start.iter().any(|b| b.id == "start_key:start"));
     }
 
     #[test]
@@ -425,25 +459,37 @@ mod tests {
         let mut settings = get_default_settings();
         settings
             .bindings
-            .get_mut("transcribe")
+            .get_mut("copy_last_transcript")
             .unwrap()
-            .current_binding = "fn+space".to_string();
+            .current_binding = "fn+c".to_string();
+        settings.start_keys[0].shortcut = "fn+space".to_string();
         settings
             .bindings
             .get_mut("cycle_word_list")
             .unwrap()
             .current_binding = "ctrl+shift+k".to_string();
+        let start =
+            crate::start_keys::bindings_to_register(&settings.start_keys, &settings.hold_keys);
         let mut bindings = vec![
             settings.bindings["cycle_word_list"].clone(),
-            settings.bindings["transcribe"].clone(),
+            settings.bindings["copy_last_transcript"].clone(),
+            start[0].clone(),
         ];
         let reset = reset_invalid(&backend, &mut bindings, &mut settings);
-        let default = get_default_settings().bindings["transcribe"]
+        let defaults = get_default_settings();
+        let default = defaults.bindings["copy_last_transcript"]
             .current_binding
             .clone();
-        assert_eq!(reset, ["transcribe"]);
+        assert_eq!(reset, ["copy_last_transcript", "start_key:start"]);
         assert_eq!(bindings[1].current_binding, default);
-        assert_eq!(settings.bindings["transcribe"].current_binding, default);
+        assert_eq!(
+            settings.bindings["copy_last_transcript"].current_binding,
+            default
+        );
+        // A start shortcut goes back to the factory one with its id.
+        let factory = defaults.start_keys[0].shortcut.clone();
+        assert_eq!(bindings[2].current_binding, factory);
+        assert_eq!(settings.start_keys[0].shortcut, factory);
         // Valid ones stay as they are.
         assert_eq!(bindings[0].current_binding, "ctrl+shift+k");
         assert_eq!(

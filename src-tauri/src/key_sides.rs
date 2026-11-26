@@ -22,6 +22,7 @@ use crate::append_text::KeyPlatform;
 use crate::end_keys::EndKey;
 use crate::profiles::ProfileValues;
 use crate::settings::{AppSettings, ShortcutBinding};
+use crate::start_keys::StartKey;
 
 /// The modifier groups, each as (left, right).
 const GROUPS: [(Modifiers, Modifiers); 4] = [
@@ -158,38 +159,72 @@ pub fn migrate(settings: &mut AppSettings) -> bool {
     migrate_on(settings, KeyPlatform::current())
 }
 
-/// The shortcuts and end shortcuts of the settings, the defaults and every
-/// profile without their sides ([`resolve`]). Returns whether anything
-/// changed, so a store without sides is never written.
+/// The shortcuts, start, hold and end shortcuts of the settings, the
+/// defaults and every profile without their sides ([`resolve`]). Returns
+/// whether anything changed, so a store without sides is never written.
 pub fn migrate_on(settings: &mut AppSettings, platform: KeyPlatform) -> bool {
-    let mut changed = resolve(&mut settings.bindings, &mut settings.end_keys, platform);
+    let mut changed = resolve(
+        Keys {
+            bindings: &mut settings.bindings,
+            start_keys: &mut settings.start_keys,
+            hold_keys: &mut settings.hold_keys,
+            end_keys: &mut settings.end_keys,
+        },
+        platform,
+    );
     if let Some(values) = settings.default_values.as_mut() {
-        changed |= resolve(&mut values.bindings, &mut values.end_keys, platform);
+        changed |= resolve(Keys::of(values), platform);
     }
     for profile in settings.profiles.iter_mut() {
-        changed |= resolve(
-            &mut profile.values.bindings,
-            &mut profile.values.end_keys,
-            platform,
-        );
+        changed |= resolve(Keys::of(&mut profile.values), platform);
     }
     changed
 }
 
-/// For an import: the profile's shortcuts and end shortcuts without sides.
+/// For an import: the profile's shortcuts, start, hold and end shortcuts
+/// without sides.
 pub fn prepare_import(values: &mut ProfileValues) {
-    resolve(
-        &mut values.bindings,
-        &mut values.end_keys,
-        KeyPlatform::current(),
-    );
+    resolve(Keys::of(values), KeyPlatform::current());
+}
+
+/// The key combinations of one set of values.
+struct Keys<'a> {
+    bindings: &'a mut HashMap<String, ShortcutBinding>,
+    start_keys: &'a mut Vec<StartKey>,
+    hold_keys: &'a mut Vec<EndKey>,
+    end_keys: &'a mut Vec<EndKey>,
+}
+
+impl<'a> Keys<'a> {
+    fn of(values: &'a mut ProfileValues) -> Self {
+        Self {
+            bindings: &mut values.bindings,
+            start_keys: &mut values.start_keys,
+            hold_keys: &mut values.hold_keys,
+            end_keys: &mut values.end_keys,
+        }
+    }
 }
 
 /// Where a key combination is stored.
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum Slot {
     Binding(String),
+    Start(usize),
+    Hold(usize),
     End(usize),
+}
+
+impl Slot {
+    /// Which of the three lists of start, hold and end shortcuts it is in.
+    fn list(&self) -> Option<u8> {
+        match self {
+            Slot::Binding(_) => None,
+            Slot::Start(_) => Some(0),
+            Slot::Hold(_) => Some(1),
+            Slot::End(_) => Some(2),
+        }
+    }
 }
 
 /// A key combination with a main key, as stored and as it will be.
@@ -203,22 +238,24 @@ struct Item {
 }
 
 /// One set of values (the flat settings, the defaults or a profile): its
-/// shortcuts and end shortcuts lose their sides. Combinations that would
-/// then be the same (`group`) are settled first:
-/// - an end shortcut with exactly a start shortcut's combination is that
-///   start shortcut's press during a recording (`end_keys`): the two lose
-///   their side together and never count against each other;
+/// shortcuts, start, hold and end shortcuts lose their sides. Combinations
+/// that would then be the same (`group`) are settled first:
+/// - start, hold and end shortcuts with exactly the same combination in
+///   different lists are one press in different roles (`start_keys`): they
+///   lose their side together and never count against each other;
 /// - any other end shortcut that never fired alone, as every press of it
 ///   fired a shortcut or an earlier end shortcut too, goes: a shortcut can't
 ///   be empty, end shortcuts are registered only while recording, so they
 ///   give way, and an end shortcut without a combination ends nothing;
 /// - the others lose their sides if that leaves no two that one press fires
 ///   both; otherwise each keeps its side, as each fired on its own side.
-fn resolve(
-    bindings: &mut HashMap<String, ShortcutBinding>,
-    end_keys: &mut Vec<EndKey>,
-    platform: KeyPlatform,
-) -> bool {
+fn resolve(keys: Keys<'_>, platform: KeyPlatform) -> bool {
+    let Keys {
+        bindings,
+        start_keys,
+        hold_keys,
+        end_keys,
+    } = keys;
     let mut ids: Vec<&String> = bindings.keys().collect();
     ids.sort();
     let stored = ids
@@ -229,6 +266,18 @@ fn resolve(
                 bindings[id].current_binding.clone(),
             )
         })
+        .chain(
+            start_keys
+                .iter()
+                .enumerate()
+                .map(|(i, key)| (Slot::Start(i), key.shortcut.clone())),
+        )
+        .chain(
+            hold_keys
+                .iter()
+                .enumerate()
+                .map(|(i, key)| (Slot::Hold(i), key.shortcut.clone())),
+        )
         .chain(
             end_keys
                 .iter()
@@ -251,15 +300,13 @@ fn resolve(
         })
         .collect();
 
-    // An end shortcut and the start shortcut whose exact combination it has.
+    // Start, hold and end shortcuts of exactly the same combination in
+    // different lists.
     let twins = |a: usize, b: usize| {
-        let start_and_end = |start: &Item, end: &Item| {
-            matches!(&start.slot, Slot::Binding(id) if crate::end_keys::START_BINDINGS.contains(&id.as_str()))
-                && matches!(end.slot, Slot::End(_))
-                && covers(&start.hotkey, &end.hotkey)
-                && covers(&end.hotkey, &start.hotkey)
-        };
-        start_and_end(&items[a], &items[b]) || start_and_end(&items[b], &items[a])
+        let (one, other) = (&items[a], &items[b]);
+        matches!((one.slot.list(), other.slot.list()), (Some(x), Some(y)) if x != y)
+            && covers(&one.hotkey, &other.hotkey)
+            && covers(&other.hotkey, &one.hotkey)
     };
     let mut changed = false;
     let mut gone: Vec<usize> = Vec::new();
@@ -283,7 +330,7 @@ fn resolve(
                     other != end
                         && !twins(other, end)
                         && covers(&items[other].hotkey, &items[end].hotkey)
-                        && (matches!(items[other].slot, Slot::Binding(_))
+                        && (!matches!(items[other].slot, Slot::End(_))
                             || !covers(&items[end].hotkey, &items[other].hotkey)
                             || other < end)
                 })
@@ -327,6 +374,8 @@ fn resolve(
                         binding.current_binding = item.target.clone();
                     }
                 }
+                Slot::Start(index) => start_keys[*index].shortcut = item.target.clone(),
+                Slot::Hold(index) => hold_keys[*index].shortcut = item.target.clone(),
                 Slot::End(index) => end_keys[*index].shortcut = item.target.clone(),
             }
             changed = true;
@@ -524,6 +573,8 @@ mod tests {
         ProfileValues {
             bindings: bindings(shortcuts),
             end_keys: ends.iter().map(|(id, keys)| end(id, keys)).collect(),
+            start_keys: Vec::new(),
+            hold_keys: Vec::new(),
             ..ProfileValues::default()
         }
     }
@@ -534,6 +585,8 @@ mod tests {
         let mut settings = crate::settings::get_default_settings();
         settings.bindings = bindings(shortcuts);
         settings.end_keys = ends.iter().map(|(id, keys)| end(id, keys)).collect();
+        settings.start_keys.clear();
+        settings.hold_keys.clear();
         settings.default_values = Some(values(shortcuts, ends));
         settings.profiles = vec![crate::profiles::Profile::new(
             "work",
@@ -570,6 +623,32 @@ mod tests {
                 &settings.profiles[0].values.end_keys,
             ),
         ]
+    }
+
+    /// Start and hold shortcuts (2026-11-26) lose their sides as the other
+    /// shortcuts do; an end shortcut with exactly one's combination is its
+    /// twin and loses its side with it.
+    #[test]
+    fn start_and_hold_shortcuts_lose_their_sides_with_their_end() {
+        let mut settings = settings_with(&[("cancel", "escape")], &[("plain", "ctrl_left+space")]);
+        settings.start_keys = vec![crate::start_keys::StartKey {
+            id: "start".to_string(),
+            shortcut: "ctrl_left+space".to_string(),
+        }];
+        settings.hold_keys = vec![end("hold", "ctrl_left+space")];
+        assert!(migrate_on(&mut settings, MAC));
+        assert_eq!(settings.start_keys[0].shortcut, "ctrl+space");
+        assert_eq!(settings.hold_keys[0].shortcut, "ctrl+space");
+        assert_eq!(
+            settings
+                .end_keys
+                .iter()
+                .map(|e| e.shortcut.as_str())
+                .collect::<Vec<_>>(),
+            ["ctrl+space"],
+            "the end with the same combination stays"
+        );
+        assert!(!migrate_on(&mut settings, MAC), "runs once");
     }
 
     #[test]
@@ -643,25 +722,46 @@ mod tests {
     }
 
     #[test]
-    fn an_end_shortcut_with_exactly_a_start_shortcuts_keys_loses_the_side_with_it() {
-        // Since 2026-11-22 an end may have a start shortcut's combination:
-        // the built-in ends of a 0.2.5 store take ⌃ Space and ⌃⇧ Space.
+    fn an_end_shortcut_with_exactly_a_start_or_hold_shortcuts_keys_loses_the_side_with_it() {
+        // Since 2026-11-22 an end may have a start shortcut's combination,
+        // since 2026-11-26 a hold shortcut's too: ⌃ Space and ⌃⇧ Space.
         let mut settings = settings_with(
-            &[
-                ("transcribe", "ctrl_left+space"),
-                ("transcribe_with_post_process", "ctrl_left+shift_left+space"),
-            ],
+            &[],
             &[
                 ("plain", "ctrl_left+space"),
                 ("post_process", "ctrl_left+shift_left+space"),
             ],
         );
+        let start = crate::start_keys::StartKey {
+            id: "start".to_string(),
+            shortcut: "ctrl_left+space".to_string(),
+        };
+        let hold = end("hold", "ctrl_left+shift_left+space");
+        let layers = std::iter::once((&mut settings.start_keys, &mut settings.hold_keys))
+            .chain(
+                settings
+                    .default_values
+                    .iter_mut()
+                    .map(|v| (&mut v.start_keys, &mut v.hold_keys)),
+            )
+            .chain(
+                settings
+                    .profiles
+                    .iter_mut()
+                    .map(|p| (&mut p.values.start_keys, &mut p.values.hold_keys)),
+            );
+        for (starts, holds) in layers {
+            *starts = vec![start.clone()];
+            *holds = vec![hold.clone()];
+        }
         assert!(migrate_on(&mut settings, MAC));
-        for (shortcuts, ends) in everywhere(&settings) {
-            let keys: HashMap<String, String> = shortcuts.into_iter().collect();
-            assert_eq!(keys["transcribe"], "ctrl+space");
+        for (_, ends) in everywhere(&settings) {
             assert_eq!(ends, vec!["ctrl+space", "ctrl+shift+space"]);
         }
+        assert_eq!(settings.start_keys[0].shortcut, "ctrl+space");
+        assert_eq!(settings.hold_keys[0].shortcut, "ctrl+shift+space");
+        let work = &settings.profiles[0].values;
+        assert_eq!(work.start_keys[0].shortcut, "ctrl+space");
         assert!(!migrate_on(&mut settings, MAC));
     }
 

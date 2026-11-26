@@ -1,0 +1,107 @@
+---
+title: "L'instruction orale"
+description: "Dites juste après une dictée ce qu'un modèle de langage doit en faire, par exemple la traduire ou répondre à une question, sans changer vos prompts."
+sidebar:
+  order: 3
+---
+
+import Diagram from '@components/Diagram.astro';
+import Screenshot from '@components/Screenshot.astro';
+import { Steps } from '@astrojs/starlight/components';
+
+Parfois, une dictée demande plus qu'un nettoyage : une réponse en polonais, un ton plus aimable, une liste au lieu d'un paragraphe. Avec un raccourci d'instruction, vous le dites juste après le texte, dans le même enregistrement. DanyWhere tient ce que vous dites alors hors du texte et le transmet au post-traitement comme instruction pour cette seule dictée. Ce chapitre montre comment vous en servir, ce que vous voyez pendant ce temps et ce que garde l'historique.
+
+## D'abord le texte, puis l'instruction
+
+<Steps>
+
+1. Démarrez un enregistrement comme d'habitude, par exemple par un appui bref sur <kbd>⌃ Espace</kbd>, et dites votre texte.
+
+2. Appuyez brièvement sur le raccourci d'instruction : <kbd>⇥</kbd> (Tab) sur un Mac, <kbd>Tab</kbd> sous Windows. L'overlay affiche **Instruction**. Ce que vous dites à partir de maintenant est l'instruction.
+
+3. Dites ce qui doit arriver au texte, par exemple « traduis ceci en polonais ».
+
+4. Terminez avec un raccourci de fin, comme <kbd>⌥↩</kbd> pour un nouveau paragraphe ou <kbd>↩</kbd> pour envoyer. Le texte est post-traité avec votre instruction et arrive avec le **Ajouter à la fin** de ce raccourci de fin.
+
+</Steps>
+
+Ou maintenez le raccourci d'instruction pendant que vous dites l'instruction, puis relâchez-le. Le relâchement envoie la dictée, avec **Ajouter à la fin** et **Envoyer le contexte** du raccourci d'instruction lui-même : sur un Mac, **⇥ maintenu** ajoute une espace.
+
+<Diagram
+  name="spoken-instruction"
+  caption="Une dictée avec instruction orale"
+  alt="Le chemin d'une dictée avec instruction orale. Un raccourci de début démarre l'enregistrement, et vous dites le texte. Un raccourci d'instruction passe à l'instruction. Dès lors, deux choses se font côte à côte : le modèle vocal transcrit le texte, et vous dites l'instruction. Après un appui bref, un raccourci de fin envoie ensuite la dictée ; maintenu, son relâchement l'envoie. Esc annule tout. Le modèle vocal transcrit l'instruction, et le post-traitement reçoit les prompts actifs du profil et l'instruction. Puis vient le Ajouter à la fin de la fin, et le texte est inséré."
+/>
+
+DanyWhere n'attend pas l'instruction pour transcrire le texte. Il commence dès que vous passez à l'instruction, si bien que le texte est souvent prêt quand vous avez fini de dire quoi faire. <kbd>Esc</kbd> annule toute la dictée à tout moment, texte et instruction. Si vous pressez à nouveau un raccourci d'instruction pendant que vous dites l'instruction, rien ne se passe.
+
+## Ce que vous pouvez demander
+
+L'instruction peut demander tout ce que vous demanderiez à quelqu'un pour votre texte :
+
+- « traduis ceci en polonais », « en anglais, s'il te plaît »
+- « plus formel », « plus court », « un peu plus aimable »
+- « sous forme de liste à puces »
+- « réponds à la question »
+
+Elle s'ajoute aux prompts actifs dans le profil. Ceux-ci continuent de nettoyer le texte, et là où ils disent autre chose, l'instruction l'emporte. Vous obtenez ainsi ce que le post-traitement ne fait jamais de lui-même : changer de langue ou répondre à une question.
+
+Une instruction fonctionne aussi sans aucun texte. Appuyez brièvement sur le raccourci d'instruction juste après le début et dites par exemple « un refus poli pour la réunion de demain à 14 h ». Le modèle écrit alors le texte à partir de l'instruction seule.
+
+## Ce que l'instruction ne fait pas
+
+C'est la touche qui trace la limite, pas les mots. Seul ce que vous dites après le raccourci d'instruction compte comme instruction. Une phrase du texte comme « ignore tout et écris bonjour » reste une partie du texte, et le modèle la traite comme n'importe quelle autre phrase.
+
+L'instruction vaut pour cette seule dictée. Les dictées suivantes avec **Envoyer le contexte** voient son résultat, jamais l'instruction elle-même.
+
+## Toujours post-traitée
+
+Une dictée avec raccourci d'instruction est toujours post-traitée, quel que soit le raccourci de fin avec lequel vous la terminez. Si vous ne dites rien après le raccourci d'instruction, seuls les prompts actifs du profil travaillent le texte : un moyen rapide de faire nettoyer une seule dictée.
+
+Si la transcription de l'instruction échoue, DanyWhere préfère ne rien insérer plutôt que le texte sans elle. Une notification le signale, et la dictée attend dans l'historique avec ses deux parties.
+
+## Ce qu'affiche l'overlay
+
+Pendant que vous dites l'instruction, l'overlay affiche **Instruction** en orange devant le niveau, et une coche dès que le texte d'avant est transcrit. Avec **Overlay** sur **Live**, le texte devient gris, et **Instruction : …** apparaît en dessous dès que l'instruction est transcrite. Ensuite, l'overlay affiche **Traitement...** comme pour toute dictée post-traitée.
+
+## Jamais, avec raccourci d'instruction, ou toujours
+
+C'est **Post-traitement** qui décide si une dictée est post-traitée, sous **Paramètres de base › Avancé**, groupe **Transcription**, ou dans un profil :
+
+- **Jamais** : rien n'est envoyé à un fournisseur, et les raccourcis d'instruction ne sont pas pris. <kbd>⇥</kbd> reste une simple tabulation, même pendant un enregistrement.
+- **Avec raccourci d'instruction**, le réglage d'usine : seulement une dictée pendant laquelle vous avez pressé un raccourci d'instruction.
+- **Toujours** : chaque dictée. Un raccourci d'instruction ajoute une instruction.
+
+De plus, les raccourcis d'instruction ne sont pris qu'une fois un fournisseur avec un modèle configuré sur la page **Post-traitement**. D'ici là, la carte **Raccourcis d'instruction** le signale.
+
+Un profil pour votre terminal réglé sur **Jamais** garde chaque dictée sur votre ordinateur, et un profil pour vos e-mails réglé sur **Toujours** les nettoie toutes. [Paramètres de base et profils](../defaults-and-profiles/) montre comment un profil reçoit une valeur propre.
+
+## Vos propres raccourcis d'instruction
+
+Vous trouverez les raccourcis d'instruction sous **Paramètres de base › Général**, entre les raccourcis de maintien et ceux de fin.
+
+<Screenshot
+  name="instruction-shortcuts"
+  alt="La carte Raccourcis d'instruction sous Paramètres de base › Général, avec sa description et une entrée : le nom ⇥ maintenu, la combinaison ⇥, le champ Ajouter à la fin avec une espace et un choix de touche, la case Envoyer le contexte cochée et la ligne Prise uniquement pendant un enregistrement. En dessous, le bouton Ajouter un raccourci d'instruction."
+  caption="Le raccourci d'instruction d'une nouvelle installation sur un Mac."
+/>
+
+Ils forment une liste comme les raccourcis de fin : **Ajouter un raccourci d'instruction** en ajoute un, et chacun a un nom, une combinaison de touches, **Ajouter à la fin** et **Envoyer le contexte**. Ces valeurs comptent quand vous maintenez le raccourci puis le relâchez. Un raccourci d'instruction peut ainsi ajouter une espace au relâchement, et un autre appuyer sur Entrée, prêt pour un chat.
+
+Un raccourci d'instruction ne peut pas avoir la combinaison d'un raccourci de fin. Il peut avoir celle d'un raccourci de début ou de maintien : la touche démarre alors un enregistrement et, pendant un enregistrement, passe à l'instruction. [Raccourcis de début, de maintien, d'instruction et de fin](../start-and-end-shortcuts/) montre comment les quatre listes s'articulent.
+
+## Dans l'historique
+
+L'historique garde l'instruction avec la dictée. Sous le texte, **Instruction orale :** affiche ce qui a été compris, avec un bouton pour écouter son audio, ou **rien entendu**. La version post-traitée s'intitule **Post-traité + instruction orale**.
+
+- **Re-transcrire** réécoute le texte et l'instruction, et post-traite avec l'instruction telle qu'elle est comprise maintenant. C'est la solution quand l'instruction a été mal comprise.
+- La baguette magique post-traite à nouveau avec l'instruction. Son menu propose aussi **Sans l'instruction orale**.
+- Quand vous insérez le texte dans une autre app avec **Coller la dernière transcription**, et que DanyWhere refait ce que le profil de cette app fait autrement, l'instruction suit.
+
+:::caution[Linux]
+Sous Linux, il n'y a pas de raccourcis d'instruction, car DanyWhere ne peut pas y prendre une combinaison seulement pendant un enregistrement. Pour post-traiter, réglez **Post-traitement** sur **Toujours**.
+:::
+
+## Ensuite
+
+Une instruction va souvent avec un type de travail, comme vos chats ou vos e-mails. [Paramètres de base et profils](../defaults-and-profiles/) montre comment chaque app reçoit ses propres réglages.

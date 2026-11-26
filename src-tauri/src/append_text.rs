@@ -1272,9 +1272,9 @@ mod tests {
         let mut settings = get_default_settings();
         settings.append_trailing_space = trailing_space;
         settings.auto_submit = auto_submit;
-        // The hold ends these tests were written with (the factory ones
-        // before 2026-11-24): `stored_with` makes a current store of it.
-        settings.hold_ends = crate::end_keys::stored_before_hold_ends();
+        // The hold shortcuts these tests were written with (without text or
+        // context): `stored_with` makes a current store of it.
+        settings.hold_keys = crate::end_keys::builtin_hold_keys("", false);
         // The shape of a store from before the defaults, when "Standard"
         // was a profile.
         let values = crate::profiles::ProfileValues::from_settings(&settings);

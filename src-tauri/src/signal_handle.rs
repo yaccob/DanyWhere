@@ -15,11 +15,20 @@ use std::thread;
 
 /// Send a transcription input to the coordinator.
 /// Used by signal handlers, CLI flags, and any other external trigger.
-pub fn send_transcription_input(app: &AppHandle, binding_id: &str, source: &str) {
-    if let Some(c) = app.try_state::<TranscriptionCoordinator>() {
-        c.send_external_input(binding_id, source);
-    } else {
+/// DanyWhere: it toggles as a tap of the first start shortcut, in the
+/// profile that applies now; with `post_process` its end is as after an
+/// instruction shortcut without an instruction (`start_keys::remote_toggle`).
+pub fn send_transcription_input(app: &AppHandle, post_process: bool, source: &str) {
+    let Some(c) = app.try_state::<TranscriptionCoordinator>() else {
         warn!("TranscriptionCoordinator not initialized");
+        return;
+    };
+    let settings = crate::settings::get_settings(app);
+    let frontmost = crate::app_profiles::frontmost_if_choosing(&settings);
+    let (_, values) = crate::app_profiles::profile_now(&settings, frontmost.as_deref());
+    match crate::start_keys::remote_toggle(&values, post_process) {
+        Some((binding_id, end)) => c.send_external_input(&binding_id, source, end),
+        None => warn!("{source}: no start or hold shortcut to toggle as"),
     }
 }
 
@@ -45,14 +54,14 @@ pub fn setup_signal_handler(app_handle: AppHandle) {
     debug!("Signal handler registered (SIGUSR2; SIGUSR1 is left to WebKitGTK)");
     thread::spawn(move || {
         for sig in signals.forever() {
-            let (binding_id, signal_name) = match sig {
+            let (post_process, signal_name) = match sig {
                 #[cfg(target_os = "macos")]
-                SIGUSR1 => ("transcribe_with_post_process", "SIGUSR1"),
-                SIGUSR2 => ("transcribe", "SIGUSR2"),
+                SIGUSR1 => (true, "SIGUSR1"),
+                SIGUSR2 => (false, "SIGUSR2"),
                 _ => continue,
             };
             debug!("Received {signal_name}");
-            send_transcription_input(&app_handle, binding_id, signal_name);
+            send_transcription_input(&app_handle, post_process, signal_name);
         }
     });
 }

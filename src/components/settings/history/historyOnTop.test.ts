@@ -59,14 +59,21 @@ check("✨ post-processes the version shown; its menu with one prompt", () => {
   const settings = source("HistorySettings.tsx");
   has(
     settings,
-    /reprocess\(entry\.id, "post_process", shown, null\)/u,
+    /reprocess\(entry\.id, "post_process", shown, null, true\)/u,
+    "HistorySettings.tsx",
+  );
+  // DanyWhere (strand Z1): with the entry's spoken instruction, as the
+  // dictation was made; its menu also without it.
+  has(
+    settings,
+    /reprocess\(entry\.id, "post_process", shown, null, false\)/u,
     "HistorySettings.tsx",
   );
   // H6 (strand E2): the menu lists every prompt by name; one chosen runs
   // alone on the version shown, its result on top.
   has(
     settings,
-    /reprocess\(entry\.id, "post_process", shown, \[promptId\]\)/u,
+    /reprocess\(entry\.id, "post_process", shown, \[promptId\], true\)/u,
     "HistorySettings.tsx",
   );
   const button = source("PostProcessButton.tsx");
@@ -80,7 +87,7 @@ check("✨ post-processes the version shown; its menu with one prompt", () => {
 check("transcribing again names no version", () => {
   has(
     source("HistorySettings.tsx"),
-    /reprocess\(entry\.id, mode, null, null\)/u,
+    /reprocess\(entry\.id, mode, null, null, true\)/u,
     "HistorySettings.tsx",
   );
 });

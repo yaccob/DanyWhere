@@ -21,14 +21,6 @@ async resetBinding(id: string) : Promise<Result<BindingResponse, string>> {
     else return { status: "error", error: e  as any };
 }
 },
-async changeShortcutActivationSetting(activation: ShortcutActivation) : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("change_shortcut_activation_setting", { activation }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
 async changeHoldThresholdMsSetting(ms: number) : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("change_hold_threshold_ms_setting", { ms }) };
@@ -312,9 +304,13 @@ async changeAutoSubmitKeySetting(key: string) : Promise<Result<null, string>> {
     else return { status: "error", error: e  as any };
 }
 },
-async changePostProcessEnabledSetting(enabled: boolean) : Promise<Result<null, string>> {
+/**
+ * Stores the active profile's mode of post-processing. The instruction
+ * shortcuts follow it (`instruction_keys::taken`).
+ */
+async changePostProcessModeSetting(mode: PostProcessMode) : Promise<Result<null, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("change_post_process_enabled_setting", { enabled }) };
+    return { status: "ok", data: await TAURI_INVOKE("change_post_process_mode_setting", { mode }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -744,11 +740,35 @@ async changeEndKeysSetting(endKeys: EndKey[]) : Promise<Result<null, string>> {
 }
 },
 /**
- * Stores the active profile's hold ends, by start shortcut.
+ * Stores the active profile's start shortcuts (the whole list, as the
+ * editor holds it).
  */
-async changeHoldEndsSetting(holdEnds: Partial<{ [key in string]: HoldEnd }>) : Promise<Result<null, string>> {
+async changeStartKeysSetting(startKeys: StartKey[]) : Promise<Result<null, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("change_hold_ends_setting", { holdEnds }) };
+    return { status: "ok", data: await TAURI_INVOKE("change_start_keys_setting", { startKeys }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Stores the active profile's hold shortcuts (the whole list).
+ */
+async changeHoldKeysSetting(holdKeys: EndKey[]) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_hold_keys_setting", { holdKeys }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Stores the active profile's instruction shortcuts (the whole list, as
+ * the editor holds it). A running recording takes the new ones at once.
+ */
+async changeInstructionKeysSetting(instructionKeys: EndKey[]) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_instruction_keys_setting", { instructionKeys }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -1490,11 +1510,13 @@ async retryHistoryEntryTranscription(id: number) : Promise<void> {
  * (`None`: the top); its result, like a new transcription's, goes on top
  * (`history_versions`). `prompt_ids`: post-process with exactly those
  * prompts of the library, in that order; `None`: the profile's active ones
- * (`prompt_library`). Its progress and outcome arrive as
+ * (`prompt_library`). `use_spoken_instruction`: post-process with the
+ * entry's spoken instruction, if it has one; false for the wand's "Without
+ * the spoken instruction". Its progress and outcome arrive as
  * `TranscriptionJob` events.
  */
-async reprocessHistoryEntry(id: number, mode: ReprocessMode, version: number | null, promptIds: string[] | null) : Promise<void> {
-    await TAURI_INVOKE("reprocess_history_entry", { id, mode, version, promptIds });
+async reprocessHistoryEntry(id: number, mode: ReprocessMode, version: number | null, promptIds: string[] | null, useSpokenInstruction: boolean) : Promise<void> {
+    await TAURI_INVOKE("reprocess_history_entry", { id, mode, version, promptIds, useSpokenInstruction });
 },
 /**
  * Saves the user's `text`, an edit of version `base` of the entry:
@@ -1788,13 +1810,10 @@ settings_schema_version?: number;
  */
 bindings?: Partial<{ [key in string]: ShortcutBinding }>; 
 /**
- * Replaces the pre-0.10 `push_to_talk` bool; stores missing this key are
- * migrated from it in `apply_settings_migrations`.
- */
-shortcut_activation?: ShortcutActivation; 
-/**
- * Hold-or-toggle only: a press held at least this long is push-to-talk,
- * anything shorter is a tap that locks recording on.
+ * DanyWhere: for a combination that is a start and a hold shortcut
+ * (`start_keys`), a press held at least this long holds; a shorter one
+ * is a tap that locks recording on. For a hold shortcut alone, a
+ * shorter press discards the recording.
  */
 hold_threshold_ms?: number; audio_feedback?: boolean; audio_feedback_volume?: number; sound_theme?: SoundTheme; 
 /**
@@ -1878,7 +1897,13 @@ dictation_context?: DictationContextSettings; model_unload_timeout?: ModelUnload
 /**
  * Migrated from `recording_retention_period` in `apply_settings_migrations`.
  */
-recording_storage_limit?: RecordingStorageLimit; paste_method?: PasteMethod; clipboard_handling?: ClipboardHandling; auto_submit?: boolean; auto_submit_key?: AutoSubmitKey; post_process_enabled?: boolean; post_process_provider_id?: string; post_process_providers?: PostProcessProvider[]; post_process_api_keys?: SecretMap; post_process_models?: Partial<{ [key in string]: string }>; 
+recording_storage_limit?: RecordingStorageLimit; paste_method?: PasteMethod; clipboard_handling?: ClipboardHandling; auto_submit?: boolean; auto_submit_key?: AutoSubmitKey; 
+/**
+ * DanyWhere: when dictations post-process ([`PostProcessMode`]); until
+ * 2026-11-26 the switch `post_process_enabled` (`post_process_mode`
+ * carries it over).
+ */
+post_process_mode?: PostProcessMode; post_process_provider_id?: string; post_process_providers?: PostProcessProvider[]; post_process_api_keys?: SecretMap; post_process_models?: Partial<{ [key in string]: string }>; 
 /**
  * DanyWhere: the effort per provider (`post_process_effort`); none
  * stored = the model's default.
@@ -1990,10 +2015,19 @@ profile_auto_by_app?: boolean;
  */
 end_keys?: EndKey[]; 
 /**
- * DanyWhere: the active profile's hold end per start shortcut
- * (`end_keys`), by binding id.
+ * DanyWhere: the active profile's start shortcuts (`start_keys`).
  */
-hold_ends?: Partial<{ [key in string]: HoldEnd }>; 
+start_keys: StartKey[]; 
+/**
+ * DanyWhere: the active profile's hold shortcuts (the module
+ * `start_keys`, which has them with the start shortcuts).
+ */
+hold_keys: EndKey[]; 
+/**
+ * DanyWhere: the active profile's instruction shortcuts
+ * (`instruction_keys`); a store from before them gets the factory ones.
+ */
+instruction_keys?: EndKey[]; 
 /**
  * DanyWhere: the height in pixels a History text box may grow to before
  * it scrolls, as dragged at its grip, for the newest entry and for the
@@ -2202,11 +2236,8 @@ shortcut: string;
  */
 append_text: string; 
 /**
- * Whether the text is post-processed (if the profile allows it).
- */
-post_process: boolean; 
-/**
- * Whether post-processing gets earlier dictations as context.
+ * Whether post-processing, when it runs, gets earlier dictations as
+ * context. (A stored box "Post-process" of before variant b is ignored.)
  */
 send_context: boolean }
 /**
@@ -2294,7 +2325,21 @@ versions: HistoryVersion[];
  * DanyWhere: the window it was dictated in and its context for
  * post-processing (`dictation_context`).
  */
-window_context: EntryWindowContext }
+window_context: EntryWindowContext; 
+/**
+ * DanyWhere: the instruction spoken for this dictation's
+ * post-processing (the instruction shortcut), as heard; `None` when it
+ * had none, empty when nothing was heard. It belongs to the entry, not
+ * to its text: it is searched, but never copied, pasted or sent along
+ * as context (`dictation_context`).
+ */
+spoken_instruction?: string | null; 
+/**
+ * DanyWhere: the file in the recordings folder that holds the
+ * instruction's audio, for playing it and transcribing it again; `None`
+ * without one, or once the storage limit removed it with the recording.
+ */
+spoken_instruction_file?: string | null }
 /**
  * What History is searched for. An empty field asks for nothing.
  */
@@ -2334,22 +2379,6 @@ export type HistoryVersion = { text: string;
  * What made it, oldest first; never empty.
  */
 steps: VersionStep[] }
-/**
- * How releasing a held start shortcut ends the recording.
- */
-export type HoldEnd = { 
-/**
- * What is appended, in the "Append" syntax (`append_text`).
- */
-append_text: string; 
-/**
- * Whether the text is post-processed (if the profile allows it).
- */
-post_process: boolean; 
-/**
- * Whether post-processing gets earlier dictations as context.
- */
-send_context: boolean }
 /**
  * Result of changing keyboard implementation
  */
@@ -2598,7 +2627,14 @@ export type NoticeCode = "TranscriptionFailed" | "PasteFailed" | "PasteBlockedEl
  * the text came at its default (`post_process_effort`). Detail: the
  * model.
  */
-"PostProcessEffortRefused"
+"PostProcessEffortRefused" | 
+/**
+ * DanyWhere: a dictation's spoken instruction couldn't be transcribed,
+ * so nothing was inserted; the text before it is the last transcript,
+ * which "Paste Last Transcript" and "Copy Last Transcript" reach
+ * (`dictation_flow`). Detail: the raw error.
+ */
+"InstructionTranscriptionFailed"
 export type NoticeLevel = 
 /**
  * Nothing came out, or Handy can't do its job.
@@ -2664,6 +2700,27 @@ export type PostProcessApiFormat =
  * Anthropic Messages (`/messages`)
  */
 "anthropic"
+/**
+ * DanyWhere: when a profile's dictations are post-processed (user,
+ * 2026-11-26, variant b of the sidecar note
+ * `2026-11-26_1841_nachbearbeitung-nur-ueber-anweisungstaste`). The end
+ * and hold shortcuts no longer say it; an instruction key
+ * (`instruction_keys`) does, unless the profile says never or always.
+ */
+export type PostProcessMode = 
+/**
+ * Never: no instruction key is taken and nothing goes to a provider.
+ */
+"never" | 
+/**
+ * When an instruction key was pressed during the recording (out of
+ * the box).
+ */
+"with_instruction_key" | 
+/**
+ * Every dictation; an instruction key adds its instruction.
+ */
+"always"
 export type PostProcessProvider = { id: string; label: string; base_url: string; allow_base_url_edit?: boolean; models_endpoint?: string | null; supports_structured_output?: boolean; api_format?: PostProcessApiFormat }
 export type Profile = { id: string; 
 /**
@@ -2698,7 +2755,11 @@ export type ProfileField = { name: string; kind: FieldKind }
  * New fields go at the end; `setting_classes` checks that every setting is
  * a profile value or classified otherwise.
  */
-export type ProfileValues = { selected_model: string; selected_language: string; spoken_languages: string[]; language_detection: LanguageDetectionMode; language_detection_window_secs: number; translate_to_english: boolean; chinese_script: ChineseScript; profile_words: string[]; word_lists: WordList[]; active_word_list_id: string | null; post_process_enabled: boolean; post_process_provider_id: string; post_process_models: Partial<{ [key in string]: string }>; 
+export type ProfileValues = { selected_model: string; selected_language: string; spoken_languages: string[]; language_detection: LanguageDetectionMode; language_detection_window_secs: number; translate_to_english: boolean; chinese_script: ChineseScript; profile_words: string[]; word_lists: WordList[]; active_word_list_id: string | null; 
+/**
+ * When dictations post-process (`settings::PostProcessMode`).
+ */
+post_process_mode: PostProcessMode; post_process_provider_id: string; post_process_models: Partial<{ [key in string]: string }>; 
 /**
  * The effort per provider (`post_process_effort`).
  */
@@ -2720,11 +2781,6 @@ context_max_entries: number;
  * `dictation_context.char_budget`
  */
 context_char_budget: number; filler_word_removal_enabled: boolean; custom_filler_words: string[] | null; 
-/**
- * How the dictation shortcut's presses drive a recording. Read when a
- * key event comes, so from the profile in use.
- */
-shortcut_activation: ShortcutActivation; 
 /**
  * The feedback sounds, their volume and theme, the done sound.
  */
@@ -2784,9 +2840,20 @@ bindings: Partial<{ [key in string]: ShortcutBinding }>;
  */
 end_keys?: EndKey[]; 
 /**
- * The hold end per start shortcut (`hold_ends`), one value as a whole.
+ * The start shortcuts (`start_keys`), each with a stable id.
  */
-hold_ends?: Partial<{ [key in string]: HoldEnd }>; 
+start_keys: StartKey[]; 
+/**
+ * The hold shortcuts (the module `start_keys`, which has them
+ * with the start shortcuts), each with a stable id.
+ */
+hold_keys: EndKey[]; 
+/**
+ * The instruction shortcuts (`instruction_keys`), each with a stable
+ * id, in the form of an end shortcut; a stored profile without them
+ * gets the factory ones.
+ */
+instruction_keys?: EndKey[]; 
 /**
  * Check the words that resemble a word list's term with the
  * post-processing provider (`word_list_check`).
@@ -2935,26 +3002,17 @@ uncovered_bindings: string[];
  * warning banner appears and explains why recording refused.
  */
 recorder_blocked: boolean }
-/**
- * How the transcribe shortcut's key events drive a recording.
- */
-export type ShortcutActivation = 
-/**
- * Press to start, press again to stop.
- */
-"toggle" | 
-/**
- * Hold to record, release to stop.
- */
-"push_to_talk" | 
-/**
- * Hold to record and release to stop, or tap to keep recording until the
- * next press. Which one it was is decided by how long the key was held
- * (`hold_threshold_ms`).
- */
-"hold_or_toggle"
 export type ShortcutBinding = { id: string; name: string; description: string; default_binding: string; current_binding: string }
 export type SoundTheme = "marimba" | "pop" | "custom"
+/**
+ * One start shortcut: only a key combination; a start shortcut has no
+ * values, since how a recording ends is up to the end shortcuts.
+ */
+export type StartKey = { 
+/**
+ * Stable, so profiles can share the entry.
+ */
+id: string; shortcut: string }
 /**
  * Phase of the streaming overlay card, emitted to drive its UI state.
  */
@@ -3110,7 +3168,14 @@ prompt_name: string | null;
  * out of the column when `None`, so stacks stored without it read the
  * same.
  */
-model?: string | null }
+model?: string | null; 
+/**
+ * DanyWhere: for an AI step, whether it ran with the instruction
+ * spoken for the dictation (`HistoryEntry::spoken_instruction`); History
+ * names the step "… + spoken instruction". Left out of the column when
+ * false.
+ */
+spoken_instruction?: boolean }
 /**
  * What the settings show about window titles on this computer.
  */

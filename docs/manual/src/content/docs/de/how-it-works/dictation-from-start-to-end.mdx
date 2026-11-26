@@ -13,28 +13,30 @@ Du drückst eine Tastenkombination, sagst, was du schreiben willst, und beendest
 <Diagram
   name="dictation-flow"
   caption="Ein Diktat von Anfang bis Ende"
-  alt="Der Weg eines Diktats. Eine Starttaste startet die Aufnahme. Sie endet, wenn du eine gehaltene Starttaste loslässt, eine Endtaste antippst oder eine Starttaste erneut antippst; Esc bricht sie ab. Das Sprachmodell transkribiert die Aufnahme. Wenn das Ende es verlangt, bearbeitet ein KI-Modell den Text mit den aktiven Prompts nach, mit „Kontext senden“ auch mit früheren Diktaten aus demselben Fenster. Danach kommt der Text aus „Anhängen“, der Text wird eingefügt, und ein Tastendruck wie Enter kann folgen. Das Diktat wird im Verlauf gespeichert, und der Ton für „fertig“ erklingt."
+  alt="Der Weg eines Diktats. Eine Start- oder Haltetaste startet die Aufnahme. Sie endet, wenn du eine Haltetaste loslässt, eine Endtaste antippst oder eine Starttaste erneut antippst; Esc bricht sie ab. Das Sprachmodell transkribiert die Aufnahme. Hast du eine Anweisungstaste gedrückt oder steht Nachbearbeitung auf Immer, bearbeitet ein KI-Modell den Text mit den aktiven Prompts und deiner gesprochenen Anweisung nach, mit „Kontext senden“ auch mit früheren Diktaten aus demselben Fenster. Danach kommt der Text aus „Anhängen“, der Text wird eingefügt, und ein Tastendruck wie Enter kann folgen. Das Diktat wird im Verlauf gespeichert, und der Ton für „fertig“ erklingt."
 />
 
 ## Die Aufnahme starten
 
-Drück die **Starttaste**: <kbd>⌃ Leertaste</kbd> auf dem Mac, <kbd>Strg+Leertaste</kbd> unter Windows, <kbd>Strg+Alt+Leertaste</kbd> unter Linux. DanyWhere hört sofort zu. Auf dem Mac und unter Windows zeigt ein kleines Overlay unten am Bildschirm, dass es aufnimmt, und wenn du **Audio-Feedback** eingeschaltet hast, sagt dir das auch ein kurzer Ton.
+Drück eine Starttaste: <kbd>⌃ Leertaste</kbd> auf dem Mac, <kbd>Strg+Leertaste</kbd> unter Windows, <kbd>Strg+Alt+Leertaste</kbd> unter Linux. DanyWhere hört sofort zu. Auf dem Mac und unter Windows zeigt ein kleines Overlay unten am Bildschirm, dass es aufnimmt, und wenn du **Audio-Feedback** eingeschaltet hast, sagt dir das auch ein kurzer Ton.
 
-Du kannst die Tastenkombination auf zwei Arten benutzen: Halte sie gedrückt, während du sprichst, und lass los, wenn du fertig bist. Oder tipp sie kurz an und sprich, so lange du willst. Das ist die Werkseinstellung **Automatisch** unter **Verhalten der Tastenkombination**; **Halten** und **Antippen** erlauben nur eine der beiden Arten.
+Du kannst die Tastenkombination auf zwei Arten benutzen: Halte sie gedrückt, während du sprichst, und lass los, wenn du fertig bist. Oder tipp sie kurz an und sprich, so lange du willst. Das geht, weil eine neue Installation sie zweimal hat, unter **Starttasten** und unter **Haltetasten**.
 
 ## So beenden, wie du den Text haben willst
 
-Wie du die Aufnahme beendest, entscheidet, was mit dem Text geschieht. Dafür gibt es drei Wege:
+Wie du die Aufnahme beendest, entscheidet, was nach dem Text kommt. Dafür gibt es drei Wege:
 
-- **Loslassen**, wenn du eine Starttaste gehalten hast. Die Aufnahme endet, wie es unter **Beim Halten** eingestellt ist.
-- **Eine Endtaste antippen.** Jede legt fest, was nach dem Text kommt, ob ein KI-Modell ihn überarbeitet und ob frühere Diktate als Kontext mitgehen. Auf dem Mac beendet zum Beispiel <kbd>↩</kbd> die Aufnahme und beginnt nach dem Text einen neuen Absatz.
+- **Loslassen**, wenn du eine Haltetaste gehalten hast. Die Aufnahme endet so, wie diese Haltetaste es sagt.
+- **Eine Endtaste antippen.** Jede legt fest, was nach dem Text kommt und ob frühere Diktate als Kontext mitgehen. Auf dem Mac beendet zum Beispiel <kbd>↩</kbd> die Aufnahme und drückt nach dem Text Enter, was eine Chatnachricht abschickt; <kbd>⌥↩</kbd> beginnt stattdessen einen neuen Absatz.
 - **Die Starttaste erneut antippen.** Das beendet die Aufnahme, wenn eine Endtaste dieselbe Tastenkombination hat. Auf dem Mac setzt erneutes Antippen von <kbd>⌃ Leertaste</kbd> ein Leerzeichen hinter den Text, bereit für den nächsten Satz.
+
+Vor dem Ende kannst du mit einer Anweisungstaste sagen, was ein KI-Modell mit dem Text tun soll: Tipp auf dem Mac <kbd>⇥</kbd> an, sag „übersetze das ins Polnische“ und beende wie immer. Wie das geht, zeigt [Die gesprochene Anweisung](../spoken-instruction/).
 
 Für eine App, in die sich nichts einfügen lässt, beendest du stattdessen mit **Letzte Transkription kopieren**: <kbd>⌃⇧C</kbd> auf dem Mac, <kbd>Alt+Umschalt+C</kbd> unter Windows und Linux. Das beendet die Aufnahme wie erneutes Antippen der Starttaste, legt den Text aber in die Zwischenablage, statt ihn einzufügen.
 
 Doch anders überlegt? <kbd>Esc</kbd> bricht die Aufnahme auf dem Mac und unter Windows ab. Dann wird nichts transkribiert, eingefügt oder aufbewahrt.
 
-Die Endtasten sind das Herzstück von DanyWhere; alle stehen in [Start- und Endtasten](../start-and-end-shortcuts/).
+Die Endtasten sind das Herzstück von DanyWhere; alle stehen in [Start-, Halte-, Anweisungs- und Endtasten](../start-and-end-shortcuts/).
 
 ## Welches Profil gilt
 
@@ -48,9 +50,9 @@ Namen und Fachbegriffe kommen öfter richtig heraus, wenn sie auf einer Wortlist
 
 ## Nachbearbeitung
 
-Ist beim gewählten Ende **Nachbearbeiten** angehakt, überarbeitet ein KI-Modell den Text, bevor er ankommt. Es bekommt die Prompts, die auf der Seite **Nachbearbeitung** als **Aktiv** markiert sind, in ihrer Reihenfolge. DanyWhere setzt einen Rahmen darum, der dem Modell sagt, dass es eine Transkription bearbeiten und keine Frage beantworten soll und dass der Text in seiner Sprache bleibt. Das Overlay zeigt **Verarbeite...**.
+Hast du während der Aufnahme eine Anweisungstaste gedrückt oder bearbeitet das Profil jedes Diktat nach, überarbeitet ein KI-Modell den Text, bevor er ankommt. Es bekommt die Prompts, die auf der Seite **Nachbearbeitung** als **Aktiv** markiert sind, in ihrer Reihenfolge, und zuletzt deine gesprochene Anweisung. DanyWhere setzt einen Rahmen darum, der dem Modell sagt, dass es eine Transkription bearbeiten und keine Frage beantworten soll und dass der Text in seiner Sprache bleibt, außer deine Anweisung verlangt etwas anderes. Das Overlay zeigt **Verarbeite...**.
 
-Nachbearbeitet wird nur, solange der Schalter **Nachbearbeitung** eingeschaltet ist, unter **Grundeinstellungen › Erweitert** oder im Profil. Ob der Text an einen Anbieter in der Cloud geht oder an ein Modell auf deinem eigenen Computer, hängt vom Anbieter ab, den du auf der Seite **Nachbearbeitung** wählst, und die Seite sagt dir, welches von beiden.
+Welcher der beiden Fälle gilt, legt die Einstellung **Nachbearbeitung** fest, unter **Grundeinstellungen › Erweitert** oder im Profil: **Nie**, **Mit Anweisungstaste** (die Werkseinstellung) oder **Immer**, für jedes Diktat. Ob der Text an einen Anbieter in der Cloud geht oder an ein Modell auf deinem eigenen Computer, hängt vom Anbieter ab, den du auf der Seite **Nachbearbeitung** wählst, und die Seite sagt dir, welches von beiden.
 
 Mit **Kontext senden** gehen frühere Diktate aus demselben Fenster mit, damit das Modell weiß, worum es gerade geht: ab Werk bis zu fünf aus der letzten Stunde. Der Verlauf markiert jeden Eintrag, der so hinausging.
 
@@ -92,7 +94,7 @@ Wo die Berechtigung Bedienungshilfen gesperrt ist, wie auf vielen Firmen-Macs, k
 
 ## Verlauf
 
-Jedes Diktat landet im **Verlauf**: die Aufnahme, die Transkription und, wenn nachbearbeitet wurde, der überarbeitete Text als zweite Fassung darüber. DanyWhere speichert das Diktat, bevor es einfügt; geht beim Einfügen etwas schief, ist also nichts verloren. Du kannst einen Eintrag später bearbeiten oder noch einmal nachbearbeiten lassen. Jede Änderung kommt als neue Fassung obendrauf, und die darunter bleiben.
+Jedes Diktat landet im **Verlauf**: die Aufnahme, die Transkription, die gesprochene Anweisung, wenn es eine gab, und, wenn nachbearbeitet wurde, der überarbeitete Text als zweite Fassung darüber. DanyWhere speichert das Diktat, bevor es einfügt; geht beim Einfügen etwas schief, ist also nichts verloren. Du kannst einen Eintrag später bearbeiten oder noch einmal nachbearbeiten lassen. Jede Änderung kommt als neue Fassung obendrauf, und die darunter bleiben.
 
 ## Der Ton für „fertig“
 
@@ -100,4 +102,4 @@ Mit **Audio-Feedback**, das ab Werk aus ist, begleiten dich drei Töne, jeder h�
 
 ## Weiter
 
-Das Ende einer Aufnahme entscheidet am meisten. [Start- und Endtasten](../start-and-end-shortcuts/) zeigt die Endtasten einer neuen Installation, woraus jede besteht und wie du eigene einrichtest.
+Das Ende einer Aufnahme entscheidet am meisten. [Start-, Halte-, Anweisungs- und Endtasten](../start-and-end-shortcuts/) zeigt die Tasten einer neuen Installation, woraus jede besteht und wie du eigene einrichtest.

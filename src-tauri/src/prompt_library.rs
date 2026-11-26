@@ -1157,7 +1157,7 @@ mod tests {
         // Everything else stays.
         let privat = s.profiles.iter().find(|p| p.id == "privat").unwrap();
         assert_eq!(privat.apps, vec!["com.apple.Notes".to_string()]);
-        assert!(privat.values.post_process_enabled);
+        assert!(privat.values.post_process_mode.allows());
     }
 
     #[test]

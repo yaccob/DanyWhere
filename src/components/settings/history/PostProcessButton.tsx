@@ -4,7 +4,9 @@
 // nothing asks first (user, 2026-11-19, H1 and H5). Its menu (H6, strand
 // E2) lists every prompt of the shared library by name, in the order of the
 // profile in use, the active ones checked; choosing one post-processes the
-// version shown with that prompt alone, the result on top as well.
+// version shown with that prompt alone, the result on top as well. For an
+// entry with a spoken instruction (strand Z1), a click runs with it, as the
+// dictation did, and the menu's first item runs without it.
 import React, { useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Check, ChevronDown, WandSparkles } from "lucide-react";
@@ -29,6 +31,10 @@ interface PostProcessButtonProps {
   menuUsable: boolean;
   /** While the user edits the text: nothing may change the stack. */
   disabled?: boolean;
+  /** DanyWhere: the entry has a spoken instruction, which a click and a
+   * prompt chosen by name apply again; this post-processes the current
+   * version without it. Undefined: no instruction, no such item. */
+  onRunWithoutInstruction?: () => void;
 }
 
 export const PostProcessButton: React.FC<PostProcessButtonProps> = ({
@@ -38,11 +44,17 @@ export const PostProcessButton: React.FC<PostProcessButtonProps> = ({
   onRunPrompt,
   menuUsable,
   disabled = false,
+  onRunWithoutInstruction,
 }) => {
   const { t } = useTranslation();
   const ready = availability === "ready";
   const usable = ready && !disabled;
-  const menuEnabled = menuUsable && !disabled && prompts.length > 0;
+  const withoutInstruction = ready ? onRunWithoutInstruction : undefined;
+  const menuEnabled =
+    !disabled &&
+    ((menuUsable && prompts.length > 0) || withoutInstruction !== undefined);
+  // The item without the instruction comes first, then the prompts.
+  const promptOffset = withoutInstruction ? 1 : 0;
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
@@ -150,14 +162,40 @@ export const PostProcessButton: React.FC<PostProcessButtonProps> = ({
           onKeyDown={onMenuKeyDown}
           className="absolute end-0 top-full mt-1 z-50 w-64 max-w-[80vw] bg-background border border-line rounded-lg shadow-lg p-1"
         >
-          <div className="px-2 py-1 text-xs text-ink-3">
-            {t("settings.history.promptMenu.title")}
-          </div>
-          {prompts.map((prompt, index) => (
+          {withoutInstruction && (
+            <>
+              <button
+                ref={(item) => {
+                  itemRefs.current[0] = item;
+                }}
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  close();
+                  withoutInstruction();
+                }}
+                className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-start text-sm text-text hover:bg-wash focus:bg-wash focus:outline-none cursor-pointer"
+              >
+                <span className="size-4 shrink-0" aria-hidden="true" />
+                <span className="min-w-0 flex-1 truncate">
+                  {t("settings.history.promptMenu.withoutSpokenInstruction")}
+                </span>
+              </button>
+              {menuUsable && prompts.length > 0 && (
+                <div role="separator" className="my-1 border-t border-line" />
+              )}
+            </>
+          )}
+          {menuUsable && prompts.length > 0 && (
+            <div className="px-2 py-1 text-xs text-ink-3">
+              {t("settings.history.promptMenu.title")}
+            </div>
+          )}
+          {(menuUsable ? prompts : []).map((prompt, index) => (
             <button
               key={prompt.id}
               ref={(item) => {
-                itemRefs.current[index] = item;
+                itemRefs.current[index + promptOffset] = item;
               }}
               type="button"
               role="menuitemcheckbox"

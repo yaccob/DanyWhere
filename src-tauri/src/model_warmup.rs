@@ -50,10 +50,11 @@ pub struct Warmup {
 }
 
 /// The warm-up a dictation needs: one when it post-processes (`post_process`,
-/// as asked for by its shortcut, and the profile's switch) with a provider on
-/// this computer that has a model.
+/// as its profile's mode expects, `dictation_start::plan_start`) and the
+/// profile may (not "never") with a provider on this computer that has a
+/// model.
 pub fn warmup_for(settings: &AppSettings, post_process: bool) -> Option<Warmup> {
-    if !post_process || !settings.post_process_enabled {
+    if !post_process || !settings.post_process_mode.allows() {
         return None;
     }
     let provider = settings.active_post_process_provider()?;
@@ -159,7 +160,7 @@ mod tests {
     /// `base_url` and `model` chosen for it.
     fn custom_settings(base_url: &str, model: &str) -> AppSettings {
         let mut settings = get_default_settings();
-        settings.post_process_enabled = true;
+        settings.post_process_mode = crate::settings::PostProcessMode::Always;
         settings.post_process_provider_id = "custom".to_string();
         settings
             .post_process_provider_mut("custom")
@@ -196,8 +197,17 @@ mod tests {
         assert!(warmup_for(&settings, false).is_none());
 
         let mut switched_off = settings;
-        switched_off.post_process_enabled = false;
+        switched_off.post_process_mode = crate::settings::PostProcessMode::Never;
         assert!(warmup_for(&switched_off, true).is_none());
+    }
+
+    #[test]
+    fn a_profile_that_never_post_processes_warms_up_nothing() {
+        let mut settings = custom_settings("http://localhost:11434/v1", "gemma4:12b");
+        settings.post_process_mode = crate::settings::PostProcessMode::Never;
+        assert!(warmup_for(&settings, true).is_none());
+        settings.post_process_mode = crate::settings::PostProcessMode::WithInstructionKey;
+        assert!(warmup_for(&settings, true).is_some());
     }
 
     #[test]

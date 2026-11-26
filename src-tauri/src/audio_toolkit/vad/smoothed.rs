@@ -153,6 +153,10 @@ impl VoiceActivityDetector for SmoothedVad {
         })
     }
 
+    fn last_frame_voiced(&self) -> Option<bool> {
+        Some(self.frame_buffer.back().is_some_and(|frame| frame.voiced))
+    }
+
     fn reset(&mut self) {
         self.inner_vad.reset();
         self.frame_buffer.clear();
@@ -233,5 +237,21 @@ mod tests {
         let report = vad.tail_report().unwrap();
         assert_eq!(report.withheld_frames, 2);
         assert_eq!(report.withheld_voiced_frames, 0);
+    }
+
+    /// DanyWhere: a frame kept for its voice says so; one kept only as the
+    /// hangover after speech doesn't (the spoken instruction's section).
+    #[test]
+    fn the_last_frame_says_whether_its_voice_or_only_the_hangover_kept_it() {
+        let mut vad = smoothed(&[true, true, false, false, false], 2);
+        assert!(!vad.push_frame(&frame(0.1)).unwrap().is_speech());
+        assert!(vad.push_frame(&frame(0.2)).unwrap().is_speech());
+        assert_eq!(vad.last_frame_voiced(), Some(true), "onset confirmed");
+        assert!(vad.push_frame(&frame(0.3)).unwrap().is_speech());
+        assert_eq!(vad.last_frame_voiced(), Some(false), "kept as hangover");
+        assert!(vad.push_frame(&frame(0.4)).unwrap().is_speech());
+        assert_eq!(vad.last_frame_voiced(), Some(false), "kept as hangover");
+        assert!(!vad.push_frame(&frame(0.5)).unwrap().is_speech());
+        assert_eq!(vad.last_frame_voiced(), Some(false));
     }
 }

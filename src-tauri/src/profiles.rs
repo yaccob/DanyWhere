@@ -27,8 +27,7 @@ use crate::profile_layers::OwnEntries;
 use crate::prompt_library::PromptOrderEntry;
 use crate::settings::{
     self, AppSettings, ChineseScript, ClipboardHandling, LanguageDetectionMode, OverlayPosition,
-    OverlayStyle, PasteMethod, PostProcessProvider, SecretMap, ShortcutActivation, SoundTheme,
-    TypingTool,
+    OverlayStyle, PasteMethod, PostProcessProvider, SecretMap, SoundTheme, TypingTool,
 };
 use crate::word_lists::WordList;
 
@@ -95,7 +94,8 @@ pub struct ProfileValues {
     pub profile_words: Vec<String>,
     pub word_lists: Vec<WordList>,
     pub active_word_list_id: Option<String>,
-    pub post_process_enabled: bool,
+    /// When dictations post-process (`settings::PostProcessMode`).
+    pub post_process_mode: crate::settings::PostProcessMode,
     pub post_process_provider_id: String,
     pub post_process_models: HashMap<String, String>,
     /// The effort per provider (`post_process_effort`).
@@ -111,9 +111,6 @@ pub struct ProfileValues {
     pub context_char_budget: u32,
     pub filler_word_removal_enabled: bool,
     pub custom_filler_words: Option<Vec<String>>,
-    /// How the dictation shortcut's presses drive a recording. Read when a
-    /// key event comes, so from the profile in use.
-    pub shortcut_activation: ShortcutActivation,
     /// The feedback sounds, their volume and theme, the done sound.
     pub audio_feedback: bool,
     pub audio_feedback_volume: f32,
@@ -161,9 +158,16 @@ pub struct ProfileValues {
     /// which `end_keys::migrate` replaces with its own.
     #[serde(default = "crate::end_keys::stored_before_end_keys")]
     pub end_keys: Vec<crate::end_keys::EndKey>,
-    /// The hold end per start shortcut (`hold_ends`), one value as a whole.
-    #[serde(default = "crate::end_keys::stored_before_hold_ends")]
-    pub hold_ends: HashMap<String, crate::end_keys::HoldEnd>,
+    /// The start shortcuts (`start_keys`), each with a stable id.
+    pub start_keys: Vec<crate::start_keys::StartKey>,
+    /// The hold shortcuts (the module `start_keys`, which has them
+    /// with the start shortcuts), each with a stable id.
+    pub hold_keys: Vec<crate::end_keys::EndKey>,
+    /// The instruction shortcuts (`instruction_keys`), each with a stable
+    /// id, in the form of an end shortcut; a stored profile without them
+    /// gets the factory ones.
+    #[serde(default = "crate::instruction_keys::default_instruction_keys")]
+    pub instruction_keys: Vec<crate::end_keys::EndKey>,
     /// Check the words that resemble a word list's term with the
     /// post-processing provider (`word_list_check`).
     pub word_list_llm_check: bool,
@@ -190,7 +194,7 @@ impl ProfileValues {
             profile_words: settings.profile_words.clone(),
             word_lists: settings.word_lists.clone(),
             active_word_list_id: settings.active_word_list_id.clone(),
-            post_process_enabled: settings.post_process_enabled,
+            post_process_mode: settings.post_process_mode,
             post_process_provider_id: settings.post_process_provider_id.clone(),
             post_process_models: settings.post_process_models.clone(),
             post_process_efforts: settings.post_process_efforts.clone(),
@@ -200,7 +204,6 @@ impl ProfileValues {
             context_char_budget: settings.dictation_context.char_budget,
             filler_word_removal_enabled: settings.filler_word_removal_enabled,
             custom_filler_words: settings.custom_filler_words.clone(),
-            shortcut_activation: settings.shortcut_activation,
             audio_feedback: settings.audio_feedback,
             audio_feedback_volume: settings.audio_feedback_volume,
             sound_theme: settings.sound_theme,
@@ -228,7 +231,9 @@ impl ProfileValues {
             long_form_chunking: settings.long_form_chunking,
             bindings: settings.bindings.clone(),
             end_keys: settings.end_keys.clone(),
-            hold_ends: settings.hold_ends.clone(),
+            start_keys: settings.start_keys.clone(),
+            hold_keys: settings.hold_keys.clone(),
+            instruction_keys: settings.instruction_keys.clone(),
             word_list_llm_check: settings.word_list_llm_check,
         }
     }
@@ -246,7 +251,7 @@ impl ProfileValues {
         settings.profile_words = self.profile_words.clone();
         settings.word_lists = self.word_lists.clone();
         settings.active_word_list_id = self.active_word_list_id.clone();
-        settings.post_process_enabled = self.post_process_enabled;
+        settings.post_process_mode = self.post_process_mode;
         settings.post_process_provider_id = self.post_process_provider_id.clone();
         settings.post_process_models = self.post_process_models.clone();
         settings.post_process_efforts = self.post_process_efforts.clone();
@@ -258,8 +263,8 @@ impl ProfileValues {
         settings.custom_filler_words = self.custom_filler_words.clone();
         settings.bindings = self.bindings.clone();
         settings.end_keys = self.end_keys.clone();
-        settings.hold_ends = self.hold_ends.clone();
-        settings.shortcut_activation = self.shortcut_activation;
+        settings.start_keys = self.start_keys.clone();
+        settings.hold_keys = self.hold_keys.clone();
         settings.audio_feedback = self.audio_feedback;
         settings.audio_feedback_volume = self.audio_feedback_volume;
         settings.sound_theme = self.sound_theme;
@@ -286,6 +291,7 @@ impl ProfileValues {
         settings.vad_enabled = self.vad_enabled;
         settings.long_form_chunking = self.long_form_chunking;
         settings.word_list_llm_check = self.word_list_llm_check;
+        settings.instruction_keys = self.instruction_keys.clone();
     }
 }
 
@@ -833,7 +839,7 @@ mod tests {
     /// Values that concern a dictation, other than a new installation's.
     fn dictation_extra() -> serde_json::Value {
         serde_json::json!({
-            "shortcut_activation": "push_to_talk",
+            "start_keys": [{ "id": "mine", "shortcut": "f13" }],
             "audio_feedback": true,
             "audio_feedback_volume": 0.25,
             "sound_theme": "pop",
@@ -877,7 +883,7 @@ mod tests {
             selected_model: "parakeet".to_string(),
             selected_language: "de".to_string(),
             spoken_languages: strings(&["de", "en"]),
-            post_process_enabled: true,
+            post_process_mode: crate::settings::PostProcessMode::WithInstructionKey,
             post_process_provider_id: "anthropic".to_string(),
             post_process_prompts: vec![
                 prompt("p1", "Diktat (DE/EN)", "Clean it up."),
@@ -904,7 +910,7 @@ mod tests {
             profile_words: strings(&["Kubernetes"]),
             word_lists: vec![list("med", &["Aspirin"])],
             active_word_list_id: Some("med".to_string()),
-            post_process_enabled: false,
+            post_process_mode: crate::settings::PostProcessMode::Always,
             post_process_provider_id: "openai".to_string(),
             post_process_models: HashMap::from([("openai".to_string(), "gpt-x".to_string())]),
             post_process_efforts: HashMap::from([("openai".to_string(), "high".to_string())]),
@@ -914,7 +920,6 @@ mod tests {
             context_char_budget: 999,
             filler_word_removal_enabled: false,
             custom_filler_words: Some(strings(&["äh"])),
-            shortcut_activation: ShortcutActivation::PushToTalk,
             audio_feedback: true,
             audio_feedback_volume: 0.25,
             sound_theme: SoundTheme::Pop,
@@ -946,14 +951,23 @@ mod tests {
             bindings: {
                 let mut bindings = crate::settings::get_default_settings().bindings;
                 bindings
-                    .get_mut("transcribe")
-                    .expect("a dictation shortcut")
-                    .current_binding = "option+space".to_string();
+                    .get_mut("copy_last_transcript")
+                    .expect("a shortcut")
+                    .current_binding = "option+c".to_string();
                 bindings
             },
             end_keys: crate::end_keys::builtin(r"\n\n", true),
-            hold_ends: crate::end_keys::builtin_holds(r"\n\n", true),
+            start_keys: vec![crate::start_keys::StartKey {
+                id: "start".to_string(),
+                shortcut: "option+space".to_string(),
+            }],
+            hold_keys: Vec::new(),
             word_list_llm_check: true,
+            instruction_keys: vec![crate::end_keys::EndKey {
+                id: "instruct".to_string(),
+                shortcut: "f19".to_string(),
+                ..Default::default()
+            }],
         }
     }
 
@@ -1489,13 +1503,19 @@ mod tests {
     #[test]
     fn shortcuts_and_end_shortcuts_are_profile_values() {
         let mut s = two_profiles();
-        let own = s.bindings["transcribe"].current_binding.clone();
+        let own = s.bindings["copy_last_transcript"].current_binding.clone();
+        let own_starts = s.start_keys.clone();
         switch_to(&mut s, "work", false).expect("switched");
-        assert_eq!(s.bindings["transcribe"].current_binding, "option+space");
+        assert_eq!(
+            s.bindings["copy_last_transcript"].current_binding,
+            "option+c"
+        );
         assert_eq!(s.end_keys, crate::end_keys::builtin(r"\n\n", true));
-        assert_eq!(s.hold_ends, crate::end_keys::builtin_holds(r"\n\n", true));
+        assert_eq!(s.start_keys[0].shortcut, "option+space");
+        assert!(s.hold_keys.is_empty());
         switch_to(&mut s, DEFAULT_PROFILE_ID, false).expect("switched back");
-        assert_eq!(s.bindings["transcribe"].current_binding, own);
+        assert_eq!(s.bindings["copy_last_transcript"].current_binding, own);
+        assert_eq!(s.start_keys, own_starts);
         assert_eq!(s.end_keys, crate::end_keys::default_end_keys());
     }
 
@@ -1508,7 +1528,13 @@ mod tests {
                 "{gone} is still a profile value"
             );
         }
-        for kept in ["bindings", "end_keys", "hold_ends"] {
+        for gone in ["shortcut_activation", "hold_ends"] {
+            assert!(
+                stored.get(gone).is_none(),
+                "{gone} is still a profile value"
+            );
+        }
+        for kept in ["bindings", "end_keys", "start_keys", "hold_keys"] {
             assert!(stored.get(kept).is_some(), "{kept} is no profile value");
         }
     }
@@ -1526,8 +1552,8 @@ mod tests {
         );
         // Its own ones stay.
         assert_eq!(
-            work(&s).values.bindings["transcribe"].current_binding,
-            "option+space"
+            work(&s).values.bindings["copy_last_transcript"].current_binding,
+            "option+c"
         );
         assert!(!ensure_profiles(&mut s));
     }

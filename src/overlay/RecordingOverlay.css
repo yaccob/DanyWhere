@@ -510,6 +510,53 @@
 .sglyph.context-off {
   color: var(--color-text);
 }
+/* DanyWhere: the recording takes a spoken instruction
+   (dictation_flow/instruction.rs): its glyph and label before the waveform,
+   the check mark once the text is transcribed: 14px and 5px, the label and
+   6px, 4px and 14px (INSTRUCTION_GLYPH, INSTRUCTION_LABEL_GAP and TEXT_READY
+   in overlayProfile.ts). Live's text goes grey, the instruction's line
+   follows it. */
+.sinstr {
+  --s-instruction: var(--color-warning);
+}
+.sinstr-glyph {
+  display: block;
+  width: 14px;
+  height: 14px;
+  margin-right: 5px;
+  flex: none;
+  color: var(--s-instruction);
+}
+.sinstr-label {
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  margin-right: 6px;
+  flex: none;
+  color: var(--s-instruction);
+}
+.sready {
+  display: block;
+  width: 14px;
+  height: 14px;
+  margin-left: 4px;
+  flex: none;
+  color: var(--s-accent);
+  visibility: hidden;
+}
+.sready.on {
+  visibility: visible;
+}
+.stext-cap p.dimmed .committed,
+.stext-cap p.dimmed .tentative {
+  color: var(--s-muted);
+}
+.stext-cap .sinstr-line {
+  display: block;
+  margin-top: 4px;
+  font-style: normal;
+  color: var(--color-warning);
+}
 /* Measures a full name or label, since the visible one can be cut off. */
 .sprobe {
   position: absolute;

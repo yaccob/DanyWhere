@@ -69,6 +69,9 @@ const translatorFor = (lng: string): Translate => {
 const KINDS: Record<string, FieldKind> = {
   word_lists: { kind: "list", key: "id" },
   end_keys: { kind: "list", key: "id" },
+  start_keys: { kind: "list", key: "id" },
+  hold_keys: { kind: "list", key: "id" },
+  instruction_keys: { kind: "list", key: "id" },
   post_process_providers: { kind: "list", key: "id" },
   bindings: { kind: "map" },
   post_process_models: { kind: "map" },
@@ -91,14 +94,12 @@ const plain = {
   name: "",
   shortcut: "ctrl+option+d",
   append_text: "\\s",
-  post_process: false,
   send_context: false,
 };
 const postProcess = {
   ...plain,
   id: "post_process",
   shortcut: "ctrl+option+shift+d",
-  post_process: true,
 };
 const ownEnd = {
   ...plain,
@@ -107,23 +108,23 @@ const ownEnd = {
   shortcut: "ctrl+option+j",
 };
 
+// Start shortcuts are only combinations, hold shortcuts have an end
+// shortcut's shape (qa 2026-11-26_1810), here Dev's keys.
+const holdDirect = { ...plain, id: "hold_direct" };
+const holdPost = {
+  ...postProcess,
+  id: "hold_post",
+  send_context: true,
+};
+const ownStart = { id: "start_1795307900001", shortcut: "ctrl+option+e" };
+
 const defaults: Record<string, unknown> = {
   bindings: {
-    transcribe: binding("transcribe", "ctrl+option+d"),
-    transcribe_with_post_process: binding(
-      "transcribe_with_post_process",
-      "ctrl+option+shift+d",
-    ),
+    paste_last_transcript: binding("paste_last_transcript", "ctrl+option+v"),
   },
+  start_keys: [{ id: "start", shortcut: "ctrl+option+d" }],
+  hold_keys: [holdDirect, holdPost],
   end_keys: [plain, postProcess],
-  hold_ends: {
-    transcribe: { append_text: "", post_process: false, send_context: false },
-    transcribe_with_post_process: {
-      append_text: "",
-      post_process: true,
-      send_context: true,
-    },
-  },
   word_lists: [{ id: "word_list_1795306966443", name: "GListe", words: [] }],
   active_word_list_id: "word_list_1795306966443",
   post_process_prompt_order: [
@@ -145,8 +146,10 @@ const neutest: LayeredProfile = {
     ...defaults,
     bindings: {
       ...(defaults.bindings as Record<string, unknown>),
-      transcribe: binding("transcribe", "ctrl+option+e"),
+      paste_last_transcript: binding("paste_last_transcript", "ctrl+option+p"),
     },
+    start_keys: [{ id: "start", shortcut: "ctrl+option+d" }, ownStart],
+    hold_keys: [{ ...holdPost, name: "Polieren" }],
     end_keys: [plain, postProcess, ownEnd],
     word_lists: [{ id: "word_list_1795307006713", name: "PListe", words: [] }],
     overlay_position: "top",
@@ -159,7 +162,9 @@ const neutest: LayeredProfile = {
   },
   own: ["overlay_position", "paste_method", "selected_microphone"],
   own_entries: {
-    bindings: { own: ["transcribe"], off: [] },
+    bindings: { own: ["paste_last_transcript"], off: [] },
+    start_keys: { own: [ownStart.id], off: [] },
+    hold_keys: { own: ["hold_post"], off: ["hold_direct"] },
     end_keys: { own: ["end_1795307930035"], off: [] },
     word_lists: {
       own: ["word_list_1795307006713"],
@@ -228,39 +233,94 @@ check("the prompt order names the active prompts", () => {
 });
 check("a shortcut shows its keys", () =>
   assert.equal(
-    valueLabel(de, "bindings", binding("transcribe", "ctrl+option+d")),
+    valueLabel(
+      de,
+      "bindings",
+      binding("paste_last_transcript", "ctrl+option+d"),
+    ),
     formatKeyCombination("ctrl+option+d", "macos"),
   ),
 );
-check("the ends for holding name the start shortcuts by their keys", () => {
-  const start = formatKeyCombination("ctrl+option+d", "macos");
-  const second = formatKeyCombination("ctrl+option+shift+d", "macos");
+check("a start shortcut is called by its combination", () => {
   assert.equal(
-    valueLabel(de, "hold_ends", defaults.hold_ends, defaults),
-    `${start} gehalten: nichts · ${second} gehalten: Nachbearbeiten, Kontext senden`,
+    entryName(de, "start_keys", "start", undefined, defaults),
+    formatKeyCombination("ctrl+option+d", "macos"),
   );
   assert.equal(
-    valueLabel(en, "hold_ends", defaults.hold_ends, defaults),
-    `${start} held: nothing · ${second} held: Post-process, Send Context`,
+    entryName(en, "start_keys", "start_1", {
+      id: "start_1",
+      shortcut: "ctrl+space",
+    }),
+    "⌃ Space",
   );
-  // A missing entry is the one out of the box; an own start shortcut of
-  // the profile is named by its own keys; what is appended shows.
   assert.equal(
-    valueLabel(
-      de,
-      "hold_ends",
-      {
-        transcribe: {
-          append_text: "\\s",
-          post_process: false,
-          send_context: true,
-        },
-      },
-      neutest.values,
-    ),
-    `${formatKeyCombination("ctrl+option+e", "macos")} gehalten: Anhängen \\s · ${second} gehalten: Nachbearbeiten`,
+    entryName(de, "start_keys", "start_1", {
+      id: "start_1",
+      shortcut: "ctrl+space",
+    }),
+    "⌃ Leertaste",
   );
 });
+check(
+  "a hold shortcut without an own name is called after its keys, held",
+  () => {
+    assert.equal(
+      entryName(de, "hold_keys", "hold_direct", undefined, defaults),
+      `${formatKeyCombination("ctrl+option+d", "macos")} gehalten`,
+    );
+    const nameless = { ...plain, id: "hold_1", shortcut: "ctrl+space" };
+    assert.equal(
+      entryName(en, "hold_keys", "hold_1", nameless),
+      "⌃ Space held",
+    );
+    assert.equal(
+      entryName(de, "hold_keys", "hold_1", nameless),
+      "⌃ Leertaste gehalten",
+    );
+    // A name of its own is shown as typed.
+    assert.equal(
+      entryName(de, "hold_keys", "hold_post", undefined, neutest.values),
+      "Polieren",
+    );
+  },
+);
+check(
+  "the page Profile names own and switched-off start and hold shortcuts",
+  () => {
+    assert.equal(
+      ownValueRow(
+        de,
+        { field: "start_keys", entry: ownStart.id },
+        neutest.values,
+      ),
+      `Starttasten: ${formatKeyCombination("ctrl+option+e", "macos")}`,
+    );
+    assert.equal(
+      ownValueRow(
+        de,
+        { field: "hold_keys", entry: "hold_post" },
+        neutest.values,
+      ),
+      "Haltetasten: Polieren",
+    );
+    assert.equal(
+      ownValueRow(
+        de,
+        { field: "hold_keys", entry: "hold_direct", off: true },
+        neutest.values,
+      ),
+      `Haltetasten: ${formatKeyCombination("ctrl+option+d", "macos")} gehalten (aus)`,
+    );
+    assert.equal(
+      ownValueLabel(
+        en,
+        { field: "hold_keys", entry: "hold_post" },
+        neutest.values,
+      ),
+      "Hold Shortcuts: Polieren",
+    );
+  },
+);
 check("an end without an own name is called by its combination", () => {
   assert.equal(
     entryName(de, "end_keys", "plain", undefined, defaults),
@@ -327,8 +387,12 @@ check("the active list is called by its name", () =>
 );
 check("an own shortcut's row on the page Profile shows its keys", () =>
   assert.equal(
-    ownValueRow(de, { field: "bindings", entry: "transcribe" }, neutest.values),
-    `Tastenkombinationen: Starttaste: ${formatKeyCombination("ctrl+option+e", "macos")}`,
+    ownValueRow(
+      de,
+      { field: "bindings", entry: "paste_last_transcript" },
+      neutest.values,
+    ),
+    `Tastenkombinationen: Letzte Transkription einfügen: ${formatKeyCombination("ctrl+option+p", "macos")}`,
   ),
 );
 check("an own end shortcut's row names it without a count", () =>
@@ -343,6 +407,38 @@ check("an own end shortcut's row names it without a count", () =>
 );
 
 // ---- wording: choices by the label their control shows ---------------------
+// The post-processing mode by the label its choice shows (qa
+// 2026-11-26_1810, "Schnittstelle Phase 2").
+check("the post-processing mode shows its choice's label", () => {
+  assert.equal(
+    valueLabel(de, "post_process_mode", "with_instruction_key"),
+    "Mit Anweisungstaste",
+  );
+  assert.equal(valueLabel(de, "post_process_mode", "never"), "Nie");
+  assert.equal(valueLabel(en, "post_process_mode", "always"), "Always");
+});
+// An instruction shortcut is named like a hold shortcut: "⇥ held".
+check(
+  "an instruction shortcut without an own name is called after its keys, held",
+  () => {
+    const tab = { ...plain, id: "instruction_tab", shortcut: "tab" };
+    assert.equal(
+      entryName(en, "instruction_keys", "instruction_tab", tab),
+      "⇥ held",
+    );
+    assert.equal(
+      entryName(de, "instruction_keys", "instruction_tab", tab),
+      "⇥ gehalten",
+    );
+    assert.equal(
+      entryName(de, "instruction_keys", "instruction_tab", {
+        ...tab,
+        name: "Übersetzen",
+      }),
+      "Übersetzen",
+    );
+  },
+);
 check("the effort shows its level's label", () => {
   assert.equal(valueLabel(de, "post_process_efforts", "xhigh"), "Sehr hoch");
   assert.equal(
@@ -409,8 +505,8 @@ check("several fields: each own one that differs, by name", () =>
 );
 check("an entry: the default's entry", () =>
   assert.equal(
-    defaultText(de, ["bindings"], "transcribe", neutest),
-    formatKeyCombination("ctrl+option+d", "macos"),
+    defaultText(de, ["bindings"], "paste_last_transcript", neutest),
+    formatKeyCombination("ctrl+option+v", "macos"),
   ),
 );
 // A model without an effort switches the profile's effort off (B10); the
@@ -573,7 +669,8 @@ check("the bindings give the choice fields this test walks", () => {
   const fields = new Map(choiceFields());
   assert.deepEqual(fields.get("language_detection"), ["when_needed", "always"]);
   assert.ok(fields.has("paste_method"), "paste_method is one");
-  assert.ok(fields.size >= 9, `only ${fields.size} found`);
+  // Eight since "Shortcut Behavior" went (qa 2026-11-26_1810).
+  assert.ok(fields.size >= 8, `only ${fields.size} found`);
 });
 
 // The typing tool's control lists the tools by their command names, as

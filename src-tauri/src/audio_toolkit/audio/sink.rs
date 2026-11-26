@@ -1,4 +1,4 @@
-use std::sync::{mpsc, Arc};
+use std::sync::{mpsc, Arc, Mutex, MutexGuard, PoisonError};
 
 use handy_recorder::{AudioChunk, Sink};
 
@@ -74,8 +74,98 @@ pub struct CapturedAudio {
     /// Every sample received (pre-VAD) was exactly zero, e.g. a muted mic.
     /// False when no audio arrived at all.
     pub input_silent: bool,
+    /// DanyWhere: the detector heard a voice in it (in its last section,
+    /// after a cut): see [`SplitSection::heard_speech`].
+    pub heard_speech: bool,
     /// The detector the recording borrowed, for the next one.
     pub vad: CaptureVad,
+}
+
+/// DanyWhere: the first section of a recording cut in two while the
+/// microphone runs ([`RecordingSections::split`]).
+#[derive(Debug, Clone, PartialEq)]
+pub struct SplitSection {
+    /// 16 kHz mono samples that passed the VAD policy before the cut.
+    pub samples: Vec<f32>,
+    /// Every sample of the section (pre-VAD) was exactly zero; false when no
+    /// audio arrived in it.
+    pub input_silent: bool,
+    /// The detector heard a voice in one of the frames it kept in this
+    /// section: frames kept only as the hangover of speech before the cut
+    /// don't count (`VoiceActivityDetector::last_frame_voiced`). Without VAD,
+    /// any sound counts.
+    pub heard_speech: bool,
+}
+
+/// What a sink kept of the section it records into now.
+#[derive(Default)]
+struct Section {
+    /// 16 kHz mono samples that passed the VAD policy.
+    samples: Vec<f32>,
+    /// A chunk arrived in this section.
+    got_audio: bool,
+    /// One of its chunks was not exact digital silence.
+    heard_sound: bool,
+    /// DanyWhere: see [`SplitSection::heard_speech`].
+    heard_speech: bool,
+}
+
+impl Section {
+    /// Every sample received was exactly zero, e.g. a muted mic. False when
+    /// no audio arrived at all.
+    fn input_silent(&self) -> bool {
+        self.got_audio && !self.heard_sound
+    }
+}
+
+#[derive(Default)]
+struct Sections {
+    current: Section,
+    /// The first section was handed over: frames go into the second, and
+    /// no longer to the live feed.
+    split: bool,
+    /// The sink finished; nothing is cut any more.
+    finished: bool,
+}
+
+/// DanyWhere: the audio a recording's sink has kept, shared with whoever may
+/// cut the recording in two while the microphone runs (the spoken
+/// instruction). The sink adds each frame it keeps under the same lock that
+/// a cut takes, so a frame lands in exactly one section, and its live feed
+/// ends with the first. Clones share it.
+#[derive(Clone, Default)]
+pub struct RecordingSections(Arc<Mutex<Sections>>);
+
+impl RecordingSections {
+    fn lock(&self) -> MutexGuard<'_, Sections> {
+        self.0.lock().unwrap_or_else(PoisonError::into_inner)
+    }
+
+    /// Ends the first section at the next frame boundary: hands over what
+    /// the sink kept so far; from here on its frames go into the second
+    /// section, which `finish` hands back, and no longer to the live feed.
+    /// `None` after a cut or once the recording finished.
+    pub fn split(&self) -> Option<SplitSection> {
+        let mut sections = self.lock();
+        if sections.split || sections.finished {
+            return None;
+        }
+        sections.split = true;
+        let first = std::mem::take(&mut sections.current);
+        Some(SplitSection {
+            input_silent: first.input_silent(),
+            heard_speech: first.heard_speech,
+            samples: first.samples,
+        })
+    }
+
+    /// The section recorded into now, for the sink's `finish`; nothing is
+    /// cut afterwards.
+    fn finish(&self) -> Section {
+        let mut sections = self.lock();
+        sections.finished = true;
+        std::mem::take(&mut sections.current)
+    }
 }
 
 /// One recording's consumer of 16 kHz mono audio from handy-recorder. Runs on
@@ -90,8 +180,8 @@ pub struct CaptureSink {
     /// Signalled on the first chunk: the device is delivering audio. Silence
     /// counts; readiness is not speech.
     ready: Option<mpsc::Sender<()>>,
-    samples: Vec<f32>,
-    heard_sound: bool,
+    /// DanyWhere: what it kept, in the section it records into now.
+    sections: RecordingSections,
 }
 
 /// Spectrum window at 16 kHz: 32 ms, near the overlay's ~30 Hz refresh.
@@ -126,9 +216,13 @@ impl CaptureSink {
             on_levels,
             on_audio,
             ready: Some(ready),
-            samples: Vec::new(),
-            heard_sound: false,
+            sections: RecordingSections::default(),
         }
+    }
+
+    /// DanyWhere: the handle that cuts this recording in two.
+    pub fn sections(&self) -> RecordingSections {
+        self.sections.clone()
     }
 
     /// The detector, from a sink that never recorded (its start failed).
@@ -155,17 +249,23 @@ impl CaptureSink {
                 );
             }
         }
+        // DanyWhere: the section recorded into last, the second after a cut.
+        let section = self.sections.finish();
         CapturedAudio {
-            samples: self.samples,
-            // `ready` is spent on the first chunk, so `None` means audio came.
-            input_silent: self.ready.is_none() && !self.heard_sound,
+            input_silent: section.input_silent(),
+            heard_speech: section.heard_speech,
+            samples: section.samples,
             vad: self.vad,
         }
     }
 
-    fn emit(samples: &mut Vec<f32>, on_audio: &AudioFrameCallback, frame: &[f32]) {
-        samples.extend_from_slice(frame);
-        on_audio(frame);
+    /// Keeps `frame` in `section` and feeds it to the live stream, unless
+    /// the first section was cut off (`live` is then `None`).
+    fn emit(section: &mut Section, live: Option<&AudioFrameCallback>, frame: &[f32]) {
+        section.samples.extend_from_slice(frame);
+        if let Some(on_audio) = live {
+            on_audio(frame);
+        }
     }
 }
 
@@ -174,9 +274,6 @@ impl Sink for CaptureSink {
         if let Some(ready) = self.ready.take() {
             let _ = ready.send(());
         }
-        if !self.heard_sound && !chunk.is_digital_silence() {
-            self.heard_sound = true;
-        }
 
         // Mono by construction: the recorder mixes down or picks one channel.
         let real = &chunk.samples[..chunk.valid_frames];
@@ -184,21 +281,46 @@ impl Sink for CaptureSink {
             (self.on_levels)(levels);
         }
 
+        // DanyWhere: under the lock a cut takes, so this chunk belongs to
+        // one section, whole (`RecordingSections::split`).
+        let mut sections = self.sections.lock();
+        let Sections { current, split, .. } = &mut *sections;
+        current.got_audio = true;
+        if !current.heard_sound && !chunk.is_digital_silence() {
+            current.heard_sound = true;
+        }
+        let live = (!*split).then_some(&self.on_audio);
+
         if self.policy == VadPolicy::Disabled {
-            Self::emit(&mut self.samples, &self.on_audio, real);
+            // DanyWhere: without a detector, any sound counts as speech.
+            current.heard_speech |= current.heard_sound;
+            Self::emit(current, live, real);
             return;
         }
 
         // The detector needs whole frames, so the final chunk goes in with its
         // zero padding; at most one frame of silence reaches the recording.
-        match self
-            .vad
-            .detector
-            .push_frame(chunk.samples)
-            .unwrap_or(VadFrame::Speech(chunk.samples))
-        {
-            VadFrame::Speech(frame) => Self::emit(&mut self.samples, &self.on_audio, frame),
-            VadFrame::Noise => {}
+        // DanyWhere: its state goes on across a cut, so the two sections
+        // hold what one recording would.
+        let voiced = match self.vad.detector.push_frame(chunk.samples) {
+            Ok(VadFrame::Speech(frame)) => {
+                Self::emit(current, live, frame);
+                None
+            }
+            Ok(VadFrame::Noise) => Some(false),
+            // A frame the detector couldn't judge is kept, as speech.
+            Err(_) => {
+                Self::emit(current, live, chunk.samples);
+                Some(true)
+            }
+        };
+        // DanyWhere: whether a voice was heard in this section, not only the
+        // hangover of the speech before a cut (`SplitSection::heard_speech`).
+        if !current.heard_speech {
+            current.heard_speech = match voiced {
+                Some(voiced) => voiced,
+                None => self.vad.detector.last_frame_voiced().unwrap_or(true),
+            };
         }
     }
 }

@@ -7,13 +7,25 @@ This page lists what DanyWhere can do, in short. Where a chapter explains a part
 
 ## Ending a dictation
 
-- **Decide at the end what happens to a dictation.** A recording starts with a start shortcut and ends with an end shortcut of your choice. Each end shortcut has a key combination of its own and says what follows the text, whether a language model post-processes it, and whether earlier dictations go along as context.
-- **Twelve end shortcuts on a Mac, in a new installation,** by one rule: ⌥ (Option) post-processes, ⇧ (Shift) picks the smaller variant, and ⌃ (Control) with ↩ (Return) presses a key. <kbd>⌃ Space</kbd> ends with a space, <kbd>↩</kbd> with a new paragraph, and <kbd>⌃↩</kbd> presses Enter to send a chat message. <kbd>⌥⌃ Space</kbd>, <kbd>⌥↩</kbd> and <kbd>⌥⌃↩</kbd> do the same with post-processing.
-- **On Windows and Linux,** the combinations of the two start shortcuts end the recording, the second one with post-processing.
-- **Hold or tap.** Hold a start shortcut while you speak, or tap it to start and tap again to stop. **When Held** sets how letting go ends the recording.
+- **Decide at the end what happens to a dictation.** A recording starts with a start shortcut and ends with an end shortcut of your choice. Each end shortcut has a key combination of its own and says what follows the text and whether earlier dictations go along as context.
+- **Four lists of the same kind:** start, hold, instruction and end shortcuts, as many of each as you like. What a combination does follows from the lists it stands in, so one combination can start with a tap and record while held.
+- **Six end shortcuts on a Mac, in a new installation,** by one rule: ⇧ (Shift) picks the smaller variant, ↩ (Return) sends, and ⌥ (Option) keeps it from sending. <kbd>⌃ Space</kbd> ends with a space, <kbd>↩</kbd> presses Enter to send a chat message, and <kbd>⌥↩</kbd> ends with a new paragraph.
+- **On Windows and Linux,** the combinations of the two hold shortcuts end the recording.
+- **Hold or tap.** Hold a hold shortcut while you speak, or tap a start shortcut to start and tap again to stop. A short tap on a key that only holds does nothing.
 - **Text and a key press after the dictation.** An end shortcut can append text, such as a space or a new line, and then press a key such as Enter.
 
-[Start and end shortcuts](../how-it-works/start-and-end-shortcuts/) explains all of this.
+[Start, hold, instruction and end shortcuts](../how-it-works/start-and-end-shortcuts/) explains all of this.
+
+## The spoken instruction
+
+- **Say what should happen to the text, right after it.** During a recording, an instruction shortcut (<kbd>⇥</kbd> on a Mac, <kbd>Tab</kbd> on Windows) switches from the text to an instruction, such as “translate this into Polish” or “answer the question”. The language model applies it on top of the profile's prompts, for this one dictation.
+- **Tap or hold.** Tap the instruction shortcut and end with any end shortcut, or hold it while you speak and let go.
+- **No waiting.** The text is transcribed while you're still saying the instruction.
+- **An instruction without text** writes something from scratch, such as a polite reply.
+- **The text stays text.** Only what you say after the key counts as an instruction, and later dictations get the result as context, never the instruction.
+- **Kept in the History** with its audio: **Re-transcribe** hears both parts again, and the wand works with or without the instruction.
+
+[The spoken instruction](../how-it-works/spoken-instruction/) shows how to use it.
 
 ## Defaults and profiles
 
@@ -27,10 +39,11 @@ This page lists what DanyWhere can do, in short. Where a chapter explains a part
 
 ## Post-processing
 
+- **Never, with an instruction shortcut, or always.** Each profile says when its dictations are post-processed: never, so nothing leaves your computer; only after an instruction shortcut, as a new installation does; or every time.
 - **A language model works on your text instead of answering it.** DanyWhere tells the model itself that it gets a transcript to work on, not a question, that the language stays, and that it corrects misheard words where the context makes clear what was said. Your prompt only says what to do with the text. **Effort**, next to the model, sets how much the model thinks.
 - **Several prompts in one go.** The prompts are one library for all profiles. Each profile switches on the ones it uses and puts them in order. They go to the model in one request and apply in turn.
 - **Your word lists as known terms.** Post-processing gets the word lists in effect, so it writes a misheard name as listed, with every speech model.
-- **Earlier dictations as context.** With **Send Context**, an end shortcut sends your earlier dictations from the same window along, so the model knows what the conversation is about.
+- **Earlier dictations as context.** With **Send Context**, an end, hold or instruction shortcut sends your earlier dictations from the same window along, so the model knows what the conversation is about.
 - **On this computer or in the cloud, and you see which.** Next to the provider, the settings say whether post-processing stays on this computer or goes to the cloud. With a model served on this computer, for example through Ollama or LM Studio, DanyWhere loads it as soon as you start speaking, so its cold start doesn't add to the wait.
 
 ## History
@@ -49,7 +62,7 @@ This page lists what DanyWhere can do, in short. Where a chapter explains a part
 ## Without Accessibility on a Mac
 
 - **DanyWhere works where this permission is blocked,** as on many managed Macs. Choose **Continue without Accessibility** during setup. With DanyWhere's input source added, end shortcuts insert the text right away. Without it, a dictation waits in DanyWhere until you insert it with <kbd>⌃⇧V</kbd>.
-- **DanyWhere can't press keys without the permission.** A new installation leaves out the four end shortcuts that press a key, and you press Enter yourself.
+- **DanyWhere can't press keys without the permission.** A new installation leaves out the two end shortcuts that press a key, and you press Enter yourself.
 - **Window titles from the apps themselves.** DanyWhere asks each app that can tell the title of its front window, such as browsers, Terminal, Mail, Notes, TextEdit and Microsoft Office, once you allow it for that app. Context from earlier dictations and the History's window filter need the title.
 - **Shortcuts with the fn key** are not available without the permission.
 
@@ -63,7 +76,7 @@ This page lists what DanyWhere can do, in short. Where a chapter explains a part
 ## More
 
 - **A sound when everything is done,** post-processing included, so you know when to look back. The three sounds rise from start to stop to done.
-- **Key combinations as your system writes them,** <kbd>⌥⌃ Space</kbd> on a Mac and <kbd>Ctrl+Shift+Space</kbd> on Windows. In a combination with a main key, the left and the right modifier keys count alike.
+- **Key combinations as your system writes them,** <kbd>⌃⇧ Space</kbd> on a Mac and <kbd>Ctrl+Shift+Space</kbd> on Windows. In a combination with a main key, the left and the right modifier keys count alike.
 - **What's new after an update,** in English or German.
 - **This manual,** in the app under **Manual** and on the web, in English, German, Spanish and French.
 

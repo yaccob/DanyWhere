@@ -408,18 +408,9 @@
         "notFound": "Kısayol bulunamadı",
         "pressKeys": "Tuşlara basın...",
         "bindings": {
-          "transcribe": {
-            "name": "Başlatma Kısayolu",
-            "description": "Bir kayıt başlatır. Nasıl biteceğini, basılı tutulduğunda da, bitirme kısayolları belirler."
-          },
           "cancel": {
             "name": "İptal Kısayolu",
             "description": "Mevcut kaydı iptal etmek için klavye kısayolu."
-          },
-          "transcribe_with_post_process": {
-            "name": "İkinci Başlatma Kısayolu",
-            "description": "İsteğe bağlı: kayıt başlatan ikinci bir tuş kombinasyonu. Fabrika ayarında, aynı kombinasyona sahip bir bitirme kısayolu metni son işler. Yalnızca son işleme açıkken kullanılır.",
-            "descriptionMacos": "İsteğe bağlı: kayıt başlatan ikinci bir tuş kombinasyonu. Fabrika ayarında, basılı tutup bırakmak metni son işler; yeniden dokunmak ise ⌥ içermeyen her bitirme kısayolu gibi son işleme olmadan bitirir. Yalnızca son işleme açıkken kullanılır."
           },
           "paste_last_transcript": {
             "name": "Son transkripti yapıştır",
@@ -464,20 +455,6 @@
         "noMatch": "“{{query}}” ile eşleşen dil yok",
         "weak": "Henüz hiçbir model {{languages}} dilini iyi tanımıyor."
       },
-      "shortcutActivation": {
-        "title": "Kısayol davranışı",
-        "description": "Bir başlatma kısayolunun kaydı nasıl başlatıp bitireceğini seçin.",
-        "options": {
-          "holdOrToggle": "Otomatik",
-          "pushToTalk": "Basılı tut",
-          "toggle": "Dokun"
-        },
-        "descriptions": {
-          "hold_or_toggle": "Kaydetmek için basılı tutun veya başlatmak için dokunun; ardından bir bitirme kısayolu kaydı durdurur",
-          "push_to_talk": "Kısayolu basılı tuttuğunuz sürece kaydeder",
-          "toggle": "Kaydı başlatmak için dokunun; yeniden dokunmak kaydı yalnızca bir bitirme kısayolu aynı kombinasyona sahipse durdurur"
-        }
-      },
       "insertService": {
         "invalid": "Bir harf, rakam veya noktalama işaretiyle ⌘ ya da ⌃ kullanın",
         "conflict": "{{name}} bu kısayolu zaten kullanıyor"
@@ -495,35 +472,75 @@
         }
       }
     },
+    "startKeys": {
+      "description": "Kayıt başlatmak için dokunun. Kayıt, bir bitirme kısayolu onu bitirene kadar sürer.",
+      "shortcutHint": "Bu kombinasyona dokunmak bir kayıt başlatır. Her zaman kullanılır.",
+      "alsoHold": "Aynı zamanda bir basılı tutma kısayolu",
+      "alsoInstruction": "Aynı zamanda bir talimat kısayolu",
+      "add": "Başlatma Kısayolu Ekle",
+      "addPressKeys": "Yeni başlatma kısayolu için tuş kombinasyonuna basın",
+      "delete": "{{shortcut}} başlatma kısayolunu sil",
+      "lastOne": "Kaydın her zaman başlatılabilmesi için bir başlatma veya basılı tutma kısayolu kalmalıdır.",
+      "refName": "Başlatma kısayolu {{shortcut}}",
+      "errors": {
+        "save": "Başlatma kısayolları kaydedilemedi: {{error}}",
+        "needsShortcut": "Her başlatma kısayolunun bir tuş kombinasyonu olmalı.",
+        "shortcutTwice": "İki başlatma kısayolu aynı kombinasyonu paylaşamaz.",
+        "last": "Son başlatma veya basılı tutma kısayolu kaldırılamaz: kayıt her zaman başlatılabilmelidir.",
+        "cannotEnd": "Linux'ta {{shortcut}} ile başlatılan bir kayıt bitirilemezdi: aynı tuş kombinasyonuna sahip bir bitirme kısayolu bırakın."
+      }
+    },
+    "holdKeys": {
+      "title": "Basılı Tutma Kısayolları",
+      "description": "Kaydetmek için basılı tutun. Bırakmak kaydı bu şekilde bitirir: neyin ekleneceği ve önceki diktelerin bağlam olarak gönderilip gönderilmeyeceği.",
+      "shortcutHint": "Bu kombinasyonu basılı tutmak kaydeder; bırakmak kaydı bu şekilde bitirir.",
+      "alsoStart": "Aynı zamanda bir başlatma kısayolu: kısa bir dokunuş, devam eden bir kayıt başlatır.",
+      "holdOnly": "Yalnızca basılı tutma kısayolu: kısa bir dokunuş hiçbir şey yapmaz.",
+      "alsoInstruction": "Aynı zamanda bir talimat kısayolu: kayıt sırasında talimata geçer.",
+      "add": "Basılı Tutma Kısayolu Ekle",
+      "addPressKeys": "Yeni basılı tutma kısayolu için tuş kombinasyonuna basın",
+      "refName": "Basılı tutma kısayolu {{name}}",
+      "errors": {
+        "save": "Basılı tutma kısayolları kaydedilemedi: {{error}}",
+        "needsShortcut": "Her basılı tutma kısayolunun bir tuş kombinasyonu olmalı.",
+        "shortcutTwice": "İki basılı tutma kısayolu aynı kombinasyonu paylaşamaz."
+      }
+    },
+    "instructionKeys": {
+      "title": "Talimat Kısayolları",
+      "description": "Kayıt sırasında bir talimat kısayolu metinden talimata geçer: sonra söyledikleriniz eklenmez, son işleme metinle ne yapacağını söyler, örneğin “bunu Lehçeye çevir”. Ona dokunun, bir bitirme kısayolu dikteyi gönderir; basılı tutun, bıraktığınızda dikte burada ayarlandığı gibi gönderilir. Böyle bir dikte her zaman son işlemden geçer.",
+      "shortcutHint": "Kayıt sırasında bu kombinasyona basmak metinden talimata geçer. Yalnızca kayıt sırasında kullanılır.",
+      "onlyWhileRecording": "Yalnızca kayıt sırasında kullanılır.",
+      "sameAsStartOrHold": "Bir başlatma veya basılı tutma kısayoluyla aynı kombinasyon: kayıt yokken bir kayıt başlatır, kayıt sırasında talimata geçer.",
+      "notTakenNever": "Son işlem “{{mode}}” olarak ayarlı: talimat kısayolları kullanılmaz. Gelişmiş altında “{{setting}}” için başka bir ayar seçin.",
+      "notTakenNoProvider": "Modeli seçilmiş bir son işlem sağlayıcısı ayarlanmadı: biri ayarlanana kadar talimat kısayolları kullanılmaz.",
+      "add": "Talimat Kısayolu Ekle",
+      "addPressKeys": "Yeni talimat kısayolu için tuş kombinasyonuna basın",
+      "refName": "Talimat kısayolu {{name}}",
+      "errors": {
+        "save": "Talimat kısayolları kaydedilemedi: {{error}}",
+        "needsShortcut": "Her talimat kısayolunun bir tuş kombinasyonu olmalı.",
+        "shortcutTwice": "İki talimat kısayolu aynı kombinasyonu paylaşamaz."
+      }
+    },
     "endKeys": {
       "title": "Bitirme Kısayolları",
-      "description": "Kaydın nasıl bittiği ve ardından ne olduğu. Her bitirme kısayolunun yalnızca kayıt sırasında kullanılan kendi tuş kombinasyonu vardır ve neyin ekleneceğini, metnin son işlenip işlenmeyeceğini ve önceki diktelerin bağlam olarak gönderilip gönderilmeyeceğini belirler. Bir bitirme kısayolu, bir başlatma kısayolunun tuş kombinasyonuna sahip olabilir: o başlatma kısayoluna yeniden dokunmak kaydı bu durumda bu şekilde bitirir.",
+      "description": "Kaydın nasıl bittiği ve ardından ne olduğu. Her bitirme kısayolunun yalnızca kayıt sırasında kullanılan kendi tuş kombinasyonu vardır ve neyin ekleneceğini ve önceki diktelerin bağlam olarak gönderilip gönderilmeyeceğini belirler. Bir bitirme kısayolu, bir başlatma veya basılı tutma kısayolunun tuş kombinasyonuna sahip olabilir: kayıt sırasında ona dokunmak kaydı bu durumda bu şekilde bitirir.",
       "name": "Ad",
       "shortcutHint": "Kayıt sırasında bu kombinasyona basmak kaydı bu şekilde bitirir. Yalnızca kayıt sırasında kullanılır.",
-      "sameAsStart": "“{{start}}” ile aynı kombinasyon: kayıt sırasında yeniden dokunmak kaydı bu şekilde bitirir.",
+      "sameAsStart": "Bir başlatma kısayoluyla aynı kombinasyon: kayıt sırasında yeniden dokunmak kaydı bu şekilde bitirir.",
+      "sameAsHold": "Bir basılı tutma kısayoluyla aynı kombinasyon: kayıt sırasında ona dokunmak kaydı bu şekilde bitirir.",
       "append": "Sona ekle",
       "appendDescription": "Bu şekilde biten bir diktenin sonuna eklenir: metin, ardından seçtiğiniz tuş. Metinde \\s boşluk, \\n yeni satır, \\t sekme ve \\\\ ters eğik çizgidir; geri kalan her şey yazıldığı gibi eklenir. Tuş yalnızca metin yapıştırıldığında gönderilir.",
-      "postProcess": "Son işle",
       "sendContext": "Bağlam Gönder",
-      "sendContextHint": "Yalnızca son işlemeyle: aynı penceredeki önceki dikteler bağlam olarak gönderilir.",
-      "postProcessOff": "Son işlem kapalı: bu şekilde biten bir dikte son işlemden geçmez. Gelişmiş altında “Son İşlem” ayarını açın.",
+      "sendContextHint": "Aynı penceredeki önceki dikteler bağlam olarak gönderilir. Bu yalnızca dikte son işlemden geçtiğinde geçerlidir.",
       "add": "Bitirme Kısayolu Ekle",
       "addPressKeys": "Yeni bitirme kısayolu için tuş kombinasyonuna basın",
       "delete": "{{name}} öğesini sil",
       "lastOne": "Kaydın her zaman bitirilebilmesi için bir bitirme kısayolu kalmalıdır.",
       "held": "{{shortcut}} basılı tutulunca",
-      "holdEnds": {
-        "title": "Basılı Tutulunca",
-        "description": "Basılı tutulan bir başlatma kısayolunu bırakmanın kaydı nasıl bitirdiği."
-      },
-      "tapEnds": {
-        "title": "Dokunulunca",
-        "description": "Bir bitirme kısayoluna dokunmanın kaydı nasıl bitirdiği."
-      },
+      "refName": "Bitirme kısayolu {{name}}",
       "factoryNames": {
-        "pattern": "{{mode}} · {{effect}}",
-        "direct": "Doğrudan",
-        "postProcessed": "Son işlemli",
         "space": "Boşluk",
         "noSpace": "Boşluksuz",
         "paragraph": "Paragraf",
@@ -531,13 +548,13 @@
         "enter": "Enter gönder",
         "shiftEnter": "Shift+Enter gönder"
       },
-      "linuxNoShortcuts": "Linux'ta bitirme kısayollarının tuş kombinasyonları kayıt sırasında kullanılmaz. Orada kayıt, basılı tutulan bir başlatma kısayolu bırakıldığında ya da tuş kombinasyonu bir bitirme kısayolunda da bulunan bir başlatma kısayoluna yeniden dokunulduğunda biter.",
+      "linuxNoShortcuts": "Linux'ta bitirme kısayollarının tuş kombinasyonları kayıt sırasında kullanılmaz. Orada kayıt, bir basılı tutma kısayolu bırakıldığında ya da tuş kombinasyonu bir bitirme kısayolunda da bulunan bir başlatma kısayoluna yeniden dokunulduğunda biter.",
       "errors": {
         "save": "Bitirme kısayolları kaydedilemedi: {{error}}",
         "needsShortcut": "Her bitirme kısayolunun bir tuş kombinasyonu olmalı.",
         "shortcutTwice": "İki bitirme kısayolu aynı kısayolu paylaşamaz.",
         "last": "Son bitirme kısayolu kaldırılamaz: kayıt her zaman bitirilebilmelidir.",
-        "cannotEnd": "Linux'ta kayıt artık bitirilemezdi: bir başlatma kısayolunun tuş kombinasyonuna sahip bir bitirme kısayolu bırakın ya da “Basılı tut” seçeneğini seçin."
+        "cannotEnd": "Linux'ta kayıt artık bitirilemezdi: bir başlatma kısayolunun tuş kombinasyonuna sahip bir bitirme kısayolu bırakın."
       }
     },
     "inputMethod": {
@@ -865,6 +882,7 @@
         "llmCheckTitle": "Adları LLM ile denetle, son işlem olmadan da",
         "llmCheckDescription": "Yalnızca bir kelime listesindeki bir girdiye benzeyen bir kelime içeren diktelerde. Cümle o zaman {{provider}} sağlayıcısına gider.",
         "llmCheckNeedsProvider": "Modeli seçilmiş bir son işlem sağlayıcısı gerekir.",
+        "llmCheckNever": "Son işlem “{{mode}}” olarak ayarlı olduğu sürece olmaz: o zaman hiçbir sağlayıcıya bir şey gönderilmez.",
         "llmCheckNotWith": "{{provider}} ile olmaz: modeli seçilmiş başka bir son işlem sağlayıcısı gerekir.",
         "setUpPostProcessing": "Son işlemi ayarla",
         "switchModel": "{{model}} modeline geç",
@@ -1066,6 +1084,15 @@
         "statusDenied": "İzin verilmedi – Sistem Ayarları › Gizlilik ve Güvenlik › Otomasyon'dan değiştirin",
         "statusNotRunning": "Çalışmıyor – izin vermek için başlatın",
         "statusUnknown": "Bilinmiyor"
+      },
+      "mode": {
+        "title": "Son İşlem",
+        "description": "Bir diktenin son işlem sağlayıcısına ne zaman gittiği. Asla: hiçbir sağlayıcıya bir şey gönderilmez ve talimat kısayolları kullanılmaz. Talimat kısayoluyla: yalnızca içinde bir talimat kısayoluna basılan dikte. Her zaman: her dikte; bir talimat kısayolu bir talimat ekler.",
+        "options": {
+          "never": "Asla",
+          "withInstructionKey": "Talimat kısayoluyla",
+          "always": "Her zaman"
+        }
       }
     },
     "history": {
@@ -1090,6 +1117,11 @@
       "postProcessOff": "Son işlem ayarlarda kapalı",
       "postProcessNotSetUp": "Önce Son İşlem altında bir sağlayıcı, model ve istem seçin",
       "recordingRemoved": "Depolama sınırında kalmak için kayıt silindi",
+      "spokenInstruction": {
+        "label": "Sesli talimat:",
+        "nothingHeard": "hiçbir şey duyulmadı",
+        "audio": "Sesli talimatın ses kaydı"
+      },
       "cancelTranscription": "Transkripsiyonu iptal et",
       "transcribing": "Transkribe ediliyor...",
       "postProcessing": "Son işlem uygulanıyor...",
@@ -1160,6 +1192,7 @@
           "ai": "Son işlem uygulandı",
           "aiPrompt": "“{{prompt}}” ile son işlem uygulandı",
           "user": "Sizin tarafınızdan düzenlendi",
+          "withSpokenInstruction": "{{step}} + sesli talimat",
           "withTime": "{{step}}, {{time}}"
         },
         "saveError": "Metniniz kaydedilemedi. Lütfen tekrar deneyin.",
@@ -1172,7 +1205,8 @@
       "promptMenu": {
         "button": "Tek bir istemle son işlem yap",
         "title": "Şununla son işlem",
-        "active": "etkin"
+        "active": "etkin",
+        "withoutSpokenInstruction": "Sesli talimat olmadan"
       },
       "retranscribeAgain": "Yeniden transkribe et ve önceki gibi yine son işlem uygula"
     },
@@ -1273,10 +1307,6 @@
         "title": "Kapalı Kapak Mikrofonu",
         "description": "Dizüstü bilgisayar kapağı kapalıyken kullanılacak mikrofon"
       },
-      "postProcessingToggle": {
-        "label": "Son İşlem",
-        "description": "Transkripsiyon sonrası yapay zekâ destekli metin iyileştirmeyi etkinleştirir"
-      },
       "muteWhileRecording": {
         "label": "Kayıt Sırasında Sessize Al",
         "description": "Kayıt sırasında sistem sesini kapatır"
@@ -1300,7 +1330,7 @@
       },
       "holdThreshold": {
         "title": "Basılı tutma eşiği",
-        "description": "Yalnızca Otomatik modda: kısayolun dokunma yerine basılı tutma sayılması için ne kadar süre (milisaniye) basılı tutulması gerektiği. Kısa basılı tutmalardan sonra kayıt açık kalmaya devam ediyorsa azaltın; bilinçli dokunmalar basılı tutma olarak algılanıyorsa artırın."
+        "description": "Bir basılı tutma kısayolunun basılı tutma sayılması için ne kadar süre (milisaniye) basılı tutulması gerektiği. Daha kısa basılı tutulursa, aynı zamanda başlatma kısayolu olan bir kombinasyon dokunma sayılır, yalnızca basılı tutma kısayolu olan bir kombinasyon ise kaydı atar. Kısa basılı tutmalardan sonra kayıt açık kalmaya devam ediyorsa azaltın; bilinçli dokunmalar basılı tutma olarak algılanıyorsa artırın."
       },
       "reliablePaste": {
         "title": "Güvenilir Yapıştırma (Beta)",
@@ -1376,7 +1406,6 @@
     "profileView": {
       "fields": {
         "shortcuts": "Kısayollar",
-        "holdEnds": "Basılı tutulunca",
         "selectedModel": "Konuşma modeli",
         "providers": "Sağlayıcının adresi ve biçimi",
         "activePrompts": "Etkin istemler",
@@ -1540,7 +1569,9 @@
     "postProcessEffortRefusedTitle": "Düşünme düzeyi reddedildi",
     "postProcessEffortRefused": "{{model}} seçilen düşünme düzeyini reddetti, bu yüzden metin modelin varsayılanıyla geldi. Son işlem modelinin yanında başka bir düzey veya “Model varsayılanı” seçin.",
     "fileTranscriptionFailedTitle": "Dosya transkripsiyonu başarısız oldu",
-    "transcriptionFailedTitle": "Transkripsiyon başarısız oldu"
+    "transcriptionFailedTitle": "Transkripsiyon başarısız oldu",
+    "instructionTranscriptionFailedTitle": "Talimat başarısız – metin hazır",
+    "instructionTranscriptionFailed": "Sesli talimat transkribe edilemedi, bu yüzden hiçbir şey eklenmedi. Ondan önceki metin hazır: Son transkripti yapıştır onu ekler, Son transkripti kopyala onu panoya koyar."
   },
   "notices": {
     "errorOne": "{{n}} hata",
@@ -1572,7 +1603,10 @@
     "notReady": "Henüz hazır değil",
     "wordList": "Kelime listesi: {{name}}",
     "wordListGlobalOnly": "Ek liste yok",
-    "cancel": "İptal"
+    "cancel": "İptal",
+    "instruction": "Talimat",
+    "instructionLine": "Talimat: {{text}}",
+    "textReady": "Metin yazıya döküldü"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} 1 kısayolu engelliyor olabilir",

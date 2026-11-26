@@ -408,18 +408,9 @@
         "notFound": "Atajo no encontrado",
         "pressKeys": "Presiona teclas...",
         "bindings": {
-          "transcribe": {
-            "name": "Atajo de inicio",
-            "description": "Inicia una grabación. Cómo termina lo deciden los atajos de fin, también al mantenerlo pulsado."
-          },
           "cancel": {
             "name": "Atajo de cancelar",
             "description": "El atajo de teclado para cancelar la grabación actual."
-          },
-          "transcribe_with_post_process": {
-            "name": "Segundo atajo de inicio",
-            "description": "Opcional: una segunda combinación que inicia una grabación. De fábrica, un atajo de fin con la misma combinación posprocesa el texto. Solo se ocupa mientras el posprocesamiento está activado.",
-            "descriptionMacos": "Opcional: una segunda combinación que inicia una grabación. De fábrica, soltarla tras mantenerla pulsada posprocesa el texto; volver a tocarla termina sin posprocesamiento, como todo atajo de fin sin ⌥. Solo se ocupa mientras el posprocesamiento está activado."
           },
           "paste_last_transcript": {
             "name": "Pegar la última transcripción",
@@ -464,20 +455,6 @@
         "noMatch": "Ningún idioma coincide con «{{query}}»",
         "weak": "Ningún modelo reconoce bien {{languages}} todavía."
       },
-      "shortcutActivation": {
-        "title": "Comportamiento del atajo",
-        "description": "Elige cómo un atajo de inicio inicia y termina una grabación.",
-        "options": {
-          "holdOrToggle": "Automático",
-          "pushToTalk": "Mantener",
-          "toggle": "Tocar"
-        },
-        "descriptions": {
-          "hold_or_toggle": "Mantén pulsado para grabar, o toca para empezar; después un atajo de fin detiene la grabación",
-          "push_to_talk": "Graba mientras mantienes pulsado el atajo",
-          "toggle": "Toca para empezar a grabar; volver a tocar solo detiene la grabación si un atajo de fin tiene la misma combinación"
-        }
-      },
       "insertService": {
         "invalid": "Usa ⌘ o ⌃ con una letra, un número o un signo de puntuación",
         "conflict": "«{{name}}» ya usa este atajo"
@@ -495,35 +472,75 @@
         }
       }
     },
+    "startKeys": {
+      "description": "Toca para iniciar una grabación. Sigue hasta que un atajo de fin la termina.",
+      "shortcutHint": "Tocar esta combinación inicia una grabación. Siempre está ocupada.",
+      "alsoHold": "También atajo de mantener",
+      "alsoInstruction": "También atajo de instrucción",
+      "add": "Añadir atajo de inicio",
+      "addPressKeys": "Pulsa la combinación para el nuevo atajo de inicio",
+      "delete": "Eliminar el atajo de inicio {{shortcut}}",
+      "lastOne": "Debe quedar un atajo de inicio o de mantener, para que una grabación siempre se pueda iniciar.",
+      "refName": "Atajo de inicio {{shortcut}}",
+      "errors": {
+        "save": "No se pudieron guardar los atajos de inicio: {{error}}",
+        "needsShortcut": "Cada atajo de inicio necesita una combinación de teclas.",
+        "shortcutTwice": "Dos atajos de inicio no pueden compartir una combinación.",
+        "last": "El último atajo de inicio o de mantener no se puede quitar: siempre debe ser posible iniciar una grabación.",
+        "cannotEnd": "En Linux no se podría terminar una grabación que inicia {{shortcut}}: conserva un atajo de fin con la misma combinación."
+      }
+    },
+    "holdKeys": {
+      "title": "Atajos de mantener",
+      "description": "Mantén pulsado para grabar. Al soltar, la grabación termina de esta manera: qué se añade y si los dictados anteriores se envían como contexto.",
+      "shortcutHint": "Mantener pulsada esta combinación graba; soltarla termina la grabación de esta manera.",
+      "alsoStart": "También atajo de inicio: un toque breve inicia una grabación que sigue en marcha.",
+      "holdOnly": "Solo atajo de mantener: un toque breve no hace nada.",
+      "alsoInstruction": "También atajo de instrucción: durante una grabación cambia a la instrucción.",
+      "add": "Añadir atajo de mantener",
+      "addPressKeys": "Pulsa la combinación para el nuevo atajo de mantener",
+      "refName": "Atajo de mantener {{name}}",
+      "errors": {
+        "save": "No se pudieron guardar los atajos de mantener: {{error}}",
+        "needsShortcut": "Cada atajo de mantener necesita una combinación de teclas.",
+        "shortcutTwice": "Dos atajos de mantener no pueden compartir una combinación."
+      }
+    },
+    "instructionKeys": {
+      "title": "Atajos de instrucción",
+      "description": "Durante una grabación, un atajo de instrucción cambia del texto a una instrucción: lo que digas después no se inserta, sino que le dice al posprocesamiento qué hacer con el texto, por ejemplo «tradúcelo al polaco». Tócalo, y un atajo de fin envía el dictado; mantenlo pulsado, y al soltarlo se envía el dictado tal como se configura aquí. Un dictado así siempre se posprocesa.",
+      "shortcutHint": "Durante una grabación, pulsar esta combinación cambia del texto a la instrucción. Solo se ocupa mientras se graba.",
+      "onlyWhileRecording": "Solo se ocupa durante una grabación.",
+      "sameAsStartOrHold": "La misma combinación que un atajo de inicio o de mantener: sin grabación inicia una, durante una grabación cambia a la instrucción.",
+      "notTakenNever": "El posprocesamiento está en «{{mode}}»: los atajos de instrucción no se ocupan. Elige otra opción para «{{setting}}» en Avanzado.",
+      "notTakenNoProvider": "No hay ningún proveedor de posprocesamiento con un modelo configurado: los atajos de instrucción no se ocupan hasta que haya uno.",
+      "add": "Añadir atajo de instrucción",
+      "addPressKeys": "Pulsa la combinación para el nuevo atajo de instrucción",
+      "refName": "Atajo de instrucción {{name}}",
+      "errors": {
+        "save": "No se pudieron guardar los atajos de instrucción: {{error}}",
+        "needsShortcut": "Cada atajo de instrucción necesita una combinación de teclas.",
+        "shortcutTwice": "Dos atajos de instrucción no pueden compartir una combinación."
+      }
+    },
     "endKeys": {
       "title": "Atajos de fin",
-      "description": "Cómo termina una grabación y qué sigue. Cada atajo de fin tiene su propia combinación de teclas, que solo se ocupa mientras se graba, e indica qué se añade, si el texto se posprocesa y si los dictados anteriores se envían como contexto. Un atajo de fin puede tener la combinación de un atajo de inicio: volver a tocar ese atajo de inicio termina entonces de esta manera.",
+      "description": "Cómo termina una grabación y qué sigue. Cada atajo de fin tiene su propia combinación de teclas, que solo se ocupa mientras se graba, e indica qué se añade y si los dictados anteriores se envían como contexto. Un atajo de fin puede tener la combinación de un atajo de inicio o de mantener: tocarla durante una grabación termina entonces de esta manera.",
       "name": "Nombre",
       "shortcutHint": "Pulsar esta combinación durante una grabación la termina de esta manera. Solo se ocupa mientras se graba.",
-      "sameAsStart": "La misma combinación que «{{start}}»: volver a tocarla durante una grabación la termina de esta manera.",
+      "sameAsStart": "La misma combinación que un atajo de inicio: volver a tocarla durante una grabación la termina de esta manera.",
+      "sameAsHold": "La misma combinación que un atajo de mantener: tocarla durante una grabación la termina de esta manera.",
       "append": "Añadir al final",
       "appendDescription": "Se añade a un dictado que termina de esta manera: el texto y luego la pulsación de tecla que elijas. En el texto, \\s es un espacio, \\n un salto de línea, \\t una tabulación y \\\\ una barra invertida; todo lo demás se añade tal como está escrito. La pulsación de tecla solo se envía cuando se pega el texto.",
-      "postProcess": "Posprocesar",
       "sendContext": "Enviar contexto",
-      "sendContextHint": "Solo con posprocesamiento: los dictados anteriores de la misma ventana se envían como contexto.",
-      "postProcessOff": "El post procesamiento está desactivado: un dictado terminado de esta manera no se posprocesa. Activa «Post procesamiento» en Avanzado.",
+      "sendContextHint": "Los dictados anteriores de la misma ventana se envían como contexto. Solo cuenta cuando el dictado se posprocesa.",
       "add": "Añadir atajo de fin",
       "addPressKeys": "Pulsa la combinación para el nuevo atajo de fin",
       "delete": "Eliminar {{name}}",
       "lastOne": "Debe quedar un atajo de fin, para que una grabación siempre se pueda terminar.",
       "held": "{{shortcut}} mantenido",
-      "holdEnds": {
-        "title": "Al mantener pulsado",
-        "description": "Cómo termina la grabación al soltar un atajo de inicio mantenido."
-      },
-      "tapEnds": {
-        "title": "Al tocar",
-        "description": "Cómo termina la grabación al tocar un atajo de fin."
-      },
+      "refName": "Atajo de fin {{name}}",
       "factoryNames": {
-        "pattern": "{{mode}} · {{effect}}",
-        "direct": "Directo",
-        "postProcessed": "Posprocesado",
         "space": "Espacio",
         "noSpace": "Sin espacio",
         "paragraph": "Párrafo",
@@ -531,13 +548,13 @@
         "enter": "Enviar Enter",
         "shiftEnter": "Enviar Mayús+Enter"
       },
-      "linuxNoShortcuts": "En Linux, las combinaciones de los atajos de fin no se ocupan mientras se graba. Allí una grabación termina al soltar un atajo de inicio mantenido, o al volver a tocar un atajo de inicio cuya combinación tiene un atajo de fin.",
+      "linuxNoShortcuts": "En Linux, las combinaciones de los atajos de fin no se ocupan mientras se graba. Allí una grabación termina al soltar un atajo de mantener, o al volver a tocar un atajo de inicio cuya combinación tiene un atajo de fin.",
       "errors": {
         "save": "No se pudieron guardar los atajos de fin: {{error}}",
         "needsShortcut": "Cada atajo de fin necesita una combinación de teclas.",
         "shortcutTwice": "Dos atajos de fin no pueden compartir un atajo.",
         "last": "El último atajo de fin no se puede quitar: siempre debe ser posible terminar una grabación.",
-        "cannotEnd": "En Linux ya no se podría terminar una grabación: conserva un atajo de fin con la combinación de un atajo de inicio o elige «Mantener»."
+        "cannotEnd": "En Linux ya no se podría terminar una grabación: conserva un atajo de fin con la combinación de un atajo de inicio."
       }
     },
     "inputMethod": {
@@ -865,6 +882,7 @@
         "llmCheckTitle": "Comprobar nombres con el LLM, también sin post proceso",
         "llmCheckDescription": "Solo en dictados con una palabra que se parece a una entrada de una lista de palabras. La frase se envía entonces a {{provider}}.",
         "llmCheckNeedsProvider": "Necesita un proveedor de post proceso con un modelo.",
+        "llmCheckNever": "No mientras el posprocesamiento esté en «{{mode}}»: entonces no se envía nada a ningún proveedor.",
         "llmCheckNotWith": "No con {{provider}}: necesita otro proveedor de post proceso con un modelo.",
         "setUpPostProcessing": "Configurar el post proceso",
         "switchModel": "Cambiar a {{model}}",
@@ -1066,6 +1084,15 @@
         "statusDenied": "No permitido – cámbialo en Ajustes del Sistema › Privacidad y seguridad › Automatización",
         "statusNotRunning": "No se está ejecutando – ábrela para permitir",
         "statusUnknown": "Desconocido"
+      },
+      "mode": {
+        "title": "Post procesamiento",
+        "description": "Cuándo un dictado va al proveedor de posprocesamiento. Nunca: no se envía nada a ningún proveedor y los atajos de instrucción no se ocupan. Con atajo de instrucción: solo un dictado en el que se pulsó un atajo de instrucción. Siempre: cada dictado; un atajo de instrucción añade una instrucción.",
+        "options": {
+          "never": "Nunca",
+          "withInstructionKey": "Con atajo de instrucción",
+          "always": "Siempre"
+        }
       }
     },
     "history": {
@@ -1090,6 +1117,11 @@
       "postProcessOff": "El post proceso está desactivado en la configuración",
       "postProcessNotSetUp": "Primero elige un proveedor, un modelo y un prompt en Post proceso",
       "recordingRemoved": "Grabación eliminada para no superar el límite de espacio",
+      "spokenInstruction": {
+        "label": "Instrucción hablada:",
+        "nothingHeard": "no se entendió nada",
+        "audio": "Audio de la instrucción hablada"
+      },
       "cancelTranscription": "Cancelar transcripción",
       "transcribing": "Transcribiendo...",
       "postProcessing": "Post procesando...",
@@ -1160,6 +1192,7 @@
           "ai": "Post procesado",
           "aiPrompt": "Post procesado con «{{prompt}}»",
           "user": "Editado por ti",
+          "withSpokenInstruction": "{{step}} + instrucción hablada",
           "withTime": "{{step}}, {{time}}"
         },
         "saveError": "No se pudo guardar tu texto. Inténtalo de nuevo.",
@@ -1172,7 +1205,8 @@
       "promptMenu": {
         "button": "Posprocesar con una instrucción",
         "title": "Posprocesar con",
-        "active": "activa"
+        "active": "activa",
+        "withoutSpokenInstruction": "Sin la instrucción hablada"
       },
       "retranscribeAgain": "Re-transcribir y post procesar de nuevo, como antes"
     },
@@ -1273,10 +1307,6 @@
         "title": "Micrófono en modo clamshell",
         "description": "Micrófono a usar cuando la tapa del portátil está cerrada"
       },
-      "postProcessingToggle": {
-        "label": "Post procesamiento",
-        "description": "Habilitar refinamiento de texto impulsado por IA después de la transcripción"
-      },
       "muteWhileRecording": {
         "label": "Silenciar durante la grabación",
         "description": "Silenciar el audio del sistema durante la grabación"
@@ -1300,7 +1330,7 @@
       },
       "holdThreshold": {
         "title": "Umbral de pulsación",
-        "description": "Solo en el modo Automático: cuánto tiempo (en milisegundos) debe mantenerse pulsado el atajo para contar como mantener en lugar de un toque. Redúcelo si la grabación sigue activa tras mantenerlo pulsado poco tiempo; auméntalo si los toques deliberados se interpretan como mantener."
+        "description": "Cuánto tiempo (en milisegundos) debe mantenerse pulsado un atajo de mantener para contar como mantener. Si se mantiene menos, una combinación que también es atajo de inicio cuenta como un toque, y un atajo que solo es de mantener descarta la grabación. Redúcelo si la grabación sigue activa tras mantenerlo pulsado poco tiempo; auméntalo si los toques deliberados se interpretan como mantener."
       },
       "reliablePaste": {
         "title": "Pegado fiable (Beta)",
@@ -1376,7 +1406,6 @@
     "profileView": {
       "fields": {
         "shortcuts": "Atajos",
-        "holdEnds": "Al mantener pulsado",
         "selectedModel": "Modelo de voz",
         "providers": "Dirección y formato del proveedor",
         "activePrompts": "Instrucciones activas",
@@ -1540,7 +1569,9 @@
     "postProcessEffortRefusedTitle": "Esfuerzo rechazado",
     "postProcessEffortRefused": "{{model}} rechazó el esfuerzo elegido, así que el texto llegó con el valor predeterminado del modelo. Elige otro esfuerzo, o «Predeterminado del modelo», junto al modelo de post proceso.",
     "fileTranscriptionFailedTitle": "Error al transcribir el archivo",
-    "transcriptionFailedTitle": "Error de transcripción"
+    "transcriptionFailedTitle": "Error de transcripción",
+    "instructionTranscriptionFailedTitle": "Instrucción fallida – texto listo",
+    "instructionTranscriptionFailed": "No se pudo transcribir la instrucción hablada, así que no se insertó nada. El texto de antes está listo: «Pegar la última transcripción» lo inserta y «Copiar la última transcripción» lo pone en el portapapeles."
   },
   "notices": {
     "errorOne": "{{n}} error",
@@ -1572,7 +1603,10 @@
     "notReady": "Aún no está listo",
     "wordList": "Lista de palabras: {{name}}",
     "wordListGlobalOnly": "Ninguna lista adicional",
-    "cancel": "Cancelar"
+    "cancel": "Cancelar",
+    "instruction": "Instrucción",
+    "instructionLine": "Instrucción: {{text}}",
+    "textReady": "Texto transcrito"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} puede estar bloqueando 1 atajo",

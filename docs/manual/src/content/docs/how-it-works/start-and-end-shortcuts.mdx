@@ -1,6 +1,6 @@
 ---
-title: Start and end shortcuts
-description: Start every dictation the same way and decide at the end what happens to it, from a space after the text to a polished message that is sent right away.
+title: Start, hold, instruction and end shortcuts
+description: Four lists of key combinations decide how a dictation starts and ends and what follows the text, from a space after it to a translated message that is sent right away.
 sidebar:
   order: 2
 ---
@@ -9,102 +9,122 @@ import Diagram from '@components/Diagram.astro';
 import Screenshot from '@components/Screenshot.astro';
 import { Tabs, TabItem, Steps } from '@astrojs/starlight/components';
 
-With DanyWhere you don't have to decide before you speak what should happen to your words. You start every dictation the same way and choose at the end: the keys you press to stop also say whether a space or a new paragraph follows, whether a language model polishes the text, and whether a chat message goes out right away. This chapter shows the end shortcuts a new installation brings, what each one is made of, and how to set up your own.
+With DanyWhere you don't have to decide before you speak what should happen to your words. You start every dictation the same way and choose at the end: the keys you press to stop also say whether a space or a new paragraph follows, and whether a chat message goes out right away. One more key, pressed before the end, lets you tell a language model what to do with the text. This chapter shows the four lists of key combinations behind all this, what a new installation brings, and how to set up your own.
 
-## Start shortcuts start, end shortcuts end
+## Four lists of the same kind
 
-A **Start Shortcut** only starts a recording. An end shortcut only ends one, and DanyWhere takes its combination only while a recording runs, as it does with <kbd>Esc</kbd>. That's why <kbd>↩</kbd> can end a dictation without getting in your way: the rest of the time, the key does what it always does.
+Under **Defaults › General**, four lists follow each other:
+
+- **Start Shortcuts** start a recording with a tap. It runs until an end shortcut ends it.
+- **Hold Shortcuts** record while you hold them. Letting go ends the recording the way the entry says.
+- **Instruction Shortcuts** switch a running recording from the text to an instruction: what you say next tells post-processing what to do with the text, such as “translate this into Polish”. [The spoken instruction](../spoken-instruction/) explains them.
+- **End Shortcuts** end a running recording the way the entry says.
+
+A start shortcut is only a key combination. Hold, instruction and end shortcuts have the same parts, described further down: a name, a key combination, **Append** and **Send Context**.
+
+DanyWhere takes the start and hold shortcuts all the time. The instruction and end shortcuts it takes only while a recording runs, as it does with <kbd>Esc</kbd>. That's why <kbd>↩</kbd> can end a dictation and <kbd>⇥</kbd> can switch to the instruction without getting in your way: the rest of the time, the keys do what they always do.
+
+## What a combination does
+
+What a key combination does follows from the lists it stands in. The same combination may stand in several lists; within one list, no two entries can share one.
+
+| The combination is … | Without a recording | During a recording |
+|---|---|---|
+| a start shortcut | A tap starts a recording that keeps running. | It ends the recording like the end shortcut with the same combination, and does nothing if there is none. |
+| a hold shortcut | Holding records; letting go ends the recording with this entry's values. A short tap does nothing. | As for a start shortcut. |
+| a start and a hold shortcut | A short tap starts a recording that keeps running; holding records until you let go. | As for a start shortcut. |
+| an instruction shortcut | Nothing: the key goes to the app. | It switches to the instruction. |
+| an end shortcut | Nothing: the key goes to the app. | It ends the recording with this entry's values. |
+
+An instruction shortcut may have a start or hold shortcut's combination: without a recording, the key starts one; during a recording, it switches to the instruction. It can't have an end shortcut's combination, since both are taken only during a recording.
 
 <Diagram
   name="how-a-recording-ends"
   caption="How a recording ends"
-  alt="The ways a recording ends. Tapping an end shortcut ends it with that end shortcut's values. Tapping a start shortcut again ends it like the end shortcut with the same combination, and does nothing if there is none. Letting go of a held start shortcut ends it as set under When Held. Esc cancels it. Each way decides what is appended, whether the text is post-processed and whether earlier dictations go along as context."
+  alt="The ways a recording ends. Tapping an end shortcut ends it with that end shortcut's values. Tapping a start or hold shortcut ends it like the end shortcut with the same combination, if there is one. Letting go of a hold shortcut ends it with that hold shortcut's values. An instruction shortcut switches to the instruction: tapped, an end shortcut ends the recording; held, letting go ends it with the instruction shortcut's values. Esc cancels it. Then the text is post-processed if an instruction shortcut was pressed or Post Processing is set to Always, with earlier dictations as context if the end asks for them, and what Append says follows."
 />
 
-Every way to end decides the same three things: what comes after the text, whether the text is post-processed, and whether earlier dictations go along as context.
+## Tap, hold, or both
 
-## The end shortcuts of a new installation
+DanyWhere tells a tap from a hold by how long you press the keys. A combination that is a start and a hold shortcut does both. On a Mac, tap <kbd>⌃ Space</kbd> and talk for as long as you like, then tap it again; or hold it while you speak and let go when you're done.
+
+A short tap on a hold shortcut that isn't also a start shortcut discards the recording: nothing is transcribed, inserted or kept. So a key pressed by mistake has no effect. The lists say under each entry what it does: **Also a hold shortcut** under a start shortcut, and under a hold shortcut **Also a start shortcut: a short tap starts a recording that keeps running.** or **Hold shortcut only: a short tap does nothing.**
+
+Instruction shortcuts know both ways too. Tap one, and an end shortcut sends the dictation off. Hold it while you speak the instruction, and letting go sends it off.
+
+## What hold, instruction and end shortcuts are made of
+
+Each entry has these parts:
+
+- **Name:** how the list shows it. An end shortcut without a name of its own shows its key combination. A hold or instruction shortcut shows its combination with “held”, such as **⌃ Space held**, since its values say what happens when you let go.
+- **The key combination.** Every entry needs one.
+- **Append:** what comes after the text. In the text field, `\s` is a space, `\n` a line break and `\t` a tab; anything else is appended as written. Next to it, you can choose a key press such as Enter, which is sent after the text has been pasted. A line underneath says in words what will be appended.
+- **Send Context:** earlier dictations from the same window go along, so the model knows what you've been writing about. This only counts when the dictation is post-processed.
+
+Whether a dictation is post-processed is not up to the entry. It's up to **Post Processing** under **Defaults › Advanced**, set to **With Instruction Shortcut** out of the box: then a dictation is post-processed when you press an instruction shortcut during it. [The spoken instruction](../spoken-instruction/) shows all three choices.
+
+## The shortcuts of a new installation
 
 <Tabs syncKey="os">
 <TabItem label="macOS">
 
-On a Mac, twelve end shortcuts follow one rule, so the keys already tell you what each one does:
+On a Mac, one combination starts and holds, and the end shortcuts follow one rule:
 
-- <kbd>⌥</kbd> (Option) post-processes the text.
 - <kbd>⇧</kbd> (Shift) picks the smaller variant: no space instead of a space, a line instead of a paragraph.
-- <kbd>⌃</kbd> (Control) together with <kbd>↩</kbd> (Return) presses a key instead of appending text.
+- <kbd>↩</kbd> (Return) sends, as it does when you type: it presses Enter after the text.
+- <kbd>⌥</kbd> (Option) keeps <kbd>↩</kbd> from sending: it appends a paragraph or a line instead.
 
-| Combination | Name | What follows the text |
-|---|---|---|
-| <kbd>⌃ Space</kbd> | **Direct · Space** | a space |
-| <kbd>⌃⇧ Space</kbd> | **Direct · No space** | nothing |
-| <kbd>↩</kbd> | **Direct · Paragraph** | two line breaks |
-| <kbd>⇧↩</kbd> | **Direct · Line** | one line break |
-| <kbd>⌃↩</kbd> | **Direct · Send Enter** | a press of Enter |
-| <kbd>⌃⇧↩</kbd> | **Direct · Send Shift+Enter** | a press of Shift+Enter |
+| List | Combination | Name | What follows the text |
+|---|---|---|---|
+| **Start Shortcuts** | <kbd>⌃ Space</kbd> | | |
+| **Hold Shortcuts** | <kbd>⌃ Space</kbd> | **⌃ Space held** | a space |
+| | <kbd>⌃⇧ Space</kbd> | **⌃⇧ Space held** | nothing |
+| **Instruction Shortcuts** | <kbd>⇥</kbd> (Tab) | **⇥ held** | a space |
+| **End Shortcuts** | <kbd>⌃ Space</kbd> | **Space** | a space |
+| | <kbd>⌃⇧ Space</kbd> | **No space** | nothing |
+| | <kbd>⌥↩</kbd> | **Paragraph** | two line breaks |
+| | <kbd>⌥⇧↩</kbd> | **Line** | one line break |
+| | <kbd>↩</kbd> | **Send Enter** | a press of Enter |
+| | <kbd>⇧↩</kbd> | **Send Shift+Enter** | a press of Shift+Enter |
 
-The same six with <kbd>⌥</kbd> in front, from <kbd>⌥⌃ Space</kbd> to <kbd>⌥⌃⇧↩</kbd>, are called **Post-processed · Space** and so on. They post-process the text and send earlier dictations from the same window along as context.
+All of them have **Send Context** ticked, so a post-processed dictation sees what you wrote before in the same window.
 
-In practice: for a longer text, tap <kbd>⌃ Space</kbd> to start and again to end; each piece gets its space, ready for the next. In an email, end with <kbd>↩</kbd> and the next paragraph is ready. In a chat, <kbd>⌃↩</kbd> sends the message, and <kbd>⌥⌃↩</kbd> polishes it first.
-
-Letting go of a held start shortcut appends a space. With the **Second Start Shortcut**, the text is post-processed as well.
+In practice: for a longer text, tap <kbd>⌃ Space</kbd> to start and again to end; each piece gets its space, ready for the next. Or hold it while you speak. In an email, end with <kbd>⌥↩</kbd> and the next paragraph is ready. In a chat, <kbd>↩</kbd> sends the message, as it would if you had typed it; tap <kbd>⇥</kbd> before it and say “a bit friendlier”, and the message is polished first.
 
 </TabItem>
 <TabItem label="Windows">
 
-Windows starts with two end shortcuts that have the combinations of the two start shortcuts: <kbd>Ctrl+Space</kbd> ends without post-processing, <kbd>Ctrl+Shift+Space</kbd> with it. Neither appends anything, so you tap the start shortcut again to end, and choose the second one when you want the text polished.
-
-Letting go of a held start shortcut works the same way: the **Start Shortcut** ends without post-processing, the **Second Start Shortcut** with it.
+Windows starts with <kbd>Ctrl+Space</kbd> as start and hold shortcut, <kbd>Ctrl+Shift+Space</kbd> as a second hold shortcut, and <kbd>Tab</kbd> as instruction shortcut. Two end shortcuts have the combinations of the two hold shortcuts. None of them appends anything, so you tap <kbd>Ctrl+Space</kbd> again to end, or hold it and let go.
 
 For anything else, add end shortcuts of your own, as shown further down.
 
 </TabItem>
 <TabItem label="Linux">
 
-Linux starts like Windows, with two end shortcuts that have the combinations of the two start shortcuts: <kbd>Ctrl+Alt+Space</kbd> ends without post-processing, <kbd>Ctrl+Alt+Shift+Space</kbd> with it. Neither appends anything.
+Linux starts with <kbd>Ctrl+Alt+Space</kbd> as start and hold shortcut and <kbd>Ctrl+Alt+Shift+Space</kbd> as a second hold shortcut. Two end shortcuts have these combinations. None of them appends anything.
 
-Letting go of a held start shortcut works the same way: the **Start Shortcut** ends without post-processing, the **Second Start Shortcut** with it.
-
-On Linux, a recording can only end through a start shortcut. See the limits at the end of this chapter.
+Linux has no instruction shortcuts, and a recording ends only through a start or hold shortcut. See the limits at the end of this chapter.
 
 </TabItem>
 </Tabs>
 
 :::note
-These are the factory settings of a new installation. If you used DanyWhere before, an update leaves your end shortcuts as they were. The names are written once, in your system's language at the first start, and you can rename them as you like.
+These are the factory settings of a new installation. If you used DanyWhere before, an update keeps your own end shortcuts; the twelve end shortcuts a Mac used to start with become the six above. The names are written once, in your system's language at the first start, and you can rename them as you like.
 :::
 
-## What an end shortcut is made of
+## Add or change a shortcut
 
-Each entry under **End Shortcuts** has these parts:
-
-- **Name:** how the list shows it. Until you type a name, it shows the key combination.
-- **The key combination** that ends the recording this way. Every end shortcut needs one, and no two can share one.
-- **Append:** what comes after the text. In the text field, `\s` is a space, `\n` a line break and `\t` a tab; anything else is appended as written. Next to it, you can choose a key press such as Enter, which is sent after the text has been pasted. A line underneath says in words what will be appended.
-- **Post-process:** a language model polishes the text before it arrives, with the prompts that are active in the profile. This only works while **Post Processing** is switched on under **Defaults › Advanced**; if it isn't, the entry says so.
-- **Send Context:** only with post-processing. Earlier dictations from the same window go along, so the model knows what you've been writing about.
-
-## The start shortcuts and how they end
-
-**Tapping a start shortcut again** during a recording ends it only through an end shortcut with exactly its combination. The list points out such an entry with a line under it. If no end shortcut has the combination, tapping the start shortcut does nothing while a recording runs.
-
-**When Held**, at the top of **End Shortcuts**, sets how letting go of a held start shortcut ends the recording. Each start shortcut has its own: **Append**, **Post-process** and **Send Context**, but no name and no combination. Below it, **When Tapped** heads the end shortcuts. While **Shortcut Behavior** is **Tap**, nothing is held, so **When Held** is hidden and the end shortcuts need no heading of their own.
-
-The **Second Start Shortcut** is optional: a second combination that starts a recording, <kbd>⌃⇧ Space</kbd> on a Mac. DanyWhere takes it only while post-processing is switched on. It's made for holding: hold <kbd>⌃ Space</kbd> for the plain text, hold <kbd>⌃⇧ Space</kbd> for the polished one.
-
-## Add or change an end shortcut
-
-You'll find the end shortcuts under **Defaults › General › End Shortcuts**.
+You'll find all four lists under **Defaults › General**.
 
 <Screenshot
   name="end-shortcuts"
-  alt="The End Shortcuts group under Defaults › General. At the top, When Held has one block per start shortcut, with the Append field, a selection for the key press and the checkboxes Post-process and Send Context. Below it, under When Tapped, each end shortcut is a row with its name, its key combination, the same field, selection and checkboxes, starting with the two that have the start shortcuts' combinations."
+  alt="The End Shortcuts group under Defaults › General. Each end shortcut is a block with its name, its key combination, the Append field with a selection for the key press, a line that says what is appended, and the checkbox Send Context, ticked. First come Space, with the start shortcut's combination, No space, with a hold shortcut's, and Paragraph."
   caption="The end shortcuts under Defaults › General."
 />
 
-To add one, click **Add End Shortcut** and press the combination you want; then set what it does. To change a combination, click it and press the new one. The trash icon next to it deletes an entry. One end shortcut always stays, so a recording can always be ended.
+Each list has its button: **Add Start Shortcut**, **Add Hold Shortcut**, **Add Instruction Shortcut** and **Add End Shortcut**. Click it and press the combination you want; then set what the entry does. To change a combination, click it and press the new one. The trash icon next to it deletes an entry. One start or hold shortcut always stays, so a recording can always be started, and one end shortcut, so it can always be ended. The instruction shortcuts may be none at all.
 
-A profile can differ from the defaults. On the profile's own page **General**, change an end shortcut, add one or delete one, and only that entry becomes the profile's own. All others keep following the defaults, including your later changes there. [Defaults and profiles](../defaults-and-profiles/) shows how this works for every setting.
+A profile can differ from the defaults. On the profile's own page **General**, change an entry of any of the four lists, add one or delete one, and only that entry becomes the profile's own. All others keep following the defaults, including your later changes there. [Defaults and profiles](../defaults-and-profiles/) shows how this works for every setting.
 
 ## Recipe: send a chat message right away
 
@@ -118,24 +138,28 @@ In a chat, you usually want to say your message and have it sent, without reachi
 
 3. Under **Append**, leave the text field empty and choose **Enter** as the key press (<kbd>↩</kbd> on a Mac).
 
-4. If the model should polish the message first, tick **Post-process**, and **Send Context** if it should see what was said before.
+4. Tick **Send Context** if a polished message should see what was said before.
 
 5. Give it a name you'll recognize, such as `Send`.
 
-6. Try it: in a chat, start a dictation, say your message and end with the new combination. The text appears and is sent.
+6. Try it: in a chat, start a dictation, say your message and end with the new combination. The text appears and is sent. To have it polished first, tap the instruction shortcut before you end, and say what to do or nothing at all.
 
 </Steps>
 
 :::tip
-On a Mac, a new installation already has this: <kbd>⌃↩</kbd> sends the message, <kbd>⌥⌃↩</kbd> polishes it first.
+On a Mac, a new installation already has this: <kbd>↩</kbd> sends the message. Tap <kbd>⇥</kbd> before it, and the message is polished first.
 :::
 
 ## Limits
 
 :::caution[Linux]
-On Linux, DanyWhere can't take an end shortcut's own combination during a recording. A recording ends there by letting go of a held start shortcut, or by tapping a start shortcut again whose combination an end shortcut has. So for the recipe above, give the Enter key press to an end shortcut that has a start shortcut's combination, or to **When Held**. The settings won't let you remove the last way to end: keep an end shortcut with a start shortcut's combination, or choose **Hold**.
+On Linux, DanyWhere can't take a combination only while a recording runs. So it takes no end shortcut's own combination and has no instruction shortcuts. A recording ends there when you let go of a hold shortcut, or tap a start shortcut again whose combination an end shortcut has; the settings won't let you remove the last such end shortcut. For the recipe above, give the Enter key press to an end shortcut with a start shortcut's combination, or to a hold shortcut. To post-process on Linux, set **Post Processing** to **Always**, in a profile of its own if you like.
 :::
 
-**On a Mac without Accessibility**, DanyWhere can't press keys. If you continue without the permission, a new installation leaves out the four end shortcuts that send Enter or Shift+Enter, and a key press chosen under **Append** isn't sent.
+**On a Mac without Accessibility**, DanyWhere can't press keys. If you continue without the permission, a new installation leaves out the two end shortcuts that send Enter or Shift+Enter, so <kbd>↩</kbd> ends nothing there; <kbd>⌥↩</kbd> and <kbd>⌥⇧↩</kbd> still end with a paragraph or a line. A key press chosen under **Append** isn't sent.
 
-**macOS uses <kbd>⌃ Space</kbd> and <kbd>⌥⌃ Space</kbd> itself** to switch input sources. If you switch keyboard layouts that way, turn those shortcuts off in System Settings, under Keyboard › Keyboard Shortcuts › Input Sources, or give DanyWhere other combinations.
+**macOS uses <kbd>⌃ Space</kbd> itself** to switch input sources once you have more than one. If you switch keyboard layouts that way, turn the shortcut off in System Settings, under Keyboard › Keyboard Shortcuts › Input Sources, or give DanyWhere other combinations.
+
+## Next
+
+The instruction shortcut is what turns a dictation into a request. [The spoken instruction](../spoken-instruction/) shows what you can ask for and what the History keeps.

@@ -1,4 +1,4 @@
-use super::{AudioFrameCallback, CaptureSink, CaptureVad, LevelCallback, VadPolicy};
+use super::{AudioFrameCallback, CaptureSink, CaptureVad, LevelCallback, SplitSection, VadPolicy};
 use crate::audio_toolkit::vad::{VadFrame, VoiceActivityDetector};
 use handy_recorder::{AudioChunk, Sink};
 use std::sync::{mpsc, Arc, Mutex};
@@ -10,15 +10,25 @@ struct ScriptedVad {
     frame_samples: usize,
     hangover: Arc<Mutex<Option<usize>>>,
     resets: Arc<Mutex<usize>>,
+    last_voiced: bool,
 }
+
+/// DanyWhere: a frame starting with this is kept as the hangover after
+/// speech, without a voice of its own.
+const HANGOVER: f32 = 9.0;
 
 impl VoiceActivityDetector for ScriptedVad {
     fn push_frame<'a>(&'a mut self, frame: &'a [f32]) -> anyhow::Result<VadFrame<'a>> {
+        self.last_voiced = frame[0] != 0.0 && frame[0] != HANGOVER;
         Ok(if frame[0] != 0.0 {
             VadFrame::Speech(frame)
         } else {
             VadFrame::Noise
         })
+    }
+
+    fn last_frame_voiced(&self) -> Option<bool> {
+        Some(self.last_voiced)
     }
 
     fn frame_samples(&self) -> usize {
@@ -175,4 +185,156 @@ fn finish_returns_the_detector_for_the_next_recording() {
     let captured = h.sink.finish();
     assert_eq!(captured.vad.frame_samples(), FRAME);
     assert_eq!(captured.vad.hangover_for(VadPolicy::Streaming), 20);
+}
+
+// DanyWhere: cutting a recording in two while the microphone runs
+// (`RecordingSections`), for the spoken instruction.
+
+#[test]
+fn a_split_hands_over_the_first_section_and_the_finish_the_second() {
+    let mut h = harness(VadPolicy::Disabled);
+    let sections = h.sink.sections();
+    h.sink.process_chunk(chunk(&[1.0, 2.0, 3.0, 4.0], FRAME));
+    h.sink.process_chunk(chunk(&[5.0, 6.0, 7.0, 8.0], FRAME));
+
+    let first = sections.split().expect("the recording is cut");
+    assert_eq!(first.samples, [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]);
+    assert!(!first.input_silent);
+
+    h.sink.process_chunk(chunk(&[9.0, 10.0, 11.0, 12.0], FRAME));
+    h.sink.process_chunk(chunk(&[13.0, 0.0, 0.0, 0.0], 1));
+    assert_eq!(h.sink.finish().samples, [9.0, 10.0, 11.0, 12.0, 13.0]);
+}
+
+#[test]
+fn after_a_split_the_live_feed_gets_nothing_more() {
+    let mut h = harness(VadPolicy::Offline);
+    let sections = h.sink.sections();
+    h.sink.process_chunk(chunk(&[1.0; FRAME], FRAME));
+    let first = sections.split().expect("the recording is cut");
+    h.sink.process_chunk(chunk(&[2.0; FRAME], FRAME));
+
+    assert_eq!(first.samples, [1.0; FRAME]);
+    assert_eq!(
+        *h.fed.lock().unwrap(),
+        first.samples,
+        "the live stream had exactly the first section"
+    );
+    assert_eq!(h.sink.finish().samples, [2.0; FRAME]);
+}
+
+#[test]
+fn each_section_says_whether_its_own_input_was_silent() {
+    let mut h = harness(VadPolicy::Offline);
+    let sections = h.sink.sections();
+    h.sink.process_chunk(chunk(&[0.0; FRAME], FRAME));
+    let first = sections.split().expect("the recording is cut");
+    assert!(first.input_silent, "the first section had only zeros");
+    h.sink.process_chunk(chunk(&[0.0, 0.01, 0.0, 0.0], FRAME));
+    assert!(
+        !h.sink.finish().input_silent,
+        "the second section had sound"
+    );
+
+    let mut h = harness(VadPolicy::Offline);
+    let sections = h.sink.sections();
+    h.sink.process_chunk(chunk(&[1.0; FRAME], FRAME));
+    assert!(!sections.split().expect("the recording is cut").input_silent);
+    h.sink.process_chunk(chunk(&[0.0; FRAME], FRAME));
+    assert!(
+        h.sink.finish().input_silent,
+        "the second section had only zeros"
+    );
+}
+
+#[test]
+fn a_split_before_any_audio_is_empty_and_not_silent() {
+    let mut h = harness(VadPolicy::Disabled);
+    let sections = h.sink.sections();
+    let first = sections.split().expect("the recording is cut");
+    assert_eq!(
+        first,
+        SplitSection {
+            samples: Vec::new(),
+            input_silent: false,
+            heard_speech: false,
+        }
+    );
+    h.sink.process_chunk(chunk(&[1.0; FRAME], FRAME));
+    assert_eq!(h.sink.finish().samples, [1.0; FRAME]);
+}
+
+#[test]
+fn a_recording_is_cut_only_once_and_not_after_it_finished() {
+    let mut h = harness(VadPolicy::Disabled);
+    let sections = h.sink.sections();
+    h.sink.process_chunk(chunk(&[1.0; FRAME], FRAME));
+    assert!(sections.split().is_some());
+    h.sink.process_chunk(chunk(&[2.0; FRAME], FRAME));
+    assert_eq!(sections.split(), None, "a second cut gives nothing");
+    assert_eq!(h.sink.finish().samples, [2.0; FRAME]);
+
+    let mut h = harness(VadPolicy::Disabled);
+    let sections = h.sink.sections();
+    h.sink.process_chunk(chunk(&[1.0; FRAME], FRAME));
+    assert_eq!(h.sink.finish().samples, [1.0; FRAME]);
+    assert_eq!(sections.split(), None, "a finished recording isn't cut");
+}
+
+// DanyWhere: whether a section of a cut recording heard speech, so an
+// instruction section without any isn't transcribed (Whisper makes a
+// sentence up from silence).
+
+#[test]
+fn a_section_with_only_the_hangover_of_the_speech_before_the_cut_heard_none() {
+    let mut h = harness(VadPolicy::Offline);
+    let sections = h.sink.sections();
+    h.sink.process_chunk(chunk(&[1.0; FRAME], FRAME));
+    let first = sections.split().expect("the recording is cut");
+    assert!(first.heard_speech, "the text was spoken");
+    h.sink.process_chunk(chunk(&[HANGOVER; FRAME], FRAME));
+    h.sink.process_chunk(chunk(&[0.0; FRAME], FRAME));
+    let second = h.sink.finish();
+    assert_eq!(second.samples, [HANGOVER; FRAME], "the hangover is kept");
+    assert!(!second.heard_speech, "but no voice was heard after the cut");
+}
+
+#[test]
+fn a_section_with_a_voice_heard_speech() {
+    let mut h = harness(VadPolicy::Offline);
+    let sections = h.sink.sections();
+    h.sink.process_chunk(chunk(&[0.0; FRAME], FRAME));
+    let first = sections.split().expect("the recording is cut");
+    assert!(!first.heard_speech, "nothing was said before the cut");
+    h.sink.process_chunk(chunk(&[HANGOVER; FRAME], FRAME));
+    h.sink.process_chunk(chunk(&[2.0; FRAME], FRAME));
+    h.sink.process_chunk(chunk(&[HANGOVER; FRAME], FRAME));
+    assert!(h.sink.finish().heard_speech);
+}
+
+#[test]
+fn without_vad_a_section_heard_speech_when_it_had_sound() {
+    let mut h = harness(VadPolicy::Disabled);
+    let sections = h.sink.sections();
+    h.sink.process_chunk(chunk(&[0.0; FRAME], FRAME));
+    assert!(
+        !sections.split().expect("cut").heard_speech,
+        "digital silence"
+    );
+    h.sink.process_chunk(chunk(&[0.0, 0.01, 0.0, 0.0], FRAME));
+    assert!(
+        h.sink.finish().heard_speech,
+        "it can't tell, so sound counts"
+    );
+}
+
+#[test]
+fn a_recording_never_cut_finishes_as_before() {
+    let mut h = harness(VadPolicy::Disabled);
+    let _sections = h.sink.sections();
+    h.sink.process_chunk(chunk(&[1.0; FRAME], FRAME));
+    h.sink.process_chunk(chunk(&[2.0; FRAME], FRAME));
+    let both = [[1.0; FRAME], [2.0; FRAME]].concat();
+    assert_eq!(*h.fed.lock().unwrap(), both);
+    assert_eq!(h.sink.finish().samples, both);
 }

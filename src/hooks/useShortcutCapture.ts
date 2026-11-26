@@ -8,6 +8,7 @@ import { SECURE_INPUT_HELP_URL } from "@/components/SecureInputWarning";
 import { useSettings } from "@/hooks/useSettings";
 import { RefusalShown } from "@/components/settings/profiles/scope/profileWriter";
 import { shortcutRefusalText } from "@/lib/shortcutRefusal";
+import { storeKeyRefLabel } from "@/components/settings/end-keys/keyRefLabel";
 import {
   getKeyName,
   MODIFIERS,
@@ -26,13 +27,14 @@ interface HandyKeysEvent {
  * DanyWhere: the toast for a refused binding. Without Accessibility "Paste
  * Last Transcript" is the "Insert Last Dictation" service's shortcut, and
  * the backend refuses what a service can't take with a code of its own
- * (`shortcutRefusalText`).
+ * (`shortcutRefusalText`); a start, hold or end shortcut is named by its
+ * keys or name.
  */
 const bindingErrorTitle = (
   error: string,
   t: ReturnType<typeof useTranslation>["t"],
 ): string =>
-  shortcutRefusalText(error, t) ??
+  shortcutRefusalText(error, t, storeKeyRefLabel(t)) ??
   t("settings.general.shortcut.errors.set", { error });
 
 /**

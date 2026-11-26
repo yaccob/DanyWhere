@@ -2,9 +2,12 @@
 // geprüft"): each end's name field and combination, the hint for an end with
 // a start shortcut's combination, the last end that can't go, "Add End
 // Shortcut", and refusals of the backend as sentences. These replace the
-// checks of the page that were left for a GUI run in Dev.
+// checks of the page that were left for a GUI run in Dev. Since Phase 2 (qa
+// 2026-11-26_1810, "Schnittstelle Phase 2") an end says nothing of
+// post-processing: no "Post-process", only "Send Context", which counts
+// when the dictation is post-processed.
 import { describe, expect, test } from "bun:test";
-import { fireEvent, screen } from "@testing-library/react";
+import { cleanup, fireEvent, screen } from "@testing-library/react";
 import type { EndKey } from "@/bindings";
 import { DEFAULTS_SCOPE, type Scope } from "@/lib/profileScope";
 import { EndKeysSettings } from "./EndKeysSettings";
@@ -26,8 +29,8 @@ import { OpenManualProvider } from "@/hooks/useOpenManual";
 const PLAIN = endKey("plain", "ctrl+space");
 const SEND = endKey("end_1795307754299", "ctrl+return", { name: "Senden" });
 const UNNAMED = endKey("end_1795307800000", "ctrl+alt+j");
-const WITH_POST = endKey("end_1795307811111", "ctrl+alt+k", {
-  post_process: true,
+const WITH_CONTEXT = endKey("end_1795307811111", "ctrl+alt+k", {
+  send_context: true,
 });
 
 /** The manual's chapters the page asked the settings window to show (none
@@ -84,21 +87,27 @@ describe("End Shortcuts under the defaults", () => {
     expect(rawTextIn()).toEqual([]);
   });
 
-  test("an end with a start shortcut's combination names that start shortcut", async () => {
-    await renderEnds([
-      PLAIN,
-      endKey("post_process", "ctrl+shift+space", { post_process: true }),
-      SEND,
-    ]);
+  // Out of the box ⌃ Space is a start and a hold shortcut, ⌃⇧ Space only a
+  // hold shortcut (qa 2026-11-26_1810): an end with one of their keys ends
+  // when it is tapped during a recording.
+  test("an end with a start or hold shortcut's combination says so", async () => {
+    await renderEnds([PLAIN, endKey("post_process", "ctrl+shift+space"), SEND]);
 
     const text = visibleText();
-    expect(text).toContain(
-      "Same combination as “Start Shortcut”: tapping it again during a recording ends this way.",
-    );
-    expect(text).toContain(
-      "Same combination as “Second Start Shortcut”: tapping it again during a recording ends this way.",
-    );
+    const START_HINT =
+      "Same combination as a start shortcut: tapping it again during a recording ends this way.";
+    const HOLD_HINT =
+      "Same combination as a hold shortcut: tapping it during a recording ends this way.";
+    expect(text.split(START_HINT).length - 1).toBe(1);
+    expect(text.split(HOLD_HINT).length - 1).toBe(1);
+    expect(text.indexOf(START_HINT)).toBeLessThan(text.indexOf(HOLD_HINT));
     expect(text.match(/Same combination as/g)?.length).toBe(2);
+  });
+
+  test("a side of a start shortcut's keys is another combination", async () => {
+    await renderEnds([endKey("plain", "ctrl_left+space"), SEND]);
+
+    expect(visibleText()).not.toContain("Same combination as");
   });
 
   test("the last end can't be deleted, and its button says why", async () => {
@@ -160,17 +169,25 @@ describe("End Shortcuts under the defaults", () => {
     expect(callsOf("setProfileValue")).toEqual([]);
   });
 
-  test("Send Context can be checked only together with Post-process", async () => {
-    await renderEnds([PLAIN, WITH_POST]);
+  test("no Post-process; Send Context is usable on each end and stored", async () => {
+    await renderEnds([PLAIN, WITH_CONTEXT]);
 
+    expect(screen.queryAllByRole("checkbox", { name: "Post-process" })).toEqual(
+      [],
+    );
     const context = screen.getAllByRole("checkbox", {
       name: "Send Context",
     }) as HTMLInputElement[];
-    expect(context.map((box) => box.disabled)).toEqual([true, false]);
+    expect(context.map((box) => [box.checked, box.disabled])).toEqual([
+      [false, false],
+      [true, false],
+    ]);
+    expect(context[0].closest("label")?.getAttribute("title")).toBe(
+      "Earlier dictations from the same window go along as context. It counts only when the dictation is post-processed.",
+    );
 
-    const post = screen.getAllByRole("checkbox", { name: "Post-process" });
-    await press(post[0]);
-    expect(storedEnds()[0]).toEqual({ ...PLAIN, post_process: true });
+    await press(context[0]);
+    expect(storedEnds()[0]).toEqual({ ...PLAIN, send_context: true });
   });
 });
 
@@ -197,7 +214,6 @@ describe("Add End Shortcut", () => {
       name: "",
       shortcut: "ctrl+e",
       append_text: "",
-      post_process: false,
       send_context: false,
     });
     expect(callsOf("resumeAllBindings")).toEqual([[]]);
@@ -291,8 +307,13 @@ describe("refusals of the backend", () => {
   test("on Linux, a change that would leave no way to end says so", async () => {
     const notices = await refuse("end-key-cannot-end");
     expect(notices).toEqual([
-      "On Linux a recording could no longer be ended: keep an end shortcut with a start shortcut's combination, or choose “Hold”.",
+      "On Linux a recording could no longer be ended: keep an end shortcut with a start shortcut's combination.",
     ]);
+  });
+
+  test("a combination of another end shortcut names that end shortcut", async () => {
+    const notices = await refuse("conflict:end_key:end_1795307754299");
+    expect(notices).toEqual(["End shortcut Senden already uses this shortcut"]);
   });
 });
 
@@ -347,88 +368,37 @@ describe("End Shortcuts in a profile", () => {
   });
 });
 
-// With post-processing off no end post-processes (user, 2026-11-23, option
-// a; `app_profiles::effective_post_process`): an end whose "Post-process" is
-// checked says so and where to turn it on, for the scope shown. Its box
-// stays usable: its value counts once post-processing is on.
-describe("End Shortcuts with post-processing off", () => {
-  const HINT =
-    "Post-processing is off: a dictation ended this way isn't post-processed. Turn on “Post Processing” under Advanced.";
-  const hints = () => visibleText().split(HINT).length - 1;
-  const WORK = "profile_1795300000001";
-  /** "Work" with post-processing as its own value `postProcess`, the
-   * defaults with the other one. */
-  const work = (postProcess: boolean): SettingsSpec => ({
-    defaults: { post_process_enabled: !postProcess },
-    profiles: [
-      {
-        id: WORK,
-        name: "Work",
-        own: ["post_process_enabled"],
-        values: { post_process_enabled: postProcess },
-      },
-    ],
+// The hint "Post-processing is off" belonged to an end's "Post-process"
+// (user, 2026-11-23, option a); with the box gone an end says nothing of
+// the profile's mode, whatever it is.
+describe("End Shortcuts and the post-processing mode", () => {
+  test("no end speaks of post-processing being off, in any mode", async () => {
+    for (const mode of ["never", "with_instruction_key", "always"] as const) {
+      await renderEnds([PLAIN, WITH_CONTEXT], DEFAULTS_SCOPE, {
+        defaults: { post_process_mode: mode },
+      });
+      expect(visibleText()).not.toContain("Post-processing is off");
+      expect(visibleText()).not.toContain("Post-process");
+      expect(rawTextIn()).toEqual([]);
+      cleanup();
+    }
   });
 
-  test("an end with Post-process checked says that it doesn't post-process", async () => {
-    await renderEnds([PLAIN, WITH_POST, SEND]);
-
-    expect(hints()).toBe(1);
-    const post = screen.getAllByRole("checkbox", {
-      name: "Post-process",
-    }) as HTMLInputElement[];
-    expect(post.map((box) => [box.checked, box.disabled])).toEqual([
-      [false, false],
-      [true, false],
-      [false, false],
-    ]);
-    expect(rawTextIn()).toEqual([]);
-  });
-
-  test("with post-processing on, no end says so", async () => {
-    await renderEnds([PLAIN, WITH_POST], DEFAULTS_SCOPE, {
-      defaults: { post_process_enabled: true },
-    });
-
-    expect(hints()).toBe(0);
-  });
-
-  test("checking Post-process with post-processing off brings the hint", async () => {
-    await renderEnds([PLAIN, SEND]);
-    expect(hints()).toBe(0);
-
-    const post = screen.getAllByRole("checkbox", { name: "Post-process" });
-    await press(post[1]);
-
-    expect(storedEnds()[1]).toEqual({ ...SEND, post_process: true });
-    expect(hints()).toBe(1);
-  });
-
-  test("in a profile its own switch counts, not the defaults'", async () => {
-    const scope: Scope = { kind: "profile", id: WORK };
-
-    await renderEnds([PLAIN, WITH_POST], scope, work(false));
-    expect(hints()).toBe(1);
-    expect(rawTextIn()).toEqual([]);
-  });
-
-  test("in a profile with post-processing on, no end says so", async () => {
-    await renderEnds(
-      [PLAIN, WITH_POST],
-      { kind: "profile", id: WORK },
-      work(true),
-    );
-
-    expect(hints()).toBe(0);
-  });
-
-  test("the hint reads in German too", async () => {
-    await switchTestLanguage("de");
-    await renderEnds([PLAIN, WITH_POST]);
+  test("the description says nothing of post-processing", async () => {
+    await renderEnds([PLAIN]);
 
     expect(visibleText()).toContain(
-      "Die Nachbearbeitung ist aus: Ein so beendetes Diktat wird nicht nachbearbeitet. Schalte „Nachbearbeitung“ unter Erweitert ein.",
+      "says what is appended and whether earlier dictations go along as context",
     );
+    expect(visibleText()).not.toContain("whether the text is post-processed");
+  });
+
+  test("in German, no Nachbearbeiten either", async () => {
+    await switchTestLanguage("de");
+    await renderEnds([PLAIN, WITH_CONTEXT]);
+
+    expect(visibleText()).not.toContain("Nachbearbeiten");
+    expect(visibleText()).not.toContain("Die Nachbearbeitung ist aus");
     expect(rawTextIn()).toEqual([]);
   });
 });

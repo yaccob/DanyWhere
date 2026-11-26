@@ -7,13 +7,25 @@ Esta página resume lo que hace DanyWhere. Donde un capítulo explica una parte 
 
 ## Terminar un dictado
 
-- **Decide al final qué pasa con un dictado.** Una grabación empieza con un atajo de inicio y termina con el atajo de fin que elijas. Cada atajo de fin tiene su propia combinación de teclas y dice qué va detrás del texto, si un modelo de lenguaje lo posprocesa y si los dictados anteriores se envían como contexto.
-- **Doce atajos de fin en un Mac, en una instalación nueva,** con una sola regla: ⌥ (Opción) posprocesa, ⇧ (Mayúsculas) elige la variante pequeña y ⌃ (Control) junto con ↩ (Retorno) pulsa una tecla. <kbd>⌃ Espacio</kbd> termina con un espacio, <kbd>↩</kbd> con un párrafo nuevo y <kbd>⌃↩</kbd> pulsa Intro para enviar un mensaje de chat. <kbd>⌥⌃ Espacio</kbd>, <kbd>⌥↩</kbd> y <kbd>⌥⌃↩</kbd> hacen lo mismo con posprocesamiento.
-- **En Windows y Linux,** las combinaciones de los dos atajos de inicio terminan la grabación, la segunda con posprocesamiento.
-- **Mantener o tocar.** Mantén pulsado un atajo de inicio mientras hablas, o tócalo para empezar y vuelve a tocarlo para parar. **Al mantener pulsado** define cómo termina la grabación al soltarlo.
+- **Decide al final qué pasa con un dictado.** Una grabación empieza con un atajo de inicio y termina con el atajo de fin que elijas. Cada atajo de fin tiene su propia combinación de teclas y dice qué va detrás del texto y si los dictados anteriores se envían como contexto.
+- **Cuatro listas del mismo tipo:** atajos de inicio, de mantener, de instrucción y de fin, tantos de cada uno como quieras. Lo que hace una combinación se deduce de las listas en las que está, así que la misma combinación puede iniciar al tocarla y grabar al mantenerla.
+- **Seis atajos de fin en un Mac, en una instalación nueva,** con una sola regla: ⇧ (Mayúsculas) elige la variante pequeña, ↩ (Retorno) envía y ⌥ (Opción) impide que envíe. <kbd>⌃ Espacio</kbd> termina con un espacio, <kbd>↩</kbd> pulsa Intro para enviar un mensaje de chat y <kbd>⌥↩</kbd> termina con un párrafo nuevo.
+- **En Windows y Linux,** las combinaciones de los dos atajos de mantener terminan la grabación.
+- **Mantener o tocar.** Mantén pulsado un atajo de mantener mientras hablas, o toca un atajo de inicio para empezar y vuelve a tocarlo para parar. Un toque breve en una tecla que solo mantiene no hace nada.
 - **Texto y una pulsación de tecla después del dictado.** Un atajo de fin puede añadir texto, como un espacio o un salto de línea, y luego pulsar una tecla como Intro.
 
-[Atajos de inicio y de fin](../how-it-works/start-and-end-shortcuts/) lo explica todo.
+[Atajos de inicio, de mantener, de instrucción y de fin](../how-it-works/start-and-end-shortcuts/) lo explica todo.
+
+## La instrucción hablada
+
+- **Di justo después del texto qué debe pasar con él.** Durante una grabación, un atajo de instrucción (<kbd>⇥</kbd> en un Mac, <kbd>Tab</kbd> en Windows) cambia del texto a una instrucción, como «tradúcelo al polaco» o «responde a la pregunta». El modelo de lenguaje la aplica además de los prompts del perfil, para este único dictado.
+- **Tocar o mantener.** Toca el atajo de instrucción y termina con cualquier atajo de fin, o mantenlo mientras hablas y suéltalo.
+- **Sin esperas.** El texto se transcribe mientras todavía dices la instrucción.
+- **Una instrucción sin texto** escribe algo desde cero, como una respuesta amable.
+- **El texto sigue siendo texto.** Solo lo que dices después de la tecla cuenta como instrucción, y los dictados posteriores reciben el resultado como contexto, nunca la instrucción.
+- **Guardada en el historial** con su audio: **Re-transcribir** vuelve a escuchar las dos partes, y la varita mágica trabaja con o sin la instrucción.
+
+[La instrucción hablada](../how-it-works/spoken-instruction/) muestra cómo usarla.
 
 ## Configuración básica y perfiles
 
@@ -27,10 +39,11 @@ Esta página resume lo que hace DanyWhere. Donde un capítulo explica una parte 
 
 ## Posprocesamiento
 
+- **Nunca, con atajo de instrucción o siempre.** Cada perfil dice cuándo se posprocesan sus dictados: nunca, así nada sale de tu equipo; solo tras un atajo de instrucción, como en una instalación nueva; o siempre.
 - **Un modelo de lenguaje trabaja tu texto en lugar de contestarlo.** El propio DanyWhere le dice al modelo que recibe una transcripción que trabajar, no una pregunta, y que el idioma se mantiene. También le pide que corrija las palabras mal entendidas cuando el contexto deja claro qué se dijo. Tu prompt solo dice qué hacer con el texto. **Esfuerzo de razonamiento**, junto al modelo, define cuánto piensa el modelo.
 - **Varios prompts de una vez.** Los prompts forman una sola biblioteca para todos los perfiles. Cada perfil activa los que usa y los ordena. Van al modelo en una sola petición y se aplican uno tras otro.
 - **Tus listas de palabras como términos conocidos.** El posprocesamiento recibe las listas de palabras vigentes, así que escribe un nombre mal entendido tal como está en la lista, con cualquier modelo de voz.
-- **Dictados anteriores como contexto.** Con **Enviar contexto**, un atajo de fin envía también tus dictados anteriores de la misma ventana, para que el modelo sepa de qué va la conversación.
+- **Dictados anteriores como contexto.** Con **Enviar contexto**, un atajo de fin, de mantener o de instrucción envía también tus dictados anteriores de la misma ventana, para que el modelo sepa de qué va la conversación.
 - **En este equipo o en la nube, y ves dónde.** Junto al proveedor, la configuración indica si el posprocesamiento se queda en este equipo o va a la nube. Con un modelo que se sirve en este equipo, por ejemplo con Ollama o LM Studio, DanyWhere lo carga en cuanto empiezas a hablar, para que su arranque en frío no alargue la espera.
 
 ## Historial
@@ -49,7 +62,7 @@ Esta página resume lo que hace DanyWhere. Donde un capítulo explica una parte 
 ## Sin Accesibilidad en un Mac
 
 - **DanyWhere funciona donde este permiso está bloqueado,** como en muchos Mac de empresa. Elige **Continuar sin accesibilidad** durante la configuración inicial. Con la fuente de entrada de DanyWhere añadida, los atajos de fin insertan el texto al momento. Sin ella, un dictado espera en DanyWhere hasta que lo insertes con <kbd>⌃⇧V</kbd>.
-- **Sin el permiso, DanyWhere no puede pulsar teclas.** Una instalación nueva omite los cuatro atajos de fin que pulsan una tecla, y tú mismo pulsas Intro.
+- **Sin el permiso, DanyWhere no puede pulsar teclas.** Una instalación nueva omite los dos atajos de fin que pulsan una tecla, y tú mismo pulsas Intro.
 - **Títulos de ventana de las propias apps.** DanyWhere pregunta el título de su ventana en primer plano a cada app que puede dárselo, como los navegadores, Terminal, Mail, Notas, TextEdit y Microsoft Office, en cuanto se lo permites para esa app. El contexto de los dictados anteriores y el filtro por ventana del historial necesitan el título.
 - **Los atajos con la tecla fn** no están disponibles sin el permiso.
 
@@ -63,7 +76,7 @@ Esta página resume lo que hace DanyWhere. Donde un capítulo explica una parte 
 ## Más
 
 - **Un sonido cuando todo está listo,** posprocesamiento incluido, para que sepas cuándo volver a mirar. Los tres sonidos son cada vez más agudos: al empezar, al parar y cuando todo está listo.
-- **Combinaciones de teclas tal como las escribe tu sistema,** <kbd>⌥⌃ Espacio</kbd> en un Mac y <kbd>Ctrl+Mayús+Espacio</kbd> en Windows. En una combinación con una tecla principal, las teclas modificadoras izquierda y derecha cuentan igual.
+- **Combinaciones de teclas tal como las escribe tu sistema,** <kbd>⌃⇧ Espacio</kbd> en un Mac y <kbd>Ctrl+Mayús+Espacio</kbd> en Windows. En una combinación con una tecla principal, las teclas modificadoras izquierda y derecha cuentan igual.
 - **Las novedades tras una actualización,** en inglés o en alemán.
 - **Este manual,** en la app, en **Manual**, y en la web, en inglés, alemán, español y francés.
 

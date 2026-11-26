@@ -34,8 +34,8 @@ use tauri::{AppHandle, Emitter, Manager};
 use crate::settings::APPLE_INTELLIGENCE_DEFAULT_MODEL_ID;
 use crate::settings::{
     self, AutoSubmitKey, ChineseScript, ClipboardHandling, KeyboardImplementation, LLMPrompt,
-    LanguageDetectionMode, OverlayPosition, OverlayStyle, PasteMethod, ShortcutActivation,
-    ShortcutBinding, SoundTheme, Theme, TypingTool, VadBackend, APPLE_INTELLIGENCE_PROVIDER_ID,
+    LanguageDetectionMode, OverlayPosition, OverlayStyle, PasteMethod, ShortcutBinding, SoundTheme,
+    Theme, TypingTool, VadBackend, APPLE_INTELLIGENCE_PROVIDER_ID,
 };
 use crate::tray;
 
@@ -269,12 +269,10 @@ pub fn change_binding(
     }
 
     // Synchronize any active Secure Input shadows.
-    let changed_dictation_shortcut =
-        crate::transcription_coordinator::is_transcribe_binding(&updated_binding.id);
     crate::secure_input::reconcile_fallback(&app);
-    // DanyWhere: the dictation shortcuts' services carry them as theirs, and
-    // "Insert Last Dictation" carries "Paste Last Transcript".
-    if changed_dictation_shortcut || id == crate::insert_service::PASTE_LAST_BINDING {
+    // DanyWhere: "Insert Last Dictation" carries "Paste Last Transcript"
+    // (the start and hold shortcuts' services follow their own commands).
+    if id == crate::insert_service::PASTE_LAST_BINDING {
         crate::insert_service::sync_dictation_service_shortcuts(&app);
     }
 
@@ -419,7 +417,10 @@ pub fn apply_no_accessibility_mode(settings: &mut settings::AppSettings) -> Vec<
     crate::end_keys::drop_factory_key_presses(&mut settings.end_keys);
 
     let defaults = settings::get_default_settings().bindings;
-    let mut reset = Vec::new();
+    // DanyWhere: the start and hold shortcuts, too (`start_keys`).
+    let mut reset = crate::start_keys::reset_invalid_keys(settings, |keys| {
+        validate_shortcut_for_implementation(keys, KeyboardImplementation::Tauri).is_ok()
+    });
     for (id, binding) in settings.bindings.iter_mut() {
         let Some(default) = defaults.get(id) else {
             continue;
@@ -441,18 +442,6 @@ pub fn apply_no_accessibility_mode(settings: &mut settings::AppSettings) -> Vec<
 // ============================================================================
 // General Settings Commands
 // ============================================================================
-
-#[tauri::command]
-#[specta::specta]
-pub fn change_shortcut_activation_setting(
-    app: AppHandle,
-    activation: ShortcutActivation,
-) -> Result<(), String> {
-    let mut settings = settings::get_settings(&app);
-    settings.shortcut_activation = activation;
-    settings::write_settings(&app, settings);
-    Ok(())
-}
 
 #[tauri::command]
 #[specta::specta]
@@ -950,23 +939,13 @@ pub fn change_auto_submit_key_setting(app: AppHandle, key: String) -> Result<(),
     Ok(())
 }
 
-#[tauri::command]
-#[specta::specta]
-pub fn change_post_process_enabled_setting(app: AppHandle, enabled: bool) -> Result<(), String> {
-    let mut settings = settings::get_settings(&app);
-    settings.post_process_enabled = enabled;
-    settings::write_settings(&app, settings.clone());
-    sync_post_process_shortcuts(&app, &settings);
-    Ok(())
-}
-
-/// Registers the post-processing shortcut while post-processing is on in
-/// `settings`, and unregisters it while it's off. DanyWhere: also while a
-/// profile with applications post-processes
-/// (`app_profiles::post_processing_reachable`), the shortcut that turns
-/// choosing the profile by application on and off only while applications
-/// are assigned; all through the shortcuts that follow the profile
-/// (`profile_sync`), which read the stored settings.
+/// Registers what follows the profile's values after `settings` changed:
+/// DanyWhere: the shortcut that turns choosing the profile by application
+/// on and off only while applications are assigned, the instruction
+/// shortcuts only while post-processing can run (`instruction_keys::taken`);
+/// all through the shortcuts that follow the profile (`profile_sync`), which
+/// read the stored settings. (The switch "Post Processing" and its command
+/// gave way to `post_process_mode` on 2026-11-26.)
 pub fn sync_post_process_shortcuts(app: &AppHandle, settings: &settings::AppSettings) {
     let _ = settings;
     profile_sync::sync_now(app);
@@ -1545,17 +1524,19 @@ mod tests {
         };
 
         /// A user coming from the default macOS setup: handy-keys backend,
-        /// simulated paste, and a shortcut only handy-keys can register.
+        /// simulated paste, and a start shortcut and a shortcut only
+        /// handy-keys can register.
         fn handy_keys_user() -> AppSettings {
             let mut settings = get_default_settings();
             settings.keyboard_implementation = KeyboardImplementation::HandyKeys;
             settings.paste_method = PasteMethod::CtrlV;
             settings.clipboard_handling = ClipboardHandling::DontModify;
+            settings.start_keys[0].shortcut = "fn+space".into();
             settings
                 .bindings
-                .get_mut("transcribe")
+                .get_mut("cycle_word_list")
                 .unwrap()
-                .current_binding = "fn+space".into();
+                .current_binding = "fn+l".into();
             settings
         }
 
@@ -1591,11 +1572,16 @@ mod tests {
         fn resets_bindings_the_tauri_backend_cannot_register() {
             let mut settings = handy_keys_user();
             let reset = apply_no_accessibility_mode(&mut settings);
-            let default = get_default_settings().bindings["transcribe"]
-                .current_binding
-                .clone();
-            assert_eq!(settings.bindings["transcribe"].current_binding, default);
-            assert_eq!(reset, vec!["transcribe".to_string()]);
+            let defaults = get_default_settings();
+            assert_eq!(
+                settings.bindings["cycle_word_list"].current_binding,
+                defaults.bindings["cycle_word_list"].current_binding
+            );
+            assert_eq!(settings.start_keys, defaults.start_keys);
+            assert_eq!(
+                reset,
+                vec!["cycle_word_list".to_string(), "start_key:start".to_string()]
+            );
         }
 
         /// The factory ends whose "Append" presses a key need Accessibility
@@ -1624,19 +1610,33 @@ mod tests {
             apply_no_accessibility_mode(&mut settings);
             assert_eq!(settings.end_keys, without_key_presses(&factory));
             #[cfg(target_os = "macos")]
-            assert_eq!(
-                ids(&settings.end_keys),
-                [
-                    "direct_space",
-                    "direct_no_space",
-                    "direct_paragraph",
-                    "direct_line",
-                    "post_space",
-                    "post_no_space",
-                    "post_paragraph",
-                    "post_line",
-                ]
-            );
+            {
+                assert_eq!(
+                    ids(&settings.end_keys),
+                    [
+                        "direct_space",
+                        "direct_no_space",
+                        "direct_paragraph",
+                        "direct_line",
+                    ]
+                );
+                // ↩ and ⇧↩ send (user, 2026-11-26), so without Accessibility
+                // they go and plain ↩ ends nothing; ⌥↩ and ⌥⇧↩ stay.
+                let shortcuts: Vec<&str> = settings
+                    .end_keys
+                    .iter()
+                    .map(|end| end.shortcut.as_str())
+                    .collect();
+                assert_eq!(
+                    shortcuts,
+                    [
+                        "ctrl+space",
+                        "ctrl+shift+space",
+                        "option+return",
+                        "option+shift+return",
+                    ]
+                );
+            }
         }
 
         #[test]
@@ -1669,7 +1669,7 @@ mod tests {
             apply_no_accessibility_mode(&mut settings);
             assert_eq!(settings.end_keys, without_key_presses(&named));
             #[cfg(target_os = "macos")]
-            assert_eq!(settings.end_keys.len(), 8);
+            assert_eq!(settings.end_keys.len(), 4);
         }
 
         #[test]
@@ -1710,22 +1710,20 @@ mod tests {
             assert_eq!(settings.profiles.len(), 1);
             assert_eq!(settings.profiles[0].values.end_keys, expected);
             #[cfg(target_os = "macos")]
-            assert_eq!(expected.len(), 8);
+            assert_eq!(expected.len(), 4);
         }
 
         #[test]
         fn keeps_bindings_the_tauri_backend_can_register() {
             let mut settings = handy_keys_user();
+            settings.start_keys[0].shortcut = "ctrl+shift+d".into();
             settings
                 .bindings
-                .get_mut("transcribe")
+                .get_mut("cycle_word_list")
                 .unwrap()
-                .current_binding = "ctrl+shift+d".into();
+                .current_binding = "ctrl+shift+l".into();
             let reset = apply_no_accessibility_mode(&mut settings);
-            assert_eq!(
-                settings.bindings["transcribe"].current_binding,
-                "ctrl+shift+d"
-            );
+            assert_eq!(settings.start_keys[0].shortcut, "ctrl+shift+d");
             assert!(reset.is_empty());
         }
     }

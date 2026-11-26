@@ -818,14 +818,14 @@ mod tests {
         // too; no shortcut decides it any more (2026-11-15).
         let mut settings = settings::get_default_settings();
         settings.bindings.remove("transcribe_with_context");
-        settings.post_process_enabled = true;
+        settings.post_process_mode = crate::settings::PostProcessMode::WithInstructionKey;
         assert!(capture_wanted(&settings));
-        settings.post_process_enabled = false;
+        settings.post_process_mode = crate::settings::PostProcessMode::Never;
         assert!(!capture_wanted(&settings));
         // A profile with applications that post-processes.
         crate::profiles::ensure_profiles(&mut settings);
         let mut mail = crate::profiles::profile_for_test(&settings, "mail", "Mail", |values| {
-            values.post_process_enabled = true;
+            values.post_process_mode = crate::settings::PostProcessMode::WithInstructionKey;
         });
         mail.apps = vec!["com.apple.mail".to_string()];
         settings.profiles.push(mail);
@@ -1102,6 +1102,32 @@ mod tests {
         let found =
             context_candidates(&conn, &query(Some(iterm), 200, i64::MAX), 0, &[]).expect("query");
         assert_eq!(found, candidates(&[(id, "Der Build ist durch.")]));
+    }
+
+    // DanyWhere: an instruction spoken for an earlier dictation ("translate
+    // it into Polish") must never act on a later one (sidecar
+    // qa/2026-11-26_1720_nachbearbeitung-gesprochene-anweisung.md).
+    #[test]
+    fn the_spoken_instruction_never_goes_along_as_context() {
+        let conn = database();
+        let iterm = window("com.googlecode.iterm2", "Release");
+        let id = insert(&conn, 100, "Dzień dobry", Some(&iterm));
+        conn.execute(
+            "UPDATE transcription_history
+             SET spoken_instruction = 'translate it into Polish',
+                 spoken_instruction_file = 'a-instruction.opus'
+             WHERE id = ?1",
+            params![id],
+        )
+        .expect("set the instruction");
+
+        let found =
+            context_candidates(&conn, &query(Some(iterm), 200, i64::MAX), 0, &[]).expect("query");
+        assert_eq!(found, candidates(&[(id, "Dzień dobry")]));
+        let sent: Vec<String> = found.into_iter().map(|(_, text)| text).collect();
+        let block = build_context_block(&sent, &[], false);
+        assert!(block.contains("Dzień dobry"), "{block}");
+        assert!(!block.contains("Polish"), "{block}");
     }
 
     #[test]

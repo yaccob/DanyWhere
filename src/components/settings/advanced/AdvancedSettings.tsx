@@ -9,7 +9,7 @@ import { PasteMethodSetting } from "../PasteMethod";
 import { TypingToolSetting } from "../TypingTool";
 import { ClipboardHandlingSetting } from "../ClipboardHandling";
 import { ClipboardNoticeSetting } from "../ClipboardNotice";
-import { PostProcessingToggle } from "../PostProcessingToggle";
+import { PostProcessModeSetting } from "../PostProcessMode";
 import { PostProcessTimeout } from "../PostProcessTimeouts";
 import { VoiceActivityDetection } from "../VoiceActivityDetection";
 import { LongFormChunking } from "../LongFormChunking";
@@ -73,10 +73,12 @@ export const AdvancedSettings: React.FC = () => {
         >
           <FillerWordRemoval descriptionMode="tooltip" grouped={true} />
         </ScopedSetting>
-        {/* DanyWhere: post-processing is used daily, so its switch is not
-            hidden behind the experimental features. */}
-        <ScopedSetting field="post_process_enabled">
-          <PostProcessingToggle descriptionMode="tooltip" grouped={true} />
+        {/* DanyWhere: post-processing is used daily, so its choice is not
+            hidden behind the experimental features. Since qa
+            2026-11-26_1841 (variant b) it is a choice of three, where the
+            switch was: never, with an instruction shortcut, always. */}
+        <ScopedSetting field="post_process_mode">
+          <PostProcessModeSetting descriptionMode="tooltip" grouped={true} />
         </ScopedSetting>
         {/* DanyWhere: the model list's time limit is an application
             setting, on Application Settings › Debug. */}

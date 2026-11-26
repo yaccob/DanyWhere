@@ -25,6 +25,9 @@ use crate::tray::{set_tray_state, TrayIconState};
 
 /// Starts a dictation with start shortcut `binding_id` in the app.
 pub(crate) fn start(app: &AppHandle, binding_id: &str) -> StartOutcome {
+    // DanyWhere: a spoken instruction left from an earlier recording that
+    // never ended goes; this one starts without (`dictation_flow::instruction`).
+    crate::dictation_flow::instruction::discard_pending();
     let rm = Arc::clone(app.state::<Arc<AudioRecordingManager>>().inner());
     let tm = Arc::clone(app.state::<Arc<TranscriptionManager>>().inner());
     let ports = AppStart {

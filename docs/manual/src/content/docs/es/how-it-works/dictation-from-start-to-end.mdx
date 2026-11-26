@@ -13,28 +13,30 @@ Pulsas una combinación de teclas, dices lo que quieres escribir y terminas la g
 <Diagram
   name="dictation-flow"
   caption="Un dictado de principio a fin"
-  alt="El camino de un dictado. Un atajo de inicio inicia la grabación. Termina cuando sueltas un atajo de inicio mantenido, tocas un atajo de fin o vuelves a tocar un atajo de inicio; Esc la cancela. El modelo de voz transcribe la grabación. Si el final lo pide, un modelo de lenguaje posprocesa el texto con los prompts activos y, con «Enviar contexto», con dictados anteriores de la misma ventana. Luego viene el texto de «Añadir al final», el texto se inserta y puede seguir una pulsación de tecla como Intro. El dictado se guarda en el historial y suena el sonido final."
+  alt="El camino de un dictado. Un atajo de inicio o de mantener inicia la grabación. Termina cuando sueltas un atajo de mantener, tocas un atajo de fin o vuelves a tocar un atajo de inicio; Esc la cancela. El modelo de voz transcribe la grabación. Si pulsaste un atajo de instrucción o Post procesamiento está en Siempre, un modelo de lenguaje posprocesa el texto con los prompts activos y tu instrucción hablada y, con «Enviar contexto», con dictados anteriores de la misma ventana. Luego viene el texto de «Añadir al final», el texto se inserta y puede seguir una pulsación de tecla como Intro. El dictado se guarda en el historial y suena el sonido final."
 />
 
 ## Inicia la grabación
 
-Pulsa el **Atajo de inicio**: <kbd>⌃ Espacio</kbd> en un Mac, <kbd>Ctrl+Espacio</kbd> en Windows, <kbd>Ctrl+Alt+Espacio</kbd> en Linux. DanyWhere empieza a escuchar al instante. En Mac y en Windows, un pequeño overlay en la parte inferior de la pantalla muestra que está grabando y, si has activado la **Retroalimentación de audio**, también te lo dice un sonido breve.
+Pulsa un atajo de inicio: <kbd>⌃ Espacio</kbd> en un Mac, <kbd>Ctrl+Espacio</kbd> en Windows, <kbd>Ctrl+Alt+Espacio</kbd> en Linux. DanyWhere empieza a escuchar al instante. En Mac y en Windows, un pequeño overlay en la parte inferior de la pantalla muestra que está grabando y, si has activado la **Retroalimentación de audio**, también te lo dice un sonido breve.
 
-Puedes usar la combinación de dos maneras: mantenla pulsada mientras hablas y suéltala cuando termines, o tócala y habla todo lo que quieras. Es el ajuste de fábrica **Automático** de **Comportamiento del atajo**; **Mantener** y **Tocar** solo permiten una de las dos.
+Puedes usar la combinación de dos maneras: mantenla pulsada mientras hablas y suéltala cuando termines, o tócala y habla todo lo que quieras. Es así porque una instalación nueva la tiene dos veces, en **Atajos de inicio** y en **Atajos de mantener**.
 
 ## Termina como quieras el texto
 
-La forma en que terminas la grabación decide qué pasa con el texto. Hay tres maneras:
+La forma en que terminas la grabación decide qué va detrás del texto. Hay tres maneras:
 
-- **Suelta** un atajo de inicio mantenido. La grabación termina como esté configurado en **Al mantener pulsado**.
-- **Toca un atajo de fin.** Cada uno indica qué va detrás del texto, si un modelo de lenguaje lo pule y si los dictados anteriores se envían como contexto. En un Mac, por ejemplo, <kbd>↩</kbd> termina la grabación y empieza un párrafo nuevo después del texto.
+- **Suelta** un atajo de mantener que tenías pulsado. La grabación termina como dice ese atajo de mantener.
+- **Toca un atajo de fin.** Cada uno indica qué va detrás del texto y si los dictados anteriores se envían como contexto. En un Mac, por ejemplo, <kbd>↩</kbd> termina la grabación y pulsa Intro después del texto, lo que envía un mensaje de chat; <kbd>⌥↩</kbd> empieza en su lugar un párrafo nuevo.
 - **Vuelve a tocar el atajo de inicio.** Esto termina la grabación si un atajo de fin tiene la misma combinación. En un Mac, tocar otra vez <kbd>⌃ Espacio</kbd> pone un espacio detrás del texto, listo para la siguiente frase.
+
+Antes de terminar, un atajo de instrucción te deja decir qué debe hacer un modelo de lenguaje con el texto: en un Mac, toca <kbd>⇥</kbd>, di «tradúcelo al polaco» y termina como siempre. [La instrucción hablada](../spoken-instruction/) muestra cómo.
 
 Para una app en la que no se puede insertar, termina con **Copiar la última transcripción**: <kbd>⌃⇧C</kbd> en un Mac, <kbd>Alt+Mayús+C</kbd> en Windows y Linux. Termina la grabación como si volvieras a tocar el atajo de inicio, pero pone el texto en el portapapeles en lugar de insertarlo.
 
 ¿Has cambiado de idea? <kbd>Esc</kbd> cancela la grabación en Mac y en Windows. No se transcribe, inserta ni guarda nada.
 
-Los atajos de fin son el corazón de DanyWhere, y [Atajos de inicio y de fin](../start-and-end-shortcuts/) los presenta todos.
+Los atajos de fin son el corazón de DanyWhere, y [Atajos de inicio, de mantener, de instrucción y de fin](../start-and-end-shortcuts/) los presenta todos.
 
 ## Qué perfil se aplica
 
@@ -48,9 +50,9 @@ Los nombres y los términos técnicos salen bien más a menudo si están en una 
 
 ## Posprocesamiento
 
-Si el final que elegiste tiene marcado **Posprocesar**, un modelo de lenguaje trabaja el texto antes de que llegue. Recibe los prompts marcados como **Activo** en la página **Post proceso**, en su orden. DanyWhere los envuelve en un marco que le dice al modelo que tiene una transcripción que trabajar, no una pregunta que responder, y que el texto conserva su idioma. El overlay muestra **Procesando...**.
+Si pulsaste un atajo de instrucción durante la grabación, o el perfil posprocesa cada dictado, un modelo de lenguaje trabaja el texto antes de que llegue. Recibe los prompts marcados como **Activo** en la página **Post proceso**, en su orden, y al final tu instrucción hablada. DanyWhere los envuelve en un marco que le dice al modelo que tiene una transcripción que trabajar, no una pregunta que responder, y que el texto conserva su idioma, salvo que tu instrucción pida otra cosa. El overlay muestra **Procesando...**.
 
-El posprocesamiento solo se hace mientras el interruptor **Post procesamiento** está activado, en **Configuración básica › Avanzado** o en el perfil. Que el texto vaya a un proveedor en la nube o a un modelo en tu propio equipo depende del proveedor que elijas en la página **Post proceso**, y la página te dice cuál de los dos.
+Cuál de los dos casos vale lo decide el ajuste **Post procesamiento**, en **Configuración básica › Avanzado** o en el perfil: **Nunca**, **Con atajo de instrucción** (el ajuste de fábrica) o **Siempre**, para cada dictado. Que el texto vaya a un proveedor en la nube o a un modelo en tu propio equipo depende del proveedor que elijas en la página **Post proceso**, y la página te dice cuál de los dos.
 
 Con **Enviar contexto**, los dictados anteriores de la misma ventana se envían también, para que el modelo sepa de qué estás hablando: de fábrica, hasta cinco de la última hora. El historial marca cada entrada que salió así.
 
@@ -92,7 +94,7 @@ Donde el permiso de Accesibilidad está bloqueado, como en muchos Mac de empresa
 
 ## Historial
 
-Cada dictado llega al **Historial**: la grabación, la transcripción y, si se posprocesó, el texto pulido como segunda versión encima. DanyWhere lo guarda antes de insertarlo, así que no se pierde nada si algo falla al pegar. Puedes editar una entrada o volver a posprocesarla más tarde; cada cambio añade una versión nueva encima y conserva las de abajo.
+Cada dictado llega al **Historial**: la grabación, la transcripción, la instrucción hablada si la hubo y, si se posprocesó, el texto pulido como segunda versión encima. DanyWhere lo guarda antes de insertarlo, así que no se pierde nada si algo falla al pegar. Puedes editar una entrada o volver a posprocesarla más tarde; cada cambio añade una versión nueva encima y conserva las de abajo.
 
 ## El sonido final
 
@@ -100,4 +102,4 @@ Con la **Retroalimentación de audio** activada (de fábrica está desactivada),
 
 ## Siguiente
 
-El final de una grabación es lo que más decide. [Atajos de inicio y de fin](../start-and-end-shortcuts/) muestra los atajos de fin de una instalación nueva, de qué se compone cada uno y cómo configurar los tuyos.
+El final de una grabación es lo que más decide. [Atajos de inicio, de mantener, de instrucción y de fin](../start-and-end-shortcuts/) muestra los atajos de una instalación nueva, de qué se compone cada uno y cómo configurar los tuyos.

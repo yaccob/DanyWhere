@@ -1,12 +1,10 @@
-import React, { useState } from "react";
+import React from "react";
 import { useTranslation } from "react-i18next";
 import { type } from "@tauri-apps/plugin-os";
-import { commands } from "@/bindings";
-import { notify } from "@/stores/noticeStore";
+import { commands, type EndKey } from "@/bindings";
 import { useSettings } from "@/hooks/useSettings";
-import { postProcessingOn } from "@/lib/endKeys";
+import { hasCombination } from "@/lib/startKeys";
 import { SettingsGroup } from "../../ui/SettingsGroup";
-import { InfoTooltip } from "../../ui/InfoTooltip";
 // DanyWhere: the "?" to the manual's chapter on start and end shortcuts.
 import { ManualHelpButton } from "../../ui/ManualHelpButton";
 import { MANUAL_PAGES } from "@/lib/manual";
@@ -14,76 +12,46 @@ import { EndKeysEditor } from "./EndKeysEditor";
 // DanyWhere (strand E2): the end shortcuts of the page's scope, the defaults
 // or a profile, each with its chain.
 import { ScopedSetting } from "../profiles/scope/ScopedSetting";
-import { useSettingsScope } from "../profiles/scope/SettingsScope";
-import { writeValue } from "../profiles/scope/profileWriter";
-import { useDescribeEndKeyError } from "./describeEndKeyError";
+import { useKeyListSave } from "./useKeyListSave";
 
 interface EndKeysSettingsProps {
-  /** Rows above the list, e.g. how a held start shortcut ends ("When
-   * Held", `HoldEndsSetting`). */
-  before?: React.ReactNode;
   /** Rows below the list, e.g. the cancel shortcut. */
   after?: React.ReactNode;
-  /** Heads the list with "When Tapped", in the list's own row, so that a
-   * heading above it ("When Held") doesn't read as the whole card's. */
-  tapHeading?: boolean;
 }
 
 /**
  * DanyWhere: the end shortcuts on the shortcut settings (end_keys.rs, qa
  * 2026-11-22_2134): the list of the page's scope (the defaults or a
- * profile; outside one, the values in use). The page General puts "When
- * Held" above it and Cancel below it (`before`, `after`; user, 2026-11-24),
- * so the card holds every way a recording ends, and then heads the list
- * with "When Tapped" (`tapHeading`; user, 2026-11-24, sidecar qa
- * 2026-11-24_1716): holding and tapping are the two gestures.
+ * profile; outside one, the values in use). The page General puts Cancel
+ * below it (`after`; user, 2026-11-24), so the card holds every way a
+ * recording ends but releasing a hold shortcut, which has its own card
+ * (qa 2026-11-26_1810). An end with the keys of a start or hold shortcut
+ * says so: tapping those during a recording ends this way. One with an
+ * instruction shortcut's keys the backend refuses (both are taken only
+ * during a recording; "Schnittstelle Phase 2"). No end says whether it
+ * post-processes any more.
  */
-export const EndKeysSettings: React.FC<EndKeysSettingsProps> = ({
-  before,
-  after,
-  tapHeading = false,
-}) => {
+export const EndKeysSettings: React.FC<EndKeysSettingsProps> = ({ after }) => {
   const { t } = useTranslation();
-  const { getSetting, refreshSettings } = useSettings();
-  const [busy, setBusy] = useState(false);
+  const { getSetting } = useSettings();
   const endKeys = getSetting("end_keys") ?? [];
-  const bindings = getSetting("bindings") ?? {};
-  // The scope's own switch: the defaults' or the profile's value.
-  const postProcessingOff = !postProcessingOn({
-    post_process_enabled: getSetting("post_process_enabled"),
-  });
+  const startKeys = getSetting("start_keys") ?? [];
+  const holdKeys = getSetting("hold_keys") ?? [];
   const isLinux = type() === "linux";
-  const scope = useSettingsScope();
-  const describe = useDescribeEndKeyError();
+  const { busy, save } = useKeyListSave<EndKey>(
+    "end_keys",
+    commands.changeEndKeysSetting,
+    "settings.endKeys.errors.save",
+  );
 
-  /** Writes `field` into the page's scope. */
-  const save = async (field: string, value: unknown) => {
-    if (!scope) return;
-    setBusy(true);
-    try {
-      await writeValue(scope, field, value, describe);
-    } finally {
-      setBusy(false);
+  const hintsOf = (end: EndKey): string[] => {
+    if (hasCombination(startKeys, end.shortcut)) {
+      return [t("settings.endKeys.sameAsStart")];
     }
-  };
-
-  const run = async (
-    change: () => Promise<
-      { status: "ok"; data: null } | { status: "error"; error: string }
-    >,
-  ) => {
-    setBusy(true);
-    try {
-      const result = await change();
-      if (result.status === "error") {
-        notify({ title: describe(result.error) });
-      }
-    } catch (error) {
-      notify({ title: t("settings.endKeys.errors.save", { error }) });
-    } finally {
-      await refreshSettings();
-      setBusy(false);
+    if (hasCombination(holdKeys, end.shortcut)) {
+      return [t("settings.endKeys.sameAsHold")];
     }
+    return [];
   };
 
   return (
@@ -102,31 +70,14 @@ export const EndKeysSettings: React.FC<EndKeysSettingsProps> = ({
           {t("settings.endKeys.linuxNoShortcuts")}
         </p>
       )}
-      {before}
-      <div>
-        {tapHeading && (
-          // The same heading as a stacked setting's (`SettingContainer`).
-          <div className="flex items-center gap-2 px-4 pt-3">
-            <h3 className="text-sm font-medium">
-              {t("settings.endKeys.tapEnds.title")}
-            </h3>
-            <InfoTooltip text={t("settings.endKeys.tapEnds.description")} />
-          </div>
-        )}
-        <ScopedSetting field="end_keys">
-          <EndKeysEditor
-            value={endKeys}
-            bindings={bindings}
-            disabled={busy}
-            postProcessingOff={postProcessingOff}
-            onChange={(next) =>
-              scope
-                ? save("end_keys", next)
-                : run(() => commands.changeEndKeysSetting(next))
-            }
-          />
-        </ScopedSetting>
-      </div>
+      <ScopedSetting field="end_keys">
+        <EndKeysEditor
+          value={endKeys}
+          hintsOf={hintsOf}
+          disabled={busy}
+          onChange={save}
+        />
+      </ScopedSetting>
       {after}
     </SettingsGroup>
   );

@@ -2,7 +2,7 @@
 title: "Paramètres de base et profils"
 description: "Dictez d'une façon dans votre terminal et d'une autre dans votre chat, tout en modifiant un réglage à un seul endroit pour tous."
 sidebar:
-  order: 3
+  order: 4
 ---
 
 import Diagram from '@components/Diagram.astro';
@@ -32,7 +32,7 @@ Ouvrez un profil sous **Paramètres des profils**, dans la barre latérale, par 
 
 <Screenshot
   name="profile-own-values"
-  alt="Le groupe Transcription de la page Avancé du profil Terminal. Sous chaque réglage se trouve une ligne d'état. Trois réglages montrent une chaîne entière et le mot gris Valeur de base : ils suivent les paramètres de base. Post-traitement, désactivé, montre une chaîne brisée, Valeur propre en bleu pétrole, Valeur de base : activé, et un bouton Réinitialiser."
+  alt="Le groupe Transcription de la page Avancé du profil Terminal. Sous chaque réglage se trouve une ligne d'état. Trois réglages montrent une chaîne entière et le mot gris Valeur de base : ils suivent les paramètres de base. Post-traitement, sur Jamais, montre une chaîne brisée, Valeur propre en bleu pétrole, Valeur de base : Avec raccourci d'instruction, et un bouton Réinitialiser."
   caption="Dans un profil, chaque réglage indique s'il suit les paramètres de base."
 />
 
@@ -41,7 +41,7 @@ Si vous modifiez un réglage qui suit la valeur de base, il devient une valeur p
 **Page aux réglages de base**, en haut d'une page, réinitialise toutes ses valeurs propres. La première page du profil, **Profil**, rassemble sous **Valeurs propres** tout ce qu'il a de différent : un clic sur une ligne ouvre ce réglage, la flèche circulaire ne réinitialise que lui, et **Tout le profil aux réglages de base** les réinitialise toutes, en gardant le nom et les apps du profil. Avant de réinitialiser plus d'une valeur, DanyWhere demande confirmation et les nomme. Dans la barre latérale, un nombre à côté d'un profil et de ses pages compte leurs valeurs propres.
 
 :::tip[Garder une valeur qui se trouve être la même]
-Pour garder une valeur que les paramètres de base ont aussi, comme le post-traitement désactivé pour votre terminal, cliquez sur la chaîne entière. La valeur devient propre au profil sans changer, et elle reste quand vous modifiez plus tard la valeur de base. Un clic sur la chaîne brisée la fait de nouveau suivre.
+Pour garder une valeur que les paramètres de base ont aussi, comme **Jamais** sous **Post-traitement** pour votre terminal, cliquez sur la chaîne entière. La valeur devient propre au profil sans changer, et elle reste quand vous modifiez plus tard la valeur de base. Un clic sur la chaîne brisée la fait de nouveau suivre.
 :::
 
 ## Vu depuis les paramètres de base
@@ -50,7 +50,7 @@ Vous pouvez aussi travailler dans l'autre sens, un réglage à la fois. Sur les 
 
 <Screenshot
   name="defaults-with-profiles"
-  alt="Le réglage Post-traitement sur la page Avancé des paramètres de base, activé. En dessous, le profil Terminal avec une chaîne brisée, son propre interrupteur, désactivé, et une flèche circulaire pour le réinitialiser. Plus bas, une ligne grise avec une chaîne entière indique Chat suit, avec à côté un menu + Profil."
+  alt="Le réglage Post-traitement sur la page Avancé des paramètres de base, sur Avec raccourci d'instruction. En dessous, le profil Terminal avec une chaîne brisée, son propre choix, Jamais, et une flèche circulaire pour le réinitialiser. Plus bas, une ligne grise avec une chaîne entière indique Chat suit, avec à côté un menu + Profil."
   caption="Dans les paramètres de base, chaque réglage montre les profils qui diffèrent."
 />
 
@@ -58,7 +58,7 @@ Les pages des **Paramètres de base** montrent et modifient toujours les paramè
 
 ## Les listes, entrée par entrée
 
-Certains réglages sont des listes : les **Raccourcis de fin** et les autres raccourcis, les listes de mots sous **Listes supplémentaires**, et les fournisseurs de post-traitement avec leurs modèles. Un profil diffère d'une telle liste entrée par entrée : il modifie une entrée, en ajoute une ou désactive une entrée des paramètres de base. La ligne d'état marque chacune **propre** ou **désactivée**, avec son propre bouton pour la réinitialiser. Toutes les autres entrées continuent de suivre les paramètres de base, y compris celles que vous y ajoutez plus tard. Sur un Mac, un profil pour vos chats pourrait envoyer ainsi avec <kbd>↩</kbd> : il ne modifie que **Direct · Paragraphe**, pour que ce raccourci de fin appuie sur Entrée au lieu de commencer un nouveau paragraphe.
+Certains réglages sont des listes : les raccourcis de début, de maintien, d'instruction et de fin et les autres raccourcis, les listes de mots sous **Listes supplémentaires**, et les fournisseurs de post-traitement avec leurs modèles. Un profil diffère d'une telle liste entrée par entrée : il modifie une entrée, en ajoute une ou désactive une entrée des paramètres de base. La ligne d'état marque chacune **propre** ou **désactivée**, avec son propre bouton pour la réinitialiser. Toutes les autres entrées continuent de suivre les paramètres de base, y compris celles que vous y ajoutez plus tard. Sur un Mac, un profil pour vos chats pourrait envoyer ainsi avec <kbd>↩</kbd> : il ne modifie que **Paragraphe**, pour que ce raccourci de fin appuie sur Entrée au lieu de commencer un nouveau paragraphe.
 
 Les mots et les prompts fonctionnent un peu différemment. La **Liste de mots** des paramètres de base s'applique dans chaque profil. Un profil peut la remplacer entièrement, mais le plus souvent il place devant elle des **Mots supplémentaires**, qu'il est seul à utiliser. Les prompts appartiennent à tous les profils ; lesquels ont la case **Actif** cochée, et dans quel ordre, relève du profil.
 
@@ -133,9 +133,9 @@ Si le fournisseur de post-traitement du profil a une clé API, l'export demande 
 
 3. Vérifiez que **Choisir le profil selon l'application** est activé.
 
-4. Ouvrez **Paramètres des profils › Terminal › Avancé** et cherchez **Post-traitement**. S'il est activé, désactivez-le. S'il est déjà désactivé, comme d'usine, cliquez sur la chaîne en dessous, pour que le terminal reste sans post-traitement même après que vous l'aurez activé dans les paramètres de base. La ligne en dessous indique maintenant **Valeur propre**.
+4. Ouvrez **Paramètres des profils › Terminal › Avancé**, cherchez **Post-traitement** et choisissez **Jamais**. Rien de ce que vous dictez dans le terminal ne part alors chez un fournisseur, et <kbd>⇥</kbd> y reste une tabulation, même pendant un enregistrement. La ligne sous le réglage indique maintenant **Valeur propre**.
 
-5. Sur un Mac, ouvrez **Paramètres des profils › Terminal › Général**, descendez jusqu'aux **Raccourcis de fin** et videz le champ **Ajouter à la fin** de **Direct · Paragraphe**. <kbd>↩</kbd> termine alors une dictée dans le terminal sans saut de ligne.
+5. Sur un Mac, ouvrez **Paramètres des profils › Terminal › Général**, descendez jusqu'aux **Raccourcis de fin** et, pour **Envoyer Entrée**, choisissez **Aucune touche** à côté de **Ajouter à la fin**. <kbd>↩</kbd> termine alors une dictée dans le terminal sans appuyer sur Entrée.
 
 6. Essayez : dans le terminal, commencez une dictée, dites une commande et terminez avec <kbd>↩</kbd>. L'overlay nomme **Terminal**, et la commande apparaît telle que vous l'avez dite, prête à être lancée.
 
@@ -143,4 +143,4 @@ Si le fournisseur de post-traitement du profil a une clé API, l'export demande 
 
 ## Ensuite
 
-Ce que les profils modifient le plus souvent, ce sont les raccourcis de fin. [Raccourcis de début et de fin](../start-and-end-shortcuts/) montre de quoi se compose chacun et comment créer les vôtres.
+Ce que les profils modifient le plus souvent, ce sont les raccourcis de fin. [Raccourcis de début, de maintien, d'instruction et de fin](../start-and-end-shortcuts/) montre de quoi se compose chacun et comment créer les vôtres.
