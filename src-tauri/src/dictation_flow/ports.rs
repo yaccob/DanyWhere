@@ -48,6 +48,27 @@ pub trait Transcribe {
     /// otherwise a batch run. `load_end_model`: first load the model of the
     /// profile the dictation ends with (`app_profiles::settle_dictation`).
     fn transcribe(&self, samples: Vec<f32>, load_end_model: bool) -> anyhow::Result<Transcription>;
+    /// DanyWhere: cuts the recording of `binding_id` in two while the
+    /// microphone runs, for a spoken instruction
+    /// (`AudioRecordingManager::split_recording`): hands over the text
+    /// section; `stop_recording` later gives the instruction. No sound, no
+    /// change to the mute. `None`: no recording of `binding_id` to cut.
+    fn split_recording(&self, binding_id: &str) -> Option<Recording>;
+    /// DanyWhere: transcribes the text section of a cut recording as
+    /// [`transcribe`](Self::transcribe) does (the live decode's result when
+    /// it has one, which ended at the cut), but keeps the model loaded: the
+    /// instruction is transcribed with it afterwards.
+    fn transcribe_text_section(&self, samples: Vec<f32>) -> anyhow::Result<Transcription>;
+    /// DanyWhere: transcribes a spoken instruction in a batch run of its
+    /// own, never from a live decode: the dictation's model, language
+    /// setting, word lists and filler words; a language set to automatic is
+    /// detected from the instruction itself. `load_end_model` as for
+    /// [`transcribe`](Self::transcribe).
+    fn transcribe_instruction(
+        &self,
+        samples: Vec<f32>,
+        load_end_model: bool,
+    ) -> anyhow::Result<Transcription>;
 }
 
 /// Post-processing.

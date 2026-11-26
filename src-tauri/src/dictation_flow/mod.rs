@@ -42,6 +42,10 @@ pub(crate) mod app_ports;
 // `fakes::llm_server` too (`word_list_check`).
 #[cfg(test)]
 pub(crate) mod fakes;
+// DanyWhere: the spoken instruction's building blocks; the dictation's end
+// takes them up with the instruction shortcut.
+#[allow(dead_code)]
+pub(crate) mod instruction;
 pub mod ports;
 
 use ports::{Deliver, DictationPorts, Overlay, Recording, Report, Session};

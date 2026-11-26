@@ -74,6 +74,29 @@ impl Transcribe for AppPorts {
         }
         self.tm.transcribe_recording(samples)
     }
+
+    fn split_recording(&self, binding_id: &str) -> Option<Recording> {
+        let first = self.rm.split_recording(binding_id)?;
+        Some(Recording {
+            samples: first.samples,
+            input_silent: first.input_silent,
+        })
+    }
+
+    fn transcribe_text_section(&self, samples: Vec<f32>) -> anyhow::Result<Transcription> {
+        self.tm.transcribe_text_section(samples)
+    }
+
+    fn transcribe_instruction(
+        &self,
+        samples: Vec<f32>,
+        load_end_model: bool,
+    ) -> anyhow::Result<Transcription> {
+        if load_end_model {
+            self.tm.load_wanted_model_after_current(true);
+        }
+        self.tm.transcribe_batch(samples)
+    }
 }
 
 impl PostProcess for AppPorts {
