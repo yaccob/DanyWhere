@@ -1568,7 +1568,9 @@
     "postProcessEffortRefusedTitle": "Esforço recusado",
     "postProcessEffortRefused": "{{model}} recusou o esforço escolhido, por isso o texto chegou com o padrão do modelo. Escolha outro esforço, ou “Padrão do modelo”, ao lado do modelo de pós-processamento.",
     "fileTranscriptionFailedTitle": "Falha na transcrição do arquivo",
-    "transcriptionFailedTitle": "Falha na transcrição"
+    "transcriptionFailedTitle": "Falha na transcrição",
+    "instructionTranscriptionFailedTitle": "Falha na instrução – texto pronto",
+    "instructionTranscriptionFailed": "Não foi possível transcrever a instrução falada, por isso nada foi inserido. O texto anterior está pronto: «Colar a última transcrição» insere-o, «Copiar a última transcrição» coloca-o na área de transferência."
   },
   "notices": {
     "errorOne": "{{n}} erro",

@@ -1568,7 +1568,9 @@
     "postProcessEffortRefusedTitle": "Effort refusé",
     "postProcessEffortRefused": "{{model}} a refusé l'effort choisi, le texte est donc arrivé avec le réglage par défaut du modèle. Choisissez un autre effort, ou « Par défaut du modèle », à côté du modèle de post-traitement.",
     "fileTranscriptionFailedTitle": "Échec de la transcription du fichier",
-    "transcriptionFailedTitle": "Échec de la transcription"
+    "transcriptionFailedTitle": "Échec de la transcription",
+    "instructionTranscriptionFailedTitle": "Échec de l'instruction – texte prêt",
+    "instructionTranscriptionFailed": "L'instruction orale n'a pas pu être transcrite, donc rien n'a été inséré. Le texte qui la précède est prêt : « Coller la dernière transcription » l'insère, « Copier la dernière transcription » le place dans le presse-papiers."
   },
   "notices": {
     "errorOne": "{{n}} erreur",

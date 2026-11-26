@@ -1568,7 +1568,9 @@
     "postProcessEffortRefusedTitle": "Sforzo rifiutato",
     "postProcessEffortRefused": "{{model}} ha rifiutato lo sforzo scelto, quindi il testo è arrivato con l'impostazione predefinita del modello. Scegli un altro sforzo, o «Predefinito del modello», accanto al modello di post-elaborazione.",
     "fileTranscriptionFailedTitle": "Trascrizione del file non riuscita",
-    "transcriptionFailedTitle": "Trascrizione non riuscita"
+    "transcriptionFailedTitle": "Trascrizione non riuscita",
+    "instructionTranscriptionFailedTitle": "Istruzione non riuscita – testo pronto",
+    "instructionTranscriptionFailed": "Non è stato possibile trascrivere l'istruzione vocale, quindi non è stato inserito nulla. Il testo che la precede è pronto: «Incolla l'ultima trascrizione» lo inserisce, «Copia l'ultima trascrizione» lo mette negli appunti."
   },
   "notices": {
     "errorOne": "{{n}} errore",

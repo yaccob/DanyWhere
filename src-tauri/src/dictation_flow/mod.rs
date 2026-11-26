@@ -659,8 +659,13 @@ struct TranscriptionFailure {
     stop_time: Instant,
 }
 
-/// Ends a dictation whose transcription failed with `err`: a notice, and an
-/// entry the user can transcribe again; nothing is pasted.
+/// Ends a dictation whose transcription failed with `err`: an entry the user
+/// can transcribe again, and a notice; nothing is pasted, and the clipboard
+/// stays as it was. DanyWhere: when only its spoken instruction failed, the
+/// text before it is saved as the entry's transcript, so it is the last
+/// transcript that "Paste Last Transcript" and "Copy Last Transcript" reach
+/// (`delivery::latest_entry_and_text`), and the notice says so (user,
+/// 2026-11-26).
 fn fail_transcription<P: DictationPorts>(
     ports: &P,
     snapshot: &DictationSnapshot,
@@ -674,13 +679,12 @@ fn fail_transcription<P: DictationPorts>(
     }
 
     error!("Transcription failed: {}", err);
-    ports.raise(
-        Notice::new(NoticeCode::TranscriptionFailed, NoticeSource::Dictation)
-            .with_detail(err.to_string()),
-    );
-    // Save entry with empty text so user can retry
-    if failure.wav_saved {
-        if let Err(save_err) = ports.history().save_entry_with_instruction(
+    // Save the entry, with what was transcribed anyway, so the user can
+    // retry. DanyWhere: saved before the notice, which says whether a text
+    // was kept.
+    let text_kept = !failure.text.trim().is_empty();
+    let saved = failure.wav_saved
+        && match ports.history().save_entry_with_instruction(
             failure.file_name,
             failure.text,
             snapshot.post_process,
@@ -688,9 +692,19 @@ fn fail_transcription<P: DictationPorts>(
             Default::default(),
             failure.instruction,
         ) {
-            error!("Failed to save failed history entry: {}", save_err);
-        }
-    }
+            Ok(_) => true,
+            Err(save_err) => {
+                error!("Failed to save failed history entry: {}", save_err);
+                false
+            }
+        };
+    let code = if saved && text_kept {
+        log::info!("The text before the failed instruction waits for Paste Last Transcript.");
+        NoticeCode::InstructionTranscriptionFailed
+    } else {
+        NoticeCode::TranscriptionFailed
+    };
+    ports.raise(Notice::new(code, NoticeSource::Dictation).with_detail(err.to_string()));
     ports.tray(TrayIconState::Idle);
     ports.complete(
         TranscriptionOutcome::Failed,
@@ -2386,11 +2400,11 @@ mod tests {
                     samples: SAMPLES,
                     load_end_model: false,
                 },
+                Event::HistoryAdded(1),
                 Event::Raise(
                     notice(NoticeCode::TranscriptionFailed)
                         .with_detail("the model crashed".to_string())
                 ),
-                Event::HistoryAdded(1),
                 Event::Tray(TrayIconState::Idle),
                 Event::Complete(TranscriptionOutcome::Failed, SAMPLES),
                 Event::Finished,

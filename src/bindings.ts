@@ -2627,7 +2627,14 @@ export type NoticeCode = "TranscriptionFailed" | "PasteFailed" | "PasteBlockedEl
  * the text came at its default (`post_process_effort`). Detail: the
  * model.
  */
-"PostProcessEffortRefused"
+"PostProcessEffortRefused" | 
+/**
+ * DanyWhere: a dictation's spoken instruction couldn't be transcribed,
+ * so nothing was inserted; the text before it is the last transcript,
+ * which "Paste Last Transcript" and "Copy Last Transcript" reach
+ * (`dictation_flow`). Detail: the raw error.
+ */
+"InstructionTranscriptionFailed"
 export type NoticeLevel = 
 /**
  * Nothing came out, or Handy can't do its job.

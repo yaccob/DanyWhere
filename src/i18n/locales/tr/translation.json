@@ -1568,7 +1568,9 @@
     "postProcessEffortRefusedTitle": "Düşünme düzeyi reddedildi",
     "postProcessEffortRefused": "{{model}} seçilen düşünme düzeyini reddetti, bu yüzden metin modelin varsayılanıyla geldi. Son işlem modelinin yanında başka bir düzey veya “Model varsayılanı” seçin.",
     "fileTranscriptionFailedTitle": "Dosya transkripsiyonu başarısız oldu",
-    "transcriptionFailedTitle": "Transkripsiyon başarısız oldu"
+    "transcriptionFailedTitle": "Transkripsiyon başarısız oldu",
+    "instructionTranscriptionFailedTitle": "Talimat başarısız – metin hazır",
+    "instructionTranscriptionFailed": "Sesli talimat transkribe edilemedi, bu yüzden hiçbir şey eklenmedi. Ondan önceki metin hazır: Son transkripti yapıştır onu ekler, Son transkripti kopyala onu panoya koyar."
   },
   "notices": {
     "errorOne": "{{n}} hata",

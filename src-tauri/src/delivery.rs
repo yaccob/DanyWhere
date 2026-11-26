@@ -331,9 +331,15 @@ pub fn clipboard_notice_duration(settings: &AppSettings) -> Option<std::time::Du
 }
 
 /// The most recent completed dictation and its text (the post-processed
-/// text if there is one), or `None` when there is none or it is empty.
+/// text if there is one), or `None` when there is none or it is empty:
+/// what "Paste Last Transcript", "Copy Last Transcript" and the "Insert
+/// Last Dictation" service deliver ([`latest_entry_and_text_in`]).
 pub fn latest_entry_and_text(app: &AppHandle) -> Option<(HistoryEntry, String)> {
-    let history = app.state::<Arc<HistoryManager>>();
+    latest_entry_and_text_in(&app.state::<Arc<HistoryManager>>())
+}
+
+/// [`latest_entry_and_text`] from `history`.
+pub fn latest_entry_and_text_in(history: &HistoryManager) -> Option<(HistoryEntry, String)> {
     let entry = match history.get_latest_completed_entry() {
         Ok(Some(entry)) => entry,
         Ok(None) => {

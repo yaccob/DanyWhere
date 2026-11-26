@@ -1568,7 +1568,9 @@
     "postProcessEffortRefusedTitle": "Wysiłek odrzucony",
     "postProcessEffortRefused": "{{model}} odrzucił wybrany wysiłek, więc tekst przyszedł z ustawieniem domyślnym modelu. Wybierz inny wysiłek albo „Domyślny modelu” obok modelu postprocesu.",
     "fileTranscriptionFailedTitle": "Transkrypcja pliku nie powiodła się",
-    "transcriptionFailedTitle": "Transkrypcja nie powiodła się"
+    "transcriptionFailedTitle": "Transkrypcja nie powiodła się",
+    "instructionTranscriptionFailedTitle": "Instrukcja nieudana – tekst gotowy",
+    "instructionTranscriptionFailed": "Nie udało się transkrybować instrukcji głosowej, więc nic nie zostało wstawione. Tekst przed nią jest gotowy: „Wklej ostatnią transkrypcję” go wstawia, „Kopiuj ostatnią transkrypcję” umieszcza go w schowku."
   },
   "notices": {
     "errorOne": "{{n}} błąd",

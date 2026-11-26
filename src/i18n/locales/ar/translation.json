@@ -1568,7 +1568,9 @@
     "postProcessEffortRefusedTitle": "رُفض مستوى التفكير",
     "postProcessEffortRefused": "رفض {{model}} مستوى التفكير المختار، لذا وصل النص بالإعداد الافتراضي للنموذج. اختر مستوى آخر، أو «افتراضي النموذج»، بجانب نموذج المعالجة اللاحقة.",
     "fileTranscriptionFailedTitle": "فشل التفريغ النصي للملف",
-    "transcriptionFailedTitle": "فشل التفريغ النصي"
+    "transcriptionFailedTitle": "فشل التفريغ النصي",
+    "instructionTranscriptionFailedTitle": "فشلت التعليمات – النص جاهز",
+    "instructionTranscriptionFailed": "تعذّر تفريغ التعليمات المنطوقة نصيًا، لذا لم يُدرج شيء. النص الذي سبقها جاهز: «لصق آخر نص مفرَّغ» يدرجه، و«نسخ آخر نص مفرَّغ» يضعه في الحافظة."
   },
   "notices": {
     "errorOne": "{{n}} خطأ",

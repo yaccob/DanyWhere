@@ -1568,7 +1568,9 @@
     "postProcessEffortRefusedTitle": "Esfuerzo rechazado",
     "postProcessEffortRefused": "{{model}} rechazó el esfuerzo elegido, así que el texto llegó con el valor predeterminado del modelo. Elige otro esfuerzo, o «Predeterminado del modelo», junto al modelo de post proceso.",
     "fileTranscriptionFailedTitle": "Error al transcribir el archivo",
-    "transcriptionFailedTitle": "Error de transcripción"
+    "transcriptionFailedTitle": "Error de transcripción",
+    "instructionTranscriptionFailedTitle": "Instrucción fallida – texto listo",
+    "instructionTranscriptionFailed": "No se pudo transcribir la instrucción hablada, así que no se insertó nada. El texto de antes está listo: «Pegar la última transcripción» lo inserta y «Copiar la última transcripción» lo pone en el portapapeles."
   },
   "notices": {
     "errorOne": "{{n}} error",
