@@ -837,12 +837,20 @@ mod tests {
             post_process: true,
             send_context: true,
         });
-        s.bindings.get_mut("transcribe").unwrap().current_binding = "f13".to_string();
+        s.bindings
+            .get_mut("copy_last_transcript")
+            .unwrap()
+            .current_binding = "f13".to_string();
+        s.start_keys[0].shortcut = "f14".to_string();
         let yaml = export(&s, "default", Some("geheim")).expect("export");
         let (profile, _) = read_import(&yaml, None).expect("import");
         assert_eq!(profile.values.end_keys, s.end_keys);
-        assert_eq!(profile.values.bindings["transcribe"].current_binding, "f13");
-        assert_eq!(profile.values.hold_ends, s.hold_ends);
+        assert_eq!(
+            profile.values.bindings["copy_last_transcript"].current_binding,
+            "f13"
+        );
+        assert_eq!(profile.values.start_keys, s.start_keys);
+        assert_eq!(profile.values.hold_keys, s.hold_keys);
     }
 
     /// A profile written on any system, with any system's name of the
@@ -876,14 +884,14 @@ mod tests {
     }
 
     /// `yaml` as a file from before the end shortcuts: the profile's values
-    /// without them, its hold ends and its shortcuts, with `fields`
-    /// instead.
+    /// without them, its start and hold shortcuts and its shortcuts, with
+    /// `fields` instead.
     fn older_file(yaml: &str, fields: serde_json::Value) -> String {
         let mut file: serde_json::Value = serde_saphyr::from_str(yaml).expect("reads");
         let values = file["profile"]["values"]
             .as_object_mut()
             .expect("the values");
-        for gone in ["end_keys", "hold_ends", "bindings"] {
+        for gone in ["end_keys", "bindings", "start_keys", "hold_keys"] {
             values.remove(gone);
         }
         for (key, value) in fields.as_object().expect("fields") {
@@ -904,10 +912,6 @@ mod tests {
         assert_eq!(
             profile.values.end_keys,
             crate::end_keys::builtin(r"\n\n", true)
-        );
-        assert_eq!(
-            profile.values.hold_ends,
-            crate::end_keys::builtin_holds(r"\n\n", true)
         );
         // The shortcuts come from the installation it is imported into.
         assert!(profile.values.bindings.is_empty());

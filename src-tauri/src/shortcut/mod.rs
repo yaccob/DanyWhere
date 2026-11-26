@@ -34,8 +34,8 @@ use tauri::{AppHandle, Emitter, Manager};
 use crate::settings::APPLE_INTELLIGENCE_DEFAULT_MODEL_ID;
 use crate::settings::{
     self, AutoSubmitKey, ChineseScript, ClipboardHandling, KeyboardImplementation, LLMPrompt,
-    LanguageDetectionMode, OverlayPosition, OverlayStyle, PasteMethod, ShortcutActivation,
-    ShortcutBinding, SoundTheme, Theme, TypingTool, VadBackend, APPLE_INTELLIGENCE_PROVIDER_ID,
+    LanguageDetectionMode, OverlayPosition, OverlayStyle, PasteMethod, ShortcutBinding, SoundTheme,
+    Theme, TypingTool, VadBackend, APPLE_INTELLIGENCE_PROVIDER_ID,
 };
 use crate::tray;
 
@@ -269,12 +269,10 @@ pub fn change_binding(
     }
 
     // Synchronize any active Secure Input shadows.
-    let changed_dictation_shortcut =
-        crate::transcription_coordinator::is_transcribe_binding(&updated_binding.id);
     crate::secure_input::reconcile_fallback(&app);
-    // DanyWhere: the dictation shortcuts' services carry them as theirs, and
-    // "Insert Last Dictation" carries "Paste Last Transcript".
-    if changed_dictation_shortcut || id == crate::insert_service::PASTE_LAST_BINDING {
+    // DanyWhere: "Insert Last Dictation" carries "Paste Last Transcript"
+    // (the start and hold shortcuts' services follow their own commands).
+    if id == crate::insert_service::PASTE_LAST_BINDING {
         crate::insert_service::sync_dictation_service_shortcuts(&app);
     }
 
@@ -419,7 +417,10 @@ pub fn apply_no_accessibility_mode(settings: &mut settings::AppSettings) -> Vec<
     crate::end_keys::drop_factory_key_presses(&mut settings.end_keys);
 
     let defaults = settings::get_default_settings().bindings;
-    let mut reset = Vec::new();
+    // DanyWhere: the start and hold shortcuts, too (`start_keys`).
+    let mut reset = crate::start_keys::reset_invalid_keys(settings, |keys| {
+        validate_shortcut_for_implementation(keys, KeyboardImplementation::Tauri).is_ok()
+    });
     for (id, binding) in settings.bindings.iter_mut() {
         let Some(default) = defaults.get(id) else {
             continue;
@@ -441,18 +442,6 @@ pub fn apply_no_accessibility_mode(settings: &mut settings::AppSettings) -> Vec<
 // ============================================================================
 // General Settings Commands
 // ============================================================================
-
-#[tauri::command]
-#[specta::specta]
-pub fn change_shortcut_activation_setting(
-    app: AppHandle,
-    activation: ShortcutActivation,
-) -> Result<(), String> {
-    let mut settings = settings::get_settings(&app);
-    settings.shortcut_activation = activation;
-    settings::write_settings(&app, settings);
-    Ok(())
-}
 
 #[tauri::command]
 #[specta::specta]
@@ -1545,17 +1534,19 @@ mod tests {
         };
 
         /// A user coming from the default macOS setup: handy-keys backend,
-        /// simulated paste, and a shortcut only handy-keys can register.
+        /// simulated paste, and a start shortcut and a shortcut only
+        /// handy-keys can register.
         fn handy_keys_user() -> AppSettings {
             let mut settings = get_default_settings();
             settings.keyboard_implementation = KeyboardImplementation::HandyKeys;
             settings.paste_method = PasteMethod::CtrlV;
             settings.clipboard_handling = ClipboardHandling::DontModify;
+            settings.start_keys[0].shortcut = "fn+space".into();
             settings
                 .bindings
-                .get_mut("transcribe")
+                .get_mut("cycle_word_list")
                 .unwrap()
-                .current_binding = "fn+space".into();
+                .current_binding = "fn+l".into();
             settings
         }
 
@@ -1591,11 +1582,16 @@ mod tests {
         fn resets_bindings_the_tauri_backend_cannot_register() {
             let mut settings = handy_keys_user();
             let reset = apply_no_accessibility_mode(&mut settings);
-            let default = get_default_settings().bindings["transcribe"]
-                .current_binding
-                .clone();
-            assert_eq!(settings.bindings["transcribe"].current_binding, default);
-            assert_eq!(reset, vec!["transcribe".to_string()]);
+            let defaults = get_default_settings();
+            assert_eq!(
+                settings.bindings["cycle_word_list"].current_binding,
+                defaults.bindings["cycle_word_list"].current_binding
+            );
+            assert_eq!(settings.start_keys, defaults.start_keys);
+            assert_eq!(
+                reset,
+                vec!["cycle_word_list".to_string(), "start_key:start".to_string()]
+            );
         }
 
         /// The factory ends whose "Append" presses a key need Accessibility
@@ -1716,16 +1712,14 @@ mod tests {
         #[test]
         fn keeps_bindings_the_tauri_backend_can_register() {
             let mut settings = handy_keys_user();
+            settings.start_keys[0].shortcut = "ctrl+shift+d".into();
             settings
                 .bindings
-                .get_mut("transcribe")
+                .get_mut("cycle_word_list")
                 .unwrap()
-                .current_binding = "ctrl+shift+d".into();
+                .current_binding = "ctrl+shift+l".into();
             let reset = apply_no_accessibility_mode(&mut settings);
-            assert_eq!(
-                settings.bindings["transcribe"].current_binding,
-                "ctrl+shift+d"
-            );
+            assert_eq!(settings.start_keys[0].shortcut, "ctrl+shift+d");
             assert!(reset.is_empty());
         }
     }

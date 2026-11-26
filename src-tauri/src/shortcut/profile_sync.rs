@@ -1,14 +1,18 @@
 //! DanyWhere: the shortcuts follow the profile that applies now (idea 3;
 //! user, 2026-11-19, T1 and F3).
 //!
-//! The shortcuts are profile values (`ProfileValues::bindings`), and only
-//! the profile that applies now has its start shortcuts registered: the
-//! profile of the application in front while "Choose Profile by
-//! Application" is on, else the active one (`app_profiles::profile_now`).
-//! Another profile's shortcuts reach the application. End shortcuts with a
-//! key combination are registered only while a recording runs, like Escape,
-//! again those of the profile that applies now (F3: after an application
-//! switch during the recording, the new profile's).
+//! The shortcuts are profile values (`ProfileValues::bindings`, the start
+//! and hold shortcuts `start_keys` and `hold_keys`), and only the profile
+//! that applies now has its shortcuts registered: the profile of the
+//! application in front while "Choose Profile by Application" is on, else
+//! the active one (`app_profiles::profile_now`). Another profile's
+//! shortcuts reach the application. Start and hold shortcuts are always
+//! registered, each combination once (`start_keys::bindings_to_register`).
+//! End shortcuts with a key combination are registered only while a
+//! recording runs, like Escape, again those of the profile that applies now
+//! (F3: after an application switch during the recording, the new
+//! profile's), without those that have exactly a start or hold shortcut's
+//! combination: that one's press during a recording is theirs.
 //!
 //! DanyWhere keeps what it registered in one table and re-registers only
 //! what differs from what should be registered now ([`desired`],
@@ -52,9 +56,11 @@ pub fn desired(settings_now: &AppSettings, recording: bool, service_available: b
                 .iter()
                 .find(|(_, other)| crate::key_sides::same_press(other, &keys))
             {
-                // One with exactly a start shortcut's keys is that start
-                // shortcut's press (`end_keys`); the coordinator ends with it.
-                if crate::end_keys::START_BINDINGS.contains(&id.as_str()) {
+                // One with exactly a start or hold shortcut's keys is that
+                // one's press (`start_keys`); the coordinator ends with it.
+                if crate::start_keys::is_dictation_binding(id)
+                    && crate::key_sides::identical_press(other_keys(&taken, id), &keys)
+                {
                     log::debug!("End shortcut {}: ends as {id}'s press", binding.id);
                 } else {
                     log::warn!(
@@ -85,6 +91,15 @@ fn keys_of(binding: &ShortcutBinding) -> String {
     binding.current_binding.trim().to_lowercase()
 }
 
+/// The keys `taken` holds for binding `id`.
+fn other_keys<'a>(taken: &'a [(String, String)], id: &str) -> &'a str {
+    taken
+        .iter()
+        .find(|(taken_id, _)| taken_id == id)
+        .map(|(_, keys)| keys.as_str())
+        .unwrap_or_default()
+}
+
 /// What to change to get from `registered` to `desired`: first unregister,
 /// then register. Bindings in `frozen` are left as they are (the dictation
 /// shortcuts released during a locked recording without Accessibility,
@@ -96,11 +111,11 @@ pub struct Plan {
 }
 
 /// See [`Plan`]. A binding counts as unchanged while its key combination is.
-pub fn plan(registered: &Registered, desired: &Registered, frozen: &[&str]) -> Plan {
+pub fn plan(registered: &Registered, desired: &Registered, frozen: &[String]) -> Plan {
     let same = |a: &ShortcutBinding, b: Option<&ShortcutBinding>| {
         b.is_some_and(|b| keys_of(a) == keys_of(b))
     };
-    let free = |id: &String| !frozen.contains(&id.as_str());
+    let free = |id: &String| !frozen.contains(id);
     Plan {
         unregister: registered
             .iter()
@@ -129,7 +144,7 @@ pub(crate) struct Target {
     /// The shortcuts to have registered ([`desired`]).
     pub wanted: Registered,
     /// Those to leave as they are ([`plan`]).
-    pub frozen: Vec<&'static str>,
+    pub frozen: Vec<String>,
     /// For whom, in the log: the application in front or the active profile.
     pub label: String,
 }
@@ -408,12 +423,9 @@ mod tests {
         crate::end_keys::with_builtin_ends(crate::settings::get_default_settings())
     }
 
-    fn with_shortcut(mut settings: AppSettings, id: &str, keys: &str) -> AppSettings {
-        settings
-            .bindings
-            .get_mut(id)
-            .expect("a default binding")
-            .current_binding = keys.to_string();
+    /// `settings` with its first start shortcut on `keys`.
+    fn with_start_key(mut settings: AppSettings, keys: &str) -> AppSettings {
+        settings.start_keys[0].shortcut = keys.to_string();
         settings
     }
 
@@ -433,14 +445,10 @@ mod tests {
     fn two_profiles() -> AppSettings {
         let mut s = get_default_settings();
         s.post_process_enabled = true;
-        s = with_shortcut(s, "transcribe", "ctrl+space");
+        s = with_start_key(s, "ctrl+space");
         ensure_profiles(&mut s);
         let mut work = crate::profiles::profile_for_test(&s, "work", "Work", |values| {
-            values
-                .bindings
-                .get_mut("transcribe")
-                .unwrap()
-                .current_binding = "option+space".to_string();
+            values.start_keys[0].shortcut = "option+space".to_string();
             values.end_keys.push(send_key("ctrl+enter"));
         });
         work.apps = vec!["com.microsoft.VSCode".to_string()];
@@ -457,10 +465,16 @@ mod tests {
         let s = two_profiles();
         let here = crate::app_profiles::settings_now(&s, Some("com.apple.TextEdit"));
         let wanted = desired(&here, false, true);
-        assert_eq!(keys(&wanted, "transcribe").as_deref(), Some("ctrl+space"));
+        assert_eq!(
+            keys(&wanted, "start_key:start").as_deref(),
+            Some("ctrl+space")
+        );
         let there = crate::app_profiles::settings_now(&s, Some("com.microsoft.VSCode"));
         let wanted = desired(&there, false, true);
-        assert_eq!(keys(&wanted, "transcribe").as_deref(), Some("option+space"));
+        assert_eq!(
+            keys(&wanted, "start_key:start").as_deref(),
+            Some("option+space")
+        );
         assert!(wanted.contains_key("paste_last_transcript"));
     }
 
@@ -473,10 +487,10 @@ mod tests {
     #[test]
     fn the_post_processing_start_shortcut_only_while_some_dictation_can_post_process() {
         let mut s = two_profiles();
-        assert!(desired(&s, false, true).contains_key("transcribe_with_post_process"));
+        assert!(desired(&s, false, true).contains_key("hold_key:hold_post"));
         s.post_process_enabled = false;
         s.profiles[0].values.post_process_enabled = false;
-        assert!(!desired(&s, false, true).contains_key("transcribe_with_post_process"));
+        assert!(!desired(&s, false, true).contains_key("hold_key:hold_post"));
     }
 
     #[test]
@@ -506,7 +520,10 @@ mod tests {
         let there = crate::app_profiles::settings_now(&s, Some("com.microsoft.VSCode"));
         let wanted = desired(&there, true, true);
         assert!(!wanted.contains_key("end_key:send"));
-        assert_eq!(keys(&wanted, "transcribe").as_deref(), Some("option+space"));
+        assert_eq!(
+            keys(&wanted, "start_key:start").as_deref(),
+            Some("option+space")
+        );
     }
 
     fn binding(id: &str, keys: &str) -> ShortcutBinding {
@@ -573,11 +590,9 @@ mod tests {
     fn released_dictation_shortcuts_are_left_alone() {
         let registered = set(&[("transcribe", "ctrl+space")]);
         let wanted = set(&[("transcribe", "option+space")]);
-        assert_eq!(plan(&registered, &wanted, &["transcribe"]), Plan::default());
-        assert_eq!(
-            plan(&Registered::new(), &wanted, &["transcribe"]),
-            Plan::default()
-        );
+        let frozen = ["transcribe".to_string()];
+        assert_eq!(plan(&registered, &wanted, &frozen), Plan::default());
+        assert_eq!(plan(&Registered::new(), &wanted, &frozen), Plan::default());
     }
 
     // ---- passes, and suspending while a shortcut is recorded ----
@@ -740,6 +755,72 @@ mod tests {
         let result = following.sync(&backend, || target(&[("transcribe", "ctrl+space")]));
         assert_eq!(result, None);
         assert!(log.lines().is_empty());
+    }
+
+    // ---- Start and hold shortcuts of one's own (2026-11-26) ----
+
+    /// A new installation's settings, post-processing on or off.
+    fn factory(post_process: bool) -> AppSettings {
+        let mut s = crate::settings::get_default_settings();
+        s.post_process_enabled = post_process;
+        ensure_profiles(&mut s);
+        s
+    }
+
+    fn factory_keys() -> (&'static str, &'static str) {
+        crate::start_keys::factory_combinations_on(crate::append_text::KeyPlatform::current())
+    }
+
+    #[test]
+    fn start_and_hold_shortcuts_are_taken_also_without_a_recording() {
+        let (start, post) = factory_keys();
+        let wanted = desired(&factory(true), false, true);
+        assert_eq!(keys(&wanted, "start_key:start").as_deref(), Some(start));
+        assert_eq!(keys(&wanted, "hold_key:hold_post").as_deref(), Some(post));
+        // ⌃Space is taken once, as the start shortcut.
+        assert!(!wanted.contains_key("hold_key:hold_direct"));
+        for legacy in crate::start_keys::LEGACY_START_BINDINGS {
+            assert!(!wanted.contains_key(legacy), "{legacy}");
+        }
+    }
+
+    #[test]
+    fn a_post_processing_hold_shortcut_only_while_post_processing_is_reachable() {
+        let wanted = desired(&factory(false), false, true);
+        assert!(wanted.contains_key("start_key:start"));
+        assert!(!wanted.contains_key("hold_key:hold_post"));
+    }
+
+    #[test]
+    fn end_shortcuts_with_a_taken_start_or_hold_combination_are_not_taken_apart() {
+        let (start, post) = factory_keys();
+        let end = |id: &str, keys: &str| EndKey {
+            id: id.to_string(),
+            shortcut: keys.to_string(),
+            ..send_key(keys)
+        };
+        let mut s = factory(true);
+        s.end_keys = vec![
+            end("on_start", start),
+            end("on_post", post),
+            end("send", "ctrl+enter"),
+        ];
+        let recording = desired(&s, true, true);
+        assert!(!recording.contains_key("end_key:on_start"));
+        assert!(!recording.contains_key("end_key:on_post"));
+        assert_eq!(
+            recording.contains_key("end_key:send"),
+            END_KEYS_WHILE_RECORDING
+        );
+        // The post-processing hold shortcut isn't taken: its combination is
+        // the end shortcut's while recording.
+        s.post_process_enabled = false;
+        let without = desired(&s, true, true);
+        assert_eq!(
+            keys(&without, "end_key:on_post").is_some(),
+            END_KEYS_WHILE_RECORDING
+        );
+        assert!(!without.contains_key("end_key:on_start"));
     }
 
     #[test]

@@ -67,6 +67,7 @@ mod settings;
 mod shortcut;
 mod signal_handle;
 mod sound_queue;
+mod start_keys;
 mod system_languages;
 mod theme_file;
 #[cfg(target_os = "macos")]
@@ -776,7 +777,6 @@ pub fn run(cli_args: CliArgs) {
         .commands(collect_commands![
             shortcut::change_binding,
             shortcut::reset_binding,
-            shortcut::change_shortcut_activation_setting,
             shortcut::change_hold_threshold_ms_setting,
             shortcut::change_audio_feedback_setting,
             shortcut::change_audio_feedback_volume_setting,
@@ -856,7 +856,8 @@ pub fn run(cli_args: CliArgs) {
             app_profiles::set_profile_auto_by_app,
             app_profiles::list_applications,
             end_keys::change_end_keys_setting,
-            end_keys::change_hold_ends_setting,
+            start_keys::change_start_keys_setting,
+            start_keys::change_hold_keys_setting,
             shortcut::suspend_all_bindings,
             shortcut::resume_all_bindings,
             shortcut::change_mute_while_recording_setting,
@@ -1066,9 +1067,9 @@ pub fn run(cli_args: CliArgs) {
     if !headless_mode {
         builder = builder.plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
             if args.iter().any(|a| a == "--toggle-transcription") {
-                signal_handle::send_transcription_input(app, "transcribe", "CLI");
+                signal_handle::send_transcription_input(app, false, "CLI");
             } else if args.iter().any(|a| a == "--toggle-post-process") {
-                signal_handle::send_transcription_input(app, "transcribe_with_post_process", "CLI");
+                signal_handle::send_transcription_input(app, true, "CLI");
             } else if args.iter().any(|a| a == "--cancel") {
                 crate::utils::cancel_current_operation(app);
             } else {

@@ -285,6 +285,12 @@ fn register_start_bindings_with(
     // Validate the shortcuts for the target implementation
     let reset_bindings =
         backend::reset_invalid(target.as_ref(), &mut bindings, &mut current_settings);
+    // DanyWhere: a start or hold shortcut reset may now have another one's
+    // combination, which is taken once (`start_keys::bindings_to_register`).
+    if !reset_bindings.is_empty() {
+        bindings =
+            backend::start_bindings(&current_settings, crate::delivery::INSERT_SERVICE_AVAILABLE);
+    }
     // Nothing counts as registered with "None".
     let report = backend::register_all(target.as_ref(), &bindings, |binding, e| {
         error!(
@@ -368,14 +374,9 @@ mod tests {
             }
         }
 
-        fn with_shortcut(self, id: &str, keys: &str) -> Self {
-            self.settings
-                .lock()
-                .unwrap()
-                .bindings
-                .get_mut(id)
-                .expect("a default binding")
-                .current_binding = keys.to_string();
+        /// The first start shortcut on `keys`.
+        fn with_start_key(self, keys: &str) -> Self {
+            self.settings.lock().unwrap().start_keys[0].shortcut = keys.to_string();
             self
         }
 
@@ -506,8 +507,9 @@ mod tests {
         lines.iter().filter(|l| l.starts_with(prefix)).collect()
     }
 
-    fn default_keys(id: &str) -> String {
-        get_default_settings().bindings[id].current_binding.clone()
+    /// A new installation's first start shortcut.
+    fn factory_start() -> String {
+        get_default_settings().start_keys[0].shortcut.clone()
     }
 
     // ---- the start ----
@@ -589,16 +591,16 @@ mod tests {
     #[test]
     fn switching_to_tauri_moves_the_shortcuts_and_resets_what_tauri_cannot_register() {
         let host = FakeHost::new(KeyboardImplementation::HandyKeys)
-            .with_shortcut("transcribe", "fn+space")
+            .with_start_key("fn+space")
             .having_registered(&[
-                binding("transcribe", "fn+space"),
+                binding("start_key:start", "fn+space"),
                 binding("cycle_word_list", "ctrl+shift+l"),
             ]);
         let result = switch(&host, "tauri").expect("switched");
         let lines = host.lines();
 
         // The old backend gives up what it had registered.
-        let unregistered = at(&lines, "handy_keys: unregister transcribe fn+space");
+        let unregistered = at(&lines, "handy_keys: unregister start_key:start fn+space");
         at(
             &lines,
             "handy_keys: unregister cycle_word_list ctrl+shift+l",
@@ -608,7 +610,7 @@ mod tests {
         let fallback = at(&lines, "reconcile fallback");
         let transcribe = at(
             &lines,
-            &format!("tauri: register transcribe {}", default_keys("transcribe")),
+            &format!("tauri: register start_key:start {}", factory_start()),
         );
         assert!(unregistered < stored && stored < fallback && fallback < transcribe);
         assert_eq!(
@@ -621,11 +623,8 @@ mod tests {
             .rposition(|l| l.starts_with("tauri: register"))
             .unwrap();
         assert!(last_at(&lines, "write tauri") > last_register, "{lines:#?}");
-        assert_eq!(
-            host.stored().bindings["transcribe"].current_binding,
-            default_keys("transcribe")
-        );
-        assert_eq!(result.reset_bindings, ["transcribe"]);
+        assert_eq!(host.stored().start_keys[0].shortcut, factory_start());
+        assert_eq!(result.reset_bindings, ["start_key:start"]);
         assert!(result.success);
         assert_eq!(host.registered_ids(), host.start_ids());
         // Then the profile's shortcuts, the fallback again, and the frontend.
@@ -635,7 +634,7 @@ mod tests {
             [
                 "follow profile".to_string(),
                 "reconcile fallback".to_string(),
-                "announce tauri [\"transcribe\"]".to_string()
+                "announce tauri [\"start_key:start\"]".to_string()
             ]
         );
     }
@@ -654,7 +653,9 @@ mod tests {
         assert!(!host
             .registered_ids()
             .contains(&"cycle_word_list".to_string()));
-        assert!(host.registered_ids().contains(&"transcribe".to_string()));
+        assert!(host
+            .registered_ids()
+            .contains(&"start_key:start".to_string()));
     }
 
     #[test]

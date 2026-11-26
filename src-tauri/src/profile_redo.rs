@@ -136,9 +136,9 @@ fn post_processing_differs(
 }
 
 /// The end a dictation that ended with `made_end` takes in the profile with
-/// `target`: the one with the same id (a hold end by its start shortcut,
-/// `end_keys::find_end`), or, where that profile has none, the one it ended
-/// with.
+/// `target`: the one with the same id (a hold shortcut's by its id, one
+/// from before them by the first hold shortcut alike, `end_keys::find_end`),
+/// or, where that profile has none, the one it ended with.
 pub fn end_in(target: &ProfileValues, made_end: &EndKey) -> EndKey {
     crate::end_keys::find_end(target, &made_end.id).unwrap_or_else(|| made_end.clone())
 }
@@ -1005,30 +1005,49 @@ mod tests {
     }
 
     #[test]
-    fn a_dictation_ended_by_holding_takes_the_targets_hold_end() {
+    fn a_dictation_ended_by_holding_takes_the_targets_hold_shortcut() {
         let settings = settings_with_mail();
-        let mut made = default_values(&settings);
-        made.hold_ends.insert(
-            "transcribe".to_string(),
-            crate::end_keys::HoldEnd::default(),
-        );
+        let made = default_values(&settings);
+        let hold = crate::start_keys::HOLD_DIRECT_ID;
         let made_end = crate::end_keys::resolve(
             &made,
-            &crate::end_keys::EndChoice::Held("transcribe".to_string()),
-            "transcribe",
+            &crate::end_keys::EndChoice::Held(hold.to_string()),
+            "hold_key:hold_direct",
         );
+        assert_eq!(made_end.id, format!("hold:{hold}"));
         let mut target = default_values(&settings);
-        target.hold_ends.insert(
-            "transcribe".to_string(),
-            crate::end_keys::HoldEnd {
-                append_text: "{Tab}".to_string(),
-                post_process: true,
-                send_context: false,
-            },
-        );
+        let there = target
+            .hold_keys
+            .iter_mut()
+            .find(|key| key.id == hold)
+            .expect("the factory hold shortcut");
+        there.append_text = "{Tab}".to_string();
+        there.post_process = true;
         let there = end_in(&target, &made_end);
         assert_eq!(there.append_text, "{Tab}");
         assert!(there.post_process);
+    }
+
+    /// An entry from before hold shortcuts (`held:<start binding>`) ends as
+    /// the target's first hold shortcut without, or with, post-processing.
+    #[test]
+    fn an_older_entry_ended_by_holding_takes_the_targets_hold_shortcut_alike() {
+        let settings = settings_with_mail();
+        let target = default_values(&settings);
+        let old = |id: &str| crate::end_keys::EndKey {
+            id: id.to_string(),
+            ..Default::default()
+        };
+        assert_eq!(
+            end_in(&target, &old("held:transcribe")).id,
+            "hold:hold_direct"
+        );
+        assert_eq!(
+            end_in(&target, &old("held:transcribe_with_post_process")).id,
+            "hold:hold_post"
+        );
+        // Anything else: the end it ended with.
+        assert_eq!(end_in(&target, &old("held:gone")).id, "held:gone");
     }
 
     #[test]
