@@ -22,6 +22,7 @@ use crate::dictation_context::{CapturedWindow, ContextQuery, WordReplacement};
 use crate::dictation_key_inserts::ClipboardReason;
 use crate::input_method::testing::{inserted, FakeInputMethod, ImCall};
 use crate::input_method::{InputMethod, InsertFailure, Inserted};
+use crate::language_detection::LanguageDecision;
 use crate::managers::history::{HistoryEntry, HistoryManager, HistoryUpdatePayload};
 use crate::managers::transcription::Transcription;
 use crate::notices::Notice;
@@ -111,6 +112,37 @@ pub struct Script {
     pub input_method_added: bool,
     /// What inserting through the input method gives while it is added.
     pub input_method_insert: Result<Inserted, InsertFailure>,
+    /// DanyWhere: what cutting the recording for a spoken instruction gives
+    /// (the text section); `None`: nothing to cut.
+    pub split: Option<Recording>,
+    /// The language the text section was transcribed in.
+    pub text_language: Option<LanguageDecision>,
+    /// Holds the text section's transcription until opened.
+    pub hold_text_section: Option<Gate>,
+    /// The spoken instruction as heard, or the error transcribing it gives.
+    pub instruction: Result<String, String>,
+    /// The language the instruction was transcribed in.
+    pub instruction_language: Option<LanguageDecision>,
+}
+
+/// DanyWhere: holds a scripted step until a test opens it. Clones share it.
+#[derive(Clone, Default)]
+pub struct Gate(Arc<(Mutex<bool>, std::sync::Condvar)>);
+
+impl Gate {
+    pub fn open(&self) {
+        let (open, opened) = &*self.0;
+        *open.lock().unwrap() = true;
+        opened.notify_all();
+    }
+
+    fn pass(&self) {
+        let (open, opened) = &*self.0;
+        let mut open = open.lock().unwrap();
+        while !*open {
+            open = opened.wait(open).unwrap();
+        }
+    }
 }
 
 impl Default for Script {
@@ -143,6 +175,11 @@ impl Default for Script {
             clipboard: Ok(()),
             input_method_added: false,
             input_method_insert: inserted(),
+            split: None,
+            text_language: None,
+            hold_text_section: None,
+            instruction: Ok("translate it into Polish".to_string()),
+            instruction_language: None,
         }
     }
 }
@@ -155,6 +192,17 @@ pub enum Event {
     StopRecording,
     CancelStream,
     Transcribe {
+        samples: usize,
+        load_end_model: bool,
+    },
+    /// DanyWhere: the recording was cut for a spoken instruction.
+    SplitRecording,
+    /// The text section of a cut recording went to transcription.
+    TranscribeTextSection {
+        samples: usize,
+    },
+    /// A spoken instruction went to transcription.
+    TranscribeInstruction {
         samples: usize,
         load_end_model: bool,
     },
@@ -350,6 +398,55 @@ impl Transcribe for FakePorts {
                 text: text.clone(),
                 language: None,
                 word_replacements: script.word_replacements.clone(),
+                model_id: Some(MODEL.to_string()),
+                takes_vocabulary: script.takes_vocabulary,
+            }),
+            Err(error) => Err(anyhow::anyhow!(error.clone())),
+        }
+    }
+
+    fn split_recording(&self, _binding_id: &str) -> Option<Recording> {
+        self.record(Event::SplitRecording);
+        self.script().split.clone()
+    }
+
+    /// The script's transcript, once its gate is open.
+    fn transcribe_text_section(&self, samples: Vec<f32>) -> anyhow::Result<Transcription> {
+        self.record(Event::TranscribeTextSection {
+            samples: samples.len(),
+        });
+        let gate = self.script().hold_text_section.clone();
+        if let Some(gate) = gate {
+            gate.pass();
+        }
+        let script = self.script();
+        match &script.transcription {
+            Ok(text) => Ok(Transcription {
+                text: text.clone(),
+                language: script.text_language.clone(),
+                word_replacements: script.word_replacements.clone(),
+                model_id: Some(MODEL.to_string()),
+                takes_vocabulary: script.takes_vocabulary,
+            }),
+            Err(error) => Err(anyhow::anyhow!(error.clone())),
+        }
+    }
+
+    fn transcribe_instruction(
+        &self,
+        samples: Vec<f32>,
+        load_end_model: bool,
+    ) -> anyhow::Result<Transcription> {
+        self.record(Event::TranscribeInstruction {
+            samples: samples.len(),
+            load_end_model,
+        });
+        let script = self.script();
+        match &script.instruction {
+            Ok(text) => Ok(Transcription {
+                text: text.clone(),
+                language: script.instruction_language.clone(),
+                word_replacements: Vec::new(),
                 model_id: Some(MODEL.to_string()),
                 takes_vocabulary: script.takes_vocabulary,
             }),

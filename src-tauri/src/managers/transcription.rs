@@ -1026,6 +1026,18 @@ impl TranscriptionManager {
         self.complete(started, samples, live)
     }
 
+    /// DanyWhere: [`transcribe_recording`](Self::transcribe_recording) for
+    /// the text section of a recording cut for a spoken instruction
+    /// (`dictation_flow::instruction`): its live decode ended at the cut.
+    /// Keeps the model loaded even when it unloads right after use: the
+    /// instruction is transcribed with it next, and the dictation's end
+    /// unloads it.
+    pub fn transcribe_text_section(&self, samples: Vec<f32>) -> Result<Transcription> {
+        let started = Instant::now();
+        let live = self.finalize_live(samples.len())?;
+        self.complete_with(started, samples, live, false)
+    }
+
     /// The final text of one transcription, from its live result or else a
     /// batch run of `audio`. Every transcription finishes here.
     fn complete(
@@ -1033,6 +1045,18 @@ impl TranscriptionManager {
         started: Instant,
         audio: Vec<f32>,
         live: Option<RunOutcome>,
+    ) -> Result<Transcription> {
+        self.complete_with(started, audio, live, true)
+    }
+
+    /// [`complete`](Self::complete); `unload`: unload the model afterwards
+    /// if it unloads right after use.
+    fn complete_with(
+        &self,
+        started: Instant,
+        audio: Vec<f32>,
+        live: Option<RunOutcome>,
+        unload: bool,
     ) -> Result<Transcription> {
         #[cfg(debug_assertions)]
         if std::env::var("HANDY_FORCE_TRANSCRIPTION_FAILURE").is_ok() {
@@ -1045,7 +1069,9 @@ impl TranscriptionManager {
         debug!("Audio vector length: {}", audio_len);
         if audio.is_empty() {
             debug!("Empty audio vector");
-            self.maybe_unload_immediately("empty audio");
+            if unload {
+                self.maybe_unload_immediately("empty audio");
+            }
             return Ok(Transcription {
                 text: String::new(),
                 language: None,
@@ -1093,7 +1119,9 @@ impl TranscriptionManager {
             );
         }
 
-        self.maybe_unload_immediately("transcription");
+        if unload {
+            self.maybe_unload_immediately("transcription");
+        }
 
         Ok(Transcription {
             text: final_result,

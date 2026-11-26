@@ -1,5 +1,5 @@
 use crate::audio_toolkit::{
-    audio::{AudioFrameCallback, LevelCallback, MicrophoneDevice},
+    audio::{AudioFrameCallback, LevelCallback, MicrophoneDevice, RecordingSections},
     vad::{
         frames_for_duration_ms, EarshotVad, SmoothedVad, VAD_OFFLINE_HANGOVER_MS, VAD_ONSET_MS,
         VAD_PREFILL_MS, VAD_STREAMING_HANGOVER_MS,
@@ -234,6 +234,18 @@ fn restore_mute(prev_muted: Option<bool>) {
 }
 
 const WHISPER_SAMPLE_RATE: usize = 16000;
+
+/// A recording shorter than a second, padded with silence to 1.25 s for the
+/// models; an empty one stays empty.
+fn padded_if_short(samples: Vec<f32>) -> Vec<f32> {
+    if samples.len() < WHISPER_SAMPLE_RATE && !samples.is_empty() {
+        let mut padded = samples;
+        padded.resize(WHISPER_SAMPLE_RATE * 5 / 4, 0.0);
+        padded
+    } else {
+        samples
+    }
+}
 
 /* ──────────────────────────────────────────────────────────────── */
 
@@ -519,6 +531,15 @@ fn forget_microphone(app: &tauri::AppHandle, unavailable_name: &str) {
 
 /* ──────────────────────────────────────────────────────────────── */
 
+/// DanyWhere: the first section of a recording cut in two
+/// ([`AudioRecordingManager::split_recording`]).
+#[derive(Debug, Clone, PartialEq)]
+pub struct RecordedSection {
+    pub samples: Vec<f32>,
+    /// The microphone sent only digital silence during the section.
+    pub input_silent: bool,
+}
+
 /// One recording session's first-sample notification. Waiting on this never
 /// blocks the shortcut coordinator: callers hand it to a dedicated worker.
 pub struct RecordingReadiness {
@@ -584,6 +605,9 @@ pub struct AudioRecordingManager {
     /// DanyWhere: what the open stream was opened with, so a recording whose
     /// profile has another microphone opens it again (`dictation_microphone`).
     opened_for: Arc<Mutex<Option<MicrophoneChoice>>>,
+    /// DanyWhere: the running recording's sections, to cut it in two
+    /// (`split_recording`); `None` while none runs.
+    sections: Arc<Mutex<Option<RecordingSections>>>,
 }
 
 impl AudioRecordingManager {
@@ -644,6 +668,7 @@ impl AudioRecordingManager {
             cached_device: Arc::new(Mutex::new(None)),
             last_input_silent: Arc::new(AtomicBool::new(false)),
             opened_for: Arc::new(Mutex::new(None)),
+            sections: Arc::new(Mutex::new(None)),
         };
 
         // Always-on?  Open immediately.
@@ -1206,9 +1231,12 @@ impl AudioRecordingManager {
                 self.return_vad(sink.into_vad());
                 return Err(anyhow::anyhow!("Recorder not available"));
             };
+            // DanyWhere: what cuts this recording for a spoken instruction.
+            let sections = sink.sections();
             match microphone.recorder.start(sink) {
                 Ok(()) => {
                     let generation = self.capture_generation.fetch_add(1, Ordering::AcqRel) + 1;
+                    *self.sections.lock().unwrap() = Some(sections);
                     *self.is_recording.lock().unwrap() = true;
                     self.set_state(
                         &mut state,
@@ -1381,6 +1409,7 @@ impl AudioRecordingManager {
                 binding_id: ref active,
             } if active == binding_id => {
                 self.set_state(&mut state, RecordingState::Stopping);
+                self.sections.lock().unwrap().take();
                 drop(state);
 
                 // Optionally keep recording for a bit longer to capture trailing audio.
@@ -1431,20 +1460,45 @@ impl AudioRecordingManager {
                     return None;
                 }
 
-                // Pad if very short
-                let s_len = samples.len();
-                // debug!("Got {} samples", s_len);
-                if s_len < WHISPER_SAMPLE_RATE && s_len > 0 {
-                    let mut padded = samples;
-                    padded.resize(WHISPER_SAMPLE_RATE * 5 / 4, 0.0);
-                    Some(padded)
-                } else {
-                    Some(samples)
-                }
+                Some(padded_if_short(samples))
             }
             _ => None,
         }
     }
+    /// DanyWhere: cuts the recording of `binding_id` in two while the
+    /// microphone runs, for the spoken instruction: hands over the first
+    /// section (padded like a short recording at `stop_recording`) and goes
+    /// on recording into a second one, which `stop_recording` returns. No
+    /// stop sound, no change to the output's mute, no gap: the cut is made
+    /// in the sink between two frames, so every sample lands in exactly one
+    /// section. From the cut on, frames no longer go to the live stream.
+    /// `None`: no recording of `binding_id` runs, or it was cut already.
+    ///
+    /// A cut in the sink rather than a stop and a new start of the
+    /// recorder: between `stop` and `start` handy-recorder pauses the
+    /// stream and discards what arrives while idle, and it pads the last
+    /// chunk of a stop with zeros, so the start of the instruction would be
+    /// lost.
+    pub fn split_recording(&self, binding_id: &str) -> Option<RecordedSection> {
+        // Under the state lock, so a stop or cancel can't run meanwhile.
+        let state = self.state.lock().unwrap();
+        if !matches!(&*state, RecordingState::Recording { binding_id: active } if active == binding_id)
+        {
+            return None;
+        }
+        let sections = self.sections.lock().unwrap().clone()?;
+        let first = sections.split()?;
+        drop(state);
+        debug!(
+            "Recording for binding {binding_id} cut while recording: {} samples before the cut",
+            first.samples.len()
+        );
+        Some(RecordedSection {
+            samples: padded_if_short(first.samples),
+            input_silent: first.input_silent,
+        })
+    }
+
     pub fn is_recording(&self) -> bool {
         // Lock-free: mirrors the `state` {Recording, Stopping} membership via
         // an atomic maintained by `set_state()`. Polled from the webview/main
@@ -1463,6 +1517,7 @@ impl AudioRecordingManager {
         match *state {
             RecordingState::Recording { .. } => {
                 self.set_state(&mut state, RecordingState::Idle);
+                self.sections.lock().unwrap().take();
                 drop(state);
 
                 if let Some(microphone) = self.recorder.lock().unwrap().as_ref() {
@@ -2089,5 +2144,367 @@ mod tests {
             "the failed stream opened again"
         );
         assert!(finish(&rm, &usb));
+    }
+
+    // DanyWhere: cutting a recording in two while the microphone runs
+    // (`split_recording`), for the spoken instruction.
+
+    mod split {
+        use super::*;
+        use crate::audio_toolkit::vad::VadFrame;
+        use std::sync::atomic::AtomicUsize;
+
+        /// Samples per chunk: the frame of the fake host's detector
+        /// (Earshot), which the microphone is opened with.
+        const CHUNK: usize = 256;
+        const BINDING: &str = "transcribe";
+
+        /// The `i`-th sample of a ramp: every value differs, none is zero,
+        /// each is exact in f32.
+        fn ramp_at(i: usize) -> f32 {
+            (i + 1) as f32 / 65_536.0
+        }
+
+        fn ramp(range: std::ops::Range<usize>) -> Vec<f32> {
+            range.map(ramp_at).collect()
+        }
+
+        /// A manager over `host` whose live feed is written down.
+        fn feeding(host: AudioHost) -> (AudioRecordingManager, Arc<Mutex<Vec<f32>>>) {
+            let fed = Arc::new(Mutex::new(Vec::new()));
+            let feed = Arc::clone(&fed);
+            let rm = AudioRecordingManager::with_host(
+                host,
+                Arc::new(move |frame: &[f32]| feed.lock().unwrap().extend_from_slice(frame)),
+            )
+            .expect("a manager over the fake microphone");
+            (rm, fed)
+        }
+
+        /// A manager over `mic` with the test settings, its live feed
+        /// written down.
+        fn manager(mic: &FakeMic) -> (AudioRecordingManager, Arc<Mutex<Vec<f32>>>) {
+            feeding(fake_microphone::host(mic, fake_microphone::settings()))
+        }
+
+        fn wait_until(what: &str, done: impl Fn() -> bool) {
+            let deadline = Instant::now() + Duration::from_secs(5);
+            while !done() {
+                assert!(Instant::now() < deadline, "timed out waiting: {what}");
+                std::thread::sleep(Duration::from_millis(1));
+            }
+        }
+
+        /// Waits until the live feed has `samples` samples: the sink has
+        /// had them (without VAD every sample is fed).
+        fn wait_fed(fed: &Arc<Mutex<Vec<f32>>>, samples: usize) {
+            wait_until("the sink got the audio", || {
+                fed.lock().unwrap().len() >= samples
+            });
+        }
+
+        fn start(rm: &AudioRecordingManager, policy: VadPolicy) -> RecordingReadiness {
+            rm.try_start_recording(BINDING, policy)
+                .expect("the recording starts")
+        }
+
+        #[test]
+        fn the_split_gives_the_first_section_and_the_stop_the_second() {
+            let mic = fake_microphone::mic();
+            let (rm, fed) = manager(&mic);
+            start(&rm, VadPolicy::Disabled);
+            let first_len = CHUNK * 70;
+            fake_microphone::play(&mic, &ramp(0..first_len));
+            wait_fed(&fed, first_len);
+
+            let first = rm.split_recording(BINDING).expect("the recording is cut");
+            assert_eq!(first.samples, ramp(0..first_len));
+            assert!(!first.input_silent);
+            assert!(rm.is_recording(), "the recording goes on");
+
+            let total = first_len + 17_000;
+            fake_microphone::play(&mic, &ramp(first_len..total));
+            assert_eq!(
+                fake_microphone::stop(&rm, &mic, BINDING),
+                Some(ramp(first_len..total))
+            );
+        }
+
+        #[test]
+        fn no_sample_is_lost_or_doubled_while_the_microphone_sends_through_the_cut() {
+            let mic = fake_microphone::mic();
+            let (rm, fed) = manager(&mic);
+            start(&rm, VadPolicy::Disabled);
+            let split_done = Arc::new(AtomicBool::new(false));
+
+            // The device's audio thread: 10 ms blocks, on and on, until well
+            // after the cut.
+            let pusher = {
+                let mic = mic.clone();
+                let split_done = Arc::clone(&split_done);
+                std::thread::spawn(move || {
+                    let (mut sent, mut after_cut) = (0, 0);
+                    while after_cut < 120 && sent < 60_000 {
+                        assert!(mic.push(&ramp(sent..sent + 160)));
+                        sent += 160;
+                        if split_done.load(Ordering::Acquire) {
+                            after_cut += 1;
+                        }
+                        std::thread::sleep(Duration::from_millis(1));
+                    }
+                    sent
+                })
+            };
+            wait_fed(&fed, 16_000);
+            let first = rm.split_recording(BINDING).expect("the recording is cut");
+            split_done.store(true, Ordering::Release);
+            let sent = pusher.join().expect("the audio thread");
+            let second = fake_microphone::stop(&rm, &mic, BINDING).expect("the second section");
+
+            assert!(first.samples.len() >= 16_000 && second.len() >= 16_000);
+            let mut both = first.samples.clone();
+            both.extend_from_slice(&second);
+            assert_eq!(
+                both.len(),
+                sent,
+                "{} + {} samples",
+                first.samples.len(),
+                second.len()
+            );
+            assert!(
+                both == ramp(0..sent),
+                "the two sections are the ramp without a gap or a repeat"
+            );
+        }
+
+        /// Speech where a frame's mean level is above 0.1, under a
+        /// recording's real smoothing (pre-roll, onset, hangover); counts
+        /// the frames it was given.
+        struct LevelVad {
+            frames: Arc<AtomicUsize>,
+        }
+
+        impl VoiceActivityDetector for LevelVad {
+            fn push_frame<'a>(&'a mut self, frame: &'a [f32]) -> anyhow::Result<VadFrame<'a>> {
+                self.frames.fetch_add(1, Ordering::AcqRel);
+                let level = frame.iter().map(|s| s.abs()).sum::<f32>() / frame.len() as f32;
+                Ok(if level > 0.1 {
+                    VadFrame::Speech(frame)
+                } else {
+                    VadFrame::Noise
+                })
+            }
+
+            fn frame_samples(&self) -> usize {
+                CHUNK
+            }
+        }
+
+        /// A manager over `mic` whose recordings run through [`LevelVad`],
+        /// and the count of frames it saw.
+        fn with_level_vad(
+            mic: &FakeMic,
+        ) -> (
+            AudioRecordingManager,
+            Arc<Mutex<Vec<f32>>>,
+            Arc<AtomicUsize>,
+        ) {
+            let frames = Arc::new(AtomicUsize::new(0));
+            let mut host = fake_microphone::host(mic, fake_microphone::settings());
+            let seen = Arc::clone(&frames);
+            host.create_vad = Arc::new(move |backend| {
+                Ok(capture_vad(
+                    smooth(Box::new(LevelVad {
+                        frames: Arc::clone(&seen),
+                    })),
+                    backend,
+                ))
+            });
+            let (rm, fed) = feeding(host);
+            (rm, fed, frames)
+        }
+
+        /// Three times a quarter second of speech-like sound, each followed
+        /// by two seconds of silence: longer than VAD's pre-roll and
+        /// hangover together, so some of it is dropped.
+        fn speech_and_pauses() -> Vec<f32> {
+            (0..3 * PERIOD)
+                .map(|i| {
+                    if i % PERIOD < 4_000 {
+                        0.5 * (((i % 100) as f32 / 50.0) - 1.0)
+                    } else {
+                        0.0
+                    }
+                })
+                .collect()
+        }
+
+        const PERIOD: usize = 36_000;
+
+        /// Plays `audio` and waits, every half second of it, until the
+        /// detector had it: the device's ring holds two seconds.
+        fn play_through(mic: &FakeMic, audio: &[f32], frames: &AtomicUsize, before: usize) {
+            for (i, part) in audio.chunks(8_000).enumerate() {
+                fake_microphone::play(mic, part);
+                let played = before + i * 8_000 + part.len();
+                wait_until("the detector had the audio", || {
+                    frames.load(Ordering::Acquire) >= played / CHUNK
+                });
+            }
+        }
+
+        #[test]
+        fn with_vad_the_two_sections_hold_what_one_recording_would() {
+            let audio = speech_and_pauses();
+
+            let mic = fake_microphone::mic();
+            let (rm, _, frames) = with_level_vad(&mic);
+            start(&rm, VadPolicy::Offline);
+            play_through(&mic, &audio, &frames, 0);
+            let whole = fake_microphone::stop(&rm, &mic, BINDING).expect("the recording");
+            assert!(
+                whole.len() >= WHISPER_SAMPLE_RATE && whole.len() < audio.len(),
+                "VAD kept some and dropped some: {} of {}",
+                whole.len(),
+                audio.len()
+            );
+
+            // Cut while the speech's onset is still pending, in the middle
+            // of speech, and in the hangover after it.
+            for cut_at in [PERIOD + 700, PERIOD + 2_000, PERIOD + 6_000] {
+                let mic = fake_microphone::mic();
+                let (rm, fed, frames) = with_level_vad(&mic);
+                start(&rm, VadPolicy::Offline);
+                play_through(&mic, &audio[..cut_at], &frames, 0);
+                let first = rm.split_recording(BINDING).expect("the recording is cut");
+                play_through(&mic, &audio[cut_at..], &frames, cut_at);
+                let second = fake_microphone::stop(&rm, &mic, BINDING).expect("the second");
+
+                // A section shorter than a second comes padded; what VAD
+                // let through before the cut is what the live feed got.
+                let kept = fed.lock().unwrap().clone();
+                assert!(!kept.is_empty(), "cut at {cut_at}: the text kept speech");
+                assert_eq!(first.samples[..kept.len()], kept[..], "cut at {cut_at}");
+                assert!(first.samples[kept.len()..].iter().all(|&s| s == 0.0));
+                let mut both = kept;
+                both.extend_from_slice(&second);
+                assert_eq!(both, whole, "cut at {cut_at}");
+            }
+        }
+
+        #[test]
+        fn the_live_stream_gets_only_the_first_section() {
+            let mic = fake_microphone::mic();
+            let (rm, fed) = manager(&mic);
+            start(&rm, VadPolicy::Disabled);
+            fake_microphone::play(&mic, &ramp(0..CHUNK * 70));
+            wait_fed(&fed, CHUNK * 70);
+            let first = rm.split_recording(BINDING).expect("the recording is cut");
+            fake_microphone::play(&mic, &ramp(CHUNK * 70..CHUNK * 150));
+            let second = fake_microphone::stop(&rm, &mic, BINDING).expect("the second");
+
+            assert_eq!(second.len(), CHUNK * 80);
+            assert_eq!(*fed.lock().unwrap(), first.samples);
+        }
+
+        #[test]
+        fn the_cut_leaves_the_microphone_open_the_mute_alone_and_the_start_current() {
+            let mic = fake_microphone::mic();
+            let (rm, fed) = manager(&mic);
+            let readiness = start(&rm, VadPolicy::Disabled);
+            fake_microphone::play(&mic, &ramp(0..CHUNK * 70));
+            wait_fed(&fed, CHUNK * 70);
+            // As if the output had been muted for the recording; a system
+            // muted before stays muted, so nothing here touches the Mac.
+            *rm.mute_state.lock().unwrap() = MuteState {
+                did_mute: true,
+                prev_muted: Some(true),
+            };
+
+            assert!(rm.split_recording(BINDING).is_some());
+            let mute = *rm.mute_state.lock().unwrap();
+            assert!(mute.did_mute, "the output stays muted");
+            assert_eq!(mute.prev_muted, Some(true));
+            assert!(mic.is_streaming(), "the microphone stays open");
+            assert!(rm.is_recording());
+            assert!(
+                rm.is_recording_readiness_current(readiness.generation()),
+                "the recording that started is still the one running"
+            );
+            fake_microphone::play(&mic, &ramp(0..CHUNK));
+            assert!(fake_microphone::stop(&rm, &mic, BINDING).is_some());
+        }
+
+        #[test]
+        fn cancelling_after_the_cut_discards_the_second_section() {
+            let mic = fake_microphone::mic();
+            let (rm, fed) = manager(&mic);
+            start(&rm, VadPolicy::Disabled);
+            fake_microphone::play(&mic, &ramp(0..CHUNK * 70));
+            wait_fed(&fed, CHUNK * 70);
+            assert!(rm.split_recording(BINDING).is_some());
+            fake_microphone::play(&mic, &ramp(0..CHUNK * 10));
+
+            rm.cancel_recording();
+            assert!(!rm.is_recording());
+            assert_eq!(rm.stop_recording(BINDING, rm.cancel_generation()), None);
+            assert!(!mic.is_streaming(), "on demand, the microphone closes");
+        }
+
+        #[test]
+        fn a_second_section_without_audio_stops_empty() {
+            let mic = fake_microphone::mic();
+            let (rm, fed) = manager(&mic);
+            start(&rm, VadPolicy::Disabled);
+            fake_microphone::play(&mic, &ramp(0..CHUNK * 70));
+            wait_fed(&fed, CHUNK * 70);
+            assert!(rm.split_recording(BINDING).is_some());
+            assert_eq!(fake_microphone::stop(&rm, &mic, BINDING), Some(Vec::new()));
+        }
+
+        #[test]
+        fn only_a_running_recording_of_that_shortcut_is_cut_and_only_once() {
+            let mic = fake_microphone::mic();
+            let (rm, fed) = manager(&mic);
+            assert_eq!(rm.split_recording(BINDING), None, "nothing records");
+
+            start(&rm, VadPolicy::Disabled);
+            fake_microphone::play(&mic, &ramp(0..CHUNK * 70));
+            wait_fed(&fed, CHUNK * 70);
+            assert_eq!(rm.split_recording("other"), None, "another shortcut's");
+            assert!(rm.split_recording(BINDING).is_some());
+            assert_eq!(rm.split_recording(BINDING), None, "cut once already");
+            assert!(fake_microphone::stop(&rm, &mic, BINDING).is_some());
+            assert_eq!(rm.split_recording(BINDING), None, "stopped");
+        }
+
+        #[test]
+        fn a_short_first_section_is_padded_as_a_short_recording_is() {
+            let mic = fake_microphone::mic();
+            let (rm, fed) = manager(&mic);
+            start(&rm, VadPolicy::Disabled);
+            fake_microphone::play(&mic, &ramp(0..CHUNK * 20));
+            wait_fed(&fed, CHUNK * 20);
+            let first = rm.split_recording(BINDING).expect("the recording is cut");
+            assert_eq!(first.samples.len(), WHISPER_SAMPLE_RATE * 5 / 4);
+            assert_eq!(first.samples[..CHUNK * 20], ramp(0..CHUNK * 20)[..]);
+            assert!(first.samples[CHUNK * 20..].iter().all(|&s| s == 0.0));
+            assert!(fake_microphone::stop(&rm, &mic, BINDING).is_some());
+        }
+
+        #[test]
+        fn each_section_reports_digital_silence_of_its_own() {
+            let mic = fake_microphone::mic();
+            let (rm, fed) = manager(&mic);
+            start(&rm, VadPolicy::Disabled);
+            fake_microphone::play(&mic, &vec![0.0; CHUNK * 70]);
+            wait_fed(&fed, CHUNK * 70);
+            let first = rm.split_recording(BINDING).expect("the recording is cut");
+            assert!(first.input_silent, "the text had only zeros");
+
+            fake_microphone::play(&mic, &ramp(0..CHUNK * 70));
+            assert!(fake_microphone::stop(&rm, &mic, BINDING).is_some());
+            assert!(!rm.last_input_silent(), "the instruction had sound");
+        }
     }
 }

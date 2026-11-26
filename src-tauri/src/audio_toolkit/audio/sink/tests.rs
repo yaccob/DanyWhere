@@ -1,4 +1,4 @@
-use super::{AudioFrameCallback, CaptureSink, CaptureVad, LevelCallback, VadPolicy};
+use super::{AudioFrameCallback, CaptureSink, CaptureVad, LevelCallback, SplitSection, VadPolicy};
 use crate::audio_toolkit::vad::{VadFrame, VoiceActivityDetector};
 use handy_recorder::{AudioChunk, Sink};
 use std::sync::{mpsc, Arc, Mutex};
@@ -175,4 +175,108 @@ fn finish_returns_the_detector_for_the_next_recording() {
     let captured = h.sink.finish();
     assert_eq!(captured.vad.frame_samples(), FRAME);
     assert_eq!(captured.vad.hangover_for(VadPolicy::Streaming), 20);
+}
+
+// DanyWhere: cutting a recording in two while the microphone runs
+// (`RecordingSections`), for the spoken instruction.
+
+#[test]
+fn a_split_hands_over_the_first_section_and_the_finish_the_second() {
+    let mut h = harness(VadPolicy::Disabled);
+    let sections = h.sink.sections();
+    h.sink.process_chunk(chunk(&[1.0, 2.0, 3.0, 4.0], FRAME));
+    h.sink.process_chunk(chunk(&[5.0, 6.0, 7.0, 8.0], FRAME));
+
+    let first = sections.split().expect("the recording is cut");
+    assert_eq!(first.samples, [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]);
+    assert!(!first.input_silent);
+
+    h.sink.process_chunk(chunk(&[9.0, 10.0, 11.0, 12.0], FRAME));
+    h.sink.process_chunk(chunk(&[13.0, 0.0, 0.0, 0.0], 1));
+    assert_eq!(h.sink.finish().samples, [9.0, 10.0, 11.0, 12.0, 13.0]);
+}
+
+#[test]
+fn after_a_split_the_live_feed_gets_nothing_more() {
+    let mut h = harness(VadPolicy::Offline);
+    let sections = h.sink.sections();
+    h.sink.process_chunk(chunk(&[1.0; FRAME], FRAME));
+    let first = sections.split().expect("the recording is cut");
+    h.sink.process_chunk(chunk(&[2.0; FRAME], FRAME));
+
+    assert_eq!(first.samples, [1.0; FRAME]);
+    assert_eq!(
+        *h.fed.lock().unwrap(),
+        first.samples,
+        "the live stream had exactly the first section"
+    );
+    assert_eq!(h.sink.finish().samples, [2.0; FRAME]);
+}
+
+#[test]
+fn each_section_says_whether_its_own_input_was_silent() {
+    let mut h = harness(VadPolicy::Offline);
+    let sections = h.sink.sections();
+    h.sink.process_chunk(chunk(&[0.0; FRAME], FRAME));
+    let first = sections.split().expect("the recording is cut");
+    assert!(first.input_silent, "the first section had only zeros");
+    h.sink.process_chunk(chunk(&[0.0, 0.01, 0.0, 0.0], FRAME));
+    assert!(
+        !h.sink.finish().input_silent,
+        "the second section had sound"
+    );
+
+    let mut h = harness(VadPolicy::Offline);
+    let sections = h.sink.sections();
+    h.sink.process_chunk(chunk(&[1.0; FRAME], FRAME));
+    assert!(!sections.split().expect("the recording is cut").input_silent);
+    h.sink.process_chunk(chunk(&[0.0; FRAME], FRAME));
+    assert!(
+        h.sink.finish().input_silent,
+        "the second section had only zeros"
+    );
+}
+
+#[test]
+fn a_split_before_any_audio_is_empty_and_not_silent() {
+    let mut h = harness(VadPolicy::Disabled);
+    let sections = h.sink.sections();
+    let first = sections.split().expect("the recording is cut");
+    assert_eq!(
+        first,
+        SplitSection {
+            samples: Vec::new(),
+            input_silent: false,
+        }
+    );
+    h.sink.process_chunk(chunk(&[1.0; FRAME], FRAME));
+    assert_eq!(h.sink.finish().samples, [1.0; FRAME]);
+}
+
+#[test]
+fn a_recording_is_cut_only_once_and_not_after_it_finished() {
+    let mut h = harness(VadPolicy::Disabled);
+    let sections = h.sink.sections();
+    h.sink.process_chunk(chunk(&[1.0; FRAME], FRAME));
+    assert!(sections.split().is_some());
+    h.sink.process_chunk(chunk(&[2.0; FRAME], FRAME));
+    assert_eq!(sections.split(), None, "a second cut gives nothing");
+    assert_eq!(h.sink.finish().samples, [2.0; FRAME]);
+
+    let mut h = harness(VadPolicy::Disabled);
+    let sections = h.sink.sections();
+    h.sink.process_chunk(chunk(&[1.0; FRAME], FRAME));
+    assert_eq!(h.sink.finish().samples, [1.0; FRAME]);
+    assert_eq!(sections.split(), None, "a finished recording isn't cut");
+}
+
+#[test]
+fn a_recording_never_cut_finishes_as_before() {
+    let mut h = harness(VadPolicy::Disabled);
+    let _sections = h.sink.sections();
+    h.sink.process_chunk(chunk(&[1.0; FRAME], FRAME));
+    h.sink.process_chunk(chunk(&[2.0; FRAME], FRAME));
+    let both = [[1.0; FRAME], [2.0; FRAME]].concat();
+    assert_eq!(*h.fed.lock().unwrap(), both);
+    assert_eq!(h.sink.finish().samples, both);
 }
