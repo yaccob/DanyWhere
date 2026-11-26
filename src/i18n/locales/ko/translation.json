@@ -525,9 +525,6 @@
       "held": "{{shortcut}} 길게 누르기",
       "refName": "종료 단축키 {{name}}",
       "factoryNames": {
-        "pattern": "{{mode}} · {{effect}}",
-        "direct": "바로",
-        "postProcessed": "후처리",
         "space": "공백",
         "noSpace": "공백 없음",
         "paragraph": "문단",

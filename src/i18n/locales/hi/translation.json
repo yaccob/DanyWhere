@@ -525,9 +525,6 @@
       "held": "{{shortcut}} दबाए रखने पर",
       "refName": "समाप्ति शॉर्टकट {{name}}",
       "factoryNames": {
-        "pattern": "{{mode}} · {{effect}}",
-        "direct": "सीधा",
-        "postProcessed": "पोस्ट-प्रोसेस किया हुआ",
         "space": "स्पेस",
         "noSpace": "बिना स्पेस",
         "paragraph": "पैराग्राफ़",

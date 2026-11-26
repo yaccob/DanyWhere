@@ -525,9 +525,6 @@
       "held": "{{shortcut}} basılı tutulunca",
       "refName": "Bitirme kısayolu {{name}}",
       "factoryNames": {
-        "pattern": "{{mode}} · {{effect}}",
-        "direct": "Doğrudan",
-        "postProcessed": "Son işlemli",
         "space": "Boşluk",
         "noSpace": "Boşluksuz",
         "paragraph": "Paragraf",

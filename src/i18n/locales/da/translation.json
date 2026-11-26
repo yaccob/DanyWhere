@@ -525,9 +525,6 @@
       "held": "{{shortcut}} holdt nede",
       "refName": "Afslutningsgenvej {{name}}",
       "factoryNames": {
-        "pattern": "{{mode}} · {{effect}}",
-        "direct": "Direkte",
-        "postProcessed": "Efterbehandlet",
         "space": "Mellemrum",
         "noSpace": "Uden mellemrum",
         "paragraph": "Afsnit",

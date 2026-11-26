@@ -525,9 +525,6 @@
       "held": "{{shortcut}} ditahan",
       "refName": "Pintasan akhir {{name}}",
       "factoryNames": {
-        "pattern": "{{mode}} · {{effect}}",
-        "direct": "Langsung",
-        "postProcessed": "Diproses lanjut",
         "space": "Spasi",
         "noSpace": "Tanpa spasi",
         "paragraph": "Paragraf",

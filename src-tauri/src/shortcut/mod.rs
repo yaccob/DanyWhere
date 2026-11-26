@@ -939,23 +939,13 @@ pub fn change_auto_submit_key_setting(app: AppHandle, key: String) -> Result<(),
     Ok(())
 }
 
-#[tauri::command]
-#[specta::specta]
-pub fn change_post_process_enabled_setting(app: AppHandle, enabled: bool) -> Result<(), String> {
-    let mut settings = settings::get_settings(&app);
-    settings.post_process_enabled = enabled;
-    settings::write_settings(&app, settings.clone());
-    sync_post_process_shortcuts(&app, &settings);
-    Ok(())
-}
-
-/// Registers the post-processing shortcut while post-processing is on in
-/// `settings`, and unregisters it while it's off. DanyWhere: also while a
-/// profile with applications post-processes
-/// (`app_profiles::post_processing_reachable`), the shortcut that turns
-/// choosing the profile by application on and off only while applications
-/// are assigned; all through the shortcuts that follow the profile
-/// (`profile_sync`), which read the stored settings.
+/// Registers what follows the profile's values after `settings` changed:
+/// DanyWhere: the shortcut that turns choosing the profile by application
+/// on and off only while applications are assigned, the instruction
+/// shortcuts only while post-processing can run (`instruction_keys::taken`);
+/// all through the shortcuts that follow the profile (`profile_sync`), which
+/// read the stored settings. (The switch "Post Processing" and its command
+/// gave way to `post_process_mode` on 2026-11-26.)
 pub fn sync_post_process_shortcuts(app: &AppHandle, settings: &settings::AppSettings) {
     let _ = settings;
     profile_sync::sync_now(app);
@@ -1627,10 +1617,6 @@ mod tests {
                     "direct_no_space",
                     "direct_paragraph",
                     "direct_line",
-                    "post_space",
-                    "post_no_space",
-                    "post_paragraph",
-                    "post_line",
                 ]
             );
         }
@@ -1665,7 +1651,7 @@ mod tests {
             apply_no_accessibility_mode(&mut settings);
             assert_eq!(settings.end_keys, without_key_presses(&named));
             #[cfg(target_os = "macos")]
-            assert_eq!(settings.end_keys.len(), 8);
+            assert_eq!(settings.end_keys.len(), 4);
         }
 
         #[test]
@@ -1706,7 +1692,7 @@ mod tests {
             assert_eq!(settings.profiles.len(), 1);
             assert_eq!(settings.profiles[0].values.end_keys, expected);
             #[cfg(target_os = "macos")]
-            assert_eq!(expected.len(), 8);
+            assert_eq!(expected.len(), 4);
         }
 
         #[test]

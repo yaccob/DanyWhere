@@ -525,9 +525,6 @@
       "held": "{{shortcut}} při podržení",
       "refName": "Ukončovací zkratka {{name}}",
       "factoryNames": {
-        "pattern": "{{mode}} · {{effect}}",
-        "direct": "Přímo",
-        "postProcessed": "Dodatečně zpracováno",
         "space": "Mezera",
         "noSpace": "Bez mezery",
         "paragraph": "Odstavec",

@@ -525,9 +525,6 @@
       "held": "{{shortcut}} nedhållet",
       "refName": "Avslutningskortkommando {{name}}",
       "factoryNames": {
-        "pattern": "{{mode}} · {{effect}}",
-        "direct": "Direkt",
-        "postProcessed": "Efterbearbetad",
         "space": "Mellanslag",
         "noSpace": "Utan mellanslag",
         "paragraph": "Stycke",

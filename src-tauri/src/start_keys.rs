@@ -10,9 +10,11 @@
 //! - **hold shortcuts** (`ProfileValues::hold_keys`, an [`EndKey`] each): a
 //!   press starts a recording, and its release from the hold threshold on
 //!   ends it with the hold shortcut's own values (what is appended, whether
-//!   the text is post-processed, whether earlier dictations go along); a
-//!   shorter press discards it, as a cancel would;
-//! - **end shortcuts** (`end_keys`).
+//!   earlier dictations go along when it post-processes); a shorter press
+//!   discards it, as a cancel would;
+//! - **end shortcuts** (`end_keys`);
+//! - **instruction shortcuts** (`instruction_keys`), during a recording
+//!   only.
 //!
 //! What a combination does follows from the lists it is in ([`Roles`],
 //! resolved on the coordinator's thread from the profile that applies
@@ -23,10 +25,9 @@
 //!
 //! Start and hold shortcuts are taken always, each combination once with
 //! the system: as `start_key:<id>` when a start shortcut has it, else as
-//! `hold_key:<id>` ([`bindings_to_register`]). A hold shortcut that
-//! post-processes is taken only while some dictation can post-process
-//! (`app_profiles::post_processing_reachable`), so whoever never
-//! post-processes keeps the combination.
+//! `hold_key:<id>` ([`bindings_to_register`]). Since variant b (user,
+//! 2026-11-26) no hold shortcut post-processes of its own; an instruction
+//! shortcut, or the profile's mode, says it (`settings::PostProcessMode`).
 
 use std::collections::HashMap;
 
@@ -48,10 +49,15 @@ pub const HOLD_BINDING_PREFIX: &str = "hold_key:";
 pub const HOLD_END_PREFIX: &str = "hold:";
 /// A new installation's start shortcut.
 pub const FACTORY_START_ID: &str = "start";
-/// A new installation's hold shortcut without post-processing.
+/// The first hold shortcut an older store's start shortcuts become
+/// ([`from_old`]), out of the box from 2026-11-26 until variant b.
 pub const HOLD_DIRECT_ID: &str = "hold_direct";
-/// A new installation's hold shortcut with post-processing.
+/// The second one, which post-processed until variant b.
 pub const HOLD_POST_ID: &str = "hold_post";
+/// A new installation's hold shortcut that appends a space (on macOS).
+pub const HOLD_SPACE_ID: &str = "hold_space";
+/// A new installation's hold shortcut that appends nothing.
+pub const HOLD_NO_SPACE_ID: &str = "hold_no_space";
 /// The start shortcut an older store's second start shortcut becomes.
 pub const SECOND_START_ID: &str = "start_second";
 /// The start shortcuts up to 2026-11-26, bindings of their own: the plain
@@ -69,7 +75,7 @@ pub struct StartKey {
 }
 
 /// The two factory combinations on `platform`: the start one and the one
-/// that holds with post-processing.
+/// with ⇧ (until variant b: the one that held with post-processing).
 pub fn factory_combinations_on(platform: KeyPlatform) -> (&'static str, &'static str) {
     match platform {
         KeyPlatform::Linux => ("ctrl+alt+space", "ctrl+alt+shift+space"),
@@ -86,25 +92,56 @@ pub fn factory_start_keys_on(platform: KeyPlatform) -> Vec<StartKey> {
     }]
 }
 
-/// A new installation's hold shortcuts on `platform`: one direct, one that
-/// post-processes, both unnamed (they follow their combination). On macOS
-/// both append a space and the second sends context, as the hold ends did
-/// out of the box; elsewhere nothing is appended and no context goes.
+/// A new installation's hold shortcuts on `platform` (recommendation 2 i of
+/// the sidecar note `2026-11-26_1841`), both unnamed (they follow their
+/// combination): on macOS ⌃Space appends a space and ⌃⇧Space nothing ("⇧
+/// picks the smaller variant"), both with "Send Context" (recommendation 3
+/// i); elsewhere neither appends anything nor sends context, as before.
 pub fn factory_hold_keys_on(platform: KeyPlatform) -> Vec<EndKey> {
+    let (first, second) = factory_combinations_on(platform);
+    let macos = platform == KeyPlatform::Macos;
+    let hold = |id: &str, shortcut: &str, append_text: &str| EndKey {
+        id: id.to_string(),
+        name: String::new(),
+        shortcut: shortcut.to_string(),
+        append_text: if macos { append_text } else { "" }.to_string(),
+        send_context: macos,
+    };
+    vec![
+        hold(HOLD_SPACE_ID, first, " "),
+        hold(HOLD_NO_SPACE_ID, second, ""),
+    ]
+}
+
+/// The hold shortcuts a new installation had on `platform` from 2026-11-26
+/// until variant b, without their box "Post-process": an unchanged list of
+/// them becomes the new factory one ([`replace_old_factory_holds`]).
+fn old_factory_hold_keys_on(platform: KeyPlatform) -> Vec<EndKey> {
     let (direct, post) = factory_combinations_on(platform);
     let macos = platform == KeyPlatform::Macos;
-    let hold = |id: &str, shortcut: &str, post_process: bool| EndKey {
+    let hold = |id: &str, shortcut: &str, send_context: bool| EndKey {
         id: id.to_string(),
         name: String::new(),
         shortcut: shortcut.to_string(),
         append_text: if macos { " " } else { "" }.to_string(),
-        post_process,
-        send_context: macos && post_process,
+        send_context,
     };
     vec![
         hold(HOLD_DIRECT_ID, direct, false),
-        hold(HOLD_POST_ID, post, true),
+        hold(HOLD_POST_ID, post, macos),
     ]
+}
+
+/// A layer's hold shortcuts that are still the factory ones of before
+/// variant b on `platform` become the new factory ones; a list of one's own
+/// stays. Returns whether they changed.
+pub fn replace_old_factory_holds(hold_keys: &mut Vec<EndKey>, platform: KeyPlatform) -> bool {
+    if *hold_keys != old_factory_hold_keys_on(platform) {
+        return false;
+    }
+    log::info!("The factory hold shortcuts take variant b's: ⇧ appends nothing");
+    *hold_keys = factory_hold_keys_on(platform);
+    true
 }
 
 /// A new installation's start shortcuts on this system.
@@ -143,12 +180,6 @@ pub fn is_dictation_binding(binding_id: &str) -> bool {
     start_id_of(binding_id).is_some() || hold_id_of(binding_id).is_some()
 }
 
-/// Whether hold shortcut `hold` counts: one that post-processes only while
-/// some dictation can (`reachable`, `app_profiles::post_processing_reachable`).
-pub fn hold_key_taken(hold: &EndKey, reachable: bool) -> bool {
-    !hold.post_process || reachable
-}
-
 /// A start or hold shortcut as a binding to register.
 fn registered(id: String, shortcut: &str) -> ShortcutBinding {
     ShortcutBinding {
@@ -162,20 +193,14 @@ fn registered(id: String, shortcut: &str) -> ShortcutBinding {
 
 /// The start and hold shortcuts to register, each combination once: under
 /// `start_key:<id>` when a start shortcut has it, else under
-/// `hold_key:<id>`; a hold shortcut that post-processes only while
-/// `reachable`.
-pub fn bindings_to_register(
-    start_keys: &[StartKey],
-    hold_keys: &[EndKey],
-    reachable: bool,
-) -> Vec<ShortcutBinding> {
+/// `hold_key:<id>`.
+pub fn bindings_to_register(start_keys: &[StartKey], hold_keys: &[EndKey]) -> Vec<ShortcutBinding> {
     let mut wanted: Vec<ShortcutBinding> = Vec::new();
     let starts = start_keys
         .iter()
         .map(|key| (start_binding_id(&key.id), key.shortcut.as_str()));
     let holds = hold_keys
         .iter()
-        .filter(|hold| hold_key_taken(hold, reachable))
         .map(|hold| (hold_binding_id(&hold.id), hold.shortcut.as_str()));
     for (id, shortcut) in starts.chain(holds) {
         let shortcut = shortcut.trim();
@@ -190,13 +215,17 @@ pub fn bindings_to_register(
 }
 
 /// What a pressed combination is in the profile that applies now: the
-/// start shortcut, the hold shortcut and the end shortcut with exactly its
-/// combination, if any. Filled in on the coordinator's thread.
+/// start shortcut, the hold shortcut, the end shortcut and the instruction
+/// shortcut with exactly its combination, if any. Filled in on the
+/// coordinator's thread.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Roles {
     pub start: Option<String>,
     pub hold: Option<String>,
     pub end: Option<String>,
+    /// The instruction shortcut with exactly its combination, while
+    /// instruction shortcuts are taken (`instruction_keys::taken`).
+    pub instruction: Option<String>,
 }
 
 /// The combination of the start or hold shortcut a registered binding id
@@ -218,20 +247,21 @@ fn combination_of<'a>(values: &'a ProfileValues, binding_id: &str) -> Option<&'a
 }
 
 /// The [`Roles`] of the combination registered as `binding_id`, in `values`
-/// (`reachable` as in [`hold_key_taken`]). None when `values` no longer has
-/// that start or hold shortcut.
-pub fn roles_of(values: &ProfileValues, binding_id: &str, reachable: bool) -> Roles {
+/// (`instruction_taken`: whether instruction shortcuts are taken now,
+/// `instruction_keys::taken`). None when `values` no longer has that start
+/// or hold shortcut.
+pub fn roles_of(values: &ProfileValues, binding_id: &str, instruction_taken: bool) -> Roles {
     match combination_of(values, binding_id)
         .map(str::trim)
         .filter(|keys| !keys.is_empty())
     {
-        Some(keys) => roles_for(values, keys, reachable),
+        Some(keys) => roles_for(values, keys, instruction_taken),
         None => Roles::default(),
     }
 }
 
 /// The [`Roles`] of combination `keys` in `values`.
-pub fn roles_for(values: &ProfileValues, keys: &str, reachable: bool) -> Roles {
+pub fn roles_for(values: &ProfileValues, keys: &str, instruction_taken: bool) -> Roles {
     let same = |shortcut: &str| identical_press(shortcut, keys);
     Roles {
         start: values
@@ -242,13 +272,18 @@ pub fn roles_for(values: &ProfileValues, keys: &str, reachable: bool) -> Roles {
         hold: values
             .hold_keys
             .iter()
-            .find(|key| hold_key_taken(key, reachable) && same(&key.shortcut))
+            .find(|key| same(&key.shortcut))
             .map(|key| key.id.clone()),
         end: values
             .end_keys
             .iter()
             .find(|end| same(&end.shortcut))
             .map(|end| end.id.clone()),
+        instruction: values
+            .instruction_keys
+            .iter()
+            .find(|key| instruction_taken && same(&key.shortcut))
+            .map(|key| key.id.clone()),
     }
 }
 
@@ -256,46 +291,59 @@ pub fn roles_for(values: &ProfileValues, keys: &str, reachable: bool) -> Roles {
 pub fn roles_now(app: &AppHandle, binding_id: &str) -> Roles {
     let settings = crate::settings::get_settings(app);
     let frontmost = crate::app_profiles::frontmost_if_choosing(&settings);
-    let (_, values) = crate::app_profiles::profile_now(&settings, frontmost.as_deref());
+    let now = crate::app_profiles::settings_now(&settings, frontmost.as_deref());
     roles_of(
-        &values,
+        &ProfileValues::from_settings(&now),
         binding_id,
-        crate::app_profiles::post_processing_reachable(&settings),
+        crate::instruction_keys::taken_here(&now),
     )
 }
 
 /// What remote control toggles (`--toggle-transcription` and SIGUSR2, or
 /// with `post_process` `--toggle-post-process` and SIGUSR1): the binding a
-/// recording it starts runs under, and how its second toggle ends it.
-/// Plain: as a tap of the first start shortcut (without one: of the first
-/// hold shortcut, locked); with post-processing: as the first hold
-/// shortcut that post-processes, locked, else as the plain one.
+/// recording it starts runs under, and how its second toggle ends it: as a
+/// tap of the first start shortcut (without one: of the first hold
+/// shortcut, locked). With `post_process` it ends as after an instruction
+/// shortcut without an instruction (variant b, user, 2026-11-26): the
+/// profile's prompts, unless it never post-processes.
 pub fn remote_toggle(values: &ProfileValues, post_process: bool) -> Option<(String, EndChoice)> {
     let as_hold = |hold: &EndKey| (hold_binding_id(&hold.id), EndChoice::Held(hold.id.clone()));
-    if post_process {
-        if let Some(hold) = values.hold_keys.iter().find(|hold| hold.post_process) {
-            return Some(as_hold(hold));
-        }
-    }
-    if let Some(start) = values.start_keys.first() {
-        return Some((
+    let (binding_id, end) = match values.start_keys.first() {
+        Some(start) => (
             start_binding_id(&start.id),
             EndChoice::Start(start.id.clone()),
-        ));
+        ),
+        None => values.hold_keys.first().map(as_hold)?,
+    };
+    Some((binding_id, after_instruction_key_if(end, post_process)))
+}
+
+/// `end`, as after an instruction shortcut when `post_process`.
+fn after_instruction_key_if(end: EndChoice, post_process: bool) -> EndChoice {
+    if post_process {
+        end.with_instruction_key()
+    } else {
+        end
     }
-    values.hold_keys.first().map(as_hold)
+}
+
+/// The hold shortcut the post-processing service stands for: the first one
+/// whose combination no start shortcut has, as the post-processing hold
+/// shortcut was out of the box until variant b (later for NoAX).
+fn post_service_hold(values: &ProfileValues) -> Option<&EndKey> {
+    values.hold_keys.iter().find(|hold| {
+        !values
+            .start_keys
+            .iter()
+            .any(|start| identical_press(&start.shortcut, &hold.shortcut))
+    })
 }
 
 /// The combination of the key a service stands for: the first start
-/// shortcut, or with `post_process` the first hold shortcut that
-/// post-processes.
+/// shortcut, or with `post_process` [`post_service_hold`].
 fn service_key(values: &ProfileValues, post_process: bool) -> Option<&str> {
     if post_process {
-        values
-            .hold_keys
-            .iter()
-            .find(|hold| hold.post_process)
-            .map(|hold| hold.shortcut.as_str())
+        post_service_hold(values).map(|hold| hold.shortcut.as_str())
     } else {
         values.start_keys.first().map(|key| key.shortcut.as_str())
     }
@@ -303,47 +351,32 @@ fn service_key(values: &ProfileValues, post_process: bool) -> Option<&str> {
 
 /// The binding one of the two "end dictation" services stands for (macOS
 /// without Accessibility, `insert_service`): the first start shortcut's for
-/// the plain one, the first post-processing hold shortcut's with
-/// `post_process`; as registered ([`bindings_to_register`]), so releasing
-/// it releases what DanyWhere took.
-pub fn service_binding(
-    values: &ProfileValues,
-    reachable: bool,
-    post_process: bool,
-) -> Option<ShortcutBinding> {
+/// the plain one, [`post_service_hold`]'s with `post_process`; as
+/// registered ([`bindings_to_register`]), so releasing it releases what
+/// DanyWhere took.
+pub fn service_binding(values: &ProfileValues, post_process: bool) -> Option<ShortcutBinding> {
     let keys = service_key(values, post_process)?;
-    bindings_to_register(&values.start_keys, &values.hold_keys, reachable)
+    bindings_to_register(&values.start_keys, &values.hold_keys)
         .into_iter()
         .find(|binding| identical_press(&binding.current_binding, keys))
 }
 
-/// How a service ends a recording: as a press of the first start shortcut,
-/// or with `post_process` as the first hold shortcut that post-processes.
+/// How a service ends a recording: as a press of the first start shortcut
+/// (without one, as the first hold shortcut held), with `post_process` as
+/// after an instruction shortcut without an instruction.
 pub fn service_end(values: &ProfileValues, post_process: bool) -> Option<EndChoice> {
-    if post_process {
-        values
-            .hold_keys
-            .iter()
-            .find(|hold| hold.post_process)
-            .map(|hold| EndChoice::Held(hold.id.clone()))
-    } else {
-        values
-            .start_keys
-            .first()
-            .map(|key| EndChoice::Start(key.id.clone()))
-    }
+    let end = match values.start_keys.first() {
+        Some(key) => EndChoice::Start(key.id.clone()),
+        None => EndChoice::Held(values.hold_keys.first()?.id.clone()),
+    };
+    Some(after_instruction_key_if(end, post_process))
 }
 
 /// The binding a recording a service starts runs under: the first start
-/// shortcut's, or with `post_process` the first post-processing hold
-/// shortcut's.
+/// shortcut's, or with `post_process` [`post_service_hold`]'s.
 pub fn service_start_binding(values: &ProfileValues, post_process: bool) -> Option<String> {
     if post_process {
-        values
-            .hold_keys
-            .iter()
-            .find(|hold| hold.post_process)
-            .map(|hold| hold_binding_id(&hold.id))
+        post_service_hold(values).map(|hold| hold_binding_id(&hold.id))
     } else {
         values
             .start_keys
@@ -368,6 +401,7 @@ pub enum KeyList {
     Start,
     Hold,
     End,
+    Instruction,
 }
 
 impl KeyList {
@@ -377,12 +411,14 @@ impl KeyList {
             Self::Start => START_BINDING_PREFIX,
             Self::Hold => HOLD_BINDING_PREFIX,
             Self::End => crate::end_keys::BINDING_PREFIX,
+            Self::Instruction => crate::instruction_keys::BINDING_PREFIX,
         }
     }
 }
 
-/// The shared check of a list: `what` is `start` or `hold`.
-fn validate_list<'a>(
+/// The shared check of a list: `what` is `start`, `hold` or `instruction`
+/// (`instruction_keys`).
+pub(crate) fn validate_list<'a>(
     entries: impl Iterator<Item = (&'a str, &'a str)>,
     what: &str,
 ) -> Result<(), String> {
@@ -435,12 +471,14 @@ pub fn validate_hold_keys(hold_keys: &[EndKey]) -> Result<(), String> {
 
 /// Checks `shortcut` of an entry of `list` against the rest of `values`:
 /// another shortcut's combination (paste, copy, …, cancel; one press firing
-/// both, `key_sides::same_press`) is `conflict:<binding id>`; a start, hold
-/// or end shortcut of another list may have exactly the same combination
-/// (`key_sides::identical_press`), but one that overlaps it only partly
-/// (`ctrl+space` against `ctrl_left+space`) is
-/// `conflict:start_key:<id>`, `conflict:hold_key:<id>` or
-/// `conflict:end_key:<id>`.
+/// both, `key_sides::same_press`) is `conflict:<binding id>`; a start, hold,
+/// end or instruction shortcut of another list may have exactly the same
+/// combination (`key_sides::identical_press`), but one that overlaps it
+/// only partly (`ctrl+space` against `ctrl_left+space`) is
+/// `conflict:start_key:<id>`, `conflict:hold_key:<id>`,
+/// `conflict:end_key:<id>` or `conflict:instruction_key:<id>`. Instruction
+/// and end shortcuts are both taken only during a recording, so between
+/// them even exactly the same combination is a conflict.
 pub fn check_combination(
     shortcut: &str,
     list: KeyList,
@@ -460,11 +498,21 @@ pub fn check_combination(
         .end_keys
         .iter()
         .map(|end| (KeyList::End, end.id.as_str(), end.shortcut.as_str()));
-    for (other, id, keys) in starts.chain(holds).chain(ends) {
-        if other != list
-            && crate::key_sides::same_press(keys, shortcut)
-            && !identical_press(keys, shortcut)
-        {
+    let instructions = values
+        .instruction_keys
+        .iter()
+        .map(|key| (KeyList::Instruction, key.id.as_str(), key.shortcut.as_str()));
+    let during_a_recording = |a: KeyList, b: KeyList| {
+        matches!(
+            (a, b),
+            (KeyList::End, KeyList::Instruction) | (KeyList::Instruction, KeyList::End)
+        )
+    };
+    for (other, id, keys) in starts.chain(holds).chain(ends).chain(instructions) {
+        if other == list || !crate::key_sides::same_press(keys, shortcut) {
+            continue;
+        }
+        if during_a_recording(list, other) || !identical_press(keys, shortcut) {
             return Err(format!("conflict:{}{id}", other.prefix()));
         }
     }
@@ -708,12 +756,12 @@ impl OldActivation {
     }
 }
 
-/// A start shortcut's end when held, up to 2026-11-26 (`hold_ends`).
+/// A start shortcut's end when held, up to 2026-11-26 (`hold_ends`); its
+/// box "Post-process" goes with variant b.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize)]
 #[serde(default)]
 pub struct OldHold {
     pub append_text: String,
-    pub post_process: bool,
     pub send_context: bool,
 }
 
@@ -775,7 +823,6 @@ pub fn from_old(
             name: String::new(),
             shortcut: shortcut.to_string(),
             append_text: old.append_text.clone(),
-            post_process: old.post_process,
             send_context: old.send_context,
         };
         hold_keys.push(hold(HOLD_DIRECT_ID, &first, &holds[0]));
@@ -950,13 +997,12 @@ mod tests {
         }
     }
 
-    fn key(id: &str, shortcut: &str, post_process: bool) -> EndKey {
+    fn key(id: &str, shortcut: &str) -> EndKey {
         EndKey {
             id: id.to_string(),
             name: String::new(),
             shortcut: shortcut.to_string(),
             append_text: String::new(),
-            post_process,
             send_context: false,
         }
     }
@@ -970,16 +1016,12 @@ mod tests {
         }
     }
 
-    /// ⌃Space start, hold and end; ⌃⇧Space holds with post-processing; ↩
-    /// ends.
+    /// ⌃Space start, hold and end; ⌃⇧Space holds; ↩ ends.
     fn usual() -> ProfileValues {
         values(
             vec![start("s", "ctrl+space")],
-            vec![
-                key("h1", "ctrl+space", false),
-                key("h2", "ctrl+shift+space", true),
-            ],
-            vec![key("e1", "ctrl+space", false), key("e2", "return", false)],
+            vec![key("h1", "ctrl+space"), key("h2", "ctrl+shift+space")],
+            vec![key("e1", "ctrl+space"), key("e2", "return")],
         )
     }
 
@@ -1001,15 +1043,15 @@ mod tests {
                 "{platform:?}"
             );
             let holds = factory_hold_keys_on(platform);
-            let ids: Vec<(&str, &str, bool)> = holds
+            let ids: Vec<(&str, &str)> = holds
                 .iter()
-                .map(|h| (h.id.as_str(), h.shortcut.as_str(), h.post_process))
+                .map(|h| (h.id.as_str(), h.shortcut.as_str()))
                 .collect();
             assert_eq!(
                 ids,
                 [
-                    (HOLD_DIRECT_ID, "ctrl+space", false),
-                    (HOLD_POST_ID, "ctrl+shift+space", true)
+                    (HOLD_SPACE_ID, "ctrl+space"),
+                    (HOLD_NO_SPACE_ID, "ctrl+shift+space")
                 ],
                 "{platform:?}"
             );
@@ -1018,16 +1060,16 @@ mod tests {
     }
 
     #[test]
-    fn on_macos_both_hold_shortcuts_append_a_space_and_the_second_sends_context() {
+    fn on_macos_the_first_hold_shortcut_appends_a_space_the_second_nothing() {
         let holds = factory_hold_keys_on(MAC);
         assert_eq!(holds.len(), 2);
         assert_eq!(
             (holds[0].append_text.as_str(), holds[0].send_context),
-            (" ", false)
+            (" ", true)
         );
         assert_eq!(
             (holds[1].append_text.as_str(), holds[1].send_context),
-            (" ", true)
+            ("", true)
         );
         for platform in [KeyPlatform::Windows, KeyPlatform::Linux] {
             let holds = factory_hold_keys_on(platform);
@@ -1115,7 +1157,7 @@ mod tests {
     fn a_combination_in_both_lists_is_registered_once_as_the_start_shortcut() {
         let v = usual();
         assert_eq!(
-            binding_ids(&bindings_to_register(&v.start_keys, &v.hold_keys, true)),
+            binding_ids(&bindings_to_register(&v.start_keys, &v.hold_keys)),
             [
                 ("start_key:s", "ctrl+space"),
                 ("hold_key:h2", "ctrl+shift+space")
@@ -1124,19 +1166,10 @@ mod tests {
     }
 
     #[test]
-    fn a_post_processing_hold_shortcut_is_registered_only_while_post_processing_is_reachable() {
-        let v = usual();
-        assert_eq!(
-            binding_ids(&bindings_to_register(&v.start_keys, &v.hold_keys, false)),
-            [("start_key:s", "ctrl+space")]
-        );
-    }
-
-    #[test]
     fn hold_shortcuts_alone_are_registered_under_their_own_ids() {
         let v = usual();
         assert_eq!(
-            binding_ids(&bindings_to_register(&[], &v.hold_keys, true)),
+            binding_ids(&bindings_to_register(&[], &v.hold_keys)),
             [
                 ("hold_key:h1", "ctrl+space"),
                 ("hold_key:h2", "ctrl+shift+space")
@@ -1151,6 +1184,7 @@ mod tests {
             start: start.map(str::to_string),
             hold: hold.map(str::to_string),
             end: end.map(str::to_string),
+            instruction: None,
         }
     }
 
@@ -1164,17 +1198,6 @@ mod tests {
         assert_eq!(
             roles_of(&v, "hold_key:h2", true),
             roles(None, Some("h2"), None)
-        );
-    }
-
-    #[test]
-    fn a_post_processing_hold_shortcut_has_no_role_while_post_processing_is_out_of_reach() {
-        let v = usual();
-        assert_eq!(roles_of(&v, "hold_key:h2", false), Roles::default());
-        // ⌃Space keeps its direct hold shortcut.
-        assert_eq!(
-            roles_of(&v, "start_key:s", false),
-            roles(Some("s"), Some("h1"), Some("e1"))
         );
     }
 
@@ -1202,47 +1225,31 @@ mod tests {
     }
 
     #[test]
-    fn remote_post_processing_toggles_as_the_first_post_processing_hold_shortcut() {
-        let mut v = usual();
-        assert_eq!(
-            remote_toggle(&v, true),
-            Some(("hold_key:h2".to_string(), EndChoice::Held("h2".to_string())))
-        );
-        v.hold_keys[1].post_process = false;
-        assert_eq!(
-            remote_toggle(&v, true),
-            Some(("start_key:s".to_string(), EndChoice::Start("s".to_string()))),
-            "without one, as the plain toggle"
-        );
-    }
-
-    #[test]
-    fn the_services_stand_for_the_first_start_and_post_processing_hold_shortcut() {
+    fn the_services_stand_for_the_first_start_and_hold_shortcut_of_its_own() {
         let mut v = usual();
         let id = |b: Option<ShortcutBinding>| b.map(|b| (b.id, b.current_binding));
         assert_eq!(
-            id(service_binding(&v, true, false)),
+            id(service_binding(&v, false)),
             Some(("start_key:s".to_string(), "ctrl+space".to_string()))
         );
         assert_eq!(
-            id(service_binding(&v, true, true)),
+            id(service_binding(&v, true)),
             Some(("hold_key:h2".to_string(), "ctrl+shift+space".to_string()))
         );
-        assert_eq!(service_binding(&v, false, true), None, "not taken then");
         assert_eq!(service_end(&v, false), Some(EndChoice::Start("s".into())));
-        assert_eq!(service_end(&v, true), Some(EndChoice::Held("h2".into())));
+        assert_eq!(
+            service_end(&v, true),
+            Some(EndChoice::Start("s".into()).with_instruction_key())
+        );
         assert_eq!(
             service_start_binding(&v, true).as_deref(),
             Some("hold_key:h2")
         );
-        // A post-processing hold shortcut on the start shortcut's keys is
-        // taken as the start shortcut.
+        // Without a hold shortcut of its own the post-processing service has
+        // no key.
         v.hold_keys[1].shortcut = "ctrl+space".to_string();
         v.hold_keys.remove(0);
-        assert_eq!(
-            id(service_binding(&v, true, true)),
-            Some(("start_key:s".to_string(), "ctrl+space".to_string()))
-        );
+        assert_eq!(service_binding(&v, true), None);
     }
 
     #[test]
@@ -1267,7 +1274,7 @@ mod tests {
             Err("start-key-needs-shortcut:b".to_string())
         );
         assert_eq!(
-            validate_hold_keys(&[key("h", "", false)]),
+            validate_hold_keys(&[key("h", "")]),
             Err("hold-key-needs-shortcut:h".to_string())
         );
     }
@@ -1279,7 +1286,7 @@ mod tests {
             Err("start-key-shortcut-twice:ctrl_left+space".to_string())
         );
         assert_eq!(
-            validate_hold_keys(&[key("a", "f13", false), key("b", "F13", true)]),
+            validate_hold_keys(&[key("a", "f13"), key("b", "F13")]),
             Err("hold-key-shortcut-twice:F13".to_string())
         );
         assert!(
@@ -1291,7 +1298,7 @@ mod tests {
     fn a_list_needs_ids_once() {
         assert!(validate_start_keys(&[start("", "f13")]).is_err());
         assert!(validate_start_keys(&[start("a", "f13"), start("a", "f14")]).is_err());
-        assert!(validate_hold_keys(&[key("a", "f13", false), key("a", "f14", false)]).is_err());
+        assert!(validate_hold_keys(&[key("a", "f13"), key("a", "f14")]).is_err());
         assert!(
             validate_start_keys(&[]).is_ok(),
             "a hold shortcut may start"
@@ -1521,8 +1528,8 @@ mod tests {
 
     use crate::end_keys::{fallback_end, find_end, resolve};
 
-    /// [`usual`] with the post-processing hold shortcut pressing Enter and
-    /// sending context.
+    /// [`usual`] with the second hold shortcut pressing Enter and sending
+    /// context.
     fn with_send() -> ProfileValues {
         let mut v = usual();
         v.hold_keys[1].append_text = "{Enter}".to_string();
@@ -1536,7 +1543,7 @@ mod tests {
         let end = resolve(&v, &EndChoice::Held("h2".into()), "hold_key:h2");
         assert_eq!(end.id, "hold:h2");
         assert_eq!(end.append_text, "{Enter}");
-        assert!(end.post_process && end.send_context);
+        assert!(end.send_context);
     }
 
     #[test]
@@ -1632,7 +1639,11 @@ mod tests {
     /// "Toggle" and its own start shortcut.
     fn old_store(activation: &str, post_process: bool) -> serde_json::Value {
         let mut settings = get_default_settings();
-        settings.post_process_enabled = post_process;
+        settings.post_process_mode = if post_process {
+            crate::settings::PostProcessMode::WithInstructionKey
+        } else {
+            crate::settings::PostProcessMode::Never
+        };
         let defaults = serde_json::to_value(ProfileValues::from_settings(&settings)).unwrap();
         let mut stored = old_layer(serde_json::to_value(&settings).unwrap(), activation);
         let map = stored.as_object_mut().unwrap();
@@ -1661,18 +1672,18 @@ mod tests {
         s
     }
 
-    fn hold(id: &str, shortcut: &str, append: &str, pp: bool, ctx: bool) -> EndKey {
+    fn hold(id: &str, shortcut: &str, append: &str, ctx: bool) -> EndKey {
         EndKey {
             append_text: append.to_string(),
             send_context: ctx,
-            ..key(id, shortcut, pp)
+            ..key(id, shortcut)
         }
     }
 
     fn old_holds() -> Vec<EndKey> {
         vec![
-            hold(HOLD_DIRECT_ID, K1, " ", false, false),
-            hold(HOLD_POST_ID, K2, "\\n", true, true),
+            hold(HOLD_DIRECT_ID, K1, " ", false),
+            hold(HOLD_POST_ID, K2, "\\n", true),
         ]
     }
 
@@ -1798,5 +1809,114 @@ mod tests {
         let defaults = crate::profiles::default_values(&settings);
         assert_eq!(values.start_keys, defaults.start_keys);
         assert_eq!(values.hold_keys, defaults.hold_keys);
+    }
+
+    // ---- Variant b (user, 2026-11-26) ----------------------------------------
+
+    /// A hold shortcut of variant b: no box, `append` and `ctx`.
+    fn hold_b(id: &str, shortcut: &str, append: &str, ctx: bool) -> EndKey {
+        EndKey {
+            id: id.to_string(),
+            shortcut: shortcut.to_string(),
+            append_text: append.to_string(),
+            send_context: ctx,
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn out_of_the_box_the_hold_shortcuts_are_named_by_what_they_append() {
+        assert_eq!(
+            factory_hold_keys_on(MAC),
+            vec![
+                hold_b(HOLD_SPACE_ID, "ctrl+space", " ", true),
+                hold_b(HOLD_NO_SPACE_ID, "ctrl+shift+space", "", true),
+            ]
+        );
+        assert_eq!(
+            factory_hold_keys_on(KeyPlatform::Windows),
+            vec![
+                hold_b(HOLD_SPACE_ID, "ctrl+space", "", false),
+                hold_b(HOLD_NO_SPACE_ID, "ctrl+shift+space", "", false),
+            ]
+        );
+        assert_eq!(
+            factory_hold_keys_on(KeyPlatform::Linux),
+            vec![
+                hold_b(HOLD_SPACE_ID, "ctrl+alt+space", "", false),
+                hold_b(HOLD_NO_SPACE_ID, "ctrl+alt+shift+space", "", false),
+            ]
+        );
+    }
+
+    /// ⌃Space start and hold, ⌃⇧Space hold, an end on ⌃Space, ⇥ instructs.
+    fn variant_b() -> ProfileValues {
+        ProfileValues {
+            start_keys: vec![start("s", "ctrl+space")],
+            hold_keys: vec![
+                hold_b("h1", "ctrl+space", " ", true),
+                hold_b("h2", "ctrl+shift+space", "", true),
+            ],
+            end_keys: vec![hold_b("e1", "ctrl+space", " ", true)],
+            instruction_keys: vec![hold_b("tab", "tab", " ", true)],
+            ..ProfileValues::default()
+        }
+    }
+
+    #[test]
+    fn remote_post_processing_toggles_as_an_instruction_key_without_an_instruction() {
+        let values = variant_b();
+        assert_eq!(
+            remote_toggle(&values, false),
+            Some(("start_key:s".to_string(), EndChoice::Start("s".to_string())))
+        );
+        assert_eq!(
+            remote_toggle(&values, true),
+            Some((
+                "start_key:s".to_string(),
+                EndChoice::Start("s".to_string()).with_instruction_key()
+            ))
+        );
+        let holds_only = ProfileValues {
+            start_keys: Vec::new(),
+            ..variant_b()
+        };
+        assert_eq!(
+            remote_toggle(&holds_only, true),
+            Some((
+                "hold_key:h1".to_string(),
+                EndChoice::Held("h1".to_string()).with_instruction_key()
+            ))
+        );
+    }
+
+    #[test]
+    fn the_post_processing_service_ends_as_an_instruction_key_without_an_instruction() {
+        let values = variant_b();
+        assert_eq!(
+            service_end(&values, true),
+            Some(EndChoice::Start("s".to_string()).with_instruction_key())
+        );
+        assert_eq!(
+            service_end(&values, false),
+            Some(EndChoice::Start("s".to_string()))
+        );
+        // Its key: the first hold shortcut with a combination of its own,
+        // as the post-processing hold shortcut was out of the box.
+        assert_eq!(
+            service_start_binding(&values, true).as_deref(),
+            Some("hold_key:h2")
+        );
+    }
+
+    #[test]
+    fn a_start_shortcuts_combination_is_an_instruction_key_while_they_are_taken() {
+        let mut values = variant_b();
+        values.instruction_keys[0].shortcut = "ctrl+shift+space".to_string();
+        let taken = roles_of(&values, "hold_key:h2", true);
+        assert_eq!(taken.instruction.as_deref(), Some("tab"));
+        assert_eq!(taken.hold.as_deref(), Some("h2"));
+        assert_eq!(roles_of(&values, "hold_key:h2", false).instruction, None);
+        assert_eq!(roles_of(&values, "start_key:s", true).instruction, None);
     }
 }

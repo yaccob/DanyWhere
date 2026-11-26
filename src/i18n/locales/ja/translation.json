@@ -525,9 +525,6 @@
       "held": "{{shortcut}} 長押し",
       "refName": "終了ショートカット {{name}}",
       "factoryNames": {
-        "pattern": "{{mode}} · {{effect}}",
-        "direct": "そのまま",
-        "postProcessed": "後処理あり",
         "space": "スペース",
         "noSpace": "スペースなし",
         "paragraph": "段落",

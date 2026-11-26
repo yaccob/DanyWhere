@@ -477,13 +477,9 @@ mod imp {
         let mut wanted: Vec<(String, ShortcutBinding, bool)> = Vec::new();
         if eligible {
             // DanyWhere: the start and hold shortcuts (`start_keys`) too, as
-            // they are registered: a post-processing hold shortcut only
-            // while post-processing is reachable.
-            let dictation = crate::start_keys::bindings_to_register(
-                &settings.start_keys,
-                &settings.hold_keys,
-                crate::app_profiles::post_processing_reachable(&settings),
-            );
+            // they are registered.
+            let dictation =
+                crate::start_keys::bindings_to_register(&settings.start_keys, &settings.hold_keys);
             let all = settings
                 .bindings
                 .iter()

@@ -525,9 +525,6 @@
       "held": "{{shortcut}} थिचिराख्दा",
       "refName": "अन्त्य सर्टकट {{name}}",
       "factoryNames": {
-        "pattern": "{{mode}} · {{effect}}",
-        "direct": "सिधै",
-        "postProcessed": "पोस्ट-प्रोसेस गरिएको",
         "space": "स्पेस",
         "noSpace": "स्पेस बिना",
         "paragraph": "अनुच्छेद",

@@ -818,14 +818,14 @@ mod tests {
         // too; no shortcut decides it any more (2026-11-15).
         let mut settings = settings::get_default_settings();
         settings.bindings.remove("transcribe_with_context");
-        settings.post_process_enabled = true;
+        settings.post_process_mode = crate::settings::PostProcessMode::WithInstructionKey;
         assert!(capture_wanted(&settings));
-        settings.post_process_enabled = false;
+        settings.post_process_mode = crate::settings::PostProcessMode::Never;
         assert!(!capture_wanted(&settings));
         // A profile with applications that post-processes.
         crate::profiles::ensure_profiles(&mut settings);
         let mut mail = crate::profiles::profile_for_test(&settings, "mail", "Mail", |values| {
-            values.post_process_enabled = true;
+            values.post_process_mode = crate::settings::PostProcessMode::WithInstructionKey;
         });
         mail.apps = vec!["com.apple.mail".to_string()];
         settings.profiles.push(mail);

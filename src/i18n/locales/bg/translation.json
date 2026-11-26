@@ -525,9 +525,6 @@
       "held": "{{shortcut}} при задържане",
       "refName": "Клавиш за край {{name}}",
       "factoryNames": {
-        "pattern": "{{mode}} · {{effect}}",
-        "direct": "Директно",
-        "postProcessed": "С постобработка",
         "space": "Интервал",
         "noSpace": "Без интервал",
         "paragraph": "Абзац",

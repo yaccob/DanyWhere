@@ -525,9 +525,6 @@
       "held": "按住 {{shortcut}}",
       "refName": "結束快捷鍵 {{name}}",
       "factoryNames": {
-        "pattern": "{{mode}} · {{effect}}",
-        "direct": "直接",
-        "postProcessed": "後處理",
         "space": "空格",
         "noSpace": "無空格",
         "paragraph": "段落",
