@@ -1,0 +1,133 @@
+---
+title: Setting up post-processing
+description: Answer two or three questions about your texts and your subscriptions, and DanyWhere suggests a language model and connects it, mostly with one button.
+sidebar:
+  order: 5
+---
+
+import Screenshot from '@components/Screenshot.astro';
+import { Steps } from '@astrojs/starlight/components';
+
+Post-processing lets a language model smooth every dictation: punctuation, filler words, spoken commands, names. The model runs at a provider, and you don't need to know any of them. DanyWhere asks you two or three questions anyone can answer, suggests a way that fits, and connects it, mostly with one button. This chapter goes through the questions, what each answer leads to, which data goes where, and what happens when a way stops working.
+
+## Set up post-processing
+
+The questions come in three places:
+
+- as a screen near the end of the first setup, **Improve your texts**, where **Later** is the main button;
+- at any time under **Defaults › Post Process › Improve Your Texts**, at the top of the page;
+- from a notice: if you press an instruction shortcut before anything is set up, DanyWhere inserts the text as you said it, and the notice offers **Set up**.
+
+The questions come one after the other, and the suggestion under them changes with your answers.
+
+**1. Where may your texts go?**
+
+- **Also to free services.** They may keep them and use them to improve their AI.
+- **Only to a service that processes them and doesn't keep them.** That runs through a subscription or costs a few dollars.
+- **Nowhere.** They stay on this computer.
+
+**2. Do you already have one of these subscriptions?** The list names only the plans that pay for use in other apps: ChatGPT Go, Plus, Pro, or Business; Claude Max, Ultra, or Team; Google AI Pro or Ultra; Hugging Face PRO; Ollama Pro or Max. Claude Pro, for example, doesn't count. After **Nowhere**, this question doesn't come.
+
+**3. How should it go on?** This question comes only after the second answer and **None of these**:
+
+- **Top up once from $5, without a subscription**
+- **Free with Groq, with a key to copy**
+- **On this computer (slower, from 16 GB of memory)**, greyed out on a computer with less, with the reason.
+
+The quick way is two answers and a button: **Also to free services**, **None of these**, **Connect OpenRouter**.
+
+<Screenshot
+  name="post-processing-questions"
+  alt="The group Improve Your Texts on the page Post Process. Question 1, Where may your texts go?, is answered with Also to free services; question 2, Do you already have one of these subscriptions?, with None of these. Under them, the suggestion OpenRouter, free, with two tips about signing up and the button Connect OpenRouter. Below, I know my way around: with All providers … and Later."
+  caption="The quick way: two answers, and the suggestion under them."
+/>
+
+## Where the answers lead
+
+| Your answers | The suggestion | Where your texts go |
+| --- | --- | --- |
+| Also to free services, none of these subscriptions | **OpenRouter, free**, up to 50 dictations a day | to OpenRouter and a free model, which may keep them and train with them |
+| either of the first two, and a subscription | that subscription: **Continue with ChatGPT**, or a key from Anthropic, Google AI Studio, Hugging Face or Ollama | to that provider, paid by your plan |
+| only to a service that doesn't keep them, none, top up | **OpenRouter with credit** | to OpenRouter and a model that doesn't use your texts for training |
+| only to a service that doesn't keep them, none, Groq | **a key from Groq**, free | to Groq, which doesn't train with them |
+| nowhere, or on this computer | a model on this computer | nowhere |
+
+Whatever goes out is the transcription, with your active prompts, your word lists, and with **Send Context**, earlier dictations from the same window. The recording itself never leaves your computer.
+
+If you chose the second answer and ChatGPT, the setup adds: **OpenAI doesn't describe how it treats requests that your plan pays for.**
+
+## Connect OpenRouter
+
+<Steps>
+
+1. Click **Connect OpenRouter**. Your browser opens OpenRouter's page, and DanyWhere shows **Waiting for the browser …**.
+2. New at OpenRouter? Sign up with Google or GitHub: that saves a password and a code by email.
+3. OpenRouter's welcome asks for a payment method. Choose **I'll do this later**: the free models need none.
+4. Back in DanyWhere, click **Open the page again**. Now OpenRouter asks whether DanyWhere may have access.
+5. Click **Authorize**. The browser says you can close the window, and DanyWhere shows the card **Connected to OpenRouter**.
+
+</Steps>
+
+With an account already, steps 2 to 4 fall away. DanyWhere gets a key of its own, with a spending limit of $10, which the card shows. **Cancel** stops waiting; after 30 minutes the sign-in expires, and **Try again** starts over.
+
+With credit, the card says **No credit yet: DanyWhere uses the free models until you top up.** Click **Top up**, pay once at OpenRouter, and come back to **I've topped up**. From then on, DanyWhere uses a model that doesn't use your texts for training. $5 is enough for thousands of dictations, and nothing renews.
+
+## Sign in with ChatGPT
+
+Click **Continue with ChatGPT**, sign in to ChatGPT in the browser and allow DanyWhere. There's no key and no extra cost: eligible usage in this app uses your ChatGPT plan, and you manage it in your ChatGPT settings. DanyWhere picks the model. If the account has no plan that counts, DanyWhere says so.
+
+## A key to paste
+
+For Claude, Google, Hugging Face, Ollama and Groq, you copy a key from the provider's site. The setup lists the steps, each with a button to the page it needs. Three providers ask for something first:
+
+- **Claude:** you can link your plan's API credits in claude.ai after seven days in the plan, without a card.
+- **Google:** AI Studio asks for a payment method and a prepayment of at least $5 before the credits apply.
+- **Groq:** the account needs no card, but when you create the key, Groq asks you to confirm with a click that you're a person.
+
+Paste the key into the field and click **Check**. DanyWhere tries it, picks a model and says **The key works.** A key that doesn't work is kept nowhere, and the setup says why.
+
+## Connected
+
+Once a way works, the card **Connected to …** takes the place of the questions, and DanyWhere tries the way right away with a sample sentence. The card says what it runs on, such as the free models and the key's spending limit at OpenRouter, or **Using ChatGPT plan**. Its buttons:
+
+- **Try it** sends the sample sentence again and shows what came back, how long it took and with which model.
+- **Manage usage**, **Credit** or **Top up** opens the provider's page for it.
+- **Disconnect** forgets the sign-in or the key.
+
+<Screenshot
+  name="post-processing-connected"
+  alt="The card Connected to OpenRouter: free models, up to 50 dictations a day; the key's spending limit of $10.00; DanyWhere picks the model. The buttons Try it, Credit and Disconnect, and under them the sample: the spoken sentence and the result, with the time and the model. Below the card, Answer the questions again and Advanced."
+  caption="Connected to OpenRouter for free, after Try it."
+/>
+
+**Answer the questions again**, under the card, brings back the questions; **Keep the current setup** closes them without a change. **Advanced** shows the group **API** with **Provider**, **API Key** and **Model**, the settings you set by hand before. Without a connection, the same group is behind **All providers …**, next to **I know my way around:**, for a provider the questions don't lead to, such as your company's server.
+
+**Later** puts the questions away to one line, **Post-processing isn't set up yet.**, with **Set up** to bring them back.
+
+:::note
+The setup always sets up the defaults. A profile's page **Post Process** shows **Provider**, **API Key** and **Model** as before, so a profile can still use a provider of its own.
+:::
+
+## When a way ends
+
+When the free dictations are used up or a sign-in has expired, you still get your words. DanyWhere inserts the transcription as it is, and the notice **Pasted Without Post-Processing** says what happened, with the next step as a button:
+
+| What happened | The button |
+| --- | --- |
+| nothing set up yet: no provider, model or key | **Set up** |
+| the 50 free dictations at OpenRouter used up for today | **Top up**, or go on tomorrow |
+| the credit used up | **Top up** at OpenRouter, **Credit** elsewhere |
+| the key's spending limit reached | **Change limit** |
+| your plan's usage limit reached for now | **Manage usage** |
+| your plan doesn't include use in other apps | **Change setup** |
+| the sign-in expired | **Sign in again** |
+
+When the free models are busy or a provider limits how much may go per minute, the notice says to wait a moment and dictate again.
+
+:::caution[A model on this computer]
+**Nowhere** and **On this computer (slower, from 16 GB of memory)** lead to a model that runs on your computer. It comes with a later version, and it needs at least 16 GB of memory. Until then, **Set up a server of your own** connects a server you run, for example Ollama or LM Studio on this computer, or your company's: enter its address and model in the group **API** below.
+:::
+
+## Next
+
+With post-processing set up, an instruction shortcut lets you tell the model what to do with one dictation, such as translating it. [The spoken instruction](../spoken-instruction/) shows how.

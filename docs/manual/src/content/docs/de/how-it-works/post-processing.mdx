@@ -1,0 +1,133 @@
+---
+title: "Nachbearbeitung einrichten"
+description: "Beantworte zwei oder drei Fragen zu deinen Texten und Abos, und DanyWhere schlägt ein KI-Modell vor und verbindet es, meist mit einem Knopf."
+sidebar:
+  order: 5
+---
+
+import Screenshot from '@components/Screenshot.astro';
+import { Steps } from '@astrojs/starlight/components';
+
+Mit der Nachbearbeitung glättet ein KI-Modell jedes Diktat: Satzzeichen, Füllwörter, Diktierbefehle, Namen. Das Modell läuft bei einem Anbieter, und du musst keinen davon kennen. DanyWhere stellt dir zwei oder drei Fragen, die jeder beantworten kann, schlägt einen passenden Weg vor und verbindet ihn, meist mit einem Knopf. Dieses Kapitel zeigt die Fragen, wohin jede Antwort führt, welche Daten wohin gehen und was passiert, wenn ein Weg nicht mehr weitergeht.
+
+## Nachbearbeitung einrichten
+
+Die Fragen kommen an drei Stellen:
+
+- als Bildschirm gegen Ende der ersten Einrichtung, **Texte verbessern lassen**, wo **Später** der wichtigste Knopf ist;
+- jederzeit unter **Grundeinstellungen › Nachbearbeitung › Texte verbessern lassen**, oben auf der Seite;
+- aus einer Meldung: Drückst du eine Anweisungstaste, bevor etwas eingerichtet ist, fügt DanyWhere den Text so ein, wie du ihn gesagt hast, und die Meldung bietet **Einrichten** an.
+
+Die Fragen kommen nacheinander, und der Vorschlag darunter wechselt mit deinen Antworten.
+
+**1. Wohin dürfen deine Texte?**
+
+- **Auch zu Gratisdiensten.** Die dürfen sie behalten und ihre KI damit verbessern.
+- **Nur zu einem Dienst, der sie bearbeitet und nicht behält.** Das läuft über ein Abo oder kostet ein paar Euro.
+- **Nirgendwohin.** Sie bleiben auf diesem Computer.
+
+**2. Hast du schon eines dieser Abos?** Die Liste nennt nur die Abos, die die Nutzung in anderen Apps bezahlen: ChatGPT Go, Plus, Pro oder Business; Claude Max, Ultra oder Team; Google AI Pro oder Ultra; Hugging Face PRO; Ollama Pro oder Max. Claude Pro zum Beispiel zählt nicht. Nach **Nirgendwohin** kommt diese Frage nicht.
+
+**3. Wie soll es weitergehen?** Diese Frage kommt nur nach der zweiten Antwort und **Keines davon**:
+
+- **Einmal ab 5 $ aufladen, ohne Abo**
+- **Gratis bei Groq, mit einem Schlüssel zum Kopieren**
+- **Auf diesem Computer (langsamer, ab 16 GB Arbeitsspeicher)**, auf einem Computer mit weniger ausgegraut, mit dem Grund.
+
+Der schnelle Weg sind zwei Antworten und ein Knopf: **Auch zu Gratisdiensten**, **Keines davon**, **Mit OpenRouter verbinden**.
+
+<Screenshot
+  name="post-processing-questions"
+  alt="Die Gruppe Texte verbessern lassen auf der Seite Nachbearbeitung. Frage 1, Wohin dürfen deine Texte?, ist mit Auch zu Gratisdiensten beantwortet, Frage 2, Hast du schon eines dieser Abos?, mit Keines davon. Darunter der Vorschlag OpenRouter, gratis, mit zwei Tipps zur Anmeldung und dem Knopf Mit OpenRouter verbinden. Unten Ich kenne mich aus: mit Alle Anbieter … und Später."
+  caption="Der schnelle Weg: zwei Antworten und der Vorschlag darunter."
+/>
+
+## Wohin die Antworten führen
+
+| Deine Antworten | Der Vorschlag | Wohin deine Texte gehen |
+| --- | --- | --- |
+| auch zu Gratisdiensten, keines dieser Abos | **OpenRouter, gratis**, bis zu 50 Diktate am Tag | zu OpenRouter und einem Gratismodell, das sie behalten und damit trainieren darf |
+| eine der ersten beiden, und ein Abo | dieses Abo: **Mit ChatGPT fortfahren** oder ein Schlüssel von Anthropic, Google AI Studio, Hugging Face oder Ollama | zu diesem Anbieter, bezahlt von deinem Abo |
+| nur zu einem Dienst, der sie nicht behält, keines, aufladen | **OpenRouter mit Guthaben** | zu OpenRouter und einem Modell, das deine Texte nicht zum Training nutzt |
+| nur zu einem Dienst, der sie nicht behält, keines, Groq | **ein Schlüssel von Groq**, gratis | zu Groq, das nicht damit trainiert |
+| nirgendwohin, oder auf diesem Computer | ein Modell auf diesem Computer | nirgendwohin |
+
+Was hinausgeht, ist die Transkription, mit deinen aktiven Prompts, deinen Wortlisten und mit **Kontext senden** früheren Diktaten aus demselben Fenster. Die Aufnahme selbst verlässt deinen Computer nie.
+
+Hast du die zweite Antwort und ChatGPT gewählt, ergänzt die Einrichtung: **OpenAI beschreibt nicht, wie es Anfragen behandelt, die dein Abo bezahlt.**
+
+## Mit OpenRouter verbinden
+
+<Steps>
+
+1. Klick auf **Mit OpenRouter verbinden**. Dein Browser öffnet die Seite von OpenRouter, und DanyWhere zeigt **Warte auf den Browser …**.
+2. Neu bei OpenRouter? Melde dich mit Google oder GitHub an: Das erspart Passwort und Bestätigungscode.
+3. Die Begrüßung von OpenRouter fragt nach einer Zahlungsart. Wähl **I'll do this later**: Die Gratismodelle brauchen keine.
+4. Zurück in DanyWhere klickst du auf **Seite erneut öffnen**. Jetzt fragt OpenRouter, ob DanyWhere Zugriff bekommen darf.
+5. Klick auf **Authorize**. Der Browser sagt, dass du das Fenster schließen kannst, und DanyWhere zeigt die Karte **Verbunden mit OpenRouter**.
+
+</Steps>
+
+Hast du schon ein Konto, fallen die Schritte 2 bis 4 weg. DanyWhere bekommt einen eigenen Schlüssel mit einem Ausgabenlimit von 10 $, das die Karte zeigt. **Abbrechen** beendet das Warten; nach 30 Minuten läuft die Anmeldung ab, und **Noch einmal versuchen** beginnt von vorn.
+
+Mit Guthaben sagt die Karte **Noch kein Guthaben: DanyWhere nimmt die Gratismodelle, bis du auflädst.** Klick auf **Aufladen**, zahl einmal bei OpenRouter und komm zurück zu **Ich habe aufgeladen**. Ab dann nimmt DanyWhere ein Modell, das deine Texte nicht zum Training nutzt. 5 $ reichen für Tausende Diktate, und es verlängert sich nichts.
+
+## Mit ChatGPT anmelden
+
+Klick auf **Mit ChatGPT fortfahren**, melde dich im Browser bei ChatGPT an und erlaube DanyWhere den Zugriff. Es gibt keinen Schlüssel und keine Zusatzkosten: Berechtigte Nutzung in dieser App läuft über dein ChatGPT-Abo, und die Nutzung verwaltest du in deinen ChatGPT-Einstellungen. DanyWhere wählt das Modell. Hat das Konto kein Abo, das zählt, sagt DanyWhere es dir.
+
+## Ein Schlüssel zum Einfügen
+
+Bei Claude, Google, Hugging Face, Ollama und Groq kopierst du einen Schlüssel von der Seite des Anbieters. Die Einrichtung zeigt die Schritte, jeden mit einem Knopf zu der Seite, die er braucht. Drei Anbieter verlangen vorher etwas:
+
+- **Claude:** Das API-Guthaben deines Abos verknüpfst du in claude.ai, nach sieben Tagen im Abo, ohne Karte.
+- **Google:** AI Studio verlangt ein Zahlungsmittel und eine Vorauszahlung von mindestens 5 $, bevor das Guthaben gilt.
+- **Groq:** Das Konto braucht keine Karte, aber wenn du den Schlüssel erstellst, lässt Groq dich mit einem Klick bestätigen, dass du ein Mensch bist.
+
+Füg den Schlüssel in das Feld ein und klick auf **Prüfen**. DanyWhere probiert ihn aus, wählt ein Modell und meldet **Der Schlüssel funktioniert.** Ein Schlüssel, der nicht funktioniert, wird nirgends gespeichert, und die Einrichtung sagt dir, warum.
+
+## Verbunden
+
+Sobald ein Weg funktioniert, tritt die Karte **Verbunden mit …** an die Stelle der Fragen, und DanyWhere probiert den Weg gleich mit einem Beispielsatz aus. Die Karte sagt, worüber es läuft, etwa die Gratismodelle und das Ausgabenlimit des Schlüssels bei OpenRouter oder **Läuft über dein ChatGPT-Abo**. Ihre Knöpfe:
+
+- **Ausprobieren** schickt den Beispielsatz noch einmal und zeigt, was zurückkam, wie lange es dauerte und mit welchem Modell.
+- **Nutzung verwalten**, **Guthaben** oder **Aufladen** öffnet die passende Seite des Anbieters.
+- **Trennen** vergisst die Anmeldung oder den Schlüssel.
+
+<Screenshot
+  name="post-processing-connected"
+  alt="Die Karte Verbunden mit OpenRouter: Gratismodelle, bis zu 50 Diktate am Tag; Ausgabenlimit des Schlüssels 10,00 $; DanyWhere wählt das Modell. Die Knöpfe Ausprobieren, Guthaben und Trennen, darunter die Probe: der gesprochene Satz und das Ergebnis, mit Dauer und Modell. Unter der Karte Fragen neu beantworten und Erweitert."
+  caption="Gratis mit OpenRouter verbunden, nach Ausprobieren."
+/>
+
+**Fragen neu beantworten** unter der Karte holt die Fragen zurück; **Einrichtung behalten** schließt sie ohne Änderung. **Erweitert** zeigt die Gruppe **API** mit **Anbieter**, **API-Schlüssel** und **Modell**, die Einstellungen, die du früher von Hand gesetzt hast. Ohne Verbindung liegt dieselbe Gruppe hinter **Alle Anbieter …**, neben **Ich kenne mich aus:**, für einen Anbieter, zu dem die Fragen nicht führen, etwa den Server deiner Firma.
+
+**Später** legt die Fragen auf eine Zeile zusammen, **Die Nachbearbeitung ist noch nicht eingerichtet.**, mit **Einrichten**, das sie zurückholt.
+
+:::note
+Die Einrichtung richtet immer die Grundeinstellungen ein. Die Seite **Nachbearbeitung** eines Profils zeigt **Anbieter**, **API-Schlüssel** und **Modell** wie bisher, sodass ein Profil weiterhin einen eigenen Anbieter nutzen kann.
+:::
+
+## Wenn ein Weg endet
+
+Sind die Gratis-Diktate aufgebraucht oder ist eine Anmeldung abgelaufen, bekommst du trotzdem deine Worte. DanyWhere fügt die Transkription unverändert ein, und die Meldung **Ohne Nachbearbeitung eingefügt** sagt, was passiert ist, mit dem nächsten Schritt als Knopf:
+
+| Was passiert ist | Der Knopf |
+| --- | --- |
+| noch nichts eingerichtet: kein Anbieter, Modell oder Schlüssel | **Einrichten** |
+| die 50 Gratis-Diktate bei OpenRouter für heute aufgebraucht | **Aufladen**, oder morgen weiter |
+| das Guthaben aufgebraucht | **Aufladen** bei OpenRouter, sonst **Guthaben** |
+| das Ausgabenlimit des Schlüssels erreicht | **Limit ändern** |
+| das Nutzungslimit deines Abos vorerst erreicht | **Nutzung verwalten** |
+| dein Abo schließt die Nutzung in anderen Apps nicht ein | **Einrichtung ändern** |
+| die Anmeldung abgelaufen | **Neu anmelden** |
+
+Sind die Gratismodelle ausgelastet oder begrenzt ein Anbieter, wie viel pro Minute gehen darf, sagt die Meldung, dass du kurz warten und noch einmal diktieren sollst.
+
+:::caution[Ein Modell auf diesem Computer]
+**Nirgendwohin** und **Auf diesem Computer (langsamer, ab 16 GB Arbeitsspeicher)** führen zu einem Modell, das auf deinem Computer läuft. Es kommt mit einer späteren Version und braucht mindestens 16 GB Arbeitsspeicher. Bis dahin verbindet **Eigenen Server einrichten** einen Server, den du betreibst, etwa Ollama oder LM Studio auf diesem Computer oder den deiner Firma: Trag seine Adresse und sein Modell unten in der Gruppe **API** ein.
+:::
+
+## Weiter
+
+Ist die Nachbearbeitung eingerichtet, sagst du dem Modell mit einer Anweisungstaste, was es mit einem einzelnen Diktat tun soll, etwa es übersetzen. [Die gesprochene Anweisung](../spoken-instruction/) zeigt, wie.
