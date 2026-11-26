@@ -7,7 +7,9 @@
 // end shortcut and, without a name of its own, is called "<keys> held". The
 // same combination may stand in several lists. Every layer keeps one start
 // or hold shortcut. The backend's refusals for them read as sentences that
-// name the shortcut by its name or its combination.
+// name the shortcut by its name or its combination. Instruction shortcuts
+// are a fourth list of the hold shortcuts' shape, named the same way ("⇥
+// held"), and may be none (qa 2026-11-26_1810, "Schnittstelle Phase 2").
 import assert from "node:assert/strict";
 import type { EndKey } from "../bindings";
 import {
@@ -72,7 +74,6 @@ const hold = (
   name: "",
   shortcut,
   append_text: "",
-  post_process: false,
   send_context: false,
   ...extra,
 });
@@ -81,11 +82,10 @@ const hold = (
 const STARTS = [start("start", "ctrl+space")];
 const HOLDS = [
   hold("hold_direct", "ctrl+space", { append_text: "\\s" }),
-  hold("hold_post", "ctrl+shift+space", {
-    append_text: "\\s",
-    post_process: true,
-    send_context: true,
-  }),
+  hold("hold_post", "ctrl+shift+space", { send_context: true }),
+];
+const INSTRUCTIONS = [
+  hold("instruction_tab", "tab", { append_text: "\\s", send_context: true }),
 ];
 const ENDS = [
   hold("plain", "ctrl+space", { name: "Direkt · Leerzeichen" }),
@@ -165,11 +165,24 @@ check("a reference names a start, hold or end shortcut by its id", () => {
     kind: "end",
     id: "end_1795307754299",
   });
+  assert.deepEqual(parseKeyRef("instruction_key:instruction_tab"), {
+    kind: "instruction",
+    id: "instruction_tab",
+  });
+  assert.deepEqual(parseKeyRef("instruction_key:instruction_1795300000002"), {
+    kind: "instruction",
+    id: "instruction_1795300000002",
+  });
   assert.equal(parseKeyRef("paste_last_transcript"), null);
   assert.equal(parseKeyRef("start_key:"), null);
 });
 
-const VALUES = { start_keys: STARTS, hold_keys: HOLDS, end_keys: ENDS };
+const VALUES = {
+  start_keys: STARTS,
+  hold_keys: HOLDS,
+  instruction_keys: INSTRUCTIONS,
+  end_keys: ENDS,
+};
 const OTHER = {
   start_keys: [start("start_1795300000005", "ctrl+alt+s")],
   hold_keys: [],
@@ -189,6 +202,8 @@ check(
     assert.equal(label("start_key:start"), "⌃ Space");
     assert.equal(label("start_key:start", "de"), "⌃ Leertaste");
     assert.equal(label("hold_key:hold_post"), "⌃⇧ Space held");
+    assert.equal(label("instruction_key:instruction_tab"), "⇥ held");
+    assert.equal(label("instruction_key:instruction_tab", "de"), "⇥ gehalten");
     assert.equal(label("end_key:plain"), "Direkt · Leerzeichen");
     assert.equal(label("end_key:end_1795307754299"), "⌃↩");
     // Found in any of the layers given.
@@ -239,6 +254,21 @@ const REFUSALS: Array<[string, string, string]> = [
     "conflict:hold_key:hold_post",
     "Hold shortcut ⌃⇧ Space held already uses this shortcut",
     "„Haltetaste ⌃⇧ Leertaste gehalten“ verwendet dieses Kürzel schon",
+  ],
+  [
+    "instruction-key-needs-shortcut:instruction_tab",
+    "Every instruction shortcut needs a key combination.",
+    "Jede Anweisungstaste braucht eine Tastenkombination.",
+  ],
+  [
+    "instruction-key-shortcut-twice:tab",
+    "Two instruction shortcuts can't share a combination.",
+    "Zwei Anweisungstasten können nicht dieselbe Tastenkombination haben.",
+  ],
+  [
+    "conflict:instruction_key:instruction_tab",
+    "Instruction shortcut ⇥ held already uses this shortcut",
+    "„Anweisungstaste ⇥ gehalten“ verwendet dieses Kürzel schon",
   ],
   [
     "conflict:end_key:plain",
@@ -371,8 +401,8 @@ const TEXTS: Array<[string, string, string]> = [
   ["settings.holdKeys.title", "Hold Shortcuts", "Haltetasten"],
   [
     "settings.holdKeys.description",
-    "Hold to record. Releasing ends the recording this way: what is appended, whether the text is post-processed, whether earlier dictations go along as context.",
-    "Gedrückt halten nimmt auf. Das Loslassen beendet die Aufnahme so: was angehängt wird, ob der Text nachbearbeitet wird, ob frühere Diktate als Kontext mitgehen.",
+    "Hold to record. Releasing ends the recording this way: what is appended and whether earlier dictations go along as context.",
+    "Gedrückt halten nimmt auf. Das Loslassen beendet die Aufnahme so: was angehängt wird und ob frühere Diktate als Kontext mitgehen.",
   ],
   ["settings.holdKeys.add", "Add Hold Shortcut", "Haltetaste hinzufügen"],
   [
@@ -390,14 +420,54 @@ const TEXTS: Array<[string, string, string]> = [
     "Hold shortcut only: a short tap does nothing.",
     "Nur Haltetaste: kurzes Antippen tut nichts.",
   ],
+  [
+    "settings.holdKeys.alsoInstruction",
+    "Also an instruction shortcut: during a recording it switches to the instruction.",
+    "Auch Anweisungstaste: Während einer Aufnahme schaltet sie zur Anweisung.",
+  ],
+  [
+    "settings.startKeys.alsoInstruction",
+    "Also an instruction shortcut",
+    "Auch Anweisungstaste",
+  ],
+  // The card of the instruction shortcuts (qa 2026-11-26_1841, decision;
+  // 2026-11-26_1720, "Einstellungen auf ‚Allgemein‘").
+  [
+    "settings.instructionKeys.title",
+    "Instruction Shortcuts",
+    "Anweisungstasten",
+  ],
+  [
+    "settings.instructionKeys.description",
+    "During a recording, an instruction shortcut switches from the text to an instruction: what you say next isn't inserted but tells post-processing what to do with the text, such as “translate this into Polish”. Tap it, and an end shortcut sends the dictation off; hold it, and releasing it sends the dictation off as set here. Such a dictation is always post-processed.",
+    "Während einer Aufnahme schaltet eine Anweisungstaste vom Text zur Anweisung: Was du danach sprichst, wird nicht eingefügt, sondern sagt der Nachbearbeitung, was sie mit dem Text tun soll, etwa „übersetze das ins Polnische“. Antippen: Eine Endtaste schickt das Diktat ab. Halten: Das Loslassen schickt es ab, so wie hier eingestellt. Nachbearbeitet wird dann immer.",
+  ],
+  [
+    "settings.instructionKeys.onlyWhileRecording",
+    "Taken only during a recording.",
+    "Nur während einer Aufnahme belegt.",
+  ],
+  [
+    "settings.instructionKeys.add",
+    "Add Instruction Shortcut",
+    "Anweisungstaste hinzufügen",
+  ],
+  [
+    "settings.instructionKeys.addPressKeys",
+    "Press the combination for the new instruction shortcut",
+    "Drück die Tastenkombination für die neue Anweisungstaste",
+  ],
 ];
 
-check("the texts of start and hold shortcuts, in English and German", () => {
-  for (const [key, english, german] of TEXTS) {
-    assert.equal(t(key), english, `en ${key}`);
-    assert.equal(tDe(key), german, `de ${key}`);
-  }
-});
+check(
+  "the texts of start, hold and instruction shortcuts, in English and German",
+  () => {
+    for (const [key, english, german] of TEXTS) {
+      assert.equal(t(key), english, `en ${key}`);
+      assert.equal(tDe(key), german, `de ${key}`);
+    }
+  },
+);
 
 check("the texts of the old model are gone from English and German", () => {
   const gone = [
@@ -407,6 +477,7 @@ check("the texts of the old model are gone from English and German", () => {
     "settings.endKeys.holdEnds",
     "settings.endKeys.tapEnds",
     "settings.profileView.fields.holdEnds",
+    "settings.holdKeys.notTaken",
   ];
   for (const key of gone) {
     assert.equal(lookup(en as Tree, key), undefined, `en ${key}`);

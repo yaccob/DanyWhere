@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import { type } from "@tauri-apps/plugin-os";
 import { commands, type EndKey } from "@/bindings";
 import { useSettings } from "@/hooks/useSettings";
-import { postProcessingOn } from "@/lib/endKeys";
 import { hasCombination } from "@/lib/startKeys";
 import { SettingsGroup } from "../../ui/SettingsGroup";
 // DanyWhere: the "?" to the manual's chapter on start and end shortcuts.
@@ -27,7 +26,10 @@ interface EndKeysSettingsProps {
  * below it (`after`; user, 2026-11-24), so the card holds every way a
  * recording ends but releasing a hold shortcut, which has its own card
  * (qa 2026-11-26_1810). An end with the keys of a start or hold shortcut
- * says so: tapping those during a recording ends this way.
+ * says so: tapping those during a recording ends this way. One with an
+ * instruction shortcut's keys the backend refuses (both are taken only
+ * during a recording; "Schnittstelle Phase 2"). No end says whether it
+ * post-processes any more.
  */
 export const EndKeysSettings: React.FC<EndKeysSettingsProps> = ({ after }) => {
   const { t } = useTranslation();
@@ -35,10 +37,6 @@ export const EndKeysSettings: React.FC<EndKeysSettingsProps> = ({ after }) => {
   const endKeys = getSetting("end_keys") ?? [];
   const startKeys = getSetting("start_keys") ?? [];
   const holdKeys = getSetting("hold_keys") ?? [];
-  // The scope's own switch: the defaults' or the profile's value.
-  const postProcessingOff = !postProcessingOn({
-    post_process_enabled: getSetting("post_process_enabled"),
-  });
   const isLinux = type() === "linux";
   const { busy, save } = useKeyListSave<EndKey>(
     "end_keys",
@@ -77,7 +75,6 @@ export const EndKeysSettings: React.FC<EndKeysSettingsProps> = ({ after }) => {
           value={endKeys}
           hintsOf={hintsOf}
           disabled={busy}
-          postProcessingOff={postProcessingOff}
           onChange={save}
         />
       </ScopedSetting>

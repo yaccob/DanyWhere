@@ -5,7 +5,9 @@
 // has a key combination; without an own name it is called by it. A start
 // shortcut ends a recording only through an end with its combination; a
 // hold shortcut ends it when released (qa 2026-11-26_1810; its own checks:
-// startKeys.test.ts).
+// startKeys.test.ts). No key says any more whether a dictation is
+// post-processed: an instruction shortcut or the profile's mode does
+// ("Schnittstelle Phase 2").
 import assert from "node:assert/strict";
 import type { EndKey } from "../bindings";
 import {
@@ -15,7 +17,6 @@ import {
   nameToStore,
   newEndKey,
   postProcessingOn,
-  postProcessingReachable,
   removeEndKey,
   updateEndKey,
 } from "./endKeys";
@@ -54,24 +55,18 @@ const macEn = (keys: string) => formatKeyCombination(keys, "macos", t);
 const macDe = (keys: string) => formatKeyCombination(keys, "macos", tDe);
 const winDe = (keys: string) => formatKeyCombination(keys, "windows", tDe);
 
-const end = (
-  id: string,
-  shortcut: string,
-  name = "",
-  post_process = false,
-): EndKey => ({
+const end = (id: string, shortcut: string, name = ""): EndKey => ({
   id,
   name,
   shortcut,
   append_text: "",
-  post_process,
   send_context: false,
 });
 
 /** Out of the box: both ends nameless, with the start shortcuts' keys. */
 const factory = [
   end("plain", "ctrl+space"),
-  end("post_process", "ctrl+shift+space", "", true),
+  end("post_process", "ctrl+shift+space"),
 ];
 
 const cases: Array<[string, () => void]> = [
@@ -127,15 +122,22 @@ const cases: Array<[string, () => void]> = [
   [
     "a new end has the captured combination, an id none has and no own name",
     () => {
-      // A hold shortcut has the same shape, with ids of its own.
+      // Hold and instruction shortcuts have the same shape, with ids of
+      // their own.
       assert.equal(newEndKey(factory, "ctrl+h", 1000, "hold").id, "hold_1000");
+      assert.deepEqual(newEndKey(factory, "tab", 1000, "instruction"), {
+        id: "instruction_1000",
+        name: "",
+        shortcut: "tab",
+        append_text: "",
+        send_context: false,
+      });
       const first = newEndKey(factory, "ctrl+enter", 1000);
       assert.deepEqual(first, {
         id: "end_1000",
         name: "",
         shortcut: "ctrl+enter",
         append_text: "",
-        post_process: false,
         send_context: false,
       });
       const second = newEndKey([...factory, first], "ctrl+alt+enter", 1000);
@@ -195,7 +197,7 @@ const cases: Array<[string, () => void]> = [
     () => {
       const present = [
         "settings.endKeys.name",
-        "settings.endKeys.postProcess",
+        "settings.endKeys.sendContext",
         "settings.endKeys.addPressKeys",
         "settings.endKeys.lastOne",
         "settings.endKeys.linuxNoShortcuts",
@@ -241,6 +243,12 @@ const cases: Array<[string, () => void]> = [
         "settings.endKeys.holdEnds",
         "settings.endKeys.tapEnds",
         "settings.profileView.fields.holdEnds",
+        // No key says whether a dictation is post-processed any more, and
+        // the switch became a choice (qa 2026-11-26_1810, Phase 2).
+        "settings.endKeys.postProcess",
+        "settings.endKeys.postProcessOff",
+        "settings.holdKeys.notTaken",
+        "settings.debug.postProcessingToggle",
       ];
       for (const key of gone) {
         assert.equal(lookup(en as Tree, key), undefined, `en ${key}`);
@@ -250,69 +258,38 @@ const cases: Array<[string, () => void]> = [
   ],
 ];
 
-// A hold shortcut that post-processes is taken only while
-// `app_profiles::post_processing_reachable` says so (qa 2026-11-26_1713,
-// question 4 a); the page says so at it.
-const profile = (id: string, apps: string[], postProcess: boolean) => ({
-  id,
-  apps,
-  values: { post_process_enabled: postProcess },
-});
-cases.push(
-  [
-    "post-processing is reachable while the values in use post-process",
-    () => {
-      assert.equal(
-        postProcessingReachable({ post_process_enabled: true, profiles: [] }),
-        true,
-      );
-      assert.equal(
-        postProcessingReachable({ post_process_enabled: false, profiles: [] }),
-        false,
-      );
-    },
-  ],
-  [
-    "or while another profile with applications post-processes, chosen by application",
-    () => {
-      const settings = {
-        post_process_enabled: false,
-        profile_auto_by_app: true,
-        active_profile_id: "default",
-        profiles: [profile("work", ["com.microsoft.VSCode"], true)],
-      };
-      assert.equal(postProcessingReachable(settings), true);
-      assert.equal(
-        postProcessingReachable({ ...settings, profile_auto_by_app: false }),
-        false,
-        "not chosen by application",
-      );
-      assert.equal(
-        postProcessingReachable({ ...settings, active_profile_id: "work" }),
-        false,
-        "the profile in use counts through the flat values",
-      );
-      assert.equal(
-        postProcessingReachable({
-          ...settings,
-          profiles: [profile("work", [], true)],
-        }),
-        false,
-        "without applications",
-      );
-    },
-  ],
-);
-
-// With post-processing off no end post-processes (user, 2026-11-23, option
-// a; `app_profiles::effective_post_process`): the pages say so.
+// Whether a dictation with these values may post-process: the profile's
+// mode isn't "never" (qa 2026-11-26_1810, "Schnittstelle Phase 2"); with
+// "with_instruction_key" an instruction shortcut decides, with "always"
+// every dictation is. Unknown counts as never, so nothing goes out.
 cases.push([
-  "a dictation can post-process only with its values' switch on",
+  "a dictation may post-process unless its values' mode is never",
   () => {
-    assert.equal(postProcessingOn({ post_process_enabled: true }), true);
-    assert.equal(postProcessingOn({ post_process_enabled: false }), false);
-    assert.equal(postProcessingOn({ post_process_enabled: null }), false);
-    assert.equal(postProcessingOn({}), false, "not known: off");
+    assert.equal(
+      postProcessingOn({ post_process_mode: "with_instruction_key" }),
+      true,
+    );
+    assert.equal(postProcessingOn({ post_process_mode: "always" }), true);
+    assert.equal(postProcessingOn({ post_process_mode: "never" }), false);
+    assert.equal(postProcessingOn({ post_process_mode: null }), false);
+    assert.equal(postProcessingOn({}), false, "not known: never");
+  },
+]);
+cases.push([
+  "the end shortcuts' texts say nothing of post-processing but where context counts",
+  () => {
+    for (const tr of [t, tDe]) {
+      const text = tr("settings.endKeys.description");
+      assert.ok(!/post-processed\b|nachbearbeitet wird/.test(text), text);
+    }
+    assert.equal(
+      t("settings.endKeys.sendContextHint"),
+      "Earlier dictations from the same window go along as context. It counts only when the dictation is post-processed.",
+    );
+    assert.equal(
+      tDe("settings.endKeys.sendContextHint"),
+      "Frühere Diktate aus demselben Fenster gehen als Kontext mit. Das wirkt nur, wenn das Diktat nachbearbeitet wird.",
+    );
   },
 ]);
 

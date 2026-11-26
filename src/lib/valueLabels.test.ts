@@ -71,6 +71,7 @@ const KINDS: Record<string, FieldKind> = {
   end_keys: { kind: "list", key: "id" },
   start_keys: { kind: "list", key: "id" },
   hold_keys: { kind: "list", key: "id" },
+  instruction_keys: { kind: "list", key: "id" },
   post_process_providers: { kind: "list", key: "id" },
   bindings: { kind: "map" },
   post_process_models: { kind: "map" },
@@ -93,14 +94,12 @@ const plain = {
   name: "",
   shortcut: "ctrl+option+d",
   append_text: "\\s",
-  post_process: false,
   send_context: false,
 };
 const postProcess = {
   ...plain,
   id: "post_process",
   shortcut: "ctrl+option+shift+d",
-  post_process: true,
 };
 const ownEnd = {
   ...plain,
@@ -408,6 +407,38 @@ check("an own end shortcut's row names it without a count", () =>
 );
 
 // ---- wording: choices by the label their control shows ---------------------
+// The post-processing mode by the label its choice shows (qa
+// 2026-11-26_1810, "Schnittstelle Phase 2").
+check("the post-processing mode shows its choice's label", () => {
+  assert.equal(
+    valueLabel(de, "post_process_mode", "with_instruction_key"),
+    "Mit Anweisungstaste",
+  );
+  assert.equal(valueLabel(de, "post_process_mode", "never"), "Nie");
+  assert.equal(valueLabel(en, "post_process_mode", "always"), "Always");
+});
+// An instruction shortcut is named like a hold shortcut: "⇥ held".
+check(
+  "an instruction shortcut without an own name is called after its keys, held",
+  () => {
+    const tab = { ...plain, id: "instruction_tab", shortcut: "tab" };
+    assert.equal(
+      entryName(en, "instruction_keys", "instruction_tab", tab),
+      "⇥ held",
+    );
+    assert.equal(
+      entryName(de, "instruction_keys", "instruction_tab", tab),
+      "⇥ gehalten",
+    );
+    assert.equal(
+      entryName(de, "instruction_keys", "instruction_tab", {
+        ...tab,
+        name: "Übersetzen",
+      }),
+      "Übersetzen",
+    );
+  },
+);
 check("the effort shows its level's label", () => {
   assert.equal(valueLabel(de, "post_process_efforts", "xhigh"), "Sehr hoch");
   assert.equal(

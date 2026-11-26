@@ -9,6 +9,7 @@ import { DEFAULT_PROFILE_ID } from "./utils/profiles";
 // DanyWhere (strand E2): the counts of own values per profile and page (P5).
 import { ownValues, type OwnEntriesLike, type Scope } from "./profileScope";
 import { pageOfValue } from "./profileFields";
+import { postProcessingOn, type PostProcessSwitch } from "./endKeys";
 
 /** The pages of the defaults: today's pages minus the application settings. */
 export const DEFAULTS_PAGES = [
@@ -65,20 +66,21 @@ export interface NavSettings {
   profiles?:
     | readonly {
         id: string;
-        values?: { post_process_enabled?: boolean | null } | null;
+        values?: PostProcessSwitch | null;
         own?: readonly string[] | null;
         own_entries?: Partial<Record<string, OwnEntriesLike>> | null;
       }[]
     | null;
   /** The defaults' own values; the flat fields hold what is in use. */
-  default_values?: { post_process_enabled?: boolean | null } | null;
-  post_process_enabled?: boolean | null;
+  default_values?: PostProcessSwitch | null;
+  post_process_mode?: PostProcessSwitch["post_process_mode"];
   debug_mode?: boolean | null;
 }
 
 /** A profile as the tree needs it. */
 export interface NavProfile {
   id: string;
+  /** It may post-process: its mode isn't "never". */
   postProcessEnabled: boolean;
   /** How many own values it has (P5), entries of lists one by one. */
   ownCount: number;
@@ -93,7 +95,8 @@ export interface NavContext {
   profilesEnabled: boolean;
   /** The profiles listed under the profile settings, in stored order. */
   profiles: NavProfile[];
-  /** Post-processing is on in the settings the defaults' pages edit. */
+  /** The settings the defaults' pages edit may post-process: their mode
+   * isn't "never" (`postProcessingOn`, qa 2026-11-26_1810, Phase 2). */
   postProcessEnabled: boolean;
   debugMode: boolean;
 }
@@ -149,7 +152,7 @@ export const navContext = (
         }
         return {
           id: profile.id,
-          postProcessEnabled: profile.values?.post_process_enabled === true,
+          postProcessEnabled: postProcessingOn(profile.values ?? {}),
           ownCount: own.length,
           pageCounts,
         };
@@ -157,23 +160,23 @@ export const navContext = (
     // The defaults' pages edit the defaults, so their Post Process page
     // follows the defaults' value; the flat field (what is in use) only
     // stands in while the settings have no defaults yet.
-    postProcessEnabled:
-      (settings?.default_values
-        ? settings.default_values.post_process_enabled
-        : settings?.post_process_enabled) === true,
+    postProcessEnabled: postProcessingOn(
+      (settings?.default_values ?? settings ?? {}) as PostProcessSwitch,
+    ),
     debugMode: settings?.debug_mode === true,
   };
 };
 
-/** The defaults' pages; Post Process only while post-processing is on, as
- * the sidebar did before. */
+/** The defaults' pages; Post Process only while the defaults may
+ * post-process (mode other than "never"), as the sidebar did with the
+ * switch before. */
 export const defaultsPages = (ctx: NavContext): DefaultsPage[] =>
   DEFAULTS_PAGES.filter(
     (page) => page !== "postprocessing" || ctx.postProcessEnabled,
   );
 
-/** A profile's pages; its Post Process only while its own post-processing
- * is on. */
+/** A profile's pages; its Post Process only while it may post-process
+ * itself. */
 export const profilePages = (profile: NavProfile): ProfilePage[] =>
   PROFILE_PAGES.filter(
     (page) => page !== "postprocessing" || profile.postProcessEnabled,

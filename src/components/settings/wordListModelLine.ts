@@ -56,20 +56,28 @@ export type WordListCheckSetup =
   /** Apple Intelligence is chosen; it can't take the request. */
   | { kind: "unsupported"; provider: PostProcessProvider }
   /** No provider chosen, or none with a model. */
-  | { kind: "missing" };
+  | { kind: "missing" }
+  /** Post-processing is set to "never": nothing goes to a provider. */
+  | { kind: "never" };
 
 type CheckSettings = Pick<
   AppSettings,
-  "post_process_provider_id" | "post_process_providers" | "post_process_models"
+  | "post_process_provider_id"
+  | "post_process_providers"
+  | "post_process_models"
+  | "post_process_mode"
 >;
 
 /** The backend's rule (`word_list_check::wanted`): post-processing has a
  * provider chosen with a model set, and it isn't Apple Intelligence.
- * Neither the post-processing switch nor a prompt matters: the check is
- * for dictations that aren't post-processed. */
+ * Neither an instruction shortcut nor a prompt matters: the check is for
+ * dictations that aren't post-processed. With post-processing set to
+ * "never" nothing goes to a provider, the check neither (qa
+ * 2026-11-26_1841, "Kleinere Folgen"); a mode not known doesn't stop it. */
 export const wordListCheckSetup = (
   settings: Partial<CheckSettings> | null | undefined,
 ): WordListCheckSetup => {
+  if (settings?.post_process_mode === "never") return { kind: "never" };
   const chosen = settings?.post_process_providers?.find(
     (p) => p.id === settings.post_process_provider_id,
   );

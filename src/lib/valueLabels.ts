@@ -149,10 +149,14 @@ export const entryName = (
     );
   }
   const format = ctx.formatShortcut ?? ((keys: string) => keys);
-  // An end without an own name is called by its combination, a hold
-  // shortcut "<keys> held"; a start shortcut has only its combination (qa
-  // 2026-11-26_1810).
-  if (field === "end_keys" || field === "hold_keys") {
+  // An end without an own name is called by its combination, a hold or
+  // instruction shortcut "<keys> held"; a start shortcut has only its
+  // combination (qa 2026-11-26_1810).
+  if (
+    field === "end_keys" ||
+    field === "hold_keys" ||
+    field === "instruction_keys"
+  ) {
     if (isObject(stored) && typeof stored.name === "string") {
       const end = { shortcut: "", ...stored } as unknown as EndKey;
       const name =

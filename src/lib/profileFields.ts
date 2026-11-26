@@ -50,8 +50,8 @@ export interface ProfileFieldInfo {
 const FIELDS = "settings.profileView.fields";
 
 export const PROFILE_FIELDS = {
-  // General: shortcuts, start, hold and end shortcuts, languages, the
-  // model's settings, sound.
+  // General: shortcuts, start, hold, instruction and end shortcuts,
+  // languages, the model's settings, sound.
   bindings: {
     page: "general",
     label: `${FIELDS}.shortcuts`,
@@ -64,6 +64,11 @@ export const PROFILE_FIELDS = {
     large: true,
   },
   hold_keys: { page: "general", label: "settings.holdKeys.title", large: true },
+  instruction_keys: {
+    page: "general",
+    label: "settings.instructionKeys.title",
+    large: true,
+  },
   end_keys: { page: "general", label: "settings.endKeys.title", large: true },
   spoken_languages: {
     page: "general",
@@ -215,9 +220,12 @@ export const PROFILE_FIELDS = {
     page: "advanced",
     label: `${FIELDS}.customFillerWords`,
   },
-  post_process_enabled: {
+  // The choice that replaced the switch "Post Processing" (qa
+  // 2026-11-26_1841, variant b); its labels follow the generic rule
+  // ("settings.postProcessing.mode.options.withInstructionKey").
+  post_process_mode: {
     page: "advanced",
-    label: "settings.debug.postProcessingToggle.label",
+    label: "settings.postProcessing.mode.title",
   },
   post_process_timeout_secs: {
     page: "advanced",

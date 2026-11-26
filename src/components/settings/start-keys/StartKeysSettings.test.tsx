@@ -30,7 +30,7 @@ import { rawTextIn, visibleText } from "@/test/visible";
 const START = startKey("start", "ctrl+space");
 const OTHER = startKey("start_1795307900001", "ctrl+alt+e");
 const DIRECT = holdKey("hold_direct", "ctrl+space");
-const POST = holdKey("hold_post", "ctrl+shift+space", { post_process: true });
+const POST = holdKey("hold_post", "ctrl+shift+space");
 
 const renderGeneral = (
   spec: SettingsSpec = {},

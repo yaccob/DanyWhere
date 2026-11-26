@@ -476,6 +476,7 @@
       "description": "Tap to start a recording. It runs until an end shortcut ends it.",
       "shortcutHint": "Tapping this combination starts a recording. It is always taken.",
       "alsoHold": "Also a hold shortcut",
+      "alsoInstruction": "Also an instruction shortcut",
       "add": "Add Start Shortcut",
       "addPressKeys": "Press the combination for the new start shortcut",
       "delete": "Delete start shortcut {{shortcut}}",
@@ -491,11 +492,11 @@
     },
     "holdKeys": {
       "title": "Hold Shortcuts",
-      "description": "Hold to record. Releasing ends the recording this way: what is appended, whether the text is post-processed, whether earlier dictations go along as context.",
+      "description": "Hold to record. Releasing ends the recording this way: what is appended and whether earlier dictations go along as context.",
       "shortcutHint": "Holding this combination records; releasing it ends the recording this way.",
       "alsoStart": "Also a start shortcut: a short tap starts a recording that keeps running.",
       "holdOnly": "Hold shortcut only: a short tap does nothing.",
-      "notTaken": "Taken only while post-processing is on: until then, its combination stays with the app in front.",
+      "alsoInstruction": "Also an instruction shortcut: during a recording it switches to the instruction.",
       "add": "Add Hold Shortcut",
       "addPressKeys": "Press the combination for the new hold shortcut",
       "refName": "Hold shortcut {{name}}",
@@ -505,19 +506,34 @@
         "shortcutTwice": "Two hold shortcuts can't share a combination."
       }
     },
+    "instructionKeys": {
+      "title": "Instruction Shortcuts",
+      "description": "During a recording, an instruction shortcut switches from the text to an instruction: what you say next isn't inserted but tells post-processing what to do with the text, such as “translate this into Polish”. Tap it, and an end shortcut sends the dictation off; hold it, and releasing it sends the dictation off as set here. Such a dictation is always post-processed.",
+      "shortcutHint": "During a recording, pressing this combination switches from the text to the instruction. It is taken only while recording.",
+      "onlyWhileRecording": "Taken only during a recording.",
+      "sameAsStartOrHold": "Same combination as a start or hold shortcut: without a recording it starts one, during a recording it switches to the instruction.",
+      "notTakenNever": "Post-processing is set to “{{mode}}”: instruction shortcuts aren't taken. Choose another setting for {{setting}} under Advanced.",
+      "notTakenNoProvider": "No post-processing provider with a model is set up: instruction shortcuts aren't taken until one is.",
+      "add": "Add Instruction Shortcut",
+      "addPressKeys": "Press the combination for the new instruction shortcut",
+      "refName": "Instruction shortcut {{name}}",
+      "errors": {
+        "save": "Couldn't save the instruction shortcuts: {{error}}",
+        "needsShortcut": "Every instruction shortcut needs a key combination.",
+        "shortcutTwice": "Two instruction shortcuts can't share a combination."
+      }
+    },
     "endKeys": {
       "title": "End Shortcuts",
-      "description": "How a recording ends and what follows. Each end shortcut has a key combination of its own, taken only while recording, and says what is appended, whether the text is post-processed and whether earlier dictations go along as context. An end shortcut may have the combination of a start or hold shortcut: tapping it during a recording then ends this way.",
+      "description": "How a recording ends and what follows. Each end shortcut has a key combination of its own, taken only while recording, and says what is appended and whether earlier dictations go along as context. An end shortcut may have the combination of a start or hold shortcut: tapping it during a recording then ends this way.",
       "name": "Name",
       "shortcutHint": "Pressing this combination during a recording ends it this way. It is taken only while recording.",
       "sameAsStart": "Same combination as a start shortcut: tapping it again during a recording ends this way.",
       "sameAsHold": "Same combination as a hold shortcut: tapping it during a recording ends this way.",
       "append": "Append",
       "appendDescription": "Appended to a dictation that ends this way: the text, then the key press you choose. In the text, \\s is a space, \\n a new line, \\t a tab and \\\\ a backslash; everything else is appended as written. The key press is sent only when the text is pasted.",
-      "postProcess": "Post-process",
       "sendContext": "Send Context",
-      "sendContextHint": "Only with post-processing: earlier dictations from the same window go along as context.",
-      "postProcessOff": "Post-processing is off: a dictation ended this way isn't post-processed. Turn on “Post Processing” under Advanced.",
+      "sendContextHint": "Earlier dictations from the same window go along as context. It counts only when the dictation is post-processed.",
       "add": "Add End Shortcut",
       "addPressKeys": "Press the combination for the new end shortcut",
       "delete": "Delete {{name}}",
@@ -869,6 +885,7 @@
         "llmCheckTitle": "Check Names with the LLM, Also Without Post-Processing",
         "llmCheckDescription": "Only in dictations with a word that resembles a word list entry. The sentence then goes to {{provider}}.",
         "llmCheckNeedsProvider": "Needs a post-processing provider with a model.",
+        "llmCheckNever": "Not while post-processing is set to “{{mode}}”: then nothing goes to a provider.",
         "llmCheckNotWith": "Not with {{provider}}: needs another post-processing provider with a model.",
         "setUpPostProcessing": "Set Up Post-Processing",
         "switchModel": "Switch to {{model}}",
@@ -1070,6 +1087,15 @@
         "statusDenied": "Not allowed – change it in System Settings › Privacy & Security › Automation",
         "statusNotRunning": "Not running – start it to allow",
         "statusUnknown": "Unknown"
+      },
+      "mode": {
+        "title": "Post Processing",
+        "description": "When a dictation goes to the post-processing provider. Never: nothing goes to a provider, and instruction shortcuts aren't taken. With Instruction Shortcut: only a dictation in which an instruction shortcut was pressed. Always: every dictation; an instruction shortcut adds an instruction.",
+        "options": {
+          "never": "Never",
+          "withInstructionKey": "With Instruction Shortcut",
+          "always": "Always"
+        }
       }
     },
     "history": {
@@ -1276,10 +1302,6 @@
       "clamshellMicrophone": {
         "title": "Clamshell Microphone",
         "description": "Microphone to use when laptop lid is closed"
-      },
-      "postProcessingToggle": {
-        "label": "Post Processing",
-        "description": "Enable AI-powered text refinement after transcription"
       },
       "muteWhileRecording": {
         "label": "Mute While Recording",
