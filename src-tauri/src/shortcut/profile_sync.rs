@@ -10,8 +10,9 @@
 //! registered, each combination once (`start_keys::bindings_to_register`).
 //! End shortcuts with a key combination are registered only while a
 //! recording runs, like Escape, and so are the instruction shortcuts while
-//! post-processing can run (`instruction_keys`), again those of the profile
-//! that applies now
+//! post-processing can run (`instruction_keys`; each also with each hold
+//! shortcut's modifiers, held down with it during a held recording), again
+//! those of the profile that applies now
 //! (F3: after an application switch during the recording, the new
 //! profile's), without those that have exactly a start or hold shortcut's
 //! combination: that one's press during a recording is theirs.
@@ -52,7 +53,10 @@ pub fn desired(settings_now: &AppSettings, recording: bool, service_available: b
 /// [`desired`] on Linux (`linux`) or elsewhere. During a recording, the end
 /// shortcuts and then the instruction shortcuts, while those are taken
 /// (`instruction_keys::taken`: the profile may post-process and has a
-/// provider with a model); neither on Linux.
+/// provider with a model), last those again with each hold shortcut's
+/// modifiers, which are still down when one is pressed during a held
+/// recording (`instruction_keys::bindings_while_holding_on`); none on
+/// Linux.
 pub fn desired_on(
     settings_now: &AppSettings,
     recording: bool,
@@ -71,8 +75,15 @@ pub fn desired_on(
             .map(|binding| (binding.id.clone(), keys_of(binding)))
             .collect();
         let mut during = crate::end_keys::bindings_to_register(&settings_now.end_keys);
+        let instruction_keys = crate::instruction_keys::taken_now(settings_now, linux);
         during.extend(crate::instruction_keys::bindings_to_register(
-            crate::instruction_keys::taken_now(settings_now, linux),
+            instruction_keys,
+        ));
+        // After every shortcut's own binding, so that one keeps its
+        // combination.
+        during.extend(crate::instruction_keys::bindings_while_holding(
+            instruction_keys,
+            &settings_now.hold_keys,
         ));
         for binding in during {
             let keys = keys_of(&binding);
@@ -87,6 +98,14 @@ pub fn desired_on(
                     && crate::key_sides::identical_press(other_keys(&taken, id), &keys)
                 {
                     log::debug!("{}: as {id}'s press", binding.id);
+                } else if crate::instruction_keys::is_while_holding(&binding.id) {
+                    // Not one of the user's own: the other shortcut keeps
+                    // the combination, without a warning.
+                    log::debug!(
+                        "{}: {} is {id}'s; left to it",
+                        binding.id,
+                        binding.current_binding
+                    );
                 } else {
                     log::warn!(
                         "{}: {} is {id}'s; not registered",
@@ -878,6 +897,76 @@ mod tests {
         let recording = desired_on(&s, true, true, false);
         assert!(!recording.contains_key("instruction_key:tab"));
         assert_eq!(keys(&recording, "start_key:start").as_deref(), Some(start));
+    }
+
+    // ---- An instruction shortcut while a hold shortcut is held ----------------
+    //
+    // Found in Dev (2026-11-26): ⌃⌥D held, ⇥ pressed: the press is ⌃⌥⇥, which
+    // `tab` alone doesn't match, so the ⇥ reached the application and the
+    // instruction was dictated as text.
+
+    /// [`with_instruction_key`] with the hold shortcuts `holds`.
+    fn holding(holds: &[&str]) -> AppSettings {
+        let mut s = with_instruction_key(crate::settings::PostProcessMode::WithInstructionKey);
+        s.hold_keys = holds
+            .iter()
+            .enumerate()
+            .map(|(n, keys)| EndKey {
+                id: format!("hold_{n}"),
+                shortcut: keys.to_string(),
+                ..Default::default()
+            })
+            .collect();
+        s
+    }
+
+    /// The combinations registered for instruction shortcut `id` in
+    /// `wanted`, its own binding's included.
+    fn instruction_combinations(wanted: &Registered, id: &str) -> Vec<String> {
+        wanted
+            .values()
+            .filter(|b| crate::instruction_keys::instruction_id_of(&b.id) == Some(id))
+            .map(|b| b.current_binding.clone())
+            .collect()
+    }
+
+    fn has_combination(found: &[String], keys: &str) -> bool {
+        found
+            .iter()
+            .any(|combination| crate::key_sides::identical_press(combination, keys))
+    }
+
+    #[test]
+    fn while_a_hold_key_is_held_the_instruction_key_is_taken_with_its_modifiers_too() {
+        let s = holding(&["ctrl+space", "ctrl+shift+space", "ctrl+option+d"]);
+        let found = instruction_combinations(&desired_on(&s, true, true, false), "tab");
+        assert_eq!(found.len(), 4, "{found:?}");
+        for keys in ["tab", "ctrl+tab", "ctrl+shift+tab", "ctrl+option+tab"] {
+            assert!(has_combination(&found, keys), "{keys}: {found:?}");
+        }
+    }
+
+    #[test]
+    fn the_instruction_key_with_a_hold_keys_modifiers_only_while_its_own_is_taken() {
+        let s = holding(&["ctrl+space", "ctrl+option+d"]);
+        assert!(instruction_combinations(&desired_on(&s, false, true, false), "tab").is_empty());
+        assert!(instruction_combinations(&desired_on(&s, true, true, true), "tab").is_empty());
+        let mut never = s.clone();
+        never.post_process_mode = crate::settings::PostProcessMode::Never;
+        assert!(instruction_combinations(&desired_on(&never, true, true, false), "tab").is_empty());
+    }
+
+    #[test]
+    fn the_instruction_key_with_a_hold_keys_modifiers_leaves_another_shortcuts_combination_alone() {
+        // An end shortcut on ⌃⇥: ⇥ held with ⌃Space stays that end.
+        let mut s = holding(&["ctrl+space", "ctrl+shift+space"]);
+        s.end_keys.push(send_key("ctrl+tab"));
+        let wanted = desired_on(&s, true, true, false);
+        assert_eq!(keys(&wanted, "end_key:send").as_deref(), Some("ctrl+tab"));
+        let found = instruction_combinations(&wanted, "tab");
+        assert!(!has_combination(&found, "ctrl+tab"), "{found:?}");
+        assert!(has_combination(&found, "ctrl+shift+tab"), "{found:?}");
+        assert!(has_combination(&found, "tab"), "{found:?}");
     }
 
     #[test]
