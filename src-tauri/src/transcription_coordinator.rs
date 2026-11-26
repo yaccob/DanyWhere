@@ -1334,15 +1334,21 @@ impl EffectRunner for AppEffects {
     }
 
     /// DanyWhere: cuts the recording for its instruction (strand Z1,
-    /// `dictation_flow::instruction`), only while the dictation's profile
-    /// takes instruction keys (not "never", a provider with a model, not on
-    /// Linux): a press that came through just before a change cuts nothing.
+    /// `dictation_flow::instruction`), only while the profile that applies
+    /// now takes this instruction key (`instruction_keys::is_taken_now`: not
+    /// "never", a provider with a model, not on Linux), the profile its
+    /// registration follows: a press that came through just before a change
+    /// cuts nothing.
     fn begin_instruction(&mut self, binding_id: &str, instruction_id: &str) -> bool {
-        let settings = crate::app_profiles::dictation_settings(&self.0);
-        if !crate::instruction_keys::taken_here(&settings) {
-            debug!(
-                "Instruction key '{instruction_id}': the dictation's profile takes none; no cut"
-            );
+        let settings = crate::settings::get_settings(&self.0);
+        let frontmost = crate::app_profiles::frontmost_if_choosing(&settings);
+        if !crate::instruction_keys::is_taken_now(
+            &settings,
+            frontmost.as_deref(),
+            instruction_id,
+            cfg!(target_os = "linux"),
+        ) {
+            debug!("Instruction key '{instruction_id}': the profile now takes it not; no cut");
             return false;
         }
         crate::dictation_flow::instruction::begin_instruction(&self.0, binding_id, instruction_id)

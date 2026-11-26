@@ -71,11 +71,9 @@ pub fn desired_on(
             .map(|binding| (binding.id.clone(), keys_of(binding)))
             .collect();
         let mut during = crate::end_keys::bindings_to_register(&settings_now.end_keys);
-        if crate::instruction_keys::taken(settings_now, linux) {
-            during.extend(crate::instruction_keys::bindings_to_register(
-                &settings_now.instruction_keys,
-            ));
-        }
+        during.extend(crate::instruction_keys::bindings_to_register(
+            crate::instruction_keys::taken_now(settings_now, linux),
+        ));
         for binding in during {
             let keys = keys_of(&binding);
             if let Some((id, _)) = taken

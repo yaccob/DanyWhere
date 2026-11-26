@@ -15,7 +15,8 @@
 //!
 //! Instruction shortcuts are registered only during a recording, like the
 //! end shortcuts, and only while the profile that applies now may
-//! post-process and has a provider with a model ([`taken`]); never on Linux,
+//! post-process and has a provider with a model ([`taken_now`]; a press
+//! cuts by the same profile, [`is_taken_now`]); never on Linux,
 //! where shortcuts registered only during a recording are unstable. One
 //! with exactly a start or hold shortcut's combination is not registered on
 //! its own: that key's press during a recording is the instruction
@@ -92,6 +93,39 @@ pub fn taken(settings_now: &AppSettings, linux: bool) -> bool {
 /// [`taken`] on this system.
 pub fn taken_here(settings_now: &AppSettings) -> bool {
     taken(settings_now, cfg!(target_os = "linux"))
+}
+
+/// The instruction shortcuts taken during a recording now: those of
+/// `settings_now` (the settings with the values of the profile that applies
+/// now, `app_profiles::settings_now`) while [`taken`], else none. The
+/// registration (`shortcut::profile_sync::desired_on`) and the cut
+/// ([`is_taken_now`]) both ask it, so a press that reaches DanyWhere is one
+/// that cuts (review finding 5, 2026-11-26), as the end shortcuts follow
+/// the profile now too.
+pub fn taken_now(settings_now: &AppSettings, linux: bool) -> &[EndKey] {
+    if taken(settings_now, linux) {
+        &settings_now.instruction_keys
+    } else {
+        &[]
+    }
+}
+
+/// Whether a press of instruction shortcut `instruction_id` cuts the
+/// recording now: the profile that applies now (`settings` as stored, with
+/// `frontmost_app` as `app_profiles::frontmost_if_choosing` looks it up)
+/// takes it ([`taken_now`]), not the profile the dictation began with.
+/// Whether the dictation then post-processes is still for the profile at
+/// its end to decide.
+pub fn is_taken_now(
+    settings: &AppSettings,
+    frontmost_app: Option<&str>,
+    instruction_id: &str,
+    linux: bool,
+) -> bool {
+    let now = crate::app_profiles::settings_now(settings, frontmost_app);
+    taken_now(&now, linux)
+        .iter()
+        .any(|key| key.id == instruction_id)
 }
 
 /// The instruction shortcuts of `instruction_keys` that have a combination,
@@ -355,6 +389,81 @@ mod tests {
         let mut no_model = set_up(PostProcessMode::Always);
         no_model.post_process_models.clear();
         assert!(!taken(&no_model, false));
+    }
+
+    // ---- The profile that applies now (review finding 5, 2026-11-26) ---------
+    //
+    // The registration (`shortcut::profile_sync`) and the cut (the
+    // coordinator's executor) both go by the profile that applies now, as
+    // the end shortcuts do, not by the dictation's.
+
+    #[test]
+    fn the_instruction_keys_taken_now_are_the_profiles_while_it_takes_them() {
+        let tab = vec![key("tab", "tab", " ", true)];
+        let with = |mode: PostProcessMode| {
+            let mut settings = set_up(mode);
+            settings.instruction_keys = tab.clone();
+            settings
+        };
+        assert_eq!(
+            taken_now(&with(PostProcessMode::WithInstructionKey), false),
+            tab.as_slice()
+        );
+        assert_eq!(
+            taken_now(&with(PostProcessMode::Always), false),
+            tab.as_slice()
+        );
+        assert!(taken_now(&with(PostProcessMode::Never), false).is_empty());
+        assert!(taken_now(&with(PostProcessMode::Always), true).is_empty());
+        let mut no_model = with(PostProcessMode::Always);
+        no_model.post_process_models.clear();
+        assert!(taken_now(&no_model, false).is_empty());
+    }
+
+    /// Settings whose active profile has mode `here`, with a profile "Mail"
+    /// for Mail with mode `in_mail`, both with ⇥, choosing by application on.
+    fn here_and_in_mail(here: PostProcessMode, in_mail: PostProcessMode) -> AppSettings {
+        let tab = vec![key("tab", "tab", " ", true)];
+        let mut settings = set_up(here);
+        settings.instruction_keys = tab.clone();
+        let mut mail_settings = set_up(in_mail);
+        mail_settings.instruction_keys = tab;
+        let mut mail = crate::profiles::Profile::new(
+            "mail",
+            "Mail",
+            ProfileValues::from_settings(&mail_settings),
+        );
+        mail.apps = vec!["com.apple.mail".to_string()];
+        settings.profiles.push(mail);
+        settings.profile_auto_by_app = true;
+        settings
+    }
+
+    #[test]
+    fn a_press_cuts_in_the_app_in_front_that_takes_instruction_keys() {
+        // The dictation began in an app whose profile never post-processes;
+        // Mail, in front now, takes ⇥: it is registered there, so it cuts.
+        let s = here_and_in_mail(PostProcessMode::Never, PostProcessMode::WithInstructionKey);
+        assert!(is_taken_now(&s, Some("com.apple.mail"), "tab", false));
+        assert!(!is_taken_now(&s, Some("com.apple.TextEdit"), "tab", false));
+        assert!(!is_taken_now(&s, Some("com.apple.mail"), "tab", true));
+    }
+
+    #[test]
+    fn a_press_cuts_nothing_in_the_app_in_front_that_never_post_processes() {
+        let s = here_and_in_mail(PostProcessMode::WithInstructionKey, PostProcessMode::Never);
+        assert!(!is_taken_now(&s, Some("com.apple.mail"), "tab", false));
+        assert!(is_taken_now(&s, Some("com.apple.TextEdit"), "tab", false));
+    }
+
+    #[test]
+    fn a_press_of_an_instruction_key_the_profile_now_lacks_cuts_nothing() {
+        let s = here_and_in_mail(
+            PostProcessMode::WithInstructionKey,
+            PostProcessMode::WithInstructionKey,
+        );
+        assert!(is_taken_now(&s, None, "tab", false));
+        assert!(!is_taken_now(&s, None, "instruction_1795300000001", false));
     }
 
     // ---- Its end -------------------------------------------------------------
