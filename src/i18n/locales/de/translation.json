@@ -1090,6 +1090,11 @@
       "postProcessOff": "Die Nachbearbeitung ist in den Einstellungen ausgeschaltet",
       "postProcessNotSetUp": "Wähle zuerst unter Nachbearbeitung einen Anbieter, ein Modell und einen Prompt",
       "recordingRemoved": "Aufnahme gelöscht, um im Speicherlimit zu bleiben",
+      "spokenInstruction": {
+        "label": "Gesprochene Anweisung:",
+        "nothingHeard": "nichts verstanden",
+        "audio": "Ton der gesprochenen Anweisung"
+      },
       "cancelTranscription": "Transkription abbrechen",
       "transcribing": "Transkribiere...",
       "postProcessing": "Wird nachbearbeitet...",
@@ -1160,6 +1165,7 @@
           "ai": "Nachbearbeitet",
           "aiPrompt": "Nachbearbeitet mit „{{prompt}}“",
           "user": "Von dir bearbeitet",
+          "withSpokenInstruction": "{{step}} + gesprochene Anweisung",
           "withTime": "{{step}}, {{time}}"
         },
         "saveError": "Dein Text konnte nicht gespeichert werden. Bitte versuche es noch einmal.",

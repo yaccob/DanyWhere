@@ -20,6 +20,7 @@ import {
   matchingVersions,
   modelName,
   moveTarget,
+  ranWithSpokenInstruction,
   saveModes,
   shownVersion,
   stepSeconds,
@@ -457,6 +458,29 @@ check("a transcription names its speech model when it's known", () => {
   );
   // Only a transcription has a model.
   assert.equal(describeStep(step("ai", null, null, "canary-1b-v2")).key, "ai");
+});
+
+// DanyWhere: a post-processing with the instruction spoken for the
+// dictation says so (qa 2026-11-26_1720, F6).
+check("a post-processing with the spoken instruction says so", () => {
+  const withInstruction = {
+    ...step("ai", 5, "E-Mail"),
+    spoken_instruction: true,
+  };
+  assert.equal(ranWithSpokenInstruction(withInstruction), true);
+  // Without the flag, from before it existed, or off.
+  assert.equal(ranWithSpokenInstruction(step("ai", 5, "E-Mail")), false);
+  assert.equal(
+    ranWithSpokenInstruction({ ...step("ai"), spoken_instruction: false }),
+    false,
+  );
+  // Only a post-processing runs with it.
+  assert.equal(
+    ranWithSpokenInstruction({ ...step("user"), spoken_instruction: true }),
+    false,
+  );
+  // Its prompt is still named as before.
+  assert.equal(describeStep(withInstruction).key, "aiPrompt");
 });
 
 check("a model shows by its name, an unknown one by its id", () => {

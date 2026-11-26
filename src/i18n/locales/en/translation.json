@@ -1090,6 +1090,11 @@
       "postProcessOff": "Post Process is turned off in the settings",
       "postProcessNotSetUp": "Choose a provider, a model and a prompt under Post Process first",
       "recordingRemoved": "Recording deleted to stay within the storage limit",
+      "spokenInstruction": {
+        "label": "Spoken instruction:",
+        "nothingHeard": "nothing heard",
+        "audio": "Audio of the spoken instruction"
+      },
       "cancelTranscription": "Cancel transcription",
       "transcribing": "Transcribing...",
       "postProcessing": "Post-processing...",
@@ -1160,6 +1165,7 @@
           "ai": "Post-processed",
           "aiPrompt": "Post-processed with “{{prompt}}”",
           "user": "Edited by you",
+          "withSpokenInstruction": "{{step}} + spoken instruction",
           "withTime": "{{step}}, {{time}}"
         },
         "saveError": "Failed to save your text. Please try again.",
