@@ -4,6 +4,7 @@ import { Input } from "../ui/Input";
 import { SettingContainer } from "../ui/SettingContainer";
 import { useSettings } from "../../hooks/useSettings";
 import { parseWholeSeconds } from "@/lib/utils/seconds";
+import { postProcessingOn } from "@/lib/endKeys";
 
 // The same limits as `llm_timeouts.rs`; there is no 0 for "no limit".
 const MIN_SECONDS = 5;
@@ -109,7 +110,10 @@ export const PostProcessTimeout: React.FC<TimeoutProps> = React.memo(
     const { getSetting } = useSettings();
     const range = { min: MIN_SECONDS, max: MAX_SECONDS };
 
-    if (!getSetting("post_process_enabled")) return null;
+    if (
+      !postProcessingOn({ post_process_mode: getSetting("post_process_mode") })
+    )
+      return null;
 
     return (
       <TimeoutSetting

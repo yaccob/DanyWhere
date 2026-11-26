@@ -4,6 +4,7 @@ import type {
   ReprocessMode,
 } from "@/bindings";
 import { hasActivePrompt } from "@/lib/promptLibrary";
+import { postProcessingOn } from "@/lib/endKeys";
 
 export type { ReprocessMode };
 
@@ -18,9 +19,7 @@ type ProviderSettings = Pick<
 type PostProcessSettings = ProviderSettings &
   Pick<
     AppSettings,
-    | "post_process_enabled"
-    | "post_process_prompts"
-    | "post_process_prompt_order"
+    "post_process_mode" | "post_process_prompts" | "post_process_prompt_order"
   >;
 
 /** DanyWhere: the chosen provider, when a model is set for it (the
@@ -37,14 +36,15 @@ export const chosenProviderWithModel = (
 };
 
 /**
- * Mirrors what the backend checks before it calls the provider: switched
- * on, and a provider with a model and (DanyWhere, the prompt library) at
- * least one active prompt.
+ * Mirrors what the backend checks before it calls the provider: a mode
+ * other than "never" (DanyWhere, qa 2026-11-26_1810, "Schnittstelle Phase
+ * 2"; the wand needs no instruction shortcut), and a provider with a model
+ * and (DanyWhere, the prompt library) at least one active prompt.
  */
 export const postProcessAvailability = (
   settings: Partial<PostProcessSettings> | null | undefined,
 ): PostProcessAvailability => {
-  if (!settings?.post_process_enabled) return "off";
+  if (!settings || !postProcessingOn(settings)) return "off";
   const prompt = hasActivePrompt(
     settings.post_process_prompts,
     settings.post_process_prompt_order,
@@ -76,11 +76,11 @@ export const retranscribeMode = (
     : "transcribe";
 
 /** DanyWhere (H6, strand E2): whether a prompt chosen by name in the
- * wand's menu can run: post-processing on and a provider with a model;
- * whether a prompt is active doesn't matter there. */
+ * wand's menu can run: post-processing other than "never" and a provider
+ * with a model; whether a prompt is active doesn't matter there. */
 export const canRunChosenPrompt = (
   settings: Partial<PostProcessSettings> | null | undefined,
 ): boolean => {
-  if (!settings?.post_process_enabled) return false;
+  if (!settings || !postProcessingOn(settings)) return false;
   return chosenProviderWithModel(settings) !== null;
 };

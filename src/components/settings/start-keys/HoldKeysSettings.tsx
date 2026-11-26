@@ -2,12 +2,6 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { commands, type EndKey } from "@/bindings";
 import { useSettings } from "@/hooks/useSettings";
-import { useSettingsStore } from "@/stores/settingsStore";
-import {
-  postProcessingOn,
-  postProcessingReachable,
-  type ReachableFrom,
-} from "@/lib/endKeys";
 import { canRemoveStartOrHold, hasCombination } from "@/lib/startKeys";
 import { SettingsGroup } from "../../ui/SettingsGroup";
 import { ScopedSetting } from "../profiles/scope/ScopedSetting";
@@ -20,21 +14,17 @@ import { useKeyListSave } from "../end-keys/useKeyListSave";
  * ends the recording with its own values, as an end shortcut would. The
  * end shortcuts' editor, with names that follow the keys ("⌃ Space held")
  * and under each entry what a short tap does: with the keys of a start
- * shortcut it starts a recording that keeps running, else nothing. One that
- * post-processes is taken only while some dictation can post-process
- * (question 4 a), which the settings in use decide, not the page's scope.
+ * shortcut it starts a recording that keeps running, else nothing; with the
+ * keys of an instruction shortcut, that one switches to the instruction
+ * during a recording. No hold shortcut says whether it post-processes since
+ * Phase 2 ("Schnittstelle Phase 2"), so every one is always taken.
  */
 export const HoldKeysSettings: React.FC = () => {
   const { t } = useTranslation();
   const { getSetting } = useSettings();
   const startKeys = getSetting("start_keys") ?? [];
   const holdKeys = getSetting("hold_keys") ?? [];
-  const inUse = useSettingsStore((state) => state.settings);
-  const unreachable = !postProcessingReachable((inUse ?? {}) as ReachableFrom);
-  // The scope's own switch: the defaults' or the profile's value.
-  const postProcessingOff = !postProcessingOn({
-    post_process_enabled: getSetting("post_process_enabled"),
-  });
+  const instructionKeys = getSetting("instruction_keys") ?? [];
   const { busy, save } = useKeyListSave<EndKey>(
     "hold_keys",
     commands.changeHoldKeysSetting,
@@ -55,10 +45,11 @@ export const HoldKeysSettings: React.FC = () => {
             hasCombination(startKeys, hold.shortcut)
               ? t("settings.holdKeys.alsoStart")
               : t("settings.holdKeys.holdOnly"),
+            ...(hasCombination(instructionKeys, hold.shortcut)
+              ? [t("settings.holdKeys.alsoInstruction")]
+              : []),
           ]}
           disabled={busy}
-          postProcessingOff={postProcessingOff}
-          postProcessingUnreachable={unreachable}
           onChange={save}
         />
       </ScopedSetting>

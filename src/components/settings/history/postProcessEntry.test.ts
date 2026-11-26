@@ -17,8 +17,11 @@ const check = (name: string, run: () => void) => {
   }
 };
 
+// DanyWhere: post-processing may run unless the mode is "never" (qa
+// 2026-11-26_1810, "Schnittstelle Phase 2"); the wand needs no instruction
+// shortcut.
 const ready = {
-  post_process_enabled: true,
+  post_process_mode: "with_instruction_key" as const,
   post_process_provider_id: "anthropic",
   post_process_providers: [
     { id: "anthropic", label: "Anthropic", base_url: "https://api" },
@@ -37,9 +40,19 @@ const ready = {
 check("post-processing is ready when everything is set", () => {
   assert.equal(postProcessAvailability(ready), "ready");
 });
-check("post-processing is off when switched off or unknown", () => {
+check("post-processing is ready with an instruction shortcut or always", () => {
   assert.equal(
-    postProcessAvailability({ ...ready, post_process_enabled: false }),
+    postProcessAvailability({ ...ready, post_process_mode: "always" }),
+    "ready",
+  );
+});
+check("post-processing is off when set to never or unknown", () => {
+  assert.equal(
+    postProcessAvailability({ ...ready, post_process_mode: "never" }),
+    "off",
+  );
+  assert.equal(
+    postProcessAvailability({ ...ready, post_process_mode: undefined }),
     "off",
   );
   assert.equal(postProcessAvailability(null), "off");
@@ -113,10 +126,14 @@ check("a chosen prompt runs without any active prompt", () => {
     true,
   );
 });
-check("a chosen prompt needs post-processing on", () => {
+check("a chosen prompt needs post-processing other than never", () => {
   assert.equal(
-    canRunChosenPrompt({ ...ready, post_process_enabled: false }),
+    canRunChosenPrompt({ ...ready, post_process_mode: "never" }),
     false,
+  );
+  assert.equal(
+    canRunChosenPrompt({ ...ready, post_process_mode: "always" }),
+    true,
   );
 });
 check("a chosen prompt needs the provider's model", () => {

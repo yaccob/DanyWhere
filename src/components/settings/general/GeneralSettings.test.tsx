@@ -1,6 +1,7 @@
 // DanyWhere: the order of the page General (user, 2026-11-24; sidecar qa
 // 2026-11-24_0141, and since 2026-11-26 qa 2026-11-26_1713, decision):
-// three lists, start, hold and end shortcuts, each a card of its own, the
+// four lists, start, hold, instruction and end shortcuts, each a card of its
+// own (the instruction shortcuts since qa 2026-11-26_1841, decision), the
 // end shortcuts closing with Cancel, then the other shortcuts. "Shortcut
 // Behavior", "Second Start Shortcut", "When Held" and "When Tapped" are
 // gone: what a combination does follows from the lists it stands in.
@@ -74,12 +75,13 @@ const ALSO_START =
 const HOLD_ONLY = "Hold shortcut only: a short tap does nothing.";
 
 describe("General: start, hold and end shortcuts", () => {
-  test("the cards: start, hold, end and other shortcuts, then the rest", async () => {
+  test("the cards: start, hold, instruction, end and other shortcuts, then the rest", async () => {
     await renderGeneral();
 
-    expect(cardTitles().slice(0, 5)).toEqual([
+    expect(cardTitles().slice(0, 6)).toEqual([
       "Start Shortcuts",
       "Hold Shortcuts",
+      "Instruction Shortcuts",
       "End Shortcuts",
       "Other Shortcuts",
       "Languages",
@@ -88,7 +90,7 @@ describe("General: start, hold and end shortcuts", () => {
   });
 
   test("nothing of the old model is left: no behavior, second start shortcut, When Held or When Tapped", async () => {
-    await renderGeneral({ defaults: { post_process_enabled: true } });
+    await renderGeneral({ defaults: { post_process_mode: "always" } });
 
     const readable = readableTexts().join(" ");
     for (const gone of [
@@ -96,6 +98,9 @@ describe("General: start, hold and end shortcuts", () => {
       "Second Start Shortcut",
       "When Held",
       "When Tapped",
+      // No key says any more whether it post-processes.
+      "Post-process",
+      "Taken only while post-processing is on",
     ]) {
       expect(readable).not.toContain(gone);
     }
@@ -154,10 +159,15 @@ describe("General: start, hold and end shortcuts", () => {
     ]);
   });
 
-  test("on Linux: no Cancel, and the Linux hint opens End Shortcuts", async () => {
+  test("on Linux: no Cancel, no instruction shortcuts, and the Linux hint opens End Shortcuts", async () => {
     setOsType("linux");
     await renderGeneral();
 
+    expect(cardTitles().slice(0, 3)).toEqual([
+      "Start Shortcuts",
+      "Hold Shortcuts",
+      "End Shortcuts",
+    ]);
     const texts = visibleTexts(card("End Shortcuts"));
     expect(texts.indexOf("End Shortcuts")).toBe(0);
     const hint = texts.findIndex((text) => text.startsWith("On Linux,"));
@@ -170,9 +180,10 @@ describe("General: start, hold and end shortcuts", () => {
     await switchTestLanguage("de");
     await renderGeneral();
 
-    expect(cardTitles().slice(0, 3)).toEqual([
+    expect(cardTitles().slice(0, 4)).toEqual([
       "Starttasten",
       "Haltetasten",
+      "Anweisungstasten",
       "Endtasten",
     ]);
     expect(visibleText(card("Starttasten"))).toContain("Auch Haltetaste");

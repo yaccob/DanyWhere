@@ -2,8 +2,10 @@
 // "Konzeptvorschlag" and question 4 a; 2026-11-26_1810): the editor of the
 // end shortcuts, with a name that follows the keys ("⌃ Space held") until
 // one is typed, and under each entry whether a short tap starts a recording
-// too. A hold shortcut that post-processes is taken only while some dictation
-// can post-process; the page says so at it.
+// too. Since Phase 2 (qa 2026-11-26_1810, "Schnittstelle Phase 2") no hold
+// shortcut says whether it post-processes: an instruction shortcut or the
+// profile's mode does, so there is no "Post-process" and no hint that one
+// isn't taken.
 import { describe, expect, test } from "bun:test";
 import { fireEvent, screen, within } from "@testing-library/react";
 import type { EndKey } from "@/bindings";
@@ -22,7 +24,7 @@ import { rawTextIn, visibleText } from "@/test/visible";
 
 const START = startKey("start", "ctrl+space");
 const DIRECT = holdKey("hold_direct", "ctrl+space");
-const POST = holdKey("hold_post", "ctrl+shift+space", { post_process: true });
+const POST = holdKey("hold_post", "ctrl+shift+space");
 
 const renderGeneral = (
   spec: SettingsSpec = {},
@@ -70,10 +72,8 @@ const rowOf = (name: string): HTMLElement => {
 const ALSO_START =
   "Also a start shortcut: a short tap starts a recording that keeps running.";
 const HOLD_ONLY = "Hold shortcut only: a short tap does nothing.";
-const NOT_TAKEN =
-  "Taken only while post-processing is on: until then, its combination stays with the app in front.";
-const POST_OFF =
-  "Post-processing is off: a dictation ended this way isn't post-processed. Turn on “Post Processing” under Advanced.";
+const ALSO_INSTRUCTION =
+  "Also an instruction shortcut: during a recording it switches to the instruction.";
 
 describe("Hold Shortcuts: names", () => {
   test("a hold shortcut without a name of its own is called after its keys, held", async () => {
@@ -142,19 +142,23 @@ describe("Hold Shortcuts: what a short tap does", () => {
 });
 
 describe("Hold Shortcuts: values", () => {
-  test("Post-process is stored with the list, Send Context only together with it", async () => {
+  test("no Post-process; Send Context is usable on each and stored with the list", async () => {
     await renderGeneral();
 
+    expect(
+      within(holdCard()).queryAllByRole("checkbox", { name: "Post-process" }),
+    ).toEqual([]);
     const context = within(holdCard()).getAllByRole("checkbox", {
       name: "Send Context",
     }) as HTMLInputElement[];
-    expect(context.map((box) => box.disabled)).toEqual([true, false]);
+    expect(context.map((box) => box.disabled)).toEqual([false, false]);
+    // Its tooltip says when it counts.
+    expect(context[0].closest("label")?.getAttribute("title")).toBe(
+      "Earlier dictations from the same window go along as context. It counts only when the dictation is post-processed.",
+    );
 
-    const post = within(holdCard()).getAllByRole("checkbox", {
-      name: "Post-process",
-    });
-    await press(post[0]);
-    expect(storedHolds()[0]).toEqual({ ...DIRECT, post_process: true });
+    await press(context[0]);
+    expect(storedHolds()[0]).toEqual({ ...DIRECT, send_context: true });
   });
 
   test("deleting a hold shortcut stores the list without it", async () => {
@@ -186,7 +190,6 @@ describe("Add Hold Shortcut", () => {
       name: "",
       shortcut: "ctrl+e",
       append_text: "",
-      post_process: false,
       send_context: false,
     });
     expect(callsOf("resumeAllBindings")).toEqual([[]]);
@@ -202,51 +205,28 @@ describe("Add Hold Shortcut", () => {
   });
 });
 
-// Question 4 a: a hold shortcut that post-processes is taken only while
-// some dictation can post-process (`app_profiles::post_processing_reachable`),
-// else its keys stay with the app. With post-processing reachable but off
-// for the scope shown, the end shortcuts' hint applies instead.
-describe("Hold Shortcuts that post-process", () => {
-  test("while nothing can post-process, it says that it isn't taken", async () => {
-    await renderGeneral();
+// A hold shortcut with an instruction shortcut's keys: during a recording
+// that combination switches to the instruction (qa 2026-11-26_1810,
+// "Regeln": allowed, the state tells them apart).
+describe("Hold Shortcuts and instruction shortcuts", () => {
+  test("a hold shortcut with an instruction shortcut's keys says so", async () => {
+    await renderGeneral({
+      defaults: {
+        instruction_keys: [holdKey("instruction_shift", "ctrl+shift+space")],
+      },
+    });
 
-    const post = visibleText(rowOf("⌃⇧ Space held"));
-    expect(post).toContain(NOT_TAKEN);
-    expect(post).not.toContain(POST_OFF);
-    expect(visibleText(rowOf("⌃ Space held"))).not.toContain(NOT_TAKEN);
+    expect(visibleText(rowOf("⌃⇧ Space held"))).toContain(ALSO_INSTRUCTION);
+    expect(visibleText(rowOf("⌃ Space held"))).not.toContain(ALSO_INSTRUCTION);
     expect(rawTextIn()).toEqual([]);
   });
 
-  test("with post-processing on, it says nothing", async () => {
-    await renderGeneral({ defaults: { post_process_enabled: true } });
+  test("nothing about being taken only while post-processing is on", async () => {
+    await renderGeneral({ defaults: { post_process_mode: "never" } });
 
     const text = visibleText(holdCard());
-    expect(text).not.toContain(NOT_TAKEN);
-    expect(text).not.toContain(POST_OFF);
-  });
-
-  test("when another profile post-processes, it is taken, and the defaults' own switch says so", async () => {
-    await renderGeneral({
-      profiles: [
-        {
-          id: "profile_1795300000001",
-          name: "Work",
-          apps: ["com.microsoft.VSCode"],
-          own: ["post_process_enabled"],
-          values: { post_process_enabled: true },
-        },
-      ],
-    });
-
-    const post = visibleText(rowOf("⌃⇧ Space held"));
-    expect(post).not.toContain(NOT_TAKEN);
-    expect(post).toContain(POST_OFF);
-  });
-
-  test("a hold shortcut without Post-process says neither", async () => {
-    await renderGeneral({ defaults: { hold_keys: [DIRECT] } });
-
-    expect(visibleText(holdCard())).not.toContain(NOT_TAKEN);
+    expect(text).not.toContain("Taken only while post-processing is on");
+    expect(text).not.toContain("Post-processing is off");
   });
 });
 
@@ -254,10 +234,8 @@ describe("Hold Shortcuts in a profile", () => {
   const WORK = "profile_1795300000001";
   const OWN = holdKey("hold_1795307930035", "ctrl+alt+h", {
     name: "Polieren",
-    post_process: true,
   });
   const spec: SettingsSpec = {
-    defaults: { post_process_enabled: true },
     profiles: [
       {
         id: WORK,
@@ -304,9 +282,8 @@ describe("Hold Shortcuts in German", () => {
     expect(text).toContain(
       "Gedrückt halten nimmt auf. Das Loslassen beendet die Aufnahme so",
     );
-    expect(text).toContain(
-      "Nur belegt, solange die Nachbearbeitung eingeschaltet ist: Bis dahin bleibt ihre Tastenkombination bei der App im Vordergrund.",
-    );
+    expect(text).not.toContain("Nur belegt, solange die Nachbearbeitung");
+    expect(text).not.toContain("Nachbearbeiten");
     expect(
       screen.getByRole("button", { name: "Haltetaste hinzufügen" }),
     ).toBeTruthy();

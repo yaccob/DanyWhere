@@ -32,7 +32,6 @@ const PLISTE = wordList("word_list_1795307006713", "PListe");
 const OWN_START = startKey("start_1795307900001", "ctrl+alt+e");
 const POLIEREN = holdKey("hold_post", "ctrl+shift+space", {
   name: "Polieren",
-  post_process: true,
   send_context: true,
 });
 
