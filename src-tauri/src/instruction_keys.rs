@@ -17,13 +17,17 @@
 //! end shortcuts, and only while the profile that applies now may
 //! post-process and has a provider with a model ([`taken_now`]; a press
 //! cuts by the same profile, [`is_taken_now`]); never on Linux,
-//! where shortcuts registered only during a recording are unstable. One
+//! where shortcuts registered only during a recording are unstable. Each is
+//! also registered with the modifiers of each hold shortcut, which are
+//! still down when it is pressed during a held recording
+//! ([`bindings_while_holding_on`]). One
 //! with exactly a start or hold shortcut's combination is not registered on
 //! its own: that key's press during a recording is the instruction
 //! shortcut's (`start_keys::Roles::instruction`). The same combination as
 //! an end shortcut is a conflict (both are taken only during a recording);
 //! an empty list is fine.
 
+use handy_keys::{Hotkey, Modifiers};
 use tauri::{AppHandle, Emitter};
 
 use crate::append_text::KeyPlatform;
@@ -68,9 +72,24 @@ pub fn binding_id(id: &str) -> String {
     format!("{BINDING_PREFIX}{id}")
 }
 
-/// The instruction shortcut a registered binding id stands for.
+/// What follows an instruction shortcut's binding id in the binding of its
+/// combination with a hold shortcut's modifiers
+/// (`instruction_key:<id>#held:<modifiers>`, [`bindings_while_holding_on`]).
+/// Ids never hold it: they are `instruction_<number>` or [`FACTORY_ID`].
+const HELD_MARKER: &str = "#held:";
+
+/// The instruction shortcut a registered binding id stands for: its own
+/// binding (`instruction_key:<id>`) or one with a hold shortcut's modifiers
+/// (`instruction_key:<id>#held:<modifiers>`).
 pub fn instruction_id_of(binding_id: &str) -> Option<&str> {
-    binding_id.strip_prefix(BINDING_PREFIX)
+    let id = binding_id.strip_prefix(BINDING_PREFIX)?;
+    Some(id.split_once(HELD_MARKER).map_or(id, |(id, _)| id))
+}
+
+/// Whether a registered binding id is an instruction shortcut's with a hold
+/// shortcut's modifiers ([`bindings_while_holding_on`]).
+pub fn is_while_holding(binding_id: &str) -> bool {
+    binding_id.starts_with(BINDING_PREFIX) && binding_id.contains(HELD_MARKER)
 }
 
 /// Whether post-processing has a provider with a model to ask, as the
@@ -142,6 +161,82 @@ pub fn bindings_to_register(instruction_keys: &[EndKey]) -> Vec<ShortcutBinding>
             current_binding: key.shortcut.trim().to_string(),
         })
         .collect()
+}
+
+/// The instruction shortcuts of `instruction_keys` as pressed while a hold
+/// shortcut of `hold_keys` holds the recording (found in Dev, 2026-11-26):
+/// the hold shortcut's modifiers are still down, so ⇥ comes as ⌃⌥⇥ or ⌃⇥,
+/// which a binding of `tab` alone doesn't match (handy-keys and Carbon
+/// match the modifiers exactly), and the ⇥ reached the application. So each
+/// instruction shortcut with a combination is also registered with each set
+/// of modifiers a hold shortcut adds to it, with a main key without a side
+/// as the recorder stores one (`key_sides::recorded`), under
+/// `instruction_key:<id>#held:<modifiers>`, which [`instruction_id_of`]
+/// maps back to `<id>`: to the coordinator a press of either is the
+/// instruction shortcut's. A hold shortcut that adds no modifier adds no
+/// binding, and combinations that don't parse are left out.
+///
+/// The hold shortcut's modifiers released before ⇥ end that binding's
+/// press: handy-keys releases a hotkey whose modifiers no longer match, so
+/// its release comes with the hold shortcut's, just before or after it. To
+/// the coordinator ⇥ came up with the hold shortcut, which is how the user
+/// sees it ("hold key released: sent").
+pub fn bindings_while_holding_on(
+    instruction_keys: &[EndKey],
+    hold_keys: &[EndKey],
+    platform: KeyPlatform,
+) -> Vec<ShortcutBinding> {
+    let held: Vec<Modifiers> = hold_keys
+        .iter()
+        .filter_map(|key| key.shortcut.trim().parse::<Hotkey>().ok())
+        .map(|hotkey| hotkey.modifiers)
+        .filter(|modifiers| !modifiers.is_empty())
+        .collect();
+    let mut bindings: Vec<ShortcutBinding> = Vec::new();
+    for key in instruction_keys {
+        let own = key.shortcut.trim();
+        let Ok(plain) = own.parse::<Hotkey>() else {
+            continue;
+        };
+        for &modifiers in &held {
+            let combined = crate::key_sides::recorded(
+                Hotkey {
+                    modifiers: plain.modifiers | modifiers,
+                    key: plain.key,
+                },
+                platform,
+            );
+            let combination = combined.to_handy_string();
+            if crate::key_sides::identical_press(&combination, own) {
+                continue;
+            }
+            let held_modifiers = Hotkey {
+                modifiers: combined.modifiers,
+                key: None,
+            }
+            .to_handy_string();
+            let id = format!("{}{HELD_MARKER}{held_modifiers}", binding_id(&key.id));
+            if bindings.iter().any(|binding| binding.id == id) {
+                continue;
+            }
+            bindings.push(ShortcutBinding {
+                id,
+                name: key.name.clone(),
+                description: String::new(),
+                default_binding: combination.clone(),
+                current_binding: combination,
+            });
+        }
+    }
+    bindings
+}
+
+/// [`bindings_while_holding_on`] on this system.
+pub fn bindings_while_holding(
+    instruction_keys: &[EndKey],
+    hold_keys: &[EndKey],
+) -> Vec<ShortcutBinding> {
+    bindings_while_holding_on(instruction_keys, hold_keys, KeyPlatform::current())
 }
 
 /// The end of instruction shortcut `id` in `values`, held and released:
@@ -363,6 +458,126 @@ mod tests {
             .map(|b| (b.id.as_str(), b.current_binding.as_str()))
             .collect();
         assert_eq!(ids, vec![("instruction_key:tab", "tab")]);
+    }
+
+    // ---- While a hold shortcut is held (Dev check, 2026-11-26) ---------------
+    //
+    // The hold shortcut's modifiers are still down when ⇥ is pressed, so the
+    // press is ⌃⌥⇥ or ⌃⇥, which a binding of `tab` alone doesn't match: the
+    // ⇥ reached the application in front. So each instruction shortcut is
+    // also taken with each hold shortcut's modifiers, under a binding id that
+    // maps back to it.
+
+    fn hold(id: &str, shortcut: &str) -> EndKey {
+        key(id, shortcut, "", false)
+    }
+
+    /// Each binding's combination, with the instruction shortcut its id
+    /// maps back to.
+    fn held_combinations(bindings: &[ShortcutBinding]) -> Vec<(Option<&str>, &str)> {
+        bindings
+            .iter()
+            .map(|b| (instruction_id_of(&b.id), b.current_binding.as_str()))
+            .collect()
+    }
+
+    /// Whether `found` holds a binding of instruction shortcut `id` that
+    /// fires on exactly the presses of `keys`.
+    fn holds_combination(found: &[(Option<&str>, &str)], id: &str, keys: &str) -> bool {
+        found.iter().any(|(of, combination)| {
+            *of == Some(id) && crate::key_sides::identical_press(combination, keys)
+        })
+    }
+
+    #[test]
+    fn an_instruction_key_taken_with_a_hold_keys_modifiers_maps_back_to_it() {
+        assert_eq!(
+            instruction_id_of("instruction_key:tab#held:ctrl+option"),
+            Some("tab")
+        );
+        assert_eq!(
+            instruction_id_of("instruction_key:instruction_tab#held:ctrl"),
+            Some("instruction_tab")
+        );
+        assert_eq!(instruction_id_of("instruction_key:tab"), Some("tab"));
+        assert_eq!(instruction_id_of("end_key:tab#held:ctrl"), None);
+        assert!(is_while_holding("instruction_key:tab#held:ctrl"));
+        assert!(!is_while_holding("instruction_key:tab"));
+        assert!(!is_while_holding("end_key:tab#held:ctrl"));
+    }
+
+    #[test]
+    fn while_a_hold_key_is_held_an_instruction_key_is_taken_with_its_modifiers() {
+        let found = bindings_while_holding_on(
+            &[key("tab", "tab", " ", true)],
+            &[
+                hold("space", "ctrl+space"),
+                hold("no_space", "ctrl+shift+space"),
+                hold("dev", "ctrl+option+d"),
+            ],
+            KeyPlatform::Macos,
+        );
+        let found = held_combinations(&found);
+        assert_eq!(found.len(), 3, "{found:?}");
+        for keys in ["ctrl+tab", "ctrl+shift+tab", "ctrl+option+tab"] {
+            assert!(holds_combination(&found, "tab", keys), "{keys}: {found:?}");
+        }
+    }
+
+    #[test]
+    fn a_hold_key_adds_only_modifiers_the_instruction_key_lacks_and_each_set_once() {
+        // F13 holds no modifier down; ⌃Space and ⌃D add nothing to ⌃⇥; ⌃⇧Space
+        // and ⌃⇧D add ⇧, once.
+        let found = bindings_while_holding_on(
+            &[key("ctab", "ctrl+tab", "", false)],
+            &[
+                hold("f", "f13"),
+                hold("a", "ctrl+space"),
+                hold("b", "ctrl+d"),
+                hold("c", "ctrl+shift+space"),
+                hold("d", "ctrl+shift+d"),
+            ],
+            KeyPlatform::Macos,
+        );
+        let found = held_combinations(&found);
+        assert_eq!(found.len(), 1, "{found:?}");
+        assert!(
+            holds_combination(&found, "ctab", "ctrl+shift+tab"),
+            "{found:?}"
+        );
+    }
+
+    #[test]
+    fn a_hold_key_of_modifiers_alone_adds_them_without_a_side_as_the_recorder_does() {
+        // With a main key the recorder stores no side (`key_sides`), so the
+        // left or the right ⌃⌥ held with ⇥ both count.
+        let found = bindings_while_holding_on(
+            &[key("tab", "tab", "", true)],
+            &[hold("mods", "ctrl_left+option_left")],
+            KeyPlatform::Macos,
+        );
+        let found = held_combinations(&found);
+        assert_eq!(found.len(), 1, "{found:?}");
+        assert!(
+            holds_combination(&found, "tab", "ctrl+option+tab"),
+            "{found:?}"
+        );
+    }
+
+    #[test]
+    fn nothing_held_or_nothing_to_hold_adds_nothing() {
+        let tab = [key("tab", "tab", "", true)];
+        assert!(bindings_while_holding_on(&tab, &[], KeyPlatform::Macos).is_empty());
+        assert!(bindings_while_holding_on(
+            &[key("blank", " ", "", false)],
+            &[hold("a", "ctrl+space")],
+            KeyPlatform::Macos
+        )
+        .is_empty());
+        assert!(
+            bindings_while_holding_on(&tab, &[hold("x", "no such key")], KeyPlatform::Macos)
+                .is_empty()
+        );
     }
 
     #[test]

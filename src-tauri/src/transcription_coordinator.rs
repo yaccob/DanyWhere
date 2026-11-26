@@ -3855,6 +3855,41 @@ mod tests {
     }
 
     #[test]
+    fn the_hold_keys_modifiers_up_while_the_instruction_key_is_held_send_with_its_values() {
+        // ⌃⌥D held, ⇥ held with it (registered as ⇥ with the hold key's
+        // modifiers, `instruction_keys::bindings_while_holding`): handy-keys
+        // reports that binding released as soon as the modifiers go up, just
+        // before or after the hold key's release; ⇥, still down, then
+        // repeats as its own binding and comes up later.
+        let t0 = Instant::now();
+        let mut instruction_first = CoordinatorState::new();
+        holding_and_instructing(&mut instruction_first, t0);
+        assert_end(
+            instruction_key(&mut instruction_first, false, t0 + ms(1500)),
+            HOLD,
+            instruction(TAB),
+        );
+        assert!(instruction_first
+            .on_input(release(HOLD), t0 + ms(1500))
+            .is_none());
+        assert!(instruction_first.on_grace_expired().is_none());
+        assert!(instruction_key(&mut instruction_first, true, t0 + ms(1600)).is_none());
+        assert!(instruction_key(&mut instruction_first, false, t0 + ms(1700)).is_none());
+        assert_eq!(instruction_first.stage, Stage::Processing);
+
+        let mut hold_first = CoordinatorState::new();
+        holding_and_instructing(&mut hold_first, t0);
+        assert!(hold_first.on_input(release(HOLD), t0 + ms(1500)).is_none());
+        assert_end(
+            instruction_key(&mut hold_first, false, t0 + ms(1500)),
+            HOLD,
+            instruction(TAB),
+        );
+        assert!(hold_first.on_grace_expired().is_none());
+        assert_eq!(hold_first.stage, Stage::Processing);
+    }
+
+    #[test]
     fn a_tap_of_the_instruction_key_after_the_hold_keys_release_locks_and_an_end_key_sends() {
         let mut state = CoordinatorState::new();
         let t0 = Instant::now();
