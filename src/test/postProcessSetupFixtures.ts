@@ -129,6 +129,20 @@ export const openedUrls = (): string[] =>
     .filter((call) => call.cmd === "plugin:opener|open_url")
     .map((call) => (call.args as { url: string }).url);
 
+/** The texts the browser shows after the sign-in's callback, in English. */
+export const BROWSER_PAGE = {
+  success: "Done. You can close this window and go back to DanyWhere.",
+  failure: "That didn't work. Go back to DanyWhere and try again.",
+};
+
+/** The same in German. */
+export const BROWSER_PAGE_DE = {
+  success:
+    "Fertig. Du kannst dieses Fenster schließen und zu DanyWhere zurückkehren.",
+  failure:
+    "Das hat nicht geklappt. Geh zurück zu DanyWhere und versuch es noch einmal.",
+};
+
 /** Starting a sign-in works and gives this page. */
 export const signInStarts = () =>
   mockCommand("startPostProcessSignIn", async (provider) =>

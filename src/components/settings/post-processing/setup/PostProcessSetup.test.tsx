@@ -12,10 +12,12 @@ import { PostProcessingSettings } from "../PostProcessingSettings";
 import { DEFAULTS_SCOPE } from "@/lib/profileScope";
 import { callsOf, emitEvent, mockCommand, ok } from "@/test/bindings-mock";
 import { switchTestLanguage } from "@/test/i18n";
-import { press, renderPage, settle } from "@/test/render";
+import { press, renderPage, setBackendSettings, settle } from "@/test/render";
 import { setOsType } from "@/test/tauri-mock";
 import { isVisible, rawTextIn, visibleText } from "@/test/visible";
 import {
+  BROWSER_PAGE,
+  BROWSER_PAGE_DE,
   GiB,
   answerStatus,
   failed,
@@ -121,7 +123,10 @@ describe("post-processing setup: the questions", () => {
 
     signInStarts();
     await press(button(CONNECT_OPENROUTER)!);
-    expect(callsOf("startPostProcessSignIn")).toEqual([["openrouter"]]);
+    // With the texts the browser shows after the callback.
+    expect(callsOf("startPostProcessSignIn")).toEqual([
+      ["openrouter", BROWSER_PAGE],
+    ]);
     expect(rawTextIn()).toEqual([]);
   });
 
@@ -193,6 +198,15 @@ describe("post-processing setup: the questions", () => {
     expect(text).not.toContain(Q2);
     expect(text).toContain("Not possible on this computer");
     expect(text).toContain("this Mac has 8 GB");
+    // The backend makes the custom provider the defaults' one.
+    mockCommand("applyPostProcessChoice", async () => {
+      setBackendSettings(
+        setupSettings(null, {
+          defaults: { post_process_provider_id: "custom" },
+        }),
+      );
+      return ok(null);
+    });
     await press(button("Set up a server of your own")!);
     expect(callsOf("applyPostProcessChoice")).toEqual([
       [{ provider_id: "custom", model: null, api_key: null, effort: null }],
@@ -345,8 +359,8 @@ describe("post-processing setup: signing in through the browser", () => {
     );
     await press(button("Try again")!);
     expect(callsOf("startPostProcessSignIn")).toEqual([
-      ["openrouter"],
-      ["openrouter"],
+      ["openrouter", BROWSER_PAGE],
+      ["openrouter", BROWSER_PAGE],
     ]);
   });
 
@@ -363,7 +377,9 @@ describe("post-processing setup: signing in through the browser", () => {
     expect(text).not.toContain("OpenAI doesn't describe");
     signInStarts();
     await press(button(CONTINUE_CHATGPT)!);
-    expect(callsOf("startPostProcessSignIn")).toEqual([["chatgpt"]]);
+    expect(callsOf("startPostProcessSignIn")).toEqual([
+      ["chatgpt", BROWSER_PAGE],
+    ]);
   });
 
   test("ChatGPT for texts that may not be kept says what OpenAI doesn't describe", async () => {
@@ -622,6 +638,12 @@ describe("post-processing setup in German", () => {
     await press(radio(/^ChatGPT/));
     expect(button("Mit ChatGPT fortfahren")).not.toBeNull();
     expect(rawTextIn()).toEqual([]);
+    // The browser's texts after the callback are German too.
+    signInStarts();
+    await press(button("Mit ChatGPT fortfahren")!);
+    expect(callsOf("startPostProcessSignIn")).toEqual([
+      ["chatgpt", BROWSER_PAGE_DE],
+    ]);
   });
 
   test("the card says Nutzung verwalten", async () => {

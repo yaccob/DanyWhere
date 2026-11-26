@@ -6,13 +6,18 @@
 import { describe, expect, test } from "bun:test";
 import { act, screen } from "@testing-library/react";
 import type { Notice } from "@/bindings";
+import type { NavLocation } from "@/lib/navigation";
 import { useNoticeStore } from "@/stores/noticeStore";
 import { useNavigationRequest } from "@/stores/navigationRequestStore";
 import { callsOf } from "@/test/bindings-mock";
 import { switchTestLanguage } from "@/test/i18n";
 import { press, renderPage } from "@/test/render";
 import { rawTextIn, visibleText } from "@/test/visible";
-import { openedUrls, signInStarts } from "@/test/postProcessSetupFixtures";
+import {
+  BROWSER_PAGE,
+  openedUrls,
+  signInStarts,
+} from "@/test/postProcessSetupFixtures";
 import { NoticePanel } from "./NoticePanel";
 
 const OPENROUTER = { providerId: "openrouter", provider: "OpenRouter" };
@@ -34,7 +39,10 @@ const showToast = async (shown: Notice) => {
 };
 
 const button = (name: string) => screen.queryByRole("button", { name });
-const POST_PROCESS_PAGE = { kind: "defaults", page: "postprocessing" };
+const POST_PROCESS_PAGE: NavLocation = {
+  kind: "defaults",
+  page: "postprocessing",
+};
 
 describe("a post-processing notice with its next step", () => {
   for (const reason of ["no-provider", "no-model", "no-api-key"]) {
@@ -99,7 +107,9 @@ describe("a post-processing notice with its next step", () => {
       "The sign-in with ChatGPT has expired; sign in again.",
     );
     await press(button("Sign in again")!);
-    expect(callsOf("startPostProcessSignIn")).toEqual([["chatgpt"]]);
+    expect(callsOf("startPostProcessSignIn")).toEqual([
+      ["chatgpt", BROWSER_PAGE],
+    ]);
     expect(useNavigationRequest.getState().requested).toEqual(
       POST_PROCESS_PAGE,
     );

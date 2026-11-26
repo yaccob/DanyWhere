@@ -17,6 +17,7 @@ import { press, renderPage } from "@/test/render";
 import { mockIpc, setOsType } from "@/test/tauri-mock";
 import { rawTextIn, visibleText } from "@/test/visible";
 import {
+  BROWSER_PAGE,
   answerStatus,
   askForLessMotion,
   lastAnswers,
@@ -123,7 +124,9 @@ describe("onboarding: Improve your texts", () => {
     expect(button("Later")!.className).toContain("bg-background-ui");
     signInStarts();
     await press(connect);
-    expect(callsOf("startPostProcessSignIn")).toEqual([["openrouter"]]);
+    expect(callsOf("startPostProcessSignIn")).toEqual([
+      ["openrouter", BROWSER_PAGE],
+    ]);
     expect(visibleText()).toContain("Waiting for the browser …");
   });
 

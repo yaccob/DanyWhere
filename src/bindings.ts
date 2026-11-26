@@ -1819,12 +1819,13 @@ async runPostProcessSample(text: string) : Promise<Result<SampleResult, FailureD
 },
 /**
  * Starts signing in through the browser: binds the loopback listener and
- * opens the provider's page in the browser. `post-process-sign-in-finished`
- * says how it ended.
+ * opens the provider's page in the browser. `page` holds the two short
+ * texts the browser shows after the callback, in the app's language.
+ * `post-process-sign-in-finished` says how it ended.
  */
-async startPostProcessSignIn(provider: SignInProvider) : Promise<Result<SignInStarted, string>> {
+async startPostProcessSignIn(provider: SignInProvider, page: CallbackPage) : Promise<Result<SignInStarted, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("start_post_process_sign_in", { provider }) };
+    return { status: "ok", data: await TAURI_INVOKE("start_post_process_sign_in", { provider, page }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -3350,6 +3351,10 @@ export type SampleResult = { output: string; model: string; millis: number }
  */
 export type FailureDto = { reason: string; detail: string | null }
 export type SignInProvider = "openrouter" | "chatgpt"
+/**
+ * The two short texts the browser shows after the sign-in's callback.
+ */
+export type CallbackPage = { success: string; failure: string }
 export type SignInStarted = { auth_url: string }
 export type OpenRouterConnection = { free_tier: boolean; limit_usd: number | null; free_models: string[]; checked_at: number }
 /**

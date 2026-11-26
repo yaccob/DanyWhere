@@ -3,8 +3,11 @@ import { platform } from "@tauri-apps/plugin-os";
 import type { NoticeCode } from "@/bindings";
 import {
   isPostProcessFailureDetail,
+  postProcessFailureAction,
   withPostProcessFailureReason,
+  type FailureAction,
 } from "./postProcessFailure";
+import { providerPages } from "./postProcessSetup/guides";
 
 interface NoticeDisplay {
   title: string;
@@ -13,7 +16,13 @@ interface NoticeDisplay {
   // The explanation already names the detail, so it isn't shown again.
   // DanyWhere: or, as a function, for the details it says so of.
   detailInExplanation?: boolean | ((detail?: string | null) => boolean);
+  // DanyWhere: the next step the notice offers for its detail, as a button.
+  action?: (detail?: string | null) => FailureAction | null;
 }
+
+// DanyWhere: a failed post-processing's next step (qa 2026-11-26_2250, 4.5).
+const postProcessAction = (detail?: string | null) =>
+  postProcessFailureAction(detail, providerPages);
 
 // See "Error notices" in AGENTS.md for how to add a code.
 const NOTICE_DISPLAY: Record<NoticeCode, NoticeDisplay> = {
@@ -62,6 +71,7 @@ const NOTICE_DISPLAY: Record<NoticeCode, NoticeDisplay> = {
     explanation: (t, detail) =>
       withPostProcessFailureReason(t, t("errors.postProcessFailed"), detail),
     detailInExplanation: isPostProcessFailureDetail,
+    action: postProcessAction,
   },
   FileTranscriptionFailed: {
     title: "errors.fileTranscriptionFailedTitle",
@@ -75,6 +85,7 @@ const NOTICE_DISPLAY: Record<NoticeCode, NoticeDisplay> = {
         detail,
       ),
     detailInExplanation: isPostProcessFailureDetail,
+    action: postProcessAction,
   },
   HistoryPostProcessFailed: {
     title: "errors.historyPostProcessFailedTitle",
@@ -85,6 +96,7 @@ const NOTICE_DISPLAY: Record<NoticeCode, NoticeDisplay> = {
         detail,
       ),
     detailInExplanation: isPostProcessFailureDetail,
+    action: postProcessAction,
   },
   // DanyWhere: the detail is the app that missed the dictation shortcut.
   AppMissedShortcut: {
