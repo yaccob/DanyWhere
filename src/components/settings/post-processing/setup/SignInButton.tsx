@@ -4,7 +4,10 @@ import type { SignInIntent, SignInProvider } from "@/bindings";
 import type { Translate } from "@/lib/displayNames";
 import { Button } from "../../../ui/Button";
 import { Spinner } from "../../../ui/Spinner";
-import { usePostProcessSetupStore } from "@/stores/postProcessSetupStore";
+import {
+  signInActive,
+  usePostProcessSetupStore,
+} from "@/stores/postProcessSetupStore";
 import { CardLine } from "./SetupCard";
 
 const KEY = "settings.postProcessing.setup.signIn";
@@ -56,6 +59,8 @@ export const SignInButton: React.FC<SignInButtonProps> = ({
   const reopenSignIn = usePostProcessSetupStore((s) => s.reopenSignIn);
   const cancelSignIn = usePostProcessSetupStore((s) => s.cancelSignIn);
   const mine = signIn?.provider === provider ? signIn : null;
+  // Only one sign-in runs at a time; a failed one holds up nothing.
+  const otherRunning = signInActive(signIn) && !mine;
 
   if (mine && mine.phase !== "failed") {
     return (
@@ -88,7 +93,7 @@ export const SignInButton: React.FC<SignInButtonProps> = ({
       <Button
         variant={prominent ? "primary" : "outline"}
         size="md"
-        disabled={inert || (signIn !== null && !mine)}
+        disabled={inert || otherRunning}
         onClick={() => void startSignIn(provider, intent)}
       >
         {mine ? t(`${KEY}.tryAgain`) : label}

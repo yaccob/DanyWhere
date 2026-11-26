@@ -12,6 +12,7 @@ import {
 } from "@/lib/postProcessSetup/questions";
 import { useSettingsStore } from "@/stores/settingsStore";
 import {
+  signInActive,
   signInIntentOf,
   usePostProcessSetupStore,
 } from "@/stores/postProcessSetupStore";
@@ -86,9 +87,10 @@ export const PostProcessSetup: React.FC<PostProcessSetupProps> = ({
   const onboarding = place === "onboarding";
 
   const ready = status?.readiness === "ready";
-  const showCard = ready && !store.editing && store.signIn === null;
-  const putOff =
-    !onboarding && store.skipped && !store.editing && store.signIn === null;
+  // A sign-in in progress keeps the questions; a failed one doesn't (D, H2).
+  const signingIn = signInActive(store.signIn);
+  const showCard = ready && !store.editing && !signingIn;
+  const putOff = !onboarding && store.skipped && !store.editing && !signingIn;
 
   if (showCard && status) {
     return (

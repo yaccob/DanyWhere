@@ -437,6 +437,75 @@ describe("post-processing setup: signing in through the browser", () => {
   });
 });
 
+// A failed sign-in doesn't hold up the rest of the setup (sidecar qa
+// 2026-11-26_2250, D, H2): another answer, another way and Later work.
+describe("post-processing setup: after a failed sign-in", () => {
+  const chatgptFails = async (
+    status: SetupStatus | (() => SetupStatus) = notReady(),
+  ) => {
+    await renderSetup(status);
+    await press(radio(FREE));
+    await press(radio(/^ChatGPT/));
+    signInStarts();
+    await press(button(CONTINUE_CHATGPT)!);
+    await act(async () => {
+      emitEvent("postProcessSignInFinished", {
+        provider: "chatgpt",
+        ok: false,
+        error: "not_eligible",
+        free_tier: null,
+      });
+    });
+    await settle();
+    expect(visibleText()).toContain(
+      "This ChatGPT account has no plan that DanyWhere can use",
+    );
+  };
+
+  test("another answer leads to another sign-in, which can start", async () => {
+    await chatgptFails();
+    await press(radio(NONE));
+
+    expect(visibleText()).not.toContain("This ChatGPT account has no plan");
+    const connect = button(CONNECT_OPENROUTER)!;
+    expect(connect.hasAttribute("disabled")).toBe(false);
+    await press(connect);
+    expect(callsOf("startPostProcessSignIn")).toEqual([
+      ["chatgpt", BROWSER_PAGE, null],
+      ["openrouter", BROWSER_PAGE, "free"],
+    ]);
+    expect(visibleText()).toContain("Waiting for the browser …");
+  });
+
+  test("a guided key still leads to the card", async () => {
+    let status = notReady({ provider_id: "anthropic" });
+    await chatgptFails(() => status);
+    await press(radio(/^Claude/));
+    mockCommand("checkPostProcessKey", async () =>
+      ok({ models: ["claude-haiku-5-5"], recommended: "claude-haiku-5-5" }),
+    );
+    mockCommand("applyPostProcessChoice", async () => {
+      status = ready({
+        provider_id: "anthropic",
+        model: "claude-haiku-5-5",
+        way: { kind: "guided_key", provider: "anthropic" },
+      });
+      return ok(null);
+    });
+    await typeInto(screen.getByLabelText("Key from Anthropic"), "sk-ant-test");
+    await press(button("Check")!);
+
+    expect(visibleText()).toContain("Connected to Anthropic");
+  });
+
+  test("Later still puts it off", async () => {
+    await chatgptFails();
+    await press(button("Later")!);
+    expect(visibleText()).toContain("Post-processing isn't set up yet.");
+    expect(visibleText()).not.toContain(Q1);
+  });
+});
+
 describe("post-processing setup: a guided key", () => {
   const toClaude = async () => {
     await renderSetup();

@@ -45,6 +45,16 @@ export interface SignInState {
   error: string | null;
 }
 
+/** A sign-in in progress: starting or waiting for the browser. A failed one
+ * holds up nothing else (sidecar qa 2026-11-26_2250, D, H2). */
+export const signInActive = (signIn: SignInState | null): boolean =>
+  signIn !== null && signIn.phase !== "failed";
+
+/** The sign-in without a failed one, which another answer or "Later"
+ * leaves behind. */
+const withoutFailed = (signIn: SignInState | null): SignInState | null =>
+  signInActive(signIn) ? signIn : null;
+
 export interface SampleState {
   phase: "running" | "done" | "failed";
   result: SampleResult | null;
@@ -149,16 +159,25 @@ export const usePostProcessSetupStore = create<PostProcessSetupState>()(
 
     answer: (next, machine, inert = false) => {
       const answers = sanitize(next, machine);
-      set({ answers, skipped: false });
+      set({ answers, skipped: false, signIn: withoutFailed(get().signIn) });
       if (!inert) void save(answers, false, false);
     },
 
     putOff: async (inert = false) => {
-      set({ skipped: true, editing: false });
+      set({
+        skipped: true,
+        editing: false,
+        signIn: withoutFailed(get().signIn),
+      });
       if (!inert) await save(get().answers ?? EMPTY, false, true);
     },
 
-    openQuestions: () => set({ editing: true, skipped: false }),
+    openQuestions: () =>
+      set({
+        editing: true,
+        skipped: false,
+        signIn: withoutFailed(get().signIn),
+      }),
     closeQuestions: () => set({ editing: false }),
 
     startSignIn: async (provider, intent = null) => {
