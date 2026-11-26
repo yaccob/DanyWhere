@@ -804,6 +804,10 @@ async fn finish_with_instruction<P: DictationPorts>(
         };
         transcripts
     };
+    // DanyWhere: done with the model, whether the instruction needed it or
+    // not: it unloads now if it unloads right after use, before the
+    // post-processing, as after a dictation without a cut.
+    ports.release_model();
 
     let wav_saved = recording_saved(saving).await;
     if ports.cancelled() {

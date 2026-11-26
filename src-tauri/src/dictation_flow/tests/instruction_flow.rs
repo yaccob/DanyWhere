@@ -192,6 +192,7 @@ fn a_dictation_with_a_spoken_instruction_from_the_cut_to_the_paste() {
             samples: SAID,
             load_end_model: false,
         },
+        Event::ReleaseModel,
         instruction_overlay(true, Some(POLISH)),
         Event::Overlay(Overlay::Working {
             working: Working::PostProcessing,
@@ -309,6 +310,7 @@ fn an_instruction_heard_as_nothing_post_processes_with_the_prompts_alone() {
             samples: SAID,
             load_end_model: false,
         },
+        Event::ReleaseModel,
         Event::Overlay(Overlay::Working {
             working: Working::PostProcessing,
             streaming: false,
@@ -366,6 +368,52 @@ fn an_instruction_section_without_speech_is_not_transcribed() {
     );
 }
 
+/// DanyWhere (review of 2026-11-26, finding 4): with "unload the model
+/// right after use" the end frees the model once both sections are dealt
+/// with, before post-processing, as a dictation without a cut does; also
+/// when no speech was heard in the instruction (⌃ Space, dictate, ⇥, say
+/// nothing, ↩) and when the text is transcribed again for the end profile.
+#[test]
+fn the_model_is_released_once_both_sections_are_dealt_with() {
+    let silent = Recording {
+        speech: false,
+        ..tone(SAID)
+    };
+    for (instruction, end_values) in [(tone(SAID), false), (silent, false), (tone(SAID), true)] {
+        let case = format!("speech {}, end values {end_values}", instruction.speech);
+        let transcribed = instruction.speech;
+        let (url, _requests) = llm_server(vec![("200 OK", POLISHED)]);
+        let ports = FakePorts::new(script(tone(SAMPLES), instruction, POLISH));
+        let slot = slot();
+        cut(&ports, slot);
+        ports.take_events();
+        let mut snapshot = ended_without_post_processing(&url, "", false);
+        snapshot.transcribed_with_end_values = end_values;
+        end(&ports, slot, snapshot);
+
+        let events = ports.take_events();
+        let first = |found: &dyn Fn(&Event) -> bool| events.iter().position(found);
+        let released = first(&|event| *event == Event::ReleaseModel)
+            .unwrap_or_else(|| panic!("{case}: the model is released: {events:#?}"));
+        let post_processed = first(&|event| matches!(event, Event::PostProcess { .. }))
+            .unwrap_or_else(|| panic!("{case}: post-processed: {events:#?}"));
+        assert!(released < post_processed, "{case}: {events:#?}");
+        let heard = first(&|event| matches!(event, Event::TranscribeInstruction { .. }));
+        assert_eq!(heard.is_some(), transcribed, "{case}: {events:#?}");
+        if let Some(heard) = heard {
+            assert!(heard < released, "{case}: {events:#?}");
+        }
+        assert_eq!(
+            events
+                .iter()
+                .filter(|event| **event == Event::ReleaseModel)
+                .count(),
+            1,
+            "{case}"
+        );
+    }
+}
+
 #[test]
 fn an_instruction_without_a_dictation_post_processes_the_instruction_alone() {
     // The instruction key right after the start (F5 i).
@@ -394,6 +442,7 @@ fn an_instruction_without_a_dictation_post_processes_the_instruction_alone() {
             samples: SAID,
             load_end_model: false,
         },
+        Event::ReleaseModel,
         instruction_overlay(true, Some("write a polite no")),
         Event::Overlay(Overlay::Working {
             working: Working::PostProcessing,
@@ -707,6 +756,7 @@ fn a_failed_instruction_keeps_the_dictation_in_history_and_pastes_nothing() {
             samples: SAID,
             load_end_model: false,
         },
+        Event::ReleaseModel,
         Event::Raise(
             notice(NoticeCode::TranscriptionFailed).with_detail("the model failed".to_string()),
         ),

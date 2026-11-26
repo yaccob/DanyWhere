@@ -74,6 +74,12 @@ pub trait Transcribe {
         samples: Vec<f32>,
         load_end_model: bool,
     ) -> anyhow::Result<Transcription>;
+    /// DanyWhere: the dictation is done with the speech model (both sections
+    /// of a cut recording are transcribed, or one wasn't needed): unloads it
+    /// if it unloads right after use, as [`transcribe`](Self::transcribe)
+    /// does after a dictation without a cut
+    /// (`TranscriptionManager::maybe_unload_immediately`).
+    fn release_model(&self);
 }
 
 /// Post-processing.

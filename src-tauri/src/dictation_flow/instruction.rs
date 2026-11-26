@@ -852,6 +852,7 @@ mod tests {
         ) -> anyhow::Result<Transcription> {
             anyhow::bail!("not here")
         }
+        fn release_model(&self) {}
     }
 
     #[test]
