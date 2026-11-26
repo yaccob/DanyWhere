@@ -18,18 +18,21 @@ import {
 } from "@/lib/endKeys";
 import { holdKeyDefaultName } from "@/lib/startKeys";
 
-/** The two lists of this shape: end shortcuts, and hold shortcuts, which
- * end a recording when released (qa 2026-11-26_1810). */
-export type EndKeysKind = "end" | "hold";
+/** The three lists of this shape: end shortcuts; hold shortcuts, which
+ * end a recording when released; instruction shortcuts, which switch to a
+ * spoken instruction during a recording and, held, end it when released
+ * (qa 2026-11-26_1810, "Schnittstelle Phase 2"). */
+export type EndKeysKind = "end" | "hold" | "instruction";
 
-/** What differs between the two lists: their texts, the ids of new
+/** What differs between the three lists: their texts, the ids of new
  * entries and how the backend registers an entry for its capture. */
 const KINDS: Record<
   EndKeysKind,
   {
     add: string;
     addPressKeys: string;
-    lastOne: string;
+    /** Why the last entry can't go; none for a list that may be empty. */
+    lastOne: string | null;
     shortcutHint: string;
     idPrefix: string;
     capturePrefix: string;
@@ -51,6 +54,15 @@ const KINDS: Record<
     idPrefix: "hold",
     capturePrefix: "hold_key",
   },
+  instruction: {
+    add: "settings.instructionKeys.add",
+    addPressKeys: "settings.instructionKeys.addPressKeys",
+    // The list may be empty.
+    lastOne: null,
+    shortcutHint: "settings.instructionKeys.shortcutHint",
+    idPrefix: "instruction",
+    capturePrefix: "instruction_key",
+  },
 };
 
 interface EndKeysEditorProps {
@@ -58,31 +70,27 @@ interface EndKeysEditorProps {
   value: EndKey[];
   /** The changed list. */
   onChange: (next: EndKey[]) => Promise<void> | void;
-  /** End shortcuts (the default) or hold shortcuts. */
+  /** End shortcuts (the default), hold or instruction shortcuts. */
   kind?: EndKeysKind;
   /** Whether an entry may go; by default while another stays. Hold
-   * shortcuts may go while a start or hold shortcut stays. */
+   * shortcuts may go while a start or hold shortcut stays, instruction
+   * shortcuts always. */
   removable?: boolean;
   /** The grey lines under an entry: which other lists have its keys. */
   hintsOf?: (entry: EndKey) => string[];
   disabled?: boolean;
-  /** Post-processing is off in the same scope: an entry with "Post-process"
-   * says that it doesn't (`postProcessingOn`). */
-  postProcessingOff?: boolean;
-  /** No dictation can post-process at all (`postProcessingReachable`): a
-   * hold shortcut with "Post-process" says that it isn't taken (qa
-   * 2026-11-26_1713, question 4 a). */
-  postProcessingUnreachable?: boolean;
 }
 
 /**
- * DanyWhere: the list of end shortcuts (end_keys.rs, qa 2026-11-22_2134)
- * or of hold shortcuts (qa 2026-11-26_1810), each with its name, its own
- * key combination, its "Append" field, and whether it post-processes and
- * sends context. Without a name of its own an end shortcut is called by its
- * combination, a hold shortcut "<keys> held". A controlled component: the
- * list comes in and a changed one goes out, so it can edit the defaults or
- * a profile's own list alike.
+ * DanyWhere: the list of end shortcuts (end_keys.rs, qa 2026-11-22_2134),
+ * of hold or of instruction shortcuts (qa 2026-11-26_1810), each with its
+ * name, its own key combination, its "Append" field, and whether it sends
+ * context, which counts only when the dictation is post-processed. No entry
+ * says whether it post-processes ("Schnittstelle Phase 2"). Without a name
+ * of its own an end shortcut is called by its combination, a hold or
+ * instruction shortcut "<keys> held". A controlled component: the list
+ * comes in and a changed one goes out, so it can edit the defaults or a
+ * profile's own list alike.
  */
 export const EndKeysEditor: React.FC<EndKeysEditorProps> = ({
   value,
@@ -91,8 +99,6 @@ export const EndKeysEditor: React.FC<EndKeysEditorProps> = ({
   removable,
   hintsOf,
   disabled = false,
-  postProcessingOff = false,
-  postProcessingUnreachable = false,
 }) => {
   const { t } = useTranslation();
   const osType = useOsType();
@@ -103,11 +109,11 @@ export const EndKeysEditor: React.FC<EndKeysEditorProps> = ({
   );
   const followed = useCallback(
     (entry: EndKey) =>
-      kind === "hold"
-        ? holdKeyDefaultName(entry, format, (shortcut) =>
+      kind === "end"
+        ? format(entry.shortcut)
+        : holdKeyDefaultName(entry, format, (shortcut) =>
             t("settings.endKeys.held", { shortcut }),
-          )
-        : format(entry.shortcut),
+          ),
     [kind, format, t],
   );
   const change = (id: string, part: Partial<EndKey>) =>
@@ -127,8 +133,6 @@ export const EndKeysEditor: React.FC<EndKeysEditorProps> = ({
           onChange={(part) => change(entry.id, part)}
           onDelete={() => onChange(removeEndKey(value, entry.id))}
           disabled={disabled}
-          postProcessingOff={postProcessingOff}
-          postProcessingUnreachable={postProcessingUnreachable}
         />
       ))}
       <div className="px-4 py-3">
@@ -161,8 +165,6 @@ interface EndKeyRowProps {
   onChange: (part: Partial<EndKey>) => Promise<void> | void;
   onDelete: () => Promise<void> | void;
   disabled: boolean;
-  postProcessingOff: boolean;
-  postProcessingUnreachable: boolean;
 }
 
 const EndKeyRow: React.FC<EndKeyRowProps> = ({
@@ -174,8 +176,6 @@ const EndKeyRow: React.FC<EndKeyRowProps> = ({
   onChange,
   onDelete,
   disabled,
-  postProcessingOff,
-  postProcessingUnreachable,
 }) => {
   const { t } = useTranslation();
   const texts = KINDS[kind];
@@ -226,7 +226,7 @@ const EndKeyRow: React.FC<EndKeyRowProps> = ({
           onClick={() => void onDelete()}
           aria-label={t("settings.endKeys.delete", { name: shownName })}
           title={
-            removable
+            removable || texts.lastOne === null
               ? t("settings.endKeys.delete", { name: shownName })
               : t(texts.lastOne)
           }
@@ -248,19 +248,11 @@ const EndKeyRow: React.FC<EndKeyRowProps> = ({
           disabled={disabled}
         />
       </div>
+      {/* DanyWhere: whether a dictation is post-processed no key says any
+          more (qa 2026-11-26_1841, variant b): an instruction shortcut or
+          the profile's mode does. Send Context stays per key (recommendation
+          3 i) and counts only then, which its tooltip says. */}
       <div className="flex flex-wrap items-center gap-4 text-sm">
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="checkbox"
-            className="accent-logo-primary"
-            checked={entry.post_process}
-            disabled={disabled}
-            onChange={(event) =>
-              void onChange({ post_process: event.target.checked })
-            }
-          />
-          {t("settings.endKeys.postProcess")}
-        </label>
         <label
           className="flex items-center gap-2 cursor-pointer"
           title={t("settings.endKeys.sendContextHint")}
@@ -269,7 +261,7 @@ const EndKeyRow: React.FC<EndKeyRowProps> = ({
             type="checkbox"
             className="accent-logo-primary"
             checked={entry.send_context}
-            disabled={disabled || !entry.post_process}
+            disabled={disabled}
             onChange={(event) =>
               void onChange({ send_context: event.target.checked })
             }
@@ -277,21 +269,6 @@ const EndKeyRow: React.FC<EndKeyRowProps> = ({
           {t("settings.endKeys.sendContext")}
         </label>
       </div>
-      {/* DanyWhere: a hold shortcut that post-processes is taken only while
-          some dictation can post-process (qa 2026-11-26_1713, question
-          4 a); otherwise, with post-processing off for this scope, no end
-          post-processes (user, 2026-11-23, option a). Either way the box
-          keeps its value for when it counts. */}
-      {entry.post_process && postProcessingUnreachable ? (
-        <p className="text-xs text-ink-3">{t("settings.holdKeys.notTaken")}</p>
-      ) : (
-        entry.post_process &&
-        postProcessingOff && (
-          <p className="text-xs text-ink-3">
-            {t("settings.endKeys.postProcessOff")}
-          </p>
-        )
-      )}
       {hints.map((hint) => (
         <p key={hint} className="text-xs text-ink-3">
           {hint}

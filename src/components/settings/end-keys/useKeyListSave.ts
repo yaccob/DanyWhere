@@ -11,14 +11,14 @@ type Outcome =
   | { status: "error"; error: string };
 
 /**
- * DanyWhere: writes a list of start, hold or end shortcuts (qa
+ * DanyWhere: writes a list of start, hold, instruction or end shortcuts (qa
  * 2026-11-26_1810): into the page's scope, the defaults or a profile, as
  * one value; outside a scope (the values in use) through the list's own
  * command (`change_start_keys_setting` …). A refusal reads as its sentence
  * (`useDescribeEndKeyError`), else as `saveKey` with the reason.
  */
 export const useKeyListSave = <T>(
-  field: "start_keys" | "hold_keys" | "end_keys",
+  field: "start_keys" | "hold_keys" | "instruction_keys" | "end_keys",
   command: (list: T[]) => Promise<Outcome>,
   saveKey: string,
 ) => {

@@ -5,6 +5,7 @@ import type {
   AppSettings as Settings,
   AudioDevice,
   PostProcessApiFormat,
+  PostProcessMode,
   ChineseScript,
   TranscribeAcceleratorSetting,
   StartKey,
@@ -215,8 +216,10 @@ const settingUpdaters: {
     commands.changeHistoryBoxHeightSetting("newest", value ?? null),
   history_box_height_other: (value) =>
     commands.changeHistoryBoxHeightSetting("other", value ?? null),
-  post_process_enabled: (value) =>
-    commands.changePostProcessEnabledSetting(value as boolean),
+  // DanyWhere: when a dictation is post-processed (never, with an
+  // instruction shortcut, always), in place of Handy's switch.
+  post_process_mode: (value) =>
+    commands.changePostProcessModeSetting(value as PostProcessMode),
   post_process_selected_prompt_id: (value) =>
     commands.setPostProcessSelectedPrompt(value as string),
   // DanyWhere: which prompts of the library the active profile runs, and

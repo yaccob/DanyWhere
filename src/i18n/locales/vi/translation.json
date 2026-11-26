@@ -476,6 +476,7 @@
       "description": "Nhấn nhanh để bắt đầu ghi âm. Bản ghi chạy cho đến khi một phím tắt kết thúc dừng nó lại.",
       "shortcutHint": "Nhấn nhanh tổ hợp phím này sẽ bắt đầu ghi âm. Tổ hợp luôn được chiếm.",
       "alsoHold": "Cũng là phím tắt giữ",
+      "alsoInstruction": "Cũng là phím tắt hướng dẫn",
       "add": "Thêm phím tắt bắt đầu",
       "addPressKeys": "Nhấn tổ hợp phím cho phím tắt bắt đầu mới",
       "delete": "Xóa phím tắt bắt đầu {{shortcut}}",
@@ -491,11 +492,11 @@
     },
     "holdKeys": {
       "title": "Phím tắt giữ",
-      "description": "Giữ để ghi âm. Khi thả ra, bản ghi kết thúc theo cách này: thêm gì, có xử lý hậu kỳ văn bản không, có gửi các lần đọc chính tả trước làm ngữ cảnh không.",
+      "description": "Giữ để ghi âm. Khi thả ra, bản ghi kết thúc theo cách này: thêm gì và có gửi các lần đọc chính tả trước làm ngữ cảnh không.",
       "shortcutHint": "Giữ tổ hợp phím này sẽ ghi âm; thả ra sẽ kết thúc bản ghi theo cách này.",
       "alsoStart": "Cũng là phím tắt bắt đầu: nhấn nhanh sẽ bắt đầu một bản ghi tiếp tục chạy.",
       "holdOnly": "Chỉ là phím tắt giữ: nhấn nhanh không làm gì cả.",
-      "notTaken": "Chỉ được chiếm khi xử lý hậu kỳ đang bật: cho đến lúc đó, tổ hợp phím của nó vẫn thuộc về ứng dụng phía trước.",
+      "alsoInstruction": "Cũng là phím tắt hướng dẫn: trong khi ghi, phím này chuyển sang hướng dẫn.",
       "add": "Thêm phím tắt giữ",
       "addPressKeys": "Nhấn tổ hợp phím cho phím tắt giữ mới",
       "refName": "Phím tắt giữ {{name}}",
@@ -505,19 +506,34 @@
         "shortcutTwice": "Hai phím tắt giữ không thể dùng chung một tổ hợp phím."
       }
     },
+    "instructionKeys": {
+      "title": "Phím tắt hướng dẫn",
+      "description": "Trong khi ghi, phím tắt hướng dẫn chuyển từ văn bản sang hướng dẫn: những gì bạn nói sau đó không được chèn vào mà cho bước xử lý sau biết cần làm gì với văn bản, ví dụ “dịch đoạn này sang tiếng Ba Lan”. Nhấn nhanh, rồi một phím tắt kết thúc sẽ gửi bản đọc chính tả đi; giữ phím, rồi khi thả ra bản đọc chính tả được gửi đi theo cài đặt ở đây. Bản đọc chính tả như vậy luôn được xử lý sau.",
+      "shortcutHint": "Trong khi ghi, nhấn tổ hợp phím này sẽ chuyển từ văn bản sang hướng dẫn. Tổ hợp chỉ được chiếm trong khi ghi.",
+      "onlyWhileRecording": "Chỉ được chiếm trong khi ghi.",
+      "sameAsStartOrHold": "Cùng tổ hợp phím với một phím tắt bắt đầu hoặc phím tắt giữ: khi không ghi, tổ hợp này bắt đầu ghi; trong khi ghi, nó chuyển sang hướng dẫn.",
+      "notTakenNever": "Xử lý sau đang đặt là “{{mode}}”: các phím tắt hướng dẫn không được chiếm. Hãy chọn cài đặt khác cho “{{setting}}” trong mục Nâng cao.",
+      "notTakenNoProvider": "Chưa thiết lập nhà cung cấp xử lý sau có mô hình: các phím tắt hướng dẫn không được chiếm cho đến khi có một nhà cung cấp.",
+      "add": "Thêm phím tắt hướng dẫn",
+      "addPressKeys": "Nhấn tổ hợp phím cho phím tắt hướng dẫn mới",
+      "refName": "Phím tắt hướng dẫn {{name}}",
+      "errors": {
+        "save": "Không thể lưu các phím tắt hướng dẫn: {{error}}",
+        "needsShortcut": "Mỗi phím tắt hướng dẫn cần có tổ hợp phím.",
+        "shortcutTwice": "Hai phím tắt hướng dẫn không thể dùng chung một tổ hợp phím."
+      }
+    },
     "endKeys": {
       "title": "Phím tắt kết thúc",
-      "description": "Cách một bản ghi kết thúc và điều gì tiếp theo. Mỗi phím tắt kết thúc có tổ hợp phím riêng, chỉ được chiếm trong khi ghi, và quyết định thêm gì, có xử lý hậu kỳ văn bản không, và có gửi các lần đọc chính tả trước làm ngữ cảnh không. Một phím tắt kết thúc có thể dùng tổ hợp phím của một phím tắt bắt đầu hoặc phím tắt giữ: khi đó nhấn nhanh tổ hợp này trong khi ghi sẽ kết thúc theo cách này.",
+      "description": "Cách một bản ghi kết thúc và điều gì tiếp theo. Mỗi phím tắt kết thúc có tổ hợp phím riêng, chỉ được chiếm trong khi ghi, và quyết định thêm gì và có gửi các lần đọc chính tả trước làm ngữ cảnh không. Một phím tắt kết thúc có thể dùng tổ hợp phím của một phím tắt bắt đầu hoặc phím tắt giữ: khi đó nhấn nhanh tổ hợp này trong khi ghi sẽ kết thúc theo cách này.",
       "name": "Tên",
       "shortcutHint": "Nhấn tổ hợp phím này trong khi ghi sẽ kết thúc bản ghi theo cách này. Tổ hợp chỉ được chiếm trong khi ghi.",
       "sameAsStart": "Cùng tổ hợp phím với một phím tắt bắt đầu: nhấn nhanh lại trong khi ghi sẽ kết thúc theo cách này.",
       "sameAsHold": "Cùng tổ hợp phím với một phím tắt giữ: nhấn nhanh trong khi ghi sẽ kết thúc theo cách này.",
       "append": "Thêm vào cuối",
       "appendDescription": "Được thêm vào lần đọc chính tả kết thúc theo cách này: văn bản, rồi đến phím bạn chọn. Trong văn bản, \\s là dấu cách, \\n là xuống dòng, \\t là tab và \\\\ là dấu gạch chéo ngược; mọi thứ khác được thêm đúng như đã viết. Phím chỉ được gửi khi văn bản được dán.",
-      "postProcess": "Xử lý hậu kỳ",
       "sendContext": "Gửi ngữ cảnh",
-      "sendContextHint": "Chỉ khi xử lý hậu kỳ: các lần đọc chính tả trước từ cùng cửa sổ được gửi làm ngữ cảnh.",
-      "postProcessOff": "Xử lý sau đang tắt: bản đọc chính tả kết thúc theo cách này sẽ không được xử lý hậu kỳ. Hãy bật “Xử lý sau” trong mục Nâng cao.",
+      "sendContextHint": "Các lần đọc chính tả trước từ cùng cửa sổ được gửi làm ngữ cảnh. Điều này chỉ có tác dụng khi bản đọc chính tả được xử lý sau.",
       "add": "Thêm phím tắt kết thúc",
       "addPressKeys": "Nhấn tổ hợp phím cho phím tắt kết thúc mới",
       "delete": "Xóa {{name}}",
@@ -525,9 +541,6 @@
       "held": "{{shortcut}} khi giữ",
       "refName": "Phím tắt kết thúc {{name}}",
       "factoryNames": {
-        "pattern": "{{mode}} · {{effect}}",
-        "direct": "Trực tiếp",
-        "postProcessed": "Xử lý hậu kỳ",
         "space": "Dấu cách",
         "noSpace": "Không dấu cách",
         "paragraph": "Đoạn",
@@ -869,6 +882,7 @@
         "llmCheckTitle": "Kiểm tra tên bằng LLM, cả khi không xử lý sau",
         "llmCheckDescription": "Chỉ trong các lần đọc chính tả có một từ giống một mục trong danh sách từ. Khi đó câu được gửi đến {{provider}}.",
         "llmCheckNeedsProvider": "Cần một nhà cung cấp xử lý sau có mô hình.",
+        "llmCheckNever": "Không dùng được khi xử lý sau đang đặt là “{{mode}}”: lúc đó không có gì được gửi đến nhà cung cấp.",
         "llmCheckNotWith": "Không dùng được với {{provider}}: cần một nhà cung cấp xử lý sau khác có mô hình.",
         "setUpPostProcessing": "Thiết lập xử lý sau",
         "switchModel": "Chuyển sang {{model}}",
@@ -1070,6 +1084,15 @@
         "statusDenied": "Không được phép – thay đổi trong Cài đặt hệ thống › Quyền riêng tư & Bảo mật › Tự động hóa",
         "statusNotRunning": "Không chạy – hãy mở để cho phép",
         "statusUnknown": "Không rõ"
+      },
+      "mode": {
+        "title": "Xử lý sau",
+        "description": "Khi nào bản đọc chính tả được gửi đến nhà cung cấp xử lý sau. Không bao giờ: không có gì được gửi đến nhà cung cấp và các phím tắt hướng dẫn không được chiếm. Khi có phím tắt hướng dẫn: chỉ bản đọc chính tả có nhấn phím tắt hướng dẫn. Luôn luôn: mọi bản đọc chính tả; phím tắt hướng dẫn thêm một hướng dẫn.",
+        "options": {
+          "never": "Không bao giờ",
+          "withInstructionKey": "Khi có phím tắt hướng dẫn",
+          "always": "Luôn luôn"
+        }
       }
     },
     "history": {
@@ -1182,7 +1205,8 @@
       "promptMenu": {
         "button": "Hậu xử lý bằng một prompt",
         "title": "Hậu xử lý bằng",
-        "active": "đang bật"
+        "active": "đang bật",
+        "withoutSpokenInstruction": "Không có hướng dẫn bằng giọng nói"
       },
       "retranscribeAgain": "Phiên âm lại và xử lý sau lần nữa như trước"
     },
@@ -1282,10 +1306,6 @@
       "clamshellMicrophone": {
         "title": "Micrô chế độ gập",
         "description": "Micrô sử dụng khi nắp laptop được đóng"
-      },
-      "postProcessingToggle": {
-        "label": "Xử lý sau",
-        "description": "Bật tinh chỉnh văn bản bằng AI sau khi chuyển đổi"
       },
       "muteWhileRecording": {
         "label": "Tắt tiếng khi ghi âm",
@@ -1580,7 +1600,10 @@
     "notReady": "Chưa sẵn sàng",
     "wordList": "Danh sách từ: {{name}}",
     "wordListGlobalOnly": "Không có danh sách bổ sung",
-    "cancel": "Hủy"
+    "cancel": "Hủy",
+    "instruction": "Hướng dẫn",
+    "instructionLine": "Hướng dẫn: {{text}}",
+    "textReady": "Đã chuyển thành văn bản"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} có thể đang chặn 1 phím tắt",

@@ -5,8 +5,8 @@ export type Translate = (
   options?: Record<string, unknown>,
 ) => string;
 
-/** What a start, hold or end shortcut the backend refers to is called (a
- * start shortcut's keys, a hold or end shortcut's name); null when the
+/** What a start, hold, instruction or end shortcut the backend refers to
+ * is called (a start shortcut's keys, the others' names); null when the
  * caller doesn't know it. */
 export type KeyRefLabel = (ref: KeyRef) => string | null;
 
@@ -17,9 +17,10 @@ const tidy = (text: string): string =>
     .replace(/\s+([,.:;!?])/g, "$1")
     .trim();
 
-/** How the notice names a start, hold or end shortcut: "Start shortcut
- * ⌃ Space", "Hold shortcut ⌃⇧ Space held", "End shortcut Senden", or just
- * its kind when its name isn't known. */
+/** How the notice names a start, hold, instruction or end shortcut: "Start
+ * shortcut ⌃ Space", "Hold shortcut ⌃⇧ Space held", "Instruction shortcut
+ * ⇥ held", "End shortcut Senden", or just its kind when its name isn't
+ * known. */
 const keyRefName = (ref: KeyRef, t: Translate, label?: KeyRefLabel): string => {
   const known = label?.(ref) ?? "";
   return tidy(
@@ -31,14 +32,14 @@ const keyRefName = (ref: KeyRef, t: Translate, label?: KeyRefLabel): string => {
 
 /**
  * DanyWhere: a refusal of the backend for a key combination, as a sentence:
- * the start, hold and end shortcuts' own codes (qa 2026-11-26_1810,
- * "Prüfung und Garantien"), a combination the service without Accessibility
+ * the start, hold, instruction and end shortcuts' own codes (qa
+ * 2026-11-26_1810, "Prüfung und Garantien", "Schnittstelle Phase 2"), a combination the service without Accessibility
  * can't take, or another shortcut that already has it ("conflict:<binding
- * id>"), by that shortcut's name; a start, hold or end shortcut
- * (`conflict:start_key:<id>` …) by its keys or name through `label`. `null`
- * for any other refusal, whose reason the caller shows as it came. One
- * place for the shortcut fields, the three lists and the scoped writes of a
- * shortcut.
+ * id>"), by that shortcut's name; a start, hold, instruction or end
+ * shortcut (`conflict:start_key:<id>` …) by its keys or name through
+ * `label`. `null` for any other refusal, whose reason the caller shows as it
+ * came. One place for the shortcut fields, the four lists and the scoped
+ * writes of a shortcut.
  */
 export const shortcutRefusalText = (
   error: string,

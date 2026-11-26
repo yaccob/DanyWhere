@@ -98,8 +98,9 @@ pub struct StartPlan {
     /// (`TranscriptionManager::start_stream`).
     pub live_decode: bool,
     pub overlay: StartOverlay,
-    /// The end the recording is expected to take post-processes, so a local
-    /// post-processing model warms up (`model_warmup`).
+    /// The recording is expected to post-process (its profile always does;
+    /// no instruction key was pressed yet), so a local post-processing model
+    /// warms up (`model_warmup`).
     pub post_process: bool,
     /// That end also sends context: the pill shows the speech bubble
     /// (`send_context`).
@@ -142,7 +143,7 @@ pub fn plan_start(
     };
     // The end the recording is expected to take (`end_keys::expected_end`).
     let expected_end = crate::end_keys::expected_end(values, binding_id);
-    let post_process = crate::app_profiles::effective_post_process(&expected_end, values);
+    let post_process = crate::dictation_snapshot::wants_post_processing(values, false);
     StartPlan {
         vad_policy,
         live_decode,
@@ -456,8 +457,7 @@ mod tests {
     const MODEL: &str = "parakeet-tdt-0.6b-v3";
     /// The factory start shortcut and hold shortcuts (`start_keys`).
     const START: &str = "start_key:start";
-    const HOLD_DIRECT: &str = "hold_key:hold_direct";
-    const HOLD_POST: &str = "hold_key:hold_post";
+    const HOLD_NO_SPACE: &str = "hold_key:hold_no_space";
 
     // check_model
 
@@ -580,61 +580,49 @@ mod tests {
         assert_eq!(plan(&settings, START, true).overlay, StartOverlay::Hidden);
     }
 
+    /// Variant b (user, 2026-11-26): at its start no instruction key was
+    /// pressed yet, so a dictation expects post-processing (a model warming
+    /// up, the speech bubble) only where its profile always post-processes.
     #[test]
-    fn the_second_start_shortcut_is_expected_to_post_process() {
-        let mut settings = settings();
-        settings.post_process_enabled = true;
-        assert!(!plan(&settings, START, false).post_process);
-        assert!(plan(&settings, HOLD_POST, false).post_process);
-    }
-
-    #[test]
-    fn with_post_processing_off_no_start_expects_post_processing() {
-        // As the defaults come: the switch is off, so neither the hold
-        // shortcut that post-processes nor another one set to warms up a
-        // model or shows the speech bubble.
-        let settings = settings();
-        assert!(!settings.post_process_enabled);
-        let mut values = ProfileValues::from_settings(&settings);
-        for end in &mut values.end_keys {
-            end.send_context = true;
+    fn at_its_start_a_dictation_expects_post_processing_only_where_it_always_does() {
+        use crate::settings::PostProcessMode::*;
+        for (mode, expected) in [(Never, false), (WithInstructionKey, false), (Always, true)] {
+            let mut settings = settings();
+            settings.post_process_mode = mode;
+            let mut values = ProfileValues::from_settings(&settings);
+            for end in values
+                .end_keys
+                .iter_mut()
+                .chain(values.hold_keys.iter_mut())
+            {
+                end.send_context = true;
+            }
+            let held = format!("hold_key:{}", values.hold_keys[0].id);
+            for binding in [START, held.as_str()] {
+                let plan = plan_start(&settings, &values, binding, false);
+                assert_eq!(plan.post_process, expected, "{mode:?}, {binding}");
+                assert_eq!(plan.sends_context, expected, "{mode:?}, {binding}");
+            }
         }
-        let pressed = plan_start(&settings, &values, HOLD_POST, false);
-        assert!(!pressed.post_process);
-        assert!(!pressed.sends_context);
-        let held = &mut values.hold_keys[0];
-        held.post_process = true;
-        held.send_context = true;
-        let held = plan_start(&settings, &values, HOLD_DIRECT, false);
-        assert!(!held.post_process);
-        assert!(!held.sends_context);
-    }
-
-    #[test]
-    fn with_hold_the_hold_end_decides_post_processing() {
-        let mut settings = settings();
-        settings.post_process_enabled = true;
-        let mut values = ProfileValues::from_settings(&settings);
-        values.hold_keys[0].post_process = true;
-        let plan = plan_start(&settings, &values, HOLD_DIRECT, false);
-        assert!(plan.post_process);
     }
 
     #[test]
     fn an_own_profile_without_post_processing_expects_none() {
-        // Its own switch counts, not that of the profile in use.
+        // Its own mode counts, not that of the profile in use.
         let mut settings = settings();
-        settings.post_process_enabled = true;
+        settings.post_process_mode = crate::settings::PostProcessMode::Always;
         let mut own = ProfileValues::from_settings(&settings);
-        own.post_process_enabled = false;
-        let plan = plan_start(&settings, &own, HOLD_POST, false);
+        own.post_process_mode = crate::settings::PostProcessMode::Never;
+        let plan = plan_start(&settings, &own, HOLD_NO_SPACE, false);
         assert!(!plan.post_process);
+        own.post_process_mode = crate::settings::PostProcessMode::WithInstructionKey;
+        assert!(!plan_start(&settings, &own, HOLD_NO_SPACE, false).post_process);
     }
 
     #[test]
     fn the_speech_bubble_shows_when_the_expected_end_post_processes_with_context() {
         let mut settings = settings();
-        settings.post_process_enabled = true;
+        settings.post_process_mode = crate::settings::PostProcessMode::Always;
         let mut values = ProfileValues::from_settings(&settings);
         for end in values
             .end_keys
@@ -643,42 +631,50 @@ mod tests {
         {
             end.send_context = true;
         }
-        let with_post_process = plan_start(&settings, &values, HOLD_POST, false);
-        assert!(with_post_process.sends_context);
-        // Context goes only with post-processing.
+        let with_context = plan_start(&settings, &values, HOLD_NO_SPACE, false);
+        assert!(with_context.sends_context);
+        // The end a press of the start shortcut takes says whether context
+        // goes along.
+        for end in &mut values.end_keys {
+            end.send_context = false;
+        }
         let plain = plan_start(&settings, &values, START, false);
+        assert!(plain.post_process);
         assert!(!plain.sends_context);
+        // Context goes only with post-processing.
+        settings.post_process_mode = crate::settings::PostProcessMode::WithInstructionKey;
+        values.post_process_mode = crate::settings::PostProcessMode::WithInstructionKey;
+        assert!(!plan_start(&settings, &values, HOLD_NO_SPACE, false).sends_context);
     }
 
-    /// A hold shortcut `id` on F13 with `post_process`, sending context.
-    fn hold_key(id: &str, post_process: bool) -> crate::end_keys::EndKey {
+    /// A hold shortcut `id` on F13, sending context if `send_context`.
+    fn hold_key(id: &str, send_context: bool) -> crate::end_keys::EndKey {
         crate::end_keys::EndKey {
             id: id.to_string(),
             name: String::new(),
             shortcut: "f13".to_string(),
             append_text: String::new(),
-            post_process,
-            send_context: true,
+            send_context,
         }
     }
 
     #[test]
     fn a_hold_shortcut_expects_its_own_end() {
         let mut settings = settings();
-        settings.post_process_enabled = true;
+        settings.post_process_mode = crate::settings::PostProcessMode::Always;
         let mut values = ProfileValues::from_settings(&settings);
-        values.hold_keys = vec![hold_key("plain", false), hold_key("post", true)];
+        values.hold_keys = vec![hold_key("quiet", false), hold_key("talking", true)];
         values.start_keys.clear();
-        let post = plan_start(&settings, &values, "hold_key:post", false);
-        assert!(post.post_process);
-        assert!(post.sends_context);
-        assert!(!plan_start(&settings, &values, "hold_key:plain", false).post_process);
+        let talking = plan_start(&settings, &values, "hold_key:talking", false);
+        assert!(talking.post_process);
+        assert!(talking.sends_context);
+        assert!(!plan_start(&settings, &values, "hold_key:quiet", false).sends_context);
     }
 
     #[test]
     fn a_start_shortcut_expects_the_end_with_its_combination() {
         let mut settings = settings();
-        settings.post_process_enabled = true;
+        settings.post_process_mode = crate::settings::PostProcessMode::Always;
         let mut values = ProfileValues::from_settings(&settings);
         values.start_keys = vec![crate::start_keys::StartKey {
             id: "s".to_string(),
@@ -1003,8 +999,8 @@ mod tests {
         let mut bench = Bench::new(fake_microphone::mic());
         bench.app.streams = true;
         bench.app.settings.overlay_style = OverlayStyle::Live;
-        bench.app.settings.post_process_enabled = true;
-        let outcome = bench.start(HOLD_POST);
+        bench.app.settings.post_process_mode = crate::settings::PostProcessMode::Always;
+        let outcome = bench.start(HOLD_NO_SPACE);
         assert!(matches!(outcome, StartOutcome::Recording(_)));
         assert_eq!(
             bench.log()[..9],
@@ -1020,10 +1016,9 @@ mod tests {
                 Did::TitleQueryPrimed,
             ]
         );
-        // The hold shortcut that post-processes does with the switch on: its
-        // model warms up.
+        // A profile that always post-processes: its model warms up.
         assert!(bench.log().contains(&Did::WarmUp { post_process: true }));
-        fake_microphone::stop(&bench.rm, &bench.mic, HOLD_POST);
+        fake_microphone::stop(&bench.rm, &bench.mic, HOLD_NO_SPACE);
     }
 
     // DanyWhere's input method (user's decision, 2026-11-23): a recording

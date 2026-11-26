@@ -38,7 +38,7 @@ use crate::tray::TrayIconState;
 /// The dictation shortcuts to release and take back: the keys the two "end
 /// dictation" services stand for (`services`, from
 /// `insert_service::service_bindings`: the first start shortcut and the
-/// first post-processing hold shortcut, as registered, so one that isn't
+/// first hold shortcut with a combination of its own, as registered, so one that isn't
 /// registered is left alone: taking it back would register it), each once.
 /// A shortcut that can't be its service's key equivalent stays DanyWhere's:
 /// released, its press would reach no service (⌥Space on the company Mac,
@@ -888,8 +888,7 @@ mod tests {
     #[cfg(target_os = "macos")]
     #[test]
     fn every_default_dictation_shortcut_can_insert() {
-        let mut settings = crate::settings::get_default_settings();
-        settings.post_process_enabled = true;
+        let settings = crate::settings::get_default_settings();
         let services: Vec<ShortcutBinding> = crate::insert_service::service_bindings(&settings)
             .into_iter()
             .filter_map(|(_, binding)| binding)

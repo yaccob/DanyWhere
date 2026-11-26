@@ -5,9 +5,11 @@
 //! (`ProfileValues::end_keys`) in which no entry is distinguished. Each has
 //! a key combination of its own, which DanyWhere registers only while a
 //! recording runs, like Escape (`shortcut::profile_sync`), and says what
-//! follows: what is appended (the "Append" syntax of `append_text`), whether
-//! the text is post-processed (with the profile's prompts) and whether the
-//! post-processing gets earlier dictations as context. Every entry keeps its
+//! follows: what is appended (the "Append" syntax of `append_text`) and
+//! whether a post-processing gets earlier dictations as context. Whether the
+//! text is post-processed is no end's business since variant b (user,
+//! 2026-11-26): an instruction shortcut pressed during the recording, or the
+//! profile's mode, says it (`settings::PostProcessMode`). Every entry keeps its
 //! `id`, so the profiles can share entries one by one. Its name is free;
 //! empty means it has none of its own and is shown by its combination.
 //!
@@ -17,9 +19,10 @@
 //! an end shortcut's form; releasing it ends with its own values
 //! ([`EndChoice::Held`]).
 //!
-//! Out of the box macOS has twelve ends, Windows and Linux two, `plain` and
-//! `post_process`, with the factory start and hold combinations. The first
-//! read of an older store carries over what it had ([`migrate`]).
+//! Out of the box macOS has six ends, named by what they do, Windows and
+//! Linux two, `plain` and `post_process`, with the factory start and hold
+//! combinations. The first read of an older store carries over what it had
+//! ([`migrate`]).
 
 use std::collections::HashMap;
 
@@ -34,8 +37,8 @@ use crate::start_keys::{OldHold, LEGACY_START_BINDINGS};
 
 /// The end with the start combination on Windows and Linux out of the box.
 pub const PLAIN_ID: &str = "plain";
-/// The end with the post-processing hold combination on Windows and Linux
-/// out of the box.
+/// The end with the second factory combination (⇧) on Windows and Linux
+/// out of the box; it post-processed until variant b, hence its id.
 pub const POST_PROCESS_ID: &str = "post_process";
 /// The prefix of an end shortcut's binding id while it is registered.
 pub const BINDING_PREFIX: &str = "end_key:";
@@ -55,24 +58,21 @@ pub struct EndKey {
     pub shortcut: String,
     /// What is appended, in the "Append" syntax (`append_text`).
     pub append_text: String,
-    /// Whether the text is post-processed (if the profile allows it).
-    pub post_process: bool,
-    /// Whether post-processing gets earlier dictations as context.
+    /// Whether post-processing, when it runs, gets earlier dictations as
+    /// context. (A stored box "Post-process" of before variant b is ignored.)
     pub send_context: bool,
 }
 
-/// The two ends Windows and Linux start with, `plain` without and
-/// `post_process` with post-processing, on combinations `keys`, with
-/// `append_text` and `send_context`.
+/// The two ends Windows and Linux start with, `plain` and `post_process`,
+/// on combinations `keys`, with `append_text` and `send_context`.
 pub fn builtin_for_keys(keys: (&str, &str), append_text: &str, send_context: bool) -> Vec<EndKey> {
-    [(PLAIN_ID, keys.0, false), (POST_PROCESS_ID, keys.1, true)]
+    [(PLAIN_ID, keys.0), (POST_PROCESS_ID, keys.1)]
         .into_iter()
-        .map(|(id, shortcut, post_process)| EndKey {
+        .map(|(id, shortcut)| EndKey {
             id: id.to_string(),
             name: String::new(),
             shortcut: shortcut.to_string(),
             append_text: append_text.to_string(),
-            post_process,
             send_context,
         })
         .collect()
@@ -106,8 +106,8 @@ pub fn builtin_hold_keys(append_text: &str, send_context: bool) -> Vec<EndKey> {
 /// Test fixtures elsewhere: `settings` with the two built-in ends and hold
 /// shortcuts without text or context, the factory ones before 2026-11-24
 /// and still on Windows and Linux. The dictation tests are written against
-/// them (an end `plain` without and `post_process` with post-processing),
-/// whatever this system's factory ends are.
+/// them (two ends, `plain` and `post_process`), whatever this system's
+/// factory ends are.
 #[cfg(test)]
 pub fn with_builtin_ends(mut settings: AppSettings) -> AppSettings {
     settings.end_keys = builtin("", false);
@@ -116,11 +116,10 @@ pub fn with_builtin_ends(mut settings: AppSettings) -> AppSettings {
 }
 
 /// The hold ends of an older store without them, with `append_text` and
-/// `send_context`: without and with post-processing.
+/// `send_context`.
 fn builtin_holds(append_text: &str, send_context: bool) -> [OldHold; 2] {
-    [false, true].map(|post_process| OldHold {
+    [(); 2].map(|()| OldHold {
         append_text: append_text.to_string(),
-        post_process,
         send_context,
     })
 }
@@ -140,18 +139,13 @@ pub fn stored_before_end_keys() -> Vec<EndKey> {
     builtin_for_keys(factory_keys(), "", false)
 }
 
-/// The words the names of macOS's factory ends are made of, in one
-/// language: "{mode} · {effect}", e.g. "Nachbearbeitet · Absatz". The
-/// source is `settings.endKeys.factoryNames` of the locale files, which
-/// build.rs carries into the tray's strings (`factory_end_name_*`).
+/// The words the names of macOS's factory ends are, in one language, e.g.
+/// "Absatz" (until variant b "{mode} · {effect}", e.g. "Nachbearbeitet ·
+/// Absatz"). The source is `settings.endKeys.factoryNames` of the locale
+/// files, which build.rs carries into the tray's strings
+/// (`factory_end_name_*`).
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct FactoryEndNames {
-    /// With `{{mode}}` and `{{effect}}`.
-    pub pattern: String,
-    /// The mode without post-processing.
-    pub direct: String,
-    /// The mode with post-processing.
-    pub post_processed: String,
     pub space: String,
     pub no_space: String,
     pub paragraph: String,
@@ -167,9 +161,6 @@ impl FactoryEndNames {
     pub fn for_locale(locale: &str) -> Self {
         let strings = crate::tray_i18n::get_tray_translations(Some(locale.to_string()));
         Self {
-            pattern: strings.factory_end_name_pattern,
-            direct: strings.factory_end_name_direct,
-            post_processed: strings.factory_end_name_post_processed,
             space: strings.factory_end_name_space,
             no_space: strings.factory_end_name_no_space,
             paragraph: strings.factory_end_name_paragraph,
@@ -178,48 +169,63 @@ impl FactoryEndNames {
             shift_enter: strings.factory_end_name_shift_enter,
         }
     }
+}
 
-    /// The name of a factory end that does `effect`, with post-processing
-    /// or without.
-    fn name(&self, post_process: bool, effect: &str) -> String {
-        let mode = if post_process {
-            &self.post_processed
-        } else {
-            &self.direct
-        };
-        self.pattern
-            .replace("{{mode}}", mode)
-            .replace("{{effect}}", effect)
+/// One factory end: named by what it does, with "Send Context" (it counts
+/// only where the dictation post-processes; recommendation 3 i).
+fn factory_end(id: &str, shortcut: &str, append_text: &str, name: &str) -> EndKey {
+    EndKey {
+        id: id.to_string(),
+        name: name.to_string(),
+        shortcut: shortcut.to_string(),
+        append_text: append_text.to_string(),
+        send_context: true,
     }
 }
 
-/// One factory end: named by what it does, and "Send Context" exactly
-/// where it post-processes, as the context goes nowhere else.
-fn factory_end(
-    id: &str,
-    shortcut: &str,
-    append_text: &str,
-    post_process: bool,
-    name: String,
-) -> EndKey {
-    EndKey {
-        id: id.to_string(),
-        name,
-        shortcut: shortcut.to_string(),
-        append_text: append_text.to_string(),
-        post_process,
-        send_context: post_process,
-    }
+/// macOS's factory ends of variant b, as (id, combination, Append): the six
+/// direct ones of the user's twelve of 2026-11-24, with their ids.
+const MACOS_SIX: [(&str, &str, &str); 6] = [
+    ("direct_space", "ctrl+space", " "),
+    ("direct_no_space", "ctrl+shift+space", ""),
+    ("direct_paragraph", "return", r"\n\n"),
+    ("direct_line", "shift+return", r"\n"),
+    ("direct_enter", "ctrl+return", "{Enter}"),
+    ("direct_shift_enter", "ctrl+shift+return", "{Shift+Enter}"),
+];
+
+/// The combinations the six had with ⌥ until variant b, which then
+/// post-processed (the user's rule of 2026-11-23: "⌥ post-processes").
+const MACOS_OLD_POST: [(&str, &str); 6] = [
+    ("post_space", "ctrl+option+space"),
+    ("post_no_space", "ctrl+option+shift+space"),
+    ("post_paragraph", "option+return"),
+    ("post_line", "option+shift+return"),
+    ("post_enter", "ctrl+option+return"),
+    ("post_shift_enter", "ctrl+option+shift+return"),
+];
+
+/// The name of the factory end `index` of [`MACOS_SIX`] in `names`.
+fn six_name(names: &FactoryEndNames, index: usize) -> &str {
+    [
+        &names.space,
+        &names.no_space,
+        &names.paragraph,
+        &names.line,
+        &names.enter,
+        &names.shift_enter,
+    ][index]
 }
 
 /// A new installation's end shortcuts on `platform`.
 ///
-/// macOS (user, 2026-11-24, the ends of their release, qa note
-/// `2026-11-23_2135_endetasten-grundeinstellungen`): one rule for all
-/// twelve: ⌥ post-processes, ⇧ picks the smaller variant, ⌃ on Enter
-/// presses a key instead of appending text; first the six without
-/// post-processing, then the same six with it. ⌃Space is the factory start
-/// shortcut, so its second press ends without post-processing.
+/// macOS (variant b, user, 2026-11-26; recommendation 2 i): the six ends
+/// without post-processing of the user's twelve of 2026-11-24 (qa note
+/// `2026-11-23_2135_endetasten-grundeinstellungen`): ⇧ picks the smaller
+/// variant, ⌃ on Enter presses a key instead of appending text; named only
+/// by what they do, all with "Send Context". The ⌥ variants went with the
+/// box "Post-process": an instruction shortcut says it now. ⌃Space is the
+/// factory start shortcut, so its second press ends with a space.
 ///
 /// Windows and Linux keep the two ends with the factory start and hold
 /// combinations: Linux takes no end's own combination
@@ -237,80 +243,50 @@ pub fn factory_end_keys_on(platform: KeyPlatform, names: &FactoryEndNames) -> Ve
             false,
         );
     }
-    // (id, combination, Append, post-processing, what it does)
-    let ends = [
-        ("direct_space", "ctrl+space", " ", false, &names.space),
-        (
-            "direct_no_space",
-            "ctrl+shift+space",
-            "",
-            false,
-            &names.no_space,
-        ),
-        (
-            "direct_paragraph",
-            "return",
-            r"\n\n",
-            false,
-            &names.paragraph,
-        ),
-        ("direct_line", "shift+return", r"\n", false, &names.line),
-        (
-            "direct_enter",
-            "ctrl+return",
-            "{Enter}",
-            false,
-            &names.enter,
-        ),
-        (
-            "direct_shift_enter",
-            "ctrl+shift+return",
-            "{Shift+Enter}",
-            false,
-            &names.shift_enter,
-        ),
-        ("post_space", "ctrl+option+space", " ", true, &names.space),
-        (
-            "post_no_space",
-            "ctrl+option+shift+space",
-            "",
-            true,
-            &names.no_space,
-        ),
-        (
-            "post_paragraph",
-            "option+return",
-            r"\n\n",
-            true,
-            &names.paragraph,
-        ),
-        ("post_line", "option+shift+return", r"\n", true, &names.line),
-        (
-            "post_enter",
-            "ctrl+option+return",
-            "{Enter}",
-            true,
-            &names.enter,
-        ),
-        (
-            "post_shift_enter",
-            "ctrl+option+shift+return",
-            "{Shift+Enter}",
-            true,
-            &names.shift_enter,
-        ),
-    ];
-    ends.into_iter()
-        .map(|(id, shortcut, append_text, post_process, effect)| {
-            factory_end(
-                id,
-                shortcut,
-                append_text,
-                post_process,
-                names.name(post_process, effect),
-            )
+    MACOS_SIX
+        .iter()
+        .enumerate()
+        .map(|(index, (id, shortcut, append_text))| {
+            factory_end(id, shortcut, append_text, six_name(names, index))
         })
         .collect()
+}
+
+/// macOS's twelve factory ends from 2026-11-24 until variant b, without
+/// their names and their box "Post-process", which a read drops: the six,
+/// without context, then the same six with ⌥, with context.
+fn old_macos_twelve() -> Vec<EndKey> {
+    let direct = MACOS_SIX.iter().map(|(id, shortcut, append_text)| EndKey {
+        send_context: false,
+        ..factory_end(id, shortcut, append_text, "")
+    });
+    let post = MACOS_OLD_POST
+        .iter()
+        .zip(MACOS_SIX.iter())
+        .map(|((id, shortcut), (_, _, append_text))| factory_end(id, shortcut, append_text, ""));
+    direct.chain(post).collect()
+}
+
+/// The step to variant b for one layer's end shortcuts on macOS: a list
+/// that is still the twelve factory ends of before (but for their names)
+/// becomes the six of [`factory_end_keys_on`], named in the language of
+/// `names` (migration may stay cheap: a name of one's own goes with it); a
+/// list of one's own keeps its ends, only without the box. Returns whether
+/// it changed.
+fn twelve_to_six(end_keys: &mut Vec<EndKey>, names: &FactoryEndNames) -> bool {
+    let unnamed: Vec<EndKey> = end_keys
+        .iter()
+        .map(|end| EndKey {
+            name: String::new(),
+            ..end.clone()
+        })
+        .collect();
+    if unnamed != old_macos_twelve() {
+        return false;
+    }
+    log::info!("The twelve factory ends become the six of variant b");
+    *end_keys = factory_end_keys_on(KeyPlatform::Macos, names);
+    true
 }
 
 /// Without Accessibility DanyWhere can't press keys, not even with its
@@ -354,6 +330,34 @@ pub enum EndChoice {
     /// combination, else the profile's first end shortcut. For the
     /// services, remote control and Handy's `stop`, which must always end.
     Start(String),
+    /// With the values of the instruction shortcut of this id: it was held
+    /// and released (in History `instruction:<id>`), after the recording
+    /// went on to a spoken instruction (`instruction_keys`).
+    Instruction(String),
+    /// As the inner choice, after an instruction shortcut was pressed
+    /// without a spoken instruction: remote control's and the service's
+    /// post-processing toggle (`start_keys::remote_toggle`). The dictation
+    /// post-processes unless its profile never does.
+    AfterInstructionKey(Box<EndChoice>),
+}
+
+impl EndChoice {
+    /// Whether an instruction shortcut came before this end, so the
+    /// dictation post-processes unless its profile never does
+    /// (`dictation_snapshot::wants_post_processing`).
+    pub fn after_instruction_key(&self) -> bool {
+        matches!(self, Self::Instruction(_) | Self::AfterInstructionKey(_))
+    }
+
+    /// This end, after an instruction shortcut: unchanged when one came
+    /// before it already.
+    pub fn with_instruction_key(self) -> EndChoice {
+        if self.after_instruction_key() {
+            self
+        } else {
+            Self::AfterInstructionKey(Box::new(self))
+        }
+    }
 }
 
 /// The end shortcut `id` in `values`.
@@ -426,9 +430,10 @@ fn as_press(values: &ProfileValues, binding_id: &str) -> EndKey {
 }
 
 /// The end a dictation with `values`, started with `recording_binding`,
-/// ends with by `choice`. A pressed end shortcut the profile doesn't have
-/// (it changed meanwhile) ends as a press of the recording's key, a hold
-/// shortcut it doesn't have as [`fallback_end`].
+/// ends with by `choice`. A pressed end shortcut or a held instruction
+/// shortcut the profile doesn't have (it changed meanwhile) ends as a press
+/// of the recording's key, a hold shortcut it doesn't have as
+/// [`fallback_end`].
 pub fn resolve(values: &ProfileValues, choice: &EndChoice, recording_binding: &str) -> EndKey {
     match choice {
         EndChoice::Key(id) => find(values, id).cloned().unwrap_or_else(|| {
@@ -440,27 +445,38 @@ pub fn resolve(values: &ProfileValues, choice: &EndChoice, recording_binding: &s
             fallback_end(values)
         }),
         EndChoice::Start(id) => as_start(values, id),
+        EndChoice::Instruction(id) => crate::instruction_keys::instruction_end(values, id)
+            .unwrap_or_else(|| {
+                log::warn!(
+                    "Instruction shortcut '{id}' not in the profile; ending as its key's press"
+                );
+                as_press(values, recording_binding)
+            }),
+        EndChoice::AfterInstructionKey(inner) => resolve(values, inner, recording_binding),
     }
 }
 
-/// The end of id `id` in `values`: an end shortcut, or a hold shortcut's
-/// end by its History id (`hold:<id>`); one of before hold shortcuts
-/// (`held:transcribe`, `held:transcribe_with_post_process`) is the first
-/// hold shortcut without, or with, post-processing. For redoing a dictation
-/// for another profile (`profile_redo`).
+/// The end of id `id` in `values`: an end shortcut, a hold shortcut's end
+/// by its History id (`hold:<id>`), or a held instruction shortcut's
+/// (`instruction:<id>`); one of before hold shortcuts (`held:transcribe`,
+/// `held:transcribe_with_post_process`) is the first, or the second, hold
+/// shortcut, where the start shortcuts' hold ends went
+/// (`start_keys::from_old`). For redoing a dictation for another profile
+/// (`profile_redo`).
 pub fn find_end(values: &ProfileValues, id: &str) -> Option<EndKey> {
     if let Some(hold) = id.strip_prefix(crate::start_keys::HOLD_END_PREFIX) {
         return hold_end(values, hold);
     }
+    if let Some(key) = id.strip_prefix(crate::instruction_keys::END_PREFIX) {
+        return crate::instruction_keys::instruction_end(values, key);
+    }
     if let Some(binding) = id.strip_prefix(LEGACY_HELD_PREFIX) {
-        let post_process = LEGACY_START_BINDINGS
+        let index = LEGACY_START_BINDINGS
             .iter()
-            .position(|legacy| *legacy == binding)?
-            == 1;
+            .position(|legacy| *legacy == binding)?;
         return values
             .hold_keys
-            .iter()
-            .find(|hold| hold.post_process == post_process)
+            .get(index)
             .and_then(|hold| hold_end(values, &hold.id));
     }
     find(values, id).cloned()
@@ -591,6 +607,10 @@ pub fn migrate(settings: &mut AppSettings, settings_value: &serde_json::Value) -
 /// - once, a value from before start and hold shortcuts (2026-11-26) gets
 ///   them from its start shortcuts, their behavior and their hold ends
 ///   (`start_keys::migrate`);
+/// - once, variant b (2026-11-26): the twelve factory ends of macOS become
+///   the six, the factory hold shortcuts of before the new ones
+///   ([`to_variant_b`]); every end's box "Post-process" went when the store
+///   was read;
 /// - an Append text with another system's key names gets `platform`'s
 ///   (`append_text::localize`), on every read.
 ///
@@ -677,6 +697,9 @@ pub fn migrate_on(
         default_holds.as_ref(),
     );
 
+    // DanyWhere: variant b (2026-11-26).
+    changed |= to_variant_b(settings, platform);
+
     let ends = settings
         .end_keys
         .iter_mut()
@@ -698,6 +721,66 @@ pub fn migrate_on(
         changed |= localize_in_place(&mut end.append_text, platform);
     }
     changed
+}
+
+/// The step to variant b (user, 2026-11-26) for every layer: on macOS a
+/// list of the twelve factory ends of before becomes the six, named in the
+/// interface's language ([`twelve_to_six`]); factory hold shortcuts of
+/// before become the new ones (`start_keys::replace_old_factory_holds`).
+/// A profile whose list changed loses its own entries and switched-off ones
+/// that are gone with it. Returns whether anything changed; a second run
+/// changes nothing.
+fn to_variant_b(settings: &mut AppSettings, platform: KeyPlatform) -> bool {
+    let names = FactoryEndNames::for_locale(&settings.app_language);
+    let step = |end_keys: &mut Vec<EndKey>, hold_keys: &mut Vec<EndKey>| {
+        let ends = platform == KeyPlatform::Macos && twelve_to_six(end_keys, &names);
+        let holds = crate::start_keys::replace_old_factory_holds(hold_keys, platform);
+        (ends, holds)
+    };
+    let (ends, holds) = step(&mut settings.end_keys, &mut settings.hold_keys);
+    let mut changed = ends || holds;
+    if let Some(defaults) = settings.default_values.as_mut() {
+        let (ends, holds) = step(&mut defaults.end_keys, &mut defaults.hold_keys);
+        changed |= ends || holds;
+    }
+    let defaults = settings.default_values.clone();
+    for profile in settings.profiles.iter_mut() {
+        let (ends, holds) = step(&mut profile.values.end_keys, &mut profile.values.hold_keys);
+        for (field, stepped) in [("end_keys", ends), ("hold_keys", holds)] {
+            if stepped {
+                changed = true;
+                prune_own_entries(profile, defaults.as_ref(), field);
+            }
+        }
+    }
+    changed
+}
+
+/// Drops the own entries of list `field` (`end_keys` or `hold_keys`) of
+/// `profile` that its list no longer has, and the switched-off ones the
+/// defaults no longer have.
+fn prune_own_entries(
+    profile: &mut crate::profiles::Profile,
+    defaults: Option<&ProfileValues>,
+    field: &str,
+) {
+    let ids = |values: &ProfileValues| -> Vec<String> {
+        let list = if field == "end_keys" {
+            &values.end_keys
+        } else {
+            &values.hold_keys
+        };
+        list.iter().map(|end| end.id.clone()).collect()
+    };
+    let mine = ids(&profile.values);
+    let theirs = defaults.map(ids).unwrap_or_default();
+    if let Some(entries) = profile.own_entries.get_mut(field) {
+        entries.own.retain(|id| mine.contains(id));
+        entries.off.retain(|id| theirs.contains(id));
+        if entries.is_empty() {
+            profile.own_entries.remove(field);
+        }
+    }
 }
 
 /// `text` with `platform`'s key names; whether it changed.
@@ -753,8 +836,7 @@ fn migrate_layer(
 }
 
 /// The hold ends stored values from before start and hold shortcuts held
-/// (`hold_ends`, by start shortcut); a missing one as out of the box: the
-/// second post-processes.
+/// (`hold_ends`, by start shortcut); a missing one without text or context.
 fn stored_holds(stored: Option<&serde_json::Value>) -> [OldHold; 2] {
     let holds: HashMap<String, OldHold> = stored
         .and_then(|values| values.get("hold_ends"))
@@ -764,10 +846,7 @@ fn stored_holds(stored: Option<&serde_json::Value>) -> [OldHold; 2] {
         holds
             .get(LEGACY_START_BINDINGS[index])
             .cloned()
-            .unwrap_or(OldHold {
-                post_process: index == 1,
-                ..OldHold::default()
-            })
+            .unwrap_or_default()
     })
 }
 
@@ -807,13 +886,9 @@ fn from_default_ends(
     let holds = [0, 1].map(|index| match default_of(end_keys, index) {
         Some(at) => OldHold {
             append_text: end_keys[at].append_text.clone(),
-            post_process: end_keys[at].post_process,
             send_context: end_keys[at].send_context,
         },
-        None => OldHold {
-            post_process: index == 1,
-            ..OldHold::default()
-        },
+        None => OldHold::default(),
     });
     let take = |ends: &mut Vec<EndKey>, index: Option<usize>, keys: &str| {
         let Some(index) = index else { return };
@@ -977,19 +1052,93 @@ pub fn change_end_keys_setting(app: AppHandle, end_keys: Vec<EndKey>) -> Result<
     Ok(())
 }
 
+/// The twelve ends macOS had out of the box until 2026-11-26, as a store
+/// holds them, named in German.
+#[cfg(test)]
+pub fn twelve_stored() -> serde_json::Value {
+    let six = [
+        (
+            "space",
+            "Leerzeichen",
+            "ctrl+space",
+            "ctrl+option+space",
+            " ",
+        ),
+        (
+            "no_space",
+            "ohne Leerzeichen",
+            "ctrl+shift+space",
+            "ctrl+option+shift+space",
+            "",
+        ),
+        ("paragraph", "Absatz", "return", "option+return", r"\n\n"),
+        (
+            "line",
+            "Zeile",
+            "shift+return",
+            "option+shift+return",
+            r"\n",
+        ),
+        (
+            "enter",
+            "Enter senden",
+            "ctrl+return",
+            "ctrl+option+return",
+            "{Enter}",
+        ),
+        (
+            "shift_enter",
+            "Shift-Enter senden",
+            "ctrl+shift+return",
+            "ctrl+option+shift+return",
+            "{Shift+Enter}",
+        ),
+    ];
+    let mut ends = Vec::new();
+    for post in [false, true] {
+        for (id, effect, direct_keys, post_keys, append) in six {
+            let (prefix, mode, keys) = if post {
+                ("post", "Nachbearbeitet", post_keys)
+            } else {
+                ("direct", "Direkt", direct_keys)
+            };
+            ends.push(serde_json::json!({
+                "id": format!("{prefix}_{id}"),
+                "name": format!("{mode} · {effect}"),
+                "shortcut": keys,
+                "append_text": append,
+                "post_process": post,
+                "send_context": post,
+            }));
+        }
+    }
+    serde_json::Value::Array(ends)
+}
+
+/// The hold shortcuts macOS had out of the box from 2026-11-26 until
+/// variant b, as a store holds them.
+#[cfg(test)]
+pub fn r_holds_stored() -> serde_json::Value {
+    serde_json::json!([
+        { "id": "hold_direct", "name": "", "shortcut": "ctrl+space",
+          "append_text": " ", "post_process": false, "send_context": false },
+        { "id": "hold_post", "name": "", "shortcut": "ctrl+shift+space",
+          "append_text": " ", "post_process": true, "send_context": true },
+    ])
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::settings::get_default_settings;
     use crate::start_keys::{KeyList, StartKey, HOLD_DIRECT_ID, HOLD_POST_ID};
 
-    fn end(id: &str, name: &str, shortcut: &str, append: &str, pp: bool, ctx: bool) -> EndKey {
+    fn end(id: &str, name: &str, shortcut: &str, append: &str, ctx: bool) -> EndKey {
         EndKey {
             id: id.to_string(),
             name: name.to_string(),
             shortcut: shortcut.to_string(),
             append_text: append.to_string(),
-            post_process: pp,
             send_context: ctx,
         }
     }
@@ -1050,111 +1199,12 @@ mod tests {
         );
     }
 
-    /// The user's end shortcuts of 2026-11-23 (qa note
-    /// `2026-11-23_2135_endetasten-grundeinstellungen`), by their rule: ⌥
-    /// post-processes, ⇧ picks the smaller variant, ⌃ on Enter presses a
-    /// key instead of appending text. First the six without post-processing,
-    /// then the same six with it; "Send Context" only where post-processing
-    /// is on, as the context goes nowhere else. In German with exactly the
-    /// user's names.
-    #[test]
-    fn on_macos_a_new_installation_ends_by_the_users_scheme() {
-        let expected = [
-            ("direct_space", "Direkt · Leerzeichen", "ctrl+space", " "),
-            (
-                "direct_no_space",
-                "Direkt · ohne Leerzeichen",
-                "ctrl+shift+space",
-                "",
-            ),
-            ("direct_paragraph", "Direkt · Absatz", "return", r"\n\n"),
-            ("direct_line", "Direkt · Zeile", "shift+return", r"\n"),
-            (
-                "direct_enter",
-                "Direkt · Enter senden",
-                "ctrl+return",
-                "{Enter}",
-            ),
-            (
-                "direct_shift_enter",
-                "Direkt · Shift-Enter senden",
-                "ctrl+shift+return",
-                "{Shift+Enter}",
-            ),
-            (
-                "post_space",
-                "Nachbearbeitet · Leerzeichen",
-                "ctrl+option+space",
-                " ",
-            ),
-            (
-                "post_no_space",
-                "Nachbearbeitet · ohne Leerzeichen",
-                "ctrl+option+shift+space",
-                "",
-            ),
-            (
-                "post_paragraph",
-                "Nachbearbeitet · Absatz",
-                "option+return",
-                r"\n\n",
-            ),
-            (
-                "post_line",
-                "Nachbearbeitet · Zeile",
-                "option+shift+return",
-                r"\n",
-            ),
-            (
-                "post_enter",
-                "Nachbearbeitet · Enter senden",
-                "ctrl+option+return",
-                "{Enter}",
-            ),
-            (
-                "post_shift_enter",
-                "Nachbearbeitet · Shift-Enter senden",
-                "ctrl+option+shift+return",
-                "{Shift+Enter}",
-            ),
-        ];
-        let expected: Vec<EndKey> = expected
-            .into_iter()
-            .map(|(id, name, shortcut, append)| {
-                let pp = id.starts_with("post_");
-                end(id, name, shortcut, append, pp, pp)
-            })
-            .collect();
-        assert_eq!(macos_ends_in("de"), expected);
-    }
-
-    #[test]
-    fn in_english_the_factory_ends_are_named_alike() {
-        assert_eq!(
-            names_of(&macos_ends_in("en")),
-            [
-                "Direct · Space",
-                "Direct · No space",
-                "Direct · Paragraph",
-                "Direct · Line",
-                "Direct · Send Enter",
-                "Direct · Send Shift+Enter",
-                "Post-processed · Space",
-                "Post-processed · No space",
-                "Post-processed · Paragraph",
-                "Post-processed · Line",
-                "Post-processed · Send Enter",
-                "Post-processed · Send Shift+Enter",
-            ]
-        );
-    }
-
     /// A regional locale (the system's, e.g. `de-AT`) takes its language's
     /// names, as the tray does.
     #[test]
     fn a_regional_locale_takes_its_languages_names() {
         let german = FactoryEndNames::for_locale("de");
-        assert_eq!(german.direct, "Direkt");
+        assert_eq!(german.space, "Leerzeichen");
         assert_eq!(FactoryEndNames::for_locale("de-AT"), german);
         assert_eq!(FactoryEndNames::for_locale("de_CH"), german);
     }
@@ -1162,46 +1212,8 @@ mod tests {
     #[test]
     fn an_unsupported_locale_takes_the_english_names() {
         let english = FactoryEndNames::for_locale("en");
-        assert_eq!(english.post_processed, "Post-processed");
+        assert_eq!(english.no_space, "No space");
         assert_eq!(FactoryEndNames::for_locale("xx-YY"), english);
-    }
-
-    /// Every language of the interface names all twelve, each apart from
-    /// the others and with nothing left unfilled.
-    #[test]
-    fn every_language_names_every_factory_end_apart() {
-        for locale in crate::tray_i18n::TRANSLATIONS.keys() {
-            let ends = macos_ends_in(locale);
-            let names = names_of(&ends);
-            assert!(
-                names
-                    .iter()
-                    .all(|name| !name.trim().is_empty() && !name.contains("{{")),
-                "{locale}: {names:?}"
-            );
-            let apart: std::collections::HashSet<_> = names.iter().collect();
-            assert_eq!(apart.len(), ends.len(), "{locale}: {names:?}");
-            assert_eq!(validate(&ends), Ok(()), "{locale}");
-        }
-    }
-
-    /// Windows and Linux keep the two ends with the factory start and hold
-    /// combinations, unnamed in every language: Linux takes no end's own
-    /// combination, and on Windows Ctrl+Alt is AltGr.
-    #[test]
-    fn on_windows_and_linux_a_new_installation_ends_with_the_factory_combinations() {
-        let german = FactoryEndNames::for_locale("de");
-        for platform in [KeyPlatform::Windows, KeyPlatform::Linux] {
-            let (plain_keys, post_keys) = crate::start_keys::factory_combinations_on(platform);
-            assert_eq!(
-                factory_end_keys_on(platform, &german),
-                vec![
-                    end(PLAIN_ID, "", plain_keys, "", false, false),
-                    end(POST_PROCESS_ID, "", post_keys, "", true, false),
-                ],
-                "{platform:?}"
-            );
-        }
     }
 
     /// The first two macOS ends are what a second press of the factory
@@ -1257,8 +1269,8 @@ mod tests {
         assert_eq!(
             builtin_for_keys(("f13", &post_keys), r"\n\n", true),
             vec![
-                end(PLAIN_ID, "", "f13", r"\n\n", false, true),
-                end(POST_PROCESS_ID, "", &post_keys, r"\n\n", true, true),
+                end(PLAIN_ID, "", "f13", r"\n\n", true),
+                end(POST_PROCESS_ID, "", &post_keys, r"\n\n", true),
             ]
         );
     }
@@ -1268,17 +1280,14 @@ mod tests {
     #[test]
     fn an_end_shortcut_ends_with_its_own_values() {
         let mut keys = builtin("", false);
-        keys.push(end("line", "Line", "shift+enter", r"\n", false, false));
+        keys.push(end("line", "Line", "shift+enter", r"\n", false));
         let values = values_with(keys);
         let chosen = resolve(
             &values,
             &EndChoice::Key("line".to_string()),
             "start_key:start",
         );
-        assert_eq!(
-            chosen,
-            end("line", "Line", "shift+enter", r"\n", false, false)
-        );
+        assert_eq!(chosen, end("line", "Line", "shift+enter", r"\n", false));
     }
 
     #[test]
@@ -1326,8 +1335,8 @@ mod tests {
     #[test]
     fn only_end_shortcuts_with_a_key_combination_are_registered() {
         let keys = vec![
-            end("send", "Send", "ctrl+enter", "{Enter}", true, false),
-            end("blank", "Blank", "  ", "", false, false),
+            end("send", "Send", "ctrl+enter", "{Enter}", false),
+            end("blank", "Blank", "  ", "", false),
         ];
         let bindings = bindings_to_register(&keys);
         assert_eq!(bindings.len(), 1);
@@ -1340,7 +1349,7 @@ mod tests {
     #[test]
     fn every_end_shortcut_needs_a_key_combination() {
         let mut keys = builtin("", false);
-        keys.push(end("x", "X", "  ", "", false, false));
+        keys.push(end("x", "X", "  ", "", false));
         assert_eq!(validate(&keys).unwrap_err(), "end-key-needs-shortcut:x");
     }
 
@@ -1348,19 +1357,19 @@ mod tests {
     fn a_list_needs_unique_ids_and_combinations_but_no_names() {
         let mut keys = builtin("", false);
         assert!(validate(&keys).is_ok());
-        keys.push(end("send", "", "ctrl+enter", "", false, false));
+        keys.push(end("send", "", "ctrl+enter", "", false));
         assert!(validate(&keys).is_ok(), "a name of its own is optional");
 
         let mut twice = keys.clone();
-        twice.push(end("send", "Other", "f14", "", false, false));
+        twice.push(end("send", "Other", "f14", "", false));
         assert!(validate(&twice).is_err(), "id twice");
 
         let mut no_id = keys.clone();
-        no_id.push(end("", "Named", "f14", "", false, false));
+        no_id.push(end("", "Named", "f14", "", false));
         assert!(validate(&no_id).is_err(), "no id");
 
         let mut same_keys = keys.clone();
-        same_keys.push(end("y", "Y", "ctrl+enter", "", false, false));
+        same_keys.push(end("y", "Y", "ctrl+enter", "", false));
         assert_eq!(
             validate(&same_keys).unwrap_err(),
             "end-key-shortcut-twice:ctrl+enter"
@@ -1370,15 +1379,15 @@ mod tests {
     #[test]
     fn a_combination_counts_twice_when_one_press_fires_both() {
         let mut keys = builtin("", false);
-        keys.push(end("send", "Send", "ctrl+return", "", false, false));
-        keys.push(end("left", "Left", "ctrl_left+return", "", false, false));
+        keys.push(end("send", "Send", "ctrl+return", "", false));
+        keys.push(end("left", "Left", "ctrl_left+return", "", false));
         assert_eq!(
             validate(&keys).unwrap_err(),
             "end-key-shortcut-twice:ctrl_left+return"
         );
         let mut apart = builtin("", false);
-        apart.push(end("left", "Left", "ctrl_left+return", "", false, false));
-        apart.push(end("right", "Right", "ctrl_right+return", "", false, false));
+        apart.push(end("left", "Left", "ctrl_left+return", "", false));
+        apart.push(end("right", "Right", "ctrl_right+return", "", false));
         assert!(validate(&apart).is_ok(), "the left and the right Ctrl");
     }
 
@@ -1395,7 +1404,7 @@ mod tests {
                 id: "start".to_string(),
                 shortcut: start,
             }],
-            hold_keys: vec![end("hold", "", "f13", "", true, false)],
+            hold_keys: vec![end("hold", "", "f13", "", false)],
             ..values_with(builtin("", false))
         }
     }
@@ -1519,16 +1528,16 @@ mod tests {
         assert_eq!(
             s.end_keys,
             vec![
-                end(PLAIN_ID, "", "f13", r"\n\n", false, true),
-                end(POST_PROCESS_ID, "", &post_keys, r"\n\n", true, true),
+                end(PLAIN_ID, "", "f13", r"\n\n", true),
+                end(POST_PROCESS_ID, "", &post_keys, r"\n\n", true),
             ]
         );
         // Handy's "Auto" (no activation stored): it holds with both.
         assert_eq!(
             s.hold_keys,
             vec![
-                end(HOLD_DIRECT_ID, "", "f13", r"\n\n", false, true),
-                end(HOLD_POST_ID, "", &post_keys, r"\n\n", true, true),
+                end(HOLD_DIRECT_ID, "", "f13", r"\n\n", true),
+                end(HOLD_POST_ID, "", &post_keys, r"\n\n", true),
             ]
         );
         assert_eq!(s.start_keys[0].shortcut, "f13");
@@ -1536,8 +1545,8 @@ mod tests {
         assert_eq!(
             s.profiles[0].values.end_keys,
             vec![
-                end(PLAIN_ID, "", "f13", r"\s", false, false),
-                end(POST_PROCESS_ID, "", &post_keys, r"\s", true, false),
+                end(PLAIN_ID, "", "f13", r"\s", false),
+                end(POST_PROCESS_ID, "", &post_keys, r"\s", false),
             ]
         );
         // Their start and hold shortcuts follow the flat ones.
@@ -1605,10 +1614,10 @@ mod tests {
         map.remove("start_keys");
         map.remove("hold_keys");
         let old = vec![
-            end(PLAIN_ID, "", "", r"\n", false, true),
-            end(POST_PROCESS_ID, "", "", r"\s", true, false),
-            end("send", "Senden", "ctrl+return", "{Enter}", true, false),
-            end("spare", "Reserve", "", "", false, false),
+            end(PLAIN_ID, "", "", r"\n", true),
+            end(POST_PROCESS_ID, "", "", r"\s", false),
+            end("send", "Senden", "ctrl+return", "{Enter}", false),
+            end("spare", "Reserve", "", "", false),
         ];
         map.insert("end_keys".into(), serde_json::json!(old));
         map.insert(
@@ -1640,17 +1649,17 @@ mod tests {
         assert_eq!(
             s.end_keys,
             vec![
-                end(PLAIN_ID, "", &plain_keys, r"\n", false, true),
-                end(POST_PROCESS_ID, "", &post_keys, r"\s", true, false),
-                end("send", "Senden", "ctrl+return", "{Enter}", true, false),
+                end(PLAIN_ID, "", &plain_keys, r"\n", true),
+                end(POST_PROCESS_ID, "", &post_keys, r"\s", false),
+                end("send", "Senden", "ctrl+return", "{Enter}", false),
             ],
             "an end without a combination that ended nothing goes"
         );
         assert_eq!(
             s.hold_keys,
             vec![
-                end(HOLD_DIRECT_ID, "", &plain_keys, r"\n", false, true),
-                end(HOLD_POST_ID, "", &post_keys, r"\s", true, false),
+                end(HOLD_DIRECT_ID, "", &plain_keys, r"\n", true),
+                end(HOLD_POST_ID, "", &post_keys, r"\s", false),
             ]
         );
     }
@@ -1674,7 +1683,7 @@ mod tests {
         );
         assert_eq!(
             s.hold_keys[0],
-            end(HOLD_DIRECT_ID, "", &plain_keys, "", false, false)
+            end(HOLD_DIRECT_ID, "", &plain_keys, "", false)
         );
     }
 
@@ -1762,8 +1771,8 @@ mod tests {
     #[test]
     fn an_import_from_dev_gives_its_ends_the_start_combinations() {
         let dev = values_with(vec![
-            end(PLAIN_ID, "", "", r"\s", false, false),
-            end(POST_PROCESS_ID, "", "", "{Enter}", true, true),
+            end(PLAIN_ID, "", "", r"\s", false),
+            end(POST_PROCESS_ID, "", "", "{Enter}", true),
         ]);
         let mut file_values = serde_json::to_value(&dev).unwrap();
         let map = file_values.as_object_mut().unwrap();
@@ -1788,7 +1797,7 @@ mod tests {
     #[test]
     fn an_import_with_end_shortcuts_keeps_them() {
         let values = ProfileValues {
-            end_keys: vec![end("send", "Send", "ctrl+enter", "{Win+Enter}", true, true)],
+            end_keys: vec![end("send", "Send", "ctrl+enter", "{Win+Enter}", true)],
             ..Default::default()
         };
         let file = serde_saphyr::to_string(&serde_json::json!({
@@ -1803,5 +1812,252 @@ mod tests {
         assert_eq!(imported.bindings, values.bindings);
         assert_eq!(imported.start_keys, values.start_keys);
         assert_eq!(imported.hold_keys, values.hold_keys);
+    }
+
+    // ---- Variant b (user, 2026-11-26): no "Post-process" box ------------------
+
+    /// An end without the box: what an end of variant b is.
+    fn plain(id: &str, name: &str, shortcut: &str, append: &str, ctx: bool) -> EndKey {
+        end(id, name, shortcut, append, ctx)
+    }
+
+    /// The six ends of macOS out of the box, named in German.
+    fn six_in_german() -> Vec<EndKey> {
+        [
+            ("direct_space", "Leerzeichen", "ctrl+space", " "),
+            (
+                "direct_no_space",
+                "Ohne Leerzeichen",
+                "ctrl+shift+space",
+                "",
+            ),
+            ("direct_paragraph", "Absatz", "return", r"\n\n"),
+            ("direct_line", "Zeile", "shift+return", r"\n"),
+            ("direct_enter", "Enter senden", "ctrl+return", "{Enter}"),
+            (
+                "direct_shift_enter",
+                "Shift-Enter senden",
+                "ctrl+shift+return",
+                "{Shift+Enter}",
+            ),
+        ]
+        .into_iter()
+        .map(|(id, name, shortcut, append)| plain(id, name, shortcut, append, true))
+        .collect()
+    }
+
+    #[test]
+    fn on_macos_six_ends_named_only_by_what_they_do_all_with_context() {
+        assert_eq!(macos_ends_in("de"), six_in_german());
+        assert_eq!(
+            names_of(&macos_ends_in("en")),
+            [
+                "Space",
+                "No space",
+                "Paragraph",
+                "Line",
+                "Send Enter",
+                "Send Shift+Enter"
+            ]
+        );
+    }
+
+    #[test]
+    fn every_language_names_the_six_apart() {
+        for locale in crate::tray_i18n::TRANSLATIONS.keys() {
+            let ends = macos_ends_in(locale);
+            assert_eq!(ends.len(), 6, "{locale}");
+            let names = names_of(&ends);
+            assert!(
+                names
+                    .iter()
+                    .all(|name| !name.trim().is_empty() && !name.contains("{{")),
+                "{locale}: {names:?}"
+            );
+            let apart: std::collections::HashSet<_> = names.iter().collect();
+            assert_eq!(apart.len(), 6, "{locale}: {names:?}");
+        }
+    }
+
+    #[test]
+    fn on_windows_and_linux_the_two_ends_stay() {
+        for platform in [KeyPlatform::Windows, KeyPlatform::Linux] {
+            let (first, second) = crate::start_keys::factory_combinations_on(platform);
+            assert_eq!(
+                factory_end_keys_on(platform, &FactoryEndNames::for_locale("de")),
+                vec![
+                    plain(PLAIN_ID, "", first, "", false),
+                    plain(POST_PROCESS_ID, "", second, "", false),
+                ],
+                "{platform:?}"
+            );
+        }
+    }
+
+    // ---- How it ends after an instruction key ----------------------------------
+
+    fn with_instruction_key() -> ProfileValues {
+        let mut values = values_with(builtin("", false));
+        values.instruction_keys = vec![plain("tab", "", "tab", " ", true)];
+        values
+    }
+
+    #[test]
+    fn a_held_instruction_key_ends_with_its_values() {
+        let values = with_instruction_key();
+        assert_eq!(
+            resolve(
+                &values,
+                &EndChoice::Instruction("tab".to_string()),
+                "start_key:start"
+            ),
+            plain("instruction:tab", "", "tab", " ", true)
+        );
+        assert_eq!(
+            find_end(&values, "instruction:tab"),
+            Some(plain("instruction:tab", "", "tab", " ", true)),
+            "a redo finds it by its History id"
+        );
+    }
+
+    #[test]
+    fn an_end_after_an_instruction_key_is_the_inner_end() {
+        let values = with_instruction_key();
+        let inner = EndChoice::Key(POST_PROCESS_ID.to_string());
+        assert_eq!(
+            resolve(
+                &values,
+                &EndChoice::AfterInstructionKey(Box::new(inner.clone())),
+                "start_key:start"
+            ),
+            resolve(&values, &inner, "start_key:start")
+        );
+    }
+
+    #[test]
+    fn an_end_knows_whether_an_instruction_key_came_before_it() {
+        let key = EndChoice::Key("x".to_string());
+        assert!(!key.after_instruction_key());
+        assert!(!EndChoice::Start("s".to_string()).after_instruction_key());
+        assert!(!EndChoice::Held("h".to_string()).after_instruction_key());
+        assert!(EndChoice::Instruction("tab".to_string()).after_instruction_key());
+        let after = key.clone().with_instruction_key();
+        assert_eq!(after, EndChoice::AfterInstructionKey(Box::new(key)));
+        assert!(after.after_instruction_key());
+        assert_eq!(after.clone().with_instruction_key(), after, "not twice");
+        let held = EndChoice::Instruction("tab".to_string());
+        assert_eq!(held.clone().with_instruction_key(), held);
+    }
+
+    #[test]
+    fn an_end_by_holding_from_before_hold_shortcuts_is_the_hold_key_in_its_place() {
+        let mut values = values_with(builtin("", false));
+        values.hold_keys = vec![
+            plain("first", "", "f13", "a", false),
+            plain("second", "", "f14", "b", false),
+        ];
+        assert_eq!(
+            find_end(&values, "held:transcribe").map(|end| end.id),
+            Some("hold:first".to_string())
+        );
+        assert_eq!(
+            find_end(&values, "held:transcribe_with_post_process").map(|end| end.id),
+            Some("hold:second".to_string())
+        );
+    }
+
+    // ---- The step to variant b ------------------------------------------------
+
+    /// A current store whose ends and hold shortcuts are the factory ones of
+    /// before variant b.
+    fn store_before_variant_b() -> serde_json::Value {
+        let mut stored = serde_json::to_value(get_default_settings()).unwrap();
+        stored["end_keys"] = twelve_stored();
+        stored["hold_keys"] = r_holds_stored();
+        stored["app_language"] = serde_json::json!("de");
+        stored
+    }
+
+    #[test]
+    fn the_twelve_factory_ends_become_the_six_named_by_what_they_do() {
+        let stored = store_before_variant_b();
+        let mut s = read(&stored);
+        assert!(migrate_on(&mut s, &stored, KeyPlatform::Macos));
+        assert_eq!(s.end_keys, six_in_german());
+    }
+
+    /// The names don't count, as they were written in the language of the
+    /// first start; the six take the new ones (migration may stay cheap).
+    #[test]
+    fn a_factory_list_with_names_of_its_own_takes_the_new_names() {
+        let mut stored = store_before_variant_b();
+        stored["end_keys"][0]["name"] = serde_json::json!("Mein Leerzeichen");
+        let mut s = read(&stored);
+        migrate_on(&mut s, &stored, KeyPlatform::Macos);
+        assert_eq!(s.end_keys, six_in_german());
+    }
+
+    #[test]
+    fn a_list_of_ones_own_keeps_its_ends_without_the_box() {
+        let mut stored = store_before_variant_b();
+        stored["end_keys"][3]["append_text"] = serde_json::json!(r"\n\n\n");
+        let mut s = read(&stored);
+        migrate_on(&mut s, &stored, KeyPlatform::Macos);
+        assert_eq!(s.end_keys.len(), 12);
+        assert_eq!(s.end_keys[3].append_text, r"\n\n\n");
+        assert_eq!(s.end_keys[6].id, "post_space");
+    }
+
+    #[test]
+    fn the_factory_hold_shortcuts_of_before_become_the_new_ones() {
+        let stored = store_before_variant_b();
+        let mut s = read(&stored);
+        migrate_on(&mut s, &stored, KeyPlatform::Macos);
+        assert_eq!(
+            s.hold_keys,
+            crate::start_keys::factory_hold_keys_on(KeyPlatform::Macos)
+        );
+        let mut own = store_before_variant_b();
+        own["hold_keys"][1]["append_text"] = serde_json::json!(r"\n");
+        let mut s = read(&own);
+        migrate_on(&mut s, &own, KeyPlatform::Macos);
+        assert_eq!(
+            s.hold_keys
+                .iter()
+                .map(|hold| (hold.id.as_str(), hold.append_text.as_str()))
+                .collect::<Vec<_>>(),
+            vec![("hold_direct", " "), ("hold_post", r"\n")],
+            "a list of one's own stays"
+        );
+    }
+
+    #[test]
+    fn every_layer_takes_the_step_and_a_second_read_writes_nothing() {
+        let mut stored = store_before_variant_b();
+        let mut defaults = serde_json::to_value(ProfileValues::default()).unwrap();
+        defaults["end_keys"] = twelve_stored();
+        defaults["hold_keys"] = r_holds_stored();
+        let mut work = defaults.clone();
+        work["selected_language"] = serde_json::json!("en");
+        stored["default_values"] = defaults;
+        stored["active_profile_id"] = serde_json::json!("default");
+        stored["profiles"] = serde_json::json!([{
+            "id": "work", "name": "Arbeit", "apps": [], "values": work,
+            "own": ["selected_language"], "own_entries": {}
+        }]);
+        let mut s = read(&stored);
+        assert!(migrate_on(&mut s, &stored, KeyPlatform::Macos));
+        let defaults = s.default_values.clone().unwrap();
+        assert_eq!(defaults.end_keys, six_in_german());
+        assert_eq!(s.profiles[0].values.end_keys, six_in_german());
+        assert_eq!(
+            s.profiles[0].values.hold_keys,
+            crate::start_keys::factory_hold_keys_on(KeyPlatform::Macos)
+        );
+        let written = serde_json::to_value(&s).unwrap();
+        let mut again = read(&written);
+        assert!(!migrate_on(&mut again, &written, KeyPlatform::Macos));
+        assert_eq!(again.end_keys, s.end_keys);
+        assert_eq!(again.profiles, s.profiles);
     }
 }

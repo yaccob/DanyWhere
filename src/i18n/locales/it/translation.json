@@ -476,6 +476,7 @@
       "description": "Tocca per avviare una registrazione. Continua finché una scorciatoia di fine non la termina.",
       "shortcutHint": "Toccare questa combinazione avvia una registrazione. È sempre occupata.",
       "alsoHold": "Anche scorciatoia da tenere premuta",
+      "alsoInstruction": "Anche scorciatoia di istruzione",
       "add": "Aggiungi scorciatoia di avvio",
       "addPressKeys": "Premi la combinazione per la nuova scorciatoia di avvio",
       "delete": "Elimina la scorciatoia di avvio {{shortcut}}",
@@ -491,11 +492,11 @@
     },
     "holdKeys": {
       "title": "Scorciatoie da tenere premute",
-      "description": "Tieni premuto per registrare. Il rilascio termina la registrazione in questo modo: cosa viene aggiunto, se il testo viene post-elaborato, se le dettature precedenti vengono inviate come contesto.",
+      "description": "Tieni premuto per registrare. Il rilascio termina la registrazione in questo modo: cosa viene aggiunto e se le dettature precedenti vengono inviate come contesto.",
       "shortcutHint": "Tenere premuta questa combinazione registra; rilasciarla termina la registrazione in questo modo.",
       "alsoStart": "Anche scorciatoia di avvio: un tocco breve avvia una registrazione che continua.",
       "holdOnly": "Solo scorciatoia da tenere premuta: un tocco breve non fa nulla.",
-      "notTaken": "Occupata solo finché la post-elaborazione è attiva: fino ad allora, la sua combinazione resta all'app in primo piano.",
+      "alsoInstruction": "Anche scorciatoia di istruzione: durante una registrazione passa all'istruzione.",
       "add": "Aggiungi scorciatoia da tenere premuta",
       "addPressKeys": "Premi la combinazione per la nuova scorciatoia da tenere premuta",
       "refName": "Scorciatoia da tenere premuta {{name}}",
@@ -505,19 +506,34 @@
         "shortcutTwice": "Due scorciatoie da tenere premute non possono condividere una combinazione."
       }
     },
+    "instructionKeys": {
+      "title": "Scorciatoie di istruzione",
+      "description": "Durante una registrazione, una scorciatoia di istruzione passa dal testo a un'istruzione: ciò che dici dopo non viene inserito, ma dice alla post-elaborazione cosa fare con il testo, per esempio «traducilo in polacco». Toccala, e una scorciatoia di fine invia la dettatura; tienila premuta, e il rilascio invia la dettatura come impostato qui. Una dettatura così viene sempre post-elaborata.",
+      "shortcutHint": "Durante una registrazione, premere questa combinazione passa dal testo all'istruzione. È occupata solo durante la registrazione.",
+      "onlyWhileRecording": "Occupata solo durante una registrazione.",
+      "sameAsStartOrHold": "Stessa combinazione di una scorciatoia di avvio o da tenere premuta: senza registrazione ne avvia una, durante una registrazione passa all'istruzione.",
+      "notTakenNever": "La post-elaborazione è impostata su «{{mode}}»: le scorciatoie di istruzione non sono occupate. Scegli un'altra impostazione per «{{setting}}» in Avanzate.",
+      "notTakenNoProvider": "Nessun provider di post-elaborazione con un modello è configurato: le scorciatoie di istruzione non sono occupate finché non ce n'è uno.",
+      "add": "Aggiungi scorciatoia di istruzione",
+      "addPressKeys": "Premi la combinazione per la nuova scorciatoia di istruzione",
+      "refName": "Scorciatoia di istruzione {{name}}",
+      "errors": {
+        "save": "Impossibile salvare le scorciatoie di istruzione: {{error}}",
+        "needsShortcut": "Ogni scorciatoia di istruzione ha bisogno di una combinazione di tasti.",
+        "shortcutTwice": "Due scorciatoie di istruzione non possono condividere una combinazione."
+      }
+    },
     "endKeys": {
       "title": "Scorciatoie di fine",
-      "description": "Come termina una registrazione e cosa segue. Ogni scorciatoia di fine ha una propria combinazione di tasti, occupata solo durante la registrazione, e stabilisce cosa viene aggiunto, se il testo viene post-elaborato e se le dettature precedenti vengono inviate come contesto. Una scorciatoia di fine può avere la combinazione di una scorciatoia di avvio o da tenere premuta: toccarla durante una registrazione termina allora in questo modo.",
+      "description": "Come termina una registrazione e cosa segue. Ogni scorciatoia di fine ha una propria combinazione di tasti, occupata solo durante la registrazione, e stabilisce cosa viene aggiunto e se le dettature precedenti vengono inviate come contesto. Una scorciatoia di fine può avere la combinazione di una scorciatoia di avvio o da tenere premuta: toccarla durante una registrazione termina allora in questo modo.",
       "name": "Nome",
       "shortcutHint": "Premere questa combinazione durante una registrazione la termina in questo modo. È occupata solo durante la registrazione.",
       "sameAsStart": "Stessa combinazione di una scorciatoia di avvio: toccarla di nuovo durante una registrazione la termina in questo modo.",
       "sameAsHold": "Stessa combinazione di una scorciatoia da tenere premuta: toccarla durante una registrazione la termina in questo modo.",
       "append": "Aggiungi alla fine",
       "appendDescription": "Aggiunto a una dettatura che termina in questo modo: il testo, poi il tasto che scegli. Nel testo \\s è uno spazio, \\n un a capo, \\t una tabulazione e \\\\ una barra rovesciata; tutto il resto viene aggiunto così com'è scritto. Il tasto viene inviato solo quando il testo viene incollato.",
-      "postProcess": "Post-elabora",
       "sendContext": "Invia contesto",
-      "sendContextHint": "Solo con la post-elaborazione: le dettature precedenti della stessa finestra vengono inviate come contesto.",
-      "postProcessOff": "La post-elaborazione è disattivata: una dettatura terminata in questo modo non viene post-elaborata. Attiva «Post-Elaborazione» in Avanzate.",
+      "sendContextHint": "Le dettature precedenti della stessa finestra vengono inviate come contesto. Conta solo quando la dettatura viene post-elaborata.",
       "add": "Aggiungi scorciatoia di fine",
       "addPressKeys": "Premi la combinazione per la nuova scorciatoia di fine",
       "delete": "Elimina {{name}}",
@@ -525,9 +541,6 @@
       "held": "{{shortcut}} tenuta premuta",
       "refName": "Scorciatoia di fine {{name}}",
       "factoryNames": {
-        "pattern": "{{mode}} · {{effect}}",
-        "direct": "Diretto",
-        "postProcessed": "Post-elaborato",
         "space": "Spazio",
         "noSpace": "Senza spazio",
         "paragraph": "Paragrafo",
@@ -869,6 +882,7 @@
         "llmCheckTitle": "Verifica i nomi con l'LLM, anche senza post-elaborazione",
         "llmCheckDescription": "Solo nelle dettature con una parola simile a una voce di un elenco di parole. La frase va allora a {{provider}}.",
         "llmCheckNeedsProvider": "Richiede un provider di post-elaborazione con un modello.",
+        "llmCheckNever": "Non finché la post-elaborazione è impostata su «{{mode}}»: allora nulla va a un provider.",
         "llmCheckNotWith": "Non con {{provider}}: richiede un altro provider di post-elaborazione con un modello.",
         "setUpPostProcessing": "Configura la post-elaborazione",
         "switchModel": "Passa a {{model}}",
@@ -1070,6 +1084,15 @@
         "statusDenied": "Non consentito – modificalo in Impostazioni di Sistema › Privacy e sicurezza › Automazione",
         "statusNotRunning": "Non in esecuzione – aprila per consentire",
         "statusUnknown": "Sconosciuto"
+      },
+      "mode": {
+        "title": "Post-Elaborazione",
+        "description": "Quando una dettatura va al provider di post-elaborazione. Mai: nulla va a un provider e le scorciatoie di istruzione non sono occupate. Con scorciatoia di istruzione: solo una dettatura in cui è stata premuta una scorciatoia di istruzione. Sempre: ogni dettatura; una scorciatoia di istruzione aggiunge un'istruzione.",
+        "options": {
+          "never": "Mai",
+          "withInstructionKey": "Con scorciatoia di istruzione",
+          "always": "Sempre"
+        }
       }
     },
     "history": {
@@ -1182,7 +1205,8 @@
       "promptMenu": {
         "button": "Post-elabora con un'istruzione",
         "title": "Post-elabora con",
-        "active": "attiva"
+        "active": "attiva",
+        "withoutSpokenInstruction": "Senza l'istruzione vocale"
       },
       "retranscribeAgain": "Ri-trascrivere e post-elaborare di nuovo, come prima"
     },
@@ -1282,10 +1306,6 @@
       "clamshellMicrophone": {
         "title": "Microfono con coperchio chiuso",
         "description": "Microfono da usare quando il portatile è chiuso"
-      },
-      "postProcessingToggle": {
-        "label": "Post-Elaborazione",
-        "description": "Abilita il miglioramento della trascrizione con IA"
       },
       "muteWhileRecording": {
         "label": "Silenzia durante la registrazione",
@@ -1580,7 +1600,10 @@
     "notReady": "Non ancora pronto",
     "wordList": "Elenco di parole: {{name}}",
     "wordListGlobalOnly": "Nessun elenco aggiuntivo",
-    "cancel": "Annulla"
+    "cancel": "Annulla",
+    "instruction": "Istruzione",
+    "instructionLine": "Istruzione: {{text}}",
+    "textReady": "Testo trascritto"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} potrebbe bloccare 1 scorciatoia",

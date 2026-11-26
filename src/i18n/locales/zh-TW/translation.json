@@ -476,6 +476,7 @@
       "description": "輕按開始錄音。錄音會一直持續，直到用結束快捷鍵結束。",
       "shortcutHint": "輕按此按鍵組合會開始錄音。始終佔用。",
       "alsoHold": "也是按住快捷鍵",
+      "alsoInstruction": "也是指令快捷鍵",
       "add": "新增開始快捷鍵",
       "addPressKeys": "按下新開始快捷鍵的按鍵組合",
       "delete": "刪除開始快捷鍵 {{shortcut}}",
@@ -491,11 +492,11 @@
     },
     "holdKeys": {
       "title": "按住快捷鍵",
-      "description": "按住時錄音。放開會以這種方式結束錄音：附加什麼、是否對文字進行後處理，以及是否將先前的聽寫作為上下文一併傳送。",
+      "description": "按住時錄音。放開會以這種方式結束錄音：附加什麼，以及是否將先前的聽寫作為上下文一併傳送。",
       "shortcutHint": "按住此按鍵組合時錄音；放開會以這種方式結束錄音。",
       "alsoStart": "也是開始快捷鍵：短暫輕按會開始錄音，錄音會持續進行。",
       "holdOnly": "僅為按住快捷鍵：短暫輕按不會有任何作用。",
-      "notTaken": "只在後處理開啟時佔用：在此之前，其按鍵組合仍歸前景應用程式使用。",
+      "alsoInstruction": "也是指令快捷鍵：錄音時會切換到指令。",
       "add": "新增按住快捷鍵",
       "addPressKeys": "按下新按住快捷鍵的按鍵組合",
       "refName": "按住快捷鍵 {{name}}",
@@ -505,19 +506,34 @@
         "shortcutTwice": "兩個按住快捷鍵不能使用同一個按鍵組合。"
       }
     },
+    "instructionKeys": {
+      "title": "指令快捷鍵",
+      "description": "錄音時，指令快捷鍵會從文字切換到指令：之後說的話不會插入，而是告訴後處理該如何處理文字，例如「把這段翻譯成波蘭語」。輕按它，由結束快捷鍵傳送聽寫；按住它，放開時依這裡的設定傳送聽寫。這樣的聽寫一律會進行後處理。",
+      "shortcutHint": "錄音時按下此按鍵組合會從文字切換到指令。只在錄音時佔用。",
+      "onlyWhileRecording": "只在錄音時佔用。",
+      "sameAsStartOrHold": "與某個開始快捷鍵或按住快捷鍵的按鍵組合相同：未錄音時會開始錄音，錄音時會切換到指令。",
+      "notTakenNever": "後處理設為「{{mode}}」：指令快捷鍵不佔用。請在「進階」中為「{{setting}}」選擇其他設定。",
+      "notTakenNoProvider": "尚未設定含模型的後處理供應商：在設定之前，指令快捷鍵不佔用。",
+      "add": "新增指令快捷鍵",
+      "addPressKeys": "按下新指令快捷鍵的按鍵組合",
+      "refName": "指令快捷鍵 {{name}}",
+      "errors": {
+        "save": "無法儲存指令快捷鍵：{{error}}",
+        "needsShortcut": "每個指令快捷鍵都需要按鍵組合。",
+        "shortcutTwice": "兩個指令快捷鍵不能使用同一個按鍵組合。"
+      }
+    },
     "endKeys": {
       "title": "結束快捷鍵",
-      "description": "錄音如何結束以及之後發生什麼。每個結束快捷鍵都有自己的按鍵組合，只在錄音時佔用，並決定附加什麼、是否對文字進行後處理，以及是否將先前的聽寫作為上下文一併傳送。結束快捷鍵可以使用某個開始快捷鍵或按住快捷鍵的按鍵組合：這時在錄音中輕按它就會以這種方式結束。",
+      "description": "錄音如何結束以及之後發生什麼。每個結束快捷鍵都有自己的按鍵組合，只在錄音時佔用，並決定附加什麼，以及是否將先前的聽寫作為上下文一併傳送。結束快捷鍵可以使用某個開始快捷鍵或按住快捷鍵的按鍵組合：這時在錄音中輕按它就會以這種方式結束。",
       "name": "名稱",
       "shortcutHint": "錄音時按下此按鍵組合會以這種方式結束錄音。只在錄音時佔用。",
       "sameAsStart": "與某個開始快捷鍵的按鍵組合相同：錄音時再次輕按會以這種方式結束。",
       "sameAsHold": "與某個按住快捷鍵的按鍵組合相同：錄音時輕按會以這種方式結束。",
       "append": "結尾附加",
       "appendDescription": "附加到以這種方式結束的聽寫：先是文字，然後是你選擇的按鍵。文字中 \\s 代表空格，\\n 代表換行，\\t 代表定位字元，\\\\ 代表反斜線；其他內容依原樣附加。只有在貼上文字時才會送出按鍵。",
-      "postProcess": "後處理",
       "sendContext": "傳送上下文",
-      "sendContextHint": "僅在後處理時：同一視窗中先前的聽寫會作為上下文一併傳送。",
-      "postProcessOff": "後處理已關閉：以這種方式結束的聽寫不會進行後處理。請在「進階」中開啟「後處理」。",
+      "sendContextHint": "同一視窗中先前的聽寫會作為上下文一併傳送。僅在聽寫進行後處理時才有作用。",
       "add": "新增結束快捷鍵",
       "addPressKeys": "按下新結束快捷鍵的按鍵組合",
       "delete": "刪除 {{name}}",
@@ -525,9 +541,6 @@
       "held": "按住 {{shortcut}}",
       "refName": "結束快捷鍵 {{name}}",
       "factoryNames": {
-        "pattern": "{{mode}} · {{effect}}",
-        "direct": "直接",
-        "postProcessed": "後處理",
         "space": "空格",
         "noSpace": "無空格",
         "paragraph": "段落",
@@ -869,6 +882,7 @@
         "llmCheckTitle": "不進行後處理時也用 LLM 核對名稱",
         "llmCheckDescription": "僅限含有與詞彙清單項目相似之詞的聽寫。此時該句會傳送到 {{provider}}。",
         "llmCheckNeedsProvider": "需要一個已設定模型的後處理供應商。",
+        "llmCheckNever": "後處理設為「{{mode}}」時無法使用：此時不會向任何供應商傳送內容。",
         "llmCheckNotWith": "不適用於 {{provider}}：需要另一個已設定模型的後處理供應商。",
         "setUpPostProcessing": "設定後處理",
         "switchModel": "切換到 {{model}}",
@@ -1070,6 +1084,15 @@
         "statusDenied": "未允許 – 請在 系統設定 › 隱私權與安全性 › 自動化 中變更",
         "statusNotRunning": "未執行 – 請啟動它以允許",
         "statusUnknown": "未知"
+      },
+      "mode": {
+        "title": "後處理",
+        "description": "聽寫何時傳送給後處理供應商。從不：不向任何供應商傳送內容，且指令快捷鍵不佔用。使用指令快捷鍵時：僅限按過指令快捷鍵的聽寫。一律：每次聽寫；指令快捷鍵會加入一條指令。",
+        "options": {
+          "never": "從不",
+          "withInstructionKey": "使用指令快捷鍵時",
+          "always": "一律"
+        }
       }
     },
     "history": {
@@ -1182,7 +1205,8 @@
       "promptMenu": {
         "button": "用一個提示詞進行後處理",
         "title": "後處理使用",
-        "active": "啟用"
+        "active": "啟用",
+        "withoutSpokenInstruction": "不含語音指令"
       },
       "retranscribeAgain": "重新轉錄，並像之前一樣再次進行後處理"
     },
@@ -1282,10 +1306,6 @@
       "clamshellMicrophone": {
         "title": "闔蓋麥克風",
         "description": "筆記型電腦闔蓋時使用的麥克風"
-      },
-      "postProcessingToggle": {
-        "label": "後處理",
-        "description": "啟用轉錄後的 AI 文字最佳化"
       },
       "muteWhileRecording": {
         "label": "錄製時靜音",
@@ -1580,7 +1600,10 @@
     "notReady": "尚未就緒",
     "wordList": "詞彙清單：{{name}}",
     "wordListGlobalOnly": "無附加清單",
-    "cancel": "取消"
+    "cancel": "取消",
+    "instruction": "指令",
+    "instructionLine": "指令：{{text}}",
+    "textReady": "文字已轉錄"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} 可能正在阻擋 1 個快捷鍵",

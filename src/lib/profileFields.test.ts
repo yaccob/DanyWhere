@@ -115,6 +115,32 @@ check(
   },
 );
 
+// The fourth list of the same shape, and the post-processing mode per
+// profile that replaces the switch (qa 2026-11-26_1810, "Schnittstelle
+// Phase 2").
+check(
+  "instruction shortcuts are on General, the post-processing mode on Advanced",
+  () => {
+    assert.equal(pageOfValue("instruction_keys"), "general");
+    assert.equal(fieldInfo("instruction_keys")?.large, true);
+    assert.equal(
+      lookup(fieldInfo("instruction_keys")!.label),
+      "Instruction Shortcuts",
+    );
+    assert.equal(pageOfValue("post_process_mode"), "advanced");
+    // The name the switch had (docs/manual/STYLE.md, glossary).
+    assert.equal(
+      lookup(fieldInfo("post_process_mode")!.label),
+      "Post Processing",
+    );
+    assert.equal(
+      lookup("settings.postProcessing.mode.options.withInstructionKey"),
+      "With Instruction Shortcut",
+    );
+    assert.equal(fieldInfo("post_process_enabled"), null);
+  },
+);
+
 check("fields by page", () => {
   assert.equal(pageOfValue("selected_model"), "models");
   assert.ok(fieldsOnPage("advanced").includes("paste_method"));

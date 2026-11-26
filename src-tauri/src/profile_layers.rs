@@ -152,6 +152,11 @@ pub const LIST_FIELDS: &[ListField] = &[
         field: "hold_keys",
         key: EntryKey::Property("id"),
     },
+    // The instruction shortcuts (variant b, 2026-11-26), by id.
+    ListField {
+        field: "instruction_keys",
+        key: EntryKey::Property("id"),
+    },
 ];
 
 /// How a field of [`ProfileValues`] couples, for the interface.
@@ -752,7 +757,9 @@ fn index_of(settings: &AppSettings, id: &str) -> Result<usize, String> {
 
 /// Runs `change` on a copy of `settings` and keeps it, propagated, only
 /// when it succeeds and every layer can still end a recording
-/// (`end_keys::check_layers`) and start one (`start_keys::check_layers`):
+/// (`end_keys::check_layers`) and start one (`start_keys::check_layers`)
+/// and keeps its instruction and end shortcuts apart
+/// (`instruction_keys::check_layers`):
 /// removing an entry of the defaults that a profile follows alone counts
 /// too, as does a profile switching one off.
 fn commit<T>(
@@ -764,6 +771,7 @@ fn commit<T>(
     propagate(&mut next);
     crate::end_keys::check_layers(settings, &next)?;
     crate::start_keys::check_layers(settings, &next)?;
+    crate::instruction_keys::check_layers(settings, &next)?;
     *settings = next;
     Ok(out)
 }
@@ -825,6 +833,10 @@ fn validate(
             crate::start_keys::check_start_keys(values, settings.keyboard_implementation)
         }
         "hold_keys" => crate::start_keys::check_hold_keys(values, settings.keyboard_implementation),
+        "instruction_keys" => crate::instruction_keys::check_instruction_keys(
+            values,
+            settings.keyboard_implementation,
+        ),
         // A shortcut: valid here and taken by no other one of the layer.
         "bindings" => {
             let ids: Vec<String> = match entry {
@@ -1343,7 +1355,7 @@ mod tests {
         ProfileValues {
             selected_model: WHISPER.to_string(),
             selected_language: "de".to_string(),
-            post_process_enabled: true,
+            post_process_mode: crate::settings::PostProcessMode::WithInstructionKey,
             post_process_provider_id: "anthropic".to_string(),
             post_process_models: map(&[
                 ("anthropic", "claude-haiku-5-5"),
@@ -2356,7 +2368,6 @@ mod tests {
             name: "Send".to_string(),
             shortcut: "option+f10".to_string(),
             append_text: "{Enter}".to_string(),
-            post_process: false,
             send_context: false,
         };
         set_entry(

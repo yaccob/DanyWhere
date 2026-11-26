@@ -43,8 +43,9 @@ pub(crate) mod app_ports;
 #[cfg(test)]
 pub(crate) mod fakes;
 // DanyWhere: the spoken instruction (its cut, its state, its building
-// blocks). `begin_instruction` and `key_of_pending` wait for strand Z2's
-// coordinator, which calls them with the instruction shortcut.
+// blocks); the coordinator cuts with `begin_instruction` when an
+// instruction shortcut is pressed (strand Z2). Some blocks serve only the
+// tests so far (`split_dictation`, `key_of_pending`, `is_ready`).
 #[allow(dead_code)]
 pub(crate) mod instruction;
 pub mod ports;
@@ -1323,9 +1324,10 @@ mod tests {
         })
     }
 
-    /// Ended with the post-processing end shortcut.
+    /// Ended with the end shortcut `post_process` after an instruction key,
+    /// so the dictation post-processes (variant b, 2026-11-26).
     fn post_processing() -> EndChoice {
-        EndChoice::Key(POST_PROCESS_ID.to_string())
+        EndChoice::Key(POST_PROCESS_ID.to_string()).with_instruction_key()
     }
 
     /// `settings` with end shortcut `id` appending `append_text` and
@@ -1347,10 +1349,10 @@ mod tests {
     }
 
     /// Settings that post-process with the library's first prompt at
-    /// `base_url`, without structured output; the switch is on.
+    /// `base_url`, without structured output, after an instruction key.
     fn post_process_settings(base_url: &str) -> AppSettings {
         let mut settings = get_default_settings();
-        settings.post_process_enabled = true;
+        settings.post_process_mode = crate::settings::PostProcessMode::WithInstructionKey;
         let provider = settings
             .post_process_providers
             .iter_mut()
@@ -1826,13 +1828,13 @@ mod tests {
 
     #[test]
     fn with_post_processing_off_the_post_processing_end_delivers_the_transcript() {
-        // As the defaults come: the switch is off and post-processing isn't
-        // set up. The built-in end with post-processing (with context)
-        // gives the transcript with its "Append" text, no notice, and an
-        // entry that wasn't post-processed.
-        let factory = with_end(get_default_settings(), POST_PROCESS_ID, " (sent)", true);
-        assert!(!factory.post_process_enabled);
-        // Set up, with the switch off: nothing goes to the provider.
+        // A profile that never post-processes, as it comes otherwise: even
+        // after an instruction key the end (with context) gives the
+        // transcript with its "Append" text, no notice, and an entry that
+        // wasn't post-processed.
+        let mut factory = with_end(get_default_settings(), POST_PROCESS_ID, " (sent)", true);
+        factory.post_process_mode = crate::settings::PostProcessMode::Never;
+        // Set up, never post-processing: nothing goes to the provider.
         let (url, requests) = llm_server(vec![("200 OK", POLISHED)]);
         let mut set_up = with_end(
             post_process_settings(&url),
@@ -1840,7 +1842,7 @@ mod tests {
             " (sent)",
             true,
         );
-        set_up.post_process_enabled = false;
+        set_up.post_process_mode = crate::settings::PostProcessMode::Never;
         for (case, settings) in [("factory", factory), ("set up", set_up)] {
             let snapshot = snapshot_of(settings, None, post_processing());
             let values = snapshot.values.clone();
@@ -3098,10 +3100,10 @@ mod tests {
         /// press it as a toggle.
         fn roles(&mut self, binding_id: &str) -> crate::start_keys::Roles {
             let values = ProfileValues::from_settings(&self.settings);
-            let reachable = crate::app_profiles::post_processing_reachable(&self.settings);
+            let taken = crate::instruction_keys::taken_here(&self.settings);
             crate::start_keys::Roles {
                 hold: None,
-                ..crate::start_keys::roles_of(&values, binding_id, reachable)
+                ..crate::start_keys::roles_of(&values, binding_id, taken)
             }
         }
 
@@ -3175,15 +3177,16 @@ mod tests {
     }
 
     #[test]
-    fn the_post_processing_end_shortcut_post_processes_a_plain_start() {
+    fn a_profile_that_always_post_processes_post_processes_an_end_shortcuts_dictation() {
         let (url, requests) = llm_server(vec![("200 OK", POLISHED)]);
         let ports = FakePorts::new(Script::default());
-        let settings = with_end(
+        let mut settings = with_end(
             post_process_settings(&url),
             POST_PROCESS_ID,
             " (sent)",
             false,
         );
+        settings.post_process_mode = crate::settings::PostProcessMode::Always;
         let coordinator = coordinator_with(&ports, settings);
         toggle_press(&coordinator);
         coordinator.finish_with_end_key(POST_PROCESS_ID);
@@ -3210,31 +3213,31 @@ mod tests {
     }
 
     #[test]
-    fn with_post_processing_off_no_shortcut_post_processes() {
-        // Post-processing is set up but switched off: neither the end
-        // shortcut with post-processing nor the hold shortcut that
-        // post-processes, toggled from outside (`--toggle-post-process`),
-        // sends the text to the provider.
+    fn never_post_processing_no_shortcut_post_processes() {
+        // Post-processing is set up but the profile never post-processes:
+        // neither an end shortcut nor the toggle from outside
+        // (`--toggle-post-process`, as after an instruction key) sends the
+        // text to the provider.
         let (url, requests) = llm_server(vec![("200 OK", POLISHED), ("200 OK", POLISHED)]);
         let mut settings = with_end(
-            post_process_settings(&url),
-            POST_PROCESS_ID,
+            with_end(
+                post_process_settings(&url),
+                POST_PROCESS_ID,
+                " (sent)",
+                false,
+            ),
+            crate::end_keys::PLAIN_ID,
             " (sent)",
             false,
         );
-        settings.post_process_enabled = false;
-        // The hold shortcut that post-processes, as `--toggle-post-process`
-        // ends (`start_keys::remote_toggle`), appends the same.
-        for hold in settings
-            .hold_keys
-            .iter_mut()
-            .filter(|hold| hold.post_process)
-        {
-            hold.append_text = " (sent)".to_string();
-        }
+        settings.post_process_mode = crate::settings::PostProcessMode::Never;
+        // `--toggle-post-process` ends as a press of the first start
+        // shortcut (`start_keys::remote_toggle`): the end with its
+        // combination, which appends the same.
         let (remote_binding, remote_end) =
             crate::start_keys::remote_toggle(&ProfileValues::from_settings(&settings), true)
-                .expect("a hold shortcut that post-processes");
+                .expect("a start shortcut");
+        assert!(remote_end.after_instruction_key());
 
         let ports = FakePorts::new(Script::default());
         let coordinator = coordinator_with(&ports, settings.clone());

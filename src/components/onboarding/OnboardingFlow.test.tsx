@@ -26,7 +26,7 @@ const CHECK_MICROPHONE = "plugin:macos-permissions|check_microphone_permission";
 
 const START = startKey("start", "ctrl+alt+d");
 const DIRECT = holdKey("hold_direct", "ctrl+alt+d");
-const POST = holdKey("hold_post", "ctrl+shift+space", { post_process: true });
+const POST = holdKey("hold_post", "ctrl+shift+space");
 const OWN_KEYS: SettingsSpec = {
   defaults: { start_keys: [START], hold_keys: [DIRECT, POST] },
 };

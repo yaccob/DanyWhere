@@ -116,20 +116,42 @@ check("a provider with a model is ready, and named", () => {
   );
 });
 
-check("neither the post-processing switch nor a prompt matters", () => {
-  assert.equal(
+check("neither an instruction shortcut nor a prompt matters", () => {
+  for (const mode of ["with_instruction_key", "always"] as const) {
+    assert.equal(
+      wordListCheckSetup(
+        settings(
+          "openai",
+          { openai: "gpt-5-mini" },
+          {
+            post_process_mode: mode,
+            post_process_prompts: [],
+            post_process_prompt_order: [],
+          },
+        ),
+      ).kind,
+      "ready",
+      mode,
+    );
+  }
+});
+
+// With post-processing set to "never" nothing goes to a provider, the check
+// neither (qa 2026-11-26_1841, "Kleinere Folgen … ohne Frage").
+check("with post-processing never the check can't run", () => {
+  assert.deepEqual(
     wordListCheckSetup(
       settings(
         "openai",
         { openai: "gpt-5-mini" },
-        {
-          post_process_enabled: false,
-          post_process_prompts: [],
-          post_process_prompt_order: [],
-        },
+        { post_process_mode: "never" },
       ),
-    ).kind,
-    "ready",
+    ),
+    { kind: "never" },
+  );
+  assert.ok(
+    typeof english.settings.advanced.wordLists.llmCheckNever === "string",
+    "its text",
   );
 });
 

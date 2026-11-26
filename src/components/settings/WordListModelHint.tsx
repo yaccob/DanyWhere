@@ -5,6 +5,7 @@ import { useSettings } from "../../hooks/useSettings";
 import { getTranslatedModelName } from "../../lib/utils/modelTranslation";
 import { providerName } from "../../lib/displayNames";
 import { scopePage } from "../../lib/navigation";
+import { postProcessingOn } from "../../lib/endKeys";
 import { Button } from "../ui/Button";
 import { ToggleSwitch } from "../ui/ToggleSwitch";
 import { pickModel, useChosenModel, usePlace } from "./models/modelEntries";
@@ -80,12 +81,14 @@ const WordListModelActions: React.FC<{ offerSetUp: boolean }> = ({
   const showSwitch = vocabularyModel?.supports_vocabulary === true;
   if (!showSetUp && !showSwitch) return null;
 
-  // Post Process shows only while post-processing is on in the scope, so
-  // setting it up turns it on there first.
+  // Post Process shows only while the scope may post-process, so setting
+  // it up leaves "never" there first, for the mode out of the box.
   const setUp = async () => {
     if (!scope || !openLocation) return;
-    if (!getSetting("post_process_enabled")) {
-      await updateSetting("post_process_enabled", true);
+    if (
+      !postProcessingOn({ post_process_mode: getSetting("post_process_mode") })
+    ) {
+      await updateSetting("post_process_mode", "with_instruction_key");
     }
     openLocation(scopePage(scope, "postprocessing"));
   };
@@ -146,7 +149,8 @@ interface WordListLlmCheckProps {
  * speech model takes no vocabulary: a word that resembles a word list
  * entry in a dictation without post-processing goes to the LLM, which
  * confirms or rejects the entry. It needs a provider with a model that
- * isn't Apple Intelligence, and says why when it's missing. */
+ * isn't Apple Intelligence and post-processing other than "never", and
+ * says why when either is missing. */
 export const WordListLlmCheck: React.FC<WordListLlmCheckProps> = React.memo(
   ({ descriptionMode = "inline", grouped = false }) => {
     const { t } = useTranslation();
@@ -164,7 +168,11 @@ export const WordListLlmCheck: React.FC<WordListLlmCheckProps> = React.memo(
           ? t("settings.advanced.wordLists.llmCheckNotWith", {
               provider: providerName(setup.provider, t),
             })
-          : t("settings.advanced.wordLists.llmCheckNeedsProvider");
+          : setup.kind === "never"
+            ? t("settings.advanced.wordLists.llmCheckNever", {
+                mode: t("settings.postProcessing.mode.options.never"),
+              })
+            : t("settings.advanced.wordLists.llmCheckNeedsProvider");
 
     return (
       <ToggleSwitch

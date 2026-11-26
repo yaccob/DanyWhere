@@ -7,6 +7,7 @@ import { ShortcutInput } from "../ShortcutInput";
 import { EndKeysSettings } from "../end-keys/EndKeysSettings";
 import { StartKeysSettings } from "../start-keys/StartKeysSettings";
 import { HoldKeysSettings } from "../start-keys/HoldKeysSettings";
+import { InstructionKeysSettings } from "../instruction-keys/InstructionKeysSettings";
 import { SettingsGroup } from "../../ui/SettingsGroup";
 import { OutputDeviceSelector } from "../OutputDeviceSelector";
 import { AudioFeedback } from "../AudioFeedback";
@@ -32,12 +33,15 @@ export const GeneralSettings: React.FC = () => {
     (getSetting("chinese_script") ?? "as_transcribed") !== "as_transcribed";
   return (
     <div className="max-w-3xl w-full mx-auto space-y-6">
-      {/* DanyWhere: three lists, start, hold and end shortcuts, follow each
-          other, the other shortcuts come after them (user, 2026-11-24; qa
-          2026-11-26_1713, decision). What a combination does follows from
-          the lists it stands in. */}
+      {/* DanyWhere: four lists, start, hold, instruction and end shortcuts,
+          follow each other, the other shortcuts come after them (user,
+          2026-11-24; qa 2026-11-26_1713 and 2026-11-26_1841, decisions).
+          What a combination does follows from the lists it stands in. Linux
+          takes no instruction shortcuts (profile_sync.rs), so it has no
+          card for them. */}
       <StartKeysSettings />
       <HoldKeysSettings />
+      {!isLinux && <InstructionKeysSettings />}
       {/* DanyWhere: how a recording ends and what follows (end_keys.rs);
           Cancel, which ends without a text, closes the end shortcuts. */}
       <EndKeysSettings

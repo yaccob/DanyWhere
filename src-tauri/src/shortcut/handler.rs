@@ -43,6 +43,22 @@ pub fn handle_shortcut_event(
         return;
     }
 
+    // DanyWhere: an instruction shortcut (`instruction_keys`), registered
+    // only while a recording runs and post-processing can run: its press
+    // goes on to the instruction, its release may send it, so both go to
+    // the coordinator.
+    if let Some(instruction_id) = crate::instruction_keys::instruction_id_of(binding_id) {
+        match app.try_state::<TranscriptionCoordinator>() {
+            Some(coordinator) => coordinator.send_instruction_key(
+                instruction_id,
+                is_pressed,
+                std::time::Duration::from_millis(get_settings(app).hold_threshold_ms),
+            ),
+            None => warn!("TranscriptionCoordinator is not initialized"),
+        }
+        return;
+    }
+
     // DanyWhere: start and hold shortcuts (`start_keys`) go to the
     // coordinator, which finds what the combination is in the profile that
     // applies now.

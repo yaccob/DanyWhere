@@ -15,9 +15,9 @@ use std::thread;
 
 /// Send a transcription input to the coordinator.
 /// Used by signal handlers, CLI flags, and any other external trigger.
-/// DanyWhere: `post_process` toggles as the first hold shortcut that
-/// post-processes, else as a tap of the first start shortcut, in the
-/// profile that applies now (`start_keys::remote_toggle`).
+/// DanyWhere: it toggles as a tap of the first start shortcut, in the
+/// profile that applies now; with `post_process` its end is as after an
+/// instruction shortcut without an instruction (`start_keys::remote_toggle`).
 pub fn send_transcription_input(app: &AppHandle, post_process: bool, source: &str) {
     let Some(c) = app.try_state::<TranscriptionCoordinator>() else {
         warn!("TranscriptionCoordinator not initialized");
