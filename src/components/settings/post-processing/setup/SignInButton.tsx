@@ -1,6 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import type { SignInIntent, SignInProvider } from "@/bindings";
+import type { SignInFailure, SignInIntent, SignInProvider } from "@/bindings";
 import type { Translate } from "@/lib/displayNames";
 import { Button } from "../../../ui/Button";
 import { Spinner } from "../../../ui/Spinner";
@@ -12,18 +12,42 @@ import { CardLine } from "./SetupCard";
 
 const KEY = "settings.postProcessing.setup.signIn";
 
-/** What a failed sign-in's `error` means to the user. */
-const failureText = (t: Translate, error: string | null) => {
-  switch (error) {
-    case "timed_out":
-      return t(`${KEY}.timedOut`);
-    case "denied":
-      return t(`${KEY}.denied`);
-    case "not_eligible":
-      return t(`${KEY}.notEligible`);
-    default:
-      return t(`${KEY}.failed`, { error: error ?? "" });
+/** The name a failure's text gives the sign-in. */
+const PROVIDER_NAME: Record<SignInProvider, string> = {
+  chatgpt: "ChatGPT",
+  openrouter: "OpenRouter",
+};
+
+/** The text of each code the backend ends a failed sign-in with; a new
+ * code doesn't compile until it has one. "cancelled" ends the sign-in
+ * without a failure (`signInFinished` in the store). */
+const FAILURE_TEXTS: Record<Exclude<SignInFailure, "cancelled">, string> = {
+  timed_out: "timedOut",
+  denied: "denied",
+  not_eligible: "notEligible",
+  no_free_model: "noFreeModel",
+  unreachable: "unreachable",
+  refused: "refused",
+  failed: "didNotWork",
+};
+
+const isFailureCode = (error: string): error is keyof typeof FAILURE_TEXTS =>
+  Object.prototype.hasOwnProperty.call(FAILURE_TEXTS, error);
+
+/** What a failed sign-in's `error` means to the user: a code from the
+ * finished event, or what a start that failed reports. */
+const failureText = (
+  t: Translate,
+  provider: SignInProvider,
+  error: string | null,
+) => {
+  if (error && isFailureCode(error)) {
+    return t(`${KEY}.${FAILURE_TEXTS[error]}`, {
+      provider: PROVIDER_NAME[provider],
+    });
   }
+  if (!error || error === "cancelled") return t(`${KEY}.didNotWork`);
+  return t(`${KEY}.failed`, { error });
 };
 
 interface SignInButtonProps {
@@ -89,7 +113,9 @@ export const SignInButton: React.FC<SignInButtonProps> = ({
 
   return (
     <div className="space-y-2">
-      {mine && <CardLine tone="error">{failureText(t, mine.error)}</CardLine>}
+      {mine && (
+        <CardLine tone="error">{failureText(t, provider, mine.error)}</CardLine>
+      )}
       <Button
         variant={prominent ? "primary" : "outline"}
         size="md"

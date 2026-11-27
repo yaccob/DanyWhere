@@ -1211,6 +1211,10 @@
           "timedOut": "Oturum açma 30 dakika bekledi ve süresi doldu.",
           "denied": "Erişime izin verilmedi.",
           "notEligible": "Bu ChatGPT hesabında DanyWhere ile kullanılabilecek bir abonelik yok (Go, Plus, Pro veya Business).",
+          "noFreeModel": "OpenRouter'da şu anda DanyWhere ile kullanılabilecek ücretsiz bir model yok. Daha sonra tekrar deneyin ya da bunun yerine bir kez kredi yükleyin.",
+          "unreachable": "{{provider}}: bağlantı kurulamadı. Bağlantınızı kontrol edip tekrar deneyin.",
+          "refused": "{{provider}}: oturum açma reddedildi. Tekrar deneyin.",
+          "didNotWork": "Oturum açma başarısız oldu. Tekrar deneyin.",
           "tryAgain": "Tekrar dene",
           "browserSuccess": "Tamamlandı. Bu pencereyi kapatıp DanyWhere uygulamasına dönebilirsiniz.",
           "browserFailure": "Bu işe yaramadı. DanyWhere uygulamasına dönüp tekrar deneyin."

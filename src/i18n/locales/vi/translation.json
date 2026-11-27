@@ -1211,6 +1211,10 @@
           "timedOut": "Phiên đăng nhập đã chờ 30 phút và đã hết hạn.",
           "denied": "Quyền truy cập không được cho phép.",
           "notEligible": "Tài khoản ChatGPT này không có gói đăng ký nào mà DanyWhere dùng được (Go, Plus, Pro hoặc Business).",
+          "noFreeModel": "Hiện OpenRouter không có mô hình miễn phí nào mà DanyWhere dùng được. Hãy thử lại sau, hoặc thay vào đó nạp tiền một lần.",
+          "unreachable": "Không thể kết nối tới {{provider}}. Hãy kiểm tra kết nối và thử lại.",
+          "refused": "{{provider}} đã từ chối đăng nhập. Hãy thử lại.",
+          "didNotWork": "Đăng nhập không thành công. Hãy thử lại.",
           "tryAgain": "Thử lại",
           "browserSuccess": "Xong. Bạn có thể đóng cửa sổ này và quay lại DanyWhere.",
           "browserFailure": "Không thành công. Hãy quay lại DanyWhere và thử lại."

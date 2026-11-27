@@ -1211,6 +1211,10 @@
           "timedOut": "Proses masuk sudah menunggu 30 menit dan kedaluwarsa.",
           "denied": "Akses tidak diizinkan.",
           "notEligible": "Akun ChatGPT ini tidak punya langganan yang bisa dipakai DanyWhere (Go, Plus, Pro, atau Business).",
+          "noFreeModel": "Saat ini OpenRouter tidak punya model gratis yang bisa dipakai DanyWhere. Coba lagi nanti, atau isi ulang sekali saja.",
+          "unreachable": "Tidak dapat terhubung ke {{provider}}. Periksa koneksi lalu coba lagi.",
+          "refused": "{{provider}} menolak proses masuk. Coba lagi.",
+          "didNotWork": "Gagal masuk. Coba lagi.",
           "tryAgain": "Coba lagi",
           "browserSuccess": "Selesai. Anda dapat menutup jendela ini dan kembali ke DanyWhere.",
           "browserFailure": "Itu tidak berhasil. Kembali ke DanyWhere dan coba lagi."

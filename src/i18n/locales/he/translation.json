@@ -1211,6 +1211,10 @@
           "timedOut": "ההתחברות המתינה 30 דקות ופג תוקפה.",
           "denied": "הגישה לא אושרה.",
           "notEligible": "לחשבון ChatGPT הזה אין מנוי ש-DanyWhere יכול להשתמש בו (Go, Plus, Pro או Business).",
+          "noFreeModel": "ל-OpenRouter אין כרגע מודל חינמי ש-DanyWhere יכול להשתמש בו. כדאי לנסות שוב מאוחר יותר, או לטעון יתרה פעם אחת במקום זאת.",
+          "unreachable": "{{provider}}: לא ניתן היה להתחבר. כדאי לבדוק את החיבור ולנסות שוב.",
+          "refused": "{{provider}}: ההתחברות נדחתה. כדאי לנסות שוב.",
+          "didNotWork": "ההתחברות לא הצליחה. כדאי לנסות שוב.",
           "tryAgain": "לנסות שוב",
           "browserSuccess": "הכול מוכן. אפשר לסגור את החלון הזה ולחזור ל-DanyWhere.",
           "browserFailure": "זה לא הצליח. חוזרים ל-DanyWhere ומנסים שוב."

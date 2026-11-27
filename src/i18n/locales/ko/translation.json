@@ -1211,6 +1211,10 @@
           "timedOut": "로그인을 30분 동안 기다려 만료되었습니다.",
           "denied": "접근이 허용되지 않았습니다.",
           "notEligible": "이 ChatGPT 계정에는 DanyWhere가 쓸 수 있는 플랜(Go, Plus, Pro 또는 Business)이 없습니다.",
+          "noFreeModel": "지금은 OpenRouter에 DanyWhere가 쓸 수 있는 무료 모델이 없습니다. 나중에 다시 시도하거나, 대신 한 번 충전하세요.",
+          "unreachable": "{{provider}}에 연결하지 못했습니다. 연결을 확인하고 다시 시도하세요.",
+          "refused": "{{provider}}에서 로그인을 거부했습니다. 다시 시도하세요.",
+          "didNotWork": "로그인하지 못했습니다. 다시 시도하세요.",
           "tryAgain": "다시 시도",
           "browserSuccess": "완료되었습니다. 이 창을 닫고 DanyWhere로 돌아가세요.",
           "browserFailure": "잘 되지 않았습니다. DanyWhere로 돌아가 다시 시도하세요."

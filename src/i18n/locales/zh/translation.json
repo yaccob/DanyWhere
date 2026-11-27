@@ -1211,6 +1211,10 @@
           "timedOut": "登录已等待 30 分钟，已过期。",
           "denied": "访问未获允许。",
           "notEligible": "此 ChatGPT 账号没有 DanyWhere 可以使用的套餐（Go、Plus、Pro 或 Business）。",
+          "noFreeModel": "OpenRouter 目前没有 DanyWhere 可以使用的免费模型。请稍后再试，或者改为一次性充值。",
+          "unreachable": "无法连接到 {{provider}}。请检查网络连接后再试一次。",
+          "refused": "{{provider}} 拒绝了登录。请再试一次。",
+          "didNotWork": "登录没有成功。请再试一次。",
           "tryAgain": "再试一次",
           "browserSuccess": "完成。你可以关闭此窗口，回到 DanyWhere。",
           "browserFailure": "没有成功。请回到 DanyWhere 再试一次。"

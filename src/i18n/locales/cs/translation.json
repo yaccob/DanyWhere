@@ -1211,6 +1211,10 @@
           "timedOut": "Přihlášení čekalo 30 minut a vypršelo.",
           "denied": "Přístup nebyl povolen.",
           "notEligible": "Tento účet ChatGPT nemá předplatné, které může DanyWhere použít (Go, Plus, Pro nebo Business).",
+          "noFreeModel": "OpenRouter teď nemá žádný bezplatný model, který může DanyWhere použít. Zkuste to později znovu, nebo místo toho jednou dobijte kredit.",
+          "unreachable": "{{provider}}: nepodařilo se navázat spojení. Zkontrolujte připojení a zkuste to znovu.",
+          "refused": "{{provider}}: přihlášení bylo odmítnuto. Zkuste to znovu.",
+          "didNotWork": "Přihlášení se nezdařilo. Zkuste to znovu.",
           "tryAgain": "Zkusit znovu",
           "browserSuccess": "Hotovo. Toto okno můžete zavřít a vrátit se do DanyWhere.",
           "browserFailure": "Nepovedlo se. Vraťte se do DanyWhere a zkuste to znovu."

@@ -1211,6 +1211,10 @@
           "timedOut": "Logowanie czekało 30 minut i wygasło.",
           "denied": "Nie zezwolono na dostęp.",
           "notEligible": "To konto ChatGPT nie ma subskrypcji, z której DanyWhere może korzystać (Go, Plus, Pro lub Business).",
+          "noFreeModel": "OpenRouter nie ma teraz żadnego darmowego modelu, którego DanyWhere może użyć. Spróbuj ponownie później albo zamiast tego jednorazowo doładuj konto.",
+          "unreachable": "{{provider}}: nie udało się nawiązać połączenia. Sprawdź połączenie i spróbuj ponownie.",
+          "refused": "{{provider}}: logowanie zostało odrzucone. Spróbuj ponownie.",
+          "didNotWork": "Logowanie się nie udało. Spróbuj ponownie.",
           "tryAgain": "Spróbuj ponownie",
           "browserSuccess": "Gotowe. Możesz zamknąć to okno i wrócić do DanyWhere.",
           "browserFailure": "Nie udało się. Wróć do DanyWhere i spróbuj ponownie."

@@ -1211,6 +1211,10 @@
           "timedOut": "ログインの待ち時間が 30 分を過ぎたため、期限切れになりました。",
           "denied": "アクセスが許可されませんでした。",
           "notEligible": "この ChatGPT アカウントには、DanyWhere で使えるプラン（Go、Plus、Pro、Business）がありません。",
+          "noFreeModel": "OpenRouter には現在、DanyWhere で使える無料モデルがありません。しばらくしてからもう一度お試しいただくか、代わりに一度チャージしてください。",
+          "unreachable": "{{provider}} に接続できませんでした。接続を確認して、もう一度お試しください。",
+          "refused": "{{provider}} がログインを拒否しました。もう一度お試しください。",
+          "didNotWork": "ログインできませんでした。もう一度お試しください。",
           "tryAgain": "もう一度試す",
           "browserSuccess": "完了しました。このウィンドウを閉じて DanyWhere に戻ってください。",
           "browserFailure": "うまくいきませんでした。DanyWhere に戻って、もう一度お試しください。"
