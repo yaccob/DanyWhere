@@ -143,7 +143,11 @@
       },
       "hint": {
         "pickOne": "בחר לפחות שפה אחת",
+        "weak_zero": "{{languages}}: עדיין אין מודל ששומע אותן היטב",
         "weak_one": "{{languages}}: עדיין אין מודל ששומע אותה היטב",
+        "weak_two": "{{languages}}: עדיין אין מודל ששומע אותן היטב",
+        "weak_few": "{{languages}}: עדיין אין מודל ששומע אותן היטב",
+        "weak_many": "{{languages}}: עדיין אין מודל ששומע אותן היטב",
         "weak_other": "{{languages}}: עדיין אין מודל ששומע אותן היטב"
       }
     },
@@ -339,7 +343,11 @@
     "search": "חיפוש שפות",
     "addAnother": "הוסף עוד",
     "remove": "הסר את {{language}}",
+    "alreadyAdded_zero": "{{languages}} כבר נוספו.",
     "alreadyAdded_one": "{{languages}} כבר נוספה.",
+    "alreadyAdded_two": "{{languages}} כבר נוספו.",
+    "alreadyAdded_few": "{{languages}} כבר נוספו.",
+    "alreadyAdded_many": "{{languages}} כבר נוספו.",
     "alreadyAdded_other": "{{languages}} כבר נוספו."
   },
   "modelSelector": {
@@ -663,7 +671,11 @@
         "untested": "לא נבדקו"
       },
       "untestedNote": "לא נבדקו עם Handy. ייתכן שהם איטיים יותר או שיעשו יותר טעויות.",
+      "untestedHidden_zero": "עוד {{count}} מודלים לא מותאמים להכתבה. חפש כדי למצוא אותם.",
       "untestedHidden_one": "עוד מודל {{count}} לא מותאם להכתבה. חפש כדי למצוא אותו.",
+      "untestedHidden_two": "עוד {{count}} מודלים לא מותאמים להכתבה. חפש כדי למצוא אותם.",
+      "untestedHidden_few": "עוד {{count}} מודלים לא מותאמים להכתבה. חפש כדי למצוא אותם.",
+      "untestedHidden_many": "עוד {{count}} מודלים לא מותאמים להכתבה. חפש כדי למצוא אותם.",
       "untestedHidden_other": "עוד {{count}} מודלים לא מותאמים להכתבה. חפש כדי למצוא אותם.",
       "emptyYours": "עדיין אין מודלים. בחר אחד למטה: הוא יורד, ואז Handy משתמש בו.",
       "showMore": "הצג עוד {{count}}",

@@ -143,7 +143,11 @@
       },
       "hint": {
         "pickOne": "Trieu almenys una llengua",
+        "weak_zero": "{{languages}}: cap model les entén bé encara",
         "weak_one": "{{languages}}: cap model l'entén bé encara",
+        "weak_two": "{{languages}}: cap model les entén bé encara",
+        "weak_few": "{{languages}}: cap model les entén bé encara",
+        "weak_many": "{{languages}}: cap model les entén bé encara",
         "weak_other": "{{languages}}: cap model les entén bé encara"
       }
     },
@@ -339,7 +343,11 @@
     "search": "Cerca llengües",
     "addAnother": "Afegeix-ne una altra",
     "remove": "Elimina {{language}}",
+    "alreadyAdded_zero": "{{languages}} ja estan afegides.",
     "alreadyAdded_one": "{{languages}} ja està afegida.",
+    "alreadyAdded_two": "{{languages}} ja estan afegides.",
+    "alreadyAdded_few": "{{languages}} ja estan afegides.",
+    "alreadyAdded_many": "{{languages}} ja estan afegides.",
     "alreadyAdded_other": "{{languages}} ja estan afegides."
   },
   "modelSelector": {
@@ -663,7 +671,11 @@
         "untested": "Sense provar"
       },
       "untestedNote": "No s'han provat amb el Handy. Poden ser més lents o cometre més errors.",
+      "untestedHidden_zero": "{{count}} models més no estan ajustats per al dictat. Cerqueu per trobar-ne algun.",
       "untestedHidden_one": "{{count}} model més no està ajustat per al dictat. Cerqueu-lo per trobar-lo.",
+      "untestedHidden_two": "{{count}} models més no estan ajustats per al dictat. Cerqueu per trobar-ne algun.",
+      "untestedHidden_few": "{{count}} models més no estan ajustats per al dictat. Cerqueu per trobar-ne algun.",
+      "untestedHidden_many": "{{count}} models més no estan ajustats per al dictat. Cerqueu per trobar-ne algun.",
       "untestedHidden_other": "{{count}} models més no estan ajustats per al dictat. Cerqueu per trobar-ne algun.",
       "emptyYours": "Encara no hi ha models. Trieu-ne un a sota: es baixa i el Handy l'utilitza.",
       "showMore": "Mostra'n {{count}} més",

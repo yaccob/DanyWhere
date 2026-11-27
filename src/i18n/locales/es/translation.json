@@ -143,7 +143,11 @@
       },
       "hint": {
         "pickOne": "Elige al menos un idioma",
+        "weak_zero": "{{languages}}: ningún modelo los entiende bien todavía",
         "weak_one": "{{languages}}: ningún modelo lo entiende bien todavía",
+        "weak_two": "{{languages}}: ningún modelo los entiende bien todavía",
+        "weak_few": "{{languages}}: ningún modelo los entiende bien todavía",
+        "weak_many": "{{languages}}: ningún modelo los entiende bien todavía",
         "weak_other": "{{languages}}: ningún modelo los entiende bien todavía"
       }
     },
@@ -339,7 +343,11 @@
     "search": "Buscar idiomas",
     "addAnother": "Añadir otro",
     "remove": "Quitar {{language}}",
+    "alreadyAdded_zero": "{{languages}} ya están añadidos.",
     "alreadyAdded_one": "{{languages}} ya está añadido.",
+    "alreadyAdded_two": "{{languages}} ya están añadidos.",
+    "alreadyAdded_few": "{{languages}} ya están añadidos.",
+    "alreadyAdded_many": "{{languages}} ya están añadidos.",
     "alreadyAdded_other": "{{languages}} ya están añadidos."
   },
   "modelSelector": {
@@ -663,7 +671,11 @@
         "untested": "Sin probar"
       },
       "untestedNote": "No probados con Handy. Pueden ser más lentos o cometer más errores.",
+      "untestedHidden_zero": "{{count}} modelos más no están optimizados para dictado. Busca para encontrar uno.",
       "untestedHidden_one": "{{count}} modelo más no está optimizado para dictado. Búscalo para encontrarlo.",
+      "untestedHidden_two": "{{count}} modelos más no están optimizados para dictado. Busca para encontrar uno.",
+      "untestedHidden_few": "{{count}} modelos más no están optimizados para dictado. Busca para encontrar uno.",
+      "untestedHidden_many": "{{count}} modelos más no están optimizados para dictado. Busca para encontrar uno.",
       "untestedHidden_other": "{{count}} modelos más no están optimizados para dictado. Busca para encontrar uno.",
       "emptyYours": "Aún no hay modelos. Elige uno abajo: se descarga y Handy lo usa.",
       "showMore": "Mostrar {{count}} más",

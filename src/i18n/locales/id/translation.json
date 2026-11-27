@@ -143,7 +143,11 @@
       },
       "hint": {
         "pickOne": "Pilih setidaknya satu bahasa",
+        "weak_zero": "{{languages}}: belum ada model yang mengenalinya dengan baik",
         "weak_one": "{{languages}}: belum ada model yang mengenalinya dengan baik",
+        "weak_two": "{{languages}}: belum ada model yang mengenalinya dengan baik",
+        "weak_few": "{{languages}}: belum ada model yang mengenalinya dengan baik",
+        "weak_many": "{{languages}}: belum ada model yang mengenalinya dengan baik",
         "weak_other": "{{languages}}: belum ada model yang mengenalinya dengan baik"
       }
     },
@@ -339,7 +343,11 @@
     "search": "Cari bahasa",
     "addAnother": "Tambah lagi",
     "remove": "Hapus {{language}}",
+    "alreadyAdded_zero": "{{languages}} sudah ditambahkan.",
     "alreadyAdded_one": "{{languages}} sudah ditambahkan.",
+    "alreadyAdded_two": "{{languages}} sudah ditambahkan.",
+    "alreadyAdded_few": "{{languages}} sudah ditambahkan.",
+    "alreadyAdded_many": "{{languages}} sudah ditambahkan.",
     "alreadyAdded_other": "{{languages}} sudah ditambahkan."
   },
   "modelSelector": {
@@ -663,7 +671,11 @@
         "untested": "Belum diuji"
       },
       "untestedNote": "Belum diuji dengan Handy. Mungkin lebih lambat atau lebih banyak salah.",
+      "untestedHidden_zero": "{{count}} model lagi tidak disetel untuk dikte. Cari untuk menemukannya.",
       "untestedHidden_one": "{{count}} model lagi tidak disetel untuk dikte. Cari untuk menemukannya.",
+      "untestedHidden_two": "{{count}} model lagi tidak disetel untuk dikte. Cari untuk menemukannya.",
+      "untestedHidden_few": "{{count}} model lagi tidak disetel untuk dikte. Cari untuk menemukannya.",
+      "untestedHidden_many": "{{count}} model lagi tidak disetel untuk dikte. Cari untuk menemukannya.",
       "untestedHidden_other": "{{count}} model lagi tidak disetel untuk dikte. Cari untuk menemukannya.",
       "emptyYours": "Belum ada model. Pilih satu di bawah: model diunduh, lalu Handy menggunakannya.",
       "showMore": "Tampilkan {{count}} lagi",

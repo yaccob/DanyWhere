@@ -143,7 +143,11 @@
       },
       "hint": {
         "pickOne": "Wähle mindestens eine Sprache",
+        "weak_zero": "{{languages}}: Noch kein Modell versteht sie gut",
         "weak_one": "{{languages}}: Noch kein Modell versteht sie gut",
+        "weak_two": "{{languages}}: Noch kein Modell versteht sie gut",
+        "weak_few": "{{languages}}: Noch kein Modell versteht sie gut",
+        "weak_many": "{{languages}}: Noch kein Modell versteht sie gut",
         "weak_other": "{{languages}}: Noch kein Modell versteht sie gut"
       }
     },
@@ -339,7 +343,11 @@
     "search": "Sprachen suchen",
     "addAnother": "Weitere hinzufügen",
     "remove": "{{language}} entfernen",
+    "alreadyAdded_zero": "{{languages}} sind bereits hinzugefügt.",
     "alreadyAdded_one": "{{languages}} ist bereits hinzugefügt.",
+    "alreadyAdded_two": "{{languages}} sind bereits hinzugefügt.",
+    "alreadyAdded_few": "{{languages}} sind bereits hinzugefügt.",
+    "alreadyAdded_many": "{{languages}} sind bereits hinzugefügt.",
     "alreadyAdded_other": "{{languages}} sind bereits hinzugefügt."
   },
   "modelSelector": {
@@ -663,7 +671,11 @@
         "untested": "Ungetestet"
       },
       "untestedNote": "Nicht mit Handy getestet. Sie könnten langsamer sein oder mehr Fehler machen.",
+      "untestedHidden_zero": "{{count}} weitere Modelle sind nicht für Diktat optimiert. Suche danach, um eines zu finden.",
       "untestedHidden_one": "{{count}} weiteres Modell ist nicht für Diktat optimiert. Suche danach, um es zu finden.",
+      "untestedHidden_two": "{{count}} weitere Modelle sind nicht für Diktat optimiert. Suche danach, um eines zu finden.",
+      "untestedHidden_few": "{{count}} weitere Modelle sind nicht für Diktat optimiert. Suche danach, um eines zu finden.",
+      "untestedHidden_many": "{{count}} weitere Modelle sind nicht für Diktat optimiert. Suche danach, um eines zu finden.",
       "untestedHidden_other": "{{count}} weitere Modelle sind nicht für Diktat optimiert. Suche danach, um eines zu finden.",
       "emptyYours": "Noch keine Modelle. Wähle unten eines aus: Es wird heruntergeladen, dann nutzt Handy es.",
       "showMore": "{{count}} weitere anzeigen",

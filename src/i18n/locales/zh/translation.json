@@ -143,7 +143,11 @@
       },
       "hint": {
         "pickOne": "请至少选择一种语言",
+        "weak_zero": "{{languages}}：目前还没有模型能很好地听懂",
         "weak_one": "{{languages}}：目前还没有模型能很好地听懂",
+        "weak_two": "{{languages}}：目前还没有模型能很好地听懂",
+        "weak_few": "{{languages}}：目前还没有模型能很好地听懂",
+        "weak_many": "{{languages}}：目前还没有模型能很好地听懂",
         "weak_other": "{{languages}}：目前还没有模型能很好地听懂"
       }
     },
@@ -339,7 +343,11 @@
     "search": "搜索语言",
     "addAnother": "再添加一种",
     "remove": "移除{{language}}",
+    "alreadyAdded_zero": "已添加{{languages}}。",
     "alreadyAdded_one": "已添加{{languages}}。",
+    "alreadyAdded_two": "已添加{{languages}}。",
+    "alreadyAdded_few": "已添加{{languages}}。",
+    "alreadyAdded_many": "已添加{{languages}}。",
     "alreadyAdded_other": "已添加{{languages}}。"
   },
   "modelSelector": {
@@ -663,7 +671,11 @@
         "untested": "未测试"
       },
       "untestedNote": "尚未经过 Handy 测试，可能更慢或错误更多。",
+      "untestedHidden_zero": "另有 {{count}} 个模型未针对听写优化，可通过搜索找到。",
       "untestedHidden_one": "另有 {{count}} 个模型未针对听写优化，可通过搜索找到。",
+      "untestedHidden_two": "另有 {{count}} 个模型未针对听写优化，可通过搜索找到。",
+      "untestedHidden_few": "另有 {{count}} 个模型未针对听写优化，可通过搜索找到。",
+      "untestedHidden_many": "另有 {{count}} 个模型未针对听写优化，可通过搜索找到。",
       "untestedHidden_other": "另有 {{count}} 个模型未针对听写优化，可通过搜索找到。",
       "emptyYours": "还没有模型。请在下方选择一个：它会先下载，然后由 Handy 使用。",
       "showMore": "再显示 {{count}} 个",
