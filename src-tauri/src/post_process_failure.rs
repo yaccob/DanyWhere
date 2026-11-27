@@ -12,10 +12,12 @@
 //!
 //! | `reason`          | when                                                        | own field |
 //! |-------------------|-------------------------------------------------------------|-----------|
+//! | `not-set-up`      | the setup was never finished and post-processing can't run (`post_process_setup::missing_reason`) | |
 //! | `no-provider`     | no provider is selected                                     |           |
 //! | `no-model`        | the provider has no model chosen                            |           |
 //! | `no-prompt`       | no active prompt has a text                                 |           |
 //! | `no-api-key`      | refused (401/403) and no API key is set                     |           |
+//! | `no-sign-in`      | ChatGPT's plan without its sign-in (signed out, or never signed in) | |
 //! | `key-refused`     | refused (401/403) with the API key set                      |           |
 //! | `no-credit`       | the account has no credit left (402, Anthropic's "credit balance is too low", OpenAI's `insufficient_quota`, "insufficient balance") | |
 //! | `free-daily-limit`| OpenRouter's free models: the day's requests are used up (`free-models-per-day`, or a 429 on the free tier while the key info says none is left, `openrouter_tier::refine_failure`) | |
@@ -49,10 +51,15 @@ use crate::settings::AppSettings;
 /// is used.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum FailureReason {
+    /// The setup was never finished, and post-processing can't run (review
+    /// of 2026-11-27, M7).
+    NotSetUp,
     NoProvider,
     NoModel,
     NoPrompt,
     NoApiKey,
+    /// ChatGPT's plan without its sign-in (review of 2026-11-27, M2).
+    NoSignIn,
     KeyRefused,
     /// The provider's account has no credit left.
     NoCredit,
@@ -294,10 +301,12 @@ impl FailureReason {
     /// `None` for [`FailureReason::Unknown`].
     pub fn name(&self) -> Option<&'static str> {
         Some(match self {
+            FailureReason::NotSetUp => "not-set-up",
             FailureReason::NoProvider => "no-provider",
             FailureReason::NoModel => "no-model",
             FailureReason::NoPrompt => "no-prompt",
             FailureReason::NoApiKey => "no-api-key",
+            FailureReason::NoSignIn => "no-sign-in",
             FailureReason::KeyRefused => "key-refused",
             FailureReason::NoCredit => "no-credit",
             FailureReason::FreeDailyLimit => "free-daily-limit",
@@ -884,9 +893,11 @@ mod tests {
             json!("boom")
         );
         let reasons = [
+            (FailureReason::NotSetUp, "not-set-up"),
             (FailureReason::NoModel, "no-model"),
             (FailureReason::NoPrompt, "no-prompt"),
             (FailureReason::NoApiKey, "no-api-key"),
+            (FailureReason::NoSignIn, "no-sign-in"),
             (FailureReason::KeyRefused, "key-refused"),
             (FailureReason::NoCredit, "no-credit"),
             (FailureReason::Unreachable, "unreachable"),

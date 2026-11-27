@@ -356,6 +356,15 @@ async fn post_process_outcome(
         return PostProcessOutcome::Skipped;
     }
 
+    // DanyWhere: a provider, its model and its access, a key or the sign-in
+    // (`post_process_setup`): without them the dictation doesn't leave the
+    // computer, and the notice says what is missing, or that the setup was
+    // never finished (review of 2026-11-27, M7).
+    if let Some(reason) = crate::post_process_setup::missing_reason(settings) {
+        debug!("Post-processing skipped because it is not set up ({reason:?})");
+        return failed(settings, reason);
+    }
+
     let provider = match settings.active_post_process_provider().cloned() {
         Some(provider) => provider,
         None => {
@@ -376,17 +385,6 @@ async fn post_process_outcome(
             provider.id
         );
         return failed(settings, FailureReason::NoModel);
-    }
-
-    // DanyWhere: and its access, a key or the sign-in (`post_process_setup`):
-    // without it the dictation doesn't leave the computer, and the notice
-    // says what is missing.
-    if let Some(reason) = crate::post_process_setup::post_process_ready(settings).failure_reason() {
-        debug!(
-            "Post-processing skipped because provider '{}' is not set up ({reason:?})",
-            provider.id
-        );
-        return failed(settings, reason);
     }
 
     // DanyWhere: the profile's active prompts from the shared library, all
@@ -1090,6 +1088,9 @@ mod tests {
         if let Some(first) = settings.post_process_prompt_order.first_mut() {
             first.active = true;
         }
+        // DanyWhere: set up through the setup, so a missing part is named
+        // as such (`post_process_setup::missing_reason`).
+        settings.post_process_setup.finished = true;
         settings
     }
 
@@ -1999,6 +2000,62 @@ mod tests {
         assert_eq!(
             run_post_process(&settings, "hello"),
             failed(&settings, FailureReason::NoApiKey)
+        );
+        assert!(
+            request.recv_timeout(Duration::from_millis(300)).is_err(),
+            "nothing left the computer"
+        );
+    }
+
+    /// Review of 2026-11-27, M7: before the setup was ever finished, what
+    /// is missing is the setup, not a part of a provider the user never
+    /// chose (OpenAI without a model on a new installation).
+    #[test]
+    fn before_the_setup_is_finished_a_dictation_says_it_is_not_set_up() {
+        let (url, request) = serve_once_capturing(POLISHED);
+        let mut new_install = post_process_settings(&url);
+        new_install.post_process_setup.finished = false;
+        new_install.post_process_models.clear();
+        new_install.post_process_api_keys.clear();
+        assert_eq!(
+            run_post_process(&new_install, "hello"),
+            failed(&new_install, FailureReason::NotSetUp)
+        );
+        let mut no_key = post_process_settings(&url);
+        no_key.post_process_setup.finished = false;
+        no_key.post_process_api_keys.clear();
+        assert_eq!(
+            run_post_process(&no_key, "hello"),
+            failed(&no_key, FailureReason::NotSetUp)
+        );
+        assert!(
+            request.recv_timeout(Duration::from_millis(300)).is_err(),
+            "nothing left the computer"
+        );
+        // Set up by hand before the setup existed: it post-processes.
+        let mut by_hand = post_process_settings(&serve_once(POLISHED));
+        by_hand.post_process_setup.finished = false;
+        assert_eq!(
+            run_post_process(&by_hand, "hello"),
+            PostProcessOutcome::Done("polished".to_string())
+        );
+    }
+
+    /// Review of 2026-11-27, M2: ChatGPT's plan without its sign-in (signed
+    /// out, say) asks to sign in again, not for an API key.
+    #[test]
+    fn the_plan_without_its_sign_in_names_the_missing_sign_in() {
+        let (url, request) = serve_once_capturing(POLISHED);
+        let mut settings = post_process_settings(&url);
+        settings.post_process_provider_id = "chatgpt".to_string();
+        settings
+            .post_process_models
+            .insert("chatgpt".to_string(), "gpt-6.2-sol".to_string());
+        settings.chatgpt_signed_in = false;
+        assert!(settings.active_post_process_provider().is_some());
+        assert_eq!(
+            run_post_process(&settings, "hello"),
+            failed(&settings, FailureReason::NoSignIn)
         );
         assert!(
             request.recv_timeout(Duration::from_millis(300)).is_err(),

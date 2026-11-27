@@ -296,16 +296,23 @@ fn an_instruction_in_a_dictation_that_ends_in_a_profile_set_to_never_sends_nothi
 /// `2026-11-26_2250_nachbearbeitung-einstieg-umsetzung`, section 2): ⇥
 /// before post-processing is set up. The text goes out as heard, without
 /// the instruction; nothing leaves the computer, and the notice says what
-/// is missing, which offers the setup.
+/// is missing, which offers the setup: before the setup was ever finished
+/// "not set up" (review of 2026-11-27, M7), after it the part.
 #[test]
 fn an_instruction_before_post_processing_is_set_up_inserts_the_text_as_heard() {
-    for (missing, reason) in [("key", "no-api-key"), ("provider", "no-provider")] {
+    for (missing, finished, reason) in [
+        ("key", false, "not-set-up"),
+        ("provider", false, "not-set-up"),
+        ("key", true, "no-api-key"),
+        ("provider", true, "no-provider"),
+    ] {
         let (url, requests) = llm_server(vec![("200 OK", POLISHED)]);
         let ports = FakePorts::new(script(tone(SAMPLES), tone(SAID), POLISH));
         let slot = slot();
         cut(&ports, slot);
         ports.take_events();
         let mut settings = with_end(post_process_settings(&url), PLAIN, "", false);
+        settings.post_process_setup.finished = finished;
         if missing == "key" {
             settings.post_process_api_keys.clear();
         } else {
