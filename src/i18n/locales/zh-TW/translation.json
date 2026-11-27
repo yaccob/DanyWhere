@@ -1279,7 +1279,7 @@
       "soundTheme": {
         "label": "聲音主題",
         "description": "選擇錄製開始和停止回饋的聲音主題",
-        "preview": "試聽聲音主題（依序播放開始、停止和結束聽寫的聲音）",
+        "preview": "試聽聲音主題（依序播放開始、指令、停止和結束聽寫的聲音）",
         "custom": "自訂"
       },
       "historyLimit": {

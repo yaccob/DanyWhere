@@ -1279,7 +1279,7 @@
       "soundTheme": {
         "label": "Chủ đề âm thanh",
         "description": "Chọn chủ đề âm thanh cho phản hồi bắt đầu và kết thúc ghi âm",
-        "preview": "Nghe thử chủ đề âm thanh (phát âm bắt đầu, dừng, rồi âm kết thúc một lần đọc chính tả)",
+        "preview": "Nghe thử chủ đề âm thanh (phát âm bắt đầu, hướng dẫn, dừng, rồi âm kết thúc một lần đọc chính tả)",
         "custom": "Tùy chỉnh"
       },
       "historyLimit": {

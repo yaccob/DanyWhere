@@ -1279,7 +1279,7 @@
       "soundTheme": {
         "label": "Tema Sonoro",
         "description": "Scegli un tema sonoro per il feedback di inizio e fine registrazione",
-        "preview": "Ascolta il tema sonoro (riproduce avvio, arresto e poi il suono che conclude una dettatura)",
+        "preview": "Ascolta il tema sonoro (riproduce avvio, istruzione, arresto e poi il suono che conclude una dettatura)",
         "custom": "Personalizzato"
       },
       "historyLimit": {

@@ -1279,7 +1279,7 @@
       "soundTheme": {
         "label": "Sound Theme",
         "description": "Choose a sound theme for recording start and stop feedback",
-        "preview": "Preview sound theme (plays start, stop, then the sound that ends a dictation)",
+        "preview": "Preview sound theme (plays start, instruction, stop, then the sound that ends a dictation)",
         "custom": "Custom"
       },
       "historyLimit": {
