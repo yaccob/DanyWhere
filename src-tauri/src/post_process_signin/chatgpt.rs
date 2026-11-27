@@ -196,11 +196,15 @@ pub enum ChatGptError {
     /// An error answer ("API request failed with status …") or a transport
     /// error; the session stays as it was.
     Http(String),
+    /// A refresh's new refresh token could not be kept (review of
+    /// 2026-11-27, N1).
+    NotSaved(String),
 }
 
 impl std::fmt::Display for ChatGptError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Self::NotSaved(error) => write!(f, "Cannot save the renewed ChatGPT sign-in: {error}"),
             Self::SignInExpired(code) => write!(
                 f,
                 "sign-in-expired: the ChatGPT sign-in has to be renewed ({code})"
@@ -290,10 +294,13 @@ pub async fn exchange_code(
 
 /// A new session for `session` (new access token and the replacing refresh
 /// token; store it at once). Without `scope` the grant stays as it was.
+/// `keep` gets `session` with the new refresh token as soon as an answer
+/// names one, before anything is checked.
 pub async fn refresh(
     client: &reqwest::Client,
     token_url: &str,
     session: &ChatGptSession,
+    keep: impl FnOnce(&ChatGptSession) -> Result<(), String>,
 ) -> Result<ChatGptSession, ChatGptError> {
     let (status, text) = post_form(
         client,
@@ -311,6 +318,13 @@ pub async fn refresh(
             return Err(ChatGptError::SignInExpired(code));
         }
         return Err(ChatGptError::Http(status_error(status, &text)));
+    }
+    // The old refresh token is spent now (review of 2026-11-27, N1): its
+    // successor is kept before anything below can fail.
+    if let Some(rotated) = rotated_refresh_token(&text) {
+        let mut kept = session.clone();
+        kept.refresh_token = rotated;
+        keep(&kept).map_err(ChatGptError::NotSaved)?;
     }
     let now = unix_now();
     let tokens = TokenAnswer::read(&text)?;
@@ -505,6 +519,16 @@ fn issued_client<'a>(flow: &'a ChatGptFlow, code: &'a SignInCode) -> Result<&'a 
             "registration incomplete: the callback named no issued client id".into(),
         )),
     }
+}
+
+/// The new refresh token of a token answer, read before anything else of it
+/// is checked.
+fn rotated_refresh_token(text: &str) -> Option<String> {
+    let data: Value = serde_json::from_str(text).ok()?;
+    data.get("refresh_token")
+        .and_then(Value::as_str)
+        .filter(|token| !token.is_empty())
+        .map(str::to_string)
 }
 
 /// The fields of a token answer DanyWhere uses.
@@ -1344,7 +1368,7 @@ mod tests {
     async fn a_refresh_posts_the_documented_form_and_takes_the_new_tokens() {
         let (base, seen) = serve(vec![("200 OK", token_answer(None, None))]).await;
         let old = session();
-        let new = refresh(&client(), &format!("{base}/api/accounts/oauth/token"), &old)
+        let new = refresh(&client(), &format!("{base}/api/accounts/oauth/token"), &old, keep_nothing)
             .await
             .expect("a new session");
 
@@ -1382,7 +1406,7 @@ mod tests {
             token_answer(Some(jwt(&renewed)), Some(FULL_SCOPE)),
         )])
         .await;
-        let new = refresh(&client(), &base, &session())
+        let new = refresh(&client(), &base, &session(), keep_nothing)
             .await
             .expect("a session");
         assert_eq!(new.email.as_deref(), Some("jo.new@example.com"));
@@ -1393,7 +1417,7 @@ mod tests {
         let mut other = claims(ISSUED);
         other["sub"] = json!("someone-else");
         let (base, _) = serve(vec![("200 OK", token_answer(Some(jwt(&other)), None))]).await;
-        let result = refresh(&client(), &base, &session()).await;
+        let result = refresh(&client(), &base, &session(), keep_nothing).await;
         assert!(
             matches!(result, Err(ChatGptError::Invalid(_))),
             "{result:?}"
@@ -1426,7 +1450,7 @@ mod tests {
         ));
         let (base, _) = serve(replies).await;
         for code in codes.iter().chain(["refresh_token_reused"].iter()) {
-            let result = refresh(&client(), &base, &session()).await;
+            let result = refresh(&client(), &base, &session(), keep_nothing).await;
             assert_eq!(
                 result.unwrap_err(),
                 ChatGptError::SignInExpired(code.to_string()),
@@ -1445,20 +1469,20 @@ mod tests {
             ),
         ])
         .await;
-        let first = refresh(&client(), &base, &session()).await.unwrap_err();
+        let first = refresh(&client(), &base, &session(), keep_nothing).await.unwrap_err();
         assert_eq!(
             first,
             ChatGptError::Http(
                 "API request failed with status 503 Service Unavailable: upstream down".to_string()
             )
         );
-        let second = refresh(&client(), &base, &session()).await.unwrap_err();
+        let second = refresh(&client(), &base, &session(), keep_nothing).await.unwrap_err();
         assert!(matches!(second, ChatGptError::Http(_)), "{second:?}");
 
         let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
         let address = listener.local_addr().unwrap();
         drop(listener);
-        let offline = refresh(&client(), &format!("http://{address}"), &session())
+        let offline = refresh(&client(), &format!("http://{address}"), &session(), keep_nothing)
             .await
             .unwrap_err();
         match offline {
@@ -1480,7 +1504,7 @@ mod tests {
             token_answer(None, Some("openid profile email offline_access")),
         )])
         .await;
-        let result = refresh(&client(), &base, &session()).await;
+        let result = refresh(&client(), &base, &session(), keep_nothing).await;
         assert_eq!(result.unwrap_err(), ChatGptError::NotEligible);
     }
 
@@ -1489,11 +1513,63 @@ mod tests {
         let mut answer: Value = serde_json::from_str(&token_answer(None, None)).unwrap();
         answer.as_object_mut().unwrap().remove("refresh_token");
         let (base, _) = serve(vec![("200 OK", answer.to_string())]).await;
-        let new = refresh(&client(), &base, &session())
+        let new = refresh(&client(), &base, &session(), keep_nothing)
             .await
             .expect("a session");
         assert_eq!(new.refresh_token, "refresh-old");
         assert_eq!(new.access_token, "access-new");
+    }
+
+    /// For a refresh whose new refresh token the test does not keep.
+    fn keep_nothing(_: &ChatGptSession) -> Result<(), String> {
+        Ok(())
+    }
+
+    /// Review of 2026-11-27, N1: OpenAI spent the old refresh token with a
+    /// 200; its new one is kept before a check can fail, or the next refresh
+    /// meets `refresh_token_reused` and ends the sign-in.
+    #[tokio::test]
+    async fn the_new_refresh_token_is_kept_before_the_answer_is_checked() {
+        let mut other_account = claims(ISSUED);
+        other_account["sub"] = json!("someone-else");
+        let mut no_token_type: Value = serde_json::from_str(&token_answer(None, None)).unwrap();
+        no_token_type.as_object_mut().unwrap().remove("token_type");
+        let answers = vec![
+            (
+                "200 OK",
+                token_answer(None, Some("openid profile email offline_access")),
+            ),
+            ("200 OK", token_answer(Some(jwt(&other_account)), None)),
+            ("200 OK", no_token_type.to_string()),
+        ];
+        let (base, _) = serve(answers).await;
+        for case in ["no plan scope", "another account", "no token type"] {
+            let kept = Mutex::new(None);
+            let result = refresh(&client(), &base, &session(), |rotated| {
+                *kept.lock().unwrap() = Some(rotated.refresh_token.clone());
+                Ok(())
+            })
+            .await;
+            assert!(result.is_err(), "{case}: {result:?}");
+            assert_eq!(
+                kept.lock().unwrap().as_deref(),
+                Some("refresh-new"),
+                "{case}"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn a_new_refresh_token_that_cannot_be_kept_fails_the_refresh() {
+        let (base, _) = serve(vec![("200 OK", token_answer(None, None))]).await;
+        let result = refresh(&client(), &base, &session(), |_| {
+            Err("disk full".to_string())
+        })
+        .await;
+        assert_eq!(
+            result.unwrap_err(),
+            ChatGptError::NotSaved("disk full".to_string())
+        );
     }
 
     // --- when to refresh -----------------------------------------------------

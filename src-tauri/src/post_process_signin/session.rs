@@ -69,12 +69,15 @@ async fn refresh_held(
     token_url: &str,
     session: &ChatGptSession,
 ) -> Result<ChatGptSession, String> {
-    match chatgpt::refresh(client, token_url, session).await {
+    match chatgpt::refresh(client, token_url, session, |rotated| store.save(rotated)).await {
         Ok(renewed) => {
-            // The old refresh token is spent: save the new one before use.
-            if let Err(error) = store.save(&renewed) {
+            // The new refresh token is kept already (`chatgpt::refresh`);
+            // the rest of the session before use. A session that can't be
+            // saved fails the request (review of 2026-11-27, N1).
+            store.save(&renewed).map_err(|error| {
                 log::error!("Cannot save the refreshed ChatGPT sign-in: {error}");
-            }
+                ChatGptError::NotSaved(error).to_string()
+            })?;
             Ok(renewed)
         }
         Err(ChatGptError::SignInExpired(code)) => {
@@ -197,6 +200,8 @@ mod tests {
         saved: AtomicUsize,
         expired: AtomicBool,
         forgot_client: AtomicBool,
+        /// Saving fails (a full disk, say).
+        save_fails: AtomicBool,
     }
 
     impl FakeStore {
@@ -213,6 +218,9 @@ mod tests {
             self.session.lock().unwrap().clone()
         }
         fn save(&self, session: &ChatGptSession) -> Result<(), String> {
+            if self.save_fails.load(Ordering::SeqCst) {
+                return Err("disk full".to_string());
+            }
             self.saved.fetch_add(1, Ordering::SeqCst);
             *self.session.lock().unwrap() = Some(session.clone());
             Ok(())
@@ -242,6 +250,43 @@ mod tests {
         assert!(error.starts_with("sign-in-expired: "), "{error}");
         assert!(store.expired.load(Ordering::SeqCst));
         assert!(store.forgot_client.load(Ordering::SeqCst));
+    }
+
+    /// Review of 2026-11-27, N1.
+    #[tokio::test]
+    async fn a_refresh_answer_that_is_not_accepted_keeps_its_new_token() {
+        let (url, _requests) = token_endpoint(
+            "200 OK",
+            json!({
+                "access_token": "access-new", "refresh_token": "refresh-new",
+                "token_type": "Bearer", "expires_in": 3600,
+                "scope": "openid profile email offline_access",
+            })
+            .to_string(),
+        )
+        .await;
+        let store = FakeStore::with(session(NOW + 60));
+        let error = fresh_session(&store, &client(), &url, NOW)
+            .await
+            .expect_err("not eligible");
+        assert!(error.starts_with("plan-not-eligible:"), "{error}");
+        assert_eq!(
+            store.load().map(|kept| kept.refresh_token),
+            Some("refresh-new".to_string()),
+            "the spent token is not kept"
+        );
+        assert!(!store.expired.load(Ordering::SeqCst));
+    }
+
+    #[tokio::test]
+    async fn a_renewed_session_that_cannot_be_saved_fails_the_request() {
+        let (url, _requests) = token_endpoint("200 OK", renewed()).await;
+        let store = FakeStore::with(session(NOW + 60));
+        store.save_fails.store(true, Ordering::SeqCst);
+        let error = fresh_session(&store, &client(), &url, NOW)
+            .await
+            .expect_err("not saved");
+        assert!(error.contains("disk full"), "{error}");
     }
 
     #[tokio::test]
@@ -337,7 +382,8 @@ mod tests {
         let fresh = fresh_session(&store, &client(), &url, NOW).await.unwrap();
         assert_eq!(fresh.access_token, "access-new");
         assert_eq!(requests.load(Ordering::SeqCst), 1);
-        assert_eq!(store.saved.load(Ordering::SeqCst), 1);
+        // The new refresh token at once, then the whole session (N1).
+        assert_eq!(store.saved.load(Ordering::SeqCst), 2);
         let saved = store.load().unwrap();
         assert_eq!(saved.refresh_token, "refresh-new");
         assert_eq!(saved.access_token, "access-new");
