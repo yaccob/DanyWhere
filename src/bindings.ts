@@ -475,9 +475,10 @@ async cancelPostProcessSignIn() : Promise<void> {
 },
 /**
  * Forgets the sign-in: ChatGPT's session (its client id and the host id
- * stay for the next sign-in), or OpenRouter's key and connection.
+ * stay for the next sign-in), or OpenRouter's key and connection. The
+ * outcome says whether OpenAI confirmed revoking ChatGPT's tokens.
  */
-async disconnectPostProcessSignIn(provider: SignInProvider) : Promise<Result<null, string>> {
+async disconnectPostProcessSignIn(provider: SignInProvider) : Promise<Result<DisconnectOutcome, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("disconnect_post_process_sign_in", { provider }) };
 } catch (e) {
@@ -2337,7 +2338,16 @@ export type DictationServiceWhenIdle =
 /**
  * What the settings page offers for a provider's model.
  */
-export type EffortOptions = { 
+/**
+ * How "Disconnect" went at the provider.
+ */
+export type DisconnectOutcome = {
+/**
+ * ChatGPT: whether OpenAI confirmed revoking the tokens; `None` when
+ * nothing was revoked (OpenRouter, or no session).
+ */
+revoke_confirmed: boolean | null }
+export type EffortOptions = {
 /**
  * In [`LEVELS`] order, without the model's default (always offered).
  */

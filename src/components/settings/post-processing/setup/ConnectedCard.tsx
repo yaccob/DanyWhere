@@ -91,6 +91,7 @@ export const ConnectedCard: React.FC<ConnectedCardProps> = ({
   const disconnect = usePostProcessSetupStore((s) => s.disconnect);
   const openQuestions = usePostProcessSetupStore((s) => s.openQuestions);
   const notToppedUp = usePostProcessSetupStore((s) => s.notToppedUp);
+  const topUpFailure = usePostProcessSetupStore((s) => s.topUpFailure);
   const running = usePostProcessSetupStore(
     (s) => s.sample?.phase === "running",
   );
@@ -158,6 +159,15 @@ export const ConnectedCard: React.FC<ConnectedCardProps> = ({
         {notToppedUp && (
           <CardLine tone="warning">
             {t(`${KEY}.connected.notToppedUp`)}
+          </CardLine>
+        )}
+        {topUpFailure && (
+          <CardLine tone="error">
+            {t(`${KEY}.connected.topUpCheckFailed`)}{" "}
+            {failureSentence(t, topUpFailure, {
+              id: status.provider_id ?? "",
+              label: name,
+            })}
           </CardLine>
         )}
         <div className="flex flex-wrap gap-2">

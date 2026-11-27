@@ -7,13 +7,20 @@
 // tries a sample sentence; today's provider settings wait under "Advanced"
 // or "All providers …".
 import { beforeEach, describe, expect, test } from "bun:test";
-import { act, fireEvent, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, screen } from "@testing-library/react";
 import { PostProcessingSettings } from "../PostProcessingSettings";
 import { DEFAULTS_SCOPE } from "@/lib/profileScope";
 import { OpenManualProvider } from "@/hooks/useOpenManual";
-import { callsOf, emitEvent, mockCommand, ok } from "@/test/bindings-mock";
+import { useNoticeStore } from "@/stores/noticeStore";
+import { callsOf, emitEvent, err, mockCommand, ok } from "@/test/bindings-mock";
 import { switchTestLanguage } from "@/test/i18n";
-import { press, renderPage, setBackendSettings, settle } from "@/test/render";
+import {
+  press,
+  raisedNotices,
+  renderPage,
+  setBackendSettings,
+  settle,
+} from "@/test/render";
 import { setOsType } from "@/test/tauri-mock";
 import { isVisible, rawTextIn, visibleText } from "@/test/visible";
 import {
@@ -816,6 +823,104 @@ describe("post-processing setup: connected", () => {
     expect(openedUrls()).toEqual(["https://chatgpt.com/settings/usage"]);
     await press(button("Disconnect")!);
     expect(callsOf("disconnectPostProcessSignIn")).toEqual([["chatgpt"]]);
+  });
+
+  // OpenAI's guidelines: when revoking fails, say so and where the user can
+  // check the access (sidecar qa 2026-11-26_2250, D, Nachtrag N).
+  test("ChatGPT: a sign-out OpenAI didn't confirm says so, with its settings", async () => {
+    mockCommand("disconnectPostProcessSignIn", async () =>
+      ok({ revoke_confirmed: false }),
+    );
+    await renderSetup(
+      ready({
+        provider_id: "chatgpt",
+        model: "gpt-6.2-sol",
+        way: { kind: "chatgpt_plan", plan: null, email: null },
+      }),
+    );
+    await press(button("Disconnect")!);
+    expect(raisedNotices()).toEqual([
+      "Sign-Out Not Confirmed by OpenAI | DanyWhere has forgotten the sign-in here. You can check DanyWhere's access in your ChatGPT settings.",
+    ]);
+    const notice = useNoticeStore.getState().local[0];
+    expect(notice.kept).toBe(true);
+    expect(notice.action?.label).toBe("ChatGPT Settings");
+    await act(async () => notice.action!.onClick());
+    expect(openedUrls()).toEqual(["https://chatgpt.com/settings/usage"]);
+  });
+
+  test("ChatGPT: a confirmed sign-out raises nothing", async () => {
+    for (const confirmed of [true, null]) {
+      mockCommand("disconnectPostProcessSignIn", async () =>
+        ok({ revoke_confirmed: confirmed }),
+      );
+      await renderSetup(
+        ready({
+          provider_id: "chatgpt",
+          model: "gpt-6.2-sol",
+          way: { kind: "chatgpt_plan", plan: null, email: null },
+        }),
+      );
+      await press(button("Disconnect")!);
+      expect(raisedNotices()).toEqual([]);
+      cleanup();
+    }
+  });
+
+  // A failure is said, not swallowed (D, N8).
+  test("a Disconnect that fails says so", async () => {
+    mockCommand("disconnectPostProcessSignIn", async () =>
+      err("the vault is locked"),
+    );
+    await renderSetup(ready());
+    await press(button("Disconnect")!);
+    expect(raisedNotices()).toEqual(["Not Disconnected | the vault is locked"]);
+  });
+
+  test("Open the page again that fails says so", async () => {
+    await renderSetup();
+    await press(radio(FREE));
+    await press(radio(NONE));
+    signInStarts();
+    await press(button(CONNECT_OPENROUTER)!);
+    mockCommand("reopenPostProcessSignIn", async () =>
+      err("no sign-in is waiting"),
+    );
+    await press(button("Open the page again")!);
+    expect(raisedNotices()).toEqual([
+      "Page Not Opened Again | no sign-in is waiting",
+    ]);
+  });
+
+  test("I've topped up that can't reach OpenRouter says why", async () => {
+    mockCommand("refreshOpenrouterConnection", async () =>
+      failed("unreachable", {
+        providerId: "openrouter",
+        provider: "OpenRouter",
+      }),
+    );
+    await renderSetup(ready(), {
+      texts_may_go: "not_kept",
+      subscription: "none",
+      next_step: "credit",
+    });
+    await press(button("I've topped up")!);
+    const text = visibleText();
+    expect(text).toContain(
+      "Couldn't ask OpenRouter about the credit. OpenRouter couldn't be reached.",
+    );
+    expect(text).not.toContain("OpenRouter doesn't show any credit yet.");
+  });
+
+  test("a status the backend can't give leaves the questions", async () => {
+    mockCommand("getPostProcessSetupStatus", async () => {
+      throw new Error("the backend is gone");
+    });
+    await renderPage(<PostProcessingSettings />, {
+      settings: setupSettings(null),
+      scope: DEFAULTS_SCOPE,
+    });
+    expect(visibleText()).toContain(Q1);
   });
 
   test("a key of one's own: Disconnect removes the key", async () => {

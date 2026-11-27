@@ -3,6 +3,7 @@
 // 2026-11-26_2250, 4.5): what the backend says about the setup, the answers
 // being given, a sign-in through the browser while it waits, and the sample.
 import { create } from "zustand";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import {
   commands,
   events,
@@ -21,6 +22,8 @@ import {
   type Machine,
   type SetupAnswers as GivenAnswers,
 } from "@/lib/postProcessSetup/questions";
+import { providerPages } from "@/lib/postProcessSetup/guides";
+import { notify } from "./noticeStore";
 import { useSettingsStore } from "./settingsStore";
 
 const TEXTS = "settings.postProcessing.setup";
@@ -84,6 +87,9 @@ interface PostProcessSetupState {
   sample: SampleState | null;
   /** "I've topped up", and OpenRouter still has the free tier. */
   notToppedUp: boolean;
+  /** "I've topped up" couldn't ask OpenRouter (sidecar qa 2026-11-26_2250,
+   * D, N8). */
+  topUpFailure: FailureDto | null;
   /** The listener of `post-process-sign-in-finished` is registered. */
   listening: boolean;
 
@@ -139,6 +145,7 @@ export const usePostProcessSetupStore = create<PostProcessSetupState>()(
     signIn: null,
     sample: null,
     notToppedUp: false,
+    topUpFailure: null,
     listening: false,
 
     hydrate: (kept) => {
@@ -150,13 +157,11 @@ export const usePostProcessSetupStore = create<PostProcessSetupState>()(
     },
 
     loadStatus: async () => {
-      const status = await commands.getPostProcessSetupStatus();
-      set({ status: status ?? null });
+      set({ status: await readStatus(get().status) });
     },
 
     refresh: async () => {
-      const status = await commands.getPostProcessSetupStatus();
-      set({ status: status ?? null });
+      set({ status: await readStatus(get().status) });
       await useSettingsStore.getState().refreshSettings();
     },
 
@@ -216,11 +221,12 @@ export const usePostProcessSetupStore = create<PostProcessSetupState>()(
 
     startSignIn: async (provider, intent = null) => {
       set({ signIn: { provider, intent, phase: "starting", error: null } });
-      const started = await commands.startPostProcessSignIn(
-        provider,
-        callbackPage(),
-        intent,
-      );
+      const started = await commands
+        .startPostProcessSignIn(provider, callbackPage(), intent)
+        .catch((error: unknown) => ({
+          status: "error" as const,
+          error: String(error),
+        }));
       const now = get().signIn;
       // Cancelled or finished meanwhile.
       if (!now || now.provider !== provider || now.phase !== "starting") return;
@@ -233,7 +239,13 @@ export const usePostProcessSetupStore = create<PostProcessSetupState>()(
     },
 
     reopenSignIn: async () => {
-      await commands.reopenPostProcessSignIn();
+      const reopened = await commands.reopenPostProcessSignIn();
+      if (reopened.status === "error") {
+        notify({
+          title: i18n.t(`${TEXTS}.errors.reopen`),
+          detail: reopened.error,
+        });
+      }
     },
 
     cancelSignIn: async () => {
@@ -242,7 +254,13 @@ export const usePostProcessSetupStore = create<PostProcessSetupState>()(
     },
 
     finishWay: async () => {
-      set({ editing: false, before: null, skipped: false, notToppedUp: false });
+      set({
+        editing: false,
+        before: null,
+        skipped: false,
+        notToppedUp: false,
+        topUpFailure: null,
+      });
       await save(get().answers ?? EMPTY, true, false);
       await get().refresh();
       await get().runSample();
@@ -264,6 +282,7 @@ export const usePostProcessSetupStore = create<PostProcessSetupState>()(
       await get().refresh();
       set({
         notToppedUp: outcome.status === "ok" && outcome.data.free_tier,
+        topUpFailure: outcome.status === "error" ? outcome.error : null,
       });
     },
 
@@ -271,10 +290,14 @@ export const usePostProcessSetupStore = create<PostProcessSetupState>()(
       const status = get().status;
       if (!status) return;
       const way = status.way;
-      if (way?.kind === "chatgpt_plan") {
-        await commands.disconnectPostProcessSignIn("chatgpt");
-      } else if (way?.kind === "openrouter") {
-        await commands.disconnectPostProcessSignIn("openrouter");
+      let failed: string | null = null;
+      if (way?.kind === "chatgpt_plan" || way?.kind === "openrouter") {
+        const provider = way.kind === "chatgpt_plan" ? "chatgpt" : "openrouter";
+        const outcome = await commands.disconnectPostProcessSignIn(provider);
+        if (outcome.status === "error") failed = outcome.error;
+        // OpenAI's guidelines: a revocation it didn't confirm is said, with
+        // where the access can be checked (D, Nachtrag N).
+        else if (outcome.data?.revoke_confirmed === false) revokeUnconfirmed();
       } else {
         // A pasted key: an empty key removes it; the rest stays. A server
         // of one's own and Apple Intelligence have nothing to disconnect.
@@ -286,18 +309,52 @@ export const usePostProcessSetupStore = create<PostProcessSetupState>()(
           way?.kind === "on_device"
         )
           return;
-        await commands.applyPostProcessChoice({
+        const removed = await commands.applyPostProcessChoice({
           provider_id: provider,
           model: null,
           api_key: "",
           effort: null,
         });
+        if (removed.status === "error") failed = removed.error;
       }
-      set({ sample: null, notToppedUp: false });
+      if (failed !== null) {
+        notify({ title: i18n.t(`${TEXTS}.errors.disconnect`), detail: failed });
+      }
+      set({ sample: null, notToppedUp: false, topUpFailure: null });
       await get().refresh();
     },
   }),
 );
+
+/** The backend's status, or `kept` when it can't give one (D, N8). */
+const readStatus = async (
+  kept: SetupStatus | null,
+): Promise<SetupStatus | null> => {
+  try {
+    return (await commands.getPostProcessSetupStatus()) ?? null;
+  } catch (error) {
+    console.error("Couldn't read the post-processing setup's status:", error);
+    return kept;
+  }
+};
+
+/** OpenAI didn't confirm revoking ChatGPT's tokens: a notice that stays in
+ * the footer, with ChatGPT's settings. */
+const revokeUnconfirmed = () => {
+  const usage = providerPages("chatgpt").usage;
+  notify({
+    level: "warning",
+    title: i18n.t(`${TEXTS}.connected.revokeUnconfirmed`),
+    detail: i18n.t(`${TEXTS}.connected.revokeUnconfirmedDetail`),
+    action: usage
+      ? {
+          label: i18n.t(`${TEXTS}.connected.chatgptSettings`),
+          onClick: () => void openUrl(usage),
+        }
+      : undefined,
+    key: "chatgpt-revoke-unconfirmed",
+  });
+};
 
 /** How a sign-in ended, from the backend's event. */
 const signInFinished = async ({

@@ -1222,6 +1222,7 @@
           "withCredit": "With credit, a model without training",
           "noCreditYet": "No credit yet: DanyWhere sends nothing until you top up.",
           "notToppedUp": "OpenRouter doesn't show any credit yet. It can take a minute.",
+          "topUpCheckFailed": "Couldn't ask OpenRouter about the credit.",
           "keyLimit": "Spending limit of the key: {{limit}}",
           "model": "Model: {{model}}",
           "picksModel": "DanyWhere picks the model.",
@@ -1231,6 +1232,9 @@
           "topUp": "Top up",
           "toppedUp": "I've topped up",
           "disconnect": "Disconnect",
+          "revokeUnconfirmed": "Sign-Out Not Confirmed by OpenAI",
+          "revokeUnconfirmedDetail": "DanyWhere has forgotten the sign-in here. You can check DanyWhere's access in your ChatGPT settings.",
+          "chatgptSettings": "ChatGPT Settings",
           "answerAgain": "Answer the questions again",
           "advanced": "Advanced"
         },
@@ -1242,6 +1246,10 @@
           "running": "Trying …",
           "took": "{{seconds}} s with {{model}}",
           "failed": "The sample didn't work."
+        },
+        "errors": {
+          "disconnect": "Not Disconnected",
+          "reopen": "Page Not Opened Again"
         }
       }
     },
