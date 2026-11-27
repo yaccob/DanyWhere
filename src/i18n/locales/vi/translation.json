@@ -1246,6 +1246,11 @@
         "description": "Mở theme.css, tệp thay đổi màu sắc và các kiểu khác của ứng dụng. Thay đổi đã lưu hiển thị trong vài giây mà không cần khởi động lại. Nếu tệp đã bị xóa, tệp sẽ được tạo lại.",
         "button": "Mở tệp giao diện"
       },
+      "soundFile": {
+        "title": "Tệp âm thanh",
+        "description": "Mở sounds.toml, tệp quy định tệp và cao độ của từng âm thanh theo chủ đề âm thanh và sự kiện. Thay đổi đã lưu áp dụng từ âm thanh tiếp theo mà không cần khởi động lại. Nếu tệp đã bị xóa, tệp sẽ được tạo lại.",
+        "button": "Mở tệp âm thanh"
+      },
       "onboardingPreview": {
         "title": "Xem trước thiết lập ban đầu",
         "description": "Xem trước các màn hình thiết lập mà không thay đổi quyền, mô hình hoặc trạng thái hoàn tất",
@@ -1274,7 +1279,7 @@
       "soundTheme": {
         "label": "Chủ đề âm thanh",
         "description": "Chọn chủ đề âm thanh cho phản hồi bắt đầu và kết thúc ghi âm",
-        "preview": "Nghe thử chủ đề âm thanh (phát âm bắt đầu, dừng, rồi âm kết thúc một lần đọc chính tả)",
+        "preview": "Nghe thử chủ đề âm thanh (phát âm bắt đầu, hướng dẫn, dừng, rồi âm kết thúc một lần đọc chính tả)",
         "custom": "Tùy chỉnh"
       },
       "historyLimit": {

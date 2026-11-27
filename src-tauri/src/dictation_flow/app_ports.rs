@@ -12,7 +12,7 @@ use super::ports::{
 };
 use crate::actions::{ProcessedTranscription, TranscriptionOutcome};
 use crate::append_text::AppendKey;
-use crate::audio_feedback::{play_feedback_sound, SoundType};
+use crate::audio_feedback::{play_feedback_sound, play_feedback_sound_blocking, SoundType};
 use crate::audio_toolkit::WordListMatch;
 use crate::delivery::DictationEnd;
 use crate::dictation_context::{CapturedWindow, ContextQuery};
@@ -259,6 +259,26 @@ impl Report for AppPorts {
     fn stop_sound(&self) {
         self.rm.remove_mute();
         play_feedback_sound(&self.app, SoundType::Stop);
+    }
+
+    fn instruction_sound(&self) {
+        if !crate::audio_feedback::feedback_on(&self.app) {
+            return;
+        }
+        let app = self.app.clone();
+        let rm = Arc::clone(&self.rm);
+        // Not on the key's thread: the sound waits for its end before the
+        // mute comes back.
+        let spawned = std::thread::Builder::new()
+            .name("instruction-sound".into())
+            .spawn(move || {
+                rm.lift_mute();
+                play_feedback_sound_blocking(&app, SoundType::Instruction);
+                rm.put_mute_back();
+            });
+        if let Err(error) = spawned {
+            log::warn!("Can't play the instruction sound: {error}");
+        }
     }
 
     fn sends_context(&self, sends: bool) {

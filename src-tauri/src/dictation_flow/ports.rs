@@ -212,6 +212,13 @@ pub trait Report {
     fn overlay(&self, overlay: Overlay);
     /// Unmutes the output muted while recording, then plays the stop sound.
     fn stop_sound(&self);
+    /// DanyWhere: plays the instruction sound, without waiting for it: an
+    /// instruction key cut the recording (`instruction::begin`). The
+    /// microphone runs on, so it lands at the start of the instruction, as
+    /// the start sound at the start of a recording; the mute while
+    /// recording is lifted for it and put back after it, unless the
+    /// recording ended meanwhile.
+    fn instruction_sound(&self);
     /// Whether the dictation sends context, for the log and the pills
     /// (`send_context::decide_at_stop`).
     fn sends_context(&self, sends: bool);

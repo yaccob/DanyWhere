@@ -9,6 +9,7 @@ import { RecordingBuffer } from "./RecordingBuffer";
 import { SettingsGroup } from "../../ui/SettingsGroup";
 import { WhatsNewPreview } from "./WhatsNewPreview";
 import { ThemeFile } from "./ThemeFile";
+import { SoundFile } from "./SoundFile";
 import { KeyboardDiagnostic } from "./KeyboardDiagnostic";
 import { DebugRun, OnboardingPreview } from "./OnboardingPreview";
 import type { OnboardingStep } from "../../onboarding/onboardingStore";
@@ -41,6 +42,7 @@ export const DebugSettings: React.FC<DebugSettingsProps> = ({
         <LogLevelSelector grouped={true} />
         <WhatsNewPreview descriptionMode="tooltip" grouped={true} />
         <ThemeFile descriptionMode="tooltip" grouped={true} />
+        <SoundFile descriptionMode="tooltip" grouped={true} />
         <OnboardingPreview
           onPreview={onPreviewOnboarding}
           descriptionMode="tooltip"

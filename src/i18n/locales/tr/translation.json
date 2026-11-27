@@ -1246,6 +1246,11 @@
         "description": "Uygulamanın renklerini ve diğer stillerini değiştiren theme.css dosyasını açar. Kaydedilen değişiklikler yeniden başlatmadan birkaç saniye içinde görünür. Dosya silinmişse yeniden oluşturulur.",
         "button": "Tema Dosyasını Aç"
       },
+      "soundFile": {
+        "title": "Ses Dosyası",
+        "description": "Her ses teması ve olay için her sesin dosyasını ve perdesini belirleyen sounds.toml dosyasını açar. Kaydedilen değişiklikler yeniden başlatmadan bir sonraki seste geçerli olur. Dosya silinmişse yeniden oluşturulur.",
+        "button": "Ses Dosyasını Aç"
+      },
       "onboardingPreview": {
         "title": "İlk kurulum önizlemesi",
         "description": "İzinleri, modelleri veya tamamlanma durumunu değiştirmeden ilk kurulum ekranlarını önizleyin",
@@ -1274,7 +1279,7 @@
       "soundTheme": {
         "label": "Ses Teması",
         "description": "Kayıt başlangıç ve bitişi için sesli geri bildirim temasını seçin",
-        "preview": "Ses temasını dinle (başlat, durdur ve ardından dikteyi bitiren sesi çalar)",
+        "preview": "Ses temasını dinle (başlat, talimat, durdur ve ardından dikteyi bitiren sesi çalar)",
         "custom": "Özel"
       },
       "historyLimit": {

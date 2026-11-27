@@ -377,28 +377,8 @@ pub enum SoundTheme {
     Custom,
 }
 
-impl SoundTheme {
-    fn as_str(&self) -> &'static str {
-        match self {
-            SoundTheme::Marimba => "marimba",
-            SoundTheme::Pop => "pop",
-            SoundTheme::Custom => "custom",
-        }
-    }
-
-    pub fn to_start_path(self) -> String {
-        format!("resources/{}_start.wav", self.as_str())
-    }
-
-    pub fn to_stop_path(self) -> String {
-        format!("resources/{}_stop.wav", self.as_str())
-    }
-
-    /// DanyWhere: the sound for a transcript left on the clipboard.
-    pub fn to_clipboard_path(self) -> String {
-        format!("resources/{}_clipboard.wav", self.as_str())
-    }
-}
+// DanyWhere: which file a theme plays for which event is in
+// `audio_feedback::bundled`, and the sound file (`sound_file`) can change it.
 
 /// UI appearance mode. `System` follows the OS `prefers-color-scheme`; `Light`
 /// and `Dark` force one of the two palettes Handy already ships.

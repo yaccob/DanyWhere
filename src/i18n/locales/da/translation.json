@@ -1246,6 +1246,11 @@
         "description": "Åbn theme.css, som ændrer appens farver og andre typografier. Gemte ændringer vises inden for få sekunder uden genstart. Hvis filen er slettet, oprettes den igen.",
         "button": "Åbn temafil"
       },
+      "soundFile": {
+        "title": "Lydfil",
+        "description": "Åbn sounds.toml, som angiver fil og tonehøjde for hver lyd pr. lydtema og hændelse. Gemte ændringer gælder fra næste lyd uden genstart. Hvis filen er slettet, oprettes den igen.",
+        "button": "Åbn lydfil"
+      },
       "onboardingPreview": {
         "title": "Forhåndsvis introduktion",
         "description": "Forhåndsvis introduktionsskærmene uden at ændre tilladelser, modeller eller fuldførelsesstatus",
@@ -1274,7 +1279,7 @@
       "soundTheme": {
         "label": "Lydtema",
         "description": "Vælg et lydtema til feedback ved start og stop af optagelse",
-        "preview": "Afspil lydtemaet (start, stop og derefter lyden, der afslutter en diktering)",
+        "preview": "Afspil lydtemaet (start, instruktion, stop og derefter lyden, der afslutter en diktering)",
         "custom": "Brugerdefineret"
       },
       "historyLimit": {

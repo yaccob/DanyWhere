@@ -1246,6 +1246,11 @@
         "description": "Ouvre theme.css, qui modifie les couleurs et les autres styles de l'application. Les modifications enregistrées s'affichent en quelques secondes, sans redémarrage. Si le fichier a été supprimé, il est recréé.",
         "button": "Ouvrir le fichier de thème"
       },
+      "soundFile": {
+        "title": "Fichier des sons",
+        "description": "Ouvre sounds.toml, qui définit le fichier et la hauteur de chaque son par thème sonore et par événement. Les modifications enregistrées s'appliquent au son suivant, sans redémarrage. Si le fichier a été supprimé, il est recréé.",
+        "button": "Ouvrir le fichier des sons"
+      },
       "onboardingPreview": {
         "title": "Aperçu de la configuration initiale",
         "description": "Prévisualisez les écrans de configuration sans modifier les autorisations, les modèles ou l’état d’achèvement",
@@ -1274,7 +1279,7 @@
       "soundTheme": {
         "label": "Thème sonore",
         "description": "Choisir un thème sonore pour les retours de début et de fin d'enregistrement",
-        "preview": "Écouter le thème sonore (joue le début, l'arrêt, puis le son qui termine une dictée)",
+        "preview": "Écouter le thème sonore (joue le début, l'instruction, l'arrêt, puis le son qui termine une dictée)",
         "custom": "Personnalisé"
       },
       "historyLimit": {

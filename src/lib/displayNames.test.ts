@@ -141,7 +141,7 @@ check("German labels of the info button, the preview and cancel", () => {
   assert.equal(de("common.moreInformation"), "Weitere Informationen");
   assert.equal(
     de("settings.debug.soundTheme.preview"),
-    "Sound-Thema anhören (spielt Start, Stopp und dann den Ton, der ein Diktat beendet)",
+    "Sound-Thema anhören (spielt Start, Anweisung, Stopp und dann den Ton, der ein Diktat beendet)",
   );
   assert.equal(de("overlay.cancel"), "Abbrechen");
 });
@@ -149,7 +149,7 @@ check("English labels keep Handy's words", () => {
   assert.equal(en("common.moreInformation"), "More information");
   assert.equal(
     en("settings.debug.soundTheme.preview"),
-    "Preview sound theme (plays start, stop, then the sound that ends a dictation)",
+    "Preview sound theme (plays start, instruction, stop, then the sound that ends a dictation)",
   );
   assert.equal(en("overlay.cancel"), "Cancel");
 });

@@ -1246,6 +1246,11 @@
         "description": "Otevře theme.css, kterým lze měnit barvy a další styly aplikace. Uložené změny se projeví během několika sekund bez restartu. Pokud byl soubor smazán, vytvoří se znovu.",
         "button": "Otevřít soubor motivu"
       },
+      "soundFile": {
+        "title": "Soubor zvuků",
+        "description": "Otevře sounds.toml, který pro každý zvukový motiv a událost určuje soubor a výšku každého zvuku. Uložené změny platí od dalšího zvuku bez restartu. Pokud byl soubor smazán, vytvoří se znovu.",
+        "button": "Otevřít soubor zvuků"
+      },
       "onboardingPreview": {
         "title": "Náhled úvodního nastavení",
         "description": "Prohlédněte si obrazovky úvodního nastavení beze změny oprávnění, modelů nebo stavu dokončení",
@@ -1274,7 +1279,7 @@
       "soundTheme": {
         "label": "Zvukový motiv",
         "description": "Vyberte zvukový motiv pro odezvu při startu a ukončení nahrávání",
-        "preview": "Přehrát ukázku zvukového motivu (start, stop a pak zvuk, který ukončuje diktát)",
+        "preview": "Přehrát ukázku zvukového motivu (start, pokyn, stop a pak zvuk, který ukončuje diktát)",
         "custom": "Vlastní"
       },
       "historyLimit": {

@@ -1246,6 +1246,11 @@
         "description": "Obre theme.css, que canvia els colors i altres estils de l'aplicació. Els canvis desats es veuen en pocs segons, sense reiniciar. Si s'ha suprimit el fitxer, es torna a crear.",
         "button": "Obre el fitxer de tema"
       },
+      "soundFile": {
+        "title": "Fitxer de sons",
+        "description": "Obre sounds.toml, que defineix el fitxer i el to de cada so per a cada tema de so i esdeveniment. Els canvis desats s'apliquen al so següent, sense reiniciar. Si s'ha suprimit el fitxer, es torna a crear.",
+        "button": "Obre el fitxer de sons"
+      },
       "onboardingPreview": {
         "title": "Previsualització de la configuració inicial",
         "description": "Previsualitza les pantalles de configuració inicial sense canviar els permisos, os models ni l'estat de compleció",
@@ -1274,7 +1279,7 @@
       "soundTheme": {
         "label": "Tema de so",
         "description": "Trieu un tema de so per als avisos d'inici i d'aturada de l'enregistrament",
-        "preview": "Escolta el tema de so (reprodueix l'inici, l'aturada i després el so que acaba un dictat)",
+        "preview": "Escolta el tema de so (reprodueix l'inici, la instrucció, l'aturada i després el so que acaba un dictat)",
         "custom": "Personalitzat"
       },
       "historyLimit": {

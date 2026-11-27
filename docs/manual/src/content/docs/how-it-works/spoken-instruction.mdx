@@ -17,7 +17,7 @@ Sometimes a dictation needs more than tidying up: a reply in Polish, a friendlie
 
 1. Start a recording as always, for example with a tap on <kbd>⌃ Space</kbd>, and say your text.
 
-2. Tap the instruction shortcut: <kbd>⇥</kbd> (Tab) on a Mac, <kbd>Tab</kbd> on Windows. The overlay shows **Instruction**. What you say from now on is the instruction.
+2. Tap the instruction shortcut: <kbd>⇥</kbd> (Tab) on a Mac, <kbd>Tab</kbd> on Windows. The overlay shows **Instruction**, and if you've switched on **Audio Feedback**, a short sound tells you too. What you say from now on is the instruction.
 
 3. Say what should happen to the text, such as “translate this into Polish”.
 
@@ -25,7 +25,7 @@ Sometimes a dictation needs more than tidying up: a reply in Polish, a friendlie
 
 </Steps>
 
-Or hold the instruction shortcut while you say the instruction, and let go. Letting go sends the dictation off, with the instruction shortcut's own **Append** and **Send Context**: on a Mac, **⇥ held** appends a space.
+Or hold the instruction shortcut while you say the instruction, and let go. It switches the moment you press it, with the same sound. Letting go sends the dictation off, with the instruction shortcut's own **Append** and **Send Context**: on a Mac, **⇥ held** appends a space.
 
 <Diagram
   name="spoken-instruction"
@@ -33,7 +33,7 @@ Or hold the instruction shortcut while you say the instruction, and let go. Lett
   alt="The way of a dictation with a spoken instruction. A start shortcut starts the recording, and you speak the text. An instruction shortcut switches to the instruction. From then on, two things happen side by side: the speech model transcribes the text, and you speak the instruction. Tapped, the instruction shortcut lets an end shortcut send the dictation off; held, letting go of it sends it off. Esc cancels everything. The speech model transcribes the instruction, and post-processing gets the profile's active prompts and the instruction. Then the end's Append follows, and the text is inserted."
 />
 
-DanyWhere doesn't wait for the instruction to transcribe the text. It starts the moment you switch, so the text is often ready by the time you've said what to do. <kbd>Esc</kbd> cancels the whole dictation at any point, text and instruction alike. Pressing an instruction shortcut again while you speak the instruction does nothing.
+DanyWhere doesn't wait for the instruction to transcribe the text. It starts the moment you switch, so the text is often ready by the time you've said what to do. <kbd>Esc</kbd> cancels the whole dictation at any point, text and instruction alike. Pressing an instruction shortcut again while you speak the instruction does nothing and plays no sound.
 
 ## What you can ask for
 

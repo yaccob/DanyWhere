@@ -409,9 +409,11 @@ pub struct Cut<'a> {
 
 /// Cuts the running recording for a spoken instruction, as
 /// [`split_dictation`] does, and keeps it in `slot` for the recording's end:
-/// shows the instruction on the overlay (no sound; the tray stays
-/// "recording"), and a check mark once the text is transcribed, unless the
-/// dictation was cancelled or a newer one owns the overlay by then.
+/// plays the instruction sound (user, 2026-11-27; after the cut, so it
+/// lands in the instruction, not in the text), shows the instruction on the
+/// overlay (the tray stays "recording"), and a check mark once the text is
+/// transcribed, unless the dictation was cancelled or a newer one owns the
+/// overlay by then.
 /// `false`: nothing was cut, as when the recording was cut already.
 pub fn begin<P>(ports: &P, slot: &'static InstructionSlot, cut: Cut<'_>) -> bool
 where
@@ -433,6 +435,7 @@ where
         cut.key_id,
         text.samples.len()
     );
+    ports.instruction_sound();
     ports.overlay(Overlay::Instruction {
         text_ready: false,
         heard: None,

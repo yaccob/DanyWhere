@@ -50,7 +50,7 @@ interface SettingsStore {
   getSetting: <K extends keyof Settings>(key: K) => Settings[K] | undefined;
   isUpdatingKey: (key: string) => boolean;
   playTestSound: (
-    soundType: "start" | "stop" | "clipboard" | "done",
+    soundType: "start" | "instruction" | "stop" | "clipboard" | "done",
   ) => Promise<void>;
   checkCustomSounds: () => Promise<void>;
   setPostProcessProvider: (providerId: string) => Promise<void>;
@@ -394,7 +394,7 @@ export const useSettingsStore = create<SettingsStore>()(
 
     // Play a test sound
     playTestSound: async (
-      soundType: "start" | "stop" | "clipboard" | "done",
+      soundType: "start" | "instruction" | "stop" | "clipboard" | "done",
     ) => {
       try {
         await commands.playTestSound(soundType);

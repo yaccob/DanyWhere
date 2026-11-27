@@ -1246,6 +1246,11 @@
         "description": "theme.css öffnen, mit der sich Farben und andere Stile der App ändern lassen. Gespeicherte Änderungen erscheinen nach wenigen Sekunden, ohne Neustart. Wurde die Datei gelöscht, wird sie neu angelegt.",
         "button": "Design-Datei öffnen"
       },
+      "soundFile": {
+        "title": "Tondatei",
+        "description": "sounds.toml öffnen, die Datei und Tonhöhe jedes Tons festlegt, je Sound-Thema und Ereignis. Gespeicherte Änderungen gelten ab dem nächsten Ton, ohne Neustart. Wurde die Datei gelöscht, wird sie neu angelegt.",
+        "button": "Tondatei öffnen"
+      },
       "onboardingPreview": {
         "title": "Ersteinrichtung ansehen",
         "description": "Vorschau der Einrichtungsbildschirme, ohne Berechtigungen, Modelle oder den Abschlussstatus zu ändern",
@@ -1274,7 +1279,7 @@
       "soundTheme": {
         "label": "Sound-Thema",
         "description": "Sound-Thema für Aufnahme-Start und -Stop-Feedback auswählen",
-        "preview": "Sound-Thema anhören (spielt Start, Stopp und dann den Ton, der ein Diktat beendet)",
+        "preview": "Sound-Thema anhören (spielt Start, Anweisung, Stopp und dann den Ton, der ein Diktat beendet)",
         "custom": "Benutzerdefiniert"
       },
       "historyLimit": {

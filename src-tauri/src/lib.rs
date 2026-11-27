@@ -68,6 +68,7 @@ mod setting_classes;
 mod settings;
 mod shortcut;
 mod signal_handle;
+mod sound_file;
 mod sound_queue;
 mod start_keys;
 mod system_languages;
@@ -979,6 +980,7 @@ pub fn run(cli_args: CliArgs) {
             prompt_frame::check_prompts_for_old_parts,
             theme_file::get_user_theme,
             theme_file::open_theme_file,
+            sound_file::open_sound_file,
         ])
         .events(collect_events![
             managers::history::HistoryUpdatePayload,
@@ -1174,6 +1176,9 @@ pub fn run(cli_args: CliArgs) {
             // DanyWhere: the user's theme file, written if it is missing before
             // the first window loads it (theme_file.rs).
             theme_file::init(app.handle());
+            // DanyWhere: the user's sound file, written if it is missing
+            // (sound_file.rs).
+            sound_file::init(app.handle());
 
             // Create main window programmatically so we can set data_directory
             // for portable mode (redirects WebView2 cache to portable Data dir)
