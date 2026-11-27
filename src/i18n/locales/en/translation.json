@@ -1211,6 +1211,10 @@
           "timedOut": "The sign-in waited 30 minutes and has expired.",
           "denied": "Access wasn't allowed.",
           "notEligible": "This ChatGPT account has no plan that DanyWhere can use (Go, Plus, Pro or Business).",
+          "noFreeModel": "OpenRouter has no free model that DanyWhere can use right now. Try again later, or top up once instead.",
+          "unreachable": "Couldn't reach {{provider}}. Check the connection and try again.",
+          "refused": "{{provider}} refused the sign-in. Try again.",
+          "didNotWork": "The sign-in didn't work. Try again.",
           "tryAgain": "Try again",
           "browserSuccess": "Done. You can close this window and go back to DanyWhere.",
           "browserFailure": "That didn't work. Go back to DanyWhere and try again."

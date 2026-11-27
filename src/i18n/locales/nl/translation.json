@@ -1211,6 +1211,10 @@
           "timedOut": "Het aanmelden heeft 30 minuten gewacht en is verlopen.",
           "denied": "De toegang is niet toegestaan.",
           "notEligible": "Dit ChatGPT-account heeft geen abonnement dat DanyWhere kan gebruiken (Go, Plus, Pro of Business).",
+          "noFreeModel": "OpenRouter heeft op dit moment geen gratis model dat DanyWhere kan gebruiken. Probeer het later opnieuw, of vul in plaats daarvan één keer aan.",
+          "unreachable": "Kan {{provider}} niet bereiken. Controleer de verbinding en probeer het opnieuw.",
+          "refused": "{{provider}} heeft het aanmelden geweigerd. Probeer het opnieuw.",
+          "didNotWork": "Het aanmelden is niet gelukt. Probeer het opnieuw.",
           "tryAgain": "Opnieuw proberen",
           "browserSuccess": "Klaar. Je kunt dit venster sluiten en teruggaan naar DanyWhere.",
           "browserFailure": "Dat is niet gelukt. Ga terug naar DanyWhere en probeer het opnieuw."

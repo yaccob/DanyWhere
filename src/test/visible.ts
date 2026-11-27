@@ -114,6 +114,12 @@ const PROBLEMS: { what: string; pattern: RegExp }[] = [
     what: "binding id",
     pattern: new RegExp(`\\b(?:${BINDING_IDS.join("|")})\\b`),
   },
+  // The codes of `SignInFailure` that are no word; the others ("denied",
+  // "refused" …) can be part of a sentence.
+  {
+    what: "sign-in failure code",
+    pattern: /\b(?:timed_out|not_eligible|no_free_model)\b/,
+  },
 ];
 
 /** Each readable text of `root` that holds something a user must never

@@ -1211,6 +1211,10 @@
           "timedOut": "L'inici de sessió ha esperat 30 minuts i ha caducat.",
           "denied": "No s'ha permès l'accés.",
           "notEligible": "Aquest compte de ChatGPT no té cap subscripció que DanyWhere pugui fer servir (Go, Plus, Pro o Business).",
+          "noFreeModel": "Ara mateix OpenRouter no té cap model gratuït que DanyWhere pugui fer servir. Torneu-ho a provar més tard, o bé recarregueu una vegada.",
+          "unreachable": "No s'ha pogut connectar amb {{provider}}. Comproveu la connexió i torneu-ho a provar.",
+          "refused": "{{provider}} ha rebutjat l'inici de sessió. Torneu-ho a provar.",
+          "didNotWork": "L'inici de sessió no ha funcionat. Torneu-ho a provar.",
           "tryAgain": "Torna-ho a provar",
           "browserSuccess": "Fet. Podeu tancar aquesta finestra i tornar a DanyWhere.",
           "browserFailure": "No ha funcionat. Torneu a DanyWhere i proveu-ho de nou."

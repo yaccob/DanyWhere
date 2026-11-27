@@ -1211,6 +1211,10 @@
           "timedOut": "Inloggningen väntade i 30 minuter och har gått ut.",
           "denied": "Åtkomst tilläts inte.",
           "notEligible": "Det här ChatGPT-kontot har inget abonnemang som DanyWhere kan använda (Go, Plus, Pro eller Business).",
+          "noFreeModel": "OpenRouter har just nu ingen gratismodell som DanyWhere kan använda. Försök igen senare, eller fyll på en gång i stället.",
+          "unreachable": "Det gick inte att nå {{provider}}. Kontrollera anslutningen och försök igen.",
+          "refused": "{{provider}} nekade inloggningen. Försök igen.",
+          "didNotWork": "Inloggningen fungerade inte. Försök igen.",
           "tryAgain": "Försök igen",
           "browserSuccess": "Klart. Du kan stänga det här fönstret och gå tillbaka till DanyWhere.",
           "browserFailure": "Det fungerade inte. Gå tillbaka till DanyWhere och försök igen."
