@@ -63,7 +63,9 @@ pub fn candidates(
 /// the dictation is not post-processed (`post_process`; post-processing
 /// gets the candidates as a hint instead), its profile may post-process
 /// (not "never", where nothing goes to a provider; variant b, 2026-11-26),
-/// and post-processing has a provider and a model to ask. Not with Apple
+/// and post-processing can run: a provider, its model and its access
+/// (`post_process_setup::post_process_ready`; review of 2026-11-27, N6:
+/// before it is set up nothing leaves the computer). Not with Apple
 /// Intelligence for now.
 pub fn wanted(settings: &AppSettings, post_process: bool) -> bool {
     if !settings.word_list_llm_check || post_process || !settings.post_process_mode.allows() {
@@ -91,8 +93,17 @@ pub fn wanted(settings: &AppSettings, post_process: bool) -> bool {
             "No word list check: provider '{}' has no model",
             provider.id
         );
+        return false;
     }
-    has_model
+    let readiness = crate::post_process_setup::post_process_ready(settings);
+    if readiness != crate::post_process_setup::Readiness::Ready {
+        debug!(
+            "No word list check: provider '{}' is not set up ({readiness:?})",
+            provider.id
+        );
+        return false;
+    }
+    true
 }
 
 /// `text` on one line: a line break becomes a space, so a candidate can't
@@ -337,7 +348,10 @@ mod tests {
         let provider_id = provider.id.clone();
         settings
             .post_process_models
-            .insert(provider_id, "model".to_string());
+            .insert(provider_id.clone(), "model".to_string());
+        settings
+            .post_process_api_keys
+            .insert(provider_id, "test-key".to_string());
         settings
     }
 
@@ -403,6 +417,31 @@ mod tests {
         let mut no_provider = settings.clone();
         no_provider.post_process_provider_id = "gone".to_string();
         assert!(!wanted(&no_provider, false));
+    }
+
+    /// Review of 2026-11-27, N6: nothing leaves the computer before
+    /// post-processing is set up, so the check needs its access too.
+    #[test]
+    fn no_check_before_post_processing_can_run() {
+        let settings = check_settings("http://localhost", true);
+        assert!(wanted(&settings, false));
+        // Signed out of OpenRouter: the model stays, the key is gone.
+        let mut no_key = settings.clone();
+        for key in no_key.post_process_api_keys.values_mut() {
+            *key = "  ".to_string();
+        }
+        assert!(!wanted(&no_key, false));
+        // ChatGPT's plan without its sign-in.
+        let mut signed_out = settings.clone();
+        signed_out.post_process_provider_id = "chatgpt".to_string();
+        signed_out
+            .post_process_models
+            .insert("chatgpt".to_string(), "gpt-6.2-sol".to_string());
+        signed_out.chatgpt_signed_in = false;
+        assert!(signed_out.active_post_process_provider().is_some());
+        assert!(!wanted(&signed_out, false));
+        signed_out.chatgpt_signed_in = true;
+        assert!(wanted(&signed_out, false));
     }
 
     #[test]

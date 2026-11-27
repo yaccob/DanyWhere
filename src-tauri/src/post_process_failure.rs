@@ -12,10 +12,12 @@
 //!
 //! | `reason`          | when                                                        | own field |
 //! |-------------------|-------------------------------------------------------------|-----------|
+//! | `not-set-up`      | the setup was never finished and post-processing can't run (`post_process_setup::missing_reason`) | |
 //! | `no-provider`     | no provider is selected                                     |           |
 //! | `no-model`        | the provider has no model chosen                            |           |
 //! | `no-prompt`       | no active prompt has a text                                 |           |
 //! | `no-api-key`      | refused (401/403) and no API key is set                     |           |
+//! | `no-sign-in`      | ChatGPT's plan without its sign-in (signed out, or never signed in) | |
 //! | `key-refused`     | refused (401/403) with the API key set                      |           |
 //! | `no-credit`       | the account has no credit left (402, Anthropic's "credit balance is too low", OpenAI's `insufficient_quota`, "insufficient balance") | |
 //! | `free-daily-limit`| OpenRouter's free models: the day's requests are used up (`free-models-per-day`, or a 429 on the free tier while the key info says none is left, `openrouter_tier::refine_failure`) | |
@@ -49,10 +51,15 @@ use crate::settings::AppSettings;
 /// is used.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum FailureReason {
+    /// The setup was never finished, and post-processing can't run (review
+    /// of 2026-11-27, M7).
+    NotSetUp,
     NoProvider,
     NoModel,
     NoPrompt,
     NoApiKey,
+    /// ChatGPT's plan without its sign-in (review of 2026-11-27, M2).
+    NoSignIn,
     KeyRefused,
     /// The provider's account has no credit left.
     NoCredit,
@@ -110,9 +117,12 @@ pub struct PostProcessFailure {
 
 impl PostProcessFailure {
     /// `reason` with the provider and model `settings` post-process with,
-    /// and for a timeout the time limit they set.
+    /// and for a timeout the time limit they set. "Not set up" names none:
+    /// before the setup the provider is nothing the user chose.
     pub fn new(settings: &AppSettings, reason: FailureReason) -> Self {
-        let provider = settings.active_post_process_provider();
+        let provider = settings
+            .active_post_process_provider()
+            .filter(|_| reason != FailureReason::NotSetUp);
         let model = provider
             .and_then(|provider| settings.post_process_models.get(&provider.id))
             .map(|model| model.trim().to_string())
@@ -294,10 +304,12 @@ impl FailureReason {
     /// `None` for [`FailureReason::Unknown`].
     pub fn name(&self) -> Option<&'static str> {
         Some(match self {
+            FailureReason::NotSetUp => "not-set-up",
             FailureReason::NoProvider => "no-provider",
             FailureReason::NoModel => "no-model",
             FailureReason::NoPrompt => "no-prompt",
             FailureReason::NoApiKey => "no-api-key",
+            FailureReason::NoSignIn => "no-sign-in",
             FailureReason::KeyRefused => "key-refused",
             FailureReason::NoCredit => "no-credit",
             FailureReason::FreeDailyLimit => "free-daily-limit",
@@ -887,6 +899,7 @@ mod tests {
             (FailureReason::NoModel, "no-model"),
             (FailureReason::NoPrompt, "no-prompt"),
             (FailureReason::NoApiKey, "no-api-key"),
+            (FailureReason::NoSignIn, "no-sign-in"),
             (FailureReason::KeyRefused, "key-refused"),
             (FailureReason::NoCredit, "no-credit"),
             (FailureReason::Unreachable, "unreachable"),
@@ -900,6 +913,40 @@ mod tests {
             assert_eq!(detail["provider"], json!("Custom"));
             assert_eq!(detail.get("seconds"), None, "{name}");
         }
+    }
+
+    /// Review of 2026-11-27, M2 and M7, as the setup's frontend reads them
+    /// (`src/lib/postProcessFailure.ts`): "not set up" names no provider
+    /// (nothing the user chose), "no sign-in" names ChatGPT's plan.
+    #[test]
+    fn the_new_reasons_read_as_the_frontend_expects() {
+        let new_install = get_default_settings();
+        assert!(new_install.active_post_process_provider().is_some());
+        let not_set_up = PostProcessFailure::new(&new_install, FailureReason::NotSetUp);
+        assert_eq!(detail_of(&not_set_up), json!({ "reason": "not-set-up" }));
+        assert_eq!(
+            crate::post_process_setup::FailureDto::from_failure(&not_set_up).reason,
+            "not-set-up"
+        );
+
+        let mut plan = get_default_settings();
+        plan.post_process_provider_id = "chatgpt".to_string();
+        plan.post_process_models
+            .insert("chatgpt".to_string(), "gpt-6.2-sol".to_string());
+        let no_sign_in = PostProcessFailure::new(&plan, FailureReason::NoSignIn);
+        assert_eq!(
+            detail_of(&no_sign_in),
+            json!({
+                "reason": "no-sign-in",
+                "providerId": "chatgpt",
+                "provider": "ChatGPT (subscription)",
+                "model": "gpt-6.2-sol"
+            })
+        );
+        assert_eq!(
+            crate::post_process_setup::FailureDto::from_failure(&no_sign_in).reason,
+            "no-sign-in"
+        );
     }
 
     #[test]

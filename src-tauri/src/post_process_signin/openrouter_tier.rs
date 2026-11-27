@@ -4,7 +4,10 @@
 //! longer reports the free tier, and post-processing switches to
 //! [`openrouter::PAID_MODEL`] with `provider.data_collection = "deny"`, as
 //! "I have topped up" does (`commands::refresh_openrouter_connection`): not
-//! when the user picked a model by hand.
+//! when the user picked a model by hand, and only for a connection without
+//! an intent (stored before the setup asked). Signed in for the free models
+//! it stays with them; signed in for credit it has the paid model from the
+//! start (review of 2026-11-27, H1 and M1; `commands::openrouter_model`).
 //!
 //! When it asks: after a post-processing request through a connected
 //! OpenRouter key on the free tier (at most once every
@@ -190,6 +193,23 @@ pub fn wants_check(settings: &AppSettings, provider_id: &str) -> bool {
         && !openrouter_key(settings).is_empty()
 }
 
+/// Whether a request with `settings` to `provider_id` goes to OpenRouter's
+/// free models (`commands::openrouter_request_fields`): a connected key on
+/// the free tier, or signed in for the free models (also with credit);
+/// never when signed in for credit (review of 2026-11-27, H1 and M1).
+pub fn uses_free_models(settings: &AppSettings, provider_id: &str) -> bool {
+    provider_id == OPENROUTER_PROVIDER_ID
+        && settings
+            .openrouter_connection
+            .as_ref()
+            .is_some_and(|connection| match commands::connection_intent(connection) {
+                Some(commands::SignInIntent::Credit) => false,
+                Some(commands::SignInIntent::Free) => true,
+                None => connection.free_tier,
+            })
+        && !openrouter_key(settings).is_empty()
+}
+
 /// The OpenRouter key in `settings`.
 fn openrouter_key(settings: &AppSettings) -> String {
     settings
@@ -252,11 +272,15 @@ pub fn apply_paid_tier(
         return Ok(false);
     }
     // The free models stay in the connection: the model the sign-in chose
-    // from them counts as DanyWhere's, not as one chosen by hand.
+    // from them counts as DanyWhere's, not as one chosen by hand. Signed in
+    // for the free models, the model stays a free one
+    // (`commands::openrouter_model`).
+    let intent = commands::connection_intent(&connection);
     let state = OpenRouterState {
         info: info.clone(),
-        model: commands::openrouter_model(false, &connection.free_models),
+        model: commands::openrouter_model(intent, false, &connection.free_models),
         free_models: connection.free_models,
+        intent,
     };
     commands::apply_openrouter_refresh(settings, &state, now)?;
     Ok(true)
@@ -273,7 +297,7 @@ pub async fn refine_failure_at(
     site: &str,
     timeout: Duration,
 ) -> FailureReason {
-    if !wants_check(settings, provider_id)
+    if !uses_free_models(settings, provider_id)
         || !post_process_failure::may_be_free_daily_limit(error, &reason)
     {
         return reason;
@@ -449,8 +473,14 @@ mod tests {
         FREE.iter().map(|model| model.to_string()).collect()
     }
 
-    /// Settings after an OpenRouter sign-in on the free tier or with credit.
+    /// Settings after an OpenRouter sign-in on the free tier or with credit,
+    /// without an intent (as stored before the setup asked).
     fn signed_in(free_tier: bool) -> AppSettings {
+        signed_in_for(None, free_tier)
+    }
+
+    /// Settings after an OpenRouter sign-in for `intent`.
+    fn signed_in_for(intent: Option<commands::SignInIntent>, free_tier: bool) -> AppSettings {
         let mut settings = get_default_settings();
         crate::profiles::ensure_profiles(&mut settings);
         let free_models = free_models();
@@ -458,8 +488,9 @@ mod tests {
             key: KEY.to_string(),
             state: OpenRouterState {
                 info: key_info(free_tier, Some(50)),
-                model: commands::openrouter_model(free_tier, &free_models),
+                model: commands::openrouter_model(intent, free_tier, &free_models),
                 free_models,
+                intent,
             },
         };
         commands::apply_openrouter_sign_in(&mut settings, &signed_in, 1_795_300_000)
@@ -946,7 +977,76 @@ mod tests {
                 limit_usd: Some(10.0),
                 free_models: free_models(),
                 checked_at: 1_795_300_000,
+                paid_only: false,
+                free_only: false,
             })
+        );
+    }
+
+    // --- what the sign-in was for (review of 2026-11-27, H1 and M1) -------
+
+    use commands::SignInIntent;
+
+    #[tokio::test]
+    async fn the_tier_check_never_switches_the_free_way_to_the_paid_model() {
+        let (site, _) = serve(key_handler(false, 1000)).await;
+        let mut settings = signed_in_for(Some(SignInIntent::Free), true);
+        assert_eq!(defaults_model(&settings).as_deref(), Some(FREE[0]));
+        let info = check_tier(&client(), &site, &with_defaults(&settings))
+            .await
+            .expect("asks")
+            .expect("credit now");
+        apply_paid_tier(&mut settings, &info, NOW).expect("applies");
+        assert_eq!(defaults_model(&settings).as_deref(), Some(FREE[0]));
+        let connection = settings.openrouter_connection.clone().expect("connected");
+        assert!(!connection.free_tier, "the account has credit now");
+        assert!(connection.free_only, "still the free way");
+        // Its requests keep the free models and no data policy.
+        let fields = Value::Object(commands::openrouter_request_fields(&settings, "openrouter"));
+        assert_eq!(fields, json!({"models": FREE}));
+    }
+
+    #[test]
+    fn a_connection_without_an_intent_still_follows_the_tier() {
+        // Stored by the branch before the intent: no `paid_only`, no
+        // `free_only`.
+        let stored = json!({
+            "free_tier": true, "limit_usd": 10.0,
+            "free_models": FREE, "checked_at": 1_795_300_000
+        });
+        let connection: OpenRouterConnection = serde_json::from_value(stored).expect("loads");
+        assert!(!connection.paid_only);
+        assert!(!connection.free_only);
+        let mut settings = signed_in(true);
+        settings.openrouter_connection = Some(connection);
+        assert_eq!(
+            apply_paid_tier(&mut settings, &key_info(false, None), NOW),
+            Ok(true)
+        );
+        assert_eq!(
+            defaults_model(&settings).as_deref(),
+            Some(openrouter::PAID_MODEL)
+        );
+    }
+
+    #[tokio::test]
+    async fn on_the_credit_way_a_429_is_never_the_free_models_daily_limit() {
+        let (site, seen) = serve(key_handler(true, 0)).await;
+        let settings = with_defaults(&signed_in_for(Some(SignInIntent::Credit), true));
+        assert_eq!(
+            refined(&settings, "openrouter", RATE_429, &site).await,
+            FailureReason::RateLimited
+        );
+        assert!(lines(&seen).is_empty(), "{:?}", lines(&seen));
+    }
+
+    #[tokio::test]
+    async fn the_free_way_on_an_account_with_credit_still_names_the_daily_limit() {
+        let (site, _) = serve(key_handler(false, 0)).await;
+        let settings = with_defaults(&signed_in_for(Some(SignInIntent::Free), false));
+        assert_eq!(
+            refined(&settings, "openrouter", RATE_429, &site).await,
+            FailureReason::FreeDailyLimit
         );
     }
 }

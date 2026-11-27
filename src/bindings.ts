@@ -444,8 +444,8 @@ async runPostProcessSample(text: string) : Promise<Result<SampleResult, FailureD
  * Starts signing in through the browser: binds the loopback listener and
  * opens the provider's page in the browser. `page` holds the two short
  * texts the browser shows after the callback, in the app's language.
- * `intent` is the way of the setup the sign-in is for (OpenRouter: its free
- * models, or only with credit); ChatGPT ignores it.
+ * `intent`: what OpenRouter is signed in for (the free models, or credit
+ * and never a free model); `null` as before, no effect on ChatGPT.
  * `post-process-sign-in-finished` says how it ended.
  */
 async startPostProcessSignIn(provider: SignInProvider, page: CallbackPage, intent: SignInIntent | null) : Promise<Result<SignInStarted, string>> {
@@ -475,8 +475,9 @@ async cancelPostProcessSignIn() : Promise<void> {
 },
 /**
  * Forgets the sign-in: ChatGPT's session (its client id and the host id
- * stay for the next sign-in), or OpenRouter's key and connection. The
- * outcome says whether OpenAI confirmed revoking ChatGPT's tokens.
+ * stay for the next sign-in), or OpenRouter's key and connection. For
+ * ChatGPT `revoke_confirmed` says whether OpenAI confirmed the end of the
+ * session (`false`: ended here only).
  */
 async disconnectPostProcessSignIn(provider: SignInProvider) : Promise<Result<DisconnectOutcome, string>> {
     try {
@@ -2336,18 +2337,21 @@ export type DictationServiceWhenIdle =
  */
 "start_recording" | "do_nothing"
 /**
- * What the settings page offers for a provider's model.
+ * How signing out went (OpenAI's "Errors and recovery": the user learns
+ * when the end of the session was not confirmed).
  */
+export type DisconnectOutcome = { 
 /**
- * How "Disconnect" went at the provider.
- */
-export type DisconnectOutcome = {
-/**
- * ChatGPT: whether OpenAI confirmed revoking the tokens; `None` when
- * nothing was revoked (OpenRouter, or no session).
+ * ChatGPT: whether OpenAI confirmed the end of the renewable session;
+ * `None` when there was nothing to end (OpenRouter, or no session
+ * stored). `Some(false)`: ended here only, the user may disconnect
+ * DanyWhere in ChatGPT's settings.
  */
 revoke_confirmed: boolean | null }
-export type EffortOptions = {
+/**
+ * What the settings page offers for a provider's model.
+ */
+export type EffortOptions = { 
 /**
  * In [`LEVELS`] order, without the model's default (always offered).
  */
@@ -2869,7 +2873,19 @@ free_models?: string[];
 /**
  * When it was asked, in seconds since the Unix epoch.
  */
-checked_at: number }
+checked_at: number; 
+/**
+ * Signed in for credit (`SignInIntent::Credit`): never a free model,
+ * always the paid one with `data_collection: "deny"`. False in a
+ * connection stored before the setup asked.
+ */
+paid_only?: boolean; 
+/**
+ * Signed in for the free models (`SignInIntent::Free`): never the paid
+ * model by itself, also with credit. False in a connection stored
+ * before the setup asked; with both false the model follows the tier.
+ */
+free_only?: boolean }
 export type OverlayPosition = "top" | "bottom"
 /**
  * Which recording overlay to display. `Minimal` and `Live` share one base
@@ -2941,11 +2957,9 @@ export type PostProcessProvider = { id: string; label: string; base_url: string;
  */
 export type PostProcessSetupState = { answers: SetupAnswers | null; finished: boolean; skipped: boolean }
 /**
- * How a sign-in ended. `error`: [`ERROR_CANCELLED`], [`ERROR_TIMED_OUT`],
- * [`ERROR_DENIED`], [`ERROR_NOT_ELIGIBLE`], or the error's text (the
- * `llm_client` forms, "sign-in-expired: …", …).
+ * How a sign-in ended; `error` says why it failed.
  */
-export type PostProcessSignInFinished = { provider: SignInProvider; ok: boolean; error: string | null; 
+export type PostProcessSignInFinished = { provider: SignInProvider; ok: boolean; error: SignInFailure | null; 
 /**
  * OpenRouter after a sign-in: whether the account is on the free tier.
  */
@@ -3333,11 +3347,63 @@ export type SetupWay =
 { kind: "on_device" }
 export type ShortcutBinding = { id: string; name: string; description: string; default_binding: string; current_binding: string }
 /**
- * The way of the setup a sign-in is for. OpenRouter: `free` keeps to the
- * free models, also on an account with credit; `credit` never uses them
- * and sends nothing until the account has credit.
+ * Why a sign-in failed, as [`PostProcessSignInFinished`] tells the
+ * frontend: a code, never the error's text (review of 2026-11-27, N5; the
+ * error itself goes to the log, without the account's id or a key).
  */
-export type SignInIntent = "free" | "credit"
+export type SignInFailure = 
+/**
+ * The user cancelled.
+ */
+"cancelled" | 
+/**
+ * No callback came within [`SIGN_IN_TIMEOUT`].
+ */
+"timed_out" | 
+/**
+ * The user refused in the browser (`error=` in the callback; for
+ * ChatGPT `access_denied`: plan usage not allowed).
+ */
+"denied" | 
+/**
+ * ChatGPT signed in but did not grant plan usage.
+ */
+"not_eligible" | 
+/**
+ * OpenRouter lists no free model DanyWhere can use (none that takes
+ * structured outputs), and the way needs one (N17).
+ */
+"no_free_model" | 
+/**
+ * The provider could not be reached: no connection, or no answer in
+ * time.
+ */
+"unreachable" | 
+/**
+ * The provider refused the exchange (an error answer).
+ */
+"refused" | 
+/**
+ * Anything else: an answer that can't be trusted, the listener, the
+ * sign-in could not be stored.
+ */
+"failed"
+/**
+ * What the user signs in to OpenRouter for, from the setup's answers
+ * (review of 2026-11-27, H1 and M1); no effect on ChatGPT.
+ */
+export type SignInIntent = 
+/**
+ * "Also to free services": the free models, also on an account with
+ * credit; never the paid model by itself.
+ */
+"free" | 
+/**
+ * "Only to a service that doesn't keep them" and "top up once": never
+ * a free model, always the paid one with `data_collection: "deny"`,
+ * also before topping up (OpenRouter then answers 402, `no-credit`).
+ */
+"credit"
 /**
  * The provider a sign-in is for.
  */

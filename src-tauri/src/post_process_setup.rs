@@ -21,7 +21,9 @@
 //! model and its access (an API key, the sign-in, or nothing for a server of
 //! one's own and Apple Intelligence). A dictation that asks for
 //! post-processing without it goes out unprocessed with the notice that says
-//! what is missing (`no-provider`, `no-model`, `no-api-key`; `actions`).
+//! what is missing (`no-provider`, `no-model`, `no-api-key`, `no-sign-in`),
+//! or `not-set-up` before the setup was ever finished ([`missing_reason`];
+//! `actions`).
 
 use std::fmt;
 use std::time::{Duration, Instant};
@@ -162,6 +164,16 @@ pub struct OpenRouterConnection {
     pub free_models: Vec<String>,
     /// When it was asked, in seconds since the Unix epoch.
     pub checked_at: i64,
+    /// Signed in for credit (`SignInIntent::Credit`): never a free model,
+    /// always the paid one with `data_collection: "deny"`. False in a
+    /// connection stored before the setup asked.
+    #[serde(default)]
+    pub paid_only: bool,
+    /// Signed in for the free models (`SignInIntent::Free`): never the paid
+    /// model by itself, also with credit. False in a connection stored
+    /// before the setup asked; with both false the model follows the tier.
+    #[serde(default)]
+    pub free_only: bool,
 }
 
 // ---- Whether post-processing can run ----------------------------------------
@@ -183,14 +195,29 @@ pub enum Readiness {
 
 impl Readiness {
     /// The reason a dictation's notice names for what is missing; `None`
-    /// when ready. A missing sign-in is set up as a missing key is.
+    /// when ready. A missing sign-in asks to sign in again (review of
+    /// 2026-11-27, M2), not for a key.
     pub fn failure_reason(self) -> Option<FailureReason> {
         match self {
             Readiness::Ready => None,
             Readiness::Provider => Some(FailureReason::NoProvider),
             Readiness::Model => Some(FailureReason::NoModel),
-            Readiness::Key | Readiness::SignIn => Some(FailureReason::NoApiKey),
+            Readiness::Key => Some(FailureReason::NoApiKey),
+            Readiness::SignIn => Some(FailureReason::NoSignIn),
         }
+    }
+}
+
+/// What a dictation's notice names when `settings` (with the values of the
+/// profile that applies) can't post-process; `None` when they can. Before
+/// the setup was ever finished that is the setup itself, `not-set-up`
+/// (review of 2026-11-27, M7: a new installation's OpenAI without a model
+/// is nothing the user chose), after it the part that is missing.
+pub fn missing_reason(settings: &AppSettings) -> Option<FailureReason> {
+    match post_process_ready(settings) {
+        Readiness::Ready => None,
+        _ if !settings.post_process_setup.finished => Some(FailureReason::NotSetUp),
+        readiness => readiness.failure_reason(),
     }
 }
 
@@ -656,7 +683,7 @@ async fn ollama_tags(
         .map_err(|e| format!("Failed to fetch models (kind: builder): {e}"))?;
     let mut request = client.get(&url).header(
         reqwest::header::USER_AGENT,
-        "DanyWhere/1.0 (+https://github.com/yaccob/Handy)",
+        crate::llm_client::DANYWHERE_USER_AGENT,
     );
     if !api_key.is_empty() {
         request = request.bearer_auth(api_key);
@@ -788,6 +815,9 @@ fn with_a_prompt(layer: &mut AppSettings) {
 pub async fn run_sample(settings: &AppSettings, text: &str) -> Result<SampleResult, FailureDto> {
     let mut layer = with_defaults(settings);
     layer.post_process_mode = settings::PostProcessMode::Always;
+    // The sample runs during the setup: it names the part that is missing,
+    // not that the setup isn't finished (`missing_reason`).
+    layer.post_process_setup.finished = true;
     if crate::prompt_library::requested(&layer).is_empty() {
         with_a_prompt(&mut layer);
     }
@@ -849,14 +879,17 @@ pub fn set_post_process_setup_answers(
     finished: bool,
     skipped: bool,
 ) -> Result<(), String> {
-    let mut settings = settings::get_settings(&app);
-    settings.post_process_setup = PostProcessSetupState {
-        answers,
-        finished,
-        skipped,
-    };
-    settings::write_settings(&app, settings);
-    Ok(())
+    // One change at a time with the writers in the background (review of
+    // 2026-11-27, N7).
+    settings::update_settings(&app, |settings| {
+        settings.post_process_setup = PostProcessSetupState {
+            answers,
+            finished,
+            skipped,
+        };
+        Ok(())
+    })
+    .map(|_| ())
 }
 
 /// Puts a way's provider, model, key and effort into the defaults and makes
@@ -864,11 +897,12 @@ pub fn set_post_process_setup_answers(
 #[tauri::command]
 #[specta::specta]
 pub fn apply_post_process_choice(app: AppHandle, choice: SetupChoice) -> Result<(), String> {
-    let mut settings = settings::get_settings(&app);
-    let before = settings.clone();
-    apply_setup_choice(&mut settings, &choice)?;
-    settings::write_settings(&app, settings.clone());
-    crate::profile_effects::apply(&app, &before, &settings);
+    let (before, after) =
+        settings::update_settings(&app, |settings| apply_setup_choice(settings, &choice))?;
+    crate::profile_effects::apply(&app, &before, &after);
+    // Review of 2026-11-27, N2: a ChatGPT session this way replaced is
+    // ended at OpenAI and here.
+    crate::post_process_signin::commands::end_left_behind_chatgpt(&app);
     Ok(())
 }
 
@@ -1025,10 +1059,32 @@ mod tests {
             Readiness::Key.failure_reason(),
             Some(FailureReason::NoApiKey)
         );
+        // Review of 2026-11-27, M2: sign in again, not "needs an API key".
         assert_eq!(
             Readiness::SignIn.failure_reason(),
-            Some(FailureReason::NoApiKey)
+            Some(FailureReason::NoSignIn)
         );
+    }
+
+    /// Review of 2026-11-27, M7.
+    #[test]
+    fn before_the_setup_is_finished_anything_missing_is_not_set_up() {
+        // A new installation: OpenAI without a model.
+        let mut new_install = get_default_settings();
+        assert!(!new_install.post_process_setup.finished);
+        assert_eq!(missing_reason(&new_install), Some(FailureReason::NotSetUp));
+        let mut chatgpt = with_provider("chatgpt", "gpt-6.2-sol");
+        chatgpt.chatgpt_signed_in = false;
+        assert_eq!(missing_reason(&chatgpt), Some(FailureReason::NotSetUp));
+        // Once finished, the part that is missing.
+        new_install.post_process_setup.finished = true;
+        assert_eq!(missing_reason(&new_install), Some(FailureReason::NoModel));
+        chatgpt.post_process_setup.finished = true;
+        assert_eq!(missing_reason(&chatgpt), Some(FailureReason::NoSignIn));
+        // Ready is ready, finished or not (set up by hand before the setup).
+        let ready = with_provider("custom", "llama3");
+        assert!(!ready.post_process_setup.finished);
+        assert_eq!(missing_reason(&ready), None);
     }
 
     // ---- The new providers ---------------------------------------------------
@@ -1251,6 +1307,8 @@ mod tests {
             limit_usd: Some(10.0),
             free_models: vec!["nvidia/nemotron-3.5-super-vl:free".to_string()],
             checked_at: 1_795_300_000,
+            paid_only: true,
+            free_only: false,
         });
         settings.post_process_setup.finished = true;
         crate::profiles::ensure_profiles(&mut settings);
@@ -1308,6 +1366,8 @@ mod tests {
             limit_usd: Some(10.0),
             free_models: Vec::new(),
             checked_at: 0,
+            paid_only: false,
+            free_only: false,
         });
         assert_eq!(
             current_way(&openrouter, None),

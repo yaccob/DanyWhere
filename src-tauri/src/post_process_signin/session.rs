@@ -24,10 +24,15 @@ pub trait SessionStore: Send + Sync {
     /// The refresh token is dead: forgets the tokens, keeps the client id
     /// and the host id.
     fn expire(&self);
+    /// The client itself is gone (`invalid_client`): forgets the client id
+    /// too, so the next sign-in registers anew (review of 2026-11-27, M3).
+    fn forget_client(&self) {}
 }
 
-/// The one lock around reading, refreshing and saving the session.
-fn refresh_lock() -> &'static futures_util::lock::Mutex<()> {
+/// The one lock around reading, refreshing and saving the session; signing
+/// out takes it too (`commands::sign_out_chatgpt`), so no refresh saves a
+/// session after it.
+pub(super) fn refresh_lock() -> &'static futures_util::lock::Mutex<()> {
     static LOCK: OnceLock<futures_util::lock::Mutex<()>> = OnceLock::new();
     LOCK.get_or_init(|| futures_util::lock::Mutex::new(()))
 }
@@ -53,23 +58,77 @@ pub async fn fresh_session(
         return Ok(session);
     }
     log::info!("Refreshing the ChatGPT sign-in");
-    match chatgpt::refresh(client, token_url, &session).await {
+    refresh_held(store, client, token_url, &session).await
+}
+
+/// Refreshes `session` through `token_url` and saves it, for a caller that
+/// holds [`refresh_lock`]; a dead refresh token ends the sign-in.
+async fn refresh_held(
+    store: &dyn SessionStore,
+    client: &reqwest::Client,
+    token_url: &str,
+    session: &ChatGptSession,
+) -> Result<ChatGptSession, String> {
+    match chatgpt::refresh(client, token_url, session, |rotated| store.save(rotated)).await {
         Ok(renewed) => {
-            // The old refresh token is spent: save the new one before use.
-            if let Err(error) = store.save(&renewed) {
+            // The new refresh token is kept already (`chatgpt::refresh`);
+            // the rest of the session before use. A session that can't be
+            // saved fails the request (review of 2026-11-27, N1).
+            store.save(&renewed).map_err(|error| {
                 log::error!("Cannot save the refreshed ChatGPT sign-in: {error}");
-            }
+                ChatGptError::NotSaved(error).to_string()
+            })?;
             Ok(renewed)
         }
         Err(ChatGptError::SignInExpired(code)) => {
             log::warn!("The ChatGPT sign-in has expired ({code}); it has to be renewed");
             store.expire();
-            Err(ChatGptError::SignInExpired(code).to_string())
+            let expired = ChatGptError::SignInExpired(code);
+            if chatgpt::names_dead_client(&expired) {
+                // The next sign-in registers anew (review of 2026-11-27, M3).
+                store.forget_client();
+            }
+            Err(expired.to_string())
         }
         Err(error) => {
             log::warn!("Refreshing the ChatGPT sign-in failed: {error}");
             Err(error.to_string())
         }
+    }
+}
+
+/// After the plan refused `refused`'s access token (review of 2026-11-27,
+/// M2): the session to ask with once more. Another request that renewed
+/// it meanwhile gives its session; otherwise it is refreshed now, whatever
+/// its expiry says. A dead refresh token ends the sign-in.
+pub async fn renewed_after_refusal(
+    store: &dyn SessionStore,
+    client: &reqwest::Client,
+    token_url: &str,
+    refused: &ChatGptSession,
+) -> Result<ChatGptSession, String> {
+    let _held = refresh_lock().lock().await;
+    let Some(stored) = store.load() else {
+        store.expire();
+        return Err(NO_SESSION.to_string());
+    };
+    if stored.access_token != refused.access_token {
+        return Ok(stored);
+    }
+    log::info!("ChatGPT's plan refused the access token; renewing the sign-in once");
+    refresh_held(store, client, token_url, &stored).await
+}
+
+/// The plan refused `refused` also after renewing it: the sign-in ends,
+/// unless another request renewed it meanwhile.
+pub async fn end_refused(store: &dyn SessionStore, refused: &ChatGptSession) {
+    let _held = refresh_lock().lock().await;
+    if store
+        .load()
+        .is_some_and(|stored| stored.access_token == refused.access_token)
+    {
+        log::warn!("ChatGPT's plan refused the renewed sign-in; it has to be renewed");
+        store.expire();
     }
 }
 
@@ -86,21 +145,26 @@ pub fn install(store: Arc<dyn SessionStore>, token_url: String) {
         Some(Installed { store, token_url });
 }
 
-/// The app's session, fresh ([`fresh_session`] with the installed store).
-pub async fn current() -> Result<ChatGptSession, String> {
-    let installed = INSTALLED
+/// The app's session store and the token URL it is refreshed through, once
+/// installed.
+pub fn installed() -> Option<(Arc<dyn SessionStore>, String)> {
+    INSTALLED
         .read()
         .unwrap_or_else(PoisonError::into_inner)
         .as_ref()
-        .map(|installed| (installed.store.clone(), installed.token_url.clone()));
-    let Some((store, token_url)) = installed else {
+        .map(|installed| (installed.store.clone(), installed.token_url.clone()))
+}
+
+/// The app's session, fresh ([`fresh_session`] with the installed store).
+pub async fn current() -> Result<ChatGptSession, String> {
+    let Some((store, token_url)) = installed() else {
         return Err(NO_SESSION.to_string());
     };
     let client = super::commands::token_client()?;
     fresh_session(store.as_ref(), &client, &token_url, unix_now()).await
 }
 
-fn unix_now() -> i64 {
+pub fn unix_now() -> i64 {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map(|elapsed| elapsed.as_secs() as i64)
@@ -135,6 +199,9 @@ mod tests {
         session: Mutex<Option<ChatGptSession>>,
         saved: AtomicUsize,
         expired: AtomicBool,
+        forgot_client: AtomicBool,
+        /// Saving fails (a full disk, say).
+        save_fails: AtomicBool,
     }
 
     impl FakeStore {
@@ -151,6 +218,9 @@ mod tests {
             self.session.lock().unwrap().clone()
         }
         fn save(&self, session: &ChatGptSession) -> Result<(), String> {
+            if self.save_fails.load(Ordering::SeqCst) {
+                return Err("disk full".to_string());
+            }
             self.saved.fetch_add(1, Ordering::SeqCst);
             *self.session.lock().unwrap() = Some(session.clone());
             Ok(())
@@ -159,6 +229,79 @@ mod tests {
             self.expired.store(true, Ordering::SeqCst);
             *self.session.lock().unwrap() = None;
         }
+        fn forget_client(&self) {
+            self.forgot_client.store(true, Ordering::SeqCst);
+        }
+    }
+
+    /// Review of 2026-11-27, M3: after `invalid_client` the client id goes
+    /// with the tokens, so the next sign-in registers anew.
+    #[tokio::test]
+    async fn a_dead_client_is_forgotten_with_the_tokens() {
+        let (url, _requests) = token_endpoint(
+            "401 Unauthorized",
+            json!({"error": "invalid_client"}).to_string(),
+        )
+        .await;
+        let store = FakeStore::with(session(NOW - 10));
+        let error = fresh_session(&store, &client(), &url, NOW)
+            .await
+            .expect_err("expired");
+        assert!(error.starts_with("sign-in-expired: "), "{error}");
+        assert!(store.expired.load(Ordering::SeqCst));
+        assert!(store.forgot_client.load(Ordering::SeqCst));
+    }
+
+    /// Review of 2026-11-27, N1.
+    #[tokio::test]
+    async fn a_refresh_answer_that_is_not_accepted_keeps_its_new_token() {
+        let (url, _requests) = token_endpoint(
+            "200 OK",
+            json!({
+                "access_token": "access-new", "refresh_token": "refresh-new",
+                "token_type": "Bearer", "expires_in": 3600,
+                "scope": "openid profile email offline_access",
+            })
+            .to_string(),
+        )
+        .await;
+        let store = FakeStore::with(session(NOW + 60));
+        let error = fresh_session(&store, &client(), &url, NOW)
+            .await
+            .expect_err("not eligible");
+        assert!(error.starts_with("plan-not-eligible:"), "{error}");
+        assert_eq!(
+            store.load().map(|kept| kept.refresh_token),
+            Some("refresh-new".to_string()),
+            "the spent token is not kept"
+        );
+        assert!(!store.expired.load(Ordering::SeqCst));
+    }
+
+    #[tokio::test]
+    async fn a_renewed_session_that_cannot_be_saved_fails_the_request() {
+        let (url, _requests) = token_endpoint("200 OK", renewed()).await;
+        let store = FakeStore::with(session(NOW + 60));
+        store.save_fails.store(true, Ordering::SeqCst);
+        let error = fresh_session(&store, &client(), &url, NOW)
+            .await
+            .expect_err("not saved");
+        assert!(error.contains("disk full"), "{error}");
+    }
+
+    #[tokio::test]
+    async fn a_dead_refresh_token_keeps_the_client() {
+        let (url, _requests) = token_endpoint(
+            "400 Bad Request",
+            json!({"error": "invalid_grant"}).to_string(),
+        )
+        .await;
+        let store = FakeStore::with(session(NOW - 10));
+        fresh_session(&store, &client(), &url, NOW)
+            .await
+            .expect_err("expired");
+        assert!(store.expired.load(Ordering::SeqCst));
+        assert!(!store.forgot_client.load(Ordering::SeqCst));
     }
 
     /// A token endpoint that answers every request with `status` and
@@ -239,7 +382,8 @@ mod tests {
         let fresh = fresh_session(&store, &client(), &url, NOW).await.unwrap();
         assert_eq!(fresh.access_token, "access-new");
         assert_eq!(requests.load(Ordering::SeqCst), 1);
-        assert_eq!(store.saved.load(Ordering::SeqCst), 1);
+        // The new refresh token at once, then the whole session (N1).
+        assert_eq!(store.saved.load(Ordering::SeqCst), 2);
         let saved = store.load().unwrap();
         assert_eq!(saved.refresh_token, "refresh-new");
         assert_eq!(saved.access_token, "access-new");

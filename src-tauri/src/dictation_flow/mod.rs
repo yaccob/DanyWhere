@@ -1400,6 +1400,8 @@ mod tests {
         if let Some(first) = settings.post_process_prompt_order.first_mut() {
             first.active = true;
         }
+        // Set up through the setup (`post_process_setup::missing_reason`).
+        settings.post_process_setup.finished = true;
         settings
     }
 

@@ -61,7 +61,7 @@ pub const USAGE_URL: &str = "https://chatgpt.com/settings/usage";
 /// A refresh is due when less than this is left of the access token.
 pub const REFRESH_MARGIN_SECS: i64 = 300;
 
-const USER_AGENT_VALUE: &str = "DanyWhere/1.0 (+https://github.com/yaccob/Handy)";
+const USER_AGENT_VALUE: &str = crate::llm_client::DANYWHERE_USER_AGENT;
 const FORM: &str = "application/x-www-form-urlencoded";
 /// Clock difference allowed for the ID token's expiry.
 const ID_TOKEN_LEEWAY_SECS: i64 = 60;
@@ -196,11 +196,15 @@ pub enum ChatGptError {
     /// An error answer ("API request failed with status …") or a transport
     /// error; the session stays as it was.
     Http(String),
+    /// A refresh's new refresh token could not be kept (review of
+    /// 2026-11-27, N1).
+    NotSaved(String),
 }
 
 impl std::fmt::Display for ChatGptError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Self::NotSaved(error) => write!(f, "Cannot save the renewed ChatGPT sign-in: {error}"),
             Self::SignInExpired(code) => write!(
                 f,
                 "sign-in-expired: the ChatGPT sign-in has to be renewed ({code})"
@@ -236,9 +240,8 @@ pub fn new_host_id() -> Result<String, String> {
 }
 
 /// Exchanges the callback's code for a session. The issued client id is the
-/// callback's (a first registration must bring one), else the flow's saved
-/// one; a callback naming another client than the saved one is refused
-/// before the code is spent.
+/// callback's (a first registration must bring one, a new registration for
+/// a dead client brings a new one), else the flow's saved one.
 pub async fn exchange_code(
     client: &reqwest::Client,
     token_url: &str,
@@ -291,10 +294,13 @@ pub async fn exchange_code(
 
 /// A new session for `session` (new access token and the replacing refresh
 /// token; store it at once). Without `scope` the grant stays as it was.
+/// `keep` gets `session` with the new refresh token as soon as an answer
+/// names one, before anything is checked.
 pub async fn refresh(
     client: &reqwest::Client,
     token_url: &str,
     session: &ChatGptSession,
+    keep: impl FnOnce(&ChatGptSession) -> Result<(), String>,
 ) -> Result<ChatGptSession, ChatGptError> {
     let (status, text) = post_form(
         client,
@@ -312,6 +318,13 @@ pub async fn refresh(
             return Err(ChatGptError::SignInExpired(code));
         }
         return Err(ChatGptError::Http(status_error(status, &text)));
+    }
+    // The old refresh token is spent now (review of 2026-11-27, N1): its
+    // successor is kept before anything below can fail.
+    if let Some(rotated) = rotated_refresh_token(&text) {
+        let mut kept = session.clone();
+        kept.refresh_token = rotated;
+        keep(&kept).map_err(ChatGptError::NotSaved)?;
     }
     let now = unix_now();
     let tokens = TokenAnswer::read(&text)?;
@@ -475,15 +488,30 @@ pub async fn list_models(
 
 // --- helpers -------------------------------------------------------------------
 
+/// Whether `error` says the client itself is gone (`invalid_client`, from a
+/// refresh or the code's exchange), so the saved client id must go and the
+/// next sign-in registers anew (review of 2026-11-27, M3).
+pub fn names_dead_client(error: &ChatGptError) -> bool {
+    const DEAD_CLIENT: &str = "invalid_client";
+    match error {
+        ChatGptError::SignInExpired(code) => code == DEAD_CLIENT,
+        ChatGptError::Http(text) => text
+            .strip_prefix(crate::llm_client::STATUS_ERROR_PREFIX)
+            .and_then(|answer| answer.split_once(": "))
+            .and_then(|(_, body)| error_code(body))
+            .is_some_and(|code| code == DEAD_CLIENT),
+        _ => false,
+    }
+}
+
 /// The client id to exchange the code with ("Registration and sign-in",
-/// step 3).
+/// step 3). One the callback names wins over the saved one: OpenAI issued
+/// it anew for a saved client it no longer knows (review of 2026-11-27,
+/// M3); the ID token must name it as its audience all the same.
 fn issued_client<'a>(flow: &'a ChatGptFlow, code: &'a SignInCode) -> Result<&'a str, ChatGptError> {
     match (flow.saved_client(), code.client_id.as_deref()) {
         (_, Some(id)) if id.is_empty() || id == DYNAMIC_CLIENT => Err(ChatGptError::Invalid(
             "the callback named no issued client id".into(),
-        )),
-        (Some(saved), Some(id)) if id != saved => Err(ChatGptError::Invalid(
-            "the callback named another client than the saved one".into(),
         )),
         (_, Some(id)) => Ok(id),
         (Some(saved), None) => Ok(saved),
@@ -491,6 +519,16 @@ fn issued_client<'a>(flow: &'a ChatGptFlow, code: &'a SignInCode) -> Result<&'a 
             "registration incomplete: the callback named no issued client id".into(),
         )),
     }
+}
+
+/// The new refresh token of a token answer, read before anything else of it
+/// is checked.
+fn rotated_refresh_token(text: &str) -> Option<String> {
+    let data: Value = serde_json::from_str(text).ok()?;
+    data.get("refresh_token")
+        .and_then(Value::as_str)
+        .filter(|token| !token.is_empty())
+        .map(str::to_string)
 }
 
 /// The fields of a token answer DanyWhere uses.
@@ -1176,21 +1214,44 @@ mod tests {
         }
     }
 
+    /// Review of 2026-11-27, M3: OpenAI issued a new client for a saved one
+    /// it no longer knows; the new one is the one to use from now on.
     #[tokio::test]
-    async fn a_callback_naming_another_client_is_rejected() {
-        let (base, seen) = serve(Vec::new()).await;
-        let result = exchange_code(
+    async fn a_callback_naming_a_newly_issued_client_takes_it() {
+        let answer = token_answer(Some(jwt(&claims("oaiapp_other"))), Some(FULL_SCOPE));
+        let (base, seen) = serve(vec![("200 OK", answer)]).await;
+        let session = exchange_code(
             &client(),
             &base,
             &flow(Some("oaiapp_saved")),
             &code(Some("oaiapp_other")),
         )
-        .await;
-        assert!(
-            matches!(result, Err(ChatGptError::Invalid(_))),
-            "{result:?}"
-        );
-        assert!(seen.lock().unwrap().is_empty());
+        .await
+        .expect("a session");
+        assert_eq!(session.client_id, "oaiapp_other");
+        let sent = seen.lock().unwrap()[0].clone();
+        assert_eq!(get(&form(&sent.body), "client_id"), Some("oaiapp_other"));
+    }
+
+    /// Review of 2026-11-27, M3: whether an error says the client itself is
+    /// gone, so the next sign-in registers anew.
+    #[test]
+    fn a_dead_client_is_told_from_a_dead_refresh_token() {
+        assert!(names_dead_client(&ChatGptError::SignInExpired(
+            "invalid_client".to_string()
+        )));
+        assert!(names_dead_client(&ChatGptError::Http(status_error(
+            reqwest::StatusCode::UNAUTHORIZED,
+            r#"{"error":"invalid_client","error_description":"Unknown client"}"#
+        ))));
+        assert!(!names_dead_client(&ChatGptError::SignInExpired(
+            "invalid_grant".to_string()
+        )));
+        assert!(!names_dead_client(&ChatGptError::Http(status_error(
+            reqwest::StatusCode::BAD_REQUEST,
+            r#"{"error":"invalid_grant"}"#
+        ))));
+        assert!(!names_dead_client(&ChatGptError::NotEligible));
     }
 
     #[tokio::test]
@@ -1307,9 +1368,14 @@ mod tests {
     async fn a_refresh_posts_the_documented_form_and_takes_the_new_tokens() {
         let (base, seen) = serve(vec![("200 OK", token_answer(None, None))]).await;
         let old = session();
-        let new = refresh(&client(), &format!("{base}/api/accounts/oauth/token"), &old)
-            .await
-            .expect("a new session");
+        let new = refresh(
+            &client(),
+            &format!("{base}/api/accounts/oauth/token"),
+            &old,
+            keep_nothing,
+        )
+        .await
+        .expect("a new session");
 
         let seen = seen.lock().unwrap()[0].clone();
         assert!(seen
@@ -1345,7 +1411,7 @@ mod tests {
             token_answer(Some(jwt(&renewed)), Some(FULL_SCOPE)),
         )])
         .await;
-        let new = refresh(&client(), &base, &session())
+        let new = refresh(&client(), &base, &session(), keep_nothing)
             .await
             .expect("a session");
         assert_eq!(new.email.as_deref(), Some("jo.new@example.com"));
@@ -1356,7 +1422,7 @@ mod tests {
         let mut other = claims(ISSUED);
         other["sub"] = json!("someone-else");
         let (base, _) = serve(vec![("200 OK", token_answer(Some(jwt(&other)), None))]).await;
-        let result = refresh(&client(), &base, &session()).await;
+        let result = refresh(&client(), &base, &session(), keep_nothing).await;
         assert!(
             matches!(result, Err(ChatGptError::Invalid(_))),
             "{result:?}"
@@ -1389,7 +1455,7 @@ mod tests {
         ));
         let (base, _) = serve(replies).await;
         for code in codes.iter().chain(["refresh_token_reused"].iter()) {
-            let result = refresh(&client(), &base, &session()).await;
+            let result = refresh(&client(), &base, &session(), keep_nothing).await;
             assert_eq!(
                 result.unwrap_err(),
                 ChatGptError::SignInExpired(code.to_string()),
@@ -1408,22 +1474,31 @@ mod tests {
             ),
         ])
         .await;
-        let first = refresh(&client(), &base, &session()).await.unwrap_err();
+        let first = refresh(&client(), &base, &session(), keep_nothing)
+            .await
+            .unwrap_err();
         assert_eq!(
             first,
             ChatGptError::Http(
                 "API request failed with status 503 Service Unavailable: upstream down".to_string()
             )
         );
-        let second = refresh(&client(), &base, &session()).await.unwrap_err();
+        let second = refresh(&client(), &base, &session(), keep_nothing)
+            .await
+            .unwrap_err();
         assert!(matches!(second, ChatGptError::Http(_)), "{second:?}");
 
         let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
         let address = listener.local_addr().unwrap();
         drop(listener);
-        let offline = refresh(&client(), &format!("http://{address}"), &session())
-            .await
-            .unwrap_err();
+        let offline = refresh(
+            &client(),
+            &format!("http://{address}"),
+            &session(),
+            keep_nothing,
+        )
+        .await
+        .unwrap_err();
         match offline {
             ChatGptError::Http(text) => {
                 assert!(
@@ -1443,7 +1518,7 @@ mod tests {
             token_answer(None, Some("openid profile email offline_access")),
         )])
         .await;
-        let result = refresh(&client(), &base, &session()).await;
+        let result = refresh(&client(), &base, &session(), keep_nothing).await;
         assert_eq!(result.unwrap_err(), ChatGptError::NotEligible);
     }
 
@@ -1452,11 +1527,63 @@ mod tests {
         let mut answer: Value = serde_json::from_str(&token_answer(None, None)).unwrap();
         answer.as_object_mut().unwrap().remove("refresh_token");
         let (base, _) = serve(vec![("200 OK", answer.to_string())]).await;
-        let new = refresh(&client(), &base, &session())
+        let new = refresh(&client(), &base, &session(), keep_nothing)
             .await
             .expect("a session");
         assert_eq!(new.refresh_token, "refresh-old");
         assert_eq!(new.access_token, "access-new");
+    }
+
+    /// For a refresh whose new refresh token the test does not keep.
+    fn keep_nothing(_: &ChatGptSession) -> Result<(), String> {
+        Ok(())
+    }
+
+    /// Review of 2026-11-27, N1: OpenAI spent the old refresh token with a
+    /// 200; its new one is kept before a check can fail, or the next refresh
+    /// meets `refresh_token_reused` and ends the sign-in.
+    #[tokio::test]
+    async fn the_new_refresh_token_is_kept_before_the_answer_is_checked() {
+        let mut other_account = claims(ISSUED);
+        other_account["sub"] = json!("someone-else");
+        let mut no_token_type: Value = serde_json::from_str(&token_answer(None, None)).unwrap();
+        no_token_type.as_object_mut().unwrap().remove("token_type");
+        let answers = vec![
+            (
+                "200 OK",
+                token_answer(None, Some("openid profile email offline_access")),
+            ),
+            ("200 OK", token_answer(Some(jwt(&other_account)), None)),
+            ("200 OK", no_token_type.to_string()),
+        ];
+        let (base, _) = serve(answers).await;
+        for case in ["no plan scope", "another account", "no token type"] {
+            let kept = Mutex::new(None);
+            let result = refresh(&client(), &base, &session(), |rotated| {
+                *kept.lock().unwrap() = Some(rotated.refresh_token.clone());
+                Ok(())
+            })
+            .await;
+            assert!(result.is_err(), "{case}: {result:?}");
+            assert_eq!(
+                kept.lock().unwrap().as_deref(),
+                Some("refresh-new"),
+                "{case}"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn a_new_refresh_token_that_cannot_be_kept_fails_the_refresh() {
+        let (base, _) = serve(vec![("200 OK", token_answer(None, None))]).await;
+        let result = refresh(&client(), &base, &session(), |_| {
+            Err("disk full".to_string())
+        })
+        .await;
+        assert_eq!(
+            result.unwrap_err(),
+            ChatGptError::NotSaved("disk full".to_string())
+        );
     }
 
     // --- when to refresh -----------------------------------------------------
@@ -1687,5 +1814,15 @@ mod tests {
         assert_eq!(DEFAULT_MODEL, "gpt-6.2-sol");
         assert_eq!(DEFAULT_EFFORT, "low");
         assert_eq!(USAGE_URL, "https://chatgpt.com/settings/usage");
+    }
+
+    /// Review of 2026-11-27, N18: OpenAI admits open-source apps, so the
+    /// sign-in names DanyWhere's own repository.
+    #[test]
+    fn the_sign_in_names_danywheres_repository() {
+        assert_eq!(
+            USER_AGENT_VALUE,
+            "DanyWhere/1.0 (+https://github.com/yaccob/DanyWhere)"
+        );
     }
 }
