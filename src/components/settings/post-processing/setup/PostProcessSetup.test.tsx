@@ -710,6 +710,10 @@ describe("post-processing setup: connected", () => {
     await press(button("Advanced")!);
     expect(visibleText()).toContain("API Key");
 
+    // Disconnect forgets the key here only (D, N16).
+    expect(visibleText()).toContain(
+      "OpenRouter keeps the key “DanyWhere” among your API keys until you delete it there.",
+    );
     await press(button("Disconnect")!);
     expect(callsOf("disconnectPostProcessSignIn")).toEqual([["openrouter"]]);
     expect(rawTextIn()).toEqual([]);
@@ -917,7 +921,10 @@ describe("post-processing setup: connected", () => {
     expect(visibleText()).toContain(Q1);
   });
 
-  test("a key of one's own: Disconnect removes the key", async () => {
+  // The card shows for any provider that is ready, also with a key the user
+  // pasted long before the setup, so removing it asks a second click (D,
+  // N14).
+  test("a key of one's own: Disconnect removes the key after a second click", async () => {
     await renderSetup(
       ready({
         provider_id: "anthropic",
@@ -927,9 +934,28 @@ describe("post-processing setup: connected", () => {
     );
     expect(visibleText()).toContain("Connected to Anthropic");
     await press(button("Disconnect")!);
+    expect(callsOf("applyPostProcessChoice")).toEqual([]);
+    expect(button("Disconnect")).toBeNull();
+    await press(button("Click again to remove the key")!);
     expect(callsOf("applyPostProcessChoice")).toEqual([
       [{ provider_id: "anthropic", model: null, api_key: "", effort: null }],
     ]);
+  });
+
+  test("a key of one's own: the second click is asked again after leaving the button", async () => {
+    await renderSetup(
+      ready({
+        provider_id: "anthropic",
+        model: "claude-haiku-5-5",
+        way: { kind: "guided_key", provider: "anthropic" },
+      }),
+    );
+    await press(button("Disconnect")!);
+    await act(async () => {
+      fireEvent.blur(button("Click again to remove the key")!);
+    });
+    expect(button("Disconnect")).not.toBeNull();
+    expect(callsOf("applyPostProcessChoice")).toEqual([]);
   });
 
   test("a server of one's own has nothing to disconnect", async () => {

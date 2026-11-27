@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import type { SetupStatus, SignInIntent } from "@/bindings";
@@ -146,6 +146,11 @@ export const ConnectedCard: React.FC<ConnectedCardProps> = ({
       manage = { label: t(`${KEY}.connected.manageUsage`), url: pages.usage };
   }
   const canDisconnect = !NOTHING_TO_DISCONNECT.includes(way?.kind ?? "");
+  // A pasted key may predate the setup: removing it takes a second click
+  // (sidecar qa 2026-11-26_2250, D, N14). A sign-in is made again quickly.
+  const removesKey =
+    canDisconnect && way?.kind !== "chatgpt_plan" && way?.kind !== "openrouter";
+  const [confirming, setConfirming] = useState(false);
 
   return (
     <div className="space-y-3">
@@ -203,12 +208,29 @@ export const ConnectedCard: React.FC<ConnectedCardProps> = ({
               variant="danger-ghost"
               size="sm"
               disabled={inert}
-              onClick={() => void disconnect()}
+              onClick={() => {
+                if (removesKey && !confirming) {
+                  setConfirming(true);
+                  return;
+                }
+                setConfirming(false);
+                void disconnect();
+              }}
+              onBlur={() => setConfirming(false)}
             >
-              {t(`${KEY}.connected.disconnect`)}
+              {t(
+                confirming
+                  ? `${KEY}.connected.disconnectConfirm`
+                  : `${KEY}.connected.disconnect`,
+              )}
             </Button>
           )}
         </div>
+        {way?.kind === "openrouter" && (
+          <CardLine tone="quiet">
+            {t(`${KEY}.connected.keyStaysAtOpenRouter`)}
+          </CardLine>
+        )}
         <SampleRun providerLabel={name} />
       </SetupCard>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1">

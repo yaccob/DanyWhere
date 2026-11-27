@@ -1233,6 +1233,8 @@
           "topUp": "Aufladen",
           "toppedUp": "Ich habe aufgeladen",
           "disconnect": "Trennen",
+          "disconnectConfirm": "Zum Entfernen noch einmal klicken",
+          "keyStaysAtOpenRouter": "OpenRouter behält den Schlüssel „DanyWhere“ bei deinen API-Schlüsseln, bis du ihn dort löschst.",
           "revokeUnconfirmed": "Abmelden von OpenAI nicht bestätigt",
           "revokeUnconfirmedDetail": "DanyWhere hat die Anmeldung hier vergessen. Den Zugriff von DanyWhere kannst du in deinen ChatGPT-Einstellungen prüfen.",
           "chatgptSettings": "ChatGPT-Einstellungen",
