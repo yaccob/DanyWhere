@@ -1144,6 +1144,7 @@
           "creditBody": "Účet u OpenRouter, jedno kliknutí na „Authorize“ a pak jednou dobít kredit od 5 $. DanyWhere vybere model, který vaše texty nepoužívá k trénování. 5 $ stačí na tisíce diktátů a nic se samo neobnovuje.",
           "tipAccount": "Zaregistrujte se přes Google nebo GitHub: ušetříte si heslo i kód z e-mailu.",
           "tipPayment": "Na OpenRouter poprvé? Uvítání se zeptá na platební metodu. Můžete zvolit „I'll do this later“: bezplatné modely žádnou nepotřebují. Pak se sem vraťte a stiskněte „Otevřít stránku znovu“.",
+          "tipPaymentCredit": "Na OpenRouter poprvé? Uvítání se zeptá na platební metodu, kterou k dobití stejně potřebujete. Pak se sem vraťte a stiskněte „Otevřít stránku znovu“. Dokud účet nemá kredit, DanyWhere nic neodesílá.",
           "connect": "Připojit OpenRouter"
         },
         "chatgpt": {
@@ -1197,10 +1198,12 @@
           "unavailableBodyMac": "Model na tomto počítači potřebuje 16 GB paměti; tento Mac má {{memory}}. Můžete použít vlastní server, třeba server vaší firmy.",
           "unavailableBody": "Model na tomto počítači potřebuje 16 GB paměti; tento počítač má {{memory}}. Můžete použít vlastní server, třeba server vaší firmy.",
           "ownServer": "Nastavit vlastní server",
-          "ownServerHint": "Níže zadejte jeho adresu a model."
+          "ownServerHint": "Níže zadejte jeho adresu a model.",
+          "ownServerLater": "Vlastní server můžete zadat později v části Základní nastavení › Následné zpracování, pod „Všichni poskytovatelé …“."
         },
         "signIn": {
           "waiting": "Čekám na prohlížeč …",
+          "title": "Přihlášení k {{provider}}",
           "waitingHint": "Dokončete to v prohlížeči. Pokud jste se nejdřív museli zaregistrovat, stiskněte „Otevřít stránku znovu“.",
           "reopen": "Otevřít stránku znovu",
           "cancel": "Zrušit",
@@ -1218,8 +1221,9 @@
           "plan": "Předplatné: {{plan}}",
           "freeModels": "Bezplatné modely, až 50 diktátů denně",
           "withCredit": "S kreditem, model bez trénování na vašich textech",
-          "noCreditYet": "Zatím žádný kredit: DanyWhere používá bezplatné modely, dokud nedobijete.",
+          "noCreditYet": "Zatím žádný kredit: DanyWhere nic neodešle, dokud nedobijete.",
           "notToppedUp": "OpenRouter zatím žádný kredit neukazuje. Může to minutu trvat.",
+          "topUpCheckFailed": "OpenRouter se nepodařilo zeptat na kredit.",
           "keyLimit": "Limit výdajů klíče: {{limit}}",
           "model": "Model: {{model}}",
           "picksModel": "Model vybírá DanyWhere.",
@@ -1229,6 +1233,11 @@
           "topUp": "Dobít",
           "toppedUp": "Dobití hotovo",
           "disconnect": "Odpojit",
+          "disconnectConfirm": "Klikněte znovu pro odebrání klíče",
+          "keyStaysAtOpenRouter": "OpenRouter si klíč „DanyWhere“ ponechá mezi vašimi API klíči, dokud ho tam nesmažete.",
+          "revokeUnconfirmed": "OpenAI odhlášení nepotvrdilo",
+          "revokeUnconfirmedDetail": "DanyWhere tady přihlášení zapomněl. Přístup DanyWhere můžete zkontrolovat v nastavení ChatGPT.",
+          "chatgptSettings": "Nastavení ChatGPT",
           "answerAgain": "Odpovědět na otázky znovu",
           "advanced": "Pokročilé"
         },
@@ -1240,6 +1249,10 @@
           "running": "Zkouším …",
           "took": "{{seconds}} s, model {{model}}",
           "failed": "Zkouška se nezdařila."
+        },
+        "errors": {
+          "disconnect": "Neodpojeno",
+          "reopen": "Stránka nebyla znovu otevřena"
         }
       }
     },
@@ -1715,6 +1728,9 @@
       "planLimit": "{{provider}}: limit využití vašeho předplatného je zatím dosažen.",
       "planNotEligible": "{{provider}}: vaše předplatné nezahrnuje použití v jiných aplikacích.",
       "signInExpired": "{{provider}}: přihlášení vypršelo; přihlaste se znovu.",
+      "noSignIn": "{{provider}}: nejste přihlášeni.",
+      "notSetUp": "Následné zpracování ještě není nastavené.",
+      "notSetUpTitle": "Následné zpracování není nastavené",
       "rateLimited": "{{provider}}: omezuje, kolik se smí poslat za minutu; chvíli počkejte a diktujte znovu.",
       "actions": {
         "setUp": "Nastavit",

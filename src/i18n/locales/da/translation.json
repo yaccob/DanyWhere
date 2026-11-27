@@ -1144,6 +1144,7 @@
           "creditBody": "En konto hos OpenRouter, et klik på »Authorize«, og fyld derefter op én gang fra 5 $. DanyWhere vælger en model, der ikke bruger dine tekster til træning. 5 $ rækker til tusindvis af dikteringer, og intet fornyes.",
           "tipAccount": "Tilmeld dig med Google eller GitHub: så slipper du for en adgangskode og en kode på mail.",
           "tipPayment": "Ny hos OpenRouter? Velkomsten beder om en betalingsmetode. Du kan vælge »I'll do this later«: de gratis modeller kræver ingen. Kom så tilbage hertil, og tryk på »Åbn siden igen«.",
+          "tipPaymentCredit": "Ny hos OpenRouter? Velkomsten beder om en betalingsmetode, som du alligevel skal bruge for at fylde op. Kom så tilbage hertil, og tryk på »Åbn siden igen«. Så længe kontoen ikke har kredit, sender DanyWhere intet.",
           "connect": "Forbind med OpenRouter"
         },
         "chatgpt": {
@@ -1197,10 +1198,12 @@
           "unavailableBodyMac": "En model på denne computer kræver 16 GB hukommelse; denne Mac har {{memory}}. Din egen server virker, fx din virksomheds.",
           "unavailableBody": "En model på denne computer kræver 16 GB hukommelse; denne computer har {{memory}}. Din egen server virker, fx din virksomheds.",
           "ownServer": "Sæt din egen server op",
-          "ownServerHint": "Angiv dens adresse og model nedenfor."
+          "ownServerHint": "Angiv dens adresse og model nedenfor.",
+          "ownServerLater": "Din egen server kan du angive senere under Grundindstillinger › Efterbehandling, bag »Alle udbydere …«."
         },
         "signIn": {
           "waiting": "Venter på browseren …",
+          "title": "Login hos {{provider}}",
           "waitingHint": "Gør det færdigt i browseren. Skulle du først oprette en konto, så tryk på »Åbn siden igen«.",
           "reopen": "Åbn siden igen",
           "cancel": "Annuller",
@@ -1218,8 +1221,9 @@
           "plan": "Abonnement: {{plan}}",
           "freeModels": "Gratis modeller, op til 50 dikteringer om dagen",
           "withCredit": "Med kredit, en model uden træning",
-          "noCreditYet": "Ingen kredit endnu: DanyWhere bruger de gratis modeller, indtil du fylder op.",
+          "noCreditYet": "Ingen kredit endnu: DanyWhere sender intet, før du fylder op.",
           "notToppedUp": "OpenRouter viser ingen kredit endnu. Det kan tage et minut.",
+          "topUpCheckFailed": "OpenRouter kunne ikke spørges om kreditten.",
           "keyLimit": "Nøglens udgiftsgrænse: {{limit}}",
           "model": "Model: {{model}}",
           "picksModel": "DanyWhere vælger modellen.",
@@ -1229,6 +1233,11 @@
           "topUp": "Fyld op",
           "toppedUp": "Jeg har fyldt op",
           "disconnect": "Afbryd forbindelsen",
+          "disconnectConfirm": "Klik igen for at fjerne nøglen",
+          "keyStaysAtOpenRouter": "OpenRouter beholder nøglen »DanyWhere« blandt dine API-nøgler, indtil du sletter den dér.",
+          "revokeUnconfirmed": "OpenAI bekræftede ikke log-ud",
+          "revokeUnconfirmedDetail": "DanyWhere har glemt login her. Du kan tjekke DanyWheres adgang i dine ChatGPT-indstillinger.",
+          "chatgptSettings": "ChatGPT-indstillinger",
           "answerAgain": "Besvar spørgsmålene igen",
           "advanced": "Avanceret"
         },
@@ -1240,6 +1249,10 @@
           "running": "Prøver …",
           "took": "{{seconds}} s med {{model}}",
           "failed": "Prøven lykkedes ikke."
+        },
+        "errors": {
+          "disconnect": "Ikke afbrudt",
+          "reopen": "Siden blev ikke åbnet igen"
         }
       }
     },
@@ -1715,6 +1728,9 @@
       "planLimit": "Dit abonnements brugsgrænse hos {{provider}} er nået for nu.",
       "planNotEligible": "Dit abonnement hos {{provider}} omfatter ikke brug i andre apps.",
       "signInExpired": "Login hos {{provider}} er udløbet; log ind igen.",
+      "noSignIn": "Du er ikke logget ind hos {{provider}}.",
+      "notSetUp": "Efterbehandlingen er ikke sat op endnu.",
+      "notSetUpTitle": "Efterbehandling ikke sat op",
       "rateLimited": "{{provider}} begrænser, hvor meget der må sendes pr. minut; vent lidt, og dikter igen.",
       "actions": {
         "setUp": "Sæt op",

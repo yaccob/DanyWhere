@@ -250,7 +250,7 @@ export const PostProcessingSettings: React.FC = () => {
   const { t } = useTranslation();
   // DanyWhere (strand E2): a deviating profile's prompts under the
   // defaults, as the names of its active ones (P7.2).
-  const { getSetting } = useSettings();
+  const { getSetting, setPostProcessProvider } = useSettings();
   const library = getSetting("post_process_prompts") ?? [];
   const promptSummary = (values: Record<string, unknown>) => {
     const order = Array.isArray(values.post_process_prompt_order)
@@ -288,7 +288,12 @@ export const PostProcessingSettings: React.FC = () => {
             place="settings"
             providersOpen={providersOpen}
             onToggleProviders={() => setProvidersOpen((open) => !open)}
-            onOpenProviders={() => setProvidersOpen(true)}
+            onOpenProviders={(providerId) => {
+              setProvidersOpen(true);
+              // As choosing it in the form below does (qa 2026-11-26_2250,
+              // D, N9).
+              if (providerId) void setPostProcessProvider(providerId);
+            }}
           />
         </SettingsGroup>
       )}

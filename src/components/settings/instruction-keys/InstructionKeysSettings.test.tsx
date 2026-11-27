@@ -29,18 +29,27 @@ import {
 } from "@/test/render";
 import { setOsType } from "@/test/tauri-mock";
 import { rawTextIn, readableTexts, visibleText } from "@/test/visible";
+import { answerStatus, notReady } from "@/test/postProcessSetupFixtures";
 
 const TAB = instructionKey("instruction_tab", "tab");
 const WORK = "profile_1795300000001";
 
-/** A provider with a model: post-processing can run. */
+/** A provider with a model and its key: post-processing can run. */
 const READY = {
   post_process_provider_id: "openai",
   post_process_providers: [
     { id: "openai", label: "OpenAI", base_url: "https://api.openai.com/v1" },
+    {
+      id: "chatgpt",
+      label: "ChatGPT (subscription)",
+      base_url: "https://api.openai.com/v1",
+    },
   ],
   post_process_models: { openai: "gpt-5-mini" },
+  post_process_api_keys: { openai: "sk-test" },
 };
+/** The same provider and model without the key: not ready. */
+const WITHOUT_KEY = { ...READY, post_process_api_keys: {} };
 
 const TITLE = "Instruction Shortcuts";
 const DESCRIPTION =
@@ -268,6 +277,45 @@ describe("Instruction Shortcuts that aren't taken", () => {
       expect(text).not.toContain(NOT_SET_UP);
       cleanup();
     }
+  });
+
+  // Ready is what the backend checks before it sends (`post_process_ready`):
+  // a model alone isn't, e.g. after Disconnect (sidecar qa
+  // 2026-11-26_2250, D, N10).
+  test("a provider with a model but no key: the card says what happens", async () => {
+    answerStatus(notReady({ readiness: "key", model: "gpt-5-mini" }));
+    await renderGeneral({ defaults: WITHOUT_KEY });
+    expect(visibleText(card())).toContain(NOT_SET_UP);
+  });
+
+  test("ChatGPT after Disconnect: the card says what happens", async () => {
+    answerStatus(
+      notReady({
+        readiness: "sign_in",
+        provider_id: "chatgpt",
+        model: "gpt-6.2-sol",
+      }),
+    );
+    await renderGeneral({
+      defaults: {
+        ...READY,
+        post_process_provider_id: "chatgpt",
+        post_process_models: { chatgpt: "gpt-6.2-sol" },
+      },
+      app: { chatgpt_signed_in: false },
+    });
+    expect(visibleText(card())).toContain(NOT_SET_UP);
+  });
+
+  test("in a profile, its provider without a key counts too", async () => {
+    await renderGeneral(
+      {
+        defaults: WITHOUT_KEY,
+        profiles: [{ id: WORK, name: "Work" }],
+      },
+      { kind: "profile", id: WORK },
+    );
+    expect(visibleText(card())).toContain(NOT_SET_UP);
   });
 
   test("in a profile its own mode counts, not the defaults'", async () => {

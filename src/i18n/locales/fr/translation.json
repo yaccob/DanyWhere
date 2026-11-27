@@ -1139,11 +1139,12 @@
         },
         "openrouter": {
           "freeTitle": "Suggestion : OpenRouter, gratuit",
-          "freeBody": "Un compte chez OpenRouter, un clic sur « Authorize », c'est fait. Jusqu'à 50 dictées par jour.",
+          "freeBody": "Un compte chez OpenRouter, un clic sur « Authorize », c'est fait. Jusqu'à 50 dictées par jour.",
           "creditTitle": "Suggestion : OpenRouter avec du crédit",
-          "creditBody": "Un compte chez OpenRouter, un clic sur « Authorize », puis une seule recharge à partir de 5 dollars. DanyWhere choisit un modèle qui n'utilise pas vos textes pour l'entraînement. 5 dollars suffisent pour des milliers de dictées, et rien ne se renouvelle.",
+          "creditBody": "Un compte chez OpenRouter, un clic sur « Authorize », puis une seule recharge à partir de 5 dollars. DanyWhere choisit un modèle qui n'utilise pas vos textes pour l'entraînement. 5 dollars suffisent pour des milliers de dictées, et rien ne se renouvelle.",
           "tipAccount": "Inscrivez-vous avec Google ou GitHub : cela vous évite un mot de passe et un code par e-mail.",
-          "tipPayment": "Nouveau sur OpenRouter ? L'accueil demande un moyen de paiement. Vous pouvez choisir « I'll do this later » : les modèles gratuits n'en ont pas besoin. Revenez ensuite ici et appuyez sur « Rouvrir la page ».",
+          "tipPayment": "Nouveau sur OpenRouter ? L'accueil demande un moyen de paiement. Vous pouvez choisir « I'll do this later » : les modèles gratuits n'en ont pas besoin. Revenez ensuite ici et appuyez sur « Rouvrir la page ».",
+          "tipPaymentCredit": "Nouveau sur OpenRouter ? L'accueil demande un moyen de paiement, dont la recharge a de toute façon besoin. Revenez ensuite ici et appuyez sur « Rouvrir la page ». Tant que le compte n'a pas de crédit, DanyWhere n'envoie rien.",
           "connect": "Connecter OpenRouter"
         },
         "chatgpt": {
@@ -1171,13 +1172,13 @@
             "keyLink": "Ouvrir la Console"
           },
           "gemini": {
-            "credits": "Dans Google AI Studio, choisissez « Claim free API credits » dans le menu de gauche (ou « Redeem » si vous avez déjà un compte de facturation) et configurez la facturation. Un nouveau compte de facturation demande un moyen de paiement et un prépaiement d'au moins 5 dollars.",
+            "credits": "Dans Google AI Studio, choisissez « Claim free API credits » dans le menu de gauche (ou « Redeem » si vous avez déjà un compte de facturation) et configurez la facturation. Un nouveau compte de facturation demande un moyen de paiement et un prépaiement d'au moins 5 dollars.",
             "creditsLink": "Ouvrir AI Studio",
-            "key": "Utilisez la clé API du projet pour lequel vous avez configuré la facturation (par défaut « Default Gemini Project »), ou créez-en une dans ce projet.",
+            "key": "Utilisez la clé API du projet pour lequel vous avez configuré la facturation (par défaut « Default Gemini Project »), ou créez-en une dans ce projet.",
             "keyLink": "Clés API"
           },
           "huggingface": {
-            "key": "Créez un jeton d'accès avec l'autorisation « Make calls to Inference Providers ».",
+            "key": "Créez un jeton d'accès avec l'autorisation « Make calls to Inference Providers ».",
             "keyLink": "Ouvrir les jetons"
           },
           "ollama_cloud": {
@@ -1185,9 +1186,9 @@
             "keyLink": "Ouvrir les clés"
           },
           "groq": {
-            "account": "Connectez-vous à GroqCloud, par exemple avec « Continue with Google ». Aucune carte n'est nécessaire.",
+            "account": "Connectez-vous à GroqCloud, par exemple avec « Continue with Google ». Aucune carte n'est nécessaire.",
             "accountLink": "Ouvrir GroqCloud",
-            "key": "Choisissez « Create API Key ». Groq vous demande de confirmer d'un clic que vous êtes bien une personne."
+            "key": "Choisissez « Create API Key ». Groq vous demande de confirmer d'un clic que vous êtes bien une personne."
           }
         },
         "local": {
@@ -1197,11 +1198,13 @@
           "unavailableBodyMac": "Un modèle sur cet ordinateur demande 16 Go de mémoire ; ce Mac en a {{memory}}. Votre propre serveur fait l'affaire, par exemple celui de votre entreprise.",
           "unavailableBody": "Un modèle sur cet ordinateur demande 16 Go de mémoire ; cet ordinateur en a {{memory}}. Votre propre serveur fait l'affaire, par exemple celui de votre entreprise.",
           "ownServer": "Configurer votre propre serveur",
-          "ownServerHint": "Saisissez son adresse et son modèle ci-dessous."
+          "ownServerHint": "Saisissez son adresse et son modèle ci-dessous.",
+          "ownServerLater": "Vous pourrez saisir votre propre serveur plus tard dans Paramètres de base › Post-traitement, sous « Tous les fournisseurs … »."
         },
         "signIn": {
           "waiting": "En attente du navigateur …",
-          "waitingHint": "Terminez dans le navigateur. Si vous avez d'abord dû créer un compte, appuyez sur « Rouvrir la page ».",
+          "title": "Connexion à {{provider}}",
+          "waitingHint": "Terminez dans le navigateur. Si vous avez d'abord dû créer un compte, appuyez sur « Rouvrir la page ».",
           "reopen": "Rouvrir la page",
           "cancel": "Annuler",
           "failed": "La connexion n'a pas abouti : {{error}}",
@@ -1218,8 +1221,9 @@
           "plan": "Abonnement : {{plan}}",
           "freeModels": "Modèles gratuits, jusqu'à 50 dictées par jour",
           "withCredit": "Avec du crédit, un modèle qui ne s'entraîne pas sur vos textes",
-          "noCreditYet": "Pas encore de crédit : DanyWhere utilise les modèles gratuits jusqu'à ce que vous rechargiez.",
+          "noCreditYet": "Pas encore de crédit : DanyWhere n'envoie rien tant que vous n'avez pas rechargé.",
           "notToppedUp": "OpenRouter n'affiche encore aucun crédit. Cela peut prendre une minute.",
+          "topUpCheckFailed": "Impossible de demander le crédit à OpenRouter.",
           "keyLimit": "Plafond de dépenses de la clé : {{limit}}",
           "model": "Modèle : {{model}}",
           "picksModel": "DanyWhere choisit le modèle.",
@@ -1229,17 +1233,26 @@
           "topUp": "Recharger",
           "toppedUp": "J'ai rechargé",
           "disconnect": "Déconnecter",
+          "disconnectConfirm": "Cliquez encore pour supprimer la clé",
+          "keyStaysAtOpenRouter": "OpenRouter conserve la clé « DanyWhere » parmi vos clés API jusqu'à ce que vous la supprimiez là-bas.",
+          "revokeUnconfirmed": "Déconnexion non confirmée par OpenAI",
+          "revokeUnconfirmedDetail": "DanyWhere a oublié la connexion ici. Vous pouvez vérifier l'accès de DanyWhere dans vos paramètres ChatGPT.",
+          "chatgptSettings": "Paramètres ChatGPT",
           "answerAgain": "Répondre à nouveau aux questions",
           "advanced": "Avancé"
         },
         "sample": {
           "title": "Essai",
-          "spoken": "Dit : « {{text}} »",
-          "result": "Résultat : « {{text}} »",
+          "spoken": "Dit : « {{text}} »",
+          "result": "Résultat : « {{text}} »",
           "text": "euh alors je t'envoie ça demain virgule d'accord point d'interrogation",
           "running": "Essai en cours …",
           "took": "{{seconds}} s avec {{model}}",
           "failed": "L'essai n'a pas marché."
+        },
+        "errors": {
+          "disconnect": "Non déconnecté",
+          "reopen": "Page non rouverte"
         }
       }
     },
@@ -1701,7 +1714,7 @@
       "noApiKey": "{{provider}} a besoin d'une clé API, et aucune n'est saisie.",
       "keyRefused": "{{provider}} a refusé la clé API.",
       "noCredit": "Votre crédit chez {{provider}} est épuisé ; rechargez-le là-bas.",
-      "modelNotFound": "{{provider}} ne propose pas le modèle « {{model}} ».",
+      "modelNotFound": "{{provider}} ne propose pas le modèle « {{model}} ».",
       "unreachable": "{{provider}} est injoignable.",
       "timeout": "{{provider}} n'a pas répondu dans le délai imparti ({{seconds}} s).",
       "status": "{{provider}} a répondu avec le statut HTTP {{status}}.",
@@ -1715,6 +1728,9 @@
       "planLimit": "La limite d'utilisation de votre abonnement {{provider}} est atteinte pour l'instant.",
       "planNotEligible": "Votre abonnement {{provider}} n'inclut pas l'utilisation dans d'autres applications.",
       "signInExpired": "La connexion à {{provider}} a expiré ; reconnectez-vous.",
+      "noSignIn": "Vous n'êtes pas connecté à {{provider}}.",
+      "notSetUp": "Le post-traitement n'est pas encore configuré.",
+      "notSetUpTitle": "Post-traitement non configuré",
       "rateLimited": "{{provider}} limite ce qui peut être envoyé par minute ; patientez un instant et dictez à nouveau.",
       "actions": {
         "setUp": "Configurer",

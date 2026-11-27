@@ -12,6 +12,7 @@ import type { ModelInfo } from "@/bindings";
 import type { NavLocation } from "@/lib/navigation";
 import { SettingsPage } from "../SettingsPage";
 import { useModelStore } from "@/stores/modelStore";
+import { usePostProcessSetupStore } from "@/stores/postProcessSetupStore";
 import { callsOf, mockCommand, ok } from "@/test/bindings-mock";
 import { modelInfo, settingsWith, type SettingsSpec } from "@/test/fixtures";
 import { switchTestLanguage } from "@/test/i18n";
@@ -381,6 +382,10 @@ describe("Set Up Post-Processing", () => {
     expect(navigated).toEqual([
       { kind: "profile", profileId: WORK, page: "postprocessing" },
     ]);
+    // A profile's page has no setup: the defaults' page later shows its
+    // card, not questions left open from here (sidecar qa 2026-11-26_2250,
+    // D, N15).
+    expect(usePostProcessSetupStore.getState().editing).toBe(false);
   });
 });
 

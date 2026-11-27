@@ -3,6 +3,7 @@
 // 2026-11-26_2250, 4.5): what the backend says about the setup, the answers
 // being given, a sign-in through the browser while it waits, and the sample.
 import { create } from "zustand";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import {
   commands,
   events,
@@ -11,14 +12,18 @@ import {
   type SampleResult,
   type SetupAnswers,
   type SetupStatus,
+  type SignInIntent,
   type SignInProvider,
 } from "@/bindings";
 import i18n from "@/i18n";
 import {
   sanitize,
+  suggest,
   type Machine,
   type SetupAnswers as GivenAnswers,
 } from "@/lib/postProcessSetup/questions";
+import { providerPages } from "@/lib/postProcessSetup/guides";
+import { notify } from "./noticeStore";
 import { useSettingsStore } from "./settingsStore";
 
 const TEXTS = "settings.postProcessing.setup";
@@ -35,11 +40,23 @@ const callbackPage = () => ({
 
 export interface SignInState {
   provider: SignInProvider;
+  /** The way it is for (`signInIntentOf`), kept for "Try again". */
+  intent: SignInIntent | null;
   /** Starting: the backend opens the browser; waiting: for its callback;
    * failed: `error` says why. */
   phase: "starting" | "waiting" | "failed";
   error: string | null;
 }
+
+/** A sign-in in progress: starting or waiting for the browser. A failed one
+ * holds up nothing else (sidecar qa 2026-11-26_2250, D, H2). */
+export const signInActive = (signIn: SignInState | null): boolean =>
+  signIn !== null && signIn.phase !== "failed";
+
+/** The sign-in without a failed one, which another answer or "Later"
+ * leaves behind. */
+const withoutFailed = (signIn: SignInState | null): SignInState | null =>
+  signInActive(signIn) ? signIn : null;
 
 export interface SampleState {
   phase: "running" | "done" | "failed";
@@ -58,10 +75,21 @@ interface PostProcessSetupState {
   /** The questions show although a way is set up or put off ("Answer the
    * questions again", a notice's "Set up" or "Change setup"). */
   editing: boolean;
+  /** While editing: the answers of the way in use and whether it was
+   * finished, which "Keep the current setup" brings back once an answer
+   * was given meanwhile (sidecar qa 2026-11-26_2250, D, M6). */
+  before: {
+    answers: SetupAnswers | null;
+    finished: boolean;
+    changed: boolean;
+  } | null;
   signIn: SignInState | null;
   sample: SampleState | null;
   /** "I've topped up", and OpenRouter still has the free tier. */
   notToppedUp: boolean;
+  /** "I've topped up" couldn't ask OpenRouter (sidecar qa 2026-11-26_2250,
+   * D, N8). */
+  topUpFailure: FailureDto | null;
   /** The listener of `post-process-sign-in-finished` is registered. */
   listening: boolean;
 
@@ -77,8 +105,13 @@ interface PostProcessSetupState {
   /** "Later". */
   putOff: (inert?: boolean) => Promise<void>;
   openQuestions: () => void;
+  /** "Keep the current setup": the questions close, and the answers of the
+   * way in use come back. */
   closeQuestions: () => void;
-  startSignIn: (provider: SignInProvider) => Promise<void>;
+  startSignIn: (
+    provider: SignInProvider,
+    intent?: SignInIntent | null,
+  ) => Promise<void>;
   reopenSignIn: () => Promise<void>;
   cancelSignIn: () => Promise<void>;
   /** A way is set up: keeps it as finished, reloads, tries the sample. */
@@ -108,9 +141,11 @@ export const usePostProcessSetupStore = create<PostProcessSetupState>()(
     answers: null,
     skipped: false,
     editing: false,
+    before: null,
     signIn: null,
     sample: null,
     notToppedUp: false,
+    topUpFailure: null,
     listening: false,
 
     hydrate: (kept) => {
@@ -122,13 +157,11 @@ export const usePostProcessSetupStore = create<PostProcessSetupState>()(
     },
 
     loadStatus: async () => {
-      const status = await commands.getPostProcessSetupStatus();
-      set({ status: status ?? null });
+      set({ status: await readStatus(get().status) });
     },
 
     refresh: async () => {
-      const status = await commands.getPostProcessSetupStatus();
-      set({ status: status ?? null });
+      set({ status: await readStatus(get().status) });
       await useSettingsStore.getState().refreshSettings();
     },
 
@@ -142,37 +175,77 @@ export const usePostProcessSetupStore = create<PostProcessSetupState>()(
 
     answer: (next, machine, inert = false) => {
       const answers = sanitize(next, machine);
-      set({ answers, skipped: false });
+      const before = get().before;
+      set({
+        answers,
+        skipped: false,
+        signIn: withoutFailed(get().signIn),
+        before: before && { ...before, changed: true },
+      });
       if (!inert) void save(answers, false, false);
     },
 
     putOff: async (inert = false) => {
-      set({ skipped: true, editing: false });
+      set({
+        skipped: true,
+        editing: false,
+        before: null,
+        signIn: withoutFailed(get().signIn),
+      });
       if (!inert) await save(get().answers ?? EMPTY, false, true);
     },
 
-    openQuestions: () => set({ editing: true, skipped: false }),
-    closeQuestions: () => set({ editing: false }),
+    openQuestions: () => {
+      const { editing, before, answers, status } = get();
+      set({
+        editing: true,
+        skipped: false,
+        signIn: withoutFailed(get().signIn),
+        before:
+          editing && before
+            ? before
+            : {
+                answers,
+                finished: status?.setup.finished ?? false,
+                changed: false,
+              },
+      });
+    },
+    closeQuestions: () => {
+      const before = get().before;
+      set({ editing: false, before: null });
+      if (!before?.changed) return;
+      set({ answers: before.answers });
+      void save(before.answers ?? EMPTY, before.finished, false);
+    },
 
-    startSignIn: async (provider) => {
-      set({ signIn: { provider, phase: "starting", error: null } });
-      const started = await commands.startPostProcessSignIn(
-        provider,
-        callbackPage(),
-      );
+    startSignIn: async (provider, intent = null) => {
+      set({ signIn: { provider, intent, phase: "starting", error: null } });
+      const started = await commands
+        .startPostProcessSignIn(provider, callbackPage(), intent)
+        .catch((error: unknown) => ({
+          status: "error" as const,
+          error: String(error),
+        }));
       const now = get().signIn;
       // Cancelled or finished meanwhile.
       if (!now || now.provider !== provider || now.phase !== "starting") return;
       set({
         signIn:
           started.status === "ok"
-            ? { provider, phase: "waiting", error: null }
-            : { provider, phase: "failed", error: started.error },
+            ? { provider, intent, phase: "waiting", error: null }
+            : { provider, intent, phase: "failed", error: started.error },
       });
     },
 
     reopenSignIn: async () => {
-      await commands.reopenPostProcessSignIn();
+      const reopened = await commands.reopenPostProcessSignIn();
+      if (reopened.status === "error") {
+        notify({
+          title: i18n.t(`${TEXTS}.errors.reopen`),
+          detail: reopened.error,
+        });
+      }
     },
 
     cancelSignIn: async () => {
@@ -181,7 +254,13 @@ export const usePostProcessSetupStore = create<PostProcessSetupState>()(
     },
 
     finishWay: async () => {
-      set({ editing: false, skipped: false, notToppedUp: false });
+      set({
+        editing: false,
+        before: null,
+        skipped: false,
+        notToppedUp: false,
+        topUpFailure: null,
+      });
       await save(get().answers ?? EMPTY, true, false);
       await get().refresh();
       await get().runSample();
@@ -203,6 +282,7 @@ export const usePostProcessSetupStore = create<PostProcessSetupState>()(
       await get().refresh();
       set({
         notToppedUp: outcome.status === "ok" && outcome.data.free_tier,
+        topUpFailure: outcome.status === "error" ? outcome.error : null,
       });
     },
 
@@ -210,10 +290,14 @@ export const usePostProcessSetupStore = create<PostProcessSetupState>()(
       const status = get().status;
       if (!status) return;
       const way = status.way;
-      if (way?.kind === "chatgpt_plan") {
-        await commands.disconnectPostProcessSignIn("chatgpt");
-      } else if (way?.kind === "openrouter") {
-        await commands.disconnectPostProcessSignIn("openrouter");
+      let failed: string | null = null;
+      if (way?.kind === "chatgpt_plan" || way?.kind === "openrouter") {
+        const provider = way.kind === "chatgpt_plan" ? "chatgpt" : "openrouter";
+        const outcome = await commands.disconnectPostProcessSignIn(provider);
+        if (outcome.status === "error") failed = outcome.error;
+        // OpenAI's guidelines: a revocation it didn't confirm is said, with
+        // where the access can be checked (D, Nachtrag N).
+        else if (outcome.data?.revoke_confirmed === false) revokeUnconfirmed();
       } else {
         // A pasted key: an empty key removes it; the rest stays. A server
         // of one's own and Apple Intelligence have nothing to disconnect.
@@ -225,18 +309,52 @@ export const usePostProcessSetupStore = create<PostProcessSetupState>()(
           way?.kind === "on_device"
         )
           return;
-        await commands.applyPostProcessChoice({
+        const removed = await commands.applyPostProcessChoice({
           provider_id: provider,
           model: null,
           api_key: "",
           effort: null,
         });
+        if (removed.status === "error") failed = removed.error;
       }
-      set({ sample: null, notToppedUp: false });
+      if (failed !== null) {
+        notify({ title: i18n.t(`${TEXTS}.errors.disconnect`), detail: failed });
+      }
+      set({ sample: null, notToppedUp: false, topUpFailure: null });
       await get().refresh();
     },
   }),
 );
+
+/** The backend's status, or `kept` when it can't give one (D, N8). */
+const readStatus = async (
+  kept: SetupStatus | null,
+): Promise<SetupStatus | null> => {
+  try {
+    return (await commands.getPostProcessSetupStatus()) ?? null;
+  } catch (error) {
+    console.error("Couldn't read the post-processing setup's status:", error);
+    return kept;
+  }
+};
+
+/** OpenAI didn't confirm revoking ChatGPT's tokens: a notice that stays in
+ * the footer, with ChatGPT's settings. */
+const revokeUnconfirmed = () => {
+  const usage = providerPages("chatgpt").usage;
+  notify({
+    level: "warning",
+    title: i18n.t(`${TEXTS}.connected.revokeUnconfirmed`),
+    detail: i18n.t(`${TEXTS}.connected.revokeUnconfirmedDetail`),
+    action: usage
+      ? {
+          label: i18n.t(`${TEXTS}.connected.chatgptSettings`),
+          onClick: () => void openUrl(usage),
+        }
+      : undefined,
+    key: "chatgpt-revoke-unconfirmed",
+  });
+};
 
 /** How a sign-in ended, from the backend's event. */
 const signInFinished = async ({
@@ -253,7 +371,33 @@ const signInFinished = async ({
     usePostProcessSetupStore.setState({ signIn: null });
   } else {
     usePostProcessSetupStore.setState({
-      signIn: { provider, phase: "failed", error },
+      signIn: { ...signIn, phase: "failed", error },
     });
+  }
+};
+
+/** Any machine: the ways through a sign-in don't depend on its memory. */
+const ANY_MACHINE: Machine = {
+  memoryBytes: Number.MAX_SAFE_INTEGER,
+  platform: "macos",
+};
+
+/**
+ * The way of the setup a sign-in is for, from the answers (sidecar qa
+ * 2026-11-26_2250, D, H1 and M1): OpenRouter's free models, or OpenRouter
+ * only with credit, which then sends nothing until the account has credit.
+ * Null when the answers lead elsewhere, e.g. to ChatGPT, or OpenRouter was
+ * chosen under "All providers …".
+ */
+export const signInIntentOf = (
+  answers: GivenAnswers | null | undefined,
+): SignInIntent | null => {
+  switch (answers ? suggest(answers, ANY_MACHINE)?.kind : undefined) {
+    case "openrouter_free":
+      return "free";
+    case "openrouter_credit":
+      return "credit";
+    default:
+      return null;
   }
 };

@@ -1144,6 +1144,7 @@
           "creditBody": "An account with OpenRouter, one click on “Authorize”, then top up once from $5. DanyWhere picks a model that doesn't use your texts for training. $5 is enough for thousands of dictations, and nothing renews.",
           "tipAccount": "Sign up with Google or GitHub: that saves a password and a code by email.",
           "tipPayment": "New at OpenRouter? Its welcome asks for a payment method. You can choose “I'll do this later”: the free models need none. Then come back here and press “Open the page again”.",
+          "tipPaymentCredit": "New at OpenRouter? Its welcome asks for a payment method, which topping up needs anyway. Then come back here and press “Open the page again”. Until the account has credit, DanyWhere sends nothing.",
           "connect": "Connect OpenRouter"
         },
         "chatgpt": {
@@ -1197,10 +1198,12 @@
           "unavailableBodyMac": "A model on this computer needs 16 GB of memory; this Mac has {{memory}}. A server of your own works, for example your company's.",
           "unavailableBody": "A model on this computer needs 16 GB of memory; this computer has {{memory}}. A server of your own works, for example your company's.",
           "ownServer": "Set up a server of your own",
-          "ownServerHint": "Enter its address and model below."
+          "ownServerHint": "Enter its address and model below.",
+          "ownServerLater": "You can enter a server of your own later under Defaults › Post Process, behind “All providers …”."
         },
         "signIn": {
           "waiting": "Waiting for the browser …",
+          "title": "Sign-in with {{provider}}",
           "waitingHint": "Finish in the browser. If you had to sign up first, press “Open the page again”.",
           "reopen": "Open the page again",
           "cancel": "Cancel",
@@ -1218,8 +1221,9 @@
           "plan": "Plan: {{plan}}",
           "freeModels": "Free models, up to 50 dictations a day",
           "withCredit": "With credit, a model without training",
-          "noCreditYet": "No credit yet: DanyWhere uses the free models until you top up.",
+          "noCreditYet": "No credit yet: DanyWhere sends nothing until you top up.",
           "notToppedUp": "OpenRouter doesn't show any credit yet. It can take a minute.",
+          "topUpCheckFailed": "Couldn't ask OpenRouter about the credit.",
           "keyLimit": "Spending limit of the key: {{limit}}",
           "model": "Model: {{model}}",
           "picksModel": "DanyWhere picks the model.",
@@ -1229,6 +1233,11 @@
           "topUp": "Top up",
           "toppedUp": "I've topped up",
           "disconnect": "Disconnect",
+          "disconnectConfirm": "Click again to remove the key",
+          "keyStaysAtOpenRouter": "OpenRouter keeps the key “DanyWhere” among your API keys until you delete it there.",
+          "revokeUnconfirmed": "Sign-Out Not Confirmed by OpenAI",
+          "revokeUnconfirmedDetail": "DanyWhere has forgotten the sign-in here. You can check DanyWhere's access in your ChatGPT settings.",
+          "chatgptSettings": "ChatGPT Settings",
           "answerAgain": "Answer the questions again",
           "advanced": "Advanced"
         },
@@ -1240,6 +1249,10 @@
           "running": "Trying …",
           "took": "{{seconds}} s with {{model}}",
           "failed": "The sample didn't work."
+        },
+        "errors": {
+          "disconnect": "Not Disconnected",
+          "reopen": "Page Not Opened Again"
         }
       }
     },
@@ -1715,6 +1728,9 @@
       "planLimit": "Your plan's usage limit with {{provider}} is reached for now.",
       "planNotEligible": "Your plan with {{provider}} doesn't include use in other apps.",
       "signInExpired": "The sign-in with {{provider}} has expired; sign in again.",
+      "noSignIn": "You aren't signed in with {{provider}}.",
+      "notSetUp": "Post-processing isn't set up yet.",
+      "notSetUpTitle": "Post-Processing Not Set Up",
       "rateLimited": "{{provider}} limits how much may be sent per minute; wait a moment and dictate again.",
       "actions": {
         "setUp": "Set up",

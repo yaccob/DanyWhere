@@ -11,11 +11,15 @@ import {
   type SetupAnswers,
 } from "@/lib/postProcessSetup/questions";
 import { useSettingsStore } from "@/stores/settingsStore";
-import { usePostProcessSetupStore } from "@/stores/postProcessSetupStore";
+import {
+  signInActive,
+  signInIntentOf,
+  usePostProcessSetupStore,
+} from "@/stores/postProcessSetupStore";
 import { CardLine } from "./SetupCard";
 import { ConnectedCard } from "./ConnectedCard";
 import { SetupQuestions } from "./SetupQuestions";
-import { SetupSuggestion } from "./SetupSuggestion";
+import { PendingSignIn, SetupSuggestion, signInOfWay } from "./SetupSuggestion";
 
 const KEY = "settings.postProcessing.setup";
 
@@ -34,8 +38,12 @@ export interface PostProcessSetupProps {
   /** Settings: whether today's provider settings show below. */
   providersOpen?: boolean;
   onToggleProviders?: () => void;
-  onOpenProviders?: () => void;
+  /** Opens today's provider settings, with `providerId` chosen there. */
+  onOpenProviders?: (providerId?: string) => void;
 }
+
+/** How many setups on the page "Post Process" are mounted. */
+let settingsPagesShown = 0;
 
 /**
  * DanyWhere: setting up post-processing with questions anyone can answer
@@ -67,6 +75,22 @@ export const PostProcessSetup: React.FC<PostProcessSetupProps> = ({
     if (settingsLoaded) hydrate(kept ?? {});
   }, [settingsLoaded, kept, hydrate]);
 
+  // Leaving the page closes questions opened again, as "Keep the current
+  // setup" does, so the next visit shows the way in use (sidecar qa
+  // 2026-11-26_2250, D, N15). Checked a turn later, after StrictMode's
+  // second mount.
+  useEffect(() => {
+    if (place !== "settings") return;
+    settingsPagesShown += 1;
+    return () => {
+      settingsPagesShown -= 1;
+      setTimeout(() => {
+        const setup = usePostProcessSetupStore.getState();
+        if (settingsPagesShown === 0 && setup.editing) setup.closeQuestions();
+      }, 0);
+    };
+  }, [place]);
+
   const status = store.status;
   const machine: Machine = {
     // Until the backend says how much memory there is, nothing is greyed
@@ -83,9 +107,10 @@ export const PostProcessSetup: React.FC<PostProcessSetupProps> = ({
   const onboarding = place === "onboarding";
 
   const ready = status?.readiness === "ready";
-  const showCard = ready && !store.editing && store.signIn === null;
-  const putOff =
-    !onboarding && store.skipped && !store.editing && store.signIn === null;
+  // A sign-in in progress keeps the questions; a failed one doesn't (D, H2).
+  const signingIn = signInActive(store.signIn);
+  const showCard = ready && !store.editing && !signingIn;
+  const putOff = !onboarding && store.skipped && !store.editing && !signingIn;
 
   if (showCard && status) {
     return (
@@ -93,7 +118,7 @@ export const PostProcessSetup: React.FC<PostProcessSetupProps> = ({
         <ConnectedCard
           status={status}
           providerLabel={labelOf(status.provider_id ?? "")}
-          wantsCredit={answers.next_step === "credit"}
+          intent={signInIntentOf(answers)}
           inert={inert}
           advanced={
             onToggleProviders
@@ -149,6 +174,12 @@ export const PostProcessSetup: React.FC<PostProcessSetupProps> = ({
   }
 
   const way = suggest(answers, machine);
+  // A sign-in the suggestion doesn't offer, e.g. from a notice's "Sign in
+  // again", shows its waiting on its own (D, M6).
+  const pending =
+    store.signIn && signInOfWay(way) !== store.signIn.provider
+      ? store.signIn
+      : null;
   return (
     <div className="space-y-4 px-4 py-3 text-start">
       {/* Not a CardLine: its m-0 would cancel the gap of space-y-4 below
@@ -156,6 +187,7 @@ export const PostProcessSetup: React.FC<PostProcessSetupProps> = ({
       {!onboarding && (
         <p className="text-sm text-pretty text-ink-3">{t(`${KEY}.intro`)}</p>
       )}
+      {pending && <PendingSignIn signIn={pending} />}
       <SetupQuestions
         answers={answers}
         machine={machine}

@@ -1,29 +1,49 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { commands, type EndKey } from "@/bindings";
+import { commands, type EndKey, type Readiness } from "@/bindings";
 import { useSettings } from "@/hooks/useSettings";
 import { hasCombination } from "@/lib/startKeys";
+import { postProcessReadiness } from "@/lib/postProcessSetup/readiness";
+import { usePostProcessSetupStore } from "@/stores/postProcessSetupStore";
+import { useSettingsStore } from "@/stores/settingsStore";
 import { SettingsGroup } from "../../ui/SettingsGroup";
 import { ScopedSetting } from "../profiles/scope/ScopedSetting";
+import { useSettingsScope } from "../profiles/scope/SettingsScope";
 import { EndKeysEditor } from "../end-keys/EndKeysEditor";
 import { useKeyListSave } from "../end-keys/useKeyListSave";
-import { chosenProviderWithModel } from "../history/postProcessEntry";
 
 /** What the card says above the list of a scope: its post-processing mode
- * is "never", so the instruction shortcuts aren't taken; or no provider
- * with a model is set up there, so they are taken, but a dictation with an
+ * is "never", so the instruction shortcuts aren't taken; or post-processing
+ * isn't ready there, so they are taken, but a dictation with an
  * instruction is inserted as heard and its notice offers the setup (qa
  * 2026-11-26_1810, "Regeln"; 2026-11-26_2250: taken before the setup too). */
 export type InstructionKeysNote = "never" | "notSetUp" | null;
 
-/** The note of a scope with these settings, if it has one. */
+/** The note of a scope with this mode and readiness, if it has one. Ready
+ * is what the backend checks before it sends: a provider, its model and
+ * its key or sign-in (qa 2026-11-26_2250, D, N10). */
 export const instructionKeysNote = (
-  settings: Parameters<typeof chosenProviderWithModel>[0] & {
-    post_process_mode?: string | null;
-  },
+  settings: { post_process_mode?: string | null } | null | undefined,
+  readiness: Readiness,
 ): InstructionKeysNote => {
   if (settings?.post_process_mode === "never") return "never";
-  return chosenProviderWithModel(settings) ? null : "notSetUp";
+  return readiness === "ready" ? null : "notSetUp";
+};
+
+/** The readiness of the page's scope: the backend's for the defaults
+ * (`get_post_process_setup_status`, asked again whenever the settings
+ * change), a profile's from its values. */
+const useScopeReadiness = (): Readiness => {
+  const scope = useSettingsScope();
+  const { settings } = useSettings();
+  const stored = useSettingsStore((s) => s.settings);
+  const status = usePostProcessSetupStore((s) => s.status);
+  const loadStatus = usePostProcessSetupStore((s) => s.loadStatus);
+  const defaults = scope === null || scope.kind === "defaults";
+  useEffect(() => {
+    if (defaults) void loadStatus();
+  }, [defaults, loadStatus, stored]);
+  return defaults && status ? status.readiness : postProcessReadiness(settings);
 };
 
 /**
@@ -49,7 +69,7 @@ export const InstructionKeysSettings: React.FC = () => {
   const startKeys = getSetting("start_keys") ?? [];
   const holdKeys = getSetting("hold_keys") ?? [];
   const instructionKeys = getSetting("instruction_keys") ?? [];
-  const note = instructionKeysNote(settings ?? {});
+  const note = instructionKeysNote(settings, useScopeReadiness());
   const { busy, save } = useKeyListSave<EndKey>(
     "instruction_keys",
     commands.changeInstructionKeysSetting,

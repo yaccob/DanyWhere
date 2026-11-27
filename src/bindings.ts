@@ -444,11 +444,13 @@ async runPostProcessSample(text: string) : Promise<Result<SampleResult, FailureD
  * Starts signing in through the browser: binds the loopback listener and
  * opens the provider's page in the browser. `page` holds the two short
  * texts the browser shows after the callback, in the app's language.
+ * `intent` is the way of the setup the sign-in is for (OpenRouter: its free
+ * models, or only with credit); ChatGPT ignores it.
  * `post-process-sign-in-finished` says how it ended.
  */
-async startPostProcessSignIn(provider: SignInProvider, page: CallbackPage) : Promise<Result<SignInStarted, string>> {
+async startPostProcessSignIn(provider: SignInProvider, page: CallbackPage, intent: SignInIntent | null) : Promise<Result<SignInStarted, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("start_post_process_sign_in", { provider, page }) };
+    return { status: "ok", data: await TAURI_INVOKE("start_post_process_sign_in", { provider, page, intent }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -473,9 +475,10 @@ async cancelPostProcessSignIn() : Promise<void> {
 },
 /**
  * Forgets the sign-in: ChatGPT's session (its client id and the host id
- * stay for the next sign-in), or OpenRouter's key and connection.
+ * stay for the next sign-in), or OpenRouter's key and connection. The
+ * outcome says whether OpenAI confirmed revoking ChatGPT's tokens.
  */
-async disconnectPostProcessSignIn(provider: SignInProvider) : Promise<Result<null, string>> {
+async disconnectPostProcessSignIn(provider: SignInProvider) : Promise<Result<DisconnectOutcome, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("disconnect_post_process_sign_in", { provider }) };
 } catch (e) {
@@ -2335,7 +2338,16 @@ export type DictationServiceWhenIdle =
 /**
  * What the settings page offers for a provider's model.
  */
-export type EffortOptions = { 
+/**
+ * How "Disconnect" went at the provider.
+ */
+export type DisconnectOutcome = {
+/**
+ * ChatGPT: whether OpenAI confirmed revoking the tokens; `None` when
+ * nothing was revoked (OpenRouter, or no session).
+ */
+revoke_confirmed: boolean | null }
+export type EffortOptions = {
 /**
  * In [`LEVELS`] order, without the model's default (always offered).
  */
@@ -3320,6 +3332,12 @@ export type SetupWay =
  */
 { kind: "on_device" }
 export type ShortcutBinding = { id: string; name: string; description: string; default_binding: string; current_binding: string }
+/**
+ * The way of the setup a sign-in is for. OpenRouter: `free` keeps to the
+ * free models, also on an account with credit; `credit` never uses them
+ * and sends nothing until the account has credit.
+ */
+export type SignInIntent = "free" | "credit"
 /**
  * The provider a sign-in is for.
  */

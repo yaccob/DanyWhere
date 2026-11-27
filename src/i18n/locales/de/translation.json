@@ -1144,6 +1144,7 @@
           "creditBody": "Ein Konto bei OpenRouter, ein Klick auf „Authorize“, dann einmal ab 5 $ aufladen. DanyWhere wählt ein Modell, das deine Texte nicht zum Training nutzt. 5 $ reichen für Tausende Diktate, und es verlängert sich nichts.",
           "tipAccount": "Melde dich mit Google oder GitHub an: Das erspart Passwort und Bestätigungscode.",
           "tipPayment": "Neu bei OpenRouter? Die Begrüßung fragt nach einer Zahlungsart. Du kannst „I'll do this later“ wählen, die Gratismodelle brauchen keine. Komm danach hierher zurück und drück „Seite erneut öffnen“.",
+          "tipPaymentCredit": "Neu bei OpenRouter? Die Begrüßung fragt nach einer Zahlungsart, die du zum Aufladen ohnehin brauchst. Komm danach hierher zurück und drück „Seite erneut öffnen“. Solange das Konto kein Guthaben hat, sendet DanyWhere nichts.",
           "connect": "Mit OpenRouter verbinden"
         },
         "chatgpt": {
@@ -1197,10 +1198,12 @@
           "unavailableBodyMac": "Ein Modell auf diesem Computer braucht 16 GB Arbeitsspeicher, dieser Mac hat {{memory}}. Ein eigener Server geht, etwa der deiner Firma.",
           "unavailableBody": "Ein Modell auf diesem Computer braucht 16 GB Arbeitsspeicher, dieser Computer hat {{memory}}. Ein eigener Server geht, etwa der deiner Firma.",
           "ownServer": "Eigenen Server einrichten",
-          "ownServerHint": "Trag unten seine Adresse und sein Modell ein."
+          "ownServerHint": "Trag unten seine Adresse und sein Modell ein.",
+          "ownServerLater": "Einen eigenen Server trägst du später unter Grundeinstellungen › Nachbearbeitung ein, hinter „Alle Anbieter …“."
         },
         "signIn": {
           "waiting": "Warte auf den Browser …",
+          "title": "Anmeldung bei {{provider}}",
           "waitingHint": "Schließ es im Browser ab. Musstest du dich erst registrieren, drück „Seite erneut öffnen“.",
           "reopen": "Seite erneut öffnen",
           "cancel": "Abbrechen",
@@ -1218,8 +1221,9 @@
           "plan": "Abo: {{plan}}",
           "freeModels": "Gratismodelle, bis zu 50 Diktate am Tag",
           "withCredit": "Mit Guthaben, ein Modell ohne Training",
-          "noCreditYet": "Noch kein Guthaben: DanyWhere nimmt die Gratismodelle, bis du auflädst.",
+          "noCreditYet": "Noch kein Guthaben: DanyWhere sendet nichts, bis du auflädst.",
           "notToppedUp": "OpenRouter zeigt noch kein Guthaben. Das kann eine Minute dauern.",
+          "topUpCheckFailed": "OpenRouter ließ sich nicht nach dem Guthaben fragen.",
           "keyLimit": "Ausgabenlimit des Schlüssels: {{limit}}",
           "model": "Modell: {{model}}",
           "picksModel": "DanyWhere wählt das Modell.",
@@ -1229,6 +1233,11 @@
           "topUp": "Aufladen",
           "toppedUp": "Ich habe aufgeladen",
           "disconnect": "Trennen",
+          "disconnectConfirm": "Zum Entfernen noch einmal klicken",
+          "keyStaysAtOpenRouter": "OpenRouter behält den Schlüssel „DanyWhere“ bei deinen API-Schlüsseln, bis du ihn dort löschst.",
+          "revokeUnconfirmed": "Abmelden von OpenAI nicht bestätigt",
+          "revokeUnconfirmedDetail": "DanyWhere hat die Anmeldung hier vergessen. Den Zugriff von DanyWhere kannst du in deinen ChatGPT-Einstellungen prüfen.",
+          "chatgptSettings": "ChatGPT-Einstellungen",
           "answerAgain": "Fragen neu beantworten",
           "advanced": "Erweitert"
         },
@@ -1240,6 +1249,10 @@
           "running": "Probiere …",
           "took": "{{seconds}} s mit {{model}}",
           "failed": "Die Probe hat nicht geklappt."
+        },
+        "errors": {
+          "disconnect": "Nicht getrennt",
+          "reopen": "Seite nicht erneut geöffnet"
         }
       }
     },
@@ -1715,6 +1728,9 @@
       "planLimit": "Das Nutzungslimit deines Abos beim Anbieter „{{provider}}“ ist vorerst erreicht.",
       "planNotEligible": "Dein Abo beim Anbieter „{{provider}}“ schließt die Nutzung in anderen Apps nicht ein.",
       "signInExpired": "Die Anmeldung beim Anbieter „{{provider}}“ ist abgelaufen; melde dich neu an.",
+      "noSignIn": "Beim Anbieter „{{provider}}“ bist du nicht angemeldet.",
+      "notSetUp": "Die Nachbearbeitung ist noch nicht eingerichtet.",
+      "notSetUpTitle": "Nachbearbeitung nicht eingerichtet",
       "rateLimited": "Der Anbieter „{{provider}}“ begrenzt, wie viel pro Minute gehen darf; warte kurz und diktiere noch einmal.",
       "actions": {
         "setUp": "Einrichten",

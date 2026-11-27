@@ -1,10 +1,13 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import type { SignInProvider } from "@/bindings";
+import type { SignInIntent, SignInProvider } from "@/bindings";
 import type { Translate } from "@/lib/displayNames";
 import { Button } from "../../../ui/Button";
 import { Spinner } from "../../../ui/Spinner";
-import { usePostProcessSetupStore } from "@/stores/postProcessSetupStore";
+import {
+  signInActive,
+  usePostProcessSetupStore,
+} from "@/stores/postProcessSetupStore";
 import { CardLine } from "./SetupCard";
 
 const KEY = "settings.postProcessing.setup.signIn";
@@ -25,6 +28,8 @@ const failureText = (t: Translate, error: string | null) => {
 
 interface SignInButtonProps {
   provider: SignInProvider;
+  /** The way of the setup the sign-in is for (`signInIntentOf`). */
+  intent?: SignInIntent | null;
   /** The button's text: OpenAI's "Continue with ChatGPT", or "Connect
    * OpenRouter". */
   label: string;
@@ -43,6 +48,7 @@ interface SignInButtonProps {
  */
 export const SignInButton: React.FC<SignInButtonProps> = ({
   provider,
+  intent = null,
   label,
   prominent,
   inert = false,
@@ -53,6 +59,8 @@ export const SignInButton: React.FC<SignInButtonProps> = ({
   const reopenSignIn = usePostProcessSetupStore((s) => s.reopenSignIn);
   const cancelSignIn = usePostProcessSetupStore((s) => s.cancelSignIn);
   const mine = signIn?.provider === provider ? signIn : null;
+  // Only one sign-in runs at a time; a failed one holds up nothing.
+  const otherRunning = signInActive(signIn) && !mine;
 
   if (mine && mine.phase !== "failed") {
     return (
@@ -85,8 +93,8 @@ export const SignInButton: React.FC<SignInButtonProps> = ({
       <Button
         variant={prominent ? "primary" : "outline"}
         size="md"
-        disabled={inert || (signIn !== null && !mine)}
-        onClick={() => void startSignIn(provider)}
+        disabled={inert || otherRunning}
+        onClick={() => void startSignIn(provider, intent)}
       >
         {mine ? t(`${KEY}.tryAgain`) : label}
       </Button>

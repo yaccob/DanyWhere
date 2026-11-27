@@ -1144,6 +1144,7 @@
           "creditBody": "Akun OpenRouter, satu klik pada “Authorize”, lalu isi ulang sekali mulai $5. DanyWhere memilih model yang tidak memakai teks Anda untuk pelatihan. $5 cukup untuk ribuan dikte, dan tidak ada yang diperpanjang otomatis.",
           "tipAccount": "Daftar dengan Google atau GitHub: Anda tidak perlu kata sandi dan kode lewat email.",
           "tipPayment": "Baru di OpenRouter? Halaman sambutannya meminta metode pembayaran. Anda bisa memilih “I'll do this later”: model gratis tidak memerlukannya. Lalu kembali ke sini dan tekan “Buka halaman lagi”.",
+          "tipPaymentCredit": "Baru di OpenRouter? Halaman sambutannya meminta metode pembayaran, yang memang diperlukan untuk mengisi ulang. Lalu kembali ke sini dan tekan “Buka halaman lagi”. Selama akun belum punya kredit, DanyWhere tidak mengirim apa pun.",
           "connect": "Hubungkan OpenRouter"
         },
         "chatgpt": {
@@ -1197,10 +1198,12 @@
           "unavailableBodyMac": "Model di komputer ini memerlukan memori 16 GB; Mac ini punya {{memory}}. Server Anda sendiri bisa dipakai, misalnya server perusahaan Anda.",
           "unavailableBody": "Model di komputer ini memerlukan memori 16 GB; komputer ini punya {{memory}}. Server Anda sendiri bisa dipakai, misalnya server perusahaan Anda.",
           "ownServer": "Siapkan server Anda sendiri",
-          "ownServerHint": "Masukkan alamat dan modelnya di bawah."
+          "ownServerHint": "Masukkan alamat dan modelnya di bawah.",
+          "ownServerLater": "Server Anda sendiri bisa Anda masukkan nanti di Pengaturan Dasar › Pascaproses, di balik “Semua penyedia …”."
         },
         "signIn": {
           "waiting": "Menunggu browser …",
+          "title": "Masuk ke {{provider}}",
           "waitingHint": "Selesaikan di browser. Jika Anda harus mendaftar dulu, tekan “Buka halaman lagi”.",
           "reopen": "Buka halaman lagi",
           "cancel": "Batal",
@@ -1218,8 +1221,9 @@
           "plan": "Langganan: {{plan}}",
           "freeModels": "Model gratis, hingga 50 dikte per hari",
           "withCredit": "Dengan kredit, model yang tidak dilatih dengan teks Anda",
-          "noCreditYet": "Belum ada kredit: DanyWhere memakai model gratis sampai Anda mengisi ulang.",
+          "noCreditYet": "Belum ada kredit: DanyWhere tidak mengirim apa pun sampai Anda mengisi ulang.",
           "notToppedUp": "OpenRouter belum menampilkan kredit. Ini bisa makan waktu satu menit.",
+          "topUpCheckFailed": "Tidak bisa menanyakan kredit ke OpenRouter.",
           "keyLimit": "Batas pengeluaran kunci: {{limit}}",
           "model": "Model: {{model}}",
           "picksModel": "DanyWhere memilih modelnya.",
@@ -1229,6 +1233,11 @@
           "topUp": "Isi ulang",
           "toppedUp": "Saya sudah mengisi ulang",
           "disconnect": "Putuskan",
+          "disconnectConfirm": "Klik lagi untuk menghapus kunci",
+          "keyStaysAtOpenRouter": "OpenRouter menyimpan kunci “DanyWhere” di antara kunci API Anda sampai Anda menghapusnya di sana.",
+          "revokeUnconfirmed": "Keluar Tidak Dikonfirmasi OpenAI",
+          "revokeUnconfirmedDetail": "DanyWhere sudah melupakan sesi masuk di sini. Anda bisa memeriksa akses DanyWhere di pengaturan ChatGPT Anda.",
+          "chatgptSettings": "Pengaturan ChatGPT",
           "answerAgain": "Jawab pertanyaan lagi",
           "advanced": "Lanjutan"
         },
@@ -1240,6 +1249,10 @@
           "running": "Mencoba …",
           "took": "{{seconds}} dtk dengan {{model}}",
           "failed": "Uji coba tidak berhasil."
+        },
+        "errors": {
+          "disconnect": "Tidak Terputus",
+          "reopen": "Halaman Tidak Dibuka Lagi"
         }
       }
     },
@@ -1715,6 +1728,9 @@
       "planLimit": "Batas penggunaan langganan Anda di {{provider}} sudah tercapai untuk saat ini.",
       "planNotEligible": "Langganan Anda di {{provider}} tidak mencakup penggunaan di aplikasi lain.",
       "signInExpired": "Sesi masuk di {{provider}} sudah kedaluwarsa; masuk lagi.",
+      "noSignIn": "Anda belum masuk di {{provider}}.",
+      "notSetUp": "Pascaproses belum disiapkan.",
+      "notSetUpTitle": "Pascaproses Belum Disiapkan",
       "rateLimited": "{{provider}} membatasi jumlah yang boleh dikirim per menit; tunggu sebentar lalu dikte lagi.",
       "actions": {
         "setUp": "Siapkan",

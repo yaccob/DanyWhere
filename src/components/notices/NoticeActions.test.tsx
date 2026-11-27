@@ -16,6 +16,7 @@ import { rawTextIn, visibleText } from "@/test/visible";
 import {
   BROWSER_PAGE,
   openedUrls,
+  setupSettings,
   signInStarts,
 } from "@/test/postProcessSetupFixtures";
 import { NoticePanel } from "./NoticePanel";
@@ -125,11 +126,61 @@ describe("a post-processing notice with its next step", () => {
     );
     await press(button("Sign in again")!);
     expect(callsOf("startPostProcessSignIn")).toEqual([
-      ["chatgpt", BROWSER_PAGE],
+      ["chatgpt", BROWSER_PAGE, null],
     ]);
     expect(useNavigationRequest.getState().requested).toEqual(
       POST_PROCESS_PAGE,
     );
+  });
+
+  // The answers say which way the new sign-in is for (sidecar qa
+  // 2026-11-26_2250, D, H1).
+  test("sign-in-expired at OpenRouter: Sign in again keeps to the way with credit", async () => {
+    signInStarts();
+    await renderPage(<NoticePanel />, {
+      settings: setupSettings({
+        texts_may_go: "not_kept",
+        subscription: "none",
+        next_step: "credit",
+      }),
+    });
+    await act(async () => {
+      const shown = failedWith("sign-in-expired", OPENROUTER);
+      useNoticeStore.setState({ notices: [shown], toasts: [shown.source] });
+    });
+    await press(button("Sign in again")!);
+    expect(callsOf("startPostProcessSignIn")).toEqual([
+      ["openrouter", BROWSER_PAGE, "credit"],
+    ]);
+  });
+
+  // Before the setup was ever finished, the first dictation with an
+  // instruction says so in plain words, not as a missing model of a provider
+  // nobody chose (sidecar qa 2026-11-26_2250, D, M7).
+  test("not-set-up: its own title, the sentence, and Set up", async () => {
+    await showToast(failedWith("not-set-up", {}));
+    const text = visibleText();
+    expect(text).toContain("Post-Processing Not Set Up");
+    expect(text).not.toContain("Pasted Without Post-Processing");
+    expect(text).toContain("Post-processing isn't set up yet.");
+    await press(button("Set up")!);
+    expect(useNavigationRequest.getState().requested).toEqual(
+      POST_PROCESS_PAGE,
+    );
+    expect(rawTextIn()).toEqual([]);
+  });
+
+  // ChatGPT after Disconnect, or a session OpenAI no longer takes (D, M2).
+  test("no-sign-in at ChatGPT: the sentence, and Sign in again", async () => {
+    signInStarts();
+    await showToast(failedWith("no-sign-in", CHATGPT));
+    expect(visibleText()).toContain("You aren't signed in with ChatGPT.");
+    expect(visibleText()).not.toContain("API key");
+    await press(button("Sign in again")!);
+    expect(callsOf("startPostProcessSignIn")).toEqual([
+      ["chatgpt", BROWSER_PAGE, null],
+    ]);
+    expect(rawTextIn()).toEqual([]);
   });
 
   test("free-busy and rate-limited: a sentence, no action", async () => {
@@ -167,6 +218,24 @@ describe("a post-processing notice with its next step", () => {
       useNoticeStore.setState({ notices: [shown], toasts: [shown.source] });
     });
     expect(button("Einrichten")).not.toBeNull();
+    expect(rawTextIn()).toEqual([]);
+
+    await act(async () => {
+      const shown = failedWith("not-set-up", {});
+      useNoticeStore.setState({ notices: [shown], toasts: [shown.source] });
+    });
+    expect(visibleText()).toContain("Nachbearbeitung nicht eingerichtet");
+    expect(visibleText()).toContain(
+      "Die Nachbearbeitung ist noch nicht eingerichtet.",
+    );
+    await act(async () => {
+      const shown = failedWith("no-sign-in", CHATGPT);
+      useNoticeStore.setState({ notices: [shown], toasts: [shown.source] });
+    });
+    expect(visibleText()).toContain(
+      "Beim Anbieter „ChatGPT“ bist du nicht angemeldet.",
+    );
+    expect(button("Neu anmelden")).not.toBeNull();
     expect(rawTextIn()).toEqual([]);
   });
 });

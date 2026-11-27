@@ -1144,6 +1144,7 @@
           "creditBody": "Một tài khoản OpenRouter, một lần nhấp vào “Authorize”, rồi nạp tiền một lần từ $5. DanyWhere chọn một mô hình không dùng văn bản của bạn để huấn luyện. $5 đủ cho hàng nghìn lần đọc chính tả và không có gì tự gia hạn.",
           "tipAccount": "Đăng ký bằng Google hoặc GitHub: bạn không cần mật khẩu và mã gửi qua email.",
           "tipPayment": "Mới dùng OpenRouter? Trang chào mừng sẽ hỏi phương thức thanh toán. Bạn có thể chọn “I'll do this later”: các mô hình miễn phí không cần. Sau đó quay lại đây và nhấn “Mở lại trang”.",
+          "tipPaymentCredit": "Mới dùng OpenRouter? Trang chào mừng sẽ hỏi phương thức thanh toán, thứ dù sao bạn cũng cần để nạp tiền. Sau đó quay lại đây và nhấn “Mở lại trang”. Khi tài khoản chưa có số dư, DanyWhere không gửi gì.",
           "connect": "Kết nối OpenRouter"
         },
         "chatgpt": {
@@ -1197,10 +1198,12 @@
           "unavailableBodyMac": "Mô hình chạy trên máy tính này cần 16 GB bộ nhớ; máy Mac này có {{memory}}. Bạn có thể dùng máy chủ riêng, ví dụ máy chủ của công ty bạn.",
           "unavailableBody": "Mô hình chạy trên máy tính này cần 16 GB bộ nhớ; máy tính này có {{memory}}. Bạn có thể dùng máy chủ riêng, ví dụ máy chủ của công ty bạn.",
           "ownServer": "Thiết lập máy chủ riêng",
-          "ownServerHint": "Nhập địa chỉ và mô hình của máy chủ ở bên dưới."
+          "ownServerHint": "Nhập địa chỉ và mô hình của máy chủ ở bên dưới.",
+          "ownServerLater": "Bạn có thể nhập máy chủ của riêng mình sau trong Cài đặt cơ bản › Xử lý sau, ở mục “Tất cả nhà cung cấp …”."
         },
         "signIn": {
           "waiting": "Đang chờ trình duyệt …",
+          "title": "Đăng nhập {{provider}}",
           "waitingHint": "Hoàn tất trong trình duyệt. Nếu bạn phải đăng ký trước, hãy nhấn “Mở lại trang”.",
           "reopen": "Mở lại trang",
           "cancel": "Hủy",
@@ -1218,8 +1221,9 @@
           "plan": "Gói đăng ký: {{plan}}",
           "freeModels": "Mô hình miễn phí, tối đa 50 lần đọc chính tả mỗi ngày",
           "withCredit": "Dùng số dư, mô hình không huấn luyện bằng văn bản của bạn",
-          "noCreditYet": "Chưa có số dư: DanyWhere dùng các mô hình miễn phí cho đến khi bạn nạp tiền.",
+          "noCreditYet": "Chưa có số dư: DanyWhere không gửi gì cho đến khi bạn nạp tiền.",
           "notToppedUp": "OpenRouter chưa hiển thị số dư. Có thể mất một phút.",
+          "topUpCheckFailed": "Không hỏi được OpenRouter về số dư.",
           "keyLimit": "Hạn mức chi tiêu của khóa: {{limit}}",
           "model": "Mô hình: {{model}}",
           "picksModel": "DanyWhere chọn mô hình.",
@@ -1229,6 +1233,11 @@
           "topUp": "Nạp tiền",
           "toppedUp": "Tôi đã nạp tiền",
           "disconnect": "Ngắt kết nối",
+          "disconnectConfirm": "Nhấp lần nữa để xóa khóa",
+          "keyStaysAtOpenRouter": "OpenRouter giữ khóa “DanyWhere” trong danh sách khóa API của bạn cho đến khi bạn xóa nó ở đó.",
+          "revokeUnconfirmed": "OpenAI chưa xác nhận đăng xuất",
+          "revokeUnconfirmedDetail": "DanyWhere đã quên phiên đăng nhập ở đây. Bạn có thể kiểm tra quyền truy cập của DanyWhere trong phần cài đặt ChatGPT.",
+          "chatgptSettings": "Cài đặt ChatGPT",
           "answerAgain": "Trả lời lại các câu hỏi",
           "advanced": "Nâng cao"
         },
@@ -1240,6 +1249,10 @@
           "running": "Đang thử …",
           "took": "{{seconds}} giây với {{model}}",
           "failed": "Thử mẫu không thành công."
+        },
+        "errors": {
+          "disconnect": "Chưa ngắt kết nối",
+          "reopen": "Chưa mở lại trang"
         }
       }
     },
@@ -1715,6 +1728,9 @@
       "planLimit": "Gói đăng ký của bạn tại {{provider}} tạm thời đã đạt giới hạn sử dụng.",
       "planNotEligible": "Gói đăng ký của bạn tại {{provider}} không bao gồm việc dùng trong ứng dụng khác.",
       "signInExpired": "Phiên đăng nhập với {{provider}} đã hết hạn; hãy đăng nhập lại.",
+      "noSignIn": "Bạn chưa đăng nhập {{provider}}.",
+      "notSetUp": "Xử lý sau chưa được thiết lập.",
+      "notSetUpTitle": "Chưa thiết lập xử lý sau",
       "rateLimited": "{{provider}} giới hạn lượng dữ liệu được gửi mỗi phút; hãy chờ một chút rồi đọc lại.",
       "actions": {
         "setUp": "Thiết lập",

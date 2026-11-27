@@ -18,6 +18,7 @@ import { mockIpc, setOsType } from "@/test/tauri-mock";
 import { rawTextIn, visibleText } from "@/test/visible";
 import {
   BROWSER_PAGE,
+  GiB,
   answerStatus,
   askForLessMotion,
   lastAnswers,
@@ -125,9 +126,22 @@ describe("onboarding: Improve your texts", () => {
     signInStarts();
     await press(connect);
     expect(callsOf("startPostProcessSignIn")).toEqual([
-      ["openrouter", BROWSER_PAGE],
+      ["openrouter", BROWSER_PAGE, "free"],
     ]);
     expect(visibleText()).toContain("Waiting for the browser …");
+  });
+
+  // Onboarding has no form for a server's address, so the button would set
+  // the provider without a word (sidecar qa 2026-11-26_2250, D, N9).
+  test("a server of one's own: where to set it up later, no button", async () => {
+    await renderAt("postProcessSetup", notReady({ memory_bytes: 8 * GiB }));
+    await press(screen.getByRole("radio", { name: /^Nowhere\./ }));
+    expect(button("Set up a server of your own")).toBeNull();
+    expect(visibleText()).toContain(
+      "You can enter a server of your own later under Defaults › Post Process, behind “All providers …”.",
+    );
+    expect(callsOf("applyPostProcessChoice")).toEqual([]);
+    expect(rawTextIn()).toEqual([]);
   });
 
   test("once set up, Continue", async () => {

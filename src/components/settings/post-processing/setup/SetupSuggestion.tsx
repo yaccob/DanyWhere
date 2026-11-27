@@ -1,10 +1,10 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { commands } from "@/bindings";
+import type { SignInProvider } from "@/bindings";
 import { Button } from "../../../ui/Button";
 import type { Machine, Way } from "@/lib/postProcessSetup/questions";
 import { memoryLabel } from "@/lib/postProcessSetup/labels";
-import { usePostProcessSetupStore } from "@/stores/postProcessSetupStore";
+import type { SignInState } from "@/stores/postProcessSetupStore";
 import { CardLine, SetupCard } from "./SetupCard";
 import { SignInButton } from "./SignInButton";
 import { GuidedKey } from "./GuidedKey";
@@ -20,43 +20,78 @@ interface SetupSuggestionProps {
    * like the next step. */
   prominent: boolean;
   inert?: boolean;
-  /** Today's provider settings opened, for a server of one's own. */
-  onOpenProviders?: () => void;
+  /** Today's provider settings opened with a provider chosen, for a server
+   * of one's own. */
+  onOpenProviders?: (providerId?: string) => void;
 }
 
-/** "Set up a server of your own": the custom provider, whose address and
- * model are among today's settings. */
+/** "Set up a server of your own": today's provider settings open with the
+ * custom provider chosen, as under "All providers …", so nothing counts as
+ * set up before its address is entered (sidecar qa 2026-11-26_2250, D, N9).
+ * Onboarding has no such settings: it says where they are. */
 const OwnServer: React.FC<{
   prominent: boolean;
   inert: boolean;
-  onOpenProviders?: () => void;
+  onOpenProviders?: (providerId?: string) => void;
 }> = ({ prominent, inert, onOpenProviders }) => {
   const { t } = useTranslation();
-  const refresh = usePostProcessSetupStore((s) => s.refresh);
-  const choose = async () => {
-    await commands.applyPostProcessChoice({
-      provider_id: "custom",
-      model: null,
-      api_key: null,
-      effort: null,
-    });
-    await refresh();
-    onOpenProviders?.();
-  };
+  if (!onOpenProviders) {
+    return <CardLine tone="quiet">{t(`${KEY}.local.ownServerLater`)}</CardLine>;
+  }
   return (
     <div className="space-y-1">
       <Button
         variant={prominent ? "primary" : "outline"}
         size="md"
         disabled={inert}
-        onClick={() => void choose()}
+        onClick={() => onOpenProviders("custom")}
       >
         {t(`${KEY}.local.ownServer`)}
       </Button>
-      {onOpenProviders && (
-        <CardLine tone="quiet">{t(`${KEY}.local.ownServerHint`)}</CardLine>
-      )}
+      <CardLine tone="quiet">{t(`${KEY}.local.ownServerHint`)}</CardLine>
     </div>
+  );
+};
+
+/** The provider whose sign-in the suggestion `way` offers, if any. */
+export const signInOfWay = (way: Way | null): SignInProvider | null => {
+  switch (way?.kind) {
+    case "openrouter_free":
+    case "openrouter_credit":
+      return "openrouter";
+    case "chatgpt_plan":
+      return "chatgpt";
+    default:
+      return null;
+  }
+};
+
+/**
+ * DanyWhere: a sign-in that the suggestion doesn't offer, started by a
+ * notice's "Sign in again" (sidecar qa 2026-11-26_2250, D, M6): its waiting
+ * with "Open the page again" and "Cancel", or why it failed and "Try
+ * again", for the way it was started for.
+ */
+export const PendingSignIn: React.FC<{ signIn: SignInState }> = ({
+  signIn,
+}) => {
+  const { t } = useTranslation();
+  const chatgpt = signIn.provider === "chatgpt";
+  return (
+    <SetupCard
+      title={t(`${KEY}.signIn.title`, {
+        provider: chatgpt ? "ChatGPT" : "OpenRouter",
+      })}
+    >
+      <SignInButton
+        provider={signIn.provider}
+        intent={signIn.intent}
+        label={t(
+          chatgpt ? `${KEY}.chatgpt.continue` : `${KEY}.openrouter.connect`,
+        )}
+        prominent={true}
+      />
+    </SetupCard>
   );
 };
 
@@ -102,10 +137,19 @@ export const SetupSuggestion: React.FC<SetupSuggestionProps> = ({
               button (Tailwind 4 puts space-y in :where()). */}
           <ul className="list-disc space-y-1 ps-5 text-sm text-ink-3">
             <li className="text-pretty">{t(`${KEY}.openrouter.tipAccount`)}</li>
-            <li className="text-pretty">{t(`${KEY}.openrouter.tipPayment`)}</li>
+            {/* With credit no free model is used, not even before the
+                top-up (sidecar qa 2026-11-26_2250, D, H1). */}
+            <li className="text-pretty">
+              {t(
+                free
+                  ? `${KEY}.openrouter.tipPayment`
+                  : `${KEY}.openrouter.tipPaymentCredit`,
+              )}
+            </li>
           </ul>
           <SignInButton
             provider="openrouter"
+            intent={free ? "free" : "credit"}
             label={t(`${KEY}.openrouter.connect`)}
             prominent={prominent}
             inert={inert}

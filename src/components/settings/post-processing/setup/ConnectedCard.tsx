@@ -1,7 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import type { SetupStatus } from "@/bindings";
+import type { SetupStatus, SignInIntent } from "@/bindings";
 import { Button } from "../../../ui/Button";
 import { DoneMark } from "../../../shared/DoneMark";
 import { failureSentence } from "@/lib/postProcessFailure";
@@ -64,8 +64,9 @@ interface ConnectedCardProps {
   status: SetupStatus;
   /** The provider's name as the provider list has it. */
   providerLabel: string;
-  /** The answer "how should it go on", to nudge a top-up it chose. */
-  wantsCredit: boolean;
+  /** The way the answers chose for OpenRouter (`signInIntentOf`): its free
+   * models also on an account with credit, or only with credit. */
+  intent: SignInIntent | null;
   inert?: boolean;
   /** Settings: today's provider, model and effort, under "Advanced". */
   advanced?: { open: boolean; onToggle: () => void };
@@ -80,7 +81,7 @@ interface ConnectedCardProps {
 export const ConnectedCard: React.FC<ConnectedCardProps> = ({
   status,
   providerLabel,
-  wantsCredit,
+  intent,
   inert = false,
   advanced,
 }) => {
@@ -90,6 +91,7 @@ export const ConnectedCard: React.FC<ConnectedCardProps> = ({
   const disconnect = usePostProcessSetupStore((s) => s.disconnect);
   const openQuestions = usePostProcessSetupStore((s) => s.openQuestions);
   const notToppedUp = usePostProcessSetupStore((s) => s.notToppedUp);
+  const topUpFailure = usePostProcessSetupStore((s) => s.topUpFailure);
   const running = usePostProcessSetupStore(
     (s) => s.sample?.phase === "running",
   );
@@ -99,7 +101,11 @@ export const ConnectedCard: React.FC<ConnectedCardProps> = ({
   );
   const name = way?.kind === "chatgpt_plan" ? "ChatGPT" : providerLabel;
   const awaitsTopUp =
-    way?.kind === "openrouter" && way.free_tier && wantsCredit;
+    way?.kind === "openrouter" && way.free_tier && intent === "credit";
+  // The free way keeps to the free models, also once the account has
+  // credit (D, M1).
+  const freeModels =
+    way?.kind === "openrouter" && (way.free_tier || intent === "free");
 
   const lines: React.ReactNode[] = [];
   let manage: { label: string; url: string } | null = null;
@@ -114,7 +120,7 @@ export const ConnectedCard: React.FC<ConnectedCardProps> = ({
       awaitsTopUp
         ? t(`${KEY}.connected.noCreditYet`)
         : t(
-            way.free_tier
+            freeModels
               ? `${KEY}.connected.freeModels`
               : `${KEY}.connected.withCredit`,
           ),
@@ -140,6 +146,11 @@ export const ConnectedCard: React.FC<ConnectedCardProps> = ({
       manage = { label: t(`${KEY}.connected.manageUsage`), url: pages.usage };
   }
   const canDisconnect = !NOTHING_TO_DISCONNECT.includes(way?.kind ?? "");
+  // A pasted key may predate the setup: removing it takes a second click
+  // (sidecar qa 2026-11-26_2250, D, N14). A sign-in is made again quickly.
+  const removesKey =
+    canDisconnect && way?.kind !== "chatgpt_plan" && way?.kind !== "openrouter";
+  const [confirming, setConfirming] = useState(false);
 
   return (
     <div className="space-y-3">
@@ -153,6 +164,15 @@ export const ConnectedCard: React.FC<ConnectedCardProps> = ({
         {notToppedUp && (
           <CardLine tone="warning">
             {t(`${KEY}.connected.notToppedUp`)}
+          </CardLine>
+        )}
+        {topUpFailure && (
+          <CardLine tone="error">
+            {t(`${KEY}.connected.topUpCheckFailed`)}{" "}
+            {failureSentence(t, topUpFailure, {
+              id: status.provider_id ?? "",
+              label: name,
+            })}
           </CardLine>
         )}
         <div className="flex flex-wrap gap-2">
@@ -188,12 +208,29 @@ export const ConnectedCard: React.FC<ConnectedCardProps> = ({
               variant="danger-ghost"
               size="sm"
               disabled={inert}
-              onClick={() => void disconnect()}
+              onClick={() => {
+                if (removesKey && !confirming) {
+                  setConfirming(true);
+                  return;
+                }
+                setConfirming(false);
+                void disconnect();
+              }}
+              onBlur={() => setConfirming(false)}
             >
-              {t(`${KEY}.connected.disconnect`)}
+              {t(
+                confirming
+                  ? `${KEY}.connected.disconnectConfirm`
+                  : `${KEY}.connected.disconnect`,
+              )}
             </Button>
           )}
         </div>
+        {way?.kind === "openrouter" && (
+          <CardLine tone="quiet">
+            {t(`${KEY}.connected.keyStaysAtOpenRouter`)}
+          </CardLine>
+        )}
         <SampleRun providerLabel={name} />
       </SetupCard>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
