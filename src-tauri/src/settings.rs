@@ -1979,6 +1979,43 @@ pub fn write_settings(app: &AppHandle, settings: AppSettings) {
     store.set("settings", serde_json::to_value(&settings).unwrap());
 }
 
+/// DanyWhere: the lock of [`update_settings`].
+static SETTINGS_CHANGE: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+/// DanyWhere (review of 2026-11-27, N7): reads the settings, changes them
+/// with `change` and writes them, one such change at a time, so that the
+/// writers in the background (OpenRouter's tier, a sign-in's thread, an
+/// expired ChatGPT session) and the setup's commands don't overwrite each
+/// other's change. Returns the settings before and after (for
+/// `profile_effects::apply`); nothing is written when `change` fails.
+pub fn update_settings(
+    app: &AppHandle,
+    change: impl FnOnce(&mut AppSettings) -> Result<(), String>,
+) -> Result<(AppSettings, AppSettings), String> {
+    locked_update(
+        &SETTINGS_CHANGE,
+        || get_settings(app),
+        |settings| write_settings(app, settings),
+        change,
+    )
+}
+
+/// The rule of [`update_settings`] for any store: `read`, `change` and
+/// `write` under `lock`.
+pub fn locked_update<S: Clone>(
+    lock: &std::sync::Mutex<()>,
+    read: impl FnOnce() -> S,
+    write: impl FnOnce(S),
+    change: impl FnOnce(&mut S) -> Result<(), String>,
+) -> Result<(S, S), String> {
+    let _held = lock.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+    let before = read();
+    let mut after = before.clone();
+    change(&mut after)?;
+    write(after.clone());
+    Ok((before, after))
+}
+
 // DanyWhere: unused since the shortcuts follow the profile (`profile_sync`).
 #[allow(dead_code)]
 pub fn get_bindings(app: &AppHandle) -> HashMap<String, ShortcutBinding> {
@@ -3323,5 +3360,58 @@ mod tests {
         ));
         assert!(!linux_self_update_possible(Some(BundleKind::Other), all));
         assert!(!linux_self_update_possible(None, all));
+    }
+
+    /// Review of 2026-11-27, N7: two changes at once (OpenRouter's tier in
+    /// the background, the user in the window) both land.
+    #[test]
+    fn two_changes_of_the_settings_at_once_both_land() {
+        let lock = std::sync::Arc::new(std::sync::Mutex::new(()));
+        let stored = std::sync::Arc::new(std::sync::Mutex::new(Vec::<&str>::new()));
+        let start = std::sync::Arc::new(std::sync::Barrier::new(2));
+        let writers: Vec<_> = ["tier", "user"]
+            .into_iter()
+            .map(|who| {
+                let (lock, stored, start) = (lock.clone(), stored.clone(), start.clone());
+                std::thread::spawn(move || {
+                    start.wait();
+                    locked_update(
+                        &lock,
+                        || {
+                            let read = stored.lock().unwrap().clone();
+                            // Reading and writing the store takes a moment.
+                            std::thread::sleep(std::time::Duration::from_millis(50));
+                            read
+                        },
+                        |changed| *stored.lock().unwrap() = changed,
+                        |changes| {
+                            changes.push(who);
+                            Ok(())
+                        },
+                    )
+                    .expect("changes")
+                })
+            })
+            .collect();
+        for writer in writers {
+            writer.join().unwrap();
+        }
+        let mut landed = stored.lock().unwrap().clone();
+        landed.sort_unstable();
+        assert_eq!(landed, vec!["tier", "user"]);
+    }
+
+    #[test]
+    fn a_change_that_fails_writes_nothing() {
+        let lock = std::sync::Mutex::new(());
+        let written = std::cell::Cell::new(false);
+        let result = locked_update(
+            &lock,
+            || 1,
+            |_| written.set(true),
+            |_| Err("refused".to_string()),
+        );
+        assert_eq!(result, Err("refused".to_string()));
+        assert!(!written.get());
     }
 }

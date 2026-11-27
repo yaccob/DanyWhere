@@ -879,14 +879,17 @@ pub fn set_post_process_setup_answers(
     finished: bool,
     skipped: bool,
 ) -> Result<(), String> {
-    let mut settings = settings::get_settings(&app);
-    settings.post_process_setup = PostProcessSetupState {
-        answers,
-        finished,
-        skipped,
-    };
-    settings::write_settings(&app, settings);
-    Ok(())
+    // One change at a time with the writers in the background (review of
+    // 2026-11-27, N7).
+    settings::update_settings(&app, |settings| {
+        settings.post_process_setup = PostProcessSetupState {
+            answers,
+            finished,
+            skipped,
+        };
+        Ok(())
+    })
+    .map(|_| ())
 }
 
 /// Puts a way's provider, model, key and effort into the defaults and makes
@@ -894,11 +897,9 @@ pub fn set_post_process_setup_answers(
 #[tauri::command]
 #[specta::specta]
 pub fn apply_post_process_choice(app: AppHandle, choice: SetupChoice) -> Result<(), String> {
-    let mut settings = settings::get_settings(&app);
-    let before = settings.clone();
-    apply_setup_choice(&mut settings, &choice)?;
-    settings::write_settings(&app, settings.clone());
-    crate::profile_effects::apply(&app, &before, &settings);
+    let (before, after) =
+        settings::update_settings(&app, |settings| apply_setup_choice(settings, &choice))?;
+    crate::profile_effects::apply(&app, &before, &after);
     // Review of 2026-11-27, N2: a ChatGPT session this way replaced is
     // ended at OpenAI and here.
     crate::post_process_signin::commands::end_left_behind_chatgpt(&app);

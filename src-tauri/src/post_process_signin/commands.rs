@@ -984,17 +984,15 @@ struct TauriHost {
 }
 
 impl TauriHost {
-    /// Changes the settings with `change` and saves them, with the effects
-    /// a changed provider has (`profile_effects`).
+    /// Changes the settings with `change` and saves them, one change at a
+    /// time (`settings::update_settings`), with the effects a changed
+    /// provider has (`profile_effects`).
     fn change_settings(
         &self,
         change: impl FnOnce(&mut AppSettings) -> Result<(), String>,
     ) -> Result<(), String> {
-        let mut settings = crate::settings::get_settings(&self.app);
-        let before = settings.clone();
-        change(&mut settings)?;
-        crate::settings::write_settings(&self.app, settings.clone());
-        crate::profile_effects::apply(&self.app, &before, &settings);
+        let (before, after) = crate::settings::update_settings(&self.app, change)?;
+        crate::profile_effects::apply(&self.app, &before, &after);
         Ok(())
     }
 }
@@ -1009,12 +1007,13 @@ impl SignInHost for TauriHost {
 
     fn chatgpt_identity(&self) -> Result<(Option<String>, String), String> {
         let vault = vault::for_app(&self.app)?;
-        let mut settings = crate::settings::get_settings(&self.app);
-        let (client_id, host_id, made) = chatgpt_identity_from(vault, &mut settings)?;
-        if made {
-            crate::settings::write_settings(&self.app, settings);
-        }
-        Ok((client_id, host_id))
+        let mut identity = None;
+        crate::settings::update_settings(&self.app, |settings| {
+            let (client_id, host_id, _made) = chatgpt_identity_from(vault, settings)?;
+            identity = Some((client_id, host_id));
+            Ok(())
+        })?;
+        identity.ok_or_else(|| "No ChatGPT identity".to_string())
     }
 
     fn save_chatgpt_client_id(&self, client_id: &str) -> Result<(), String> {
@@ -1070,10 +1069,10 @@ impl SessionStore for AppSessionStore {
 
     fn expire(&self) {
         let ended = vault::for_app(&self.app).and_then(|vault| {
-            let mut settings = crate::settings::get_settings(&self.app);
-            end_chatgpt_sign_in(vault, &mut settings)?;
-            crate::settings::write_settings(&self.app, settings);
-            Ok(())
+            crate::settings::update_settings(&self.app, |settings| {
+                end_chatgpt_sign_in(vault, settings)
+            })
+            .map(|_| ())
         });
         if let Err(error) = ended {
             log::error!("Cannot end the expired ChatGPT sign-in: {error}");
