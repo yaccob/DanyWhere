@@ -46,4 +46,5 @@ export const LANGUAGE_METADATA: Record<
     nativeName: "Bahasa Indonesia",
     priority: 26,
   },
+  sl: { name: "Slovenian", nativeName: "Slovenščina", priority: 27 },
 };

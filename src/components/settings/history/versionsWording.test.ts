@@ -39,6 +39,7 @@ const NEWEST: Record<string, RegExp> = {
   pl: /najnowsz/iu,
   pt: /mais recente|mais nov/iu,
   ru: /новейш|сам\p{L}* нов/iu,
+  sl: /najnovejš|zadnj\p{L}* različic/iu,
   sv: /nyaste|senaste/iu,
   tr: /(?<!\p{L})en yeni|(?<!\p{L})en son(?!\p{L})/iu,
   uk: /найнов/iu,

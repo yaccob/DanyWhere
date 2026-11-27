@@ -192,7 +192,7 @@ const cases: Array<[string, () => void]> = [
     () => {
       const dir = new URL("../i18n/locales/", import.meta.url);
       const locales = readdirSync(dir);
-      assert.equal(locales.length, 26);
+      assert.equal(locales.length, 27);
       for (const locale of locales) {
         const tree = JSON.parse(
           readFileSync(new URL(`${locale}/translation.json`, dir), "utf8"),
