@@ -395,6 +395,8 @@ Each profile has its own prompt list with one prompt selected, as the post-proce
 
 **Open:** what this means for the other themes. Claude's note: Marimba and Pop already have a sound on B4 (today's stop) and one on E5 (today's done), so each needs only a new sound on G♯5; whether Pop's two pops, today its done sound, suit the end of a recording has to be heard. Custom has no instruction sound: an optional `custom_instruction.wav`, and what plays without one (nothing, or Marimba's). The done sound and the waiting sound are one file per theme today; whether the waiting sound moves to G♯5 as well is open too. The pitch tests (`assert_rising`) would check four steps instead of three.
 
+**Decided (user, 2026-11-27, about 22:00): the sounds are on out of the box.** Today `audio_feedback` is off in a new installation, so a newcomer hears none of these sounds unless they switch them on; the user: "Töne ab Werk an auf alle Fälle". The new introduction video plays them and explains them in one sentence ("Kurze Töne sagen dir, was gerade passiert: wenn DanyWhere zuhört, wenn die Aufnahme endet und wenn dein Text da ist."), so the app has to ship with them on before that video is published. Existing installations keep their own choice.
+
 ### Settings: drop the "Experimental Features" switch
 
 **Question (user, 2026-11-15):** DanyWhere uses Handy's switch for nothing of its own; it only shows six Handy settings (keyboard implementation, acceleration, lazy stream close, AirPods mode, VAD backend, language detection). Proposed: remove the switch and move the six to the hidden Debug page (⌘⇧D), next to similar technical settings.
