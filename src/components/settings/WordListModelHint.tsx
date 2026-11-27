@@ -92,8 +92,12 @@ const WordListModelActions: React.FC<{ offerSetUp: boolean }> = ({
       await updateSetting("post_process_mode", "with_instruction_key");
     }
     // DanyWhere: the defaults' page opens on the setup's questions, also
-    // when it was put off with "Later" (qa 2026-11-26_2250, 4.5).
-    usePostProcessSetupStore.getState().openQuestions();
+    // when it was put off with "Later" (qa 2026-11-26_2250, 4.5). A
+    // profile's page has no setup, so they aren't left open for the
+    // defaults' (D, N15).
+    if (scope.kind === "defaults") {
+      usePostProcessSetupStore.getState().openQuestions();
+    }
     openLocation(scopePage(scope, "postprocessing"));
   };
 

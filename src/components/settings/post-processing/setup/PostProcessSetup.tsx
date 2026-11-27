@@ -42,6 +42,9 @@ export interface PostProcessSetupProps {
   onOpenProviders?: (providerId?: string) => void;
 }
 
+/** How many setups on the page "Post Process" are mounted. */
+let settingsPagesShown = 0;
+
 /**
  * DanyWhere: setting up post-processing with questions anyone can answer
  * (sidecar qa 2026-11-26_1840 and 2026-11-26_2250, 4.5). Until a way works,
@@ -71,6 +74,22 @@ export const PostProcessSetup: React.FC<PostProcessSetupProps> = ({
   useEffect(() => {
     if (settingsLoaded) hydrate(kept ?? {});
   }, [settingsLoaded, kept, hydrate]);
+
+  // Leaving the page closes questions opened again, as "Keep the current
+  // setup" does, so the next visit shows the way in use (sidecar qa
+  // 2026-11-26_2250, D, N15). Checked a turn later, after StrictMode's
+  // second mount.
+  useEffect(() => {
+    if (place !== "settings") return;
+    settingsPagesShown += 1;
+    return () => {
+      settingsPagesShown -= 1;
+      setTimeout(() => {
+        const setup = usePostProcessSetupStore.getState();
+        if (settingsPagesShown === 0 && setup.editing) setup.closeQuestions();
+      }, 0);
+    };
+  }, [place]);
 
   const status = store.status;
   const machine: Machine = {

@@ -984,6 +984,26 @@ describe("post-processing setup: connected", () => {
     expect(visibleText()).toContain("Connected to OpenRouter");
   });
 
+  // Questions opened again and left without an answer don't stay open for
+  // the next visit (D, N15).
+  test("leaving the page closes the questions opened again", async () => {
+    await renderSetup(ready(), {
+      texts_may_go: "free_services",
+      subscription: "none",
+    });
+    await press(button("Answer the questions again")!);
+    expect(visibleText()).toContain(Q1);
+
+    cleanup();
+    await settle();
+    await renderSetup(ready(), {
+      texts_may_go: "free_services",
+      subscription: "none",
+    });
+    expect(visibleText()).toContain("Connected to OpenRouter");
+    expect(visibleText()).not.toContain(Q1);
+  });
+
   // The answers describe the way in use, so keeping it takes back what was
   // answered meanwhile (D, M6).
   test("Keep the current setup takes back the answers given meanwhile", async () => {
