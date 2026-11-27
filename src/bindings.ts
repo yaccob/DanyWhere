@@ -1762,8 +1762,8 @@ async openThemeFile() : Promise<Result<null, string>> {
 }
 },
 /**
- * Opens the sound file in the system's default app for TOML files, writing
- * it first if it is missing (Debug page).
+ * Opens the sound file in the system's default app for it, writing it
+ * first if it is missing (Debug page).
  */
 async openSoundFile() : Promise<Result<null, string>> {
     try {
