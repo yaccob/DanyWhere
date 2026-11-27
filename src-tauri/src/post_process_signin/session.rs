@@ -24,6 +24,9 @@ pub trait SessionStore: Send + Sync {
     /// The refresh token is dead: forgets the tokens, keeps the client id
     /// and the host id.
     fn expire(&self);
+    /// The client itself is gone (`invalid_client`): forgets the client id
+    /// too, so the next sign-in registers anew (review of 2026-11-27, M3).
+    fn forget_client(&self) {}
 }
 
 /// The one lock around reading, refreshing and saving the session; signing
@@ -77,7 +80,12 @@ async fn refresh_held(
         Err(ChatGptError::SignInExpired(code)) => {
             log::warn!("The ChatGPT sign-in has expired ({code}); it has to be renewed");
             store.expire();
-            Err(ChatGptError::SignInExpired(code).to_string())
+            let expired = ChatGptError::SignInExpired(code);
+            if chatgpt::names_dead_client(&expired) {
+                // The next sign-in registers anew (review of 2026-11-27, M3).
+                store.forget_client();
+            }
+            Err(expired.to_string())
         }
         Err(error) => {
             log::warn!("Refreshing the ChatGPT sign-in failed: {error}");
@@ -188,6 +196,7 @@ mod tests {
         session: Mutex<Option<ChatGptSession>>,
         saved: AtomicUsize,
         expired: AtomicBool,
+        forgot_client: AtomicBool,
     }
 
     impl FakeStore {
@@ -212,6 +221,42 @@ mod tests {
             self.expired.store(true, Ordering::SeqCst);
             *self.session.lock().unwrap() = None;
         }
+        fn forget_client(&self) {
+            self.forgot_client.store(true, Ordering::SeqCst);
+        }
+    }
+
+    /// Review of 2026-11-27, M3: after `invalid_client` the client id goes
+    /// with the tokens, so the next sign-in registers anew.
+    #[tokio::test]
+    async fn a_dead_client_is_forgotten_with_the_tokens() {
+        let (url, _requests) = token_endpoint(
+            "401 Unauthorized",
+            json!({"error": "invalid_client"}).to_string(),
+        )
+        .await;
+        let store = FakeStore::with(session(NOW - 10));
+        let error = fresh_session(&store, &client(), &url, NOW)
+            .await
+            .expect_err("expired");
+        assert!(error.starts_with("sign-in-expired: "), "{error}");
+        assert!(store.expired.load(Ordering::SeqCst));
+        assert!(store.forgot_client.load(Ordering::SeqCst));
+    }
+
+    #[tokio::test]
+    async fn a_dead_refresh_token_keeps_the_client() {
+        let (url, _requests) = token_endpoint(
+            "400 Bad Request",
+            json!({"error": "invalid_grant"}).to_string(),
+        )
+        .await;
+        let store = FakeStore::with(session(NOW - 10));
+        fresh_session(&store, &client(), &url, NOW)
+            .await
+            .expect_err("expired");
+        assert!(store.expired.load(Ordering::SeqCst));
+        assert!(!store.forgot_client.load(Ordering::SeqCst));
     }
 
     /// A token endpoint that answers every request with `status` and

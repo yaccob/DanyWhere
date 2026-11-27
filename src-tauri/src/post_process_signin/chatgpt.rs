@@ -236,9 +236,8 @@ pub fn new_host_id() -> Result<String, String> {
 }
 
 /// Exchanges the callback's code for a session. The issued client id is the
-/// callback's (a first registration must bring one), else the flow's saved
-/// one; a callback naming another client than the saved one is refused
-/// before the code is spent.
+/// callback's (a first registration must bring one, a new registration for
+/// a dead client brings a new one), else the flow's saved one.
 pub async fn exchange_code(
     client: &reqwest::Client,
     token_url: &str,
@@ -475,15 +474,30 @@ pub async fn list_models(
 
 // --- helpers -------------------------------------------------------------------
 
+/// Whether `error` says the client itself is gone (`invalid_client`, from a
+/// refresh or the code's exchange), so the saved client id must go and the
+/// next sign-in registers anew (review of 2026-11-27, M3).
+pub fn names_dead_client(error: &ChatGptError) -> bool {
+    const DEAD_CLIENT: &str = "invalid_client";
+    match error {
+        ChatGptError::SignInExpired(code) => code == DEAD_CLIENT,
+        ChatGptError::Http(text) => text
+            .strip_prefix(crate::llm_client::STATUS_ERROR_PREFIX)
+            .and_then(|answer| answer.split_once(": "))
+            .and_then(|(_, body)| error_code(body))
+            .is_some_and(|code| code == DEAD_CLIENT),
+        _ => false,
+    }
+}
+
 /// The client id to exchange the code with ("Registration and sign-in",
-/// step 3).
+/// step 3). One the callback names wins over the saved one: OpenAI issued
+/// it anew for a saved client it no longer knows (review of 2026-11-27,
+/// M3); the ID token must name it as its audience all the same.
 fn issued_client<'a>(flow: &'a ChatGptFlow, code: &'a SignInCode) -> Result<&'a str, ChatGptError> {
     match (flow.saved_client(), code.client_id.as_deref()) {
         (_, Some(id)) if id.is_empty() || id == DYNAMIC_CLIENT => Err(ChatGptError::Invalid(
             "the callback named no issued client id".into(),
-        )),
-        (Some(saved), Some(id)) if id != saved => Err(ChatGptError::Invalid(
-            "the callback named another client than the saved one".into(),
         )),
         (_, Some(id)) => Ok(id),
         (Some(saved), None) => Ok(saved),
@@ -1176,21 +1190,44 @@ mod tests {
         }
     }
 
+    /// Review of 2026-11-27, M3: OpenAI issued a new client for a saved one
+    /// it no longer knows; the new one is the one to use from now on.
     #[tokio::test]
-    async fn a_callback_naming_another_client_is_rejected() {
-        let (base, seen) = serve(Vec::new()).await;
-        let result = exchange_code(
+    async fn a_callback_naming_a_newly_issued_client_takes_it() {
+        let answer = token_answer(Some(jwt(&claims("oaiapp_other"))), Some(FULL_SCOPE));
+        let (base, seen) = serve(vec![("200 OK", answer)]).await;
+        let session = exchange_code(
             &client(),
             &base,
             &flow(Some("oaiapp_saved")),
             &code(Some("oaiapp_other")),
         )
-        .await;
-        assert!(
-            matches!(result, Err(ChatGptError::Invalid(_))),
-            "{result:?}"
-        );
-        assert!(seen.lock().unwrap().is_empty());
+        .await
+        .expect("a session");
+        assert_eq!(session.client_id, "oaiapp_other");
+        let sent = seen.lock().unwrap()[0].clone();
+        assert_eq!(get(&form(&sent.body), "client_id"), Some("oaiapp_other"));
+    }
+
+    /// Review of 2026-11-27, M3: whether an error says the client itself is
+    /// gone, so the next sign-in registers anew.
+    #[test]
+    fn a_dead_client_is_told_from_a_dead_refresh_token() {
+        assert!(names_dead_client(
+            &ChatGptError::SignInExpired("invalid_client".to_string())
+        ));
+        assert!(names_dead_client(&ChatGptError::Http(status_error(
+            reqwest::StatusCode::UNAUTHORIZED,
+            r#"{"error":"invalid_client","error_description":"Unknown client"}"#
+        ))));
+        assert!(!names_dead_client(
+            &ChatGptError::SignInExpired("invalid_grant".to_string())
+        ));
+        assert!(!names_dead_client(&ChatGptError::Http(status_error(
+            reqwest::StatusCode::BAD_REQUEST,
+            r#"{"error":"invalid_grant"}"#
+        ))));
+        assert!(!names_dead_client(&ChatGptError::NotEligible));
     }
 
     #[tokio::test]

@@ -174,6 +174,9 @@ pub trait SignInHost: Send + Sync + 'static {
     /// the code is exchanged (the registration stands even if the exchange
     /// fails).
     fn save_chatgpt_client_id(&self, client_id: &str) -> Result<(), String>;
+    /// ChatGPT: forgets the saved client id once OpenAI no longer knows it
+    /// (`invalid_client`), so the next sign-in registers anew.
+    fn forget_chatgpt_client_id(&self) -> Result<(), String>;
     /// ChatGPT: stores the session and sets the plan up for post-processing.
     fn store_chatgpt(&self, session: ChatGptSession) -> Result<(), String>;
     /// OpenRouter: stores the key and what it reaches and sets OpenRouter up
@@ -301,7 +304,12 @@ impl SignIns {
                 let event = match pending.wait(timeout, &cancel) {
                     // Replaced by a newer sign-in, which reports for itself.
                     Err(SignInError::Cancelled) if !inner.is_current(id) => return,
-                    Err(error) => failed(provider, wait_failure(provider, &error)),
+                    Err(error) => {
+                        if provider == SignInProvider::Chatgpt && refuses_the_client(&error) {
+                            forget_dead_client(host.as_ref());
+                        }
+                        failed(provider, wait_failure(provider, &error))
+                    }
                     Ok(code) => tauri::async_runtime::block_on(complete(
                         flow,
                         code,
@@ -379,6 +387,22 @@ fn wait_failure(provider: SignInProvider, error: &SignInError) -> SignInFailure 
             );
             SignInFailure::Failed
         }
+    }
+}
+
+/// Whether the browser's refusal says the client itself is unknown
+/// (`error=invalid_client`; review of 2026-11-27, M3).
+fn refuses_the_client(error: &SignInError) -> bool {
+    matches!(error, SignInError::Denied(reason)
+        if reason.split(':').next().map(str::trim) == Some("invalid_client"))
+}
+
+/// ChatGPT no longer knows the saved client: the next sign-in registers
+/// anew.
+fn forget_dead_client(host: &dyn SignInHost) {
+    log::warn!("ChatGPT no longer knows DanyWhere's client id; the next sign-in registers anew");
+    if let Err(error) = host.forget_chatgpt_client_id() {
+        log::error!("Cannot forget ChatGPT's dead client id: {error}");
     }
 }
 
@@ -479,8 +503,9 @@ async fn complete_openrouter(
     Ok(free_tier)
 }
 
-/// ChatGPT: saves a newly issued client id first, then the session for the
-/// code.
+/// ChatGPT: saves a newly issued client id first (a first registration, or
+/// a new one for a saved client OpenAI no longer knows), then the session
+/// for the code. A client the exchange refuses as unknown is forgotten.
 async fn complete_chatgpt(
     flow: &ChatGptFlow,
     code: &SignInCode,
@@ -488,9 +513,9 @@ async fn complete_chatgpt(
     endpoints: &Endpoints,
 ) -> Result<(), Failed> {
     let usable = |id: &&str| !id.is_empty() && *id != chatgpt::DYNAMIC_CLIENT;
-    let registered_before = flow.client_id.as_deref().filter(usable).is_some();
+    let saved = flow.client_id.as_deref().filter(usable);
     if let Some(issued) = code.client_id.as_deref().filter(usable) {
-        if !registered_before {
+        if saved != Some(issued) {
             if let Err(error) = host.save_chatgpt_client_id(issued) {
                 log::error!("Cannot save ChatGPT's issued client id: {error}");
             }
@@ -499,13 +524,18 @@ async fn complete_chatgpt(
     let client = token_client()?;
     let session = chatgpt::exchange_code(&client, &endpoints.chatgpt_token_url, flow, code)
         .await
-        .map_err(|error| match error {
-            ChatGptError::NotEligible => Failed::code(SignInFailure::NotEligible),
-            ChatGptError::Http(text) => Failed::from(text),
-            other => Failed {
-                code: SignInFailure::Failed,
-                error: other.to_string(),
-            },
+        .map_err(|error| {
+            if chatgpt::names_dead_client(&error) {
+                forget_dead_client(host);
+            }
+            match error {
+                ChatGptError::NotEligible => Failed::code(SignInFailure::NotEligible),
+                ChatGptError::Http(text) => Failed::from(text),
+                other => Failed {
+                    code: SignInFailure::Failed,
+                    error: other.to_string(),
+                },
+            }
         })?;
     Ok(host.store_chatgpt(session)?)
 }
@@ -785,6 +815,12 @@ pub fn chatgpt_identity_from(
     Ok((client_id, host_id, true))
 }
 
+/// OpenAI no longer knows the saved client id (`invalid_client`): it goes,
+/// so the next sign-in registers anew (review of 2026-11-27, M3).
+pub fn forget_chatgpt_client(vault: &Vault) -> Result<(), String> {
+    vault.update(|secrets| secrets.chatgpt_client_id = None)
+}
+
 /// The ChatGPT sign-in ended (dead refresh token, or signed out): the
 /// tokens go, the client id and the host id stay.
 pub fn end_chatgpt_sign_in(vault: &Vault, settings: &mut AppSettings) -> Result<(), String> {
@@ -986,6 +1022,10 @@ impl SignInHost for TauriHost {
             .update(|secrets| secrets.chatgpt_client_id = Some(client_id.to_string()))
     }
 
+    fn forget_chatgpt_client_id(&self) -> Result<(), String> {
+        forget_chatgpt_client(vault::for_app(&self.app)?)
+    }
+
     fn store_chatgpt(&self, session: ChatGptSession) -> Result<(), String> {
         let vault = vault::for_app(&self.app)?;
         self.change_settings(|settings| store_chatgpt_sign_in(vault, settings, &session))
@@ -1037,6 +1077,13 @@ impl SessionStore for AppSessionStore {
         });
         if let Err(error) = ended {
             log::error!("Cannot end the expired ChatGPT sign-in: {error}");
+        }
+    }
+
+    fn forget_client(&self) {
+        let forgotten = vault::for_app(&self.app).and_then(forget_chatgpt_client);
+        if let Err(error) = forgotten {
+            log::error!("Cannot forget ChatGPT's dead client id: {error}");
         }
     }
 }
@@ -1267,6 +1314,12 @@ mod tests {
                 .unwrap()
                 .push(client_id.to_string());
             *self.client_id.lock().unwrap() = Some(client_id.to_string());
+            Ok(())
+        }
+
+        fn forget_chatgpt_client_id(&self) -> Result<(), String> {
+            self.calls.lock().unwrap().push("forget_client");
+            *self.client_id.lock().unwrap() = None;
             Ok(())
         }
 
@@ -1904,6 +1957,109 @@ mod tests {
         assert!(!event.ok);
         assert_eq!(event.error, Some(SignInFailure::NotEligible));
         assert!(host.chatgpt.lock().unwrap().is_none());
+    }
+
+    // --- review of 2026-11-27, M3: a client OpenAI no longer knows ------------
+
+    /// Starts a ChatGPT sign-in with `saved` as the saved client against
+    /// `base`, calls back with `params` and returns how it ended.
+    async fn chatgpt_sign_in_with(
+        saved: Option<&str>,
+        nonce: Option<Arc<Mutex<String>>>,
+        base: &str,
+        params: &[(&str, &str)],
+    ) -> (Arc<FakeHost>, PostProcessSignInFinished) {
+        let (host, mut events) = fake_host(saved, false);
+        let sign_ins = SignIns::default();
+        let auth_url = sign_ins
+            .start(
+                SignInProvider::Chatgpt,
+                page(),
+                None,
+                host.clone(),
+                endpoints(base, base),
+                WAIT,
+            )
+            .unwrap();
+        if let Some(nonce) = nonce {
+            *nonce.lock().unwrap() = query_of(&auth_url)["nonce"].clone();
+        }
+        play_browser(&auth_url, "redirect_uri", params).await.unwrap();
+        let event = next_event(&mut events).await;
+        (host, event)
+    }
+
+    #[tokio::test]
+    async fn a_new_registration_for_a_dead_client_is_taken_and_saved() {
+        let nonce = Arc::new(Mutex::new(String::new()));
+        let (base, seen) = serve(chatgpt_handler(nonce.clone(), PLAN_SCOPES)).await;
+        let (host, event) = chatgpt_sign_in_with(
+            Some(ISSUED),
+            Some(nonce),
+            &base,
+            &[("code", "c"), ("client_id", "oaiapp_issued_anew")],
+        )
+        .await;
+        assert!(event.ok, "{event:?}");
+        assert_eq!(
+            *host.saved_client_ids.lock().unwrap(),
+            vec!["oaiapp_issued_anew"]
+        );
+        let session = host.chatgpt.lock().unwrap().clone().expect("stored");
+        assert_eq!(session.client_id, "oaiapp_issued_anew");
+        let form = query_of(&format!("http://x/?{}", seen.lock().unwrap()[0].body));
+        assert_eq!(form["client_id"], "oaiapp_issued_anew");
+    }
+
+    #[tokio::test]
+    async fn a_client_refused_in_the_browser_is_forgotten() {
+        let (base, _seen) = serve(failing_handler("500 Internal Server Error")).await;
+        let (host, event) = chatgpt_sign_in_with(
+            Some(ISSUED),
+            None,
+            &base,
+            &[
+                ("error", "invalid_client"),
+                ("error_description", "Unknown client"),
+            ],
+        )
+        .await;
+        assert_eq!(event.error, Some(SignInFailure::Denied));
+        assert!(
+            host.calls.lock().unwrap().contains(&"forget_client"),
+            "{:?}",
+            host.calls.lock().unwrap()
+        );
+        assert_eq!(*host.client_id.lock().unwrap(), None);
+    }
+
+    #[tokio::test]
+    async fn a_client_the_exchange_refuses_is_forgotten() {
+        let refused = json!({"error": "invalid_client"}).to_string();
+        let (base, _seen) =
+            serve(Arc::new(move |_| ("401 Unauthorized".to_string(), refused.clone()))).await;
+        let (host, event) =
+            chatgpt_sign_in_with(Some(ISSUED), None, &base, &[("code", "c")]).await;
+        assert_eq!(event.error, Some(SignInFailure::Refused));
+        assert!(host.calls.lock().unwrap().contains(&"forget_client"));
+        // Another refusal keeps it.
+        let (base, _seen) = serve(failing_handler("500 Internal Server Error")).await;
+        let (host, _event) =
+            chatgpt_sign_in_with(Some(ISSUED), None, &base, &[("code", "c")]).await;
+        assert!(!host.calls.lock().unwrap().contains(&"forget_client"));
+    }
+
+    #[test]
+    fn a_forgotten_client_makes_the_next_sign_in_register_anew() {
+        let dir = tempfile::tempdir().unwrap();
+        let vault = Vault::new(dir.path().join(vault::FILE_NAME));
+        let mut settings = new_install();
+        store_chatgpt_sign_in(&vault, &mut settings, &chatgpt_session()).unwrap();
+        let (client, _, _) = chatgpt_identity_from(&vault, &mut settings).unwrap();
+        assert_eq!(client.as_deref(), Some(ISSUED));
+        forget_chatgpt_client(&vault).expect("forgets");
+        let (client, _, _) = chatgpt_identity_from(&vault, &mut settings).unwrap();
+        assert_eq!(client, None, "a first registration again");
     }
 
     #[tokio::test]
