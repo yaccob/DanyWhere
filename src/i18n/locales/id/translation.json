@@ -1246,6 +1246,11 @@
         "description": "Buka theme.css, yang mengubah warna dan gaya lain aplikasi. Perubahan yang disimpan tampil dalam beberapa detik, tanpa memulai ulang. Jika berkas telah dihapus, berkas dibuat lagi.",
         "button": "Buka Berkas Tema"
       },
+      "soundFile": {
+        "title": "Berkas Suara",
+        "description": "Buka sounds.toml, yang menentukan berkas dan nada setiap suara per tema suara dan peristiwa. Perubahan yang disimpan berlaku mulai suara berikutnya, tanpa memulai ulang. Jika berkas telah dihapus, berkas dibuat lagi.",
+        "button": "Buka Berkas Suara"
+      },
       "onboardingPreview": {
         "title": "Pratinjau Penyiapan Awal",
         "description": "Pratinjau layar penyiapan awal tanpa mengubah izin, model, atau status penyelesaian",
@@ -1274,7 +1279,7 @@
       "soundTheme": {
         "label": "Tema Suara",
         "description": "Pilih tema suara untuk umpan balik saat perekaman dimulai dan dihentikan",
-        "preview": "Dengarkan tema suara (memutar mulai, berhenti, lalu suara yang mengakhiri dikte)",
+        "preview": "Dengarkan tema suara (memutar mulai, instruksi, berhenti, lalu suara yang mengakhiri dikte)",
         "custom": "Kustom"
       },
       "historyLimit": {

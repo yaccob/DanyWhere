@@ -1246,6 +1246,11 @@
         "description": "Otwiera theme.css, który zmienia kolory i inne style aplikacji. Zapisane zmiany widać po kilku sekundach, bez ponownego uruchamiania. Jeśli plik został usunięty, zostanie utworzony ponownie.",
         "button": "Otwórz plik motywu"
       },
+      "soundFile": {
+        "title": "Plik dźwięków",
+        "description": "Otwiera sounds.toml, który dla każdego motywu dźwiękowego i zdarzenia określa plik i wysokość każdego dźwięku. Zapisane zmiany obowiązują od następnego dźwięku, bez ponownego uruchamiania. Jeśli plik został usunięty, zostanie utworzony ponownie.",
+        "button": "Otwórz plik dźwięków"
+      },
       "onboardingPreview": {
         "title": "Podgląd konfiguracji początkowej",
         "description": "Wyświetl ekrany konfiguracji początkowej bez zmiany uprawnień, modeli ani stanu ukończenia",
@@ -1274,7 +1279,7 @@
       "soundTheme": {
         "label": "Motyw dźwiękowy",
         "description": "Wybierz motyw dźwiękowy dla informacji o rozpoczęciu i zakończeniu nagrywania",
-        "preview": "Odsłuchaj motyw dźwiękowy (start, stop, a potem dźwięk kończący dyktowanie)",
+        "preview": "Odsłuchaj motyw dźwiękowy (start, instrukcja, stop, a potem dźwięk kończący dyktowanie)",
         "custom": "Własny"
       },
       "historyLimit": {

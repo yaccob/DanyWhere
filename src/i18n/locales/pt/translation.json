@@ -1246,6 +1246,11 @@
         "description": "Abre theme.css, que muda as cores e outros estilos do aplicativo. As alterações salvas aparecem em poucos segundos, sem reiniciar. Se o arquivo foi excluído, ele é criado de novo.",
         "button": "Abrir arquivo de tema"
       },
+      "soundFile": {
+        "title": "Arquivo de sons",
+        "description": "Abre sounds.toml, que define o arquivo e o tom de cada som por tema de som e evento. As alterações salvas valem a partir do próximo som, sem reiniciar. Se o arquivo foi excluído, ele é criado de novo.",
+        "button": "Abrir arquivo de sons"
+      },
       "onboardingPreview": {
         "title": "Pré-visualizar configuração inicial",
         "description": "Pré-visualize os ecrãs de configuração sem alterar permissões, modelos ou o estado de conclusão",
@@ -1274,7 +1279,7 @@
       "soundTheme": {
         "label": "Tema de Som",
         "description": "Escolha um tema de som para feedback de início e parada de gravação",
-        "preview": "Ouvir o tema de som (toca o início, a parada e depois o som que encerra um ditado)",
+        "preview": "Ouvir o tema de som (toca o início, a instrução, a parada e depois o som que encerra um ditado)",
         "custom": "Personalizado"
       },
       "historyLimit": {

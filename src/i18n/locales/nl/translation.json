@@ -1246,6 +1246,11 @@
         "description": "Opent theme.css, waarmee je de kleuren en andere stijlen van de app wijzigt. Opgeslagen wijzigingen zijn binnen enkele seconden zichtbaar, zonder herstart. Is het bestand verwijderd, dan wordt het opnieuw aangemaakt.",
         "button": "Themabestand openen"
       },
+      "soundFile": {
+        "title": "Geluidenbestand",
+        "description": "Opent sounds.toml, waarmee je per geluidsthema en gebeurtenis het bestand en de toonhoogte van elk geluid instelt. Opgeslagen wijzigingen gelden vanaf het volgende geluid, zonder herstart. Is het bestand verwijderd, dan wordt het opnieuw aangemaakt.",
+        "button": "Geluidenbestand openen"
+      },
       "onboardingPreview": {
         "title": "Voorbeeld van onboarding",
         "description": "Bekijk de onboardingschermen zonder machtigingen, modellen of de voltooiingsstatus te wijzigen",
@@ -1274,7 +1279,7 @@
       "soundTheme": {
         "label": "Geluidsthema",
         "description": "Kies een geluidsthema voor feedback bij het starten en stoppen van opnames",
-        "preview": "Geluidsthema beluisteren (speelt start, stop en dan het geluid dat een dictaat beëindigt)",
+        "preview": "Geluidsthema beluisteren (speelt start, instructie, stop en dan het geluid dat een dictaat beëindigt)",
         "custom": "Aangepast"
       },
       "historyLimit": {
