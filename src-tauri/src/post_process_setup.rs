@@ -879,6 +879,9 @@ pub fn apply_post_process_choice(app: AppHandle, choice: SetupChoice) -> Result<
     apply_setup_choice(&mut settings, &choice)?;
     settings::write_settings(&app, settings.clone());
     crate::profile_effects::apply(&app, &before, &settings);
+    // Review of 2026-11-27, N2: a ChatGPT session this way replaced is
+    // ended at OpenAI and here.
+    crate::post_process_signin::commands::end_left_behind_chatgpt(&app);
     Ok(())
 }
 

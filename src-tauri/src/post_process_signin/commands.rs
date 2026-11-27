@@ -537,37 +537,132 @@ pub fn short_token_client(timeout: Duration) -> Result<reqwest::Client, String> 
 /// ChatGPT (the discovery document, then the revocation).
 pub const REVOKE_TIMEOUT: Duration = Duration::from_secs(4);
 
+/// How signing out went (OpenAI's "Errors and recovery": the user learns
+/// when the end of the session was not confirmed).
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Type)]
+pub struct DisconnectOutcome {
+    /// ChatGPT: whether OpenAI confirmed the end of the renewable session;
+    /// `None` when there was nothing to end (OpenRouter, or no session
+    /// stored). `Some(false)`: ended here only, the user may disconnect
+    /// DanyWhere in ChatGPT's settings.
+    pub revoke_confirmed: Option<bool>,
+}
+
 /// Signing out of ChatGPT: ends the stored session's renewable session at
 /// OpenAI first ("Accounts and sessions", "End the renewable session"; best
 /// effort, each request within `timeout`), through the `revocation_endpoint`
 /// of the discovery document at `discovery_url`. Returns whether OpenAI
 /// confirmed it; without a stored session nothing is sent. The caller then
 /// forgets the tokens here ([`end_chatgpt_sign_in`]) either way.
-pub async fn revoke_chatgpt_session(vault: &Vault, discovery_url: &str, timeout: Duration) -> bool {
+pub async fn revoke_chatgpt_session(
+    vault: &Vault,
+    discovery_url: &str,
+    timeout: Duration,
+) -> Option<bool> {
     let Some(session) = vault.load().chatgpt() else {
-        return false;
+        return None;
     };
     let client = match short_token_client(timeout) {
         Ok(client) => client,
         Err(error) => {
             log::warn!("Cannot end the ChatGPT sign-in at OpenAI: {error}");
-            return false;
+            return Some(false);
         }
     };
     match chatgpt::revoke(&client, discovery_url, &session).await {
         Ok(()) => {
             log::info!("OpenAI ended the ChatGPT sign-in's renewable session");
-            true
+            Some(true)
         }
         Err(error) => {
             // "Errors and recovery": clear the tokens here all the same; the
             // user can disconnect DanyWhere in ChatGPT's settings.
             log::warn!(
-                "OpenAI did not confirm the end of the ChatGPT sign-in ({error}); it ends here only"
+                "OpenAI did not confirm the end of the ChatGPT sign-in ({}); it ends here only",
+                redact_secrets(&error)
             );
-            false
+            Some(false)
         }
     }
+}
+
+/// Signs out of ChatGPT: [`revoke_chatgpt_session`], then `end` forgets the
+/// session here ([`end_chatgpt_sign_in`]). Both under the refresh's lock
+/// (review of 2026-11-27, N2): a refresh in progress ends first and its new
+/// token is the one revoked, and none saves a session afterwards.
+pub async fn sign_out_chatgpt(
+    vault: &Vault,
+    discovery_url: &str,
+    timeout: Duration,
+    end: impl FnOnce() -> Result<(), String>,
+) -> Result<DisconnectOutcome, String> {
+    let _held = super::session::refresh_lock().lock().await;
+    sign_out_chatgpt_held(vault, discovery_url, timeout, end).await
+}
+
+/// [`sign_out_chatgpt`] for a caller that holds the refresh's lock.
+async fn sign_out_chatgpt_held(
+    vault: &Vault,
+    discovery_url: &str,
+    timeout: Duration,
+    end: impl FnOnce() -> Result<(), String>,
+) -> Result<DisconnectOutcome, String> {
+    let revoke_confirmed = revoke_chatgpt_session(vault, discovery_url, timeout).await;
+    end()?;
+    Ok(DisconnectOutcome { revoke_confirmed })
+}
+
+/// Whether `settings` post-process through ChatGPT's plan anywhere: the
+/// values in use, the defaults or a profile.
+fn chatgpt_in_use(settings: &AppSettings) -> bool {
+    settings.post_process_provider_id == CHATGPT_PROVIDER_ID
+        || crate::profiles::default_values(settings).post_process_provider_id
+            == CHATGPT_PROVIDER_ID
+        || settings
+            .profiles
+            .iter()
+            .any(|profile| profile.values.post_process_provider_id == CHATGPT_PROVIDER_ID)
+}
+
+/// Whether a ChatGPT session (`has_session`) is left behind by `settings`:
+/// neither the defaults nor a profile post-process through ChatGPT's plan
+/// any more, after another way replaced it (review of 2026-11-27, N2).
+pub fn leaves_chatgpt_behind(settings: &AppSettings, has_session: bool) -> bool {
+    has_session && !chatgpt_in_use(settings)
+}
+
+/// After another way of the setup replaced ChatGPT's plan: signs out of a
+/// session left behind ([`leaves_chatgpt_behind`]), in the background, so
+/// it does not stay unrevoked for up to 30 days.
+pub fn end_left_behind_chatgpt(app: &AppHandle) {
+    let Ok(vault) = vault::for_app(app) else {
+        return;
+    };
+    let settings = crate::settings::get_settings(app);
+    if !leaves_chatgpt_behind(&settings, vault.load().chatgpt().is_some()) {
+        return;
+    }
+    let app = app.clone();
+    tauri::async_runtime::spawn(async move {
+        let _held = super::session::refresh_lock().lock().await;
+        // Unless ChatGPT came back meanwhile (a new sign-in's session).
+        let settings = crate::settings::get_settings(&app);
+        if !leaves_chatgpt_behind(&settings, vault.load().chatgpt().is_some()) {
+            return;
+        }
+        let host = TauriHost { app: app.clone() };
+        let signed_out = sign_out_chatgpt_held(vault, chatgpt::DISCOVERY, REVOKE_TIMEOUT, || {
+            host.change_settings(|settings| end_chatgpt_sign_in(vault, settings))
+        })
+        .await;
+        match signed_out {
+            Ok(outcome) => log::info!(
+                "Another way replaced ChatGPT's plan; its sign-in ended (confirmed by OpenAI: {:?})",
+                outcome.revoke_confirmed
+            ),
+            Err(error) => log::warn!("Cannot end the ChatGPT sign-in left behind: {error}"),
+        }
+    });
 }
 
 /// The model to ask OpenRouter (review of 2026-11-27, H1 and M1): for
@@ -897,7 +992,11 @@ impl SignInHost for TauriHost {
     }
 
     fn store_openrouter(&self, signed_in: OpenRouterSignedIn) -> Result<(), String> {
-        self.change_settings(|settings| apply_openrouter_sign_in(settings, &signed_in, unix_now()))
+        self.change_settings(|settings| {
+            apply_openrouter_sign_in(settings, &signed_in, unix_now())
+        })?;
+        end_left_behind_chatgpt(&self.app);
+        Ok(())
     }
 
     fn finished(&self, event: PostProcessSignInFinished) {
@@ -999,18 +1098,19 @@ pub fn cancel_post_process_sign_in(sign_ins: State<'_, SignIns>) {
 }
 
 /// Forgets the sign-in: ChatGPT's session (its client id and the host id
-/// stay for the next sign-in), or OpenRouter's key and connection.
+/// stay for the next sign-in), or OpenRouter's key and connection. For
+/// ChatGPT `revoke_confirmed` says whether OpenAI confirmed the end of the
+/// session (`false`: ended here only).
 // DanyWhere (2026-11-27): ChatGPT's renewable session is ended at OpenAI
 // first, as far as it answers within a few seconds
-// (`revoke_chatgpt_session`). A plain comment, so the generated bindings
-// keep their text.
+// (`revoke_chatgpt_session`), while no refresh runs (`sign_out_chatgpt`).
 #[tauri::command]
 #[specta::specta]
 pub async fn disconnect_post_process_sign_in(
     app: AppHandle,
     sign_ins: State<'_, SignIns>,
     provider: SignInProvider,
-) -> Result<(), String> {
+) -> Result<DisconnectOutcome, String> {
     // A sign-in with the same provider still waiting would bring it back.
     if sign_ins.in_progress() == Some(provider) {
         sign_ins.cancel();
@@ -1019,10 +1119,17 @@ pub async fn disconnect_post_process_sign_in(
     match provider {
         SignInProvider::Chatgpt => {
             let vault = vault::for_app(&app)?;
-            revoke_chatgpt_session(vault, chatgpt::DISCOVERY, REVOKE_TIMEOUT).await;
-            host.change_settings(|settings| end_chatgpt_sign_in(vault, settings))
+            sign_out_chatgpt(vault, chatgpt::DISCOVERY, REVOKE_TIMEOUT, || {
+                host.change_settings(|settings| end_chatgpt_sign_in(vault, settings))
+            })
+            .await
         }
-        SignInProvider::Openrouter => host.change_settings(end_openrouter_sign_in),
+        SignInProvider::Openrouter => {
+            host.change_settings(end_openrouter_sign_in)?;
+            Ok(DisconnectOutcome {
+                revoke_confirmed: None,
+            })
+        }
     }
 }
 
@@ -2522,7 +2629,7 @@ mod tests {
         let (_dir, vault, mut settings) = signed_in_vault();
 
         let discovery = format!("{url}/.well-known/openid-configuration");
-        assert!(revoke_chatgpt_session(&vault, &discovery, Duration::from_secs(5)).await);
+        assert_eq!(revoke_chatgpt_session(&vault, &discovery, Duration::from_secs(5)).await, Some(true));
         assert_eq!(
             lines(&seen),
             vec![
@@ -2553,11 +2660,11 @@ mod tests {
         *base.lock().unwrap() = url.clone();
         let (_dir, vault, mut settings) = signed_in_vault();
         let discovery = format!("{url}/.well-known/openid-configuration");
-        assert!(!revoke_chatgpt_session(&vault, &discovery, Duration::from_secs(5)).await);
+        assert_eq!(revoke_chatgpt_session(&vault, &discovery, Duration::from_secs(5)).await, Some(false));
         assert_eq!(lines(&seen).len(), 2);
         // Nobody listens there.
         let gone = "http://127.0.0.1:9/.well-known/openid-configuration";
-        assert!(!revoke_chatgpt_session(&vault, gone, Duration::from_secs(2)).await);
+        assert_eq!(revoke_chatgpt_session(&vault, gone, Duration::from_secs(2)).await, Some(false));
         end_chatgpt_sign_in(&vault, &mut settings).unwrap();
         assert!(vault.load().chatgpt().is_none());
         assert!(!settings.chatgpt_signed_in);
@@ -2571,7 +2678,163 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let vault = Vault::new(dir.path().join(vault::FILE_NAME));
         let discovery = format!("{url}/.well-known/openid-configuration");
-        assert!(!revoke_chatgpt_session(&vault, &discovery, Duration::from_secs(5)).await);
+        assert_eq!(revoke_chatgpt_session(&vault, &discovery, Duration::from_secs(5)).await, None);
         assert!(lines(&seen).is_empty(), "{:?}", lines(&seen));
+    }
+
+    // --- review of 2026-11-27: the outcome of signing out, and N2 -------------
+
+    #[test]
+    fn the_disconnect_outcome_reads_as_the_frontend_expects() {
+        for (confirmed, expected) in [
+            (Some(true), json!(true)),
+            (Some(false), json!(false)),
+            (None, Value::Null),
+        ] {
+            assert_eq!(
+                serde_json::to_value(DisconnectOutcome {
+                    revoke_confirmed: confirmed
+                })
+                .unwrap(),
+                json!({ "revoke_confirmed": expected })
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn signing_out_says_whether_openai_confirmed_the_end() {
+        let base = Arc::new(Mutex::new(String::new()));
+        let (url, _seen) = serve(revocation_handler(base.clone(), "200 OK")).await;
+        *base.lock().unwrap() = url.clone();
+        let discovery = format!("{url}/.well-known/openid-configuration");
+        let (_dir, vault, mut settings) = signed_in_vault();
+        let outcome = sign_out_chatgpt(&vault, &discovery, Duration::from_secs(5), || {
+            end_chatgpt_sign_in(&vault, &mut settings)
+        })
+        .await
+        .expect("signs out");
+        assert_eq!(outcome.revoke_confirmed, Some(true));
+        assert!(vault.load().chatgpt().is_none());
+        assert!(!settings.chatgpt_signed_in);
+        // Nothing stored any more: nothing to confirm.
+        let outcome = sign_out_chatgpt(&vault, &discovery, Duration::from_secs(5), || {
+            end_chatgpt_sign_in(&vault, &mut settings)
+        })
+        .await
+        .expect("signs out");
+        assert_eq!(outcome.revoke_confirmed, None);
+
+        // OpenAI refuses: ended here only, and the user is told.
+        let refused = Arc::new(Mutex::new(String::new()));
+        let (url, _seen) =
+            serve(revocation_handler(refused.clone(), "503 Service Unavailable")).await;
+        *refused.lock().unwrap() = url.clone();
+        let (_dir, vault, mut settings) = signed_in_vault();
+        let outcome = sign_out_chatgpt(
+            &vault,
+            &format!("{url}/.well-known/openid-configuration"),
+            Duration::from_secs(5),
+            || end_chatgpt_sign_in(&vault, &mut settings),
+        )
+        .await
+        .expect("signs out here");
+        assert_eq!(outcome.revoke_confirmed, Some(false));
+        assert!(vault.load().chatgpt().is_none());
+    }
+
+    /// The sign-in's file as the requests' session store, as the app's.
+    struct VaultStore<'a>(&'a Vault);
+
+    impl SessionStore for VaultStore<'_> {
+        fn load(&self) -> Option<ChatGptSession> {
+            self.0.load().chatgpt()
+        }
+        fn save(&self, session: &ChatGptSession) -> Result<(), String> {
+            self.0
+                .update(|secrets| secrets.chatgpt_session = Some(session.into()))
+        }
+        fn expire(&self) {
+            let _ = self.0.update(|secrets| secrets.chatgpt_session = None);
+        }
+    }
+
+    #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+    async fn signing_out_waits_for_a_refresh_and_revokes_its_new_token() {
+        // The token endpoint answers after a moment, so the sign-out comes
+        // while the refresh runs.
+        let renewed = json!({
+            "access_token": "access-2", "refresh_token": "refresh-2",
+            "token_type": "Bearer", "expires_in": 3600, "scope": PLAN_SCOPES,
+        })
+        .to_string();
+        let (token_base, _) = serve(Arc::new(move |_| {
+            std::thread::sleep(Duration::from_millis(400));
+            ("200 OK".to_string(), renewed.clone())
+        }))
+        .await;
+        let base = Arc::new(Mutex::new(String::new()));
+        let (url, seen) = serve(revocation_handler(base.clone(), "200 OK")).await;
+        *base.lock().unwrap() = url.clone();
+        let dir = tempfile::tempdir().unwrap();
+        let vault = Vault::new(dir.path().join(vault::FILE_NAME));
+        let mut settings = new_install();
+        let mut due = chatgpt_session();
+        due.expires_at = now() + 60;
+        store_chatgpt_sign_in(&vault, &mut settings, &due).unwrap();
+
+        let store = VaultStore(&vault);
+        let client = token_client().unwrap();
+        let token_url = format!("{token_base}/api/accounts/oauth/token");
+        let discovery = format!("{url}/.well-known/openid-configuration");
+        let refresh = super::super::session::fresh_session(&store, &client, &token_url, now());
+        let sign_out = async {
+            tokio::time::sleep(Duration::from_millis(100)).await;
+            sign_out_chatgpt(&vault, &discovery, Duration::from_secs(5), || {
+                end_chatgpt_sign_in(&vault, &mut settings)
+            })
+            .await
+        };
+        let (renewed, outcome) = tokio::join!(refresh, sign_out);
+        assert_eq!(renewed.expect("refreshed").refresh_token, "refresh-2");
+        assert_eq!(outcome.expect("signed out").revoke_confirmed, Some(true));
+        let revoked = seen
+            .lock()
+            .unwrap()
+            .iter()
+            .find(|seen| seen.line == "POST /api/accounts/oauth/revoke")
+            .cloned()
+            .expect("revoked");
+        assert_eq!(
+            query_of(&format!("http://x/?{}", revoked.body))
+                .get("token")
+                .map(String::as_str),
+            Some("refresh-2"),
+            "the renewed token is the one that lives"
+        );
+        assert!(vault.load().chatgpt().is_none(), "no session left behind");
+        assert!(!settings.chatgpt_signed_in);
+    }
+
+    #[test]
+    fn a_way_that_replaces_chatgpt_leaves_its_session_behind() {
+        let (_dir, _vault, settings) = signed_in_vault();
+        assert!(!leaves_chatgpt_behind(&settings, true), "still in use");
+        let mut replaced = settings.clone();
+        crate::post_process_setup::apply_setup_choice(
+            &mut replaced,
+            &SetupChoice {
+                provider_id: "groq".to_string(),
+                model: Some("openai/gpt-oss-120b".to_string()),
+                api_key: Some("gsk-test-key".to_string()),
+                effort: None,
+            },
+        )
+        .unwrap();
+        assert!(leaves_chatgpt_behind(&replaced, true));
+        assert!(!leaves_chatgpt_behind(&replaced, false), "nothing stored");
+        // A profile that still post-processes through the plan keeps it.
+        let mut kept = replaced.clone();
+        kept.profiles[0].values.post_process_provider_id = "chatgpt".to_string();
+        assert!(!leaves_chatgpt_behind(&kept, true));
     }
 }

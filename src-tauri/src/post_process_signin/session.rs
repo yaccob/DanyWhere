@@ -26,8 +26,10 @@ pub trait SessionStore: Send + Sync {
     fn expire(&self);
 }
 
-/// The one lock around reading, refreshing and saving the session.
-fn refresh_lock() -> &'static futures_util::lock::Mutex<()> {
+/// The one lock around reading, refreshing and saving the session; signing
+/// out takes it too (`commands::sign_out_chatgpt`), so no refresh saves a
+/// session after it.
+pub(super) fn refresh_lock() -> &'static futures_util::lock::Mutex<()> {
     static LOCK: OnceLock<futures_util::lock::Mutex<()>> = OnceLock::new();
     LOCK.get_or_init(|| futures_util::lock::Mutex::new(()))
 }
