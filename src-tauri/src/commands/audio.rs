@@ -333,6 +333,7 @@ fn test_sound(name: &str) -> Option<audio_feedback::SoundType> {
         "stop" => Some(audio_feedback::SoundType::Stop),
         "clipboard" => Some(audio_feedback::SoundType::Clipboard),
         "done" => Some(audio_feedback::SoundType::Done),
+        "cancel" => Some(audio_feedback::SoundType::Cancel),
         _ => None,
     }
 }
@@ -437,13 +438,22 @@ mod tests {
     fn the_preview_plays_every_event_by_its_name() {
         use audio_feedback::SoundType;
         assert_eq!(
-            ["start", "instruction", "stop", "done", "clipboard"].map(test_sound),
+            [
+                "start",
+                "instruction",
+                "stop",
+                "done",
+                "clipboard",
+                "cancel"
+            ]
+            .map(test_sound),
             [
                 Some(SoundType::Start),
                 Some(SoundType::Instruction),
                 Some(SoundType::Stop),
                 Some(SoundType::Done),
                 Some(SoundType::Clipboard),
+                Some(SoundType::Cancel),
             ]
         );
         assert_eq!(test_sound("finish"), None);

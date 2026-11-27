@@ -17,9 +17,13 @@ use tauri::{AppHandle, Manager};
 
 /// The events a feedback sound marks. DanyWhere: each has a pitch of its own,
 /// rising from the first to the last (user, 2026-11-27): start E4,
-/// instruction B4, stop E5, done G♯5, and the waiting sound as the done one.
+/// instruction B4, stop E5, done G♯5, and the waiting sound as the done one;
+/// a cancel falls below them all, to B3.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SoundType {
+    /// DanyWhere: a dictation was cancelled (Escape, the overlay's ✕, the
+    /// tray's Cancel; `utils::cancel_current_operation`).
+    Cancel,
     Start,
     /// DanyWhere: an instruction key cut the recording for a spoken
     /// instruction (`dictation_flow::instruction::begin`).
@@ -34,19 +38,21 @@ pub enum SoundType {
 }
 
 impl SoundType {
-    /// Every event, in the order a dictation plays them, as the sound file
-    /// lists them.
-    pub const ALL: [SoundType; 5] = [
+    /// Every event, in the order a dictation plays them and the cancel last,
+    /// as the sound file lists them.
+    pub const ALL: [SoundType; 6] = [
         SoundType::Start,
         SoundType::Instruction,
         SoundType::Stop,
         SoundType::Done,
         SoundType::Clipboard,
+        SoundType::Cancel,
     ];
 
     /// The event's name in the sound file (`sound_file`).
     pub fn event_name(self) -> &'static str {
         match self {
+            SoundType::Cancel => "cancel",
             SoundType::Start => "start",
             SoundType::Instruction => "instruction",
             SoundType::Stop => "stop",
@@ -63,6 +69,10 @@ impl SoundType {
 /// theme borrows Marimba's where it has no file of its own.
 fn bundled(theme: SoundTheme, sound_type: SoundType) -> &'static str {
     match (theme, sound_type) {
+        // A cancel a fourth below the start: Handy's own B3 stroke, and the
+        // B4 pop an octave down.
+        (SoundTheme::Pop, SoundType::Cancel) => "pop_b3.wav",
+        (SoundTheme::Marimba | SoundTheme::Custom, SoundType::Cancel) => "marimba_b3.wav",
         (SoundTheme::Pop, SoundType::Start) => "pop_e4.wav",
         (SoundTheme::Pop, SoundType::Instruction) => "pop_b4.wav",
         (SoundTheme::Pop, SoundType::Stop) => "pop_e5.wav",
@@ -91,6 +101,7 @@ fn custom_files(sound_type: SoundType) -> (&'static [&'static str], bool) {
         SoundType::Instruction => (&["custom_instruction.wav"], true),
         SoundType::Done => (&["custom_done.wav", "custom_clipboard.wav"], true),
         SoundType::Clipboard => (&["custom_clipboard.wav"], true),
+        SoundType::Cancel => (&["custom_cancel.wav"], true),
     }
 }
 
@@ -1200,6 +1211,7 @@ mod tests {
                 resource("marimba_e5.wav"),
                 resource("marimba_gsharp5.wav"),
                 resource("marimba_gsharp5.wav"),
+                resource("marimba_b3.wav"),
             ]
         );
     }
@@ -1214,8 +1226,35 @@ mod tests {
                 resource("pop_e5.wav"),
                 resource("pop_double_gsharp5.wav"),
                 resource("pop_double_gsharp5.wav"),
+                resource("pop_b3.wav"),
             ]
         );
+    }
+
+    /// A cancel falls below the start (user, 2026-11-27: "H3 … oder E3"):
+    /// B3, a fourth below E4, at least a whole tone below it.
+    fn assert_cancel_lowest(theme: SoundTheme) {
+        let pitch = |sound_type| {
+            let name = bundled(theme, sound_type);
+            let (samples, rate) = read_bundled(name);
+            (name, strongest_frequency(&samples, rate))
+        };
+        let (cancel, cancel_hz) = pitch(SoundType::Cancel);
+        let (start, start_hz) = pitch(SoundType::Start);
+        assert!(
+            cancel_hz * 2f64.powf(2.0 / 12.0) < start_hz,
+            "{theme:?}: {cancel} ({cancel_hz:.0} Hz) is not a whole tone below {start} ({start_hz:.0} Hz)"
+        );
+    }
+
+    #[test]
+    fn the_marimba_cancel_sound_is_below_the_start_sound() {
+        assert_cancel_lowest(SoundTheme::Marimba);
+    }
+
+    #[test]
+    fn the_pop_cancel_sound_is_below_the_start_sound() {
+        assert_cancel_lowest(SoundTheme::Pop);
     }
 
     #[test]
@@ -1226,6 +1265,7 @@ mod tests {
             "custom_stop.wav",
             "custom_done.wav",
             "custom_clipboard.wav",
+            "custom_cancel.wav",
         ]);
         let played: Vec<_> = SoundType::ALL
             .into_iter()
@@ -1239,6 +1279,7 @@ mod tests {
                 app_data("custom_stop.wav"),
                 app_data("custom_done.wav"),
                 app_data("custom_clipboard.wav"),
+                app_data("custom_cancel.wav"),
             ]
         );
     }
@@ -1258,6 +1299,7 @@ mod tests {
                 app_data("custom_stop.wav"),
                 resource("marimba_gsharp5.wav"),
                 resource("marimba_gsharp5.wav"),
+                resource("marimba_b3.wav"),
             ]
         );
     }

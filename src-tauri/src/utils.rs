@@ -240,10 +240,29 @@ fn cancel_operation(app: &AppHandle, notify_coordinator: bool) {
     // Cancel any ongoing recording
     let audio_manager = app.state::<Arc<AudioRecordingManager>>();
     let recording_was_active = audio_manager.is_recording();
+    // DanyWhere: whether a dictation was running at all (the tray records
+    // every start, finish and cancel), for the cancel sound below.
+    let dictation_was_running = recording_was_active || crate::tray::dictation_in_progress(app);
     audio_manager.cancel_recording();
     // DanyWhere: a spoken instruction the recording went on to goes with it
     // (`dictation_flow::instruction`), its text's transcription too.
     crate::dictation_flow::instruction::discard_pending();
+
+    // DanyWhere: a cancel the user asked for sounds, the lowest of the
+    // sounds (user, 2026-11-27): after the output muted while recording is
+    // back, as the stop sound, and with the dictation's profile's sounds,
+    // before its profile ends below. A hold shortcut released too early
+    // (`discard_current_recording`) is no cancel and stays silent.
+    if dictation_was_running {
+        audio_manager.remove_mute();
+        if notify_coordinator {
+            info!("Cancelled; playing the cancel sound.");
+            crate::audio_feedback::play_feedback_sound(
+                app,
+                crate::audio_feedback::SoundType::Cancel,
+            );
+        }
+    }
 
     // Abandon any live streaming transcription, and stop a transcription
     // already in progress

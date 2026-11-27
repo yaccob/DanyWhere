@@ -112,8 +112,10 @@ pub fn parse(text: &str) -> (SoundFile, Vec<String>) {
                 .into_iter()
                 .find(|sound_type| sound_type.event_name() == event)
             else {
+                let known: Vec<&str> = SoundType::ALL.map(SoundType::event_name).to_vec();
                 problems.push(format!(
-                    "[{section}] {event}: no such event (start, instruction, stop, done, waiting)"
+                    "[{section}] {event}: no such event ({})",
+                    known.join(", ")
                 ));
                 continue;
             };
@@ -202,13 +204,15 @@ const HEADER: &str = "\
 # and the app writes a fresh copy at its next start.
 #
 # The events, in the order a dictation plays them, each higher than the one
-# before:
+# before, and the cancel lowest of all:
 #   start        the recording starts
 #   instruction  an instruction shortcut switches to the spoken instruction
 #   stop         the recording ends
 #   done         the dictation is done, post-processing included, and its
 #                text delivered (with Sound When Done on)
 #   waiting      the text waits on the clipboard for you to paste it
+#   cancel       a dictation is cancelled (Escape, the overlay's X, the
+#                tray's Cancel)
 #
 # An entry is a file, or a table with a file and a pitch shift:
 #   stop = \"my-stop.wav\"
@@ -569,6 +573,7 @@ mod tests {
             "stop",
             "done",
             "waiting",
+            "a dictation is cancelled",
             "semitones",
             BUILT_IN_PREFIX,
             "[marimba]",
