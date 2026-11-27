@@ -162,6 +162,16 @@ pub struct OpenRouterConnection {
     pub free_models: Vec<String>,
     /// When it was asked, in seconds since the Unix epoch.
     pub checked_at: i64,
+    /// Signed in for credit (`SignInIntent::Credit`): never a free model,
+    /// always the paid one with `data_collection: "deny"`. False in a
+    /// connection stored before the setup asked.
+    #[serde(default)]
+    pub paid_only: bool,
+    /// Signed in for the free models (`SignInIntent::Free`): never the paid
+    /// model by itself, also with credit. False in a connection stored
+    /// before the setup asked; with both false the model follows the tier.
+    #[serde(default)]
+    pub free_only: bool,
 }
 
 // ---- Whether post-processing can run ----------------------------------------
@@ -1251,6 +1261,8 @@ mod tests {
             limit_usd: Some(10.0),
             free_models: vec!["nvidia/nemotron-3.5-super-vl:free".to_string()],
             checked_at: 1_795_300_000,
+            paid_only: true,
+            free_only: false,
         });
         settings.post_process_setup.finished = true;
         crate::profiles::ensure_profiles(&mut settings);
@@ -1308,6 +1320,8 @@ mod tests {
             limit_usd: Some(10.0),
             free_models: Vec::new(),
             checked_at: 0,
+            paid_only: false,
+            free_only: false,
         });
         assert_eq!(
             current_way(&openrouter, None),

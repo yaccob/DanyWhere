@@ -1498,6 +1498,8 @@ mod tests {
             limit_usd: Some(10.0),
             free_models: vec!["nvidia/nemotron-3.5-super-vl:free".to_string()],
             checked_at: 1_795_300_000,
+            paid_only: false,
+            free_only: false,
         });
         settings
     }

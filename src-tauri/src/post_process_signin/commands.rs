@@ -73,6 +73,20 @@ pub enum SignInProvider {
     Chatgpt,
 }
 
+/// What the user signs in to OpenRouter for, from the setup's answers
+/// (review of 2026-11-27, H1 and M1); no effect on ChatGPT.
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Type)]
+#[serde(rename_all = "lowercase")]
+pub enum SignInIntent {
+    /// "Also to free services": the free models, also on an account with
+    /// credit; never the paid model by itself.
+    Free,
+    /// "Only to a service that doesn't keep them" and "top up once": never
+    /// a free model, always the paid one with `data_collection: "deny"`,
+    /// also before topping up (OpenRouter then answers 402, `no-credit`).
+    Credit,
+}
+
 /// The two short texts the browser shows after the callback, in the app's
 /// language.
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Type)]
@@ -125,9 +139,11 @@ pub struct OpenRouterState {
     /// The free models to try, in order (at most
     /// [`openrouter::MAX_FALLBACK_MODELS`]).
     pub free_models: Vec<String>,
-    /// The model to ask: on the free tier the first free model, else
-    /// [`openrouter::PAID_MODEL`].
+    /// The model to ask ([`openrouter_model`]).
     pub model: String,
+    /// What the sign-in was for; `None` for a connection from before the
+    /// setup asked.
+    pub intent: Option<SignInIntent>,
 }
 
 /// A finished OpenRouter sign-in: the new key and what it reaches. Its
@@ -208,36 +224,39 @@ impl Inner {
     }
 }
 
-/// The provider's side of one attempt, kept for the exchange.
+/// The provider's side of one attempt, kept for the exchange; OpenRouter's
+/// with what the sign-in is for.
 enum Flow {
-    OpenRouter(OpenRouterFlow),
+    OpenRouter(OpenRouterFlow, Option<SignInIntent>),
     ChatGpt(ChatGptFlow),
 }
 
 impl Flow {
     fn sign_in_flow(&self) -> &dyn SignInFlow {
         match self {
-            Flow::OpenRouter(flow) => flow,
+            Flow::OpenRouter(flow, _) => flow,
             Flow::ChatGpt(flow) => flow,
         }
     }
 }
 
 impl SignIns {
-    /// Starts signing in with `provider`: binds the loopback listener, opens
-    /// the provider's page in the browser and waits for the callback in a
+    /// Starts signing in with `provider`, for `intent` (OpenRouter; `None`
+    /// as before the setup asked): binds the loopback listener, opens the
+    /// provider's page in the browser and waits for the callback in a
     /// thread of its own for at most `timeout`. A sign-in already in
     /// progress ends without an event. Returns the page's URL.
     pub fn start(
         &self,
         provider: SignInProvider,
         page: CallbackPage,
+        intent: Option<SignInIntent>,
         host: Arc<dyn SignInHost>,
         endpoints: Endpoints,
         timeout: Duration,
     ) -> Result<String, String> {
         let flow = match provider {
-            SignInProvider::Openrouter => Flow::OpenRouter(OpenRouterFlow::danywhere()),
+            SignInProvider::Openrouter => Flow::OpenRouter(OpenRouterFlow::danywhere(), intent),
             SignInProvider::Chatgpt => {
                 let (client_id, host_id) = host.chatgpt_identity()?;
                 Flow::ChatGpt(ChatGptFlow::new(client_id, host_id)?)
@@ -406,9 +425,11 @@ async fn complete(
     endpoints: &Endpoints,
 ) -> PostProcessSignInFinished {
     let (provider, outcome) = match flow {
-        Flow::OpenRouter(_) => (
+        Flow::OpenRouter(_, intent) => (
             SignInProvider::Openrouter,
-            complete_openrouter(&code, host, endpoints).await.map(Some),
+            complete_openrouter(&code, intent, host, endpoints)
+                .await
+                .map(Some),
         ),
         Flow::ChatGpt(flow) => (
             SignInProvider::Chatgpt,
@@ -438,17 +459,18 @@ async fn complete(
     }
 }
 
-/// OpenRouter: the key for the code, what it reaches; returns whether the
-/// account is on the free tier. Without a model to ask (no usable free
-/// model) nothing is stored.
+/// OpenRouter: the key for the code, what it reaches for `intent`; returns
+/// whether the account is on the free tier. Without a model to ask (no
+/// usable free model) nothing is stored.
 async fn complete_openrouter(
     code: &SignInCode,
+    intent: Option<SignInIntent>,
     host: &dyn SignInHost,
     endpoints: &Endpoints,
 ) -> Result<bool, Failed> {
     let client = token_client()?;
     let key = openrouter::exchange_code(&client, &endpoints.openrouter_base, code).await?;
-    let state = openrouter_state(&client, &endpoints.openrouter_base, &key).await?;
+    let state = openrouter_state(&client, &endpoints.openrouter_base, &key, intent).await?;
     if state.model.is_empty() {
         return Err(Failed::code(SignInFailure::NoFreeModel));
     }
@@ -548,25 +570,46 @@ pub async fn revoke_chatgpt_session(vault: &Vault, discovery_url: &str, timeout:
     }
 }
 
-/// The model to ask OpenRouter: the first free model on the free tier,
-/// else [`openrouter::PAID_MODEL`].
-pub fn openrouter_model(free_tier: bool, free_models: &[String]) -> String {
-    if free_tier {
+/// The model to ask OpenRouter (review of 2026-11-27, H1 and M1): for
+/// credit always [`openrouter::PAID_MODEL`], for the free models always the
+/// first free one (empty without one), and without an intent (a connection
+/// from before the setup asked) the first free one on the free tier, else
+/// the paid one.
+pub fn openrouter_model(
+    intent: Option<SignInIntent>,
+    free_tier: bool,
+    free_models: &[String],
+) -> String {
+    let free = match intent {
+        Some(SignInIntent::Credit) => false,
+        Some(SignInIntent::Free) => true,
+        None => free_tier,
+    };
+    if free {
         free_models.first().cloned().unwrap_or_default()
     } else {
         openrouter::PAID_MODEL.to_string()
     }
 }
 
-/// What OpenRouter says about `key` and the free models to try: from the
-/// model list, or OpenRouter's preferred free models when the list can't be
-/// read.
+/// What OpenRouter says about `key` and the free models to try for
+/// `intent`: from the model list, or OpenRouter's preferred free models
+/// when the list can't be read; none for credit, which never asks one.
 pub async fn openrouter_state(
     client: &reqwest::Client,
     base: &str,
     key: &str,
+    intent: Option<SignInIntent>,
 ) -> Result<OpenRouterState, String> {
     let info = openrouter::key_info(client, base, key).await?;
+    if intent == Some(SignInIntent::Credit) {
+        return Ok(OpenRouterState {
+            model: openrouter_model(intent, info.free_tier, &[]),
+            info,
+            free_models: Vec::new(),
+            intent,
+        });
+    }
     let free_models = match openrouter::list_models(client, base).await {
         Ok(models) => {
             openrouter::choose_free_models(&models, true, openrouter::MAX_FALLBACK_MODELS)
@@ -580,11 +623,12 @@ pub async fn openrouter_state(
                 .collect()
         }
     };
-    let model = openrouter_model(info.free_tier, &free_models);
+    let model = openrouter_model(intent, info.free_tier, &free_models);
     Ok(OpenRouterState {
         info,
         free_models,
         model,
+        intent,
     })
 }
 
@@ -654,12 +698,37 @@ pub fn end_chatgpt_sign_in(vault: &Vault, settings: &mut AppSettings) -> Result<
     Ok(())
 }
 
-fn connection_of(state: &OpenRouterState, now: i64) -> OpenRouterConnection {
+/// What `connection`'s sign-in was for; `None` for one stored before the
+/// setup asked.
+pub fn connection_intent(connection: &OpenRouterConnection) -> Option<SignInIntent> {
+    if connection.paid_only {
+        Some(SignInIntent::Credit)
+    } else if connection.free_only {
+        Some(SignInIntent::Free)
+    } else {
+        None
+    }
+}
+
+/// The connection for `state` at `now`, for `intent`: with credit no free
+/// models to fall back on.
+fn connection_of(
+    state: &OpenRouterState,
+    intent: Option<SignInIntent>,
+    now: i64,
+) -> OpenRouterConnection {
+    let paid_only = intent == Some(SignInIntent::Credit);
     OpenRouterConnection {
         free_tier: state.info.free_tier,
         limit_usd: state.info.limit_usd,
-        free_models: state.free_models.clone(),
+        free_models: if paid_only {
+            Vec::new()
+        } else {
+            state.free_models.clone()
+        },
         checked_at: now,
+        paid_only,
+        free_only: intent == Some(SignInIntent::Free),
     }
 }
 
@@ -672,7 +741,11 @@ pub fn apply_openrouter_sign_in(
     now: i64,
 ) -> Result<(), String> {
     let mut next = settings.clone();
-    next.openrouter_connection = Some(connection_of(&signed_in.state, now));
+    next.openrouter_connection = Some(connection_of(
+        &signed_in.state,
+        signed_in.state.intent,
+        now,
+    ));
     crate::post_process_setup::apply_setup_choice(
         &mut next,
         &SetupChoice {
@@ -686,16 +759,23 @@ pub fn apply_openrouter_sign_in(
     Ok(())
 }
 
-/// After OpenRouter was asked again at `now`: the connection anew, and the
-/// defaults' OpenRouter model follows the tier (the first free model, or the
-/// paid one after topping up) unless the user chose another one.
+/// After OpenRouter was asked again at `now`: the connection anew, for what
+/// its sign-in was for, and the defaults' OpenRouter model follows
+/// [`openrouter_model`] (without an intent the tier: the first free model,
+/// or the paid one after topping up) unless the user chose another one.
 pub fn apply_openrouter_refresh(
     settings: &mut AppSettings,
     state: &OpenRouterState,
     now: i64,
 ) -> Result<OpenRouterConnection, String> {
     let mut next = settings.clone();
-    let connection = connection_of(state, now);
+    // What the sign-in was for stays, whatever `state` was asked for.
+    let intent = next
+        .openrouter_connection
+        .as_ref()
+        .and_then(connection_intent);
+    let connection = connection_of(state, intent, now);
+    let model = openrouter_model(intent, state.info.free_tier, &connection.free_models);
     let before = next.openrouter_connection.replace(connection.clone());
     let current = crate::post_process_setup::with_defaults(&next)
         .post_process_models
@@ -707,13 +787,13 @@ pub fn apply_openrouter_refresh(
         || current == openrouter::PAID_MODEL
         || before.is_some_and(|before| before.free_models.contains(&current))
         || state.free_models.contains(&current);
-    if ours && !state.model.is_empty() && current != state.model {
+    if ours && !model.is_empty() && current != model {
         profile_layers::set_entry(
             &mut next,
             &Scope::Defaults,
             "post_process_models",
             OPENROUTER_PROVIDER_ID,
-            Value::String(state.model.clone()),
+            Value::String(model),
         )?;
     }
     *settings = next;
@@ -737,12 +817,23 @@ pub fn end_openrouter_sign_in(settings: &mut AppSettings) -> Result<(), String> 
 
 /// The fields an OpenRouter request gets from the sign-in's connection
 /// (`openrouter::request_extras`): the free models to fall back on, or the
-/// data policy with credit. Nothing for another provider or a key pasted
-/// in by hand.
+/// data policy with credit. Signed in for credit, never the free models and
+/// always the policy, also before topping up; signed in for the free
+/// models, always them, also with credit. Nothing for another provider or a
+/// key pasted in by hand.
 pub fn openrouter_request_fields(settings: &AppSettings, provider_id: &str) -> Map<String, Value> {
     match &settings.openrouter_connection {
         Some(connection) if provider_id == OPENROUTER_PROVIDER_ID => {
-            openrouter::request_extras(&connection.free_models, connection.free_tier)
+            let free = match connection_intent(connection) {
+                Some(SignInIntent::Credit) => false,
+                Some(SignInIntent::Free) => true,
+                None => connection.free_tier,
+            };
+            if free {
+                openrouter::request_extras(&connection.free_models, true)
+            } else {
+                openrouter::request_extras(&[], false)
+            }
         }
         _ => Map::new(),
     }
@@ -867,6 +958,8 @@ pub fn change_app_settings(
 /// Starts signing in through the browser: binds the loopback listener and
 /// opens the provider's page in the browser. `page` holds the two short
 /// texts the browser shows after the callback, in the app's language.
+/// `intent`: what OpenRouter is signed in for (the free models, or credit
+/// and never a free model); `null` as before, no effect on ChatGPT.
 /// `post-process-sign-in-finished` says how it ended.
 #[tauri::command]
 #[specta::specta]
@@ -875,10 +968,12 @@ pub fn start_post_process_sign_in(
     sign_ins: State<'_, SignIns>,
     provider: SignInProvider,
     page: CallbackPage,
+    intent: Option<SignInIntent>,
 ) -> Result<SignInStarted, String> {
     let auth_url = sign_ins.start(
         provider,
         page,
+        intent,
         host(&app),
         Endpoints::real(),
         SIGN_IN_TIMEOUT,
@@ -962,7 +1057,11 @@ pub async fn refresh_openrouter_connection(
         return Err(failure(FailureReason::NoApiKey));
     }
     let client = token_client().map_err(|error| failure(FailureReason::other(&error)))?;
-    let state = openrouter_state(&client, openrouter::DEFAULT_BASE, &key)
+    let intent = settings
+        .openrouter_connection
+        .as_ref()
+        .and_then(connection_intent);
+    let state = openrouter_state(&client, openrouter::DEFAULT_BASE, &key, intent)
         .await
         .map_err(|error| {
             failure(crate::post_process_failure::classify_llm_error(
@@ -1302,10 +1401,28 @@ mod tests {
     #[test]
     fn the_model_is_the_first_free_one_or_the_paid_one() {
         let free = vec!["a:free".to_string(), "b:free".to_string()];
-        assert_eq!(openrouter_model(true, &free), "a:free");
-        assert_eq!(openrouter_model(true, &[]), "");
-        assert_eq!(openrouter_model(false, &free), openrouter::PAID_MODEL);
-        assert_eq!(openrouter_model(false, &[]), openrouter::PAID_MODEL);
+        assert_eq!(openrouter_model(None, true, &free), "a:free");
+        assert_eq!(openrouter_model(None, true, &[]), "");
+        assert_eq!(openrouter_model(None, false, &free), openrouter::PAID_MODEL);
+        assert_eq!(openrouter_model(None, false, &[]), openrouter::PAID_MODEL);
+    }
+
+    /// Review of 2026-11-27, H1 and M1: the way decides, not the tier.
+    #[test]
+    fn the_intent_decides_the_model_whatever_the_tier() {
+        let free = vec!["a:free".to_string(), "b:free".to_string()];
+        let credit = Some(SignInIntent::Credit);
+        let gratis = Some(SignInIntent::Free);
+        assert_eq!(openrouter_model(credit, true, &free), openrouter::PAID_MODEL);
+        assert_eq!(openrouter_model(credit, false, &free), openrouter::PAID_MODEL);
+        assert_eq!(openrouter_model(credit, true, &[]), openrouter::PAID_MODEL);
+        assert_eq!(openrouter_model(gratis, false, &free), "a:free");
+        assert_eq!(openrouter_model(gratis, true, &free), "a:free");
+        assert_eq!(openrouter_model(gratis, false, &[]), "");
+        assert_eq!(
+            serde_json::to_value([SignInIntent::Free, SignInIntent::Credit]).unwrap(),
+            json!(["free", "credit"])
+        );
     }
 
     #[test]
@@ -1323,6 +1440,7 @@ mod tests {
                 },
                 free_models: vec!["a:free".to_string()],
                 model: "a:free".to_string(),
+                intent: None,
             },
         };
         let text = format!("{signed_in:?}");
@@ -1403,6 +1521,7 @@ mod tests {
             .start(
                 SignInProvider::Openrouter,
                 page(),
+                None,
                 host.clone(),
                 endpoints(&base, &base),
                 WAIT,
@@ -1471,6 +1590,7 @@ mod tests {
             .start(
                 SignInProvider::Openrouter,
                 page(),
+                None,
                 host.clone(),
                 endpoints(&base, &base),
                 WAIT,
@@ -1491,7 +1611,7 @@ mod tests {
     async fn without_openrouters_model_list_the_preferred_free_models_are_tried() {
         let (base, _seen) = serve(openrouter_handler(true, "503 Service Unavailable")).await;
         let client = token_client().unwrap();
-        let state = openrouter_state(&client, &base, NEW_KEY)
+        let state = openrouter_state(&client, &base, NEW_KEY, None)
             .await
             .expect("the key info is enough");
         let preferred: Vec<String> = openrouter::FREE_MODEL_PREFERENCE
@@ -1512,6 +1632,7 @@ mod tests {
             .start(
                 SignInProvider::Openrouter,
                 page(),
+                None,
                 host.clone(),
                 endpoints(&base, &base),
                 WAIT,
@@ -1538,6 +1659,7 @@ mod tests {
             .start(
                 SignInProvider::Chatgpt,
                 page(),
+                None,
                 host.clone(),
                 endpoints(&base, &base),
                 WAIT,
@@ -1592,6 +1714,7 @@ mod tests {
             .start(
                 SignInProvider::Chatgpt,
                 page(),
+                None,
                 host.clone(),
                 endpoints(&base, &base),
                 WAIT,
@@ -1621,6 +1744,7 @@ mod tests {
             .start(
                 SignInProvider::Chatgpt,
                 page(),
+                None,
                 host.clone(),
                 endpoints(&base, &base),
                 WAIT,
@@ -1659,6 +1783,7 @@ mod tests {
             .start(
                 SignInProvider::Chatgpt,
                 page(),
+                None,
                 host.clone(),
                 endpoints(&base, &base),
                 WAIT,
@@ -1683,6 +1808,7 @@ mod tests {
             .start(
                 SignInProvider::Chatgpt,
                 page(),
+                None,
                 host.clone(),
                 endpoints(&base, &base),
                 WAIT,
@@ -1713,6 +1839,7 @@ mod tests {
             .start(
                 SignInProvider::Openrouter,
                 page(),
+                None,
                 host.clone(),
                 endpoints(base, base),
                 WAIT,
@@ -1763,6 +1890,7 @@ mod tests {
             .start(
                 SignInProvider::Chatgpt,
                 page(),
+                None,
                 host.clone(),
                 endpoints(&base, &base),
                 WAIT,
@@ -1813,6 +1941,7 @@ mod tests {
             .start(
                 SignInProvider::Openrouter,
                 page(),
+                None,
                 host.clone(),
                 endpoints("http://127.0.0.1:9", "http://127.0.0.1:9"),
                 WAIT,
@@ -1841,6 +1970,7 @@ mod tests {
             .start(
                 SignInProvider::Chatgpt,
                 page(),
+                None,
                 host.clone(),
                 endpoints("http://127.0.0.1:9", "http://127.0.0.1:9"),
                 Duration::from_millis(300),
@@ -1862,6 +1992,7 @@ mod tests {
             .start(
                 SignInProvider::Openrouter,
                 page(),
+                None,
                 host.clone(),
                 endpoints(&base, &base),
                 WAIT,
@@ -1871,6 +2002,7 @@ mod tests {
             .start(
                 SignInProvider::Openrouter,
                 page(),
+                None,
                 host.clone(),
                 endpoints(&base, &base),
                 WAIT,
@@ -1902,6 +2034,7 @@ mod tests {
             .start(
                 SignInProvider::Openrouter,
                 page(),
+                None,
                 host.clone(),
                 endpoints("http://127.0.0.1:9", "http://127.0.0.1:9"),
                 WAIT,
@@ -1934,6 +2067,7 @@ mod tests {
         let started = sign_ins.start(
             SignInProvider::Openrouter,
             page(),
+            None,
             host.clone(),
             endpoints("http://127.0.0.1:9", "http://127.0.0.1:9"),
             WAIT,
@@ -1981,6 +2115,13 @@ mod tests {
     }
 
     fn signed_in_openrouter(free_tier: bool) -> OpenRouterSignedIn {
+        signed_in_openrouter_for(None, free_tier)
+    }
+
+    fn signed_in_openrouter_for(
+        intent: Option<SignInIntent>,
+        free_tier: bool,
+    ) -> OpenRouterSignedIn {
         let free_models = vec![
             "nvidia/nemotron-3.5-super-vl:free".to_string(),
             "inclusionai/ling-3.2-flash:free".to_string(),
@@ -1996,8 +2137,9 @@ mod tests {
                     limit_remaining_usd: Some(10.0),
                     free_requests_remaining: Some(50),
                 },
-                model: openrouter_model(free_tier, &free_models),
+                model: openrouter_model(intent, free_tier, &free_models),
                 free_models,
+                intent,
             },
         }
     }
@@ -2136,6 +2278,8 @@ mod tests {
                 limit_usd: Some(10.0),
                 free_models: signed_in.state.free_models.clone(),
                 checked_at: 1_795_300_000,
+                paid_only: false,
+                free_only: false,
             })
         );
         assert_eq!(post_process_ready(&layer), Readiness::Ready);
@@ -2202,6 +2346,141 @@ mod tests {
         assert_eq!(
             Value::Object(paid),
             serde_json::json!({"provider": {"data_collection": "deny"}})
+        );
+    }
+
+    // --- what the sign-in was for (review of 2026-11-27, H1 and M1) ----------
+
+    /// Signs in to OpenRouter for `intent` on an account on the free tier or
+    /// with credit; returns what the host stored.
+    async fn sign_in_for(intent: SignInIntent, free_tier: bool) -> OpenRouterSignedIn {
+        let (base, _seen) = serve(openrouter_handler(free_tier, "200 OK")).await;
+        let (host, mut events) = fake_host(None, false);
+        let sign_ins = SignIns::default();
+        let auth_url = sign_ins
+            .start(
+                SignInProvider::Openrouter,
+                page(),
+                Some(intent),
+                host.clone(),
+                endpoints(&base, &base),
+                WAIT,
+            )
+            .unwrap();
+        play_browser(&auth_url, "callback_url", &[("code", "c")])
+            .await
+            .unwrap();
+        let event = next_event(&mut events).await;
+        assert!(event.ok, "{event:?}");
+        let stored = host.openrouter.lock().unwrap().take();
+        stored.expect("stored")
+    }
+
+    /// The free models the stored model list gives.
+    fn listed_free_models() -> Vec<String> {
+        openrouter::choose_free_models(
+            &serde_json::from_str(STORED_MODELS).unwrap(),
+            true,
+            openrouter::MAX_FALLBACK_MODELS,
+        )
+    }
+
+    /// Post-processes "hello there" with `settings`' defaults, OpenRouter
+    /// pointed at a fake server; returns the request's body.
+    async fn dictation_body(settings: &AppSettings) -> Value {
+        let reply = json!({"choices": [{"message": {"content": "{\"transcription\":\"Polished.\"}"}}]})
+            .to_string();
+        let (chat, seen) = serve(Arc::new(move |_| ("200 OK".to_string(), reply.clone()))).await;
+        let mut layer = with_defaults(settings);
+        layer
+            .post_process_provider_mut("openrouter")
+            .expect("OpenRouter is a provider")
+            .base_url = format!("{chat}/api/v1");
+        let processed = crate::actions::process_transcription_with_settings(
+            &layer,
+            "hello there",
+            None,
+            true,
+            &[],
+            |_| None,
+        )
+        .await;
+        assert_eq!(
+            processed.post_processed_text.as_deref(),
+            Some("Polished."),
+            "{:?}",
+            processed.post_process_failure
+        );
+        let request = seen.lock().unwrap()[0].clone();
+        assert_eq!(request.line, "POST /api/v1/chat/completions");
+        serde_json::from_str(&request.body).expect("a JSON body")
+    }
+
+    #[tokio::test]
+    async fn the_credit_way_on_the_free_tier_never_sends_a_free_model() {
+        let signed_in = sign_in_for(SignInIntent::Credit, true).await;
+        assert_eq!(signed_in.state.model, openrouter::PAID_MODEL);
+        let mut settings = new_install();
+        apply_openrouter_sign_in(&mut settings, &signed_in, 1).unwrap();
+        let connection = settings.openrouter_connection.clone().expect("connected");
+        assert!(connection.paid_only);
+        assert!(!connection.free_only);
+        assert!(connection.free_tier, "not topped up yet");
+        assert_eq!(
+            Value::Object(openrouter_request_fields(&settings, "openrouter")),
+            json!({"provider": {"data_collection": "deny"}})
+        );
+        // The dictation: the paid model, no free fallback, no data kept.
+        let body = dictation_body(&settings).await;
+        assert_eq!(body["model"], openrouter::PAID_MODEL);
+        assert!(body.get("models").is_none(), "{body}");
+        assert_eq!(body["provider"]["data_collection"], "deny");
+        assert!(!body.to_string().contains(":free"), "{body}");
+    }
+
+    #[tokio::test]
+    async fn the_free_way_on_an_account_with_credit_keeps_the_free_models() {
+        let signed_in = sign_in_for(SignInIntent::Free, false).await;
+        let free = listed_free_models();
+        assert_eq!(signed_in.state.model, free[0]);
+        let mut settings = new_install();
+        apply_openrouter_sign_in(&mut settings, &signed_in, 1).unwrap();
+        let connection = settings.openrouter_connection.clone().expect("connected");
+        assert!(connection.free_only);
+        assert!(!connection.paid_only);
+        assert_eq!(
+            Value::Object(openrouter_request_fields(&settings, "openrouter")),
+            json!({ "models": free })
+        );
+        let body = dictation_body(&settings).await;
+        assert_eq!(body["model"], free[0].as_str());
+        assert_eq!(body["models"], json!(free));
+        assert!(body.get("provider").is_none(), "{body}");
+    }
+
+    #[test]
+    fn asking_openrouter_again_keeps_what_the_sign_in_was_for() {
+        // The credit way stays paid-only, whatever the tier says.
+        let mut settings = new_install();
+        let credit = signed_in_openrouter_for(Some(SignInIntent::Credit), true);
+        apply_openrouter_sign_in(&mut settings, &credit, 1).unwrap();
+        let free_again = signed_in_openrouter(true).state;
+        let connection = apply_openrouter_refresh(&mut settings, &free_again, 2).unwrap();
+        assert!(connection.paid_only);
+        assert_eq!(
+            defaults_entry(&settings, "models", "openrouter").as_deref(),
+            Some(openrouter::PAID_MODEL)
+        );
+        // The free way keeps its free model after topping up.
+        let mut settings = new_install();
+        let gratis = signed_in_openrouter_for(Some(SignInIntent::Free), true);
+        apply_openrouter_sign_in(&mut settings, &gratis, 1).unwrap();
+        let paid = signed_in_openrouter(false).state;
+        let connection = apply_openrouter_refresh(&mut settings, &paid, 2).unwrap();
+        assert!(connection.free_only);
+        assert_eq!(
+            defaults_entry(&settings, "models", "openrouter").as_deref(),
+            Some("nvidia/nemotron-3.5-super-vl:free")
         );
     }
 
