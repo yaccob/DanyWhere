@@ -117,9 +117,12 @@ pub struct PostProcessFailure {
 
 impl PostProcessFailure {
     /// `reason` with the provider and model `settings` post-process with,
-    /// and for a timeout the time limit they set.
+    /// and for a timeout the time limit they set. "Not set up" names none:
+    /// before the setup the provider is nothing the user chose.
     pub fn new(settings: &AppSettings, reason: FailureReason) -> Self {
-        let provider = settings.active_post_process_provider();
+        let provider = settings
+            .active_post_process_provider()
+            .filter(|_| reason != FailureReason::NotSetUp);
         let model = provider
             .and_then(|provider| settings.post_process_models.get(&provider.id))
             .map(|model| model.trim().to_string())
@@ -893,7 +896,6 @@ mod tests {
             json!("boom")
         );
         let reasons = [
-            (FailureReason::NotSetUp, "not-set-up"),
             (FailureReason::NoModel, "no-model"),
             (FailureReason::NoPrompt, "no-prompt"),
             (FailureReason::NoApiKey, "no-api-key"),
@@ -911,6 +913,40 @@ mod tests {
             assert_eq!(detail["provider"], json!("Custom"));
             assert_eq!(detail.get("seconds"), None, "{name}");
         }
+    }
+
+    /// Review of 2026-11-27, M2 and M7, as the setup's frontend reads them
+    /// (`src/lib/postProcessFailure.ts`): "not set up" names no provider
+    /// (nothing the user chose), "no sign-in" names ChatGPT's plan.
+    #[test]
+    fn the_new_reasons_read_as_the_frontend_expects() {
+        let new_install = get_default_settings();
+        assert!(new_install.active_post_process_provider().is_some());
+        let not_set_up = PostProcessFailure::new(&new_install, FailureReason::NotSetUp);
+        assert_eq!(detail_of(&not_set_up), json!({ "reason": "not-set-up" }));
+        assert_eq!(
+            crate::post_process_setup::FailureDto::from_failure(&not_set_up).reason,
+            "not-set-up"
+        );
+
+        let mut plan = get_default_settings();
+        plan.post_process_provider_id = "chatgpt".to_string();
+        plan.post_process_models
+            .insert("chatgpt".to_string(), "gpt-6.2-sol".to_string());
+        let no_sign_in = PostProcessFailure::new(&plan, FailureReason::NoSignIn);
+        assert_eq!(
+            detail_of(&no_sign_in),
+            json!({
+                "reason": "no-sign-in",
+                "providerId": "chatgpt",
+                "provider": "ChatGPT (subscription)",
+                "model": "gpt-6.2-sol"
+            })
+        );
+        assert_eq!(
+            crate::post_process_setup::FailureDto::from_failure(&no_sign_in).reason,
+            "no-sign-in"
+        );
     }
 
     #[test]
