@@ -950,8 +950,14 @@ async fn send_responses_with(
         "Sending a request through ChatGPT's plan to {}",
         sanitized_url_for_log(&provider.base_url)
     );
-    let error = match send_plan(client, provider, &signed_in.access_token, &headers, &mut attempt)
-        .await
+    let error = match send_plan(
+        client,
+        provider,
+        &signed_in.access_token,
+        &headers,
+        &mut attempt,
+    )
+    .await
     {
         Err(error) if refuses_sign_in(&error) => error,
         answered => return answered,
@@ -962,7 +968,15 @@ async fn send_responses_with(
     );
     let renewed =
         session::renewed_after_refusal(store, &token_client, token_url, &signed_in).await?;
-    match send_plan(client, provider, &renewed.access_token, &headers, &mut attempt).await {
+    match send_plan(
+        client,
+        provider,
+        &renewed.access_token,
+        &headers,
+        &mut attempt,
+    )
+    .await
+    {
         Err(error) if refuses_sign_in(&error) => {
             session::end_refused(store, &renewed).await;
             Err(format!(
@@ -2658,12 +2672,14 @@ mod tests {
             Ok(())
         }
         fn expire(&self) {
-            self.expired.store(true, std::sync::atomic::Ordering::SeqCst);
+            self.expired
+                .store(true, std::sync::atomic::Ordering::SeqCst);
             *self.session.lock().unwrap() = None;
         }
     }
 
-    const PLAN_REFUSED_401: &str = r#"{"error":{"code":"invalid_token","message":"The access token is invalid."}}"#;
+    const PLAN_REFUSED_401: &str =
+        r#"{"error":{"code":"invalid_token","message":"The access token is invalid."}}"#;
     const PLAN_NOT_ELIGIBLE_403: &str = r#"{"error":{"code":"subscription_sharing_user_not_eligible","message":"This plan can't be used by apps."}}"#;
     const RENEWED_TOKENS: &str = r#"{"access_token":"access-new","refresh_token":"refresh-new","token_type":"Bearer","expires_in":3600,"scope":"openid profile email offline_access resource.invoke chatgpt.tokens.use.direct"}"#;
     const DEAD_REFRESH: &str = r#"{"error":"invalid_grant"}"#;
@@ -2699,10 +2715,20 @@ mod tests {
         let lines: Vec<&str> = requests.iter().map(|r| r.line.as_str()).collect();
         assert_eq!(
             lines,
-            ["POST /responses", "POST /api/accounts/oauth/token", "POST /responses"]
+            [
+                "POST /responses",
+                "POST /api/accounts/oauth/token",
+                "POST /responses"
+            ]
         );
-        assert_eq!(requests[0].authorization.as_deref(), Some("Bearer access-old"));
-        assert_eq!(requests[2].authorization.as_deref(), Some("Bearer access-new"));
+        assert_eq!(
+            requests[0].authorization.as_deref(),
+            Some("Bearer access-old")
+        );
+        assert_eq!(
+            requests[2].authorization.as_deref(),
+            Some("Bearer access-new")
+        );
         assert!(!store.was_expired());
         assert_eq!(
             store
@@ -2780,7 +2806,9 @@ mod tests {
             Some("https://github.com/yaccob/DanyWhere")
         );
         assert_eq!(
-            headers.get(USER_AGENT).and_then(|value| value.to_str().ok()),
+            headers
+                .get(USER_AGENT)
+                .and_then(|value| value.to_str().ok()),
             Some("DanyWhere/1.0 (+https://github.com/yaccob/DanyWhere)")
         );
         assert_eq!(headers.get("X-Title").unwrap(), "DanyWhere");

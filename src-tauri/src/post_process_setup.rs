@@ -1072,10 +1072,7 @@ mod tests {
         // A new installation: OpenAI without a model.
         let mut new_install = get_default_settings();
         assert!(!new_install.post_process_setup.finished);
-        assert_eq!(
-            missing_reason(&new_install),
-            Some(FailureReason::NotSetUp)
-        );
+        assert_eq!(missing_reason(&new_install), Some(FailureReason::NotSetUp));
         let mut chatgpt = with_provider("chatgpt", "gpt-6.2-sol");
         chatgpt.chatgpt_signed_in = false;
         assert_eq!(missing_reason(&chatgpt), Some(FailureReason::NotSetUp));

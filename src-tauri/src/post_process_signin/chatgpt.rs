@@ -1237,16 +1237,16 @@ mod tests {
     /// gone, so the next sign-in registers anew.
     #[test]
     fn a_dead_client_is_told_from_a_dead_refresh_token() {
-        assert!(names_dead_client(
-            &ChatGptError::SignInExpired("invalid_client".to_string())
-        ));
+        assert!(names_dead_client(&ChatGptError::SignInExpired(
+            "invalid_client".to_string()
+        )));
         assert!(names_dead_client(&ChatGptError::Http(status_error(
             reqwest::StatusCode::UNAUTHORIZED,
             r#"{"error":"invalid_client","error_description":"Unknown client"}"#
         ))));
-        assert!(!names_dead_client(
-            &ChatGptError::SignInExpired("invalid_grant".to_string())
-        ));
+        assert!(!names_dead_client(&ChatGptError::SignInExpired(
+            "invalid_grant".to_string()
+        )));
         assert!(!names_dead_client(&ChatGptError::Http(status_error(
             reqwest::StatusCode::BAD_REQUEST,
             r#"{"error":"invalid_grant"}"#
@@ -1368,9 +1368,14 @@ mod tests {
     async fn a_refresh_posts_the_documented_form_and_takes_the_new_tokens() {
         let (base, seen) = serve(vec![("200 OK", token_answer(None, None))]).await;
         let old = session();
-        let new = refresh(&client(), &format!("{base}/api/accounts/oauth/token"), &old, keep_nothing)
-            .await
-            .expect("a new session");
+        let new = refresh(
+            &client(),
+            &format!("{base}/api/accounts/oauth/token"),
+            &old,
+            keep_nothing,
+        )
+        .await
+        .expect("a new session");
 
         let seen = seen.lock().unwrap()[0].clone();
         assert!(seen
@@ -1469,22 +1474,31 @@ mod tests {
             ),
         ])
         .await;
-        let first = refresh(&client(), &base, &session(), keep_nothing).await.unwrap_err();
+        let first = refresh(&client(), &base, &session(), keep_nothing)
+            .await
+            .unwrap_err();
         assert_eq!(
             first,
             ChatGptError::Http(
                 "API request failed with status 503 Service Unavailable: upstream down".to_string()
             )
         );
-        let second = refresh(&client(), &base, &session(), keep_nothing).await.unwrap_err();
+        let second = refresh(&client(), &base, &session(), keep_nothing)
+            .await
+            .unwrap_err();
         assert!(matches!(second, ChatGptError::Http(_)), "{second:?}");
 
         let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
         let address = listener.local_addr().unwrap();
         drop(listener);
-        let offline = refresh(&client(), &format!("http://{address}"), &session(), keep_nothing)
-            .await
-            .unwrap_err();
+        let offline = refresh(
+            &client(),
+            &format!("http://{address}"),
+            &session(),
+            keep_nothing,
+        )
+        .await
+        .unwrap_err();
         match offline {
             ChatGptError::Http(text) => {
                 assert!(

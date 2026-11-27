@@ -589,9 +589,8 @@ pub async fn revoke_chatgpt_session(
     discovery_url: &str,
     timeout: Duration,
 ) -> Option<bool> {
-    let Some(session) = vault.load().chatgpt() else {
-        return None;
-    };
+    // Nothing stored: nothing to end.
+    let session = vault.load().chatgpt()?;
     let client = match short_token_client(timeout) {
         Ok(client) => client,
         Err(error) => {
@@ -646,8 +645,7 @@ async fn sign_out_chatgpt_held(
 /// values in use, the defaults or a profile.
 fn chatgpt_in_use(settings: &AppSettings) -> bool {
     settings.post_process_provider_id == CHATGPT_PROVIDER_ID
-        || crate::profiles::default_values(settings).post_process_provider_id
-            == CHATGPT_PROVIDER_ID
+        || crate::profiles::default_values(settings).post_process_provider_id == CHATGPT_PROVIDER_ID
         || settings
             .profiles
             .iter()
@@ -872,11 +870,7 @@ pub fn apply_openrouter_sign_in(
     now: i64,
 ) -> Result<(), String> {
     let mut next = settings.clone();
-    next.openrouter_connection = Some(connection_of(
-        &signed_in.state,
-        signed_in.state.intent,
-        now,
-    ));
+    next.openrouter_connection = Some(connection_of(&signed_in.state, signed_in.state.intent, now));
     crate::post_process_setup::apply_setup_choice(
         &mut next,
         &SetupChoice {
@@ -1572,8 +1566,14 @@ mod tests {
         let free = vec!["a:free".to_string(), "b:free".to_string()];
         let credit = Some(SignInIntent::Credit);
         let gratis = Some(SignInIntent::Free);
-        assert_eq!(openrouter_model(credit, true, &free), openrouter::PAID_MODEL);
-        assert_eq!(openrouter_model(credit, false, &free), openrouter::PAID_MODEL);
+        assert_eq!(
+            openrouter_model(credit, true, &free),
+            openrouter::PAID_MODEL
+        );
+        assert_eq!(
+            openrouter_model(credit, false, &free),
+            openrouter::PAID_MODEL
+        );
         assert_eq!(openrouter_model(credit, true, &[]), openrouter::PAID_MODEL);
         assert_eq!(openrouter_model(gratis, false, &free), "a:free");
         assert_eq!(openrouter_model(gratis, true, &free), "a:free");
@@ -1983,7 +1983,9 @@ mod tests {
         if let Some(nonce) = nonce {
             *nonce.lock().unwrap() = query_of(&auth_url)["nonce"].clone();
         }
-        play_browser(&auth_url, "redirect_uri", params).await.unwrap();
+        play_browser(&auth_url, "redirect_uri", params)
+            .await
+            .unwrap();
         let event = next_event(&mut events).await;
         (host, event)
     }
@@ -2035,10 +2037,11 @@ mod tests {
     #[tokio::test]
     async fn a_client_the_exchange_refuses_is_forgotten() {
         let refused = json!({"error": "invalid_client"}).to_string();
-        let (base, _seen) =
-            serve(Arc::new(move |_| ("401 Unauthorized".to_string(), refused.clone()))).await;
-        let (host, event) =
-            chatgpt_sign_in_with(Some(ISSUED), None, &base, &[("code", "c")]).await;
+        let (base, _seen) = serve(Arc::new(move |_| {
+            ("401 Unauthorized".to_string(), refused.clone())
+        }))
+        .await;
+        let (host, event) = chatgpt_sign_in_with(Some(ISSUED), None, &base, &[("code", "c")]).await;
         assert_eq!(event.error, Some(SignInFailure::Refused));
         assert!(host.calls.lock().unwrap().contains(&"forget_client"));
         // Another refusal keeps it.
@@ -2122,8 +2125,10 @@ mod tests {
             "hint": "sk-or-v1-leaked-key-fragment"
         })
         .to_string();
-        let (base, _seen) =
-            serve(Arc::new(move |_| ("401 Unauthorized".to_string(), answer.clone()))).await;
+        let (base, _seen) = serve(Arc::new(move |_| {
+            ("401 Unauthorized".to_string(), answer.clone())
+        }))
+        .await;
         let (host, event) = openrouter_sign_in_against(&base).await;
         assert!(!event.ok);
         assert_eq!(error_code(&event), json!("refused"));
@@ -2650,8 +2655,9 @@ mod tests {
     /// Post-processes "hello there" with `settings`' defaults, OpenRouter
     /// pointed at a fake server; returns the request's body.
     async fn dictation_body(settings: &AppSettings) -> Value {
-        let reply = json!({"choices": [{"message": {"content": "{\"transcription\":\"Polished.\"}"}}]})
-            .to_string();
+        let reply =
+            json!({"choices": [{"message": {"content": "{\"transcription\":\"Polished.\"}"}}]})
+                .to_string();
         let (chat, seen) = serve(Arc::new(move |_| ("200 OK".to_string(), reply.clone()))).await;
         let mut layer = with_defaults(settings);
         layer
@@ -2784,7 +2790,10 @@ mod tests {
         let (_dir, vault, mut settings) = signed_in_vault();
 
         let discovery = format!("{url}/.well-known/openid-configuration");
-        assert_eq!(revoke_chatgpt_session(&vault, &discovery, Duration::from_secs(5)).await, Some(true));
+        assert_eq!(
+            revoke_chatgpt_session(&vault, &discovery, Duration::from_secs(5)).await,
+            Some(true)
+        );
         assert_eq!(
             lines(&seen),
             vec![
@@ -2815,11 +2824,17 @@ mod tests {
         *base.lock().unwrap() = url.clone();
         let (_dir, vault, mut settings) = signed_in_vault();
         let discovery = format!("{url}/.well-known/openid-configuration");
-        assert_eq!(revoke_chatgpt_session(&vault, &discovery, Duration::from_secs(5)).await, Some(false));
+        assert_eq!(
+            revoke_chatgpt_session(&vault, &discovery, Duration::from_secs(5)).await,
+            Some(false)
+        );
         assert_eq!(lines(&seen).len(), 2);
         // Nobody listens there.
         let gone = "http://127.0.0.1:9/.well-known/openid-configuration";
-        assert_eq!(revoke_chatgpt_session(&vault, gone, Duration::from_secs(2)).await, Some(false));
+        assert_eq!(
+            revoke_chatgpt_session(&vault, gone, Duration::from_secs(2)).await,
+            Some(false)
+        );
         end_chatgpt_sign_in(&vault, &mut settings).unwrap();
         assert!(vault.load().chatgpt().is_none());
         assert!(!settings.chatgpt_signed_in);
@@ -2833,7 +2848,10 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let vault = Vault::new(dir.path().join(vault::FILE_NAME));
         let discovery = format!("{url}/.well-known/openid-configuration");
-        assert_eq!(revoke_chatgpt_session(&vault, &discovery, Duration::from_secs(5)).await, None);
+        assert_eq!(
+            revoke_chatgpt_session(&vault, &discovery, Duration::from_secs(5)).await,
+            None
+        );
         assert!(lines(&seen).is_empty(), "{:?}", lines(&seen));
     }
 
@@ -2881,8 +2899,11 @@ mod tests {
 
         // OpenAI refuses: ended here only, and the user is told.
         let refused = Arc::new(Mutex::new(String::new()));
-        let (url, _seen) =
-            serve(revocation_handler(refused.clone(), "503 Service Unavailable")).await;
+        let (url, _seen) = serve(revocation_handler(
+            refused.clone(),
+            "503 Service Unavailable",
+        ))
+        .await;
         *refused.lock().unwrap() = url.clone();
         let (_dir, vault, mut settings) = signed_in_vault();
         let outcome = sign_out_chatgpt(

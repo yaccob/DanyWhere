@@ -2008,7 +2008,9 @@ pub fn locked_update<S: Clone>(
     write: impl FnOnce(S),
     change: impl FnOnce(&mut S) -> Result<(), String>,
 ) -> Result<(S, S), String> {
-    let _held = lock.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+    let _held = lock
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     let before = read();
     let mut after = before.clone();
     change(&mut after)?;
