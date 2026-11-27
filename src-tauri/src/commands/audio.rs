@@ -22,17 +22,14 @@ pub struct CustomSounds {
     stop: bool,
 }
 
-fn custom_sound_exists(app: &AppHandle, sound_type: &str) -> bool {
-    crate::portable::resolve_app_data(app, &format!("custom_{}.wav", sound_type))
-        .is_ok_and(|path| path.exists())
-}
-
 #[tauri::command]
 #[specta::specta]
 pub fn check_custom_sounds(app: AppHandle) -> CustomSounds {
+    // DanyWhere: the files the custom theme plays, its own or those the
+    // sound file names.
     CustomSounds {
-        start: custom_sound_exists(&app, "start"),
-        stop: custom_sound_exists(&app, "stop"),
+        start: audio_feedback::custom_sound_exists(&app, audio_feedback::SoundType::Start),
+        stop: audio_feedback::custom_sound_exists(&app, audio_feedback::SoundType::Stop),
     }
 }
 
@@ -321,17 +318,23 @@ pub fn get_selected_output_device(app: AppHandle) -> Result<String, String> {
 #[tauri::command]
 #[specta::specta]
 pub async fn play_test_sound(app: AppHandle, sound_type: String) {
-    let sound = match sound_type.as_str() {
-        "start" => audio_feedback::SoundType::Start,
-        "stop" => audio_feedback::SoundType::Stop,
-        "clipboard" => audio_feedback::SoundType::Clipboard,
-        "done" => audio_feedback::SoundType::Done,
-        _ => {
-            warn!("Unknown sound type: {}", sound_type);
-            return;
-        }
+    let Some(sound) = test_sound(&sound_type) else {
+        warn!("Unknown sound type: {}", sound_type);
+        return;
     };
     audio_feedback::play_test_sound(&app, sound);
+}
+
+/// The sound the Sound page's preview asks for by its name.
+fn test_sound(name: &str) -> Option<audio_feedback::SoundType> {
+    match name {
+        "start" => Some(audio_feedback::SoundType::Start),
+        "instruction" => Some(audio_feedback::SoundType::Instruction),
+        "stop" => Some(audio_feedback::SoundType::Stop),
+        "clipboard" => Some(audio_feedback::SoundType::Clipboard),
+        "done" => Some(audio_feedback::SoundType::Done),
+        _ => None,
+    }
 }
 
 #[tauri::command]
@@ -429,6 +432,22 @@ pub async fn change_airpods_mode_setting(app: AppHandle, enabled: bool) -> Resul
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_preview_plays_every_event_by_its_name() {
+        use audio_feedback::SoundType;
+        assert_eq!(
+            ["start", "instruction", "stop", "done", "clipboard"].map(test_sound),
+            [
+                Some(SoundType::Start),
+                Some(SoundType::Instruction),
+                Some(SoundType::Stop),
+                Some(SoundType::Done),
+                Some(SoundType::Clipboard),
+            ]
+        );
+        assert_eq!(test_sound("finish"), None);
+    }
 
     // DanyWhere: what the settings offer from the lists of devices.
 

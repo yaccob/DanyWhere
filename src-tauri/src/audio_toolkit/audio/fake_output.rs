@@ -69,6 +69,8 @@ struct Seen {
     open_streams: usize,
     peak: f32,
     errors_reported: usize,
+    /// The first channel of every sample it got, of all its streams.
+    heard: Vec<f32>,
 }
 
 /// One fake output device. Clones share the device.
@@ -196,6 +198,21 @@ impl FakeOutput {
     /// The loudest sample it got.
     pub(crate) fn peak(&self) -> f32 {
         self.seen.lock().unwrap().peak
+    }
+
+    /// The first channel of what it got, at the rate of the stream asked
+    /// for last, from the first sample above silence to the last.
+    pub(crate) fn heard(&self) -> (Vec<f32>, u32) {
+        let seen = self.seen.lock().unwrap();
+        let rate = seen.asked.last().map_or(0, |config| config.sample_rate);
+        let loud = |s: &&f32| s.abs() > 1e-4;
+        let start = seen.heard.iter().position(|s| loud(&s)).unwrap_or(0);
+        let end = seen
+            .heard
+            .iter()
+            .rposition(|s| loud(&s))
+            .map_or(0, |i| i + 1);
+        (seen.heard[start..end.max(start)].to_vec(), rate)
     }
 
     pub(crate) fn errors_reported(&self) -> usize {
@@ -437,6 +454,8 @@ impl FakeStream {
                     let peak = samples.iter().fold(0.0f32, |peak, s| peak.max(s.abs()));
                     let mut seen = device.seen.lock().unwrap();
                     seen.peak = seen.peak.max(peak);
+                    let channels = usize::from(config.channels.max(1));
+                    seen.heard.extend(samples.iter().step_by(channels));
                 }
             }
         });

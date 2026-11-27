@@ -47,8 +47,10 @@ export const SoundPicker: React.FC<SoundPickerProps> = ({
   // switched off, else the one for a transcript left on the clipboard.
   const doneSound = getSetting("done_sound") ?? true;
 
+  // DanyWhere: in the order a dictation plays them, each a step higher.
   const handlePlayAllSounds = async () => {
     await playTestSound("start");
+    await playTestSound("instruction");
     await playTestSound("stop");
     await playTestSound(doneSound ? "done" : "clipboard");
   };
