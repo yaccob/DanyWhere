@@ -1246,6 +1246,11 @@
         "description": "Öppnar theme.css, som ändrar appens färger och andra stilar. Sparade ändringar syns inom några sekunder, utan omstart. Om filen har tagits bort skapas den igen.",
         "button": "Öppna temafil"
       },
+      "soundFile": {
+        "title": "Ljudfil",
+        "description": "Öppnar sounds.toml, som anger fil och tonhöjd för varje ljud per ljudtema och händelse. Sparade ändringar gäller från nästa ljud, utan omstart. Om filen har tagits bort skapas den igen.",
+        "button": "Öppna ljudfil"
+      },
       "onboardingPreview": {
         "title": "Förhandsvisa introduktionen",
         "description": "Förhandsvisa introduktionsskärmarna utan att ändra behörigheter, modeller eller slutförandestatus",
