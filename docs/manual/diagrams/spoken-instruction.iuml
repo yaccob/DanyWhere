@@ -5,8 +5,9 @@
 start
 :$start;
 :$text;
-' The instruction shortcut cuts the recording without a gap or a sound
-' (AudioRecordingManager::split_recording) and switches the coordinator to
+' The instruction shortcut cuts the recording without a gap
+' (AudioRecordingManager::split_recording), plays the instruction sound
+' with Audio Feedback on, and switches the coordinator to
 ' "Recording: instruction" (dictation_flow::instruction::begin_instruction).
 ' Esc discards both sections (cancel_current_operation).
 :$switch;
