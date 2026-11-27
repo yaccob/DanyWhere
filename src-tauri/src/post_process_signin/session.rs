@@ -55,7 +55,18 @@ pub async fn fresh_session(
         return Ok(session);
     }
     log::info!("Refreshing the ChatGPT sign-in");
-    match chatgpt::refresh(client, token_url, &session).await {
+    refresh_held(store, client, token_url, &session).await
+}
+
+/// Refreshes `session` through `token_url` and saves it, for a caller that
+/// holds [`refresh_lock`]; a dead refresh token ends the sign-in.
+async fn refresh_held(
+    store: &dyn SessionStore,
+    client: &reqwest::Client,
+    token_url: &str,
+    session: &ChatGptSession,
+) -> Result<ChatGptSession, String> {
+    match chatgpt::refresh(client, token_url, session).await {
         Ok(renewed) => {
             // The old refresh token is spent: save the new one before use.
             if let Err(error) = store.save(&renewed) {
@@ -75,6 +86,41 @@ pub async fn fresh_session(
     }
 }
 
+/// After the plan refused `refused`'s access token (review of 2026-11-27,
+/// M2): the session to ask with once more. Another request that renewed
+/// it meanwhile gives its session; otherwise it is refreshed now, whatever
+/// its expiry says. A dead refresh token ends the sign-in.
+pub async fn renewed_after_refusal(
+    store: &dyn SessionStore,
+    client: &reqwest::Client,
+    token_url: &str,
+    refused: &ChatGptSession,
+) -> Result<ChatGptSession, String> {
+    let _held = refresh_lock().lock().await;
+    let Some(stored) = store.load() else {
+        store.expire();
+        return Err(NO_SESSION.to_string());
+    };
+    if stored.access_token != refused.access_token {
+        return Ok(stored);
+    }
+    log::info!("ChatGPT's plan refused the access token; renewing the sign-in once");
+    refresh_held(store, client, token_url, &stored).await
+}
+
+/// The plan refused `refused` also after renewing it: the sign-in ends,
+/// unless another request renewed it meanwhile.
+pub async fn end_refused(store: &dyn SessionStore, refused: &ChatGptSession) {
+    let _held = refresh_lock().lock().await;
+    if store
+        .load()
+        .is_some_and(|stored| stored.access_token == refused.access_token)
+    {
+        log::warn!("ChatGPT's plan refused the renewed sign-in; it has to be renewed");
+        store.expire();
+    }
+}
+
 struct Installed {
     store: Arc<dyn SessionStore>,
     token_url: String,
@@ -88,21 +134,26 @@ pub fn install(store: Arc<dyn SessionStore>, token_url: String) {
         Some(Installed { store, token_url });
 }
 
-/// The app's session, fresh ([`fresh_session`] with the installed store).
-pub async fn current() -> Result<ChatGptSession, String> {
-    let installed = INSTALLED
+/// The app's session store and the token URL it is refreshed through, once
+/// installed.
+pub fn installed() -> Option<(Arc<dyn SessionStore>, String)> {
+    INSTALLED
         .read()
         .unwrap_or_else(PoisonError::into_inner)
         .as_ref()
-        .map(|installed| (installed.store.clone(), installed.token_url.clone()));
-    let Some((store, token_url)) = installed else {
+        .map(|installed| (installed.store.clone(), installed.token_url.clone()))
+}
+
+/// The app's session, fresh ([`fresh_session`] with the installed store).
+pub async fn current() -> Result<ChatGptSession, String> {
+    let Some((store, token_url)) = installed() else {
         return Err(NO_SESSION.to_string());
     };
     let client = super::commands::token_client()?;
     fresh_session(store.as_ref(), &client, &token_url, unix_now()).await
 }
 
-fn unix_now() -> i64 {
+pub fn unix_now() -> i64 {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map(|elapsed| elapsed.as_secs() as i64)

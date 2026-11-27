@@ -890,7 +890,42 @@ async fn send_responses(
     json_schema: Option<&Value>,
     reasoning: &ReasoningRequest,
 ) -> Result<Completion, String> {
-    let session = crate::post_process_signin::session::current().await?;
+    let Some((store, token_url)) = crate::post_process_signin::session::installed() else {
+        return Err(crate::post_process_signin::session::NO_SESSION.to_string());
+    };
+    send_responses_with(
+        store.as_ref(),
+        &token_url,
+        provider,
+        model,
+        instructions,
+        input,
+        json_schema,
+        reasoning,
+    )
+    .await
+}
+
+/// DanyWhere: [`send_responses`] with the session of `store`, refreshed
+/// through `token_url`. Review of 2026-11-27, M2: an access token the plan
+/// refuses before its expiry (signed out in ChatGPT's settings, say) is
+/// renewed once and the request asked again; refused again, the sign-in
+/// ends and the error reads as `sign-in-expired`.
+#[allow(clippy::too_many_arguments)]
+async fn send_responses_with(
+    store: &dyn crate::post_process_signin::session::SessionStore,
+    token_url: &str,
+    provider: &PostProcessProvider,
+    model: &str,
+    instructions: Option<&str>,
+    input: &str,
+    json_schema: Option<&Value>,
+    reasoning: &ReasoningRequest,
+) -> Result<Completion, String> {
+    use crate::post_process_signin::session;
+    let token_client = crate::post_process_signin::commands::token_client()?;
+    let signed_in =
+        session::fresh_session(store, &token_client, token_url, session::unix_now()).await?;
     let client = shared_client()?;
     // `X-Title`, `Referer`, `User-Agent`; the bearer and the content type
     // are `llm_responses`'.
@@ -899,39 +934,102 @@ async fn send_responses(
     let effort = reasoning.effort.as_deref();
     let rejection = effort.map(|level| effort_rejection_key(provider, model, level));
     let skipped = rejection.as_deref().is_some_and(is_known_rejected);
-    let first = if skipped { None } else { effort };
-    let mut request = crate::llm_responses::ResponsesRequest {
-        model,
-        instructions,
-        input,
-        effort: first,
-        json_schema,
-        timeout: None,
+    let mut attempt = PlanAttempt {
+        request: crate::llm_responses::ResponsesRequest {
+            model,
+            instructions,
+            input,
+            effort: if skipped { None } else { effort },
+            json_schema,
+            timeout: None,
+        },
+        effort_ignored: skipped,
+        rejection,
     };
     debug!(
         "Sending a request through ChatGPT's plan to {}",
         sanitized_url_for_log(&provider.base_url)
     );
+    let error = match send_plan(client, provider, &signed_in.access_token, &headers, &mut attempt)
+        .await
+    {
+        Err(error) if refuses_sign_in(&error) => error,
+        answered => return answered,
+    };
+    info!(
+        "ChatGPT's plan refused the sign-in (status {:?})",
+        crate::post_process_failure::error_status(&error)
+    );
+    let renewed =
+        session::renewed_after_refusal(store, &token_client, token_url, &signed_in).await?;
+    match send_plan(client, provider, &renewed.access_token, &headers, &mut attempt).await {
+        Err(error) if refuses_sign_in(&error) => {
+            session::end_refused(store, &renewed).await;
+            Err(format!(
+                "{} ChatGPT's plan refused the renewed sign-in (status {})",
+                crate::post_process_failure::SIGN_IN_EXPIRED_PREFIX,
+                crate::post_process_failure::error_status(&error).unwrap_or_default()
+            ))
+        }
+        answered => answered,
+    }
+}
+
+/// DanyWhere: one request through ChatGPT's plan and what its effort did.
+struct PlanAttempt<'a> {
+    request: crate::llm_responses::ResponsesRequest<'a>,
+    /// The answer came without the profile's effort.
+    effort_ignored: bool,
+    /// Where a refused effort is remembered (`remember_rejection`).
+    rejection: Option<String>,
+}
+
+/// DanyWhere: `attempt` with the access token `bearer`. An effort the model
+/// refuses (400 on `reasoning.effort`) is dropped and asked once more
+/// without it, and not sent again while the app runs.
+async fn send_plan(
+    client: &reqwest::Client,
+    provider: &PostProcessProvider,
+    bearer: &str,
+    headers: &HeaderMap,
+    attempt: &mut PlanAttempt<'_>,
+) -> Result<Completion, String> {
     let completion = |text: String, effort_ignored: bool| Completion {
         content: (!text.is_empty()).then_some(text),
         effort_ignored,
     };
-    let bearer = session.access_token.as_str();
-    match crate::llm_responses::send(client, &provider.base_url, bearer, &headers, &request).await {
-        Ok(text) => Ok(completion(text, skipped)),
-        Err(error) if first.is_some() && refuses_effort(&error) => {
-            info!("ChatGPT's plan refused the effort for '{model}'; retrying without it");
-            request.effort = None;
+    let base_url = &provider.base_url;
+    match crate::llm_responses::send(client, base_url, bearer, headers, &attempt.request).await {
+        Ok(text) => Ok(completion(text, attempt.effort_ignored)),
+        Err(error) if attempt.request.effort.is_some() && refuses_effort(&error) => {
+            info!(
+                "ChatGPT's plan refused the effort for '{}'; retrying without it",
+                attempt.request.model
+            );
+            attempt.request.effort = None;
+            attempt.effort_ignored = true;
             let text =
-                crate::llm_responses::send(client, &provider.base_url, bearer, &headers, &request)
+                crate::llm_responses::send(client, base_url, bearer, headers, &attempt.request)
                     .await?;
-            if let Some(key) = rejection {
+            if let Some(key) = attempt.rejection.take() {
                 remember_rejection(key);
             }
             Ok(completion(text, true))
         }
         Err(error) => Err(error),
     }
+}
+
+/// DanyWhere: whether the plan refused the sign-in itself: a 401 or 403
+/// that names no other reason (not the plan's limit, a plan apps may not
+/// use, a missing model or credit).
+fn refuses_sign_in(error: &str) -> bool {
+    use crate::post_process_failure::{classify_llm_error, error_status, FailureReason};
+    matches!(error_status(error), Some(401 | 403))
+        && matches!(
+            classify_llm_error(error, true),
+            FailureReason::KeyRefused | FailureReason::SignInExpired
+        )
 }
 
 /// DanyWhere: whether `error` is a 400 refusing `reasoning.effort`.
@@ -2512,6 +2610,164 @@ mod tests {
             body["models"],
             serde_json::json!(["a/one:free", "b/two:free"])
         );
+    }
+
+    // ---- review of 2026-11-27, M2: a sign-in the plan refuses ------------
+
+    /// A plan session of each test's own, and what happened to it.
+    struct RefusedPlanStore {
+        session: Mutex<Option<crate::post_process_signin::chatgpt::ChatGptSession>>,
+        saved: std::sync::atomic::AtomicUsize,
+        expired: std::sync::atomic::AtomicBool,
+    }
+
+    impl RefusedPlanStore {
+        /// A session whose access token is not due for a refresh.
+        fn new() -> Self {
+            RefusedPlanStore {
+                session: Mutex::new(Some(crate::post_process_signin::chatgpt::ChatGptSession {
+                    client_id: "app_client_test".to_string(),
+                    access_token: "access-old".to_string(),
+                    refresh_token: "refresh-old".to_string(),
+                    expires_at: i64::MAX / 2,
+                    email: None,
+                    plan: None,
+                    subject: "user-test".to_string(),
+                    earliest_refresh_at: None,
+                })),
+                saved: Default::default(),
+                expired: Default::default(),
+            }
+        }
+
+        fn was_expired(&self) -> bool {
+            self.expired.load(std::sync::atomic::Ordering::SeqCst)
+        }
+    }
+
+    impl crate::post_process_signin::session::SessionStore for RefusedPlanStore {
+        fn load(&self) -> Option<crate::post_process_signin::chatgpt::ChatGptSession> {
+            self.session.lock().unwrap().clone()
+        }
+        fn save(
+            &self,
+            session: &crate::post_process_signin::chatgpt::ChatGptSession,
+        ) -> Result<(), String> {
+            self.saved.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            *self.session.lock().unwrap() = Some(session.clone());
+            Ok(())
+        }
+        fn expire(&self) {
+            self.expired.store(true, std::sync::atomic::Ordering::SeqCst);
+            *self.session.lock().unwrap() = None;
+        }
+    }
+
+    const PLAN_REFUSED_401: &str = r#"{"error":{"code":"invalid_token","message":"The access token is invalid."}}"#;
+    const PLAN_NOT_ELIGIBLE_403: &str = r#"{"error":{"code":"subscription_sharing_user_not_eligible","message":"This plan can't be used by apps."}}"#;
+    const RENEWED_TOKENS: &str = r#"{"access_token":"access-new","refresh_token":"refresh-new","token_type":"Bearer","expires_in":3600,"scope":"openid profile email offline_access resource.invoke chatgpt.tokens.use.direct"}"#;
+    const DEAD_REFRESH: &str = r#"{"error":"invalid_grant"}"#;
+
+    /// One request through the plan with `store`, its tokens renewed at the
+    /// same fake server.
+    async fn ask_plan(store: &RefusedPlanStore, base_url: &str) -> Result<Completion, String> {
+        send_responses_with(
+            store,
+            &format!("{base_url}/api/accounts/oauth/token"),
+            &plan_provider(base_url),
+            "gpt-6.2-sol",
+            Some("the frame"),
+            "the transcript",
+            None,
+            &ReasoningRequest::default(),
+        )
+        .await
+    }
+
+    #[tokio::test]
+    async fn a_refused_access_token_is_renewed_once_and_the_request_asked_again() {
+        let (base_url, seen) = serve_plan(vec![
+            ("401 Unauthorized", "application/json", PLAN_REFUSED_401),
+            ("200 OK", "application/json", RENEWED_TOKENS),
+            ("200 OK", SSE, PLAN_OK),
+        ])
+        .await;
+        let store = RefusedPlanStore::new();
+        let reply = ask_plan(&store, &base_url).await;
+        assert_eq!(reply.map(|c| c.content), Ok(Some("Cleaned".to_string())));
+        let requests = plan_requests(&seen);
+        let lines: Vec<&str> = requests.iter().map(|r| r.line.as_str()).collect();
+        assert_eq!(
+            lines,
+            ["POST /responses", "POST /api/accounts/oauth/token", "POST /responses"]
+        );
+        assert_eq!(requests[0].authorization.as_deref(), Some("Bearer access-old"));
+        assert_eq!(requests[2].authorization.as_deref(), Some("Bearer access-new"));
+        assert!(!store.was_expired());
+        assert_eq!(
+            store
+                .session
+                .lock()
+                .unwrap()
+                .as_ref()
+                .map(|session| session.refresh_token.clone()),
+            Some("refresh-new".to_string())
+        );
+    }
+
+    #[tokio::test]
+    async fn a_sign_in_refused_again_after_renewing_ends_as_expired() {
+        let (base_url, seen) = serve_plan(vec![
+            ("401 Unauthorized", "application/json", PLAN_REFUSED_401),
+            ("200 OK", "application/json", RENEWED_TOKENS),
+            ("401 Unauthorized", "application/json", PLAN_REFUSED_401),
+        ])
+        .await;
+        let store = RefusedPlanStore::new();
+        let error = ask_plan(&store, &base_url).await.expect_err("refused");
+        assert!(error.starts_with("sign-in-expired:"), "{error}");
+        assert_eq!(
+            crate::post_process_failure::classify_llm_error(&error, false),
+            crate::post_process_failure::FailureReason::SignInExpired
+        );
+        assert!(store.was_expired(), "the sign-in ends");
+        assert_eq!(plan_requests(&seen).len(), 3);
+    }
+
+    #[tokio::test]
+    async fn a_dead_refresh_token_after_a_refusal_ends_the_sign_in() {
+        let (base_url, seen) = serve_plan(vec![
+            ("401 Unauthorized", "application/json", PLAN_REFUSED_401),
+            ("400 Bad Request", "application/json", DEAD_REFRESH),
+        ])
+        .await;
+        let store = RefusedPlanStore::new();
+        let error = ask_plan(&store, &base_url).await.expect_err("refused");
+        assert_eq!(
+            crate::post_process_failure::classify_llm_error(&error, false),
+            crate::post_process_failure::FailureReason::SignInExpired,
+            "{error}"
+        );
+        assert!(store.was_expired());
+        assert_eq!(plan_requests(&seen).len(), 2);
+    }
+
+    #[tokio::test]
+    async fn a_plan_that_may_not_be_used_is_not_renewed() {
+        let (base_url, seen) = serve_plan(vec![(
+            "403 Forbidden",
+            "application/json",
+            PLAN_NOT_ELIGIBLE_403,
+        )])
+        .await;
+        let store = RefusedPlanStore::new();
+        let error = ask_plan(&store, &base_url).await.expect_err("not eligible");
+        assert_eq!(
+            crate::post_process_failure::classify_llm_error(&error, false),
+            crate::post_process_failure::FailureReason::PlanNotEligible
+        );
+        assert_eq!(plan_requests(&seen).len(), 1, "no renewal");
+        assert!(!store.was_expired());
     }
 
     /// DanyWhere (review of 2026-11-27, N18): the requests name DanyWhere's
