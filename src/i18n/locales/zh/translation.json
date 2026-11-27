@@ -1144,6 +1144,7 @@
           "creditBody": "注册一个 OpenRouter 账号，点一下“Authorize”，然后一次性充值 5 美元起。DanyWhere 会选择不拿你的文字做训练的模型。5 美元够听写几千次，而且不会自动续费。",
           "tipAccount": "用 Google 或 GitHub 登录：省去密码和邮件验证码。",
           "tipPayment": "第一次用 OpenRouter？欢迎页面会要求填写付款方式。你可以选择“I'll do this later”，免费模型不需要付款方式。之后回到这里，点“重新打开页面”。",
+          "tipPaymentCredit": "第一次用 OpenRouter？欢迎页面会要求填写付款方式，反正充值也需要它。之后回到这里，点“重新打开页面”。账户没有额度之前，DanyWhere 不会发送任何内容。",
           "connect": "连接 OpenRouter"
         },
         "chatgpt": {
@@ -1197,10 +1198,12 @@
           "unavailableBodyMac": "在此电脑上运行模型需要 16 GB 内存，此 Mac 只有 {{memory}}。可以使用你自己的服务器，例如你公司的服务器。",
           "unavailableBody": "在此电脑上运行模型需要 16 GB 内存，此电脑只有 {{memory}}。可以使用你自己的服务器，例如你公司的服务器。",
           "ownServer": "设置自己的服务器",
-          "ownServerHint": "在下方填写它的地址和模型。"
+          "ownServerHint": "在下方填写它的地址和模型。",
+          "ownServerLater": "自己的服务器可以稍后在“基本设置 › 后处理”的“所有提供商 …”中填写。"
         },
         "signIn": {
           "waiting": "正在等待浏览器 …",
+          "title": "登录 {{provider}}",
           "waitingHint": "请在浏览器中完成。如果你需要先注册，请点“重新打开页面”。",
           "reopen": "重新打开页面",
           "cancel": "取消",
@@ -1218,8 +1221,9 @@
           "plan": "套餐：{{plan}}",
           "freeModels": "免费模型，每天最多 50 次听写",
           "withCredit": "已充值，使用不拿文字做训练的模型",
-          "noCreditYet": "还没有额度：在你充值之前，DanyWhere 会使用免费模型。",
+          "noCreditYet": "还没有额度：在你充值之前，DanyWhere 不会发送任何内容。",
           "notToppedUp": "OpenRouter 还没有显示额度。这可能需要一分钟。",
+          "topUpCheckFailed": "无法向 OpenRouter 查询额度。",
           "keyLimit": "密钥的消费上限：{{limit}}",
           "model": "模型：{{model}}",
           "picksModel": "由 DanyWhere 选择模型。",
@@ -1229,6 +1233,11 @@
           "topUp": "充值",
           "toppedUp": "我已充值",
           "disconnect": "断开连接",
+          "disconnectConfirm": "再点一次即可删除密钥",
+          "keyStaysAtOpenRouter": "在你删除之前，OpenRouter 会在你的 API 密钥中保留密钥“DanyWhere”。",
+          "revokeUnconfirmed": "OpenAI 未确认退出登录",
+          "revokeUnconfirmedDetail": "DanyWhere 已在这里忘记登录。你可以在 ChatGPT 设置中检查 DanyWhere 的访问权限。",
+          "chatgptSettings": "ChatGPT 设置",
           "answerAgain": "重新回答问题",
           "advanced": "高级"
         },
@@ -1240,6 +1249,10 @@
           "running": "正在试用 …",
           "took": "用 {{model}} 耗时 {{seconds}} 秒",
           "failed": "试用没有成功。"
+        },
+        "errors": {
+          "disconnect": "未断开连接",
+          "reopen": "未能重新打开页面"
         }
       }
     },
@@ -1715,6 +1728,9 @@
       "planLimit": "你在 {{provider}} 的套餐用量暂时已达上限。",
       "planNotEligible": "你在 {{provider}} 的套餐不包括在其他应用中使用。",
       "signInExpired": "{{provider}} 的登录已过期，请重新登录。",
+      "noSignIn": "你尚未登录 {{provider}}。",
+      "notSetUp": "尚未设置后处理。",
+      "notSetUpTitle": "未设置后处理",
       "rateLimited": "{{provider}} 限制了每分钟可发送的量，请稍等片刻再听写。",
       "actions": {
         "setUp": "设置",

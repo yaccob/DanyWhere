@@ -1144,6 +1144,7 @@
           "creditBody": "Una cuenta en OpenRouter, un clic en «Authorize» y luego una sola recarga desde 5 dólares. DanyWhere elige un modelo que no usa tus textos para entrenar. 5 dólares alcanzan para miles de dictados, y nada se renueva.",
           "tipAccount": "Regístrate con Google o GitHub: así te ahorras una contraseña y un código por correo.",
           "tipPayment": "¿Nuevo en OpenRouter? La bienvenida te pide un método de pago. Puedes elegir «I'll do this later»: los modelos gratuitos no lo necesitan. Luego vuelve aquí y pulsa «Abrir la página de nuevo».",
+          "tipPaymentCredit": "¿Nuevo en OpenRouter? La bienvenida te pide un método de pago, que de todos modos necesitas para recargar. Luego vuelve aquí y pulsa «Abrir la página de nuevo». Mientras la cuenta no tenga saldo, DanyWhere no envía nada.",
           "connect": "Conectar OpenRouter"
         },
         "chatgpt": {
@@ -1197,10 +1198,12 @@
           "unavailableBodyMac": "Un modelo en este ordenador necesita 16 GB de memoria; este Mac tiene {{memory}}. Sirve un servidor propio, por ejemplo el de tu empresa.",
           "unavailableBody": "Un modelo en este ordenador necesita 16 GB de memoria; este ordenador tiene {{memory}}. Sirve un servidor propio, por ejemplo el de tu empresa.",
           "ownServer": "Configurar un servidor propio",
-          "ownServerHint": "Introduce abajo su dirección y su modelo."
+          "ownServerHint": "Introduce abajo su dirección y su modelo.",
+          "ownServerLater": "Un servidor propio lo puedes introducir más tarde en Configuración básica › Post proceso, dentro de «Todos los proveedores …»."
         },
         "signIn": {
           "waiting": "Esperando al navegador …",
+          "title": "Inicio de sesión en {{provider}}",
           "waitingHint": "Termina en el navegador. Si antes tuviste que registrarte, pulsa «Abrir la página de nuevo».",
           "reopen": "Abrir la página de nuevo",
           "cancel": "Cancelar",
@@ -1218,8 +1221,9 @@
           "plan": "Suscripción: {{plan}}",
           "freeModels": "Modelos gratuitos, hasta 50 dictados al día",
           "withCredit": "Con saldo, un modelo que no entrena con tus textos",
-          "noCreditYet": "Aún no hay saldo: DanyWhere usa los modelos gratuitos hasta que recargues.",
+          "noCreditYet": "Aún no hay saldo: DanyWhere no envía nada hasta que recargues.",
           "notToppedUp": "OpenRouter aún no muestra saldo. Puede tardar un minuto.",
+          "topUpCheckFailed": "No se pudo consultar el saldo en OpenRouter.",
           "keyLimit": "Límite de gasto de la clave: {{limit}}",
           "model": "Modelo: {{model}}",
           "picksModel": "DanyWhere elige el modelo.",
@@ -1229,6 +1233,11 @@
           "topUp": "Recargar",
           "toppedUp": "Ya he recargado",
           "disconnect": "Desconectar",
+          "disconnectConfirm": "Haz clic de nuevo para quitar la clave",
+          "keyStaysAtOpenRouter": "OpenRouter conserva la clave «DanyWhere» entre tus claves API hasta que la borres allí.",
+          "revokeUnconfirmed": "OpenAI no confirmó el cierre de sesión",
+          "revokeUnconfirmedDetail": "DanyWhere ha olvidado aquí el inicio de sesión. Puedes comprobar el acceso de DanyWhere en tu configuración de ChatGPT.",
+          "chatgptSettings": "Configuración de ChatGPT",
           "answerAgain": "Responder de nuevo a las preguntas",
           "advanced": "Avanzado"
         },
@@ -1240,6 +1249,10 @@
           "running": "Probando …",
           "took": "{{seconds}} s con {{model}}",
           "failed": "La prueba no ha funcionado."
+        },
+        "errors": {
+          "disconnect": "No desconectado",
+          "reopen": "Página no abierta de nuevo"
         }
       }
     },
@@ -1715,6 +1728,9 @@
       "planLimit": "Se ha alcanzado por ahora el límite de uso de tu suscripción a {{provider}}.",
       "planNotEligible": "Tu suscripción a {{provider}} no incluye el uso en otras aplicaciones.",
       "signInExpired": "La sesión con {{provider}} ha caducado; vuelve a iniciar sesión.",
+      "noSignIn": "No has iniciado sesión en {{provider}}.",
+      "notSetUp": "El post proceso aún no está configurado.",
+      "notSetUpTitle": "Post proceso no configurado",
       "rateLimited": "{{provider}} limita cuánto se puede enviar por minuto; espera un momento y vuelve a dictar.",
       "actions": {
         "setUp": "Configurar",

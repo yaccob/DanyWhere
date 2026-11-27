@@ -1144,6 +1144,7 @@
           "creditBody": "Bir OpenRouter hesabı, “Authorize” düğmesine bir tıklama, ardından bir kerelik en az 5 $ kredi yükleme. DanyWhere, metinlerinizi eğitim için kullanmayan bir model seçer. 5 $ binlerce dikteye yeter ve hiçbir şey kendiliğinden yenilenmez.",
           "tipAccount": "Google veya GitHub ile kaydolun: böylece parolaya ve e-postayla gelen koda gerek kalmaz.",
           "tipPayment": "OpenRouter sizin için yeni mi? Karşılama ekranı bir ödeme yöntemi ister. “I'll do this later” seçeneğini seçebilirsiniz: ücretsiz modeller ödeme yöntemi gerektirmez. Ardından buraya dönüp “Sayfayı yeniden aç” düğmesine basın.",
+          "tipPaymentCredit": "OpenRouter sizin için yeni mi? Karşılama ekranı bir ödeme yöntemi ister; kredi yüklemek için zaten buna ihtiyacınız var. Ardından buraya dönüp “Sayfayı yeniden aç” düğmesine basın. Hesapta kredi olmadığı sürece DanyWhere hiçbir şey göndermez.",
           "connect": "OpenRouter ile bağlan"
         },
         "chatgpt": {
@@ -1197,10 +1198,12 @@
           "unavailableBodyMac": "Bu bilgisayarda çalışan bir model 16 GB bellek gerektirir; bu Mac'te {{memory}} var. Kendi sunucunuzu kullanabilirsiniz, örneğin şirketinizin sunucusunu.",
           "unavailableBody": "Bu bilgisayarda çalışan bir model 16 GB bellek gerektirir; bu bilgisayarda {{memory}} var. Kendi sunucunuzu kullanabilirsiniz, örneğin şirketinizin sunucusunu.",
           "ownServer": "Kendi sunucunuzu ayarlayın",
-          "ownServerHint": "Adresini ve modelini aşağıya girin."
+          "ownServerHint": "Adresini ve modelini aşağıya girin.",
+          "ownServerLater": "Kendi sunucunuzu daha sonra Temel Ayarlar › Son İşlem altında, “Tüm sağlayıcılar …” içinde girebilirsiniz."
         },
         "signIn": {
           "waiting": "Tarayıcı bekleniyor …",
+          "title": "{{provider}} oturumu",
           "waitingHint": "İşlemi tarayıcıda tamamlayın. Önce kaydolmanız gerektiyse “Sayfayı yeniden aç” düğmesine basın.",
           "reopen": "Sayfayı yeniden aç",
           "cancel": "İptal",
@@ -1218,8 +1221,9 @@
           "plan": "Abonelik: {{plan}}",
           "freeModels": "Ücretsiz modeller, günde 50 dikteye kadar",
           "withCredit": "Krediyle, metinlerinizle eğitilmeyen bir model",
-          "noCreditYet": "Henüz kredi yok: Siz kredi yükleyene kadar DanyWhere ücretsiz modelleri kullanır.",
+          "noCreditYet": "Henüz kredi yok: Siz kredi yükleyene kadar DanyWhere hiçbir şey göndermez.",
           "notToppedUp": "OpenRouter henüz kredi göstermiyor. Bu bir dakika sürebilir.",
+          "topUpCheckFailed": "OpenRouter'a kredi sorulamadı.",
           "keyLimit": "Anahtarın harcama sınırı: {{limit}}",
           "model": "Model: {{model}}",
           "picksModel": "Modeli DanyWhere seçer.",
@@ -1229,6 +1233,11 @@
           "topUp": "Kredi yükle",
           "toppedUp": "Kredi yükledim",
           "disconnect": "Bağlantıyı kes",
+          "disconnectConfirm": "Anahtarı kaldırmak için yeniden tıklayın",
+          "keyStaysAtOpenRouter": "OpenRouter, “DanyWhere” anahtarını siz orada silene kadar API anahtarlarınız arasında tutar.",
+          "revokeUnconfirmed": "Oturum kapatma OpenAI tarafından onaylanmadı",
+          "revokeUnconfirmedDetail": "DanyWhere buradaki oturumu unuttu. DanyWhere'in erişimini ChatGPT ayarlarınızdan kontrol edebilirsiniz.",
+          "chatgptSettings": "ChatGPT Ayarları",
           "answerAgain": "Soruları yeniden yanıtla",
           "advanced": "Gelişmiş"
         },
@@ -1240,6 +1249,10 @@
           "running": "Deneniyor …",
           "took": "{{model}} ile {{seconds}} sn",
           "failed": "Deneme başarısız oldu."
+        },
+        "errors": {
+          "disconnect": "Bağlantı kesilmedi",
+          "reopen": "Sayfa yeniden açılmadı"
         }
       }
     },
@@ -1715,6 +1728,9 @@
       "planLimit": "{{provider}}: aboneliğinizin kullanım sınırına şimdilik ulaşıldı.",
       "planNotEligible": "{{provider}}: aboneliğiniz diğer uygulamalarda kullanımı kapsamıyor.",
       "signInExpired": "{{provider}}: oturumun süresi doldu; yeniden oturum açın.",
+      "noSignIn": "{{provider}}: oturum açmadınız.",
+      "notSetUp": "Son işlem henüz ayarlanmadı.",
+      "notSetUpTitle": "Son işlem ayarlanmadı",
       "rateLimited": "{{provider}}: dakikada gönderilebilecek miktarı sınırlıyor; biraz bekleyip yeniden dikte edin.",
       "actions": {
         "setUp": "Ayarla",

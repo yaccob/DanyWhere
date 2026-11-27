@@ -1144,6 +1144,7 @@
           "creditBody": "OpenRouter のアカウントを作って「Authorize」をクリックし、5 ドルから一度だけチャージします。DanyWhere は、テキストを学習に使わないモデルを選びます。5 ドルで数千回の音声入力ができ、自動更新はありません。",
           "tipAccount": "Google か GitHub で登録すると、パスワードもメールの確認コードも要りません。",
           "tipPayment": "OpenRouter は初めてですか？最初の画面で支払い方法を聞かれますが、「I'll do this later」を選べます。無料モデルには支払い方法は不要です。そのあとここに戻って「ページをもう一度開く」を押してください。",
+          "tipPaymentCredit": "OpenRouter は初めてですか？最初の画面で支払い方法を聞かれます。チャージにはどのみち必要です。そのあとここに戻って「ページをもう一度開く」を押してください。アカウントにクレジットがあるまで、DanyWhere は何も送信しません。",
           "connect": "OpenRouter に接続"
         },
         "chatgpt": {
@@ -1197,10 +1198,12 @@
           "unavailableBodyMac": "このコンピュータ上でモデルを動かすには 16 GB のメモリが必要ですが、この Mac は {{memory}} です。自分のサーバー（たとえば会社のサーバー）なら使えます。",
           "unavailableBody": "このコンピュータ上でモデルを動かすには 16 GB のメモリが必要ですが、このコンピュータは {{memory}} です。自分のサーバー（たとえば会社のサーバー）なら使えます。",
           "ownServer": "自分のサーバーを設定する",
-          "ownServerHint": "下にアドレスとモデルを入力してください。"
+          "ownServerHint": "下にアドレスとモデルを入力してください。",
+          "ownServerLater": "自分のサーバーは、後から「基本設定 › 後処理」の「すべてのプロバイダー …」で入力できます。"
         },
         "signIn": {
           "waiting": "ブラウザを待っています …",
+          "title": "{{provider}} へのログイン",
           "waitingHint": "ブラウザで完了してください。先に登録が必要だった場合は「ページをもう一度開く」を押してください。",
           "reopen": "ページをもう一度開く",
           "cancel": "キャンセル",
@@ -1218,8 +1221,9 @@
           "plan": "プラン：{{plan}}",
           "freeModels": "無料モデル、1 日 50 回まで",
           "withCredit": "クレジットで利用、学習に使わないモデル",
-          "noCreditYet": "まだクレジットがありません。チャージするまで、DanyWhere は無料モデルを使います。",
+          "noCreditYet": "まだクレジットがありません。チャージするまで、DanyWhere は何も送信しません。",
           "notToppedUp": "OpenRouter にはまだクレジットが表示されていません。1 分ほどかかることがあります。",
+          "topUpCheckFailed": "OpenRouter にクレジットを問い合わせできませんでした。",
           "keyLimit": "キーの利用上限：{{limit}}",
           "model": "モデル：{{model}}",
           "picksModel": "モデルは DanyWhere が選びます。",
@@ -1229,6 +1233,11 @@
           "topUp": "チャージ",
           "toppedUp": "チャージしました",
           "disconnect": "接続を解除",
+          "disconnectConfirm": "もう一度クリックするとキーを削除します",
+          "keyStaysAtOpenRouter": "OpenRouter では、削除するまでキー「DanyWhere」が API キーの一覧に残ります。",
+          "revokeUnconfirmed": "OpenAI がログアウトを確認しませんでした",
+          "revokeUnconfirmedDetail": "DanyWhere はここでのログイン情報を削除しました。DanyWhere のアクセスは ChatGPT の設定で確認できます。",
+          "chatgptSettings": "ChatGPT の設定",
           "answerAgain": "質問に答え直す",
           "advanced": "詳細設定"
         },
@@ -1240,6 +1249,10 @@
           "running": "試しています …",
           "took": "{{model}} で {{seconds}} 秒",
           "failed": "お試しがうまくいきませんでした。"
+        },
+        "errors": {
+          "disconnect": "接続を解除できませんでした",
+          "reopen": "ページをもう一度開けませんでした"
         }
       }
     },
@@ -1715,6 +1728,9 @@
       "planLimit": "現在、{{provider}} のプランの利用上限に達しています。",
       "planNotEligible": "{{provider}} のプランには、ほかのアプリでの利用が含まれていません。",
       "signInExpired": "{{provider}} へのログインの期限が切れました。もう一度ログインしてください。",
+      "noSignIn": "{{provider}} にログインしていません。",
+      "notSetUp": "後処理はまだ設定されていません。",
+      "notSetUpTitle": "後処理が未設定です",
       "rateLimited": "{{provider}} は 1 分あたりに送れる量を制限しています。少し待ってから、もう一度音声入力してください。",
       "actions": {
         "setUp": "設定する",

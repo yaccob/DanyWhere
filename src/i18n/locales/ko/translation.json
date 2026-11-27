@@ -1144,6 +1144,7 @@
           "creditBody": "OpenRouter 계정을 만들고 ‘Authorize’를 한 번 누른 다음, 5달러부터 한 번만 충전합니다. DanyWhere는 텍스트를 학습에 쓰지 않는 모델을 고릅니다. 5달러면 받아쓰기 수천 번에 충분하고, 자동으로 갱신되는 것은 없습니다.",
           "tipAccount": "Google이나 GitHub로 가입하면 비밀번호와 이메일 인증 코드가 필요 없습니다.",
           "tipPayment": "OpenRouter가 처음인가요? 첫 화면에서 결제 수단을 묻습니다. ‘I'll do this later’를 선택하면 됩니다. 무료 모델에는 결제 수단이 필요 없습니다. 그다음 여기로 돌아와 ‘페이지 다시 열기’를 누르세요.",
+          "tipPaymentCredit": "OpenRouter가 처음인가요? 첫 화면에서 결제 수단을 묻습니다. 충전하려면 어차피 필요합니다. 그다음 여기로 돌아와 ‘페이지 다시 열기’를 누르세요. 계정에 크레딧이 없는 동안 DanyWhere는 아무것도 보내지 않습니다.",
           "connect": "OpenRouter 연결"
         },
         "chatgpt": {
@@ -1197,10 +1198,12 @@
           "unavailableBodyMac": "이 컴퓨터에서 모델을 실행하려면 메모리 16GB가 필요하지만 이 Mac은 {{memory}}입니다. 회사 서버처럼 직접 운영하는 서버는 쓸 수 있습니다.",
           "unavailableBody": "이 컴퓨터에서 모델을 실행하려면 메모리 16GB가 필요하지만 이 컴퓨터는 {{memory}}입니다. 회사 서버처럼 직접 운영하는 서버는 쓸 수 있습니다.",
           "ownServer": "직접 운영하는 서버 설정",
-          "ownServerHint": "아래에 주소와 모델을 입력하세요."
+          "ownServerHint": "아래에 주소와 모델을 입력하세요.",
+          "ownServerLater": "직접 운영하는 서버는 나중에 ‘기본 설정 › 후처리’의 ‘모든 제공자 …’에서 입력할 수 있습니다."
         },
         "signIn": {
           "waiting": "브라우저를 기다리는 중 …",
+          "title": "{{provider}} 로그인",
           "waitingHint": "브라우저에서 마무리하세요. 먼저 가입해야 했다면 ‘페이지 다시 열기’를 누르세요.",
           "reopen": "페이지 다시 열기",
           "cancel": "취소",
@@ -1218,8 +1221,9 @@
           "plan": "플랜: {{plan}}",
           "freeModels": "무료 모델, 하루 최대 50번 받아쓰기",
           "withCredit": "크레딧 사용, 학습에 쓰지 않는 모델",
-          "noCreditYet": "아직 크레딧이 없습니다. 충전할 때까지 DanyWhere가 무료 모델을 사용합니다.",
+          "noCreditYet": "아직 크레딧이 없습니다. 충전할 때까지 DanyWhere는 아무것도 보내지 않습니다.",
           "notToppedUp": "OpenRouter에 아직 크레딧이 표시되지 않습니다. 1분 정도 걸릴 수 있습니다.",
+          "topUpCheckFailed": "OpenRouter에 크레딧을 확인하지 못했습니다.",
           "keyLimit": "키의 지출 한도: {{limit}}",
           "model": "모델: {{model}}",
           "picksModel": "모델은 DanyWhere가 고릅니다.",
@@ -1229,6 +1233,11 @@
           "topUp": "충전",
           "toppedUp": "충전했습니다",
           "disconnect": "연결 해제",
+          "disconnectConfirm": "키를 제거하려면 한 번 더 클릭하세요",
+          "keyStaysAtOpenRouter": "OpenRouter는 키 ‘DanyWhere’를 직접 삭제할 때까지 API 키 목록에 보관합니다.",
+          "revokeUnconfirmed": "OpenAI가 로그아웃을 확인하지 않음",
+          "revokeUnconfirmedDetail": "DanyWhere는 여기서 로그인 정보를 지웠습니다. DanyWhere의 접근 권한은 ChatGPT 설정에서 확인할 수 있습니다.",
+          "chatgptSettings": "ChatGPT 설정",
           "answerAgain": "질문에 다시 답하기",
           "advanced": "고급"
         },
@@ -1240,6 +1249,10 @@
           "running": "테스트 중 …",
           "took": "{{seconds}}초, {{model}}",
           "failed": "테스트에 실패했습니다."
+        },
+        "errors": {
+          "disconnect": "연결 해제 안 됨",
+          "reopen": "페이지를 다시 열지 못함"
         }
       }
     },
@@ -1715,6 +1728,9 @@
       "planLimit": "{{provider}}: 플랜의 사용 한도에 일시적으로 도달했습니다.",
       "planNotEligible": "{{provider}}: 현재 플랜에는 다른 앱에서의 사용이 포함되어 있지 않습니다.",
       "signInExpired": "{{provider}}: 로그인이 만료되었습니다. 다시 로그인하세요.",
+      "noSignIn": "{{provider}}에 로그인되어 있지 않습니다.",
+      "notSetUp": "후처리가 아직 설정되지 않았습니다.",
+      "notSetUpTitle": "후처리 설정 안 됨",
       "rateLimited": "{{provider}}: 1분당 보낼 수 있는 양이 제한되어 있습니다. 잠시 기다린 후 다시 받아쓰기하세요.",
       "actions": {
         "setUp": "설정하기",

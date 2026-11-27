@@ -1144,6 +1144,7 @@
           "creditBody": "Een account bij OpenRouter, één klik op „Authorize”, en dan eenmalig tegoed aanvullen vanaf $ 5. DanyWhere kiest een model dat je teksten niet gebruikt om te trainen. $ 5 is genoeg voor duizenden dictaten, en er wordt niets verlengd.",
           "tipAccount": "Meld je aan met Google of GitHub: dat scheelt een wachtwoord en een code per e-mail.",
           "tipPayment": "Nieuw bij OpenRouter? Het welkomstscherm vraagt om een betaalmethode. Je kunt „I'll do this later” kiezen: de gratis modellen hebben er geen nodig. Kom daarna hier terug en klik op „Pagina opnieuw openen”.",
+          "tipPaymentCredit": "Nieuw bij OpenRouter? Het welkomstscherm vraagt om een betaalmethode, die je voor het aanvullen toch nodig hebt. Kom daarna hier terug en klik op „Pagina opnieuw openen”. Zolang het account geen tegoed heeft, verstuurt DanyWhere niets.",
           "connect": "Verbinden met OpenRouter"
         },
         "chatgpt": {
@@ -1197,10 +1198,12 @@
           "unavailableBodyMac": "Een model op deze computer heeft 16 GB werkgeheugen nodig; deze Mac heeft {{memory}}. Een eigen server werkt wel, bijvoorbeeld die van je bedrijf.",
           "unavailableBody": "Een model op deze computer heeft 16 GB werkgeheugen nodig; deze computer heeft {{memory}}. Een eigen server werkt wel, bijvoorbeeld die van je bedrijf.",
           "ownServer": "Eigen server instellen",
-          "ownServerHint": "Vul hieronder het adres en het model in."
+          "ownServerHint": "Vul hieronder het adres en het model in.",
+          "ownServerLater": "Een eigen server vul je later in via Basisinstellingen › Naverwerking, achter „Alle providers …”."
         },
         "signIn": {
           "waiting": "Wachten op de browser …",
+          "title": "Aanmelden bij {{provider}}",
           "waitingHint": "Rond het af in de browser. Moest je je eerst registreren, klik dan op „Pagina opnieuw openen”.",
           "reopen": "Pagina opnieuw openen",
           "cancel": "Annuleren",
@@ -1218,8 +1221,9 @@
           "plan": "Abonnement: {{plan}}",
           "freeModels": "Gratis modellen, tot 50 dictaten per dag",
           "withCredit": "Met tegoed, een model zonder training",
-          "noCreditYet": "Nog geen tegoed: DanyWhere gebruikt de gratis modellen tot je aanvult.",
+          "noCreditYet": "Nog geen tegoed: DanyWhere verstuurt niets tot je aanvult.",
           "notToppedUp": "OpenRouter toont nog geen tegoed. Dat kan een minuut duren.",
+          "topUpCheckFailed": "Kon OpenRouter niet naar het tegoed vragen.",
           "keyLimit": "Bestedingslimiet van de sleutel: {{limit}}",
           "model": "Model: {{model}}",
           "picksModel": "DanyWhere kiest het model.",
@@ -1229,6 +1233,11 @@
           "topUp": "Aanvullen",
           "toppedUp": "Ik heb aangevuld",
           "disconnect": "Ontkoppelen",
+          "disconnectConfirm": "Klik nogmaals om de sleutel te verwijderen",
+          "keyStaysAtOpenRouter": "OpenRouter bewaart de sleutel „DanyWhere” bij je API-sleutels tot je hem daar verwijdert.",
+          "revokeUnconfirmed": "Afmelden niet bevestigd door OpenAI",
+          "revokeUnconfirmedDetail": "DanyWhere is de aanmelding hier vergeten. De toegang van DanyWhere kun je controleren in je ChatGPT-instellingen.",
+          "chatgptSettings": "ChatGPT-instellingen",
           "answerAgain": "Vragen opnieuw beantwoorden",
           "advanced": "Geavanceerd"
         },
@@ -1240,6 +1249,10 @@
           "running": "Bezig met proberen …",
           "took": "{{seconds}} s met {{model}}",
           "failed": "De proef is niet gelukt."
+        },
+        "errors": {
+          "disconnect": "Niet ontkoppeld",
+          "reopen": "Pagina niet opnieuw geopend"
         }
       }
     },
@@ -1715,6 +1728,9 @@
       "planLimit": "De gebruikslimiet van je abonnement bij {{provider}} is voorlopig bereikt.",
       "planNotEligible": "Je abonnement bij {{provider}} omvat geen gebruik in andere apps.",
       "signInExpired": "De aanmelding bij {{provider}} is verlopen; meld je opnieuw aan.",
+      "noSignIn": "Je bent niet aangemeld bij {{provider}}.",
+      "notSetUp": "De naverwerking is nog niet ingesteld.",
+      "notSetUpTitle": "Naverwerking niet ingesteld",
       "rateLimited": "{{provider}} beperkt hoeveel er per minuut mag worden verstuurd; wacht even en dicteer opnieuw.",
       "actions": {
         "setUp": "Instellen",

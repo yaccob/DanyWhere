@@ -1144,6 +1144,7 @@
           "creditBody": "Un compte a OpenRouter, un clic a «Authorize» i després recarregueu una vegada des de 5 $. DanyWhere tria un model que no fa servir els vostres textos per entrenar-se. Amb 5 $ n'hi ha prou per a milers de dictats, i no es renova res.",
           "tipAccount": "Registreu-vos amb Google o GitHub: així us estalvieu una contrasenya i un codi per correu.",
           "tipPayment": "Sou nous a OpenRouter? La benvinguda us demana un mètode de pagament. Podeu triar «I'll do this later»: els models gratuïts no en necessiten cap. Després torneu aquí i premeu «Torna a obrir la pàgina».",
+          "tipPaymentCredit": "Sou nous a OpenRouter? La benvinguda us demana un mètode de pagament, que igualment necessitareu per recarregar. Després torneu aquí i premeu «Torna a obrir la pàgina». Mentre el compte no tingui crèdit, DanyWhere no envia res.",
           "connect": "Connecta amb OpenRouter"
         },
         "chatgpt": {
@@ -1197,10 +1198,12 @@
           "unavailableBodyMac": "Un model en aquest ordinador necessita 16 GB de memòria; aquest Mac en té {{memory}}. Podeu fer servir un servidor propi, per exemple el de la vostra empresa.",
           "unavailableBody": "Un model en aquest ordinador necessita 16 GB de memòria; aquest ordinador en té {{memory}}. Podeu fer servir un servidor propi, per exemple el de la vostra empresa.",
           "ownServer": "Configura un servidor propi",
-          "ownServerHint": "Introduïu-ne l'adreça i el model a sota."
+          "ownServerHint": "Introduïu-ne l'adreça i el model a sota.",
+          "ownServerLater": "Un servidor propi el podeu introduir més tard a Configuració bàsica › Postprocessament, dins de «Tots els proveïdors …»."
         },
         "signIn": {
           "waiting": "S'està esperant el navegador …",
+          "title": "Inici de sessió a {{provider}}",
           "waitingHint": "Acabeu-ho al navegador. Si primer us heu hagut de registrar, premeu «Torna a obrir la pàgina».",
           "reopen": "Torna a obrir la pàgina",
           "cancel": "Cancel·la",
@@ -1218,8 +1221,9 @@
           "plan": "Subscripció: {{plan}}",
           "freeModels": "Models gratuïts, fins a 50 dictats al dia",
           "withCredit": "Amb crèdit, un model sense entrenament",
-          "noCreditYet": "Encara no hi ha crèdit: DanyWhere fa servir els models gratuïts fins que recarregueu.",
+          "noCreditYet": "Encara no hi ha crèdit: DanyWhere no envia res fins que recarregueu.",
           "notToppedUp": "OpenRouter encara no mostra cap crèdit. Pot trigar un minut.",
+          "topUpCheckFailed": "No s'ha pogut consultar el crèdit a OpenRouter.",
           "keyLimit": "Límit de despesa de la clau: {{limit}}",
           "model": "Model: {{model}}",
           "picksModel": "DanyWhere tria el model.",
@@ -1229,6 +1233,11 @@
           "topUp": "Recarrega",
           "toppedUp": "Ja he recarregat",
           "disconnect": "Desconnecta",
+          "disconnectConfirm": "Torneu a fer clic per eliminar la clau",
+          "keyStaysAtOpenRouter": "OpenRouter conserva la clau «DanyWhere» entre les vostres claus de l'API fins que la suprimiu allà.",
+          "revokeUnconfirmed": "OpenAI no ha confirmat la desconnexió",
+          "revokeUnconfirmedDetail": "DanyWhere ha oblidat l'inici de sessió aquí. Podeu comprovar l'accés de DanyWhere a la configuració de ChatGPT.",
+          "chatgptSettings": "Configuració de ChatGPT",
           "answerAgain": "Torna a respondre les preguntes",
           "advanced": "Avançat"
         },
@@ -1240,6 +1249,10 @@
           "running": "S'està provant …",
           "took": "{{seconds}} s amb {{model}}",
           "failed": "La prova no ha funcionat."
+        },
+        "errors": {
+          "disconnect": "No s'ha desconnectat",
+          "reopen": "No s'ha tornat a obrir la pàgina"
         }
       }
     },
@@ -1715,6 +1728,9 @@
       "planLimit": "De moment s'ha arribat al límit d'ús de la vostra subscripció a {{provider}}.",
       "planNotEligible": "La vostra subscripció a {{provider}} no inclou l'ús en altres aplicacions.",
       "signInExpired": "L'inici de sessió a {{provider}} ha caducat; torneu a iniciar la sessió.",
+      "noSignIn": "No heu iniciat la sessió a {{provider}}.",
+      "notSetUp": "El postprocessament encara no està configurat.",
+      "notSetUpTitle": "Postprocessament no configurat",
       "rateLimited": "{{provider}} limita quant es pot enviar per minut; espereu una mica i torneu a dictar.",
       "actions": {
         "setUp": "Configura",

@@ -1144,6 +1144,7 @@
           "creditBody": "Konto w OpenRouter, jedno kliknięcie w „Authorize”, potem jednorazowe doładowanie od 5 dolarów. DanyWhere wybiera model, który nie używa twoich tekstów do trenowania. 5 dolarów wystarczy na tysiące dyktowań i nic się nie odnawia.",
           "tipAccount": "Zarejestruj się przez Google albo GitHub: oszczędzisz sobie hasła i kodu z e-maila.",
           "tipPayment": "Pierwszy raz w OpenRouter? Powitanie prosi o metodę płatności. Możesz wybrać „I'll do this later”: darmowe modele jej nie potrzebują. Potem wróć tutaj i naciśnij „Otwórz stronę ponownie”.",
+          "tipPaymentCredit": "Pierwszy raz w OpenRouter? Powitanie prosi o metodę płatności, która i tak jest potrzebna do doładowania. Potem wróć tutaj i naciśnij „Otwórz stronę ponownie”. Dopóki konto nie ma środków, DanyWhere niczego nie wysyła.",
           "connect": "Połącz z OpenRouter"
         },
         "chatgpt": {
@@ -1197,10 +1198,12 @@
           "unavailableBodyMac": "Model na tym komputerze potrzebuje 16 GB pamięci, a ten Mac ma {{memory}}. Sprawdzi się własny serwer, na przykład serwer twojej firmy.",
           "unavailableBody": "Model na tym komputerze potrzebuje 16 GB pamięci, a ten komputer ma {{memory}}. Sprawdzi się własny serwer, na przykład serwer twojej firmy.",
           "ownServer": "Skonfiguruj własny serwer",
-          "ownServerHint": "Wpisz poniżej jego adres i model."
+          "ownServerHint": "Wpisz poniżej jego adres i model.",
+          "ownServerLater": "Własny serwer możesz wpisać później w Ustawieniach podstawowych › Postproces, pod „Wszyscy dostawcy …”."
         },
         "signIn": {
           "waiting": "Czekam na przeglądarkę …",
+          "title": "Logowanie do {{provider}}",
           "waitingHint": "Dokończ w przeglądarce. Jeśli najpierw trzeba było się zarejestrować, naciśnij „Otwórz stronę ponownie”.",
           "reopen": "Otwórz stronę ponownie",
           "cancel": "Anuluj",
@@ -1218,8 +1221,9 @@
           "plan": "Subskrypcja: {{plan}}",
           "freeModels": "Darmowe modele, do 50 dyktowań dziennie",
           "withCredit": "Ze środkami na koncie, model, który nie trenuje na twoich tekstach",
-          "noCreditYet": "Brak jeszcze środków: DanyWhere używa darmowych modeli, dopóki nie doładujesz konta.",
+          "noCreditYet": "Brak jeszcze środków: DanyWhere niczego nie wysyła, dopóki nie doładujesz konta.",
           "notToppedUp": "OpenRouter nie pokazuje jeszcze środków. To może potrwać minutę.",
+          "topUpCheckFailed": "Nie udało się zapytać OpenRouter o środki.",
           "keyLimit": "Limit wydatków klucza: {{limit}}",
           "model": "Model: {{model}}",
           "picksModel": "Model wybiera DanyWhere.",
@@ -1229,6 +1233,11 @@
           "topUp": "Doładuj",
           "toppedUp": "Konto doładowane",
           "disconnect": "Rozłącz",
+          "disconnectConfirm": "Kliknij ponownie, aby usunąć klucz",
+          "keyStaysAtOpenRouter": "OpenRouter przechowuje klucz „DanyWhere” wśród twoich kluczy API, dopóki go tam nie usuniesz.",
+          "revokeUnconfirmed": "OpenAI nie potwierdziło wylogowania",
+          "revokeUnconfirmedDetail": "DanyWhere zapomniał tutaj logowanie. Dostęp DanyWhere możesz sprawdzić w ustawieniach ChatGPT.",
+          "chatgptSettings": "Ustawienia ChatGPT",
           "answerAgain": "Odpowiedz ponownie na pytania",
           "advanced": "Zaawansowane"
         },
@@ -1240,6 +1249,10 @@
           "running": "Próbuję …",
           "took": "{{seconds}} s z modelem {{model}}",
           "failed": "Próba się nie udała."
+        },
+        "errors": {
+          "disconnect": "Nie rozłączono",
+          "reopen": "Strona nie została ponownie otwarta"
         }
       }
     },
@@ -1715,6 +1728,9 @@
       "planLimit": "{{provider}}: limit użycia twojej subskrypcji jest na razie wyczerpany.",
       "planNotEligible": "{{provider}}: twoja subskrypcja nie obejmuje użycia w innych aplikacjach.",
       "signInExpired": "{{provider}}: logowanie wygasło; zaloguj się ponownie.",
+      "noSignIn": "{{provider}}: nie jesteś zalogowany.",
+      "notSetUp": "Postproces nie jest jeszcze skonfigurowany.",
+      "notSetUpTitle": "Postproces nieskonfigurowany",
       "rateLimited": "{{provider}}: obowiązuje limit tego, ile można wysłać na minutę; odczekaj chwilę i podyktuj ponownie.",
       "actions": {
         "setUp": "Skonfiguruj",

@@ -1144,6 +1144,7 @@
           "creditBody": "Ett konto hos OpenRouter, ett klick på ”Authorize”, sedan fyller du på en gång från 5 $. DanyWhere väljer en modell som inte använder dina texter för träning. 5 $ räcker till tusentals dikteringar, och inget förnyas.",
           "tipAccount": "Registrera dig med Google eller GitHub: då slipper du ett lösenord och en kod via e-post.",
           "tipPayment": "Ny på OpenRouter? Välkomstsidan ber om ett betalsätt. Du kan välja ”I'll do this later”: gratismodellerna behöver inget. Kom sedan tillbaka hit och tryck på ”Öppna sidan igen”.",
+          "tipPaymentCredit": "Ny på OpenRouter? Välkomstsidan ber om ett betalsätt, som du ändå behöver för att fylla på. Kom sedan tillbaka hit och tryck på ”Öppna sidan igen”. Så länge kontot saknar kredit skickar DanyWhere inget.",
           "connect": "Anslut till OpenRouter"
         },
         "chatgpt": {
@@ -1197,10 +1198,12 @@
           "unavailableBodyMac": "En modell på den här datorn kräver 16 GB minne; den här Macen har {{memory}}. En egen server fungerar, till exempel ditt företags.",
           "unavailableBody": "En modell på den här datorn kräver 16 GB minne; den här datorn har {{memory}}. En egen server fungerar, till exempel ditt företags.",
           "ownServer": "Ställ in en egen server",
-          "ownServerHint": "Ange dess adress och modell nedan."
+          "ownServerHint": "Ange dess adress och modell nedan.",
+          "ownServerLater": "En egen server anger du senare under Grundinställningar › Efterbearbetning, bakom ”Alla leverantörer …”."
         },
         "signIn": {
           "waiting": "Väntar på webbläsaren …",
+          "title": "Inloggning hos {{provider}}",
           "waitingHint": "Slutför i webbläsaren. Om du först behövde registrera dig, tryck på ”Öppna sidan igen”.",
           "reopen": "Öppna sidan igen",
           "cancel": "Avbryt",
@@ -1218,8 +1221,9 @@
           "plan": "Abonnemang: {{plan}}",
           "freeModels": "Gratismodeller, upp till 50 dikteringar om dagen",
           "withCredit": "Med kredit, en modell utan träning",
-          "noCreditYet": "Ingen kredit än: DanyWhere använder gratismodellerna tills du fyller på.",
+          "noCreditYet": "Ingen kredit än: DanyWhere skickar inget förrän du fyller på.",
           "notToppedUp": "OpenRouter visar ingen kredit än. Det kan ta en minut.",
+          "topUpCheckFailed": "Kunde inte fråga OpenRouter om krediten.",
           "keyLimit": "Nyckelns utgiftsgräns: {{limit}}",
           "model": "Modell: {{model}}",
           "picksModel": "DanyWhere väljer modellen.",
@@ -1229,6 +1233,11 @@
           "topUp": "Fyll på",
           "toppedUp": "Jag har fyllt på",
           "disconnect": "Koppla från",
+          "disconnectConfirm": "Klicka igen för att ta bort nyckeln",
+          "keyStaysAtOpenRouter": "OpenRouter behåller nyckeln ”DanyWhere” bland dina API-nycklar tills du tar bort den där.",
+          "revokeUnconfirmed": "Utloggningen bekräftades inte av OpenAI",
+          "revokeUnconfirmedDetail": "DanyWhere har glömt inloggningen här. Du kan kontrollera DanyWheres åtkomst i dina ChatGPT-inställningar.",
+          "chatgptSettings": "ChatGPT-inställningar",
           "answerAgain": "Svara på frågorna igen",
           "advanced": "Avancerat"
         },
@@ -1240,6 +1249,10 @@
           "running": "Testar …",
           "took": "{{seconds}} s med {{model}}",
           "failed": "Provet fungerade inte."
+        },
+        "errors": {
+          "disconnect": "Inte frånkopplad",
+          "reopen": "Sidan öppnades inte igen"
         }
       }
     },
@@ -1715,6 +1728,9 @@
       "planLimit": "Ditt abonnemangs användningsgräns hos {{provider}} är nådd för tillfället.",
       "planNotEligible": "Ditt abonnemang hos {{provider}} omfattar inte användning i andra appar.",
       "signInExpired": "Inloggningen hos {{provider}} har gått ut; logga in igen.",
+      "noSignIn": "Du är inte inloggad hos {{provider}}.",
+      "notSetUp": "Efterbearbetningen är inte inställd än.",
+      "notSetUpTitle": "Efterbearbetning inte inställd",
       "rateLimited": "{{provider}} begränsar hur mycket som får skickas per minut; vänta en stund och diktera igen.",
       "actions": {
         "setUp": "Ställ in",
