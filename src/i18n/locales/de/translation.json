@@ -1198,7 +1198,8 @@
           "unavailableBodyMac": "Ein Modell auf diesem Computer braucht 16 GB Arbeitsspeicher, dieser Mac hat {{memory}}. Ein eigener Server geht, etwa der deiner Firma.",
           "unavailableBody": "Ein Modell auf diesem Computer braucht 16 GB Arbeitsspeicher, dieser Computer hat {{memory}}. Ein eigener Server geht, etwa der deiner Firma.",
           "ownServer": "Eigenen Server einrichten",
-          "ownServerHint": "Trag unten seine Adresse und sein Modell ein."
+          "ownServerHint": "Trag unten seine Adresse und sein Modell ein.",
+          "ownServerLater": "Einen eigenen Server trägst du später unter Grundeinstellungen › Nachbearbeitung ein, hinter „Alle Anbieter …“."
         },
         "signIn": {
           "waiting": "Warte auf den Browser …",

@@ -38,7 +38,8 @@ export interface PostProcessSetupProps {
   /** Settings: whether today's provider settings show below. */
   providersOpen?: boolean;
   onToggleProviders?: () => void;
-  onOpenProviders?: () => void;
+  /** Opens today's provider settings, with `providerId` chosen there. */
+  onOpenProviders?: (providerId?: string) => void;
 }
 
 /**

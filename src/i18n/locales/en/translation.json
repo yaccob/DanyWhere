@@ -1198,7 +1198,8 @@
           "unavailableBodyMac": "A model on this computer needs 16 GB of memory; this Mac has {{memory}}. A server of your own works, for example your company's.",
           "unavailableBody": "A model on this computer needs 16 GB of memory; this computer has {{memory}}. A server of your own works, for example your company's.",
           "ownServer": "Set up a server of your own",
-          "ownServerHint": "Enter its address and model below."
+          "ownServerHint": "Enter its address and model below.",
+          "ownServerLater": "You can enter a server of your own later under Defaults › Post Process, behind “All providers …”."
         },
         "signIn": {
           "waiting": "Waiting for the browser …",

@@ -14,13 +14,7 @@ import { OpenManualProvider } from "@/hooks/useOpenManual";
 import { useNoticeStore } from "@/stores/noticeStore";
 import { callsOf, emitEvent, err, mockCommand, ok } from "@/test/bindings-mock";
 import { switchTestLanguage } from "@/test/i18n";
-import {
-  press,
-  raisedNotices,
-  renderPage,
-  setBackendSettings,
-  settle,
-} from "@/test/render";
+import { press, raisedNotices, renderPage, settle } from "@/test/render";
 import { setOsType } from "@/test/tauri-mock";
 import { isVisible, rawTextIn, visibleText } from "@/test/visible";
 import {
@@ -224,25 +218,25 @@ describe("post-processing setup: the questions", () => {
   });
 
   test("nowhere, on 8 GB: not possible here, a server of one's own", async () => {
-    await renderSetup(notReady({ memory_bytes: 8 * GiB }));
+    answerStatus(notReady({ memory_bytes: 8 * GiB }));
+    await renderPage(<PostProcessingSettings />, {
+      settings: setupSettings(null),
+      scope: DEFAULTS_SCOPE,
+      acceptWrites: true,
+    });
     await press(radio(NOWHERE));
 
     const text = visibleText();
     expect(text).not.toContain(Q2);
     expect(text).toContain("Not possible on this computer");
     expect(text).toContain("this Mac has 8 GB");
-    // The backend makes the custom provider the defaults' one.
-    mockCommand("applyPostProcessChoice", async () => {
-      setBackendSettings(
-        setupSettings(null, {
-          defaults: { post_process_provider_id: "custom" },
-        }),
-      );
-      return ok(null);
-    });
     await press(button("Set up a server of your own")!);
-    expect(callsOf("applyPostProcessChoice")).toEqual([
-      [{ provider_id: "custom", model: null, api_key: null, effort: null }],
+    // The custom provider's form opens with it chosen, as under All
+    // providers …: nothing is set up before an address is entered and
+    // tried (sidecar qa 2026-11-26_2250, D, N9).
+    expect(callsOf("applyPostProcessChoice")).toEqual([]);
+    expect(callsOf("setProfileValue")).toEqual([
+      [DEFAULTS_SCOPE, "post_process_provider_id", "custom"],
     ]);
     // Its address and model are among today's settings.
     expect(visibleText()).toContain("Base URL");
