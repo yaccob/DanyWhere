@@ -16,7 +16,7 @@ Las preguntas aparecen en tres sitios:
 
 - como una pantalla hacia el final de la primera configuración, **Mejorar tus textos**, donde **Más tarde** es el botón principal;
 - en cualquier momento en **Configuración básica › Post proceso › Mejorar tus textos**, arriba de la página;
-- desde un aviso: si pulsas un atajo de instrucción antes de configurar nada, DanyWhere inserta el texto tal como lo dijiste, y el aviso ofrece **Configurar**.
+- desde un aviso: si pulsas un atajo de instrucción antes de configurar nada, DanyWhere inserta el texto tal como lo dijiste, y el aviso **Post proceso no configurado** ofrece **Configurar**.
 
 Las preguntas aparecen una tras otra, y la sugerencia de debajo cambia con tus respuestas.
 
@@ -62,7 +62,7 @@ Si elegiste la segunda respuesta y ChatGPT, la configuración añade: **OpenAI n
 
 1. Haz clic en **Conectar OpenRouter**. Tu navegador abre la página de OpenRouter, y DanyWhere muestra **Esperando al navegador …**.
 2. ¿Eres nuevo en OpenRouter? Regístrate con Google o GitHub: así te ahorras una contraseña y un código por correo.
-3. La bienvenida de OpenRouter pide un método de pago. Elige **I'll do this later**: los modelos gratuitos no lo necesitan.
+3. La bienvenida de OpenRouter pide un método de pago. Para los modelos gratuitos, elige **I'll do this later**: no lo necesitan. Para el camino con saldo, añádelo: para recargar lo necesitas de todos modos.
 4. De vuelta en DanyWhere, haz clic en **Abrir la página de nuevo**. Ahora OpenRouter pregunta si DanyWhere puede tener acceso.
 5. Haz clic en **Authorize**. El navegador dice que puedes cerrar la ventana, y DanyWhere muestra la tarjeta **Conectado a OpenRouter**.
 
@@ -70,7 +70,9 @@ Si elegiste la segunda respuesta y ChatGPT, la configuración añade: **OpenAI n
 
 Si ya tienes una cuenta, los pasos 2 a 4 no hacen falta. DanyWhere recibe una clave propia, con un límite de gasto de 10 dólares, que la tarjeta muestra. **Cancelar** deja de esperar; a los 30 minutos el inicio de sesión caduca, y **Intentar de nuevo** vuelve a empezar.
 
-Con saldo, la tarjeta dice **Aún no hay saldo: DanyWhere usa los modelos gratuitos hasta que recargues.** Haz clic en **Recargar**, paga una vez en OpenRouter y vuelve a **Ya he recargado**. Desde entonces, DanyWhere usa un modelo que no usa tus textos para entrenar. 5 dólares dan para miles de dictados, y nada se renueva.
+Con saldo, la tarjeta dice **Aún no hay saldo: DanyWhere no envía nada hasta que recargues.** Hasta entonces, ningún texto sale de tu equipo, ni siquiera hacia un modelo gratuito: elegiste un servicio que no los guarda. Haz clic en **Recargar**, paga una vez en OpenRouter y vuelve a **Ya he recargado**. Desde entonces, DanyWhere usa un modelo que no usa tus textos para entrenar. 5 dólares dan para miles de dictados, y nada se renueva.
+
+El camino gratuito se queda con los modelos gratuitos aunque tu cuenta de OpenRouter tenga saldo.
 
 ## Iniciar sesión con ChatGPT
 
@@ -92,11 +94,13 @@ En cuanto un camino funciona, la tarjeta **Conectado a …** ocupa el lugar de l
 
 - **Probar** vuelve a enviar la frase de ejemplo y muestra qué volvió, cuánto tardó y con qué modelo.
 - **Gestionar el uso**, **Saldo** o **Recargar** abre la página correspondiente del proveedor.
-- **Desconectar** olvida el inicio de sesión o la clave.
+- **Desconectar** olvida el inicio de sesión o la clave. Una clave que pegaste solo se va tras un segundo clic, en **Haz clic de nuevo para quitar la clave**.
+
+En OpenRouter, la clave **DanyWhere** sigue entre tus claves API hasta que la borres allí; **Desconectar** solo la olvida en DanyWhere, como dice la tarjeta. Si OpenAI no confirma el cierre de sesión de ChatGPT, el aviso **OpenAI no confirmó el cierre de sesión** lo dice, con **Configuración de ChatGPT**, donde puedes comprobar el acceso de DanyWhere.
 
 <Screenshot
   name="post-processing-connected"
-  alt="La tarjeta Conectado a OpenRouter: modelos gratuitos, hasta 50 dictados al día; el límite de gasto de la clave, 10 dólares; DanyWhere elige el modelo. Los botones Probar, Saldo y Desconectar, y debajo la prueba: la frase dicha y el resultado, con el tiempo y el modelo. Bajo la tarjeta, Responder de nuevo a las preguntas y Avanzado."
+  alt="La tarjeta Conectado a OpenRouter: modelos gratuitos, hasta 50 dictados al día; el límite de gasto de la clave, 10 dólares; DanyWhere elige el modelo. Los botones Probar, Saldo y Desconectar; debajo, que OpenRouter conserva la clave DanyWhere hasta que la borres allí, y la prueba: la frase dicha y el resultado, con el tiempo y el modelo. Bajo la tarjeta, Responder de nuevo a las preguntas y Avanzado."
   caption="Conectado a OpenRouter gratis, después de probar."
 />
 
@@ -110,11 +114,12 @@ Lo que configuras con las preguntas vale para la configuración básica. La pág
 
 ## Cuando un camino termina
 
-Si se agotan los dictados gratuitos o caduca un inicio de sesión, igualmente recibes tus palabras. DanyWhere inserta la transcripción tal cual, y el aviso **Pegado sin post proceso** dice qué pasó, con el siguiente paso como botón:
+Si se agotan los dictados gratuitos o caduca un inicio de sesión, igualmente recibes tus palabras. DanyWhere inserta la transcripción tal cual, y el aviso **Pegado sin post proceso** dice qué pasó, con el siguiente paso como botón. Si nunca se configuró nada, el aviso se llama **Post proceso no configurado**.
 
 | Qué pasó | El botón |
 | --- | --- |
-| nada configurado aún: sin proveedor, modelo o clave | **Configurar** |
+| nada configurado aún, o ya sin proveedor, modelo o clave | **Configurar** |
+| sin sesión iniciada en ChatGPT, por ejemplo tras **Desconectar** | **Volver a iniciar sesión** |
 | los 50 dictados gratuitos de OpenRouter agotados por hoy | **Recargar**, o seguir mañana |
 | el saldo agotado | **Recargar** en OpenRouter, si no **Saldo** |
 | el límite de gasto de la clave alcanzado | **Cambiar el límite** |
@@ -125,7 +130,7 @@ Si se agotan los dictados gratuitos o caduca un inicio de sesión, igualmente re
 Si los modelos gratuitos están ocupados o un proveedor limita cuánto puede ir por minuto, el aviso dice que esperes un momento y vuelvas a dictar.
 
 :::caution[Un modelo en este equipo]
-**A ningún sitio** y **En este ordenador (más lento, desde 16 GB de memoria)** llevan a un modelo que funciona en tu equipo. Llega con una versión posterior y necesita al menos 16 GB de memoria. Hasta entonces, **Configurar un servidor propio** conecta un servidor que tú gestionas, por ejemplo Ollama o LM Studio en este equipo, o el de tu empresa: escribe su dirección y su modelo más abajo, en el grupo **API**.
+**A ningún sitio** y **En este ordenador (más lento, desde 16 GB de memoria)** llevan a un modelo que funciona en tu equipo. Llega con una versión posterior y necesita al menos 16 GB de memoria. Hasta entonces sirve un servidor que tú gestionas, por ejemplo Ollama o LM Studio en este equipo, o el de tu empresa: **Configurar un servidor propio** abre más abajo el grupo **API** con el proveedor **Proveedor personalizado**, donde escribes su dirección y su modelo. En la primera configuración, la pantalla dice dónde está.
 :::
 
 ## Siguiente

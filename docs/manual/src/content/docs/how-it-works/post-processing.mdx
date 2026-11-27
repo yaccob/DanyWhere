@@ -16,7 +16,7 @@ The questions come in three places:
 
 - as a screen near the end of the first setup, **Improve your texts**, where **Later** is the main button;
 - at any time under **Defaults › Post Process › Improve Your Texts**, at the top of the page;
-- from a notice: if you press an instruction shortcut before anything is set up, DanyWhere inserts the text as you said it, and the notice offers **Set up**.
+- from a notice: if you press an instruction shortcut before anything is set up, DanyWhere inserts the text as you said it, and the notice **Post-Processing Not Set Up** offers **Set up**.
 
 The questions come one after the other, and the suggestion under them changes with your answers.
 
@@ -62,7 +62,7 @@ If you chose the second answer and ChatGPT, the setup adds: **OpenAI doesn't des
 
 1. Click **Connect OpenRouter**. Your browser opens OpenRouter's page, and DanyWhere shows **Waiting for the browser …**.
 2. New at OpenRouter? Sign up with Google or GitHub: that saves a password and a code by email.
-3. OpenRouter's welcome asks for a payment method. Choose **I'll do this later**: the free models need none.
+3. OpenRouter's welcome asks for a payment method. For the free models, choose **I'll do this later**: they need none. For the way with credit, add it: topping up needs it anyway.
 4. Back in DanyWhere, click **Open the page again**. Now OpenRouter asks whether DanyWhere may have access.
 5. Click **Authorize**. The browser says you can close the window, and DanyWhere shows the card **Connected to OpenRouter**.
 
@@ -70,7 +70,9 @@ If you chose the second answer and ChatGPT, the setup adds: **OpenAI doesn't des
 
 With an account already, steps 2 to 4 fall away. DanyWhere gets a key of its own, with a spending limit of $10, which the card shows. **Cancel** stops waiting; after 30 minutes the sign-in expires, and **Try again** starts over.
 
-With credit, the card says **No credit yet: DanyWhere uses the free models until you top up.** Click **Top up**, pay once at OpenRouter, and come back to **I've topped up**. From then on, DanyWhere uses a model that doesn't use your texts for training. $5 is enough for thousands of dictations, and nothing renews.
+With credit, the card says **No credit yet: DanyWhere sends nothing until you top up.** Until then, no text leaves your computer, not even to a free model: you chose a service that doesn't keep them. Click **Top up**, pay once at OpenRouter, and come back to **I've topped up**. From then on, DanyWhere uses a model that doesn't use your texts for training. $5 is enough for thousands of dictations, and nothing renews.
+
+The free way stays with the free models even when your OpenRouter account has credit.
 
 ## Sign in with ChatGPT
 
@@ -92,11 +94,13 @@ Once a way works, the card **Connected to …** takes the place of the questions
 
 - **Try it** sends the sample sentence again and shows what came back, how long it took and with which model.
 - **Manage usage**, **Credit** or **Top up** opens the provider's page for it.
-- **Disconnect** forgets the sign-in or the key.
+- **Disconnect** forgets the sign-in or the key. A key you pasted goes only after a second click, on **Click again to remove the key**.
+
+At OpenRouter, the key **DanyWhere** stays among your API keys until you delete it there; Disconnect forgets it only in DanyWhere, as the card says. If OpenAI doesn't confirm the sign-out from ChatGPT, the notice **Sign-Out Not Confirmed by OpenAI** says so, with **ChatGPT Settings**, where you can check DanyWhere's access.
 
 <Screenshot
   name="post-processing-connected"
-  alt="The card Connected to OpenRouter: free models, up to 50 dictations a day; the key's spending limit of $10.00; DanyWhere picks the model. The buttons Try it, Credit and Disconnect, and under them the sample: the spoken sentence and the result, with the time and the model. Below the card, Answer the questions again and Advanced."
+  alt="The card Connected to OpenRouter: free models, up to 50 dictations a day; the key's spending limit of $10.00; DanyWhere picks the model. The buttons Try it, Credit and Disconnect; under them, that OpenRouter keeps the key DanyWhere until you delete it there, and the sample: the spoken sentence and the result, with the time and the model. Below the card, Answer the questions again and Advanced."
   caption="Connected to OpenRouter for free, after Try it."
 />
 
@@ -110,11 +114,12 @@ The setup always sets up the defaults. A profile's page **Post Process** shows *
 
 ## When a way ends
 
-When the free dictations are used up or a sign-in has expired, you still get your words. DanyWhere inserts the transcription as it is, and the notice **Pasted Without Post-Processing** says what happened, with the next step as a button:
+When the free dictations are used up or a sign-in has expired, you still get your words. DanyWhere inserts the transcription as it is, and the notice **Pasted Without Post-Processing** says what happened, with the next step as a button. Before anything was ever set up, the notice is called **Post-Processing Not Set Up**.
 
 | What happened | The button |
 | --- | --- |
-| nothing set up yet: no provider, model or key | **Set up** |
+| nothing set up yet, or no provider, model or key any more | **Set up** |
+| not signed in to ChatGPT, for example after **Disconnect** | **Sign in again** |
 | the 50 free dictations at OpenRouter used up for today | **Top up**, or go on tomorrow |
 | the credit used up | **Top up** at OpenRouter, **Credit** elsewhere |
 | the key's spending limit reached | **Change limit** |
@@ -125,7 +130,7 @@ When the free dictations are used up or a sign-in has expired, you still get you
 When the free models are busy or a provider limits how much may go per minute, the notice says to wait a moment and dictate again.
 
 :::caution[A model on this computer]
-**Nowhere** and **On this computer (slower, from 16 GB of memory)** lead to a model that runs on your computer. It comes with a later version, and it needs at least 16 GB of memory. Until then, **Set up a server of your own** connects a server you run, for example Ollama or LM Studio on this computer, or your company's: enter its address and model in the group **API** below.
+**Nowhere** and **On this computer (slower, from 16 GB of memory)** lead to a model that runs on your computer. It comes with a later version, and it needs at least 16 GB of memory. Until then, a server you run works, for example Ollama or LM Studio on this computer, or your company's: **Set up a server of your own** opens the group **API** below with the provider **Custom**, where you enter its address and model. In the first setup, the screen says where that is.
 :::
 
 ## Next

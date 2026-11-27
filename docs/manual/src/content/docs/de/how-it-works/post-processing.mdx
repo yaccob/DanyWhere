@@ -16,7 +16,7 @@ Die Fragen kommen an drei Stellen:
 
 - als Bildschirm gegen Ende der ersten Einrichtung, **Texte verbessern lassen**, wo **Später** der wichtigste Knopf ist;
 - jederzeit unter **Grundeinstellungen › Nachbearbeitung › Texte verbessern lassen**, oben auf der Seite;
-- aus einer Meldung: Drückst du eine Anweisungstaste, bevor etwas eingerichtet ist, fügt DanyWhere den Text so ein, wie du ihn gesagt hast, und die Meldung bietet **Einrichten** an.
+- aus einer Meldung: Drückst du eine Anweisungstaste, bevor etwas eingerichtet ist, fügt DanyWhere den Text so ein, wie du ihn gesagt hast, und die Meldung **Nachbearbeitung nicht eingerichtet** bietet **Einrichten** an.
 
 Die Fragen kommen nacheinander, und der Vorschlag darunter wechselt mit deinen Antworten.
 
@@ -62,7 +62,7 @@ Hast du die zweite Antwort und ChatGPT gewählt, ergänzt die Einrichtung: **Ope
 
 1. Klick auf **Mit OpenRouter verbinden**. Dein Browser öffnet die Seite von OpenRouter, und DanyWhere zeigt **Warte auf den Browser …**.
 2. Neu bei OpenRouter? Melde dich mit Google oder GitHub an: Das erspart Passwort und Bestätigungscode.
-3. Die Begrüßung von OpenRouter fragt nach einer Zahlungsart. Wähl **I'll do this later**: Die Gratismodelle brauchen keine.
+3. Die Begrüßung von OpenRouter fragt nach einer Zahlungsart. Für die Gratismodelle wähl **I'll do this later**: Sie brauchen keine. Für den Weg mit Guthaben trag sie ein: Zum Aufladen brauchst du sie ohnehin.
 4. Zurück in DanyWhere klickst du auf **Seite erneut öffnen**. Jetzt fragt OpenRouter, ob DanyWhere Zugriff bekommen darf.
 5. Klick auf **Authorize**. Der Browser sagt, dass du das Fenster schließen kannst, und DanyWhere zeigt die Karte **Verbunden mit OpenRouter**.
 
@@ -70,7 +70,9 @@ Hast du die zweite Antwort und ChatGPT gewählt, ergänzt die Einrichtung: **Ope
 
 Hast du schon ein Konto, fallen die Schritte 2 bis 4 weg. DanyWhere bekommt einen eigenen Schlüssel mit einem Ausgabenlimit von 10 $, das die Karte zeigt. **Abbrechen** beendet das Warten; nach 30 Minuten läuft die Anmeldung ab, und **Noch einmal versuchen** beginnt von vorn.
 
-Mit Guthaben sagt die Karte **Noch kein Guthaben: DanyWhere nimmt die Gratismodelle, bis du auflädst.** Klick auf **Aufladen**, zahl einmal bei OpenRouter und komm zurück zu **Ich habe aufgeladen**. Ab dann nimmt DanyWhere ein Modell, das deine Texte nicht zum Training nutzt. 5 $ reichen für Tausende Diktate, und es verlängert sich nichts.
+Mit Guthaben sagt die Karte **Noch kein Guthaben: DanyWhere sendet nichts, bis du auflädst.** Bis dahin verlässt kein Text deinen Computer, auch nicht zu einem Gratismodell: Du hast einen Dienst gewählt, der sie nicht behält. Klick auf **Aufladen**, zahl einmal bei OpenRouter und komm zurück zu **Ich habe aufgeladen**. Ab dann nimmt DanyWhere ein Modell, das deine Texte nicht zum Training nutzt. 5 $ reichen für Tausende Diktate, und es verlängert sich nichts.
+
+Der Gratis-Weg bleibt bei den Gratismodellen, auch wenn dein Konto bei OpenRouter Guthaben hat.
 
 ## Mit ChatGPT anmelden
 
@@ -92,11 +94,13 @@ Sobald ein Weg funktioniert, tritt die Karte **Verbunden mit …** an die Stelle
 
 - **Ausprobieren** schickt den Beispielsatz noch einmal und zeigt, was zurückkam, wie lange es dauerte und mit welchem Modell.
 - **Nutzung verwalten**, **Guthaben** oder **Aufladen** öffnet die passende Seite des Anbieters.
-- **Trennen** vergisst die Anmeldung oder den Schlüssel.
+- **Trennen** vergisst die Anmeldung oder den Schlüssel. Einen eingefügten Schlüssel erst nach einem zweiten Klick, auf **Zum Entfernen noch einmal klicken**.
+
+Bei OpenRouter bleibt der Schlüssel **DanyWhere** bei deinen API-Schlüsseln, bis du ihn dort löschst; Trennen vergisst ihn nur in DanyWhere, wie die Karte sagt. Bestätigt OpenAI das Abmelden bei ChatGPT nicht, sagt das die Meldung **Abmelden von OpenAI nicht bestätigt**, mit **ChatGPT-Einstellungen**, wo du den Zugriff von DanyWhere prüfen kannst.
 
 <Screenshot
   name="post-processing-connected"
-  alt="Die Karte Verbunden mit OpenRouter: Gratismodelle, bis zu 50 Diktate am Tag; Ausgabenlimit des Schlüssels 10,00 $; DanyWhere wählt das Modell. Die Knöpfe Ausprobieren, Guthaben und Trennen, darunter die Probe: der gesprochene Satz und das Ergebnis, mit Dauer und Modell. Unter der Karte Fragen neu beantworten und Erweitert."
+  alt="Die Karte Verbunden mit OpenRouter: Gratismodelle, bis zu 50 Diktate am Tag; Ausgabenlimit des Schlüssels 10,00 $; DanyWhere wählt das Modell. Die Knöpfe Ausprobieren, Guthaben und Trennen; darunter, dass OpenRouter den Schlüssel DanyWhere behält, bis du ihn dort löschst, und die Probe: der gesprochene Satz und das Ergebnis, mit Dauer und Modell. Unter der Karte Fragen neu beantworten und Erweitert."
   caption="Gratis mit OpenRouter verbunden, nach Ausprobieren."
 />
 
@@ -110,11 +114,12 @@ Die Einrichtung richtet immer die Grundeinstellungen ein. Die Seite **Nachbearbe
 
 ## Wenn ein Weg endet
 
-Sind die Gratis-Diktate aufgebraucht oder ist eine Anmeldung abgelaufen, bekommst du trotzdem deine Worte. DanyWhere fügt die Transkription unverändert ein, und die Meldung **Ohne Nachbearbeitung eingefügt** sagt, was passiert ist, mit dem nächsten Schritt als Knopf:
+Sind die Gratis-Diktate aufgebraucht oder ist eine Anmeldung abgelaufen, bekommst du trotzdem deine Worte. DanyWhere fügt die Transkription unverändert ein, und die Meldung **Ohne Nachbearbeitung eingefügt** sagt, was passiert ist, mit dem nächsten Schritt als Knopf. War noch nie etwas eingerichtet, heißt die Meldung **Nachbearbeitung nicht eingerichtet**.
 
 | Was passiert ist | Der Knopf |
 | --- | --- |
-| noch nichts eingerichtet: kein Anbieter, Modell oder Schlüssel | **Einrichten** |
+| noch nichts eingerichtet, oder kein Anbieter, Modell oder Schlüssel mehr | **Einrichten** |
+| nicht bei ChatGPT angemeldet, etwa nach **Trennen** | **Neu anmelden** |
 | die 50 Gratis-Diktate bei OpenRouter für heute aufgebraucht | **Aufladen**, oder morgen weiter |
 | das Guthaben aufgebraucht | **Aufladen** bei OpenRouter, sonst **Guthaben** |
 | das Ausgabenlimit des Schlüssels erreicht | **Limit ändern** |
@@ -125,7 +130,7 @@ Sind die Gratis-Diktate aufgebraucht oder ist eine Anmeldung abgelaufen, bekomms
 Sind die Gratismodelle ausgelastet oder begrenzt ein Anbieter, wie viel pro Minute gehen darf, sagt die Meldung, dass du kurz warten und noch einmal diktieren sollst.
 
 :::caution[Ein Modell auf diesem Computer]
-**Nirgendwohin** und **Auf diesem Computer (langsamer, ab 16 GB Arbeitsspeicher)** führen zu einem Modell, das auf deinem Computer läuft. Es kommt mit einer späteren Version und braucht mindestens 16 GB Arbeitsspeicher. Bis dahin verbindet **Eigenen Server einrichten** einen Server, den du betreibst, etwa Ollama oder LM Studio auf diesem Computer oder den deiner Firma: Trag seine Adresse und sein Modell unten in der Gruppe **API** ein.
+**Nirgendwohin** und **Auf diesem Computer (langsamer, ab 16 GB Arbeitsspeicher)** führen zu einem Modell, das auf deinem Computer läuft. Es kommt mit einer späteren Version und braucht mindestens 16 GB Arbeitsspeicher. Bis dahin geht ein Server, den du betreibst, etwa Ollama oder LM Studio auf diesem Computer oder der deiner Firma: **Eigenen Server einrichten** öffnet unten die Gruppe **API** mit dem Anbieter **Eigener Anbieter**, wo du seine Adresse und sein Modell einträgst. In der ersten Einrichtung sagt der Bildschirm, wo das ist.
 :::
 
 ## Weiter

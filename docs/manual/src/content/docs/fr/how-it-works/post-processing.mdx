@@ -16,7 +16,7 @@ Les questions apparaissent à trois endroits :
 
 - sous forme d'écran vers la fin de la première configuration, **Améliorer vos textes**, où **Plus tard** est le bouton principal ;
 - à tout moment sous **Paramètres de base › Post-traitement › Améliorer vos textes**, en haut de la page ;
-- depuis une notification : si vous appuyez sur un raccourci d'instruction avant que rien ne soit configuré, DanyWhere insère le texte tel que vous l'avez dit, et la notification propose **Configurer**.
+- depuis une notification : si vous appuyez sur un raccourci d'instruction avant que rien ne soit configuré, DanyWhere insère le texte tel que vous l'avez dit, et la notification **Post-traitement non configuré** propose **Configurer**.
 
 Les questions arrivent l'une après l'autre, et la suggestion en dessous change avec vos réponses.
 
@@ -62,7 +62,7 @@ Si vous avez choisi la deuxième réponse et ChatGPT, la configuration ajoute : 
 
 1. Cliquez sur **Connecter OpenRouter**. Votre navigateur ouvre la page d'OpenRouter, et DanyWhere affiche **En attente du navigateur …**.
 2. Nouveau chez OpenRouter ? Inscrivez-vous avec Google ou GitHub : cela vous épargne un mot de passe et un code par e-mail.
-3. L'accueil d'OpenRouter demande un moyen de paiement. Choisissez **I'll do this later** : les modèles gratuits n'en ont pas besoin.
+3. L'accueil d'OpenRouter demande un moyen de paiement. Pour les modèles gratuits, choisissez **I'll do this later** : ils n'en ont pas besoin. Pour la voie avec crédit, ajoutez-le : la recharge en a de toute façon besoin.
 4. De retour dans DanyWhere, cliquez sur **Rouvrir la page**. OpenRouter demande alors si DanyWhere peut avoir accès.
 5. Cliquez sur **Authorize**. Le navigateur indique que vous pouvez fermer la fenêtre, et DanyWhere affiche la carte **Connecté à OpenRouter**.
 
@@ -70,7 +70,9 @@ Si vous avez choisi la deuxième réponse et ChatGPT, la configuration ajoute : 
 
 Si vous avez déjà un compte, les étapes 2 à 4 disparaissent. DanyWhere reçoit sa propre clé, avec un plafond de dépenses de 10 dollars, que la carte affiche. **Annuler** arrête l'attente ; au bout de 30 minutes la connexion expire, et **Réessayer** recommence depuis le début.
 
-Avec crédit, la carte indique **Pas encore de crédit : DanyWhere utilise les modèles gratuits jusqu'à ce que vous rechargiez.** Cliquez sur **Recharger**, payez une fois chez OpenRouter et revenez à **J'ai rechargé**. Dès lors, DanyWhere utilise un modèle qui n'utilise pas vos textes pour l'entraînement. 5 dollars suffisent pour des milliers de dictées, et rien ne se renouvelle.
+Avec crédit, la carte indique **Pas encore de crédit : DanyWhere n'envoie rien tant que vous n'avez pas rechargé.** D'ici là, aucun texte ne quitte votre ordinateur, pas même vers un modèle gratuit : vous avez choisi un service qui ne les garde pas. Cliquez sur **Recharger**, payez une fois chez OpenRouter et revenez à **J'ai rechargé**. Dès lors, DanyWhere utilise un modèle qui n'utilise pas vos textes pour l'entraînement. 5 dollars suffisent pour des milliers de dictées, et rien ne se renouvelle.
+
+La voie gratuite reste aux modèles gratuits, même si votre compte OpenRouter a du crédit.
 
 ## Se connecter avec ChatGPT
 
@@ -92,11 +94,13 @@ Dès qu'une voie fonctionne, la carte **Connecté à …** prend la place des qu
 
 - **Essayer** renvoie la phrase d'exemple et montre ce qui est revenu, en combien de temps et avec quel modèle.
 - **Gérer l'utilisation**, **Crédit** ou **Recharger** ouvre la page correspondante du fournisseur.
-- **Déconnecter** oublie la connexion ou la clé.
+- **Déconnecter** oublie la connexion ou la clé. Une clé que vous avez collée ne part qu'après un second clic, sur **Cliquez encore pour supprimer la clé**.
+
+Chez OpenRouter, la clé **DanyWhere** reste parmi vos clés API jusqu'à ce que vous la supprimiez là-bas ; **Déconnecter** ne l'oublie que dans DanyWhere, comme le dit la carte. Si OpenAI ne confirme pas la déconnexion de ChatGPT, la notification **Déconnexion non confirmée par OpenAI** le signale, avec **Paramètres ChatGPT**, où vous pouvez vérifier l'accès de DanyWhere.
 
 <Screenshot
   name="post-processing-connected"
-  alt="La carte Connecté à OpenRouter : modèles gratuits, jusqu'à 50 dictées par jour ; le plafond de dépenses de la clé, 10 dollars ; DanyWhere choisit le modèle. Les boutons Essayer, Crédit et Déconnecter, et en dessous l'essai : la phrase dite et le résultat, avec la durée et le modèle. Sous la carte, Répondre à nouveau aux questions et Avancé."
+  alt="La carte Connecté à OpenRouter : modèles gratuits, jusqu'à 50 dictées par jour ; le plafond de dépenses de la clé, 10 dollars ; DanyWhere choisit le modèle. Les boutons Essayer, Crédit et Déconnecter ; en dessous, qu'OpenRouter conserve la clé DanyWhere jusqu'à ce que vous la supprimiez là-bas, et l'essai : la phrase dite et le résultat, avec la durée et le modèle. Sous la carte, Répondre à nouveau aux questions et Avancé."
   caption="Connecté gratuitement à OpenRouter, après un essai."
 />
 
@@ -110,11 +114,12 @@ Ce que vous configurez avec les questions vaut pour les paramètres de base. La 
 
 ## Quand une voie s'arrête
 
-Quand les dictées gratuites sont épuisées ou qu'une connexion a expiré, vous obtenez quand même vos mots. DanyWhere insère la transcription telle quelle, et la notification **Collé sans post-traitement** dit ce qui s'est passé, avec l'étape suivante sous forme de bouton :
+Quand les dictées gratuites sont épuisées ou qu'une connexion a expiré, vous obtenez quand même vos mots. DanyWhere insère la transcription telle quelle, et la notification **Collé sans post-traitement** dit ce qui s'est passé, avec l'étape suivante sous forme de bouton. Si rien n'a jamais été configuré, la notification s'appelle **Post-traitement non configuré**.
 
 | Ce qui s'est passé | Le bouton |
 | --- | --- |
-| rien de configuré encore : ni fournisseur, ni modèle, ni clé | **Configurer** |
+| rien de configuré encore, ou plus de fournisseur, de modèle ou de clé | **Configurer** |
+| pas connecté à ChatGPT, par exemple après **Déconnecter** | **Se reconnecter** |
 | les 50 dictées gratuites d'OpenRouter épuisées pour aujourd'hui | **Recharger**, ou reprendre demain |
 | le crédit épuisé | **Recharger** chez OpenRouter, sinon **Crédit** |
 | le plafond de dépenses de la clé atteint | **Modifier le plafond** |
@@ -125,7 +130,7 @@ Quand les dictées gratuites sont épuisées ou qu'une connexion a expiré, vous
 Quand les modèles gratuits sont saturés ou qu'un fournisseur limite ce qui peut partir par minute, la notification vous dit d'attendre un instant et de dicter à nouveau.
 
 :::caution[Un modèle sur cet ordinateur]
-**Nulle part** et **Sur cet ordinateur (plus lent, à partir de 16 Go de mémoire)** mènent à un modèle qui tourne sur votre ordinateur. Il arrive avec une version ultérieure et demande au moins 16 Go de mémoire. D'ici là, **Configurer votre propre serveur** connecte un serveur que vous gérez, par exemple Ollama ou LM Studio sur cet ordinateur, ou celui de votre entreprise : saisissez son adresse et son modèle plus bas, dans le groupe **API**.
+**Nulle part** et **Sur cet ordinateur (plus lent, à partir de 16 Go de mémoire)** mènent à un modèle qui tourne sur votre ordinateur. Il arrive avec une version ultérieure et demande au moins 16 Go de mémoire. D'ici là, un serveur que vous gérez convient, par exemple Ollama ou LM Studio sur cet ordinateur, ou celui de votre entreprise : **Configurer votre propre serveur** ouvre plus bas le groupe **API** avec le fournisseur **Fournisseur personnalisé**, où vous saisissez son adresse et son modèle. Lors de la première configuration, l'écran indique où cela se trouve.
 :::
 
 ## Ensuite
