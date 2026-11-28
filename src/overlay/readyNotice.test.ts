@@ -140,7 +140,7 @@ for (const [locale, text] of Object.entries(wording)) {
 // Every locale: each pill shows its own text, and only the clipboard pill
 // talks about the clipboard.
 const locales = readdirSync(LOCALES);
-assert.equal(locales.length, 26, "26 locales");
+assert.equal(locales.length, 27, "27 locales");
 for (const locale of locales) {
   const t = translate(locale);
   const clipboard = t("overlay.clipboard", { keys: "⌘V" });

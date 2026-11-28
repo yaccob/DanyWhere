@@ -101,7 +101,7 @@ check(() =>
 // Every locale: two lines each, neither of them Handy's old tooltip, and the
 // Debug page points at the star.
 const locales = readdirSync(LOCALES);
-assert.equal(locales.length, 26, "26 locales");
+assert.equal(locales.length, 27, "27 locales");
 for (const locale of locales) {
   const t = lookup(load(locale));
   for (const saved of [false, true]) {

@@ -143,7 +143,11 @@
       },
       "hint": {
         "pickOne": "اختر لغة واحدة على الأقل",
+        "weak_zero": "{{languages}}: لا يوجد نموذج يسمعها جيدًا بعد",
         "weak_one": "{{languages}}: لا يوجد نموذج يسمعها جيدًا بعد",
+        "weak_two": "{{languages}}: لا يوجد نموذج يسمعها جيدًا بعد",
+        "weak_few": "{{languages}}: لا يوجد نموذج يسمعها جيدًا بعد",
+        "weak_many": "{{languages}}: لا يوجد نموذج يسمعها جيدًا بعد",
         "weak_other": "{{languages}}: لا يوجد نموذج يسمعها جيدًا بعد"
       }
     },
@@ -339,7 +343,11 @@
     "search": "البحث عن اللغات",
     "addAnother": "إضافة أخرى",
     "remove": "إزالة {{language}}",
+    "alreadyAdded_zero": "{{languages}} مُضافة بالفعل.",
     "alreadyAdded_one": "{{languages}} مُضافة بالفعل.",
+    "alreadyAdded_two": "{{languages}} مُضافة بالفعل.",
+    "alreadyAdded_few": "{{languages}} مُضافة بالفعل.",
+    "alreadyAdded_many": "{{languages}} مُضافة بالفعل.",
     "alreadyAdded_other": "{{languages}} مُضافة بالفعل."
   },
   "modelSelector": {
@@ -663,7 +671,11 @@
         "untested": "غير مختبرة"
       },
       "untestedNote": "لم تُختبر مع Handy. قد تكون أبطأ أو ترتكب أخطاء أكثر.",
+      "untestedHidden_zero": "{{count}} من النماذج الأخرى غير مضبوطة للإملاء. ابحث للعثور على أحدها.",
       "untestedHidden_one": "نموذج آخر ({{count}}) غير مضبوط للإملاء. ابحث للعثور عليه.",
+      "untestedHidden_two": "{{count}} من النماذج الأخرى غير مضبوطة للإملاء. ابحث للعثور على أحدها.",
+      "untestedHidden_few": "{{count}} من النماذج الأخرى غير مضبوطة للإملاء. ابحث للعثور على أحدها.",
+      "untestedHidden_many": "{{count}} من النماذج الأخرى غير مضبوطة للإملاء. ابحث للعثور على أحدها.",
       "untestedHidden_other": "{{count}} من النماذج الأخرى غير مضبوطة للإملاء. ابحث للعثور على أحدها.",
       "emptyYours": "لا توجد نماذج بعد. اختر واحدًا أدناه: يُنزَّل ثم يستخدمه Handy.",
       "showMore": "عرض {{count}} أخرى",

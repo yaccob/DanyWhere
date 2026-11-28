@@ -143,7 +143,11 @@
       },
       "hint": {
         "pickOne": "कम से कम एक भाषा चुनें",
+        "weak_zero": "{{languages}}: कोई मॉडल इन्हें अभी अच्छी तरह नहीं सुनता",
         "weak_one": "{{languages}}: कोई मॉडल इसे अभी अच्छी तरह नहीं सुनता",
+        "weak_two": "{{languages}}: कोई मॉडल इन्हें अभी अच्छी तरह नहीं सुनता",
+        "weak_few": "{{languages}}: कोई मॉडल इन्हें अभी अच्छी तरह नहीं सुनता",
+        "weak_many": "{{languages}}: कोई मॉडल इन्हें अभी अच्छी तरह नहीं सुनता",
         "weak_other": "{{languages}}: कोई मॉडल इन्हें अभी अच्छी तरह नहीं सुनता"
       }
     },
@@ -339,7 +343,11 @@
     "search": "भाषाएं खोजें",
     "addAnother": "एक और जोड़ें",
     "remove": "{{language}} हटाएं",
+    "alreadyAdded_zero": "{{languages}} पहले से जुड़ी हैं.",
     "alreadyAdded_one": "{{languages}} पहले से जुड़ी है.",
+    "alreadyAdded_two": "{{languages}} पहले से जुड़ी हैं.",
+    "alreadyAdded_few": "{{languages}} पहले से जुड़ी हैं.",
+    "alreadyAdded_many": "{{languages}} पहले से जुड़ी हैं.",
     "alreadyAdded_other": "{{languages}} पहले से जुड़ी हैं."
   },
   "modelSelector": {
@@ -663,7 +671,11 @@
         "untested": "अपरीक्षित"
       },
       "untestedNote": "Handy के साथ परखे नहीं गए हैं. ये धीमे हो सकते हैं या ज़्यादा गलतियां कर सकते हैं.",
+      "untestedHidden_zero": "{{count}} और मॉडल डिक्टेशन के लिए ट्यून नहीं हैं. उन्हें ढूंढने के लिए खोजें.",
       "untestedHidden_one": "{{count}} और मॉडल डिक्टेशन के लिए ट्यून नहीं है. उसे ढूंढने के लिए खोजें.",
+      "untestedHidden_two": "{{count}} और मॉडल डिक्टेशन के लिए ट्यून नहीं हैं. उन्हें ढूंढने के लिए खोजें.",
+      "untestedHidden_few": "{{count}} और मॉडल डिक्टेशन के लिए ट्यून नहीं हैं. उन्हें ढूंढने के लिए खोजें.",
+      "untestedHidden_many": "{{count}} और मॉडल डिक्टेशन के लिए ट्यून नहीं हैं. उन्हें ढूंढने के लिए खोजें.",
       "untestedHidden_other": "{{count}} और मॉडल डिक्टेशन के लिए ट्यून नहीं हैं. उन्हें ढूंढने के लिए खोजें.",
       "emptyYours": "अभी कोई मॉडल नहीं है. नीचे से कोई चुनें: वह डाउनलोड होगा, फिर Handy उसका उपयोग करेगा.",
       "showMore": "{{count}} और दिखाएं",

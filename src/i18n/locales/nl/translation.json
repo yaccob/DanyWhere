@@ -143,7 +143,11 @@
       },
       "hint": {
         "pickOne": "Kies minstens één taal",
+        "weak_zero": "{{languages}}: geen enkel model verstaat deze talen al goed",
         "weak_one": "{{languages}}: geen enkel model verstaat die taal al goed",
+        "weak_two": "{{languages}}: geen enkel model verstaat deze talen al goed",
+        "weak_few": "{{languages}}: geen enkel model verstaat deze talen al goed",
+        "weak_many": "{{languages}}: geen enkel model verstaat deze talen al goed",
         "weak_other": "{{languages}}: geen enkel model verstaat deze talen al goed"
       }
     },
@@ -339,7 +343,11 @@
     "search": "Talen zoeken",
     "addAnother": "Nog een toevoegen",
     "remove": "{{language}} verwijderen",
+    "alreadyAdded_zero": "{{languages}} zijn al toegevoegd.",
     "alreadyAdded_one": "{{languages}} is al toegevoegd.",
+    "alreadyAdded_two": "{{languages}} zijn al toegevoegd.",
+    "alreadyAdded_few": "{{languages}} zijn al toegevoegd.",
+    "alreadyAdded_many": "{{languages}} zijn al toegevoegd.",
     "alreadyAdded_other": "{{languages}} zijn al toegevoegd."
   },
   "modelSelector": {
@@ -663,7 +671,11 @@
         "untested": "Niet getest"
       },
       "untestedNote": "Niet getest met Handy. Ze kunnen langzamer zijn of meer fouten maken.",
+      "untestedHidden_zero": "{{count}} andere modellen zijn niet afgestemd op dicteren. Zoek om er een te vinden.",
       "untestedHidden_one": "{{count}} ander model is niet afgestemd op dicteren. Zoek om het te vinden.",
+      "untestedHidden_two": "{{count}} andere modellen zijn niet afgestemd op dicteren. Zoek om er een te vinden.",
+      "untestedHidden_few": "{{count}} andere modellen zijn niet afgestemd op dicteren. Zoek om er een te vinden.",
+      "untestedHidden_many": "{{count}} andere modellen zijn niet afgestemd op dicteren. Zoek om er een te vinden.",
       "untestedHidden_other": "{{count}} andere modellen zijn niet afgestemd op dicteren. Zoek om er een te vinden.",
       "emptyYours": "Nog geen modellen. Kies hieronder een model: het wordt gedownload en daarna gebruikt Handy het.",
       "showMore": "{{count}} meer tonen",

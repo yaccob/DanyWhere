@@ -143,7 +143,11 @@
       },
       "hint": {
         "pickOne": "Scegli almeno una lingua",
+        "weak_zero": "{{languages}}: nessun modello le riconosce ancora bene",
         "weak_one": "{{languages}}: nessun modello la riconosce ancora bene",
+        "weak_two": "{{languages}}: nessun modello le riconosce ancora bene",
+        "weak_few": "{{languages}}: nessun modello le riconosce ancora bene",
+        "weak_many": "{{languages}}: nessun modello le riconosce ancora bene",
         "weak_other": "{{languages}}: nessun modello le riconosce ancora bene"
       }
     },
@@ -339,7 +343,11 @@
     "search": "Cerca lingue",
     "addAnother": "Aggiungine un'altra",
     "remove": "Rimuovi {{language}}",
+    "alreadyAdded_zero": "{{languages}} sono già state aggiunte.",
     "alreadyAdded_one": "{{languages}} è già stata aggiunta.",
+    "alreadyAdded_two": "{{languages}} sono già state aggiunte.",
+    "alreadyAdded_few": "{{languages}} sono già state aggiunte.",
+    "alreadyAdded_many": "{{languages}} sono già state aggiunte.",
     "alreadyAdded_other": "{{languages}} sono già state aggiunte."
   },
   "modelSelector": {
@@ -663,7 +671,11 @@
         "untested": "Non testati"
       },
       "untestedNote": "Non testati con Handy. Potrebbero essere più lenti o commettere più errori.",
+      "untestedHidden_zero": "Altri {{count}} modelli non sono ottimizzati per la dettatura. Cerca per trovarne uno.",
       "untestedHidden_one": "Un altro modello ({{count}}) non è ottimizzato per la dettatura. Cercalo per trovarlo.",
+      "untestedHidden_two": "Altri {{count}} modelli non sono ottimizzati per la dettatura. Cerca per trovarne uno.",
+      "untestedHidden_few": "Altri {{count}} modelli non sono ottimizzati per la dettatura. Cerca per trovarne uno.",
+      "untestedHidden_many": "Altri {{count}} modelli non sono ottimizzati per la dettatura. Cerca per trovarne uno.",
       "untestedHidden_other": "Altri {{count}} modelli non sono ottimizzati per la dettatura. Cerca per trovarne uno.",
       "emptyYours": "Ancora nessun modello. Scegline uno qui sotto: si scarica e poi Handy lo usa.",
       "showMore": "Mostra altri {{count}}",

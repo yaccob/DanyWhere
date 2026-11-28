@@ -143,7 +143,11 @@
       },
       "hint": {
         "pickOne": "Choisissez au moins une langue",
+        "weak_zero": "{{languages}} : aucun modèle ne les comprend bien pour l'instant",
         "weak_one": "{{languages}} : aucun modèle ne la comprend bien pour l'instant",
+        "weak_two": "{{languages}} : aucun modèle ne les comprend bien pour l'instant",
+        "weak_few": "{{languages}} : aucun modèle ne les comprend bien pour l'instant",
+        "weak_many": "{{languages}} : aucun modèle ne les comprend bien pour l'instant",
         "weak_other": "{{languages}} : aucun modèle ne les comprend bien pour l'instant"
       }
     },
@@ -339,7 +343,11 @@
     "search": "Rechercher des langues",
     "addAnother": "Ajouter une autre",
     "remove": "Retirer {{language}}",
+    "alreadyAdded_zero": "{{languages}} sont déjà ajoutées.",
     "alreadyAdded_one": "{{languages}} est déjà ajoutée.",
+    "alreadyAdded_two": "{{languages}} sont déjà ajoutées.",
+    "alreadyAdded_few": "{{languages}} sont déjà ajoutées.",
+    "alreadyAdded_many": "{{languages}} sont déjà ajoutées.",
     "alreadyAdded_other": "{{languages}} sont déjà ajoutées."
   },
   "modelSelector": {
@@ -663,7 +671,11 @@
         "untested": "Non testés"
       },
       "untestedNote": "Non testés avec Handy. Ils peuvent être plus lents ou faire plus d'erreurs.",
+      "untestedHidden_zero": "{{count}} autres modèles ne sont pas adaptés à la dictée. Utilisez la recherche pour en trouver un.",
       "untestedHidden_one": "{{count}} autre modèle n'est pas adapté à la dictée. Utilisez la recherche pour le trouver.",
+      "untestedHidden_two": "{{count}} autres modèles ne sont pas adaptés à la dictée. Utilisez la recherche pour en trouver un.",
+      "untestedHidden_few": "{{count}} autres modèles ne sont pas adaptés à la dictée. Utilisez la recherche pour en trouver un.",
+      "untestedHidden_many": "{{count}} autres modèles ne sont pas adaptés à la dictée. Utilisez la recherche pour en trouver un.",
       "untestedHidden_other": "{{count}} autres modèles ne sont pas adaptés à la dictée. Utilisez la recherche pour en trouver un.",
       "emptyYours": "Aucun modèle pour l'instant. Choisissez-en un ci-dessous : il se télécharge, puis Handy l'utilise.",
       "showMore": "Afficher {{count}} de plus",

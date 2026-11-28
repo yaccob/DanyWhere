@@ -143,7 +143,11 @@
       },
       "hint": {
         "pickOne": "Vyberte alespoň jeden jazyk",
+        "weak_zero": "{{languages}}: zatím je žádný model dobře neslyší",
         "weak_one": "{{languages}}: zatím ho žádný model dobře neslyší",
+        "weak_two": "{{languages}}: zatím je žádný model dobře neslyší",
+        "weak_few": "{{languages}}: zatím je žádný model dobře neslyší",
+        "weak_many": "{{languages}}: zatím je žádný model dobře neslyší",
         "weak_other": "{{languages}}: zatím je žádný model dobře neslyší"
       }
     },
@@ -339,7 +343,11 @@
     "search": "Hledat jazyky",
     "addAnother": "Přidat další",
     "remove": "Odebrat: {{language}}",
+    "alreadyAdded_zero": "{{languages}} jsou již přidány.",
     "alreadyAdded_one": "{{languages}} je již přidán.",
+    "alreadyAdded_two": "{{languages}} jsou již přidány.",
+    "alreadyAdded_few": "{{languages}} jsou již přidány.",
+    "alreadyAdded_many": "{{languages}} jsou již přidány.",
     "alreadyAdded_other": "{{languages}} jsou již přidány."
   },
   "modelSelector": {
@@ -663,7 +671,11 @@
         "untested": "Netestováno"
       },
       "untestedNote": "Netestováno s Handy. Mohou být pomalejší nebo dělat více chyb.",
+      "untestedHidden_zero": "Dalších {{count}} modelů není vyladěno pro diktování. Najdete je hledáním.",
       "untestedHidden_one": "Další {{count}} model není vyladěn pro diktování. Najdete ho hledáním.",
+      "untestedHidden_two": "Dalších {{count}} modelů není vyladěno pro diktování. Najdete je hledáním.",
+      "untestedHidden_few": "Další {{count}} modely nejsou vyladěny pro diktování. Najdete je hledáním.",
+      "untestedHidden_many": "Dalších {{count}} modelů není vyladěno pro diktování. Najdete je hledáním.",
       "untestedHidden_other": "Dalších {{count}} modelů není vyladěno pro diktování. Najdete je hledáním.",
       "emptyYours": "Zatím žádné modely. Vyberte některý níže: stáhne se a Handy ho začne používat.",
       "showMore": "Zobrazit další ({{count}})",
