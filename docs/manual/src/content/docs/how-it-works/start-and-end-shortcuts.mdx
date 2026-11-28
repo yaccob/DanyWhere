@@ -101,15 +101,15 @@ For anything else, add end shortcuts of your own, as shown further down.
 </TabItem>
 <TabItem label="Linux">
 
-Linux starts with <kbd>Ctrl+Alt+Space</kbd> as start and hold shortcut and <kbd>Ctrl+Alt+Shift+Space</kbd> as a second hold shortcut. Two end shortcuts have these combinations. None of them appends anything.
+Linux starts with <kbd>Ctrl+Alt+Space</kbd> as start and hold shortcut and <kbd>Ctrl+Alt+Shift+Space</kbd> as a second hold shortcut, which is also the instruction shortcut. One end shortcut has the start shortcut's combination. None of them appends anything.
 
-Linux has no instruction shortcuts, and a recording ends only through a start or hold shortcut. See the limits at the end of this chapter.
+So you tap <kbd>Ctrl+Alt+Space</kbd> to start and again to end, or hold it and let go. During a recording, <kbd>Ctrl+Alt+Shift+Space</kbd> switches to the spoken instruction: hold it while you speak and let go, or tap it and end with <kbd>Ctrl+Alt+Space</kbd>. See the limits at the end of this chapter.
 
 </TabItem>
 </Tabs>
 
 :::note
-These are the factory settings of a new installation. If you used DanyWhere before, an update keeps your own end shortcuts; the twelve end shortcuts a Mac used to start with become the six above. The names are written once, in your system's language at the first start, and you can rename them as you like.
+These are the factory settings of a new installation. If you used DanyWhere before, an update keeps your own end shortcuts; the twelve end shortcuts a Mac used to start with become the six above, and on Linux the end shortcut on <kbd>Ctrl+Alt+Shift+Space</kbd> goes, unless you changed it. The names are written once, in your system's language at the first start, and you can rename them as you like.
 :::
 
 ## Add or change a shortcut
@@ -153,7 +153,7 @@ On a Mac, a new installation already has this: <kbd>↩</kbd> sends the message.
 ## Limits
 
 :::caution[Linux]
-On Linux, DanyWhere can't take a combination only while a recording runs. So it takes no end shortcut's own combination and has no instruction shortcuts. A recording ends there when you let go of a hold shortcut, or tap a start shortcut again whose combination an end shortcut has; the settings won't let you remove the last such end shortcut. For the recipe above, give the Enter key press to an end shortcut with a start shortcut's combination, or to a hold shortcut. To post-process on Linux, set **Post Processing** to **Always**, in a profile of its own if you like.
+On Linux, DanyWhere can't take a combination only while a recording runs. So it takes no end shortcut's own combination, and an instruction shortcut needs the combination of a start or hold shortcut. A recording ends there when you let go of a hold shortcut, or tap a start shortcut again whose combination an end shortcut has; the settings won't let you remove the last such end shortcut. For the recipe above, give the Enter key press to an end shortcut with a start shortcut's combination, or to a hold shortcut.
 :::
 
 **On a Mac without Accessibility**, DanyWhere can't press keys. If you continue without the permission, a new installation leaves out the two end shortcuts that send Enter or Shift+Enter, so <kbd>↩</kbd> ends nothing there; <kbd>⌥↩</kbd> and <kbd>⌥⇧↩</kbd> still end with a paragraph or a line. A key press chosen under **Append** isn't sent.
