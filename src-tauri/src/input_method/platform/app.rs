@@ -18,8 +18,14 @@ use crate::input_method::{InputMethod, InputMethodStatus, InsertFailure, Inserte
 pub struct Timeouts {
     /// For the input method to link up after its source was selected.
     pub link: Duration,
+    /// How long of `link` passes before the source is selected once more
+    /// (another source, then DanyWhere's).
+    pub reselect_after: Duration,
     /// For a text field to have the input method.
     pub client: Duration,
+    /// How long of `client` passes before the activation of the application
+    /// in front goes round (`InputSources::reconnect_focused_field`).
+    pub reconnect_after: Duration,
     /// For the answer to `insert`.
     pub answer: Duration,
     /// For the whole insertion.
@@ -34,7 +40,9 @@ impl Default for Timeouts {
     fn default() -> Self {
         Timeouts {
             link: Duration::from_millis(1500),
+            reselect_after: Duration::from_millis(500),
             client: Duration::from_millis(1000),
+            reconnect_after: Duration::from_millis(250),
             answer: Duration::from_millis(1500),
             total: Duration::from_millis(2500),
             min_answer: Duration::from_millis(500),
@@ -150,6 +158,29 @@ impl AppInputMethod {
             log::warn!("Input method: selecting its source failed: {e}");
             NotSelected::Failed
         })
+    }
+
+    /// Selects another source and then DanyWhere's again, leaving the holds
+    /// and what they go back to as they are: the source from before, else
+    /// macOS's ASCII-capable layout.
+    fn select_ours_once_more(&self, id: &str) {
+        let holds = self.holds();
+        let other = holds
+            .remembered
+            .as_ref()
+            .map(|remembered| remembered.source.clone())
+            .or_else(|| self.sources.ascii_capable_layout());
+        let Some(other) = other.filter(|other| other != id) else {
+            log::debug!("Input method: no other source to select in between");
+            return;
+        };
+        if let Err(e) = self.sources.select(&other) {
+            log::warn!("Input method: selecting {other} in between failed: {e}");
+            return;
+        }
+        if let Err(e) = self.sources.select(id) {
+            log::warn!("Input method: selecting its source again failed: {e}");
+        }
     }
 
     /// Replaces the installed copy with the bundled one and registers it.
@@ -306,19 +337,66 @@ impl InputMethod for AppInputMethod {
         }
         let left =
             |limit: Duration| limit.min(self.timeouts.total.saturating_sub(started.elapsed()));
-        if !self.link.wait_connected(left(self.timeouts.link)) {
+        // A replaced copy (an update) wasn't started by the first selection
+        // of its source, but by the next one (2026-11-24).
+        if !self
+            .link
+            .wait_connected(left(self.timeouts.link.min(self.timeouts.reselect_after)))
+        {
+            log::info!(
+                "Input method: it didn't link up in {} ms; selecting its source once more",
+                started.elapsed().as_millis()
+            );
+            self.select_ours_once_more(id);
+        }
+        if !self
+            .link
+            .wait_connected(left(self.timeouts.link.saturating_sub(started.elapsed())))
+        {
             log::info!("Input method: it didn't link up in time");
             return Err(InsertFailure::NotConnected);
         }
         if self.link.active_client().is_none() {
+            let waiting = Instant::now();
             let wait = left(self.timeouts.client).min(
                 self.timeouts
                     .total
                     .saturating_sub(started.elapsed())
                     .saturating_sub(self.timeouts.min_answer),
             );
-            if !self.link.wait_active(wait) {
-                log::debug!("Input method: no text field reported; asking anyway");
+            // macOS doesn't always hand the focused field to a source a
+            // program selected (the second dictation into the same field,
+            // 2026-11-24); an activation of its application does.
+            if !self
+                .link
+                .wait_active(wait.min(self.timeouts.reconnect_after))
+            {
+                log::info!(
+                    "Input method: no text field reported in {} ms; taking the activation round",
+                    waiting.elapsed().as_millis()
+                );
+                let went_back = self.sources.reconnect_focused_field();
+                if self
+                    .link
+                    .wait_active(wait.saturating_sub(waiting.elapsed()))
+                {
+                    log::info!(
+                        "Input method: {} reported its text field after the activation went round ({} ms)",
+                        self.link
+                            .active_client()
+                            .unwrap_or_else(|| "an app".into()),
+                        waiting.elapsed().as_millis()
+                    );
+                } else {
+                    log::info!(
+                        "Input method: still no text field reported{}; asking anyway",
+                        if went_back {
+                            ""
+                        } else {
+                            " (the activation didn't go back)"
+                        }
+                    );
+                }
             }
         }
         let answer_time = left(self.timeouts.answer).max(self.timeouts.min_answer);
@@ -429,6 +507,9 @@ mod tests {
         /// A text field gets the input method this long into `wait_active`.
         active_after: Option<Duration>,
         answer: Result<InsertAnswer, LinkError>,
+        /// As the real input method: an insert while no text field has it
+        /// answers `no_client` (else `answer` comes regardless).
+        no_client_without_field: bool,
         quit_disconnects: bool,
         log: Vec<String>,
     }
@@ -440,6 +521,7 @@ mod tests {
                     connected,
                     active: connected.then(|| "com.apple.TextEdit".to_string()),
                     active_after: None,
+                    no_client_without_field: false,
                     answer: Ok(InsertAnswer::Inserted {
                         client: Some("com.apple.TextEdit".into()),
                     }),
@@ -526,6 +608,9 @@ mod tests {
                 if !state.connected {
                     return Err(LinkError::NotConnected);
                 }
+                if state.no_client_without_field && state.active.is_none() {
+                    return Ok(InsertAnswer::NoClient);
+                }
                 state.answer.clone()
             };
             if answer == Err(LinkError::Timeout) {
@@ -550,7 +635,9 @@ mod tests {
     fn short() -> Timeouts {
         Timeouts {
             link: Duration::from_millis(200),
+            reselect_after: Duration::from_millis(50),
             client: Duration::from_millis(150),
+            reconnect_after: Duration::from_millis(50),
             answer: Duration::from_millis(300),
             total: Duration::from_millis(400),
             min_answer: Duration::from_millis(100),
@@ -777,6 +864,105 @@ mod tests {
         );
         assert_eq!(s.sources.selected(), vec![OURS], "selected once");
         assert!(s.link.log().contains(&"insert Hallo Welt".to_string()));
+        s.im.end();
+        assert_eq!(s.sources.current(), GERMAN);
+    }
+
+    // --- a text field that doesn't report by itself (2026-11-24) ---
+
+    /// Ready, but no text field has the input method, and an insert then
+    /// answers `no_client`, as the real one does.
+    fn without_a_text_field() -> Setup {
+        let s = ready();
+        {
+            let mut state = s.link.state.lock().unwrap();
+            state.active = None;
+            state.no_client_without_field = true;
+        }
+        s
+    }
+
+    #[test]
+    fn a_field_that_reports_only_after_the_activation_went_round_gets_the_text() {
+        // The second dictation into the same field: macOS didn't connect
+        // the field to the selected source, an activation of its app does.
+        let s = without_a_text_field();
+        let link = s.link.clone();
+        s.sources.when_reconnected(move || {
+            link.state.lock().unwrap().active = Some("com.apple.Safari".into());
+        });
+        s.im.begin();
+        assert!(s.im.insert("Zweites Diktat").is_ok());
+        assert_eq!(s.sources.reconnects(), 1);
+        s.im.end();
+    }
+
+    #[test]
+    fn a_field_that_has_the_input_method_needs_no_round() {
+        let s = ready();
+        s.im.begin();
+        assert!(s.im.insert("Erstes Diktat").is_ok());
+        assert_eq!(s.sources.reconnects(), 0);
+        s.im.end();
+    }
+
+    #[test]
+    fn a_field_that_reports_soon_after_the_selection_needs_no_round() {
+        let s = without_a_text_field();
+        s.link.state.lock().unwrap().active_after = Some(Duration::from_millis(10));
+        s.im.begin();
+        assert!(s.im.insert("Erstes Diktat").is_ok());
+        assert_eq!(s.sources.reconnects(), 0);
+        s.im.end();
+    }
+
+    #[test]
+    fn without_any_field_even_after_the_round_the_text_goes_as_without_it() {
+        // The Finder, the desktop: the activation goes round once, then the
+        // text waits as before.
+        let s = without_a_text_field();
+        s.im.begin();
+        assert_eq!(s.im.insert("x"), Err(InsertFailure::NoClient));
+        assert_eq!(s.sources.reconnects(), 1);
+        s.im.end();
+    }
+
+    // --- an input method that doesn't start (after its copy was replaced,
+    // 2026-11-24) ---
+
+    #[test]
+    fn an_input_method_that_doesnt_start_at_the_first_selection_starts_at_the_next() {
+        // macOS didn't start the replaced input method when its source was
+        // selected; the next selection of it did.
+        let s = setup(true, true, false);
+        let link = s.link.clone();
+        let ours_selected = Arc::new(Mutex::new(0usize));
+        let counted = ours_selected.clone();
+        s.sources.when_selected(move |id| {
+            if id != OURS {
+                return;
+            }
+            let mut count = counted.lock().unwrap();
+            *count += 1;
+            if *count == 2 {
+                let mut state = link.state.lock().unwrap();
+                state.connected = true;
+                state.active = Some("com.apple.TextEdit".into());
+            }
+        });
+        s.im.begin();
+        assert!(s.im.insert("Nach dem Update").is_ok());
+        assert_eq!(s.sources.selected(), vec![OURS, GERMAN, OURS]);
+        s.im.end();
+        assert_eq!(s.sources.current(), GERMAN);
+    }
+
+    #[test]
+    fn an_input_method_that_never_starts_is_selected_once_more_then_given_up() {
+        let s = setup(true, true, false);
+        s.im.begin();
+        assert_eq!(s.im.insert("x"), Err(InsertFailure::NotConnected));
+        assert_eq!(s.sources.selected(), vec![OURS, GERMAN, OURS]);
         s.im.end();
         assert_eq!(s.sources.current(), GERMAN);
     }

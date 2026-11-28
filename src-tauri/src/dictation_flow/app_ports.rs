@@ -289,6 +289,10 @@ impl Report for AppPorts {
         crate::delivery::play_sound_after_dictation(&self.app, end);
     }
 
+    fn after_text_inserted(&self) {
+        crate::window_capture::ask_pending_consent();
+    }
+
     fn raise(&self, notice: Notice) {
         notices::raise(&self.app, notice);
     }

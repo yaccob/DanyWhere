@@ -23,6 +23,15 @@ pub trait InputSources: Send + Sync {
     fn register(&self, path: &Path) -> Result<(), String>;
     /// The id of the ASCII-capable keyboard layout macOS would use now.
     fn ascii_capable_layout(&self) -> Option<String>;
+    /// Makes the application in front hand its focused text field to the
+    /// current input source again, by taking the activation from it for a
+    /// moment and giving it straight back. macOS doesn't always connect the
+    /// focused field to a source a program selected: in Safari and TextEdit
+    /// a field that had had the input method once often got no
+    /// `activateServer` again until a key was pressed, while an activation
+    /// of its application brought it every time (2026-11-24, macOS 27).
+    /// Returns whether the activation went back to that application.
+    fn reconnect_focused_field(&self) -> bool;
 }
 
 /// How long a caller waits for the main thread to run a TIS call.
@@ -95,6 +104,61 @@ impl InputSources for CarbonInputSources {
     fn ascii_capable_layout(&self) -> Option<String> {
         self.on_main("ascii_capable_layout", tis::ascii_capable_layout)
             .flatten()
+    }
+
+    fn reconnect_focused_field(&self) -> bool {
+        let Some(front) = self
+            .on_main("activate DanyWhere", activation::take_from_front)
+            .flatten()
+        else {
+            return false;
+        };
+        // Off the main thread, so that it handles the activation meanwhile;
+        // 120 ms brought the field back every time in the trial.
+        std::thread::sleep(activation::HOLD);
+        self.on_main("give the activation back", move || {
+            activation::give_back(front)
+        })
+        .unwrap_or(false)
+    }
+}
+
+/// Taking the activation from the application in front and giving it back
+/// ([`InputSources::reconnect_focused_field`]); main thread only. While its
+/// window is hidden DanyWhere is an accessory app (no Dock icon, no menu
+/// bar), so all that shows is the front window losing its focus for a
+/// moment.
+mod activation {
+    use std::time::Duration;
+
+    use objc2::MainThreadMarker;
+    use objc2_app_kit::NSWorkspace;
+    use objc2_app_kit::{NSApplication, NSApplicationActivationOptions, NSRunningApplication};
+
+    /// How long DanyWhere keeps the activation.
+    pub const HOLD: Duration = Duration::from_millis(120);
+
+    /// Activates DanyWhere and returns the pid of the application that was
+    /// in front, or `None` when that is DanyWhere itself or unknown.
+    pub fn take_from_front() -> Option<i32> {
+        let mtm = MainThreadMarker::new()?;
+        let front = NSWorkspace::sharedWorkspace().frontmostApplication()?;
+        let pid = front.processIdentifier();
+        if pid <= 0 || pid as u32 == std::process::id() {
+            return None;
+        }
+        #[allow(deprecated)]
+        NSApplication::sharedApplication(mtm).activateIgnoringOtherApps(true);
+        Some(pid)
+    }
+
+    /// Activates the application with `pid` again.
+    pub fn give_back(pid: i32) -> bool {
+        let Some(app) = NSRunningApplication::runningApplicationWithProcessIdentifier(pid) else {
+            log::warn!("Input method: the application in front (pid {pid}) is gone");
+            return false;
+        };
+        app.activateWithOptions(NSApplicationActivationOptions::empty())
     }
 }
 
@@ -205,11 +269,20 @@ pub mod testing {
     use std::path::{Path, PathBuf};
     use std::sync::Mutex;
 
+    type OnReconnect = Box<dyn Fn() + Send + Sync>;
+    type OnSelect = Box<dyn Fn(&str) + Send + Sync>;
+
     /// macOS's input sources, played by the test: a list of added sources,
     /// the current one and every selection and registration.
     #[derive(Default)]
     pub struct FakeSources {
         pub state: Mutex<FakeState>,
+        /// What the application in front does when its activation goes
+        /// round (`reconnect_focused_field`), e.g. a text field reports.
+        pub on_reconnect: Mutex<Option<OnReconnect>>,
+        /// What macOS does after a source was selected, e.g. starting the
+        /// input method.
+        pub on_select: Mutex<Option<OnSelect>>,
     }
 
     #[derive(Default)]
@@ -225,6 +298,8 @@ pub mod testing {
         /// The current source and layout can't be read, as when the main
         /// thread doesn't answer in time.
         pub current_unknown: bool,
+        /// How often the activation went round (`reconnect_focused_field`).
+        pub reconnects: usize,
     }
 
     impl FakeSources {
@@ -238,6 +313,8 @@ pub mod testing {
                     ascii: "com.apple.keylayout.ABC".into(),
                     ..FakeState::default()
                 }),
+                on_reconnect: Mutex::new(None),
+                on_select: Mutex::new(None),
             }
         }
 
@@ -261,6 +338,20 @@ pub mod testing {
         pub fn registered(&self) -> Vec<PathBuf> {
             self.state.lock().unwrap().registered.clone()
         }
+
+        /// From now on, when the activation goes round, `then` runs.
+        pub fn when_reconnected(&self, then: impl Fn() + Send + Sync + 'static) {
+            *self.on_reconnect.lock().unwrap() = Some(Box::new(then));
+        }
+
+        pub fn reconnects(&self) -> usize {
+            self.state.lock().unwrap().reconnects
+        }
+
+        /// From now on, after each selection, `then` runs with its id.
+        pub fn when_selected(&self, then: impl Fn(&str) + Send + Sync + 'static) {
+            *self.on_select.lock().unwrap() = Some(Box::new(then));
+        }
     }
 
     impl InputSources for FakeSources {
@@ -279,14 +370,19 @@ pub mod testing {
         }
 
         fn select(&self, id: &str) -> Result<(), String> {
-            let mut state = self.state.lock().unwrap();
-            if state.select_fails || !state.added.iter().any(|a| a == id) {
-                return Err(format!("{id} can't be selected"));
+            {
+                let mut state = self.state.lock().unwrap();
+                if state.select_fails || !state.added.iter().any(|a| a == id) {
+                    return Err(format!("{id} can't be selected"));
+                }
+                state.selected.push(id.into());
+                state.current = id.into();
+                if id.contains(".keylayout.") {
+                    state.layout = id.into();
+                }
             }
-            state.selected.push(id.into());
-            state.current = id.into();
-            if id.contains(".keylayout.") {
-                state.layout = id.into();
+            if let Some(then) = self.on_select.lock().unwrap().as_ref() {
+                then(id);
             }
             Ok(())
         }
@@ -298,6 +394,14 @@ pub mod testing {
 
         fn ascii_capable_layout(&self) -> Option<String> {
             Some(self.state.lock().unwrap().ascii.clone())
+        }
+
+        fn reconnect_focused_field(&self) -> bool {
+            self.state.lock().unwrap().reconnects += 1;
+            if let Some(then) = self.on_reconnect.lock().unwrap().as_ref() {
+                then();
+            }
+            true
         }
     }
 }

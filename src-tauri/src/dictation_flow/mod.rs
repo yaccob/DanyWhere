@@ -1268,6 +1268,13 @@ fn deliver_dictation<P: DictationPorts>(ports: &P, delivery: Delivery) {
         (false, Some(notice), _) => ports.raise_without_overlay(notice),
         (false, None, _) => {}
     }
+    // DanyWhere: once the text is in, macOS may
+    // ask whether DanyWhere may read that app's
+    // window title (user's choice, 2026-11-24);
+    // not while it waits for ⌃⇧V.
+    if inserted_by_input_method || inserted_by_service {
+        ports.after_text_inserted();
+    }
     if owns_ui() {
         ports.tray(TrayIconState::Idle);
     }
@@ -3645,6 +3652,39 @@ mod tests {
                 Event::Finished,
             ]
         );
+    }
+
+    // --- after the text is in, macOS may be asked about the window title
+    // (user's choice "A", 2026-11-24) ---
+
+    #[test]
+    fn a_dictation_the_input_method_inserted_may_ask_about_the_window_title() {
+        let access = Access::WithoutForService;
+        let ports = FakePorts::new(access.script(with_input_method(Script::default(), inserted())));
+        finish(&ports, snapshot_with(pasting_with_keys(access, " (sent)")));
+        assert_eq!(ports.texts_inserted(), 1);
+    }
+
+    #[test]
+    fn a_dictation_a_waiting_service_call_inserted_may_ask_too() {
+        let access = Access::WithoutForService;
+        let ports = FakePorts::new(access.script(Script {
+            call_waiting: true,
+            service_takes: true,
+            ..Script::default()
+        }));
+        finish(&ports, snapshot_with(pasting_with_keys(access, " (sent)")));
+        assert_eq!(ports.texts_inserted(), 1);
+    }
+
+    #[test]
+    fn a_dictation_that_waits_for_the_service_asks_nothing_yet() {
+        // Its text isn't in: a dialog now would take the focus from the
+        // field where ⌃⇧V is to insert it.
+        let access = Access::WithoutForService;
+        let ports = FakePorts::new(access.script(Script::default()));
+        finish(&ports, snapshot_with(pasting_with_keys(access, " (sent)")));
+        assert_eq!(ports.texts_inserted(), 0);
     }
 
     #[test]
