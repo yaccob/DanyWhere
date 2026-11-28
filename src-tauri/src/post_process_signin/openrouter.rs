@@ -26,13 +26,19 @@ pub const PAID_MODEL: &str = "anthropic/claude-haiku-5.5";
 /// items or fewer." (HTTP 400, tried 2026-11-26).
 pub const MAX_FALLBACK_MODELS: usize = 3;
 /// Free models to try first, in this order, where the model list still has
-/// them. Tried 2026-11-26: Nemotron 3.5 Super answered every request (13 of
-/// 13, and the fallback and schema probes), the Gemma models were busy
-/// (HTTP 429 upstream), Ling 3.2 Flash answered with a schema.
+/// them; without the list the first [`MAX_FALLBACK_MODELS`] are sent as they
+/// are, so those must take a schema and turn their reasoning off. Ordered by
+/// how often each followed a spoken instruction, measured 2026-11-28 with
+/// DanyWhere's own requests (translate, shorten, make a list, more formal):
+/// ERNIE 5.5 Flash 36 of 39 (busy once in 40), Particle 1 27 of 35 (busy 5
+/// times in 40, twice an empty reply), Nemotron 3.5 Super 20 of 60 (never a
+/// list, never shorter; no variant of the frame helped). The Gemma models
+/// take no schema; Ling 3.2 Flash of 2026-11-26 is gone.
 pub const FREE_MODEL_PREFERENCE: &[&str] = &[
+    "baidu/ernie-5.5-flash-preview:free",
+    "particle-ai/particle-1:free",
     "nvidia/nemotron-3.5-super-vl:free",
     "google/gemma-4-31b-it:free",
-    "inclusionai/ling-3.2-flash:free",
     "google/gemma-4-26b-a4b-it:free",
 ];
 /// The smallest context a free model needs to take a long dictation with
@@ -701,9 +707,9 @@ mod tests {
         assert_eq!(
             choose_free_models(&stored_models(), true, MAX_FALLBACK_MODELS),
             vec![
-                "nvidia/nemotron-3.5-super-vl:free",
-                "inclusionai/ling-3.2-flash:free",
                 "baidu/ernie-5.5-flash-preview:free",
+                "particle-ai/particle-1:free",
+                "nvidia/nemotron-3.5-super-vl:free",
             ]
         );
     }
@@ -713,11 +719,11 @@ mod tests {
         assert_eq!(
             choose_free_models(&stored_models(), false, 5),
             vec![
+                "baidu/ernie-5.5-flash-preview:free",
+                "particle-ai/particle-1:free",
                 "nvidia/nemotron-3.5-super-vl:free",
                 "google/gemma-4-31b-it:free",
-                "inclusionai/ling-3.2-flash:free",
                 "google/gemma-4-26b-a4b-it:free",
-                "baidu/ernie-5.5-flash-preview:free",
             ]
         );
     }
@@ -838,6 +844,38 @@ mod tests {
             choose_free_models(&list, true, MAX_FALLBACK_MODELS).len(),
             MAX_FALLBACK_MODELS
         );
+    }
+
+    // The order of 2026-11-28 (sidecar note
+    // `qa/2026-11-28_1010_auftrag-gratismodelle-anweisung.md`, the user's
+    // choice): by how often each followed a spoken instruction, ERNIE 5.5
+    // Flash 36 of 39, Particle 1 27 of 35, Nemotron 3.5 Super 20 of 60.
+    #[test]
+    fn the_list_of_2026_11_28_gives_ernie_particle_and_nemotron_in_that_order() {
+        let list: Value = serde_json::from_str(MODELS_2026_11_28).expect("list parses");
+        assert_eq!(
+            choose_free_models(&list, true, MAX_FALLBACK_MODELS),
+            vec![
+                "baidu/ernie-5.5-flash-preview:free",
+                "particle-ai/particle-1:free",
+                "nvidia/nemotron-3.5-super-vl:free",
+            ]
+        );
+    }
+
+    // Without OpenRouter's model list the sign-in sends the first preferred
+    // models unchecked (`commands::openrouter_state`), always with a schema:
+    // each of them has to take one and turn its reasoning off.
+    #[test]
+    fn the_first_preferred_models_are_usable_with_a_schema_in_the_list_of_2026_11_28() {
+        let list: Value = serde_json::from_str(MODELS_2026_11_28).expect("list parses");
+        let usable = choose_free_models(&list, true, usize::MAX);
+        for preferred in FREE_MODEL_PREFERENCE.iter().take(MAX_FALLBACK_MODELS) {
+            assert!(
+                usable.iter().any(|id| id == preferred),
+                "{preferred} is not usable with a schema: {usable:?}"
+            );
+        }
     }
 
     #[test]
