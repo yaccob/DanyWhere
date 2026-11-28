@@ -1116,8 +1116,9 @@ pub fn prepare_import(file_text: &str, values: &mut ProfileValues) {
 /// a file without shortcuts takes the importing installation's (an empty
 /// map, which `profiles::ensure_profiles` fills); the old start shortcuts
 /// go: a file from before start and hold shortcuts takes the defaults'
-/// (`profile_transfer::prepare_import_values` fills them in); Append texts
-/// get `platform`'s key names.
+/// (`profile_transfer::prepare_import_values` fills them in); on Linux the
+/// step to its instruction shortcut ([`linux_instruction_step`]); Append
+/// texts get `platform`'s key names.
 pub fn prepare_import_on(file_text: &str, values: &mut ProfileValues, platform: KeyPlatform) {
     if let Ok(file) = serde_saphyr::from_str::<serde_json::Value>(file_text) {
         let stored = file
@@ -1133,6 +1134,10 @@ pub fn prepare_import_on(file_text: &str, values: &mut ProfileValues, platform: 
             crate::append_text::stored_trailing_space(stored),
             (false, crate::settings::AutoSubmitKey::Enter, platform),
         );
+        // Linux' instruction shortcut (2026-11-28), as a store's layer.
+        if platform == KeyPlatform::Linux {
+            linux_instruction_step(stored, &mut values.end_keys, &mut values.instruction_keys);
+        }
         let own_start_values = !lacks("shortcut_activation")
             || !lacks("hold_ends")
             || LEGACY_START_BINDINGS
@@ -2330,6 +2335,36 @@ mod tests {
         crate::profile_layers::propagate(&mut after);
         assert!(after.profiles[0].values.instruction_keys.is_empty());
         assert_eq!(after.profiles[0].values.end_keys, own);
+    }
+
+    /// A profile file of 0.5.1 from Linux, with the old pair of ends and no
+    /// instruction shortcuts, imports as the store reads: one end and the
+    /// factory instruction shortcut, so its ends can be changed afterwards.
+    #[test]
+    fn a_linux_import_of_0_5_1_gets_the_instruction_key_as_the_store_does() {
+        let old = ProfileValues {
+            start_keys: crate::start_keys::factory_start_keys_on(LINUX),
+            hold_keys: crate::start_keys::factory_hold_keys_on(LINUX),
+            end_keys: linux_pair("", false),
+            ..ProfileValues::default()
+        };
+        let mut file_values = serde_json::to_value(&old).unwrap();
+        file_values
+            .as_object_mut()
+            .unwrap()
+            .remove("instruction_keys");
+        let file = serde_saphyr::to_string(&serde_json::json!({
+            "version": 1,
+            "profile": { "id": "w", "name": "W", "values": file_values }
+        }))
+        .unwrap();
+        let mut imported = old.clone();
+        prepare_import_on(&file, &mut imported, LINUX);
+        assert_eq!(
+            imported.end_keys,
+            vec![plain(PLAIN_ID, "", linux_first(), "", false)]
+        );
+        assert_eq!(imported.instruction_keys, linux_instruction());
     }
 
     #[test]

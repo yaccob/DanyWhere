@@ -927,10 +927,13 @@ mod tests {
             serde_json::json!({ "append_text": r"\n\n", "send_context": true }),
         );
         let (profile, _) = read_import(&older, None).expect("import");
-        assert_eq!(
-            profile.values.end_keys,
-            crate::end_keys::builtin(r"\n\n", true)
-        );
+        let mut expected = crate::end_keys::builtin(r"\n\n", true);
+        // Linux keeps the first of the two, which did the same, as its
+        // instruction shortcut takes the second one's combination (2026-11-28).
+        if cfg!(target_os = "linux") {
+            expected.truncate(1);
+        }
+        assert_eq!(profile.values.end_keys, expected);
         // The shortcuts come from the installation it is imported into.
         assert!(profile.values.bindings.is_empty());
     }

@@ -1494,8 +1494,11 @@ mod tests {
         let newer = "format: danywhere-profile\nversion: 1\nprofile:\n  id: x\n  name: New\n  values:\n    append_trailing_space: true\n    append_text: '{Enter}'\n";
         let mut values = ProfileValues::default();
         crate::end_keys::prepare_import(newer, &mut values);
-        assert_eq!(values.end_keys[0].append_text, "{Enter}");
-        assert_eq!(values.end_keys[1].append_text, "{Enter}");
+        // Every end (on Linux one: the second did the same, 2026-11-28).
+        assert!(!values.end_keys.is_empty());
+        for end in &values.end_keys {
+            assert_eq!(end.append_text, "{Enter}", "{}", end.id);
+        }
     }
 
     #[test]
