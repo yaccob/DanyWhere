@@ -527,14 +527,17 @@
       "shortcutHint": "Během nahrávání stisknutí této kombinace kláves přepne z textu na pokyn. Je obsazena jen během nahrávání.",
       "onlyWhileRecording": "Obsazena jen během nahrávání.",
       "sameAsStartOrHold": "Stejná kombinace kláves jako spouštěcí zkratka nebo zkratka pro podržení: bez nahrávání ho spustí, během nahrávání přepne na pokyn.",
+      "linuxNotTaken": "V Linuxu neobsazeno: žádná spouštěcí zkratka ani zkratka pro podržení nemá tuto kombinaci kláves.",
       "notTakenNever": "Následné zpracování je nastaveno na „{{mode}}“: zkratky pro pokyn nejsou obsazené. Zvolte v sekci Pokročilé jiné nastavení pro „{{setting}}“.",
       "notSetUp": "Následné zpracování ještě není nastavené: po zkratce pro pokyn se text vloží tak, jak zazněl, bez pokynu, a oznámení nabídne jeho nastavení.",
+      "linuxNote": "V Linuxu nemůže Handy obsadit kombinaci kláves jen během nahrávání, proto zkratka pro pokyn potřebuje kombinaci kláves spouštěcí zkratky nebo zkratky pro podržení: stisknutá během nahrávání přepne na pokyn.",
       "add": "Přidat zkratku pro pokyn",
       "addPressKeys": "Stiskněte kombinaci kláves pro novou zkratku pro pokyn",
       "refName": "Zkratka pro pokyn {{name}}",
       "errors": {
         "save": "Zkratky pro pokyn se nepodařilo uložit: {{error}}",
         "needsShortcut": "Každá zkratka pro pokyn potřebuje kombinaci kláves.",
+        "needsStartOrHold": "V Linuxu potřebuje zkratka pro pokyn kombinaci kláves spouštěcí zkratky nebo zkratky pro podržení.",
         "shortcutTwice": "Dvě zkratky pro pokyn nemohou mít stejnou kombinaci kláves."
       }
     },

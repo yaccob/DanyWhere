@@ -527,14 +527,17 @@
       "shortcutHint": "Durante una grabación, pulsar esta combinación cambia del texto a la instrucción. Solo se ocupa mientras se graba.",
       "onlyWhileRecording": "Solo se ocupa durante una grabación.",
       "sameAsStartOrHold": "La misma combinación que un atajo de inicio o de mantener: sin grabación inicia una, durante una grabación cambia a la instrucción.",
+      "linuxNotTaken": "No se ocupa en Linux: ningún atajo de inicio o de mantener tiene esta combinación.",
       "notTakenNever": "El posprocesamiento está en «{{mode}}»: los atajos de instrucción no se ocupan. Elige otra opción para «{{setting}}» en Avanzado.",
       "notSetUp": "El posprocesamiento aún no está configurado: tras un atajo de instrucción, el texto se inserta tal como se oyó, sin la instrucción, y un aviso ofrece configurarlo.",
+      "linuxNote": "En Linux, Handy no puede ocupar una combinación solo durante una grabación, así que un atajo de instrucción necesita la combinación de un atajo de inicio o de mantener: pulsado durante una grabación, ese atajo cambia a la instrucción.",
       "add": "Añadir atajo de instrucción",
       "addPressKeys": "Pulsa la combinación para el nuevo atajo de instrucción",
       "refName": "Atajo de instrucción {{name}}",
       "errors": {
         "save": "No se pudieron guardar los atajos de instrucción: {{error}}",
         "needsShortcut": "Cada atajo de instrucción necesita una combinación de teclas.",
+        "needsStartOrHold": "En Linux, un atajo de instrucción necesita la combinación de un atajo de inicio o de mantener.",
         "shortcutTwice": "Dos atajos de instrucción no pueden compartir una combinación."
       }
     },

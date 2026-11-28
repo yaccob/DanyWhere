@@ -2685,12 +2685,14 @@ mod tests {
         let mut settings: AppSettings = serde_json::from_value(raw.clone()).expect("parses");
         assert!(apply_settings_migrations(&mut settings, &raw));
         assert_eq!(settings.end_keys[0].append_text, r"\s{Ctrl+Enter}");
-        // The defaults are made from the migrated flat values.
+        // The defaults are made from the migrated flat values: every end
+        // (on Linux one, whose second end did the same, 2026-11-28).
         crate::profiles::ensure_profiles(&mut settings);
-        assert_eq!(
-            crate::profiles::default_values(&settings).end_keys[1].append_text,
-            r"\s{Ctrl+Enter}"
-        );
+        let defaults = crate::profiles::default_values(&settings);
+        assert!(!defaults.end_keys.is_empty());
+        for end in &defaults.end_keys {
+            assert_eq!(end.append_text, r"\s{Ctrl+Enter}", "{}", end.id);
+        }
     }
 
     /// DanyWhere: a combination recorded with one side (`ctrl_left+space`)

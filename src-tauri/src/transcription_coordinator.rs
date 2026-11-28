@@ -236,6 +236,12 @@ struct InstructionPress {
     /// Held at least this long, its release sends the dictation with the
     /// instruction key's values.
     threshold: Duration,
+    /// When `via`'s key went up, while that release waits out
+    /// `RELEASE_GRACE` (X11 repeats a held key as release/press pairs,
+    /// #1539; Linux reaches the instruction only this way, user,
+    /// 2026-11-28): a press of `via` within it was a repeat and takes it
+    /// back, else [`CoordinatorState::on_grace_expired`] resolves it.
+    released_at: Option<Instant>,
 }
 
 /// A keyboard/signal edge for a start or hold shortcut.
@@ -480,6 +486,7 @@ impl CoordinatorState {
             locked: false,
             via,
             threshold,
+            released_at: None,
         });
         Some(Effect::BeginInstruction {
             binding_id,
@@ -546,8 +553,35 @@ impl CoordinatorState {
     }
 
     /// Deadline of the deferred release, if any — drives `recv_timeout`.
+    /// DanyWhere: the earlier one of it and that of a start or hold
+    /// shortcut's release that would end the instruction
+    /// ([`InstructionPress::released_at`]).
     fn grace_deadline(&self) -> Option<Instant> {
-        self.pending_release.as_ref().map(|p| p.deadline)
+        let pending = self.pending_release.as_ref().map(|p| p.deadline);
+        match (pending, self.instruction_release_deadline()) {
+            (Some(a), Some(b)) => Some(a.min(b)),
+            (a, b) => a.or(b),
+        }
+    }
+
+    /// DanyWhere: when the release of the start or hold shortcut binding the
+    /// instruction key came as is resolved, while it waits out its grace.
+    fn instruction_release_deadline(&self) -> Option<Instant> {
+        self.instruction
+            .as_ref()
+            .and_then(|press| press.released_at)
+            .map(|released_at| released_at + RELEASE_GRACE)
+    }
+
+    /// DanyWhere: the waiting release of the start or hold shortcut binding
+    /// the instruction key came as, resolved as that release
+    /// ([`CoordinatorState::instruction_released`], measured to the key-up).
+    fn on_instruction_grace_expired(&mut self) -> Option<Effect> {
+        let press = self.instruction.as_mut()?;
+        let released_at = press.released_at.take()?;
+        let id = press.id.clone();
+        let via = press.via.clone();
+        self.instruction_released(&id, via.as_deref(), released_at)
     }
 
     /// Whether the current session (recording, or remembered for the drain)
@@ -574,6 +608,17 @@ impl CoordinatorState {
     }
 
     fn on_input(&mut self, input: InputEvent, now: Instant) -> Option<Effect> {
+        // DanyWhere: a press of the start or hold shortcut binding the
+        // instruction key came as, while its release waits out the grace:
+        // that release was an X11 repeat's, the key is still held.
+        if input.is_pressed && input.external.is_none() {
+            if let Some(press) = self.instruction.as_mut().filter(|press| {
+                press.released_at.is_some() && press.via.as_deref() == Some(&input.binding_id)
+            }) {
+                press.released_at = None;
+                return None;
+            }
+        }
         let pending_release_binding = self
             .pending_release
             .as_ref()
@@ -766,15 +811,19 @@ impl CoordinatorState {
                 }
                 Stage::Processing => {}
             }
-        } else if let Some(instruction_id) = self
+        } else if let Some(press) = self
             .instruction
-            .as_ref()
+            .as_mut()
             .filter(|press| press.via.as_deref() == Some(input.binding_id.as_str()))
-            .map(|press| press.id.clone())
         {
             // DanyWhere: the release of the start or hold shortcut binding
-            // the instruction key came as.
-            return self.instruction_released(&instruction_id, Some(&input.binding_id), now);
+            // the instruction key came as waits out the grace window, as a
+            // hold shortcut's does (X11's repeats); a tapped, locked one's
+            // next release means nothing.
+            if !press.locked && press.released_at.is_none() {
+                press.released_at = Some(now);
+            }
+            return None;
         } else if hold_to_talk && self.recording_binding() == Some(input.binding_id.as_str()) {
             // A release that was not deferred (one is already pending for this
             // binding): resolve it immediately rather than dropping it.
@@ -794,6 +843,17 @@ impl CoordinatorState {
     /// resolve the deferred release against whatever that binding's key was
     /// holding — the live recording, or a press remembered while busy.
     fn on_grace_expired(&mut self) -> Option<Effect> {
+        // DanyWhere: of two waiting releases, the earlier one first; the
+        // loop comes back for the other at its deadline.
+        if let Some(instruction_deadline) = self.instruction_release_deadline() {
+            let pending_first = self
+                .pending_release
+                .as_ref()
+                .is_some_and(|pending| pending.deadline < instruction_deadline);
+            if !pending_first {
+                return self.on_instruction_grace_expired();
+            }
+        }
         let pending = self.pending_release.take()?;
         match &self.stage {
             Stage::Recording(id) | Stage::Instruction(id) if *id == pending.binding_id => self
@@ -1369,18 +1429,13 @@ impl EffectRunner for AppEffects {
     /// DanyWhere: cuts the recording for its instruction (strand Z1,
     /// `dictation_flow::instruction`), only while the profile that applies
     /// now takes this instruction key (`instruction_keys::is_taken_now`: not
-    /// "never", a provider with a model, not on Linux), the profile its
+    /// "never"; on Linux too, user 2026-11-28), the profile its
     /// registration follows: a press that came through just before a change
     /// cuts nothing.
     fn begin_instruction(&mut self, binding_id: &str, instruction_id: &str) -> bool {
         let settings = crate::settings::get_settings(&self.0);
         let frontmost = crate::app_profiles::frontmost_if_choosing(&settings);
-        if !crate::instruction_keys::is_taken_now(
-            &settings,
-            frontmost.as_deref(),
-            instruction_id,
-            cfg!(target_os = "linux"),
-        ) {
+        if !crate::instruction_keys::is_taken_now(&settings, frontmost.as_deref(), instruction_id) {
             debug!("Instruction key '{instruction_id}': the profile now takes it not; no cut");
             return false;
         }
@@ -4080,15 +4135,106 @@ mod tests {
         ));
         state.on_instruction_result(true);
         assert_eq!(state.stage, Stage::Instruction(START.to_string()));
-        // Its own release, held, sends with the instruction key's values.
-        assert_end(
-            state.on_input(release(HOLD), t0 + ms(1000) + THRESHOLD),
-            START,
-            instruction(TAB),
-        );
+        // Its own release, held, sends with the instruction key's values
+        // once the release's grace window passed without a repeat's press.
+        assert!(state
+            .on_input(release(HOLD), t0 + ms(1000) + THRESHOLD)
+            .is_none());
+        assert_end(state.on_grace_expired(), START, instruction(TAB));
         // Idle, the same combination starts a recording as before.
         let mut idle = CoordinatorState::new();
         assert!(is_start(idle.on_input(press(HOLD, instructs), t0)));
         assert_eq!(idle.stage, Stage::Recording(HOLD.to_string()));
+    }
+
+    // DanyWhere: Linux (user, 2026-11-28; sidecar note
+    // `2026-11-28_1405_auftrag-anweisungstaste-linux`) reaches the spoken
+    // instruction only through a start or hold shortcut with the instruction
+    // key's combination, out of the box Ctrl+Alt+Shift+Space. X11 repeats a
+    // held key as release/press pairs (#1539), so that key's release waits
+    // out the grace window too: a repeat's press within it takes it back.
+
+    /// Roles of [`HOLD`] as the instruction key's combination.
+    fn hold_instructs() -> Roles {
+        Roles {
+            instruction: Some(TAB.to_string()),
+            ..only_hold()
+        }
+    }
+
+    #[test]
+    fn an_instruction_through_a_hold_key_outlasts_x11_auto_repeat() {
+        let mut state = CoordinatorState::new();
+        let t0 = Instant::now();
+        tapped_start(&mut state, t0);
+        assert!(is_begin_instruction(
+            state.on_input(press(HOLD, hold_instructs()), t0 + ms(1000)),
+            START
+        ));
+        state.on_instruction_result(true);
+        // X11 repeats from 660 ms on, every 40 ms: each release is followed
+        // by a press 2 ms later.
+        for n in 0..5 {
+            let at = t0 + ms(1660 + 40 * n);
+            assert!(
+                state.on_input(release(HOLD), at).is_none(),
+                "a repeat's release ({n}) sends nothing"
+            );
+            assert!(state
+                .on_input(press(HOLD, hold_instructs()), at + ms(2))
+                .is_none());
+            assert!(state.on_grace_expired().is_none());
+            assert_eq!(state.stage, Stage::Instruction(START.to_string()));
+        }
+        // The real release, long after: sent with the instruction key's
+        // values.
+        assert!(state.on_input(release(HOLD), t0 + ms(4000)).is_none());
+        assert_end(state.on_grace_expired(), START, instruction(TAB));
+        assert_eq!(state.stage, Stage::Processing);
+    }
+
+    #[test]
+    fn a_tapped_hold_key_as_instruction_key_locks_after_its_grace_window() {
+        let mut state = CoordinatorState::new();
+        let t0 = Instant::now();
+        tapped_start(&mut state, t0);
+        assert!(is_begin_instruction(
+            state.on_input(press(HOLD, hold_instructs()), t0 + ms(1000)),
+            START
+        ));
+        state.on_instruction_result(true);
+        assert!(state.on_input(release(HOLD), t0 + ms(1100)).is_none());
+        assert!(state.on_grace_expired().is_none());
+        assert_eq!(state.stage, Stage::Instruction(START.to_string()));
+        // The start shortcut again, the end with its combination: sent.
+        assert_end(
+            state.on_input(
+                press(START, roles(Some("start"), None, Some("plain"))),
+                t0 + ms(3000),
+            ),
+            START,
+            key("plain"),
+        );
+    }
+
+    #[test]
+    fn the_hold_keys_release_waiting_out_its_grace_and_the_recordings_own_both_resolve() {
+        // ⌃Space held (both lists), ⌃⇧Space pressed for the instruction, both
+        // let go within the same grace window: the instruction key's release
+        // decides, held long it sends with its values.
+        let mut state = CoordinatorState::new();
+        let t0 = Instant::now();
+        let both = || roles(Some("start"), Some("hold_post"), None);
+        assert!(is_start(state.on_input(press(START, both()), t0)));
+        assert!(is_begin_instruction(
+            state.on_input(press(HOLD, hold_instructs()), t0 + ms(1000)),
+            START
+        ));
+        state.on_instruction_result(true);
+        assert!(state.on_input(release(HOLD), t0 + ms(2000)).is_none());
+        assert!(state.on_input(release(START), t0 + ms(2010)).is_none());
+        assert_end(state.on_grace_expired(), START, instruction(TAB));
+        assert!(state.on_grace_expired().is_none());
+        assert_eq!(state.stage, Stage::Processing);
     }
 }

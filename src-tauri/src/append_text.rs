@@ -1377,7 +1377,12 @@ mod tests {
     fn nothing_to_carry_over_needs_no_write() {
         let stored = stored_before_the_field(false, false, "enter");
         let mut settings = read(&stored);
-        assert!(!crate::end_keys::migrate(&mut settings, &stored));
+        // On Linux the second factory end goes since the instruction
+        // shortcut took its combination (2026-11-28), a change of its own.
+        assert_eq!(
+            crate::end_keys::migrate(&mut settings, &stored),
+            cfg!(target_os = "linux")
+        );
         assert_eq!(settings.end_keys[0].append_text, "");
     }
 
@@ -1400,8 +1405,15 @@ mod tests {
     /// A current store whose values (in the end shortcuts) were written on
     /// another system.
     fn stored_with(settings_value: &str, profile_values: [&str; 2]) -> serde_json::Value {
+        // Two ends on combinations of no system's factory lists: on Linux
+        // the factory pair would lose its second end on read (2026-11-28).
         let end_keys = |value: &str| {
-            serde_json::to_value(crate::end_keys::builtin(value, false)).expect("serializes")
+            serde_json::to_value(crate::end_keys::builtin_for_keys(
+                ("f13", "f14"),
+                value,
+                false,
+            ))
+            .expect("serializes")
         };
         let mut stored = stored_before_the_field(false, false, "enter");
         stored["end_keys"] = end_keys(settings_value);
@@ -1482,8 +1494,11 @@ mod tests {
         let newer = "format: danywhere-profile\nversion: 1\nprofile:\n  id: x\n  name: New\n  values:\n    append_trailing_space: true\n    append_text: '{Enter}'\n";
         let mut values = ProfileValues::default();
         crate::end_keys::prepare_import(newer, &mut values);
-        assert_eq!(values.end_keys[0].append_text, "{Enter}");
-        assert_eq!(values.end_keys[1].append_text, "{Enter}");
+        // Every end (on Linux one: the second did the same, 2026-11-28).
+        assert!(!values.end_keys.is_empty());
+        for end in &values.end_keys {
+            assert_eq!(end.append_text, "{Enter}", "{}", end.id);
+        }
     }
 
     #[test]

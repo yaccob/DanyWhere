@@ -3140,7 +3140,7 @@ mod tests {
         /// press it as a toggle.
         fn roles(&mut self, binding_id: &str) -> crate::start_keys::Roles {
             let values = ProfileValues::from_settings(&self.settings);
-            let taken = crate::instruction_keys::taken_here(&self.settings);
+            let taken = crate::instruction_keys::taken(&self.settings);
             crate::start_keys::Roles {
                 hold: None,
                 ..crate::start_keys::roles_of(&values, binding_id, taken)

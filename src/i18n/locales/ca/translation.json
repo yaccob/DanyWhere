@@ -527,14 +527,17 @@
       "shortcutHint": "Durant una gravació, prémer aquesta combinació canvia del text a la instrucció. Només s'ocupa mentre es grava.",
       "onlyWhileRecording": "Només s'ocupa durant una gravació.",
       "sameAsStartOrHold": "La mateixa combinació que una drecera d'inici o de pulsació llarga: sense gravació n'inicia una, durant una gravació canvia a la instrucció.",
+      "linuxNotTaken": "No s'ocupa a Linux: cap drecera d'inici o de pulsació llarga té aquesta combinació.",
       "notTakenNever": "El posprocessament està configurat a «{{mode}}»: les dreceres d'instrucció no s'ocupen. Tria una altra opció per a «{{setting}}» a Avançat.",
       "notSetUp": "El postprocessament encara no està configurat: després d'una drecera d'instrucció, el text s'insereix tal com s'ha sentit, sense la instrucció, i un avís us ofereix configurar-lo.",
+      "linuxNote": "A Linux, Handy no pot ocupar una combinació només durant una gravació, així que una drecera d'instrucció necessita la combinació d'una drecera d'inici o de pulsació llarga: premuda durant una gravació, aquesta canvia a la instrucció.",
       "add": "Afegeix una drecera d'instrucció",
       "addPressKeys": "Prem la combinació per a la nova drecera d'instrucció",
       "refName": "Drecera d'instrucció {{name}}",
       "errors": {
         "save": "No s'han pogut desar les dreceres d'instrucció: {{error}}",
         "needsShortcut": "Cada drecera d'instrucció necessita una combinació de tecles.",
+        "needsStartOrHold": "A Linux, una drecera d'instrucció necessita la combinació d'una drecera d'inici o de pulsació llarga.",
         "shortcutTwice": "Dues dreceres d'instrucció no poden compartir una combinació."
       }
     },

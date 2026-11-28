@@ -1443,6 +1443,24 @@ mod tests {
         s
     }
 
+    /// [`migrated`] without instruction shortcuts in any layer on Linux, as
+    /// Linux had before 2026-11-28: its layers keep the two built-in ends,
+    /// and the factory instruction shortcut has the second one's
+    /// combination, which a check of the end shortcuts refuses.
+    fn migrated_without_linux_instruction_key() -> AppSettings {
+        let mut s = migrated();
+        if cfg!(target_os = "linux") {
+            s.instruction_keys.clear();
+            if let Some(defaults) = s.default_values.as_mut() {
+                defaults.instruction_keys.clear();
+            }
+            for profile in &mut s.profiles {
+                profile.values.instruction_keys.clear();
+            }
+        }
+        s
+    }
+
     fn profile<'a>(s: &'a AppSettings, id: &str) -> &'a Profile {
         s.profiles
             .iter()
@@ -2083,7 +2101,7 @@ mod tests {
 
     #[test]
     fn values_are_validated_like_their_change_commands_validate_them() {
-        let mut s = migrated();
+        let mut s = migrated_without_linux_instruction_key();
         assert!(set_value(
             &mut s,
             &Scope::Defaults,
@@ -2391,7 +2409,7 @@ mod tests {
 
     #[test]
     fn a_profile_adds_an_end_shortcut_of_its_own() {
-        let mut s = migrated();
+        let mut s = migrated_without_linux_instruction_key();
         let send = crate::end_keys::EndKey {
             id: "send".to_string(),
             name: "Send".to_string(),

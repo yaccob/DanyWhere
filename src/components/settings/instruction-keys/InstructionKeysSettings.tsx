@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { type } from "@tauri-apps/plugin-os";
 import { commands, type EndKey, type Readiness } from "@/bindings";
 import { useSettings } from "@/hooks/useSettings";
 import { hasCombination } from "@/lib/startKeys";
@@ -60,8 +61,11 @@ const useScopeReadiness = (): Readiness => {
  * a recording, and with a start or hold shortcut's keys, what those do
  * outside one. Above the list, when the scope's mode is "never", that the
  * shortcuts aren't taken, and without a provider, what happens to a
- * dictation with an instruction until one is set up. General hides the card on
- * Linux, where instruction shortcuts aren't taken (`profile_sync.rs`).
+ * dictation with an instruction until one is set up. On Linux, where nothing
+ * is taken only during a recording (`profile_sync.rs`), an instruction
+ * shortcut works only with a start or hold shortcut's combination (user,
+ * 2026-11-28): the card says so, and an entry without one says that Linux
+ * doesn't take it.
  */
 export const InstructionKeysSettings: React.FC = () => {
   const { t } = useTranslation();
@@ -69,6 +73,7 @@ export const InstructionKeysSettings: React.FC = () => {
   const startKeys = getSetting("start_keys") ?? [];
   const holdKeys = getSetting("hold_keys") ?? [];
   const instructionKeys = getSetting("instruction_keys") ?? [];
+  const isLinux = type() === "linux";
   const note = instructionKeysNote(settings, useScopeReadiness());
   const { busy, save } = useKeyListSave<EndKey>(
     "instruction_keys",
@@ -81,6 +86,11 @@ export const InstructionKeysSettings: React.FC = () => {
       title={t("settings.instructionKeys.title")}
       description={t("settings.instructionKeys.description")}
     >
+      {isLinux && (
+        <p className="px-4 py-2 text-xs text-ink-3">
+          {t("settings.instructionKeys.linuxNote")}
+        </p>
+      )}
       {note === "never" && (
         <p className="px-4 py-2 text-xs text-ink-3">
           {t("settings.instructionKeys.notTakenNever", {
@@ -99,13 +109,20 @@ export const InstructionKeysSettings: React.FC = () => {
           kind="instruction"
           value={instructionKeys}
           removable={true}
-          hintsOf={(instruction) => [
-            t("settings.instructionKeys.onlyWhileRecording"),
-            ...(hasCombination(startKeys, instruction.shortcut) ||
-            hasCombination(holdKeys, instruction.shortcut)
-              ? [t("settings.instructionKeys.sameAsStartOrHold")]
-              : []),
-          ]}
+          hintsOf={(instruction) => {
+            const onStartOrHold =
+              hasCombination(startKeys, instruction.shortcut) ||
+              hasCombination(holdKeys, instruction.shortcut);
+            return [
+              t("settings.instructionKeys.onlyWhileRecording"),
+              ...(onStartOrHold
+                ? [t("settings.instructionKeys.sameAsStartOrHold")]
+                : []),
+              ...(isLinux && !onStartOrHold
+                ? [t("settings.instructionKeys.linuxNotTaken")]
+                : []),
+            ];
+          }}
           disabled={busy}
           onChange={save}
         />

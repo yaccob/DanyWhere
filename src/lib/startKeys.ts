@@ -158,6 +158,10 @@ export const keyRefusal = (error: string): KeyRefusal | null => {
       /instruction-key-needs-shortcut:/,
       "settings.instructionKeys.errors.needsShortcut",
     ],
+    [
+      /instruction-key-needs-start-or-hold:/,
+      "settings.instructionKeys.errors.needsStartOrHold",
+    ],
     [/start-key-shortcut-twice:/, "settings.startKeys.errors.shortcutTwice"],
     [/hold-key-shortcut-twice:/, "settings.holdKeys.errors.shortcutTwice"],
     [

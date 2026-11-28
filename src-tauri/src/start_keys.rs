@@ -295,7 +295,7 @@ pub fn roles_now(app: &AppHandle, binding_id: &str) -> Roles {
     roles_of(
         &ProfileValues::from_settings(&now),
         binding_id,
-        crate::instruction_keys::taken_here(&now),
+        crate::instruction_keys::taken(&now),
     )
 }
 
@@ -1944,5 +1944,29 @@ mod tests {
         assert_eq!(taken.hold.as_deref(), Some("h2"));
         assert_eq!(roles_of(&values, "hold_key:h2", false).instruction, None);
         assert_eq!(roles_of(&values, "start_key:s", true).instruction, None);
+    }
+
+    /// Linux (user, 2026-11-28): a new installation's Ctrl+Alt+Shift+Space
+    /// holds without a recording and instructs during one, as instruction
+    /// shortcuts are taken there too (`instruction_keys::taken`).
+    #[test]
+    fn on_linux_the_second_factory_combination_instructs_during_a_recording() {
+        let linux = KeyPlatform::Linux;
+        let mut settings = crate::settings::get_default_settings();
+        settings.start_keys = factory_start_keys_on(linux);
+        settings.hold_keys = factory_hold_keys_on(linux);
+        settings.instruction_keys = crate::instruction_keys::factory_instruction_keys_on(linux);
+        let values = ProfileValues::from_settings(&settings);
+        let taken = crate::instruction_keys::taken(&settings);
+        let second = roles_of(&values, &hold_binding_id(HOLD_NO_SPACE_ID), taken);
+        assert_eq!(
+            second.instruction.as_deref(),
+            Some(crate::instruction_keys::LINUX_FACTORY_ID)
+        );
+        assert_eq!(second.hold.as_deref(), Some(HOLD_NO_SPACE_ID));
+        assert_eq!(second.start, None);
+        let first = roles_of(&values, &start_binding_id(FACTORY_START_ID), taken);
+        assert_eq!(first.instruction, None);
+        assert_eq!(first.start.as_deref(), Some(FACTORY_START_ID));
     }
 }

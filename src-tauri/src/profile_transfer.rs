@@ -884,10 +884,11 @@ mod tests {
             r"\s{Meta+Return}",
         ] {
             let mut s = settings();
-            s.end_keys[1].append_text = written.to_string();
+            // The first end: Linux has one factory end (2026-11-28).
+            s.end_keys[0].append_text = written.to_string();
             let yaml = export(&s, "default", Some("geheim")).expect("export");
             let (profile, _) = read_import(&yaml, None).expect("import");
-            let imported = &profile.values.end_keys[1].append_text;
+            let imported = &profile.values.end_keys[0].append_text;
             assert_eq!(&localize(imported, KeyPlatform::current()), imported);
             assert_eq!(
                 Append::from_parts(&parse(imported)),
@@ -926,10 +927,13 @@ mod tests {
             serde_json::json!({ "append_text": r"\n\n", "send_context": true }),
         );
         let (profile, _) = read_import(&older, None).expect("import");
-        assert_eq!(
-            profile.values.end_keys,
-            crate::end_keys::builtin(r"\n\n", true)
-        );
+        let mut expected = crate::end_keys::builtin(r"\n\n", true);
+        // Linux keeps the first of the two, which did the same, as its
+        // instruction shortcut takes the second one's combination (2026-11-28).
+        if cfg!(target_os = "linux") {
+            expected.truncate(1);
+        }
+        assert_eq!(profile.values.end_keys, expected);
         // The shortcuts come from the installation it is imported into.
         assert!(profile.values.bindings.is_empty());
     }

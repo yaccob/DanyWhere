@@ -527,14 +527,17 @@
       "shortcutHint": "Under en inspelning växlar ett tryck på den här tangentkombinationen från texten till instruktionen. Den är bara upptagen under en inspelning.",
       "onlyWhileRecording": "Bara upptagen under en inspelning.",
       "sameAsStartOrHold": "Samma tangentkombination som ett start- eller hållkortkommando: utan inspelning startar den en, under en inspelning växlar den till instruktionen.",
+      "linuxNotTaken": "Tas inte upp på Linux: inget start- eller hållkortkommando har den här tangentkombinationen.",
       "notTakenNever": "Efterbearbetning är inställd på ”{{mode}}”: instruktionskortkommandon är inte upptagna. Välj en annan inställning för ”{{setting}}” under Avancerat.",
       "notSetUp": "Efterbearbetningen är inte inställd än: efter ett instruktionskortkommando infogas texten som den hördes, utan instruktionen, och ett meddelande erbjuder att ställa in den.",
+      "linuxNote": "På Linux kan Handy inte ta upp en tangentkombination bara under en inspelning, så ett instruktionskortkommando behöver där tangentkombinationen från ett start- eller hållkortkommando: tryckt under en inspelning växlar det till instruktionen.",
       "add": "Lägg till instruktionskortkommando",
       "addPressKeys": "Tryck på tangentkombinationen för det nya instruktionskortkommandot",
       "refName": "Instruktionskortkommando {{name}}",
       "errors": {
         "save": "Instruktionskortkommandona kunde inte sparas: {{error}}",
         "needsShortcut": "Varje instruktionskortkommando behöver en tangentkombination.",
+        "needsStartOrHold": "På Linux behöver ett instruktionskortkommando tangentkombinationen från ett start- eller hållkortkommando.",
         "shortcutTwice": "Två instruktionskortkommandon kan inte dela en tangentkombination."
       }
     },

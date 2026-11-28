@@ -527,14 +527,17 @@
       "shortcutHint": "Kayıt sırasında bu kombinasyona basmak metinden talimata geçer. Yalnızca kayıt sırasında kullanılır.",
       "onlyWhileRecording": "Yalnızca kayıt sırasında kullanılır.",
       "sameAsStartOrHold": "Bir başlatma veya basılı tutma kısayoluyla aynı kombinasyon: kayıt yokken bir kayıt başlatır, kayıt sırasında talimata geçer.",
+      "linuxNotTaken": "Linux'ta kullanılmaz: hiçbir başlatma veya basılı tutma kısayolu bu kombinasyona sahip değil.",
       "notTakenNever": "Son işlem “{{mode}}” olarak ayarlı: talimat kısayolları kullanılmaz. Gelişmiş altında “{{setting}}” için başka bir ayar seçin.",
       "notSetUp": "Son işlem henüz ayarlanmadı: bir talimat kısayolundan sonra metin duyulduğu gibi, talimat olmadan eklenir ve bir bildirim son işlemi ayarlamayı önerir.",
+      "linuxNote": "Linux'ta Handy bir tuş kombinasyonunu yalnızca kayıt sırasında kullanamaz; bu yüzden orada bir talimat kısayolunun bir başlatma veya basılı tutma kısayoluyla aynı kombinasyona sahip olması gerekir: kayıt sırasında basıldığında talimata geçer.",
       "add": "Talimat Kısayolu Ekle",
       "addPressKeys": "Yeni talimat kısayolu için tuş kombinasyonuna basın",
       "refName": "Talimat kısayolu {{name}}",
       "errors": {
         "save": "Talimat kısayolları kaydedilemedi: {{error}}",
         "needsShortcut": "Her talimat kısayolunun bir tuş kombinasyonu olmalı.",
+        "needsStartOrHold": "Linux'ta bir talimat kısayolu, bir başlatma veya basılı tutma kısayoluyla aynı kombinasyona sahip olmalı.",
         "shortcutTwice": "İki talimat kısayolu aynı kombinasyonu paylaşamaz."
       }
     },

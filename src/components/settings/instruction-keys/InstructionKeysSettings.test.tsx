@@ -7,7 +7,7 @@
 // uses the end shortcuts' editor with names that follow the keys ("⇥ held"),
 // may be emptied, says that its shortcuts are taken only during a recording,
 // and when they aren't taken at all (post-processing "never", no provider).
-// Linux has none (`profile_sync.rs`), so the card is hidden there.
+// Linux has them only on a start or hold shortcut's combination (below).
 import { describe, expect, test } from "bun:test";
 import { cleanup, fireEvent, screen, within } from "@testing-library/react";
 import type { EndKey } from "@/bindings";
@@ -15,8 +15,10 @@ import { GeneralSettings } from "@/components/settings/general/GeneralSettings";
 import { DEFAULTS_SCOPE, type Scope } from "@/lib/profileScope";
 import { callsOf, err, mockCommand } from "@/test/bindings-mock";
 import {
+  endKey,
   instructionKey,
   settingsWith,
+  startKey,
   type SettingsSpec,
 } from "@/test/fixtures";
 import { switchTestLanguage } from "@/test/i18n";
@@ -337,13 +339,80 @@ describe("Instruction Shortcuts that aren't taken", () => {
   });
 });
 
+// Linux (user, 2026-11-28; sidecar qa 2026-11-28_1405): nothing is taken
+// there only during a recording, so an instruction shortcut works only with
+// a start or hold shortcut's combination, out of the box Ctrl+Alt+Shift+Space.
+// The card shows and says so; an entry without such a combination says that
+// Linux doesn't take it, and the backend refuses a new one.
 describe("Instruction Shortcuts on Linux", () => {
-  test("the card is hidden", async () => {
+  const LINUX_NOTE =
+    "On Linux, DanyWhere can't take a combination only during a recording, so an instruction shortcut needs the combination of a start or hold shortcut: pressed during a recording, that one switches to the instruction.";
+  const NOT_TAKEN =
+    "Not taken on Linux: no start or hold shortcut has this combination.";
+  const SECOND = instructionKey("instruction_second", "ctrl+alt+shift+space");
+  const linux: SettingsSpec = {
+    defaults: {
+      ...READY,
+      start_keys: [startKey("start", "ctrl+alt+space")],
+      hold_keys: [
+        endKey("hold_space", "ctrl+alt+space"),
+        endKey("hold_no_space", "ctrl+alt+shift+space"),
+      ],
+      instruction_keys: [SECOND],
+      end_keys: [endKey("plain", "ctrl+alt+space")],
+    },
+  };
+
+  test("the card shows between Hold and End Shortcuts and says what Linux takes", async () => {
     setOsType("linux");
+    await renderGeneral(linux);
+
+    expect(cardTitles().slice(0, 4)).toEqual([
+      "Start Shortcuts",
+      "Hold Shortcuts",
+      TITLE,
+      "End Shortcuts",
+    ]);
+    const text = visibleText(card());
+    expect(text).toContain(LINUX_NOTE);
+    expect(text).toContain(SAME_AS_START_OR_HOLD);
+    expect(text).not.toContain(NOT_TAKEN);
+    expect(rawTextIn()).toEqual([]);
+  });
+
+  test("an entry no start or hold shortcut has says that Linux doesn't take it", async () => {
+    setOsType("linux");
+    await renderGeneral({
+      defaults: { ...linux.defaults, instruction_keys: [TAB] },
+    });
+
+    expect(visibleText(card())).toContain(NOT_TAKEN);
+    expect(rawTextIn()).toEqual([]);
+  });
+
+  test("elsewhere neither the Linux note nor its entry hint shows", async () => {
     await renderGeneral({ defaults: READY });
 
-    expect(cardTitles()).not.toContain(TITLE);
-    expect(readableTexts().join(" ")).not.toContain("Instruction Shortcut");
+    const text = visibleText(card());
+    expect(text).not.toContain(LINUX_NOTE);
+    expect(text).not.toContain(NOT_TAKEN);
+  });
+
+  test("a combination of neither list is refused with its reason", async () => {
+    setOsType("linux");
+    mockCommand("setProfileValue", async () =>
+      err("instruction-key-needs-start-or-hold:instruction_tab"),
+    );
+    await renderGeneral(
+      { defaults: { ...linux.defaults, instruction_keys: [SECOND, TAB] } },
+      DEFAULTS_SCOPE,
+      false,
+    );
+    await press(screen.getByRole("button", { name: "Delete Tab held" }));
+
+    expect(raisedNotices()).toEqual([
+      "On Linux an instruction shortcut needs the combination of a start or hold shortcut.",
+    ]);
   });
 });
 

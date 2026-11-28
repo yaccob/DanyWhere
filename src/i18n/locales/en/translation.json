@@ -527,14 +527,17 @@
       "shortcutHint": "During a recording, pressing this combination switches from the text to the instruction. It is taken only while recording.",
       "onlyWhileRecording": "Taken only during a recording.",
       "sameAsStartOrHold": "Same combination as a start or hold shortcut: without a recording it starts one, during a recording it switches to the instruction.",
+      "linuxNotTaken": "Not taken on Linux: no start or hold shortcut has this combination.",
       "notTakenNever": "Post-processing is set to “{{mode}}”: instruction shortcuts aren't taken. Choose another setting for {{setting}} under Advanced.",
       "notSetUp": "Nothing is set up for post-processing yet: after an instruction shortcut the text is inserted as heard, without the instruction, and a notice offers to set it up.",
+      "linuxNote": "On Linux, Handy can't take a combination only during a recording, so an instruction shortcut needs the combination of a start or hold shortcut: pressed during a recording, that one switches to the instruction.",
       "add": "Add Instruction Shortcut",
       "addPressKeys": "Press the combination for the new instruction shortcut",
       "refName": "Instruction shortcut {{name}}",
       "errors": {
         "save": "Couldn't save the instruction shortcuts: {{error}}",
         "needsShortcut": "Every instruction shortcut needs a key combination.",
+        "needsStartOrHold": "On Linux an instruction shortcut needs the combination of a start or hold shortcut.",
         "shortcutTwice": "Two instruction shortcuts can't share a combination."
       }
     },

@@ -37,11 +37,11 @@ export const GeneralSettings: React.FC = () => {
           follow each other, the other shortcuts come after them (user,
           2026-11-24; qa 2026-11-26_1713 and 2026-11-26_1841, decisions).
           What a combination does follows from the lists it stands in. Linux
-          takes no instruction shortcuts (profile_sync.rs), so it has no
-          card for them. */}
+          takes instruction shortcuts only on a start or hold shortcut's
+          combination (user, 2026-11-28); the card says so there. */}
       <StartKeysSettings />
       <HoldKeysSettings />
-      {!isLinux && <InstructionKeysSettings />}
+      <InstructionKeysSettings />
       {/* DanyWhere: how a recording ends and what follows (end_keys.rs);
           Cancel, which ends without a text, closes the end shortcuts. */}
       <EndKeysSettings
