@@ -12,6 +12,9 @@
 // MANUAL_SCREENSHOTS_PREVIEW=<folder> it also writes, per picture, the SVG
 // rasterized (`rsvg-convert`), the SVG before svgo rasterized, and plain
 // browser screenshots of the same part and of the whole window, to compare.
+// MANUAL_SCREENSHOTS_ONLY=<name>,<name> makes only those pictures, and
+// MANUAL_SCREENSHOTS_LANGUAGES=<lang>,<lang> only those languages, so a new
+// picture leaves the others' files as they are.
 //
 // Needs Playwright's Chromium (`bunx playwright install --only-shell
 // chromium`) and poppler (`pdftocairo`); type check with
@@ -82,6 +85,9 @@ interface Shot {
    * with what its scope shows under it (chain, deviating profiles); the
    * whole group when missing. */
   settingTitleKey?: string;
+  /** A button of the group pressed before the picture, by its label's
+   * translation key, such as "Try it" on the setup's card. */
+  pressKey?: string;
 }
 
 const SHOTS: Shot[] = [
@@ -123,7 +129,50 @@ const SHOTS: Shot[] = [
     path: [{ key: "sidebar.areas.profiles" }],
     groupTitleKey: "settings.profiles.title",
   },
+  // The post-processing setup answered the quick way ("Also to free
+  // services", "None of these"), with the suggestion "OpenRouter, free"
+  // under the questions (the chapter "Setting up post-processing").
+  {
+    name: "post-processing-questions",
+    scene: "setup-questions",
+    path: [{ key: "sidebar.postProcessing" }],
+    groupTitleKey: "settings.postProcessing.setup.title",
+  },
+  // The card once OpenRouter is connected for free, with the sample that
+  // "Try it" ran.
+  {
+    name: "post-processing-connected",
+    scene: "setup-connected",
+    path: [{ key: "sidebar.postProcessing" }],
+    groupTitleKey: "settings.postProcessing.setup.title",
+    pressKey: "settings.postProcessing.setup.connected.tryIt",
+  },
 ];
+
+/** A comma-separated list from the environment, or none. */
+const listFromEnv = (name: string): string[] | null => {
+  const value = process.env[name]?.trim();
+  return value ? value.split(",").map((part) => part.trim()) : null;
+};
+
+const ONLY = listFromEnv("MANUAL_SCREENSHOTS_ONLY");
+const ONLY_LANGUAGES = listFromEnv("MANUAL_SCREENSHOTS_LANGUAGES");
+for (const name of ONLY ?? []) {
+  if (!SHOTS.some((shot) => shot.name === name)) {
+    throw new Error(`MANUAL_SCREENSHOTS_ONLY: no picture "${name}"`);
+  }
+}
+for (const language of ONLY_LANGUAGES ?? []) {
+  if (!(LANGUAGES as readonly string[]).includes(language)) {
+    throw new Error(`MANUAL_SCREENSHOTS_LANGUAGES: no language "${language}"`);
+  }
+}
+const SHOTS_MADE = ONLY
+  ? SHOTS.filter((shot) => ONLY.includes(shot.name))
+  : SHOTS;
+const LANGUAGES_MADE = ONLY_LANGUAGES
+  ? LANGUAGES.filter((language) => ONLY_LANGUAGES.includes(language))
+  : LANGUAGES;
 
 /** A translation as the app shows it: the locale's text, the product named
  * DanyWhere (`src/i18n/branding.ts`), English where the locale lacks it. */
@@ -211,8 +260,37 @@ const navigate = async (
       ),
     title,
   );
+  await settle(page);
+};
+
+/** Clicks the button labelled `label` in the settings group titled `title`
+ * and waits until what the click started is drawn. */
+const pressButton = async (
+  page: Page,
+  title: string,
+  label: string,
+): Promise<void> => {
+  await page.evaluate(
+    ([wanted, text]) => {
+      const heading = [...document.querySelectorAll("h2")].find(
+        (element) => element.textContent?.trim() === wanted,
+      );
+      const group = heading?.closest("div.space-y-2");
+      const button = [
+        ...(group?.querySelectorAll<HTMLButtonElement>("button") ?? []),
+      ].find((candidate) => candidate.textContent?.trim() === text);
+      if (!button) throw new Error(`no button "${text}" in "${wanted}"`);
+      button.click();
+    },
+    [title, label] as const,
+  );
+  await settle(page);
+};
+
+/** Waits until nothing on the page changes any more: the commands it asks
+ * are answered and the markup stays the same over a few frames. */
+const settle = async (page: Page): Promise<void> => {
   await page.waitForLoadState("networkidle");
-  // Settled: the markup stayed the same over a few frames.
   await page.evaluate(async () => {
     const frame = () =>
       new Promise((done) =>
@@ -515,7 +593,7 @@ const finishSvg = (
   }).data;
 };
 
-for (const language of LANGUAGES) {
+for (const language of LANGUAGES_MADE) {
   for (const theme of THEMES) {
     test(`${language} ${theme}`, async ({ page }) => {
       // An error in the app would leave a picture of a half-drawn window.
@@ -524,10 +602,13 @@ for (const language of LANGUAGES) {
       page.on("console", (message) => {
         if (message.type() === "error") errors.push(message.text());
       });
-      for (const shot of SHOTS) {
+      for (const shot of SHOTS_MADE) {
         const title = translation(language, shot.groupTitleKey);
         await openWindow(page, language, theme, shot.scene ?? "fresh");
         if (shot.path) await navigate(page, language, shot.path, title);
+        if (shot.pressKey) {
+          await pressButton(page, title, translation(language, shot.pressKey));
+        }
         await growWindow(page);
         await keepUpright(page);
         const viewport = page.viewportSize();

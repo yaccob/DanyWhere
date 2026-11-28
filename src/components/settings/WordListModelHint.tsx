@@ -1,6 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useModelStore } from "../../stores/modelStore";
+import { usePostProcessSetupStore } from "../../stores/postProcessSetupStore";
 import { useSettings } from "../../hooks/useSettings";
 import { getTranslatedModelName } from "../../lib/utils/modelTranslation";
 import { providerName } from "../../lib/displayNames";
@@ -89,6 +90,13 @@ const WordListModelActions: React.FC<{ offerSetUp: boolean }> = ({
       !postProcessingOn({ post_process_mode: getSetting("post_process_mode") })
     ) {
       await updateSetting("post_process_mode", "with_instruction_key");
+    }
+    // DanyWhere: the defaults' page opens on the setup's questions, also
+    // when it was put off with "Later" (qa 2026-11-26_2250, 4.5). A
+    // profile's page has no setup, so they aren't left open for the
+    // defaults' (D, N15).
+    if (scope.kind === "defaults") {
+      usePostProcessSetupStore.getState().openQuestions();
     }
     openLocation(scopePage(scope, "postprocessing"));
   };

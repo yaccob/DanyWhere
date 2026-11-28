@@ -40,7 +40,8 @@
     "openChapter": "マニュアルを開く: {{chapter}}",
     "chapters": {
       "startAndEndShortcuts": "開始・終了ショートカット",
-      "defaultsAndProfiles": "基本設定とプロファイル"
+      "defaultsAndProfiles": "基本設定とプロファイル",
+      "postProcessingSetup": "後処理の設定"
     },
     "unavailable": "このビルドの DanyWhere にはマニュアルが含まれていません。"
   },
@@ -256,6 +257,12 @@
     "linux": {
       "tryIt": "うまくいかない場合は <guide>Linux セットアップガイド</guide>",
       "done": "ほかのアプリで動かない場合は <guide>Linux セットアップガイド</guide>"
+    },
+    "postProcessSetup": {
+      "title": "テキストを整える",
+      "sub": "言語モデルが、音声入力のたびに句読点、「えーと」などのつなぎ言葉、音声コマンド、名前を整えます。短い質問に 2 つ答えれば設定は完了です。",
+      "later": "後で",
+      "laterHint": "後から「基本設定 › 後処理」で設定できます。"
     }
   },
   "modelTable": {
@@ -521,7 +528,7 @@
       "onlyWhileRecording": "録音中だけ割り当てられます。",
       "sameAsStartOrHold": "開始ショートカットまたは長押しショートカットと同じキーの組み合わせです。録音していないときは録音を開始し、録音中は指示に切り替えます。",
       "notTakenNever": "後処理が「{{mode}}」に設定されているため、指示ショートカットは割り当てられません。「詳細設定」で「{{setting}}」に別の設定を選んでください。",
-      "notTakenNoProvider": "モデルを設定した後処理のプロバイダーがありません。設定するまで指示ショートカットは割り当てられません。",
+      "notSetUp": "後処理はまだ設定されていません。指示ショートカットを押すと、テキストは聞き取ったまま指示なしで挿入され、設定を促す通知が表示されます。",
       "add": "指示ショートカットを追加",
       "addPressKeys": "新しい指示ショートカットのキーの組み合わせを押してください",
       "refName": "指示ショートカット {{name}}",
@@ -1105,6 +1112,164 @@
           "withInstructionKey": "指示ショートカット使用時",
           "always": "常に"
         }
+      },
+      "setup": {
+        "title": "テキストを整える",
+        "intro": "短い質問に 2 つ答えるだけで、すべて設定できます。回答はいつでも変更できます。",
+        "later": "後で",
+        "knowMyWay": "詳しい方向け：",
+        "allProviders": "すべてのプロバイダー …",
+        "notSetUp": "後処理はまだ設定されていません。",
+        "setUp": "設定する",
+        "keepCurrent": "今の設定のままにする",
+        "q1": {
+          "title": "1. テキストをどこへ送ってもいいですか？",
+          "free_services": {
+            "label": "無料のサービスにも送ってよい。",
+            "hint": "サービス側がテキストを保存し、AI の改善に使うことがあります。"
+          },
+          "not_kept": {
+            "label": "処理だけして保存しないサービスにだけ送る。",
+            "hint": "加入中のプランで使うか、数ドルの費用がかかります。"
+          },
+          "nowhere": {
+            "label": "どこにも送らない。",
+            "hint": "テキストはこのコンピュータから出ません。"
+          }
+        },
+        "q2": {
+          "title": "2. 次のいずれかのプランにすでに加入していますか？",
+          "none": "どれも加入していない"
+        },
+        "q3": {
+          "title": "3. どう進めますか？",
+          "credit": "プランなしで、5 ドルから一度だけチャージ",
+          "groq": "Groq で無料（キーをコピーして使います）",
+          "this_computer": "このコンピュータ上で（遅め、メモリ 16 GB 以上）",
+          "tooLittleMemoryMac": "このコンピュータ上で：16 GB 必要ですが、この Mac は {{memory}} です。",
+          "tooLittleMemory": "このコンピュータ上で：16 GB 必要ですが、このコンピュータは {{memory}} です。"
+        },
+        "openrouter": {
+          "freeTitle": "おすすめ：OpenRouter（無料）",
+          "freeBody": "OpenRouter のアカウントを作って「Authorize」をクリックするだけです。1 日 50 回まで音声入力できます。",
+          "creditTitle": "おすすめ：OpenRouter（クレジットで利用）",
+          "creditBody": "OpenRouter のアカウントを作って「Authorize」をクリックし、5 ドルから一度だけチャージします。DanyWhere は、テキストを学習に使わないモデルを選びます。5 ドルで数千回の音声入力ができ、自動更新はありません。",
+          "tipAccount": "Google か GitHub で登録すると、パスワードもメールの確認コードも要りません。",
+          "tipPayment": "OpenRouter は初めてですか？最初の画面で支払い方法を聞かれますが、「I'll do this later」を選べます。無料モデルには支払い方法は不要です。そのあとここに戻って「ページをもう一度開く」を押してください。",
+          "tipPaymentCredit": "OpenRouter は初めてですか？最初の画面で支払い方法を聞かれます。チャージにはどのみち必要です。そのあとここに戻って「ページをもう一度開く」を押してください。アカウントにクレジットがあるまで、DanyWhere は何も送信しません。",
+          "connect": "OpenRouter に接続"
+        },
+        "chatgpt": {
+          "title": "おすすめ：ChatGPT プラン",
+          "body": "ChatGPT プランで使えます。キーも追加料金も不要です。ブラウザで ChatGPT にログインし、DanyWhere を許可してください。",
+          "firstUse": "このアプリでの対象となる利用には、ChatGPT プランが使われます。利用状況は ChatGPT の設定で管理できます。",
+          "dataNotDescribed": "プランで支払われるリクエストを OpenAI がどう扱うかは、説明されていません。",
+          "continue": "ChatGPT で続ける"
+        },
+        "guidedKey": {
+          "title": "おすすめ：{{service}} のキー",
+          "paste": "ここにキーを貼り付け",
+          "fieldLabel": "{{service}} のキー",
+          "check": "確認",
+          "checking": "確認中 …",
+          "works": "キーは使えます。"
+        },
+        "guides": {
+          "copyKey": "キーをコピーして、ここに貼り付けてください。",
+          "copyToken": "トークンをコピーして、ここに貼り付けてください。",
+          "anthropic": {
+            "credits": "claude.ai で、プランの API クレジットをリンクします。プランに加入して 7 日後からでき、カードの登録は不要です。",
+            "creditsLink": "手順を見る",
+            "key": "Claude Console の、連携した組織でキーを作成します。",
+            "keyLink": "Console を開く"
+          },
+          "gemini": {
+            "credits": "Google AI Studio の左側のメニューで「Claim free API credits」を選び（請求先アカウントがすでにある場合は「Redeem」）、お支払い情報を設定します。新しい請求先アカウントには、支払い方法と 5 ドル以上の前払いが必要です。",
+            "creditsLink": "AI Studio を開く",
+            "key": "お支払い情報を設定したプロジェクト（既定では「Default Gemini Project」）の API キーを使うか、そのプロジェクトでキーを作成します。",
+            "keyLink": "API キー"
+          },
+          "huggingface": {
+            "key": "「Make calls to Inference Providers」の権限を付けたアクセストークンを作成します。",
+            "keyLink": "トークンを開く"
+          },
+          "ollama_cloud": {
+            "key": "Ollama のアカウントでキーを作成します。",
+            "keyLink": "キーを開く"
+          },
+          "groq": {
+            "account": "GroqCloud にログインします。たとえば「Continue with Google」を使います。カードは不要です。",
+            "accountLink": "GroqCloud を開く",
+            "key": "「Create API Key」を選びます。人間であることをクリックひとつで確認するよう、Groq から求められます。"
+          }
+        },
+        "local": {
+          "laterTitle": "このコンピュータ上で：今後のバージョンで対応",
+          "laterBody": "DanyWhere は今後、このコンピュータ上で動くモデルを用意します。それまでは自分のサーバーを使えます。たとえばこのコンピュータ上の Ollama や LM Studio、または会社のサーバーです。",
+          "unavailableTitle": "このコンピュータではできません",
+          "unavailableBodyMac": "このコンピュータ上でモデルを動かすには 16 GB のメモリが必要ですが、この Mac は {{memory}} です。自分のサーバー（たとえば会社のサーバー）なら使えます。",
+          "unavailableBody": "このコンピュータ上でモデルを動かすには 16 GB のメモリが必要ですが、このコンピュータは {{memory}} です。自分のサーバー（たとえば会社のサーバー）なら使えます。",
+          "ownServer": "自分のサーバーを設定する",
+          "ownServerHint": "下にアドレスとモデルを入力してください。",
+          "ownServerLater": "自分のサーバーは、後から「基本設定 › 後処理」の「すべてのプロバイダー …」で入力できます。"
+        },
+        "signIn": {
+          "waiting": "ブラウザを待っています …",
+          "title": "{{provider}} へのログイン",
+          "waitingHint": "ブラウザで完了してください。先に登録が必要だった場合は「ページをもう一度開く」を押してください。",
+          "reopen": "ページをもう一度開く",
+          "cancel": "キャンセル",
+          "failed": "ログインできませんでした：{{error}}",
+          "timedOut": "ログインの待ち時間が 30 分を過ぎたため、期限切れになりました。",
+          "denied": "アクセスが許可されませんでした。",
+          "notEligible": "この ChatGPT アカウントには、DanyWhere で使えるプラン（Go、Plus、Pro、Business）がありません。",
+          "noFreeModel": "OpenRouter には現在、DanyWhere で使える無料モデルがありません。しばらくしてからもう一度お試しいただくか、代わりに一度チャージしてください。",
+          "unreachable": "{{provider}} に接続できませんでした。接続を確認して、もう一度お試しください。",
+          "refused": "{{provider}} がログインを拒否しました。もう一度お試しください。",
+          "didNotWork": "ログインできませんでした。もう一度お試しください。",
+          "tryAgain": "もう一度試す",
+          "browserSuccess": "完了しました。このウィンドウを閉じて DanyWhere に戻ってください。",
+          "browserFailure": "うまくいきませんでした。DanyWhere に戻って、もう一度お試しください。"
+        },
+        "connected": {
+          "title": "{{provider}} に接続済み",
+          "usingPlan": "ChatGPT プランを利用中",
+          "plan": "プラン：{{plan}}",
+          "freeModels": "無料モデル、1 日 50 回まで",
+          "withCredit": "クレジットで利用、学習に使わないモデル",
+          "noCreditYet": "まだクレジットがありません。チャージするまで、DanyWhere は何も送信しません。",
+          "notToppedUp": "OpenRouter にはまだクレジットが表示されていません。1 分ほどかかることがあります。",
+          "topUpCheckFailed": "OpenRouter にクレジットを問い合わせできませんでした。",
+          "keyLimit": "キーの利用上限：{{limit}}",
+          "model": "モデル：{{model}}",
+          "picksModel": "モデルは DanyWhere が選びます。",
+          "tryIt": "試してみる",
+          "manageUsage": "利用状況を管理",
+          "credit": "クレジット",
+          "topUp": "チャージ",
+          "toppedUp": "チャージしました",
+          "disconnect": "接続を解除",
+          "disconnectConfirm": "もう一度クリックするとキーを削除します",
+          "keyStaysAtOpenRouter": "OpenRouter では、削除するまでキー「DanyWhere」が API キーの一覧に残ります。",
+          "revokeUnconfirmed": "OpenAI がログアウトを確認しませんでした",
+          "revokeUnconfirmedDetail": "DanyWhere はここでのログイン情報を削除しました。DanyWhere のアクセスは ChatGPT の設定で確認できます。",
+          "chatgptSettings": "ChatGPT の設定",
+          "answerAgain": "質問に答え直す",
+          "advanced": "詳細設定"
+        },
+        "sample": {
+          "title": "お試し",
+          "spoken": "話した内容：「{{text}}」",
+          "result": "結果：「{{text}}」",
+          "text": "えーと じゃあ明日それ送るね てん いいかな はてな",
+          "running": "試しています …",
+          "took": "{{model}} で {{seconds}} 秒",
+          "failed": "お試しがうまくいきませんでした。"
+        },
+        "errors": {
+          "disconnect": "接続を解除できませんでした",
+          "reopen": "ページをもう一度開けませんでした"
+        }
       }
     },
     "history": {
@@ -1275,7 +1440,8 @@
           "model": "モデル",
           "demo": "デモ",
           "try": "お試し",
-          "done": "準備完了"
+          "done": "準備完了",
+          "postProcessSetup": "テキストを整える"
         }
       },
       "onboardingRun": {
@@ -1576,7 +1742,26 @@
       "emptyReply": "{{provider}} からテキストが返されませんでした。",
       "truncated": "応答がモデルの出力上限で途切れました。",
       "unavailable": "{{provider}} はこのコンピューターでは利用できません。",
-      "other": "エラー: {{error}}"
+      "other": "エラー: {{error}}",
+      "freeBusy": "{{provider}} の無料モデルは現在混み合っています。少し待ってからもう一度お試しください。",
+      "freeDailyLimit": "{{provider}} の無料の音声入力は、今日の分を使い切りました（1 日 50 回）。明日また使うか、一度チャージしてください。",
+      "keyLimit": "{{provider}} でキーの利用上限に達しました。そちらで変更してください。",
+      "planLimit": "現在、{{provider}} のプランの利用上限に達しています。",
+      "planNotEligible": "{{provider}} のプランには、ほかのアプリでの利用が含まれていません。",
+      "signInExpired": "{{provider}} へのログインの期限が切れました。もう一度ログインしてください。",
+      "noSignIn": "{{provider}} にログインしていません。",
+      "notSetUp": "後処理はまだ設定されていません。",
+      "notSetUpTitle": "後処理が未設定です",
+      "rateLimited": "{{provider}} は 1 分あたりに送れる量を制限しています。少し待ってから、もう一度音声入力してください。",
+      "actions": {
+        "setUp": "設定する",
+        "topUp": "チャージ",
+        "credit": "クレジット",
+        "changeLimit": "上限を変更",
+        "manageUsage": "利用状況を管理",
+        "changeSetup": "設定を変更",
+        "signInAgain": "もう一度ログイン"
+      }
     },
     "appMissedShortcutTitle": "コピー済み – アプリを再起動",
     "appMissedShortcut": "DanyWhere が音声入力のショートカットを設定したとき {{app}} はすでに開いていたため、再起動するまでショートカットを認識しません。テキストはクリップボードにあります。",

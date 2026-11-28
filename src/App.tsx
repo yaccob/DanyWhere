@@ -46,6 +46,7 @@ import {
 import { WhatsNewGate } from "./components/whats-new";
 import { useSettings } from "./hooks/useSettings";
 import { useSettingsStore } from "./stores/settingsStore";
+import { useNavigationRequest } from "./stores/navigationRequestStore";
 import { commands } from "@/bindings";
 import { permissionsSatisfied } from "@/components/onboarding/permissionGate";
 import { deleteRetiredModel } from "@/lib/models/retired";
@@ -90,6 +91,14 @@ function App() {
     if (moved) setLocation(shown);
   }, [moved, shown]);
   const shownKey = locationKey(shown);
+  // DanyWhere: a place asked for from outside the settings page, e.g. a
+  // notice's "Set up" (stores/navigationRequestStore.ts).
+  const requested = useNavigationRequest((s) => s.requested);
+  useEffect(() => {
+    if (!requested) return;
+    setLocation(requested);
+    useNavigationRequest.getState().done();
+  }, [requested]);
   const direction = getLanguageDirection(i18n.language);
   const refreshAudioDevices = useSettingsStore(
     (state) => state.refreshAudioDevices,

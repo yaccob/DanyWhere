@@ -15,7 +15,7 @@
 //!
 //! Instruction shortcuts are registered only during a recording, like the
 //! end shortcuts, and only while the profile that applies now may
-//! post-process and has a provider with a model ([`taken_now`]; a press
+//! post-process, set up or not ([`taken_now`]; a press
 //! cuts by the same profile, [`is_taken_now`]); never on Linux,
 //! where shortcuts registered only during a recording are unstable. Each is
 //! also registered with the modifiers of each hold shortcut, which are
@@ -92,21 +92,15 @@ pub fn is_while_holding(binding_id: &str) -> bool {
     binding_id.starts_with(BINDING_PREFIX) && binding_id.contains(HELD_MARKER)
 }
 
-/// Whether post-processing has a provider with a model to ask, as the
-/// word list check asks (`word_list_check::wanted`).
-pub fn provider_set_up(settings: &AppSettings) -> bool {
-    settings
-        .active_post_process_provider()
-        .and_then(|provider| settings.post_process_models.get(&provider.id))
-        .is_some_and(|model| !model.trim().is_empty())
-}
-
 /// Whether the instruction shortcuts of `settings_now` (the settings with
 /// the values of the profile that applies now) are taken during a
-/// recording: the profile may post-process (not "never"), post-processing
-/// has a provider with a model, and not on Linux (`linux`).
+/// recording: the profile may post-process (not "never"), and not on Linux
+/// (`linux`). Also before post-processing is set up (the post-processing
+/// setup, sidecar note `2026-11-26_2250_nachbearbeitung-einstieg-umsetzung`,
+/// section 2): such a dictation goes out unprocessed, and its notice says
+/// what is missing (`post_process_setup::post_process_ready`).
 pub fn taken(settings_now: &AppSettings, linux: bool) -> bool {
-    !linux && settings_now.post_process_mode.allows() && provider_set_up(settings_now)
+    !linux && settings_now.post_process_mode.allows()
 }
 
 /// [`taken`] on this system.
@@ -581,29 +575,31 @@ mod tests {
     }
 
     #[test]
-    fn post_processing_is_set_up_with_a_provider_and_its_model() {
-        assert!(provider_set_up(&set_up(
-            PostProcessMode::WithInstructionKey
-        )));
-        let mut no_model = set_up(PostProcessMode::WithInstructionKey);
-        no_model
-            .post_process_models
-            .insert("anthropic".to_string(), "  ".to_string());
-        assert!(!provider_set_up(&no_model));
-        let mut no_provider = set_up(PostProcessMode::WithInstructionKey);
-        no_provider.post_process_provider_id = "gone".to_string();
-        assert!(!provider_set_up(&no_provider));
-    }
-
-    #[test]
-    fn instruction_keys_are_taken_unless_never_without_a_provider_or_on_linux() {
+    fn instruction_keys_are_taken_unless_never_or_on_linux() {
         assert!(taken(&set_up(PostProcessMode::WithInstructionKey), false));
         assert!(taken(&set_up(PostProcessMode::Always), false));
         assert!(!taken(&set_up(PostProcessMode::Never), false));
         assert!(!taken(&set_up(PostProcessMode::WithInstructionKey), true));
+    }
+
+    /// The post-processing setup (sidecar note
+    /// `2026-11-26_2250_nachbearbeitung-einstieg-umsetzung`, section 2): ⇥
+    /// cuts also before post-processing is set up; the dictation's end
+    /// inserts the text unprocessed and its notice offers the setup.
+    #[test]
+    fn instruction_keys_are_taken_before_post_processing_is_set_up() {
         let mut no_model = set_up(PostProcessMode::Always);
         no_model.post_process_models.clear();
-        assert!(!taken(&no_model, false));
+        assert!(taken(&no_model, false));
+        let mut no_provider = set_up(PostProcessMode::WithInstructionKey);
+        no_provider.post_process_provider_id = "gone".to_string();
+        assert!(taken(&no_provider, false));
+        // A new installation: a provider without a model or key.
+        assert!(taken(&get_default_settings(), false));
+        let mut never = get_default_settings();
+        never.post_process_mode = PostProcessMode::Never;
+        assert!(!taken(&never, false));
+        assert!(!taken(&get_default_settings(), true));
     }
 
     // ---- The profile that applies now (review finding 5, 2026-11-26) ---------
@@ -630,9 +626,10 @@ mod tests {
         );
         assert!(taken_now(&with(PostProcessMode::Never), false).is_empty());
         assert!(taken_now(&with(PostProcessMode::Always), true).is_empty());
+        // Also before post-processing is set up.
         let mut no_model = with(PostProcessMode::Always);
         no_model.post_process_models.clear();
-        assert!(taken_now(&no_model, false).is_empty());
+        assert_eq!(taken_now(&no_model, false), tab.as_slice());
     }
 
     /// Settings whose active profile has mode `here`, with a profile "Mail"

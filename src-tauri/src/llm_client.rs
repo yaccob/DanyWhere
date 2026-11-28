@@ -111,6 +111,10 @@ pub struct ReasoningRequest {
     pub disable_by_default: bool,
     /// The effort chosen for the profile; `None` = the model's default.
     pub effort: Option<String>,
+    /// DanyWhere: more fields for a chat completion request's body, from the
+    /// provider's sign-in (OpenRouter's free models to fall back on, or its
+    /// data policy with credit; `post_process_signin::commands`).
+    pub extra_fields: serde_json::Map<String, Value>,
 }
 
 /// DanyWhere: an answer, and whether it came without the chosen effort.
@@ -301,6 +305,9 @@ struct ChatCompletionRequest {
     response_format: Option<ResponseFormat>,
     #[serde(flatten)]
     reasoning: ReasoningParams,
+    /// DanyWhere: [`ReasoningRequest::extra_fields`].
+    #[serde(flatten)]
+    extra: serde_json::Map<String, Value>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -410,20 +417,19 @@ impl AnthropicMessagesResponse {
     }
 }
 
+/// DanyWhere: the app's site, as its requests name it (`Referer`).
+pub const DANYWHERE_SITE: &str = "https://github.com/yaccob/DanyWhere";
+/// DanyWhere: the `User-Agent` of every request to a provider or a sign-in.
+pub const DANYWHERE_USER_AGENT: &str = "DanyWhere/1.0 (+https://github.com/yaccob/DanyWhere)";
+
 /// Build headers for API requests based on provider type
 fn build_headers(provider: &PostProcessProvider, api_key: &str) -> Result<HeaderMap, String> {
     let mut headers = HeaderMap::new();
 
     // Common headers
     headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
-    headers.insert(
-        REFERER,
-        HeaderValue::from_static("https://github.com/yaccob/Handy"),
-    );
-    headers.insert(
-        USER_AGENT,
-        HeaderValue::from_static("DanyWhere/1.0 (+https://github.com/yaccob/Handy)"),
-    );
+    headers.insert(REFERER, HeaderValue::from_static(DANYWHERE_SITE));
+    headers.insert(USER_AGENT, HeaderValue::from_static(DANYWHERE_USER_AGENT));
     headers.insert("X-Title", HeaderValue::from_static("DanyWhere"));
 
     // Provider-specific auth headers
@@ -614,6 +620,10 @@ pub async fn send_chat_completion(
     prompt: String,
     reasoning: &ReasoningRequest,
 ) -> Result<Completion, String> {
+    // DanyWhere: ChatGPT's plan, the one message as its input.
+    if provider.api_format == PostProcessApiFormat::Responses {
+        return send_responses(provider, model, None, &prompt, None, reasoning).await;
+    }
     if provider.api_format == PostProcessApiFormat::Anthropic {
         return send_anthropic_message(
             provider,
@@ -628,10 +638,34 @@ pub async fn send_chat_completion(
     send_chat_completion_with_schema(provider, api_key, model, prompt, None, None, reasoning).await
 }
 
+/// DanyWhere: the longest wait a rate limit's `retry-after` may ask for
+/// before the one retry (sidecar note
+/// `2026-11-26_2250_nachbearbeitung-einstieg-umsetzung`, section 2: Groq's
+/// free plan allows 8000 tokens a minute; a longer wait becomes the notice
+/// "rate-limited").
+const MAX_RATE_LIMIT_WAIT: Duration = Duration::from_secs(15);
+
+/// DanyWhere: the wait a 429's `retry-after` asks for, in seconds (a date is
+/// not read).
+fn retry_after(headers: &HeaderMap) -> Option<Duration> {
+    let value = headers
+        .get(reqwest::header::RETRY_AFTER)?
+        .to_str()
+        .ok()?
+        .trim();
+    let seconds: f64 = value.parse().ok()?;
+    (seconds.is_finite() && seconds >= 0.0).then(|| Duration::from_secs_f64(seconds))
+}
+
 /// DanyWhere: sends the plan's bodies in turn until one is not refused with
 /// 400/422, the answer endpoints give to fields they don't take. When a later
 /// body gets through, the keys of the refused ones are remembered, so the
 /// next request skips them. Returns the response and which body it answers.
+///
+/// DanyWhere (2026-11-26): a rate limit (`post_process_failure`'s
+/// `rate-limited`) whose `retry-after` is at most [`MAX_RATE_LIMIT_WAIT`] is
+/// waited for and sent once more; any other 429 (no credit, ChatGPT's plan
+/// limit, OpenRouter's busy free model or its limits) is not.
 async fn post_until_accepted<B: Serialize>(
     client: &ProviderClient,
     url: &str,
@@ -639,6 +673,7 @@ async fn post_until_accepted<B: Serialize>(
     what: &str,
 ) -> Result<(reqwest::Response, usize), String> {
     let mut used = 0;
+    let mut rate_limit_retried = false;
     loop {
         let Some((body, _)) = plan.attempts.get(used) else {
             return Err("No request to send".to_string());
@@ -663,12 +698,38 @@ async fn post_until_accepted<B: Serialize>(
             sanitized_url(response.url())
         );
 
+        // DanyWhere: one retry after a short rate limit.
+        if status.as_u16() == 429 && !rate_limit_retried {
+            if let Some(wait) =
+                retry_after(response.headers()).filter(|wait| *wait <= MAX_RATE_LIMIT_WAIT)
+            {
+                let error_text = response.text().await.unwrap_or_else(|e| {
+                    report_reqwest_error("Failed to read API error response", &e)
+                });
+                let error = format!("{}{}: {}", STATUS_ERROR_PREFIX, status, error_text);
+                if crate::post_process_failure::classify_llm_error(&error, true)
+                    != crate::post_process_failure::FailureReason::RateLimited
+                {
+                    return Err(error);
+                }
+                info!(
+                    "{} was rate limited (status {}); retrying once in {:?}",
+                    what, status, wait
+                );
+                tokio::time::sleep(wait).await;
+                rate_limit_retried = true;
+                continue;
+            }
+        }
+
         // A 400/422 on a request carrying reasoning fields is almost always
         // the endpoint rejecting those fields — retry without them.
         if matches!(status.as_u16(), 400 | 422) && used + 1 < plan.attempts.len() {
             let error_text = response.text().await.unwrap_or_else(|e| {
                 report_reqwest_error("Failed to read reasoning rejection response", &e)
             });
+            // DanyWhere: without the account's id (OpenRouter puts it there).
+            let error_text = crate::post_process_failure::redact_secrets(&error_text);
             info!(
                 "Endpoint rejected the request's reasoning fields (status {}): {}. Retrying without them",
                 status, error_text
@@ -714,6 +775,18 @@ pub async fn send_chat_completion_with_schema(
     json_schema: Option<Value>,
     reasoning: &ReasoningRequest,
 ) -> Result<Completion, String> {
+    // DanyWhere: ChatGPT's plan, the system prompt as its instructions.
+    if provider.api_format == PostProcessApiFormat::Responses {
+        return send_responses(
+            provider,
+            model,
+            system_prompt.as_deref(),
+            &user_content,
+            json_schema.as_ref(),
+            reasoning,
+        )
+        .await;
+    }
     let base_url = provider.base_url.trim_end_matches('/');
     let url = format!("{}/chat/completions", base_url);
 
@@ -751,6 +824,7 @@ pub async fn send_chat_completion_with_schema(
         },
     });
 
+    let extra = &reasoning.extra_fields;
     let plan =
         reasoning_attempts(provider, model, reasoning).map(|reasoning| ChatCompletionRequest {
             model: model.to_string(),
@@ -758,6 +832,7 @@ pub async fn send_chat_completion_with_schema(
             stream: false,
             response_format: response_format.clone(),
             reasoning,
+            extra: extra.clone(),
         });
 
     let (response, used) = post_until_accepted(&client, &url, &plan, "Chat completion").await?;
@@ -798,6 +873,184 @@ pub async fn send_chat_completion_with_schema(
         content: choice.message.content,
         effort_ignored,
     })
+}
+
+/// DanyWhere: one post-processing request through ChatGPT's plan (the
+/// provider format `Responses`, `llm_responses`), with the session's access
+/// token, refreshed first when due (`post_process_signin::session`). The
+/// plan route takes no `system` message, so a system prompt goes as
+/// `instructions`. An effort the model refuses (400 on `reasoning.effort`)
+/// is dropped, as for the other formats, and not sent again while the app
+/// runs; the answer says it came without it.
+async fn send_responses(
+    provider: &PostProcessProvider,
+    model: &str,
+    instructions: Option<&str>,
+    input: &str,
+    json_schema: Option<&Value>,
+    reasoning: &ReasoningRequest,
+) -> Result<Completion, String> {
+    let Some((store, token_url)) = crate::post_process_signin::session::installed() else {
+        return Err(crate::post_process_signin::session::NO_SESSION.to_string());
+    };
+    send_responses_with(
+        store.as_ref(),
+        &token_url,
+        provider,
+        model,
+        instructions,
+        input,
+        json_schema,
+        reasoning,
+    )
+    .await
+}
+
+/// DanyWhere: [`send_responses`] with the session of `store`, refreshed
+/// through `token_url`. Review of 2026-11-27, M2: an access token the plan
+/// refuses before its expiry (signed out in ChatGPT's settings, say) is
+/// renewed once and the request asked again; refused again, the sign-in
+/// ends and the error reads as `sign-in-expired`.
+#[allow(clippy::too_many_arguments)]
+async fn send_responses_with(
+    store: &dyn crate::post_process_signin::session::SessionStore,
+    token_url: &str,
+    provider: &PostProcessProvider,
+    model: &str,
+    instructions: Option<&str>,
+    input: &str,
+    json_schema: Option<&Value>,
+    reasoning: &ReasoningRequest,
+) -> Result<Completion, String> {
+    use crate::post_process_signin::session;
+    let token_client = crate::post_process_signin::commands::token_client()?;
+    let signed_in =
+        session::fresh_session(store, &token_client, token_url, session::unix_now()).await?;
+    let client = shared_client()?;
+    // `X-Title`, `Referer`, `User-Agent`; the bearer and the content type
+    // are `llm_responses`'.
+    let mut headers = build_headers(provider, "")?;
+    headers.remove(CONTENT_TYPE);
+    let effort = reasoning.effort.as_deref();
+    let rejection = effort.map(|level| effort_rejection_key(provider, model, level));
+    let skipped = rejection.as_deref().is_some_and(is_known_rejected);
+    let mut attempt = PlanAttempt {
+        request: crate::llm_responses::ResponsesRequest {
+            model,
+            instructions,
+            input,
+            effort: if skipped { None } else { effort },
+            json_schema,
+            timeout: None,
+        },
+        effort_ignored: skipped,
+        rejection,
+    };
+    debug!(
+        "Sending a request through ChatGPT's plan to {}",
+        sanitized_url_for_log(&provider.base_url)
+    );
+    let error = match send_plan(
+        client,
+        provider,
+        &signed_in.access_token,
+        &headers,
+        &mut attempt,
+    )
+    .await
+    {
+        Err(error) if refuses_sign_in(&error) => error,
+        answered => return answered,
+    };
+    info!(
+        "ChatGPT's plan refused the sign-in (status {:?})",
+        crate::post_process_failure::error_status(&error)
+    );
+    let renewed =
+        session::renewed_after_refusal(store, &token_client, token_url, &signed_in).await?;
+    match send_plan(
+        client,
+        provider,
+        &renewed.access_token,
+        &headers,
+        &mut attempt,
+    )
+    .await
+    {
+        Err(error) if refuses_sign_in(&error) => {
+            session::end_refused(store, &renewed).await;
+            Err(format!(
+                "{} ChatGPT's plan refused the renewed sign-in (status {})",
+                crate::post_process_failure::SIGN_IN_EXPIRED_PREFIX,
+                crate::post_process_failure::error_status(&error).unwrap_or_default()
+            ))
+        }
+        answered => answered,
+    }
+}
+
+/// DanyWhere: one request through ChatGPT's plan and what its effort did.
+struct PlanAttempt<'a> {
+    request: crate::llm_responses::ResponsesRequest<'a>,
+    /// The answer came without the profile's effort.
+    effort_ignored: bool,
+    /// Where a refused effort is remembered (`remember_rejection`).
+    rejection: Option<String>,
+}
+
+/// DanyWhere: `attempt` with the access token `bearer`. An effort the model
+/// refuses (400 on `reasoning.effort`) is dropped and asked once more
+/// without it, and not sent again while the app runs.
+async fn send_plan(
+    client: &reqwest::Client,
+    provider: &PostProcessProvider,
+    bearer: &str,
+    headers: &HeaderMap,
+    attempt: &mut PlanAttempt<'_>,
+) -> Result<Completion, String> {
+    let completion = |text: String, effort_ignored: bool| Completion {
+        content: (!text.is_empty()).then_some(text),
+        effort_ignored,
+    };
+    let base_url = &provider.base_url;
+    match crate::llm_responses::send(client, base_url, bearer, headers, &attempt.request).await {
+        Ok(text) => Ok(completion(text, attempt.effort_ignored)),
+        Err(error) if attempt.request.effort.is_some() && refuses_effort(&error) => {
+            info!(
+                "ChatGPT's plan refused the effort for '{}'; retrying without it",
+                attempt.request.model
+            );
+            attempt.request.effort = None;
+            attempt.effort_ignored = true;
+            let text =
+                crate::llm_responses::send(client, base_url, bearer, headers, &attempt.request)
+                    .await?;
+            if let Some(key) = attempt.rejection.take() {
+                remember_rejection(key);
+            }
+            Ok(completion(text, true))
+        }
+        Err(error) => Err(error),
+    }
+}
+
+/// DanyWhere: whether the plan refused the sign-in itself: a 401 or 403
+/// that names no other reason (not the plan's limit, a plan apps may not
+/// use, a missing model or credit).
+fn refuses_sign_in(error: &str) -> bool {
+    use crate::post_process_failure::{classify_llm_error, error_status, FailureReason};
+    matches!(error_status(error), Some(401 | 403))
+        && matches!(
+            classify_llm_error(error, true),
+            FailureReason::KeyRefused | FailureReason::SignInExpired
+        )
+}
+
+/// DanyWhere: whether `error` is a 400 refusing `reasoning.effort`.
+fn refuses_effort(error: &str) -> bool {
+    error
+        .strip_prefix(STATUS_ERROR_PREFIX)
+        .is_some_and(|rest| rest.starts_with("400") && rest.contains("reasoning.effort"))
 }
 
 /// Send a single-prompt request to an Anthropic Messages API (`/messages`).
@@ -871,6 +1124,22 @@ pub async fn fetch_models(
     api_key: String,
     time_limit: Duration,
 ) -> Result<Vec<String>, String> {
+    // DanyWhere: ChatGPT's plan lists the account's models with the
+    // session's token (`chatgpt::list_models`).
+    if provider.api_format == PostProcessApiFormat::Responses {
+        let session = crate::post_process_signin::session::current().await?;
+        let client = reqwest::Client::builder()
+            .timeout(time_limit)
+            .connect_timeout(Duration::from_secs(10))
+            .build()
+            .map_err(|e| report_reqwest_error("Failed to build HTTP client", &e))?;
+        return crate::post_process_signin::chatgpt::list_models(
+            &client,
+            &provider.base_url,
+            &session,
+        )
+        .await;
+    }
     let base_url = provider.base_url.trim_end_matches('/');
     let url = format!("{}/models", base_url);
 
@@ -944,6 +1213,13 @@ pub async fn send_warmup(
     model: &str,
     time_limit: Duration,
 ) -> Result<(), String> {
+    // DanyWhere: through ChatGPT's plan a request would cost plan usage
+    // and load nothing; only the session is made fresh.
+    if provider.api_format == PostProcessApiFormat::Responses {
+        return crate::post_process_signin::session::current()
+            .await
+            .map(|_| ());
+    }
     let base_url = provider.base_url.trim_end_matches('/');
     let url = if provider.api_format == PostProcessApiFormat::Anthropic {
         format!("{}/messages", base_url)
@@ -1034,6 +1310,7 @@ mod tests {
             stream: false,
             response_format: None,
             reasoning,
+            extra: serde_json::Map::new(),
         };
         serde_json::to_value(&request).unwrap()
     }
@@ -1269,6 +1546,7 @@ mod tests {
             &ReasoningRequest {
                 disable_by_default: true,
                 effort: None,
+                ..Default::default()
             },
         )
         .await;
@@ -1451,6 +1729,7 @@ mod tests {
             &ReasoningRequest {
                 disable_by_default: true,
                 effort: None,
+                ..Default::default()
             },
         )
         .await;
@@ -1463,6 +1742,7 @@ mod tests {
         ReasoningRequest {
             disable_by_default: false,
             effort: Some(level.to_string()),
+            ..Default::default()
         }
     }
 
@@ -1512,6 +1792,7 @@ mod tests {
         let reasoning = ReasoningRequest {
             disable_by_default: true,
             effort: Some("low".to_string()),
+            ..Default::default()
         };
         let json = first_attempt(
             &provider("custom", "https://api.deepseek.com"),
@@ -1531,6 +1812,7 @@ mod tests {
             &ReasoningRequest {
                 disable_by_default: true,
                 effort: None,
+                ..Default::default()
             },
         );
         assert_eq!(
@@ -1851,6 +2133,129 @@ mod tests {
         assert_eq!(bodies[0]["max_tokens"], 1);
     }
 
+    // ---- DanyWhere: one retry after a short rate limit (2026-11-26) --------
+    //
+    // Groq's free plan allows 8000 tokens a minute (sidecar note
+    // `2026-11-26_1955_nachbearbeitung-versuche`, section 4) and sends
+    // `retry-after` with its 429 (console.groq.com/docs/rate-limits).
+
+    /// A status line with a `retry-after` header after it, for
+    /// [`serve_in_turn`], which writes the status into its response's first
+    /// line.
+    const RATE_LIMITED_NOW: &str = "429 Too Many Requests\r\nretry-after: 0";
+    const RATE_LIMITED_1S: &str = "429 Too Many Requests\r\nretry-after: 1";
+    const RATE_LIMITED_LONG: &str = "429 Too Many Requests\r\nretry-after: 30";
+    const TPM: &str = r#"{"error":{"message":"Rate limit reached for model `openai/gpt-oss-120b` in organization `org_test` service tier `on_demand` on tokens per minute (TPM): Limit 8000, Used 5959, Requested 3039. Please try again in 0.5s.","type":"tokens","code":"rate_limit_exceeded"}}"#;
+    const FREE_BUSY: &str = r#"{"error":{"message":"Provider returned error","code":429,"metadata":{"raw":"google/gemma-4-26b-a4b-it:free is temporarily rate-limited upstream. Please retry shortly, or add your own provider key to use your own limits: https://openrouter.ai/workspaces/default/byok","provider_name":"Google AI Studio","is_byok":false,"provider_error_code":"429","limit_source":"upstream_provider_shared_pool"}}}"#;
+    const QUOTA: &str = r#"{"error":{"message":"You exceeded your current quota, please check your plan and billing details.","type":"insufficient_quota","param":null,"code":"insufficient_quota"}}"#;
+
+    async fn plain_request(base_url: &str) -> Result<Completion, String> {
+        send_chat_completion(
+            &provider("custom", base_url),
+            "key".to_string(),
+            "model",
+            "raw".to_string(),
+            &ReasoningRequest::default(),
+        )
+        .await
+    }
+
+    #[tokio::test]
+    async fn a_short_rate_limit_is_waited_for_and_tried_once_more() {
+        let (base_url, bodies) =
+            serve_in_turn(vec![(RATE_LIMITED_1S, TPM), ("200 OK", CHAT_OK)]).await;
+        let started = std::time::Instant::now();
+        let reply = plain_request(&base_url).await;
+        assert_eq!(
+            reply,
+            Ok(Completion {
+                content: Some("Cleaned".to_string()),
+                effort_ignored: false,
+            })
+        );
+        assert!(started.elapsed() >= Duration::from_millis(900), "waited");
+        assert_eq!(bodies.lock().unwrap().len(), 2);
+    }
+
+    #[tokio::test]
+    async fn a_rate_limit_is_retried_only_once() {
+        let (base_url, bodies) = serve_in_turn(vec![
+            (RATE_LIMITED_NOW, TPM),
+            (RATE_LIMITED_NOW, TPM),
+            ("200 OK", CHAT_OK),
+        ])
+        .await;
+        let reply = plain_request(&base_url).await;
+        let error = reply.expect_err("the second 429 is the answer");
+        assert!(error.starts_with(STATUS_ERROR_PREFIX), "{error}");
+        assert!(error.contains("tokens per minute"), "{error}");
+        assert_eq!(bodies.lock().unwrap().len(), 2);
+    }
+
+    #[tokio::test]
+    async fn a_long_or_missing_retry_after_is_not_waited_for() {
+        for status in [RATE_LIMITED_LONG, "429 Too Many Requests"] {
+            let (base_url, bodies) = serve_in_turn(vec![(status, TPM), ("200 OK", CHAT_OK)]).await;
+            let reply = plain_request(&base_url).await;
+            assert!(reply.is_err(), "{status}");
+            assert_eq!(bodies.lock().unwrap().len(), 1, "{status}");
+        }
+    }
+
+    #[tokio::test]
+    async fn a_busy_free_model_or_a_used_up_quota_is_not_retried() {
+        // OpenRouter's busy free model sends no retry-after (strand L); even
+        // with one it isn't retried, and neither is a quota that is gone.
+        for body in [FREE_BUSY, QUOTA] {
+            let (base_url, bodies) =
+                serve_in_turn(vec![(RATE_LIMITED_NOW, body), ("200 OK", CHAT_OK)]).await;
+            let reply = plain_request(&base_url).await;
+            let error = reply.expect_err("not retried");
+            assert!(error.starts_with(STATUS_ERROR_PREFIX), "{error}");
+            assert_eq!(bodies.lock().unwrap().len(), 1, "{body}");
+        }
+    }
+
+    #[tokio::test]
+    async fn an_anthropic_rate_limit_is_retried_too() {
+        let anthropic_429 = r#"{"type":"error","error":{"type":"rate_limit_error","message":"This request would exceed the rate limit for your organization of 50 requests per minute."}}"#;
+        let (base_url, bodies) = serve_in_turn(vec![
+            (RATE_LIMITED_NOW, anthropic_429),
+            ("200 OK", MESSAGES_OK),
+        ])
+        .await;
+        let reply = send_chat_completion(
+            &anthropic_format_provider(&base_url),
+            "key".to_string(),
+            "claude-haiku-5-5",
+            "raw".to_string(),
+            &ReasoningRequest::default(),
+        )
+        .await;
+        assert_eq!(
+            reply.map(|completion| completion.content),
+            Ok(Some("Cleaned".to_string()))
+        );
+        assert_eq!(bodies.lock().unwrap().len(), 2);
+    }
+
+    #[test]
+    fn retry_after_is_read_in_seconds() {
+        let header = |value: &str| {
+            let mut headers = HeaderMap::new();
+            headers.insert("retry-after", HeaderValue::from_str(value).unwrap());
+            headers
+        };
+        assert_eq!(retry_after(&header("8")), Some(Duration::from_secs(8)));
+        assert_eq!(
+            retry_after(&header("7.5")),
+            Some(Duration::from_millis(7500))
+        );
+        assert_eq!(retry_after(&header("Wed, 21 Oct 2026 07:28:00 GMT")), None);
+        assert_eq!(retry_after(&header("-1")), None);
+        assert_eq!(retry_after(&HeaderMap::new()), None);
+    }
+
     #[tokio::test]
     async fn a_refused_warmup_is_an_error() {
         let (base_url, _bodies) =
@@ -1863,5 +2268,549 @@ mod tests {
         )
         .await;
         assert!(reply.is_err());
+    }
+
+    // ---- DanyWhere: ChatGPT's plan over the Responses API (strand Z) -------
+
+    const PLAN_ACCESS: &str = "test-plan-access-token";
+
+    /// The plan session every test here sees: one that is not due, so no
+    /// refresh is asked for.
+    struct TestPlanStore;
+
+    impl crate::post_process_signin::session::SessionStore for TestPlanStore {
+        fn load(&self) -> Option<crate::post_process_signin::chatgpt::ChatGptSession> {
+            Some(crate::post_process_signin::chatgpt::ChatGptSession {
+                client_id: "app_client_test".to_string(),
+                access_token: PLAN_ACCESS.to_string(),
+                refresh_token: "test-plan-refresh".to_string(),
+                expires_at: i64::MAX / 2,
+                email: None,
+                plan: None,
+                subject: "user-test".to_string(),
+                earliest_refresh_at: None,
+            })
+        }
+        fn save(
+            &self,
+            _session: &crate::post_process_signin::chatgpt::ChatGptSession,
+        ) -> Result<(), String> {
+            Ok(())
+        }
+        fn expire(&self) {}
+    }
+
+    fn plan_session() {
+        static INSTALLED: std::sync::Once = std::sync::Once::new();
+        INSTALLED.call_once(|| {
+            crate::post_process_signin::session::install(
+                std::sync::Arc::new(TestPlanStore),
+                "http://127.0.0.1:9/never".to_string(),
+            )
+        });
+    }
+
+    fn plan_provider(base_url: &str) -> PostProcessProvider {
+        PostProcessProvider {
+            api_format: PostProcessApiFormat::Responses,
+            supports_structured_output: true,
+            ..provider("chatgpt", base_url)
+        }
+    }
+
+    /// One request as the plan's fake server saw it.
+    #[derive(Debug, Clone)]
+    struct PlanRequest {
+        line: String,
+        authorization: Option<String>,
+        body: Value,
+    }
+
+    /// Answers one request per entry (status, content type, body), in turn,
+    /// and keeps the requests.
+    async fn serve_plan(
+        replies: Vec<(&'static str, &'static str, &'static str)>,
+    ) -> (String, std::sync::Arc<Mutex<Vec<PlanRequest>>>) {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let seen = std::sync::Arc::new(Mutex::new(Vec::new()));
+        let kept = seen.clone();
+        tokio::spawn(async move {
+            for (status, content_type, body) in replies {
+                let Ok((mut stream, _)) = listener.accept().await else {
+                    return;
+                };
+                let mut request = Vec::new();
+                let mut buffer = [0_u8; 8192];
+                loop {
+                    let n = stream.read(&mut buffer).await.unwrap_or(0);
+                    if n == 0 {
+                        break;
+                    }
+                    request.extend_from_slice(&buffer[..n]);
+                    let text = String::from_utf8_lossy(&request).to_string();
+                    if let Some(end) = text.find("\r\n\r\n") {
+                        let head = &text[..end];
+                        let header = |name: &str| {
+                            head.lines().find_map(|line| {
+                                let (key, value) = line.split_once(':')?;
+                                key.trim()
+                                    .eq_ignore_ascii_case(name)
+                                    .then(|| value.trim().to_string())
+                            })
+                        };
+                        let length = header("content-length")
+                            .and_then(|v| v.parse::<usize>().ok())
+                            .unwrap_or(0);
+                        if request.len() >= end + 4 + length {
+                            let first = head.lines().next().unwrap_or("");
+                            let line = first.rsplit_once(' ').map_or(first, |(l, _)| l);
+                            kept.lock().unwrap().push(PlanRequest {
+                                line: line.to_string(),
+                                authorization: header("authorization"),
+                                body: serde_json::from_str(&text[end + 4..]).unwrap_or(Value::Null),
+                            });
+                            break;
+                        }
+                    }
+                }
+                let response = format!(
+                    "HTTP/1.1 {status}\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                    body.len()
+                );
+                let _ = stream.write_all(response.as_bytes()).await;
+            }
+        });
+        (format!("http://{address}"), seen)
+    }
+
+    const SSE: &str = "text/event-stream";
+    const PLAN_OK: &str = "event: response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"delta\":\"Clean\"}\n\ndata: {\"type\":\"response.output_text.delta\",\"delta\":\"ed\"}\n\ndata: {\"type\":\"response.completed\",\"response\":{\"output\":[]}}\n\n";
+    const PLAN_EMPTY: &str =
+        "data: {\"type\":\"response.completed\",\"response\":{\"output\":[]}}\n\n";
+    const PLAN_REFUSES_EFFORT: &str = r#"{"error": {"code": "unsupported_value", "message": "Unsupported value: 'xhigh' is not supported with the 'gpt-test' model.", "param": "reasoning.effort", "type": "invalid_request_error"}}"#;
+    const PLAN_LIMIT: &str = r#"{"error":{"code":"subscription_sharing_usage_limit_exceeded","message":"You have reached your plan's usage limit."}}"#;
+
+    fn plan_requests(seen: &std::sync::Arc<Mutex<Vec<PlanRequest>>>) -> Vec<PlanRequest> {
+        seen.lock().unwrap().clone()
+    }
+
+    #[tokio::test]
+    async fn the_plan_gets_the_structured_request_on_responses_with_the_sessions_token() {
+        plan_session();
+        let (base_url, seen) = serve_plan(vec![("200 OK", SSE, PLAN_OK)]).await;
+        let schema = serde_json::json!({"type": "object"});
+        let reply = send_chat_completion_with_schema(
+            &plan_provider(&base_url),
+            String::new(),
+            "gpt-6.2-sol",
+            "the transcript".to_string(),
+            Some("the frame".to_string()),
+            Some(schema.clone()),
+            &ReasoningRequest {
+                effort: Some("low".to_string()),
+                ..Default::default()
+            },
+        )
+        .await;
+        assert_eq!(
+            reply,
+            Ok(Completion {
+                content: Some("Cleaned".to_string()),
+                effort_ignored: false,
+            })
+        );
+        let requests = plan_requests(&seen);
+        assert_eq!(requests.len(), 1);
+        let request = &requests[0];
+        assert_eq!(request.line, "POST /responses");
+        assert_eq!(
+            request.authorization.as_deref(),
+            Some(format!("Bearer {PLAN_ACCESS}").as_str())
+        );
+        let body = &request.body;
+        assert_eq!(body["model"], "gpt-6.2-sol");
+        assert_eq!(body["instructions"], "the frame");
+        assert_eq!(body["input"][0]["role"], "user");
+        assert_eq!(body["input"][0]["content"], "the transcript");
+        assert_eq!(body["reasoning"]["effort"], "low");
+        assert_eq!(body["text"]["format"]["type"], "json_schema");
+        assert_eq!(body["text"]["format"]["schema"], schema);
+        assert_eq!(body["store"], false);
+        assert_eq!(body["stream"], true);
+        assert!(body.get("messages").is_none(), "{body}");
+    }
+
+    #[tokio::test]
+    async fn the_plan_gets_the_single_message_as_its_input() {
+        plan_session();
+        let (base_url, seen) = serve_plan(vec![("200 OK", SSE, PLAN_OK)]).await;
+        let reply = send_chat_completion(
+            &plan_provider(&base_url),
+            String::new(),
+            "gpt-6.2-sol",
+            "frame, prompt and transcript".to_string(),
+            &ReasoningRequest::default(),
+        )
+        .await;
+        assert_eq!(
+            reply.map(|completion| completion.content),
+            Ok(Some("Cleaned".to_string()))
+        );
+        let body = plan_requests(&seen)[0].body.clone();
+        assert_eq!(body["input"][0]["content"], "frame, prompt and transcript");
+        assert!(body.get("instructions").is_none(), "{body}");
+        assert!(body.get("reasoning").is_none(), "{body}");
+    }
+
+    #[tokio::test]
+    async fn an_empty_answer_of_the_plan_has_no_content() {
+        plan_session();
+        let (base_url, _seen) = serve_plan(vec![("200 OK", SSE, PLAN_EMPTY)]).await;
+        let reply = send_chat_completion(
+            &plan_provider(&base_url),
+            String::new(),
+            "gpt-6.2-sol",
+            "prompt".to_string(),
+            &ReasoningRequest::default(),
+        )
+        .await;
+        assert_eq!(
+            reply,
+            Ok(Completion {
+                content: None,
+                effort_ignored: false,
+            })
+        );
+    }
+
+    #[tokio::test]
+    async fn an_effort_the_plan_refuses_is_dropped_reported_and_not_sent_again() {
+        plan_session();
+        let (base_url, seen) = serve_plan(vec![
+            ("400 Bad Request", "application/json", PLAN_REFUSES_EFFORT),
+            ("200 OK", SSE, PLAN_OK),
+            ("200 OK", SSE, PLAN_OK),
+        ])
+        .await;
+        let provider = plan_provider(&base_url);
+        let reasoning = ReasoningRequest {
+            effort: Some("xhigh".to_string()),
+            ..Default::default()
+        };
+        let ask = || {
+            send_chat_completion(
+                &provider,
+                String::new(),
+                "gpt-test-refused-effort",
+                "prompt".to_string(),
+                &reasoning,
+            )
+        };
+        assert_eq!(
+            ask().await,
+            Ok(Completion {
+                content: Some("Cleaned".to_string()),
+                effort_ignored: true,
+            })
+        );
+        assert_eq!(
+            ask().await,
+            Ok(Completion {
+                content: Some("Cleaned".to_string()),
+                effort_ignored: true,
+            })
+        );
+        let requests = plan_requests(&seen);
+        assert_eq!(requests.len(), 3);
+        assert_eq!(requests[0].body["reasoning"]["effort"], "xhigh");
+        assert!(requests[1].body.get("reasoning").is_none());
+        assert!(requests[2].body.get("reasoning").is_none(), "not again");
+    }
+
+    #[tokio::test]
+    async fn a_plan_limit_keeps_the_status_form_and_its_reason() {
+        plan_session();
+        let (base_url, seen) = serve_plan(vec![(
+            "429 Too Many Requests",
+            "application/json",
+            PLAN_LIMIT,
+        )])
+        .await;
+        let error = send_chat_completion(
+            &plan_provider(&base_url),
+            String::new(),
+            "gpt-6.2-sol",
+            "prompt".to_string(),
+            &ReasoningRequest::default(),
+        )
+        .await
+        .expect_err("the limit");
+        assert!(error.starts_with(STATUS_ERROR_PREFIX), "{error}");
+        assert_eq!(
+            crate::post_process_failure::classify_llm_error(&error, true),
+            crate::post_process_failure::FailureReason::PlanLimit
+        );
+        assert_eq!(plan_requests(&seen).len(), 1);
+    }
+
+    #[tokio::test]
+    async fn the_plans_model_list_comes_from_the_account() {
+        plan_session();
+        let (base_url, seen) = serve_plan(vec![(
+            "200 OK",
+            "application/json",
+            r#"{"models":[{"slug":"gpt-6.2-sol","visibility":"list"},{"slug":"gpt-internal","visibility":"hide"},{"slug":"gpt-6.1-terra","visibility":"list"}]}"#,
+        )])
+        .await;
+        let models = fetch_models(
+            &plan_provider(&base_url),
+            String::new(),
+            Duration::from_secs(5),
+        )
+        .await;
+        assert_eq!(
+            models,
+            Ok(vec!["gpt-6.2-sol".to_string(), "gpt-6.1-terra".to_string()])
+        );
+        let request = &plan_requests(&seen)[0];
+        assert_eq!(request.line, "GET /models");
+        assert_eq!(
+            request.authorization.as_deref(),
+            Some(format!("Bearer {PLAN_ACCESS}").as_str())
+        );
+    }
+
+    #[tokio::test]
+    async fn warming_the_plan_up_sends_no_request() {
+        plan_session();
+        let (base_url, seen) = serve_plan(vec![("200 OK", SSE, PLAN_OK)]).await;
+        let reply = send_warmup(
+            &plan_provider(&base_url),
+            "",
+            "gpt-6.2-sol",
+            Duration::from_secs(5),
+        )
+        .await;
+        assert_eq!(reply, Ok(()));
+        assert!(plan_requests(&seen).is_empty());
+    }
+
+    #[tokio::test]
+    async fn openrouters_fields_from_the_sign_in_go_with_the_request() {
+        let (base_url, bodies) = serve_in_turn(vec![("200 OK", CHAT_OK)]).await;
+        let mut extra_fields = serde_json::Map::new();
+        extra_fields.insert(
+            "models".to_string(),
+            serde_json::json!(["a/one:free", "b/two:free"]),
+        );
+        let reply = send_chat_completion_with_schema(
+            &provider("openrouter", &base_url),
+            "sk-or-test".to_string(),
+            "a/one:free",
+            "content".to_string(),
+            None,
+            None,
+            &ReasoningRequest {
+                extra_fields,
+                ..Default::default()
+            },
+        )
+        .await;
+        assert!(reply.is_ok(), "{reply:?}");
+        let body = bodies.lock().unwrap()[0].clone();
+        assert_eq!(body["model"], "a/one:free");
+        assert_eq!(
+            body["models"],
+            serde_json::json!(["a/one:free", "b/two:free"])
+        );
+    }
+
+    // ---- review of 2026-11-27, M2: a sign-in the plan refuses ------------
+
+    /// A plan session of each test's own, and what happened to it.
+    struct RefusedPlanStore {
+        session: Mutex<Option<crate::post_process_signin::chatgpt::ChatGptSession>>,
+        saved: std::sync::atomic::AtomicUsize,
+        expired: std::sync::atomic::AtomicBool,
+    }
+
+    impl RefusedPlanStore {
+        /// A session whose access token is not due for a refresh.
+        fn new() -> Self {
+            RefusedPlanStore {
+                session: Mutex::new(Some(crate::post_process_signin::chatgpt::ChatGptSession {
+                    client_id: "app_client_test".to_string(),
+                    access_token: "access-old".to_string(),
+                    refresh_token: "refresh-old".to_string(),
+                    expires_at: i64::MAX / 2,
+                    email: None,
+                    plan: None,
+                    subject: "user-test".to_string(),
+                    earliest_refresh_at: None,
+                })),
+                saved: Default::default(),
+                expired: Default::default(),
+            }
+        }
+
+        fn was_expired(&self) -> bool {
+            self.expired.load(std::sync::atomic::Ordering::SeqCst)
+        }
+    }
+
+    impl crate::post_process_signin::session::SessionStore for RefusedPlanStore {
+        fn load(&self) -> Option<crate::post_process_signin::chatgpt::ChatGptSession> {
+            self.session.lock().unwrap().clone()
+        }
+        fn save(
+            &self,
+            session: &crate::post_process_signin::chatgpt::ChatGptSession,
+        ) -> Result<(), String> {
+            self.saved.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            *self.session.lock().unwrap() = Some(session.clone());
+            Ok(())
+        }
+        fn expire(&self) {
+            self.expired
+                .store(true, std::sync::atomic::Ordering::SeqCst);
+            *self.session.lock().unwrap() = None;
+        }
+    }
+
+    const PLAN_REFUSED_401: &str =
+        r#"{"error":{"code":"invalid_token","message":"The access token is invalid."}}"#;
+    const PLAN_NOT_ELIGIBLE_403: &str = r#"{"error":{"code":"subscription_sharing_user_not_eligible","message":"This plan can't be used by apps."}}"#;
+    const RENEWED_TOKENS: &str = r#"{"access_token":"access-new","refresh_token":"refresh-new","token_type":"Bearer","expires_in":3600,"scope":"openid profile email offline_access resource.invoke chatgpt.tokens.use.direct"}"#;
+    const DEAD_REFRESH: &str = r#"{"error":"invalid_grant"}"#;
+
+    /// One request through the plan with `store`, its tokens renewed at the
+    /// same fake server.
+    async fn ask_plan(store: &RefusedPlanStore, base_url: &str) -> Result<Completion, String> {
+        send_responses_with(
+            store,
+            &format!("{base_url}/api/accounts/oauth/token"),
+            &plan_provider(base_url),
+            "gpt-6.2-sol",
+            Some("the frame"),
+            "the transcript",
+            None,
+            &ReasoningRequest::default(),
+        )
+        .await
+    }
+
+    #[tokio::test]
+    async fn a_refused_access_token_is_renewed_once_and_the_request_asked_again() {
+        let (base_url, seen) = serve_plan(vec![
+            ("401 Unauthorized", "application/json", PLAN_REFUSED_401),
+            ("200 OK", "application/json", RENEWED_TOKENS),
+            ("200 OK", SSE, PLAN_OK),
+        ])
+        .await;
+        let store = RefusedPlanStore::new();
+        let reply = ask_plan(&store, &base_url).await;
+        assert_eq!(reply.map(|c| c.content), Ok(Some("Cleaned".to_string())));
+        let requests = plan_requests(&seen);
+        let lines: Vec<&str> = requests.iter().map(|r| r.line.as_str()).collect();
+        assert_eq!(
+            lines,
+            [
+                "POST /responses",
+                "POST /api/accounts/oauth/token",
+                "POST /responses"
+            ]
+        );
+        assert_eq!(
+            requests[0].authorization.as_deref(),
+            Some("Bearer access-old")
+        );
+        assert_eq!(
+            requests[2].authorization.as_deref(),
+            Some("Bearer access-new")
+        );
+        assert!(!store.was_expired());
+        assert_eq!(
+            store
+                .session
+                .lock()
+                .unwrap()
+                .as_ref()
+                .map(|session| session.refresh_token.clone()),
+            Some("refresh-new".to_string())
+        );
+    }
+
+    #[tokio::test]
+    async fn a_sign_in_refused_again_after_renewing_ends_as_expired() {
+        let (base_url, seen) = serve_plan(vec![
+            ("401 Unauthorized", "application/json", PLAN_REFUSED_401),
+            ("200 OK", "application/json", RENEWED_TOKENS),
+            ("401 Unauthorized", "application/json", PLAN_REFUSED_401),
+        ])
+        .await;
+        let store = RefusedPlanStore::new();
+        let error = ask_plan(&store, &base_url).await.expect_err("refused");
+        assert!(error.starts_with("sign-in-expired:"), "{error}");
+        assert_eq!(
+            crate::post_process_failure::classify_llm_error(&error, false),
+            crate::post_process_failure::FailureReason::SignInExpired
+        );
+        assert!(store.was_expired(), "the sign-in ends");
+        assert_eq!(plan_requests(&seen).len(), 3);
+    }
+
+    #[tokio::test]
+    async fn a_dead_refresh_token_after_a_refusal_ends_the_sign_in() {
+        let (base_url, seen) = serve_plan(vec![
+            ("401 Unauthorized", "application/json", PLAN_REFUSED_401),
+            ("400 Bad Request", "application/json", DEAD_REFRESH),
+        ])
+        .await;
+        let store = RefusedPlanStore::new();
+        let error = ask_plan(&store, &base_url).await.expect_err("refused");
+        assert_eq!(
+            crate::post_process_failure::classify_llm_error(&error, false),
+            crate::post_process_failure::FailureReason::SignInExpired,
+            "{error}"
+        );
+        assert!(store.was_expired());
+        assert_eq!(plan_requests(&seen).len(), 2);
+    }
+
+    #[tokio::test]
+    async fn a_plan_that_may_not_be_used_is_not_renewed() {
+        let (base_url, seen) = serve_plan(vec![(
+            "403 Forbidden",
+            "application/json",
+            PLAN_NOT_ELIGIBLE_403,
+        )])
+        .await;
+        let store = RefusedPlanStore::new();
+        let error = ask_plan(&store, &base_url).await.expect_err("not eligible");
+        assert_eq!(
+            crate::post_process_failure::classify_llm_error(&error, false),
+            crate::post_process_failure::FailureReason::PlanNotEligible
+        );
+        assert_eq!(plan_requests(&seen).len(), 1, "no renewal");
+        assert!(!store.was_expired());
+    }
+
+    /// DanyWhere (review of 2026-11-27, N18): the requests name DanyWhere's
+    /// own repository, not Handy's.
+    #[test]
+    fn the_requests_name_danywheres_repository() {
+        let headers = build_headers(&provider("openrouter", "http://127.0.0.1:9"), "").unwrap();
+        assert_eq!(
+            headers.get(REFERER).and_then(|value| value.to_str().ok()),
+            Some("https://github.com/yaccob/DanyWhere")
+        );
+        assert_eq!(
+            headers
+                .get(USER_AGENT)
+                .and_then(|value| value.to_str().ok()),
+            Some("DanyWhere/1.0 (+https://github.com/yaccob/DanyWhere)")
+        );
+        assert_eq!(headers.get("X-Title").unwrap(), "DanyWhere");
     }
 }

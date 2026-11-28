@@ -321,6 +321,23 @@ async fn post_process_transcription(
     }
 }
 
+/// DanyWhere: the reasons of a failed structured request that a second
+/// request without the schema would meet as well (lead, 2026-11-26): a
+/// limit, an ended sign-in, a plan that may not be used.
+fn ends_without_fallback(reason: &FailureReason) -> bool {
+    matches!(
+        reason,
+        FailureReason::PlanLimit
+            | FailureReason::FreeBusy
+            | FailureReason::FreeDailyLimit
+            | FailureReason::NoCredit
+            | FailureReason::KeyLimit
+            | FailureReason::RateLimited
+            | FailureReason::SignInExpired
+            | FailureReason::PlanNotEligible
+    )
+}
+
 /// Handy's post-processing. DanyWhere: sets `effort_refused` when the reply
 /// came without the profile's effort (`llm_client::Completion`).
 async fn post_process_outcome(
@@ -337,6 +354,15 @@ async fn post_process_outcome(
     if is_blank_transcription(transcription) && spoken_instruction.is_none() {
         debug!("Post-processing skipped because the transcription is empty");
         return PostProcessOutcome::Skipped;
+    }
+
+    // DanyWhere: a provider, its model and its access, a key or the sign-in
+    // (`post_process_setup`): without them the dictation doesn't leave the
+    // computer, and the notice says what is missing, or that the setup was
+    // never finished (review of 2026-11-27, M7).
+    if let Some(reason) = crate::post_process_setup::missing_reason(settings) {
+        debug!("Post-processing skipped because it is not set up ({reason:?})");
+        return failed(settings, reason);
     }
 
     let provider = match settings.active_post_process_provider().cloned() {
@@ -404,10 +430,21 @@ async fn post_process_outcome(
     let reasoning = crate::llm_client::ReasoningRequest {
         disable_by_default: matches!(provider.id.as_str(), "custom" | "openrouter"),
         effort: crate::post_process_effort::for_request(settings, &provider, &model),
+        // DanyWhere: what OpenRouter's sign-in says the request needs.
+        extra_fields: crate::post_process_signin::commands::openrouter_request_fields(
+            settings,
+            &provider.id,
+        ),
     };
     if let Some(effort) = &reasoning.effort {
         log::info!("Post-processing with effort '{effort}'");
     }
+
+    // DanyWhere: once this request is over, however it ends, OpenRouter's
+    // tier is asked again in the background when the key is on the free
+    // tier (`openrouter_tier`); the dictation doesn't wait for it.
+    let _tier_check =
+        crate::post_process_signin::openrouter_tier::AfterRequest::new(settings, &provider.id);
 
     if provider.supports_structured_output {
         debug!("Using structured outputs for provider '{}'", provider.id);
@@ -527,9 +564,31 @@ async fn post_process_outcome(
                 return failed(settings, FailureReason::EmptyReply);
             }
             Err(e) => {
+                // DanyWhere (lead, 2026-11-26): a limit, an ended sign-in
+                // or a plan that may not be used fails the request without
+                // the schema too; only a schema not taken is worth one.
+                let reason =
+                    crate::post_process_failure::classify_llm_error(&e, !api_key.trim().is_empty());
+                // DanyWhere: a 429 on OpenRouter's free tier may be the
+                // day's limit (`openrouter_tier::refine_failure`).
+                let reason = crate::post_process_signin::openrouter_tier::refine_failure(
+                    settings, &provider, &e, reason,
+                )
+                .await;
+                if ends_without_fallback(&reason) {
+                    warn!(
+                        "Structured output failed for provider '{}' ({:?}): {}. Not asking again without it.",
+                        provider.id,
+                        reason,
+                        crate::post_process_failure::redact_secrets(&e)
+                    );
+                    return failed(settings, reason);
+                }
+                // DanyWhere: without the account's id (`redact_secrets`).
                 warn!(
                     "Structured output failed for provider '{}': {}. Falling back to legacy mode.",
-                    provider.id, e
+                    provider.id,
+                    crate::post_process_failure::redact_secrets(&e)
                 );
                 // Fall through to legacy mode below
             }
@@ -578,13 +637,16 @@ async fn post_process_outcome(
             error!(
                 "LLM post-processing failed for provider '{}': {}. Falling back to original transcription.",
                 provider.id,
-                e
+                crate::post_process_failure::redact_secrets(&e)
             );
-            // DanyWhere: the notice names why (`post_process_failure`).
-            failed(
-                settings,
-                crate::post_process_failure::classify_llm_error(&e, api_key_set),
+            // DanyWhere: the notice names why (`post_process_failure`), a
+            // 429 on OpenRouter's free tier after asking its key info.
+            let reason = crate::post_process_failure::classify_llm_error(&e, api_key_set);
+            let reason = crate::post_process_signin::openrouter_tier::refine_failure(
+                settings, &provider, &e, reason,
             )
+            .await;
+            failed(settings, reason)
         }
     }
 }
@@ -695,11 +757,16 @@ pub(crate) async fn process_transcription_with_settings(
                 crate::prompt_library::request_names(&prompts),
             )
         };
-        let context_block = if is_blank_transcription(&final_text) && spoken_instruction.is_none() {
-            None
-        } else {
-            context_for(&instructions)
-        };
+        // DanyWhere: nor before post-processing is set up, when nothing is
+        // sent (`post_process_setup`).
+        let set_up = crate::post_process_setup::post_process_ready(settings)
+            == crate::post_process_setup::Readiness::Ready;
+        let context_block =
+            if !set_up || (is_blank_transcription(&final_text) && spoken_instruction.is_none()) {
+                None
+            } else {
+                context_for(&instructions)
+            };
         // A reply that's blank once cleaned is no better than none.
         let report = post_process_within_time_limit(
             settings,
@@ -1010,13 +1077,20 @@ mod tests {
         let provider_id = provider.id.clone();
         settings
             .post_process_models
-            .insert(provider_id, "model".to_string());
+            .insert(provider_id.clone(), "model".to_string());
+        // DanyWhere: the provider needs a key (`post_process_setup`).
+        settings
+            .post_process_api_keys
+            .insert(provider_id, "sk-test".to_string());
         // DanyWhere: the first prompt of the library is the active one.
         settings.post_process_prompt_order =
             crate::prompt_library::default_order(&settings.post_process_prompts);
         if let Some(first) = settings.post_process_prompt_order.first_mut() {
             first.active = true;
         }
+        // DanyWhere: set up through the setup, so a missing part is named
+        // as such (`post_process_setup::missing_reason`).
+        settings.post_process_setup.finished = true;
         settings
     }
 
@@ -1351,6 +1425,140 @@ mod tests {
         );
         let body = bodies.recv_timeout(Duration::from_secs(5)).unwrap();
         assert_eq!(body["reasoning_effort"], "high", "{body}");
+    }
+
+    // DanyWhere (lead, 2026-11-26): a structured request that fails for a
+    // limit is not sent once more without the schema; only a schema the
+    // provider doesn't take falls back to the single message.
+
+    const OUT_OF_QUOTA: &str = r#"{"error":{"message":"You exceeded your current quota, please check your plan and billing details.","type":"insufficient_quota","param":null,"code":"insufficient_quota"}}"#;
+    const TOKENS_PER_MINUTE: &str = r#"{"error":{"message":"Rate limit reached for model `openai/gpt-oss-120b` in organization `org_test` service tier `on_demand` on tokens per minute (TPM): Limit 8000, Used 5959, Requested 3039. Please try again in 22.5s.","type":"tokens","code":"rate_limit_exceeded"}}"#;
+    const PLAN_USED_UP: &str = r#"{"error":{"code":"subscription_sharing_usage_limit_exceeded","message":"You have reached your plan's usage limit."}}"#;
+    const SCHEMA_REFUSED: &str = r#"{"error":{"message":"Invalid parameter: 'response_format' of type 'json_schema' is not supported with this model.","type":"invalid_request_error","param":"response_format","code":null}}"#;
+
+    /// [`post_process_settings`] with structured output.
+    fn structured_settings(base_url: &str) -> AppSettings {
+        let mut settings = post_process_settings(base_url);
+        let id = settings.post_process_provider_id.clone();
+        if let Some(provider) = settings
+            .post_process_providers
+            .iter_mut()
+            .find(|provider| provider.id == id)
+        {
+            provider.supports_structured_output = true;
+        }
+        settings
+    }
+
+    #[test]
+    fn a_limit_on_the_structured_request_is_not_asked_again_without_the_schema() {
+        for (body, reason) in [
+            (OUT_OF_QUOTA, FailureReason::NoCredit),
+            (TOKENS_PER_MINUTE, FailureReason::RateLimited),
+            (PLAN_USED_UP, FailureReason::PlanLimit),
+        ] {
+            let (url, bodies) =
+                serve_in_turn(vec![("429 Too Many Requests", body), ("200 OK", POLISHED)]);
+            let settings = structured_settings(&url);
+            assert_eq!(
+                run_post_process(&settings, "hello"),
+                failed(&settings, reason),
+                "{body}"
+            );
+            let first = bodies.recv_timeout(Duration::from_secs(5)).unwrap();
+            assert!(first.get("response_format").is_some(), "{first}");
+            assert!(
+                bodies.recv_timeout(Duration::from_millis(300)).is_err(),
+                "a second request after {body}"
+            );
+        }
+    }
+
+    /// DanyWhere: settings that post-process through OpenRouter at
+    /// `site` (a fake server: requests to `{site}/api/v1/…`), connected
+    /// through the sign-in on the free tier, with the single message.
+    fn openrouter_free_settings(site: &str) -> AppSettings {
+        let mut settings = post_process_settings(site);
+        settings.post_process_provider_id = "openrouter".to_string();
+        let provider = settings
+            .post_process_providers
+            .iter_mut()
+            .find(|provider| provider.id == "openrouter")
+            .expect("OpenRouter is a provider");
+        provider.base_url = format!("{site}/api/v1");
+        provider.supports_structured_output = false;
+        settings.post_process_models.insert(
+            "openrouter".to_string(),
+            "nvidia/nemotron-3.5-super-vl:free".to_string(),
+        );
+        settings
+            .post_process_api_keys
+            .insert("openrouter".to_string(), "sk-or-v1-test".to_string());
+        settings.openrouter_connection = Some(crate::post_process_setup::OpenRouterConnection {
+            free_tier: true,
+            limit_usd: Some(10.0),
+            free_models: vec!["nvidia/nemotron-3.5-super-vl:free".to_string()],
+            checked_at: 1_795_300_000,
+            paid_only: false,
+            free_only: false,
+        });
+        settings
+    }
+
+    /// OpenRouter's own rate limit, which doesn't say which limit.
+    const OPENROUTER_RATE_429: &str = r#"{"error":{"code":429,"message":"Rate limit exceeded","metadata":{"error_type":"rate_limit_exceeded"}}}"#;
+    /// A free model busy at its provider (2026-11-26).
+    const OPENROUTER_BUSY_429: &str = r#"{"error":{"message":"Provider returned error","code":429,"metadata":{"raw":"nvidia/nemotron-3.5-super-vl:free is temporarily rate-limited upstream.","provider_name":"Nvidia","limit_source":"upstream_provider_shared_pool"}}}"#;
+    /// `GET /api/v1/key` with no free request left today, and with some.
+    const KEY_NONE_LEFT: &str = r#"{"data":{"label":"sk-or-v1-abc...xyz","limit":10,"limit_remaining":10,"usage":0,"is_free_tier":true,"free_model_daily_requests":{"used":50,"limit":50,"remaining":0}}}"#;
+    const KEY_SOME_LEFT: &str = r#"{"data":{"label":"sk-or-v1-abc...xyz","limit":10,"limit_remaining":10,"usage":0,"is_free_tier":true,"free_model_daily_requests":{"used":43,"limit":50,"remaining":7}}}"#;
+
+    #[test]
+    fn a_free_openrouter_429_with_no_free_request_left_is_the_days_limit() {
+        let (url, bodies) = serve_in_turn(vec![
+            ("429 Too Many Requests", OPENROUTER_RATE_429),
+            ("200 OK", KEY_NONE_LEFT),
+        ]);
+        let settings = openrouter_free_settings(&url);
+        assert_eq!(
+            run_post_process(&settings, "hello"),
+            failed(&settings, FailureReason::FreeDailyLimit)
+        );
+        let chat = bodies.recv_timeout(Duration::from_secs(5)).unwrap();
+        assert!(chat.get("messages").is_some(), "{chat}");
+        // The key info: a GET without a body.
+        let key = bodies.recv_timeout(Duration::from_secs(5)).unwrap();
+        assert_eq!(key, serde_json::Value::Null);
+    }
+
+    #[test]
+    fn a_free_openrouter_429_with_free_requests_left_keeps_its_reason() {
+        let (url, _) = serve_in_turn(vec![
+            ("429 Too Many Requests", OPENROUTER_BUSY_429),
+            ("200 OK", KEY_SOME_LEFT),
+        ]);
+        let settings = openrouter_free_settings(&url);
+        assert_eq!(
+            run_post_process(&settings, "hello"),
+            failed(&settings, FailureReason::FreeBusy)
+        );
+    }
+
+    #[test]
+    fn a_schema_the_provider_does_not_take_falls_back_to_the_single_message() {
+        let (url, bodies) = serve_in_turn(vec![
+            ("400 Bad Request", SCHEMA_REFUSED),
+            ("200 OK", POLISHED),
+        ]);
+        let settings = structured_settings(&url);
+        assert_eq!(
+            run_post_process(&settings, "hello"),
+            PostProcessOutcome::Done("polished".to_string())
+        );
+        let first = bodies.recv_timeout(Duration::from_secs(5)).unwrap();
+        assert!(first.get("response_format").is_some(), "{first}");
+        let second = bodies.recv_timeout(Duration::from_secs(5)).unwrap();
+        assert!(second.get("response_format").is_none(), "{second}");
     }
 
     #[test]
@@ -1737,7 +1945,11 @@ mod tests {
     fn a_refusal_says_whether_the_key_was_missing_or_refused() {
         let refusal =
             r#"{"error":{"message":"Incorrect API key provided","code":"invalid_api_key"}}"#;
-        let settings = post_process_settings(&serve_once_with("401 Unauthorized", refusal));
+        // A server of one's own needs no key until it refuses without one.
+        let settings = on_own_server(post_process_settings(&serve_once_with(
+            "401 Unauthorized",
+            refusal,
+        )));
         assert_eq!(
             run_post_process(&settings, "hello"),
             failed(&settings, FailureReason::NoApiKey)
@@ -1752,6 +1964,139 @@ mod tests {
             run_post_process(&settings, "hello"),
             failed(&settings, FailureReason::KeyRefused)
         );
+    }
+
+    /// `settings` (from [`post_process_settings`]) post-processing with the
+    /// custom provider at the same address, with the same model, no key.
+    fn on_own_server(mut settings: AppSettings) -> AppSettings {
+        let from = settings
+            .active_post_process_provider()
+            .cloned()
+            .expect("a provider");
+        let custom = settings
+            .post_process_provider_mut("custom")
+            .expect("the custom provider");
+        custom.base_url = from.base_url;
+        custom.supports_structured_output = false;
+        settings.post_process_provider_id = "custom".to_string();
+        settings
+            .post_process_models
+            .insert("custom".to_string(), "model".to_string());
+        settings
+    }
+
+    /// DanyWhere: the post-processing setup (sidecar note
+    /// `2026-11-26_2250_nachbearbeitung-einstieg-umsetzung`, section 2): a
+    /// provider that needs a key isn't asked without one, so the dictation
+    /// doesn't leave the computer; the notice says the key is missing.
+    #[test]
+    fn a_provider_without_its_key_is_not_asked() {
+        let (url, request) = serve_once_capturing(POLISHED);
+        let mut settings = post_process_settings(&url);
+        let provider_id = settings.post_process_provider_id.clone();
+        settings
+            .post_process_api_keys
+            .insert(provider_id, "  ".to_string());
+        assert_eq!(
+            run_post_process(&settings, "hello"),
+            failed(&settings, FailureReason::NoApiKey)
+        );
+        assert!(
+            request.recv_timeout(Duration::from_millis(300)).is_err(),
+            "nothing left the computer"
+        );
+    }
+
+    /// Review of 2026-11-27, M7: before the setup was ever finished, what
+    /// is missing is the setup, not a part of a provider the user never
+    /// chose (OpenAI without a model on a new installation).
+    #[test]
+    fn before_the_setup_is_finished_a_dictation_says_it_is_not_set_up() {
+        let (url, request) = serve_once_capturing(POLISHED);
+        let mut new_install = post_process_settings(&url);
+        new_install.post_process_setup.finished = false;
+        new_install.post_process_models.clear();
+        new_install.post_process_api_keys.clear();
+        assert_eq!(
+            run_post_process(&new_install, "hello"),
+            failed(&new_install, FailureReason::NotSetUp)
+        );
+        let mut no_key = post_process_settings(&url);
+        no_key.post_process_setup.finished = false;
+        no_key.post_process_api_keys.clear();
+        assert_eq!(
+            run_post_process(&no_key, "hello"),
+            failed(&no_key, FailureReason::NotSetUp)
+        );
+        assert!(
+            request.recv_timeout(Duration::from_millis(300)).is_err(),
+            "nothing left the computer"
+        );
+        // Set up by hand before the setup existed: it post-processes.
+        let mut by_hand = post_process_settings(&serve_once(POLISHED));
+        by_hand.post_process_setup.finished = false;
+        assert_eq!(
+            run_post_process(&by_hand, "hello"),
+            PostProcessOutcome::Done("polished".to_string())
+        );
+    }
+
+    /// Review of 2026-11-27, M2: ChatGPT's plan without its sign-in (signed
+    /// out, say) asks to sign in again, not for an API key.
+    #[test]
+    fn the_plan_without_its_sign_in_names_the_missing_sign_in() {
+        let (url, request) = serve_once_capturing(POLISHED);
+        let mut settings = post_process_settings(&url);
+        settings.post_process_provider_id = "chatgpt".to_string();
+        settings
+            .post_process_models
+            .insert("chatgpt".to_string(), "gpt-6.2-sol".to_string());
+        settings.chatgpt_signed_in = false;
+        assert!(settings.active_post_process_provider().is_some());
+        assert_eq!(
+            run_post_process(&settings, "hello"),
+            failed(&settings, FailureReason::NoSignIn)
+        );
+        assert!(
+            request.recv_timeout(Duration::from_millis(300)).is_err(),
+            "nothing left the computer"
+        );
+    }
+
+    /// Without the setup no context is gathered either, and the text goes
+    /// out as it was heard, without the spoken instruction.
+    #[test]
+    fn without_the_setup_the_text_goes_out_as_heard() {
+        let mut settings = post_process_settings(NOWHERE);
+        settings.post_process_provider_id = "gone".to_string();
+        let (processed, asked) = process_with_instruction(
+            &settings,
+            "hello",
+            Some("translate it into Polish"),
+            true,
+            Some(marker_block()),
+        );
+        assert_eq!(processed.final_text, "hello");
+        assert_eq!(processed.post_processed_text, None);
+        assert_eq!(
+            processed.post_process_failure,
+            Some(PostProcessFailure::new(
+                &settings,
+                FailureReason::NoProvider
+            ))
+        );
+        assert!(asked.is_empty(), "no context gathered: {asked:?}");
+        assert!(processed.context_entry_ids.is_empty());
+
+        let mut no_key = post_process_settings(NOWHERE);
+        no_key.post_process_api_keys.clear();
+        let (processed, asked) = process_with(&no_key, "hello", true, Some(marker_block()));
+        assert_eq!(processed.final_text, "hello");
+        assert_eq!(
+            processed.post_process_failure.map(|failure| failure.reason),
+            Some(FailureReason::NoApiKey)
+        );
+        assert!(asked.is_empty(), "no context gathered: {asked:?}");
     }
 
     #[test]
@@ -2431,6 +2776,10 @@ mod tests {
             settings
                 .post_process_models
                 .insert(provider_id.clone(), model.clone());
+            // DanyWhere: a provider that needs a key is asked only with one.
+            settings
+                .post_process_api_keys
+                .insert(provider_id.clone(), "sk-probe".to_string());
             if let Some(effort) = &effort {
                 settings
                     .post_process_efforts

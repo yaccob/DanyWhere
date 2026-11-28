@@ -40,7 +40,8 @@
     "openChapter": "פתיחת המדריך: {{chapter}}",
     "chapters": {
       "startAndEndShortcuts": "קיצורי התחלה וסיום",
-      "defaultsAndProfiles": "הגדרות בסיס ופרופילים"
+      "defaultsAndProfiles": "הגדרות בסיס ופרופילים",
+      "postProcessingSetup": "הגדרת העיבוד המשלים"
     },
     "unavailable": "גרסה זו של DanyWhere אינה כוללת את המדריך."
   },
@@ -256,6 +257,12 @@
     "linux": {
       "tryIt": "לא עובד? <guide>מדריך ההתקנה ללינוקס</guide>",
       "done": "לא עובד באפליקציות אחרות? <guide>מדריך ההתקנה ללינוקס</guide>"
+    },
+    "postProcessSetup": {
+      "title": "שיפור הטקסטים שלך",
+      "sub": "מודל שפה יכול ללטש כל הכתבה: סימני פיסוק, מילות מילוי, פקודות מוכתבות, שמות. שתי שאלות קצרות, וזה מוגדר.",
+      "later": "מאוחר יותר",
+      "laterHint": "אפשר למצוא את זה מאוחר יותר בהגדרות בסיס › עיבוד משלים."
     }
   },
   "modelTable": {
@@ -521,7 +528,7 @@
       "onlyWhileRecording": "תפוס רק בזמן הקלטה.",
       "sameAsStartOrHold": "אותו צירוף מקשים כמו של קיצור התחלה או קיצור לחיצה ארוכה: בלי הקלטה הוא מתחיל הקלטה, בזמן הקלטה הוא עובר להוראה.",
       "notTakenNever": "העיבוד המשלים מוגדר ל„{{mode}}”: קיצורי ההוראה אינם תפוסים. בחרו הגדרה אחרת עבור „{{setting}}” תחת מתקדם.",
-      "notTakenNoProvider": "לא הוגדר ספק לעיבוד משלים עם מודל: קיצורי ההוראה אינם תפוסים עד שיוגדר אחד.",
+      "notSetUp": "העיבוד המשלים עדיין לא הוגדר: אחרי קיצור הוראה הטקסט מוכנס כפי שנשמע, בלי ההוראה, והודעה מציעה להגדיר אותו.",
       "add": "הוספת קיצור הוראה",
       "addPressKeys": "לחצו על צירוף המקשים לקיצור ההוראה החדש",
       "refName": "קיצור הוראה {{name}}",
@@ -1105,6 +1112,164 @@
           "withInstructionKey": "עם קיצור הוראה",
           "always": "תמיד"
         }
+      },
+      "setup": {
+        "title": "שיפור הטקסטים שלך",
+        "intro": "שתי שאלות קצרות, והכול מוגדר. אפשר לשנות את התשובות בכל עת.",
+        "later": "מאוחר יותר",
+        "knowMyWay": "למתקדמים:",
+        "allProviders": "כל הספקים …",
+        "notSetUp": "העיבוד המשלים עדיין לא הוגדר.",
+        "setUp": "הגדרה",
+        "keepCurrent": "להשאיר את ההגדרה הנוכחית",
+        "q1": {
+          "title": "1. לאן מותר לטקסטים שלך להגיע?",
+          "free_services": {
+            "label": "גם לשירותים חינמיים.",
+            "hint": "הם עשויים לשמור אותם ולהשתמש בהם כדי לשפר את הבינה המלאכותית שלהם."
+          },
+          "not_kept": {
+            "label": "רק לשירות שמעבד אותם ולא שומר אותם.",
+            "hint": "זה עובר דרך מנוי או עולה כמה דולרים."
+          },
+          "nowhere": {
+            "label": "לשום מקום.",
+            "hint": "הם נשארים במחשב הזה."
+          }
+        },
+        "q2": {
+          "title": "2. יש לך כבר אחד מהמנויים האלה?",
+          "none": "אף אחד מהם"
+        },
+        "q3": {
+          "title": "3. איך ממשיכים?",
+          "credit": "טעינה חד־פעמית החל מ-5 דולר, בלי מנוי",
+          "groq": "בחינם עם Groq, עם מפתח להעתקה",
+          "this_computer": "במחשב הזה (איטי יותר, החל מ-16 GB זיכרון)",
+          "tooLittleMemoryMac": "במחשב הזה: נדרשים 16 GB, ול-Mac הזה יש {{memory}}.",
+          "tooLittleMemory": "במחשב הזה: נדרשים 16 GB, ולמחשב הזה יש {{memory}}."
+        },
+        "openrouter": {
+          "freeTitle": "הצעה: OpenRouter, בחינם",
+          "freeBody": "חשבון ב-OpenRouter, לחיצה אחת על „Authorize”, וזהו. עד 50 הכתבות ביום.",
+          "creditTitle": "הצעה: OpenRouter עם יתרה",
+          "creditBody": "חשבון ב-OpenRouter, לחיצה אחת על „Authorize”, ואז טעינה חד־פעמית החל מ-5 דולר. DanyWhere בוחר מודל שלא משתמש בטקסטים שלך לאימון. 5 דולר מספיקים לאלפי הכתבות, ושום דבר לא מתחדש.",
+          "tipAccount": "כדאי להירשם עם Google או GitHub: כך אין צורך בסיסמה ובקוד במייל.",
+          "tipPayment": "חדשים ב-OpenRouter? מסך הפתיחה מבקש אמצעי תשלום. אפשר לבחור „I'll do this later”: המודלים החינמיים לא צריכים אותו. אחר כך חוזרים לכאן ולוחצים על „לפתוח את הדף שוב”.",
+          "tipPaymentCredit": "חדשים ב-OpenRouter? מסך הפתיחה מבקש אמצעי תשלום, שבכל מקרה נדרש לטעינת יתרה. אחר כך חוזרים לכאן ולוחצים על „לפתוח את הדף שוב”. כל עוד אין בחשבון יתרה, DanyWhere לא שולח דבר.",
+          "connect": "חיבור ל-OpenRouter"
+        },
+        "chatgpt": {
+          "title": "הצעה: המנוי שלך ל-ChatGPT",
+          "body": "עובד דרך המנוי שלך ל-ChatGPT: בלי מפתח ובלי עלות נוספת. יש להתחבר ל-ChatGPT בדפדפן ולאשר גישה ל-DanyWhere.",
+          "firstUse": "שימוש זכאי באפליקציה הזו עובר דרך המנוי שלך ל-ChatGPT. את השימוש מנהלים בהגדרות ChatGPT שלך.",
+          "dataNotDescribed": "OpenAI לא מתארת איך היא מטפלת בבקשות שהמנוי שלך משלם עליהן.",
+          "continue": "המשך עם ChatGPT"
+        },
+        "guidedKey": {
+          "title": "הצעה: מפתח מ-{{service}}",
+          "paste": "להדביק כאן את המפתח",
+          "fieldLabel": "מפתח מ-{{service}}",
+          "check": "בדיקה",
+          "checking": "בודק …",
+          "works": "המפתח עובד."
+        },
+        "guides": {
+          "copyKey": "מעתיקים את המפתח ומדביקים אותו כאן.",
+          "copyToken": "מעתיקים את הטוקן ומדביקים אותו כאן.",
+          "anthropic": {
+            "credits": "מקשרים ב-claude.ai את יתרת ה-API של המנוי. זה אפשרי אחרי שבעה ימים במנוי, ואין צורך להוסיף כרטיס.",
+            "creditsLink": "איך זה עובד",
+            "key": "יוצרים מפתח ב-Claude Console, בארגון שקושר.",
+            "keyLink": "פתיחת ה-Console"
+          },
+          "gemini": {
+            "credits": "ב-Google AI Studio בוחרים „Claim free API credits” בתפריט שבצד שמאל (או „Redeem” אם כבר יש חשבון חיוב) ומגדירים חיוב. חשבון חיוב חדש דורש אמצעי תשלום ותשלום מראש של 5 דולר לפחות.",
+            "creditsLink": "פתיחת AI Studio",
+            "key": "משתמשים במפתח ה-API של הפרויקט שהוגדר לו חיוב (כברירת מחדל „Default Gemini Project”), או יוצרים בו מפתח.",
+            "keyLink": "מפתחות API"
+          },
+          "huggingface": {
+            "key": "יוצרים טוקן גישה עם ההרשאה „Make calls to Inference Providers”.",
+            "keyLink": "פתיחת הטוקנים"
+          },
+          "ollama_cloud": {
+            "key": "יוצרים מפתח בחשבון Ollama שלך.",
+            "keyLink": "פתיחת המפתחות"
+          },
+          "groq": {
+            "account": "מתחברים ל-GroqCloud, למשל עם „Continue with Google”. אין צורך בכרטיס.",
+            "accountLink": "פתיחת GroqCloud",
+            "key": "בוחרים „Create API Key”. Groq מבקשת לאשר בלחיצה שמדובר באדם."
+          }
+        },
+        "local": {
+          "laterTitle": "במחשב הזה: יגיע בגרסה מאוחרת יותר",
+          "laterBody": "בהמשך DanyWhere יביא מודל שרץ במחשב הזה. עד אז אפשר להשתמש בשרת משלך, למשל Ollama או LM Studio במחשב הזה, או השרת של החברה שלך.",
+          "unavailableTitle": "זה לא אפשרי במחשב הזה",
+          "unavailableBodyMac": "מודל במחשב הזה צריך 16 GB זיכרון, ול-Mac הזה יש {{memory}}. אפשר להשתמש בשרת משלך, למשל השרת של החברה שלך.",
+          "unavailableBody": "מודל במחשב הזה צריך 16 GB זיכרון, ולמחשב הזה יש {{memory}}. אפשר להשתמש בשרת משלך, למשל השרת של החברה שלך.",
+          "ownServer": "הגדרת שרת משלך",
+          "ownServerHint": "יש להזין למטה את הכתובת שלו ואת המודל.",
+          "ownServerLater": "שרת משלך אפשר להזין מאוחר יותר בהגדרות בסיס › עיבוד משלים, תחת „כל הספקים …”."
+        },
+        "signIn": {
+          "waiting": "ממתין לדפדפן …",
+          "title": "התחברות ל-{{provider}}",
+          "waitingHint": "יש לסיים בדפדפן. אם היה צורך להירשם קודם, לוחצים על „לפתוח את הדף שוב”.",
+          "reopen": "לפתוח את הדף שוב",
+          "cancel": "ביטול",
+          "failed": "ההתחברות לא הצליחה: {{error}}",
+          "timedOut": "ההתחברות המתינה 30 דקות ופג תוקפה.",
+          "denied": "הגישה לא אושרה.",
+          "notEligible": "לחשבון ChatGPT הזה אין מנוי ש-DanyWhere יכול להשתמש בו (Go, Plus, Pro או Business).",
+          "noFreeModel": "ל-OpenRouter אין כרגע מודל חינמי ש-DanyWhere יכול להשתמש בו. כדאי לנסות שוב מאוחר יותר, או לטעון יתרה פעם אחת במקום זאת.",
+          "unreachable": "{{provider}}: לא ניתן היה להתחבר. כדאי לבדוק את החיבור ולנסות שוב.",
+          "refused": "{{provider}}: ההתחברות נדחתה. כדאי לנסות שוב.",
+          "didNotWork": "ההתחברות לא הצליחה. כדאי לנסות שוב.",
+          "tryAgain": "לנסות שוב",
+          "browserSuccess": "הכול מוכן. אפשר לסגור את החלון הזה ולחזור ל-DanyWhere.",
+          "browserFailure": "זה לא הצליח. חוזרים ל-DanyWhere ומנסים שוב."
+        },
+        "connected": {
+          "title": "מחובר ל-{{provider}}",
+          "usingPlan": "עובד דרך המנוי שלך ל-ChatGPT",
+          "plan": "מנוי: {{plan}}",
+          "freeModels": "מודלים חינמיים, עד 50 הכתבות ביום",
+          "withCredit": "עם יתרה, מודל בלי אימון על הטקסטים",
+          "noCreditYet": "עדיין אין יתרה: DanyWhere לא שולח דבר עד לטעינת היתרה.",
+          "notToppedUp": "OpenRouter עדיין לא מציג יתרה. זה יכול לקחת דקה.",
+          "topUpCheckFailed": "לא ניתן היה לשאול את OpenRouter על היתרה.",
+          "keyLimit": "מגבלת ההוצאה של המפתח: {{limit}}",
+          "model": "מודל: {{model}}",
+          "picksModel": "DanyWhere בוחר את המודל.",
+          "tryIt": "לנסות",
+          "manageUsage": "ניהול השימוש",
+          "credit": "יתרה",
+          "topUp": "טעינת יתרה",
+          "toppedUp": "טענתי יתרה",
+          "disconnect": "ניתוק",
+          "disconnectConfirm": "יש ללחוץ שוב כדי להסיר את המפתח",
+          "keyStaysAtOpenRouter": "OpenRouter שומר את המפתח „DanyWhere” בין מפתחות ה-API שלך עד שמוחקים אותו שם.",
+          "revokeUnconfirmed": "OpenAI לא אישרה את ההתנתקות",
+          "revokeUnconfirmedDetail": "DanyWhere שכח את ההתחברות כאן. אפשר לבדוק את הגישה של DanyWhere בהגדרות ChatGPT שלך.",
+          "chatgptSettings": "הגדרות ChatGPT",
+          "answerAgain": "לענות שוב על השאלות",
+          "advanced": "מתקדם"
+        },
+        "sample": {
+          "title": "ניסיון",
+          "spoken": "נאמר: „{{text}}”",
+          "result": "תוצאה: „{{text}}”",
+          "text": "אממ אז אני אשלח לך את זה מחר פסיק בסדר סימן שאלה",
+          "running": "מנסה …",
+          "took": "{{seconds}} ש׳ עם {{model}}",
+          "failed": "הניסיון לא הצליח."
+        },
+        "errors": {
+          "disconnect": "לא נותק",
+          "reopen": "הדף לא נפתח שוב"
+        }
       }
     },
     "history": {
@@ -1275,7 +1440,8 @@
           "model": "מודל",
           "demo": "הדגמה",
           "try": "נסה",
-          "done": "הכול מוכן"
+          "done": "הכול מוכן",
+          "postProcessSetup": "שיפור הטקסטים שלך"
         }
       },
       "onboardingRun": {
@@ -1576,7 +1742,26 @@
       "emptyReply": "{{provider}}: התשובה לא הכילה טקסט.",
       "truncated": "התשובה נקטעה במגבלת הפלט של המודל.",
       "unavailable": "{{provider}}: לא זמין במחשב זה.",
-      "other": "שגיאה: {{error}}"
+      "other": "שגיאה: {{error}}",
+      "freeBusy": "{{provider}}: המודלים החינמיים עמוסים כרגע; כדאי לנסות שוב בעוד רגע.",
+      "freeDailyLimit": "{{provider}}: ההכתבות החינמיות להיום נגמרו (50 ביום); אפשר להמשיך מחר, או לטעון יתרה פעם אחת.",
+      "keyLimit": "{{provider}}: המפתח הגיע למגבלת ההוצאה; יש לשנות אותה שם.",
+      "planLimit": "{{provider}}: המנוי שלך הגיע למגבלת השימוש לעת עתה.",
+      "planNotEligible": "{{provider}}: המנוי שלך לא כולל שימוש באפליקציות אחרות.",
+      "signInExpired": "{{provider}}: תוקף ההתחברות פג; יש להתחבר מחדש.",
+      "noSignIn": "{{provider}}: אין התחברות.",
+      "notSetUp": "העיבוד המשלים עדיין לא הוגדר.",
+      "notSetUpTitle": "עיבוד משלים לא הוגדר",
+      "rateLimited": "{{provider}}: יש מגבלה על כמה אפשר לשלוח בדקה; כדאי לחכות רגע ולהכתיב שוב.",
+      "actions": {
+        "setUp": "הגדרה",
+        "topUp": "טעינת יתרה",
+        "credit": "יתרה",
+        "changeLimit": "שינוי המגבלה",
+        "manageUsage": "ניהול השימוש",
+        "changeSetup": "שינוי ההגדרה",
+        "signInAgain": "התחברות מחדש"
+      }
     },
     "appMissedShortcutTitle": "הועתק – נדרשת הפעלה מחדש",
     "appMissedShortcut": "{{app}} כבר היה פתוח כש־DanyWhere הגדיר את קיצור ההכתבה, ולכן יכיר אותו רק אחרי הפעלה מחדש. הטקסט נמצא בלוח.",

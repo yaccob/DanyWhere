@@ -40,7 +40,8 @@
     "openChapter": "Kılavuzu aç: {{chapter}}",
     "chapters": {
       "startAndEndShortcuts": "Başlatma ve Bitirme Kısayolları",
-      "defaultsAndProfiles": "Temel Ayarlar ve Profiller"
+      "defaultsAndProfiles": "Temel Ayarlar ve Profiller",
+      "postProcessingSetup": "Son İşlemi Ayarlama"
     },
     "unavailable": "DanyWhere'in bu sürümünde kılavuz bulunmuyor."
   },
@@ -256,6 +257,12 @@
     "linux": {
       "tryIt": "Çalışmıyor mu? <guide>Linux kurulum rehberi</guide>",
       "done": "Diğer uygulamalarda çalışmıyor mu? <guide>Linux kurulum rehberi</guide>"
+    },
+    "postProcessSetup": {
+      "title": "Metinlerinizi iyileştirin",
+      "sub": "Bir dil modeli her dikteyi toparlayabilir: noktalama işaretleri, dolgu kelimeleri, sesli komutlar, isimler. İki kısa soru, ardından her şey hazır.",
+      "later": "Daha sonra",
+      "laterHint": "Bunu daha sonra Temel Ayarlar › Son İşlem altında bulabilirsiniz."
     }
   },
   "modelTable": {
@@ -521,7 +528,7 @@
       "onlyWhileRecording": "Yalnızca kayıt sırasında kullanılır.",
       "sameAsStartOrHold": "Bir başlatma veya basılı tutma kısayoluyla aynı kombinasyon: kayıt yokken bir kayıt başlatır, kayıt sırasında talimata geçer.",
       "notTakenNever": "Son işlem “{{mode}}” olarak ayarlı: talimat kısayolları kullanılmaz. Gelişmiş altında “{{setting}}” için başka bir ayar seçin.",
-      "notTakenNoProvider": "Modeli seçilmiş bir son işlem sağlayıcısı ayarlanmadı: biri ayarlanana kadar talimat kısayolları kullanılmaz.",
+      "notSetUp": "Son işlem henüz ayarlanmadı: bir talimat kısayolundan sonra metin duyulduğu gibi, talimat olmadan eklenir ve bir bildirim son işlemi ayarlamayı önerir.",
       "add": "Talimat Kısayolu Ekle",
       "addPressKeys": "Yeni talimat kısayolu için tuş kombinasyonuna basın",
       "refName": "Talimat kısayolu {{name}}",
@@ -1105,6 +1112,164 @@
           "withInstructionKey": "Talimat kısayoluyla",
           "always": "Her zaman"
         }
+      },
+      "setup": {
+        "title": "Metinlerinizi İyileştirin",
+        "intro": "İki kısa soru, ardından her şey hazır. Yanıtlarınızı istediğiniz zaman değiştirebilirsiniz.",
+        "later": "Daha sonra",
+        "knowMyWay": "Bu işlerden anlıyorum:",
+        "allProviders": "Tüm sağlayıcılar …",
+        "notSetUp": "Son işlem henüz ayarlanmadı.",
+        "setUp": "Ayarla",
+        "keepCurrent": "Mevcut ayarı koru",
+        "q1": {
+          "title": "1. Metinleriniz nereye gidebilir?",
+          "free_services": {
+            "label": "Ücretsiz hizmetlere de.",
+            "hint": "Bu hizmetler metinleri saklayabilir ve yapay zekâlarını geliştirmek için kullanabilir."
+          },
+          "not_kept": {
+            "label": "Yalnızca metinleri işleyip saklamayan bir hizmete.",
+            "hint": "Bu bir abonelikle olur ya da birkaç dolara mal olur."
+          },
+          "nowhere": {
+            "label": "Hiçbir yere.",
+            "hint": "Metinler bu bilgisayarda kalır."
+          }
+        },
+        "q2": {
+          "title": "2. Bu aboneliklerden birine zaten sahip misiniz?",
+          "none": "Hiçbiri"
+        },
+        "q3": {
+          "title": "3. Nasıl devam edilsin?",
+          "credit": "Bir kerelik en az 5 $ kredi yükleme, abonelik yok",
+          "groq": "Groq ile ücretsiz, kopyalanacak bir anahtarla",
+          "this_computer": "Bu bilgisayarda (daha yavaş, en az 16 GB bellek)",
+          "tooLittleMemoryMac": "Bu bilgisayarda: 16 GB gerekir, bu Mac'te {{memory}} var.",
+          "tooLittleMemory": "Bu bilgisayarda: 16 GB gerekir, bu bilgisayarda {{memory}} var."
+        },
+        "openrouter": {
+          "freeTitle": "Öneri: OpenRouter, ücretsiz",
+          "freeBody": "Bir OpenRouter hesabı, “Authorize” düğmesine bir tıklama, hepsi bu. Günde 50 dikteye kadar.",
+          "creditTitle": "Öneri: OpenRouter, krediyle",
+          "creditBody": "Bir OpenRouter hesabı, “Authorize” düğmesine bir tıklama, ardından bir kerelik en az 5 $ kredi yükleme. DanyWhere, metinlerinizi eğitim için kullanmayan bir model seçer. 5 $ binlerce dikteye yeter ve hiçbir şey kendiliğinden yenilenmez.",
+          "tipAccount": "Google veya GitHub ile kaydolun: böylece parolaya ve e-postayla gelen koda gerek kalmaz.",
+          "tipPayment": "OpenRouter sizin için yeni mi? Karşılama ekranı bir ödeme yöntemi ister. “I'll do this later” seçeneğini seçebilirsiniz: ücretsiz modeller ödeme yöntemi gerektirmez. Ardından buraya dönüp “Sayfayı yeniden aç” düğmesine basın.",
+          "tipPaymentCredit": "OpenRouter sizin için yeni mi? Karşılama ekranı bir ödeme yöntemi ister; kredi yüklemek için zaten buna ihtiyacınız var. Ardından buraya dönüp “Sayfayı yeniden aç” düğmesine basın. Hesapta kredi olmadığı sürece DanyWhere hiçbir şey göndermez.",
+          "connect": "OpenRouter ile bağlan"
+        },
+        "chatgpt": {
+          "title": "Öneri: ChatGPT aboneliğiniz",
+          "body": "ChatGPT aboneliğiniz üzerinden çalışır: anahtar yok, ek ücret yok. Tarayıcıda ChatGPT hesabınızla oturum açın ve DanyWhere için izin verin.",
+          "firstUse": "Bu uygulamadaki uygun kullanım ChatGPT aboneliğinizden karşılanır. Kullanımı ChatGPT ayarlarınızdan yönetebilirsiniz.",
+          "dataNotDescribed": "OpenAI, aboneliğinizin ödediği istekleri nasıl işlediğini açıklamıyor.",
+          "continue": "ChatGPT ile devam et"
+        },
+        "guidedKey": {
+          "title": "Öneri: {{service}} anahtarı",
+          "paste": "Anahtarı buraya yapıştırın",
+          "fieldLabel": "{{service}} anahtarı",
+          "check": "Kontrol et",
+          "checking": "Kontrol ediliyor …",
+          "works": "Anahtar çalışıyor."
+        },
+        "guides": {
+          "copyKey": "Anahtarı kopyalayıp buraya yapıştırın.",
+          "copyToken": "Token'ı kopyalayıp buraya yapıştırın.",
+          "anthropic": {
+            "credits": "Aboneliğinizin API kredisini claude.ai üzerinde bağlayın. Bu, abonelikte yedi gün geçtikten sonra mümkündür ve bunun için kart eklemeniz gerekmez.",
+            "creditsLink": "Nasıl yapılır",
+            "key": "Claude Console üzerinde, bağladığınız kuruluşta bir anahtar oluşturun.",
+            "keyLink": "Console sayfasını aç"
+          },
+          "gemini": {
+            "credits": "Google AI Studio içinde soldaki menüden “Claim free API credits” seçeneğini seçin (zaten bir faturalandırma hesabınız varsa “Redeem”) ve faturalandırmayı ayarlayın. Yeni bir faturalandırma hesabı için bir ödeme yöntemi ve en az 5 $ ön ödeme gerekir.",
+            "creditsLink": "AI Studio sayfasını aç",
+            "key": "Faturalandırmayı ayarladığınız projenin API anahtarını kullanın (varsayılan olarak “Default Gemini Project”) ya da orada bir anahtar oluşturun.",
+            "keyLink": "API anahtarları"
+          },
+          "huggingface": {
+            "key": "“Make calls to Inference Providers” izniyle bir erişim token'ı oluşturun.",
+            "keyLink": "Token sayfasını aç"
+          },
+          "ollama_cloud": {
+            "key": "Ollama hesabınızda bir anahtar oluşturun.",
+            "keyLink": "Anahtarlar sayfasını aç"
+          },
+          "groq": {
+            "account": "GroqCloud üzerinde oturum açın, örneğin “Continue with Google” ile. Kart gerekmez.",
+            "accountLink": "GroqCloud sayfasını aç",
+            "key": "“Create API Key” seçeneğini seçin. Groq, insan olduğunuzu tek tıklamayla onaylamanızı ister."
+          }
+        },
+        "local": {
+          "laterTitle": "Bu bilgisayarda: sonraki bir sürümle gelecek",
+          "laterBody": "DanyWhere ileride bu bilgisayarda çalışan bir model getirecek. O zamana kadar kendi sunucunuzu kullanabilirsiniz; örneğin bu bilgisayarda Ollama ya da LM Studio veya şirketinizin sunucusu.",
+          "unavailableTitle": "Bu bilgisayarda mümkün değil",
+          "unavailableBodyMac": "Bu bilgisayarda çalışan bir model 16 GB bellek gerektirir; bu Mac'te {{memory}} var. Kendi sunucunuzu kullanabilirsiniz, örneğin şirketinizin sunucusunu.",
+          "unavailableBody": "Bu bilgisayarda çalışan bir model 16 GB bellek gerektirir; bu bilgisayarda {{memory}} var. Kendi sunucunuzu kullanabilirsiniz, örneğin şirketinizin sunucusunu.",
+          "ownServer": "Kendi sunucunuzu ayarlayın",
+          "ownServerHint": "Adresini ve modelini aşağıya girin.",
+          "ownServerLater": "Kendi sunucunuzu daha sonra Temel Ayarlar › Son İşlem altında, “Tüm sağlayıcılar …” içinde girebilirsiniz."
+        },
+        "signIn": {
+          "waiting": "Tarayıcı bekleniyor …",
+          "title": "{{provider}} oturumu",
+          "waitingHint": "İşlemi tarayıcıda tamamlayın. Önce kaydolmanız gerektiyse “Sayfayı yeniden aç” düğmesine basın.",
+          "reopen": "Sayfayı yeniden aç",
+          "cancel": "İptal",
+          "failed": "Oturum açma başarısız oldu: {{error}}",
+          "timedOut": "Oturum açma 30 dakika bekledi ve süresi doldu.",
+          "denied": "Erişime izin verilmedi.",
+          "notEligible": "Bu ChatGPT hesabında DanyWhere ile kullanılabilecek bir abonelik yok (Go, Plus, Pro veya Business).",
+          "noFreeModel": "OpenRouter'da şu anda DanyWhere ile kullanılabilecek ücretsiz bir model yok. Daha sonra tekrar deneyin ya da bunun yerine bir kez kredi yükleyin.",
+          "unreachable": "{{provider}}: bağlantı kurulamadı. Bağlantınızı kontrol edip tekrar deneyin.",
+          "refused": "{{provider}}: oturum açma reddedildi. Tekrar deneyin.",
+          "didNotWork": "Oturum açma başarısız oldu. Tekrar deneyin.",
+          "tryAgain": "Tekrar dene",
+          "browserSuccess": "Tamamlandı. Bu pencereyi kapatıp DanyWhere uygulamasına dönebilirsiniz.",
+          "browserFailure": "Bu işe yaramadı. DanyWhere uygulamasına dönüp tekrar deneyin."
+        },
+        "connected": {
+          "title": "Bağlandı: {{provider}}",
+          "usingPlan": "ChatGPT aboneliğiniz kullanılıyor",
+          "plan": "Abonelik: {{plan}}",
+          "freeModels": "Ücretsiz modeller, günde 50 dikteye kadar",
+          "withCredit": "Krediyle, metinlerinizle eğitilmeyen bir model",
+          "noCreditYet": "Henüz kredi yok: Siz kredi yükleyene kadar DanyWhere hiçbir şey göndermez.",
+          "notToppedUp": "OpenRouter henüz kredi göstermiyor. Bu bir dakika sürebilir.",
+          "topUpCheckFailed": "OpenRouter'a kredi sorulamadı.",
+          "keyLimit": "Anahtarın harcama sınırı: {{limit}}",
+          "model": "Model: {{model}}",
+          "picksModel": "Modeli DanyWhere seçer.",
+          "tryIt": "Dene",
+          "manageUsage": "Kullanımı yönet",
+          "credit": "Kredi",
+          "topUp": "Kredi yükle",
+          "toppedUp": "Kredi yükledim",
+          "disconnect": "Bağlantıyı kes",
+          "disconnectConfirm": "Anahtarı kaldırmak için yeniden tıklayın",
+          "keyStaysAtOpenRouter": "OpenRouter, “DanyWhere” anahtarını siz orada silene kadar API anahtarlarınız arasında tutar.",
+          "revokeUnconfirmed": "Oturum kapatma OpenAI tarafından onaylanmadı",
+          "revokeUnconfirmedDetail": "DanyWhere buradaki oturumu unuttu. DanyWhere'in erişimini ChatGPT ayarlarınızdan kontrol edebilirsiniz.",
+          "chatgptSettings": "ChatGPT Ayarları",
+          "answerAgain": "Soruları yeniden yanıtla",
+          "advanced": "Gelişmiş"
+        },
+        "sample": {
+          "title": "Deneme",
+          "spoken": "Söylenen: “{{text}}”",
+          "result": "Sonuç: “{{text}}”",
+          "text": "ııı yani bunu sana yarın gönderirim virgül tamam mı soru işareti",
+          "running": "Deneniyor …",
+          "took": "{{model}} ile {{seconds}} sn",
+          "failed": "Deneme başarısız oldu."
+        },
+        "errors": {
+          "disconnect": "Bağlantı kesilmedi",
+          "reopen": "Sayfa yeniden açılmadı"
+        }
       }
     },
     "history": {
@@ -1275,7 +1440,8 @@
           "model": "Model",
           "demo": "Demo",
           "try": "Deneyin",
-          "done": "Hazır"
+          "done": "Hazır",
+          "postProcessSetup": "Metinlerinizi İyileştirin"
         }
       },
       "onboardingRun": {
@@ -1576,7 +1742,26 @@
       "emptyReply": "{{provider}}: yanıtta metin yok.",
       "truncated": "Yanıt, modelin çıktı sınırında kesildi.",
       "unavailable": "{{provider}}: bu bilgisayarda kullanılamıyor.",
-      "other": "Hata: {{error}}"
+      "other": "Hata: {{error}}",
+      "freeBusy": "{{provider}}: ücretsiz modeller şu anda yoğun; birazdan tekrar deneyin.",
+      "freeDailyLimit": "{{provider}}: bugünkü ücretsiz dikteler bitti (günde 50); yarın devam edin ya da bir kez kredi yükleyin.",
+      "keyLimit": "{{provider}}: anahtarın harcama sınırına ulaşıldı; sınırı orada değiştirin.",
+      "planLimit": "{{provider}}: aboneliğinizin kullanım sınırına şimdilik ulaşıldı.",
+      "planNotEligible": "{{provider}}: aboneliğiniz diğer uygulamalarda kullanımı kapsamıyor.",
+      "signInExpired": "{{provider}}: oturumun süresi doldu; yeniden oturum açın.",
+      "noSignIn": "{{provider}}: oturum açmadınız.",
+      "notSetUp": "Son işlem henüz ayarlanmadı.",
+      "notSetUpTitle": "Son işlem ayarlanmadı",
+      "rateLimited": "{{provider}}: dakikada gönderilebilecek miktarı sınırlıyor; biraz bekleyip yeniden dikte edin.",
+      "actions": {
+        "setUp": "Ayarla",
+        "topUp": "Kredi yükle",
+        "credit": "Kredi",
+        "changeLimit": "Sınırı değiştir",
+        "manageUsage": "Kullanımı yönet",
+        "changeSetup": "Ayarı değiştir",
+        "signInAgain": "Yeniden oturum aç"
+      }
     },
     "appMissedShortcutTitle": "Kopyalandı – yeniden başlatın",
     "appMissedShortcut": "DanyWhere dikte kısayolunu ayarladığında {{app}} zaten açıktı, bu yüzden kısayolu ancak yeniden başlatıldıktan sonra tanır. Metin panoda.",

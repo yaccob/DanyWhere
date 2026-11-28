@@ -40,7 +40,8 @@
     "openChapter": "Åbn brugervejledningen: {{chapter}}",
     "chapters": {
       "startAndEndShortcuts": "Start- og afslutningsgenveje",
-      "defaultsAndProfiles": "Grundindstillinger og profiler"
+      "defaultsAndProfiles": "Grundindstillinger og profiler",
+      "postProcessingSetup": "Opsætning af efterbehandling"
     },
     "unavailable": "Denne udgave af DanyWhere har ingen brugervejledning."
   },
@@ -256,6 +257,12 @@
     "linux": {
       "tryIt": "Virker det ikke? <guide>Linux-opsætningsguide</guide>",
       "done": "Virker det ikke i andre apps? <guide>Linux-opsætningsguide</guide>"
+    },
+    "postProcessSetup": {
+      "title": "Få dine tekster forbedret",
+      "sub": "En sprogmodel kan pudse hver diktering af: tegnsætning, fyldord, dikterede kommandoer, navne. To korte spørgsmål, så er det sat op.",
+      "later": "Senere",
+      "laterHint": "Du finder det senere under Grundindstillinger › Efterbehandling."
     }
   },
   "modelTable": {
@@ -521,7 +528,7 @@
       "onlyWhileRecording": "Kun optaget under en optagelse.",
       "sameAsStartOrHold": "Samme tastekombination som en start- eller holdegenvej: uden optagelse starter den en, under en optagelse skifter den til instruktionen.",
       "notTakenNever": "Efterbehandling er sat til »{{mode}}«: instruktionsgenveje er ikke optaget. Vælg en anden indstilling for »{{setting}}« under Avanceret.",
-      "notTakenNoProvider": "Ingen udbyder til efterbehandling med en model er sat op: instruktionsgenveje er ikke optaget, før der er en.",
+      "notSetUp": "Efterbehandlingen er ikke sat op endnu: efter en instruktionsgenvej indsættes teksten, som den blev hørt, uden instruktionen, og en meddelelse tilbyder at sætte den op.",
       "add": "Tilføj instruktionsgenvej",
       "addPressKeys": "Tryk på tastekombinationen til den nye instruktionsgenvej",
       "refName": "Instruktionsgenvej {{name}}",
@@ -1105,6 +1112,164 @@
           "withInstructionKey": "Med instruktionsgenvej",
           "always": "Altid"
         }
+      },
+      "setup": {
+        "title": "Få dine tekster forbedret",
+        "intro": "To korte spørgsmål, så er alt sat op. Du kan altid ændre dine svar.",
+        "later": "Senere",
+        "knowMyWay": "Jeg kender det godt:",
+        "allProviders": "Alle udbydere …",
+        "notSetUp": "Efterbehandlingen er ikke sat op endnu.",
+        "setUp": "Sæt op",
+        "keepCurrent": "Behold den nuværende opsætning",
+        "q1": {
+          "title": "1. Hvor må dine tekster komme hen?",
+          "free_services": {
+            "label": "Også til gratis tjenester.",
+            "hint": "De må beholde dem og bruge dem til at forbedre deres AI."
+          },
+          "not_kept": {
+            "label": "Kun til en tjeneste, der behandler dem og ikke gemmer dem.",
+            "hint": "Det går via et abonnement eller koster et par dollars."
+          },
+          "nowhere": {
+            "label": "Ingen steder.",
+            "hint": "De bliver på denne computer."
+          }
+        },
+        "q2": {
+          "title": "2. Har du allerede et af disse abonnementer?",
+          "none": "Ingen af dem"
+        },
+        "q3": {
+          "title": "3. Hvordan skal det gå videre?",
+          "credit": "Fyld op én gang fra 5 $, uden abonnement",
+          "groq": "Gratis hos Groq, med en nøgle, du kopierer",
+          "this_computer": "På denne computer (langsommere, fra 16 GB hukommelse)",
+          "tooLittleMemoryMac": "På denne computer: kræver 16 GB, denne Mac har {{memory}}.",
+          "tooLittleMemory": "På denne computer: kræver 16 GB, denne computer har {{memory}}."
+        },
+        "openrouter": {
+          "freeTitle": "Forslag: OpenRouter, gratis",
+          "freeBody": "En konto hos OpenRouter, et klik på »Authorize«, færdig. Op til 50 dikteringer om dagen.",
+          "creditTitle": "Forslag: OpenRouter med kredit",
+          "creditBody": "En konto hos OpenRouter, et klik på »Authorize«, og fyld derefter op én gang fra 5 $. DanyWhere vælger en model, der ikke bruger dine tekster til træning. 5 $ rækker til tusindvis af dikteringer, og intet fornyes.",
+          "tipAccount": "Tilmeld dig med Google eller GitHub: så slipper du for en adgangskode og en kode på mail.",
+          "tipPayment": "Ny hos OpenRouter? Velkomsten beder om en betalingsmetode. Du kan vælge »I'll do this later«: de gratis modeller kræver ingen. Kom så tilbage hertil, og tryk på »Åbn siden igen«.",
+          "tipPaymentCredit": "Ny hos OpenRouter? Velkomsten beder om en betalingsmetode, som du alligevel skal bruge for at fylde op. Kom så tilbage hertil, og tryk på »Åbn siden igen«. Så længe kontoen ikke har kredit, sender DanyWhere intet.",
+          "connect": "Forbind med OpenRouter"
+        },
+        "chatgpt": {
+          "title": "Forslag: dit ChatGPT-abonnement",
+          "body": "Kører via dit ChatGPT-abonnement: ingen nøgle, ingen ekstra udgifter. Log ind på ChatGPT i browseren, og giv DanyWhere adgang.",
+          "firstUse": "Berettiget brug i denne app kører via dit ChatGPT-abonnement. Administrer brugen i dine ChatGPT-indstillinger.",
+          "dataNotDescribed": "OpenAI beskriver ikke, hvordan det behandler forespørgsler, som dit abonnement betaler for.",
+          "continue": "Fortsæt med ChatGPT"
+        },
+        "guidedKey": {
+          "title": "Forslag: en nøgle fra {{service}}",
+          "paste": "Indsæt nøglen her",
+          "fieldLabel": "Nøgle fra {{service}}",
+          "check": "Tjek",
+          "checking": "Tjekker …",
+          "works": "Nøglen virker."
+        },
+        "guides": {
+          "copyKey": "Kopiér nøglen, og indsæt den her.",
+          "copyToken": "Kopiér tokenet, og indsæt det her.",
+          "anthropic": {
+            "credits": "Tilknyt dit abonnements API-kredit i claude.ai. Det kan du efter syv dage med abonnementet, og du behøver ikke tilføje et kort.",
+            "creditsLink": "Sådan gør du",
+            "key": "Opret en nøgle i Claude Console, i den organisation, du har tilknyttet.",
+            "keyLink": "Åbn Console"
+          },
+          "gemini": {
+            "credits": "Vælg »Claim free API credits« i menuen til venstre i Google AI Studio (eller »Redeem«, hvis du allerede har en faktureringskonto), og konfigurer betaling. En ny faktureringskonto kræver en betalingsmetode og en forudbetaling på mindst 5 $.",
+            "creditsLink": "Åbn AI Studio",
+            "key": "Brug API-nøglen fra det projekt, du har konfigureret betaling for (som standard »Default Gemini Project«), eller opret en dér.",
+            "keyLink": "API-nøgler"
+          },
+          "huggingface": {
+            "key": "Opret et adgangstoken med tilladelsen »Make calls to Inference Providers«.",
+            "keyLink": "Åbn tokens"
+          },
+          "ollama_cloud": {
+            "key": "Opret en nøgle i din Ollama-konto.",
+            "keyLink": "Åbn nøgler"
+          },
+          "groq": {
+            "account": "Log ind på GroqCloud, fx med »Continue with Google«. Der kræves intet kort.",
+            "accountLink": "Åbn GroqCloud",
+            "key": "Vælg »Create API Key«. Groq beder dig bekræfte med et klik, at du er et menneske."
+          }
+        },
+        "local": {
+          "laterTitle": "På denne computer: kommer i en senere version",
+          "laterBody": "DanyWhere får senere en model, der kører på denne computer. Indtil da kan du bruge din egen server, fx Ollama eller LM Studio på denne computer eller din virksomheds.",
+          "unavailableTitle": "Det er ikke muligt på denne computer",
+          "unavailableBodyMac": "En model på denne computer kræver 16 GB hukommelse; denne Mac har {{memory}}. Din egen server virker, fx din virksomheds.",
+          "unavailableBody": "En model på denne computer kræver 16 GB hukommelse; denne computer har {{memory}}. Din egen server virker, fx din virksomheds.",
+          "ownServer": "Sæt din egen server op",
+          "ownServerHint": "Angiv dens adresse og model nedenfor.",
+          "ownServerLater": "Din egen server kan du angive senere under Grundindstillinger › Efterbehandling, bag »Alle udbydere …«."
+        },
+        "signIn": {
+          "waiting": "Venter på browseren …",
+          "title": "Login hos {{provider}}",
+          "waitingHint": "Gør det færdigt i browseren. Skulle du først oprette en konto, så tryk på »Åbn siden igen«.",
+          "reopen": "Åbn siden igen",
+          "cancel": "Annuller",
+          "failed": "Login lykkedes ikke: {{error}}",
+          "timedOut": "Login ventede i 30 minutter og er udløbet.",
+          "denied": "Adgang blev ikke tilladt.",
+          "notEligible": "Denne ChatGPT-konto har intet abonnement, som DanyWhere kan bruge (Go, Plus, Pro eller Business).",
+          "noFreeModel": "OpenRouter har lige nu ingen gratis model, som DanyWhere kan bruge. Prøv igen senere, eller fyld op én gang i stedet.",
+          "unreachable": "Kunne ikke få forbindelse til {{provider}}. Tjek forbindelsen, og prøv igen.",
+          "refused": "{{provider}} afviste login. Prøv igen.",
+          "didNotWork": "Login lykkedes ikke. Prøv igen.",
+          "tryAgain": "Prøv igen",
+          "browserSuccess": "Færdig. Du kan lukke dette vindue og gå tilbage til DanyWhere.",
+          "browserFailure": "Det lykkedes ikke. Gå tilbage til DanyWhere, og prøv igen."
+        },
+        "connected": {
+          "title": "Forbundet med {{provider}}",
+          "usingPlan": "Kører via dit ChatGPT-abonnement",
+          "plan": "Abonnement: {{plan}}",
+          "freeModels": "Gratis modeller, op til 50 dikteringer om dagen",
+          "withCredit": "Med kredit, en model uden træning",
+          "noCreditYet": "Ingen kredit endnu: DanyWhere sender intet, før du fylder op.",
+          "notToppedUp": "OpenRouter viser ingen kredit endnu. Det kan tage et minut.",
+          "topUpCheckFailed": "OpenRouter kunne ikke spørges om kreditten.",
+          "keyLimit": "Nøglens udgiftsgrænse: {{limit}}",
+          "model": "Model: {{model}}",
+          "picksModel": "DanyWhere vælger modellen.",
+          "tryIt": "Prøv det",
+          "manageUsage": "Administrer brug",
+          "credit": "Kredit",
+          "topUp": "Fyld op",
+          "toppedUp": "Jeg har fyldt op",
+          "disconnect": "Afbryd forbindelsen",
+          "disconnectConfirm": "Klik igen for at fjerne nøglen",
+          "keyStaysAtOpenRouter": "OpenRouter beholder nøglen »DanyWhere« blandt dine API-nøgler, indtil du sletter den dér.",
+          "revokeUnconfirmed": "OpenAI bekræftede ikke log-ud",
+          "revokeUnconfirmedDetail": "DanyWhere har glemt login her. Du kan tjekke DanyWheres adgang i dine ChatGPT-indstillinger.",
+          "chatgptSettings": "ChatGPT-indstillinger",
+          "answerAgain": "Besvar spørgsmålene igen",
+          "advanced": "Avanceret"
+        },
+        "sample": {
+          "title": "Prøve",
+          "spoken": "Sagt: »{{text}}«",
+          "result": "Resultat: »{{text}}«",
+          "text": "øh altså jeg sender dig det i morgen komma okay spørgsmålstegn",
+          "running": "Prøver …",
+          "took": "{{seconds}} s med {{model}}",
+          "failed": "Prøven lykkedes ikke."
+        },
+        "errors": {
+          "disconnect": "Ikke afbrudt",
+          "reopen": "Siden blev ikke åbnet igen"
+        }
       }
     },
     "history": {
@@ -1275,7 +1440,8 @@
           "model": "Model",
           "demo": "Demo",
           "try": "Prøv det",
-          "done": "Klar"
+          "done": "Klar",
+          "postProcessSetup": "Få dine tekster forbedret"
         }
       },
       "onboardingRun": {
@@ -1576,7 +1742,26 @@
       "emptyReply": "{{provider}} sendte ingen tekst tilbage.",
       "truncated": "Svaret blev afkortet ved modellens outputgrænse.",
       "unavailable": "{{provider}} er ikke tilgængelig på denne computer.",
-      "other": "Fejl: {{error}}"
+      "other": "Fejl: {{error}}",
+      "freeBusy": "De gratis modeller hos {{provider}} er optaget lige nu; prøv igen om lidt.",
+      "freeDailyLimit": "De gratis dikteringer hos {{provider}} er brugt op for i dag (50 om dagen); fortsæt i morgen, eller fyld op én gang.",
+      "keyLimit": "Nøglens udgiftsgrænse hos {{provider}} er nået; ændr den der.",
+      "planLimit": "Dit abonnements brugsgrænse hos {{provider}} er nået for nu.",
+      "planNotEligible": "Dit abonnement hos {{provider}} omfatter ikke brug i andre apps.",
+      "signInExpired": "Login hos {{provider}} er udløbet; log ind igen.",
+      "noSignIn": "Du er ikke logget ind hos {{provider}}.",
+      "notSetUp": "Efterbehandlingen er ikke sat op endnu.",
+      "notSetUpTitle": "Efterbehandling ikke sat op",
+      "rateLimited": "{{provider}} begrænser, hvor meget der må sendes pr. minut; vent lidt, og dikter igen.",
+      "actions": {
+        "setUp": "Sæt op",
+        "topUp": "Fyld op",
+        "credit": "Kredit",
+        "changeLimit": "Ændr grænse",
+        "manageUsage": "Administrer brug",
+        "changeSetup": "Ændr opsætning",
+        "signInAgain": "Log ind igen"
+      }
     },
     "appMissedShortcutTitle": "Kopieret – genstart appen",
     "appMissedShortcut": "{{app}} var allerede åben, da DanyWhere satte dikteringsgenvejen op, så den kender den først efter en genstart. Teksten er i udklipsholderen.",

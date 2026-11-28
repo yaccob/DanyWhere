@@ -38,6 +38,9 @@ mod key_sides;
 mod language_detection;
 mod languages;
 mod llm_client;
+// DanyWhere: the Responses API for ChatGPT's plan (`llm_client` sends the
+// provider format `Responses` there).
+mod llm_responses;
 mod llm_timeouts;
 mod managers;
 mod memory;
@@ -52,6 +55,10 @@ pub mod portable;
 mod post_process_effort;
 mod post_process_failure;
 mod post_process_mode;
+mod post_process_setup;
+// DanyWhere: the browser sign-in of OpenRouter and ChatGPT, its commands,
+// its file and ChatGPT's session.
+mod post_process_signin;
 #[cfg(target_os = "linux")]
 mod primary_selection;
 mod profile_effects;
@@ -72,6 +79,7 @@ mod sound_file;
 mod sound_queue;
 mod start_keys;
 mod system_languages;
+mod system_memory;
 mod theme_file;
 #[cfg(target_os = "macos")]
 mod title_query;
@@ -824,6 +832,17 @@ pub fn run(cli_args: CliArgs) {
             shortcut::fetch_post_process_models,
             post_process_effort::get_post_process_effort_options,
             post_process_effort::change_post_process_effort_setting,
+            post_process_setup::get_post_process_setup_status,
+            post_process_setup::set_post_process_setup_answers,
+            post_process_setup::apply_post_process_choice,
+            post_process_setup::check_post_process_key,
+            post_process_setup::run_post_process_sample,
+            post_process_signin::commands::start_post_process_sign_in,
+            post_process_signin::commands::reopen_post_process_sign_in,
+            post_process_signin::commands::cancel_post_process_sign_in,
+            post_process_signin::commands::disconnect_post_process_sign_in,
+            post_process_signin::commands::refresh_openrouter_connection,
+            system_memory::get_system_memory_bytes,
             shortcut::add_post_process_prompt,
             shortcut::update_post_process_prompt,
             shortcut::delete_post_process_prompt,
@@ -990,6 +1009,7 @@ pub fn run(cli_args: CliArgs) {
             transcription_coordinator::RecordingStateEvent,
             actions::TranscriptionCompleteEvent,
             notices::NoticesChanged,
+            post_process_signin::commands::PostProcessSignInFinished,
         ]);
 
     #[cfg(debug_assertions)] // <- Only export on non-release builds
@@ -1267,6 +1287,18 @@ pub fn run(cli_args: CliArgs) {
             WEBVIEW_LOG_STREAMING.store(settings.debug_mode, Ordering::Relaxed);
             let app_handle = app.handle().clone();
             app.manage(TranscriptionCoordinator::new(app_handle.clone()));
+            // DanyWhere: the browser sign-in in progress, and ChatGPT's
+            // session for the requests through its plan.
+            app.manage(post_process_signin::commands::SignIns::default());
+            post_process_signin::session::install(
+                std::sync::Arc::new(post_process_signin::commands::AppSessionStore::new(
+                    app_handle.clone(),
+                )),
+                post_process_signin::chatgpt::TOKEN.to_string(),
+            );
+            // DanyWhere: OpenRouter's tier asked again by itself, in a thread
+            // of its own, first shortly after the start.
+            post_process_signin::openrouter_tier::start(app_handle.clone());
 
             initialize_core_logic(&app_handle);
 

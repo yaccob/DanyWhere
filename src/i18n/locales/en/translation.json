@@ -40,7 +40,8 @@
     "openChapter": "Open the manual: {{chapter}}",
     "chapters": {
       "startAndEndShortcuts": "Start and End Shortcuts",
-      "defaultsAndProfiles": "Defaults and Profiles"
+      "defaultsAndProfiles": "Defaults and Profiles",
+      "postProcessingSetup": "Setting Up Post-Processing"
     },
     "unavailable": "This build of DanyWhere has no manual."
   },
@@ -256,6 +257,12 @@
     "linux": {
       "tryIt": "Not working? <guide>Linux setup guide</guide>",
       "done": "Not working in other apps? <guide>Linux setup guide</guide>"
+    },
+    "postProcessSetup": {
+      "title": "Improve your texts",
+      "sub": "A language model can smooth every dictation: punctuation, filler words, spoken commands, names. Two short questions, and it's set up.",
+      "later": "Later",
+      "laterHint": "You'll find it later under Defaults › Post Process."
     }
   },
   "modelTable": {
@@ -521,7 +528,7 @@
       "onlyWhileRecording": "Taken only during a recording.",
       "sameAsStartOrHold": "Same combination as a start or hold shortcut: without a recording it starts one, during a recording it switches to the instruction.",
       "notTakenNever": "Post-processing is set to “{{mode}}”: instruction shortcuts aren't taken. Choose another setting for {{setting}} under Advanced.",
-      "notTakenNoProvider": "No post-processing provider with a model is set up: instruction shortcuts aren't taken until one is.",
+      "notSetUp": "Nothing is set up for post-processing yet: after an instruction shortcut the text is inserted as heard, without the instruction, and a notice offers to set it up.",
       "add": "Add Instruction Shortcut",
       "addPressKeys": "Press the combination for the new instruction shortcut",
       "refName": "Instruction shortcut {{name}}",
@@ -1105,6 +1112,164 @@
           "withInstructionKey": "With Instruction Shortcut",
           "always": "Always"
         }
+      },
+      "setup": {
+        "title": "Improve Your Texts",
+        "intro": "Two short questions, and everything is set up. You can change your answers any time.",
+        "later": "Later",
+        "knowMyWay": "I know my way around:",
+        "allProviders": "All providers …",
+        "notSetUp": "Post-processing isn't set up yet.",
+        "setUp": "Set up",
+        "keepCurrent": "Keep the current setup",
+        "q1": {
+          "title": "1. Where may your texts go?",
+          "free_services": {
+            "label": "Also to free services.",
+            "hint": "They may keep them and use them to improve their AI."
+          },
+          "not_kept": {
+            "label": "Only to a service that processes them and doesn't keep them.",
+            "hint": "That runs through a subscription or costs a few dollars."
+          },
+          "nowhere": {
+            "label": "Nowhere.",
+            "hint": "They stay on this computer."
+          }
+        },
+        "q2": {
+          "title": "2. Do you already have one of these subscriptions?",
+          "none": "None of these"
+        },
+        "q3": {
+          "title": "3. How should it go on?",
+          "credit": "Top up once from $5, without a subscription",
+          "groq": "Free with Groq, with a key to copy",
+          "this_computer": "On this computer (slower, from 16 GB of memory)",
+          "tooLittleMemoryMac": "On this computer: needs 16 GB, this Mac has {{memory}}.",
+          "tooLittleMemory": "On this computer: needs 16 GB, this computer has {{memory}}."
+        },
+        "openrouter": {
+          "freeTitle": "Suggestion: OpenRouter, free",
+          "freeBody": "An account with OpenRouter, one click on “Authorize”, done. Up to 50 dictations a day.",
+          "creditTitle": "Suggestion: OpenRouter with credit",
+          "creditBody": "An account with OpenRouter, one click on “Authorize”, then top up once from $5. DanyWhere picks a model that doesn't use your texts for training. $5 is enough for thousands of dictations, and nothing renews.",
+          "tipAccount": "Sign up with Google or GitHub: that saves a password and a code by email.",
+          "tipPayment": "New at OpenRouter? Its welcome asks for a payment method. You can choose “I'll do this later”: the free models need none. Then come back here and press “Open the page again”.",
+          "tipPaymentCredit": "New at OpenRouter? Its welcome asks for a payment method, which topping up needs anyway. Then come back here and press “Open the page again”. Until the account has credit, DanyWhere sends nothing.",
+          "connect": "Connect OpenRouter"
+        },
+        "chatgpt": {
+          "title": "Suggestion: your ChatGPT plan",
+          "body": "Runs through your ChatGPT plan: no key, no extra cost. Sign in to ChatGPT in the browser and allow DanyWhere.",
+          "firstUse": "Eligible usage in this app uses your ChatGPT plan. Manage usage in your ChatGPT settings.",
+          "dataNotDescribed": "OpenAI doesn't describe how it treats requests that your plan pays for.",
+          "continue": "Continue with ChatGPT"
+        },
+        "guidedKey": {
+          "title": "Suggestion: a key from {{service}}",
+          "paste": "Paste the key here",
+          "fieldLabel": "Key from {{service}}",
+          "check": "Check",
+          "checking": "Checking …",
+          "works": "The key works."
+        },
+        "guides": {
+          "copyKey": "Copy the key and paste it here.",
+          "copyToken": "Copy the token and paste it here.",
+          "anthropic": {
+            "credits": "Link your plan's API credits in claude.ai. That's possible after seven days in the plan, and you don't need to add a card.",
+            "creditsLink": "How it works",
+            "key": "Create a key in the Claude Console, in the organization you linked.",
+            "keyLink": "Open the Console"
+          },
+          "gemini": {
+            "credits": "In Google AI Studio, choose “Claim free API credits” in the menu on the left (or “Redeem” if you already have a billing account) and set up billing. A new billing account needs a payment method and a prepayment of at least $5.",
+            "creditsLink": "Open AI Studio",
+            "key": "Use the API key of the project you set up billing for (by default “Default Gemini Project”), or create one there.",
+            "keyLink": "API keys"
+          },
+          "huggingface": {
+            "key": "Create an access token with the permission “Make calls to Inference Providers”.",
+            "keyLink": "Open tokens"
+          },
+          "ollama_cloud": {
+            "key": "Create a key in your Ollama account.",
+            "keyLink": "Open keys"
+          },
+          "groq": {
+            "account": "Sign in at GroqCloud, for example with “Continue with Google”. No card is needed.",
+            "accountLink": "Open GroqCloud",
+            "key": "Choose “Create API Key”. Groq asks you to confirm with a click that you're a person."
+          }
+        },
+        "local": {
+          "laterTitle": "On this computer: comes with a later version",
+          "laterBody": "DanyWhere will bring a model that runs on this computer. Until then, a server of your own works, for example Ollama or LM Studio on this computer, or your company's.",
+          "unavailableTitle": "Not possible on this computer",
+          "unavailableBodyMac": "A model on this computer needs 16 GB of memory; this Mac has {{memory}}. A server of your own works, for example your company's.",
+          "unavailableBody": "A model on this computer needs 16 GB of memory; this computer has {{memory}}. A server of your own works, for example your company's.",
+          "ownServer": "Set up a server of your own",
+          "ownServerHint": "Enter its address and model below.",
+          "ownServerLater": "You can enter a server of your own later under Defaults › Post Process, behind “All providers …”."
+        },
+        "signIn": {
+          "waiting": "Waiting for the browser …",
+          "title": "Sign-in with {{provider}}",
+          "waitingHint": "Finish in the browser. If you had to sign up first, press “Open the page again”.",
+          "reopen": "Open the page again",
+          "cancel": "Cancel",
+          "failed": "The sign-in didn't work: {{error}}",
+          "timedOut": "The sign-in waited 30 minutes and has expired.",
+          "denied": "Access wasn't allowed.",
+          "notEligible": "This ChatGPT account has no plan that DanyWhere can use (Go, Plus, Pro or Business).",
+          "noFreeModel": "OpenRouter has no free model that DanyWhere can use right now. Try again later, or top up once instead.",
+          "unreachable": "Couldn't reach {{provider}}. Check the connection and try again.",
+          "refused": "{{provider}} refused the sign-in. Try again.",
+          "didNotWork": "The sign-in didn't work. Try again.",
+          "tryAgain": "Try again",
+          "browserSuccess": "Done. You can close this window and go back to DanyWhere.",
+          "browserFailure": "That didn't work. Go back to DanyWhere and try again."
+        },
+        "connected": {
+          "title": "Connected to {{provider}}",
+          "usingPlan": "Using ChatGPT plan",
+          "plan": "Plan: {{plan}}",
+          "freeModels": "Free models, up to 50 dictations a day",
+          "withCredit": "With credit, a model without training",
+          "noCreditYet": "No credit yet: DanyWhere sends nothing until you top up.",
+          "notToppedUp": "OpenRouter doesn't show any credit yet. It can take a minute.",
+          "topUpCheckFailed": "Couldn't ask OpenRouter about the credit.",
+          "keyLimit": "Spending limit of the key: {{limit}}",
+          "model": "Model: {{model}}",
+          "picksModel": "DanyWhere picks the model.",
+          "tryIt": "Try it",
+          "manageUsage": "Manage usage",
+          "credit": "Credit",
+          "topUp": "Top up",
+          "toppedUp": "I've topped up",
+          "disconnect": "Disconnect",
+          "disconnectConfirm": "Click again to remove the key",
+          "keyStaysAtOpenRouter": "OpenRouter keeps the key “DanyWhere” among your API keys until you delete it there.",
+          "revokeUnconfirmed": "Sign-Out Not Confirmed by OpenAI",
+          "revokeUnconfirmedDetail": "DanyWhere has forgotten the sign-in here. You can check DanyWhere's access in your ChatGPT settings.",
+          "chatgptSettings": "ChatGPT Settings",
+          "answerAgain": "Answer the questions again",
+          "advanced": "Advanced"
+        },
+        "sample": {
+          "title": "Sample",
+          "spoken": "Spoken: “{{text}}”",
+          "result": "Result: “{{text}}”",
+          "text": "um so I'll send you that tomorrow comma okay question mark",
+          "running": "Trying …",
+          "took": "{{seconds}} s with {{model}}",
+          "failed": "The sample didn't work."
+        },
+        "errors": {
+          "disconnect": "Not Disconnected",
+          "reopen": "Page Not Opened Again"
+        }
       }
     },
     "history": {
@@ -1275,7 +1440,8 @@
           "model": "Model",
           "demo": "Demo",
           "try": "Try it",
-          "done": "All set"
+          "done": "All set",
+          "postProcessSetup": "Improve Your Texts"
         }
       },
       "onboardingRun": {
@@ -1576,7 +1742,26 @@
       "emptyReply": "{{provider}} sent back no text.",
       "truncated": "The answer was cut off at the model's output limit.",
       "unavailable": "{{provider}} isn't available on this computer.",
-      "other": "Error: {{error}}"
+      "other": "Error: {{error}}",
+      "freeBusy": "The free models at {{provider}} are busy right now; try again in a moment.",
+      "freeDailyLimit": "The free dictations at {{provider}} are used up for today (50 a day); go on tomorrow, or top up once.",
+      "keyLimit": "The key's spending limit at {{provider}} is reached; change it there.",
+      "planLimit": "Your plan's usage limit with {{provider}} is reached for now.",
+      "planNotEligible": "Your plan with {{provider}} doesn't include use in other apps.",
+      "signInExpired": "The sign-in with {{provider}} has expired; sign in again.",
+      "noSignIn": "You aren't signed in with {{provider}}.",
+      "notSetUp": "Post-processing isn't set up yet.",
+      "notSetUpTitle": "Post-Processing Not Set Up",
+      "rateLimited": "{{provider}} limits how much may be sent per minute; wait a moment and dictate again.",
+      "actions": {
+        "setUp": "Set up",
+        "topUp": "Top up",
+        "credit": "Credit",
+        "changeLimit": "Change limit",
+        "manageUsage": "Manage usage",
+        "changeSetup": "Change setup",
+        "signInAgain": "Sign in again"
+      }
     },
     "appMissedShortcutTitle": "Copied – Restart the App",
     "appMissedShortcut": "{{app}} was already open when DanyWhere set up the dictation shortcut, so it only knows it after a restart. Your text is on the clipboard.",

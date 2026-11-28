@@ -23,6 +23,7 @@ type ManualLanguage = (typeof MANUAL_LANGUAGES)[number];
 export const MANUAL_PAGES = {
   startAndEndShortcuts: "how-it-works/start-and-end-shortcuts/",
   defaultsAndProfiles: "how-it-works/defaults-and-profiles/",
+  postProcessingSetup: "how-it-works/post-processing/",
 } as const;
 
 /** The manual's language for an interface language such as `de-AT`; none

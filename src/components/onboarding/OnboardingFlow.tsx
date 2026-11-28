@@ -19,6 +19,7 @@ import { useInputMethod } from "@/hooks/useInputMethod";
 import { offersInputMethod } from "@/lib/inputMethod";
 import { Demo } from "./screens/Demo";
 import { TryIt } from "./screens/TryIt";
+import { PostProcessSetupScreen } from "./screens/PostProcessSetupScreen";
 import { useOsType } from "@/hooks/useOsType";
 import { DownloadStatus } from "./DownloadStatus";
 import { useOnboardingModels } from "./useOnboardingModels";
@@ -282,8 +283,23 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
           onEdit={(to) => store.set({ step: to, returnTo: "done" })}
           onBack={() => moveScreens("out", back)}
           onArrive={() => go("done")}
-          onUnfinish={() => go("try")}
+          // DanyWhere: All set's Back goes to the screen before it, which
+          // is setting up post-processing.
+          onUnfinish={back}
           onDone={finish}
+          // DanyWhere: the glove lands in the tray, then the setup of
+          // post-processing comes before All set.
+          onLanded={step === "try" ? () => go("postProcessSetup") : undefined}
+        />
+      );
+    // DanyWhere: setting up post-processing, with "Later".
+    case "postProcessSetup":
+      return (
+        <PostProcessSetupScreen
+          progress={progress}
+          preview={preview}
+          onBack={back}
+          onLeave={onward}
         />
       );
   }

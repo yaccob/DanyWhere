@@ -13,6 +13,7 @@ export type OnboardingStep =
   | "model"
   | "demo"
   | "try"
+  | "postProcessSetup"
   | "done";
 
 export const STEP_ORDER: OnboardingStep[] = [
@@ -23,6 +24,9 @@ export const STEP_ORDER: OnboardingStep[] = [
   "model",
   "demo",
   "try",
+  // DanyWhere: setting up post-processing, with "Later" (sidecar qa
+  // 2026-11-26_1840, section 5).
+  "postProcessSetup",
   "done",
 ];
 

@@ -1,0 +1,138 @@
+---
+title: "Configurar el posprocesamiento"
+description: "Responde dos o tres preguntas sobre tus textos y tus suscripciones, y DanyWhere te propone un modelo de lenguaje y lo conecta, casi siempre con un botón."
+sidebar:
+  order: 5
+---
+
+import Screenshot from '@components/Screenshot.astro';
+import { Steps } from '@astrojs/starlight/components';
+
+Con el posprocesamiento, un modelo de lenguaje pule cada dictado: puntuación, muletillas, órdenes habladas, nombres. El modelo funciona en un proveedor, y no hace falta que conozcas ninguno. DanyWhere te hace dos o tres preguntas que cualquiera puede responder, te propone un camino que encaja y lo conecta, casi siempre con un botón. Este capítulo recorre las preguntas, adónde lleva cada respuesta, qué datos van adónde y qué pasa cuando un camino deja de funcionar.
+
+## Configurar el posprocesamiento
+
+Las preguntas aparecen en tres sitios:
+
+- como una pantalla hacia el final de la primera configuración, **Mejorar tus textos**, donde **Más tarde** es el botón principal;
+- en cualquier momento en **Configuración básica › Post proceso › Mejorar tus textos**, arriba de la página;
+- desde un aviso: si pulsas un atajo de instrucción antes de configurar nada, DanyWhere inserta el texto tal como lo dijiste, y el aviso **Post proceso no configurado** ofrece **Configurar**.
+
+Las preguntas aparecen una tras otra, y la sugerencia de debajo cambia con tus respuestas.
+
+**1. ¿Adónde pueden ir tus textos?**
+
+- **También a servicios gratuitos.** Pueden guardarlos y usarlos para mejorar su IA.
+- **Solo a un servicio que los procese y no los guarde.** Eso va con una suscripción o cuesta unos pocos dólares.
+- **A ningún sitio.** Se quedan en este ordenador.
+
+**2. ¿Ya tienes alguna de estas suscripciones?** La lista nombra solo los planes que pagan el uso en otras apps: ChatGPT Go, Plus, Pro o Business; Claude Max, Ultra o Team; Google AI Pro o Ultra; Hugging Face PRO; Ollama Pro o Max. Claude Pro, por ejemplo, no cuenta. Después de **A ningún sitio**, esta pregunta no aparece.
+
+**3. ¿Cómo seguimos?** Esta pregunta solo aparece después de la segunda respuesta y **Ninguna de estas**:
+
+- **Recargar una vez desde 5 dólares, sin suscripción**
+- **Gratis con Groq, con una clave para copiar**
+- **En este ordenador (más lento, desde 16 GB de memoria)**, en gris en un equipo con menos, con el motivo.
+
+El camino rápido son dos respuestas y un botón: **También a servicios gratuitos**, **Ninguna de estas**, **Conectar OpenRouter**.
+
+<Screenshot
+  name="post-processing-questions"
+  alt="El grupo Mejorar tus textos en la página Post proceso. La pregunta 1 está respondida con También a servicios gratuitos y la pregunta 2 con Ninguna de estas. Debajo, la sugerencia OpenRouter, gratis, con dos consejos para registrarse y el botón Conectar OpenRouter. Abajo, Sé cómo funciona: con Todos los proveedores … y Más tarde."
+  caption="El camino rápido: dos respuestas y la sugerencia debajo."
+/>
+
+## Adónde llevan las respuestas
+
+| Tus respuestas | La sugerencia | Adónde van tus textos |
+| --- | --- | --- |
+| también a servicios gratuitos, ninguna de estas suscripciones | **OpenRouter, gratis**, hasta 50 dictados al día | a OpenRouter y a un modelo gratuito, que puede guardarlos y entrenar con ellos |
+| una de las dos primeras, y una suscripción | esa suscripción: **Continuar con ChatGPT**, o una clave de Anthropic, Google AI Studio, Hugging Face u Ollama | a ese proveedor, pagado por tu suscripción |
+| solo a un servicio que no los guarda, ninguna, recargar | **OpenRouter con saldo** | a OpenRouter y a un modelo que no usa tus textos para entrenar |
+| solo a un servicio que no los guarda, ninguna, Groq | **una clave de Groq**, gratis | a Groq, que no entrena con ellos |
+| a ningún sitio, o en este equipo | un modelo en este equipo | a ningún sitio |
+
+Lo que sale es la transcripción, con tus prompts activos, tus listas de palabras y, con **Enviar contexto**, los dictados anteriores de la misma ventana. La grabación en sí nunca sale de tu equipo.
+
+Si elegiste la segunda respuesta y ChatGPT, la configuración añade: **OpenAI no explica cómo trata las solicitudes que paga tu suscripción.**
+
+## Conectar OpenRouter
+
+<Steps>
+
+1. Haz clic en **Conectar OpenRouter**. Tu navegador abre la página de OpenRouter, y DanyWhere muestra **Esperando al navegador …**.
+2. ¿Eres nuevo en OpenRouter? Regístrate con Google o GitHub: así te ahorras una contraseña y un código por correo.
+3. La bienvenida de OpenRouter pide un método de pago. Para los modelos gratuitos, elige **I'll do this later**: no lo necesitan. Para el camino con saldo, añádelo: para recargar lo necesitas de todos modos.
+4. De vuelta en DanyWhere, haz clic en **Abrir la página de nuevo**. Ahora OpenRouter pregunta si DanyWhere puede tener acceso.
+5. Haz clic en **Authorize**. El navegador dice que puedes cerrar la ventana, y DanyWhere muestra la tarjeta **Conectado a OpenRouter**.
+
+</Steps>
+
+Si ya tienes una cuenta, los pasos 2 a 4 no hacen falta. DanyWhere recibe una clave propia, con un límite de gasto de 10 dólares, que la tarjeta muestra. **Cancelar** deja de esperar; a los 30 minutos el inicio de sesión caduca, y **Intentar de nuevo** vuelve a empezar.
+
+Con saldo, la tarjeta dice **Aún no hay saldo: DanyWhere no envía nada hasta que recargues.** Hasta entonces, ningún texto sale de tu equipo, ni siquiera hacia un modelo gratuito: elegiste un servicio que no los guarda. Haz clic en **Recargar**, paga una vez en OpenRouter y vuelve a **Ya he recargado**. Desde entonces, DanyWhere usa un modelo que no usa tus textos para entrenar. 5 dólares dan para miles de dictados, y nada se renueva.
+
+El camino gratuito se queda con los modelos gratuitos aunque tu cuenta de OpenRouter tenga saldo.
+
+## Iniciar sesión con ChatGPT
+
+Haz clic en **Continuar con ChatGPT**, inicia sesión en ChatGPT en el navegador y permite el acceso a DanyWhere. No hay clave ni coste adicional: el uso admitido en esta app corre a cargo de tu suscripción a ChatGPT, y lo gestionas en la configuración de ChatGPT. DanyWhere elige el modelo. Si la cuenta no tiene una suscripción que cuente, DanyWhere te lo dice.
+
+## Una clave para pegar
+
+Con Claude, Google, Hugging Face, Ollama y Groq, copias una clave del sitio del proveedor. La configuración muestra los pasos, cada uno con un botón a la página que necesita. Tres proveedores piden algo antes:
+
+- **Claude:** vinculas el saldo de API de tu suscripción en claude.ai, a partir de siete días de suscripción, sin tarjeta. La clave tiene que ser de la organización que vinculaste.
+- **Google:** una cuenta de facturación nueva en AI Studio pide un método de pago y un pago anticipado de al menos 5 dólares antes de que valga el saldo; con una cuenta de facturación que ya tienes, solo lo canjeas. La clave tiene que ser del proyecto con facturación.
+- **Groq:** la cuenta no necesita tarjeta, pero al crear la clave Groq te pide confirmar con un clic que eres una persona.
+
+Pega la clave en el campo y haz clic en **Comprobar**. DanyWhere la prueba, elige un modelo y dice **La clave funciona.** Una clave que no funciona no se guarda en ningún sitio, y la configuración te dice por qué.
+
+## Conectado
+
+En cuanto un camino funciona, la tarjeta **Conectado a …** ocupa el lugar de las preguntas, y DanyWhere prueba el camino enseguida con una frase de ejemplo. La tarjeta dice por dónde va, por ejemplo los modelos gratuitos y el límite de gasto de la clave en OpenRouter, o **Usando tu suscripción a ChatGPT**. Sus botones:
+
+- **Probar** vuelve a enviar la frase de ejemplo y muestra qué volvió, cuánto tardó y con qué modelo.
+- **Gestionar el uso**, **Saldo** o **Recargar** abre la página correspondiente del proveedor.
+- **Desconectar** olvida el inicio de sesión o la clave. Una clave que pegaste solo se va tras un segundo clic, en **Haz clic de nuevo para quitar la clave**.
+
+En OpenRouter, la clave **DanyWhere** sigue entre tus claves API hasta que la borres allí; **Desconectar** solo la olvida en DanyWhere, como dice la tarjeta. Si OpenAI no confirma el cierre de sesión de ChatGPT, el aviso **OpenAI no confirmó el cierre de sesión** lo dice, con **Configuración de ChatGPT**, donde puedes comprobar el acceso de DanyWhere.
+
+<Screenshot
+  name="post-processing-connected"
+  alt="La tarjeta Conectado a OpenRouter: modelos gratuitos, hasta 50 dictados al día; el límite de gasto de la clave, 10 dólares; DanyWhere elige el modelo. Los botones Probar, Saldo y Desconectar; debajo, que OpenRouter conserva la clave DanyWhere hasta que la borres allí, y la prueba: la frase dicha y el resultado, con el tiempo y el modelo. Bajo la tarjeta, Responder de nuevo a las preguntas y Avanzado."
+  caption="Conectado a OpenRouter gratis, después de probar."
+/>
+
+**Responder de nuevo a las preguntas**, bajo la tarjeta, trae de vuelta las preguntas; **Mantener la configuración actual** las cierra sin cambios. **Avanzado** muestra el grupo **API** con **Proveedor**, **Clave API** y **Modelo**, los ajustes que antes ponías a mano. Sin conexión, el mismo grupo está detrás de **Todos los proveedores …**, junto a **Sé cómo funciona:**, para un proveedor al que las preguntas no llevan, como el servidor de tu empresa.
+
+**Más tarde** reduce las preguntas a una línea, **El post proceso aún no está configurado.**, con **Configurar** para traerlas de vuelta.
+
+:::note
+Lo que configuras con las preguntas vale para la configuración básica. La página **Post proceso** de un perfil muestra **Proveedor**, **Clave API** y **Modelo** como antes, así que un perfil puede seguir usando un proveedor propio.
+:::
+
+## Cuando un camino termina
+
+Si se agotan los dictados gratuitos o caduca un inicio de sesión, igualmente recibes tus palabras. DanyWhere inserta la transcripción tal cual, y el aviso **Pegado sin post proceso** dice qué pasó, con el siguiente paso como botón. Si nunca se configuró nada, el aviso se llama **Post proceso no configurado**.
+
+| Qué pasó | El botón |
+| --- | --- |
+| nada configurado aún, o ya sin proveedor, modelo o clave | **Configurar** |
+| sin sesión iniciada en ChatGPT, por ejemplo tras **Desconectar** | **Volver a iniciar sesión** |
+| los 50 dictados gratuitos de OpenRouter agotados por hoy | **Recargar**, o seguir mañana |
+| el saldo agotado | **Recargar** en OpenRouter, si no **Saldo** |
+| el límite de gasto de la clave alcanzado | **Cambiar el límite** |
+| el límite de uso de tu suscripción alcanzado por ahora | **Gestionar el uso** |
+| tu suscripción no incluye el uso en otras apps | **Cambiar la configuración** |
+| el inicio de sesión caducado | **Volver a iniciar sesión** |
+
+Si los modelos gratuitos están ocupados o un proveedor limita cuánto puede ir por minuto, el aviso dice que esperes un momento y vuelvas a dictar.
+
+:::caution[Un modelo en este equipo]
+**A ningún sitio** y **En este ordenador (más lento, desde 16 GB de memoria)** llevan a un modelo que funciona en tu equipo. Llega con una versión posterior y necesita al menos 16 GB de memoria. Hasta entonces sirve un servidor que tú gestionas, por ejemplo Ollama o LM Studio en este equipo, o el de tu empresa: **Configurar un servidor propio** abre más abajo el grupo **API** con el proveedor **Proveedor personalizado**, donde escribes su dirección y su modelo. En la primera configuración, la pantalla dice dónde está.
+:::
+
+## Siguiente
+
+Con el posprocesamiento configurado, un atajo de instrucción te deja decirle al modelo qué hacer con un solo dictado, como traducirlo. [La instrucción hablada](../spoken-instruction/) muestra cómo.

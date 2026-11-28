@@ -105,6 +105,10 @@ pub enum PostProcessApiFormat {
     OpenAi,
     /// Anthropic Messages (`/messages`)
     Anthropic,
+    /// DanyWhere: OpenAI Responses (`/responses`, streamed), the way ChatGPT's
+    /// plan is used (`post_process_setup`, sidecar note
+    /// `2026-11-26_2250_nachbearbeitung-einstieg-umsetzung`, section 4.2).
+    Responses,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Type)]
@@ -762,6 +766,26 @@ pub struct AppSettings {
     pub history_box_height_newest: Option<u32>,
     #[serde(default)]
     pub history_box_height_other: Option<u32>,
+    /// DanyWhere: the answers of the post-processing setup's questions and
+    /// whether it was finished or put off (`post_process_setup`). For the
+    /// app as a whole, not a profile value.
+    #[serde(default)]
+    pub post_process_setup: crate::post_process_setup::PostProcessSetupState,
+    /// DanyWhere: whether a sign-in with ChatGPT, whose plan post-processes
+    /// (provider `chatgpt`), is stored. The session itself, its tokens and
+    /// account, stays out of the settings, which go to the webview: it is in
+    /// `post_process_signin.json` (`post_process_signin::vault`).
+    #[serde(default)]
+    pub chatgpt_signed_in: bool,
+    /// DanyWhere: this installation's id at ChatGPT's sign-in
+    /// (`ext_agent_host_id`, made once), redacted in the debug output.
+    #[serde(default)]
+    pub chatgpt_host_id: Option<crate::post_process_setup::SecretText>,
+    /// DanyWhere: what OpenRouter said about the key from its sign-in (free
+    /// tier, limit, the free models to try); the key itself is the
+    /// provider's API key (`post_process_api_keys["openrouter"]`).
+    #[serde(default)]
+    pub openrouter_connection: Option<crate::post_process_setup::OpenRouterConnection>,
 }
 
 fn default_profile_auto_by_app() -> bool {
@@ -926,7 +950,7 @@ fn default_post_process_provider_id() -> String {
     "openai".to_string()
 }
 
-fn default_post_process_providers() -> Vec<PostProcessProvider> {
+pub(crate) fn default_post_process_providers() -> Vec<PostProcessProvider> {
     let mut providers = vec![
         PostProcessProvider {
             id: "openai".to_string(),
@@ -1012,6 +1036,56 @@ fn default_post_process_providers() -> Vec<PostProcessProvider> {
         api_format: PostProcessApiFormat::OpenAi,
     });
 
+    // DanyWhere: the providers of the post-processing setup (sidecar note
+    // `2026-11-26_2250_nachbearbeitung-einstieg-umsetzung`, section 4.3).
+    // ChatGPT's plan through its sign-in, over the Responses API; structured
+    // output through `text.format` (tried on 2026-11-26, note
+    // `2026-11-26_1955_nachbearbeitung-versuche`, section 1).
+    providers.push(PostProcessProvider {
+        id: "chatgpt".to_string(),
+        label: "ChatGPT (subscription)".to_string(),
+        base_url: crate::post_process_signin::chatgpt::API_BASE.to_string(),
+        allow_base_url_edit: false,
+        models_endpoint: Some("/models".to_string()),
+        supports_structured_output: true,
+        api_format: PostProcessApiFormat::Responses,
+    });
+    // https://ai.google.dev/gemini-api/docs/openai: "Gemini models can output
+    // JSON objects in any structure you define" through `response_format`.
+    providers.push(PostProcessProvider {
+        id: "gemini".to_string(),
+        label: "Google Gemini".to_string(),
+        base_url: "https://generativelanguage.googleapis.com/v1beta/openai".to_string(),
+        allow_base_url_edit: false,
+        models_endpoint: Some("/models".to_string()),
+        supports_structured_output: true,
+        api_format: PostProcessApiFormat::OpenAi,
+    });
+    // https://huggingface.co/docs/inference-providers: the router; structured
+    // output depends on the provider that serves the model (its guide
+    // "Structured Outputs" picks one), so it isn't asked for.
+    providers.push(PostProcessProvider {
+        id: "huggingface".to_string(),
+        label: "Hugging Face".to_string(),
+        base_url: "https://router.huggingface.co/v1".to_string(),
+        allow_base_url_edit: false,
+        models_endpoint: Some("/models".to_string()),
+        supports_structured_output: false,
+        api_format: PostProcessApiFormat::OpenAi,
+    });
+    // https://docs.ollama.com/api/openai-compatibility (`https://ollama.com/v1`
+    // with an API key); https://docs.ollama.com/cloud: "Cloud models currently
+    // do not support structured outputs".
+    providers.push(PostProcessProvider {
+        id: "ollama_cloud".to_string(),
+        label: "Ollama Cloud".to_string(),
+        base_url: "https://ollama.com/v1".to_string(),
+        allow_base_url_edit: false,
+        models_endpoint: Some("/models".to_string()),
+        supports_structured_output: false,
+        api_format: PostProcessApiFormat::OpenAi,
+    });
+
     // Custom provider always comes last
     providers.push(PostProcessProvider {
         id: "custom".to_string(),
@@ -1034,11 +1108,18 @@ fn default_post_process_api_keys() -> SecretMap {
     SecretMap(map)
 }
 
-fn default_model_for_provider(provider_id: &str) -> String {
-    if provider_id == APPLE_INTELLIGENCE_PROVIDER_ID {
-        return APPLE_INTELLIGENCE_DEFAULT_MODEL_ID.to_string();
+pub(crate) fn default_model_for_provider(provider_id: &str) -> String {
+    match provider_id {
+        APPLE_INTELLIGENCE_PROVIDER_ID => APPLE_INTELLIGENCE_DEFAULT_MODEL_ID.to_string(),
+        // DanyWhere: through ChatGPT's plan it met every rule of the user's
+        // long prompt, at 2.1 s in the median (sidecar note
+        // `2026-11-26_1955_nachbearbeitung-versuche`, section 2).
+        "chatgpt" => "gpt-6.2-sol".to_string(),
+        // DanyWhere: "Our fastest, most cost-effective 3.5 model", stable
+        // (https://ai.google.dev/gemini-api/docs/models, 2026-11-26).
+        "gemini" => "gemini-3.5-flash-lite".to_string(),
+        _ => String::new(),
     }
-    String::new()
 }
 
 fn default_post_process_models() -> HashMap<String, String> {
@@ -1087,7 +1168,7 @@ fn default_typing_tool() -> TypingTool {
     TypingTool::Auto
 }
 
-fn ensure_post_process_defaults(settings: &mut AppSettings) -> bool {
+pub(crate) fn ensure_post_process_defaults(settings: &mut AppSettings) -> bool {
     let mut changed = false;
     for provider in default_post_process_providers() {
         // Use match to do a single lookup - either sync existing or add new
@@ -1121,8 +1202,17 @@ fn ensure_post_process_defaults(settings: &mut AppSettings) -> bool {
                 }
             }
             None => {
-                // Provider doesn't exist, add it
-                settings.post_process_providers.push(provider.clone());
+                // Provider doesn't exist, add it; DanyWhere: before the
+                // custom one, which stays last.
+                let custom = settings
+                    .post_process_providers
+                    .iter()
+                    .position(|p| p.id == "custom")
+                    .filter(|_| provider.id != "custom");
+                match custom {
+                    Some(at) => settings.post_process_providers.insert(at, provider.clone()),
+                    None => settings.post_process_providers.push(provider.clone()),
+                }
                 changed = true;
             }
         }
@@ -1163,7 +1253,7 @@ fn ensure_post_process_defaults(settings: &mut AppSettings) -> bool {
 /// DanyWhere: [`ensure_post_process_defaults`] for the flat values and
 /// every profile, since the providers, their keys and models are profile
 /// values: a provider a new version brings reaches every profile.
-fn ensure_post_process_defaults_everywhere(settings: &mut AppSettings) -> bool {
+pub(crate) fn ensure_post_process_defaults_everywhere(settings: &mut AppSettings) -> bool {
     let flat = ensure_post_process_defaults(settings);
     let profiles = crate::profiles::ensure_in_every_profile(settings, ensure_post_process_defaults);
     flat || profiles
@@ -1363,6 +1453,10 @@ pub fn get_default_settings() -> AppSettings {
         instruction_keys: crate::instruction_keys::default_instruction_keys(),
         history_box_height_newest: None,
         history_box_height_other: None,
+        post_process_setup: Default::default(),
+        chatgpt_signed_in: false,
+        chatgpt_host_id: None,
+        openrouter_connection: None,
     }
 }
 
@@ -1863,6 +1957,45 @@ pub fn write_settings(app: &AppHandle, settings: AppSettings) {
     let _ = crate::profile_layers::route_flat(&mut settings);
 
     store.set("settings", serde_json::to_value(&settings).unwrap());
+}
+
+/// DanyWhere: the lock of [`update_settings`].
+static SETTINGS_CHANGE: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+/// DanyWhere (review of 2026-11-27, N7): reads the settings, changes them
+/// with `change` and writes them, one such change at a time, so that the
+/// writers in the background (OpenRouter's tier, a sign-in's thread, an
+/// expired ChatGPT session) and the setup's commands don't overwrite each
+/// other's change. Returns the settings before and after (for
+/// `profile_effects::apply`); nothing is written when `change` fails.
+pub fn update_settings(
+    app: &AppHandle,
+    change: impl FnOnce(&mut AppSettings) -> Result<(), String>,
+) -> Result<(AppSettings, AppSettings), String> {
+    locked_update(
+        &SETTINGS_CHANGE,
+        || get_settings(app),
+        |settings| write_settings(app, settings),
+        change,
+    )
+}
+
+/// The rule of [`update_settings`] for any store: `read`, `change` and
+/// `write` under `lock`.
+pub fn locked_update<S: Clone>(
+    lock: &std::sync::Mutex<()>,
+    read: impl FnOnce() -> S,
+    write: impl FnOnce(S),
+    change: impl FnOnce(&mut S) -> Result<(), String>,
+) -> Result<(S, S), String> {
+    let _held = lock
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    let before = read();
+    let mut after = before.clone();
+    change(&mut after)?;
+    write(after.clone());
+    Ok((before, after))
 }
 
 // DanyWhere: unused since the shortcuts follow the profile (`profile_sync`).
@@ -3209,5 +3342,58 @@ mod tests {
         ));
         assert!(!linux_self_update_possible(Some(BundleKind::Other), all));
         assert!(!linux_self_update_possible(None, all));
+    }
+
+    /// Review of 2026-11-27, N7: two changes at once (OpenRouter's tier in
+    /// the background, the user in the window) both land.
+    #[test]
+    fn two_changes_of_the_settings_at_once_both_land() {
+        let lock = std::sync::Arc::new(std::sync::Mutex::new(()));
+        let stored = std::sync::Arc::new(std::sync::Mutex::new(Vec::<&str>::new()));
+        let start = std::sync::Arc::new(std::sync::Barrier::new(2));
+        let writers: Vec<_> = ["tier", "user"]
+            .into_iter()
+            .map(|who| {
+                let (lock, stored, start) = (lock.clone(), stored.clone(), start.clone());
+                std::thread::spawn(move || {
+                    start.wait();
+                    locked_update(
+                        &lock,
+                        || {
+                            let read = stored.lock().unwrap().clone();
+                            // Reading and writing the store takes a moment.
+                            std::thread::sleep(std::time::Duration::from_millis(50));
+                            read
+                        },
+                        |changed| *stored.lock().unwrap() = changed,
+                        |changes| {
+                            changes.push(who);
+                            Ok(())
+                        },
+                    )
+                    .expect("changes")
+                })
+            })
+            .collect();
+        for writer in writers {
+            writer.join().unwrap();
+        }
+        let mut landed = stored.lock().unwrap().clone();
+        landed.sort_unstable();
+        assert_eq!(landed, vec!["tier", "user"]);
+    }
+
+    #[test]
+    fn a_change_that_fails_writes_nothing() {
+        let lock = std::sync::Mutex::new(());
+        let written = std::cell::Cell::new(false);
+        let result = locked_update(
+            &lock,
+            || 1,
+            |_| written.set(true),
+            |_| Err("refused".to_string()),
+        );
+        assert_eq!(result, Err("refused".to_string()));
+        assert!(!written.get());
     }
 }

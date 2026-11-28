@@ -1390,12 +1390,18 @@ mod tests {
         let provider_id = provider.id.clone();
         settings
             .post_process_models
-            .insert(provider_id, "model".to_string());
+            .insert(provider_id.clone(), "model".to_string());
+        // The provider needs a key (`post_process_setup`).
+        settings
+            .post_process_api_keys
+            .insert(provider_id, "sk-test".to_string());
         settings.post_process_prompt_order =
             crate::prompt_library::default_order(&settings.post_process_prompts);
         if let Some(first) = settings.post_process_prompt_order.first_mut() {
             first.active = true;
         }
+        // Set up through the setup (`post_process_setup::missing_reason`).
+        settings.post_process_setup.finished = true;
         settings
     }
 

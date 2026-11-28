@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { RefreshCcw } from "lucide-react";
 import type { PostProcessApiFormat, PromptOrderEntry } from "@/bindings";
@@ -24,6 +24,12 @@ import { PromptLibrary } from "./PromptLibrary";
 // that deviate from it. The provider's settings are shown as text under the
 // defaults: their controls take the values of the page's scope as props.
 import { ScopedSetting } from "../profiles/scope/ScopedSetting";
+import { useSettingsScope } from "../profiles/scope/SettingsScope";
+// DanyWhere: setting it up with questions anyone can answer (sidecar qa
+// 2026-11-26_2250, 4.5).
+import { PostProcessSetup } from "./setup/PostProcessSetup";
+import { ManualHelpButton } from "../../ui/ManualHelpButton";
+import { MANUAL_PAGES } from "@/lib/manual";
 
 const PostProcessingSettingsApiComponent: React.FC = () => {
   const { t } = useTranslation();
@@ -244,7 +250,7 @@ export const PostProcessingSettings: React.FC = () => {
   const { t } = useTranslation();
   // DanyWhere (strand E2): a deviating profile's prompts under the
   // defaults, as the names of its active ones (P7.2).
-  const { getSetting } = useSettings();
+  const { getSetting, setPostProcessProvider } = useSettings();
   const library = getSetting("post_process_prompts") ?? [];
   const promptSummary = (values: Record<string, unknown>) => {
     const order = Array.isArray(values.post_process_prompt_order)
@@ -259,11 +265,44 @@ export const PostProcessingSettings: React.FC = () => {
       : t("settings.profileView.summary.noneActive");
   };
 
+  // DanyWhere: the setup writes into the defaults, so it is at the top of
+  // their page; a profile's page shows its provider settings as before.
+  // Under the defaults they wait under "All providers …" or "Advanced".
+  const scope = useSettingsScope();
+  const inDefaults = scope?.kind === "defaults";
+  const [providersOpen, setProvidersOpen] = useState(false);
+
   return (
     <div className="max-w-3xl w-full mx-auto space-y-6">
-      <SettingsGroup title={t("settings.postProcessing.api.title")}>
-        <PostProcessingSettingsApi />
-      </SettingsGroup>
+      {inDefaults && (
+        <SettingsGroup
+          title={t("settings.postProcessing.setup.title")}
+          titleAction={
+            <ManualHelpButton
+              page={MANUAL_PAGES.postProcessingSetup}
+              chapter={t("manual.chapters.postProcessingSetup")}
+            />
+          }
+        >
+          <PostProcessSetup
+            place="settings"
+            providersOpen={providersOpen}
+            onToggleProviders={() => setProvidersOpen((open) => !open)}
+            onOpenProviders={(providerId) => {
+              setProvidersOpen(true);
+              // As choosing it in the form below does (qa 2026-11-26_2250,
+              // D, N9).
+              if (providerId) void setPostProcessProvider(providerId);
+            }}
+          />
+        </SettingsGroup>
+      )}
+
+      {(!inDefaults || providersOpen) && (
+        <SettingsGroup title={t("settings.postProcessing.api.title")}>
+          <PostProcessingSettingsApi />
+        </SettingsGroup>
+      )}
 
       <SettingsGroup title={t("settings.postProcessing.prompts.title")}>
         <ScopedSetting

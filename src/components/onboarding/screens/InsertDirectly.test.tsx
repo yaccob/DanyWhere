@@ -146,9 +146,9 @@ describe("onboarding: when Insert Directly comes", () => {
 
   test("counts as a step of the flow", async () => {
     await renderFlow({ skipped: true, at: "insertDirectly" });
-    // Welcome, Insert Directly, Model, Demo, Try it, All set: the
-    // permissions were already given.
-    expect(screen.queryByRole("img", { name: "Step 2 of 6" })).not.toBeNull();
+    // Welcome, Insert Directly, Model, Demo, Try it, Improve your texts,
+    // All set: the permissions were already given.
+    expect(screen.queryByRole("img", { name: "Step 2 of 7" })).not.toBeNull();
   });
 });
 

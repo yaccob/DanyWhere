@@ -7,6 +7,8 @@ import { useNoticeStore } from "@/stores/noticeStore";
 import { useFieldKinds } from "@/components/settings/profiles/scope/fieldKinds";
 import { useDecoupleBar } from "@/components/settings/profiles/scope/decoupleBarStore";
 import { useSettingJump } from "@/components/settings/profiles/scope/settingJumpStore";
+import { usePostProcessSetupStore } from "@/stores/postProcessSetupStore";
+import { useNavigationRequest } from "@/stores/navigationRequestStore";
 
 interface Resettable<S> {
   getInitialState: () => S;
@@ -23,4 +25,6 @@ export const resetStores = (): void => {
   reset(useFieldKinds);
   reset(useDecoupleBar);
   reset(useSettingJump);
+  reset(usePostProcessSetupStore);
+  reset(useNavigationRequest);
 };

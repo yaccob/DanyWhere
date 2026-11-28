@@ -29,18 +29,27 @@ import {
 } from "@/test/render";
 import { setOsType } from "@/test/tauri-mock";
 import { rawTextIn, readableTexts, visibleText } from "@/test/visible";
+import { answerStatus, notReady } from "@/test/postProcessSetupFixtures";
 
 const TAB = instructionKey("instruction_tab", "tab");
 const WORK = "profile_1795300000001";
 
-/** A provider with a model: post-processing can run. */
+/** A provider with a model and its key: post-processing can run. */
 const READY = {
   post_process_provider_id: "openai",
   post_process_providers: [
     { id: "openai", label: "OpenAI", base_url: "https://api.openai.com/v1" },
+    {
+      id: "chatgpt",
+      label: "ChatGPT (subscription)",
+      base_url: "https://api.openai.com/v1",
+    },
   ],
   post_process_models: { openai: "gpt-5-mini" },
+  post_process_api_keys: { openai: "sk-test" },
 };
+/** The same provider and model without the key: not ready. */
+const WITHOUT_KEY = { ...READY, post_process_api_keys: {} };
 
 const TITLE = "Instruction Shortcuts";
 const DESCRIPTION =
@@ -48,8 +57,8 @@ const DESCRIPTION =
 const ONLY_WHILE = "Taken only during a recording.";
 const NEVER =
   "Post-processing is set to “Never”: instruction shortcuts aren't taken. Choose another setting for Post Processing under Advanced.";
-const NO_PROVIDER =
-  "No post-processing provider with a model is set up: instruction shortcuts aren't taken until one is.";
+const NOT_SET_UP =
+  "Nothing is set up for post-processing yet: after an instruction shortcut the text is inserted as heard, without the instruction, and a notice offers to set it up.";
 const SAME_AS_START_OR_HOLD =
   "Same combination as a start or hold shortcut: without a recording it starts one, during a recording it switches to the instruction.";
 
@@ -233,9 +242,10 @@ describe("Instruction Shortcuts: adding and deleting", () => {
   });
 });
 
-// Instruction shortcuts are taken only while the scope may post-process and
-// a provider is set up (qa 2026-11-26_1810, "Regeln"); the card says why
-// they aren't, for the scope shown.
+// Instruction shortcuts are taken while the scope may post-process, set up
+// or not (qa 2026-11-26_2250: the setup's notice offers to set it up); the
+// card says why they aren't, or what happens without a provider, for the
+// scope shown.
 describe("Instruction Shortcuts that aren't taken", () => {
   test("with post-processing set to Never, the card says so", async () => {
     await renderGeneral({
@@ -244,16 +254,18 @@ describe("Instruction Shortcuts that aren't taken", () => {
 
     const text = visibleText(card());
     expect(text).toContain(NEVER);
-    expect(text).not.toContain(NO_PROVIDER);
+    expect(text).not.toContain(NOT_SET_UP);
     expect(rawTextIn()).toEqual([]);
   });
 
-  test("without a provider with a model, the card says so", async () => {
+  test("without a provider with a model they are taken, and the card says what happens", async () => {
     await renderGeneral();
 
     const text = visibleText(card());
-    expect(text).toContain(NO_PROVIDER);
+    expect(text).toContain(NOT_SET_UP);
     expect(text).not.toContain(NEVER);
+    expect(text).not.toContain("aren't taken");
+    expect(rawTextIn()).toEqual([]);
   });
 
   test("with a provider, with an instruction shortcut or always, nothing of it", async () => {
@@ -262,9 +274,48 @@ describe("Instruction Shortcuts that aren't taken", () => {
 
       const text = visibleText(card());
       expect(text).not.toContain(NEVER);
-      expect(text).not.toContain(NO_PROVIDER);
+      expect(text).not.toContain(NOT_SET_UP);
       cleanup();
     }
+  });
+
+  // Ready is what the backend checks before it sends (`post_process_ready`):
+  // a model alone isn't, e.g. after Disconnect (sidecar qa
+  // 2026-11-26_2250, D, N10).
+  test("a provider with a model but no key: the card says what happens", async () => {
+    answerStatus(notReady({ readiness: "key", model: "gpt-5-mini" }));
+    await renderGeneral({ defaults: WITHOUT_KEY });
+    expect(visibleText(card())).toContain(NOT_SET_UP);
+  });
+
+  test("ChatGPT after Disconnect: the card says what happens", async () => {
+    answerStatus(
+      notReady({
+        readiness: "sign_in",
+        provider_id: "chatgpt",
+        model: "gpt-6.2-sol",
+      }),
+    );
+    await renderGeneral({
+      defaults: {
+        ...READY,
+        post_process_provider_id: "chatgpt",
+        post_process_models: { chatgpt: "gpt-6.2-sol" },
+      },
+      app: { chatgpt_signed_in: false },
+    });
+    expect(visibleText(card())).toContain(NOT_SET_UP);
+  });
+
+  test("in a profile, its provider without a key counts too", async () => {
+    await renderGeneral(
+      {
+        defaults: WITHOUT_KEY,
+        profiles: [{ id: WORK, name: "Work" }],
+      },
+      { kind: "profile", id: WORK },
+    );
+    expect(visibleText(card())).toContain(NOT_SET_UP);
   });
 
   test("in a profile its own mode counts, not the defaults'", async () => {
@@ -418,7 +469,7 @@ describe("Instruction Shortcuts in German", () => {
     cleanup();
     await renderGeneral();
     expect(visibleText(card("Anweisungstasten"))).toContain(
-      "Kein Anbieter mit Modell für die Nachbearbeitung eingerichtet: Anweisungstasten sind erst belegt, wenn einer eingerichtet ist.",
+      "Die Nachbearbeitung ist noch nicht eingerichtet: Nach einer Anweisungstaste wird der Text so eingefügt, wie er gehört wurde, ohne die Anweisung, und ein Hinweis bietet an, sie einzurichten.",
     );
   });
 

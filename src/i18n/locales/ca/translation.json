@@ -40,7 +40,8 @@
     "openChapter": "Obre el manual: {{chapter}}",
     "chapters": {
       "startAndEndShortcuts": "Dreceres d'inici i de final",
-      "defaultsAndProfiles": "Configuració bàsica i perfils"
+      "defaultsAndProfiles": "Configuració bàsica i perfils",
+      "postProcessingSetup": "Configurar el postprocessament"
     },
     "unavailable": "Aquesta compilació de DanyWhere no inclou el manual."
   },
@@ -256,6 +257,12 @@
     "linux": {
       "tryIt": "No funciona? <guide>Guia de configuració per a Linux</guide>",
       "done": "No funciona a altres aplicacions? <guide>Guia de configuració per a Linux</guide>"
+    },
+    "postProcessSetup": {
+      "title": "Milloreu els vostres textos",
+      "sub": "Un model de llenguatge pot polir cada dictat: puntuació, paraules de farciment, ordres dictades, noms. Dues preguntes curtes i ja estarà configurat.",
+      "later": "Més tard",
+      "laterHint": "Ho trobareu més tard a Configuració bàsica › Postprocessament."
     }
   },
   "modelTable": {
@@ -521,7 +528,7 @@
       "onlyWhileRecording": "Només s'ocupa durant una gravació.",
       "sameAsStartOrHold": "La mateixa combinació que una drecera d'inici o de pulsació llarga: sense gravació n'inicia una, durant una gravació canvia a la instrucció.",
       "notTakenNever": "El posprocessament està configurat a «{{mode}}»: les dreceres d'instrucció no s'ocupen. Tria una altra opció per a «{{setting}}» a Avançat.",
-      "notTakenNoProvider": "No hi ha cap proveïdor de postprocessament amb un model configurat: les dreceres d'instrucció no s'ocupen fins que n'hi hagi un.",
+      "notSetUp": "El postprocessament encara no està configurat: després d'una drecera d'instrucció, el text s'insereix tal com s'ha sentit, sense la instrucció, i un avís us ofereix configurar-lo.",
       "add": "Afegeix una drecera d'instrucció",
       "addPressKeys": "Prem la combinació per a la nova drecera d'instrucció",
       "refName": "Drecera d'instrucció {{name}}",
@@ -1105,6 +1112,164 @@
           "withInstructionKey": "Amb drecera d'instrucció",
           "always": "Sempre"
         }
+      },
+      "setup": {
+        "title": "Milloreu els vostres textos",
+        "intro": "Dues preguntes curtes i ja està tot configurat. Podeu canviar les respostes quan vulgueu.",
+        "later": "Més tard",
+        "knowMyWay": "Ja sé com funciona:",
+        "allProviders": "Tots els proveïdors …",
+        "notSetUp": "El postprocessament encara no està configurat.",
+        "setUp": "Configura",
+        "keepCurrent": "Mantén la configuració actual",
+        "q1": {
+          "title": "1. On poden anar els vostres textos?",
+          "free_services": {
+            "label": "També a serveis gratuïts.",
+            "hint": "Se'ls poden quedar i fer-los servir per millorar la seva IA."
+          },
+          "not_kept": {
+            "label": "Només a un servei que els processi i no se'ls quedi.",
+            "hint": "Això va amb una subscripció o costa uns quants dòlars."
+          },
+          "nowhere": {
+            "label": "Enlloc.",
+            "hint": "Es queden en aquest ordinador."
+          }
+        },
+        "q2": {
+          "title": "2. Ja teniu alguna d'aquestes subscripcions?",
+          "none": "Cap d'aquestes"
+        },
+        "q3": {
+          "title": "3. Com voleu continuar?",
+          "credit": "Recarregar una vegada des de 5 $, sense subscripció",
+          "groq": "Gratis amb Groq, amb una clau per copiar",
+          "this_computer": "En aquest ordinador (més lent, a partir de 16 GB de memòria)",
+          "tooLittleMemoryMac": "En aquest ordinador: calen 16 GB, aquest Mac en té {{memory}}.",
+          "tooLittleMemory": "En aquest ordinador: calen 16 GB, aquest ordinador en té {{memory}}."
+        },
+        "openrouter": {
+          "freeTitle": "Suggeriment: OpenRouter, gratis",
+          "freeBody": "Un compte a OpenRouter, un clic a «Authorize» i fet. Fins a 50 dictats al dia.",
+          "creditTitle": "Suggeriment: OpenRouter amb crèdit",
+          "creditBody": "Un compte a OpenRouter, un clic a «Authorize» i després recarregueu una vegada des de 5 $. DanyWhere tria un model que no fa servir els vostres textos per entrenar-se. Amb 5 $ n'hi ha prou per a milers de dictats, i no es renova res.",
+          "tipAccount": "Registreu-vos amb Google o GitHub: així us estalvieu una contrasenya i un codi per correu.",
+          "tipPayment": "Sou nous a OpenRouter? La benvinguda us demana un mètode de pagament. Podeu triar «I'll do this later»: els models gratuïts no en necessiten cap. Després torneu aquí i premeu «Torna a obrir la pàgina».",
+          "tipPaymentCredit": "Sou nous a OpenRouter? La benvinguda us demana un mètode de pagament, que igualment necessitareu per recarregar. Després torneu aquí i premeu «Torna a obrir la pàgina». Mentre el compte no tingui crèdit, DanyWhere no envia res.",
+          "connect": "Connecta amb OpenRouter"
+        },
+        "chatgpt": {
+          "title": "Suggeriment: la vostra subscripció de ChatGPT",
+          "body": "Funciona amb la vostra subscripció de ChatGPT: sense clau i sense cap cost addicional. Inicieu la sessió a ChatGPT al navegador i doneu accés a DanyWhere.",
+          "firstUse": "L'ús elegible en aquesta aplicació va a càrrec de la vostra subscripció de ChatGPT. Gestioneu l'ús a la configuració de ChatGPT.",
+          "dataNotDescribed": "OpenAI no explica com tracta les sol·licituds que paga la vostra subscripció.",
+          "continue": "Continua amb ChatGPT"
+        },
+        "guidedKey": {
+          "title": "Suggeriment: una clau de {{service}}",
+          "paste": "Enganxeu la clau aquí",
+          "fieldLabel": "Clau de {{service}}",
+          "check": "Comprova",
+          "checking": "S'està comprovant …",
+          "works": "La clau funciona."
+        },
+        "guides": {
+          "copyKey": "Copieu la clau i enganxeu-la aquí.",
+          "copyToken": "Copieu el token i enganxeu-lo aquí.",
+          "anthropic": {
+            "credits": "Vinculeu els crèdits d'API de la vostra subscripció a claude.ai. Es pot fer després de set dies de subscripció, i no cal afegir cap targeta.",
+            "creditsLink": "Com funciona",
+            "key": "Creeu una clau a la Claude Console, a l'organització que heu vinculat.",
+            "keyLink": "Obre la Console"
+          },
+          "gemini": {
+            "credits": "A Google AI Studio, trieu «Claim free API credits» al menú de l'esquerra (o «Redeem» si ja teniu un compte de facturació) i configureu la facturació. Un compte de facturació nou necessita un mètode de pagament i un pagament per avançat d'almenys 5 $.",
+            "creditsLink": "Obre AI Studio",
+            "key": "Feu servir la clau de l'API del projecte per al qual heu configurat la facturació (per defecte «Default Gemini Project») o creeu-n'hi una.",
+            "keyLink": "Claus de l'API"
+          },
+          "huggingface": {
+            "key": "Creeu un token d'accés amb el permís «Make calls to Inference Providers».",
+            "keyLink": "Obre els tokens"
+          },
+          "ollama_cloud": {
+            "key": "Creeu una clau al vostre compte d'Ollama.",
+            "keyLink": "Obre les claus"
+          },
+          "groq": {
+            "account": "Inicieu la sessió a GroqCloud, per exemple amb «Continue with Google». No cal cap targeta.",
+            "accountLink": "Obre GroqCloud",
+            "key": "Trieu «Create API Key». Groq us demana que confirmeu amb un clic que sou una persona."
+          }
+        },
+        "local": {
+          "laterTitle": "En aquest ordinador: arribarà en una versió posterior",
+          "laterBody": "DanyWhere portarà més endavant un model que funciona en aquest ordinador. Mentrestant, podeu fer servir un servidor propi, per exemple Ollama o LM Studio en aquest ordinador, o el de la vostra empresa.",
+          "unavailableTitle": "En aquest ordinador no és possible",
+          "unavailableBodyMac": "Un model en aquest ordinador necessita 16 GB de memòria; aquest Mac en té {{memory}}. Podeu fer servir un servidor propi, per exemple el de la vostra empresa.",
+          "unavailableBody": "Un model en aquest ordinador necessita 16 GB de memòria; aquest ordinador en té {{memory}}. Podeu fer servir un servidor propi, per exemple el de la vostra empresa.",
+          "ownServer": "Configura un servidor propi",
+          "ownServerHint": "Introduïu-ne l'adreça i el model a sota.",
+          "ownServerLater": "Un servidor propi el podeu introduir més tard a Configuració bàsica › Postprocessament, dins de «Tots els proveïdors …»."
+        },
+        "signIn": {
+          "waiting": "S'està esperant el navegador …",
+          "title": "Inici de sessió a {{provider}}",
+          "waitingHint": "Acabeu-ho al navegador. Si primer us heu hagut de registrar, premeu «Torna a obrir la pàgina».",
+          "reopen": "Torna a obrir la pàgina",
+          "cancel": "Cancel·la",
+          "failed": "L'inici de sessió no ha funcionat: {{error}}",
+          "timedOut": "L'inici de sessió ha esperat 30 minuts i ha caducat.",
+          "denied": "No s'ha permès l'accés.",
+          "notEligible": "Aquest compte de ChatGPT no té cap subscripció que DanyWhere pugui fer servir (Go, Plus, Pro o Business).",
+          "noFreeModel": "Ara mateix OpenRouter no té cap model gratuït que DanyWhere pugui fer servir. Torneu-ho a provar més tard, o bé recarregueu una vegada.",
+          "unreachable": "No s'ha pogut connectar amb {{provider}}. Comproveu la connexió i torneu-ho a provar.",
+          "refused": "{{provider}} ha rebutjat l'inici de sessió. Torneu-ho a provar.",
+          "didNotWork": "L'inici de sessió no ha funcionat. Torneu-ho a provar.",
+          "tryAgain": "Torna-ho a provar",
+          "browserSuccess": "Fet. Podeu tancar aquesta finestra i tornar a DanyWhere.",
+          "browserFailure": "No ha funcionat. Torneu a DanyWhere i proveu-ho de nou."
+        },
+        "connected": {
+          "title": "Connectat a {{provider}}",
+          "usingPlan": "Amb la vostra subscripció de ChatGPT",
+          "plan": "Subscripció: {{plan}}",
+          "freeModels": "Models gratuïts, fins a 50 dictats al dia",
+          "withCredit": "Amb crèdit, un model sense entrenament",
+          "noCreditYet": "Encara no hi ha crèdit: DanyWhere no envia res fins que recarregueu.",
+          "notToppedUp": "OpenRouter encara no mostra cap crèdit. Pot trigar un minut.",
+          "topUpCheckFailed": "No s'ha pogut consultar el crèdit a OpenRouter.",
+          "keyLimit": "Límit de despesa de la clau: {{limit}}",
+          "model": "Model: {{model}}",
+          "picksModel": "DanyWhere tria el model.",
+          "tryIt": "Prova-ho",
+          "manageUsage": "Gestiona l'ús",
+          "credit": "Crèdit",
+          "topUp": "Recarrega",
+          "toppedUp": "Ja he recarregat",
+          "disconnect": "Desconnecta",
+          "disconnectConfirm": "Torneu a fer clic per eliminar la clau",
+          "keyStaysAtOpenRouter": "OpenRouter conserva la clau «DanyWhere» entre les vostres claus de l'API fins que la suprimiu allà.",
+          "revokeUnconfirmed": "OpenAI no ha confirmat la desconnexió",
+          "revokeUnconfirmedDetail": "DanyWhere ha oblidat l'inici de sessió aquí. Podeu comprovar l'accés de DanyWhere a la configuració de ChatGPT.",
+          "chatgptSettings": "Configuració de ChatGPT",
+          "answerAgain": "Torna a respondre les preguntes",
+          "advanced": "Avançat"
+        },
+        "sample": {
+          "title": "Prova",
+          "spoken": "Dit: «{{text}}»",
+          "result": "Resultat: «{{text}}»",
+          "text": "eh doncs t'ho envio demà coma d'acord signe d'interrogació",
+          "running": "S'està provant …",
+          "took": "{{seconds}} s amb {{model}}",
+          "failed": "La prova no ha funcionat."
+        },
+        "errors": {
+          "disconnect": "No s'ha desconnectat",
+          "reopen": "No s'ha tornat a obrir la pàgina"
+        }
       }
     },
     "history": {
@@ -1275,7 +1440,8 @@
           "model": "Model",
           "demo": "Demostració",
           "try": "Prova-ho",
-          "done": "Tot a punt"
+          "done": "Tot a punt",
+          "postProcessSetup": "Milloreu els vostres textos"
         }
       },
       "onboardingRun": {
@@ -1576,7 +1742,26 @@
       "emptyReply": "{{provider}} no ha retornat cap text.",
       "truncated": "La resposta s'ha tallat al límit de sortida del model.",
       "unavailable": "{{provider}} no està disponible en aquest ordinador.",
-      "other": "Error: {{error}}"
+      "other": "Error: {{error}}",
+      "freeBusy": "Els models gratuïts de {{provider}} estan ocupats ara mateix; torneu-ho a provar d'aquí a una estona.",
+      "freeDailyLimit": "Els dictats gratuïts de {{provider}} s'han acabat per avui (50 al dia); continueu demà o recarregueu una vegada.",
+      "keyLimit": "S'ha arribat al límit de despesa de la clau a {{provider}}; canvieu-lo allà.",
+      "planLimit": "De moment s'ha arribat al límit d'ús de la vostra subscripció a {{provider}}.",
+      "planNotEligible": "La vostra subscripció a {{provider}} no inclou l'ús en altres aplicacions.",
+      "signInExpired": "L'inici de sessió a {{provider}} ha caducat; torneu a iniciar la sessió.",
+      "noSignIn": "No heu iniciat la sessió a {{provider}}.",
+      "notSetUp": "El postprocessament encara no està configurat.",
+      "notSetUpTitle": "Postprocessament no configurat",
+      "rateLimited": "{{provider}} limita quant es pot enviar per minut; espereu una mica i torneu a dictar.",
+      "actions": {
+        "setUp": "Configura",
+        "topUp": "Recarrega",
+        "credit": "Crèdit",
+        "changeLimit": "Canvia el límit",
+        "manageUsage": "Gestiona l'ús",
+        "changeSetup": "Canvia la configuració",
+        "signInAgain": "Torna a iniciar la sessió"
+      }
     },
     "appMissedShortcutTitle": "Copiat – reinicia l'app",
     "appMissedShortcut": "{{app}} ja estava obert quan DanyWhere va configurar la drecera de dictat, així que només la reconeixerà després de reiniciar-lo. El text és al porta-retalls.",

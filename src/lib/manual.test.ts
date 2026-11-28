@@ -7,6 +7,8 @@
 // link inside it does: stay in the manual, open in the default browser, or
 // nothing.
 import assert from "node:assert/strict";
+import { existsSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import {
   MANUAL_PAGES,
   isExternal,
@@ -237,6 +239,17 @@ check("isExternal is true exactly for the links the browser opens", () => {
   assert.equal(isExternal("javascript:alert(1)", MAC), false);
   assert.equal(isExternal("http://localhost:1420/manual/", DEV), false);
 });
+
+// --- The chapters the app links to exist, in every language -----------------
+const DOCS = new URL("../../docs/manual/src/content/docs/", import.meta.url);
+for (const [name, page] of Object.entries(MANUAL_PAGES)) {
+  check(`MANUAL_PAGES.${name} is a chapter in en, de, es and fr`, () => {
+    for (const language of ["", "de/", "es/", "fr/"]) {
+      const file = new URL(`${language}${page.replace(/\/$/, "")}.mdx`, DOCS);
+      assert.ok(existsSync(file), fileURLToPath(file));
+    }
+  });
+}
 
 if (failures.length > 0) {
   console.error(`manual.test.ts: ${failures.length} of ${total} checks failed`);

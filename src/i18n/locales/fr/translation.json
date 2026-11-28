@@ -40,7 +40,8 @@
     "openChapter": "Ouvrir le manuel : {{chapter}}",
     "chapters": {
       "startAndEndShortcuts": "Raccourcis de début et de fin",
-      "defaultsAndProfiles": "Paramètres de base et profils"
+      "defaultsAndProfiles": "Paramètres de base et profils",
+      "postProcessingSetup": "Configurer le post-traitement"
     },
     "unavailable": "Cette version de DanyWhere ne contient pas le manuel."
   },
@@ -256,6 +257,12 @@
     "linux": {
       "tryIt": "Ça ne marche pas ? <guide>Guide de configuration Linux</guide>",
       "done": "Ça ne marche pas dans les autres apps ? <guide>Guide de configuration Linux</guide>"
+    },
+    "postProcessSetup": {
+      "title": "Améliorer vos textes",
+      "sub": "Un modèle de langage peut peaufiner chaque dictée : ponctuation, hésitations, commandes dictées, noms propres. Deux petites questions, et c'est configuré.",
+      "later": "Plus tard",
+      "laterHint": "Vous le retrouverez plus tard dans Paramètres de base › Post-traitement."
     }
   },
   "modelTable": {
@@ -521,7 +528,7 @@
       "onlyWhileRecording": "Prise uniquement pendant un enregistrement.",
       "sameAsStartOrHold": "Même combinaison qu'un raccourci de début ou de maintien : sans enregistrement, elle en démarre un ; pendant un enregistrement, elle passe à l'instruction.",
       "notTakenNever": "Le post-traitement est réglé sur « {{mode}} » : les raccourcis d'instruction ne sont pas pris. Choisissez un autre réglage pour « {{setting}} » dans Avancé.",
-      "notTakenNoProvider": "Aucun fournisseur de post-traitement avec un modèle n'est configuré : les raccourcis d'instruction ne sont pas pris tant qu'il n'y en a pas.",
+      "notSetUp": "Le post-traitement n'est pas encore configuré : après un raccourci d'instruction, le texte est inséré tel qu'il a été entendu, sans l'instruction, et une notification propose de le configurer.",
       "add": "Ajouter un raccourci d'instruction",
       "addPressKeys": "Appuyez sur la combinaison du nouveau raccourci d'instruction",
       "refName": "Raccourci d'instruction {{name}}",
@@ -1105,6 +1112,164 @@
           "withInstructionKey": "Avec raccourci d'instruction",
           "always": "Toujours"
         }
+      },
+      "setup": {
+        "title": "Améliorer vos textes",
+        "intro": "Deux petites questions, et tout est configuré. Vous pouvez modifier vos réponses à tout moment.",
+        "later": "Plus tard",
+        "knowMyWay": "Je m'y connais :",
+        "allProviders": "Tous les fournisseurs …",
+        "notSetUp": "Le post-traitement n'est pas encore configuré.",
+        "setUp": "Configurer",
+        "keepCurrent": "Garder la configuration actuelle",
+        "q1": {
+          "title": "1. Où vos textes peuvent-ils être envoyés ?",
+          "free_services": {
+            "label": "Aussi à des services gratuits.",
+            "hint": "Ils peuvent les conserver et s'en servir pour améliorer leur IA."
+          },
+          "not_kept": {
+            "label": "Seulement à un service qui les traite sans les conserver.",
+            "hint": "Cela passe par un abonnement ou coûte quelques dollars."
+          },
+          "nowhere": {
+            "label": "Nulle part.",
+            "hint": "Ils restent sur cet ordinateur."
+          }
+        },
+        "q2": {
+          "title": "2. Avez-vous déjà l'un de ces abonnements ?",
+          "none": "Aucun de ceux-ci"
+        },
+        "q3": {
+          "title": "3. Comment voulez-vous continuer ?",
+          "credit": "Recharger une fois à partir de 5 dollars, sans abonnement",
+          "groq": "Gratuit avec Groq, avec une clé à copier",
+          "this_computer": "Sur cet ordinateur (plus lent, à partir de 16 Go de mémoire)",
+          "tooLittleMemoryMac": "Sur cet ordinateur : il faut 16 Go, ce Mac en a {{memory}}.",
+          "tooLittleMemory": "Sur cet ordinateur : il faut 16 Go, cet ordinateur en a {{memory}}."
+        },
+        "openrouter": {
+          "freeTitle": "Suggestion : OpenRouter, gratuit",
+          "freeBody": "Un compte chez OpenRouter, un clic sur « Authorize », c'est fait. Jusqu'à 50 dictées par jour.",
+          "creditTitle": "Suggestion : OpenRouter avec du crédit",
+          "creditBody": "Un compte chez OpenRouter, un clic sur « Authorize », puis une seule recharge à partir de 5 dollars. DanyWhere choisit un modèle qui n'utilise pas vos textes pour l'entraînement. 5 dollars suffisent pour des milliers de dictées, et rien ne se renouvelle.",
+          "tipAccount": "Inscrivez-vous avec Google ou GitHub : cela vous évite un mot de passe et un code par e-mail.",
+          "tipPayment": "Nouveau sur OpenRouter ? L'accueil demande un moyen de paiement. Vous pouvez choisir « I'll do this later » : les modèles gratuits n'en ont pas besoin. Revenez ensuite ici et appuyez sur « Rouvrir la page ».",
+          "tipPaymentCredit": "Nouveau sur OpenRouter ? L'accueil demande un moyen de paiement, dont la recharge a de toute façon besoin. Revenez ensuite ici et appuyez sur « Rouvrir la page ». Tant que le compte n'a pas de crédit, DanyWhere n'envoie rien.",
+          "connect": "Connecter OpenRouter"
+        },
+        "chatgpt": {
+          "title": "Suggestion : votre abonnement ChatGPT",
+          "body": "Passe par votre abonnement ChatGPT : pas de clé, pas de frais en plus. Connectez-vous à ChatGPT dans le navigateur et autorisez DanyWhere.",
+          "firstUse": "L'utilisation éligible dans cette application passe par votre abonnement ChatGPT. Gérez l'utilisation dans vos paramètres ChatGPT.",
+          "dataNotDescribed": "OpenAI ne précise pas comment elle traite les requêtes payées par votre abonnement.",
+          "continue": "Continuer avec ChatGPT"
+        },
+        "guidedKey": {
+          "title": "Suggestion : une clé {{service}}",
+          "paste": "Collez la clé ici",
+          "fieldLabel": "Clé {{service}}",
+          "check": "Vérifier",
+          "checking": "Vérification …",
+          "works": "La clé fonctionne."
+        },
+        "guides": {
+          "copyKey": "Copiez la clé et collez-la ici.",
+          "copyToken": "Copiez le jeton et collez-le ici.",
+          "anthropic": {
+            "credits": "Associez les crédits API de votre abonnement dans claude.ai. C'est possible après sept jours d'abonnement, et vous n'avez pas besoin d'ajouter de carte.",
+            "creditsLink": "Comment faire",
+            "key": "Créez une clé dans la Claude Console, dans l'organisation que vous avez associée.",
+            "keyLink": "Ouvrir la Console"
+          },
+          "gemini": {
+            "credits": "Dans Google AI Studio, choisissez « Claim free API credits » dans le menu de gauche (ou « Redeem » si vous avez déjà un compte de facturation) et configurez la facturation. Un nouveau compte de facturation demande un moyen de paiement et un prépaiement d'au moins 5 dollars.",
+            "creditsLink": "Ouvrir AI Studio",
+            "key": "Utilisez la clé API du projet pour lequel vous avez configuré la facturation (par défaut « Default Gemini Project »), ou créez-en une dans ce projet.",
+            "keyLink": "Clés API"
+          },
+          "huggingface": {
+            "key": "Créez un jeton d'accès avec l'autorisation « Make calls to Inference Providers ».",
+            "keyLink": "Ouvrir les jetons"
+          },
+          "ollama_cloud": {
+            "key": "Créez une clé dans votre compte Ollama.",
+            "keyLink": "Ouvrir les clés"
+          },
+          "groq": {
+            "account": "Connectez-vous à GroqCloud, par exemple avec « Continue with Google ». Aucune carte n'est nécessaire.",
+            "accountLink": "Ouvrir GroqCloud",
+            "key": "Choisissez « Create API Key ». Groq vous demande de confirmer d'un clic que vous êtes bien une personne."
+          }
+        },
+        "local": {
+          "laterTitle": "Sur cet ordinateur : arrive dans une version ultérieure",
+          "laterBody": "DanyWhere proposera un modèle qui fonctionne sur cet ordinateur. En attendant, votre propre serveur fait l'affaire, par exemple Ollama ou LM Studio sur cet ordinateur, ou celui de votre entreprise.",
+          "unavailableTitle": "Impossible sur cet ordinateur",
+          "unavailableBodyMac": "Un modèle sur cet ordinateur demande 16 Go de mémoire ; ce Mac en a {{memory}}. Votre propre serveur fait l'affaire, par exemple celui de votre entreprise.",
+          "unavailableBody": "Un modèle sur cet ordinateur demande 16 Go de mémoire ; cet ordinateur en a {{memory}}. Votre propre serveur fait l'affaire, par exemple celui de votre entreprise.",
+          "ownServer": "Configurer votre propre serveur",
+          "ownServerHint": "Saisissez son adresse et son modèle ci-dessous.",
+          "ownServerLater": "Vous pourrez saisir votre propre serveur plus tard dans Paramètres de base › Post-traitement, sous « Tous les fournisseurs … »."
+        },
+        "signIn": {
+          "waiting": "En attente du navigateur …",
+          "title": "Connexion à {{provider}}",
+          "waitingHint": "Terminez dans le navigateur. Si vous avez d'abord dû créer un compte, appuyez sur « Rouvrir la page ».",
+          "reopen": "Rouvrir la page",
+          "cancel": "Annuler",
+          "failed": "La connexion n'a pas abouti : {{error}}",
+          "timedOut": "La connexion a attendu 30 minutes et a expiré.",
+          "denied": "L'accès n'a pas été autorisé.",
+          "notEligible": "Ce compte ChatGPT n'a pas d'abonnement que DanyWhere peut utiliser (Go, Plus, Pro ou Business).",
+          "noFreeModel": "OpenRouter n'a pour le moment aucun modèle gratuit que DanyWhere puisse utiliser. Réessayez plus tard, ou rechargez plutôt une fois.",
+          "unreachable": "Impossible de joindre {{provider}}. Vérifiez la connexion et réessayez.",
+          "refused": "{{provider}} a refusé la connexion. Réessayez.",
+          "didNotWork": "La connexion n'a pas abouti. Réessayez.",
+          "tryAgain": "Réessayer",
+          "browserSuccess": "C'est fait. Vous pouvez fermer cette fenêtre et revenir à DanyWhere.",
+          "browserFailure": "Ça n'a pas marché. Revenez à DanyWhere et réessayez."
+        },
+        "connected": {
+          "title": "Connecté à {{provider}}",
+          "usingPlan": "Utilise votre abonnement ChatGPT",
+          "plan": "Abonnement : {{plan}}",
+          "freeModels": "Modèles gratuits, jusqu'à 50 dictées par jour",
+          "withCredit": "Avec du crédit, un modèle qui ne s'entraîne pas sur vos textes",
+          "noCreditYet": "Pas encore de crédit : DanyWhere n'envoie rien tant que vous n'avez pas rechargé.",
+          "notToppedUp": "OpenRouter n'affiche encore aucun crédit. Cela peut prendre une minute.",
+          "topUpCheckFailed": "Impossible de demander le crédit à OpenRouter.",
+          "keyLimit": "Plafond de dépenses de la clé : {{limit}}",
+          "model": "Modèle : {{model}}",
+          "picksModel": "DanyWhere choisit le modèle.",
+          "tryIt": "Essayer",
+          "manageUsage": "Gérer l'utilisation",
+          "credit": "Crédit",
+          "topUp": "Recharger",
+          "toppedUp": "J'ai rechargé",
+          "disconnect": "Déconnecter",
+          "disconnectConfirm": "Cliquez encore pour supprimer la clé",
+          "keyStaysAtOpenRouter": "OpenRouter conserve la clé « DanyWhere » parmi vos clés API jusqu'à ce que vous la supprimiez là-bas.",
+          "revokeUnconfirmed": "Déconnexion non confirmée par OpenAI",
+          "revokeUnconfirmedDetail": "DanyWhere a oublié la connexion ici. Vous pouvez vérifier l'accès de DanyWhere dans vos paramètres ChatGPT.",
+          "chatgptSettings": "Paramètres ChatGPT",
+          "answerAgain": "Répondre à nouveau aux questions",
+          "advanced": "Avancé"
+        },
+        "sample": {
+          "title": "Essai",
+          "spoken": "Dit : « {{text}} »",
+          "result": "Résultat : « {{text}} »",
+          "text": "euh alors je t'envoie ça demain virgule d'accord point d'interrogation",
+          "running": "Essai en cours …",
+          "took": "{{seconds}} s avec {{model}}",
+          "failed": "L'essai n'a pas marché."
+        },
+        "errors": {
+          "disconnect": "Non déconnecté",
+          "reopen": "Page non rouverte"
+        }
       }
     },
     "history": {
@@ -1275,7 +1440,8 @@
           "model": "Modèle",
           "demo": "Démo",
           "try": "Essai",
-          "done": "Tout est prêt"
+          "done": "Tout est prêt",
+          "postProcessSetup": "Améliorer vos textes"
         }
       },
       "onboardingRun": {
@@ -1569,14 +1735,33 @@
       "noApiKey": "{{provider}} a besoin d'une clé API, et aucune n'est saisie.",
       "keyRefused": "{{provider}} a refusé la clé API.",
       "noCredit": "Votre crédit chez {{provider}} est épuisé ; rechargez-le là-bas.",
-      "modelNotFound": "{{provider}} ne propose pas le modèle « {{model}} ».",
+      "modelNotFound": "{{provider}} ne propose pas le modèle « {{model}} ».",
       "unreachable": "{{provider}} est injoignable.",
       "timeout": "{{provider}} n'a pas répondu dans le délai imparti ({{seconds}} s).",
       "status": "{{provider}} a répondu avec le statut HTTP {{status}}.",
       "emptyReply": "{{provider}} n'a renvoyé aucun texte.",
       "truncated": "La réponse a été coupée à la limite de sortie du modèle.",
       "unavailable": "{{provider}} n'est pas disponible sur cet ordinateur.",
-      "other": "Erreur : {{error}}"
+      "other": "Erreur : {{error}}",
+      "freeBusy": "Les modèles gratuits de {{provider}} sont saturés pour le moment ; réessayez dans un instant.",
+      "freeDailyLimit": "Les dictées gratuites chez {{provider}} sont épuisées pour aujourd'hui (50 par jour) ; continuez demain, ou rechargez une fois.",
+      "keyLimit": "Le plafond de dépenses de la clé chez {{provider}} est atteint ; modifiez-le là-bas.",
+      "planLimit": "La limite d'utilisation de votre abonnement {{provider}} est atteinte pour l'instant.",
+      "planNotEligible": "Votre abonnement {{provider}} n'inclut pas l'utilisation dans d'autres applications.",
+      "signInExpired": "La connexion à {{provider}} a expiré ; reconnectez-vous.",
+      "noSignIn": "Vous n'êtes pas connecté à {{provider}}.",
+      "notSetUp": "Le post-traitement n'est pas encore configuré.",
+      "notSetUpTitle": "Post-traitement non configuré",
+      "rateLimited": "{{provider}} limite ce qui peut être envoyé par minute ; patientez un instant et dictez à nouveau.",
+      "actions": {
+        "setUp": "Configurer",
+        "topUp": "Recharger",
+        "credit": "Crédit",
+        "changeLimit": "Modifier le plafond",
+        "manageUsage": "Gérer l'utilisation",
+        "changeSetup": "Modifier la configuration",
+        "signInAgain": "Se reconnecter"
+      }
     },
     "appMissedShortcutTitle": "Copié – redémarrez l'app",
     "appMissedShortcut": "{{app}} était déjà ouverte quand DanyWhere a configuré le raccourci de dictée ; elle ne le reconnaîtra qu'après un redémarrage. Le texte est dans le presse-papiers.",

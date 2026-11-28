@@ -40,7 +40,8 @@
     "openChapter": "Apri il manuale: {{chapter}}",
     "chapters": {
       "startAndEndShortcuts": "Scorciatoie di avvio e di fine",
-      "defaultsAndProfiles": "Impostazioni di base e profili"
+      "defaultsAndProfiles": "Impostazioni di base e profili",
+      "postProcessingSetup": "Configurare la post-elaborazione"
     },
     "unavailable": "Questa build di DanyWhere non include il manuale."
   },
@@ -256,6 +257,12 @@
     "linux": {
       "tryIt": "Non funziona? <guide>Guida alla configurazione su Linux</guide>",
       "done": "Non funziona in altre app? <guide>Guida alla configurazione su Linux</guide>"
+    },
+    "postProcessSetup": {
+      "title": "Migliora i tuoi testi",
+      "sub": "Un modello linguistico può rifinire ogni dettatura: punteggiatura, intercalari, comandi dettati, nomi. Due domande veloci ed è configurato.",
+      "later": "Più tardi",
+      "laterHint": "Lo trovi più tardi in Impostazioni di base › Post-Elaborazione."
     }
   },
   "modelTable": {
@@ -521,7 +528,7 @@
       "onlyWhileRecording": "Occupata solo durante una registrazione.",
       "sameAsStartOrHold": "Stessa combinazione di una scorciatoia di avvio o da tenere premuta: senza registrazione ne avvia una, durante una registrazione passa all'istruzione.",
       "notTakenNever": "La post-elaborazione è impostata su «{{mode}}»: le scorciatoie di istruzione non sono occupate. Scegli un'altra impostazione per «{{setting}}» in Avanzate.",
-      "notTakenNoProvider": "Nessun provider di post-elaborazione con un modello è configurato: le scorciatoie di istruzione non sono occupate finché non ce n'è uno.",
+      "notSetUp": "La post-elaborazione non è ancora configurata: dopo una scorciatoia di istruzione il testo viene inserito così come è stato sentito, senza l'istruzione, e un avviso propone di configurarla.",
       "add": "Aggiungi scorciatoia di istruzione",
       "addPressKeys": "Premi la combinazione per la nuova scorciatoia di istruzione",
       "refName": "Scorciatoia di istruzione {{name}}",
@@ -1105,6 +1112,164 @@
           "withInstructionKey": "Con scorciatoia di istruzione",
           "always": "Sempre"
         }
+      },
+      "setup": {
+        "title": "Migliora i tuoi testi",
+        "intro": "Due domande veloci e tutto è configurato. Puoi cambiare le risposte in qualsiasi momento.",
+        "later": "Più tardi",
+        "knowMyWay": "So come fare:",
+        "allProviders": "Tutti i provider …",
+        "notSetUp": "La post-elaborazione non è ancora configurata.",
+        "setUp": "Configura",
+        "keepCurrent": "Mantieni la configurazione attuale",
+        "q1": {
+          "title": "1. Dove possono andare i tuoi testi?",
+          "free_services": {
+            "label": "Anche a servizi gratuiti.",
+            "hint": "Possono conservarli e usarli per migliorare la loro IA."
+          },
+          "not_kept": {
+            "label": "Solo a un servizio che li elabora e non li conserva.",
+            "hint": "Passa da un abbonamento o costa qualche dollaro."
+          },
+          "nowhere": {
+            "label": "Da nessuna parte.",
+            "hint": "Restano su questo computer."
+          }
+        },
+        "q2": {
+          "title": "2. Hai già uno di questi abbonamenti?",
+          "none": "Nessuno di questi"
+        },
+        "q3": {
+          "title": "3. Come vuoi proseguire?",
+          "credit": "Ricarica una volta da 5 dollari, senza abbonamento",
+          "groq": "Gratis con Groq, con una chiave da copiare",
+          "this_computer": "Su questo computer (più lento, da 16 GB di memoria)",
+          "tooLittleMemoryMac": "Su questo computer: servono 16 GB, questo Mac ne ha {{memory}}.",
+          "tooLittleMemory": "Su questo computer: servono 16 GB, questo computer ne ha {{memory}}."
+        },
+        "openrouter": {
+          "freeTitle": "Suggerimento: OpenRouter, gratis",
+          "freeBody": "Un account su OpenRouter, un clic su «Authorize», fatto. Fino a 50 dettature al giorno.",
+          "creditTitle": "Suggerimento: OpenRouter con credito",
+          "creditBody": "Un account su OpenRouter, un clic su «Authorize», poi una sola ricarica da 5 dollari. DanyWhere sceglie un modello che non usa i tuoi testi per l'addestramento. 5 dollari bastano per migliaia di dettature, e non si rinnova nulla.",
+          "tipAccount": "Registrati con Google o GitHub: ti risparmi una password e un codice via e-mail.",
+          "tipPayment": "Nuovo su OpenRouter? Il benvenuto chiede un metodo di pagamento. Puoi scegliere «I'll do this later»: i modelli gratuiti non ne hanno bisogno. Poi torna qui e premi «Riapri la pagina».",
+          "tipPaymentCredit": "Nuovo su OpenRouter? Il benvenuto chiede un metodo di pagamento, che ti serve comunque per ricaricare. Poi torna qui e premi «Riapri la pagina». Finché l'account non ha credito, DanyWhere non invia nulla.",
+          "connect": "Collega OpenRouter"
+        },
+        "chatgpt": {
+          "title": "Suggerimento: il tuo abbonamento ChatGPT",
+          "body": "Passa dal tuo abbonamento ChatGPT: niente chiave, nessun costo aggiuntivo. Accedi a ChatGPT nel browser e consenti l'accesso a DanyWhere.",
+          "firstUse": "L'utilizzo idoneo in questa app usa il tuo abbonamento ChatGPT. Gestisci l'utilizzo nelle impostazioni di ChatGPT.",
+          "dataNotDescribed": "OpenAI non descrive come tratta le richieste pagate dal tuo abbonamento.",
+          "continue": "Continua con ChatGPT"
+        },
+        "guidedKey": {
+          "title": "Suggerimento: una chiave di {{service}}",
+          "paste": "Incolla qui la chiave",
+          "fieldLabel": "Chiave di {{service}}",
+          "check": "Verifica",
+          "checking": "Verifica in corso …",
+          "works": "La chiave funziona."
+        },
+        "guides": {
+          "copyKey": "Copia la chiave e incollala qui.",
+          "copyToken": "Copia il token e incollalo qui.",
+          "anthropic": {
+            "credits": "Collega i crediti API del tuo abbonamento in claude.ai. Si può fare dopo sette giorni di abbonamento, e non serve aggiungere una carta.",
+            "creditsLink": "Come funziona",
+            "key": "Crea una chiave nella Claude Console, nell'organizzazione che hai collegato.",
+            "keyLink": "Apri la Console"
+          },
+          "gemini": {
+            "credits": "In Google AI Studio scegli «Claim free API credits» nel menu a sinistra (o «Redeem» se hai già un account di fatturazione) e configura la fatturazione. Un nuovo account di fatturazione richiede un metodo di pagamento e un pagamento anticipato di almeno 5 dollari.",
+            "creditsLink": "Apri AI Studio",
+            "key": "Usa la chiave API del progetto per cui hai configurato la fatturazione (per impostazione predefinita «Default Gemini Project») oppure creane una lì.",
+            "keyLink": "Chiavi API"
+          },
+          "huggingface": {
+            "key": "Crea un token di accesso con l'autorizzazione «Make calls to Inference Providers».",
+            "keyLink": "Apri i token"
+          },
+          "ollama_cloud": {
+            "key": "Crea una chiave nel tuo account Ollama.",
+            "keyLink": "Apri le chiavi"
+          },
+          "groq": {
+            "account": "Accedi a GroqCloud, per esempio con «Continue with Google». Non serve una carta.",
+            "accountLink": "Apri GroqCloud",
+            "key": "Scegli «Create API Key». Groq ti chiede di confermare con un clic che sei una persona."
+          }
+        },
+        "local": {
+          "laterTitle": "Su questo computer: arriva con una versione successiva",
+          "laterBody": "DanyWhere porterà un modello che funziona su questo computer. Fino ad allora va bene un server tuo, per esempio Ollama o LM Studio su questo computer, o quello della tua azienda.",
+          "unavailableTitle": "Non è possibile su questo computer",
+          "unavailableBodyMac": "Un modello su questo computer richiede 16 GB di memoria; questo Mac ne ha {{memory}}. Va bene un server tuo, per esempio quello della tua azienda.",
+          "unavailableBody": "Un modello su questo computer richiede 16 GB di memoria; questo computer ne ha {{memory}}. Va bene un server tuo, per esempio quello della tua azienda.",
+          "ownServer": "Configura un server tuo",
+          "ownServerHint": "Inserisci qui sotto il suo indirizzo e il suo modello.",
+          "ownServerLater": "Un server tuo puoi inserirlo più tardi in Impostazioni di base › Post-Elaborazione, sotto «Tutti i provider …»."
+        },
+        "signIn": {
+          "waiting": "In attesa del browser …",
+          "title": "Accesso a {{provider}}",
+          "waitingHint": "Completa nel browser. Se prima hai dovuto registrarti, premi «Riapri la pagina».",
+          "reopen": "Riapri la pagina",
+          "cancel": "Annulla",
+          "failed": "L'accesso non è riuscito: {{error}}",
+          "timedOut": "L'accesso ha atteso 30 minuti ed è scaduto.",
+          "denied": "L'accesso non è stato consentito.",
+          "notEligible": "Questo account ChatGPT non ha un abbonamento che DanyWhere possa usare (Go, Plus, Pro o Business).",
+          "noFreeModel": "Al momento OpenRouter non ha nessun modello gratuito che DanyWhere possa usare. Riprova più tardi, oppure ricarica una volta.",
+          "unreachable": "Impossibile raggiungere {{provider}}. Controlla la connessione e riprova.",
+          "refused": "{{provider}} ha rifiutato l'accesso. Riprova.",
+          "didNotWork": "L'accesso non è riuscito. Riprova.",
+          "tryAgain": "Riprova",
+          "browserSuccess": "Fatto. Puoi chiudere questa finestra e tornare a DanyWhere.",
+          "browserFailure": "Non ha funzionato. Torna a DanyWhere e riprova."
+        },
+        "connected": {
+          "title": "Collegato a {{provider}}",
+          "usingPlan": "Usa il tuo abbonamento ChatGPT",
+          "plan": "Abbonamento: {{plan}}",
+          "freeModels": "Modelli gratuiti, fino a 50 dettature al giorno",
+          "withCredit": "Con credito, un modello che non si addestra sui tuoi testi",
+          "noCreditYet": "Ancora nessun credito: DanyWhere non invia nulla finché non ricarichi.",
+          "notToppedUp": "OpenRouter non mostra ancora alcun credito. Può volerci un minuto.",
+          "topUpCheckFailed": "Impossibile chiedere il credito a OpenRouter.",
+          "keyLimit": "Limite di spesa della chiave: {{limit}}",
+          "model": "Modello: {{model}}",
+          "picksModel": "DanyWhere sceglie il modello.",
+          "tryIt": "Prova",
+          "manageUsage": "Gestisci l'utilizzo",
+          "credit": "Credito",
+          "topUp": "Ricarica",
+          "toppedUp": "Ho ricaricato",
+          "disconnect": "Disconnetti",
+          "disconnectConfirm": "Fai di nuovo clic per rimuovere la chiave",
+          "keyStaysAtOpenRouter": "OpenRouter conserva la chiave «DanyWhere» tra le tue chiavi API finché non la elimini lì.",
+          "revokeUnconfirmed": "Disconnessione non confermata da OpenAI",
+          "revokeUnconfirmedDetail": "DanyWhere ha dimenticato l'accesso qui. Puoi controllare l'accesso di DanyWhere nelle impostazioni di ChatGPT.",
+          "chatgptSettings": "Impostazioni di ChatGPT",
+          "answerAgain": "Rispondi di nuovo alle domande",
+          "advanced": "Avanzate"
+        },
+        "sample": {
+          "title": "Prova",
+          "spoken": "Detto: «{{text}}»",
+          "result": "Risultato: «{{text}}»",
+          "text": "ehm allora te lo mando domani virgola va bene punto interrogativo",
+          "running": "Prova in corso …",
+          "took": "{{seconds}} s con {{model}}",
+          "failed": "La prova non è riuscita."
+        },
+        "errors": {
+          "disconnect": "Non disconnesso",
+          "reopen": "Pagina non riaperta"
+        }
       }
     },
     "history": {
@@ -1275,7 +1440,8 @@
           "model": "Modello",
           "demo": "Demo",
           "try": "Provalo",
-          "done": "Tutto pronto"
+          "done": "Tutto pronto",
+          "postProcessSetup": "Migliora i tuoi testi"
         }
       },
       "onboardingRun": {
@@ -1576,7 +1742,26 @@
       "emptyReply": "{{provider}} non ha restituito alcun testo.",
       "truncated": "La risposta è stata troncata al limite di output del modello.",
       "unavailable": "{{provider}} non è disponibile su questo computer.",
-      "other": "Errore: {{error}}"
+      "other": "Errore: {{error}}",
+      "freeBusy": "I modelli gratuiti su {{provider}} sono occupati in questo momento; riprova tra poco.",
+      "freeDailyLimit": "Le dettature gratuite su {{provider}} sono esaurite per oggi (50 al giorno); continua domani o ricarica una volta.",
+      "keyLimit": "Il limite di spesa della chiave su {{provider}} è stato raggiunto; cambialo lì.",
+      "planLimit": "Il limite di utilizzo del tuo abbonamento {{provider}} è raggiunto per ora.",
+      "planNotEligible": "Il tuo abbonamento {{provider}} non include l'uso in altre app.",
+      "signInExpired": "L'accesso a {{provider}} è scaduto; accedi di nuovo.",
+      "noSignIn": "Non hai effettuato l'accesso a {{provider}}.",
+      "notSetUp": "La post-elaborazione non è ancora configurata.",
+      "notSetUpTitle": "Post-elaborazione non configurata",
+      "rateLimited": "{{provider}} limita quanto si può inviare al minuto; aspetta un momento e detta di nuovo.",
+      "actions": {
+        "setUp": "Configura",
+        "topUp": "Ricarica",
+        "credit": "Credito",
+        "changeLimit": "Cambia limite",
+        "manageUsage": "Gestisci l'utilizzo",
+        "changeSetup": "Cambia configurazione",
+        "signInAgain": "Accedi di nuovo"
+      }
     },
     "appMissedShortcutTitle": "Copiato – riavvia l'app",
     "appMissedShortcut": "{{app}} era già aperta quando DanyWhere ha impostato la scorciatoia di dettatura, quindi la riconoscerà solo dopo un riavvio. Il testo è negli appunti.",

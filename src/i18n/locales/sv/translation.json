@@ -40,7 +40,8 @@
     "openChapter": "Öppna handboken: {{chapter}}",
     "chapters": {
       "startAndEndShortcuts": "Start- och avslutningskortkommandon",
-      "defaultsAndProfiles": "Grundinställningar och profiler"
+      "defaultsAndProfiles": "Grundinställningar och profiler",
+      "postProcessingSetup": "Ställa in efterbearbetning"
     },
     "unavailable": "Den här versionen av DanyWhere har ingen handbok."
   },
@@ -256,6 +257,12 @@
     "linux": {
       "tryIt": "Fungerar det inte? <guide>Installationsguide för Linux</guide>",
       "done": "Fungerar det inte i andra appar? <guide>Installationsguide för Linux</guide>"
+    },
+    "postProcessSetup": {
+      "title": "Få dina texter förbättrade",
+      "sub": "En språkmodell kan putsa varje diktering: skiljetecken, utfyllnadsord, dikterade kommandon, namn. Två korta frågor, sedan är det inställt.",
+      "later": "Senare",
+      "laterHint": "Du hittar det senare under Grundinställningar › Efterbearbetning."
     }
   },
   "modelTable": {
@@ -521,7 +528,7 @@
       "onlyWhileRecording": "Bara upptagen under en inspelning.",
       "sameAsStartOrHold": "Samma tangentkombination som ett start- eller hållkortkommando: utan inspelning startar den en, under en inspelning växlar den till instruktionen.",
       "notTakenNever": "Efterbearbetning är inställd på ”{{mode}}”: instruktionskortkommandon är inte upptagna. Välj en annan inställning för ”{{setting}}” under Avancerat.",
-      "notTakenNoProvider": "Ingen leverantör för efterbearbetning med en modell är inställd: instruktionskortkommandon är inte upptagna förrän en finns.",
+      "notSetUp": "Efterbearbetningen är inte inställd än: efter ett instruktionskortkommando infogas texten som den hördes, utan instruktionen, och ett meddelande erbjuder att ställa in den.",
       "add": "Lägg till instruktionskortkommando",
       "addPressKeys": "Tryck på tangentkombinationen för det nya instruktionskortkommandot",
       "refName": "Instruktionskortkommando {{name}}",
@@ -1105,6 +1112,164 @@
           "withInstructionKey": "Med instruktionskortkommando",
           "always": "Alltid"
         }
+      },
+      "setup": {
+        "title": "Få dina texter förbättrade",
+        "intro": "Två korta frågor, sedan är allt inställt. Du kan ändra svaren när som helst.",
+        "later": "Senare",
+        "knowMyWay": "Jag kan det här:",
+        "allProviders": "Alla leverantörer …",
+        "notSetUp": "Efterbearbetningen är inte inställd än.",
+        "setUp": "Ställ in",
+        "keepCurrent": "Behåll nuvarande inställning",
+        "q1": {
+          "title": "1. Vart får dina texter skickas?",
+          "free_services": {
+            "label": "Även till gratistjänster.",
+            "hint": "De får behålla dem och använda dem för att förbättra sin AI."
+          },
+          "not_kept": {
+            "label": "Bara till en tjänst som bearbetar dem och inte sparar dem.",
+            "hint": "Det går via ett abonnemang eller kostar några dollar."
+          },
+          "nowhere": {
+            "label": "Ingenstans.",
+            "hint": "De stannar på den här datorn."
+          }
+        },
+        "q2": {
+          "title": "2. Har du redan något av de här abonnemangen?",
+          "none": "Inget av dem"
+        },
+        "q3": {
+          "title": "3. Hur vill du gå vidare?",
+          "credit": "Fyll på en gång från 5 $, utan abonnemang",
+          "groq": "Gratis hos Groq, med en nyckel att kopiera",
+          "this_computer": "På den här datorn (långsammare, från 16 GB minne)",
+          "tooLittleMemoryMac": "På den här datorn: kräver 16 GB, den här Macen har {{memory}}.",
+          "tooLittleMemory": "På den här datorn: kräver 16 GB, den här datorn har {{memory}}."
+        },
+        "openrouter": {
+          "freeTitle": "Förslag: OpenRouter, gratis",
+          "freeBody": "Ett konto hos OpenRouter, ett klick på ”Authorize”, klart. Upp till 50 dikteringar om dagen.",
+          "creditTitle": "Förslag: OpenRouter med kredit",
+          "creditBody": "Ett konto hos OpenRouter, ett klick på ”Authorize”, sedan fyller du på en gång från 5 $. DanyWhere väljer en modell som inte använder dina texter för träning. 5 $ räcker till tusentals dikteringar, och inget förnyas.",
+          "tipAccount": "Registrera dig med Google eller GitHub: då slipper du ett lösenord och en kod via e-post.",
+          "tipPayment": "Ny på OpenRouter? Välkomstsidan ber om ett betalsätt. Du kan välja ”I'll do this later”: gratismodellerna behöver inget. Kom sedan tillbaka hit och tryck på ”Öppna sidan igen”.",
+          "tipPaymentCredit": "Ny på OpenRouter? Välkomstsidan ber om ett betalsätt, som du ändå behöver för att fylla på. Kom sedan tillbaka hit och tryck på ”Öppna sidan igen”. Så länge kontot saknar kredit skickar DanyWhere inget.",
+          "connect": "Anslut till OpenRouter"
+        },
+        "chatgpt": {
+          "title": "Förslag: ditt ChatGPT-abonnemang",
+          "body": "Går via ditt ChatGPT-abonnemang: ingen nyckel, ingen extra kostnad. Logga in på ChatGPT i webbläsaren och ge DanyWhere åtkomst.",
+          "firstUse": "Berättigad användning i den här appen går via ditt ChatGPT-abonnemang. Hantera användningen i dina ChatGPT-inställningar.",
+          "dataNotDescribed": "OpenAI beskriver inte hur det behandlar förfrågningar som ditt abonnemang betalar för.",
+          "continue": "Fortsätt med ChatGPT"
+        },
+        "guidedKey": {
+          "title": "Förslag: en nyckel från {{service}}",
+          "paste": "Klistra in nyckeln här",
+          "fieldLabel": "Nyckel från {{service}}",
+          "check": "Kontrollera",
+          "checking": "Kontrollerar …",
+          "works": "Nyckeln fungerar."
+        },
+        "guides": {
+          "copyKey": "Kopiera nyckeln och klistra in den här.",
+          "copyToken": "Kopiera token och klistra in den här.",
+          "anthropic": {
+            "credits": "Koppla ditt abonnemangs API-kredit i claude.ai. Det går efter sju dagar med abonnemanget, och du behöver inte lägga till något kort.",
+            "creditsLink": "Så fungerar det",
+            "key": "Skapa en nyckel i Claude Console, i den organisation du har kopplat.",
+            "keyLink": "Öppna Console"
+          },
+          "gemini": {
+            "credits": "Välj ”Claim free API credits” i menyn till vänster i Google AI Studio (eller ”Redeem” om du redan har ett faktureringskonto) och ställ in faktureringen. Ett nytt faktureringskonto kräver ett betalsätt och en förskottsbetalning på minst 5 $.",
+            "creditsLink": "Öppna AI Studio",
+            "key": "Använd API-nyckeln för projektet du har ställt in fakturering för (som standard ”Default Gemini Project”), eller skapa en där.",
+            "keyLink": "API-nycklar"
+          },
+          "huggingface": {
+            "key": "Skapa en åtkomsttoken med behörigheten ”Make calls to Inference Providers”.",
+            "keyLink": "Öppna tokens"
+          },
+          "ollama_cloud": {
+            "key": "Skapa en nyckel i ditt Ollama-konto.",
+            "keyLink": "Öppna nycklar"
+          },
+          "groq": {
+            "account": "Logga in på GroqCloud, till exempel med ”Continue with Google”. Inget kort behövs.",
+            "accountLink": "Öppna GroqCloud",
+            "key": "Välj ”Create API Key”. Groq låter dig bekräfta med ett klick att du är en människa."
+          }
+        },
+        "local": {
+          "laterTitle": "På den här datorn: kommer i en senare version",
+          "laterBody": "DanyWhere får senare en modell som körs på den här datorn. Till dess fungerar en egen server, till exempel Ollama eller LM Studio på den här datorn, eller ditt företags.",
+          "unavailableTitle": "Det går inte på den här datorn",
+          "unavailableBodyMac": "En modell på den här datorn kräver 16 GB minne; den här Macen har {{memory}}. En egen server fungerar, till exempel ditt företags.",
+          "unavailableBody": "En modell på den här datorn kräver 16 GB minne; den här datorn har {{memory}}. En egen server fungerar, till exempel ditt företags.",
+          "ownServer": "Ställ in en egen server",
+          "ownServerHint": "Ange dess adress och modell nedan.",
+          "ownServerLater": "En egen server anger du senare under Grundinställningar › Efterbearbetning, bakom ”Alla leverantörer …”."
+        },
+        "signIn": {
+          "waiting": "Väntar på webbläsaren …",
+          "title": "Inloggning hos {{provider}}",
+          "waitingHint": "Slutför i webbläsaren. Om du först behövde registrera dig, tryck på ”Öppna sidan igen”.",
+          "reopen": "Öppna sidan igen",
+          "cancel": "Avbryt",
+          "failed": "Inloggningen fungerade inte: {{error}}",
+          "timedOut": "Inloggningen väntade i 30 minuter och har gått ut.",
+          "denied": "Åtkomst tilläts inte.",
+          "notEligible": "Det här ChatGPT-kontot har inget abonnemang som DanyWhere kan använda (Go, Plus, Pro eller Business).",
+          "noFreeModel": "OpenRouter har just nu ingen gratismodell som DanyWhere kan använda. Försök igen senare, eller fyll på en gång i stället.",
+          "unreachable": "Det gick inte att nå {{provider}}. Kontrollera anslutningen och försök igen.",
+          "refused": "{{provider}} nekade inloggningen. Försök igen.",
+          "didNotWork": "Inloggningen fungerade inte. Försök igen.",
+          "tryAgain": "Försök igen",
+          "browserSuccess": "Klart. Du kan stänga det här fönstret och gå tillbaka till DanyWhere.",
+          "browserFailure": "Det fungerade inte. Gå tillbaka till DanyWhere och försök igen."
+        },
+        "connected": {
+          "title": "Ansluten till {{provider}}",
+          "usingPlan": "Går via ditt ChatGPT-abonnemang",
+          "plan": "Abonnemang: {{plan}}",
+          "freeModels": "Gratismodeller, upp till 50 dikteringar om dagen",
+          "withCredit": "Med kredit, en modell utan träning",
+          "noCreditYet": "Ingen kredit än: DanyWhere skickar inget förrän du fyller på.",
+          "notToppedUp": "OpenRouter visar ingen kredit än. Det kan ta en minut.",
+          "topUpCheckFailed": "Kunde inte fråga OpenRouter om krediten.",
+          "keyLimit": "Nyckelns utgiftsgräns: {{limit}}",
+          "model": "Modell: {{model}}",
+          "picksModel": "DanyWhere väljer modellen.",
+          "tryIt": "Testa",
+          "manageUsage": "Hantera användning",
+          "credit": "Kredit",
+          "topUp": "Fyll på",
+          "toppedUp": "Jag har fyllt på",
+          "disconnect": "Koppla från",
+          "disconnectConfirm": "Klicka igen för att ta bort nyckeln",
+          "keyStaysAtOpenRouter": "OpenRouter behåller nyckeln ”DanyWhere” bland dina API-nycklar tills du tar bort den där.",
+          "revokeUnconfirmed": "Utloggningen bekräftades inte av OpenAI",
+          "revokeUnconfirmedDetail": "DanyWhere har glömt inloggningen här. Du kan kontrollera DanyWheres åtkomst i dina ChatGPT-inställningar.",
+          "chatgptSettings": "ChatGPT-inställningar",
+          "answerAgain": "Svara på frågorna igen",
+          "advanced": "Avancerat"
+        },
+        "sample": {
+          "title": "Prov",
+          "spoken": "Sagt: ”{{text}}”",
+          "result": "Resultat: ”{{text}}”",
+          "text": "eh alltså jag skickar det till dig i morgon komma okej frågetecken",
+          "running": "Testar …",
+          "took": "{{seconds}} s med {{model}}",
+          "failed": "Provet fungerade inte."
+        },
+        "errors": {
+          "disconnect": "Inte frånkopplad",
+          "reopen": "Sidan öppnades inte igen"
+        }
       }
     },
     "history": {
@@ -1275,7 +1440,8 @@
           "model": "Modell",
           "demo": "Demo",
           "try": "Testa",
-          "done": "Klart"
+          "done": "Klart",
+          "postProcessSetup": "Få dina texter förbättrade"
         }
       },
       "onboardingRun": {
@@ -1576,7 +1742,26 @@
       "emptyReply": "{{provider}} skickade inte tillbaka någon text.",
       "truncated": "Svaret kapades vid modellens utdatagräns.",
       "unavailable": "{{provider}} är inte tillgänglig på den här datorn.",
-      "other": "Fel: {{error}}"
+      "other": "Fel: {{error}}",
+      "freeBusy": "Gratismodellerna hos {{provider}} är upptagna just nu; försök igen om en stund.",
+      "freeDailyLimit": "Gratisdikteringarna hos {{provider}} är slut för i dag (50 om dagen); fortsätt i morgon eller fyll på en gång.",
+      "keyLimit": "Nyckelns utgiftsgräns hos {{provider}} är nådd; ändra den där.",
+      "planLimit": "Ditt abonnemangs användningsgräns hos {{provider}} är nådd för tillfället.",
+      "planNotEligible": "Ditt abonnemang hos {{provider}} omfattar inte användning i andra appar.",
+      "signInExpired": "Inloggningen hos {{provider}} har gått ut; logga in igen.",
+      "noSignIn": "Du är inte inloggad hos {{provider}}.",
+      "notSetUp": "Efterbearbetningen är inte inställd än.",
+      "notSetUpTitle": "Efterbearbetning inte inställd",
+      "rateLimited": "{{provider}} begränsar hur mycket som får skickas per minut; vänta en stund och diktera igen.",
+      "actions": {
+        "setUp": "Ställ in",
+        "topUp": "Fyll på",
+        "credit": "Kredit",
+        "changeLimit": "Ändra gräns",
+        "manageUsage": "Hantera användning",
+        "changeSetup": "Ändra inställning",
+        "signInAgain": "Logga in igen"
+      }
     },
     "appMissedShortcutTitle": "Kopierat – starta om appen",
     "appMissedShortcut": "{{app}} var redan öppen när DanyWhere ställde in kortkommandot för diktering, så den känner till det först efter en omstart. Texten finns i urklipp.",

@@ -294,6 +294,64 @@ fn an_instruction_in_a_dictation_that_ends_in_a_profile_set_to_never_sends_nothi
     assert_eq!(ai_steps_with_instruction(entry), Vec::<bool>::new());
 }
 
+/// DanyWhere: the post-processing setup (sidecar note
+/// `2026-11-26_2250_nachbearbeitung-einstieg-umsetzung`, section 2): ⇥
+/// before post-processing is set up. The text goes out as heard, without
+/// the instruction; nothing leaves the computer, and the notice says what
+/// is missing, which offers the setup: before the setup was ever finished
+/// "not set up" (review of 2026-11-27, M7), after it the part.
+#[test]
+fn an_instruction_before_post_processing_is_set_up_inserts_the_text_as_heard() {
+    for (missing, finished, reason) in [
+        ("key", false, "not-set-up"),
+        ("provider", false, "not-set-up"),
+        ("key", true, "no-api-key"),
+        ("provider", true, "no-provider"),
+    ] {
+        let (url, requests) = llm_server(vec![("200 OK", POLISHED)]);
+        let ports = FakePorts::new(script(tone(SAMPLES), tone(SAID), POLISH));
+        let slot = slot();
+        cut(&ports, slot);
+        ports.take_events();
+        let mut settings = with_end(post_process_settings(&url), PLAIN, "", false);
+        settings.post_process_setup.finished = finished;
+        if missing == "key" {
+            settings.post_process_api_keys.clear();
+        } else {
+            settings.post_process_provider_id = "gone".to_string();
+        }
+        let snapshot = snapshot_of(settings, None, EndChoice::Key(PLAIN.to_string()));
+        let values = snapshot.values.clone();
+        end(&ports, slot, snapshot);
+
+        let events = ports.take_events();
+        assert!(
+            events.contains(&paste("hello", &values, "")),
+            "{missing}: the text as heard: {events:#?}"
+        );
+        let raised: Vec<&crate::notices::Notice> = events
+            .iter()
+            .filter_map(|event| match event {
+                Event::Raise(notice) => Some(notice),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(raised.len(), 1, "{missing}: {events:#?}");
+        assert_eq!(raised[0].code, NoticeCode::PostProcessFailed);
+        let detail: serde_json::Value =
+            serde_json::from_str(raised[0].detail.as_deref().expect("a detail")).unwrap();
+        assert_eq!(detail["reason"], reason, "{missing}");
+        assert!(
+            requests.recv_timeout(Duration::from_millis(500)).is_err(),
+            "{missing}: no request left the computer"
+        );
+        let entry = &ports.entries()[0];
+        assert_eq!(entry.transcription_text, "hello");
+        assert_eq!(entry.post_processed_text, None);
+        assert_eq!(entry.spoken_instruction.as_deref(), Some(POLISH));
+    }
+}
+
 #[test]
 fn an_instruction_heard_as_nothing_post_processes_with_the_prompts_alone() {
     let (url, requests) = llm_server(vec![("200 OK", POLISHED)]);

@@ -40,7 +40,8 @@
     "openChapter": "Odpri priročnik: {{chapter}}",
     "chapters": {
       "startAndEndShortcuts": "Bližnjice za začetek in konec",
-      "defaultsAndProfiles": "Osnovne nastavitve in profili"
+      "defaultsAndProfiles": "Osnovne nastavitve in profili",
+      "postProcessingSetup": "Nastavitev naknadne obdelave"
     },
     "unavailable": "Ta različica aplikacije DanyWhere nima priročnika."
   },
@@ -256,6 +257,12 @@
     "linux": {
       "tryIt": "Ne deluje? <guide>Navodila za nastavitev v Linuxu</guide>",
       "done": "Ne deluje v drugih aplikacijah? <guide>Navodila za nastavitev v Linuxu</guide>"
+    },
+    "postProcessSetup": {
+      "title": "Izboljšajte svoja besedila",
+      "sub": "Jezikovni model lahko izgladi vsak narek: ločila, mašila, izgovorjene ukaze, imena. Dve kratki vprašanji in vse bo nastavljeno.",
+      "later": "Pozneje",
+      "laterHint": "Nastavitev najdete pozneje pod Osnovne nastavitve › Naknadna obdelava."
     }
   },
   "modelTable": {
@@ -521,7 +528,7 @@
       "onlyWhileRecording": "Zasedena samo med snemanjem.",
       "sameAsStartOrHold": "Ista kombinacija tipk kot bližnjica za začetek ali za držanje: zunaj snemanja začne snemanje, med snemanjem preklopi na navodilo.",
       "notTakenNever": "Naknadna obdelava je nastavljena na »{{mode}}«: bližnjice za navodila niso zasedene. Pod Napredno izberite drugo nastavitev za »{{setting}}«.",
-      "notTakenNoProvider": "Ponudnik naknadne obdelave z modelom ni nastavljen: bližnjice za navodila niso zasedene, dokler ga ne nastavite.",
+      "notSetUp": "Naknadna obdelava še ni nastavljena: po bližnjici za navodilo se besedilo vstavi tako, kot je bilo slišano, brez navodila, obvestilo pa ponudi nastavitev.",
       "add": "Dodaj bližnjico za navodilo",
       "addPressKeys": "Pritisnite kombinacijo tipk za novo bližnjico za navodilo",
       "refName": "Bližnjica za navodilo {{name}}",
@@ -1105,6 +1112,164 @@
           "withInstructionKey": "Z bližnjico za navodilo",
           "always": "Vedno"
         }
+      },
+      "setup": {
+        "title": "Izboljšajte svoja besedila",
+        "intro": "Dve kratki vprašanji in vse je nastavljeno. Odgovore lahko kadar koli spremenite.",
+        "later": "Pozneje",
+        "knowMyWay": "Za izkušene:",
+        "allProviders": "Vsi ponudniki …",
+        "notSetUp": "Naknadna obdelava še ni nastavljena.",
+        "setUp": "Nastavi",
+        "keepCurrent": "Obdrži trenutno nastavitev",
+        "q1": {
+          "title": "1. Kam se smejo pošiljati vaša besedila?",
+          "free_services": {
+            "label": "Tudi brezplačnim storitvam.",
+            "hint": "Te jih smejo obdržati in z njimi izboljševati svojo umetno inteligenco."
+          },
+          "not_kept": {
+            "label": "Samo storitvi, ki jih obdela in jih ne obdrži.",
+            "hint": "To gre prek naročnine ali stane nekaj dolarjev."
+          },
+          "nowhere": {
+            "label": "Nikamor.",
+            "hint": "Ostanejo v tem računalniku."
+          }
+        },
+        "q2": {
+          "title": "2. Ali že imate katero od teh naročnin?",
+          "none": "Nobene od teh"
+        },
+        "q3": {
+          "title": "3. Kako naprej?",
+          "credit": "Enkratno polnjenje dobroimetja od 5 $, brez naročnine",
+          "groq": "Brezplačno pri ponudniku Groq, s ključem za kopiranje",
+          "this_computer": "V tem računalniku (počasneje, od 16 GB pomnilnika)",
+          "tooLittleMemoryMac": "V tem računalniku: potrebnih je 16 GB, ta Mac ima {{memory}}.",
+          "tooLittleMemory": "V tem računalniku: potrebnih je 16 GB, ta računalnik ima {{memory}}."
+        },
+        "openrouter": {
+          "freeTitle": "Predlog: OpenRouter, brezplačno",
+          "freeBody": "Račun pri storitvi OpenRouter, en klik na »Authorize« in končano. Do 50 narekov na dan.",
+          "creditTitle": "Predlog: OpenRouter z dobroimetjem",
+          "creditBody": "Račun pri storitvi OpenRouter, en klik na »Authorize«, nato enkrat napolnite dobroimetje od 5 $. DanyWhere izbere model, ki vaših besedil ne uporablja za učenje. 5 $ zadošča za več tisoč narekov in nič se ne podaljša samodejno.",
+          "tipAccount": "Registrirajte se z računom Google ali GitHub: tako prihranite geslo in kodo po e-pošti.",
+          "tipPayment": "Ste novi pri storitvi OpenRouter? Pozdravna stran vpraša za način plačila. Izberete lahko »I'll do this later«: brezplačni modeli ga ne potrebujejo. Nato se vrnite sem in pritisnite »Znova odpri stran«.",
+          "tipPaymentCredit": "Ste novi pri storitvi OpenRouter? Pozdravna stran vpraša za način plačila, ki ga za polnjenje tako ali tako potrebujete. Nato se vrnite sem in pritisnite »Znova odpri stran«. Dokler račun nima dobroimetja, DanyWhere ne pošlje ničesar.",
+          "connect": "Poveži OpenRouter"
+        },
+        "chatgpt": {
+          "title": "Predlog: vaša naročnina ChatGPT",
+          "body": "Deluje prek vaše naročnine ChatGPT: brez ključa, brez dodatnih stroškov. V brskalniku se prijavite v ChatGPT in dovolite dostop aplikaciji DanyWhere.",
+          "firstUse": "Upravičena uporaba v tej aplikaciji gre prek vaše naročnine ChatGPT. Uporabo upravljate v nastavitvah ChatGPT.",
+          "dataNotDescribed": "OpenAI ne opisuje, kako ravna z zahtevami, ki jih plača vaša naročnina.",
+          "continue": "Nadaljuj s ChatGPT"
+        },
+        "guidedKey": {
+          "title": "Predlog: ključ ponudnika {{service}}",
+          "paste": "Ključ prilepite sem",
+          "fieldLabel": "Ključ ponudnika {{service}}",
+          "check": "Preveri",
+          "checking": "Preverjanje …",
+          "works": "Ključ deluje."
+        },
+        "guides": {
+          "copyKey": "Kopirajte ključ in ga prilepite sem.",
+          "copyToken": "Kopirajte žeton in ga prilepite sem.",
+          "anthropic": {
+            "credits": "Na claude.ai povežite dobroimetje za API, ki pripada vaši naročnini. To je mogoče po sedmih dneh naročnine, kartice pa vam ni treba dodati.",
+            "creditsLink": "Kako to deluje",
+            "key": "V Claude Console ustvarite ključ, in sicer v organizaciji, ki ste jo povezali.",
+            "keyLink": "Odpri Console"
+          },
+          "gemini": {
+            "credits": "V Google AI Studio v meniju na levi izberite »Claim free API credits« (ali »Redeem«, če že imate račun za obračunavanje) in nastavite obračunavanje. Nov račun za obračunavanje potrebuje način plačila in predplačilo najmanj 5 $.",
+            "creditsLink": "Odpri AI Studio",
+            "key": "Uporabite ključ API projekta, za katerega ste nastavili obračunavanje (privzeto »Default Gemini Project«), ali tam ustvarite novega.",
+            "keyLink": "Ključi API"
+          },
+          "huggingface": {
+            "key": "Ustvarite žeton za dostop z dovoljenjem »Make calls to Inference Providers«.",
+            "keyLink": "Odpri žetone"
+          },
+          "ollama_cloud": {
+            "key": "V svojem računu Ollama ustvarite ključ.",
+            "keyLink": "Odpri ključe"
+          },
+          "groq": {
+            "account": "Prijavite se v GroqCloud, na primer z »Continue with Google«. Kartica ni potrebna.",
+            "accountLink": "Odpri GroqCloud",
+            "key": "Izberite »Create API Key«. Groq vas prosi, da s klikom potrdite, da ste človek."
+          }
+        },
+        "local": {
+          "laterTitle": "V tem računalniku: na voljo v poznejši različici",
+          "laterBody": "Poznejša različica aplikacije DanyWhere bo prinesla model, ki deluje v tem računalniku. Do takrat lahko uporabite lasten strežnik, na primer Ollama ali LM Studio v tem računalniku ali strežnik vašega podjetja.",
+          "unavailableTitle": "V tem računalniku to ni mogoče",
+          "unavailableBodyMac": "Model v tem računalniku potrebuje 16 GB pomnilnika; ta Mac ima {{memory}}. Uporabite lahko lasten strežnik, na primer strežnik vašega podjetja.",
+          "unavailableBody": "Model v tem računalniku potrebuje 16 GB pomnilnika; ta računalnik ima {{memory}}. Uporabite lahko lasten strežnik, na primer strežnik vašega podjetja.",
+          "ownServer": "Nastavi lasten strežnik",
+          "ownServerHint": "Spodaj vnesite njegov naslov in model.",
+          "ownServerLater": "Lasten strežnik lahko pozneje vnesete pod Osnovne nastavitve › Naknadna obdelava, za »Vsi ponudniki …«."
+        },
+        "signIn": {
+          "waiting": "Čakanje na brskalnik …",
+          "title": "Prijava pri ponudniku {{provider}}",
+          "waitingHint": "Dokončajte v brskalniku. Če ste se morali najprej registrirati, pritisnite »Znova odpri stran«.",
+          "reopen": "Znova odpri stran",
+          "cancel": "Prekliči",
+          "failed": "Prijava ni uspela: {{error}}",
+          "timedOut": "Prijava je čakala 30 minut in je potekla.",
+          "denied": "Dostop ni bil dovoljen.",
+          "notEligible": "Ta račun ChatGPT nima naročnine, ki jo lahko uporablja DanyWhere (Go, Plus, Pro ali Business).",
+          "noFreeModel": "OpenRouter trenutno nima brezplačnega modela, ki ga lahko uporablja DanyWhere. Poskusite znova pozneje ali raje enkrat napolnite dobroimetje.",
+          "unreachable": "Ponudnika {{provider}} ni bilo mogoče doseči. Preverite povezavo in poskusite znova.",
+          "refused": "Ponudnik {{provider}} je zavrnil prijavo. Poskusite znova.",
+          "didNotWork": "Prijava ni uspela. Poskusite znova.",
+          "tryAgain": "Poskusi znova",
+          "browserSuccess": "Končano. To okno lahko zaprete in se vrnete v aplikacijo DanyWhere.",
+          "browserFailure": "Ni uspelo. Vrnite se v aplikacijo DanyWhere in poskusite znova."
+        },
+        "connected": {
+          "title": "Povezano s ponudnikom {{provider}}",
+          "usingPlan": "Prek vaše naročnine ChatGPT",
+          "plan": "Naročnina: {{plan}}",
+          "freeModels": "Brezplačni modeli, do 50 narekov na dan",
+          "withCredit": "Z dobroimetjem, model brez učenja na vaših besedilih",
+          "noCreditYet": "Še brez dobroimetja: DanyWhere ne pošlje ničesar, dokler ga ne napolnite.",
+          "notToppedUp": "OpenRouter še ne prikazuje dobroimetja. To lahko traja minuto.",
+          "topUpCheckFailed": "Od storitve OpenRouter ni bilo mogoče izvedeti stanja dobroimetja.",
+          "keyLimit": "Omejitev porabe ključa: {{limit}}",
+          "model": "Model: {{model}}",
+          "picksModel": "Model izbere DanyWhere.",
+          "tryIt": "Preizkusi",
+          "manageUsage": "Upravljaj uporabo",
+          "credit": "Dobroimetje",
+          "topUp": "Napolni",
+          "toppedUp": "Polnjenje opravljeno",
+          "disconnect": "Prekini povezavo",
+          "disconnectConfirm": "Kliknite znova, da odstranite ključ",
+          "keyStaysAtOpenRouter": "OpenRouter obdrži ključ »DanyWhere« med vašimi ključi API, dokler ga tam ne izbrišete.",
+          "revokeUnconfirmed": "OpenAI ni potrdil odjave",
+          "revokeUnconfirmedDetail": "Aplikacija DanyWhere je prijavo tukaj pozabila. Dostop aplikacije DanyWhere lahko preverite v nastavitvah ChatGPT.",
+          "chatgptSettings": "Nastavitve ChatGPT",
+          "answerAgain": "Znova odgovori na vprašanja",
+          "advanced": "Napredno"
+        },
+        "sample": {
+          "title": "Preizkus",
+          "spoken": "Izgovorjeno: »{{text}}«",
+          "result": "Rezultat: »{{text}}«",
+          "text": "eee no ti to pošljem jutri vejica velja vprašaj",
+          "running": "Preizkušanje …",
+          "took": "{{seconds}} s z modelom {{model}}",
+          "failed": "Preizkus ni uspel."
+        },
+        "errors": {
+          "disconnect": "Povezava ni prekinjena",
+          "reopen": "Strani ni bilo mogoče znova odpreti"
+        }
       }
     },
     "history": {
@@ -1275,7 +1440,8 @@
           "model": "Model",
           "demo": "Predstavitev",
           "try": "Preizkus",
-          "done": "Vse je pripravljeno"
+          "done": "Vse je pripravljeno",
+          "postProcessSetup": "Izboljšajte svoja besedila"
         }
       },
       "onboardingRun": {
@@ -1576,7 +1742,26 @@
       "emptyReply": "Ponudnik {{provider}} ni vrnil nobenega besedila.",
       "truncated": "Odgovor je bil odrezan, ker je dosegel omejitev izhoda modela.",
       "unavailable": "Ponudnik {{provider}} v tem računalniku ni na voljo.",
-      "other": "Napaka: {{error}}"
+      "other": "Napaka: {{error}}",
+      "freeBusy": "Brezplačni modeli pri ponudniku {{provider}} so trenutno zasedeni; poskusite znova čez trenutek.",
+      "freeDailyLimit": "Brezplačni nareki pri ponudniku {{provider}} so za danes porabljeni (50 na dan); nadaljujte jutri ali enkrat napolnite dobroimetje.",
+      "keyLimit": "Omejitev porabe ključa pri ponudniku {{provider}} je dosežena; spremenite jo tam.",
+      "planLimit": "Omejitev uporabe vaše naročnine pri ponudniku {{provider}} je za zdaj dosežena.",
+      "planNotEligible": "Vaša naročnina pri ponudniku {{provider}} ne vključuje uporabe v drugih aplikacijah.",
+      "signInExpired": "Prijava pri ponudniku {{provider}} je potekla; znova se prijavite.",
+      "noSignIn": "Pri ponudniku {{provider}} niste prijavljeni.",
+      "notSetUp": "Naknadna obdelava še ni nastavljena.",
+      "notSetUpTitle": "Naknadna obdelava ni nastavljena",
+      "rateLimited": "Ponudnik {{provider}} omejuje, koliko se sme poslati na minuto; malo počakajte in znova narekujte.",
+      "actions": {
+        "setUp": "Nastavi",
+        "topUp": "Napolni",
+        "credit": "Dobroimetje",
+        "changeLimit": "Spremeni omejitev",
+        "manageUsage": "Upravljaj uporabo",
+        "changeSetup": "Spremeni nastavitev",
+        "signInAgain": "Znova se prijavi"
+      }
     },
     "appMissedShortcutTitle": "Kopirano – znova zaženite aplikacijo",
     "appMissedShortcut": "Aplikacija {{app}} je bila odprta že pred nastavitvijo bližnjice za narekovanje, zato jo bo poznala šele po ponovnem zagonu. Vaše besedilo je v odložišču.",

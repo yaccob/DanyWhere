@@ -40,7 +40,8 @@
     "openChapter": "Buka panduan: {{chapter}}",
     "chapters": {
       "startAndEndShortcuts": "Pintasan Mulai dan Akhir",
-      "defaultsAndProfiles": "Pengaturan Dasar dan Profil"
+      "defaultsAndProfiles": "Pengaturan Dasar dan Profil",
+      "postProcessingSetup": "Menyiapkan Pascaproses"
     },
     "unavailable": "Build DanyWhere ini tidak menyertakan panduan."
   },
@@ -256,6 +257,12 @@
     "linux": {
       "tryIt": "Tidak berfungsi? <guide>Panduan penyiapan Linux</guide>",
       "done": "Tidak berfungsi di aplikasi lain? <guide>Panduan penyiapan Linux</guide>"
+    },
+    "postProcessSetup": {
+      "title": "Perbaiki teks Anda",
+      "sub": "Model bahasa dapat merapikan setiap dikte: tanda baca, kata pengisi, perintah lisan, nama. Dua pertanyaan singkat, lalu semuanya siap.",
+      "later": "Nanti",
+      "laterHint": "Anda dapat menemukannya nanti di Pengaturan Dasar › Pascaproses."
     }
   },
   "modelTable": {
@@ -521,7 +528,7 @@
       "onlyWhileRecording": "Hanya dipakai selama rekaman.",
       "sameAsStartOrHold": "Kombinasi yang sama dengan sebuah pintasan mulai atau pintasan tahan: tanpa rekaman, kombinasi ini memulai rekaman; selama rekaman, kombinasi ini beralih ke instruksi.",
       "notTakenNever": "Pascaproses diatur ke “{{mode}}”: pintasan instruksi tidak dipakai. Pilih pengaturan lain untuk “{{setting}}” di Lanjutan.",
-      "notTakenNoProvider": "Belum ada penyedia pascaproses dengan model yang disiapkan: pintasan instruksi tidak dipakai sampai ada satu.",
+      "notSetUp": "Pascaproses belum disiapkan: setelah pintasan instruksi, teks disisipkan seperti yang terdengar, tanpa instruksi, dan sebuah pemberitahuan menawarkan untuk menyiapkannya.",
       "add": "Tambah Pintasan Instruksi",
       "addPressKeys": "Tekan kombinasi untuk pintasan instruksi yang baru",
       "refName": "Pintasan instruksi {{name}}",
@@ -1105,6 +1112,164 @@
           "withInstructionKey": "Dengan pintasan instruksi",
           "always": "Selalu"
         }
+      },
+      "setup": {
+        "title": "Perbaiki Teks Anda",
+        "intro": "Dua pertanyaan singkat, lalu semuanya siap. Anda dapat mengubah jawaban kapan saja.",
+        "later": "Nanti",
+        "knowMyWay": "Saya sudah paham caranya:",
+        "allProviders": "Semua penyedia …",
+        "notSetUp": "Pascaproses belum disiapkan.",
+        "setUp": "Siapkan",
+        "keepCurrent": "Pertahankan pengaturan saat ini",
+        "q1": {
+          "title": "1. Ke mana teks Anda boleh dikirim?",
+          "free_services": {
+            "label": "Juga ke layanan gratis.",
+            "hint": "Layanan itu boleh menyimpannya dan memakainya untuk meningkatkan AI mereka."
+          },
+          "not_kept": {
+            "label": "Hanya ke layanan yang memprosesnya tanpa menyimpannya.",
+            "hint": "Itu lewat langganan atau berbiaya beberapa dolar."
+          },
+          "nowhere": {
+            "label": "Tidak ke mana pun.",
+            "hint": "Teks tetap di komputer ini."
+          }
+        },
+        "q2": {
+          "title": "2. Apakah Anda sudah punya salah satu langganan ini?",
+          "none": "Tidak satu pun"
+        },
+        "q3": {
+          "title": "3. Bagaimana selanjutnya?",
+          "credit": "Isi ulang sekali mulai $5, tanpa langganan",
+          "groq": "Gratis di Groq, dengan kunci untuk disalin",
+          "this_computer": "Di komputer ini (lebih lambat, mulai memori 16 GB)",
+          "tooLittleMemoryMac": "Di komputer ini: perlu 16 GB, Mac ini punya {{memory}}.",
+          "tooLittleMemory": "Di komputer ini: perlu 16 GB, komputer ini punya {{memory}}."
+        },
+        "openrouter": {
+          "freeTitle": "Saran: OpenRouter, gratis",
+          "freeBody": "Akun OpenRouter, satu klik pada “Authorize”, selesai. Hingga 50 dikte per hari.",
+          "creditTitle": "Saran: OpenRouter dengan kredit",
+          "creditBody": "Akun OpenRouter, satu klik pada “Authorize”, lalu isi ulang sekali mulai $5. DanyWhere memilih model yang tidak memakai teks Anda untuk pelatihan. $5 cukup untuk ribuan dikte, dan tidak ada yang diperpanjang otomatis.",
+          "tipAccount": "Daftar dengan Google atau GitHub: Anda tidak perlu kata sandi dan kode lewat email.",
+          "tipPayment": "Baru di OpenRouter? Halaman sambutannya meminta metode pembayaran. Anda bisa memilih “I'll do this later”: model gratis tidak memerlukannya. Lalu kembali ke sini dan tekan “Buka halaman lagi”.",
+          "tipPaymentCredit": "Baru di OpenRouter? Halaman sambutannya meminta metode pembayaran, yang memang diperlukan untuk mengisi ulang. Lalu kembali ke sini dan tekan “Buka halaman lagi”. Selama akun belum punya kredit, DanyWhere tidak mengirim apa pun.",
+          "connect": "Hubungkan OpenRouter"
+        },
+        "chatgpt": {
+          "title": "Saran: langganan ChatGPT Anda",
+          "body": "Berjalan lewat langganan ChatGPT Anda: tanpa kunci, tanpa biaya tambahan. Masuk ke ChatGPT di browser dan izinkan DanyWhere.",
+          "firstUse": "Penggunaan yang memenuhi syarat di aplikasi ini memakai langganan ChatGPT Anda. Kelola penggunaan di pengaturan ChatGPT Anda.",
+          "dataNotDescribed": "OpenAI tidak menjelaskan cara mereka memperlakukan permintaan yang dibayar oleh langganan Anda.",
+          "continue": "Lanjutkan dengan ChatGPT"
+        },
+        "guidedKey": {
+          "title": "Saran: kunci dari {{service}}",
+          "paste": "Tempel kunci di sini",
+          "fieldLabel": "Kunci dari {{service}}",
+          "check": "Periksa",
+          "checking": "Memeriksa …",
+          "works": "Kunci berfungsi."
+        },
+        "guides": {
+          "copyKey": "Salin kunci dan tempel di sini.",
+          "copyToken": "Salin token dan tempel di sini.",
+          "anthropic": {
+            "credits": "Tautkan kredit API langganan Anda di claude.ai. Itu bisa dilakukan setelah tujuh hari berlangganan, dan Anda tidak perlu menambahkan kartu.",
+            "creditsLink": "Caranya",
+            "key": "Buat kunci di Claude Console, di organisasi yang Anda tautkan.",
+            "keyLink": "Buka Console"
+          },
+          "gemini": {
+            "credits": "Di Google AI Studio, pilih “Claim free API credits” di menu sebelah kiri (atau “Redeem” jika Anda sudah punya akun penagihan) dan siapkan penagihan. Akun penagihan baru memerlukan metode pembayaran dan prabayar minimal $5.",
+            "creditsLink": "Buka AI Studio",
+            "key": "Gunakan kunci API dari proyek yang penagihannya sudah Anda siapkan (secara default “Default Gemini Project”), atau buat satu di sana.",
+            "keyLink": "Kunci API"
+          },
+          "huggingface": {
+            "key": "Buat token akses dengan izin “Make calls to Inference Providers”.",
+            "keyLink": "Buka halaman token"
+          },
+          "ollama_cloud": {
+            "key": "Buat kunci di akun Ollama Anda.",
+            "keyLink": "Buka halaman kunci"
+          },
+          "groq": {
+            "account": "Masuk ke GroqCloud, misalnya dengan “Continue with Google”. Tidak perlu kartu.",
+            "accountLink": "Buka GroqCloud",
+            "key": "Pilih “Create API Key”. Groq meminta Anda mengonfirmasi dengan satu klik bahwa Anda manusia."
+          }
+        },
+        "local": {
+          "laterTitle": "Di komputer ini: hadir di versi mendatang",
+          "laterBody": "DanyWhere nanti akan membawa model yang berjalan di komputer ini. Sampai saat itu, server Anda sendiri bisa dipakai, misalnya Ollama atau LM Studio di komputer ini, atau server perusahaan Anda.",
+          "unavailableTitle": "Tidak bisa di komputer ini",
+          "unavailableBodyMac": "Model di komputer ini memerlukan memori 16 GB; Mac ini punya {{memory}}. Server Anda sendiri bisa dipakai, misalnya server perusahaan Anda.",
+          "unavailableBody": "Model di komputer ini memerlukan memori 16 GB; komputer ini punya {{memory}}. Server Anda sendiri bisa dipakai, misalnya server perusahaan Anda.",
+          "ownServer": "Siapkan server Anda sendiri",
+          "ownServerHint": "Masukkan alamat dan modelnya di bawah.",
+          "ownServerLater": "Server Anda sendiri bisa Anda masukkan nanti di Pengaturan Dasar › Pascaproses, di balik “Semua penyedia …”."
+        },
+        "signIn": {
+          "waiting": "Menunggu browser …",
+          "title": "Masuk ke {{provider}}",
+          "waitingHint": "Selesaikan di browser. Jika Anda harus mendaftar dulu, tekan “Buka halaman lagi”.",
+          "reopen": "Buka halaman lagi",
+          "cancel": "Batal",
+          "failed": "Gagal masuk: {{error}}",
+          "timedOut": "Proses masuk sudah menunggu 30 menit dan kedaluwarsa.",
+          "denied": "Akses tidak diizinkan.",
+          "notEligible": "Akun ChatGPT ini tidak punya langganan yang bisa dipakai DanyWhere (Go, Plus, Pro, atau Business).",
+          "noFreeModel": "Saat ini OpenRouter tidak punya model gratis yang bisa dipakai DanyWhere. Coba lagi nanti, atau isi ulang sekali saja.",
+          "unreachable": "Tidak dapat terhubung ke {{provider}}. Periksa koneksi lalu coba lagi.",
+          "refused": "{{provider}} menolak proses masuk. Coba lagi.",
+          "didNotWork": "Gagal masuk. Coba lagi.",
+          "tryAgain": "Coba lagi",
+          "browserSuccess": "Selesai. Anda dapat menutup jendela ini dan kembali ke DanyWhere.",
+          "browserFailure": "Itu tidak berhasil. Kembali ke DanyWhere dan coba lagi."
+        },
+        "connected": {
+          "title": "Terhubung ke {{provider}}",
+          "usingPlan": "Memakai langganan ChatGPT",
+          "plan": "Langganan: {{plan}}",
+          "freeModels": "Model gratis, hingga 50 dikte per hari",
+          "withCredit": "Dengan kredit, model yang tidak dilatih dengan teks Anda",
+          "noCreditYet": "Belum ada kredit: DanyWhere tidak mengirim apa pun sampai Anda mengisi ulang.",
+          "notToppedUp": "OpenRouter belum menampilkan kredit. Ini bisa makan waktu satu menit.",
+          "topUpCheckFailed": "Tidak bisa menanyakan kredit ke OpenRouter.",
+          "keyLimit": "Batas pengeluaran kunci: {{limit}}",
+          "model": "Model: {{model}}",
+          "picksModel": "DanyWhere memilih modelnya.",
+          "tryIt": "Coba",
+          "manageUsage": "Kelola penggunaan",
+          "credit": "Kredit",
+          "topUp": "Isi ulang",
+          "toppedUp": "Saya sudah mengisi ulang",
+          "disconnect": "Putuskan",
+          "disconnectConfirm": "Klik lagi untuk menghapus kunci",
+          "keyStaysAtOpenRouter": "OpenRouter menyimpan kunci “DanyWhere” di antara kunci API Anda sampai Anda menghapusnya di sana.",
+          "revokeUnconfirmed": "Keluar Tidak Dikonfirmasi OpenAI",
+          "revokeUnconfirmedDetail": "DanyWhere sudah melupakan sesi masuk di sini. Anda bisa memeriksa akses DanyWhere di pengaturan ChatGPT Anda.",
+          "chatgptSettings": "Pengaturan ChatGPT",
+          "answerAgain": "Jawab pertanyaan lagi",
+          "advanced": "Lanjutan"
+        },
+        "sample": {
+          "title": "Uji coba",
+          "spoken": "Diucapkan: “{{text}}”",
+          "result": "Hasil: “{{text}}”",
+          "text": "eee jadi itu aku kirim ke kamu besok koma oke tanda tanya",
+          "running": "Mencoba …",
+          "took": "{{seconds}} dtk dengan {{model}}",
+          "failed": "Uji coba tidak berhasil."
+        },
+        "errors": {
+          "disconnect": "Tidak Terputus",
+          "reopen": "Halaman Tidak Dibuka Lagi"
+        }
       }
     },
     "history": {
@@ -1275,7 +1440,8 @@
           "model": "Model",
           "demo": "Demo",
           "try": "Coba",
-          "done": "Selesai"
+          "done": "Selesai",
+          "postProcessSetup": "Perbaiki Teks Anda"
         }
       },
       "onboardingRun": {
@@ -1576,7 +1742,26 @@
       "emptyReply": "{{provider}} tidak mengembalikan teks.",
       "truncated": "Jawaban terpotong pada batas keluaran model.",
       "unavailable": "{{provider}} tidak tersedia di komputer ini.",
-      "other": "Galat: {{error}}"
+      "other": "Galat: {{error}}",
+      "freeBusy": "Model gratis di {{provider}} sedang sibuk; coba lagi sebentar lagi.",
+      "freeDailyLimit": "Dikte gratis di {{provider}} sudah habis untuk hari ini (50 per hari); lanjutkan besok, atau isi ulang sekali.",
+      "keyLimit": "Batas pengeluaran kunci di {{provider}} sudah tercapai; ubah di sana.",
+      "planLimit": "Batas penggunaan langganan Anda di {{provider}} sudah tercapai untuk saat ini.",
+      "planNotEligible": "Langganan Anda di {{provider}} tidak mencakup penggunaan di aplikasi lain.",
+      "signInExpired": "Sesi masuk di {{provider}} sudah kedaluwarsa; masuk lagi.",
+      "noSignIn": "Anda belum masuk di {{provider}}.",
+      "notSetUp": "Pascaproses belum disiapkan.",
+      "notSetUpTitle": "Pascaproses Belum Disiapkan",
+      "rateLimited": "{{provider}} membatasi jumlah yang boleh dikirim per menit; tunggu sebentar lalu dikte lagi.",
+      "actions": {
+        "setUp": "Siapkan",
+        "topUp": "Isi ulang",
+        "credit": "Kredit",
+        "changeLimit": "Ubah batas",
+        "manageUsage": "Kelola penggunaan",
+        "changeSetup": "Ubah pengaturan",
+        "signInAgain": "Masuk lagi"
+      }
     },
     "appMissedShortcutTitle": "Disalin – Mulai Ulang Aplikasi",
     "appMissedShortcut": "{{app}} sudah terbuka saat DanyWhere menyiapkan pintasan dikte, jadi aplikasi itu baru mengenalinya setelah dimulai ulang. Teksnya ada di papan klip.",

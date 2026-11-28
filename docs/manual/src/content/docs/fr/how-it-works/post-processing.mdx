@@ -1,0 +1,138 @@
+---
+title: "Configurer le post-traitement"
+description: "Répondez à deux ou trois questions sur vos textes et vos abonnements, et DanyWhere vous propose un modèle de langage et le connecte, le plus souvent d'un seul bouton."
+sidebar:
+  order: 5
+---
+
+import Screenshot from '@components/Screenshot.astro';
+import { Steps } from '@astrojs/starlight/components';
+
+Avec le post-traitement, un modèle de langage peaufine chaque dictée : ponctuation, mots de remplissage, commandes dictées, noms. Le modèle tourne chez un fournisseur, et vous n'avez besoin d'en connaître aucun. DanyWhere vous pose deux ou trois questions auxquelles tout le monde peut répondre, propose une voie adaptée et la connecte, le plus souvent d'un seul bouton. Ce chapitre passe en revue les questions, où mène chaque réponse, quelles données vont où, et ce qui se passe quand une voie ne fonctionne plus.
+
+## Configurer le post-traitement
+
+Les questions apparaissent à trois endroits :
+
+- sous forme d'écran vers la fin de la première configuration, **Améliorer vos textes**, où **Plus tard** est le bouton principal ;
+- à tout moment sous **Paramètres de base › Post-traitement › Améliorer vos textes**, en haut de la page ;
+- depuis une notification : si vous appuyez sur un raccourci d'instruction avant que rien ne soit configuré, DanyWhere insère le texte tel que vous l'avez dit, et la notification **Post-traitement non configuré** propose **Configurer**.
+
+Les questions arrivent l'une après l'autre, et la suggestion en dessous change avec vos réponses.
+
+**1. Où vos textes peuvent-ils être envoyés ?**
+
+- **Aussi à des services gratuits.** Ils peuvent les conserver et s'en servir pour améliorer leur IA.
+- **Seulement à un service qui les traite sans les conserver.** Cela passe par un abonnement ou coûte quelques dollars.
+- **Nulle part.** Ils restent sur cet ordinateur.
+
+**2. Avez-vous déjà l'un de ces abonnements ?** La liste ne nomme que les abonnements qui paient l'utilisation dans d'autres apps : ChatGPT Go, Plus, Pro ou Business ; Claude Max, Ultra ou Team ; Google AI Pro ou Ultra ; Hugging Face PRO ; Ollama Pro ou Max. Claude Pro, par exemple, ne compte pas. Après **Nulle part**, cette question ne vient pas.
+
+**3. Comment voulez-vous continuer ?** Cette question ne vient qu'après la deuxième réponse et **Aucun de ceux-ci** :
+
+- **Recharger une fois à partir de 5 dollars, sans abonnement**
+- **Gratuit avec Groq, avec une clé à copier**
+- **Sur cet ordinateur (plus lent, à partir de 16 Go de mémoire)**, grisé sur un ordinateur qui en a moins, avec la raison.
+
+La voie rapide, ce sont deux réponses et un bouton : **Aussi à des services gratuits**, **Aucun de ceux-ci**, **Connecter OpenRouter**.
+
+<Screenshot
+  name="post-processing-questions"
+  alt="Le groupe Améliorer vos textes sur la page Post-traitement. La question 1 a pour réponse Aussi à des services gratuits, la question 2 Aucun de ceux-ci. En dessous, la suggestion OpenRouter, gratuit, avec deux conseils pour l'inscription et le bouton Connecter OpenRouter. En bas, Je m'y connais : avec Tous les fournisseurs … et Plus tard."
+  caption="La voie rapide : deux réponses et la suggestion en dessous."
+/>
+
+## Où mènent les réponses
+
+| Vos réponses | La suggestion | Où vont vos textes |
+| --- | --- | --- |
+| aussi vers des services gratuits, aucun de ces abonnements | **OpenRouter, gratuit**, jusqu'à 50 dictées par jour | vers OpenRouter et un modèle gratuit, qui peut les garder et s'entraîner avec |
+| l'une des deux premières, et un abonnement | cet abonnement : **Continuer avec ChatGPT**, ou une clé d'Anthropic, Google AI Studio, Hugging Face ou Ollama | vers ce fournisseur, payé par votre abonnement |
+| seulement vers un service qui ne les garde pas, aucun, recharger | **OpenRouter avec du crédit** | vers OpenRouter et un modèle qui n'utilise pas vos textes pour l'entraînement |
+| seulement vers un service qui ne les garde pas, aucun, Groq | **une clé de Groq**, gratuite | vers Groq, qui ne s'entraîne pas avec |
+| nulle part, ou sur cet ordinateur | un modèle sur cet ordinateur | nulle part |
+
+Ce qui part, c'est la transcription, avec vos prompts actifs, vos listes de mots et, avec **Envoyer le contexte**, les dictées précédentes de la même fenêtre. L'enregistrement lui-même ne quitte jamais votre ordinateur.
+
+Si vous avez choisi la deuxième réponse et ChatGPT, la configuration ajoute : **OpenAI ne précise pas comment elle traite les requêtes payées par votre abonnement.**
+
+## Connecter OpenRouter
+
+<Steps>
+
+1. Cliquez sur **Connecter OpenRouter**. Votre navigateur ouvre la page d'OpenRouter, et DanyWhere affiche **En attente du navigateur …**.
+2. Nouveau chez OpenRouter ? Inscrivez-vous avec Google ou GitHub : cela vous épargne un mot de passe et un code par e-mail.
+3. L'accueil d'OpenRouter demande un moyen de paiement. Pour les modèles gratuits, choisissez **I'll do this later** : ils n'en ont pas besoin. Pour la voie avec crédit, ajoutez-le : la recharge en a de toute façon besoin.
+4. De retour dans DanyWhere, cliquez sur **Rouvrir la page**. OpenRouter demande alors si DanyWhere peut avoir accès.
+5. Cliquez sur **Authorize**. Le navigateur indique que vous pouvez fermer la fenêtre, et DanyWhere affiche la carte **Connecté à OpenRouter**.
+
+</Steps>
+
+Si vous avez déjà un compte, les étapes 2 à 4 disparaissent. DanyWhere reçoit sa propre clé, avec un plafond de dépenses de 10 dollars, que la carte affiche. **Annuler** arrête l'attente ; au bout de 30 minutes la connexion expire, et **Réessayer** recommence depuis le début.
+
+Avec crédit, la carte indique **Pas encore de crédit : DanyWhere n'envoie rien tant que vous n'avez pas rechargé.** D'ici là, aucun texte ne quitte votre ordinateur, pas même vers un modèle gratuit : vous avez choisi un service qui ne les garde pas. Cliquez sur **Recharger**, payez une fois chez OpenRouter et revenez à **J'ai rechargé**. Dès lors, DanyWhere utilise un modèle qui n'utilise pas vos textes pour l'entraînement. 5 dollars suffisent pour des milliers de dictées, et rien ne se renouvelle.
+
+La voie gratuite reste aux modèles gratuits, même si votre compte OpenRouter a du crédit.
+
+## Se connecter avec ChatGPT
+
+Cliquez sur **Continuer avec ChatGPT**, connectez-vous à ChatGPT dans le navigateur et autorisez DanyWhere. Pas de clé, pas de coût supplémentaire : l'utilisation éligible dans cette app passe par votre abonnement ChatGPT, et vous la gérez dans les paramètres de ChatGPT. DanyWhere choisit le modèle. Si le compte n'a pas d'abonnement qui compte, DanyWhere vous le dit.
+
+## Une clé à coller
+
+Pour Claude, Google, Hugging Face, Ollama et Groq, vous copiez une clé depuis le site du fournisseur. La configuration affiche les étapes, chacune avec un bouton vers la page dont elle a besoin. Trois fournisseurs demandent quelque chose avant :
+
+- **Claude :** vous liez le crédit API de votre abonnement dans claude.ai, après sept jours d'abonnement, sans carte. La clé doit venir de l'organisation que vous avez associée.
+- **Google :** un nouveau compte de facturation dans AI Studio demande un moyen de paiement et un prépaiement d'au moins 5 dollars avant que le crédit s'applique ; avec un compte de facturation existant, vous l'échangez simplement. La clé doit appartenir au projet avec facturation.
+- **Groq :** le compte n'a pas besoin de carte, mais quand vous créez la clé, Groq vous demande de confirmer d'un clic que vous êtes une personne.
+
+Collez la clé dans le champ et cliquez sur **Vérifier**. DanyWhere l'essaie, choisit un modèle et indique **La clé fonctionne.** Une clé qui ne fonctionne pas n'est gardée nulle part, et la configuration vous dit pourquoi.
+
+## Connecté
+
+Dès qu'une voie fonctionne, la carte **Connecté à …** prend la place des questions, et DanyWhere essaie aussitôt la voie avec une phrase d'exemple. La carte indique par où elle passe, par exemple les modèles gratuits et le plafond de dépenses de la clé chez OpenRouter, ou **Utilise votre abonnement ChatGPT**. Ses boutons :
+
+- **Essayer** renvoie la phrase d'exemple et montre ce qui est revenu, en combien de temps et avec quel modèle.
+- **Gérer l'utilisation**, **Crédit** ou **Recharger** ouvre la page correspondante du fournisseur.
+- **Déconnecter** oublie la connexion ou la clé. Une clé que vous avez collée ne part qu'après un second clic, sur **Cliquez encore pour supprimer la clé**.
+
+Chez OpenRouter, la clé **DanyWhere** reste parmi vos clés API jusqu'à ce que vous la supprimiez là-bas ; **Déconnecter** ne l'oublie que dans DanyWhere, comme le dit la carte. Si OpenAI ne confirme pas la déconnexion de ChatGPT, la notification **Déconnexion non confirmée par OpenAI** le signale, avec **Paramètres ChatGPT**, où vous pouvez vérifier l'accès de DanyWhere.
+
+<Screenshot
+  name="post-processing-connected"
+  alt="La carte Connecté à OpenRouter : modèles gratuits, jusqu'à 50 dictées par jour ; le plafond de dépenses de la clé, 10 dollars ; DanyWhere choisit le modèle. Les boutons Essayer, Crédit et Déconnecter ; en dessous, qu'OpenRouter conserve la clé DanyWhere jusqu'à ce que vous la supprimiez là-bas, et l'essai : la phrase dite et le résultat, avec la durée et le modèle. Sous la carte, Répondre à nouveau aux questions et Avancé."
+  caption="Connecté gratuitement à OpenRouter, après un essai."
+/>
+
+**Répondre à nouveau aux questions**, sous la carte, ramène les questions ; **Garder la configuration actuelle** les referme sans changement. **Avancé** affiche le groupe **API** avec **Fournisseur**, **Clé API** et **Modèle**, les réglages que vous faisiez à la main auparavant. Sans connexion, le même groupe se trouve derrière **Tous les fournisseurs …**, à côté de **Je m'y connais :**, pour un fournisseur auquel les questions ne mènent pas, comme le serveur de votre entreprise.
+
+**Plus tard** réduit les questions à une ligne, **Le post-traitement n'est pas encore configuré.**, avec **Configurer** pour les faire revenir.
+
+:::note
+Ce que vous configurez avec les questions vaut pour les paramètres de base. La page **Post-traitement** d'un profil affiche **Fournisseur**, **Clé API** et **Modèle** comme avant, si bien qu'un profil peut toujours utiliser son propre fournisseur.
+:::
+
+## Quand une voie s'arrête
+
+Quand les dictées gratuites sont épuisées ou qu'une connexion a expiré, vous obtenez quand même vos mots. DanyWhere insère la transcription telle quelle, et la notification **Collé sans post-traitement** dit ce qui s'est passé, avec l'étape suivante sous forme de bouton. Si rien n'a jamais été configuré, la notification s'appelle **Post-traitement non configuré**.
+
+| Ce qui s'est passé | Le bouton |
+| --- | --- |
+| rien de configuré encore, ou plus de fournisseur, de modèle ou de clé | **Configurer** |
+| pas connecté à ChatGPT, par exemple après **Déconnecter** | **Se reconnecter** |
+| les 50 dictées gratuites d'OpenRouter épuisées pour aujourd'hui | **Recharger**, ou reprendre demain |
+| le crédit épuisé | **Recharger** chez OpenRouter, sinon **Crédit** |
+| le plafond de dépenses de la clé atteint | **Modifier le plafond** |
+| la limite d'utilisation de votre abonnement atteinte pour l'instant | **Gérer l'utilisation** |
+| votre abonnement n'inclut pas l'utilisation dans d'autres apps | **Modifier la configuration** |
+| la connexion expirée | **Se reconnecter** |
+
+Quand les modèles gratuits sont saturés ou qu'un fournisseur limite ce qui peut partir par minute, la notification vous dit d'attendre un instant et de dicter à nouveau.
+
+:::caution[Un modèle sur cet ordinateur]
+**Nulle part** et **Sur cet ordinateur (plus lent, à partir de 16 Go de mémoire)** mènent à un modèle qui tourne sur votre ordinateur. Il arrive avec une version ultérieure et demande au moins 16 Go de mémoire. D'ici là, un serveur que vous gérez convient, par exemple Ollama ou LM Studio sur cet ordinateur, ou celui de votre entreprise : **Configurer votre propre serveur** ouvre plus bas le groupe **API** avec le fournisseur **Fournisseur personnalisé**, où vous saisissez son adresse et son modèle. Lors de la première configuration, l'écran indique où cela se trouve.
+:::
+
+## Ensuite
+
+Une fois le post-traitement configuré, un raccourci d'instruction vous permet de dire au modèle quoi faire d'une seule dictée, par exemple la traduire. [L'instruction orale](../spoken-instruction/) montre comment.
