@@ -144,7 +144,11 @@
       },
       "hint": {
         "pickOne": "請至少選擇一種語言",
+        "weak_zero": "{{languages}}：目前還沒有模型能聽得很準",
         "weak_one": "{{languages}}：目前還沒有模型能聽得很準",
+        "weak_two": "{{languages}}：目前還沒有模型能聽得很準",
+        "weak_few": "{{languages}}：目前還沒有模型能聽得很準",
+        "weak_many": "{{languages}}：目前還沒有模型能聽得很準",
         "weak_other": "{{languages}}：目前還沒有模型能聽得很準"
       }
     },
@@ -346,7 +350,11 @@
     "search": "搜尋語言",
     "addAnother": "新增其他語言",
     "remove": "移除{{language}}",
+    "alreadyAdded_zero": "已新增{{languages}}。",
     "alreadyAdded_one": "已新增{{languages}}。",
+    "alreadyAdded_two": "已新增{{languages}}。",
+    "alreadyAdded_few": "已新增{{languages}}。",
+    "alreadyAdded_many": "已新增{{languages}}。",
     "alreadyAdded_other": "已新增{{languages}}。"
   },
   "modelSelector": {
@@ -670,7 +678,11 @@
         "untested": "未測試"
       },
       "untestedNote": "尚未經過 Handy 測試，可能較慢或錯誤較多。",
+      "untestedHidden_zero": "另有 {{count}} 個模型並未針對聽寫調校，請搜尋以找到它們。",
       "untestedHidden_one": "另有 {{count}} 個模型並未針對聽寫調校，請搜尋以找到它。",
+      "untestedHidden_two": "另有 {{count}} 個模型並未針對聽寫調校，請搜尋以找到它們。",
+      "untestedHidden_few": "另有 {{count}} 個模型並未針對聽寫調校，請搜尋以找到它們。",
+      "untestedHidden_many": "另有 {{count}} 個模型並未針對聽寫調校，請搜尋以找到它們。",
       "untestedHidden_other": "另有 {{count}} 個模型並未針對聽寫調校，請搜尋以找到它們。",
       "emptyYours": "尚無模型。請從下方選擇一個：下載完成後 Handy 就會使用它。",
       "showMore": "再顯示 {{count}} 個",
@@ -1411,6 +1423,11 @@
         "description": "開啟 theme.css，用它可以變更應用程式的顏色和其他樣式。儲存的變更幾秒內即會生效，無需重新啟動。如果檔案已被刪除，會重新建立。",
         "button": "開啟主題檔案"
       },
+      "soundFile": {
+        "title": "聲音檔案",
+        "description": "開啟 sounds.toml，用它可以為每個聲音主題和事件設定每個聲音的檔案和音高。儲存的變更從下一個聲音起生效，無需重新啟動。如果檔案已被刪除，會重新建立。",
+        "button": "開啟聲音檔案"
+      },
       "onboardingPreview": {
         "title": "預覽新手引導",
         "description": "預覽新手引導畫面，而不變更權限、模型或完成狀態",
@@ -1440,7 +1457,7 @@
       "soundTheme": {
         "label": "聲音主題",
         "description": "選擇錄製開始和停止回饋的聲音主題",
-        "preview": "試聽聲音主題（依序播放開始、停止和結束聽寫的聲音）",
+        "preview": "試聽聲音主題（依序播放開始、指令、停止和結束聽寫的聲音）",
         "custom": "自訂"
       },
       "historyLimit": {

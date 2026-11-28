@@ -144,7 +144,11 @@
       },
       "hint": {
         "pickOne": "请至少选择一种语言",
+        "weak_zero": "{{languages}}：目前还没有模型能很好地听懂",
         "weak_one": "{{languages}}：目前还没有模型能很好地听懂",
+        "weak_two": "{{languages}}：目前还没有模型能很好地听懂",
+        "weak_few": "{{languages}}：目前还没有模型能很好地听懂",
+        "weak_many": "{{languages}}：目前还没有模型能很好地听懂",
         "weak_other": "{{languages}}：目前还没有模型能很好地听懂"
       }
     },
@@ -346,7 +350,11 @@
     "search": "搜索语言",
     "addAnother": "再添加一种",
     "remove": "移除{{language}}",
+    "alreadyAdded_zero": "已添加{{languages}}。",
     "alreadyAdded_one": "已添加{{languages}}。",
+    "alreadyAdded_two": "已添加{{languages}}。",
+    "alreadyAdded_few": "已添加{{languages}}。",
+    "alreadyAdded_many": "已添加{{languages}}。",
     "alreadyAdded_other": "已添加{{languages}}。"
   },
   "modelSelector": {
@@ -670,7 +678,11 @@
         "untested": "未测试"
       },
       "untestedNote": "尚未经过 Handy 测试，可能更慢或错误更多。",
+      "untestedHidden_zero": "另有 {{count}} 个模型未针对听写优化，可通过搜索找到。",
       "untestedHidden_one": "另有 {{count}} 个模型未针对听写优化，可通过搜索找到。",
+      "untestedHidden_two": "另有 {{count}} 个模型未针对听写优化，可通过搜索找到。",
+      "untestedHidden_few": "另有 {{count}} 个模型未针对听写优化，可通过搜索找到。",
+      "untestedHidden_many": "另有 {{count}} 个模型未针对听写优化，可通过搜索找到。",
       "untestedHidden_other": "另有 {{count}} 个模型未针对听写优化，可通过搜索找到。",
       "emptyYours": "还没有模型。请在下方选择一个：它会先下载，然后由 Handy 使用。",
       "showMore": "再显示 {{count}} 个",
@@ -1411,6 +1423,11 @@
         "description": "打开 theme.css，用它可以更改应用的颜色和其他样式。保存的更改几秒内即可生效，无需重启。如果文件已被删除，会重新创建。",
         "button": "打开主题文件"
       },
+      "soundFile": {
+        "title": "声音文件",
+        "description": "打开 sounds.toml，用它可以为每个声音主题和事件设定每个声音的文件和音高。保存的更改从下一个声音起生效，无需重启。如果文件已被删除，会重新创建。",
+        "button": "打开声音文件"
+      },
       "onboardingPreview": {
         "title": "预览新手引导",
         "description": "预览新手引导界面，而不更改权限、模型或完成状态",
@@ -1440,7 +1457,7 @@
       "soundTheme": {
         "label": "声音主题",
         "description": "选择录制开始和停止反馈的声音主题",
-        "preview": "试听声音主题（依次播放开始、停止和结束听写的声音）",
+        "preview": "试听声音主题（依次播放开始、指令、停止和结束听写的声音）",
         "custom": "自定义"
       },
       "historyLimit": {

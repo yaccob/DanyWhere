@@ -144,7 +144,11 @@
       },
       "hint": {
         "pickOne": "言語を1つ以上選んでください",
+        "weak_zero": "{{languages}}: まだこれらの言語をうまく聞き取れるモデルはありません",
         "weak_one": "{{languages}}: まだこの言語をうまく聞き取れるモデルはありません",
+        "weak_two": "{{languages}}: まだこれらの言語をうまく聞き取れるモデルはありません",
+        "weak_few": "{{languages}}: まだこれらの言語をうまく聞き取れるモデルはありません",
+        "weak_many": "{{languages}}: まだこれらの言語をうまく聞き取れるモデルはありません",
         "weak_other": "{{languages}}: まだこれらの言語をうまく聞き取れるモデルはありません"
       }
     },
@@ -346,7 +350,11 @@
     "search": "言語を検索",
     "addAnother": "ほかを追加",
     "remove": "{{language}} を削除",
+    "alreadyAdded_zero": "{{languages}} はすでに追加されています。",
     "alreadyAdded_one": "{{languages}} はすでに追加されています。",
+    "alreadyAdded_two": "{{languages}} はすでに追加されています。",
+    "alreadyAdded_few": "{{languages}} はすでに追加されています。",
+    "alreadyAdded_many": "{{languages}} はすでに追加されています。",
     "alreadyAdded_other": "{{languages}} はすでに追加されています。"
   },
   "modelSelector": {
@@ -670,7 +678,11 @@
         "untested": "未テスト"
       },
       "untestedNote": "Handy ではテストされていません。速度が遅かったり、間違いが多かったりする可能性があります。",
+      "untestedHidden_zero": "音声入力向けに調整されていないモデルがあと {{count}} 個あります。検索で見つけられます。",
       "untestedHidden_one": "音声入力向けに調整されていないモデルがあと {{count}} 個あります。検索で見つけられます。",
+      "untestedHidden_two": "音声入力向けに調整されていないモデルがあと {{count}} 個あります。検索で見つけられます。",
+      "untestedHidden_few": "音声入力向けに調整されていないモデルがあと {{count}} 個あります。検索で見つけられます。",
+      "untestedHidden_many": "音声入力向けに調整されていないモデルがあと {{count}} 個あります。検索で見つけられます。",
       "untestedHidden_other": "音声入力向けに調整されていないモデルがあと {{count}} 個あります。検索で見つけられます。",
       "emptyYours": "モデルはまだありません。下から選ぶとダウンロードされ、Handy が使用します。",
       "showMore": "さらに {{count}} 個を表示",
@@ -1411,6 +1423,11 @@
         "description": "アプリの色やその他のスタイルを変更する theme.css を開きます。保存した変更は再起動なしで数秒以内に反映されます。ファイルが削除されていた場合は作り直します。",
         "button": "テーマファイルを開く"
       },
+      "soundFile": {
+        "title": "サウンドファイル",
+        "description": "サウンドテーマとイベントごとに、各サウンドのファイルとピッチを決める sounds.toml を開きます。保存した変更は再起動なしで次のサウンドから反映されます。ファイルが削除されていた場合は作り直します。",
+        "button": "サウンドファイルを開く"
+      },
       "onboardingPreview": {
         "title": "オンボーディングをプレビュー",
         "description": "権限、モデル、完了状態を変更せずにオンボーディング画面をプレビューします",
@@ -1440,7 +1457,7 @@
       "soundTheme": {
         "label": "サウンドテーマ",
         "description": "録音開始・停止フィードバックのサウンドテーマを選択",
-        "preview": "サウンドテーマを試聴（開始、停止、続いて音声入力を終える音を再生）",
+        "preview": "サウンドテーマを試聴（開始、指示、停止、続いて音声入力を終える音を再生）",
         "custom": "カスタム"
       },
       "historyLimit": {

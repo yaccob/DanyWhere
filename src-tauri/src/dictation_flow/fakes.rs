@@ -251,6 +251,7 @@ pub enum Event {
     Tray(TrayIconState),
     Overlay(Overlay),
     StopSound,
+    InstructionSound,
     SendsContext(bool),
     BeginWindowCapture,
     SoundAfterDictation(DictationEnd),
@@ -664,6 +665,10 @@ impl Report for FakePorts {
 
     fn stop_sound(&self) {
         self.record(Event::StopSound);
+    }
+
+    fn instruction_sound(&self) {
+        self.record(Event::InstructionSound);
     }
 
     fn sends_context(&self, sends: bool) {

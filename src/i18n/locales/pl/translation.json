@@ -144,7 +144,11 @@
       },
       "hint": {
         "pickOne": "Wybierz co najmniej jeden język",
+        "weak_zero": "{{languages}}: żaden model nie rozumie ich jeszcze dobrze",
         "weak_one": "{{languages}}: żaden model nie rozumie go jeszcze dobrze",
+        "weak_two": "{{languages}}: żaden model nie rozumie ich jeszcze dobrze",
+        "weak_few": "{{languages}}: żaden model nie rozumie ich jeszcze dobrze",
+        "weak_many": "{{languages}}: żaden model nie rozumie ich jeszcze dobrze",
         "weak_other": "{{languages}}: żaden model nie rozumie ich jeszcze dobrze"
       }
     },
@@ -346,7 +350,11 @@
     "search": "Szukaj języków",
     "addAnother": "Dodaj kolejny",
     "remove": "Usuń: {{language}}",
+    "alreadyAdded_zero": "{{languages}}: już dodano.",
     "alreadyAdded_one": "{{languages}} jest już dodany.",
+    "alreadyAdded_two": "{{languages}}: już dodano.",
+    "alreadyAdded_few": "{{languages}}: już dodano.",
+    "alreadyAdded_many": "{{languages}}: już dodano.",
     "alreadyAdded_other": "{{languages}}: już dodano."
   },
   "modelSelector": {
@@ -670,7 +678,11 @@
         "untested": "Nieprzetestowane"
       },
       "untestedNote": "Nie testowano z Handy. Mogą działać wolniej lub popełniać więcej błędów.",
+      "untestedHidden_zero": "Kolejne modele nie są dostosowane do dyktowania (liczba: {{count}}). Użyj wyszukiwania, aby je znaleźć.",
       "untestedHidden_one": "{{count}} kolejny model nie jest dostosowany do dyktowania. Użyj wyszukiwania, aby go znaleźć.",
+      "untestedHidden_two": "Kolejne modele nie są dostosowane do dyktowania (liczba: {{count}}). Użyj wyszukiwania, aby je znaleźć.",
+      "untestedHidden_few": "Kolejne modele nie są dostosowane do dyktowania (liczba: {{count}}). Użyj wyszukiwania, aby je znaleźć.",
+      "untestedHidden_many": "Kolejne modele nie są dostosowane do dyktowania (liczba: {{count}}). Użyj wyszukiwania, aby je znaleźć.",
       "untestedHidden_other": "Kolejne modele nie są dostosowane do dyktowania (liczba: {{count}}). Użyj wyszukiwania, aby je znaleźć.",
       "emptyYours": "Brak modeli. Wybierz jeden poniżej: zostanie pobrany, a potem Handy go użyje.",
       "showMore": "Pokaż jeszcze {{count}}",
@@ -1411,6 +1423,11 @@
         "description": "Otwiera theme.css, który zmienia kolory i inne style aplikacji. Zapisane zmiany widać po kilku sekundach, bez ponownego uruchamiania. Jeśli plik został usunięty, zostanie utworzony ponownie.",
         "button": "Otwórz plik motywu"
       },
+      "soundFile": {
+        "title": "Plik dźwięków",
+        "description": "Otwiera sounds.toml, który dla każdego motywu dźwiękowego i zdarzenia określa plik i wysokość każdego dźwięku. Zapisane zmiany obowiązują od następnego dźwięku, bez ponownego uruchamiania. Jeśli plik został usunięty, zostanie utworzony ponownie.",
+        "button": "Otwórz plik dźwięków"
+      },
       "onboardingPreview": {
         "title": "Podgląd konfiguracji początkowej",
         "description": "Wyświetl ekrany konfiguracji początkowej bez zmiany uprawnień, modeli ani stanu ukończenia",
@@ -1440,7 +1457,7 @@
       "soundTheme": {
         "label": "Motyw dźwiękowy",
         "description": "Wybierz motyw dźwiękowy dla informacji o rozpoczęciu i zakończeniu nagrywania",
-        "preview": "Odsłuchaj motyw dźwiękowy (start, stop, a potem dźwięk kończący dyktowanie)",
+        "preview": "Odsłuchaj motyw dźwiękowy (start, instrukcja, stop, a potem dźwięk kończący dyktowanie)",
         "custom": "Własny"
       },
       "historyLimit": {

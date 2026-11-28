@@ -144,7 +144,11 @@
       },
       "hint": {
         "pickOne": "Scegli almeno una lingua",
+        "weak_zero": "{{languages}}: nessun modello le riconosce ancora bene",
         "weak_one": "{{languages}}: nessun modello la riconosce ancora bene",
+        "weak_two": "{{languages}}: nessun modello le riconosce ancora bene",
+        "weak_few": "{{languages}}: nessun modello le riconosce ancora bene",
+        "weak_many": "{{languages}}: nessun modello le riconosce ancora bene",
         "weak_other": "{{languages}}: nessun modello le riconosce ancora bene"
       }
     },
@@ -346,7 +350,11 @@
     "search": "Cerca lingue",
     "addAnother": "Aggiungine un'altra",
     "remove": "Rimuovi {{language}}",
+    "alreadyAdded_zero": "{{languages}} sono già state aggiunte.",
     "alreadyAdded_one": "{{languages}} è già stata aggiunta.",
+    "alreadyAdded_two": "{{languages}} sono già state aggiunte.",
+    "alreadyAdded_few": "{{languages}} sono già state aggiunte.",
+    "alreadyAdded_many": "{{languages}} sono già state aggiunte.",
     "alreadyAdded_other": "{{languages}} sono già state aggiunte."
   },
   "modelSelector": {
@@ -670,7 +678,11 @@
         "untested": "Non testati"
       },
       "untestedNote": "Non testati con Handy. Potrebbero essere più lenti o commettere più errori.",
+      "untestedHidden_zero": "Altri {{count}} modelli non sono ottimizzati per la dettatura. Cerca per trovarne uno.",
       "untestedHidden_one": "Un altro modello ({{count}}) non è ottimizzato per la dettatura. Cercalo per trovarlo.",
+      "untestedHidden_two": "Altri {{count}} modelli non sono ottimizzati per la dettatura. Cerca per trovarne uno.",
+      "untestedHidden_few": "Altri {{count}} modelli non sono ottimizzati per la dettatura. Cerca per trovarne uno.",
+      "untestedHidden_many": "Altri {{count}} modelli non sono ottimizzati per la dettatura. Cerca per trovarne uno.",
       "untestedHidden_other": "Altri {{count}} modelli non sono ottimizzati per la dettatura. Cerca per trovarne uno.",
       "emptyYours": "Ancora nessun modello. Scegline uno qui sotto: si scarica e poi Handy lo usa.",
       "showMore": "Mostra altri {{count}}",
@@ -1411,6 +1423,11 @@
         "description": "Apre theme.css, che cambia i colori e gli altri stili dell'app. Le modifiche salvate compaiono in pochi secondi, senza riavvio. Se il file è stato eliminato, viene ricreato.",
         "button": "Apri file del tema"
       },
+      "soundFile": {
+        "title": "File dei suoni",
+        "description": "Apre sounds.toml, che stabilisce il file e l'altezza di ogni suono per tema sonoro ed evento. Le modifiche salvate valgono dal suono successivo, senza riavvio. Se il file è stato eliminato, viene ricreato.",
+        "button": "Apri file dei suoni"
+      },
       "onboardingPreview": {
         "title": "Anteprima della configurazione iniziale",
         "description": "Visualizza le schermate di configurazione senza modificare autorizzazioni, modelli o stato di completamento",
@@ -1440,7 +1457,7 @@
       "soundTheme": {
         "label": "Tema Sonoro",
         "description": "Scegli un tema sonoro per il feedback di inizio e fine registrazione",
-        "preview": "Ascolta il tema sonoro (riproduce avvio, arresto e poi il suono che conclude una dettatura)",
+        "preview": "Ascolta il tema sonoro (riproduce avvio, istruzione, arresto e poi il suono che conclude una dettatura)",
         "custom": "Personalizzato"
       },
       "historyLimit": {

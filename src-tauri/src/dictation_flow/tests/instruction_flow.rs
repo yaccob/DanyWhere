@@ -156,9 +156,10 @@ fn a_dictation_with_a_spoken_instruction_from_the_cut_to_the_paste() {
     });
     let slot = slot();
 
-    // The instruction key: the recording is cut without a sound, the text
-    // goes to transcription in the background, the pill says
-    // "Instruction"; the check mark comes once the text is transcribed.
+    // The instruction key: the recording is cut, without a gap, and the
+    // instruction sound plays (user, 2026-11-27), the text goes to
+    // transcription in the background, the pill says "Instruction"; the
+    // check mark comes once the text is transcribed.
     assert!(press(&ports, slot, false));
     assert!(ports.wait_for(&Event::TranscribeTextSection { samples: SAMPLES }, LONG));
     assert!(
@@ -171,11 +172,12 @@ fn a_dictation_with_a_spoken_instruction_from_the_cut_to_the_paste() {
         ports.take_events(),
         [
             Event::SplitRecording,
+            Event::InstructionSound,
             instruction_overlay(false, None),
             Event::TranscribeTextSection { samples: SAMPLES },
             instruction_overlay(true, None),
         ],
-        "no stop sound, the tray as it was, the microphone on"
+        "the instruction sound, no stop sound, the tray as it was, the microphone on"
     );
     assert_eq!(slot.key_of(1).as_deref(), Some(KEY));
 
@@ -483,6 +485,7 @@ fn an_instruction_without_a_dictation_post_processes_the_instruction_alone() {
         ports.take_events(),
         [
             Event::SplitRecording,
+            Event::InstructionSound,
             instruction_overlay(false, None),
             Event::CancelStream,
             instruction_overlay(true, None),
@@ -581,6 +584,7 @@ fn escape_after_the_cut_throws_the_instruction_away() {
         ports.take_events(),
         [
             Event::SplitRecording,
+            Event::InstructionSound,
             instruction_overlay(false, None),
             Event::TranscribeTextSection { samples: SAMPLES },
         ]

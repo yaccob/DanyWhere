@@ -266,10 +266,45 @@ pub enum MicrophoneMode {
 /// exactly as it was. `did_mute` is true while our mute is active; `prev_muted`
 /// is the system mute state captured just before we muted, used to decide
 /// whether to unmute on stop (so a system that was already muted stays muted).
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 struct MuteState {
     did_mute: bool,
     prev_muted: Option<bool>,
+    /// DanyWhere: our mute is lifted for a feedback sound in the middle of
+    /// the recording (the instruction sound) and comes back after it.
+    lifted: bool,
+}
+
+impl MuteState {
+    /// DanyWhere: lifts our mute for a sound. `true`: restore the system's
+    /// sound now.
+    fn lift(&mut self) -> bool {
+        if self.did_mute && !self.lifted {
+            self.lifted = true;
+            return true;
+        }
+        false
+    }
+
+    /// DanyWhere: puts a lifted mute back. `true`: mute now. Nothing once
+    /// our mute ended meanwhile, so a recording that ended during the sound
+    /// never leaves the system muted.
+    fn put_back(&mut self) -> bool {
+        if self.did_mute && self.lifted {
+            self.lifted = false;
+            return true;
+        }
+        false
+    }
+
+    /// Ends our mute. `true`: restore the system's sound now; not while it
+    /// is lifted, since it is restored already.
+    fn end(&mut self) -> bool {
+        let restore = self.did_mute && !self.lifted;
+        self.did_mute = false;
+        self.lifted = false;
+        restore
+    }
 }
 
 /// The persisted microphone preference currently in effect. Clamshell and
@@ -932,6 +967,7 @@ impl AudioRecordingManager {
             mute_guard.prev_muted = get_mute();
             set_mute(true);
             mute_guard.did_mute = true;
+            mute_guard.lifted = false;
             debug!("Mute applied (prev_muted={:?})", mute_guard.prev_muted);
         }
     }
@@ -940,13 +976,33 @@ impl AudioRecordingManager {
     /// (a system already muted before recording stays muted).
     pub fn remove_mute(&self) {
         let mut mute_guard = self.mute_state.lock().unwrap();
-        if mute_guard.did_mute {
+        if mute_guard.end() {
             restore_mute(mute_guard.prev_muted);
-            mute_guard.did_mute = false;
             debug!(
                 "Mute removed (restored prev_muted={:?})",
                 mute_guard.prev_muted
             );
+        }
+    }
+
+    /// DanyWhere: lifts the mute while recording for a feedback sound in
+    /// the middle of the recording, as the start sound plays before the
+    /// mute; [`put_mute_back`](Self::put_mute_back) after it.
+    pub fn lift_mute(&self) {
+        let mut mute_guard = self.mute_state.lock().unwrap();
+        if mute_guard.lift() {
+            restore_mute(mute_guard.prev_muted);
+            debug!("Mute lifted for a feedback sound");
+        }
+    }
+
+    /// DanyWhere: mutes again after [`lift_mute`](Self::lift_mute), unless
+    /// the recording's mute ended meanwhile.
+    pub fn put_mute_back(&self) {
+        let mut mute_guard = self.mute_state.lock().unwrap();
+        if mute_guard.put_back() {
+            set_mute(true);
+            debug!("Mute put back after a feedback sound");
         }
     }
 
@@ -987,9 +1043,8 @@ impl AudioRecordingManager {
             // takes the `is_open` lock we are already holding.
             {
                 let mut mute_guard = self.mute_state.lock().unwrap();
-                if mute_guard.did_mute {
+                if mute_guard.end() {
                     restore_mute(mute_guard.prev_muted);
-                    mute_guard.did_mute = false;
                 }
             }
             let failed = self.recorder.lock().unwrap().take();
@@ -1010,9 +1065,8 @@ impl AudioRecordingManager {
         // flag, which would strand system audio muted.
         {
             let mut mute_guard = self.mute_state.lock().unwrap();
-            if mute_guard.did_mute {
+            if mute_guard.end() {
                 restore_mute(mute_guard.prev_muted);
-                mute_guard.did_mute = false;
             }
         }
 
@@ -1089,10 +1143,9 @@ impl AudioRecordingManager {
 
         {
             let mut mute_guard = self.mute_state.lock().unwrap();
-            if mute_guard.did_mute {
+            if mute_guard.end() {
                 restore_mute(mute_guard.prev_muted);
             }
-            mute_guard.did_mute = false;
         }
 
         let microphone = self.recorder.lock().unwrap().take();
@@ -1836,6 +1889,63 @@ mod tests {
     use super::*;
     use handy_recorder::testing::{FakeError, FakeMic};
 
+    // DanyWhere: lifting the mute while recording for the instruction
+    // sound, as pure steps of `MuteState`; the manager runs them under one
+    // lock, so an end of the recording between lifting and putting back
+    // decides in one order or the other, never in between.
+
+    /// Our mute is on; the system was not muted before.
+    fn muted() -> MuteState {
+        MuteState {
+            did_mute: true,
+            prev_muted: Some(false),
+            lifted: false,
+        }
+    }
+
+    #[test]
+    fn a_lifted_mute_restores_the_sound_and_comes_back_after_it() {
+        let mut state = muted();
+        assert!(state.lift(), "the sound is restored for the sound");
+        assert!(!state.lift(), "lifted once");
+        assert!(state.put_back(), "muted again after it");
+        assert!(!state.put_back(), "put back once");
+        assert!(state.end(), "the end restores the sound");
+    }
+
+    #[test]
+    fn a_recording_that_ends_during_the_sound_leaves_the_system_unmuted() {
+        let mut state = muted();
+        assert!(state.lift());
+        assert!(
+            !state.end(),
+            "the sound is restored already; nothing to do at the end"
+        );
+        assert!(!state.put_back(), "no mute once the recording ended");
+        assert!(!state.did_mute);
+    }
+
+    #[test]
+    fn without_our_mute_nothing_is_lifted_or_put_back() {
+        let mut state = MuteState::default();
+        assert!(!state.lift());
+        assert!(!state.put_back());
+        assert!(!state.end());
+    }
+
+    #[test]
+    fn a_new_mute_forgets_a_lift_of_the_recording_before() {
+        let mut state = muted();
+        assert!(state.lift());
+        assert!(!state.end());
+        // The next recording mutes (`apply_mute`); the old sound's put back
+        // comes late.
+        state.did_mute = true;
+        state.lifted = false;
+        assert!(!state.put_back(), "the new mute is not touched");
+        assert!(state.end());
+    }
+
     // DanyWhere: the manager over a fake microphone (`AudioHost`).
 
     #[test]
@@ -2437,6 +2547,7 @@ mod tests {
             *rm.mute_state.lock().unwrap() = MuteState {
                 did_mute: true,
                 prev_muted: Some(true),
+                ..Default::default()
             };
 
             assert!(rm.split_recording(BINDING).is_some());

@@ -144,7 +144,11 @@
       },
       "hint": {
         "pickOne": "Välj minst ett språk",
+        "weak_zero": "{{languages}}: ingen modell hör dem bra ännu",
         "weak_one": "{{languages}}: ingen modell hör det bra ännu",
+        "weak_two": "{{languages}}: ingen modell hör dem bra ännu",
+        "weak_few": "{{languages}}: ingen modell hör dem bra ännu",
+        "weak_many": "{{languages}}: ingen modell hör dem bra ännu",
         "weak_other": "{{languages}}: ingen modell hör dem bra ännu"
       }
     },
@@ -346,7 +350,11 @@
     "search": "Sök språk",
     "addAnother": "Lägg till ett till",
     "remove": "Ta bort {{language}}",
+    "alreadyAdded_zero": "{{languages}} är redan tillagda.",
     "alreadyAdded_one": "{{languages}} är redan tillagt.",
+    "alreadyAdded_two": "{{languages}} är redan tillagda.",
+    "alreadyAdded_few": "{{languages}} är redan tillagda.",
+    "alreadyAdded_many": "{{languages}} är redan tillagda.",
     "alreadyAdded_other": "{{languages}} är redan tillagda."
   },
   "modelSelector": {
@@ -670,7 +678,11 @@
         "untested": "Ej testade"
       },
       "untestedNote": "Inte testade med Handy. De kan vara långsammare eller göra fler fel.",
+      "untestedHidden_zero": "{{count}} modeller till är inte anpassade för diktering. Sök för att hitta en.",
       "untestedHidden_one": "{{count}} modell till är inte anpassad för diktering. Sök för att hitta den.",
+      "untestedHidden_two": "{{count}} modeller till är inte anpassade för diktering. Sök för att hitta en.",
+      "untestedHidden_few": "{{count}} modeller till är inte anpassade för diktering. Sök för att hitta en.",
+      "untestedHidden_many": "{{count}} modeller till är inte anpassade för diktering. Sök för att hitta en.",
       "untestedHidden_other": "{{count}} modeller till är inte anpassade för diktering. Sök för att hitta en.",
       "emptyYours": "Inga modeller ännu. Välj en nedan: den laddas ner och sedan använder Handy den.",
       "showMore": "Visa {{count}} till",
@@ -1411,6 +1423,11 @@
         "description": "Öppnar theme.css, som ändrar appens färger och andra stilar. Sparade ändringar syns inom några sekunder, utan omstart. Om filen har tagits bort skapas den igen.",
         "button": "Öppna temafil"
       },
+      "soundFile": {
+        "title": "Ljudfil",
+        "description": "Öppnar sounds.toml, som anger fil och tonhöjd för varje ljud per ljudtema och händelse. Sparade ändringar gäller från nästa ljud, utan omstart. Om filen har tagits bort skapas den igen.",
+        "button": "Öppna ljudfil"
+      },
       "onboardingPreview": {
         "title": "Förhandsvisa introduktionen",
         "description": "Förhandsvisa introduktionsskärmarna utan att ändra behörigheter, modeller eller slutförandestatus",
@@ -1440,7 +1457,7 @@
       "soundTheme": {
         "label": "Ljudtema",
         "description": "Välj ett ljudtema för återkoppling vid start och stopp av inspelning",
-        "preview": "Lyssna på ljudtemat (spelar start, stopp och sedan ljudet som avslutar en diktering)",
+        "preview": "Lyssna på ljudtemat (spelar start, instruktion, stopp och sedan ljudet som avslutar en diktering)",
         "custom": "Anpassat"
       },
       "historyLimit": {

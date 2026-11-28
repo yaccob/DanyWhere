@@ -144,7 +144,11 @@
       },
       "hint": {
         "pickOne": "Vælg mindst ét sprog",
+        "weak_zero": "{{languages}}: ingen model forstår dem godt endnu",
         "weak_one": "{{languages}}: ingen model forstår det godt endnu",
+        "weak_two": "{{languages}}: ingen model forstår dem godt endnu",
+        "weak_few": "{{languages}}: ingen model forstår dem godt endnu",
+        "weak_many": "{{languages}}: ingen model forstår dem godt endnu",
         "weak_other": "{{languages}}: ingen model forstår dem godt endnu"
       }
     },
@@ -346,7 +350,11 @@
     "search": "Søg efter sprog",
     "addAnother": "Tilføj et til",
     "remove": "Fjern {{language}}",
+    "alreadyAdded_zero": "{{languages}} er allerede tilføjet.",
     "alreadyAdded_one": "{{languages}} er allerede tilføjet.",
+    "alreadyAdded_two": "{{languages}} er allerede tilføjet.",
+    "alreadyAdded_few": "{{languages}} er allerede tilføjet.",
+    "alreadyAdded_many": "{{languages}} er allerede tilføjet.",
     "alreadyAdded_other": "{{languages}} er allerede tilføjet."
   },
   "modelSelector": {
@@ -670,7 +678,11 @@
         "untested": "Ikke testet"
       },
       "untestedNote": "Ikke testet med Handy. De kan være langsommere eller lave flere fejl.",
+      "untestedHidden_zero": "{{count}} modeller mere er ikke tilpasset diktering. Søg for at finde dem.",
       "untestedHidden_one": "{{count}} model mere er ikke tilpasset diktering. Søg for at finde den.",
+      "untestedHidden_two": "{{count}} modeller mere er ikke tilpasset diktering. Søg for at finde dem.",
+      "untestedHidden_few": "{{count}} modeller mere er ikke tilpasset diktering. Søg for at finde dem.",
+      "untestedHidden_many": "{{count}} modeller mere er ikke tilpasset diktering. Søg for at finde dem.",
       "untestedHidden_other": "{{count}} modeller mere er ikke tilpasset diktering. Søg for at finde dem.",
       "emptyYours": "Ingen modeller endnu. Vælg en nedenfor: den downloades, og så bruger Handy den.",
       "showMore": "Vis {{count}} flere",
@@ -1411,6 +1423,11 @@
         "description": "Åbn theme.css, som ændrer appens farver og andre typografier. Gemte ændringer vises inden for få sekunder uden genstart. Hvis filen er slettet, oprettes den igen.",
         "button": "Åbn temafil"
       },
+      "soundFile": {
+        "title": "Lydfil",
+        "description": "Åbn sounds.toml, som angiver fil og tonehøjde for hver lyd pr. lydtema og hændelse. Gemte ændringer gælder fra næste lyd uden genstart. Hvis filen er slettet, oprettes den igen.",
+        "button": "Åbn lydfil"
+      },
       "onboardingPreview": {
         "title": "Forhåndsvis introduktion",
         "description": "Forhåndsvis introduktionsskærmene uden at ændre tilladelser, modeller eller fuldførelsesstatus",
@@ -1440,7 +1457,7 @@
       "soundTheme": {
         "label": "Lydtema",
         "description": "Vælg et lydtema til feedback ved start og stop af optagelse",
-        "preview": "Afspil lydtemaet (start, stop og derefter lyden, der afslutter en diktering)",
+        "preview": "Afspil lydtemaet (start, instruktion, stop og derefter lyden, der afslutter en diktering)",
         "custom": "Brugerdefineret"
       },
       "historyLimit": {

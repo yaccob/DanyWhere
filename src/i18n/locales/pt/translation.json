@@ -144,7 +144,11 @@
       },
       "hint": {
         "pickOne": "Escolha pelo menos um idioma",
+        "weak_zero": "{{languages}}: nenhum modelo entende bem esses idiomas ainda",
         "weak_one": "{{languages}}: nenhum modelo entende bem ainda",
+        "weak_two": "{{languages}}: nenhum modelo entende bem esses idiomas ainda",
+        "weak_few": "{{languages}}: nenhum modelo entende bem esses idiomas ainda",
+        "weak_many": "{{languages}}: nenhum modelo entende bem esses idiomas ainda",
         "weak_other": "{{languages}}: nenhum modelo entende bem esses idiomas ainda"
       }
     },
@@ -346,7 +350,11 @@
     "search": "Buscar idiomas",
     "addAnother": "Adicionar outro",
     "remove": "Remover {{language}}",
+    "alreadyAdded_zero": "{{languages}} já foram adicionados.",
     "alreadyAdded_one": "{{languages}} já foi adicionado.",
+    "alreadyAdded_two": "{{languages}} já foram adicionados.",
+    "alreadyAdded_few": "{{languages}} já foram adicionados.",
+    "alreadyAdded_many": "{{languages}} já foram adicionados.",
     "alreadyAdded_other": "{{languages}} já foram adicionados."
   },
   "modelSelector": {
@@ -670,7 +678,11 @@
         "untested": "Não testados"
       },
       "untestedNote": "Não testados com o Handy. Podem ser mais lentos ou cometer mais erros.",
+      "untestedHidden_zero": "Mais {{count}} modelos não são otimizados para ditado. Busque para encontrar um.",
       "untestedHidden_one": "Mais {{count}} modelo não é otimizado para ditado. Busque para encontrá-lo.",
+      "untestedHidden_two": "Mais {{count}} modelos não são otimizados para ditado. Busque para encontrar um.",
+      "untestedHidden_few": "Mais {{count}} modelos não são otimizados para ditado. Busque para encontrar um.",
+      "untestedHidden_many": "Mais {{count}} modelos não são otimizados para ditado. Busque para encontrar um.",
       "untestedHidden_other": "Mais {{count}} modelos não são otimizados para ditado. Busque para encontrar um.",
       "emptyYours": "Nenhum modelo ainda. Escolha um abaixo: ele é baixado e o Handy passa a usá-lo.",
       "showMore": "Mostrar mais {{count}}",
@@ -1411,6 +1423,11 @@
         "description": "Abre theme.css, que muda as cores e outros estilos do aplicativo. As alterações salvas aparecem em poucos segundos, sem reiniciar. Se o arquivo foi excluído, ele é criado de novo.",
         "button": "Abrir arquivo de tema"
       },
+      "soundFile": {
+        "title": "Arquivo de sons",
+        "description": "Abre sounds.toml, que define o arquivo e o tom de cada som por tema de som e evento. As alterações salvas valem a partir do próximo som, sem reiniciar. Se o arquivo foi excluído, ele é criado de novo.",
+        "button": "Abrir arquivo de sons"
+      },
       "onboardingPreview": {
         "title": "Pré-visualizar configuração inicial",
         "description": "Pré-visualize os ecrãs de configuração sem alterar permissões, modelos ou o estado de conclusão",
@@ -1440,7 +1457,7 @@
       "soundTheme": {
         "label": "Tema de Som",
         "description": "Escolha um tema de som para feedback de início e parada de gravação",
-        "preview": "Ouvir o tema de som (toca o início, a parada e depois o som que encerra um ditado)",
+        "preview": "Ouvir o tema de som (toca o início, a instrução, a parada e depois o som que encerra um ditado)",
         "custom": "Personalizado"
       },
       "historyLimit": {

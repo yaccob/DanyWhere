@@ -144,7 +144,11 @@
       },
       "hint": {
         "pickOne": "En az bir dil seçin",
+        "weak_zero": "{{languages}}: henüz hiçbir model bunları iyi anlamıyor",
         "weak_one": "{{languages}}: henüz hiçbir model bunu iyi anlamıyor",
+        "weak_two": "{{languages}}: henüz hiçbir model bunları iyi anlamıyor",
+        "weak_few": "{{languages}}: henüz hiçbir model bunları iyi anlamıyor",
+        "weak_many": "{{languages}}: henüz hiçbir model bunları iyi anlamıyor",
         "weak_other": "{{languages}}: henüz hiçbir model bunları iyi anlamıyor"
       }
     },
@@ -346,7 +350,11 @@
     "search": "Dil ara",
     "addAnother": "Başka ekle",
     "remove": "{{language}} dilini kaldır",
+    "alreadyAdded_zero": "{{languages}} zaten ekli.",
     "alreadyAdded_one": "{{languages}} zaten ekli.",
+    "alreadyAdded_two": "{{languages}} zaten ekli.",
+    "alreadyAdded_few": "{{languages}} zaten ekli.",
+    "alreadyAdded_many": "{{languages}} zaten ekli.",
     "alreadyAdded_other": "{{languages}} zaten ekli."
   },
   "modelSelector": {
@@ -670,7 +678,11 @@
         "untested": "Test edilmemiş"
       },
       "untestedNote": "Handy ile test edilmedi. Daha yavaş olabilir veya daha fazla hata yapabilir.",
+      "untestedHidden_zero": "{{count}} model daha yazdırma için ayarlanmamış. Bulmak için arama yapın.",
       "untestedHidden_one": "{{count}} model daha yazdırma için ayarlanmamış. Bulmak için arama yapın.",
+      "untestedHidden_two": "{{count}} model daha yazdırma için ayarlanmamış. Bulmak için arama yapın.",
+      "untestedHidden_few": "{{count}} model daha yazdırma için ayarlanmamış. Bulmak için arama yapın.",
+      "untestedHidden_many": "{{count}} model daha yazdırma için ayarlanmamış. Bulmak için arama yapın.",
       "untestedHidden_other": "{{count}} model daha yazdırma için ayarlanmamış. Bulmak için arama yapın.",
       "emptyYours": "Henüz model yok. Aşağıdan birini seçin: iner, sonra Handy onu kullanır.",
       "showMore": "{{count}} tane daha göster",
@@ -1411,6 +1423,11 @@
         "description": "Uygulamanın renklerini ve diğer stillerini değiştiren theme.css dosyasını açar. Kaydedilen değişiklikler yeniden başlatmadan birkaç saniye içinde görünür. Dosya silinmişse yeniden oluşturulur.",
         "button": "Tema Dosyasını Aç"
       },
+      "soundFile": {
+        "title": "Ses Dosyası",
+        "description": "Her ses teması ve olay için her sesin dosyasını ve perdesini belirleyen sounds.toml dosyasını açar. Kaydedilen değişiklikler yeniden başlatmadan bir sonraki seste geçerli olur. Dosya silinmişse yeniden oluşturulur.",
+        "button": "Ses Dosyasını Aç"
+      },
       "onboardingPreview": {
         "title": "İlk kurulum önizlemesi",
         "description": "İzinleri, modelleri veya tamamlanma durumunu değiştirmeden ilk kurulum ekranlarını önizleyin",
@@ -1440,7 +1457,7 @@
       "soundTheme": {
         "label": "Ses Teması",
         "description": "Kayıt başlangıç ve bitişi için sesli geri bildirim temasını seçin",
-        "preview": "Ses temasını dinle (başlat, durdur ve ardından dikteyi bitiren sesi çalar)",
+        "preview": "Ses temasını dinle (başlat, talimat, durdur ve ardından dikteyi bitiren sesi çalar)",
         "custom": "Özel"
       },
       "historyLimit": {

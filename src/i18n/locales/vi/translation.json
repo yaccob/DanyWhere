@@ -144,7 +144,11 @@
       },
       "hint": {
         "pickOne": "Hãy chọn ít nhất một ngôn ngữ",
+        "weak_zero": "{{languages}}: chưa có mô hình nào nghe tốt các ngôn ngữ này",
         "weak_one": "{{languages}}: chưa có mô hình nào nghe tốt ngôn ngữ này",
+        "weak_two": "{{languages}}: chưa có mô hình nào nghe tốt các ngôn ngữ này",
+        "weak_few": "{{languages}}: chưa có mô hình nào nghe tốt các ngôn ngữ này",
+        "weak_many": "{{languages}}: chưa có mô hình nào nghe tốt các ngôn ngữ này",
         "weak_other": "{{languages}}: chưa có mô hình nào nghe tốt các ngôn ngữ này"
       }
     },
@@ -346,7 +350,11 @@
     "search": "Tìm kiếm ngôn ngữ",
     "addAnother": "Thêm ngôn ngữ khác",
     "remove": "Xóa {{language}}",
+    "alreadyAdded_zero": "Đã thêm {{languages}} rồi.",
     "alreadyAdded_one": "Đã thêm {{languages}} rồi.",
+    "alreadyAdded_two": "Đã thêm {{languages}} rồi.",
+    "alreadyAdded_few": "Đã thêm {{languages}} rồi.",
+    "alreadyAdded_many": "Đã thêm {{languages}} rồi.",
     "alreadyAdded_other": "Đã thêm {{languages}} rồi."
   },
   "modelSelector": {
@@ -670,7 +678,11 @@
         "untested": "Chưa kiểm thử"
       },
       "untestedNote": "Chưa được kiểm thử với Handy. Chúng có thể chậm hơn hoặc mắc nhiều lỗi hơn.",
+      "untestedHidden_zero": "{{count}} mô hình khác chưa được tinh chỉnh cho việc đọc chính tả. Hãy tìm kiếm để thấy chúng.",
       "untestedHidden_one": "{{count}} mô hình khác chưa được tinh chỉnh cho việc đọc chính tả. Hãy tìm kiếm để thấy nó.",
+      "untestedHidden_two": "{{count}} mô hình khác chưa được tinh chỉnh cho việc đọc chính tả. Hãy tìm kiếm để thấy chúng.",
+      "untestedHidden_few": "{{count}} mô hình khác chưa được tinh chỉnh cho việc đọc chính tả. Hãy tìm kiếm để thấy chúng.",
+      "untestedHidden_many": "{{count}} mô hình khác chưa được tinh chỉnh cho việc đọc chính tả. Hãy tìm kiếm để thấy chúng.",
       "untestedHidden_other": "{{count}} mô hình khác chưa được tinh chỉnh cho việc đọc chính tả. Hãy tìm kiếm để thấy chúng.",
       "emptyYours": "Chưa có mô hình nào. Hãy chọn một mô hình bên dưới: nó sẽ được tải xuống, rồi Handy sẽ dùng nó.",
       "showMore": "Hiển thị thêm {{count}}",
@@ -1411,6 +1423,11 @@
         "description": "Mở theme.css, tệp thay đổi màu sắc và các kiểu khác của ứng dụng. Thay đổi đã lưu hiển thị trong vài giây mà không cần khởi động lại. Nếu tệp đã bị xóa, tệp sẽ được tạo lại.",
         "button": "Mở tệp giao diện"
       },
+      "soundFile": {
+        "title": "Tệp âm thanh",
+        "description": "Mở sounds.toml, tệp quy định tệp và cao độ của từng âm thanh theo chủ đề âm thanh và sự kiện. Thay đổi đã lưu áp dụng từ âm thanh tiếp theo mà không cần khởi động lại. Nếu tệp đã bị xóa, tệp sẽ được tạo lại.",
+        "button": "Mở tệp âm thanh"
+      },
       "onboardingPreview": {
         "title": "Xem trước thiết lập ban đầu",
         "description": "Xem trước các màn hình thiết lập mà không thay đổi quyền, mô hình hoặc trạng thái hoàn tất",
@@ -1440,7 +1457,7 @@
       "soundTheme": {
         "label": "Chủ đề âm thanh",
         "description": "Chọn chủ đề âm thanh cho phản hồi bắt đầu và kết thúc ghi âm",
-        "preview": "Nghe thử chủ đề âm thanh (phát âm bắt đầu, dừng, rồi âm kết thúc một lần đọc chính tả)",
+        "preview": "Nghe thử chủ đề âm thanh (phát âm bắt đầu, hướng dẫn, dừng, rồi âm kết thúc một lần đọc chính tả)",
         "custom": "Tùy chỉnh"
       },
       "historyLimit": {

@@ -144,7 +144,11 @@
       },
       "hint": {
         "pickOne": "Pick at least one language",
+        "weak_zero": "{{languages}}: no model hears these well yet",
         "weak_one": "{{languages}}: no model hears it well yet",
+        "weak_two": "{{languages}}: no model hears these well yet",
+        "weak_few": "{{languages}}: no model hears these well yet",
+        "weak_many": "{{languages}}: no model hears these well yet",
         "weak_other": "{{languages}}: no model hears these well yet"
       }
     },
@@ -346,7 +350,11 @@
     "search": "Search languages",
     "addAnother": "Add another",
     "remove": "Remove {{language}}",
+    "alreadyAdded_zero": "{{languages}} are already added.",
     "alreadyAdded_one": "{{languages}} is already added.",
+    "alreadyAdded_two": "{{languages}} are already added.",
+    "alreadyAdded_few": "{{languages}} are already added.",
+    "alreadyAdded_many": "{{languages}} are already added.",
     "alreadyAdded_other": "{{languages}} are already added."
   },
   "modelSelector": {
@@ -670,7 +678,11 @@
         "untested": "Untested"
       },
       "untestedNote": "Not tested with Handy. They may be slower or make more mistakes.",
+      "untestedHidden_zero": "{{count}} more models aren’t tuned for dictation. Search to find one.",
       "untestedHidden_one": "{{count}} more model isn’t tuned for dictation. Search to find it.",
+      "untestedHidden_two": "{{count}} more models aren’t tuned for dictation. Search to find one.",
+      "untestedHidden_few": "{{count}} more models aren’t tuned for dictation. Search to find one.",
+      "untestedHidden_many": "{{count}} more models aren’t tuned for dictation. Search to find one.",
       "untestedHidden_other": "{{count}} more models aren’t tuned for dictation. Search to find one.",
       "emptyYours": "No models yet. Pick one below: it downloads, then Handy uses it.",
       "showMore": "Show {{count}} more",
@@ -1411,6 +1423,11 @@
         "description": "Open theme.css, which changes the app's colors and other styles. Saved changes show within seconds, without a restart. If the file was deleted, it is created again.",
         "button": "Open Theme File"
       },
+      "soundFile": {
+        "title": "Sound File",
+        "description": "Open sounds.toml, which sets the file and pitch of each sound, per sound theme and event. Saved changes apply to the next sound, without a restart. If the file was deleted, it is created again.",
+        "button": "Open Sound File"
+      },
       "onboardingPreview": {
         "title": "Preview Onboarding",
         "description": "Preview onboarding screens without changing permissions, models, or completion state",
@@ -1440,7 +1457,7 @@
       "soundTheme": {
         "label": "Sound Theme",
         "description": "Choose a sound theme for recording start and stop feedback",
-        "preview": "Preview sound theme (plays start, stop, then the sound that ends a dictation)",
+        "preview": "Preview sound theme (plays start, instruction, stop, then the sound that ends a dictation)",
         "custom": "Custom"
       },
       "historyLimit": {

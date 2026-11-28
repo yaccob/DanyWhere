@@ -144,7 +144,11 @@
       },
       "hint": {
         "pickOne": "언어를 하나 이상 선택하세요",
+        "weak_zero": "{{languages}}: 아직 이 언어들을 잘 알아듣는 모델이 없습니다",
         "weak_one": "{{languages}}: 아직 이 언어를 잘 알아듣는 모델이 없습니다",
+        "weak_two": "{{languages}}: 아직 이 언어들을 잘 알아듣는 모델이 없습니다",
+        "weak_few": "{{languages}}: 아직 이 언어들을 잘 알아듣는 모델이 없습니다",
+        "weak_many": "{{languages}}: 아직 이 언어들을 잘 알아듣는 모델이 없습니다",
         "weak_other": "{{languages}}: 아직 이 언어들을 잘 알아듣는 모델이 없습니다"
       }
     },
@@ -346,7 +350,11 @@
     "search": "언어 검색",
     "addAnother": "추가",
     "remove": "{{language}} 삭제",
+    "alreadyAdded_zero": "{{languages}}은(는) 이미 추가되었습니다.",
     "alreadyAdded_one": "{{languages}}은(는) 이미 추가되었습니다.",
+    "alreadyAdded_two": "{{languages}}은(는) 이미 추가되었습니다.",
+    "alreadyAdded_few": "{{languages}}은(는) 이미 추가되었습니다.",
+    "alreadyAdded_many": "{{languages}}은(는) 이미 추가되었습니다.",
     "alreadyAdded_other": "{{languages}}은(는) 이미 추가되었습니다."
   },
   "modelSelector": {
@@ -670,7 +678,11 @@
         "untested": "테스트되지 않음"
       },
       "untestedNote": "Handy에서 테스트하지 않았습니다. 더 느리거나 오류가 더 많을 수 있습니다.",
+      "untestedHidden_zero": "받아쓰기에 맞춰 조정되지 않은 모델이 {{count}}개 더 있습니다. 검색해서 찾아보세요.",
       "untestedHidden_one": "받아쓰기에 맞춰 조정되지 않은 모델이 {{count}}개 더 있습니다. 검색해서 찾아보세요.",
+      "untestedHidden_two": "받아쓰기에 맞춰 조정되지 않은 모델이 {{count}}개 더 있습니다. 검색해서 찾아보세요.",
+      "untestedHidden_few": "받아쓰기에 맞춰 조정되지 않은 모델이 {{count}}개 더 있습니다. 검색해서 찾아보세요.",
+      "untestedHidden_many": "받아쓰기에 맞춰 조정되지 않은 모델이 {{count}}개 더 있습니다. 검색해서 찾아보세요.",
       "untestedHidden_other": "받아쓰기에 맞춰 조정되지 않은 모델이 {{count}}개 더 있습니다. 검색해서 찾아보세요.",
       "emptyYours": "아직 모델이 없습니다. 아래에서 하나를 고르면 다운로드된 후 Handy가 사용합니다.",
       "showMore": "{{count}}개 더 보기",
@@ -1411,6 +1423,11 @@
         "description": "앱의 색상과 기타 스타일을 바꾸는 theme.css를 엽니다. 저장한 변경 사항은 다시 시작하지 않아도 몇 초 안에 반영됩니다. 파일이 삭제되었으면 다시 만듭니다.",
         "button": "테마 파일 열기"
       },
+      "soundFile": {
+        "title": "사운드 파일",
+        "description": "사운드 테마와 이벤트별로 각 소리의 파일과 음높이를 정하는 sounds.toml을 엽니다. 저장한 변경 사항은 다시 시작하지 않아도 다음 소리부터 반영됩니다. 파일이 삭제되었으면 다시 만듭니다.",
+        "button": "사운드 파일 열기"
+      },
       "onboardingPreview": {
         "title": "온보딩 미리보기",
         "description": "권한, 모델 또는 완료 상태를 변경하지 않고 온보딩 화면을 미리 봅니다",
@@ -1440,7 +1457,7 @@
       "soundTheme": {
         "label": "사운드 테마",
         "description": "녹음 시작 및 정지 피드백을 위한 사운드 테마를 선택하세요",
-        "preview": "사운드 테마 미리 듣기(시작, 중지, 그다음 받아쓰기를 끝내는 소리 재생)",
+        "preview": "사운드 테마 미리 듣기(시작, 지시, 중지, 그다음 받아쓰기를 끝내는 소리 재생)",
         "custom": "사용자 정의"
       },
       "historyLimit": {

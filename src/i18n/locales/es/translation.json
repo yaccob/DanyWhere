@@ -144,7 +144,11 @@
       },
       "hint": {
         "pickOne": "Elige al menos un idioma",
+        "weak_zero": "{{languages}}: ningún modelo los entiende bien todavía",
         "weak_one": "{{languages}}: ningún modelo lo entiende bien todavía",
+        "weak_two": "{{languages}}: ningún modelo los entiende bien todavía",
+        "weak_few": "{{languages}}: ningún modelo los entiende bien todavía",
+        "weak_many": "{{languages}}: ningún modelo los entiende bien todavía",
         "weak_other": "{{languages}}: ningún modelo los entiende bien todavía"
       }
     },
@@ -346,7 +350,11 @@
     "search": "Buscar idiomas",
     "addAnother": "Añadir otro",
     "remove": "Quitar {{language}}",
+    "alreadyAdded_zero": "{{languages}} ya están añadidos.",
     "alreadyAdded_one": "{{languages}} ya está añadido.",
+    "alreadyAdded_two": "{{languages}} ya están añadidos.",
+    "alreadyAdded_few": "{{languages}} ya están añadidos.",
+    "alreadyAdded_many": "{{languages}} ya están añadidos.",
     "alreadyAdded_other": "{{languages}} ya están añadidos."
   },
   "modelSelector": {
@@ -670,7 +678,11 @@
         "untested": "Sin probar"
       },
       "untestedNote": "No probados con Handy. Pueden ser más lentos o cometer más errores.",
+      "untestedHidden_zero": "{{count}} modelos más no están optimizados para dictado. Busca para encontrar uno.",
       "untestedHidden_one": "{{count}} modelo más no está optimizado para dictado. Búscalo para encontrarlo.",
+      "untestedHidden_two": "{{count}} modelos más no están optimizados para dictado. Busca para encontrar uno.",
+      "untestedHidden_few": "{{count}} modelos más no están optimizados para dictado. Busca para encontrar uno.",
+      "untestedHidden_many": "{{count}} modelos más no están optimizados para dictado. Busca para encontrar uno.",
       "untestedHidden_other": "{{count}} modelos más no están optimizados para dictado. Busca para encontrar uno.",
       "emptyYours": "Aún no hay modelos. Elige uno abajo: se descarga y Handy lo usa.",
       "showMore": "Mostrar {{count}} más",
@@ -1411,6 +1423,11 @@
         "description": "Abre theme.css, que cambia los colores y otros estilos de la aplicación. Los cambios guardados se ven en pocos segundos, sin reiniciar. Si el archivo se eliminó, se vuelve a crear.",
         "button": "Abrir archivo de tema"
       },
+      "soundFile": {
+        "title": "Archivo de sonidos",
+        "description": "Abre sounds.toml, que define el archivo y el tono de cada sonido por tema de sonido y evento. Los cambios guardados se aplican al siguiente sonido, sin reiniciar. Si el archivo se eliminó, se vuelve a crear.",
+        "button": "Abrir archivo de sonidos"
+      },
       "onboardingPreview": {
         "title": "Vista previa de la configuración inicial",
         "description": "Previsualiza las pantallas de configuración inicial sin cambiar permisos, modelos ni el estado de finalización",
@@ -1440,7 +1457,7 @@
       "soundTheme": {
         "label": "Tema de sonido",
         "description": "Elige un tema de sonido para la retroalimentación de inicio y parada de grabación",
-        "preview": "Escuchar el tema de sonido (reproduce el inicio, la parada y luego el sonido que termina un dictado)",
+        "preview": "Escuchar el tema de sonido (reproduce el inicio, la instrucción, la parada y luego el sonido que termina un dictado)",
         "custom": "Personalizado"
       },
       "historyLimit": {

@@ -144,7 +144,11 @@
       },
       "hint": {
         "pickOne": "Trieu almenys una llengua",
+        "weak_zero": "{{languages}}: cap model les entén bé encara",
         "weak_one": "{{languages}}: cap model l'entén bé encara",
+        "weak_two": "{{languages}}: cap model les entén bé encara",
+        "weak_few": "{{languages}}: cap model les entén bé encara",
+        "weak_many": "{{languages}}: cap model les entén bé encara",
         "weak_other": "{{languages}}: cap model les entén bé encara"
       }
     },
@@ -346,7 +350,11 @@
     "search": "Cerca llengües",
     "addAnother": "Afegeix-ne una altra",
     "remove": "Elimina {{language}}",
+    "alreadyAdded_zero": "{{languages}} ja estan afegides.",
     "alreadyAdded_one": "{{languages}} ja està afegida.",
+    "alreadyAdded_two": "{{languages}} ja estan afegides.",
+    "alreadyAdded_few": "{{languages}} ja estan afegides.",
+    "alreadyAdded_many": "{{languages}} ja estan afegides.",
     "alreadyAdded_other": "{{languages}} ja estan afegides."
   },
   "modelSelector": {
@@ -670,7 +678,11 @@
         "untested": "Sense provar"
       },
       "untestedNote": "No s'han provat amb el Handy. Poden ser més lents o cometre més errors.",
+      "untestedHidden_zero": "{{count}} models més no estan ajustats per al dictat. Cerqueu per trobar-ne algun.",
       "untestedHidden_one": "{{count}} model més no està ajustat per al dictat. Cerqueu-lo per trobar-lo.",
+      "untestedHidden_two": "{{count}} models més no estan ajustats per al dictat. Cerqueu per trobar-ne algun.",
+      "untestedHidden_few": "{{count}} models més no estan ajustats per al dictat. Cerqueu per trobar-ne algun.",
+      "untestedHidden_many": "{{count}} models més no estan ajustats per al dictat. Cerqueu per trobar-ne algun.",
       "untestedHidden_other": "{{count}} models més no estan ajustats per al dictat. Cerqueu per trobar-ne algun.",
       "emptyYours": "Encara no hi ha models. Trieu-ne un a sota: es baixa i el Handy l'utilitza.",
       "showMore": "Mostra'n {{count}} més",
@@ -1411,6 +1423,11 @@
         "description": "Obre theme.css, que canvia els colors i altres estils de l'aplicació. Els canvis desats es veuen en pocs segons, sense reiniciar. Si s'ha suprimit el fitxer, es torna a crear.",
         "button": "Obre el fitxer de tema"
       },
+      "soundFile": {
+        "title": "Fitxer de sons",
+        "description": "Obre sounds.toml, que defineix el fitxer i el to de cada so per a cada tema de so i esdeveniment. Els canvis desats s'apliquen al so següent, sense reiniciar. Si s'ha suprimit el fitxer, es torna a crear.",
+        "button": "Obre el fitxer de sons"
+      },
       "onboardingPreview": {
         "title": "Previsualització de la configuració inicial",
         "description": "Previsualitza les pantalles de configuració inicial sense canviar els permisos, os models ni l'estat de compleció",
@@ -1440,7 +1457,7 @@
       "soundTheme": {
         "label": "Tema de so",
         "description": "Trieu un tema de so per als avisos d'inici i d'aturada de l'enregistrament",
-        "preview": "Escolta el tema de so (reprodueix l'inici, l'aturada i després el so que acaba un dictat)",
+        "preview": "Escolta el tema de so (reprodueix l'inici, la instrucció, l'aturada i després el so que acaba un dictat)",
         "custom": "Personalitzat"
       },
       "historyLimit": {
