@@ -527,14 +527,17 @@
       "shortcutHint": "Trong khi ghi, nhấn tổ hợp phím này sẽ chuyển từ văn bản sang hướng dẫn. Tổ hợp chỉ được chiếm trong khi ghi.",
       "onlyWhileRecording": "Chỉ được chiếm trong khi ghi.",
       "sameAsStartOrHold": "Cùng tổ hợp phím với một phím tắt bắt đầu hoặc phím tắt giữ: khi không ghi, tổ hợp này bắt đầu ghi; trong khi ghi, nó chuyển sang hướng dẫn.",
+      "linuxNotTaken": "Không được chiếm trên Linux: không có phím tắt bắt đầu hoặc phím tắt giữ nào có tổ hợp phím này.",
       "notTakenNever": "Xử lý sau đang đặt là “{{mode}}”: các phím tắt hướng dẫn không được chiếm. Hãy chọn cài đặt khác cho “{{setting}}” trong mục Nâng cao.",
       "notSetUp": "Xử lý sau chưa được thiết lập: sau phím tắt hướng dẫn, văn bản được chèn đúng như đã nghe, không kèm hướng dẫn, và một thông báo đề nghị thiết lập.",
+      "linuxNote": "Trên Linux, Handy không thể chiếm một tổ hợp phím chỉ trong lúc ghi, nên phím tắt hướng dẫn ở đó cần có cùng tổ hợp phím với một phím tắt bắt đầu hoặc phím tắt giữ: khi được nhấn trong lúc ghi, phím đó chuyển sang hướng dẫn.",
       "add": "Thêm phím tắt hướng dẫn",
       "addPressKeys": "Nhấn tổ hợp phím cho phím tắt hướng dẫn mới",
       "refName": "Phím tắt hướng dẫn {{name}}",
       "errors": {
         "save": "Không thể lưu các phím tắt hướng dẫn: {{error}}",
         "needsShortcut": "Mỗi phím tắt hướng dẫn cần có tổ hợp phím.",
+        "needsStartOrHold": "Trên Linux, phím tắt hướng dẫn cần có cùng tổ hợp phím với một phím tắt bắt đầu hoặc phím tắt giữ.",
         "shortcutTwice": "Hai phím tắt hướng dẫn không thể dùng chung một tổ hợp phím."
       }
     },

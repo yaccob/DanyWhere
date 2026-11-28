@@ -527,14 +527,17 @@
       "shortcutHint": "Durante uma gravação, premir esta combinação muda do texto para a instrução. Só fica ocupada durante a gravação.",
       "onlyWhileRecording": "Ocupada só durante uma gravação.",
       "sameAsStartOrHold": "A mesma combinação que um atalho de início ou de segurar: sem gravação, inicia uma; durante uma gravação, muda para a instrução.",
+      "linuxNotTaken": "Não fica ocupado no Linux: nenhum atalho de início ou de segurar tem esta combinação.",
       "notTakenNever": "O pós-processamento está definido como “{{mode}}”: os atalhos de instrução não ficam ocupados. Escolha outra definição para “{{setting}}” em Avançado.",
       "notSetUp": "O pós-processamento ainda não está configurado: depois de um atalho de instrução, o texto é inserido como foi ouvido, sem a instrução, e um aviso oferece configurá-lo.",
+      "linuxNote": "No Linux, o Handy não consegue ocupar uma combinação só durante uma gravação, por isso um atalho de instrução precisa da combinação de um atalho de início ou de segurar: pressionado durante uma gravação, ele muda para a instrução.",
       "add": "Adicionar atalho de instrução",
       "addPressKeys": "Prima a combinação para o novo atalho de instrução",
       "refName": "Atalho de instrução {{name}}",
       "errors": {
         "save": "Não foi possível guardar os atalhos de instrução: {{error}}",
         "needsShortcut": "Cada atalho de instrução precisa de uma combinação de teclas.",
+        "needsStartOrHold": "No Linux, um atalho de instrução precisa da combinação de um atalho de início ou de segurar.",
         "shortcutTwice": "Dois atalhos de instrução não podem partilhar uma combinação."
       }
     },

@@ -527,14 +527,17 @@
       "shortcutHint": "Tijdens een opname schakelt deze toetsencombinatie van de tekst naar de instructie. Ze is alleen bezet tijdens een opname.",
       "onlyWhileRecording": "Alleen bezet tijdens een opname.",
       "sameAsStartOrHold": "Dezelfde toetsencombinatie als een start- of vasthoudsneltoets: zonder opname start ze er een, tijdens een opname schakelt ze naar de instructie.",
+      "linuxNotTaken": "Niet bezet op Linux: geen start- of vasthoudsneltoets heeft deze combinatie.",
       "notTakenNever": "Naverwerking staat op „{{mode}}”: instructiesneltoetsen zijn niet bezet. Kies onder Geavanceerd een andere instelling bij „{{setting}}”.",
       "notSetUp": "De naverwerking is nog niet ingesteld: na een instructiesneltoets wordt de tekst ingevoegd zoals hij gehoord is, zonder de instructie, en een melding biedt aan om haar in te stellen.",
+      "linuxNote": "Op Linux kan Handy een combinatie niet alleen tijdens een opname bezetten, dus heeft een instructiesneltoets daar de combinatie van een start- of vasthoudsneltoets nodig: tijdens een opname ingedrukt, schakelt die naar de instructie.",
       "add": "Instructiesneltoets toevoegen",
       "addPressKeys": "Druk op de toetsencombinatie voor de nieuwe instructiesneltoets",
       "refName": "Instructiesneltoets {{name}}",
       "errors": {
         "save": "De instructiesneltoetsen konden niet worden opgeslagen: {{error}}",
         "needsShortcut": "Elke instructiesneltoets heeft een toetsencombinatie nodig.",
+        "needsStartOrHold": "Op Linux heeft een instructiesneltoets de combinatie van een start- of vasthoudsneltoets nodig.",
         "shortcutTwice": "Twee instructiesneltoetsen kunnen geen toetsencombinatie delen."
       }
     },

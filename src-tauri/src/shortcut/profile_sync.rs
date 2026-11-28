@@ -56,7 +56,8 @@ pub fn desired(settings_now: &AppSettings, recording: bool, service_available: b
 /// not), last those again with each hold shortcut's
 /// modifiers, which are still down when one is pressed during a held
 /// recording (`instruction_keys::bindings_while_holding_on`); none on
-/// Linux.
+/// Linux, where an instruction shortcut works only through a start or hold
+/// shortcut with its combination, registered all along (user, 2026-11-28).
 pub fn desired_on(
     settings_now: &AppSettings,
     recording: bool,
@@ -75,7 +76,7 @@ pub fn desired_on(
             .map(|binding| (binding.id.clone(), keys_of(binding)))
             .collect();
         let mut during = crate::end_keys::bindings_to_register(&settings_now.end_keys);
-        let instruction_keys = crate::instruction_keys::taken_now(settings_now, linux);
+        let instruction_keys = crate::instruction_keys::taken_now(settings_now);
         during.extend(crate::instruction_keys::bindings_to_register(
             instruction_keys,
         ));
@@ -889,6 +890,24 @@ mod tests {
     fn never_an_instruction_key_on_linux() {
         let s = with_instruction_key(crate::settings::PostProcessMode::Always);
         assert!(!desired_on(&s, true, true, true).contains_key("instruction_key:tab"));
+    }
+
+    /// Linux (user, 2026-11-28): its instruction shortcut is the second
+    /// factory combination, a hold shortcut registered all along; a
+    /// recording registers nothing more there, so nothing is registered or
+    /// unregistered while one runs.
+    #[test]
+    fn on_linux_a_recording_registers_nothing_more_with_the_factory_instruction_key() {
+        let linux = crate::append_text::KeyPlatform::Linux;
+        let mut s = with_instruction_key(crate::settings::PostProcessMode::WithInstructionKey);
+        s.start_keys = crate::start_keys::factory_start_keys_on(linux);
+        s.hold_keys = crate::start_keys::factory_hold_keys_on(linux);
+        s.instruction_keys = crate::instruction_keys::factory_instruction_keys_on(linux);
+        assert!(!s.instruction_keys.is_empty());
+        assert_eq!(
+            desired_on(&s, true, true, true),
+            desired_on(&s, false, true, true)
+        );
     }
 
     #[test]

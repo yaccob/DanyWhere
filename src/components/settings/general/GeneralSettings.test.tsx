@@ -159,13 +159,16 @@ describe("General: start, hold and end shortcuts", () => {
     ]);
   });
 
-  test("on Linux: no Cancel, no instruction shortcuts, and the Linux hint opens End Shortcuts", async () => {
+  test("on Linux: no Cancel, the instruction shortcuts, and the Linux hint opens End Shortcuts", async () => {
     setOsType("linux");
     await renderGeneral();
 
-    expect(cardTitles().slice(0, 3)).toEqual([
+    // Instruction shortcuts on a start or hold shortcut's combination
+    // (user, 2026-11-28).
+    expect(cardTitles().slice(0, 4)).toEqual([
       "Start Shortcuts",
       "Hold Shortcuts",
+      "Instruction Shortcuts",
       "End Shortcuts",
     ]);
     const texts = visibleTexts(card("End Shortcuts"));

@@ -527,14 +527,17 @@
       "shortcutHint": "Under en optagelse skifter et tryk på denne tastekombination fra teksten til instruktionen. Den er kun optaget under en optagelse.",
       "onlyWhileRecording": "Kun optaget under en optagelse.",
       "sameAsStartOrHold": "Samme tastekombination som en start- eller holdegenvej: uden optagelse starter den en, under en optagelse skifter den til instruktionen.",
+      "linuxNotTaken": "Optages ikke på Linux: ingen start- eller holdegenvej har denne tastekombination.",
       "notTakenNever": "Efterbehandling er sat til »{{mode}}«: instruktionsgenveje er ikke optaget. Vælg en anden indstilling for »{{setting}}« under Avanceret.",
       "notSetUp": "Efterbehandlingen er ikke sat op endnu: efter en instruktionsgenvej indsættes teksten, som den blev hørt, uden instruktionen, og en meddelelse tilbyder at sætte den op.",
+      "linuxNote": "På Linux kan Handy ikke optage en tastekombination kun under en optagelse, så en instruktionsgenvej skal dér have tastekombinationen fra en start- eller holdegenvej: trykket under en optagelse skifter den til instruktionen.",
       "add": "Tilføj instruktionsgenvej",
       "addPressKeys": "Tryk på tastekombinationen til den nye instruktionsgenvej",
       "refName": "Instruktionsgenvej {{name}}",
       "errors": {
         "save": "Instruktionsgenvejene kunne ikke gemmes: {{error}}",
         "needsShortcut": "Hver instruktionsgenvej skal have en tastekombination.",
+        "needsStartOrHold": "På Linux skal en instruktionsgenvej have tastekombinationen fra en start- eller holdegenvej.",
         "shortcutTwice": "To instruktionsgenveje kan ikke dele en tastekombination."
       }
     },

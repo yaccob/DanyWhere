@@ -323,6 +323,11 @@ check("a refusal names its text and, where it has one, the shortcut", () => {
     key: "settings.startKeys.errors.cannotEnd",
     ref: { kind: "start", id: "start" },
   });
+  // Linux (2026-11-28): an instruction shortcut on neither list's keys.
+  assert.deepEqual(
+    keyRefusal("instruction-key-needs-start-or-hold:instruction_tab"),
+    { key: "settings.instructionKeys.errors.needsStartOrHold" },
+  );
   // An end shortcut's code is not taken for a start shortcut's, nor back.
   assert.equal(keyRefusal("end-key-last")?.key, "settings.endKeys.errors.last");
   assert.equal(keyRefusal("something else"), null);

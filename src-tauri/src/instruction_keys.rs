@@ -17,15 +17,19 @@
 //! end shortcuts, and only while the profile that applies now may
 //! post-process, set up or not ([`taken_now`]; a press
 //! cuts by the same profile, [`is_taken_now`]); never on Linux,
-//! where shortcuts registered only during a recording are unstable. Each is
+//! where shortcuts registered only during a recording are unstable
+//! (`shortcut::profile_sync`). Each is
 //! also registered with the modifiers of each hold shortcut, which are
 //! still down when it is pressed during a held recording
 //! ([`bindings_while_holding_on`]). One
 //! with exactly a start or hold shortcut's combination is not registered on
 //! its own: that key's press during a recording is the instruction
-//! shortcut's (`start_keys::Roles::instruction`). The same combination as
-//! an end shortcut is a conflict (both are taken only during a recording);
-//! an empty list is fine.
+//! shortcut's (`start_keys::Roles::instruction`). That is how Linux has
+//! them (user, 2026-11-28): its factory instruction shortcut is the second
+//! factory combination, a hold shortcut registered all along, and one of
+//! one's own needs a start or hold shortcut's combination there. The same
+//! combination as an end shortcut is a conflict (both are taken only during
+//! a recording); an empty list is fine.
 
 use handy_keys::{Hotkey, Modifiers};
 use tauri::{AppHandle, Emitter};
@@ -42,14 +46,29 @@ pub const BINDING_PREFIX: &str = "instruction_key:";
 pub const END_PREFIX: &str = "instruction:";
 /// A new installation's instruction shortcut, ⇥.
 pub const FACTORY_ID: &str = "instruction_tab";
+/// A new installation's instruction shortcut on Linux, the second factory
+/// combination (`start_keys::factory_combinations_on`).
+pub const LINUX_FACTORY_ID: &str = "instruction_second";
 
 /// A new installation's instruction shortcuts on `platform` (recommendation
 /// 2 i of the sidecar note `2026-11-26_1841`): ⇥ with "Send Context" on
 /// (recommendation 3 i), appending a space on macOS as its hold shortcuts
-/// do, nothing on Windows; none on Linux, where they aren't taken.
+/// do, nothing on Windows. Linux (user, 2026-11-28) can't take ⇥ only
+/// during a recording, so its instruction shortcut is the second factory
+/// combination, Ctrl+Alt+Shift+Space, which holds without a recording;
+/// without "Append" and "Send Context", as Linux' hold and end shortcuts.
 pub fn factory_instruction_keys_on(platform: KeyPlatform) -> Vec<EndKey> {
     let append_text = match platform {
-        KeyPlatform::Linux => return Vec::new(),
+        KeyPlatform::Linux => {
+            let (_, second) = crate::start_keys::factory_combinations_on(platform);
+            return vec![EndKey {
+                id: LINUX_FACTORY_ID.to_string(),
+                name: String::new(),
+                shortcut: second.to_string(),
+                append_text: String::new(),
+                send_context: false,
+            }];
+        }
         KeyPlatform::Macos => " ",
         KeyPlatform::Windows => "",
     };
@@ -94,18 +113,16 @@ pub fn is_while_holding(binding_id: &str) -> bool {
 
 /// Whether the instruction shortcuts of `settings_now` (the settings with
 /// the values of the profile that applies now) are taken during a
-/// recording: the profile may post-process (not "never"), and not on Linux
-/// (`linux`). Also before post-processing is set up (the post-processing
+/// recording: the profile may post-process (not "never"). Also on Linux
+/// (user, 2026-11-28), there only through a start or hold shortcut with the
+/// instruction shortcut's combination, as nothing is registered there
+/// during a recording (`shortcut::profile_sync::desired_on`). Also before
+/// post-processing is set up (the post-processing
 /// setup, sidecar note `2026-11-26_2250_nachbearbeitung-einstieg-umsetzung`,
 /// section 2): such a dictation goes out unprocessed, and its notice says
 /// what is missing (`post_process_setup::post_process_ready`).
-pub fn taken(settings_now: &AppSettings, linux: bool) -> bool {
-    !linux && settings_now.post_process_mode.allows()
-}
-
-/// [`taken`] on this system.
-pub fn taken_here(settings_now: &AppSettings) -> bool {
-    taken(settings_now, cfg!(target_os = "linux"))
+pub fn taken(settings_now: &AppSettings) -> bool {
+    settings_now.post_process_mode.allows()
 }
 
 /// The instruction shortcuts taken during a recording now: those of
@@ -115,8 +132,8 @@ pub fn taken_here(settings_now: &AppSettings) -> bool {
 /// ([`is_taken_now`]) both ask it, so a press that reaches DanyWhere is one
 /// that cuts (review finding 5, 2026-11-26), as the end shortcuts follow
 /// the profile now too.
-pub fn taken_now(settings_now: &AppSettings, linux: bool) -> &[EndKey] {
-    if taken(settings_now, linux) {
+pub fn taken_now(settings_now: &AppSettings) -> &[EndKey] {
+    if taken(settings_now) {
         &settings_now.instruction_keys
     } else {
         &[]
@@ -133,12 +150,9 @@ pub fn is_taken_now(
     settings: &AppSettings,
     frontmost_app: Option<&str>,
     instruction_id: &str,
-    linux: bool,
 ) -> bool {
     let now = crate::app_profiles::settings_now(settings, frontmost_app);
-    taken_now(&now, linux)
-        .iter()
-        .any(|key| key.id == instruction_id)
+    taken_now(&now).iter().any(|key| key.id == instruction_id)
 }
 
 /// The instruction shortcuts of `instruction_keys` that have a combination,
@@ -266,7 +280,28 @@ pub fn check_instruction_keys(
     values: &mut ProfileValues,
     implementation: crate::settings::KeyboardImplementation,
 ) -> Result<(), String> {
+    check_instruction_keys_on(values, implementation, cfg!(target_os = "linux"))
+}
+
+/// [`check_instruction_keys`] on Linux (`linux`) or elsewhere. Linux
+/// registers nothing during a recording, so there each needs exactly a
+/// start or hold shortcut's combination
+/// (`instruction-key-needs-start-or-hold:<id>`, user, 2026-11-28).
+pub fn check_instruction_keys_on(
+    values: &mut ProfileValues,
+    implementation: crate::settings::KeyboardImplementation,
+    linux: bool,
+) -> Result<(), String> {
     validate_instruction_keys(&values.instruction_keys)?;
+    if linux {
+        if let Some(key) = values
+            .instruction_keys
+            .iter()
+            .find(|key| !on_a_start_or_hold_key(values, &key.shortcut))
+        {
+            return Err(format!("instruction-key-needs-start-or-hold:{}", key.id));
+        }
+    }
     for key in values.instruction_keys.iter_mut() {
         key.append_text = crate::append_text::localize(&key.append_text, KeyPlatform::current());
     }
@@ -279,6 +314,19 @@ pub fn check_instruction_keys(
         )?;
     }
     Ok(())
+}
+
+/// Whether a start or hold shortcut of `values` has exactly combination
+/// `keys` (`key_sides::identical_press`): its press during a recording is
+/// then an instruction shortcut's (`start_keys::Roles::instruction`), the
+/// only way Linux has them.
+pub fn on_a_start_or_hold_key(values: &ProfileValues, keys: &str) -> bool {
+    let keys = keys.trim();
+    let starts = values.start_keys.iter().map(|key| key.shortcut.as_str());
+    let holds = values.hold_keys.iter().map(|key| key.shortcut.as_str());
+    starts
+        .chain(holds)
+        .any(|shortcut| crate::key_sides::identical_press(shortcut.trim(), keys))
 }
 
 /// The instruction shortcuts of `values` whose combination an end shortcut
@@ -395,9 +443,62 @@ mod tests {
         );
     }
 
+    /// Linux (user, 2026-11-28): the second factory combination, which is a
+    /// hold shortcut there and isn't taken apart during a recording; its
+    /// press then switches to the instruction. Nothing appended and no
+    /// context, as Linux' hold and end shortcuts (Linux has no window
+    /// titles, `window_capture`).
     #[test]
-    fn on_linux_there_is_none_out_of_the_box() {
-        assert!(factory_instruction_keys_on(KeyPlatform::Linux).is_empty());
+    fn on_linux_it_is_the_second_factory_combination_without_append_text_or_context() {
+        let (_, second) = crate::start_keys::factory_combinations_on(KeyPlatform::Linux);
+        assert_eq!(second, "ctrl+alt+shift+space");
+        assert_eq!(
+            factory_instruction_keys_on(KeyPlatform::Linux),
+            vec![key(LINUX_FACTORY_ID, second, "", false)]
+        );
+        assert!(crate::start_keys::factory_hold_keys_on(KeyPlatform::Linux)
+            .iter()
+            .any(|hold| crate::key_sides::identical_press(&hold.shortcut, second)));
+    }
+
+    /// Every system's factory start, hold, end and instruction shortcuts get
+    /// on with each other; on Linux the instruction shortcut has a hold
+    /// shortcut's combination and no end's (user, 2026-11-28).
+    #[test]
+    fn every_systems_factory_lists_collide_with_nothing() {
+        let names = crate::end_keys::FactoryEndNames::for_locale("en");
+        for platform in [KeyPlatform::Macos, KeyPlatform::Windows, KeyPlatform::Linux] {
+            let mut values = ProfileValues::from_settings(&get_default_settings());
+            values.start_keys = crate::start_keys::factory_start_keys_on(platform);
+            values.hold_keys = crate::start_keys::factory_hold_keys_on(platform);
+            values.end_keys = crate::end_keys::factory_end_keys_on(platform, &names);
+            values.instruction_keys = factory_instruction_keys_on(platform);
+            assert!(!values.instruction_keys.is_empty(), "{platform:?}");
+            for key in &values.instruction_keys {
+                assert_eq!(
+                    check_combination(&key.shortcut, KeyList::Instruction, &values),
+                    Ok(()),
+                    "{platform:?}"
+                );
+            }
+            for end in &values.end_keys {
+                assert_eq!(
+                    check_combination(&end.shortcut, KeyList::End, &values),
+                    Ok(()),
+                    "{platform:?}: {}",
+                    end.shortcut
+                );
+            }
+            assert_eq!(
+                check_instruction_keys_on(
+                    &mut values,
+                    crate::settings::KeyboardImplementation::Tauri,
+                    platform == KeyPlatform::Linux
+                ),
+                Ok(()),
+                "{platform:?}"
+            );
+        }
     }
 
     #[test]
@@ -411,9 +512,7 @@ mod tests {
             settings.post_process_mode,
             PostProcessMode::WithInstructionKey
         );
-        if KeyPlatform::current() != KeyPlatform::Linux {
-            assert!(!settings.instruction_keys.is_empty());
-        }
+        assert!(!settings.instruction_keys.is_empty());
     }
 
     #[test]
@@ -574,12 +673,14 @@ mod tests {
         );
     }
 
+    /// Also on Linux (user, 2026-11-28): there only through a start or hold
+    /// shortcut with the instruction key's combination, as nothing is
+    /// registered there during a recording (`shortcut::profile_sync`).
     #[test]
-    fn instruction_keys_are_taken_unless_never_or_on_linux() {
-        assert!(taken(&set_up(PostProcessMode::WithInstructionKey), false));
-        assert!(taken(&set_up(PostProcessMode::Always), false));
-        assert!(!taken(&set_up(PostProcessMode::Never), false));
-        assert!(!taken(&set_up(PostProcessMode::WithInstructionKey), true));
+    fn instruction_keys_are_taken_unless_never_also_on_linux() {
+        assert!(taken(&set_up(PostProcessMode::WithInstructionKey)));
+        assert!(taken(&set_up(PostProcessMode::Always)));
+        assert!(!taken(&set_up(PostProcessMode::Never)));
     }
 
     /// The post-processing setup (sidecar note
@@ -590,16 +691,15 @@ mod tests {
     fn instruction_keys_are_taken_before_post_processing_is_set_up() {
         let mut no_model = set_up(PostProcessMode::Always);
         no_model.post_process_models.clear();
-        assert!(taken(&no_model, false));
+        assert!(taken(&no_model));
         let mut no_provider = set_up(PostProcessMode::WithInstructionKey);
         no_provider.post_process_provider_id = "gone".to_string();
-        assert!(taken(&no_provider, false));
+        assert!(taken(&no_provider));
         // A new installation: a provider without a model or key.
-        assert!(taken(&get_default_settings(), false));
+        assert!(taken(&get_default_settings()));
         let mut never = get_default_settings();
         never.post_process_mode = PostProcessMode::Never;
-        assert!(!taken(&never, false));
-        assert!(!taken(&get_default_settings(), true));
+        assert!(!taken(&never));
     }
 
     // ---- The profile that applies now (review finding 5, 2026-11-26) ---------
@@ -617,19 +717,15 @@ mod tests {
             settings
         };
         assert_eq!(
-            taken_now(&with(PostProcessMode::WithInstructionKey), false),
+            taken_now(&with(PostProcessMode::WithInstructionKey)),
             tab.as_slice()
         );
-        assert_eq!(
-            taken_now(&with(PostProcessMode::Always), false),
-            tab.as_slice()
-        );
-        assert!(taken_now(&with(PostProcessMode::Never), false).is_empty());
-        assert!(taken_now(&with(PostProcessMode::Always), true).is_empty());
+        assert_eq!(taken_now(&with(PostProcessMode::Always)), tab.as_slice());
+        assert!(taken_now(&with(PostProcessMode::Never)).is_empty());
         // Also before post-processing is set up.
         let mut no_model = with(PostProcessMode::Always);
         no_model.post_process_models.clear();
-        assert_eq!(taken_now(&no_model, false), tab.as_slice());
+        assert_eq!(taken_now(&no_model), tab.as_slice());
     }
 
     /// Settings whose active profile has mode `here`, with a profile "Mail"
@@ -656,16 +752,15 @@ mod tests {
         // The dictation began in an app whose profile never post-processes;
         // Mail, in front now, takes ⇥: it is registered there, so it cuts.
         let s = here_and_in_mail(PostProcessMode::Never, PostProcessMode::WithInstructionKey);
-        assert!(is_taken_now(&s, Some("com.apple.mail"), "tab", false));
-        assert!(!is_taken_now(&s, Some("com.apple.TextEdit"), "tab", false));
-        assert!(!is_taken_now(&s, Some("com.apple.mail"), "tab", true));
+        assert!(is_taken_now(&s, Some("com.apple.mail"), "tab"));
+        assert!(!is_taken_now(&s, Some("com.apple.TextEdit"), "tab"));
     }
 
     #[test]
     fn a_press_cuts_nothing_in_the_app_in_front_that_never_post_processes() {
         let s = here_and_in_mail(PostProcessMode::WithInstructionKey, PostProcessMode::Never);
-        assert!(!is_taken_now(&s, Some("com.apple.mail"), "tab", false));
-        assert!(is_taken_now(&s, Some("com.apple.TextEdit"), "tab", false));
+        assert!(!is_taken_now(&s, Some("com.apple.mail"), "tab"));
+        assert!(is_taken_now(&s, Some("com.apple.TextEdit"), "tab"));
     }
 
     #[test]
@@ -674,8 +769,8 @@ mod tests {
             PostProcessMode::WithInstructionKey,
             PostProcessMode::WithInstructionKey,
         );
-        assert!(is_taken_now(&s, None, "tab", false));
-        assert!(!is_taken_now(&s, None, "instruction_1795300000001", false));
+        assert!(is_taken_now(&s, None, "tab"));
+        assert!(!is_taken_now(&s, None, "instruction_1795300000001"));
     }
 
     // ---- Its end -------------------------------------------------------------
@@ -808,6 +903,37 @@ mod tests {
             windows.instruction_keys[0].append_text,
             crate::append_text::localize("{Win+Enter}", KeyPlatform::current())
         );
+    }
+
+    /// Linux (user, 2026-11-28): nothing is registered there during a
+    /// recording, so an instruction shortcut works only with exactly a
+    /// start or hold shortcut's combination; another is refused instead of
+    /// being ignored without a word.
+    #[test]
+    fn on_linux_an_instruction_key_needs_a_start_or_hold_keys_combination() {
+        let handy = crate::settings::KeyboardImplementation::HandyKeys;
+        let mut values = layer();
+        assert_eq!(
+            check_instruction_keys_on(&mut values, handy, true),
+            Err("instruction-key-needs-start-or-hold:tab".to_string())
+        );
+        assert_eq!(
+            check_instruction_keys_on(&mut values, handy, false),
+            Ok(()),
+            "elsewhere ⇥ is taken during a recording"
+        );
+        for keys in ["ctrl+space", "f13"] {
+            let mut on_start_or_hold = layer();
+            on_start_or_hold.instruction_keys[0].shortcut = keys.to_string();
+            assert_eq!(
+                check_instruction_keys_on(&mut on_start_or_hold, handy, true),
+                Ok(()),
+                "{keys}"
+            );
+        }
+        let mut none = layer();
+        none.instruction_keys.clear();
+        assert_eq!(check_instruction_keys_on(&mut none, handy, true), Ok(()));
     }
 
     #[test]

@@ -527,14 +527,17 @@
       "shortcutHint": "Podczas nagrywania naciśnięcie tej kombinacji przełącza z tekstu na instrukcję. Jest zajęta tylko podczas nagrywania.",
       "onlyWhileRecording": "Zajęta tylko podczas nagrywania.",
       "sameAsStartOrHold": "Ta sama kombinacja co skrót rozpoczynający lub przytrzymywany: bez nagrania rozpoczyna nagranie, podczas nagrywania przełącza na instrukcję.",
+      "linuxNotTaken": "Niezajęty w systemie Linux: żaden skrót rozpoczynający ani przytrzymywany nie ma tej kombinacji.",
       "notTakenNever": "Postprocess jest ustawiony na „{{mode}}”: skróty instrukcji nie są zajęte. Wybierz inne ustawienie dla „{{setting}}” w sekcji Zaawansowane.",
       "notSetUp": "Postproces nie jest jeszcze skonfigurowany: po skrócie instrukcji tekst zostaje wstawiony tak, jak go usłyszano, bez instrukcji, a powiadomienie proponuje konfigurację.",
+      "linuxNote": "W systemie Linux Handy nie może zajmować kombinacji tylko na czas nagrania, dlatego skrót instrukcji potrzebuje tam kombinacji skrótu rozpoczynającego lub przytrzymywanego: naciśnięty podczas nagrania przełącza na instrukcję.",
       "add": "Dodaj skrót instrukcji",
       "addPressKeys": "Naciśnij kombinację dla nowego skrótu instrukcji",
       "refName": "Skrót instrukcji {{name}}",
       "errors": {
         "save": "Nie udało się zapisać skrótów instrukcji: {{error}}",
         "needsShortcut": "Każdy skrót instrukcji potrzebuje kombinacji klawiszy.",
+        "needsStartOrHold": "W systemie Linux skrót instrukcji potrzebuje kombinacji skrótu rozpoczynającego lub przytrzymywanego.",
         "shortcutTwice": "Dwa skróty instrukcji nie mogą mieć tej samej kombinacji."
       }
     },

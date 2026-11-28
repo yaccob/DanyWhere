@@ -527,14 +527,17 @@
       "shortcutHint": "Selama rekaman, menekan kombinasi ini beralih dari teks ke instruksi. Kombinasi ini hanya dipakai selama merekam.",
       "onlyWhileRecording": "Hanya dipakai selama rekaman.",
       "sameAsStartOrHold": "Kombinasi yang sama dengan sebuah pintasan mulai atau pintasan tahan: tanpa rekaman, kombinasi ini memulai rekaman; selama rekaman, kombinasi ini beralih ke instruksi.",
+      "linuxNotTaken": "Tidak dipakai di Linux: tidak ada pintasan mulai atau pintasan tahan dengan kombinasi ini.",
       "notTakenNever": "Pascaproses diatur ke “{{mode}}”: pintasan instruksi tidak dipakai. Pilih pengaturan lain untuk “{{setting}}” di Lanjutan.",
       "notSetUp": "Pascaproses belum disiapkan: setelah pintasan instruksi, teks disisipkan seperti yang terdengar, tanpa instruksi, dan sebuah pemberitahuan menawarkan untuk menyiapkannya.",
+      "linuxNote": "Di Linux, Handy tidak dapat memakai kombinasi hanya selama rekaman, jadi pintasan instruksi di sana memerlukan kombinasi sebuah pintasan mulai atau pintasan tahan: ditekan selama rekaman, pintasan itu beralih ke instruksi.",
       "add": "Tambah Pintasan Instruksi",
       "addPressKeys": "Tekan kombinasi untuk pintasan instruksi yang baru",
       "refName": "Pintasan instruksi {{name}}",
       "errors": {
         "save": "Pintasan instruksi tidak dapat disimpan: {{error}}",
         "needsShortcut": "Setiap pintasan instruksi memerlukan kombinasi tombol.",
+        "needsStartOrHold": "Di Linux, pintasan instruksi memerlukan kombinasi sebuah pintasan mulai atau pintasan tahan.",
         "shortcutTwice": "Dua pintasan instruksi tidak boleh memakai kombinasi yang sama."
       }
     },

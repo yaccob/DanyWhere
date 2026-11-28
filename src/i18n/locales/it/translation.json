@@ -527,14 +527,17 @@
       "shortcutHint": "Durante una registrazione, premere questa combinazione passa dal testo all'istruzione. È occupata solo durante la registrazione.",
       "onlyWhileRecording": "Occupata solo durante una registrazione.",
       "sameAsStartOrHold": "Stessa combinazione di una scorciatoia di avvio o da tenere premuta: senza registrazione ne avvia una, durante una registrazione passa all'istruzione.",
+      "linuxNotTaken": "Non occupata su Linux: nessuna scorciatoia di avvio o da tenere premuta ha questa combinazione.",
       "notTakenNever": "La post-elaborazione è impostata su «{{mode}}»: le scorciatoie di istruzione non sono occupate. Scegli un'altra impostazione per «{{setting}}» in Avanzate.",
       "notSetUp": "La post-elaborazione non è ancora configurata: dopo una scorciatoia di istruzione il testo viene inserito così come è stato sentito, senza l'istruzione, e un avviso propone di configurarla.",
+      "linuxNote": "Su Linux Handy non può occupare una combinazione solo durante una registrazione, quindi una scorciatoia di istruzione ha bisogno della combinazione di una scorciatoia di avvio o da tenere premuta: premuta durante una registrazione, quella passa all'istruzione.",
       "add": "Aggiungi scorciatoia di istruzione",
       "addPressKeys": "Premi la combinazione per la nuova scorciatoia di istruzione",
       "refName": "Scorciatoia di istruzione {{name}}",
       "errors": {
         "save": "Impossibile salvare le scorciatoie di istruzione: {{error}}",
         "needsShortcut": "Ogni scorciatoia di istruzione ha bisogno di una combinazione di tasti.",
+        "needsStartOrHold": "Su Linux una scorciatoia di istruzione ha bisogno della combinazione di una scorciatoia di avvio o da tenere premuta.",
         "shortcutTwice": "Due scorciatoie di istruzione non possono condividere una combinazione."
       }
     },

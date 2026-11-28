@@ -1377,7 +1377,12 @@ mod tests {
     fn nothing_to_carry_over_needs_no_write() {
         let stored = stored_before_the_field(false, false, "enter");
         let mut settings = read(&stored);
-        assert!(!crate::end_keys::migrate(&mut settings, &stored));
+        // On Linux the second factory end goes since the instruction
+        // shortcut took its combination (2026-11-28), a change of its own.
+        assert_eq!(
+            crate::end_keys::migrate(&mut settings, &stored),
+            cfg!(target_os = "linux")
+        );
         assert_eq!(settings.end_keys[0].append_text, "");
     }
 

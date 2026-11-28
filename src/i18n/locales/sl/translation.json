@@ -527,14 +527,17 @@
       "shortcutHint": "Če to kombinacijo tipk pritisnete med snemanjem, preklopite z besedila na navodilo. Zasedena je samo med snemanjem.",
       "onlyWhileRecording": "Zasedena samo med snemanjem.",
       "sameAsStartOrHold": "Ista kombinacija tipk kot bližnjica za začetek ali za držanje: zunaj snemanja začne snemanje, med snemanjem preklopi na navodilo.",
+      "linuxNotTaken": "V Linuxu ni zasedena: nobena bližnjica za začetek ali za držanje nima te kombinacije tipk.",
       "notTakenNever": "Naknadna obdelava je nastavljena na »{{mode}}«: bližnjice za navodila niso zasedene. Pod Napredno izberite drugo nastavitev za »{{setting}}«.",
       "notSetUp": "Naknadna obdelava še ni nastavljena: po bližnjici za navodilo se besedilo vstavi tako, kot je bilo slišano, brez navodila, obvestilo pa ponudi nastavitev.",
+      "linuxNote": "V Linuxu Handy kombinacije tipk ne more zasesti samo med snemanjem, zato bližnjica za navodilo tam potrebuje kombinacijo tipk bližnjice za začetek ali za držanje: pritisnjena med snemanjem preklopi na navodilo.",
       "add": "Dodaj bližnjico za navodilo",
       "addPressKeys": "Pritisnite kombinacijo tipk za novo bližnjico za navodilo",
       "refName": "Bližnjica za navodilo {{name}}",
       "errors": {
         "save": "Bližnjic za navodila ni bilo mogoče shraniti: {{error}}",
         "needsShortcut": "Vsaka bližnjica za navodilo potrebuje kombinacijo tipk.",
+        "needsStartOrHold": "V Linuxu bližnjica za navodilo potrebuje kombinacijo tipk bližnjice za začetek ali za držanje.",
         "shortcutTwice": "Dve bližnjici za navodilo ne moreta imeti iste kombinacije tipk."
       }
     },

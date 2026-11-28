@@ -245,21 +245,28 @@ fn six_name(names: &FactoryEndNames, index: usize) -> &str {
 /// shortcut says it now. ⌃Space is the factory start shortcut, so its
 /// second press ends with a space.
 ///
-/// Windows and Linux keep the two ends with the factory start and hold
-/// combinations: Linux takes no end's own combination
-/// (`shortcut::profile_sync`), and on Windows Ctrl+Alt is AltGr.
+/// Windows keeps the two ends with the factory start and hold combinations
+/// (Ctrl+Alt is AltGr there). Linux takes no end's own combination
+/// (`shortcut::profile_sync`) and has its instruction shortcut on the
+/// second factory combination (user, 2026-11-28), which an end may not
+/// share: it keeps only the end on the start combination, which did what
+/// the other does since variant b.
 ///
 /// The macOS ends get names from `names` (user, 2026-11-24, "Variante 2"):
 /// written once, in the language of a new installation, and from then on
 /// names like typed ones, which follow neither a change of language nor a
-/// changed end. Windows' and Linux' two ends stay unnamed.
+/// changed end. Windows' and Linux' ends stay unnamed.
 pub fn factory_end_keys_on(platform: KeyPlatform, names: &FactoryEndNames) -> Vec<EndKey> {
     if platform != KeyPlatform::Macos {
-        return builtin_for_keys(
+        let mut ends = builtin_for_keys(
             crate::start_keys::factory_combinations_on(platform),
             "",
             false,
         );
+        if platform == KeyPlatform::Linux {
+            ends.truncate(1);
+        }
+        return ends;
     }
     MACOS_SIX
         .iter()
@@ -725,6 +732,11 @@ pub fn migrate_on(
     // DanyWhere: variant b (2026-11-26).
     changed |= to_variant_b(settings, platform);
 
+    // DanyWhere: Linux' instruction shortcut (2026-11-28).
+    if platform == KeyPlatform::Linux {
+        changed |= to_linux_instruction_key(settings, settings_value);
+    }
+
     let ends = settings
         .end_keys
         .iter_mut()
@@ -782,6 +794,134 @@ fn to_variant_b(settings: &mut AppSettings, platform: KeyPlatform) -> bool {
         }
     }
     changed
+}
+
+/// The step to Linux' instruction shortcut (user, 2026-11-28; sidecar note
+/// `2026-11-28_1405_auftrag-anweisungstaste-linux`) for every layer
+/// ([`linux_instruction_step`]). A profile whose ends changed loses the own
+/// entries gone with them; one that lost the factory instruction shortcut
+/// to an end of its own while the defaults keep it switches it off, so the
+/// defaults don't bring it back. Returns whether anything changed; a second
+/// run changes nothing.
+fn to_linux_instruction_key(settings: &mut AppSettings, stored: &serde_json::Value) -> bool {
+    let (ends, keys) = linux_instruction_step(
+        Some(stored),
+        &mut settings.end_keys,
+        &mut settings.instruction_keys,
+    );
+    let mut changed = ends || keys;
+    let stored_defaults = stored.get("default_values").filter(|v| !v.is_null());
+    if let Some(defaults) = settings.default_values.as_mut() {
+        let (ends, keys) = linux_instruction_step(
+            stored_defaults,
+            &mut defaults.end_keys,
+            &mut defaults.instruction_keys,
+        );
+        changed |= ends || keys;
+    }
+    let defaults = settings.default_values.clone();
+    let stored_profiles = stored.get("profiles").and_then(|p| p.as_array());
+    for profile in settings.profiles.iter_mut() {
+        let stored_values = stored_profiles
+            .and_then(|profiles| {
+                profiles.iter().find(|stored| {
+                    stored.get("id").and_then(|id| id.as_str()) == Some(profile.id.as_str())
+                })
+            })
+            .and_then(|stored| stored.get("values"));
+        let (ends, keys) = linux_instruction_step(
+            stored_values,
+            &mut profile.values.end_keys,
+            &mut profile.values.instruction_keys,
+        );
+        if ends {
+            prune_own_entries(profile, defaults.as_ref(), "end_keys");
+        }
+        let factory_id = crate::instruction_keys::LINUX_FACTORY_ID;
+        let lost =
+            |values: &ProfileValues| !values.instruction_keys.iter().any(|k| k.id == factory_id);
+        if keys
+            && lost(&profile.values)
+            && defaults.as_ref().is_some_and(|defaults| !lost(defaults))
+        {
+            profile
+                .own_entries
+                .entry("instruction_keys".to_string())
+                .or_default()
+                .off
+                .insert(factory_id.to_string());
+        }
+        changed |= ends || keys;
+    }
+    changed
+}
+
+/// One layer's step to Linux' instruction shortcut (`stored` its stored
+/// values): a layer that stored no instruction shortcuts (0.5.1 had none)
+/// gets the factory one; the factory end on the second factory combination
+/// goes where it does what the end on the start combination does
+/// ([`drop_linux_second_end`]), and a layer whose ends were those two and
+/// that has no instruction shortcuts (Dev builds of main stored none on
+/// Linux, whose card was hidden) gets the factory one, once; the factory
+/// instruction shortcut goes from a layer with an end of its own on its
+/// combination, which keeps it. Returns whether the ends and whether the
+/// instruction shortcuts changed.
+fn linux_instruction_step(
+    stored: Option<&serde_json::Value>,
+    end_keys: &mut Vec<EndKey>,
+    instruction_keys: &mut Vec<EndKey>,
+) -> (bool, bool) {
+    let factory = crate::instruction_keys::factory_instruction_keys_on(KeyPlatform::Linux);
+    let mut keys_changed = false;
+    let unstored = stored.is_none_or(|values| values.get("instruction_keys").is_none());
+    if unstored && *instruction_keys != factory {
+        *instruction_keys = factory.clone();
+        keys_changed = true;
+    }
+    let ends_changed = drop_linux_second_end(end_keys);
+    if ends_changed && instruction_keys.is_empty() {
+        *instruction_keys = factory.clone();
+        keys_changed = true;
+    }
+    let before = instruction_keys.len();
+    instruction_keys.retain(|key| {
+        !(factory.contains(key)
+            && end_keys
+                .iter()
+                .any(|end| crate::key_sides::same_press(end.shortcut.trim(), key.shortcut.trim())))
+    });
+    if instruction_keys.len() != before {
+        log::info!("An end of one's own keeps the second factory combination: no instruction shortcut on it");
+        keys_changed = true;
+    }
+    (ends_changed, keys_changed)
+}
+
+/// Linux' two factory ends of before its instruction shortcut, `plain` and
+/// `post_process` on the two factory combinations, whose second (unnamed)
+/// does what the first does: the second goes, as the instruction shortcut
+/// takes its combination. Returns whether it went.
+fn drop_linux_second_end(end_keys: &mut Vec<EndKey>) -> bool {
+    let (first, second) = crate::start_keys::factory_combinations_on(KeyPlatform::Linux);
+    let redundant = match end_keys.as_slice() {
+        [a, b] => {
+            a.id == PLAIN_ID
+                && b.id == POST_PROCESS_ID
+                && crate::key_sides::identical_press(a.shortcut.trim(), first)
+                && crate::key_sides::identical_press(b.shortcut.trim(), second)
+                && b.name.trim().is_empty()
+                && a.append_text == b.append_text
+                && a.send_context == b.send_context
+        }
+        _ => false,
+    };
+    if redundant {
+        log::info!(
+            "Linux' second factory end goes: the instruction shortcut takes its combination"
+        );
+        end_keys.truncate(1);
+    }
+    redundant
 }
 
 /// Drops the own entries of list `field` (`end_keys` or `hold_keys`) of
@@ -2008,18 +2148,202 @@ mod tests {
     }
 
     #[test]
-    fn on_windows_and_linux_the_two_ends_stay() {
-        for platform in [KeyPlatform::Windows, KeyPlatform::Linux] {
-            let (first, second) = crate::start_keys::factory_combinations_on(platform);
-            assert_eq!(
-                factory_end_keys_on(platform, &FactoryEndNames::for_locale("de")),
-                vec![
-                    plain(PLAIN_ID, "", first, "", false),
-                    plain(POST_PROCESS_ID, "", second, "", false),
-                ],
-                "{platform:?}"
-            );
+    fn on_windows_the_two_ends_stay() {
+        let platform = KeyPlatform::Windows;
+        let (first, second) = crate::start_keys::factory_combinations_on(platform);
+        assert_eq!(
+            factory_end_keys_on(platform, &FactoryEndNames::for_locale("de")),
+            vec![
+                plain(PLAIN_ID, "", first, "", false),
+                plain(POST_PROCESS_ID, "", second, "", false),
+            ]
+        );
+    }
+
+    /// Linux (user, 2026-11-28): the second factory combination is the
+    /// instruction shortcut there, which an end may not share; the end on
+    /// it did what the first does since variant b, so it went.
+    #[test]
+    fn on_linux_one_end_has_the_start_combination() {
+        let platform = KeyPlatform::Linux;
+        let (first, _) = crate::start_keys::factory_combinations_on(platform);
+        assert_eq!(
+            factory_end_keys_on(platform, &FactoryEndNames::for_locale("de")),
+            vec![plain(PLAIN_ID, "", first, "", false)]
+        );
+    }
+
+    // ---- Linux' instruction shortcut (user, 2026-11-28) ------------------------
+    //
+    // Sidecar note `2026-11-28_1405_auftrag-anweisungstaste-linux`: a store
+    // from before (0.5.1 had no instruction shortcuts, Dev builds of main
+    // stored none on Linux) gets the factory instruction shortcut on the
+    // second factory combination; the end on it goes where it did what the
+    // first end does; an end of one's own there keeps it, and that layer gets
+    // no factory instruction shortcut.
+
+    const LINUX: KeyPlatform = KeyPlatform::Linux;
+
+    fn linux_first() -> &'static str {
+        crate::start_keys::factory_combinations_on(LINUX).0
+    }
+
+    fn linux_second() -> &'static str {
+        crate::start_keys::factory_combinations_on(LINUX).1
+    }
+
+    /// Linux' two factory ends of before, with `append` and `ctx`.
+    fn linux_pair(append: &str, ctx: bool) -> Vec<EndKey> {
+        vec![
+            plain(PLAIN_ID, "", linux_first(), append, ctx),
+            plain(POST_PROCESS_ID, "", linux_second(), append, ctx),
+        ]
+    }
+
+    /// A Linux store with `ends` in the settings, the defaults and a profile
+    /// "work" that follows them, its instruction shortcuts `instruction_keys`
+    /// (`None`: the field isn't stored, as in 0.5.1).
+    fn linux_store(ends: Vec<EndKey>, instruction_keys: Option<Vec<EndKey>>) -> serde_json::Value {
+        let mut s = get_default_settings();
+        s.start_keys = crate::start_keys::factory_start_keys_on(LINUX);
+        s.hold_keys = crate::start_keys::factory_hold_keys_on(LINUX);
+        s.end_keys = ends;
+        s.instruction_keys = instruction_keys.clone().unwrap_or_default();
+        let values = ProfileValues::from_settings(&s);
+        s.default_values = Some(values.clone());
+        s.profiles = vec![crate::profiles::Profile::new("work", "Arbeit", values)];
+        let mut stored = serde_json::to_value(&s).unwrap();
+        if instruction_keys.is_none() {
+            let unstored = |layer: &mut serde_json::Value| {
+                layer.as_object_mut().unwrap().remove("instruction_keys");
+            };
+            unstored(&mut stored);
+            unstored(&mut stored["default_values"]);
+            unstored(&mut stored["profiles"][0]["values"]);
         }
+        stored
+    }
+
+    /// Every layer's (end shortcuts, instruction shortcuts).
+    fn layers(s: &AppSettings) -> Vec<(Vec<EndKey>, Vec<EndKey>)> {
+        let defaults = s.default_values.as_ref().unwrap();
+        vec![
+            (s.end_keys.clone(), s.instruction_keys.clone()),
+            (defaults.end_keys.clone(), defaults.instruction_keys.clone()),
+            (
+                s.profiles[0].values.end_keys.clone(),
+                s.profiles[0].values.instruction_keys.clone(),
+            ),
+        ]
+    }
+
+    fn linux_instruction() -> Vec<EndKey> {
+        crate::instruction_keys::factory_instruction_keys_on(LINUX)
+    }
+
+    /// Migrates `stored` on Linux; a second read changes nothing.
+    fn migrated_on_linux(stored: &serde_json::Value) -> AppSettings {
+        let mut s = read(stored);
+        assert!(migrate_on(&mut s, stored, LINUX));
+        let written = serde_json::to_value(&s).unwrap();
+        let mut again = read(&written);
+        assert!(!migrate_on(&mut again, &written, LINUX), "once only");
+        assert_eq!(layers(&again), layers(&s));
+        s
+    }
+
+    #[test]
+    fn a_linux_store_of_0_5_1_gets_the_instruction_key_and_loses_the_second_end() {
+        let s = migrated_on_linux(&linux_store(linux_pair("", false), None));
+        for (ends, instructions) in layers(&s) {
+            assert_eq!(ends, vec![plain(PLAIN_ID, "", linux_first(), "", false)]);
+            assert_eq!(instructions, linux_instruction());
+        }
+    }
+
+    #[test]
+    fn a_linux_dev_store_without_instruction_keys_gets_the_factory_one_once() {
+        let s = migrated_on_linux(&linux_store(linux_pair("", false), Some(Vec::new())));
+        for (ends, instructions) in layers(&s) {
+            assert_eq!(ends.len(), 1);
+            assert_eq!(instructions, linux_instruction());
+        }
+        // Deleted later: it stays deleted.
+        let mut deleted = s.clone();
+        deleted.instruction_keys.clear();
+        if let Some(defaults) = deleted.default_values.as_mut() {
+            defaults.instruction_keys.clear();
+        }
+        deleted.profiles[0].values.instruction_keys.clear();
+        let stored = serde_json::to_value(&deleted).unwrap();
+        let mut again = read(&stored);
+        assert!(!migrate_on(&mut again, &stored, LINUX));
+        assert!(layers(&again).iter().all(|(_, keys)| keys.is_empty()));
+    }
+
+    #[test]
+    fn a_linux_pair_carried_over_with_the_same_values_loses_its_second_end_too() {
+        let s = migrated_on_linux(&linux_store(linux_pair(" ", true), None));
+        for (ends, instructions) in layers(&s) {
+            assert_eq!(ends, vec![plain(PLAIN_ID, "", linux_first(), " ", true)]);
+            assert_eq!(instructions, linux_instruction());
+        }
+    }
+
+    #[test]
+    fn a_linux_end_of_ones_own_on_the_second_combination_keeps_it() {
+        let mut own = linux_pair("", false);
+        own[1].append_text = r"\n".to_string();
+        let s = migrated_on_linux(&linux_store(own.clone(), None));
+        for (ends, instructions) in layers(&s) {
+            assert_eq!(ends, own);
+            assert!(instructions.is_empty(), "{instructions:?}");
+        }
+    }
+
+    #[test]
+    fn a_linux_profile_whose_own_end_has_the_second_combination_switches_the_instruction_key_off() {
+        let mut stored = linux_store(linux_pair("", false), None);
+        // The profile's second end is its own, with a line break.
+        let mut own = linux_pair("", false);
+        own[1].append_text = r"\n".to_string();
+        stored["profiles"][0]["values"]["end_keys"] = serde_json::to_value(&own).unwrap();
+        stored["profiles"][0]["own_entries"] =
+            serde_json::json!({ "end_keys": { "own": [POST_PROCESS_ID], "off": [] } });
+        let s = migrated_on_linux(&stored);
+        let defaults = s.default_values.as_ref().unwrap();
+        assert_eq!(defaults.instruction_keys, linux_instruction());
+        let work = &s.profiles[0];
+        assert_eq!(work.values.end_keys, own);
+        assert!(work.values.instruction_keys.is_empty());
+        assert!(
+            work.own_entries["instruction_keys"]
+                .off
+                .contains(crate::instruction_keys::LINUX_FACTORY_ID),
+            "{:?}",
+            work.own_entries
+        );
+        // The defaults don't bring it back.
+        let mut after = s.clone();
+        crate::profile_layers::propagate(&mut after);
+        assert!(after.profiles[0].values.instruction_keys.is_empty());
+        assert_eq!(after.profiles[0].values.end_keys, own);
+    }
+
+    #[test]
+    fn the_linux_step_leaves_other_systems_alone() {
+        let (first, second) = crate::start_keys::factory_combinations_on(KeyPlatform::Windows);
+        let mut s = get_default_settings();
+        s.end_keys = vec![
+            plain(PLAIN_ID, "", first, "", false),
+            plain(POST_PROCESS_ID, "", second, "", false),
+        ];
+        s.instruction_keys = Vec::new();
+        let stored = serde_json::to_value(&s).unwrap();
+        let mut again = read(&stored);
+        migrate_on(&mut again, &stored, KeyPlatform::Windows);
+        assert_eq!(again.end_keys.len(), 2);
+        assert!(again.instruction_keys.is_empty());
     }
 
     // ---- How it ends after an instruction key ----------------------------------

@@ -527,14 +527,17 @@
       "shortcutHint": "Während einer Aufnahme schaltet diese Tastenkombination vom Text zur Anweisung. Sie ist nur während einer Aufnahme belegt.",
       "onlyWhileRecording": "Nur während einer Aufnahme belegt.",
       "sameAsStartOrHold": "Dieselbe Tastenkombination wie eine Start- oder Haltetaste: Ohne Aufnahme startet sie eine, während einer Aufnahme schaltet sie zur Anweisung.",
+      "linuxNotTaken": "Unter Linux nicht belegt: Keine Start- oder Haltetaste hat diese Tastenkombination.",
       "notTakenNever": "Die Nachbearbeitung steht auf „{{mode}}“: Anweisungstasten sind nicht belegt. Wähle unter Erweitert bei „{{setting}}“ eine andere Einstellung.",
       "notSetUp": "Die Nachbearbeitung ist noch nicht eingerichtet: Nach einer Anweisungstaste wird der Text so eingefügt, wie er gehört wurde, ohne die Anweisung, und ein Hinweis bietet an, sie einzurichten.",
+      "linuxNote": "Unter Linux kann Handy eine Tastenkombination nicht nur für die Dauer einer Aufnahme belegen. Eine Anweisungstaste braucht dort deshalb die Tastenkombination einer Start- oder Haltetaste: Während einer Aufnahme gedrückt, schaltet diese zur Anweisung.",
       "add": "Anweisungstaste hinzufügen",
       "addPressKeys": "Drück die Tastenkombination für die neue Anweisungstaste",
       "refName": "Anweisungstaste {{name}}",
       "errors": {
         "save": "Die Anweisungstasten konnten nicht gespeichert werden: {{error}}",
         "needsShortcut": "Jede Anweisungstaste braucht eine Tastenkombination.",
+        "needsStartOrHold": "Unter Linux braucht eine Anweisungstaste die Tastenkombination einer Start- oder Haltetaste.",
         "shortcutTwice": "Zwei Anweisungstasten können nicht dieselbe Tastenkombination haben."
       }
     },
