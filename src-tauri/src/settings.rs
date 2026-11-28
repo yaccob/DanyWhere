@@ -1361,7 +1361,9 @@ pub fn get_default_settings() -> AppSettings {
         settings_schema_version: default_settings_schema_version(),
         bindings,
         hold_threshold_ms: default_hold_threshold_ms(),
-        audio_feedback: false,
+        // DanyWhere: on in a new installation (user, 2026-11-27, "Töne ab
+        // Werk an"); Handy's was off. A store without the key stays off.
+        audio_feedback: true,
         audio_feedback_volume: default_audio_feedback_volume(),
         sound_theme: default_sound_theme(),
         done_sound: default_done_sound(),
@@ -2196,6 +2198,18 @@ mod tests {
         stored["input_method_guide_seen"] = serde_json::json!(true);
         let settings: AppSettings = serde_json::from_value(stored).unwrap();
         assert!(settings.input_method_guide_seen);
+    }
+
+    /// DanyWhere (user, 2026-11-27: "Töne ab Werk an auf alle Fälle"): a new
+    /// installation plays the sounds, which the introduction video for
+    /// beginners explains. A stored installation keeps its own choice
+    /// (`empty_store_parses_with_defaults`: a store without the key stays
+    /// silent, as Handy's always was).
+    #[test]
+    fn a_new_installation_plays_the_sounds() {
+        let settings = get_default_settings();
+        assert!(settings.audio_feedback);
+        assert!(settings.done_sound);
     }
 
     /// Every field must survive a partial store: a missing key must never fail
