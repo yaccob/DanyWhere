@@ -1913,7 +1913,9 @@ mod tests {
 
     #[test]
     fn key_names_from_another_system_are_localized_on_every_read() {
-        let mut s = get_default_settings();
+        // Two ends and two hold shortcuts on every system (Linux has one
+        // factory end since 2026-11-28).
+        let mut s = with_builtin_ends(get_default_settings());
         s.end_keys[1].append_text = "{Win+Enter}".to_string();
         s.hold_keys[1].append_text = "{Win+Enter}".to_string();
         let stored = serde_json::to_value(&s).unwrap();

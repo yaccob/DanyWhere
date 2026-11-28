@@ -884,10 +884,11 @@ mod tests {
             r"\s{Meta+Return}",
         ] {
             let mut s = settings();
-            s.end_keys[1].append_text = written.to_string();
+            // The first end: Linux has one factory end (2026-11-28).
+            s.end_keys[0].append_text = written.to_string();
             let yaml = export(&s, "default", Some("geheim")).expect("export");
             let (profile, _) = read_import(&yaml, None).expect("import");
-            let imported = &profile.values.end_keys[1].append_text;
+            let imported = &profile.values.end_keys[0].append_text;
             assert_eq!(&localize(imported, KeyPlatform::current()), imported);
             assert_eq!(
                 Append::from_parts(&parse(imported)),

@@ -1405,8 +1405,15 @@ mod tests {
     /// A current store whose values (in the end shortcuts) were written on
     /// another system.
     fn stored_with(settings_value: &str, profile_values: [&str; 2]) -> serde_json::Value {
+        // Two ends on combinations of no system's factory lists: on Linux
+        // the factory pair would lose its second end on read (2026-11-28).
         let end_keys = |value: &str| {
-            serde_json::to_value(crate::end_keys::builtin(value, false)).expect("serializes")
+            serde_json::to_value(crate::end_keys::builtin_for_keys(
+                ("f13", "f14"),
+                value,
+                false,
+            ))
+            .expect("serializes")
         };
         let mut stored = stored_before_the_field(false, false, "enter");
         stored["end_keys"] = end_keys(settings_value);

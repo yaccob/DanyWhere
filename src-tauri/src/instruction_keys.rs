@@ -883,19 +883,23 @@ mod tests {
         values
             .instruction_keys
             .push(key("enter", "return", "", false));
+        // Elsewhere than on Linux, where ⇥ has no start or hold shortcut's
+        // combination and is refused for that first.
         assert_eq!(
-            check_instruction_keys(
+            check_instruction_keys_on(
                 &mut values,
-                crate::settings::KeyboardImplementation::HandyKeys
+                crate::settings::KeyboardImplementation::HandyKeys,
+                false
             ),
             Err("conflict:end_key:para".to_string())
         );
         let mut windows = layer();
         windows.instruction_keys[0].append_text = "{Win+Enter}".to_string();
         assert_eq!(
-            check_instruction_keys(
+            check_instruction_keys_on(
                 &mut windows,
-                crate::settings::KeyboardImplementation::HandyKeys
+                crate::settings::KeyboardImplementation::HandyKeys,
+                false
             ),
             Ok(())
         );

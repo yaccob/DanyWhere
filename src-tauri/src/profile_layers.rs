@@ -1433,6 +1433,15 @@ mod tests {
             arbeit,
             Profile::new("playground", "Playground", playground_values()),
         ];
+        // These layers keep the two built-in ends; on Linux the factory
+        // instruction shortcut has the second one's combination (2026-11-28),
+        // so there they have none, as Linux had before.
+        if cfg!(target_os = "linux") {
+            s.instruction_keys.clear();
+            for profile in &mut s.profiles {
+                profile.values.instruction_keys.clear();
+            }
+        }
         s
     }
 
