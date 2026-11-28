@@ -847,7 +847,7 @@
       },
       "appendText": {
         "noAccessibility": "Brez dovoljenja za Dostopnost se pritiski tipk ne pošljejo; besedilo se vseeno pripne.",
-        "keyNone": "Brez pritiska tipke",
+        "keyNone": "Brez tipke",
         "keyKept": "Ohranjeno od prej; v tem sistemu ni na voljo",
         "preview": {
           "nothing": "Ničesar se ne pripne",
